@@ -30,7 +30,7 @@ class FuseCommentsPass(Pass):
         new_stream: list[ast.Token] = []  # New stream to hold ordered tokens
 
         if not isinstance(self.ir, ast.Module):
-            raise self.ice(
+            raise self.bug(
                 f"FuseCommentsPass can only be run on a Module, not a {type(self.ir)}"
             )
 
@@ -83,7 +83,7 @@ class FuseCommentsPass(Pass):
                         parent_kids.insert(insert_index, token)
                         prev_token.parent.set_kids(parent_kids)
                     else:
-                        raise self.ice(
+                        raise self.bug(
                             "Token without parent in AST should be impossible"
                         )
 

@@ -40,7 +40,7 @@ class JacParser(Pass):
             if isinstance(mod, ast.Module):
                 return mod
             else:
-                raise self.ice()
+                raise self.bug()
         except jl.UnexpectedInput as e:
             catch_error = ast.EmptyToken()
             catch_error.orig_src = self.source
@@ -76,12 +76,12 @@ class JacParser(Pass):
             orig_src=mod.loc.orig_src,
             name=token.type,
             value=token.value,
-            line=token.line if token.line is not None else 0,
-            end_line=token.end_line if token.end_line is not None else 0,
-            col_start=token.column if token.column is not None else 0,
-            col_end=token.end_column if token.end_column is not None else 0,
-            pos_start=token.start_pos if token.start_pos is not None else 0,
-            pos_end=token.end_pos if token.end_pos is not None else 0,
+            line=token.line or 0,
+            end_line=token.end_line or 0,
+            col_start=token.column or 0,
+            col_end=token.end_column or 0,
+            pos_start=token.start_pos or 0,
+            pos_end=token.end_pos or 0,
             kid=[],
         )
 
@@ -131,19 +131,24 @@ class JacParser(Pass):
             self.parse_ref = parser
             self.terminals: list[ast.Token] = []
 
-        def ice(self) -> Exception:
-            """Raise internal compiler error."""
-            self.parse_ref.error("Internal Compiler Error, Invalid Parse Tree!")
+        def bug(self) -> Exception:
+            """Raise error because of a bug occured."""
+            self.parse_ref.error("BUG: Invalid Parse Tree!")
             return RuntimeError(
-                f"{self.parse_ref.__class__.__name__} - Internal Compiler Error, Invalid Parse Tree!"
+                f"{self.parse_ref.__class__.__name__} - BUG: Invalid Parse Tree!"
             )
 
+        # (thakee): Rename this method to update_node(), this is un-readable.
         def nu(self, node: ast.T) -> ast.T:
             """Update node."""
             self.parse_ref.cur_node = node
             if node not in self.parse_ref.node_list:
                 self.parse_ref.node_list.append(node)
             return node
+
+        # ---------------------------------------------------------------------
+        # Parsing Lark to Jaclang
+        # ---------------------------------------------------------------------
 
         def start(self, kid: list[ast.Module]) -> ast.Module:
             """Grammar rule.
@@ -161,7 +166,7 @@ class JacParser(Pass):
             module: (doc_tag? element (element_with_doc | element)*)?
             doc_tag (element_with_doc (element_with_doc | element)*)?
             """
-            doc = kid[0] if len(kid) and isinstance(kid[0], ast.String) else None
+            doc = kid[0] if kid and isinstance(kid[0], ast.String) else None
             body = kid[1:] if doc else kid
             body = [i for i in body if isinstance(i, ast.ElementStmt)]
             mod = ast.Module(
@@ -171,11 +176,7 @@ class JacParser(Pass):
                 body=body,
                 is_imported=False,
                 terminals=self.terminals,
-                kid=(
-                    kid
-                    if len(kid)
-                    else [ast.EmptyToken(ast.JacSource("", self.parse_ref.mod_path))]
-                ),
+                kid=kid or [ast.EmptyToken(ast.JacSource("", self.parse_ref.mod_path))],
             )
             return self.nu(mod)
 
@@ -186,12 +187,18 @@ class JacParser(Pass):
 
             element_with_doc: doc_tag element
             """
+            # (thakee): All these if checks are un-necessary only here to ensure there is no bug in the parser
+            #           if we get rid of all the "ensure no bug" ifs, would squeeze some performance, and for that
+            #           we should use assert statement, so the condition will be stripped out in the optimized
+            #           build like bellow.
+            #
+            # assert isinstance(kid[1], ast.ElementStmt) and isinstance(kid[0], ast.String), "BUG: Report Please!"
+            #
             if isinstance(kid[1], ast.ElementStmt) and isinstance(kid[0], ast.String):
                 kid[1].doc = kid[0]
                 kid[1].add_kids_left([kid[0]])
                 return self.nu(kid[1])
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def element(self, kid: list[ast.AstNode]) -> ast.ElementStmt:
             """Grammar rule.
@@ -206,8 +213,7 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.ElementStmt):
                 return self.nu(kid[0])
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def global_var(self, kid: list[ast.AstNode]) -> ast.GlobalVars:
             """Grammar rule.
@@ -226,8 +232,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def access_tag(self, kid: list[ast.AstNode]) -> ast.SubTag[ast.Token]:
             """Grammar rule.
@@ -241,8 +246,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def test(self, kid: list[ast.AstNode]) -> ast.Test:
             """Grammar rule.
@@ -261,8 +265,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def free_code(self, kid: list[ast.AstNode]) -> ast.ModuleCode:
             """Grammar rule.
@@ -279,8 +282,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def doc_tag(self, kid: list[ast.AstNode]) -> ast.String:
             """Grammar rule.
@@ -289,8 +291,7 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.String):
                 return self.nu(kid[0])
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def py_code_block(self, kid: list[ast.AstNode]) -> ast.PyInlineCode:
             """Grammar rule.
@@ -304,8 +305,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def import_stmt(self, kid: list[ast.AstNode]) -> ast.Import:
             """Grammar rule.
@@ -350,8 +350,7 @@ class JacParser(Pass):
                         "Deprecated syntax, use braces for multiple imports (e.g, import from mymod {a, b, c})",
                     )
                 return ret
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def from_path(self, kid: list[ast.AstNode]) -> ast.ModulePath:
             """Grammar rule.
@@ -372,15 +371,14 @@ class JacParser(Pass):
                 ret.level = level
                 ret.add_kids_left(adds)
                 return ret
-            else:
-                return self.nu(
-                    ast.ModulePath(
-                        path=None,
-                        level=level,
-                        alias=None,
-                        kid=kid,
-                    )
+            return self.nu(
+                ast.ModulePath(
+                    path=None,
+                    level=level,
+                    alias=None,
+                    kid=kid,
                 )
+            )
 
         def include_stmt(self, kid: list[ast.AstNode]) -> ast.Import:
             """Grammar rule.
@@ -390,7 +388,7 @@ class JacParser(Pass):
             lang = kid[1] if isinstance(kid[1], ast.SubTag) else None
             from_path = kid[2] if lang else kid[1]
             if not isinstance(from_path, ast.ModulePath):
-                raise self.ice()
+                raise self.bug()
             items = ast.SubNodeList[ast.ModulePath](
                 items=[from_path], delim=Tok.COMMA, kid=[from_path]
             )
@@ -463,8 +461,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def architype(
             self, kid: list[ast.AstNode]
@@ -480,13 +477,11 @@ class JacParser(Pass):
                     kid[1].decorators = kid[0]
                     kid[1].add_kids_left([kid[0]])
                     return self.nu(kid[1])
-                else:
-                    raise self.ice()
+                raise self.bug()
 
             elif isinstance(kid[0], (ast.ArchSpec, ast.ArchDef, ast.Enum, ast.EnumDef)):
                 return self.nu(kid[0])
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def architype_decl(self, kid: list[ast.AstNode]) -> ast.ArchSpec:
             """Grammar rule.
@@ -519,8 +514,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def architype_def(self, kid: list[ast.AstNode]) -> ast.ArchDef:
             """Grammar rule.
@@ -537,8 +531,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def arch_type(self, kid: list[ast.AstNode]) -> ast.Token:
             """Grammar rule.
@@ -550,8 +543,7 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.Token):
                 return self.nu(kid[0])
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def decorators(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Expr]:
             """Grammar rule.
@@ -567,8 +559,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def inherited_archs(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Expr]:
             """Grammar rule.
@@ -597,8 +588,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def named_ref(self, kid: list[ast.AstNode]) -> ast.NameAtom:
             """Grammar rule.
@@ -609,8 +599,7 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.NameAtom):
                 return self.nu(kid[0])
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def special_ref(self, kid: list[ast.AstNode]) -> ast.SpecialVarRef:
             """Grammar rule.
@@ -624,8 +613,7 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.Name):
                 return self.nu(ast.SpecialVarRef(var=kid[0]))
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def enum(self, kid: list[ast.AstNode]) -> ast.Enum | ast.EnumDef:
             """Grammar rule.
@@ -638,13 +626,10 @@ class JacParser(Pass):
                     kid[1].decorators = kid[0]
                     kid[1].add_kids_left([kid[0]])
                     return self.nu(kid[1])
-                else:
-                    raise self.ice()
-            elif isinstance(kid[0], (ast.Enum, ast.EnumDef)):
+                raise self.bug()
+            if isinstance(kid[0], (ast.Enum, ast.EnumDef)):
                 return self.nu(kid[0])
-            else:
-
-                raise self.ice()
+            raise self.bug()
 
         def enum_decl(self, kid: list[ast.AstNode]) -> ast.Enum:
             """Grammar rule.
@@ -675,8 +660,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def enum_def(self, kid: list[ast.AstNode]) -> ast.EnumDef:
             """Grammar rule.
@@ -693,8 +677,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def enum_block(
             self, kid: list[ast.AstNode]
@@ -719,7 +702,7 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], (ast.PyInlineCode, ast.Ability)):
                 return self.nu(kid[0])
-            elif isinstance(kid[0], (ast.Name)):
+            if isinstance(kid[0], (ast.Name)):
                 if (
                     len(kid) >= 3
                     and isinstance(kid[-1], ast.Expr)
@@ -764,9 +747,9 @@ class JacParser(Pass):
                             is_enum_stmt=True,
                         )
                     )
-            elif isinstance(kid[0], (ast.PyInlineCode, ast.ModuleCode)):
+            if isinstance(kid[0], (ast.PyInlineCode, ast.ModuleCode)):
                 return self.nu(kid[0])
-            raise self.ice()
+            raise self.bug()
 
         def ability(
             self, kid: list[ast.AstNode]
@@ -787,7 +770,7 @@ class JacParser(Pass):
             )
             ability = chomp[1] if is_async else chomp[0]
             if not isinstance(ability, (ast.Ability, ast.AbilityDef)):
-                raise self.ice()
+                raise self.bug()
             if is_async and isinstance(ability, ast.Ability):
                 ability.is_async = True
                 ability.add_kids_left([is_async])
@@ -848,8 +831,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def ability_def(self, kid: list[ast.AstNode]) -> ast.AbilityDef:
             """Grammar rule.
@@ -869,8 +851,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         # We need separate production rule for abstract_ability because we don't
         # want to allow regular abilities outside of classed to be abstract.
@@ -915,8 +896,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def genai_ability(self, kid: list[ast.AstNode]) -> ast.Ability:
             """Grammar rule.
@@ -964,8 +944,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def event_clause(self, kid: list[ast.AstNode]) -> ast.EventSignature:
             """Grammar rule.
@@ -990,8 +969,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def func_decl(self, kid: list[ast.AstNode]) -> ast.FuncSignature:
             """Grammar rule.
@@ -1017,19 +995,11 @@ class JacParser(Pass):
                         semstr=semstr,
                         params=params,
                         return_type=return_spec,
-                        kid=(
-                            kid
-                            if len(kid)
-                            else [
-                                ast.EmptyToken(
-                                    ast.JacSource("", self.parse_ref.mod_path)
-                                )
-                            ]
-                        ),
+                        kid=kid
+                        or [ast.EmptyToken(ast.JacSource("", self.parse_ref.mod_path))],
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def func_decl_params(
             self, kid: list[ast.AstNode]
@@ -1084,8 +1054,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def member_block(
             self, kid: list[ast.AstNode]
@@ -1124,7 +1093,7 @@ class JacParser(Pass):
                 kid[1].add_kids_left([kid[0]])
                 ret = self.nu(kid[1])
             else:
-                raise self.ice()
+                raise self.bug()
             if isinstance(ret, ast.Ability):
                 ret.signature.is_method = True
             return ret
@@ -1154,8 +1123,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def has_assign_list(
             self, kid: list[ast.AstNode]
@@ -1205,8 +1173,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def type_tag(self, kid: list[ast.AstNode]) -> ast.SubTag[ast.Expr]:
             """Grammar rule.
@@ -1221,7 +1188,7 @@ class JacParser(Pass):
                     )
                 )
             else:
-                raise self.ice()
+                raise self.bug()
 
         def builtin_type(self, kid: list[ast.AstNode]) -> ast.Token:
             """Grammar rule.
@@ -1252,8 +1219,7 @@ class JacParser(Pass):
                         pos_end=kid[0].pos_end,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def code_block(
             self, kid: list[ast.AstNode]
@@ -1275,8 +1241,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def statement(self, kid: list[ast.AstNode]) -> ast.CodeBlockStmt:
             """Grammar rule.
@@ -1309,7 +1274,7 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.CodeBlockStmt) and len(kid) < 2:
                 return self.nu(kid[0])
-            elif isinstance(kid[0], ast.Token) and kid[0].name == Tok.KW_YIELD:
+            if isinstance(kid[0], ast.Token) and kid[0].name == Tok.KW_YIELD:
                 return ast.ExprStmt(
                     expr=(
                         expr := ast.YieldExpr(
@@ -1321,17 +1286,16 @@ class JacParser(Pass):
                     in_fstring=False,
                     kid=[expr],
                 )
-            elif isinstance(kid[0], ast.Expr):
+            if isinstance(kid[0], ast.Expr):
                 return ast.ExprStmt(
                     expr=kid[0],
                     in_fstring=False,
                     kid=kid,
                 )
-            elif isinstance(kid[0], ast.CodeBlockStmt):
+            if isinstance(kid[0], ast.CodeBlockStmt):
                 kid[0].add_kids_right([kid[1]])
                 return self.nu(kid[0])
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def typed_ctx_block(self, kid: list[ast.AstNode]) -> ast.TypedCtxBlock:
             """Grammar rule.
@@ -1346,8 +1310,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def if_stmt(self, kid: list[ast.AstNode]) -> ast.IfStmt:
             """Grammar rule.
@@ -1368,8 +1331,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def elif_stmt(self, kid: list[ast.AstNode]) -> ast.ElseIf:
             """Grammar rule.
@@ -1390,8 +1352,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def else_stmt(self, kid: list[ast.AstNode]) -> ast.ElseStmt:
             """Grammar rule.
@@ -1405,8 +1366,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def try_stmt(self, kid: list[ast.AstNode]) -> ast.TryStmt:
             """Grammar rule.
@@ -1441,8 +1401,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def except_list(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Except]:
             """Grammar rule.
@@ -1458,8 +1417,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def except_def(self, kid: list[ast.AstNode]) -> ast.Except:
             """Grammar rule.
@@ -1478,8 +1436,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def finally_stmt(self, kid: list[ast.AstNode]) -> ast.FinallyStmt:
             """Grammar rule.
@@ -1493,8 +1450,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def for_stmt(self, kid: list[ast.AstNode]) -> ast.IterForStmt | ast.InForStmt:
             """Grammar rule.
@@ -1529,9 +1485,8 @@ class JacParser(Pass):
                             kid=kid,
                         )
                     )
-                else:
-                    raise self.ice()
-            elif isinstance(chomp[1], ast.Expr):
+                raise self.bug()
+            if isinstance(chomp[1], ast.Expr):
                 if isinstance(chomp[3], ast.Expr) and isinstance(
                     chomp[4], ast.SubNodeList
                 ):
@@ -1549,10 +1504,8 @@ class JacParser(Pass):
                             kid=kid,
                         )
                     )
-                else:
-                    raise self.ice()
-            else:
-                raise self.ice()
+                raise self.bug()
+            raise self.bug()
 
         def while_stmt(self, kid: list[ast.AstNode]) -> ast.WhileStmt:
             """Grammar rule.
@@ -1567,8 +1520,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def with_stmt(self, kid: list[ast.AstNode]) -> ast.WithStmt:
             """Grammar rule.
@@ -1591,8 +1543,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def expr_as_list(
             self, kid: list[ast.AstNode]
@@ -1625,8 +1576,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def raise_stmt(self, kid: list[ast.AstNode]) -> ast.RaiseStmt:
             """Grammar rule.
@@ -1664,8 +1614,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def check_stmt(self, kid: list[ast.AstNode]) -> ast.CheckStmt:
             """Grammar rule.
@@ -1679,8 +1628,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def ctrl_stmt(self, kid: list[ast.AstNode]) -> ast.CtrlStmt:
             """Grammar rule.
@@ -1694,8 +1642,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def delete_stmt(self, kid: list[ast.AstNode]) -> ast.DeleteStmt:
             """Grammar rule.
@@ -1709,8 +1656,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def report_stmt(self, kid: list[ast.AstNode]) -> ast.ReportStmt:
             """Grammar rule.
@@ -1724,8 +1670,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def return_stmt(self, kid: list[ast.AstNode]) -> ast.ReturnStmt:
             """Grammar rule.
@@ -1739,13 +1684,12 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                return self.nu(
-                    ast.ReturnStmt(
-                        expr=None,
-                        kid=kid,
-                    )
+            return self.nu(
+                ast.ReturnStmt(
+                    expr=None,
+                    kid=kid,
                 )
+            )
 
         def walker_stmt(self, kid: list[ast.AstNode]) -> ast.CodeBlockStmt:
             """Grammar rule.
@@ -1754,8 +1698,7 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.CodeBlockStmt):
                 return self.nu(kid[0])
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def ignore_stmt(self, kid: list[ast.AstNode]) -> ast.IgnoreStmt:
             """Grammar rule.
@@ -1769,8 +1712,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def visit_stmt(self, kid: list[ast.AstNode]) -> ast.VisitStmt:
             """Grammar rule.
@@ -1789,8 +1731,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def revisit_stmt(self, kid: list[ast.AstNode]) -> ast.RevisitStmt:
             """Grammar rule.
@@ -1812,11 +1753,7 @@ class JacParser(Pass):
 
             disengage_stmt: KW_DISENGAGE SEMI
             """
-            return self.nu(
-                ast.DisengageStmt(
-                    kid=kid,
-                )
-            )
+            return self.nu(ast.DisengageStmt(kid=kid))
 
         def global_ref(self, kid: list[ast.AstNode]) -> ast.GlobalStmt:
             """Grammar rule.
@@ -1825,8 +1762,7 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.SubNodeList):
                 return self.nu(ast.GlobalStmt(target=kid[1], kid=kid))
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def nonlocal_ref(self, kid: list[ast.AstNode]) -> ast.NonLocalStmt:
             """Grammar rule.
@@ -1835,8 +1771,7 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.SubNodeList):
                 return self.nu(ast.NonLocalStmt(target=kid[1], kid=kid))
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def assignment(self, kid: list[ast.AstNode]) -> ast.Assignment:
             """Grammar rule.
@@ -1941,12 +1876,10 @@ class JacParser(Pass):
                             kid=kid,
                         )
                     )
-                else:
-                    raise self.ice()
-            elif isinstance(kid[0], ast.Expr):
+                raise self.bug()
+            if isinstance(kid[0], ast.Expr):
                 return self.nu(kid[0])
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def walrus_assign(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
@@ -1974,13 +1907,10 @@ class JacParser(Pass):
                             kid=kid,
                         )
                     )
-                else:
-                    raise self.ice()
-            elif isinstance(kid[0], ast.Expr):
+                raise self.bug()
+            if isinstance(kid[0], ast.Expr):
                 return self.nu(kid[0])
-            else:
-
-                raise self.ice()
+            raise self.bug()
 
         def lambda_expr(self, kid: list[ast.AstNode]) -> ast.LambdaExpr:
             """Grammar rule.
@@ -2023,8 +1953,7 @@ class JacParser(Pass):
                         kid=new_kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def pipe(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
@@ -2090,7 +2019,7 @@ class JacParser(Pass):
                 values = [i for i in kid if isinstance(i, ast.Expr)]
                 ops = kid[1] if isinstance(kid[1], ast.Token) else None
                 if not ops:
-                    raise self.ice()
+                    raise self.bug()
                 return self.nu(
                     ast.BoolExpr(
                         op=ops,
@@ -2098,11 +2027,9 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            elif isinstance(kid[0], ast.Expr):
+            if isinstance(kid[0], ast.Expr):
                 return self.nu(kid[0])
-            else:
-
-                raise self.ice()
+            raise self.bug()
 
         def logical_and(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
@@ -2113,7 +2040,7 @@ class JacParser(Pass):
                 values = [i for i in kid if isinstance(i, ast.Expr)]
                 ops = kid[1] if isinstance(kid[1], ast.Token) else None
                 if not ops:
-                    raise self.ice()
+                    raise self.bug()
                 return self.nu(
                     ast.BoolExpr(
                         op=ops,
@@ -2121,11 +2048,9 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            elif isinstance(kid[0], ast.Expr):
+            if isinstance(kid[0], ast.Expr):
                 return self.nu(kid[0])
-            else:
-
-                raise self.ice()
+            raise self.bug()
 
         def logical_not(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
@@ -2142,11 +2067,10 @@ class JacParser(Pass):
                         )
                     )
                 else:
-                    raise self.ice()
+                    raise self.bug()
             if isinstance(kid[0], ast.Expr):
                 return self.nu(kid[0])
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def compare(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
@@ -2167,11 +2091,10 @@ class JacParser(Pass):
                         )
                     )
                 else:
-                    raise self.ice()
-            elif isinstance(kid[0], ast.Expr):
+                    raise self.bug()
+            if isinstance(kid[0], ast.Expr):
                 return self.nu(kid[0])
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def cmp_op(self, kid: list[ast.AstNode]) -> ast.Token:
             """Grammar rule.
@@ -2189,8 +2112,7 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.Token):
                 return self.nu(kid[0])
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def arithmetic(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
@@ -2220,8 +2142,7 @@ class JacParser(Pass):
                             kid=kid,
                         )
                     )
-                else:
-                    raise self.ice()
+                raise self.bug()
             return self.binary_expr_unwind(kid)
 
         def power(self, kid: list[ast.AstNode]) -> ast.Expr:
@@ -2273,8 +2194,7 @@ class JacParser(Pass):
                             kid=kid,
                         )
                     )
-                else:
-                    raise self.ice()
+                raise self.bug()
             return self.binary_expr_unwind(kid)
 
         def ref(self, kid: list[ast.AstNode]) -> ast.Expr:
@@ -2292,8 +2212,7 @@ class JacParser(Pass):
                             kid=kid,
                         )
                     )
-                else:
-                    raise self.ice()
+                raise self.bug()
             return self.binary_expr_unwind(kid)
 
         def pipe_call(self, kid: list[ast.AstNode]) -> ast.Expr:
@@ -2317,7 +2236,7 @@ class JacParser(Pass):
                             kid=kid,
                         )
                     )
-                elif isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.Expr):
+                if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.Expr):
                     return self.nu(
                         ast.UnaryExpr(
                             op=kid[0],
@@ -2325,8 +2244,7 @@ class JacParser(Pass):
                             kid=kid,
                         )
                     )
-                else:
-                    raise self.ice()
+                raise self.bug()
             return self.binary_expr_unwind(kid)
 
         def aug_op(self, kid: list[ast.AstNode]) -> ast.Token:
@@ -2348,8 +2266,7 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.Token):
                 return self.nu(kid[0])
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def atomic_chain(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
@@ -2381,7 +2298,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            elif (
+            if (
                 len(chomp) > 1
                 and isinstance(chomp[0], ast.Token)
                 and isinstance(chomp[1], (ast.AtomExpr, ast.AtomTrailer))
@@ -2396,8 +2313,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def atomic_call(self, kid: list[ast.AstNode]) -> ast.FuncCall:
             """Grammar rule.
@@ -2426,12 +2342,11 @@ class JacParser(Pass):
                 return self.nu(
                     ast.FuncCall(target=kid[0], params=kid[2], genai_call=None, kid=kid)
                 )
-            elif len(kid) == 3 and isinstance(kid[0], ast.Expr):
+            if len(kid) == 3 and isinstance(kid[0], ast.Expr):
                 return self.nu(
                     ast.FuncCall(target=kid[0], params=None, genai_call=None, kid=kid)
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def index_slice(self, kid: list[ast.AstNode]) -> ast.IndexSlice:
             """Grammar rule.
@@ -2446,7 +2361,7 @@ class JacParser(Pass):
                 index = kid[0]
                 if isinstance(index, ast.ListVal):
                     if not index.values:
-                        raise self.ice()
+                        raise self.bug()
                     if len(index.values.items) == 1:
                         expr = index.values.items[0] if index.values else None
                     else:
@@ -2464,8 +2379,7 @@ class JacParser(Pass):
                             kid=kid,
                         )
                     )
-                else:
-                    raise self.ice()
+                raise self.bug()
             else:
                 slices: list[ast.IndexSlice.Slice] = []
                 chomp = kid[1:]
@@ -2517,9 +2431,8 @@ class JacParser(Pass):
             if len(kid) == 1:
                 if isinstance(kid[0], ast.AtomExpr):
                     return self.nu(kid[0])
-                else:
-                    raise self.ice()
-            elif len(kid) == 3:
+                raise self.bug()
+            if len(kid) == 3:
                 if (
                     isinstance(kid[0], ast.Token)
                     and isinstance(kid[1], (ast.Expr, ast.YieldExpr))
@@ -2527,10 +2440,8 @@ class JacParser(Pass):
                 ):
                     ret = ast.AtomUnit(value=kid[1], kid=kid)
                     return self.nu(ret)
-                else:
-                    raise self.ice()
-            else:
-                raise self.ice()
+                raise self.bug()
+            raise self.bug()
 
         def yield_expr(self, kid: list[ast.AstNode]) -> ast.YieldExpr:
             """Grammar rule.
@@ -2545,8 +2456,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def atom_literal(self, kid: list[ast.AstNode]) -> ast.AtomExpr:
             """Grammar rule.
@@ -2563,8 +2473,7 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.AtomExpr):
                 return self.nu(kid[0])
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def atom_collection(self, kid: list[ast.AstNode]) -> ast.AtomExpr:
             """Grammar rule.
@@ -2580,8 +2489,7 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.AtomExpr):
                 return self.nu(kid[0])
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def multistring(self, kid: list[ast.AstNode]) -> ast.AtomExpr:
             """Grammar rule.
@@ -2596,8 +2504,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def fstring(self, kid: list[ast.AstNode]) -> ast.FString:
             """Grammar rule.
@@ -2612,15 +2519,14 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            elif isinstance(kid[1], ast.SubNodeList):
+            if isinstance(kid[1], ast.SubNodeList):
                 return self.nu(
                     ast.FString(
                         parts=kid[1],
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def fstr_parts(
             self, kid: list[ast.AstNode]
@@ -2682,15 +2588,14 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            elif isinstance(kid[1], ast.SubNodeList):
+            if isinstance(kid[1], ast.SubNodeList):
                 return self.nu(
                     ast.ListVal(
                         values=kid[1],
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def tuple_val(self, kid: list[ast.AstNode]) -> ast.TupleVal:
             """Grammar rule.
@@ -2704,15 +2609,14 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            elif isinstance(kid[1], ast.SubNodeList):
+            if isinstance(kid[1], ast.SubNodeList):
                 return self.nu(
                     ast.TupleVal(
                         values=kid[1],
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def set_val(self, kid: list[ast.AstNode]) -> ast.SetVal:
             """Grammar rule.
@@ -2726,15 +2630,14 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            elif isinstance(kid[1], ast.SubNodeList):
+            if isinstance(kid[1], ast.SubNodeList):
                 return self.nu(
                     ast.SetVal(
                         values=kid[1],
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def expr_list(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Expr]:
             """Grammar rule.
@@ -2803,7 +2706,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            elif len(kid) == 2 and isinstance(kid[1], ast.Expr):
+            if len(kid) == 2 and isinstance(kid[1], ast.Expr):
                 return self.nu(
                     ast.KWPair(
                         key=None,
@@ -2811,8 +2714,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def name_list(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Name]:
             """Grammar rule.
@@ -2904,7 +2806,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            elif len(kid) == 2 and isinstance(kid[1], ast.Expr):
+            if len(kid) == 2 and isinstance(kid[1], ast.Expr):
                 return self.nu(
                     ast.KVPair(
                         key=None,
@@ -2912,8 +2814,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def list_compr(self, kid: list[ast.AstNode]) -> ast.ListCompr:
             """Grammar rule.
@@ -2929,8 +2830,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def gen_compr(self, kid: list[ast.AstNode]) -> ast.GenCompr:
             """Grammar rule.
@@ -2946,8 +2846,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def set_compr(self, kid: list[ast.AstNode]) -> ast.SetCompr:
             """Grammar rule.
@@ -2963,8 +2862,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def dict_compr(self, kid: list[ast.AstNode]) -> ast.DictCompr:
             """Grammar rule.
@@ -2980,8 +2878,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def inner_compr(self, kid: list[ast.AstNode]) -> ast.InnerCompr:
             """Grammar rule.
@@ -3008,8 +2905,7 @@ class JacParser(Pass):
                         kid=chomp,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def param_list(
             self, kid: list[ast.AstNode]
@@ -3032,9 +2928,8 @@ class JacParser(Pass):
                     ):  # Append the trailing comma to the subnode list.
                         kid[0].kid.append(kid[1])
                     return self.nu(kid[0])
-                else:
-                    raise self.ice()
-            elif isinstance(kid[0], ast.SubNodeList) and isinstance(
+                raise self.bug()
+            if isinstance(kid[0], ast.SubNodeList) and isinstance(
                 kid[2], ast.SubNodeList
             ):
                 valid_kid = [
@@ -3050,9 +2945,8 @@ class JacParser(Pass):
                             kid=kid,
                         )
                     )
-                else:
-                    raise self.ice()
-            raise self.ice()
+                raise self.bug()
+            raise self.bug()
 
         def assignment_list(
             self, kid: list[ast.AstNode]
@@ -3092,8 +2986,7 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.ArchRef):
                 return self.nu(kid[0])
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def node_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
             """Grammar rule.
@@ -3108,8 +3001,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def edge_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
             """Grammar rule.
@@ -3124,8 +3016,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def walker_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
             """Grammar rule.
@@ -3140,8 +3031,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def class_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
             """Grammar rule.
@@ -3156,8 +3046,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def object_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
             """Grammar rule.
@@ -3172,8 +3061,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def type_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
             """Grammar rule.
@@ -3188,8 +3076,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def enum_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
             """Grammar rule.
@@ -3204,8 +3091,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def ability_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
             """Grammar rule.
@@ -3220,8 +3106,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def arch_or_ability_chain(self, kid: list[ast.AstNode]) -> ast.ArchRefChain:
             """Grammar rule.
@@ -3244,8 +3129,7 @@ class JacParser(Pass):
                         kid=new_kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def abil_to_arch_chain(self, kid: list[ast.AstNode]) -> ast.ArchRefChain:
             """Grammar rule.
@@ -3262,17 +3146,15 @@ class JacParser(Pass):
                             kid=[*(kid[0].kid), kid[1]],
                         )
                     )
-                else:
-                    raise self.ice()
-            elif isinstance(kid[0], ast.ArchRef):
+                raise self.bug()
+            if isinstance(kid[0], ast.ArchRef):
                 return self.nu(
                     ast.ArchRefChain(
                         archs=[kid[0]],
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def arch_to_abil_chain(self, kid: list[ast.AstNode]) -> ast.ArchRefChain:
             """Grammar rule.
@@ -3289,17 +3171,15 @@ class JacParser(Pass):
                             kid=[*(kid[0].kid), kid[1]],
                         )
                     )
-                else:
-                    raise self.ice()
-            elif isinstance(kid[0], ast.ArchRef):
+                raise self.bug()
+            if isinstance(kid[0], ast.ArchRef):
                 return self.nu(
                     ast.ArchRefChain(
                         archs=[kid[0]],
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def arch_to_enum_chain(self, kid: list[ast.AstNode]) -> ast.ArchRefChain:
             """Grammar rule.
@@ -3316,17 +3196,15 @@ class JacParser(Pass):
                             kid=[*(kid[0].kid), kid[1]],
                         )
                     )
-                else:
-                    raise self.ice()
-            elif isinstance(kid[0], ast.ArchRef):
+                raise self.bug()
+            if isinstance(kid[0], ast.ArchRef):
                 return self.nu(
                     ast.ArchRefChain(
                         archs=[kid[0]],
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def edge_ref_chain(self, kid: list[ast.AstNode]) -> ast.EdgeRefTrailer:
             """Grammar rule.
@@ -3350,8 +3228,7 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.EdgeOpRef):
                 return self.nu(kid[0])
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def edge_to(self, kid: list[ast.AstNode]) -> ast.EdgeOpRef:
             """Grammar rule.
@@ -3364,8 +3241,7 @@ class JacParser(Pass):
                 return self.nu(
                     ast.EdgeOpRef(filter_cond=fcond, edge_dir=EdgeDir.OUT, kid=kid)
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def edge_from(self, kid: list[ast.AstNode]) -> ast.EdgeOpRef:
             """Grammar rule.
@@ -3378,8 +3254,7 @@ class JacParser(Pass):
                 return self.nu(
                     ast.EdgeOpRef(filter_cond=fcond, edge_dir=EdgeDir.IN, kid=kid)
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def edge_any(self, kid: list[ast.AstNode]) -> ast.EdgeOpRef:
             """Grammar rule.
@@ -3392,8 +3267,7 @@ class JacParser(Pass):
                 return self.nu(
                     ast.EdgeOpRef(filter_cond=fcond, edge_dir=EdgeDir.ANY, kid=kid)
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def connect_op(self, kid: list[ast.AstNode]) -> ast.ConnectOp:
             """Grammar rule.
@@ -3402,8 +3276,7 @@ class JacParser(Pass):
             """
             if len(kid) < 2 and isinstance(kid[0], ast.ConnectOp):
                 return self.nu(kid[0])
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def disconnect_op(self, kid: list[ast.AstNode]) -> ast.DisconnectOp:
             """Grammar rule.
@@ -3417,8 +3290,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def connect_to(self, kid: list[ast.AstNode]) -> ast.ConnectOp:
             """Grammar rule.
@@ -3446,8 +3318,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def connect_from(self, kid: list[ast.AstNode]) -> ast.ConnectOp:
             """Grammar rule.
@@ -3475,8 +3346,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def connect_any(self, kid: list[ast.AstNode]) -> ast.ConnectOp:
             """Grammar rule.
@@ -3503,8 +3373,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def filter_compr(self, kid: list[ast.AstNode]) -> ast.FilterCompr:
             """Grammar rule.
@@ -3514,12 +3383,11 @@ class JacParser(Pass):
             """
             if isinstance(kid[2], ast.SubNodeList):
                 return self.nu(ast.FilterCompr(compares=kid[2], f_type=None, kid=kid))
-            elif isinstance(kid[3], ast.FilterCompr):
+            if isinstance(kid[3], ast.FilterCompr):
                 kid[3].add_kids_left(kid[:3])
                 kid[3].add_kids_right(kid[4:])
                 return self.nu(kid[3])
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def filter_compare_list(
             self, kid: list[ast.AstNode]
@@ -3567,8 +3435,7 @@ class JacParser(Pass):
                 (isinstance(compares, ast.SubNodeList)) or compares is None
             ):
                 return self.nu(ast.FilterCompr(compares=compares, f_type=expr, kid=kid))
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def filter_compare_item(self, kid: list[ast.AstNode]) -> ast.CompareExpr:
             """Grammar rule.
@@ -3578,8 +3445,7 @@ class JacParser(Pass):
             ret = self.compare(kid)
             if isinstance(ret, ast.CompareExpr):
                 return self.nu(ret)
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def assign_compr(self, kid: list[ast.AstNode]) -> ast.AssignCompr:
             """Grammar rule.
@@ -3593,8 +3459,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def match_stmt(self, kid: list[ast.AstNode]) -> ast.MatchStmt:
             """Grammar rule.
@@ -3610,8 +3475,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def match_case_block(self, kid: list[ast.AstNode]) -> ast.MatchCase:
             """Grammar rule.
@@ -3632,8 +3496,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def pattern_seq(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
             """Grammar rule.
@@ -3642,8 +3505,7 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.MatchPattern):
                 return self.nu(kid[0])
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def or_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
             """Grammar rule.
@@ -3653,16 +3515,14 @@ class JacParser(Pass):
             if len(kid) == 1:
                 if isinstance(kid[0], ast.MatchPattern):
                     return self.nu(kid[0])
-                else:
-                    raise self.ice()
-            else:
-                patterns = [i for i in kid if isinstance(i, ast.MatchPattern)]
-                return self.nu(
-                    ast.MatchOr(
-                        patterns=patterns,
-                        kid=kid,
-                    )
+                raise self.bug()
+            patterns = [i for i in kid if isinstance(i, ast.MatchPattern)]
+            return self.nu(
+                ast.MatchOr(
+                    patterns=patterns,
+                    kid=kid,
                 )
+            )
 
         def as_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
             """Grammar rule.
@@ -3679,8 +3539,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
             """Grammar rule.
@@ -3693,8 +3552,7 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.MatchPattern):
                 return self.nu(kid[0])
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def literal_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
             """Grammar rule.
@@ -3708,8 +3566,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def singleton_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
             """Grammar rule.
@@ -3723,8 +3580,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def capture_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
             """Grammar rule.
@@ -3749,8 +3605,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def sequence_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
             """Grammar rule.
@@ -3788,7 +3643,7 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.MatchPattern):
                 return self.nu(kid[0])
-            elif isinstance(kid[-1], ast.Name):
+            if isinstance(kid[-1], ast.Name):
                 return self.nu(
                     ast.MatchStar(
                         is_list=True,
@@ -3796,8 +3651,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def dict_inner_pattern(
             self, kid: list[ast.AstNode]
@@ -3816,7 +3670,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            elif isinstance(kid[-1], ast.Name):
+            if isinstance(kid[-1], ast.Name):
                 return self.nu(
                     ast.MatchStar(
                         is_list=False,
@@ -3824,8 +3678,7 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def class_pattern(self, kid: list[ast.AstNode]) -> ast.MatchArch:
             """Grammar rule.
@@ -3852,7 +3705,7 @@ class JacParser(Pass):
                         )
                         chomp = chomp[2:]
                     else:
-                        raise self.ice()
+                        raise self.bug()
                 elif isinstance(cur_element, ast.NameAtom):
                     chomp = chomp[1:]
                 else:
@@ -3902,8 +3755,7 @@ class JacParser(Pass):
                         kid=kid_nodes,
                     )
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def pattern_list(
             self, kid: list[ast.AstNode]
@@ -3950,7 +3802,7 @@ class JacParser(Pass):
                 if not isinstance(name, ast.NameAtom) or not isinstance(
                     value, ast.MatchPattern
                 ):
-                    raise self.ice()
+                    raise self.bug()
                 new_kid = [
                     *consume.kid,
                     comma,
@@ -3963,7 +3815,7 @@ class JacParser(Pass):
                 if not isinstance(name, ast.NameAtom) or not isinstance(
                     value, ast.MatchPattern
                 ):
-                    raise self.ice()
+                    raise self.bug()
                 new_kid = [
                     ast.MatchKVPair(key=name, value=value, kid=[name, eq, value])
                 ]
@@ -3974,8 +3826,7 @@ class JacParser(Pass):
                     delim=Tok.COMMA,
                     kid=new_kid,
                 )
-            else:
-                raise self.ice()
+            raise self.bug()
 
         def __default_token__(self, token: jl.Token) -> ast.Token:
             """Token handler."""
@@ -4019,12 +3870,12 @@ class JacParser(Pass):
                 orig_src=self.parse_ref.source,
                 name=token.type,
                 value=token.value[2:] if token.type == Tok.KWESC_NAME else token.value,
-                line=token.line if token.line is not None else 0,
-                end_line=token.end_line if token.end_line is not None else 0,
-                col_start=token.column if token.column is not None else 0,
-                col_end=token.end_column if token.end_column is not None else 0,
-                pos_start=token.start_pos if token.start_pos is not None else 0,
-                pos_end=token.end_pos if token.end_pos is not None else 0,
+                line=token.line or 0,
+                end_line=token.end_line or 0,
+                col_start=token.column or 0,
+                col_end=token.end_column or 0,
+                pos_start=token.start_pos or 0,
+                pos_end=token.end_pos or 0,
             )
             if isinstance(ret, ast.Name):
                 if token.type == Tok.KWESC_NAME:

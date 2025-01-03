@@ -143,15 +143,13 @@ class Pass(Transform[T]):
         self.log_error(msg, node_override=node_override)
 
     def warning(self, msg: str, node_override: Optional[ast.AstNode] = None) -> None:
-        """Pass Error."""
+        """Pass warning."""
         self.log_warning(msg, node_override=node_override)
 
-    def ice(self, msg: str = "Something went horribly wrong!") -> RuntimeError:
-        """Pass Error."""
-        self.log_error(f"ICE: Pass {self.__class__.__name__} - {msg}")
-        return RuntimeError(
-            f"Internal Compiler Error: Pass {self.__class__.__name__} - {msg}"
-        )
+    def bug(self, msg: str = "Bug in jaclang report please!") -> RuntimeError:
+        """Pass bug."""
+        self.log_error(f"BUG: Pass {self.__class__.__name__} - {msg}")
+        return RuntimeError(f"Compiler Bug: Pass {self.__class__.__name__} - {msg}")
 
 
 class PrinterPass(Pass):
