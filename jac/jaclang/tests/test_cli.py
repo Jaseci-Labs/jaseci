@@ -393,6 +393,27 @@ class JacCliTests(TestCase):
         self.assertIn("...F", stderr)
         self.assertIn("F.F", stderr)
 
+    def test_run_specific_test_only(self) -> None:
+        """Test a specific test case."""
+        process = subprocess.Popen(
+            [
+                "jac",
+                "test",
+                "-t",
+                "from_2_to_10",
+                self.fixture_abs_path("jactest_main.jac"),
+            ],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        stdout, stderr = process.communicate()
+        self.assertIn("Ran 1 test", stderr)
+        self.assertIn("Testing fibonacci numbers from 2 to 10.", stdout)
+        self.assertNotIn("Testing first 2 fibonacci numbers.", stdout)
+        self.assertNotIn("This test should not run after import.", stdout)
+
     def test_graph_coverage(self) -> None:
         """Test for coverage of graph cmd."""
         graph_params = set(inspect.signature(cli.dot).parameters.keys())
