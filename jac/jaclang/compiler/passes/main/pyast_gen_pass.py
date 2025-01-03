@@ -393,7 +393,7 @@ class PyastGenPass(Pass):
             ):
                 node.gen.py_ast = [doc] + node.assignments.gen.py_ast
             else:
-                raise self.ice()
+                raise self.bug()
         else:
             node.gen.py_ast = node.assignments.gen.py_ast
 
@@ -511,7 +511,7 @@ class PyastGenPass(Pass):
                 )
 
             else:
-                raise self.ice()
+                raise self.bug()
         else:
             node.gen.py_ast = self.pyinline_sync(
                 [*ast3.parse(textwrap.dedent(node.code.value)).body]
@@ -824,7 +824,7 @@ class PyastGenPass(Pass):
         if node.is_absorb:
             source = node.items.items[0]
             if not isinstance(source, ast.ModulePath):
-                raise self.ice()
+                raise self.bug()
             typecheck_nodes.append(
                 self.sync(
                     py_node=ast3.ImportFrom(
@@ -1114,7 +1114,7 @@ class PyastGenPass(Pass):
                 self.sync(ast3.Name(id="__jac_Enum__", ctx=ast3.Load()))
             )
         else:
-            raise self.ice()
+            raise self.bug()
         node.gen.py_ast = [
             self.sync(
                 ast3.ClassDef(
@@ -1315,7 +1315,7 @@ class PyastGenPass(Pass):
                     (
                         params.append(i.gen.py_ast[0])
                         if isinstance(i.gen.py_ast[0], ast3.arg)
-                        else self.ice("This list should only be Args")
+                        else self.bug("This list should only be Args")
                     )
         defaults = (
             [x.value.gen.py_ast[0] for x in node.params.items if x.value]
@@ -1462,7 +1462,7 @@ class PyastGenPass(Pass):
             if isinstance(doc, ast3.AST) and isinstance(node.vars.gen.py_ast, list):
                 node.gen.py_ast = [doc] + node.vars.gen.py_ast
             else:
-                raise self.ice()
+                raise self.bug()
         else:
             node.gen.py_ast = node.vars.gen.py_ast  # TODO: This is a list
 
@@ -1729,7 +1729,7 @@ class PyastGenPass(Pass):
         ):
             body += [node.count_by.gen.py_ast[0]]
         else:
-            raise self.ice()
+            raise self.bug()
         py_nodes.append(node.iter.gen.py_ast[0])
         py_nodes.append(
             self.sync(
@@ -2262,7 +2262,7 @@ class PyastGenPass(Pass):
                     )
                 )
                 if node.is_enum_stmt
-                else None if node.type_tag else self.ice()
+                else None if node.type_tag else self.bug()
             )
         )
         if node.type_tag:
@@ -2424,7 +2424,7 @@ class PyastGenPass(Pass):
     def translate_jac_bin_op(self, node: ast.BinaryExpr) -> list[ast3.AST]:
         """Translate jac binary op."""
         if isinstance(node.op, (ast.DisconnectOp, ast.ConnectOp)):
-            raise self.ice()
+            raise self.bug()
         elif node.op.name in [
             Tok.PIPE_FWD,
             Tok.A_PIPE_FWD,
@@ -2660,7 +2660,7 @@ class PyastGenPass(Pass):
                 )
             ]
         else:
-            self.ice(f"Unknown Unary operator {node.op.value}")
+            self.bug(f"Unknown Unary operator {node.op.value}")
 
     def exit_if_else_expr(self, node: ast.IfElseExpr) -> None:
         """Sub objects.
@@ -2696,7 +2696,7 @@ class PyastGenPass(Pass):
                 elif isinstance(i, ast.ExprStmt):
                     pieces.append(i.gen.py_ast[0])
                 else:
-                    raise self.ice("Multi string made of something weird.")
+                    raise self.bug("Multi string made of something weird.")
             return pieces
 
         combined_multi: list[str | bytes | ast3.AST] = []
@@ -3061,7 +3061,7 @@ class PyastGenPass(Pass):
                 ):
                     keywords.append(x.gen.py_ast[0])
                 else:
-                    self.ice("Invalid Parameter")
+                    self.bug("Invalid Parameter")
         if node.genai_call:
             self.needs_jac_feature()
             by_llm_call_args = self.get_by_llm_call_args(node)
@@ -3216,7 +3216,7 @@ class PyastGenPass(Pass):
                     edges_only=node.edges_only and cur == last_edge,
                 )
             else:
-                raise self.ice("Invalid edge ref trailer")
+                raise self.bug("Invalid edge ref trailer")
 
         node.gen.py_ast = [pynode]
 

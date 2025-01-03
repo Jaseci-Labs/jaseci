@@ -102,7 +102,7 @@ class DefUsePass(Pass):
                 access_spec=node.parent.parent,
             )
         else:
-            self.ice("Inconsistency in AST, has var should be under arch has")
+            self.bug("Inconsistency in AST, has var should be under arch has")
 
     def enter_assignment(self, node: ast.Assignment) -> None:
         """Sub objects.

@@ -88,7 +88,7 @@ class DeclImplMatchPass(Pass):
                 if not isinstance(
                     valid_decl := decl_node.name_of, ast.AstImplNeedingNode
                 ) or not (valid_decl.sym_tab and sym.decl.name_of.sym_tab):
-                    raise self.ice(
+                    raise self.bug(
                         f"Expected AstImplNeedingNode, got {valid_decl.__class__.__name__}. Not possible."
                     )
 

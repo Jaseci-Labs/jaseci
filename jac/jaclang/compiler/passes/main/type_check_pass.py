@@ -98,7 +98,7 @@ class JacTypeCheckPass(Pass):
             new_modules.append(st)
 
         if not isinstance(self.ir, ast.Module):
-            raise self.ice("Expected module node. Impossible")
+            raise self.bug("Expected module node. Impossible")
         mypy_graph = myab.load_graph(
             [
                 myab.BuildSource(

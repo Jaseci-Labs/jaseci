@@ -452,7 +452,7 @@ class PyImportPass(JacImportPass):
                 )
                 return mod
             else:
-                raise self.ice(f"\tFailed to import python module {mod_path}")
+                raise self.bug(f"\tFailed to import python module {mod_path}")
 
         except Exception as e:
             self.error(f"\tFailed to import python module {mod_path}")

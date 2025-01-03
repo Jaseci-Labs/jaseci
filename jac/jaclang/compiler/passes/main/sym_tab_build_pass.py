@@ -89,7 +89,7 @@ class SymTabBuildPass(Pass):
                 if isinstance(j, ast.AstSymbolNode):
                     j.sym_tab.def_insert(j, access_spec=node, single_decl="global var")
                 else:
-                    self.ice("Expected name type for globabl vars")
+                    self.bug("Expected name type for globabl vars")
 
     def enter_sub_tag(self, node: ast.SubTag) -> None:
         """Sub objects.
