@@ -153,7 +153,6 @@ class ImportReturn:
             )
             if not codeobj:
                 raise ImportError(f"No bytecode found for {jac_file_path}")
-
             exec(codeobj, new_module.__dict__)
             return getattr(new_module, name, new_module)
         except ImportError as e:
@@ -349,13 +348,22 @@ class JacImporter(Importer):
                 if not codeobj:
                     raise ImportError(f"No bytecode found for {spec.full_target}")
 
-                try:
-                    with sys_path_context(spec.caller_dir):
-                        exec(codeobj, module.__dict__)
-                except Exception as e:
-                    logger.error(e)
-                    logger.error(dump_traceback(e))
-                    raise e
+                from jaclang.runtimelib.machine import JacMachine
+
+                if JacMachine.get().gin:
+                    try:
+                        with sys_path_context(spec.caller_dir):
+                            JacMachine.get().gin.tracker.start_tracking()
+                            exec(codeobj, module.__dict__)
+                            JacMachine.get().gin.tracker.stop_tracking()
+                            JacMachine.get().gin.set_finished(None)
+                    except Exception as e:
+                        logger.error(e)
+                        logger.error(dump_traceback(e))
+                        JacMachine.get().gin.set_finished(e)
+                        raise e
+                else:
+                    exec(codeobj, module.__dict__)
 
         import_return = ImportReturn(module, unique_loaded_items, self)
         if spec.items:

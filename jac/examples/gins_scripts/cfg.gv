@@ -1,0 +1,28 @@
+// Control Flow Graph
+digraph {
+	bb0 [label=BB0]
+	bb1 [label=BB1]
+	bb2 [label=BB2]
+	bb3 [label=BB3]
+	bb4 [label=BB4]
+	bb5 [label=BB5]
+	bb6 [label=BB6]
+	bb7 [label=BB7]
+	bb8 [label=BB8]
+	bb9 [label=BB9]
+	bb10 [label=BB10]
+	bb0 -> bb2
+	bb0 -> bb1
+	bb1 -> bb3
+	bb2 -> bb3
+	bb3 -> bb10
+	bb3 -> bb4
+	bb4 -> bb6
+	bb4 -> bb5
+	bb5 -> bb7
+	bb6 -> bb7
+	bb7 -> bb9
+	bb7 -> bb8
+	bb8 -> bb4
+	bb9 -> bb10
+}
