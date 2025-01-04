@@ -1011,8 +1011,9 @@ class ModulePath(AstSymbolNode):
         target = self.dot_path_str
         if target_item:
             target += f".{target_item}"
-        base_path = os.path.dirname(self.loc.mod_path)
-        base_path = base_path if base_path else os.getcwd()
+        base_path = (
+            os.getenv("JACPATH") or os.path.dirname(self.loc.mod_path) or os.getcwd()
+        )
         parts = target.split(".")
         traversal_levels = self.level - 1 if self.level > 0 else 0
         actual_parts = parts[traversal_levels:]
