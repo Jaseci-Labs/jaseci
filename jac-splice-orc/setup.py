@@ -8,7 +8,7 @@ with open(os.path.join(here, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="jac-splice-orc",
-    version="0.1.3",
+    version="0.1.4",
     description="JAC Splice-Orchestrator: Kubernetes-based dynamic remote module management for JacLang",
     author="Jason Mars",
     author_email="jason@jaseci.org",
@@ -20,16 +20,16 @@ setup(
         "jac_splice_orc.config": ["config.json"],
     },
     install_requires=[
-        "fastapi",
-        "uvicorn",
-        "grpcio",
-        "grpcio-tools",
-        "kubernetes",
-        "pydantic",
-        "requests",
-        "python-dotenv",
-        "numpy",
-        "jaclang",
+        "fastapi~=0.111.0",
+        "uvicorn~=0.30.1",
+        "grpcio~=1.68.1",
+        "grpcio-tools~=1.67.1",
+        "kubernetes~=31.0.0",
+        "pydantic~=2.8.2",
+        "requests~=2.32.3",
+        "python-dotenv~=1.0.1",
+        "numpy~=2.0.1",
+        "jaclang~=0.7.27",
     ],
     entry_points={
         "jac": [
