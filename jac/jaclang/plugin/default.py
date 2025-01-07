@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast as ast3
 import fnmatch
 import html
+import inspect
 import os
 import types
 from collections import OrderedDict
@@ -818,12 +819,14 @@ class JacFeatureImpl(
     @hookimpl
     def create_test(test_fun: Callable) -> Callable:
         """Create a new test."""
+        file_path = inspect.getfile(test_fun)
+        func_name = test_fun.__name__
 
         def test_deco() -> None:
             test_fun(JacTestCheck())
 
         test_deco.__name__ = test_fun.__name__
-        JacTestCheck.add_test(test_deco)
+        JacTestCheck.add_test(file_path, func_name, test_deco)
 
         return test_deco
 
@@ -831,6 +834,7 @@ class JacFeatureImpl(
     @hookimpl
     def run_test(
         filepath: str,
+        func_name: Optional[str],
         filter: Optional[str],
         xit: bool,
         maxfail: Optional[int],
@@ -849,7 +853,9 @@ class JacFeatureImpl(
                     mod_name = mod_name[:-5]
                 JacTestCheck.reset()
                 Jac.jac_import(target=mod_name, base_path=base, cachable=False)
-                JacTestCheck.run_test(xit, maxfail, verbose)
+                JacTestCheck.run_test(
+                    xit, maxfail, verbose, os.path.abspath(filepath), func_name
+                )
                 ret_count = JacTestCheck.failcount
             else:
                 print("Not a .jac file.")
@@ -875,7 +881,9 @@ class JacFeatureImpl(
                         print(f"\n\n\t\t* Inside {root_dir}" + "/" + f"{file} *")
                         JacTestCheck.reset()
                         Jac.jac_import(target=file[:-4], base_path=root_dir)
-                        JacTestCheck.run_test(xit, maxfail, verbose)
+                        JacTestCheck.run_test(
+                            xit, maxfail, verbose, os.path.abspath(file), func_name
+                        )
 
                     if JacTestCheck.breaker and (xit or maxfail):
                         break
