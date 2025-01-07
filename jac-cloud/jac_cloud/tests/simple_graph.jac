@@ -859,12 +859,58 @@ walker visit_sequence {
     }
 }
 
-walker webhook {
+#################################################################
+#                           WEBHOOKS                            #
+#################################################################
+
+walker webhook_by_header {
     can enter1 with `root entry {
-        report here;
+        report True;
     }
 
     class __specs__ {
-        has webhook: dict = {};
+        has webhook: dict = {
+            "type": "header",
+            "name": "test_key"
+        };
+    }
+}
+
+walker webhook_by_query {
+    can enter1 with `root entry {
+        report True;
+    }
+
+    class __specs__ {
+        has webhook: dict = {
+            "type": "query",
+            "name": "test_key"
+        };
+    }
+}
+
+walker webhook_by_path {
+    can enter1 with `root entry {
+        report True;
+    }
+
+    class __specs__ {
+        has webhook: dict = {
+            "type": "path",
+            "name": "test_key"
+        }, path: str = "/{test_key}";
+    }
+}
+
+walker webhook_by_body {
+    can enter1 with `root entry {
+        report True;
+    }
+
+    class __specs__ {
+        has webhook: dict = {
+            "type": "body",
+            "name": "test_key"
+        };
     }
 }

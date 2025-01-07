@@ -533,7 +533,11 @@ components:
   securitySchemes:
     APIKeyHeader:
       in: header
-      name: X-API-KEY
+      name: test_key
+      type: apiKey
+    APIKeyQuery:
+      in: query
+      name: test_key
       type: apiKey
     HTTPBearer:
       scheme: bearer
@@ -4219,9 +4223,9 @@ paths:
       summary: Generate Key
       tags:
       - webhook
-  /webhook/walker/webhook:
+  /webhook/walker/webhook_by_body:
     post:
-      operationId: api_root_webhook_walker_webhook_post
+      operationId: api_root_webhook_walker_webhook_by_body_post
       responses:
         '200':
           content:
@@ -4230,16 +4234,14 @@ paths:
                 anyOf:
                 - $ref: '#/components/schemas/ContextResponse_NoneType_'
                 - {}
-                title: Response Api Root Webhook Walker Webhook Post
+                title: Response Api Root Webhook Walker Webhook By Body Post
           description: Successful Response
-      security:
-      - APIKeyHeader: []
-      summary: /webhook
+      summary: /webhook_by_body
       tags:
       - webhook-walker
-  /webhook/walker/webhook/{node}:
+  /webhook/walker/webhook_by_body/{node}:
     post:
-      operationId: api_entry_webhook_walker_webhook__node__post
+      operationId: api_entry_webhook_walker_webhook_by_body__node__post
       parameters:
       - in: path
         name: node
@@ -4257,7 +4259,56 @@ paths:
                 anyOf:
                 - $ref: '#/components/schemas/ContextResponse_NoneType_'
                 - {}
-                title: Response Api Entry Webhook Walker Webhook  Node  Post
+                title: Response Api Entry Webhook Walker Webhook By Body  Node  Post
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: /webhook_by_body/{node}
+      tags:
+      - webhook-walker
+  /webhook/walker/webhook_by_header:
+    post:
+      operationId: api_root_webhook_walker_webhook_by_header_post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Webhook Walker Webhook By Header Post
+          description: Successful Response
+      security:
+      - APIKeyHeader: []
+      summary: /webhook_by_header
+      tags:
+      - webhook-walker
+  /webhook/walker/webhook_by_header/{node}:
+    post:
+      operationId: api_entry_webhook_walker_webhook_by_header__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Webhook Walker Webhook By Header  Node  Post
           description: Successful Response
         '422':
           content:
@@ -4267,6 +4318,105 @@ paths:
           description: Validation Error
       security:
       - APIKeyHeader: []
-      summary: /webhook/{node}
+      summary: /webhook_by_header/{node}
+      tags:
+      - webhook-walker
+  /webhook/walker/webhook_by_path/{node}/{test_key}:
+    post:
+      operationId: api_entry_webhook_walker_webhook_by_path__node___test_key__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Webhook Walker Webhook By Path  Node   Test
+                  Key  Post
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: /webhook_by_path/{node}/{test_key}
+      tags:
+      - webhook-walker
+  /webhook/walker/webhook_by_path/{test_key}:
+    post:
+      operationId: api_root_webhook_walker_webhook_by_path__test_key__post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Webhook Walker Webhook By Path  Test Key  Post
+          description: Successful Response
+      summary: /webhook_by_path/{test_key}
+      tags:
+      - webhook-walker
+  /webhook/walker/webhook_by_query:
+    post:
+      operationId: api_root_webhook_walker_webhook_by_query_post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Webhook Walker Webhook By Query Post
+          description: Successful Response
+      security:
+      - APIKeyQuery: []
+      summary: /webhook_by_query
+      tags:
+      - webhook-walker
+  /webhook/walker/webhook_by_query/{node}:
+    post:
+      operationId: api_entry_webhook_walker_webhook_by_query__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Webhook Walker Webhook By Query  Node  Post
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - APIKeyQuery: []
+      summary: /webhook_by_query/{node}
       tags:
       - webhook-walker

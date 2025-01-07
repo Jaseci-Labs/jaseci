@@ -113,3 +113,84 @@ walker webhook {
   "message": "Successfully Deleted!"
 }
 ```
+## WEBHOOK SAMPLES
+
+### `BY HEADER` (default)
+```python
+walker webhook_by_header {
+    can enter1 with `root entry {
+        report here;
+    }
+
+    class __specs__ {
+        has webhook: dict = {
+            "type": "header",
+            "name": "test-key"
+        };
+    }
+}
+```
+#### REQUEST
+```bash
+curl -X 'POST' 'http://localhost:8001/webhook/walker/webhook_by_header' \
+  -H 'test-key: YOUR-GENERATED-KEY'
+```
+
+### `BY QUERY`
+```python
+walker webhook_by_query {
+    can enter1 with `root entry {
+        report here;
+    }
+
+    class __specs__ {
+        has webhook: dict = {
+            "type": "query",
+            "name": "test_key"
+        };
+    }
+}
+```
+#### REQUEST
+```bash
+curl -X 'POST' 'http://localhost:8001/webhook/walker/webhook_by_query?test_key=YOUR-GENERATED-KEY'
+```
+
+### `BY PATH`
+```python
+walker webhook_by_path {
+    can enter1 with `root entry {
+        report here;
+    }
+
+    class __specs__ {
+        has webhook: dict = {
+            "type": "path",
+            "name": "test_key" # name and the path var should be the same
+        }, path: str = "/{test_key}";
+    }
+}
+```
+#### REQUEST
+```bash
+curl -X 'POST' 'http://localhost:8001/webhook/walker/webhook_by_path/YOUR-GENERATED-KEY'
+```
+### `BY BODY`
+```python
+walker webhook_by_body {
+    can enter1 with `root entry {
+        report here;
+    }
+
+    class __specs__ {
+        has webhook: dict = {
+            "type": "body",
+            "name": "test_key"
+        };
+    }
+}
+```
+#### REQUEST
+```bash
+curl -X 'POST' 'http://localhost:8001/webhook/walker/webhook_by_body' -d '{"test_key": "YOUR-GENERATED-KEY"}'
+```

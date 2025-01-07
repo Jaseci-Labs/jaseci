@@ -11,7 +11,7 @@ from ..datasources.collection import Collection as BaseCollection
 
 @dataclass(kw_only=True)
 class Webhook:
-    """User Base Model."""
+    """Webhook Base Model."""
 
     id: ObjectId = field(default_factory=ObjectId)
     name: str
@@ -23,9 +23,9 @@ class Webhook:
 
     class Collection(BaseCollection["Webhook"]):
         """
-        User collection interface.
+        Webhook collection interface.
 
-        This interface is for User's Management.
+        This interface is for Webhook Credentials Management.
         You may override this if you wish to implement different structure
         """
 
@@ -40,7 +40,7 @@ class Webhook:
             """
             Return parsed Webhook from document.
 
-            This the default User parser after getting a single document.
+            This the default Webhook parser after getting a single document.
             You may override this to specify how/which class it will be casted/based.
             """
             doc = cast(dict, doc)
