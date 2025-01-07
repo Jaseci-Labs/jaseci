@@ -129,8 +129,7 @@ obj JacPlugin {
 :obj:Memory:can:get_obj
 (caller_id: UUID, item_id: UUID, override: bool=False) -> Element {
     ret = item_id |> self.index.get;
-    if override
-        or (ret is not None and caller_id |> ret.__is_readable) {
+    if override or (ret is not None and caller_id |> ret.__is_readable) {
         return ret;
     }
 }
