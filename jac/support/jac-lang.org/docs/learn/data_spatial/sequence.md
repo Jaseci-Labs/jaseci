@@ -51,38 +51,7 @@ with entry{
     Walker() spawn root;
 }
 ```
-
-## **Jac version >= 0.7.26**
-> **walker generic entry** => \
-> **node entries (generic/typed)** => \
-> **back to walker typed entry** => \
-> **walker typed exit** => \
-> **back to node exits (generic/typed)** => \
-> **back to walker generic exit**
-```
-walker entry
-walker enter to root
-a-2
-a-3
-a-1
-a-6
-a-4
-a-5
-b-2
-b-3
-b-1
-b-6
-b-4
-b-5
-c-2
-c-3
-c-1
-c-6
-c-4
-c-5
-walker exit
-```
-## **After Refactor**
+## Current triggering sequence (jaclang version >= 0.7.29)
 > **walker generic entry** => \
 > **walker typed entry** => \
 > **node generic entry** => \
@@ -112,5 +81,35 @@ c-3
 c-4
 c-5
 c-6
+walker exit
+```
+## For jaclang version <= 0.7.28
+> **walker generic entry** => \
+> **node entries (generic/typed)** => \
+> **back to walker typed entry** => \
+> **walker typed exit** => \
+> **back to node exits (generic/typed)** => \
+> **back to walker generic exit**
+```
+walker entry
+walker enter to root
+a-2
+a-3
+a-1
+a-6
+a-4
+a-5
+b-2
+b-3
+b-1
+b-6
+b-4
+b-5
+c-2
+c-3
+c-1
+c-6
+c-4
+c-5
 walker exit
 ```
