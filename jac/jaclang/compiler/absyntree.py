@@ -886,14 +886,12 @@ class Import(ElementStmt, CodeBlockStmt):
         is_absorb: bool,  # For includes
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
-        import_all: bool = False,
     ) -> None:
         """Initialize import node."""
         self.hint = hint
         self.from_loc = from_loc
         self.items = items
         self.is_absorb = is_absorb
-        self.import_all = import_all
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
 

@@ -319,7 +319,7 @@ class PyImportPass(JacImportPass):
             sym_tab = imported_mod.sym_tab
             parent_sym_tab = imp_node.parent_of_type(ast.Module).sym_tab
 
-            if imp_node.import_all:
+            if imp_node.is_absorb:
                 for symbol in sym_tab.tab.values():
                     if symbol.sym_type == SymbolType.MODULE:
                         continue
@@ -397,7 +397,7 @@ class PyImportPass(JacImportPass):
             )
             self.attach_mod_to_node(imported_item, imported_mod)
 
-            if imp_node.import_all:
+            if imp_node.is_absorb:
                 msg = f"\tRegistering module:{imported_mod.name} to "
                 msg += f"import_from (import all) handling with {imp_node.loc.mod_path}:{imp_node.loc}"
                 self.__debug_print(msg)

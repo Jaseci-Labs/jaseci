@@ -1560,7 +1560,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 items=path_in,
                 is_absorb=True,
                 kid=[pytag, path_in],
-                import_all=True,
             )
             return ret
         ret = ast.Import(
