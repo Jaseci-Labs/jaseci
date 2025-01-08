@@ -509,3 +509,17 @@ class JacCliTests(TestCase):
                 self.assertNotIn("Passed successfully.", stdout)
                 self.assertIn("F", stderr)
         os.remove(test_file)
+
+    def test_cache_ast(self) -> None:
+        """Test for Caching Issue."""
+        cli.check(f"{self.fixture_abs_path('test_cache_ast.jac')}")
+        self.assertTrue(
+            os.path.exists(
+                f"{self.fixture_abs_path(os.path.join('__jac_gen__', 'test_cache_pyast.pkl'))}"
+            )
+        )
+        self.assertTrue(
+            os.path.exists(
+                f"{self.fixture_abs_path(os.path.join('__jac_gen__', 'test_cache_jacast.pkl'))}"
+            )
+        )
