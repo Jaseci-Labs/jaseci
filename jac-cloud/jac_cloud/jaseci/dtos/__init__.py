@@ -10,6 +10,7 @@ from .user import (
 )
 from .webhook import Expiration, GenerateKey, KeyIDs
 from .websocket import (
+    ChangeUserEvent,
     ChannelEvent,
     ClientEvent,
     ConnectionEvent,
@@ -30,6 +31,7 @@ __all__ = [
     "Expiration",
     "GenerateKey",
     "KeyIDs",
+    "ChangeUserEvent",
     "ChannelEvent",
     "ClientEvent",
     "ConnectionEvent",

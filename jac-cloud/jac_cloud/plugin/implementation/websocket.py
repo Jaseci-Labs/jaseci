@@ -26,6 +26,7 @@ from starlette.websockets import WebSocketDisconnect, WebSocketState
 from ...core.architype import NodeAnchor, NodeArchitype, WalkerAnchor
 from ...core.context import JaseciContext, PUBLIC_ROOT
 from ...jaseci.dtos import (
+    ChangeUserEvent,
     ChannelEvent,
     ClientEvent,
     ConnectionEvent,
@@ -136,6 +137,23 @@ class WebSocketManager:
         self.websocket_clients.pop(client_id, None)
         self.user_websockets[root].remove(websocket)
         self.channel_websockets[channel_id].remove(websocket)
+
+    async def change_user(self, websocket: WebSocket, token: str | None) -> None:
+        """Change User Websocket."""
+        root: NodeAnchor = websocket._root  # type: ignore[attr-defined]
+
+        self.user_websockets[root].remove(websocket)
+
+        if not authenticate_websocket(websocket, token):
+            websocket._user = None  # type: ignore[attr-defined]
+            websocket._root = PUBLIC_ROOT  # type: ignore[attr-defined]
+
+        root = websocket._root  # type: ignore[attr-defined]
+
+        if root not in self.user_websockets:
+            self.user_websockets[root] = set()
+
+        self.user_websockets[root].add(websocket)
 
     def notify_self(self, data: dict) -> None:
         """Notify self client."""
@@ -303,6 +321,9 @@ async def websocket_endpoint(
                     await client_execution(event)
                     await WEBSOCKET_MANAGER.broadcast(wse)
                 case ConnectionEvent():
+                    await connection_execution(websocket)
+                case ChangeUserEvent():
+                    await WEBSOCKET_MANAGER.change_user(websocket, event.token)
                     await connection_execution(websocket)
                 case _:
                     await websocket.send_json({"error": "Not a valid event!"})

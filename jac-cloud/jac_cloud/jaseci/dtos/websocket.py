@@ -47,11 +47,25 @@ class ClientEvent(BaseModel):
     data: dict
 
 
+class ChangeUserEvent(BaseModel):
+    """Change User Event Model."""
+
+    type: Literal["change_user"] = "change_user"
+    token: str | None = None
+
+
 class WebSocketEvent(BaseModel):
     """WebSocket Event."""
 
     instance_id: str | None = None
     event: Annotated[
-        Union[ConnectionEvent, WalkerEvent, UserEvent, ChannelEvent, ClientEvent],
+        Union[
+            ConnectionEvent,
+            WalkerEvent,
+            UserEvent,
+            ChannelEvent,
+            ClientEvent,
+            ChangeUserEvent,
+        ],
         Field(discriminator="type"),
     ]

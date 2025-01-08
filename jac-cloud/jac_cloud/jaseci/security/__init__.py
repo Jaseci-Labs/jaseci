@@ -178,10 +178,12 @@ def generate_webhook_auth(webhook: dict) -> list:
     return authenticators
 
 
-def authenticate_websocket(websocket: WebSocket) -> bool:
+def authenticate_websocket(
+    websocket: WebSocket, authorization: str | None = None
+) -> bool:
     """Authenticate websocket connection."""
     if (
-        authorization := websocket.headers.get("Authorization")
+        authorization or (authorization := websocket.headers.get("Authorization"))
     ) and authorization.lower().startswith("bearer"):
         token = authorization[7:]
         decrypted = decrypt(token)
