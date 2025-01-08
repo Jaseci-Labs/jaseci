@@ -30,7 +30,6 @@ class JacImportPass(Pass):
     def before_pass(self) -> None:
         """Run once before pass."""
         self.import_table: dict[str, ast.Module] = {}
-        self.CACHE_DIR = ""
 
     def enter_module(self, node: ast.Module) -> None:
         """Run Importer."""
@@ -49,52 +48,11 @@ class JacImportPass(Pass):
 
         node.mod_deps.update(self.import_table)
 
-    def after_pass(self) -> None:
-        """Cache compiled modules after the pass."""
-        base, mod = os.path.split(next(iter(self.import_table)))
-        self.CACHE_DIR = os.path.join(base, "__jac_gen__")
-        os.makedirs(self.CACHE_DIR, exist_ok=True)
-        for path, module in self.import_table.items():
-            cache_path = os.path.join(self.CACHE_DIR, f"{module.name}.bin")
-            try:
-                with open(cache_path, "wb") as cache_file:
-                    pickle.dump(module, cache_file, protocol=5)
-            except Exception as e:
-                logger.error(f"Failed to cache module {path}: {e}")
-
     def process_import(self, i: ast.ModulePath) -> None:
-        """Process an import with caching."""
+        """Process an import."""
         imp_node = i.parent_of_type(ast.Import)
-        base, mod = os.path.split(i.resolve_relative_path())
-        self.CACHE_DIR = os.path.join(base, "__jac_gen__")
         if imp_node.is_jac and not i.sub_module:
-            cached_ast = self.load_cached_ast(i)
-            if cached_ast:
-                self.attach_mod_to_node(i, cached_ast)
-            else:
-                self.import_jac_module(node=i)
-
-    def load_cached_ast(self, i: ast.ModulePath) -> Optional[ast.Module]:
-        """Load cached AST if the file and dependencies haven't changed."""
-        file_path = i.resolve_relative_path()
-        cache_path = os.path.join(self.CACHE_DIR, f"{i.sym_name}.bin")
-        if not os.path.exists(cache_path):
-            return None
-
-        try:
-            source_mtime = os.path.getmtime(file_path)
-            cache_mtime = os.path.getmtime(cache_path)
-
-            if source_mtime > cache_mtime:
-                return None
-
-            with open(cache_path, "rb") as cache_file:
-                cached_ast = pickle.load(cache_file)
-                return cached_ast if isinstance(cached_ast, ast.Module) else None
-
-        except Exception as e:
-            logger.error(f"Failed to load cached module {i.sym_name}: {e}")
-            return None
+            self.import_jac_module(node=i)
 
     def attach_mod_to_node(
         self, node: ast.ModulePath | ast.ModuleItem, mod: ast.Module | None
@@ -254,15 +212,8 @@ class PyImportPass(JacImportPass):
         self.__load_builtins()
 
     def after_pass(self) -> None:
-        """Cache compiled Python modules after the pass."""
+        """Build symbol tables for import from nodes."""
         self.__import_from_symbol_table_build()
-        for _, module in self.import_from_build_list:
-            cache_path = os.path.join(self.CACHE_DIR, f"{module.name}.pkl")
-            try:
-                with open(cache_path, "wb") as cache_file:
-                    pickle.dump(module, cache_file)
-            except Exception as e:
-                logger.error(f"Failed to cache Python module {module.name}: {e}")
         return super().after_pass()
 
     def process_import(self, i: ast.ModulePath) -> None:
@@ -289,35 +240,6 @@ class PyImportPass(JacImportPass):
                 self.__debug_print(msg)
                 self.__process_import(imp_node)
 
-    def _load_cached_py_module(
-        self, module_path: ast.ModulePath
-    ) -> Optional[ast.Module]:
-        """Load cached Python module if up-to-date."""
-        cache_path = os.path.join(self.CACHE_DIR, f"{module_path.dot_path_str}.pkl")
-        source_path = module_path.resolve_relative_path()
-        if not os.path.exists(cache_path):
-            return None
-
-        try:
-            source_mtime = os.path.getmtime(source_path)
-            cache_mtime = os.path.getmtime(cache_path)
-
-            if source_mtime > cache_mtime:
-                return None
-
-            with open(cache_path, "rb") as cache_file:
-                cached_module = pickle.load(cache_file)
-                if not isinstance(cached_module, ast.Module):
-                    raise TypeError(
-                        f"Cached module for {module_path.dot_path_str} is invalid."
-                    )
-                return cached_module
-        except Exception as e:
-            logger.error(
-                f"Failed to load cached module {module_path.dot_path_str}: {e}"
-            )
-            return None
-
     def __process_import_from(self, imp_node: ast.Import) -> None:
         """Process imports in the form of `from X import I`."""
         assert isinstance(self.ir, ast.Module)
@@ -326,12 +248,10 @@ class PyImportPass(JacImportPass):
         self.__debug_print(f"\tTrying to import {imp_node.from_loc.dot_path_str}")
 
         # Attempt to import the Python module X and process it
-        imported_mod = self._load_cached_py_module(imp_node.from_loc)
-        if not imported_mod:
-            imported_mod = self.__import_py_module(
-                parent_node_path=ast.Module.get_href_path(imp_node),
-                mod_path=imp_node.from_loc.dot_path_str,
-            )
+        imported_mod = self.__import_py_module(
+            parent_node_path=ast.Module.get_href_path(imp_node),
+            mod_path=imp_node.from_loc.dot_path_str,
+        )
 
         if imported_mod:
             # Cyclic imports will happen in case of import sys
@@ -434,41 +354,68 @@ class PyImportPass(JacImportPass):
         """Process the imports in form of `import X`."""
         # Expected that each ImportStatement will import one item
         # In case of this assertion fired then we need to revisit this item
+        assert len(imp_node.items.items) == 1
+        imported_item = imp_node.items.items[0]
+        assert isinstance(imported_item, ast.ModulePath)
 
-        for imported_item in imp_node.items.items:
-            assert isinstance(imported_item, ast.ModulePath)
-            self.__debug_print(f"\tTrying to import {imported_item.dot_path_str}")
-            imported_mod = self._load_cached_py_module(imported_item)
-            if not imported_mod:
-                imported_mod = self.__import_py_module(
-                    parent_node_path=ast.Module.get_href_path(imported_item),
-                    mod_path=imported_item.dot_path_str,
-                    imported_mod_name=(
-                        # TODO: Check this replace
-                        imported_item.dot_path_str.replace(".", "")
-                        if not imported_item.alias
-                        else imported_item.alias.sym_name
-                    ),
-                )
-            if imported_mod:
-                if self.__check_cyclic_imports(imp_node, imported_mod):
-                    self.__debug_print(
-                        f"\tCycled imports is found at {imp_node.loc.mod_path} {imp_node.loc}"
-                    )
-                    return
-                elif imported_mod.name == "builtins":
-                    self.__debug_print(
-                        f"\tIgnoring attaching builtins {imp_node.loc.mod_path} {imp_node.loc}"
-                    )
-                    return
+        self.__debug_print(f"\tTrying to import {imported_item.dot_path_str}")
+        imported_mod = self.__import_py_module(
+            parent_node_path=ast.Module.get_href_path(imported_item),
+            mod_path=imported_item.dot_path_str,
+            imported_mod_name=(
+                # TODO: Check this replace
+                imported_item.dot_path_str.replace(".", "")
+                if not imported_item.alias
+                else imported_item.alias.sym_name
+            ),
+        )
+        if imported_mod:
+            if self.__check_cyclic_imports(imp_node, imported_mod):
                 self.__debug_print(
-                    f"\tAttaching {imported_mod.name} into {ast.Module.get_href_path(imp_node)}"
+                    f"\tCycled imports is found at {imp_node.loc.mod_path} {imp_node.loc}"
                 )
-                self.attach_mod_to_node(imported_item, imported_mod)
+                return
+            elif imported_mod.name == "builtins":
                 self.__debug_print(
-                    f"\tBuilding symbol table for module:{ast.Module.get_href_path(imported_mod)}"
+                    f"\tIgnoring attaching builtins {imp_node.loc.mod_path} {imp_node.loc}"
                 )
-                SymTabBuildPass(input_ir=imported_mod, prior=self)
+                return
+            self.__debug_print(
+                f"\tAttaching {imported_mod.name} into {ast.Module.get_href_path(imp_node)}"
+            )
+            self.attach_mod_to_node(imported_item, imported_mod)
+            self.__debug_print(
+                f"\tBuilding symbol table for module:{ast.Module.get_href_path(imported_mod)}"
+            )
+            SymTabBuildPass(input_ir=imported_mod, prior=self)
+
+    def _load_cached_py_module(
+        self, source_path: str, cache_path: str
+    ) -> Optional[ast.Module]:
+        """Load cached Python module if up-to-date."""
+        try:
+            source_mtime = os.path.getmtime(source_path)
+            cache_mtime = os.path.getmtime(cache_path)
+
+            if source_mtime > cache_mtime:
+                return None
+
+            with open(cache_path, "rb") as cache_file:
+                cached_module = pickle.load(cache_file)
+                if not isinstance(cached_module, ast.Module):
+                    raise TypeError(f"Cached module for {cache_path} is invalid.")
+                return cached_module
+        except Exception as e:
+            logger.error(f"Failed to load cached module {cache_path}: {e}")
+            return None
+
+    def cache_ast(self, mod: ast.Module, cache_path: str) -> None:
+        """Cache the Python module."""
+        try:
+            with open(cache_path, "wb") as cache_file:
+                pickle.dump(mod, cache_file, protocol=5)
+        except Exception as e:
+            logger.error(f"Failed to cache Python module {mod.name}: {e}")
 
     def __import_py_module(
         self,
@@ -480,6 +427,10 @@ class PyImportPass(JacImportPass):
         from jaclang.compiler.passes.main import PyastBuildPass
 
         assert isinstance(self.ir, ast.Module)
+
+        cache_dir = os.path.join(os.path.dirname(self.ir.loc.mod_path), "__py_gen__")
+        os.makedirs(cache_dir, exist_ok=True)
+        cache_path = os.path.join(cache_dir, f"{mod_path}.pkl")
 
         python_raise_map = self.ir.py_info.py_raise_map
         file_to_raise: Optional[str] = None
@@ -509,15 +460,19 @@ class PyImportPass(JacImportPass):
                 )
                 return self.import_table[file_to_raise]
 
-            with open(file_to_raise, "r", encoding="utf-8") as f:
-                file_source = f.read()
-                mod = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(
-                        py_ast.parse(file_source),
-                        orig_src=ast.JacSource(file_source, file_to_raise),
-                    ),
-                ).ir
-                SubNodeTabPass(input_ir=mod, prior=self)
+            if os.path.exists(cache_path):
+                mod = self._load_cached_py_module(file_to_raise, cache_path)
+            else:
+                with open(file_to_raise, "r", encoding="utf-8") as f:
+                    file_source = f.read()
+                    mod = PyastBuildPass(
+                        input_ir=ast.PythonModuleAst(
+                            py_ast.parse(file_source),
+                            orig_src=ast.JacSource(file_source, file_to_raise),
+                        ),
+                    ).ir
+                    SubNodeTabPass(input_ir=mod, prior=self)
+                self.cache_ast(mod, cache_path)
 
             if mod:
                 mod.name = imported_mod_name if imported_mod_name else mod.name
