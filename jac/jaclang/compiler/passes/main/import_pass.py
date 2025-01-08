@@ -440,7 +440,7 @@ class PyImportPass(JacImportPass):
 
         assert isinstance(self.ir, ast.Module)
 
-        cache_dir = os.path.join(os.path.dirname(self.ir.loc.mod_path), "__py_gen__")
+        cache_dir = os.path.join(os.path.dirname(self.ir.loc.mod_path), "__jac_gen__")
         os.makedirs(cache_dir, exist_ok=True)
         cache_path = os.path.join(cache_dir, f"{mod_path}.pkl")
 
