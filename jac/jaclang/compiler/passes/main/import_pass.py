@@ -170,10 +170,10 @@ class JacImportPass(Pass):
                 kid=[ast.EmptyToken()],
             )
 
-    def _load_cached_py_module(
+    def load_cached_py_module(
         self, source_path: str, cache_path: str
     ) -> Optional[ast.Module]:
-        """Load cached Python module if up-to-date."""
+        """Load cached module if up-to-date."""
         try:
             source_mtime = os.path.getmtime(source_path)
             cache_mtime = os.path.getmtime(cache_path)
@@ -191,22 +191,17 @@ class JacImportPass(Pass):
             return None
 
     def cache_ast(self, mod: ast.Module, cache_path: str) -> None:
-        """Cache the Python module."""
+        """Cache the module."""
         try:
             with open(cache_path, "wb") as cache_file:
                 pickle.dump(mod, cache_file, protocol=5)
         except Exception as e:
-            logger.error(f"Failed to cache Python module {mod.name}: {e}")
+            logger.error(f"Failed to cache module {mod.name}: {e}")
 
     def import_jac_mod_from_file(self, target: str) -> ast.Module | None:
         """Import a module from a file."""
         from jaclang.compiler.compile import jac_file_to_pass
         from jaclang.compiler.passes.main import SubNodeTabPass
-
-        cache_dir = os.path.join(os.path.dirname(self.ir.loc.mod_path), "__jac_gen__")
-        os.makedirs(cache_dir, exist_ok=True)
-        module_name = os.path.splitext(os.path.basename(target))[0]
-        cache_path = os.path.join(cache_dir, f"{module_name}.pkl")
 
         if not os.path.exists(target):
             self.error(f"Could not find module {target}")
@@ -214,14 +209,10 @@ class JacImportPass(Pass):
         if target in self.import_table:
             return self.import_table[target]
         try:
-            if os.path.exists(cache_path):
-                mod = self._load_cached_py_module(target, cache_path)
-            else:
-                mod_pass = jac_file_to_pass(file_path=target, target=SubNodeTabPass)
-                self.errors_had += mod_pass.errors_had
-                self.warnings_had += mod_pass.warnings_had
-                mod = mod_pass.ir
-                self.cache_ast(mod, cache_path)
+            mod_pass = jac_file_to_pass(file_path=target, target=SubNodeTabPass)
+            self.errors_had += mod_pass.errors_had
+            self.warnings_had += mod_pass.warnings_had
+            mod = mod_pass.ir
         except Exception as e:
             logger.info(e)
             mod = None
@@ -470,7 +461,7 @@ class PyImportPass(JacImportPass):
                 return self.import_table[file_to_raise]
 
             if os.path.exists(cache_path):
-                mod = self._load_cached_py_module(file_to_raise, cache_path)
+                mod = self.load_cached_py_module(file_to_raise, cache_path)
             else:
                 with open(file_to_raise, "r", encoding="utf-8") as f:
                     file_source = f.read()
