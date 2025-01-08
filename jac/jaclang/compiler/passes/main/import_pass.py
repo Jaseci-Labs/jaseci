@@ -170,10 +170,13 @@ class JacImportPass(Pass):
                 kid=[ast.EmptyToken()],
             )
 
-    def load_cached_py_module(
+    def load_cached_module(
         self, source_path: str, cache_path: str
-    ) -> Optional[ast.Module]:
+    ) -> ast.Module | None:
         """Load cached module if up-to-date."""
+        if not os.path.exists(cache_path):
+            return None
+
         try:
             source_mtime = os.path.getmtime(source_path)
             cache_mtime = os.path.getmtime(cache_path)
@@ -203,16 +206,24 @@ class JacImportPass(Pass):
         from jaclang.compiler.compile import jac_file_to_pass
         from jaclang.compiler.passes.main import SubNodeTabPass
 
+        cache_dir = os.path.join(os.path.dirname(self.ir.loc.mod_path), "__jac_gen__")
+        os.makedirs(cache_dir, exist_ok=True)
+        module_name = os.path.splitext(os.path.basename(target))[0]
+        cache_path = os.path.join(cache_dir, f"{module_name}.pkl")
+
         if not os.path.exists(target):
             self.error(f"Could not find module {target}")
             return None
         if target in self.import_table:
             return self.import_table[target]
         try:
-            mod_pass = jac_file_to_pass(file_path=target, target=SubNodeTabPass)
-            self.errors_had += mod_pass.errors_had
-            self.warnings_had += mod_pass.warnings_had
-            mod = mod_pass.ir
+            mod = self.load_cached_module(target, cache_path)
+            if not mod:
+                mod_pass = jac_file_to_pass(file_path=target, target=SubNodeTabPass)
+                self.errors_had += mod_pass.errors_had
+                self.warnings_had += mod_pass.warnings_had
+                if isinstance(mod_pass.ir, ast.Module):
+                    mod = mod_pass.ir
         except Exception as e:
             logger.info(e)
             mod = None
@@ -220,6 +231,7 @@ class JacImportPass(Pass):
             self.import_table[target] = mod
             mod.is_imported = True
             mod.body = [x for x in mod.body if not isinstance(x, ast.AstImplOnlyNode)]
+            self.cache_ast(mod, cache_path)
             return mod
         else:
             self.error(f"Module {target} is not a valid Jac module.")
@@ -461,7 +473,7 @@ class PyImportPass(JacImportPass):
                 return self.import_table[file_to_raise]
 
             if os.path.exists(cache_path):
-                mod = self.load_cached_py_module(file_to_raise, cache_path)
+                mod = self.load_cached_module(file_to_raise, cache_path)
             else:
                 with open(file_to_raise, "r", encoding="utf-8") as f:
                     file_source = f.read()
