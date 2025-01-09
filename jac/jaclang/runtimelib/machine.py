@@ -38,6 +38,7 @@ class JacMachine:
         self.loaded_modules: dict[str, types.ModuleType] = {}
         if not base_path:
             base_path = os.getcwd()
+        # Ensure the base_path is a list rather than a string
         self.base_path = base_path
         self.base_path_dir = (
             os.path.dirname(base_path)
