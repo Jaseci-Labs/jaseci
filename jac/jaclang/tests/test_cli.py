@@ -9,6 +9,7 @@ import sys
 import traceback
 
 from jaclang.cli import cli
+from jaclang.compiler.constant import Constants
 from jaclang.plugin.builtin import dotgen
 from jaclang.utils.test import TestCase
 
@@ -512,14 +513,27 @@ class JacCliTests(TestCase):
 
     def test_cache_ast(self) -> None:
         """Test for Caching Issue."""
+        jac_file = self.fixture_abs_path("test_cache_jacast.jac")
+        py_file = self.fixture_abs_path("test_cache_pyast.py")
         cli.check(f"{self.fixture_abs_path('test_cache_ast.jac')}")
         self.assertTrue(
             os.path.exists(
-                f"{self.fixture_abs_path(os.path.join('__jac_gen__', 'test_cache_pyast.pkl'))}"
+                f"{(os.path.join(os.path.dirname(py_file), Constants.JAC_GEN_DIR, 'test_cache_pyast.pkl'))}"
             )
         )
         self.assertTrue(
             os.path.exists(
-                f"{self.fixture_abs_path(os.path.join('__jac_gen__', 'test_cache_jacast.pkl'))}"
+                f"{os.path.join(os.path.dirname(py_file), Constants.JAC_GEN_DIR, 'test_cache_jacast.pkl')}"
             )
         )
+        with open(py_file, "w") as f:
+            f.write("""def add(a: int, b: int) -> int:\n\treturn a + b + 5""")
+        with open(jac_file, "w") as f:
+            f.write("""can add(a:int,b:int)->int{return a + b + 5 ;}""")
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.run(f"{self.fixture_abs_path('test_cache_ast.jac')}")
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("8", stdout_value)
+        self.assertIn("8", stdout_value)
