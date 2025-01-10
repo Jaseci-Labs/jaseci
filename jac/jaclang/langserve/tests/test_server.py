@@ -368,8 +368,18 @@ class TestJacLangServer(TestCase):
             ),
             (
                 lspt.Position(37, 12),
-                ["self", "add", "subtract", "x", "Colorenum", "Colour1", "red", "r"],
-                160,
+                [
+                    "self",
+                    "add",
+                    "subtract",
+                    "x",
+                    "Colorenum",
+                    "Colour1",
+                    "red",
+                    "r",
+                    "Jac",
+                ],
+                9,
                 None,
             ),
         ]
