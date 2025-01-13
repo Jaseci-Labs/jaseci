@@ -12,6 +12,7 @@ from types import MethodType, UnionType
 from typing import Any, Callable, ClassVar, Optional, TypeVar
 from uuid import UUID, uuid4
 
+
 logger = getLogger(__name__)
 
 TARCH = TypeVar("TARCH", bound="Architype")
@@ -289,8 +290,24 @@ class ObjectArchitype(Architype):
 class GenericEdge(EdgeArchitype):
     """Generic Root Node."""
 
+    __slots__ = ("spawn",)
+
     _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
     _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
+
+    _method_bounds: ClassVar[dict[str, Callable]] = {
+        "spawn": lambda _: None,
+    }
+
+    def __init__(self) -> None:
+        """Create Generic Edge."""
+        self.spawn: Callable = lambda _: None
+        self.load_method_bounds()
+
+    def load_method_bounds(self) -> None:
+        """Load method bounds."""
+        for name, func in self._method_bounds.items():
+            setattr(self, name, MethodType(func, self))
 
 
 @dataclass(eq=False)
@@ -305,13 +322,28 @@ class Root(NodeArchitype):
     _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
     _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
 
+    _method_bounds: ClassVar[dict[str, Callable]] = {
+        "spawn": lambda _: None,
+        "connect": lambda _: None,
+        "disconnect": lambda _: None,
+        "refs": lambda _: None,
+    }
+
     def __init__(self) -> None:
         """Create root node."""
         self.__jac__ = NodeAnchor(architype=self, persistent=True, edges=[])
-        self.spawn: MethodType = MethodType(lambda _: None, self)
-        self.connect: MethodType = MethodType(lambda _: None, self)
-        self.disconnect: MethodType = MethodType(lambda _: None, self)
-        self.refs: MethodType = MethodType(lambda _: None, self)
+        # We need to define the method bounds here so that the type checker can
+        # assign the dynamic attributes.
+        self.spawn: Callable = lambda _: None
+        self.connect: Callable = lambda _: None
+        self.disconnect: Callable = lambda _: None
+        self.refs: Callable = lambda _: None
+        self.load_method_bounds()
+
+    def load_method_bounds(self) -> None:
+        """Load method bounds."""
+        for name, func in self._method_bounds.items():
+            setattr(self, name, MethodType(func, self))
 
 
 @dataclass(eq=False)
@@ -324,22 +356,17 @@ class DSFunc:
     @cached_property
     def trigger(self) -> type | UnionType | tuple[type | UnionType, ...] | None:
         """Get function parameter annotations."""
-        t = (
-            (
-                inspect.signature(self.func, eval_str=True)
-                .parameters["_jac_here_"]
-                .annotation
-            )
-            if self.func
-            else None
-        )
-        return None if t is inspect._empty else t
+        if self.func:
+            parameters = inspect.signature(self.func, eval_str=True).parameters
+            if len(parameters) >= 2:
+                second_param = list(parameters.values())[1]
+                ty = second_param.annotation
+                return ty if ty != inspect._empty else None
+        return None
 
     def resolve(self, cls: type) -> None:
         """Resolve the function."""
         self.func = getattr(cls, self.name)
-<<<<<<< HEAD
-=======
 
     def get_funcparam_annotations(
         self, func: Callable[[Any, Any], Any] | None
@@ -362,4 +389,3 @@ class DSFunc:
             .annotation
         )
         return annotation if annotation != inspect._empty else None
->>>>>>> 64d095e50 (jac2py codegen refactored)

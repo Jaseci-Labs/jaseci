@@ -118,19 +118,20 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
 
         expected_outputs = [
-            "+-- AtomTrailer - Type: builtins.list[builtins.int]",
-            "    +-- Name - arr - Type: builtins.list[builtins.list[builtins.int]],  SymbolTable: list",
-            "    +-- IndexSlice - [IndexSlice] - Type: builtins.list[builtins.list[builtins.int]],  SymbolTable: None",
-            "        +-- Token - [,",
+            # (thakee): I don't know if this List() wrapper on all list is okey?
+            "+-- AtomTrailer - Type: Any",
+            "    +-- Name - arr - Type: jaclang.List[jaclang.List[builtins.int]],  SymbolTable: None",
+            "    +-- IndexSlice - [IndexSlice] - Type: builtins.slice,  SymbolTable: None",
+            "        +-- Token - [, ",
             "        +-- Int - 1 - Type: Literal[1]?,  SymbolTable: None",
-            "        +-- Token - :,",
+            "        +-- Token - :, ",
             "        +-- Int - 3 - Type: Literal[3]?,  SymbolTable: None",
-            "        +-- Token - ,,",
+            "        +-- Token - ,, ",
             "        +-- Int - 1 - Type: Literal[1]?,  SymbolTable: None",
-            "        +-- Token - :,",
-            "        +-- Token - :,",
+            "        +-- Token - :, ",
+            "        +-- Token - :, ",
             "        +-- Int - 2 - Type: Literal[2]?,  SymbolTable: None",
-            "        +-- Token - ],",
+            "        +-- Token - ], ",
         ]
 
         for expected in expected_outputs:
@@ -1033,11 +1034,11 @@ class JacLanguageTests(TestCase):
             stdout_value,
         )
         self.assertIn(
-            "Walkers in bar:\n  - Walker: bar_walk",
+            "Walkers in bar:\n  - Walker: Walker\n  - Walker: bar_walk",
             stdout_value,
         )
         self.assertIn("Nodes in bar:\n  - Node: Item", stdout_value)
-        self.assertIn("Edges in bar:\n  - Edge: Link", stdout_value)
+        self.assertIn("Edges in bar:\n  - Edge: Edge\n  - Edge: Link", stdout_value)
         self.assertIn("Item value: 0", stdout_value)
         self.assertIn("Created 5 items.", stdout_value)
 

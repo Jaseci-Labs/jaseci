@@ -93,7 +93,7 @@ class Constants(StrEnum):
     JAC_LANG_IMP = "jac"
     HERE = "here"  # "_jac_here_"
     JAC_CHECK = "_check"
-    JAC_FEATURE = "_Jac"
+    JAC_FEATURE = "Jac"  # "_Jac"
     ROOT = f"{JAC_FEATURE}.get_root()"
     EDGES_TO_NODE = "__jac__.edges_to_nodes"
     EDGE_REF = "__jac__.edge_ref"
