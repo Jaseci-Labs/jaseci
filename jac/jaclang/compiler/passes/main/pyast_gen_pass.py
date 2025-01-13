@@ -7,7 +7,7 @@ in each node. Module nodes contain the entire module code.
 import ast as ast3
 import textwrap
 from dataclasses import dataclass
-from typing import Optional, Sequence, TypeVar
+from typing import Optional, Sequence, TypeVar, cast
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Constants as Con, EdgeDir, Tokens as Tok
@@ -55,6 +55,14 @@ class PyastGenPass(Pass):
         self.debuginfo: dict[str, list[str]] = {"jac_mods": []}
         self.already_added: list[str] = []
         self.preamble: list[ast3.AST] = [
+            self.sync(
+                ast3.ImportFrom(
+                    module="__future__",
+                    names=[self.sync(ast3.alias(name="annotations", asname=None))],
+                    level=0,
+                ),
+                jac_node=self.ir,
+            ),
             (
                 self.sync(
                     ast3.ImportFrom(
@@ -107,7 +115,7 @@ class PyastGenPass(Pass):
         #     if isinstance(i, ast3.AST):
         #         i.jac_link = node
 
-    def jaclib_obj(self, obj_name: str) -> ast3.AST:
+    def jaclib_obj(self, obj_name: str) -> ast3.Name | ast3.Attribute:
         """Return the object from jaclib as ast node based on the import config."""
         if JACLIB_IMPORT_ALL:
             return self.sync(ast3.Name(id=obj_name, ctx=ast3.Load()))
@@ -119,26 +127,6 @@ class PyastGenPass(Pass):
             )
         )
 
-    def needs_jac_import(self) -> None:
-        """Check if import is needed."""
-        if self.needs_jac_import.__name__ in self.already_added:
-            return
-        self.preamble.append(
-            self.sync(
-                ast3.ImportFrom(
-                    module="jaclang",
-                    names=[
-                        self.sync(
-                            ast3.alias(name="jac_import", asname="__jac_import__")
-                        )
-                    ],
-                    level=0,
-                ),
-                jac_node=self.ir,
-            )
-        )
-        self.already_added.append(self.needs_jac_import.__name__)
-
     def needs_typing(self) -> None:
         """Check if enum is needed."""
         if self.needs_typing.__name__ in self.already_added:
@@ -148,7 +136,7 @@ class PyastGenPass(Pass):
                 ast3.Import(
                     names=[
                         self.sync(
-                            ast3.alias(name="typing", asname="_jac_typ"),
+                            ast3.alias(name="typing"),
                             jac_node=self.ir,
                         ),
                     ]
@@ -425,15 +413,7 @@ class PyastGenPass(Pass):
             func.decorator_list.append(
                 self.sync(
                     ast3.Call(
-                        func=self.sync(
-                            ast3.Attribute(
-                                value=self.sync(
-                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
-                                ),
-                                attr="impl_patch_filename",
-                                ctx=ast3.Load(),
-                            )
-                        ),
+                        func=self.jaclib_obj("_impl_patch_filename"),
                         args=[],
                         keywords=[
                             self.sync(
@@ -532,7 +512,6 @@ class PyastGenPass(Pass):
         for k, v in imp_from.items():
             item_keys.append(self.sync(ast3.Constant(value=k)))
             item_values.append(self.sync(ast3.Constant(value=v)))
-        self.needs_jac_import()
         path_named_value: str
         py_nodes: list[ast3.AST] = []
         typecheck_nodes: list[ast3.AST] = []
@@ -591,68 +570,65 @@ class PyastGenPass(Pass):
                         ),
                         value=self.sync(
                             ast3.Call(
-                                func=self.sync(
-                                    ast3.Name(id="__jac_import__", ctx=ast3.Load())
+                                func=self.jaclib_obj("jac_import"),
+                                args=[
+                                    self.sync(ast3.Constant(value=path)),
+                                ]
+                                + (
+                                    [
+                                        self.sync(
+                                            ast3.Constant(value="py"),
+                                            node.hint,
+                                        )
+                                    ]
+                                    if node.is_py
+                                    else []
                                 ),
-                                args=[],
-                                keywords=[
-                                    self.sync(
-                                        ast3.keyword(
-                                            arg="target",
-                                            value=self.sync(
-                                                ast3.Constant(value=path),
-                                            ),
-                                        )
-                                    ),
-                                    self.sync(
-                                        ast3.keyword(
-                                            arg="base_path",
-                                            value=self.sync(
-                                                ast3.Name(
-                                                    id="__file__",
-                                                    ctx=ast3.Load(),
-                                                )
-                                            ),
-                                        )
-                                    ),
-                                    self.sync(
-                                        ast3.keyword(
-                                            arg="lng",
-                                            value=self.sync(
-                                                ast3.Constant(
-                                                    value="py" if node.is_py else "jac"
+                                keywords=(
+                                    [
+                                        self.sync(
+                                            ast3.keyword(
+                                                arg="absorb",
+                                                value=self.sync(
+                                                    ast3.Constant(value=node.is_absorb),
                                                 ),
-                                                node.hint,
-                                            ),
-                                        )
-                                    ),
-                                    self.sync(
-                                        ast3.keyword(
-                                            arg="absorb",
-                                            value=self.sync(
-                                                ast3.Constant(value=node.is_absorb),
-                                            ),
-                                        )
-                                    ),
-                                    self.sync(
-                                        ast3.keyword(
-                                            arg="mdl_alias",
-                                            value=self.sync(
-                                                ast3.Constant(value=alias),
-                                            ),
-                                        )
-                                    ),
-                                    self.sync(
-                                        ast3.keyword(
-                                            arg="items",
-                                            value=self.sync(
-                                                ast3.Dict(
-                                                    keys=item_keys, values=item_values
+                                            )
+                                        ),
+                                    ]
+                                    if node.is_absorb
+                                    else []
+                                )
+                                + (
+                                    [
+                                        self.sync(
+                                            ast3.keyword(
+                                                arg="alias",
+                                                value=self.sync(
+                                                    ast3.Constant(value=alias),
                                                 ),
-                                            ),
-                                        )
-                                    ),
-                                ],
+                                            )
+                                        ),
+                                    ]
+                                    if alias
+                                    else []
+                                )
+                                + (
+                                    [
+                                        self.sync(
+                                            ast3.keyword(
+                                                arg="items",
+                                                value=self.sync(
+                                                    ast3.Dict(
+                                                        keys=item_keys,
+                                                        values=item_values,
+                                                    ),
+                                                ),
+                                            )
+                                        ),
+                                    ]
+                                    if len(item_keys)
+                                    else []
+                                ),
                             )
                         ),
                     ),
@@ -841,7 +817,7 @@ class PyastGenPass(Pass):
                 ast3.If(
                     test=self.sync(
                         ast3.Attribute(
-                            value=self.sync(ast3.Name(id="_jac_typ", ctx=ast3.Load())),
+                            value=self.sync(ast3.Name(id="typing", ctx=ast3.Load())),
                             attr="TYPE_CHECKING",
                             ctx=ast3.Load(),
                         )
@@ -921,9 +897,7 @@ class PyastGenPass(Pass):
 
         base_classes = node.base_classes.gen.py_ast if node.base_classes else []
         if node.arch_type.name != Tok.KW_CLASS:
-            base_classes.append(
-                self.jaclib_obj("Jac" + node.arch_type.value.capitalize())
-            )
+            base_classes.append(self.jaclib_obj(node.arch_type.value.capitalize()))
         node.gen.py_ast = [
             self.sync(
                 ast3.ClassDef(
@@ -1224,14 +1198,13 @@ class PyastGenPass(Pass):
                 isinstance(node.arch_name, ast.SpecialVarRef)
                 and node.arch_name.orig.name == Tok.KW_ROOT
             ):
-                node.gen.py_ast = [self.jaclib_obj("RootType")]
+                node.gen.py_ast = [self.jaclib_obj("Root")]
             else:
-                # TODO (thakee): Check what is this?
                 self.needs_typing()
                 node.gen.py_ast = [
                     self.sync(
                         ast3.Attribute(
-                            value=self.sync(ast3.Name(id="_jac_typ", ctx=ast3.Load())),
+                            value=self.sync(ast3.Name(id="typing", ctx=ast3.Load())),
                             attr=node.arch_name.sym_name,
                             ctx=ast3.Load(),
                         )
@@ -1863,12 +1836,7 @@ class PyastGenPass(Pass):
                             ast3.Call(
                                 func=self.sync(
                                     ast3.Attribute(
-                                        value=self.sync(
-                                            ast3.Name(
-                                                id=Con.JAC_FEATURE.value,
-                                                ctx=ast3.Load(),
-                                            )
-                                        ),
+                                        value=self.jaclib_obj(Con.JAC_FEATURE.value),
                                         attr="report",
                                         ctx=ast3.Load(),
                                     )
@@ -2566,14 +2534,33 @@ class PyastGenPass(Pass):
 
         values: Optional[SubNodeList[ExprType]],
         """
-        node.gen.py_ast = [
-            self.sync(
-                ast3.List(
-                    elts=node.values.gen.py_ast if node.values else [],
-                    ctx=node.py_ctx_func(),
+        # (thakee): What should I do?
+        if isinstance(node.py_ctx_func(), ast3.Load):
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Call(
+                        func=self.jaclib_obj("List"),
+                        args=[
+                            self.sync(
+                                ast3.List(
+                                    elts=node.values.gen.py_ast if node.values else [],
+                                    ctx=ast3.Load(),
+                                )
+                            )
+                        ],
+                        keywords=[],
+                    )
                 )
-            )
-        ]
+            ]
+        else:
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.List(
+                        elts=node.values.gen.py_ast if node.values else [],
+                        ctx=node.py_ctx_func(),
+                    )
+                )
+            ]
 
     def exit_set_val(self, node: ast.SetVal) -> None:
         """Sub objects.
@@ -2673,9 +2660,17 @@ class PyastGenPass(Pass):
         """
         node.gen.py_ast = [
             self.sync(
-                ast3.ListComp(
-                    elt=node.out_expr.gen.py_ast[0],
-                    generators=[i.gen.py_ast[0] for i in node.compr],
+                ast3.Call(
+                    func=self.jaclib_obj("List"),
+                    args=[
+                        self.sync(
+                            ast3.ListComp(
+                                elt=node.out_expr.gen.py_ast[0],
+                                generators=[i.gen.py_ast[0] for i in node.compr],
+                            )
+                        )
+                    ],
+                    keywords=[],
                 )
             )
         ]
@@ -2753,18 +2748,17 @@ class PyastGenPass(Pass):
             else:
                 self.error("Invalid attribute access")
         elif isinstance(node.right, ast.FilterCompr):
-            assert node.right.f_type is not None  # (thakee): Could it be none?
             node.gen.py_ast = [
                 self.sync(
                     ast3.Call(
                         func=self.sync(
                             ast3.Attribute(
                                 value=node.target.gen.py_ast[0],
-                                attr="filter_type",
+                                attr="filter",
                                 ctx=ast3.Load(),
                             )
                         ),
-                        args=[node.right.f_type.gen.py_ast[0]],
+                        args=cast(ast3.Tuple, node.right.gen.py_ast[0]).elts,
                         keywords=[],
                     )
                 )
@@ -2775,14 +2769,12 @@ class PyastGenPass(Pass):
                     ast3.Call(
                         func=self.sync(
                             ast3.Attribute(
-                                value=self.sync(
-                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
-                                ),
-                                attr="assign_compr",
+                                value=node.target.gen.py_ast[0],
+                                attr="assign",
                                 ctx=ast3.Load(),
                             )
                         ),
-                        args=[node.target.gen.py_ast[0], node.right.gen.py_ast[0]],
+                        args=cast(ast3.Tuple, node.right.gen.py_ast[0]).elts,
                         keywords=[],
                     )
                 )
@@ -3008,119 +3000,19 @@ class PyastGenPass(Pass):
                     edges_only=node.edges_only and cur == last_edge,
                 )
                 if next_i and isinstance(next_i, ast.FilterCompr):
-                    if next_i.f_type:
-                        pynode = self.sync(
-                            ast3.Call(
-                                func=self.sync(
-                                    ast3.Attribute(
-                                        value=pynode,
-                                        attr="filter_type",
-                                        ctx=ast3.Load(),
-                                    )
-                                ),
-                                args=[next_i.f_type.gen.py_ast[0]],
-                                keywords=[],
-                            )
+                    pynode = self.sync(
+                        ast3.Call(
+                            func=self.sync(
+                                ast3.Attribute(
+                                    value=pynode,
+                                    attr="filter",
+                                    ctx=ast3.Load(),
+                                )
+                            ),
+                            args=cast(ast3.Tuple, next_i.gen.py_ast[0]).elts,
+                            keywords=[],
                         )
-                    elif next_i.compares:
-                        iter_name = "item"  # (thakee): I don't know what to name.
-                        expr: ast3.expr | None = None
-                        comp = next_i.compares.items[0]
-                        if (
-                            len(next_i.compares.items) == 1
-                            and isinstance(comp.gen.py_ast[0], ast3.Compare)
-                            and isinstance(comp.gen.py_ast[0].left, ast3.Name)
-                        ):
-                            expr = self.sync(
-                                ast3.Compare(
-                                    left=self.sync(
-                                        ast3.Attribute(
-                                            value=self.sync(
-                                                ast3.Name(
-                                                    id=iter_name,
-                                                    ctx=ast3.Load(),
-                                                ),
-                                                jac_node=comp,
-                                            ),
-                                            attr=comp.gen.py_ast[0].left.id,
-                                            ctx=ast3.Load(),
-                                        ),
-                                        jac_node=comp,
-                                    ),
-                                    ops=comp.gen.py_ast[0].ops,
-                                    comparators=comp.gen.py_ast[0].comparators,
-                                ),
-                                jac_node=comp,
-                            )
-                        else:
-                            expr = self.sync(
-                                ast3.BoolOp(
-                                    op=self.sync(ast3.And()),
-                                    values=[
-                                        self.sync(
-                                            ast3.Compare(
-                                                left=self.sync(
-                                                    ast3.Attribute(
-                                                        value=self.sync(
-                                                            ast3.Name(
-                                                                id=iter_name,
-                                                                ctx=ast3.Load(),
-                                                            ),
-                                                            jac_node=comp,
-                                                        ),
-                                                        attr=comp.gen.py_ast[0].left.id,
-                                                        ctx=ast3.Load(),
-                                                    ),
-                                                    jac_node=comp,
-                                                ),
-                                                ops=comp.gen.py_ast[0].ops,
-                                                comparators=comp.gen.py_ast[
-                                                    0
-                                                ].comparators,
-                                            ),
-                                            jac_node=comp,
-                                        )
-                                        for comp in next_i.compares.items
-                                        if isinstance(comp.gen.py_ast[0], ast3.Compare)
-                                        and isinstance(
-                                            comp.gen.py_ast[0].left, ast3.Name
-                                        )
-                                    ],
-                                ),
-                            )
-                        assert expr is not None
-                        pynode = self.sync(
-                            ast3.Call(
-                                func=self.sync(
-                                    ast3.Attribute(
-                                        value=pynode,
-                                        attr="filter_func",
-                                        ctx=ast3.Load(),
-                                    )
-                                ),
-                                args=[
-                                    self.sync(
-                                        ast3.Lambda(
-                                            args=self.sync(
-                                                ast3.arguments(
-                                                    posonlyargs=[],
-                                                    args=[
-                                                        self.sync(
-                                                            ast3.arg(arg=iter_name)
-                                                        )
-                                                    ],
-                                                    kwonlyargs=[],
-                                                    kw_defaults=[],
-                                                    defaults=[],
-                                                )
-                                            ),
-                                            body=expr,
-                                        )
-                                    )
-                                ],
-                                keywords=[],
-                            )
-                        )
+                    )
                 chomp = chomp[1:] if next_i else chomp
             elif isinstance(cur, ast.EdgeOpRef) and isinstance(next_i, ast.EdgeOpRef):
                 pynode = self.translate_edge_op_ref(
@@ -3360,107 +3252,74 @@ class PyastGenPass(Pass):
 
         compares: SubNodeList[BinaryExpr],
         """
-        # FIXME (thakee): Do I have to remove this?
+        iter_name = "item"
+        comprs = [
+            self.sync(
+                ast3.Compare(
+                    left=self.sync(
+                        ast3.Attribute(
+                            value=self.sync(
+                                ast3.Name(
+                                    id=iter_name,
+                                    ctx=ast3.Load(),
+                                ),
+                                jac_node=x,
+                            ),
+                            attr=x.gen.py_ast[0].left.id,
+                            ctx=ast3.Load(),
+                        ),
+                        jac_node=x,
+                    ),
+                    ops=x.gen.py_ast[0].ops,
+                    comparators=x.gen.py_ast[0].comparators,
+                ),
+                jac_node=x,
+            )
+            for x in (node.compares.items if node.compares else [])
+            if isinstance(x.gen.py_ast[0], ast3.Compare)
+            and isinstance(x.gen.py_ast[0].left, ast3.Name)
+        ]
+
+        body = (
+            self.sync(
+                ast3.BoolOp(
+                    op=self.sync(ast3.And()),
+                    values=comprs,
+                )
+            )
+            if len(comprs) > 1
+            else (comprs[0] if comprs else None)
+        )
+
         node.gen.py_ast = [
             self.sync(
-                ast3.Lambda(
-                    args=self.sync(
-                        ast3.arguments(
-                            posonlyargs=[],
-                            args=[self.sync(ast3.arg(arg="x"))],
-                            kwonlyargs=[],
-                            kw_defaults=[],
-                            defaults=[],
-                        )
-                    ),
-                    body=self.sync(
-                        ast3.ListComp(
-                            elt=self.sync(ast3.Name(id="i", ctx=ast3.Load())),
-                            generators=[
-                                self.sync(
-                                    ast3.comprehension(
-                                        target=self.sync(
-                                            ast3.Name(id="i", ctx=ast3.Store())
-                                        ),
-                                        iter=self.sync(
-                                            ast3.Name(id="x", ctx=ast3.Load())
-                                        ),
-                                        ifs=(
-                                            (
-                                                [
-                                                    self.sync(
-                                                        ast3.Call(
-                                                            func=self.sync(
-                                                                ast3.Name(
-                                                                    id="isinstance",
-                                                                    ctx=ast3.Load(),
-                                                                )
-                                                            ),
-                                                            args=[
-                                                                self.sync(
-                                                                    ast3.Name(
-                                                                        id="i",
-                                                                        ctx=ast3.Load(),
-                                                                    )
-                                                                ),
-                                                                self.sync(
-                                                                    node.f_type.gen.py_ast[
-                                                                        0
-                                                                    ]
-                                                                ),
-                                                            ],
-                                                            keywords=[],
-                                                        )
-                                                    )
-                                                ]
-                                                if node.f_type
-                                                else []
-                                            )
-                                            + [
-                                                self.sync(
-                                                    ast3.Compare(
-                                                        left=self.sync(
-                                                            ast3.Attribute(
-                                                                value=self.sync(
-                                                                    ast3.Name(
-                                                                        id="i",
-                                                                        ctx=ast3.Load(),
-                                                                    ),
-                                                                    jac_node=x,
-                                                                ),
-                                                                attr=x.gen.py_ast[
-                                                                    0
-                                                                ].left.id,
-                                                                ctx=ast3.Load(),
-                                                            ),
-                                                            jac_node=x,
-                                                        ),
-                                                        ops=x.gen.py_ast[0].ops,
-                                                        comparators=x.gen.py_ast[
-                                                            0
-                                                        ].comparators,
-                                                    ),
-                                                    jac_node=x,
-                                                )
-                                                for x in (
-                                                    node.compares.items
-                                                    if node.compares
-                                                    else []
-                                                )
-                                                if isinstance(
-                                                    x.gen.py_ast[0], ast3.Compare
-                                                )
-                                                and isinstance(
-                                                    x.gen.py_ast[0].left, ast3.Name
-                                                )
-                                            ]
-                                        ),
-                                        is_async=0,
-                                    )
+                ast3.Tuple(
+                    elts=[
+                        (
+                            self.sync(node.f_type.gen.py_ast[0])
+                            if node.f_type
+                            else self.sync(ast3.Constant(value=None))
+                        ),
+                        (
+                            self.sync(
+                                ast3.Lambda(
+                                    args=self.sync(
+                                        ast3.arguments(
+                                            posonlyargs=[],
+                                            args=[self.sync(ast3.arg(arg=iter_name))],
+                                            kwonlyargs=[],
+                                            kw_defaults=[],
+                                            defaults=[],
+                                        )
+                                    ),
+                                    body=body,
                                 )
-                            ],
-                        )
-                    ),
+                            )
+                            if body
+                            else self.sync(ast3.Constant(value=None))
+                        ),
+                    ],
+                    ctx=ast3.Load(),
                 )
             )
         ]

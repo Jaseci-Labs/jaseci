@@ -1,39 +1,56 @@
 """The Jac Programming Language."""
 
 import inspect
-import types
-import typing
-from abc import ABC, ABCMeta, abstractmethod
+import os
+from abc import ABC, ABCMeta, abstractmethod as abstract
 from dataclasses import dataclass, field as dc_field
-from typing import Any, Callable, ClassVar, Dict, Tuple, Type, TypeVar, override
+from types import ModuleType
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Generic,
+    Tuple,
+    Type,
+    TypeVar,
+    override,
+)
 
 from jaclang.plugin.builtin import dotgen, jid  # noqa: F401
 from jaclang.plugin.default import JacFeatureImpl
-from jaclang.plugin.feature import JacFeature as _Jac, plugin_manager
-from jaclang.plugin.spec import EdgeDir, Root
-from jaclang.runtimelib.architype import Root as RootType
+from jaclang.plugin.feature import JacFeature as Jac, plugin_manager
+from jaclang.plugin.spec import EdgeDir
+from jaclang.runtimelib.architype import GenericEdge, Root
+from jaclang.runtimelib.context import ExecutionContext
 
 __all__ = [
-    "JacObj",
-    "JacWalker",
-    "JacNode",
-    "JacEdge",
+    # Jac types.
+    "Obj",
+    "Walker",
+    "Node",
+    "Edge",
+    "List",
     "EdgeDir",
-    "RootType",
-    "jac_import",
+    "Root",
+    # Decorators.
     "with_entry",
     "with_exit",
     "jac_test",
     "abstract",
     "override",
+    # Functions.
+    "jac_import",
     "field",
-    "static",
+    # Builtin.
+    "Jac",
     "root",
-    # Builtin-functions.
+    "static",
     "dotgen",
     "jid",
     "jobj",
     # This is not part of the jaclib for a python user but used internally to generate by jac compiler.
+    # (thakee): can directly use Jac in the generated source code.
     "_impl_patch_filename",
 ]
 
@@ -53,11 +70,11 @@ T = TypeVar("T")
 
 
 # https://stackoverflow.com/a/9639512/10846399
-class _JacArchiTypeBase:
+class _ArchiTypeBase:
     pass
 
 
-class JacMetaCommon(ABCMeta):
+class MetaCommon(ABCMeta):
     """Common metaclass for Jac types."""
 
     def __new__(  # noqa: D102
@@ -66,21 +83,19 @@ class JacMetaCommon(ABCMeta):
         bases: Tuple[Type, ...],
         dct: Dict[str, Any],
         make_func: Callable[[list, list], Callable[[type], type]],
-    ) -> "JacMetaCommon":
+    ) -> "MetaCommon":
 
         # We have added this "__init__" to the jac base class just to make the type checkers happy.
         # Actually the dataclass decorator will create an __init__ function and assign it here bellow.
-        if bases == (_JacArchiTypeBase,) and "__init__" in dct:
+        if bases == (_ArchiTypeBase,) and "__init__" in dct:
             del dct["__init__"]
 
         on_entry, on_exit = [], []
-        for value in dct.values():
-            if hasattr(value, "__jac_entry"):
-                entry_node = getattr(value, "__jac_entry")  # noqa: B009
-                on_entry.append(_Jac.DSFunc(value.__name__, entry_node))
-            if hasattr(value, "__jac_exit"):
-                exit_node = getattr(value, "__jac_exit")  # noqa: B009
-                on_exit.append(_Jac.DSFunc(value.__name__, exit_node))
+        for func in dct.values():
+            if hasattr(func, "__jac_entry"):
+                on_entry.append(Jac.DSFunc(func.__name__, func))
+            if hasattr(func, "__jac_exit"):
+                on_exit.append(Jac.DSFunc(func.__name__, func))
 
         inst = super().__new__(cls, name, bases, dct)
         inst = dataclass(eq=False)(inst)  # type: ignore [arg-type, assignment]
@@ -88,32 +103,32 @@ class JacMetaCommon(ABCMeta):
         return inst
 
 
-class JacMetaObj(JacMetaCommon, ABC):  # noqa: D101
+class MetaObj(MetaCommon, ABC):  # noqa: D101
     def __new__(  # noqa: D102
         cls, name: str, bases: Tuple[Type, ...], dct: Dict[str, Any]
-    ) -> "JacMetaCommon":
-        return super().__new__(cls, name, bases, dct, _Jac.make_obj)
+    ) -> "MetaCommon":
+        return super().__new__(cls, name, bases, dct, Jac.make_obj)
 
 
-class JacMetaWalker(JacMetaCommon, ABC):  # noqa: D101
+class MetaWalker(MetaCommon, ABC):  # noqa: D101
     def __new__(  # noqa: D102
         cls, name: str, bases: Tuple[Type, ...], dct: Dict[str, Any]
-    ) -> "JacMetaCommon":
-        return super().__new__(cls, name, bases, dct, _Jac.make_walker)
+    ) -> "MetaCommon":
+        return super().__new__(cls, name, bases, dct, Jac.make_walker)
 
 
-class JacMetaNode(JacMetaCommon, ABC):  # noqa: D101
+class MetaNode(MetaCommon, ABC):  # noqa: D101
     def __new__(  # noqa: D102
         cls, name: str, bases: Tuple[Type, ...], dct: Dict[str, Any]
-    ) -> "JacMetaCommon":
-        return super().__new__(cls, name, bases, dct, _Jac.make_node)
+    ) -> "MetaCommon":
+        return super().__new__(cls, name, bases, dct, Jac.make_node)
 
 
-class JacMetaEdge(JacMetaCommon, ABC):  # noqa: D101
+class MetaEdge(MetaCommon, ABC):  # noqa: D101
     def __new__(  # noqa: D102
         cls, name: str, bases: Tuple[Type, ...], dct: Dict[str, Any]
-    ) -> "JacMetaCommon":
-        return super().__new__(cls, name, bases, dct, _Jac.make_edge)
+    ) -> "MetaCommon":
+        return super().__new__(cls, name, bases, dct, Jac.make_edge)
 
 
 # ----------------------------------------------------------------------------
@@ -121,91 +136,88 @@ class JacMetaEdge(JacMetaCommon, ABC):  # noqa: D101
 # ----------------------------------------------------------------------------
 
 
-class JacObj(_JacArchiTypeBase, metaclass=JacMetaObj):
+class Obj(_ArchiTypeBase, metaclass=MetaObj):
     """Base class for all the jac object types."""
 
     def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
         """Initialize Jac architype base."""
 
 
-class JacWalker(_JacArchiTypeBase, metaclass=JacMetaWalker):
+class Walker(_ArchiTypeBase, metaclass=MetaWalker):
     """Base class for all the jac walker types."""
 
     def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
         """Initialize Jac architype base."""
 
-    def spawn(self, node: "JacNode") -> "JacWalker":
+    def spawn(self, node: "_ArchiTypeBase | Root") -> "Walker":
         """Spawn a new node from the walker."""
-        return _Jac.spawn_call(self, node)  # type: ignore [arg-type, return-value]
+        return Jac.spawn_call(self, node)  # type: ignore [arg-type, return-value]
 
     def ignore(
         self,
         expr: """(
-        list[JacNode | JacEdge]
-        | JacNodeList
-        | JacEdgeList
-        | JacNode
-        | JacEdge
+        Root
+        | Node
+        | Edge
+        | list[Node | Root | Edge]
+        | List[Node | Root | Edge]
         )""",
     ) -> bool:
         """Ignore statement."""
-        return _Jac.ignore(self, expr)  # type: ignore [arg-type]
+        return Jac.ignore(self, expr)  # type: ignore [arg-type]
 
     def visit(
         self,
         expr: """(
             Root
-            | list[JacNode | JacEdge]
-            | JacNodeList
-            | JacEdgeList
-            | JacNode
-            | JacEdge
+            | Node
+            | Edge
+            | list[Node | Root | Edge]
+            | List[Node | Root | Edge]
         )""",
     ) -> bool:
         """Visit statement."""
-        return _Jac.visit_node(self, expr)  # type: ignore [arg-type]
+        return Jac.visit_node(self, expr)  # type: ignore [arg-type]
 
     def disengage(self) -> None:
         """Disengage statement."""
-        _Jac.disengage(self)  # type: ignore [arg-type]
+        Jac.disengage(self)  # type: ignore [arg-type]
 
 
-class JacNode(_JacArchiTypeBase, metaclass=JacMetaNode):
+class Node(_ArchiTypeBase, metaclass=MetaNode):
     """Base class for all the jac node types."""
 
     def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
         """Initialize Jac architype base."""
 
-    def spawn(self, walker: JacWalker) -> "JacWalker":
+    def spawn(self, archi: _ArchiTypeBase) -> "Walker":
         """Spawn a new node from the walker."""
-        return _Jac.spawn_call(self, walker)  # type: ignore [arg-type, return-value]
+        return Jac.spawn_call(self, archi)  # type: ignore [arg-type, return-value]
 
     def connect(
         self,
-        node: "JacNode | JacNodeList",
-        edge: "type[JacEdge] | JacEdge | None" = None,
+        node: "Node | Root | List[Node | Root]",
+        edge: "type[Edge] | Edge | None" = None,
         unidir: bool = False,
         conn_assign: tuple[tuple, tuple] | None = None,
         edges_only: bool = False,
-    ) -> "JacNodeList | JacEdgeList":
+    ) -> "List[Node | Root| Edge]":
         """Connect the current node to another node."""
         # TODO: The above edge type should be reviewed, as the bellow can also take None, Edge, type[Edge].
-        ret = _Jac.connect(
+        ret = Jac.connect(
             left=self,  # type: ignore [arg-type]
             right=node,  # type: ignore [arg-type]
-            edge_spec=_Jac.build_edge(
+            edge_spec=Jac.build_edge(
                 is_undirected=unidir, conn_type=edge, conn_assign=conn_assign  # type: ignore [arg-type]
             ),
             edges_only=edges_only,
         )
-        if edges_only:
-            return JacEdgeList(ret)  # type: ignore [arg-type]
-        return JacNodeList(ret)  # type: ignore [arg-type]
+        return List(ret)  # type: ignore [arg-type]
 
     def disconnect(
         self,
-        node: "JacNode | JacNodeList",
-        edge: "type[JacEdge] | None" = None,
+        node: "Node | Root | List[Node | Root]",
+        edge: "type[Edge] | None" = None,
         dir: EdgeDir = EdgeDir.OUT,
     ) -> bool:
         """Disconnect the current node from the graph."""
@@ -214,16 +226,16 @@ class JacNode(_JacArchiTypeBase, metaclass=JacMetaNode):
             filter_func = lambda edges: [  # noqa: E731
                 ed for ed in edges if isinstance(ed, edge)
             ]
-        return _Jac.disconnect(self, node, dir=dir, filter_func=filter_func)  # type: ignore [arg-type]
+        return Jac.disconnect(self, node, dir=dir, filter_func=filter_func)  # type: ignore [arg-type]
 
     def refs(
         self,
-        edge: "type[JacEdge] | None" = None,
-        cond: "Callable[[JacEdge], bool] | None" = None,
-        target: "JacNode | JacNodeList | None" = None,
+        edge: "type[Edge] | None" = None,
+        cond: "Callable[[Edge], bool] | None" = None,
+        target: "Node | Root | List[Node|Root] | None" = None,
         dir: EdgeDir = EdgeDir.OUT,
         edges_only: bool = False,
-    ) -> "JacNodeList | JacEdgeList":
+    ) -> "List[Node | Root | Edge]":
         """Return all the connected nodes / edges."""
         filter_func = (
             (
@@ -241,45 +253,45 @@ class JacNode(_JacArchiTypeBase, metaclass=JacMetaNode):
             filter_func=filter_func,
             edges_only=edges_only,
         )
-        if edges_only:
-            return JacEdgeList(ret)
-        return JacNodeList(ret)
+        return List(ret)
 
 
-class JacEdge(_JacArchiTypeBase, metaclass=JacMetaEdge):
+class Edge(_ArchiTypeBase, metaclass=MetaEdge):
     """Base class for all the jac edge types."""
 
     def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
         """Initialize Jac architype base."""
 
-
-class JacEdgeList(list[JacEdge]):
-    """List of jac edges."""
-
-    def filter_type(self, ty: "type[JacEdge]") -> "JacEdgeList":
-        """Filter the list with a type."""
-        return JacEdgeList([elem for elem in self if isinstance(elem, ty)])
-
-    def filter_func(self, fn: Callable) -> "JacEdgeList":
-        """Filter the list with a function."""
-        return JacEdgeList([elem for elem in self if fn(elem)])
+    def spawn(self, archi: _ArchiTypeBase) -> "Walker":
+        """Spawn a new node from the walker."""
+        return Jac.spawn_call(self, archi)  # type: ignore [arg-type, return-value]
 
 
-class JacNodeList(list[JacNode]):
-    """List of jac nodes."""
+class List(Generic[T], list[T]):
+    """List with jac methods."""
 
     # Reuse the methods.
-    connect = JacNode.connect
-    disconnect = JacNode.disconnect
-    refs = JacNode.refs
+    connect = Node.connect
+    disconnect = Node.disconnect
+    refs = Node.refs
 
-    def filter_type(self, ty: "type[JacNode]") -> "JacNodeList":
-        """Filter the list with a type."""
-        return JacNodeList([elem for elem in self if isinstance(elem, ty)])
+    def filter(
+        self, ty: type[T] | None = None, fn: Callable[[T], bool] | None = None
+    ) -> "List[T]":
+        """Filter comprehension."""
+        if ty and fn:
+            return List(
+                list(filter(lambda item: isinstance(item, ty) and fn(item), self))
+            )
+        if ty:
+            return List(list(filter(lambda item: isinstance(item, ty), self)))
+        if fn:
+            return List(list(filter(fn, self)))
+        return self
 
-    def filter_func(self, fn: Callable) -> "JacNodeList":
-        """Filter the list with a function."""
-        return JacNodeList([elem for elem in self if fn(elem)])
+    def assign(self, attrs: tuple[str], values: tuple[Any]) -> "List[T]":
+        """Assign Comprehension."""
+        return List(Jac.assign_compr(self, (attrs, values)))
 
 
 # ----------------------------------------------------------------------------
@@ -289,41 +301,45 @@ class JacNodeList(list[JacNode]):
 
 def with_entry(func: Callable) -> Callable:
     """Mark a method as jac entry with this decorator."""
-    # Ensure the functioin has 2 parameters (self, here).
-    sig = inspect.signature(func, eval_str=True)
-    param_count = len(sig.parameters)
-    if param_count != 2:
-        raise ValueError("Jac entry function must have exactly 2 parameters.")
-
-    # Get the entry node from the type hints.
-    second_param_name = list(sig.parameters.keys())[1]
-    entry_node = typing.get_type_hints(func).get(second_param_name)
-
-    # Mark the function as jac entry.
-    setattr(func, "__jac_entry", entry_node)  # noqa: B010
+    setattr(func, "__jac_entry", True)  # noqa: B010
     return func
 
 
 def with_exit(func: Callable) -> Callable:
     """Mark a method as jac exit with this decorator."""
-    # Ensure the functioin has 2 parameters (self, here).
-    sig = inspect.signature(func, eval_str=True)
-    param_count = len(sig.parameters)
-    if param_count != 2:
-        raise ValueError("Jac exit function must have exactly 2 parameters.")
-
-    # Get the entry node from the type hints.
-    second_param_name = list(sig.parameters.keys())[1]
-    exit_node = typing.get_type_hints(func).get(second_param_name)
-
-    # Mark the function as jac entry.
-    setattr(func, "__jac_exit", exit_node)  # noqa: B010
+    setattr(func, "__jac_exit", True)  # noqa: B010
     return func
 
 
 # ----------------------------------------------------------------------------
 # Functions.
 # ----------------------------------------------------------------------------
+
+
+def jac_import(
+    target: str,
+    lng: str | None = "jac",
+    base_path: str | None = None,
+    absorb: bool = False,
+    cachable: bool = True,
+    alias: str | None = None,
+    override_name: str | None = None,
+    items: dict[str, str | None] | None = None,
+    reload_module: bool | None = False,
+) -> tuple[ModuleType, ...]:
+    """Import a module."""
+    base_path = base_path or os.path.dirname(inspect.stack()[1].filename)
+    return Jac.jac_import(
+        target=target,
+        lng=lng,
+        base_path=base_path,
+        absorb=absorb,
+        cachable=cachable,
+        mdl_alias=alias,
+        override_name=override_name,
+        items=items,
+        reload_module=reload_module,
+    )
 
 
 def field(
@@ -337,19 +353,42 @@ def field(
     if value is not None:
         gen = lambda: value  # noqa: E731
     assert gen is not None
-    return _Jac.has_instance_default(gen_func=gen)
+    return Jac.has_instance_default(gen_func=gen)
 
 
+# ----------------------------------------------------------------------------
+# Builtin.
+# ----------------------------------------------------------------------------
+
+jac_test = Jac.create_test
 static = ClassVar
-abstract = abstractmethod
+jobj = Jac.get_object
+_impl_patch_filename = Jac.impl_patch_filename
 
-jac_import = _Jac.jac_import
-jac_test = _Jac.create_test
-root = _Jac.get_root()
-jobj = _Jac.get_object
-_impl_patch_filename = _Jac.impl_patch_filename
 
-root.spawn = types.MethodType(JacNode.spawn, root)
-root.connect = types.MethodType(JacNode.connect, root)
-root.disconnect = types.MethodType(JacNode.disconnect, root)
-root.refs = types.MethodType(JacNode.refs, root)
+# ----------------------------------------------------------------------------
+# Root Node and Generic Edge.
+# ----------------------------------------------------------------------------
+
+Root._method_bounds = {
+    "spawn": Node.spawn,
+    "connect": Node.connect,
+    "disconnect": Node.disconnect,
+    "refs": Node.refs,
+}
+
+GenericEdge._method_bounds = {
+    "spawn": Edge.spawn,
+}
+
+root = Jac.get_root()
+root.load_method_bounds()
+
+
+# Listen to context change and update the above global root here.
+def _update_root() -> None:
+    global root
+    root = ExecutionContext.get_root()
+
+
+ExecutionContext.on_ctx_change.append(lambda ctx: _update_root())
