@@ -462,7 +462,7 @@ class NameAtom(AtomExpr, EnumBlockStmt):
         self._sym: Optional[Symbol] = None
         self._sym_name: str = ""
         self._sym_category: SymbolType = SymbolType.UNKNOWN
-        self._py_ctx_func: Type[ast3.AST] = ast3.Load
+        self._py_ctx_func: Type[ast3.expr_context] = ast3.Load
         AtomExpr.__init__(self)
 
     @property
@@ -492,12 +492,12 @@ class NameAtom(AtomExpr, EnumBlockStmt):
         return ret_type
 
     @property
-    def py_ctx_func(self) -> Type[ast3.AST]:
+    def py_ctx_func(self) -> Type[ast3.expr_context]:
         """Get python context function."""
         return self._py_ctx_func
 
     @py_ctx_func.setter
-    def py_ctx_func(self, py_ctx_func: Type[ast3.AST]) -> None:
+    def py_ctx_func(self, py_ctx_func: Type[ast3.expr_context]) -> None:
         """Set python context function."""
         self._py_ctx_func = py_ctx_func
 

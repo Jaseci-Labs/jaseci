@@ -1,5 +1,5 @@
 from __future__ import annotations
-from jaclang.plugin.feature import JacFeature as _Jac
+from jaclang.plugin.feature import JacFeature as Jac
 
 
 # Since the Animal class cannot be inherit from object, (cause the base class will be changed at run time)
@@ -11,13 +11,13 @@ class Base:
     pass
 
 
-@_Jac.make_walker(on_entry=[_Jac.DSFunc("self_destruct", None)], on_exit=[])
+@Jac.make_walker(on_entry=[Jac.DSFunc("self_destruct", None)], on_exit=[])
 class Visitor(Base):
     def self_destruct(self, _jac_here_) -> None:
         print("get's here")
-        _Jac.disengage(self)
+        Jac.disengage(self)
         return
         print("but not here")
 
 
-_Jac.spawn_call(_Jac.get_root(), Visitor())
+Jac.spawn_call(Jac.get_root(), Visitor())

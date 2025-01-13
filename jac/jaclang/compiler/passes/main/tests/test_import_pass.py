@@ -81,15 +81,13 @@ class ImportPassPassTests(TestCase):
             "genericpath": r"jaclang/vendor/mypy/typeshed/stdlib/genericpath.pyi$",
         }
         for i in p:
-<<<<<<< HEAD
             self.assertIn(i, build.ir.py_info.py_raise_map)
             self.assertRegex(
-                re.sub(r".*fixtures/", "", build.ir.py_info.py_raise_map[i]), p[i]
+                re.sub(r".*fixtures/", "", build.ir.py_info.py_raise_map[i]).replace(
+                    "\\", "/"
+                ),
+                p[i],
             )
-=======
-            self.assertIn(i, build.ir.py_raise_map)
-            self.assertRegex(re.sub(r".*fixtures/", "", build.ir.py_raise_map[i]).replace("\\", "/"), p[i])
->>>>>>> 64d095e50 (jac2py codegen refactored)
 
     def test_py_raised_mods(self) -> None:
         """Basic test for pass."""
