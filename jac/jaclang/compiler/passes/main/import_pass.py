@@ -13,7 +13,7 @@ from typing import Optional
 
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.constant import SymbolType
+from jaclang.compiler.constant import Constants, SymbolType
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import DefUsePass, SubNodeTabPass, SymTabBuildPass
 from jaclang.compiler.passes.main.sym_tab_build_pass import PyInspectSymTabBuildPass
@@ -466,9 +466,9 @@ class PyImportPass(JacImportPass):
         assert isinstance(self.ir, ast.Module)
         base_dir = pathlib.Path(os.path.dirname(__file__)).parent.parent.parent
         jac_gen_dir = (
-            base_dir / "vendor" / "mypy" / "typeshed" / "stdlib" / "__jac__gen__"
+            base_dir / "vendor" / "mypy" / "typeshed" / "stdlib" / Constants.JAC_GEN_DIR
         )
-        mod_file_path = jac_gen_dir / "builtins_mod.jbc"
+        mod_file_path = jac_gen_dir / "builtins.pkl"
         jac_gen_dir.mkdir(parents=True, exist_ok=True)
         if mod_file_path.exists() and mod_file_path.stat().st_size > 0:
             with open(mod_file_path, "rb") as mod_file:
