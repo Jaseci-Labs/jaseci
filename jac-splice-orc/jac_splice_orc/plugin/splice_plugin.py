@@ -1,5 +1,6 @@
 """JAC Splice-Orchestrator Plugin."""
 
+import json
 import time
 import types
 from typing import Optional, Union
@@ -202,7 +203,7 @@ class SpliceOrcPlugin:
             logging.info("Using NodePort service type for kind cluster.")
         else:
             service_type = "LoadBalancer"
-            node_port = None 
+            node_port = None
             logging.info("Using LoadBalancer service type.")
 
         # Create the Deployment object
@@ -386,11 +387,19 @@ class SpliceOrcPlugin:
         """Creating Jac CLI commands."""
 
         @cmd_registry.register
-        def orc_initialize(namespace: str) -> None:
+        def orc_initialize(namespace: str, config_path: Optional[str] = None) -> None:
             """Initialize the Pod Manager and Kubernetes system.
 
             :param namespace: Kubernetes namespace to use.
+            :param config_path: Path to a custom configuration file.
             """
+            # Load custom config if provided
+            custom_config = None
+            if config_path:
+                with open(config_path, "r") as file:
+                    custom_config = json.load(file)
+                global config_loader
+                config_loader = ConfigLoader(custom_config)
             # Use the provided namespace if given, else read from config
             if not namespace:
                 namespace = config_loader.get(

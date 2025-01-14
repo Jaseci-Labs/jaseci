@@ -5,3 +5,4 @@ protobuf==4.23.4
 pluggy==1.2.0
 jaclang
 numpy
+deepmerge==2.0
