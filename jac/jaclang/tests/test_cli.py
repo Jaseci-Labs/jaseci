@@ -515,7 +515,8 @@ class JacCliTests(TestCase):
         """Test for Caching Issue."""
         jac_file = self.fixture_abs_path("test_cache_jacast.jac")
         py_file = self.fixture_abs_path("test_cache_pyast.py")
-        os.environ["JACLANG_CACHE"] = "true"
+        os.environ["JACLANG_CACHE"] = "True"
+        settings.load_env_vars()
         cli.check(f"{self.fixture_abs_path('test_cache_ast.jac')}")
         self.assertTrue(
             os.path.exists(
