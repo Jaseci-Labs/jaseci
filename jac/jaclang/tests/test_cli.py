@@ -11,6 +11,7 @@ import traceback
 from jaclang.cli import cli
 from jaclang.compiler.constant import Constants
 from jaclang.plugin.builtin import dotgen
+from jaclang.settings import settings
 from jaclang.utils.test import TestCase
 
 
