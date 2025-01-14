@@ -87,9 +87,143 @@ A **graph** is a mathematical structure used to model relationships between obje
       edge follow {}
       ```
 
+### **Jaclang Implementation**
 
+=== "Jaclang Installation"
+      1. Install Jaclang
+            ```bash
+            pip install jaclang, graphviz
+            ```
+      2. Run code
+            ```bash
+            jac run filename.jac
+            ```
+      3. Visulalize Graph
+            ```bash
+            jac dot filename.jac > filename.dot
+            ```
+      4. Open the saved dot file and visualize
 
+=== "Example 1"
+    ```jac linenums="1"
+    --8<-- "examples/data_spatial/create_node.jac"
+    ```
 
+For more explanation [visit](../data_spatial/examples.md)
 
+## **Introduction to Jac-cloud**
+
+### **Walkers**
+- Walkers are simply agents that can walk on a graph and do tasks where needed.
+- Walkers also inherits from classes in jaclang, but they do not require initialization.
+- Abilities can be defined to run on different types of nodes.
+- Jaseci stack automatically converts walkers into RESTful API Endpoints
+
+#### **Profile Management**
+- `visit_profile`: Access or create a new user profile.
+- `load_user_profiles`: Loads all user profiles from the database.
+- `update_profile`: Updates a profile’s username.
+- `get_profile`: Retrieves and logs profile information.
+- `follow_request` / `un_follow_request`: Allows users to follow or unfollow other profiles.
+
+#### **Tweet Management**
+- `create_tweet`: Allows a user to post a new tweet.
+- `update_tweet`: Updates an existing tweet’s content.
+- `remove_tweet`: Deletes a user’s tweet.
+- `load_tweets`: Fetches all tweets from a user, including:
+      - Comments.
+      - Likes.
+      - Content with timestamps.
+- `like_tweet` / `remove_like`: Users can like or unlike tweets.
+- `comment_tweet`: Users can comment on tweets.
+
+#### **User Feed and Search**
+- **`load_feed`:**
+      - Fetches the latest tweets from the user and their followees.
+      - Summarizes tweets using GPT-4o.
+      - Provides search functionality using query-based filtering with `cosine_similarity`.
+- **`summarise_tweets`:**
+      - Summarizes major trends and events from fetched tweets in a concise line.
+- **`search_tweets`:**
+      - Filters tweets relevant to a query using vector embeddings.
+
+#### **Interaction Loaders**
+- `load_likes`: Fetches likes on a tweet.
+- `load_comments`: Fetches comments on a tweet.
+- `load_tweet`: Fetches details of a specific tweet, including content and author.
+
+### **Jac Cloud Implementation**
+
+=== "Jac-cloud Installation"
+      1. Install Jaclang
+            ```bash
+            pip install jac-cloud
+            ```
+      2. Run code
+            ```bash
+            jac serve filename.jac
+            ```
+      3. Go to your browser and navigate to
+            ```bash
+            http://localhost:8000/docs
+            ```
+
+=== "Example 1"
+    ```jac linenums="1"
+    --8<-- "support\jac-lang.org\docs\learn\littleX\src\Jac_cloud_example.jac"
+    ```
+## **Introduction to MTLLM**
+Integrates LLM into your existing application with minimal effort.
+
+### **MTLLM Implementation**
+
+=== "MTLLM Installation"
+      1. Install MTLLM with ollama
+            ```bash
+            pip install mtllm[ollama]
+            ```
+      2. Run code
+            ```bash
+            jac run mtllm_example.jac
+            ```
+
+=== "Example 1"
+    ```jac linenums="1"
+    --8<-- "support\jac-lang.org\docs\learn\littleX\src\mtllm_example.jac"
+    ```
+
+## **Introduction to Jac Splice Orchestrator**
+
+**JAC Cloud Orchestrator** (jac-splice-orc) is a system designed to **dynamically import** any Python module, deploy it as a Kubernetes Pod, and expose it as an independent gRPC service. This enables any Python module to be used as a microservice, providing flexibility and scalability in a cloud environment.
+
+### **Jac Splice Orchestrator Implementation**
+
+=== "Jac-splice-orc Installation"
+      1. Install Jac Splice Orchestrator
+            ```bash
+            pip install jac-splice-orc
+            ```
+      2. Setup Configuration file and Create Cluster
+            ```bash
+            kind create cluster --name cluster_name --config kind-config.yaml
+            ```
+      3. Initialize Jac Splice Orchestrator
+            ```bash
+            jac orc_initialize cluster_name
+            ```
+      4. Run Jac file
+            ```bash
+            jac run filename.jac
+            ```
+
+=== "kind-config.yaml"
+    ```yaml linenums="1"
+    --8<-- "support\jac-lang.org\docs\learn\littleX\src\kind-config.yaml"
+    ```
+
+=== "Example"
+    ```jac linenums="1"
+    --8<-- "support\jac-lang.org\docs\learn\littleX\src\mtllm_example.jac"
+    ```
 
 
