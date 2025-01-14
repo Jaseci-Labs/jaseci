@@ -30,6 +30,9 @@ class Settings:
     # LSP configuration
     lsp_debug: bool = False
 
+    # Cache configuration
+    cache: bool = False
+
     def __post_init__(self) -> None:
         """Initialize settings."""
         home_dir = os.path.expanduser("~")

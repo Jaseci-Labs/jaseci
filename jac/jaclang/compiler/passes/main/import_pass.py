@@ -222,7 +222,8 @@ class JacImportPass(Pass):
                 self.warnings_had += mod_pass.warnings_had
                 if isinstance(mod_pass.ir, ast.Module):
                     mod = mod_pass.ir
-                    self.cache_ast(mod, cache_path, os.path.getmtime(target))
+                    if settings.cache:
+                        self.cache_ast(mod, cache_path, os.path.getmtime(target))
         except Exception as e:
             logger.info(e)
             mod = None
@@ -485,7 +486,8 @@ class PyImportPass(JacImportPass):
                         ),
                     ).ir
                     SubNodeTabPass(input_ir=mod, prior=self)
-                self.cache_ast(mod, cache_path, os.path.getmtime(file_to_raise))
+                if settings.cache:
+                    self.cache_ast(mod, cache_path, os.path.getmtime(file_to_raise))
 
             if mod:
                 mod.name = imported_mod_name if imported_mod_name else mod.name
