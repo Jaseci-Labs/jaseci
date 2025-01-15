@@ -202,20 +202,22 @@ class JacImportPass(Pass):
         from jaclang.compiler.compile import jac_file_to_pass
         from jaclang.compiler.passes.main import SubNodeTabPass
 
-        cache_dir = os.path.join(
-            os.path.dirname(self.ir.loc.mod_path), Constants.JAC_GEN_DIR
-        )
-        os.makedirs(cache_dir, exist_ok=True)
-        module_name = os.path.splitext(os.path.basename(target))[0]
-        cache_path = os.path.join(cache_dir, f"{module_name}.pkl")
-
         if not os.path.exists(target):
             self.error(f"Could not find module {target}")
             return None
         if target in self.import_table:
             return self.import_table[target]
         try:
-            mod = self.load_cached_module(target, cache_path, os.path.getmtime(target))
+            if settings.cache:
+                cache_dir = os.path.join(
+                    os.path.dirname(self.ir.loc.mod_path), Constants.JAC_GEN_DIR
+                )
+                os.makedirs(cache_dir, exist_ok=True)
+                module_name = os.path.splitext(os.path.basename(target))[0]
+                cache_path = os.path.join(cache_dir, f"{module_name}.pkl")
+                mod = self.load_cached_module(
+                    target, cache_path, os.path.getmtime(target)
+                )
             if not mod:
                 mod_pass = jac_file_to_pass(file_path=target, target=SubNodeTabPass)
                 self.errors_had += mod_pass.errors_had
@@ -439,12 +441,6 @@ class PyImportPass(JacImportPass):
 
         assert isinstance(self.ir, ast.Module)
 
-        cache_dir = os.path.join(
-            os.path.dirname(self.ir.loc.mod_path), Constants.JAC_GEN_DIR
-        )
-        os.makedirs(cache_dir, exist_ok=True)
-        cache_path = os.path.join(cache_dir, f"{mod_path}.pkl")
-
         python_raise_map = self.ir.py_info.py_raise_map
         file_to_raise: Optional[str] = None
 
@@ -472,10 +468,15 @@ class PyImportPass(JacImportPass):
                     f"\t{file_to_raise} was raised before, getting it from cache"
                 )
                 return self.import_table[file_to_raise]
-
-            mod = self.load_cached_module(
-                file_to_raise, cache_path, os.path.getmtime(file_to_raise)
-            )
+            if settings.cache:
+                cache_dir = os.path.join(
+                    os.path.dirname(self.ir.loc.mod_path), Constants.JAC_GEN_DIR
+                )
+                os.makedirs(cache_dir, exist_ok=True)
+                cache_path = os.path.join(cache_dir, f"{mod_path}.pkl")
+                mod = self.load_cached_module(
+                    file_to_raise, cache_path, os.path.getmtime(file_to_raise)
+                )
             if not mod:
                 with open(file_to_raise, "r", encoding="utf-8") as f:
                     file_source = f.read()
