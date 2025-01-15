@@ -1013,9 +1013,11 @@ class ModulePath(AstSymbolNode):
         target = self.dot_path_str
         if target_item:
             target += f".{target_item}"
+        print("in resolve_relative_path")
         base_path = (
             os.getenv("JACPATH") or os.path.dirname(self.loc.mod_path) or os.getcwd()
         )
+        print("base_path", base_path)
         parts = target.split(".")
         traversal_levels = self.level - 1 if self.level > 0 else 0
         actual_parts = parts[traversal_levels:]
@@ -1027,6 +1029,7 @@ class ModulePath(AstSymbolNode):
             if os.path.exists(relative_path + ".jac")
             else relative_path
         )
+        print(f"relative: {relative_path}")
         return relative_path
 
     def normalize(self, deep: bool = False) -> bool:
