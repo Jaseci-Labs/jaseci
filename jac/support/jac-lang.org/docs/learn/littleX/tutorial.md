@@ -1,221 +1,532 @@
-# **Tutorial For Beginners**
+# **Build LittleX**
 
-## **Introduction to Graphs**
+Hello everyone! We are going to build a social media app with Jaseci stack!
 
-A **graph** is a mathematical structure used to model relationships between objects. It consists of two primary components:
+If you’ve ever thought about creating your own social media platform like Instagram, Twitter, or Facebook, you’re in the right place! In this post, I’ll break down the architecture of a social media app in a simple and beginner-friendly way. Let’s dive right in!
 
-- **Nodes (or Vertices)**: These are the individual entities or points in the graph. Each node represents an object, entity, or a piece of data.
+## **What is App Architecture?**
 
-- **Edges**: These are the connections or relationships between nodes. Edges can be directed (one-way) or undirected (two-way).
+App architecture is like the blueprint of your app. It defines how all the different parts of your app work together, ensuring it runs smoothly, is scalable, and is easy to maintain. For a social media app, we need to think about:
 
-### **Key Characteristics of Graphs**
+- **Frontend:** What the users see and interact with (the interface).
 
-- **Directed vs. Undirected**:
-      - A **directed graph** has edges with a direction, indicating a one-way relationship (e.g., "A points to B").
-      - An **undirected graph** has edges with no direction, indicating a two-way relationship (e.g., "A is connected to B").
+- **Backend:** The brains of the app that process data and make everything work.
 
-- **Weighted vs. Unweighted**:
-      - A **weighted graph** assigns a weight or value to each edge (e.g., distance, cost, or capacity).
-      - An **unweighted graph** treats all edges equally.
+- **Database:** Where all the app’s data is stored (users, posts, likes, etc.).
 
-??? example "Family Graph"
-      ![Image title](images/Family.png)
-      Sample Family Graph image will be updated soon
+Now let’s break these down step by step.
 
-## **Introduction to Data-spatial Programming**
+### **1. Frontend – The User Interface (UI)**
 
-**Data Spatial Programming** organizes data as interconnected nodes within a spatial or graph-like structure. It focuses on the **relationships** between data points, rather than processing them **step-by-step**. This approach is ideal for complex systems like social networks or AI models, where data entities influence each other dynamically.
+The frontend is what users see and use. It’s where they log in, post updates, like photos, and comment on posts. Think of it as the app’s face.
 
-| Aspect      | Conventional Programming  | Data Spatial Programming |
-| :---------: | :-------------: | :-------------: |
-| Data Representation       | Data is stored in linear structures like arrays, tables, or objects.  | Data is represented as entities (nodes) in a multidimensional space (graphs).  |
-| Focus       | Focuses on procedural logic and algorithmic problem-solving. | Focuses on relationships and interactions between data points. |
-| Execution Model    | Runs sequentially, following explicit instructions. | Operates through spatial relationships, with data interacting dynamically. |
-| Use Cases    | System programming, desktop applications, database manipulation. | Real-time network analysis, AI, graph-based applications, simulations. |
+What do we need in the Frontend?
 
-# **LittleX Architecture and Its Explanation**
+- **Login and Signup Screens:** Let users create accounts and log in securely.
+- **Feed Display:** A timeline that shows posts (text, images, or videos).
+- **User Profiles:** A page showing the user’s profile picture, bio, posts, and followers.
+- **Post Interaction:** Buttons for liking, commenting, and sharing posts.
 
-## **Overview of LittleX Architecture**
+**Typical Technologies used for Frontend:**
+Use HTML, CSS, and JavaScript with a framework like React or Vue.js.
 
-![Image title](images/Architecture.png)
+**How does it work?**
 
-### **Nodes**
+The frontend sends requests to the backend when users perform actions (e.g., liking a post). It then receives data (e.g., updated like count) and displays it to the user.
 
-#### **profile**
-- Represents a user profile.
-- **Attributes:**
-      - `username`: Name of the user.
-      - `count_tag`: Tracks hashtag usage as a dictionary.
-      - `followees`: List of followed profiles.
+### **2. Backend – The Brains of the App**
 
-- User Node
+The backend handles the logic and processes all the requests from the frontend. It connects to the database and decides what information to send back.
+
+**What do we need in the Backend?**
+
+- **User Authentication:** Manage login, signup, and password recovery securely.
+- **Post Management:** Handle uploading, editing, and deleting posts.
+- **Social Features:** Enable users to follow/unfollow others, Allow likes, comments, and sharing.
+
+**Typical Technologies used for Backend:**
+
+- **Languages:** Python (with FastAPI or Django), Node.js, or Go.
+- **Frameworks:** Use a REST API or GraphQL for communication with the frontend.
+
+**How does it work?**
+
+When a user logs in, the backend verifies their credentials. When a user uploads a photo, the backend processes it and saves it to the database or storage. When a user views their feed, the backend fetches posts from the database and sends them to the frontend.
+
+### **3. Database – Storing the Data**
+
+The database is where all the app’s data lives. This includes user profiles, posts, likes, comments, and more.
+
+**What do we need in the Database?**
+
+- **Users Table:** Stores user information like name, email, profile picture, and bio.
+- **Posts Table:** Stores posts with text, images, or videos and the user who created them.
+- **Likes and Comments Table:**  Keeps track of which user liked or commented on which post.
+
+**Typical Technologies for Database:**
+
+- **Relational Databases (structured data):** PostgreSQL, MySQL.
+- **NoSQL Databases (unstructured data):** MongoDB or Cassandra.
+
+we discussed the architecture of a social media app. Now, we're going to build the backend of LittleX—a minimal social media platform. **The exciting part?** We're using **Jaseci Stack**, an **open-source** comprehensive technology **stack** that simplifies backend development by reducing complexity in modern **AI-powered** and **cloud-native** applications. Let's dive right in!
+
+**What is LittleX?**
+
+LittleX is a basic social media platform that allows users to:
+
+- Sign up, log in, and manage their profiles.
+- Create, view, and interact with posts.
+- Follow other users and explore their content.
+
+For this post, we'll only build the backend. LittleX will leverage Jaseci's powerful tools to manage user authentication and database interactions seamlessly.
+
+**Why Jaseci?**
+
+Jaseci simplifies backend development with:
+
+- **Built-in User Management System:** No need to reinvent the wheel for user signup and login. It also includes Authentication, Secure APIs without external libraries
+- **Data spatial Programming:** Perfect for modeling social connections like followers and posts.
+- **Cloud-Native:** Built for scalability and performance in the cloud.
+- **AI-Powered:** Integrates with AI services for advanced features like content moderation and personalized recommendations
+- **Orchestrator:** Dynamically turns Python modules into Kubernetes-deployed gRPC microservices
+- **Ease of Scaling:** A robust foundation for future features.
+
+With Jaseci, we can focus on implementing features instead of setting up complex systems.
+
+**Key Components for LittleX Backend**
+
+**1. Create Nodes**
+
+Nodes represent the entities in LittleX, such as tweets, users, and hashtags.
+These are fundamental building blocks in Jaseci for storing and managing data relationships.
+
+**2. Create Edges**
+
+Edges represent the relationships between nodes, like a user posting a tweet or a user following another user.
+
+**3. Create Walker APIs**
+
+Walkers in Jaseci act as APIs or functions that handle the logic of the application.
+For example, a walker to fetch tweets, post a comment, or like a tweet.
+
+**4. Integrating AI to Summarize Tweets:**
+
+Using Jaseci’s AI integration capabilities, we can build an AI-powered summarization feature.
+This enhances user experience by providing concise summaries of lengthy tweets.
+
+## **Getting Started**
+
+### **Step 1: Set Up Jaseci**
+```bash
+pip install jaclang, jac-cloud, mtllm, jac-splice-orc
+```
+
+### **Step 2: Creating Nodes**
+
+Nodes are essential for representing entities in LittleX. Here are the nodes we need to create:
+
+- **Profile Node:**
+      - Represents the user.
+      - Fields: username, count_tag(For personalised feed), followees
       ```jac
-      node User {
-            has username: str;
-            has followers: list;
-            has posts: list;
+      node profile {
+            has username: str = "";
+            has count_tag: dict = {};
+            has followees: list = [];
       }
       ```
 
-#### **tweet**
-- Represents a user's post/tweet.
-- **Attributes:**
-      - `content`: Tweet text.
-      - `created_at`: Timestamp when the tweet was created.
+- **Tweet Node:**
+      - Represents an individual tweet.
+      - Fields: content, created_at (timestamp)
+      ```bash
+      node tweet {
+            has content: str;
+            has created_at: str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S");
+      }
+      ```
 
-#### **comment**
-- Represents a comment on a tweet.
-- **Attributes:**
-      - `content`: Comment text.
+- **Comment Node:**
+      - Represents comments for the tweets.
+      - Fields: content.
+      ```bash
+      node comment {
+            has content: str;
+      }
+      ```
 
-### **Edges (Relationships)**
+### **Step 3: Creating Edges**
 
-- **follow:** Connects one profile to another (followee).
-- **like:** Represents a "like" relationship between a profile and a tweet.
-- **post:** Represents a relationship where a profile posts a tweet.
+Edges define the relationships between nodes. Here are the nodes we need to create:
 
-- **Follow Edge**
-      ```jac
+- **Follows Edge:**
+      - Represents the relationship between users who follow each other.
+      ```bash
       edge follow {}
       ```
 
-### **Jaclang Implementation**
+- **Like Edge:**
+      - Represents the relationship between users and the tweets they posted.
+      ```bash
+      edge like {}
+      ```
 
-=== "Jaclang Installation"
-      1. Install Jaclang
-            ```bash
-            pip install jaclang, graphviz
-            ```
-      2. Run code
-            ```bash
-            jac run filename.jac
-            ```
-      3. Visulalize Graph
-            ```bash
-            jac dot filename.jac > filename.dot
-            ```
-      4. Open the saved dot file and visualize
+- **Post Edge:**
+      - Link the comments back to tweets
+      ```bash
+      edge post {}
+      ```
 
-=== "Example 1"
-    ```jac linenums="1"
-    --8<-- "examples/data_spatial/create_node.jac"
-    ```
+### **Step 4: Creating APIs(Walkers)**
 
-For more explanation [visit](../data_spatial/examples.md)
+Nodes are essential for representing entities in LittleX. Here are the nodes we need to create:
 
-## **Introduction to Jac-cloud**
+- **Visit Profile Walker:**
+      - Visits or creates a new profile node for a user.
+      - Ensures profiles exist in the system for any user action.
+      ```py
+      walker visit_profile {
+            can visit_profile with `root entry {
+                  visit [-->(`?profile)] else {
+                        logger.info("Creating new profile");
+                        new_profile = here ++> profile();
+                        visit new_profile;
+                  }
+            }
+      }
+      ```
+      - If current walker enter via `root`, `visit_profile` ability will be executed.
+      - `visit [-->(``?profile)] else {}` Checks whether profile node exist from root, if yes, visit to that profile node. Otherwise execute to else part.
+      - `here ++> profile()` It creates a profile node and connects with current node(`root`).
+      - `visit new_profile` Walker visit to that node (`profile`)
 
-### **Walkers**
-- Walkers are simply agents that can walk on a graph and do tasks where needed.
-- Walkers also inherits from classes in jaclang, but they do not require initialization.
-- Abilities can be defined to run on different types of nodes.
-- Jaseci stack automatically converts walkers into RESTful API Endpoints
+- **Load User Profile Walker:**
+      - Loads all profiles from the database.
+      - Useful for managing or listing all users in the system.
+      ```py
+      walker load_user_profiles {
+            obj __specs__ {
+                  static has auth: bool = False;
+            }
+            can load_profiles with `root entry {
+                  self.profiles: list = [];
 
-#### **Profile Management**
-- `visit_profile`: Access or create a new user profile.
-- `load_user_profiles`: Loads all user profiles from the database.
-- `update_profile`: Updates a profile’s username.
-- `get_profile`: Retrieves and logs profile information.
-- `follow_request` / `un_follow_request`: Allows users to follow or unfollow other profiles.
+                  for user in NodeAnchor.Collection.find({"name": "profile"}) {
+                        user_node = user.architype;
+                        self.profiles.append(
+                        {"name": user_node.username, "id": jid(user_node)}
+                        );
+                  }
+                  report self.profiles;
+            }
+      }
+      ```
+      - `static has auth: bool = False` Set diable authentication for that walker.
+      - `NodeAnchor.Collection.find({"name": "profile"})` Get list of profiles.
+      - `user.architype` Get architype of user node.
+      - `jid(user_node)` Get the unique id of an object.
 
-#### **Tweet Management**
-- `create_tweet`: Allows a user to post a new tweet.
-- `update_tweet`: Updates an existing tweet’s content.
-- `remove_tweet`: Deletes a user’s tweet.
-- `load_tweets`: Fetches all tweets from a user, including:
-      - Comments.
-      - Likes.
-      - Content with timestamps.
-- `like_tweet` / `remove_like`: Users can like or unlike tweets.
-- `comment_tweet`: Users can comment on tweets.
+- **Update Profile Walker:**
+      - Updates a user's profile, specifically the username.
+      ```py
+      walker update_profile :visit_profile: {
+            has new_username: str;
 
-#### **User Feed and Search**
-- **`load_feed`:**
-      - Fetches the latest tweets from the user and their followees.
-      - Summarizes tweets using GPT-4o.
-      - Provides search functionality using query-based filtering with `cosine_similarity`.
-- **`summarise_tweets`:**
-      - Summarizes major trends and events from fetched tweets in a concise line.
-- **`search_tweets`:**
-      - Filters tweets relevant to a query using vector embeddings.
+            can update_profile with profile entry {
+                  logger.info("Updating profile");
+                  here.username = self.new_username;
+                  report here;
+            }
+      }
+      ```
+      - `can update_profile with profile entry{}` If current walker enter via `profile` node, `update_profile` ability will be executed.
+      - `here.username = self.new_username` Update username.
 
-#### **Interaction Loaders**
-- `load_likes`: Fetches likes on a tweet.
-- `load_comments`: Fetches comments on a tweet.
-- `load_tweet`: Fetches details of a specific tweet, including content and author.
+- **Get Profile Walker:**
+      - Retrieves profile details and logs them.
+      ```bash
+      walker get_profile :visit_profile: {
+            can get_profile with profile entry {
+                  logger.info(f"prfile info: {here}");
+                  report here;
+            }
+      }
+      ```
 
-### **Jac Cloud Implementation**
+- **Follow Request Walker:**
+      - Adds a user to the followees list and creates a follow edge.
+      ```bash
+      walker follow_request :visit_profile: {
+            has profile_id: str;
 
-=== "Jac-cloud Installation"
-      1. Install Jaclang
-            ```bash
-            pip install jac-cloud
-            ```
-      2. Run code
-            ```bash
-            jac serve filename.jac
-            ```
-      3. Go to your browser and navigate to
-            ```bash
-            http://localhost:8000/docs
-            ```
+            can follow with profile entry {
+                  here.followees.append(self.profile_id);
+                  logger.info(f"New followee addded: {self.profile_id}");
+                  here +:follow():+> &self.profile_id;
+                  report here;
+            }
+      }
+      ```
+      - `here.followees.append(self.profile_id)` Add the profile id to the followees list
+      - `here +:follow():+> &self.profile_id` Create a follow edge from `profile` node.
 
-=== "Example 1"
-    ```jac linenums="1"
-    --8<-- "support/jac-lang.org/docs/learn/littleX/src/Jac_cloud_example.jac"
-    ```
-## **Introduction to MTLLM**
-Integrates LLM into your existing application with minimal effort.
+- **Unfollow Request Walker:**
+      - Removes a user from the followees list and deletes the follow edge.
+      ```bash
+      walker un_follow_request :visit_profile: {
+            has profile_id: str;
 
-### **MTLLM Implementation**
+            can un_follow with profile entry {
+                  here.followees.remove(self.profile_id);
+                  logger.info(f"Followe removed: {self.profile_id}");
+                  here del-:follow:-> &self.profile_id;
+                  report here;
+            }
+      }
+      ```
+      - `here.followees.remove(self.profile_id)` Remove the profile id from the followees list
+      - `here del-:follow:-> &self.profile_id` Delete the follow edge from `profile` node.
 
-=== "MTLLM Installation"
-      1. Install MTLLM with ollama
-            ```bash
-            pip install mtllm[ollama]
-            ```
-      2. Run code
-            ```bash
-            jac run mtllm_example.jac
-            ```
+- **Create Tweet Walker:**
+      - Creates a new tweet for a profile and adds it to the graph using a post edge.
+      ```bash
+      walker create_tweet :visit_profile: {
+            has content: str;
 
-=== "Example 1"
-    ```jac linenums="1"
-    --8<-- "support/jac-lang.org/docs/learn/littleX/src/mtllm_example.jac"
-    ```
+            can tweet with profile entry {
+                  tweet_node = here +:post:+> tweet(content=self.content);
+                  visit tweet_node;
+            }
 
-## **Introduction to Jac Splice Orchestrator**
+            can report_tweet with tweet entry {
+                  logger.info(f"Creating new tweet: {here.content}");
+                  Jac.unrestrict(here, level="READ");
+                  report here;
+            }
+      }
+      ```
+      - `tweet_node = here +:post:+> tweet(content=self.content)` Create a new tweet with content.
+      - `visit tweet_node` Visit the newly created tweet node.
+      - `Jac.unrestrict(here, level="READ")` Unrestrict that tweet node to everyone with read access.
 
-**JAC Cloud Orchestrator** (jac-splice-orc) is a system designed to **dynamically import** any Python module, deploy it as a Kubernetes Pod, and expose it as an independent gRPC service. This enables any Python module to be used as a microservice, providing flexibility and scalability in a cloud environment.
+- **Update Tweet Walker:**
+      - Updates the content of an existing tweet by its ID.
+      ```bash
+      walker update_tweet :visit_profile: {
+            has tweet_id: str;
+            has updated_content: str;
 
-### **Jac Splice Orchestrator Implementation**
+            can visit_tweet with profile entry {
+                  tweet_node = &self.tweet_id;
+                  visit tweet_node;
+                  logger.info(f"Tweet deleted: {tweet_node}");
+            }
+            can update_tweet with tweet entry {
+                  here.content = self.updated_content;
+                  report here;
+            }
+      }
+      ```
+      - `tweet_node = &self.tweet_id` Get the tweet node by its ID.
+      - `visit tweet_node` Visit the tweet node.
+      - `here.content = self.updated_content` Update the content of the tweet node.
 
-=== "Jac-splice-orc Installation"
-      1. Install Jac Splice Orchestrator
-            ```bash
-            pip install jac-splice-orc
-            ```
-      2. Setup Configuration file and Create Cluster
-            ```bash
-            kind create cluster --name cluster_name --config kind-config.yaml
-            ```
-      3. Initialize Jac Splice Orchestrator
-            ```bash
-            jac orc_initialize cluster_name
-            ```
-      4. Run Jac file
-            ```bash
-            jac run filename.jac
-            ```
+- **Remove Tweet Walker:**
+      - Deletes a tweet by removing its connection to the profile.
+      ```bash
+      walker remove_tweet :visit_profile: {
+            has tweet_id: str;
 
-=== "kind-config.yaml"
-    ```yaml linenums="1"
-    --8<-- "support/jac-lang.org/docs/learn/littleX/src/kind-config.yaml"
-    ```
+            can remove_tweet with profile entry {
+                  tweet_node = &self.tweet_id;
+                  here del--> tweet_node;
+                  logger.info(f"Tweet deleted: {tweet_node}");
+            }
+      }
+      ```
+      - `tweet_node = &self.tweet_id` Get the tweet node by its ID.
+      - `here del--> tweet_node` Remove the connection between the profile and the tweet node.
 
-=== "Example"
-    ```jac linenums="1"
-    --8<-- "support/jac-lang.org/docs/learn/littleX/src/mtllm_example.jac"
-    ```
+- **Like Tweet Walker:**
+      - Adds a like edge between a tweet and the profile liking it.
+      ```bash
+      walker like_tweet :visit_profile: {
+            has tweet_id: str;
+
+            can like with profile entry {
+                  tweet_node = &self.tweet_id;
+                  Jac.unrestrict(tweet_node, level="CONNECT");
+                  tweet_node +:like():+> here;
+                  logger.info(f"liked to a tweet: {tweet_node}");
+                  report tweet_node;
+            }
+      }
+      ```
+      - `tweet_node = &self.tweet_id` Get the tweet node by its ID.
+      - `Jac.unrestrict(tweet_node, level="CONNECT")` Unrestrict the tweet node to Connect level.
+      - `tweet_node +:like():+> here` Add a like edge between the tweet and user.
+
+- **Remove Like Walker:**
+      - Removes the like edge
+      ```bash
+      walker remove_like :visit_profile: {
+            has tweet_id: str;
+
+            can remove_like with profile entry {
+                  tweet_node = &self.tweet_id;
+                  tweet_node del-:like:-> here;
+                  logger.info(f"Reomve liked to a tweet: {tweet_node}");
+                  report tweet_node;
+            }
+      }
+      ```
+      - `tweet_node = &self.tweet_id` Get the tweet node by its ID.
+      - `tweet_node del-:like:-> here` Remove the like edge between the tweet and user.
+
+- **Comment Tweet Walker:**
+      - Adds a comment to a tweet by creating a comment node and connecting it to the tweet.
+      ```bash
+      walker comment_tweet :visit_profile: {
+            has tweet_id: str;
+            has content: str;
+
+            can add_comment with profile entry {
+                  comment_node = here ++> comment(content=self.content);
+                  tweet_node = &self.tweet_id;
+                  Jac.unrestrict(tweet_node, level="CONNECT");
+                  tweet_node ++> comment_node[0];
+                  logger.info(f"comment added: {comment_node[0]}");
+                  report comment_node[0];
+            }
+      }
+      ```
+      - `comment_node = here ++> comment(content=self.content)` Create a new comment node with content
+      - `tweet_node = &self.tweet_id` Get the tweet node by its ID.
+      - `Jac.unrestrict(tweet_node, level="CONNECT")` Unrestrict the tweet node to connect level.
+      - `tweet_node ++> comment_node[0]` Add a comment edge between the tweet and user.
+
+- **Load Like Walker:**
+      - Gathers all profiles that liked a specific tweet.
+      ```bash
+      walker load_likes {
+            has likes: list = [];
+
+            can load_likes with tweet entry {
+                  visit [-:like:->];
+            }
+
+            can load_profile with profile entry {
+                  Jac.unrestrict(here, level="READ");
+                  self.likes.append({"username": here.username});
+            }
+      }
+      ```
+      - `visit [-:like:->]` Visit all like edges connected to the tweet.
+      - `Jac.unrestrict(here, level="READ")` Unrestrict the profile node to everyone with read access
+      - `self.likes.append({"username": here.username})` Add the profile to the likes list
+
+- **Load Tweet Walker:**
+      - Loads detailed information about a tweet, including its content and author.
+      ```bash
+      walker load_tweet {
+            has tweet_info: dict = {};
+
+            can load_tweets with tweet entry {
+                  self.tweet_info["content"] = here;
+                  visit [<-:post:-];
+            }
+
+            can load_profile with profile entry {
+                  self.tweet_info["username"] = here.username;
+            }
+      }
+      ```
+      - `self.tweet_info["content"] = here;` Get the tweet content
+      - `visit [<-:post:-]` Visit all post edges connected to the tweet.
+      - `self.tweet_info["username"] = here.username;` Get the tweet author
+
+- **Load Comments Walker:**
+      - Retrieves all comments on a tweet, including the commenter's username.
+      ```bash
+      walker load_comments {
+            has comments: list = [];
+
+            can load_comments with tweet entry {
+                  visit [-->](`?comment);
+            }
+
+            can report_comments with comment entry {
+                  Jac.unrestrict(here, level="READ");
+                  commenter = [<--](`?profile);
+                  self.comments.append(
+                        {"commenter": commenter[0].username, "comment": here}
+                  );
+            }
+      }
+      ```
+      - `visit [-->](`?comment)` Visit all comment edges connected to the tweet.
+      - `Jac.unrestrict(here, level="READ")` Unrestrict the comment node to everyone with read access
+      - `commenter = [<--](`?profile)` Get the commenter's profile
+
+- **Load Feed Walker:**
+      - Fetches all tweets for a profile, including their comments and likes.
+      ```bash
+      walker load_feed :visit_profile: {
+            has search_query: str = "";
+
+            can load with profile entry {
+                  self.feeds: list = [];
+                  user_tweets = here spawn load_tweets();
+                  self.feeds.extend(user_tweets.tweets);
+
+                  for user in here.followees {
+                        user_node = &user;
+                        Jac.unrestrict(user_node, level="READ");
+                        logger.info("Acess has given to profile node");
+                        user_tweets = user_node spawn load_tweets();
+                        self.feeds.extend(user_tweets.tweets);
+                  }
+                  tweets = [feed['tweet']['content'].content for feed in self.feeds];
+                  self.summary: str = summarise_tweets(tweets);
+                  here.summary_count +=1;###
+
+                  # Filter tweets based on search query
+                  if (self.search_query) {
+                        tweet_embeddings = model.encode(tweets);
+                        filtered_results = search_tweets(
+                        self.search_query,
+                        self.feeds,
+                        tweet_embeddings
+                        );
+                        report {"feeds": filtered_results, "summary": self.summary};
+                  } else {
+                        report {"feeds": self.feeds, "summary": self.summary};
+                  }
+
+            }
+      }
+      ```
+      - `user_tweets = here spawn load_tweets();` Spawn load_tweets walker with current node.
+      - `self.feeds.extend(user_tweets.tweets);` Add the user's tweets to the
+      profile's feed.
+      - `user_node = &user;` Get the user node.
+      - `Jac.unrestrict(user_node, level="READ");` Give the user node read access
+      - `self.summary: str = summarise_tweets(tweets);` Summarize the tweets.
+      - `if (self.search_query) { ... } else { ... }` If a search query is provided, filter the tweets based on the query. Otherwise, return all tweets.
 
 
+### **Step 5: Integrating AI to Summarize Tweets:**
+- **Import Lamma with MTLLM**
+```bash
+import:py from mtllm.llms {Ollama}
+glob llm = Ollama(host="http://127.0.0.1:11434", model_name="llama3.2:1b");
+```
+- **Summarize Tweets Using Lamma:**
+      - Summarize tweets
+      ```bash
+      can 'Summarize latest trends, major events, and notable interactions from the recent tweets in one line.'
+            summarise_tweets(tweets: list[str]) -> 'Summarisation': str by llm();
+      ```
+
+### **Step 6: Integrating Jac Splice Orchestrator**
+Content will be added soon.
