@@ -2,7 +2,7 @@
 
 ## **What is Jaseci?**
 
-<span style="color: red;">**Jaseci**</span> is an **open-source** comprehensive technology **stack**. It integrates tools and frameworks that work together to simplify complex software development. It’s not just a programming tool but an **ecosystem** aimed at reducing complexity in modern **AI-powered** and **cloud-native** applications.
+**Jaseci** is an **open-source** comprehensive technology **stack**. It integrates tools and frameworks that work together to simplify complex software development. It’s not just a programming tool but an **ecosystem** aimed at reducing complexity in modern **AI-powered** and **cloud-native** applications.
 
 ### **Jaseci Ecosystem**
 This is a collection of libraries and frameworks in the Jaseci Ecosystem.

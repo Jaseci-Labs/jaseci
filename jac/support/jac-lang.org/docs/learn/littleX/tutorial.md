@@ -18,13 +18,9 @@ A **graph** is a mathematical structure used to model relationships between obje
       - A **weighted graph** assigns a weight or value to each edge (e.g., distance, cost, or capacity).
       - An **unweighted graph** treats all edges equally.
 
-??? example "Graph"
-      ![Image title](images\graph.png)
-      Sample Graph image will be updated soon
-
 ??? example "Family Graph"
+      ![Image title](images/Family.png)
       Sample Family Graph image will be updated soon
----
 
 ## **Introduction to Data-spatial Programming**
 
@@ -37,13 +33,11 @@ A **graph** is a mathematical structure used to model relationships between obje
 | Execution Model    | Runs sequentially, following explicit instructions. | Operates through spatial relationships, with data interacting dynamically. |
 | Use Cases    | System programming, desktop applications, database manipulation. | Real-time network analysis, AI, graph-based applications, simulations. |
 
----
-
 # **LittleX Architecture and Its Explanation**
 
 ## **Overview of LittleX Architecture**
 
-![Image title](images\Architecture.png)
+![Image title](images/Architecture.png)
 
 ### **Nodes**
 
@@ -73,8 +67,6 @@ A **graph** is a mathematical structure used to model relationships between obje
 - Represents a comment on a tweet.
 - **Attributes:**
       - `content`: Comment text.
-
----
 
 ### **Edges (Relationships)**
 
@@ -170,7 +162,7 @@ For more explanation [visit](../data_spatial/examples.md)
 
 === "Example 1"
     ```jac linenums="1"
-    --8<-- "support\jac-lang.org\docs\learn\littleX\src\Jac_cloud_example.jac"
+    --8<-- "support/jac-lang.org/docs/learn/littleX/src/Jac_cloud_example.jac"
     ```
 ## **Introduction to MTLLM**
 Integrates LLM into your existing application with minimal effort.
@@ -189,7 +181,7 @@ Integrates LLM into your existing application with minimal effort.
 
 === "Example 1"
     ```jac linenums="1"
-    --8<-- "support\jac-lang.org\docs\learn\littleX\src\mtllm_example.jac"
+    --8<-- "support/jac-lang.org/docs/learn/littleX/src/mtllm_example.jac"
     ```
 
 ## **Introduction to Jac Splice Orchestrator**
@@ -218,12 +210,12 @@ Integrates LLM into your existing application with minimal effort.
 
 === "kind-config.yaml"
     ```yaml linenums="1"
-    --8<-- "support\jac-lang.org\docs\learn\littleX\src\kind-config.yaml"
+    --8<-- "support/jac-lang.org/docs/learn/littleX/src/kind-config.yaml"
     ```
 
 === "Example"
     ```jac linenums="1"
-    --8<-- "support\jac-lang.org\docs\learn\littleX\src\mtllm_example.jac"
+    --8<-- "support/jac-lang.org/docs/learn/littleX/src/mtllm_example.jac"
     ```
 
 
