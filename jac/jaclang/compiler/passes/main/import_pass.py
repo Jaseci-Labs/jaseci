@@ -218,6 +218,8 @@ class JacImportPass(Pass):
                 mod = self.load_cached_module(
                     target, cache_path, os.path.getmtime(target)
                 )
+            else:
+                mod = None
             if not mod:
                 mod_pass = jac_file_to_pass(file_path=target, target=SubNodeTabPass)
                 self.errors_had += mod_pass.errors_had
@@ -477,6 +479,8 @@ class PyImportPass(JacImportPass):
                 mod = self.load_cached_module(
                     file_to_raise, cache_path, os.path.getmtime(file_to_raise)
                 )
+            else:
+                mod = None
             if not mod:
                 with open(file_to_raise, "r", encoding="utf-8") as f:
                     file_source = f.read()
