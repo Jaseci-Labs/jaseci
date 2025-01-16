@@ -215,9 +215,7 @@ class JacImportPass(Pass):
                 os.makedirs(cache_dir, exist_ok=True)
                 module_name = os.path.splitext(os.path.basename(target))[0]
                 cache_path = os.path.join(cache_dir, f"{module_name}.pkl")
-                mod = self.load_cached_module(
-                     cache_path, os.path.getmtime(target)
-                )
+                mod = self.load_cached_module(cache_path, os.path.getmtime(target))
             else:
                 mod = None
             if not mod:
