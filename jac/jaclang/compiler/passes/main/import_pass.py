@@ -170,7 +170,7 @@ class JacImportPass(Pass):
             )
 
     def load_cached_module(
-        self, source_path: str, cache_path: str, source_mtime: float
+        self, cache_path: str, source_mtime: float
     ) -> ast.Module | None:
         """Load cached module if up-to-date."""
         if not os.path.exists(cache_path):
@@ -216,7 +216,7 @@ class JacImportPass(Pass):
                 module_name = os.path.splitext(os.path.basename(target))[0]
                 cache_path = os.path.join(cache_dir, f"{module_name}.pkl")
                 mod = self.load_cached_module(
-                    target, cache_path, os.path.getmtime(target)
+                     cache_path, os.path.getmtime(target)
                 )
             else:
                 mod = None
@@ -477,7 +477,7 @@ class PyImportPass(JacImportPass):
                 os.makedirs(cache_dir, exist_ok=True)
                 cache_path = os.path.join(cache_dir, f"{mod_path}.pkl")
                 mod = self.load_cached_module(
-                    file_to_raise, cache_path, os.path.getmtime(file_to_raise)
+                    cache_path, os.path.getmtime(file_to_raise)
                 )
             else:
                 mod = None
