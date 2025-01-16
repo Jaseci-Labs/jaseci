@@ -151,14 +151,12 @@ class JacImportPass(Pass):
                                 i, self.import_jac_mod_from_file(from_mod_target)
                             )
         else:
-            print("I'm before attach")
             self.attach_mod_to_node(node, self.import_jac_mod_from_file(target))
 
     def import_jac_mod_from_dir(self, target: str) -> ast.Module | None:
         """Import a module from a directory."""
         with_init = os.path.join(target, "__init__.jac")
         if os.path.exists(with_init):
-            print(f"Importing in the dir ")
             return self.import_jac_mod_from_file(with_init)
         else:
             return ast.Module(
@@ -177,11 +175,8 @@ class JacImportPass(Pass):
         from jaclang.compiler.compile import jac_file_to_pass
         from jaclang.compiler.passes.main import SubNodeTabPass
 
-        print(f"Importing {target}")
         if not os.path.exists(target):
-            print("I'm before error")
             self.error(f"Could not find module {target}")
-            print("I'm after error")
             return None
         if target in self.import_table:
             return self.import_table[target]

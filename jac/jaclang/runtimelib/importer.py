@@ -316,63 +316,43 @@ class JacImporter(Importer):
         """Run the import process for Jac modules."""
         unique_loaded_items: list[types.ModuleType] = []
         module = None
-
-        # Construct search paths
-        search_paths = []
-        # Process base_path and include all its parent directories
-        if isinstance(spec.base_path, str):
-            base_path = os.path.abspath(spec.base_path)
-            while base_path and base_path not in search_paths:
-                search_paths.append(base_path)
-                base_path = os.path.dirname(base_path)
-        elif isinstance(spec.base_path, list):
-            for path_item in spec.base_path:
-                base_path = os.path.abspath(path_item)
-                while base_path and base_path not in search_paths:
-                    search_paths.append(base_path)
-                    base_path = os.path.dirname(base_path)
-
-        # Add caller_dir
-        search_paths.append(os.path.abspath(spec.caller_dir))
-
-        # Add directories from JACPATH
+        # Gather all possible search paths
         jacpaths = os.environ.get("JACPATH", "")
+        search_paths = [spec.caller_dir]
         if jacpaths:
             for p in jacpaths.split(os.pathsep):
                 p = p.strip()
-                if p and os.path.isdir(p) and os.path.abspath(p) not in search_paths:
-                    search_paths.append(os.path.abspath(p))
+                if p and p not in search_paths:
+                    search_paths.append(p)
 
-        # Locate the module
-        found_path = None
-        target_path_components = spec.target.split(".")
-        for search_path in search_paths:
-            candidate = os.path.join(search_path, *target_path_components)
-            if os.path.isdir(candidate) or os.path.isfile(candidate + ".jac"):
-                found_path = candidate
-                break
+            # Attempt to locate the module file or directory
+            found_path = None
+            target_path_components = spec.target.split(".")
+            for search_path in search_paths:
+                candidate = os.path.join(search_path, "/".join(target_path_components))
+                # Check if the candidate is a directory or a .jac file
+                if (os.path.isdir(candidate)) or (os.path.isfile(candidate + ".jac")):
+                    found_path = candidate
+                    break
 
-        if not found_path:
-            raise ImportError(
-                f"Unable to locate module '{spec.target}' in {search_paths}"
-            )
-
-        spec.full_target = os.path.abspath(found_path)
-        # Determine the module name using `get_sys_mod_name`
+            # If a suitable path was found, update spec.full_target; otherwise, raise an error
+            if found_path:
+                spec.full_target = os.path.abspath(found_path)
+            else:
+                raise ImportError(
+                    f"Unable to locate module '{spec.target}' in {search_paths}"
+                )
         if os.path.isfile(spec.full_target + ".jac"):
             module_name = self.get_sys_mod_name(spec.full_target + ".jac")
+            module_name = spec.override_name if spec.override_name else module_name
         else:
             module_name = self.get_sys_mod_name(spec.full_target)
 
-        module_name = spec.override_name if spec.override_name else module_name
-
-        # Check if module is already loaded
         module = self.jac_machine.loaded_modules.get(module_name)
 
-        # Load module if not already loaded or if reload is requested
         if not module or module.__name__ == "__main__" or reload:
             if os.path.isdir(spec.full_target):
-                module = self.handle_directory(module_name, spec.full_target)
+                module = self.handle_directory(spec.module_name, spec.full_target)
             else:
                 spec.full_target += ".jac" if spec.language == "jac" else ".py"
                 module = self.create_jac_py_module(
@@ -388,6 +368,7 @@ class JacImporter(Importer):
                     reload=reload if reload else False,
                 )
 
+                # Since this is a compile time error, we can safely raise an exception here.
                 if not codeobj:
                     raise ImportError(f"No bytecode found for {spec.full_target}")
 
