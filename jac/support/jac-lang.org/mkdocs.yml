@@ -14,11 +14,8 @@ nav:
         - "for_coders/language_basics/impl_docs.md"
       - Data Spatial Programming:
         - "for_coders/data_spatial/dataspatial.md"
-        - "for_coders/data_spatial/why_ds.md"
-        - "for_coders/data_spatial/introduction_to_ds_primitives.md"
-        - "for_coders/data_spatial/edge_filtering.md"
-        - "for_coders/data_spatial/connecting_nodes.md"
-        - "for_coders/data_spatial/walker_def.md"
+        - "for_coders/data_spatial/nodes_and_edges.md"
+        - "for_coders/data_spatial/walkers.md"
       - Python Integration:
         - "for_coders/python_integration.md"
       - LLMs and AI Models:
