@@ -1246,6 +1246,9 @@ class JacLanguageTests(TestCase):
             "WalkerArchitype",
             "EdgeArchitype",
             "Architype",
+            "[85, 90, 78]",
+            "[70, 88, 92]",
+            "[95, 100, 98]",
         ]
-        for i in range(5):
+        for i in range(8):
             self.assertIn(jac_types[i], stdout_value[i])
