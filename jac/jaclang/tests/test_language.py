@@ -136,6 +136,15 @@ class JacLanguageTests(TestCase):
         for expected in expected_outputs:
             self.assertIn(expected, stdout_value)
 
+    def test_pipe_call_percedence(self) -> None:
+        """Basic test for pipe call."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.run(self.fixture_abs_path("pipe_call.jac"))  # type: ignore
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual("True\n4\n", stdout_value)
+
     def test_chandra_bugs(self) -> None:
         """Parse micro jac file."""
         captured_output = io.StringIO()
