@@ -12,6 +12,30 @@ Nodes are the fundamental elements of a graph in Jac, acting as starting points,
 
 - **Visit-dependent Abilities:** These abilities are only triggered when a specific type of "walker" (discussed later) interacts with the node. This ensures that certain actions are performed only in response to a walker's visit. In these abilities, a special keyword `here` is used to reference the visiting walker. This allows you to access the walker's attributes and abilities directly during its interaction with the node.
 
+- This is an example of defining a node.
+```jac
+    node test_node {
+        has value: int;
+
+        can log_entry with entry {
+            print(f">>> Some Walker entered the node: ", self);
+        }
+        can log_test_walker_entry with test_walker entry {
+            print(f">>> {here} entered the node {self}");
+            here.callable();
+        }
+        can log_test_walker_exit with test_walker exit {
+            print(f"<<< {here} exited the node {self}");
+        }
+        can log_exit with exit {
+            print(f"<<< Some Walker exited the node {self}");
+        }
+        can callable {
+            print(f"===== Callable on {self}");
+        }
+    }
+```
+
 - Nodes can connect in different ways: one node can link to multiple nodes, multiple nodes can link to one node, a group of nodes can connect to another group of nodes, or one node can connect to another single node.
 === "Jac"
     ```jac linenums="1"
