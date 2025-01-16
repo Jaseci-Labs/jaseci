@@ -49,3 +49,26 @@ with entry {
         student_grades
     );
 }
+
+node test_node {
+    has value: int;
+}
+
+walker test_walker {
+
+    can traverse with `root entry {
+        visit [-->](`?test_node);
+    }
+
+    can log_visit with test_node exit {
+        print(test_node,`test_node,`here,`self);
+    }
+}
+
+with entry {
+    for i in range(10) {
+        root ++> (next:=test_node(value=i));
+    }
+    wlk_obj = root spawn test_walker();
+    print(wlk_obj);
+}

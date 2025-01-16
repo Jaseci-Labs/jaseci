@@ -1421,7 +1421,7 @@ class PyastGenPass(Pass):
                                                 ctx=ast3.Load(),
                                             )
                                         ),
-                                        attr="type",
+                                        attr="archi_type_of",
                                         ctx=ast3.Load(),
                                     )
                                 ),

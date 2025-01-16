@@ -202,7 +202,7 @@ class JacClassReferences:
     Walker: ClassVar[TypeAlias] = WalkerArchitype
 
     @staticmethod
-    def type(instance: object) -> Type[Architype] | None:
+    def archi_type_of(instance: object) -> Type[Architype] | Type:
         """Get the type of the object."""
         return (
             NodeArchitype
@@ -213,7 +213,9 @@ class JacClassReferences:
                 else (
                     WalkerArchitype
                     if isinstance(instance, WalkerArchitype)
-                    else Architype if isinstance(instance, Architype) else None
+                    else (
+                        Architype if isinstance(instance, Architype) else type(instance)
+                    )
                 )
             )
         )
