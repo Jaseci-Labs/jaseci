@@ -1027,6 +1027,15 @@ class ModulePath(AstSymbolNode):
             if os.path.exists(relative_path + ".jac")
             else relative_path
         )
+        jacpath = os.getenv("JACPATH")
+        if not os.path.exists(relative_path) and jacpath:
+            name_to_find = actual_parts[-1] + ".jac"
+
+            # Walk through the single path in JACPATH
+            for root, _, files in os.walk(jacpath):
+                if name_to_find in files:
+                    relative_path = os.path.join(root, name_to_find)
+                    break
         return relative_path
 
     def normalize(self, deep: bool = False) -> bool:
