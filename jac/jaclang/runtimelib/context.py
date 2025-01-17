@@ -5,7 +5,7 @@ from __future__ import annotations
 import unittest
 from contextvars import ContextVar
 from dataclasses import MISSING
-from typing import Any, Callable, Optional, cast
+from typing import Any, Callable, ClassVar, Optional, cast
 from uuid import UUID
 
 from .architype import NodeAnchor, Root
@@ -32,6 +32,9 @@ class ExecutionContext:
     root: NodeAnchor
     entry_node: NodeAnchor
 
+    # A context change event subscription list, those who want to listen ctx change will register here.
+    on_ctx_change: ClassVar[list[Callable[[ExecutionContext | None], None]]] = []
+
     def init_anchor(
         self,
         anchor_id: str | None,
@@ -52,6 +55,8 @@ class ExecutionContext:
         """Close current ExecutionContext."""
         self.mem.close()
         EXECUTION_CONTEXT.set(None)
+        for func in ExecutionContext.on_ctx_change:
+            func(EXECUTION_CONTEXT.get(None))
 
     @staticmethod
     def create(
@@ -79,6 +84,8 @@ class ExecutionContext:
             old_ctx.close()
 
         EXECUTION_CONTEXT.set(ctx)
+        for func in ExecutionContext.on_ctx_change:
+            func(EXECUTION_CONTEXT.get(None))
 
         return ctx
 
