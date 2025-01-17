@@ -492,7 +492,9 @@ class PyImportPass(JacImportPass):
 
         assert isinstance(self.ir, ast.Module)
 
-        file_to_raise = os.path.join(os.path.dirname(__file__), "../../../../jaclang/plugin/jac_builtins.pyi")
+        file_to_raise = os.path.join(
+            os.path.dirname(__file__), "../../../../jaclang/plugin/jac_builtins.pyi"
+        )
         with open(file_to_raise, "r", encoding="utf-8") as f:
             file_source = f.read()
             mod = PyastBuildPass(
