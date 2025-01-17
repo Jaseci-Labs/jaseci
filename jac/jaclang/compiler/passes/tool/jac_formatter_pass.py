@@ -973,7 +973,6 @@ class JacFormatPass(Pass):
                     Tok.PIPE_FWD,
                     Tok.KW_SPAWN,
                     Tok.A_PIPE_FWD,
-                    Tok.ELVIS_OP,
                 ]
                 or (
                     node.op.name == Tok.PIPE_FWD
