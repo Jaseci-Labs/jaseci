@@ -457,13 +457,13 @@ class JacAccessValidationPlugin:
                 access_level = to_root.access.all
 
             level = to_root.access.roots.check(jroot.ref_id)
-            if level > AccessLevel.NO_ACCESS and access_level == AccessLevel.NO_ACCESS:
+            if level > AccessLevel.NO_ACCESS and access_level < level:
                 access_level = level
 
         # if target anchor have set allowed roots
         # if current root is allowed to target anchor
         level = to_access.roots.check(jroot.ref_id)
-        if level > AccessLevel.NO_ACCESS and access_level == AccessLevel.NO_ACCESS:
+        if level > AccessLevel.NO_ACCESS and access_level < level:
             access_level = level
 
         return access_level
