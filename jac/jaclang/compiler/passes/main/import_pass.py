@@ -492,22 +492,27 @@ class PyImportPass(JacImportPass):
 
         assert isinstance(self.ir, ast.Module)
 
-        file_to_raise = os.path.join(
-            os.path.dirname(__file__), "../../../../jaclang/plugin/jac_builtins.pyi"
-        )
-        with open(file_to_raise, "r", encoding="utf-8") as f:
-            file_source = f.read()
-            mod = PyastBuildPass(
-                input_ir=ast.PythonModuleAst(
-                    py_ast.parse(file_source),
-                    orig_src=ast.JacSource(file_source, file_to_raise),
-                ),
-            ).ir
-            mod.parent = self.ir
-            SubNodeTabPass(input_ir=mod, prior=self)
-            SymTabBuildPass(input_ir=mod, prior=self)
-            DefUsePass(input_ir=mod, prior=self)
-            mod.parent = None
+        for file_to_raise in [
+            os.path.join(
+                os.path.dirname(__file__), "../../../../jaclang/plugin/jac_builtins.pyi"
+            ),
+            os.path.join(
+                os.path.dirname(__file__), "../../../../jaclang/plugin/jac_features.pyi"
+            ),
+        ]:
+            with open(file_to_raise, "r", encoding="utf-8") as f:
+                file_source = f.read()
+                mod = PyastBuildPass(
+                    input_ir=ast.PythonModuleAst(
+                        py_ast.parse(file_source),
+                        orig_src=ast.JacSource(file_source, file_to_raise),
+                    ),
+                ).ir
+                mod.parent = self.ir
+                SubNodeTabPass(input_ir=mod, prior=self)
+                SymTabBuildPass(input_ir=mod, prior=self)
+                DefUsePass(input_ir=mod, prior=self)
+                mod.parent = None
 
     def annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""
