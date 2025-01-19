@@ -233,6 +233,44 @@ class JacCliTests(TestCase):
             r"13\:12 \- 13\:18.*Name - append - .*SymbolPath: builtins_test.builtins.list.append",
         )
 
+    def test_sub_class_symbol_table_fix_1(self) -> None:
+        """Testing for print AstTool."""
+        from jaclang.settings import settings
+
+        settings.ast_symbol_info_detailed = True
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        cli.tool("ir", ["ast", f"{self.fixture_abs_path('base_class1.jac')}"])
+
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        settings.ast_symbol_info_detailed = False
+
+        self.assertRegex(
+            stdout_value,
+            r"10:7 - 10:12.*Name - start - Type.*SymbolPath: base_class1.B.start",
+        )
+
+    def test_sub_class_symbol_table_fix_2(self) -> None:
+        """Testing for print AstTool."""
+        from jaclang.settings import settings
+
+        settings.ast_symbol_info_detailed = True
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        cli.tool("ir", ["ast", f"{self.fixture_abs_path('base_class2.jac')}"])
+
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        settings.ast_symbol_info_detailed = False
+
+        self.assertRegex(
+            stdout_value,
+            r"10:7 - 10:12.*Name - start - Type.*SymbolPath: base_class2.B.start",
+        )
+
     def test_jac_builtins_loading(self) -> None:
         """Testing for print AstTool."""
         from jaclang.settings import settings
@@ -421,6 +459,27 @@ class JacCliTests(TestCase):
         stdout, stderr = process.communicate()
         self.assertIn("...F", stderr)
         self.assertIn("F.F", stderr)
+
+    def test_run_specific_test_only(self) -> None:
+        """Test a specific test case."""
+        process = subprocess.Popen(
+            [
+                "jac",
+                "test",
+                "-t",
+                "from_2_to_10",
+                self.fixture_abs_path("jactest_main.jac"),
+            ],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        stdout, stderr = process.communicate()
+        self.assertIn("Ran 1 test", stderr)
+        self.assertIn("Testing fibonacci numbers from 2 to 10.", stdout)
+        self.assertNotIn("Testing first 2 fibonacci numbers.", stdout)
+        self.assertNotIn("This test should not run after import.", stdout)
 
     def test_graph_coverage(self) -> None:
         """Test for coverage of graph cmd."""
