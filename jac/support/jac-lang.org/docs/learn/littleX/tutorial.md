@@ -6,14 +6,14 @@ This guide introduces how the Jaseci Stack accelerates application development b
 
 We’ll develop a web application called **LittleX**, a streamlined and efficient version of Elon Musk’s X, using the Jaseci Stack. This project highlights the simplicity and power of Jaseci, enabling us to implement advanced features with minimal code and effort—tasks that typically require significant time in traditional frameworks.
 
-### **Key Features:**
+## **Key Features:**
 - User authentication: Sign up, log in, and profile management.
 - Content management: Create, view, and interact with posts.
 - Social interactions: Follow users and explore their content.
 
 With Jaseci, we can focus on building these features seamlessly rather than dealing with the complexities of system setup. This guide focuses on the **backend** for LittleX, showcasing how Jaseci efficiently handles user authentication and database operations.
 
-# Why Jaseci?
+## Why Jaseci?
 
 Jaseci empowers developers to build smarter applications with less hassle by:
 
@@ -24,15 +24,15 @@ Jaseci empowers developers to build smarter applications with less hassle by:
 
 ## **What You Need**
 
-To get started with building **LittelX**, ensure you have the following:
+To get started with building **LittleX**, ensure you have the following:
 
 - **About 15 minutes**: Time required to set up and explore the basics.
 - **A favorite text editor or IDE**: Any development environment you are comfortable with.
 - **Python 3.12 or later**: Jaseci is built on Python; ensure you have a compatible version installed.
-- **Jaclang, Jac-cloud, MTLLM, Jac-splice-orc** - Jaseci stack libraries.
-- Node.js (optional): If you plan to integrate a frontend in future steps.
+- **Jaclang, Jac-cloud, MTLLM, Jac-splice-orc**: Jaseci stack libraries.
+- **Node.js (optional)**: If you plan to integrate a frontend in future steps.
 
-**LittleX Architecture**
+## **LittleX Architecture**
 
 === "Single user"
       ![Image title](images/single-user.jpg)
@@ -67,7 +67,7 @@ node Person{
 * `int` is used for integer values (years).
 * `str` is used for string values (names).
 
-Now Lets create required nodes for LittleX
+Now Lets create required nodes for LittleX.
 
 === "Guide"
       Nodes are essential for representing entities in LittleX. Here are the nodes we need to create:
@@ -127,7 +127,7 @@ edge Relation{
 Now Lets create required edges for LittleX
 
 === "Guide"
-      Edges define the relationships between nodes. Here are the nodes we need to create:
+      Edges define the relationships between nodes. Here are the edges we need to create:
 
       - **Follows Edge**
         * Represents the relationship between users who follow each other.
@@ -142,7 +142,7 @@ Now Lets create required edges for LittleX
             ```
 
       - **Post Edge**
-        * Link the comments back to tweets
+        * Link the comments back to tweets.
             ```bash
             edge post {}
             ```
@@ -161,7 +161,7 @@ walker Relation{
       has since: int;
 }
 ```
-Now Lets create required walkers for LittleX
+Now Lets create required walkers for LittleX.
 
 === "Guide"
       Nodes are essential for representing entities in LittleX. Here are the nodes we need to create:
@@ -183,13 +183,16 @@ Now Lets create required walkers for LittleX
         * If current walker enter via `root`, `visit_profile` ability will be executed.
         * `visit [-->(``?profile)] else {}` Checks whether profile node exist from root, if yes, visit to that profile node. Otherwise execute to else part.
         * `here ++> profile()` It creates a profile node and connects with current node(`root`).
-            - `visit new_profile` Walker visit to that node (`profile`)
+        * `visit new_profile` Walker visit to that node (`profile`).
 
       - **Load User Profile Walker**
         * Loads all profiles from the database.
         * Useful for managing or listing all users in the system.
             ```py
             walker load_user_profiles {
+                  obj __specs__ {
+                        static has auth: bool = False;
+                  }
                   can load_profiles with `root entry {
                         self.profiles: list = [];
 
@@ -203,6 +206,7 @@ Now Lets create required walkers for LittleX
                   }
             }
             ```
+        * `static has auth: bool = False` Set diable authentication for that walker.
         * `NodeAnchor.Collection.find({"name": "profile"})` Get list of profiles.
         * `user.architype` Get architype of user node.
         * `jid(user_node)` Get the unique id of an object.
@@ -248,7 +252,7 @@ Now Lets create required walkers for LittleX
                   }
             }
             ```
-        * `here.followees.append(self.profile_id)` Add the profile id to the followees list
+        * `here.followees.append(self.profile_id)` Add the profile id to the followees list.
         * `here +:follow():+> &self.profile_id` Create a follow edge from `profile` node.
 
       - **Unfollow Request Walker**
@@ -265,7 +269,7 @@ Now Lets create required walkers for LittleX
                   }
             }
             ```
-        * `here.followees.remove(self.profile_id)` Remove the profile id from the followees list
+        * `here.followees.remove(self.profile_id)` Remove the profile id from the followees list.
         * `here del-:follow:-> &self.profile_id` Delete the follow edge from `profile` node.
 
       - **Create Tweet Walker**
@@ -376,7 +380,7 @@ Now Lets create required walkers for LittleX
                   }
             }
             ```
-        * `comment_node = here ++> comment(content=self.content)` Create a new comment node with content
+        * `comment_node = here ++> comment(content=self.content)` Create a new comment node with content.
         * `tweet_node = &self.tweet_id` Get the tweet node by its ID.
         * `tweet_node ++> comment_node[0]` Add a comment edge between the tweet and user.
 
@@ -396,7 +400,7 @@ Now Lets create required walkers for LittleX
             }
             ```
         * `visit [-:like:->]` Visit all like edges connected to the tweet.
-        * `self.likes.append({"username": here.username})` Add the profile to the likes list
+        * `self.likes.append({"username": here.username})` Add the profile to the likes list.
 
       - **Load Tweet Walker**
         * Loads detailed information about a tweet, including its content and author.
@@ -414,9 +418,9 @@ Now Lets create required walkers for LittleX
                   }
             }
             ```
-        * `self.tweet_info["content"] = here;` Get the tweet content
+        * `self.tweet_info["content"] = here;` Get the tweet content.
         * `visit [<-:post:-]` Visit all post edges connected to the tweet.
-        * `self.tweet_info["username"] = here.username;` Get the tweet author
+        * `self.tweet_info["username"] = here.username;` Get the tweet author.
 
       - **Load Comments Walker**
         * Retrieves all comments on a tweet, including the commenter's username.
@@ -437,7 +441,7 @@ Now Lets create required walkers for LittleX
             }
             ```
         * `visit [-->](`?comment)` Visit all comment edges connected to the tweet.
-        * `commenter = [<--](`?profile)` Get the commenter's profile
+        * `commenter = [<--](`?profile)` Get the commenter's profile.
 
       - **Load Feed Walker**
         * Fetches all tweets for a profile, including their comments and likes.
@@ -487,9 +491,21 @@ Now Lets create required walkers for LittleX
     --8<-- "support/jac-lang.org/docs/learn/littleX/src/LittleX_step4.jac"
     ```
 
+**Test functionality**
+Using tools like Swagger or Postman, you've tested these APIs to confirm their functionality.
+
 ### **Lesson 4: Exploring Graph Security**
 
-In Jaclang, each user has a root graph, and access between users' archetypes is restricted by default. Permissions must be explicitly granted for interactions between different users' graphs.
+Up until this point, you’ve successfully created a single-user social media application where a user can post tweets, like them, and interact with comments.
+
+Now, imagine scaling this application to handle multiple users. Questions arise, such as:
+
+- How do you ensure users cannot modify or view others' data without permission?
+- How do you securely enable collaboration, such as liking or commenting on someone else's tweet?
+
+This is where graph security in Jaclang simplifies managing access and permissions between users' graphs.
+
+Jaclang provides explicit access control to ensure data privacy and controlled interaction between users. Permissions define what other users can do with specific parts of a graph.
 
 **Access Levels**
 
@@ -520,158 +536,153 @@ By default, users cannot access other users' nodes. To grant access, permission 
       ```
 
 === "Guide"
-      Here is the implementation of securities.
+      **Scenarios**
 
-      - **Load User Profile Walker**
-            ```py
-            walker load_user_profiles {
-                  obj __specs__ {
-                        static has auth: bool = False;
-                  }
-                  can load_profiles with `root entry {
-                        self.profiles: list = [];
+      - Posting a Tweet (Granting Read Access)
 
-                        for user in NodeAnchor.Collection.find({"name": "profile"}) {
-                              user_node = user.architype;
-                              self.profiles.append(
-                              {"name": user_node.username, "id": jid(user_node)}
-                              );
+        * When a user creates a tweet, it is private by default.
+        * To make it viewable by others, the system explicitly grants READ access to the tweet.
+        * **Create Tweet Walker**
+                  ```bash
+                  walker create_tweet :visit_profile: {
+                        has content: str;
+
+                        can tweet with profile entry {
+                              tweet_node = here +:post:+> tweet(content=self.content);
+                              visit tweet_node;
                         }
-                        report self.profiles;
-                  }
-            }
-            ```
-        * `static has auth: bool = False` Set diable authentication for that walker.
 
-      - **Create Tweet Walker**
-            ```bash
-            walker create_tweet :visit_profile: {
-                  has content: str;
-
-                  can tweet with profile entry {
-                        tweet_node = here +:post:+> tweet(content=self.content);
-                        visit tweet_node;
+                        can report_tweet with tweet entry {
+                              logger.info(f"Creating new tweet: {here.content}");
+                              Jac.unrestrict(here, level="READ");
+                              report here;
+                        }
                   }
-
-                  can report_tweet with tweet entry {
-                        logger.info(f"Creating new tweet: {here.content}");
-                        Jac.unrestrict(here, level="READ");
-                        report here;
-                  }
-            }
-            ```
+                  ```
         * `Jac.unrestrict(here, level="READ")` Unrestrict that tweet node to everyone with read access.
 
-      - **Like Tweet Walker**
-            ```bash
-            walker like_tweet :visit_profile: {
-                  has tweet_id: str;
+      - Liking a Tweet (Granting Connect Access)
 
-                  can like with profile entry {
-                        tweet_node = &self.tweet_id;
-                        Jac.unrestrict(tweet_node, level="CONNECT");
-                        tweet_node +:like():+> here;
-                        logger.info(f"liked to a tweet: {tweet_node}");
-                        report tweet_node;
+        * To let a user like someone else's tweet, Jaclang temporarily grants CONNECT access to the tweet node.
+        * This allows the liking user to create a connection to the tweet without modifying its content.
+        * **Like Tweet Walker**
+                  ```bash
+                  walker like_tweet :visit_profile: {
+                        has tweet_id: str;
+
+                        can like with profile entry {
+                              tweet_node = &self.tweet_id;
+                              Jac.unrestrict(tweet_node, level="CONNECT");
+                              tweet_node +:like():+> here;
+                              logger.info(f"liked to a tweet: {tweet_node}");
+                              report tweet_node;
+                        }
                   }
-            }
-            ```
+                  ```
         * `Jac.unrestrict(tweet_node, level="CONNECT")` Unrestrict the tweet node to Connect level.
 
-      - **Comment Tweet Walker**
-            ```bash
-            walker comment_tweet :visit_profile: {
-                  has tweet_id: str;
-                  has content: str;
+      - Commenting on a Tweet
 
-                  can add_comment with profile entry {
-                        comment_node = here ++> comment(content=self.content);
-                        tweet_node = &self.tweet_id;
-                        Jac.unrestrict(tweet_node, level="CONNECT");
-                        tweet_node ++> comment_node[0];
-                        logger.info(f"comment added: {comment_node[0]}");
-                        report comment_node[0];
+        * Similar to liking, commenting requires CONNECT access.
+        * A new comment node is created and linked to the tweet while granting READ access for others to view it.
+        * **Comment Tweet Walker**
+                  ```bash
+                  walker comment_tweet :visit_profile: {
+                        has tweet_id: str;
+                        has content: str;
+
+                        can add_comment with profile entry {
+                              comment_node = here ++> comment(content=self.content);
+                              tweet_node = &self.tweet_id;
+                              Jac.unrestrict(tweet_node, level="CONNECT");
+                              tweet_node ++> comment_node[0];
+                              logger.info(f"comment added: {comment_node[0]}");
+                              report comment_node[0];
+                        }
                   }
-            }
-            ```
+                  ```
         * `Jac.unrestrict(tweet_node, level="CONNECT")` Unrestrict the tweet node to connect level.
 
-      - **Load Like Walker**
-            ```bash
-            walker load_likes {
-                  has likes: list = [];
+      - Loading Feeds (Read Access for Followers)
 
-                  can load_likes with tweet entry {
-                        visit [-:like:->];
-                  }
+        * When a user views their feed, Jaclang unrestricts their READ access to tweets and profiles of people they follow.
+        * This ensures the feed is populated with the right content while maintaining privacy for others.
+        * **Load Like Walker**
+                  ```bash
+                  walker load_likes {
+                        has likes: list = [];
 
-                  can load_profile with profile entry {
-                        Jac.unrestrict(here, level="READ");
-                        self.likes.append({"username": here.username});
-                  }
-            }
-            ```
-        * `Jac.unrestrict(here, level="READ")` Unrestrict the profile node to everyone with read access
-
-      - **Load Comments Walker**
-        * Retrieves all comments on a tweet, including the commenter's username.
-            ```bash
-            walker load_comments {
-                  has comments: list = [];
-
-                  can load_comments with tweet entry {
-                        visit [-->](`?comment);
-                  }
-
-                  can report_comments with comment entry {
-                        Jac.unrestrict(here, level="READ");
-                        commenter = [<--](`?profile);
-                        self.comments.append(
-                              {"commenter": commenter[0].username, "comment": here}
-                        );
-                  }
-            }
-            ```
-        * `Jac.unrestrict(here, level="READ")` Unrestrict the comment node to everyone with read access
-
-      - **Load Feed Walker**
-            ```bash
-            walker load_feed :visit_profile: {
-                  has search_query: str = "";
-
-                  can load with profile entry {
-                        self.feeds: list = [];
-                        user_tweets = here spawn load_tweets();
-                        self.feeds.extend(user_tweets.tweets);
-
-                        for user in here.followees {
-                              user_node = &user;
-                              Jac.unrestrict(user_node, level="READ");
-                              logger.info("Acess has given to profile node");
-                              user_tweets = user_node spawn load_tweets();
-                              self.feeds.extend(user_tweets.tweets);
+                        can load_likes with tweet entry {
+                              visit [-:like:->];
                         }
-                        tweets = [feed['tweet']['content'].content for feed in self.feeds];
-                        self.summary: str = summarise_tweets(tweets);
-                        here.summary_count +=1;###
 
-                        # Filter tweets based on search query
-                        if (self.search_query) {
-                              tweet_embeddings = model.encode(tweets);
-                              filtered_results = search_tweets(
-                              self.search_query,
-                              self.feeds,
-                              tweet_embeddings
+                        can load_profile with profile entry {
+                              Jac.unrestrict(here, level="READ");
+                              self.likes.append({"username": here.username});
+                        }
+                  }
+                  ```
+            * `Jac.unrestrict(here, level="READ")` Unrestrict the profile node to everyone with read access.
+
+        * **Load Comments Walker**
+            * Retrieves all comments on a tweet, including the commenter's username.
+                  ```bash
+                  walker load_comments {
+                        has comments: list = [];
+
+                        can load_comments with tweet entry {
+                              visit [-->](`?comment);
+                        }
+
+                        can report_comments with comment entry {
+                              Jac.unrestrict(here, level="READ");
+                              commenter = [<--](`?profile);
+                              self.comments.append(
+                                    {"commenter": commenter[0].username, "comment": here}
                               );
-                              report {"feeds": filtered_results, "summary": self.summary};
-                        } else {
-                              report {"feeds": self.feeds, "summary": self.summary};
                         }
-
                   }
-            }
-            ```
-        * `Jac.unrestrict(user_node, level="READ");` Give the user node read access
+                  ```
+            * `Jac.unrestrict(here, level="READ")` Unrestrict the comment node to everyone with read access.
+
+        * **Load Feed Walker**
+                  ```bash
+                  walker load_feed :visit_profile: {
+                        has search_query: str = "";
+
+                        can load with profile entry {
+                              self.feeds: list = [];
+                              user_tweets = here spawn load_tweets();
+                              self.feeds.extend(user_tweets.tweets);
+
+                              for user in here.followees {
+                                    user_node = &user;
+                                    Jac.unrestrict(user_node, level="READ");
+                                    logger.info("Acess has given to profile node");
+                                    user_tweets = user_node spawn load_tweets();
+                                    self.feeds.extend(user_tweets.tweets);
+                              }
+                              tweets = [feed['tweet']['content'].content for feed in self.feeds];
+                              self.summary: str = summarise_tweets(tweets);
+                              here.summary_count +=1;###
+
+                              # Filter tweets based on search query
+                              if (self.search_query) {
+                                    tweet_embeddings = model.encode(tweets);
+                                    filtered_results = search_tweets(
+                                    self.search_query,
+                                    self.feeds,
+                                    tweet_embeddings
+                                    );
+                                    report {"feeds": filtered_results, "summary": self.summary};
+                              } else {
+                                    report {"feeds": self.feeds, "summary": self.summary};
+                              }
+
+                        }
+                  }
+                  ```
+            * `Jac.unrestrict(user_node, level="READ");` Give the user node read access.
 
 === "LittleX.jac Upto Now"
     ```jac linenums="1"
@@ -681,19 +692,21 @@ By default, users cannot access other users' nodes. To grant access, permission 
 ### **Lesson 5: Adding node abilities**
 Nodes in Jaclang can have abilities defined to perform specific tasks. These abilities are structured as entry and exit points.
 
-Imagine a smart home system where each room is represented as a node. Walkers (automated agents) traverse these nodes, performing tasks like turning lights on or off, adjusting temperature, or sending alerts when entering or exiting a room.
+Imagine a smart home system where each room is represented as a node. Walkers traverse these nodes, performing tasks like turning lights on or off, adjusting temperature, or sending alerts when entering or exiting a room.
 
 **Entry**
 When someone enters a room:
-- Lights Turn On: The system detects entry and automatically switches on the lights to ensure the person feels welcomed.
-- Room Occupied: The system marks the room as occupied in its database or tracking system.
+
+- **Lights Turn On:** The system detects entry and automatically switches on the lights to ensure the person feels welcomed.
+- **Room Occupied:** The system marks the room as occupied in its database or tracking system.
 
 You enter the Living Room, and the system turns on the lights and logs your presence.
 
 **Exit**
 When someone exits a room:
-- Lights Turn Off: The system detects the exit and switches off the lights to save energy.
-- Room Vacant: It marks the room as unoccupied in its tracking system.
+
+- **Lights Turn Off:** The system detects the exit and switches off the lights to save energy.
+- **Room Vacant:** It marks the room as unoccupied in its tracking system.
 
 You leave the Living Room, and the system turns off the lights and updates its records to show the room is vacant.
 
@@ -721,7 +734,15 @@ You leave the Living Room, and the system turns off the lights and updates its r
 
 ### **Lesson 6: Let's add some AI magic to our application using the power of MTLLM:**
 
-Leverage AI with Jaclang to summarize tweets efficiently using the **Llama** model from the MTLLM library.
+In this lesson, we'll explore how to leverage AI to enhance your application. Using the power of MTLLM's Llama model, you can summarize tweets to quickly understand trends, major events, and notable interactions in one line.
+
+**Why This Feature Matters**
+
+Think of your application as a personalized newsfeed or trend analyzer.
+
+- **Save Time:** Instead of scrolling through dozens of tweets, users get a quick summary of what's happening.
+- **Gain Insights:** By distilling key information, the application helps users make sense of large volumes of data.
+- **Engage Users:** AI-powered summaries make the experience dynamic and intelligent, setting your platform apart from others.
 
 === "Guide"
       - **Import Lamma with MTLLM**
@@ -744,7 +765,7 @@ Leverage AI with Jaclang to summarize tweets efficiently using the **Llama** mod
 
 **JAC Cloud Orchestrator (jac-splice-orc)** transforms Python modules into scalable, cloud-based microservices. By deploying them as Kubernetes Pods and exposing them via gRPC, it empowers developers to seamlessly integrate dynamic, distributed services into their applications.
 
-#### Why is it important?
+**Why is it important?**
 
 - **Scalability at its Core**: Handles dynamic workloads by effortlessly scaling microservices.
 - **Seamless Integration**: Makes advanced cloud-based service deployment intuitive and efficient, reducing the operational overhead.
