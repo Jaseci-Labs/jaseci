@@ -1,35 +1,26 @@
 # **Building an Application with Jaseci**
 
-This guide provides a sampling of how Jaseci Stack helps you accelerate application development. As you explore more Jaseci Getting Started guides, you will discover additional use cases for Jaseci Stack[**********]. This guide is designed to give you a quick taste of Jaseci Stack. If you want to create your own Jaseci-based project, start by setting up the Jaseci framework, defining your nodes, edges, and walkers, and crafting your application logic using Jaseci's graph-based programming model. 
+This guide introduces how the Jaseci Stack accelerates application development by leveraging its graph-based programming model. With Jaseci, we can focus on implementing features instead of setting up complex systems. As you explore Jaseci’s features, you’ll uncover its wide range of use cases. This guide provides a quick introduction, helping you set up the Jaseci framework, define nodes, edges, and walkers, and craft application logic for your project.
 
+## **What We Will Build**
 
-# **What We Will build**
+We’ll develop a web application called **LittleX**, a streamlined and efficient version of Elon Musk’s X, using the Jaseci Stack. This project highlights the simplicity and power of Jaseci, enabling us to implement advanced features with minimal code and effort—tasks that typically require significant time in traditional frameworks.
 
-In this guide, we will develop a streamlined web application named LittelX—a lighter and more efficient version of Elon Musk's X—using the Jaseci Stack. This application will showcase the power and simplicity of Jaseci by incorporating advanced services with minimal code and effort, demonstrating features that would typically require significant development time in other frameworks.
+### **Key Features:**
+- User authentication: Sign up, log in, and profile management.
+- Content management: Create, view, and interact with posts.
+- Social interactions: Follow users and explore their content.
 
+With Jaseci, we can focus on building these features seamlessly rather than dealing with the complexities of system setup. This guide focuses on the **backend** for LittleX, showcasing how Jaseci efficiently handles user authentication and database operations.
 
-**Features We Will Build**
+# Why Jaseci?
 
-In this guide, we will implement the core backend features for LittelX, including:
+Jaseci empowers developers to build smarter applications with less hassle by:
 
-- Sign up, log in, and manage their profiles.
-- Create, view, and interact with posts.
-- Follow other users and explore their content.
-
-For this post, we'll only build the backend. LittleX will leverage Jaseci's powerful tools to manage user authentication and database interactions seamlessly.
-
-**Why Jaseci?**
-
-Jaseci simplifies backend development with:
-
-- **Built-in User Management System:** No need to reinvent the wheel for user signup and login. It also includes Authentication, Secure APIs without external libraries
-- **Data spatial Programming:** Perfect for modeling social connections like followers and posts.
-- **Cloud-Native:** Built for scalability and performance in the cloud.
-- **AI-Powered:** Integrates with AI services for advanced features like content moderation and personalized recommendations
-- **Orchestrator:** Dynamically turns Python modules into Kubernetes-deployed gRPC microservices
-- **Ease of Scaling:** A robust foundation for future features.
-
-With Jaseci, we can focus on implementing features instead of setting up complex systems.
+- **Simplifying User Management:** It handles signup, login, and security out of the box.
+- **Connecting Data Easily:** Perfect for building apps that need to model relationships, like social networks or recommendation systems.
+- **Scalability Built-In:** Designed for cloud performance, so your app grows seamlessly with your users.
+- **AI at Your Fingertips:** Adds intelligent features like personalization and moderation with minimal effort.
 
 ## **What You Need**
 
@@ -38,7 +29,7 @@ To get started with building **LittelX**, ensure you have the following:
 - **About 15 minutes**: Time required to set up and explore the basics.
 - **A favorite text editor or IDE**: Any development environment you are comfortable with.
 - **Python 3.12 or later**: Jaseci is built on Python; ensure you have a compatible version installed.
-- [*********] - please add all the required stuffs here
+- **Jaclang, Jac-cloud, MTLLM, Jac-splice-orc** - Jaseci stack libraries.
 - Node.js (optional): If you plan to integrate a frontend in future steps.
 
 **LittleX Architecture**
@@ -61,7 +52,7 @@ pip install jaclang, jac-cloud, mtllm, jac-splice-orc
 
 **Jac lang**, language used in Jaseci stack, organizes data as interconnected nodes within a spatial or graph-like structure. It focuses on the **relationships** between data points, rather than processing them **step-by-step**.
 
-**Nodes (or Vertices)**: These are the individual entities or points in a graph. Each node represents an object, entity, or a piece of data.
+**Nodes**: These are the individual entities or points in a graph. Each node represents an object, entity, or a piece of data.
 
 First create a node with name Person and attributes name, age.
 ```jac
@@ -70,6 +61,12 @@ node Person{
       has age: int;
 }
 ```
+
+* The `node` keyword defines a node entity in the graph (Person).
+* The `has` keyword specifies the attributes of the node.
+* `int` is used for integer values (years).
+* `str` is used for string values (names).
+
 Now Lets create required nodes for LittleX
 
 === "Guide"
@@ -108,10 +105,12 @@ Now Lets create required nodes for LittleX
     ```jac linenums="1"
     --8<-- "support/jac-lang.org/docs/learn/littleX/src/LittleX_step2.jac"
     ```
+For more explanation [visit](../data_spatial/examples.md)
 
 ### **Lesson 2: Creating Edges**
 
 **Edges**: These are the connections or relationships between nodes. Edges can be unidirectional or bidirectional.
+![Image title](images/Family.png)
 
 First create a edge with name Relation and attribute since.
 ```jac
@@ -119,6 +118,12 @@ edge Relation{
       has since: int;
 }
 ```
+
+* The `edge` keyword defines a relationship between nodes (Relation).
+* The `has` keyword specifies the attributes of the edge.
+* `int` is used for integer values (years).
+* `str` is used for string values (names).
+
 Now Lets create required edges for LittleX
 
 === "Guide"
@@ -145,6 +150,7 @@ Now Lets create required edges for LittleX
     ```jac linenums="1"
     --8<-- "support/jac-lang.org/docs/learn/littleX/src/LittleX_step3.jac"
     ```
+For more explanation [visit](../data_spatial/examples.md)
 
 ### **Lesson 3: Creating our first Walker**
 Walkers are graph-traversing agents in Jaclang that perform tasks without requiring initialization and can define abilities for various node types. The Jaseci stack automatically converts walkers into RESTful API endpoints.
