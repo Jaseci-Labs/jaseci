@@ -190,9 +190,6 @@ Now Lets create required walkers for LittleX
         * Useful for managing or listing all users in the system.
             ```py
             walker load_user_profiles {
-                  obj __specs__ {
-                        static has auth: bool = False;
-                  }
                   can load_profiles with `root entry {
                         self.profiles: list = [];
 
@@ -206,7 +203,6 @@ Now Lets create required walkers for LittleX
                   }
             }
             ```
-        * `static has auth: bool = False` Set diable authentication for that walker.
         * `NodeAnchor.Collection.find({"name": "profile"})` Get list of profiles.
         * `user.architype` Get architype of user node.
         * `jid(user_node)` Get the unique id of an object.
@@ -285,14 +281,12 @@ Now Lets create required walkers for LittleX
 
                   can report_tweet with tweet entry {
                         logger.info(f"Creating new tweet: {here.content}");
-                        Jac.unrestrict(here, level="READ");
                         report here;
                   }
             }
             ```
         * `tweet_node = here +:post:+> tweet(content=self.content)` Create a new tweet with content.
         * `visit tweet_node` Visit the newly created tweet node.
-        * `Jac.unrestrict(here, level="READ")` Unrestrict that tweet node to everyone with read access.
 
       - **Update Tweet Walker**
         * Updates the content of an existing tweet by its ID.
@@ -340,7 +334,6 @@ Now Lets create required walkers for LittleX
 
                   can like with profile entry {
                         tweet_node = &self.tweet_id;
-                        Jac.unrestrict(tweet_node, level="CONNECT");
                         tweet_node +:like():+> here;
                         logger.info(f"liked to a tweet: {tweet_node}");
                         report tweet_node;
@@ -348,7 +341,6 @@ Now Lets create required walkers for LittleX
             }
             ```
         * `tweet_node = &self.tweet_id` Get the tweet node by its ID.
-        * `Jac.unrestrict(tweet_node, level="CONNECT")` Unrestrict the tweet node to Connect level.
         * `tweet_node +:like():+> here` Add a like edge between the tweet and user.
 
       - **Remove Like Walker**
@@ -378,7 +370,6 @@ Now Lets create required walkers for LittleX
                   can add_comment with profile entry {
                         comment_node = here ++> comment(content=self.content);
                         tweet_node = &self.tweet_id;
-                        Jac.unrestrict(tweet_node, level="CONNECT");
                         tweet_node ++> comment_node[0];
                         logger.info(f"comment added: {comment_node[0]}");
                         report comment_node[0];
@@ -387,7 +378,6 @@ Now Lets create required walkers for LittleX
             ```
         * `comment_node = here ++> comment(content=self.content)` Create a new comment node with content
         * `tweet_node = &self.tweet_id` Get the tweet node by its ID.
-        * `Jac.unrestrict(tweet_node, level="CONNECT")` Unrestrict the tweet node to connect level.
         * `tweet_node ++> comment_node[0]` Add a comment edge between the tweet and user.
 
       - **Load Like Walker**
@@ -401,13 +391,11 @@ Now Lets create required walkers for LittleX
                   }
 
                   can load_profile with profile entry {
-                        Jac.unrestrict(here, level="READ");
                         self.likes.append({"username": here.username});
                   }
             }
             ```
         * `visit [-:like:->]` Visit all like edges connected to the tweet.
-        * `Jac.unrestrict(here, level="READ")` Unrestrict the profile node to everyone with read access
         * `self.likes.append({"username": here.username})` Add the profile to the likes list
 
       - **Load Tweet Walker**
@@ -441,7 +429,6 @@ Now Lets create required walkers for LittleX
                   }
 
                   can report_comments with comment entry {
-                        Jac.unrestrict(here, level="READ");
                         commenter = [<--](`?profile);
                         self.comments.append(
                               {"commenter": commenter[0].username, "comment": here}
@@ -450,7 +437,6 @@ Now Lets create required walkers for LittleX
             }
             ```
         * `visit [-->](`?comment)` Visit all comment edges connected to the tweet.
-        * `Jac.unrestrict(here, level="READ")` Unrestrict the comment node to everyone with read access
         * `commenter = [<--](`?profile)` Get the commenter's profile
 
       - **Load Feed Walker**
@@ -466,8 +452,6 @@ Now Lets create required walkers for LittleX
 
                         for user in here.followees {
                               user_node = &user;
-                              Jac.unrestrict(user_node, level="READ");
-                              logger.info("Acess has given to profile node");
                               user_tweets = user_node spawn load_tweets();
                               self.feeds.extend(user_tweets.tweets);
                         }
@@ -495,7 +479,6 @@ Now Lets create required walkers for LittleX
         * `self.feeds.extend(user_tweets.tweets);` Add the user's tweets to the
             profile's feed.
         * `user_node = &user;` Get the user node.
-        * `Jac.unrestrict(user_node, level="READ");` Give the user node read access
         * `self.summary: str = summarise_tweets(tweets);` Summarize the tweets.
         * `if (self.search_query) { ... } else { ... }` If a search query is provided, filter the tweets based on the query. Otherwise, return all tweets.
 
@@ -536,8 +519,184 @@ By default, users cannot access other users' nodes. To grant access, permission 
       Jac.restrict(here);
       ```
 
+=== "Guide"
+      Here is the implementation of securities.
+
+      - **Load User Profile Walker**
+            ```py
+            walker load_user_profiles {
+                  obj __specs__ {
+                        static has auth: bool = False;
+                  }
+                  can load_profiles with `root entry {
+                        self.profiles: list = [];
+
+                        for user in NodeAnchor.Collection.find({"name": "profile"}) {
+                              user_node = user.architype;
+                              self.profiles.append(
+                              {"name": user_node.username, "id": jid(user_node)}
+                              );
+                        }
+                        report self.profiles;
+                  }
+            }
+            ```
+        * `static has auth: bool = False` Set diable authentication for that walker.
+
+      - **Create Tweet Walker**
+            ```bash
+            walker create_tweet :visit_profile: {
+                  has content: str;
+
+                  can tweet with profile entry {
+                        tweet_node = here +:post:+> tweet(content=self.content);
+                        visit tweet_node;
+                  }
+
+                  can report_tweet with tweet entry {
+                        logger.info(f"Creating new tweet: {here.content}");
+                        Jac.unrestrict(here, level="READ");
+                        report here;
+                  }
+            }
+            ```
+        * `Jac.unrestrict(here, level="READ")` Unrestrict that tweet node to everyone with read access.
+
+      - **Like Tweet Walker**
+            ```bash
+            walker like_tweet :visit_profile: {
+                  has tweet_id: str;
+
+                  can like with profile entry {
+                        tweet_node = &self.tweet_id;
+                        Jac.unrestrict(tweet_node, level="CONNECT");
+                        tweet_node +:like():+> here;
+                        logger.info(f"liked to a tweet: {tweet_node}");
+                        report tweet_node;
+                  }
+            }
+            ```
+        * `Jac.unrestrict(tweet_node, level="CONNECT")` Unrestrict the tweet node to Connect level.
+
+      - **Comment Tweet Walker**
+            ```bash
+            walker comment_tweet :visit_profile: {
+                  has tweet_id: str;
+                  has content: str;
+
+                  can add_comment with profile entry {
+                        comment_node = here ++> comment(content=self.content);
+                        tweet_node = &self.tweet_id;
+                        Jac.unrestrict(tweet_node, level="CONNECT");
+                        tweet_node ++> comment_node[0];
+                        logger.info(f"comment added: {comment_node[0]}");
+                        report comment_node[0];
+                  }
+            }
+            ```
+        * `Jac.unrestrict(tweet_node, level="CONNECT")` Unrestrict the tweet node to connect level.
+
+      - **Load Like Walker**
+            ```bash
+            walker load_likes {
+                  has likes: list = [];
+
+                  can load_likes with tweet entry {
+                        visit [-:like:->];
+                  }
+
+                  can load_profile with profile entry {
+                        Jac.unrestrict(here, level="READ");
+                        self.likes.append({"username": here.username});
+                  }
+            }
+            ```
+        * `Jac.unrestrict(here, level="READ")` Unrestrict the profile node to everyone with read access
+
+      - **Load Comments Walker**
+        * Retrieves all comments on a tweet, including the commenter's username.
+            ```bash
+            walker load_comments {
+                  has comments: list = [];
+
+                  can load_comments with tweet entry {
+                        visit [-->](`?comment);
+                  }
+
+                  can report_comments with comment entry {
+                        Jac.unrestrict(here, level="READ");
+                        commenter = [<--](`?profile);
+                        self.comments.append(
+                              {"commenter": commenter[0].username, "comment": here}
+                        );
+                  }
+            }
+            ```
+        * `Jac.unrestrict(here, level="READ")` Unrestrict the comment node to everyone with read access
+
+      - **Load Feed Walker**
+            ```bash
+            walker load_feed :visit_profile: {
+                  has search_query: str = "";
+
+                  can load with profile entry {
+                        self.feeds: list = [];
+                        user_tweets = here spawn load_tweets();
+                        self.feeds.extend(user_tweets.tweets);
+
+                        for user in here.followees {
+                              user_node = &user;
+                              Jac.unrestrict(user_node, level="READ");
+                              logger.info("Acess has given to profile node");
+                              user_tweets = user_node spawn load_tweets();
+                              self.feeds.extend(user_tweets.tweets);
+                        }
+                        tweets = [feed['tweet']['content'].content for feed in self.feeds];
+                        self.summary: str = summarise_tweets(tweets);
+                        here.summary_count +=1;###
+
+                        # Filter tweets based on search query
+                        if (self.search_query) {
+                              tweet_embeddings = model.encode(tweets);
+                              filtered_results = search_tweets(
+                              self.search_query,
+                              self.feeds,
+                              tweet_embeddings
+                              );
+                              report {"feeds": filtered_results, "summary": self.summary};
+                        } else {
+                              report {"feeds": self.feeds, "summary": self.summary};
+                        }
+
+                  }
+            }
+            ```
+        * `Jac.unrestrict(user_node, level="READ");` Give the user node read access
+
+=== "LittleX.jac Upto Now"
+    ```jac linenums="1"
+    --8<-- "support/jac-lang.org/docs/learn/littleX/src/LittleX_step4.jac"
+    ```
+
 ### **Lesson 5: Adding node abilities**
 Nodes in Jaclang can have abilities defined to perform specific tasks. These abilities are structured as entry and exit points.
+
+Imagine a smart home system where each room is represented as a node. Walkers (automated agents) traverse these nodes, performing tasks like turning lights on or off, adjusting temperature, or sending alerts when entering or exiting a room.
+
+**Entry**
+When someone enters a room:
+- Lights Turn On: The system detects entry and automatically switches on the lights to ensure the person feels welcomed.
+- Room Occupied: The system marks the room as occupied in its database or tracking system.
+
+You enter the Living Room, and the system turns on the lights and logs your presence.
+
+**Exit**
+When someone exits a room:
+- Lights Turn Off: The system detects the exit and switches off the lights to save energy.
+- Room Vacant: It marks the room as unoccupied in its tracking system.
+
+You leave the Living Room, and the system turns off the lights and updates its records to show the room is vacant.
+
 === "Guide"
       ```bash
       node profile {
@@ -583,7 +742,14 @@ Leverage AI with Jaclang to summarize tweets efficiently using the **Llama** mod
 
 ### **Lesson 7: Integrating Jac Splice Orchestrator**
 
-**JAC Cloud Orchestrator (jac-splice-orc)** enables the dynamic import of Python modules, deploying them as Kubernetes Pods and exposing them as gRPC services for scalable microservices.
+**JAC Cloud Orchestrator (jac-splice-orc)** transforms Python modules into scalable, cloud-based microservices. By deploying them as Kubernetes Pods and exposing them via gRPC, it empowers developers to seamlessly integrate dynamic, distributed services into their applications.
+
+#### Why is it important?
+
+- **Scalability at its Core**: Handles dynamic workloads by effortlessly scaling microservices.
+- **Seamless Integration**: Makes advanced cloud-based service deployment intuitive and efficient, reducing the operational overhead.
+- **Flexible and Dynamic**: Allows you to import Python modules dynamically, adapting to evolving application requirements.
+- **Optimized for Developers**: Simplifies complex backend orchestration, enabling more focus on feature development and innovation.
 
 === "Guide"
       1. Setup Configuration file and Create Cluster
