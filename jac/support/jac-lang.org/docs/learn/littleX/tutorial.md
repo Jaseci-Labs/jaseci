@@ -7,9 +7,9 @@ This guide introduces how the Jaseci Stack accelerates application development b
 We’ll develop a web application called **LittleX**, a streamlined and efficient version of Elon Musk’s X, using the Jaseci Stack. This project highlights the simplicity and power of Jaseci, enabling us to implement advanced features with minimal code and effort—tasks that typically require significant time in traditional frameworks.
 
 ## **Key Features:**
-- User authentication: Sign up, log in, and profile management.
-- Content management: Create, view, and interact with posts.
-- Social interactions: Follow users and explore their content.
+- **User authentication:** Sign up, log in, and profile management.
+- **Content management:** Create, view, and interact with posts.
+- **Social interactions:** Follow users and explore their content.
 
 With Jaseci, we can focus on building these features seamlessly rather than dealing with the complexities of system setup. This guide focuses on the **backend** for LittleX, showcasing how Jaseci efficiently handles user authentication and database operations.
 
