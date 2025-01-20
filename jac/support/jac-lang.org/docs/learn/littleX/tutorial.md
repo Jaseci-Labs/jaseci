@@ -1,44 +1,22 @@
-# **Build LittleX**
+# **Building an Application with Jaseci**
 
-Hello everyone! We are going to build a social media app with Jaseci stack!
+This guide provides a sampling of how Jaseci Stack helps you accelerate application development. As you explore more Jaseci Getting Started guides, you will discover additional use cases for Jaseci Stack[**********]. This guide is designed to give you a quick taste of Jaseci Stack. If you want to create your own Jaseci-based project, start by setting up the Jaseci framework, defining your nodes, edges, and walkers, and crafting your application logic using Jaseci's graph-based programming model. 
 
-If you’ve ever thought about creating your own social media platform like Instagram, Twitter, or Facebook, you’re in the right place! In this post, I’ll break down the architecture of a social media app in a simple and beginner-friendly way.
 
-## **App Architecture**
+# **What We Will build**
 
-App architecture is the blueprint for how app components interact, ensuring smooth performance, scalability, and maintainability.
+In this guide, we will develop a streamlined web application named LittelX—a lighter and more efficient version of Elon Musk's X—using the Jaseci Stack. This application will showcase the power and simplicity of Jaseci by incorporating advanced services with minimal code and effort, demonstrating features that would typically require significant development time in other frameworks.
 
-### **1. Frontend – User Interface (UI)**
 
-- **Purpose:** What users see and interact with (e.g., login, feed, profiles).
-- **Key Features:**
-      - Login/Signup screens.
-      - Feed display for posts (text, images, videos).
-      - User profiles with bio, posts, and followers.
-      - Post interactions (like, comment, share).
-- **Technologies:** HTML, CSS, JavaScript with frameworks like React or Vue.js.
-- **How It Works:** Sends user actions to the backend and displays responses (e.g., updated like count).
+**Features We Will Build**
 
-### **2. Backend – App Logic**
+In this guide, we will implement the core backend features for LittelX, including:
 
-- **Purpose:** Handles requests, processes data, and connects to the database.
-- **Key Features:**
-      - User authentication (login, signup).
-      - Post management (upload, edit, delete).
-      - Social features (follow, like, comment, share).
-- **Technologies:** Python (FastAPI/Django), Node.js, or Go with REST API or GraphQL.
-- **How It Works:** Processes user actions (e.g., verify login, upload photos) and communicates with the database.
+- Sign up, log in, and manage their profiles.
+- Create, view, and interact with posts.
+- Follow other users and explore their content.
 
-### **3. Database – Data Storage**
-
-- **Purpose:** Stores all app data (users, posts, likes, comments).
-- **Key Tables:**
-      - **Users:** Stores profile data (name, email, bio).
-      - **Posts:** Stores content and related user info.
-      - **Likes/Comments:** Tracks interactions on posts.
-- **Technologies:** PostgreSQL, MySQL (structured), MongoDB, Cassandra (unstructured).
-
-we discussed the architecture of a social media app. Now, we're going to build the backend of LittleX—a minimal social media platform. **The exciting part?** We're using **Jaseci Stack**, an **open-source** comprehensive technology **stack** that simplifies backend development by reducing complexity in modern **AI-powered** and **cloud-native** applications.
+For this post, we'll only build the backend. LittleX will leverage Jaseci's powerful tools to manage user authentication and database interactions seamlessly.
 
 **Why Jaseci?**
 
@@ -53,15 +31,15 @@ Jaseci simplifies backend development with:
 
 With Jaseci, we can focus on implementing features instead of setting up complex systems.
 
-**What is LittleX?**
+## **What You Need**
 
-LittleX is a basic social media platform that allows users to:
+To get started with building **LittelX**, ensure you have the following:
 
-- Sign up, log in, and manage their profiles.
-- Create, view, and interact with posts.
-- Follow other users and explore their content.
-
-For this post, we'll only build the backend. LittleX will leverage Jaseci's powerful tools to manage user authentication and database interactions seamlessly.
+- **About 15 minutes**: Time required to set up and explore the basics.
+- **A favorite text editor or IDE**: Any development environment you are comfortable with.
+- **Python 3.12 or later**: Jaseci is built on Python; ensure you have a compatible version installed.
+- [*********] - please add all the required stuffs here
+- Node.js (optional): If you plan to integrate a frontend in future steps.
 
 **LittleX Architecture**
 
@@ -79,7 +57,7 @@ LittleX’s graph-based architecture uses nodes for entities like users and post
 pip install jaclang, jac-cloud, mtllm, jac-splice-orc
 ```
 
-### **Lesson 1: Creating Nodes**
+### **Lesson 1: Let's create our first Node**
 
 **Jac lang**, language used in Jaseci stack, organizes data as interconnected nodes within a spatial or graph-like structure. It focuses on the **relationships** between data points, rather than processing them **step-by-step**.
 
@@ -168,7 +146,7 @@ Now Lets create required edges for LittleX
     --8<-- "support/jac-lang.org/docs/learn/littleX/src/LittleX_step3.jac"
     ```
 
-### **Lesson 3: Creating Walkers**
+### **Lesson 3: Creating our first Walker**
 Walkers are graph-traversing agents in Jaclang that perform tasks without requiring initialization and can define abilities for various node types. The Jaseci stack automatically converts walkers into RESTful API endpoints.
 
 First create a walker with name Relation and attribute since.
@@ -576,7 +554,7 @@ Nodes in Jaclang can have abilities defined to perform specific tasks. These abi
     --8<-- "support/jac-lang.org/docs/learn/littleX/src/LittleX_step6.jac"
     ```
 
-### **Lesson 6: Integrating AI to Summarize Tweets:**
+### **Lesson 6: Let's add some AI magic to our application using the power of MTLLM:**
 
 Leverage AI with Jaclang to summarize tweets efficiently using the **Llama** model from the MTLLM library.
 
