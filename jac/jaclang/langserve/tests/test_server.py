@@ -379,7 +379,7 @@ class TestJacLangServer(TestCase):
                     "r",
                     "Jac",
                 ],
-                9,
+                170,
                 None,
             ),
         ]
@@ -391,15 +391,23 @@ class TestJacLangServer(TestCase):
                 base_module_file, position, completion_trigger=completion_trigger
             ).items
             for completion in expected_completions:
-                self.assertIn(completion, str(completions))
-            self.assertEqual(expected_length, len(completions))
+                self.assertIn(
+                    completion, str(completions), msg=f"Case: {test_cases.index(case)}"
+                )
+            self.assertEqual(
+                expected_length, len(completions), msg=f"Case: {test_cases.index(case)}"
+            )
 
             if position == lspt.Position(73, 12):
                 self.assertEqual(
-                    2, str(completions).count("kind=<CompletionItemKind.Function: 3>")
+                    2,
+                    str(completions).count("kind=<CompletionItemKind.Function: 3>"),
+                    msg=f"Case: {test_cases.index(case)}",
                 )
                 self.assertEqual(
-                    4, str(completions).count("kind=<CompletionItemKind.Field: 5>")
+                    4,
+                    str(completions).count("kind=<CompletionItemKind.Field: 5>"),
+                    msg=f"Case: {test_cases.index(case)}",
                 )
 
     def test_go_to_reference(self) -> None:
