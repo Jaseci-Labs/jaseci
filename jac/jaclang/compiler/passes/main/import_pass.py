@@ -510,7 +510,7 @@ class PyImportPass(JacImportPass):
                 ).ir
                 mod.parent = self.ir
                 SubNodeTabPass(input_ir=mod, prior=self)
-                PyInspectSymTabBuildPass(input_ir=mod, prior=self)
+                SymTabBuildPass(input_ir=mod, prior=self)
                 DefUsePass(input_ir=mod, prior=self)
                 mod.parent = None
 
