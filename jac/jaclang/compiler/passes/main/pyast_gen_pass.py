@@ -413,7 +413,13 @@ class PyastGenPass(Pass):
             func.decorator_list.append(
                 self.sync(
                     ast3.Call(
-                        func=self.jaclib_obj("_impl_patch_filename"),
+                        func=self.sync(
+                            ast3.Attribute(
+                                value=self.jaclib_obj("Jac"),
+                                attr="impl_patch_filename",
+                                ctx=ast3.Load(),
+                            )
+                        ),
                         args=[],
                         keywords=[
                             self.sync(
@@ -1059,12 +1065,17 @@ class PyastGenPass(Pass):
                 )
             )
 
-        # TODO(thakee): Check the bellow code?
         if isinstance(node.body, ast.AstImplOnlyNode):
             decorator_list.append(
                 self.sync(
                     ast3.Call(
-                        func=self.jaclib_obj("_impl_patch_filename"),
+                        func=self.sync(
+                            ast3.Attribute(
+                                self.jaclib_obj("Jac"),
+                                attr="impl_patch_filename",
+                                ctx=ast3.Load(),
+                            ),
+                        ),
                         args=[self.sync(ast3.Constant(value=node.body.loc.mod_path))],
                         keywords=[],
                     )
@@ -2553,7 +2564,6 @@ class PyastGenPass(Pass):
 
         values: Optional[SubNodeList[ExprType]],
         """
-        # (thakee): What should I do?
         if isinstance(node.py_ctx_func(), ast3.Load):
             node.gen.py_ast = [
                 self.sync(
