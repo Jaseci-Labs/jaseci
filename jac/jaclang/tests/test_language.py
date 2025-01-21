@@ -118,7 +118,6 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
 
         expected_outputs = [
-            # (thakee): I don't know if this List() wrapper on all list is okey?
             "+-- AtomTrailer - Type: Any",
             "    +-- Name - arr - Type: jaclang.List[jaclang.List[builtins.int]],  SymbolTable: None",
             "    +-- IndexSlice - [IndexSlice] - Type: builtins.slice,  SymbolTable: None",

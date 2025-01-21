@@ -2,7 +2,7 @@ from jaclang import List
 
 a = 9.2
 b = 44
-c = List([2, 4, 6, 10])  # (thakee):
+c = List([2, 4, 6, 10])
 d = {"name": "john", "age": 28}
 e = ("jaseci", 5, 4, 14)
 f = True

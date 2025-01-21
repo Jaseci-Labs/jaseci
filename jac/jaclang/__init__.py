@@ -2,7 +2,7 @@
 
 import inspect
 import os
-from abc import ABC, ABCMeta, abstractmethod as abstract
+from abc import ABCMeta, abstractmethod as abstract
 from dataclasses import dataclass, field as dc_field
 from types import ModuleType
 from typing import (
@@ -49,9 +49,6 @@ __all__ = [
     "dotgen",
     "jid",
     "jobj",
-    # This is not part of the jaclib for a python user but used internally to generate by jac compiler.
-    # (thakee): can directly use Jac in the generated source code.
-    "_impl_patch_filename",
 ]
 
 
@@ -103,28 +100,28 @@ class MetaCommon(ABCMeta):
         return inst
 
 
-class MetaObj(MetaCommon, ABC):  # noqa: D101
+class MetaObj(MetaCommon):  # noqa: D101
     def __new__(  # noqa: D102
         cls, name: str, bases: Tuple[Type, ...], dct: Dict[str, Any]
     ) -> "MetaCommon":
         return super().__new__(cls, name, bases, dct, Jac.make_obj)
 
 
-class MetaWalker(MetaCommon, ABC):  # noqa: D101
+class MetaWalker(MetaCommon):  # noqa: D101
     def __new__(  # noqa: D102
         cls, name: str, bases: Tuple[Type, ...], dct: Dict[str, Any]
     ) -> "MetaCommon":
         return super().__new__(cls, name, bases, dct, Jac.make_walker)
 
 
-class MetaNode(MetaCommon, ABC):  # noqa: D101
+class MetaNode(MetaCommon):  # noqa: D101
     def __new__(  # noqa: D102
         cls, name: str, bases: Tuple[Type, ...], dct: Dict[str, Any]
     ) -> "MetaCommon":
         return super().__new__(cls, name, bases, dct, Jac.make_node)
 
 
-class MetaEdge(MetaCommon, ABC):  # noqa: D101
+class MetaEdge(MetaCommon):  # noqa: D101
     def __new__(  # noqa: D102
         cls, name: str, bases: Tuple[Type, ...], dct: Dict[str, Any]
     ) -> "MetaCommon":
@@ -363,7 +360,6 @@ def field(
 jac_test = Jac.create_test
 static = ClassVar
 jobj = Jac.get_object
-_impl_patch_filename = Jac.impl_patch_filename
 
 
 # ----------------------------------------------------------------------------
