@@ -319,3 +319,5 @@ client.send(JSON.stringify({
 	"type": "connection"
 }));
 ```
+---
+### **For complete working example you may download this [API Request Collection](https://github.com/amadolid/jaseci/blob/websocket-backup-final/jac-cloud/jac_cloud/tests/jac-cloud-websocket.insomnia)**
