@@ -81,6 +81,12 @@ In this setup, each user's architype (node, edge, walker) is isolated with defau
         }
     }
     ```
+## Access Level Prioritization
+Specific root access will get prioritize over "all" access. This is to support different scenario such as:
+ - all: `NO_ACCESS` roots: `root2: CoNNECT`
+   - all user will have no access except user2 which will have connect access
+ - all: `WRITE` roots: `root2: NO_ACCESS`
+   - user2 will have no access while all other user have write access
 
 ## Example Structure in DB perspective
 Consider the following structure:

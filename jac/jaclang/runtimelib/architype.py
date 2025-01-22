@@ -44,9 +44,9 @@ class Access:
 
     anchors: dict[str, AccessLevel] = field(default_factory=dict)
 
-    def check(self, anchor: str) -> AccessLevel:
+    def check(self, anchor: str) -> AccessLevel | None:
         """Validate access."""
-        return self.anchors.get(anchor, AccessLevel.NO_ACCESS)
+        return self.anchors.get(anchor)
 
 
 @dataclass

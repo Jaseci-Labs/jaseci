@@ -74,7 +74,7 @@ class JacAccessValidationPlugin:
         if (
             isinstance(anchor, BaseAnchor)
             and (ref_id := root_id.ref_id)
-            and level != access.anchors.get(ref_id, AccessLevel.NO_ACCESS)
+            and level != access.anchors.get(ref_id)
         ):
             access.anchors[ref_id] = level
             anchor._set.update({f"access.roots.anchors.{ref_id}": level.name})
@@ -169,14 +169,12 @@ class JacAccessValidationPlugin:
             if to_root.access.all > access_level:
                 access_level = to_root.access.all
 
-            level = to_root.access.roots.check(jroot.ref_id)
-            if level > AccessLevel.NO_ACCESS and access_level == AccessLevel.NO_ACCESS:
+            if (level := to_root.access.roots.check(jroot.ref_id)) is not None:
                 access_level = level
 
         # if target anchor have set allowed roots
         # if current root is allowed to target anchor
-        level = to_access.roots.check(jroot.ref_id)
-        if level > AccessLevel.NO_ACCESS and access_level == AccessLevel.NO_ACCESS:
+        if (level := to_access.roots.check(jroot.ref_id)) is not None:
             access_level = level
 
         return access_level

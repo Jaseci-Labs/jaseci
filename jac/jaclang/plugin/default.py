@@ -179,14 +179,12 @@ class JacAccessValidationImpl:
             if to_root.access.all > access_level:
                 access_level = to_root.access.all
 
-            level = to_root.access.roots.check(str(jroot.id))
-            if level > AccessLevel.NO_ACCESS and access_level == AccessLevel.NO_ACCESS:
+            if (level := to_root.access.roots.check(str(jroot.id))) is not None:
                 access_level = level
 
         # if target anchor have set allowed roots
         # if current root is allowed to target anchor
-        level = to_access.roots.check(str(jroot.id))
-        if level > AccessLevel.NO_ACCESS and access_level == AccessLevel.NO_ACCESS:
+        if (level := to_access.roots.check(str(jroot.id))) is not None:
             access_level = level
 
         return access_level
