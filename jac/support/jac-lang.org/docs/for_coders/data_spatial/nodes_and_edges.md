@@ -1,7 +1,16 @@
 # <span style="color: orange">Nodes and Edges</span>
 
 ## Nodes 
-Nodes are the fundamental elements of a graph in Jac, acting as starting points, connection hubs, and endpoints. They can be compared to custom classes in object-oriented programming (OOP). 
+Nodes are architypes forming part of a graph, holding properties. They can be compared to custom classes in object-oriented programming (OOP). 
+
+```jac
+      node node_name{
+          has node_property: int;
+      }
+      node node_name{
+          has node_property: int = 10;
+      }
+```
 
 ### Custom Node Types
 - You can define custom node types to create specific instances within the graph. 
@@ -36,13 +45,65 @@ Nodes are the fundamental elements of a graph in Jac, acting as starting points,
     }
 ```
 
-- Nodes can connect in different ways: one node can link to multiple nodes, multiple nodes can link to one node, a group of nodes can connect to another group of nodes, or one node can connect to another single node.
-=== "Jac"
+### Connecting Nodes
+Nodes in JacLang can establish connections in various ways, offering flexibility for building complex graphs:
+
+- **One-to-One**: A single node connects to another single node.
+- **One-to-Many**: A single node connects to multiple nodes.
+- **Many-to-One**: Multiple nodes connect to a single node.
+- **Many-to-Many**: A group of nodes connects to another group of nodes.
+
+This versatility allows for creating intricate and highly interconnected graph structures, tailored to the specific needs of your application.
+=== "one2one.jac"
+    ```jac linenums="1"
+    node MyNode{}
+
+    with entry{
+    first_node = MyNode();
+    second_node = MyNode();
+
+    root ++> first_node;
+    first_node ++> second_node;
+
+    }
+    ```
+    ??? example "Graph Image"
+        ![Image](Images/onetoone.png)
+=== "one2many.jac"
+    ```jac linenums="1"
+    node MyNode{}
+
+    with entry{
+    first_node = MyNode();
+    second_tier = [MyNode() for i in range(2)];
+
+    root ++> first_node;
+    first_node ++> second_tier; # one to many
+
+    }
+    ```
+    ??? example "Graph Image"
+        ![Image](Images/onetomany.png)
+=== "many2one.jac"
+    ```jac linenums="1"
+    node MyNode{}
+
+    with entry{
+    first_tier = [MyNode() for i in range(2)];
+    second_node = MyNode();
+    root ++> first_tier;
+    first_tier ++> second_node; # many to one
+
+    }
+    ```
+    ??? example "Graph Image"
+        ![Image](Images/manytoone.png)
+=== "many2many.jac"
     ```jac linenums="1"
     --8<-- "examples/data_spatial/create_node.jac"
     ```
-??? example "Graph Image"
-    ![Image](Images/create_node.png)
+    ??? example "Graph Image"
+        ![Image](Images/create_node.png)
 
 ## Edges
 Nodes can be linked using either *default edges* (generic connections) or *custom edges*, which have specific properties.
