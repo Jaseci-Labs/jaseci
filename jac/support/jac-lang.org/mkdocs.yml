@@ -14,12 +14,15 @@ nav:
           - "learn/impl_docs.md"
           - Data Spatial:
               - "learn/data_spatial/examples.md"
+              - "learn/data_spatial/sequence.md"
               - "learn/data_spatial/FAQ.md"
           - Jac Cloud:
               - "learn/coders/jac-cloud/docs/jac_cloud.md"
               - "learn/coders/jac-cloud/docs/permission.md"
               - "learn/coders/jac-cloud/docs/jac_cloud_logging.md"
               - "learn/coders/jac-cloud/docs/jac_cloud_env_vars.md"
+              - "learn/coders/jac-cloud/docs/jac_cloud_webhook.md"
+              - "learn/coders/jac-cloud/docs/jac_cloud_websocket.md"
           - MTLLM:
               - "learn/with_llm.md"
               - Quick Start:
@@ -36,6 +39,11 @@ nav:
                   - "learn/coders/mtllm/docs/building_blocks/Multimodality.md"
               - Tutorials:
                   - "learn/coders/mtllm/docs/tutorials/rpg_game.md"
+          - Showcase Projects:
+              - LittleX:
+                  - "learn/littleX/overview.md"
+                  - "learn/littleX/quickstart.md"
+                  - "learn/littleX/tutorial.md"
           - "learn/tips_tricks.md"
           - "learn/jac_plugins.md"
       - For contributors:
@@ -105,12 +113,15 @@ markdown_extensions:
         - name: mermaid
           class: mermaid
           # format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tasklist:
+      custom_checkbox: true
   - attr_list
   - md_in_html
   - attr_list
   - admonition
   - pymdownx.details
   - pymdownx.superfences
+  - tables
   # - pymdownx.emoji:
   #     emoji_index: !!python/name:material.extensions.emoji.twemoji
   #     emoji_generator: !!python/name:material.extensions.emoji.to_svg

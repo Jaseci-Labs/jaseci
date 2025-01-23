@@ -31,7 +31,7 @@ def jac_file_to_pass(
     schedule: list[Type[Pass]] = pass_schedule,
 ) -> Pass:
     """Convert a Jac file to an AST."""
-    with open(file_path) as file:
+    with open(file_path, "r", encoding="utf-8") as file:
         return jac_str_to_pass(
             jac_str=file.read(),
             file_path=file_path,

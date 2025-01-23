@@ -33,7 +33,7 @@ class TestLoader(TestCase):
         )
         self.assertIn(
             "/tests/fixtures/hello_world.jac",
-            str(JacMachine.get().loaded_modules),
+            str(JacMachine.get().loaded_modules).replace("\\\\", "/"),
         )
         JacMachine.detach()
 
