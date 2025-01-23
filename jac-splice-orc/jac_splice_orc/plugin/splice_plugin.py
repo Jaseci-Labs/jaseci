@@ -108,6 +108,7 @@ class SpliceOrcPlugin:
                         "pods",
                         "services",
                         "configmaps",
+                        "roles",
                     ],
                     verbs=["get", "watch", "list", "create", "update", "delete"],
                 ),
@@ -202,7 +203,7 @@ class SpliceOrcPlugin:
             logging.info("Using NodePort service type for kind cluster.")
         else:
             service_type = "LoadBalancer"
-            node_port = None 
+            node_port = None
             logging.info("Using LoadBalancer service type.")
 
         # Create the Deployment object
