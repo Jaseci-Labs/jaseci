@@ -13,9 +13,11 @@ nav:
         - "for_coders/language_basics/import.md"
         - "for_coders/language_basics/impl_docs.md"
       - Data Spatial Programming:
-        - "for_coders/data_spatial/dataspatial.md"
-        - "for_coders/data_spatial/nodes_and_edges.md"
-        - "for_coders/data_spatial/walkers.md"
+        - "for_coders/data_spatial/dataspatial.md" # Why data spatial
+        - "for_coders/data_spatial/nodes_and_edges.md" # Introduction to DS primitives
+        - "for_coders/data_spatial/filtering.md" # Filtering
+        - "for_coders/data_spatial/walkers.md" # Walker
+        - "for_coders/data_spatial/FAQ.md" # faq
       - Python Integration:
         - "for_coders/python_integration.md"
       - LLMs and AI Models:
