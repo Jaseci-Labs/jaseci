@@ -920,12 +920,6 @@ class JacFeatureImpl(
 
     @staticmethod
     @hookimpl
-    def elvis(op1: Optional[T], op2: T) -> T:
-        """Jac's elvis operator feature."""
-        return ret if (ret := op1) is not None else op2
-
-    @staticmethod
-    @hookimpl
     def has_instance_default(gen_func: Callable[[], T]) -> T:
         """Jac's has container default feature."""
         return field(default_factory=lambda: gen_func())
