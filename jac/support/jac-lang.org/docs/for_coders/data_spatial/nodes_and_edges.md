@@ -67,8 +67,8 @@ This versatility allows for creating intricate and highly interconnected graph s
 
     }
     ```
-    ??? example "Graph Image"
-        ![Image](Images/onetoone.png)
+    <!-- ??? example "Graph Image"
+        ![Image](Images/onetoone.png) -->
 === "one2many.jac"
     ```jac linenums="1"
     node MyNode{}
@@ -82,8 +82,8 @@ This versatility allows for creating intricate and highly interconnected graph s
 
     }
     ```
-    ??? example "Graph Image"
-        ![Image](Images/onetomany.png)
+    <!-- ??? example "Graph Image"
+        ![Image](Images/onetomany.png) -->
 === "many2one.jac"
     ```jac linenums="1"
     node MyNode{}
@@ -96,18 +96,33 @@ This versatility allows for creating intricate and highly interconnected graph s
 
     }
     ```
-    ??? example "Graph Image"
-        ![Image](Images/manytoone.png)
+    <!-- ??? example "Graph Image"
+        ![Image](Images/manytoone.png) -->
 === "many2many.jac"
     ```jac linenums="1"
     --8<-- "examples/data_spatial/create_node.jac"
     ```
-    ??? example "Graph Image"
-        ![Image](Images/create_node.png)
+    <!-- ??? example "Graph Image"
+        ![Image](Images/create_node.png) -->
 
 ## Edges
-Nodes can be linked using either *default edges* (generic connections) or *custom edges*, which have specific properties.
-    ```jac
+Nodes can be linked using either *default edges* (generic connections) or *custom edges*, which have specific properties as shown in the following examples.
+=== "Generic Edges"
+    ```jac linenums="1"
       node_1 ++> node_2; # uni directional edge
       node_1 <++> node_2; # bidirectional edge
     ```
+=== "Custom Edges"
+    ```jac linenums="1"
+    edge custom1 {
+        has atrib1:str;
+    }
+      node_1 +:custom1:atrib1='val1':+> node_2; # uni directional edge
+      node_1 <+:custom1:atrib1='val2':+> node_2; # bidirectional edge
+    ```
+
+To delete an edge between two nodes the ````del``` keyword can be used as shown below.
+
+```jac linenums="1"
+node_1 del --> node_2;
+```
