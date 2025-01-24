@@ -8,7 +8,7 @@ with open(os.path.join(here, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="jac-splice-orc",
-    version="0.1.4",
+    version="0.1.5",
     description="JAC Splice-Orchestrator: Kubernetes-based dynamic remote module management for JacLang",
     author="Jason Mars",
     author_email="jason@jaseci.org",

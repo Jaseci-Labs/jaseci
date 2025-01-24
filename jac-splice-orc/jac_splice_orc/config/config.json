@@ -71,6 +71,6 @@
         }
     },
     "environment": {
-        "POD_MANAGER_URL": "http://a88a549ed32f14b14b1333a81ebd7a2a-1627559794.us-west-2.elb.amazonaws.com:8000"
+        "POD_MANAGER_URL": "http://localhost:30080"
     }
 }
