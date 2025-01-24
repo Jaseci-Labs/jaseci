@@ -1549,7 +1549,8 @@ class JacFormatPass(Pass):
                 test_str += f" {node.op.value} "
 
         # Check if line break is needed
-        if self.is_line_break_needed(test_str):
+        adjusted_line_length = self.MAX_LINE_LENGTH * 2 - self.indent_size * 2
+        if self.is_line_break_needed(test_str, max_line_length=adjusted_line_length):
             for i in node.values:
                 if i != end:
                     self.emit_ln(node, f"{i.gen.jac}")
