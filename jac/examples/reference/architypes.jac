@@ -1,18 +1,20 @@
 can print_base_classes(cls: type) -> type {
-    print(f"Base classes of {cls.__name__}: {[c.__name__  for c in cls.__bases__]}");
+    print(
+        f"Base classes of {cls.__name__}: {[c.__name__ for c in cls.__bases__]}"
+    );
     return cls;
 }
 
-obj Animal {}
+class Animal {}
 
 obj Domesticated {}
 
 @print_base_classes
-obj Pet :Animal, Domesticated: {}
+node Pet :Animal, Domesticated: {}
 
-obj Person :Animal: {}
+walker Person :Animal: {}
 
-obj Feeder :Person: {}
+walker Feeder :Person: {}
 
 @print_base_classes
-obj Zoologist :Feeder: {}
+walker Zoologist :Feeder: {}
