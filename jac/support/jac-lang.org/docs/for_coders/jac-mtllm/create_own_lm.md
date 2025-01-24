@@ -78,8 +78,6 @@ class MyLLM(BaseLLM):
     # Rest of the code
 ```
 
-Check the [API Reference](/docs/api/mtllm) for more information on prompting techniques.
-
 Thats it! You have successfully created your own Language Model to be used with MTLLM.
 
 >  <span style="color: orange">**NOTICE**

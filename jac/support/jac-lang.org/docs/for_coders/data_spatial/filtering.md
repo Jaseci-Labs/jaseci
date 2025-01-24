@@ -26,8 +26,8 @@ We can filter specific types of nodes from a list of visitable nodes based on th
     [C(val=25)]
     [C(val=15)]
     ```
-??? example "Graph Image"
-    ![Image](Images/filtering.png)
+??? example "Graph"
+    ![Image](assets/filtering.png)
 
 ## Edge-Based Filtering
 
@@ -49,4 +49,4 @@ We can filter nodes based on specific edge attributes, such as filtering by edge
     [A(val=20)]
     ```
 ??? example "Graph Image"
-    ![Image](Images/edge_filtering.png)
+    ![Image](assets/edge_filtering.png)

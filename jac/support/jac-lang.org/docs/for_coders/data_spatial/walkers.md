@@ -11,7 +11,7 @@ A walker can be spawned at any point on the graph with the ```spawn``` keyword.
     --8<-- "examples/data_spatial/define_walker.jac"
     ```
 ??? example "Graph Image"
-    ![Image](Images/define_walker.png)
+    ![Image](assets/define_walker.png)
 
 ## Graph Traversal Using Visit
 Walkers navigate the graph using the ```visit``` keyword.

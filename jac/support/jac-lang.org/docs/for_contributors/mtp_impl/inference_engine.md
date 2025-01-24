@@ -26,9 +26,9 @@ Key features:
 - Inclusion of available tools and their usage instructions
 
 Files involved:
-- [`aott.py`](mtllm/aott.py) # aott_raise, get_all_type_explanations
-- [`plugin.py`](mtllm/plugin.py) # with_llm method
-- [`types.py`](mtllm/types.py) # Information, InputInformation, OutputHint, Tool classes
+- [`aott.py`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac-mtllm/mtllm/aott.py) # aott_raise, get_all_type_explanations
+- [`plugin.py`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac-mtllm/mtllm/plugin.py) # with_llm method
+- [`types.py`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac-mtllm/mtllm/types.py) # Information, InputInformation, OutputHint, Tool classes
 
 ### <span style="color: orange">2.2 LLM Interface
 
@@ -40,8 +40,8 @@ Key features:
 - Handling Multi-Modal Inputs if applicable
 
 Files involved:
-- [`aott.py`](mtllm/aott.py) # aott_raise
-- ['llms/base.py'](mtllm/llms/base.py) # BaseLLM class, __call__, __infer__
+- [`aott.py`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac-mtllm/mtllm/aott.py) # aott_raise
+- ['llms/base.py'](https://github.com/Jaseci-Labs/jaseci/blob/main/jac-mtllm/mtllm/llms/base.py) # BaseLLM class, __call__, __infer__
 
 ### <span style="color: orange">2.3 Output Processor
 
@@ -53,8 +53,8 @@ Key features:
 - Conversion of string representations to Python objects (when applicable)
 
 Files involved:
-- [`aott.py`](mtllm/aott.py) # aott_raise
-- [`llms/base.py`](mtllm/llms/base.py) # BaseLLM class, BaseLLM.resolve_output, BaseLLM._extract_output, BaseLLM.to_object, BaseLLM._fix_output
+- [`aott.py`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac-mtllm/mtllm/aott.py) # aott_raise
+- [`llms/base.py`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac-mtllm/mtllm/llms/base.py) # BaseLLM class, BaseLLM.resolve_output, BaseLLM._extract_output, BaseLLM.to_object, BaseLLM._fix_output
 
 ### <span style="color: orange">2.4 Error Handler
 
@@ -67,7 +67,7 @@ Key features:
 - Implementation of fallback strategies
 
 Files involved:
-- [`llms/base.py`](mtllm/llms/base.py) # BaseLLM._check_output , BaseLLM._extract_output, BaseLLM.to_object, BaseLLM._fix_output
+- [`llms/base.py`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac-mtllm/mtllm/llms/base.py) # BaseLLM._check_output , BaseLLM._extract_output, BaseLLM.to_object, BaseLLM._fix_output
 
 
 ### <span style="color: orange">2.5 Tool Integrator
@@ -79,10 +79,10 @@ Key features:
 - Error handling for tool execution in ReAct mode
 
 Files involved:
-- [`plugin.py`](mtllm/plugin.py) # callable_to_tool
-- [`types.py`](mtllm/types.py) # Tool class
-- [`tools/base.py`](mtllm/tools/base.py) # Tool class
-- [`tools/<math_utils.py/serper.py/wikipedia.py>](mtllm/tools) # Predefined tools
+- [`plugin.py`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac-mtllm/mtllm/plugin.py) # callable_to_tool
+- [`types.py`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac-mtllm/mtllm/types.py) # Tool class
+- [`tools/base.py`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac-mtllm/mtllm/llms/base.py) # Tool class
+- [`tools/<math_utils.py/serper.py/wikipedia.py>](https://github.com/Jaseci-Labs/jaseci/tree/main/jac-mtllm/mtllm/tools) # Predefined tools
 
 ## <span style="color: orange">3. Inference Process
 

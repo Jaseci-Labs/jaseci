@@ -2,14 +2,8 @@
 
 Jac Language CLI is with a variety of commands to facilitate users. Additionally, Jac language offers users the ability to define custom CLI commands through plugins. This document aims to provide an overview of each command along with clear usage instructions. Jac CLI can ba accessed using bash commands as well as by bashing ```jac``` which will start the Jac CLI.
 
-> Type "help" on Jac CLI and see!
 
-### Click one of the default commands below and see the usage.
-- [tool](#tool) , [run](#run) , [clean](#clean) , [format](#format) , [check](#check) , [build](#build)  , [enter](#enter) , [test](#test)
-
-
-
-## 1. Command `tool`:
+## `jac tool`
 Jac Language offers language tools to perform various tasks efficiently. The `tool` command is utilized to execute specific language tools along with any optional arguments as needed. This command enables users to interact with language-specific command line tools designed to manage the language effectively.
 ```bash
 $ jac tool <jac_tool> <args>
@@ -26,7 +20,8 @@ Parameters to execute the tool command:
 jac tool ir <output_type> <file_path>
 ```
 
-#### Parameters to use the ir tool:
+*Parameters for `jac tool ir`*
+
 - `output_type`: Choose one of the following options:
 - `sym`: Provides the symbol table of the specified .jac file.
 - `sym.`: Generates a dot graph representation of the symbol table for the specified .jac file.
@@ -52,28 +47,28 @@ jac tool ir ast <file_path>
 ```
 
 
-> 1.2. jac_tool `pass_template`:
+> jac_tool `pass_template`:
   `pass_template` tool generates pass template for jac.
 ```bash
 jac tool pass_template
 ```
 
 
-> 1.3. jac_tool `py_ast_nodes`:
+> jac_tool `py_ast_nodes`:
   `py_ast_nodes` tool lists python ast nodes.
 ```bash
 jac tool py_ast_nodes
 ```
 
 
-> 1.4. jac_tool `md_doc`:
+> jac_tool `md_doc`:
   `md_doc` tool generate mermaid markdown doc.
 ```bash
 jac tool md_doc
 ```
 
 
-> 1.5. jac_tool `automate_ref`:
+> jac_tool `automate_ref`:
   `automate_ref` tool automates the reference guide generation.
 ```bash
 jac tool automate_ref
@@ -81,7 +76,7 @@ jac tool automate_ref
 
 
 
-## 2. Command `run`:
+## `jac run`
 
 The `run` command is utilized to run the specified .jac or .jir file.
 ```bash
@@ -98,7 +93,7 @@ jac run <file_path>
 
 
 
-## 3. Command `clean`:
+## `jac clean`
 The `clean` command is utilized to remove the __jac_gen__ , __pycache__ folders from the current directory recursively.
 ```bash
 jac clean
@@ -107,7 +102,7 @@ No Parameters needed to execute the clean command
 
 
 
-## 4. Command `format`:
+## `jac format`
 The `format` command is utilized to run the specified .jac file or format all .jac files in a given directory.
 ```bash
 jac format <file_path/directory_path> [outfile] [debug]
@@ -124,7 +119,7 @@ jac format <file_path/directory_path> [outfile] [debug]
 
 
 
-## 5. Command `check`:
+## `jac check`
 The `check` command is utilized to run type checker for a specified .jac file.
 ```bash
 jac check <file_path>
@@ -134,7 +129,7 @@ Parameters to execute the check command:
 
 
 
-## 6. Command `build`:
+## `jac build`
 
 The `build` command is utilized to build the specified .jac file.
 ```bash
@@ -145,7 +140,7 @@ jac build <file_path>
 
 
 
-## 7. Command `enter`:
+## `jac enter`
 
 The `enter` command is utilized to run the specified entrypoint function in the given .jac file.
 
@@ -164,7 +159,7 @@ jac enter <file_path>
 
 
 
-## 8. Command `test`:
+## `jac test`
 
 The `test` command is utilized to run the test suite in the specified .jac file.
 ```bash

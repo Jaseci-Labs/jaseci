@@ -68,7 +68,7 @@ This versatility allows for creating intricate and highly interconnected graph s
     }
     ```
     <!-- ??? example "Graph Image"
-        ![Image](Images/onetoone.png) -->
+        ![Image](assets/onetoone.png) -->
 === "one2many.jac"
     ```jac linenums="1"
     node MyNode{}
@@ -83,7 +83,7 @@ This versatility allows for creating intricate and highly interconnected graph s
     }
     ```
     <!-- ??? example "Graph Image"
-        ![Image](Images/onetomany.png) -->
+        ![Image](assets/onetomany.png) -->
 === "many2one.jac"
     ```jac linenums="1"
     node MyNode{}
@@ -97,13 +97,13 @@ This versatility allows for creating intricate and highly interconnected graph s
     }
     ```
     <!-- ??? example "Graph Image"
-        ![Image](Images/manytoone.png) -->
+        ![Image](assets/manytoone.png) -->
 === "many2many.jac"
     ```jac linenums="1"
     --8<-- "examples/data_spatial/create_node.jac"
     ```
     <!-- ??? example "Graph Image"
-        ![Image](Images/create_node.png) -->
+        ![Image](assets/create_node.png) -->
 
 ## Edges
 Nodes can be linked using either *default edges* (generic connections) or *custom edges*, which have specific properties as shown in the following examples.

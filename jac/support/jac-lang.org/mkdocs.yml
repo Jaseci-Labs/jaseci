@@ -6,8 +6,7 @@ nav:
       - "for_coders/introduction.md"
       - "for_coders/why_jac.md"
       - "for_coders/getting_started.md"
-      - "for_coders/getting_started/installation.md"
-      - "for_coders/getting_started/jac_in_a_flash.md"
+      - "for_coders/installation.md"
       - Language Basics:
         - "for_coders/language_basics/basic_syntax.md"
         - "for_coders/language_basics/types.md"
@@ -20,27 +19,18 @@ nav:
         - "for_coders/data_spatial/walkers.md" # Walker
         - "for_coders/data_spatial/filtering.md" # Filtering
         - "for_coders/data_spatial/FAQ.md" # faq
-      - Python Integration:
-        - "for_coders/python_integration.md"
-      - LLMs and AI Models:
+      # - Python Integration:
+      #   - "for_coders/python_integration.md"
+      - Programming with Generative AI Models:
         - "for_coders/jac-mtllm/with_llm.md"
         - Quick Start Guide: "for_coders/jac-mtllm/quickstart.md"
-            # - "for_coders/mtllm/quickstart/installation.md"
-            # - "for_coders/mtllm/quickstart/minimal-working-example.md"
-        # - Building Blocks:
-        #     - "for_coders/mtllm/building_blocks/language_models.md"
-        #     - "for_coders/mtllm/building_blocks/semstrings.md"
-        #     - "for_coders/mtllm/building_blocks/functions_methods.md"
-        #     - "for_coders/mtllm/building_blocks/object_init.md"
         - Models: "for_coders/jac-mtllm/model_declaration.md"
         - Usage of MTLLM: "for_coders/jac-mtllm/usage.md"
         - Optional Meaning Hints: "for_coders/jac-mtllm/semstrings.md"
         - Using Multimodal models: "for_coders/jac-mtllm/multimodality.md"
+        - Bring your own LM: "for_coders/jac-mtllm/create_own_lm.md"
         - Python MTLLM Interface: "for_coders/jac-mtllm/python_integration.md"
         - Tutorials: "for_coders/jac-mtllm/rpg_game.md"
-        # - Design and Implementation:
-        #     - "for_coders/mtllm/design_impl/inference_engine.md"
-        #     - "for_coders/mtllm/design_impl/sem_registry.md"
       - Cloud Native Abstractions:
         - "for_coders/jac-cloud/jac_cloud.md"
         - "for_coders/jac-cloud/permission.md"
@@ -50,19 +40,25 @@ nav:
         - "for_coders/tools/testing.md"
         - "for_coders/tools/jac_streamlit.md"
         - "for_coders/tools/cli.md"
+      - Manual:
+        - "for_coders/jac_coding_manual.md"
   - For contributors:
       - "for_contributors/contrib.md"
       - "for_contributors/internals.md"
       - "for_contributors/jac_plugins.md"
+      - "for_contributors/ast_doc.md"
+      - "for_contributors/roadmap.md"
+      - "for_contributors/mtp_impl/inference_engine.md"
+      - "for_contributors/mtp_impl/sem_registry.md"
 
   - Examples:
-    - EECS449:
+    - RAG-based Conversational Chatbot:
         - "examples/tutorial/readme.md"
         - "examples/tutorial/1_setting-up-jac-cloud.md"
         - "examples/tutorial/2_building-a-rag-chatbot.md"
         - "examples/tutorial/3_rag-dialogue-routing-chatbot.md"
 
-  - Complete Language Syntax Reference:
+  - Language Reference:
     - "lang_ref/jac_ref.md"
 
 theme:
