@@ -18,8 +18,8 @@ nav:
         - "for_coders/data_spatial/nodes_and_edges.md" # Introduction to DS primitives
         - "for_coders/data_spatial/walkers.md" # Walker
         - "for_coders/data_spatial/filtering.md" # Filtering
-        - "for_coders/data_spatial/FAQ.md" # faq
         - "for_coders/data_spatial/sequence.md"
+        - "for_coders/data_spatial/FAQ.md" # faq
       # - Python Integration:
       #   - "for_coders/python_integration.md"
       - Programming with Generative AI Models:

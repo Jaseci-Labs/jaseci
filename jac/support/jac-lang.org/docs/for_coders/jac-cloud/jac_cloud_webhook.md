@@ -1,4 +1,4 @@
-# WEBHOOK
+# webhook
 - webhook walker is similar to normal authenticated walker however, normal authenticated walker is associated to a user while webhook is directly to root.
 - webhook api keys are manage by user
 - supports different HTTP components as API key holder
