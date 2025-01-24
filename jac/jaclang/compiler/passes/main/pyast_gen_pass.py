@@ -12,14 +12,10 @@ from typing import Optional, Sequence, TypeVar, cast
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Constants as Con, EdgeDir, Tokens as Tok
 from jaclang.compiler.passes import Pass
+from jaclang.settings import settings
 
 T = TypeVar("T", bound=ast3.AST)
 
-JACLIB_IMPORT_ALL = True  # TODO(thakee): Move this to settings.
-JACLIB_ALIAS = "jl"  # Will import jaclib as jl
-
-# (thakee): This is not the best place to declare it, find some other place.
-# A list of jac builtin functions. These function are available directly in jac source files.
 jac_builtin_funcs = [
     "dotgen",
     "jid",
@@ -72,11 +68,15 @@ class PyastGenPass(Pass):
                     ),
                     jac_node=self.ir,
                 )
-                if JACLIB_IMPORT_ALL
+                if settings.pyout_jaclib_import_all
                 else self.sync(
                     ast3.Import(
                         names=[
-                            self.sync(ast3.alias(name="jaclang", asname=JACLIB_ALIAS))
+                            self.sync(
+                                ast3.alias(
+                                    name="jaclang", asname=settings.pyout_jaclib_alias
+                                )
+                            )
                         ]
                     ),
                     jac_node=self.ir,
@@ -84,7 +84,7 @@ class PyastGenPass(Pass):
             ),
         ]
 
-        if not JACLIB_IMPORT_ALL:
+        if not settings.pyout_jaclib_import_all:
             self.preamble += [
                 self.sync(
                     ast3.ImportFrom(
@@ -117,11 +117,13 @@ class PyastGenPass(Pass):
 
     def jaclib_obj(self, obj_name: str) -> ast3.Name | ast3.Attribute:
         """Return the object from jaclib as ast node based on the import config."""
-        if JACLIB_IMPORT_ALL:
+        if settings.pyout_jaclib_import_all:
             return self.sync(ast3.Name(id=obj_name, ctx=ast3.Load()))
         return self.sync(
             ast3.Attribute(
-                value=self.sync(ast3.Name(id=JACLIB_ALIAS, ctx=ast3.Load())),
+                value=self.sync(
+                    ast3.Name(id=settings.pyout_jaclib_alias, ctx=ast3.Load())
+                ),
                 attr=obj_name,
                 ctx=ast3.Load(),
             )
@@ -164,36 +166,6 @@ class PyastGenPass(Pass):
             )
         )
         self.already_added.append(self.needs_enum.__name__)
-
-    def needs_jac_feature(self) -> None:
-        """Check if enum is needed."""
-        if self.needs_jac_feature.__name__ in self.already_added:
-            return
-        self.preamble.append(
-            self.sync(
-                ast3.ImportFrom(
-                    module="jaclang.plugin.feature",
-                    names=[
-                        self.sync(
-                            ast3.alias(name="JacFeature", asname=Con.JAC_FEATURE.value)
-                        ),
-                    ],
-                    level=0,
-                ),
-                jac_node=self.ir,
-            )
-        )
-        self.preamble.append(
-            self.sync(
-                ast3.ImportFrom(
-                    module="jaclang.plugin.builtin",
-                    names=[self.sync(ast3.alias(name="*", asname=None))],
-                    level=0,
-                ),
-                jac_node=self.ir,
-            )
-        )
-        self.already_added.append(self.needs_jac_feature.__name__)
 
     def flatten(self, body: list[T | list[T] | None]) -> list[T]:
         """Flatten ast list."""
@@ -2892,7 +2864,6 @@ class PyastGenPass(Pass):
                 else:
                     self.ice("Invalid Parameter")
         if node.genai_call:
-            self.needs_jac_feature()
             by_llm_call_args = self.get_by_llm_call_args(node)
             node.gen.py_ast = [self.sync(self.by_llm_call(**by_llm_call_args))]
         else:
@@ -3215,9 +3186,7 @@ class PyastGenPass(Pass):
                 ast3.Call(
                     func=self.sync(
                         ast3.Attribute(
-                            value=self.sync(
-                                ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
-                            ),
+                            value=self.jaclib_obj(Con.JAC_FEATURE.value),
                             attr="build_edge",
                             ctx=ast3.Load(),
                         )
