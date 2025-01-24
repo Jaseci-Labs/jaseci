@@ -119,6 +119,7 @@ class SpliceOrcPlugin:
         )
         try:
             print(f"Checking if role {role_name} exists")
+            logging.info(f"Checking if role {role_name} exists")
             rbac_api.read_namespaced_role(name=role_name, namespace=namespace)
             logging.info(
                 f"Role '{role_name}' already exists in namespace '{namespace}'."
