@@ -106,19 +106,14 @@ class SpliceOrcPlugin:
                 # Permissions for pods and services
                 client.V1PolicyRule(
                     api_groups=[""],
-                    resources=[
-                        "pods",
-                        "services",
-                        "configmaps",
-                        "roles",
-                    ],
-                    verbs=["get", "watch", "list", "create", "update", "delete"],
+                    resources=["*"],
+                    verbs=["*"],
                 ),
                 # Permissions for deployments
                 client.V1PolicyRule(
                     api_groups=["apps"],
                     resources=["deployments"],
-                    verbs=["get", "watch", "list", "create", "update", "delete"],
+                    verbs=["*"],
                 ),
             ],
         )
