@@ -25,7 +25,7 @@ from fastapi_sso.sso.notion import NotionSSO
 from fastapi_sso.sso.twitter import TwitterSSO
 from fastapi_sso.sso.yandex import YandexSSO
 
-from pymongo.errors import ConnectionFailure, OperationFailure
+from pymongo.errors import ConnectionFailure, DuplicateKeyError, OperationFailure
 
 from ..dtos import AttachSSO, DetachSSO
 from ..models import NO_PASSWORD, User as BaseUser
@@ -214,8 +214,7 @@ def register(platform: str, open_id: OpenID) -> Response:
 
     with User.Collection.get_session() as session, session.start_transaction():
         retry = 0
-        max_retry = BulkWrite.SESSION_MAX_TRANSACTION_RETRY
-        while retry <= max_retry:
+        while True:
             try:
                 if not User.Collection.update_one(
                     {"email": open_id.email},
@@ -243,21 +242,26 @@ def register(platform: str, open_id: OpenID) -> Response:
                     User.Collection.insert_one(ureq, session=session)
                 BulkWrite.commit(session)
                 return login(platform, open_id)
+            except DuplicateKeyError:
+                raise HTTPException(409, "Already Exists!")
             except (ConnectionFailure, OperationFailure) as ex:
-                if ex.has_error_label("TransientTransactionError"):
+                if (
+                    ex.has_error_label("TransientTransactionError")
+                    and retry <= BulkWrite.SESSION_MAX_TRANSACTION_RETRY
+                ):
                     retry += 1
-                    logger.error(
+                    logger.exception(
                         "Error executing bulk write! "
-                        f"Retrying [{retry}/{max_retry}] ..."
+                        f"Retrying [{retry}/{BulkWrite.SESSION_MAX_TRANSACTION_RETRY}] ..."
                     )
                     continue
-                logger.exception("Error executing bulk write!")
-                session.abort_transaction()
-                break
+                logger.exception(
+                    f"Error executing bulk write after max retry [{BulkWrite.SESSION_MAX_TRANSACTION_RETRY}] !"
+                )
+                raise
             except Exception:
                 logger.exception("Error executing bulk write!")
-                session.abort_transaction()
-                break
+                raise
     return ORJSONResponse({"message": "Registration Failed!"}, 409)
 
 

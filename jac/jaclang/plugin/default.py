@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast as ast3
 import fnmatch
 import html
+import inspect
 import os
 import types
 from collections import OrderedDict
@@ -42,8 +43,11 @@ from jaclang.runtimelib.constructs import (
 from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
 from jaclang.runtimelib.machine import JacMachine, JacProgram
 from jaclang.runtimelib.memory import Shelf, ShelfStorage
-from jaclang.runtimelib.utils import collect_node_connections, traverse_graph
-
+from jaclang.runtimelib.utils import (
+    all_issubclass,
+    collect_node_connections,
+    traverse_graph,
+)
 
 import pluggy
 
@@ -175,14 +179,12 @@ class JacAccessValidationImpl:
             if to_root.access.all > access_level:
                 access_level = to_root.access.all
 
-            level = to_root.access.roots.check(str(jroot.id))
-            if level > AccessLevel.NO_ACCESS and access_level == AccessLevel.NO_ACCESS:
+            if (level := to_root.access.roots.check(str(jroot.id))) is not None:
                 access_level = level
 
         # if target anchor have set allowed roots
         # if current root is allowed to target anchor
-        level = to_access.roots.check(str(jroot.id))
-        if level > AccessLevel.NO_ACCESS and access_level == AccessLevel.NO_ACCESS:
+        if (level := to_access.roots.check(str(jroot.id))) is not None:
             access_level = level
 
         return access_level
@@ -398,64 +400,85 @@ class JacWalkerImpl:
 
         walker.path = []
         walker.next = [node]
-        if walker.next:
-            current_node = walker.next[-1].architype
-            for i in warch._jac_entry_funcs_:
-                trigger = i.get_funcparam_annotations(i.func)
-                if not trigger:
-                    if i.func:
-                        i.func(warch, current_node)
-                    else:
-                        raise ValueError(f"No function {i.name} to call.")
+        current_node = node.architype
+
+        # walker entry
+        for i in warch._jac_entry_funcs_:
+            if i.func and not i.trigger:
+                i.func(warch, current_node)
+            if walker.disengaged:
+                return warch
+
         while len(walker.next):
             if current_node := walker.next.pop(0).architype:
-                for i in current_node._jac_entry_funcs_:
-                    trigger = i.get_funcparam_annotations(i.func)
-                    if not trigger or isinstance(warch, trigger):
-                        if i.func:
-                            i.func(current_node, warch)
-                        else:
-                            raise ValueError(f"No function {i.name} to call.")
-                    if walker.disengaged:
-                        return warch
+                # walker entry with
                 for i in warch._jac_entry_funcs_:
-                    trigger = i.get_funcparam_annotations(i.func)
-                    if not trigger or isinstance(current_node, trigger):
-                        if i.func and trigger:
-                            i.func(warch, current_node)
-                        elif not trigger:
-                            continue
-                        else:
-                            raise ValueError(f"No function {i.name} to call.")
+                    if (
+                        i.func
+                        and i.trigger
+                        and all_issubclass(i.trigger, NodeArchitype)
+                        and isinstance(current_node, i.trigger)
+                    ):
+                        i.func(warch, current_node)
                     if walker.disengaged:
                         return warch
-                for i in warch._jac_exit_funcs_:
-                    trigger = i.get_funcparam_annotations(i.func)
-                    if not trigger or isinstance(current_node, trigger):
-                        if i.func and trigger:
-                            i.func(warch, current_node)
-                        elif not trigger:
-                            continue
-                        else:
-                            raise ValueError(f"No function {i.name} to call.")
+
+                # node entry
+                for i in current_node._jac_entry_funcs_:
+                    if i.func and not i.trigger:
+                        i.func(current_node, warch)
                     if walker.disengaged:
                         return warch
+
+                # node entry with
+                for i in current_node._jac_entry_funcs_:
+                    if (
+                        i.func
+                        and i.trigger
+                        and all_issubclass(i.trigger, WalkerArchitype)
+                        and isinstance(warch, i.trigger)
+                    ):
+                        i.func(current_node, warch)
+                    if walker.disengaged:
+                        return warch
+
+                # node exit with
                 for i in current_node._jac_exit_funcs_:
-                    trigger = i.get_funcparam_annotations(i.func)
-                    if not trigger or isinstance(warch, trigger):
-                        if i.func:
-                            i.func(current_node, warch)
-                        else:
-                            raise ValueError(f"No function {i.name} to call.")
+                    if (
+                        i.func
+                        and i.trigger
+                        and all_issubclass(i.trigger, WalkerArchitype)
+                        and isinstance(warch, i.trigger)
+                    ):
+                        i.func(current_node, warch)
                     if walker.disengaged:
                         return warch
+
+                # node exit
+                for i in current_node._jac_exit_funcs_:
+                    if i.func and not i.trigger:
+                        i.func(current_node, warch)
+                    if walker.disengaged:
+                        return warch
+
+                # walker exit with
+                for i in warch._jac_exit_funcs_:
+                    if (
+                        i.func
+                        and i.trigger
+                        and all_issubclass(i.trigger, NodeArchitype)
+                        and isinstance(current_node, i.trigger)
+                    ):
+                        i.func(warch, current_node)
+                    if walker.disengaged:
+                        return warch
+        # walker exit
         for i in warch._jac_exit_funcs_:
-            trigger = i.get_funcparam_annotations(i.func)
-            if not trigger:
-                if i.func:
-                    i.func(warch, current_node)
-                else:
-                    raise ValueError(f"No function {i.name} to call.")
+            if i.func and not i.trigger:
+                i.func(warch, current_node)
+            if walker.disengaged:
+                return warch
+
         walker.ignores = []
         return warch
 
@@ -818,12 +841,14 @@ class JacFeatureImpl(
     @hookimpl
     def create_test(test_fun: Callable) -> Callable:
         """Create a new test."""
+        file_path = inspect.getfile(test_fun)
+        func_name = test_fun.__name__
 
         def test_deco() -> None:
             test_fun(JacTestCheck())
 
         test_deco.__name__ = test_fun.__name__
-        JacTestCheck.add_test(test_deco)
+        JacTestCheck.add_test(file_path, func_name, test_deco)
 
         return test_deco
 
@@ -831,6 +856,7 @@ class JacFeatureImpl(
     @hookimpl
     def run_test(
         filepath: str,
+        func_name: Optional[str],
         filter: Optional[str],
         xit: bool,
         maxfail: Optional[int],
@@ -849,7 +875,9 @@ class JacFeatureImpl(
                     mod_name = mod_name[:-5]
                 JacTestCheck.reset()
                 Jac.jac_import(target=mod_name, base_path=base, cachable=False)
-                JacTestCheck.run_test(xit, maxfail, verbose)
+                JacTestCheck.run_test(
+                    xit, maxfail, verbose, os.path.abspath(filepath), func_name
+                )
                 ret_count = JacTestCheck.failcount
             else:
                 print("Not a .jac file.")
@@ -875,7 +903,9 @@ class JacFeatureImpl(
                         print(f"\n\n\t\t* Inside {root_dir}" + "/" + f"{file} *")
                         JacTestCheck.reset()
                         Jac.jac_import(target=file[:-4], base_path=root_dir)
-                        JacTestCheck.run_test(xit, maxfail, verbose)
+                        JacTestCheck.run_test(
+                            xit, maxfail, verbose, os.path.abspath(file), func_name
+                        )
 
                     if JacTestCheck.breaker and (xit or maxfail):
                         break
@@ -887,12 +917,6 @@ class JacFeatureImpl(
             print("No test files found.") if not test_file else None
 
         return ret_count
-
-    @staticmethod
-    @hookimpl
-    def elvis(op1: Optional[T], op2: T) -> T:
-        """Jac's elvis operator feature."""
-        return ret if (ret := op1) is not None else op2
 
     @staticmethod
     @hookimpl

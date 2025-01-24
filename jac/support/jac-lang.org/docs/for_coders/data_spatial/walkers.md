@@ -10,7 +10,7 @@ A walker can be spawned at any point on the graph with the ```spawn``` keyword.
     ```jac linenums="1"
     --8<-- "examples/data_spatial/define_walker.jac"
     ```
-??? example "Graph Image"
+??? example "Graph"
     ![Image](assets/define_walker.png)
 
 ## Graph Traversal Using Visit

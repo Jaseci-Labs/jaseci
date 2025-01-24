@@ -5,7 +5,7 @@ Nodes can be connected in various ways, including from a single node to a list o
     ```jac linenums="1"
     --8<-- "examples/data_spatial/create_node.jac"
     ```
-??? example "Graph Image"
+??? example "Graph"
     ![Image](assets/create_node.png)
 
 ##  <span style="color: orange">Custom Edge Creation and Operations
@@ -16,7 +16,7 @@ We can establish connections between nodes or lists of nodes using custom edges 
     --8<-- "examples/data_spatial/custom_edge.jac"
     ```
 Lines 17-21 demonstrate how to retrieve visitable or reachable nodes from a given node by applying specific edge conditions, such as filtering based on edge types or chaining multiple edge traversals.
-??? example "Graph Image"
+??? example "Graph"
     ![Image](assets/custom_edge.png)
 
 ## <span style="color: orange">Filtering
@@ -29,7 +29,7 @@ We can filter nodes based on specific edge attributes, such as filtering by edge
     --8<-- "examples/data_spatial/edge_filtering.jac"
     ```
 
-??? example "Graph Image"
+??? example "Graph"
     ![Image](assets/edge_filtering.png)
 
 #### <span style="color: White">Filtering Based on Node Types and Attributes
@@ -39,7 +39,7 @@ We can filter specific types of nodes from a list of visitable nodes based on th
     ```jac linenums="1"
     --8<-- "examples/data_spatial/filtering.jac"
     ```
-??? example "Graph Image"
+??? example "Graph"
     ![Image](assets/filtering.png)
 
 ##  <span style="color: orange">Visiting
@@ -48,7 +48,7 @@ We can retrieve all visitable nodes from a node in specific directions.
     ```jac linenums="1"
     --8<-- "examples/data_spatial/visiting.jac"
     ```
-??? example "Graph Image"
+??? example "Graph"
     ![Image](assets/visiting.png)
 
 
@@ -91,7 +91,7 @@ We can retrieve all visitable nodes from a node in specific directions.
     ```jac linenums="1"
     --8<-- "examples/data_spatial/define_walker.jac"
     ```
-??? example "Graph Image"
+??? example "Graph"
     ![Image](assets/define_walker.png)
 
 ## <span style="color: orange">Node Connections
@@ -99,7 +99,7 @@ We can retrieve all visitable nodes from a node in specific directions.
     ```jac linenums="1"
     --8<-- "examples/data_spatial/node_connections.jac"
     ```
-??? example "Graph Image"
+??? example "Graph"
     ![Image](assets/ds_example_1.png)
 
 ??? info "Code Explanation"

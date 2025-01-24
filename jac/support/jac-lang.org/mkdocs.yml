@@ -19,6 +19,7 @@ nav:
         - "for_coders/data_spatial/walkers.md" # Walker
         - "for_coders/data_spatial/filtering.md" # Filtering
         - "for_coders/data_spatial/FAQ.md" # faq
+        - "for_coders/data_spatial/sequence.md"
       # - Python Integration:
       #   - "for_coders/python_integration.md"
       - Programming with Generative AI Models:
@@ -36,6 +37,8 @@ nav:
         - "for_coders/jac-cloud/permission.md"
         - "for_coders/jac-cloud/jac_cloud_logging.md"
         - "for_coders/jac-cloud/jac_cloud_env_vars.md"
+        - "for_coders/jac-cloud/jac_cloud_webhook.md"
+        - "for_coders/jac-cloud/jac_cloud_websocket.md"
       - Tools:
         - "for_coders/tools/testing.md"
         - "for_coders/tools/jac_streamlit.md"
@@ -50,13 +53,16 @@ nav:
       - "for_contributors/roadmap.md"
       - "for_contributors/mtp_impl/inference_engine.md"
       - "for_contributors/mtp_impl/sem_registry.md"
-
   - Examples:
+    - LittleX (your own twitter):
+      - "examples/littleX/overview.md"
+      - "examples/littleX/tutorial.md"
+      - "examples/littleX/quickstart.md"
     - RAG-based Conversational Chatbot:
-        - "examples/tutorial/readme.md"
-        - "examples/tutorial/1_setting-up-jac-cloud.md"
-        - "examples/tutorial/2_building-a-rag-chatbot.md"
-        - "examples/tutorial/3_rag-dialogue-routing-chatbot.md"
+      - "examples/rag_chatbot/readme.md"
+      - "examples/rag_chatbot/1_setting-up-jac-cloud.md"
+      - "examples/rag_chatbot/2_building-a-rag-chatbot.md"
+      - "examples/rag_chatbot/3_rag-dialogue-routing-chatbot.md"
 
   - Language Reference:
     - "lang_ref/jac_ref.md"
@@ -114,12 +120,15 @@ markdown_extensions:
         - name: mermaid
           class: mermaid
           # format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tasklist:
+      custom_checkbox: true
   - attr_list
   - md_in_html
   - attr_list
   - admonition
   - pymdownx.details
   - pymdownx.superfences
+  - tables
   - toc:
         permalink: "#"
   # - pymdownx.emoji:

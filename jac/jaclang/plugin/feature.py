@@ -359,6 +359,7 @@ class JacFeature(
     @staticmethod
     def run_test(
         filepath: str,
+        func_name: Optional[str] = None,
         filter: Optional[str] = None,
         xit: bool = False,
         maxfail: Optional[int] = None,
@@ -368,17 +369,13 @@ class JacFeature(
         """Run the test suite in the specified .jac file."""
         return plugin_manager.hook.run_test(
             filepath=filepath,
+            func_name=func_name,
             filter=filter,
             xit=xit,
             maxfail=maxfail,
             directory=directory,
             verbose=verbose,
         )
-
-    @staticmethod
-    def elvis(op1: Optional[T], op2: T) -> T:
-        """Jac's elvis operator feature."""
-        return plugin_manager.hook.elvis(op1=op1, op2=op2)
 
     @staticmethod
     def has_instance_default(gen_func: Callable[[], T]) -> T:

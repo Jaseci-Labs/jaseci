@@ -67,7 +67,7 @@ This versatility allows for creating intricate and highly interconnected graph s
 
     }
     ```
-    <!-- ??? example "Graph Image"
+    <!-- ??? example "Graph"
         ![Image](assets/onetoone.png) -->
 === "one2many.jac"
     ```jac linenums="1"
@@ -82,7 +82,7 @@ This versatility allows for creating intricate and highly interconnected graph s
 
     }
     ```
-    <!-- ??? example "Graph Image"
+    <!-- ??? example "Graph"
         ![Image](assets/onetomany.png) -->
 === "many2one.jac"
     ```jac linenums="1"
@@ -96,13 +96,13 @@ This versatility allows for creating intricate and highly interconnected graph s
 
     }
     ```
-    <!-- ??? example "Graph Image"
+    <!-- ??? example "Graph"
         ![Image](assets/manytoone.png) -->
 === "many2many.jac"
     ```jac linenums="1"
     --8<-- "examples/data_spatial/create_node.jac"
     ```
-    <!-- ??? example "Graph Image"
+    <!-- ??? example "Graph"
         ![Image](assets/create_node.png) -->
 
 ## Edges

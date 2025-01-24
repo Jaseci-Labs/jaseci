@@ -48,5 +48,5 @@ We can filter nodes based on specific edge attributes, such as filtering by edge
     [A(val=10)]
     [A(val=20)]
     ```
-??? example "Graph Image"
+??? example "Graph"
     ![Image](assets/edge_filtering.png)
