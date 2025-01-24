@@ -13,10 +13,10 @@ nav:
         - "for_coders/language_basics/import.md"
         - "for_coders/language_basics/impl_docs.md"
       - Data Spatial Programming:
-        - "for_coders/data_spatial/dataspatial.md" # Why data spatial
+        # - "for_coders/data_spatial/dataspatial.md" # Why data spatial
         - "for_coders/data_spatial/nodes_and_edges.md" # Introduction to DS primitives
-        - "for_coders/data_spatial/filtering.md" # Filtering
         - "for_coders/data_spatial/walkers.md" # Walker
+        - "for_coders/data_spatial/filtering.md" # Filtering
         - "for_coders/data_spatial/FAQ.md" # faq
       - Python Integration:
         - "for_coders/python_integration.md"
@@ -36,9 +36,9 @@ nav:
         - Using Multimodal models: "for_coders/jac-mtllm/multimodality.md"
         - Python MTLLM Interface: "for_coders/jac-mtllm/python_integration.md"
         - Tutorials: "for_coders/mtllm/tutorials/rpg_game.md"
-        - Design and Implementation:
-            - "for_coders/mtllm/design_impl/inference_engine.md"
-            - "for_coders/mtllm/design_impl/sem_registry.md"
+        # - Design and Implementation:
+        #     - "for_coders/mtllm/design_impl/inference_engine.md"
+        #     - "for_coders/mtllm/design_impl/sem_registry.md"
       - Cloud Native Abstractions:
         - "for_coders/jac-cloud/jac_cloud.md"
         - "for_coders/jac-cloud/permission.md"
