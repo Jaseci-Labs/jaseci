@@ -1,6 +1,8 @@
 # Python Integration
 
-- Interoperability of Jac
+**(W.I.P)**
+
+<!-- - Interoperability of Jac
 
 ## How to use Python Libraries?</span>
 
@@ -11,4 +13,4 @@
 
 - Importing Jac modules into Python
 - 1. Importing as an object
-- 2. Excecuting Jac programs on import.
+- 2. Excecuting Jac programs on import. -->
