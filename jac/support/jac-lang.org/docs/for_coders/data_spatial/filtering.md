@@ -4,9 +4,10 @@ JacLang provides flexible filtering mechanisms to control graph traversal and op
 
 ---
 
-## 1. Node-Based Filtering
+## Node-Based Filtering
 
 Node-based filtering restricts traversal to specific nodes that satisfy predefined conditions. This is useful when you need to:
+
 - Limit traversal to nodes with certain attributes or properties.
 - Filter nodes dynamically based on walker state or external context.
 
@@ -28,7 +29,7 @@ We can filter specific types of nodes from a list of visitable nodes based on th
 ??? example "Graph Image"
     ![Image](Images/filtering.png)
 
-##2. Edge-Based Filtering
+## Edge-Based Filtering
 
 Edge filtering in JacLang allows developers to control traversal by selecting edges based on specific attributes or conditions. This is especially useful in scenarios where certain edges in the graph are more relevant to the task at hand, such as weighted graphs or context-sensitive connections.
 
