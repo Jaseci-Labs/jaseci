@@ -28,15 +28,6 @@ class SpliceOrcPlugin:
     @staticmethod
     def is_kind_cluster():
         """Detect if the cluster is a kind cluster."""
-        Kube_service = os.getenv("KUBERNETES_SERVICE_HOST", None)
-        if Kube_service:
-            if Kube_service == "kind":
-                logging.info("Detected kind cluster.")
-                return True
-            else:
-                logging.info("Detected non-kind cluster.")
-                return False
-
         try:
             contexts, current_context = config.list_kube_config_contexts()
             current_context_name = current_context["name"]
@@ -202,14 +193,11 @@ class SpliceOrcPlugin:
         env_vars = pod_manager_config.get("env_vars", {})
         resources = pod_manager_config.get("resources", {})
         service_name = pod_manager_config.get("service_name", "pod-manager-service")
-
-        # Adjust service type based on cluster type
-        if cls.is_kind_cluster():
-            service_type = "NodePort"
+        service_type = pod_manager_config.get("service_type", "LoadBalancer")
+        if service_type == "NodePort":
             node_port = 30080
             logging.info("Using NodePort service type for kind cluster.")
         else:
-            service_type = "LoadBalancer"
             node_port = None
             logging.info("Using LoadBalancer service type.")
 
@@ -331,7 +319,10 @@ class SpliceOrcPlugin:
 
     @classmethod
     def configure_pod_manager_url(cls, namespace):
-        if cls.is_kind_cluster():
+        service_type = config_loader.get(
+            "kubernetes", "pod_manager", "service_type", default="NodePort"
+        )
+        if service_type == "NodePort":
             node_port = 30080  # The NodePort we have configured
             pod_manager_url_local = f"http://localhost:{node_port}"
             logging.info(f"Pod manager URL set to: {pod_manager_url_local}")
