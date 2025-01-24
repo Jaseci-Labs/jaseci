@@ -1,7 +1,7 @@
 # <span style="color: orange">Nodes and Edges</span>
 
-## Nodes 
-Nodes are architypes forming part of a graph, holding properties. They can be compared to custom classes in object-oriented programming (OOP). 
+## Nodes
+Nodes are architypes forming part of a graph, holding properties. They can be compared to custom classes in object-oriented programming (OOP).
 
 ```jac
       node node_name{
@@ -13,11 +13,11 @@ Nodes are architypes forming part of a graph, holding properties. They can be co
 ```
 
 ### Custom Node Types
-- You can define custom node types to create specific instances within the graph. 
+- You can define custom node types to create specific instances within the graph.
 - Each node can have `attributes` (like fields in a class) and `abilities` (similar to methods in OOP).
 
 ### Abilities in Nodes
-- **Callable Abilities:** They are similar to standard methods in OOP. Inside any ability, the node can refer to itself using the `self` keyword, much like in OOP. 
+- **Callable Abilities:** They are similar to standard methods in OOP. Inside any ability, the node can refer to itself using the `self` keyword, much like in OOP.
 
 - **Visit-dependent Abilities:** These abilities are only triggered when a specific type of "walker" (discussed later) interacts with the node. This ensures that certain actions are performed only in response to a walker's visit. In these abilities, a special keyword `here` is used to reference the visiting walker. This allows you to access the walker's attributes and abilities directly during its interaction with the node.
 

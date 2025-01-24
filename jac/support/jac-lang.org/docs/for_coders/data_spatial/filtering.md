@@ -1,4 +1,4 @@
-# Node and Edge Filtering in JacLang
+# Node and Edge Filtering
 
 JacLang provides flexible filtering mechanisms to control graph traversal and operations, allowing precise selection of nodes and edges based on specific criteria. These filters enable developers to optimize traversal and focus only on relevant parts of the graph.
 

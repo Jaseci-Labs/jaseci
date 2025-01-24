@@ -27,6 +27,35 @@ Walkers navigate the graph using the ```visit``` keyword.
     ```jac linenums="1"
         visit [<--node_name]; # Visits predecessor nodes of a node
     ```
+## Attributes & Abilities
+- Similar to nodes, walkers can have their own attributes and abilities including both callable and visit-dependent abilities.
+
+- **Visit-dependent Abilities:**
+    - Ensures the ability is executed only when the walker visits a node.
+    - Can be defined within:
+        - **Nodes:** Triggered upon a walker's arrival.
+        - **Walkers:**  Specific to the walker’s operation during its visit.
+
+## Reference Keywords:
+- ```self``` : Refers to the walker object itself.
+- ```here```: References the current node visited by the walker, enabling access to its attributes and callable abilities.
+    This allows seamless interaction between walker and node attributes.
+
+- Control Movement:
+    - Use ```visit``` to:
+        - Direct the walker to a specific node.
+        - Walk along an edge connecting nodes.
+
+- Remove Walkers:
+    - Use ```disengage``` to remove a walker from the graph.
+
+## Walkers in Action:
+- Walkers prioritize their visit-dependent abilities first before executing the abilities of the visited node.
+- This enables flexible task delegation:
+    - Define visit-dependent tasks either within the walker or in the node.
+
+By using these principles, walkers can efficiently traverse and interact with graphs, enabling dynamic workflows.
+
 ### Example:
 === "Jac"
     ```jac linenums="1"
@@ -66,32 +95,3 @@ Walkers navigate the graph using the ```visit``` keyword.
     In the example, it logs the exit point, increments exit_count by 1, and prints the final node visited.
     !!! Info ""
         - This DS function is executed at the end of the walker's execution, after all nodes have been visited.
-
-## Attributes & Abilities
-- Similar to nodes, walkers can have their own attributes and abilities including both callable and visit-dependent abilities.
-
-- **Visit-dependent Abilities:**
-    - Ensures the ability is executed only when the walker visits a node.
-    - Can be defined within:
-        - **Nodes:** Triggered upon a walker's arrival.
-        - **Walkers:**  Specific to the walker’s operation during its visit.
-
-## Reference Keywords:
-- ```self``` : Refers to the walker object itself.
-- ```here```: References the current node visited by the walker, enabling access to its attributes and callable abilities.
-    This allows seamless interaction between walker and node attributes.
-
-- Control Movement:
-    - Use ```visit``` to:
-        - Direct the walker to a specific node.
-        - Walk along an edge connecting nodes.
-
-- Remove Walkers:
-    - Use ```disengage``` to remove a walker from the graph.
-
-## Walkers in Action:
-- Walkers prioritize their visit-dependent abilities first before executing the abilities of the visited node.
-- This enables flexible task delegation:
-    - Define visit-dependent tasks either within the walker or in the node.
-
-By using these principles, walkers can efficiently traverse and interact with graphs, enabling dynamic workflows.
