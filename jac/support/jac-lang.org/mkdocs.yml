@@ -6,6 +6,8 @@ nav:
       - "for_coders/introduction.md"
       - "for_coders/why_jac.md"
       - "for_coders/getting_started.md"
+      - "for_coders/getting_started/installation.md"
+      - "for_coders/getting_started/jac_in_a_flash.md"
       - Language Basics:
         - "for_coders/language_basics/basic_syntax.md"
         - "for_coders/language_basics/types.md"
@@ -35,7 +37,7 @@ nav:
         - Optional Meaning Hints: "for_coders/jac-mtllm/semstrings.md"
         - Using Multimodal models: "for_coders/jac-mtllm/multimodality.md"
         - Python MTLLM Interface: "for_coders/jac-mtllm/python_integration.md"
-        - Tutorials: "for_coders/mtllm/tutorials/rpg_game.md"
+        - Tutorials: "for_coders/jac-mtllm/rpg_game.md"
         # - Design and Implementation:
         #     - "for_coders/mtllm/design_impl/inference_engine.md"
         #     - "for_coders/mtllm/design_impl/sem_registry.md"

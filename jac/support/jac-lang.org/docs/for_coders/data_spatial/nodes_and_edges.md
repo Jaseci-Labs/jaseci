@@ -3,7 +3,7 @@
 ## Nodes
 Nodes are architypes forming part of a graph, holding properties. They can be compared to custom classes in object-oriented programming (OOP).
 
-```jac
+```jac linenums="1"
       node node_name{
           has node_property: int;
       }
@@ -22,7 +22,7 @@ Nodes are architypes forming part of a graph, holding properties. They can be co
 - **Visit-dependent Abilities:** These abilities are only triggered when a specific type of "walker" (discussed later) interacts with the node. This ensures that certain actions are performed only in response to a walker's visit. In these abilities, a special keyword `here` is used to reference the visiting walker. This allows you to access the walker's attributes and abilities directly during its interaction with the node.
 
 - This is an example of defining a node.
-```jac
+```jac linenums="1"
     node test_node {
         has value: int;
 
@@ -109,16 +109,21 @@ This versatility allows for creating intricate and highly interconnected graph s
 Nodes can be linked using either *default edges* (generic connections) or *custom edges*, which have specific properties as shown in the following examples.
 === "Generic Edges"
     ```jac linenums="1"
+    with entry {
       node_1 ++> node_2; # uni directional edge
       node_1 <++> node_2; # bidirectional edge
+    }
     ```
 === "Custom Edges"
     ```jac linenums="1"
     edge custom1 {
         has atrib1:str;
     }
+
+    with entry {
       node_1 +:custom1:atrib1='val1':+> node_2; # uni directional edge
       node_1 <+:custom1:atrib1='val2':+> node_2; # bidirectional edge
+    }
     ```
 
 To delete an edge between two nodes the ````del``` keyword can be used as shown below.

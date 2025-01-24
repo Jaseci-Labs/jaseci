@@ -35,7 +35,6 @@ Walkers navigate the graph using the ```visit``` keyword.
     - Can be defined within:
         - **Nodes:** Triggered upon a walker's arrival.
         - **Walkers:**  Specific to the walker’s operation during its visit.
-
 ## Reference Keywords:
 - ```self``` : Refers to the walker object itself.
 - ```here```: References the current node visited by the walker, enabling access to its attributes and callable abilities.
