@@ -28,6 +28,15 @@ class SpliceOrcPlugin:
     @staticmethod
     def is_kind_cluster():
         """Detect if the cluster is a kind cluster."""
+        Kube_service = os.getenv("KUBERNETES_SERVICE_HOST", None)
+        if Kube_service:
+            if Kube_service == "kind":
+                logging.info("Detected kind cluster.")
+                return True
+            else:
+                logging.info("Detected non-kind cluster.")
+                return False
+
         try:
             contexts, current_context = config.list_kube_config_contexts()
             current_context_name = current_context["name"]
@@ -118,7 +127,6 @@ class SpliceOrcPlugin:
             ],
         )
         try:
-            print(f"Checking if role {role_name} exists")
             logging.info(f"Checking if role {role_name} exists")
             rbac_api.read_namespaced_role(name=role_name, namespace=namespace)
             logging.info(
