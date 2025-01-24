@@ -1,7 +1,6 @@
 site_name: The Jac Programming Language
 site_url: https://jac-lang.org
 nav:
-  - Home: "homepage.md"
   - For coders:
       - "for_coders/introduction.md"
       - "for_coders/why_jac.md"
