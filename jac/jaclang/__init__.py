@@ -17,7 +17,7 @@ from typing import (
     override,
 )
 
-from jaclang.plugin.builtin import dotgen, jid  # noqa: F401
+from jaclang.plugin.builtin import dotgen, jid, jobj  # noqa: F401
 from jaclang.plugin.default import JacFeatureImpl
 from jaclang.plugin.feature import JacFeature as Jac, plugin_manager
 from jaclang.plugin.spec import EdgeDir
@@ -66,7 +66,13 @@ T = TypeVar("T")
 # ----------------------------------------------------------------------------
 
 
-# https://stackoverflow.com/a/9639512/10846399
+# Since the meta class of the architypes are changine the base class to it's
+# suitable archi type, If a class doesn't have a parent class (ie. by default
+# inherit from object) __bases__ will be immutable. So we need to use a dummy
+# parent class to make it mutable.
+#
+# Reference: https://stackoverflow.com/a/9639512/10846399
+#
 class _ArchiTypeBase:
     pass
 
@@ -359,8 +365,6 @@ def field(
 
 jac_test = Jac.create_test
 static = ClassVar
-jobj = Jac.get_object
-
 
 # ----------------------------------------------------------------------------
 # Root Node and Generic Edge.
