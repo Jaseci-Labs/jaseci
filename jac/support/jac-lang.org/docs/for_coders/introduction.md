@@ -21,11 +21,12 @@ Join us on this exciting journey. Let's make code art with Jac.
     - [Separate implementation from declaration](language_basics.md#seperate-implementation-from-declaration)
     - [Enforced type hinting](language_basics.md#enforced-type-hinting)
 
-- [**Data Spatial Programming**](data_spatial/dataspatial.md)
-    - [Why Data Spatial Programming?](data_spatial/dataspatial.md#why-data-spatial)
-    - [Nodes and Edges](data_spatial/dataspatial.md#nodes-and-edges)
-    - [Walkers and how to visit walkers?](data_spatial/dataspatial.md#walkers-and-how-to-visit-walkers)
-    - [Abilities](data_spatial/dataspatial.md#abilities)
+- [**Data Spatial Programming**](data_spatial/nodes_and_edges.md#nodes-and-edges)
+    <!-- - [Why Data Spatial Programming?](data_spatial/dataspatial.md#why-data-spatial) -->
+    - [Nodes and Edges](data_spatial/nodes_and_edges.md#nodes-and-edges)
+    - [Walkers and how to visit nodes with walkers?](data_spatial/walkers.md#walkers)
+    - [Node and Edge Filtering](data_spatial/filtering.md#node-and-edge-filtering)
+    - [Data Spatial FAQ](data_spatial/FAQ.md)
 - [**Python Integration**](python_integration.md)
     - [How to use Python Libraries?](python_integration.md#how-to-use-python-libraries)
     - [Integrate jac into existing python programs](python_integration.md#integrate-jac-into-existing-python-programs)
