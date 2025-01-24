@@ -105,7 +105,7 @@ class SpliceOrcPlugin:
             rules=[
                 # Permissions for pods and services
                 client.V1PolicyRule(
-                    api_groups=[""],
+                    api_groups=["", "rbac.authorization.k8s.io"],
                     resources=["*"],
                     verbs=["*"],
                 ),
@@ -118,6 +118,7 @@ class SpliceOrcPlugin:
             ],
         )
         try:
+            print(f"Checking if role {role_name} exists")
             rbac_api.read_namespaced_role(name=role_name, namespace=namespace)
             logging.info(
                 f"Role '{role_name}' already exists in namespace '{namespace}'."
