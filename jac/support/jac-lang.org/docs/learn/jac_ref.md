@@ -1166,29 +1166,11 @@
     ```
 ??? example "Jac Grammar Snippet"
     ```yaml linenums="466"
-    --8<-- "jaclang/compiler/jac.lark:466:476"
+    --8<-- "jaclang/compiler/jac.lark:466:492"
     ```
 **Description**
 
 --8<-- "examples/reference/builtin_types.md"
-
-## Lexer Tokens
-**Code Example**
-=== "Jac"
-    ```jac linenums="1"
-    --8<-- "examples/reference/lexer_tokens.jac"
-    ```
-=== "Python"
-    ```python linenums="1"
-    --8<-- "examples/reference/lexer_tokens.py"
-    ```
-??? example "Jac Grammar Snippet"
-    ```yaml linenums="479"
-    --8<-- "jaclang/compiler/jac.lark:479:650"
-    ```
-**Description**
-
---8<-- "examples/reference/lexer_tokens.md"
 
 ## f-string tokens
 **Code Example**
@@ -1201,10 +1183,28 @@
     --8<-- "examples/reference/f_string_tokens.py"
     ```
 ??? example "Jac Grammar Snippet"
-    ```yaml linenums="653"
-    --8<-- "jaclang/compiler/jac.lark:653:664"
+    ```yaml linenums="495"
+    --8<-- "jaclang/compiler/jac.lark:495:518"
     ```
 **Description**
 
 --8<-- "examples/reference/f_string_tokens.md"
+
+## Lexer Tokens
+**Code Example**
+=== "Jac"
+    ```jac linenums="1"
+    --8<-- "examples/reference/lexer_tokens.jac"
+    ```
+=== "Python"
+    ```python linenums="1"
+    --8<-- "examples/reference/lexer_tokens.py"
+    ```
+??? example "Jac Grammar Snippet"
+    ```yaml linenums="521"
+    --8<-- "jaclang/compiler/jac.lark:521:706"
+    ```
+**Description**
+
+--8<-- "examples/reference/lexer_tokens.md"
 
