@@ -73,13 +73,14 @@ def extract_headings(file_path: str) -> dict[str, tuple[int, int]]:
     current_heading = None
     start_line = 0
     for idx, line in enumerate(lines, start=1):
-        if line.strip().startswith("//"):
+        line = line.strip().removesuffix(".")
+        if line.startswith("// [Heading]:"):
             if current_heading is not None:
                 headings[current_heading] = (
                     start_line,
                     idx - 2,
                 )  # Subtract 1 to get the correct end line
-            current_heading = line.strip()[2:]
+            current_heading = line.removeprefix("// [Heading]:")
             start_line = idx + 1
     # Add the last heading
     if current_heading is not None:
