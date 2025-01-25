@@ -4,12 +4,12 @@ from jaclang import *
 
 def print_base_classes(cls: type) -> type:
     print(
-        f"Base classes of {cls.__name__}: {List([c.__name__ for c in cls.__bases__])}"
+        f"Base classes of {cls.__name__}: {JacList([c.__name__ for c in cls.__bases__])}"
     )
     return cls
 
 
-class Animal(Obj):
+class Animal:
     pass
 
 
@@ -18,18 +18,18 @@ class Domesticated(Obj):
 
 
 @print_base_classes
-class Pet(Animal, Domesticated, Obj):
+class Pet(Animal, Domesticated, Node):
     pass
 
 
-class Person(Animal, Obj):
+class Person(Animal, Walker):
     pass
 
 
-class Feeder(Person, Obj):
+class Feeder(Person, Walker):
     pass
 
 
 @print_base_classes
-class Zoologist(Feeder, Obj):
+class Zoologist(Feeder, Walker):
     pass

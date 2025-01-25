@@ -72,23 +72,20 @@ class MypyTypeCheckPassTests(TestCase):
             out,
             r"129:24 - 129:28.*SpecialVarRef - Jac.get_root\(\) \- Type\: jaclang.runtimelib.architype.Root",
         )
-        # (thakee) Jac.node_dot ???
-        #
-        # self.assertRegex(out, r"129:11 - 129:29.*FuncCall \- Type\: builtins\.str")
-        # self.assertRegex(
-        #     out,
-        #     r"129:15 - 129:23.*Name \- node_dot \- Type\: builtins.str,  SymbolTable\: str",
-        # )
 
-        # (thakee) Root methods doesn't have type info, what to do?
-        #
-        # self.assertRegex(
-        #     out,
-        #     r"128:5 - 128:25.*BinaryExpr \- Type\: jaclang.runtimelib.architype.WalkerArchitype",
-        # )
-        # self.assertRegex(
-        #     out,
-        #     r"48:11 - 48:28.*EdgeRefTrailer \- Type\: builtins.list\[data_spatial_types.A\]",
-        # )
+        self.assertRegex(out, r"129:11 - 129:29.*FuncCall \- Type\: builtins\.str")
+        self.assertRegex(
+            out,
+            r"129:15 - 129:23.*Name \- node_dot \- Type\: builtins.str,  SymbolTable\: str",
+        )
+
+        self.assertRegex(
+            out,
+            r"128:5 - 128:25.*BinaryExpr \- Type\: jaclang.Walker",
+        )
+        self.assertRegex(
+            out,
+            r"48:11 - 48:28.*EdgeRefTrailer \- Type\: jaclang.JacList\[data_spatial_types.A\]",
+        )
 
         self.assertRegex(out, r"24:5 - 24:25.*BinaryExpr \- Type\: builtins.bool", out)

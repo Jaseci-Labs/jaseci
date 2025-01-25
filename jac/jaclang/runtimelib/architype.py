@@ -301,11 +301,16 @@ class GenericEdge(EdgeArchitype):
 
     def __init__(self) -> None:
         """Create Generic Edge."""
-        self.spawn: Callable = lambda _: None
-        self.load_method_bounds()
+        # To avoide circular dependency between this file and jaclib/__init__.py we need to
+        # import the types here.
+        from jaclang import _ArchiTypeBase, Edge, Walker
+
+        self.spawn: Callable[[_ArchiTypeBase], Walker] = MethodType(Edge.spawn, self)
 
     def load_method_bounds(self) -> None:
         """Load method bounds."""
+        # Since the Shelf doesn't store the metod objects to the session dump, it doesn't
+        # load the methods again, so we need to load them manually.
         for name, func in self._method_bounds.items():
             setattr(self, name, MethodType(func, self))
 
@@ -332,16 +337,27 @@ class Root(NodeArchitype):
     def __init__(self) -> None:
         """Create root node."""
         self.__jac__ = NodeAnchor(architype=self, persistent=True, edges=[])
-        # We need to define the method bounds here so that the type checker can
-        # assign the dynamic attributes.
-        self.spawn: Callable = lambda _: None
-        self.connect: Callable = lambda _: None
-        self.disconnect: Callable = lambda _: None
-        self.refs: Callable = lambda _: None
-        self.load_method_bounds()
+
+        # To avoide circular dependency between this file and jaclib/__init__.py we need to
+        # import the types here.
+        from jaclang import _ArchiTypeBase, Edge, Node, Walker, JacList
+
+        # We have to mark the parameter as variable number cause, they have default vaules
+        # and cannot be annotate the default values as such, so calling with no arguments
+        # for the default parameters will error in type checking.
+        self.spawn: Callable[[_ArchiTypeBase], Walker] = MethodType(Node.spawn, self)
+        self.connect: Callable[..., JacList[Node | Root | Edge]] = MethodType(
+            Node.connect, self
+        )
+        self.disconnect: Callable[..., bool] = MethodType(Node.disconnect, self)
+        self.refs: Callable[..., JacList[Node | Root | Edge]] = MethodType(
+            Node.refs, self
+        )
 
     def load_method_bounds(self) -> None:
         """Load method bounds."""
+        # Since the Shelf doesn't store the metod objects to the session dump, it doesn't
+        # load the methods again, so we need to load them manually.
         for name, func in self._method_bounds.items():
             setattr(self, name, MethodType(func, self))
 
