@@ -2521,7 +2521,7 @@ class PyastGenPass(Pass):
             node.gen.py_ast = [
                 self.sync(
                     ast3.Call(
-                        func=self.jaclib_obj("List"),
+                        func=self.jaclib_obj("JacList"),
                         args=[
                             self.sync(
                                 ast3.List(
@@ -2643,7 +2643,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(
                 ast3.Call(
-                    func=self.jaclib_obj("List"),
+                    func=self.jaclib_obj("JacList"),
                     args=[
                         self.sync(
                             ast3.ListComp(
