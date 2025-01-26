@@ -186,7 +186,7 @@ class JacImportPass(Pass):
             self.warnings_had += mod_pass.warnings_had
             mod = mod_pass.ir
         except Exception as e:
-            logger.info(e)
+            logger.error(e)
             mod = None
         if isinstance(mod, ast.Module):
             self.import_table[target] = mod
