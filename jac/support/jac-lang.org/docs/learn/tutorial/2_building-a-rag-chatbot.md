@@ -488,7 +488,7 @@ To summarize:
 You can now serve this code using Jac Cloud by running the following command:
 
 ```bash
-DATABASE_HOST=mongodb://localhost:27017/?replicaSet=my-rs jac serve server.jac
+jac serve server.jac
 ```
 
 Now you can test out your chatbot using the client we created earlier. The chatbot will retrieve candidate responses from the documents and generate the final response using the MTLLM model. Ask any question related to the documents you added to the `docs` directory and see how the chatbot responds.
