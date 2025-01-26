@@ -15,8 +15,8 @@ from typing import (
     Type,
     TypeGuard,
     TypeVar,
-    override,
     cast,
+    override,
 )
 
 from jaclang.plugin.builtin import dotgen, jid, jobj  # noqa: F401

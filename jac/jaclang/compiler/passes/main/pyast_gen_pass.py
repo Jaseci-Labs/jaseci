@@ -16,12 +16,6 @@ from jaclang.settings import settings
 
 T = TypeVar("T", bound=ast3.AST)
 
-jac_builtin_funcs = [
-    "dotgen",
-    "jid",
-    "jobj",
-]
-
 
 class PyastGenPass(Pass):
     """Jac blue transpilation to python pass."""
@@ -83,6 +77,8 @@ class PyastGenPass(Pass):
                 )
             ),
         ]
+
+        from jaclang.plugin.builtin import __all__ as jac_builtin_funcs
 
         if not settings.pyout_jaclib_import_all:
             self.preamble += [
