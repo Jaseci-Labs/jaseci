@@ -118,9 +118,9 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
 
         expected_outputs = [
-            "+-- AtomTrailer - Type: Any",
+            "+-- AtomTrailer - Type: jaclang.JacList[builtins.int]",
             "    +-- Name - arr - Type: jaclang.JacList[jaclang.JacList[builtins.int]],  SymbolTable: None",
-            "    +-- IndexSlice - [IndexSlice] - Type: builtins.slice,  SymbolTable: None",
+            "+-- IndexSlice - [IndexSlice] - Type: jaclang.JacList[jaclang.JacList[builtins.int]],  SymbolTable: None",
             "        +-- Token - [, ",
             "        +-- Int - 1 - Type: Literal[1]?,  SymbolTable: None",
             "        +-- Token - :, ",
