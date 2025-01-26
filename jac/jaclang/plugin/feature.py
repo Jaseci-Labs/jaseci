@@ -96,9 +96,9 @@ class JacAccessValidation:
         return plugin_manager.hook.check_write_access(to=to)
 
     @staticmethod
-    def check_access_level(to: Anchor) -> AccessLevel:
+    def check_access_level(to: Anchor, no_custom: bool = False) -> AccessLevel:
         """Access validation."""
-        return plugin_manager.hook.check_access_level(to=to)
+        return plugin_manager.hook.check_access_level(to=to, no_custom=no_custom)
 
 
 class JacNode:
