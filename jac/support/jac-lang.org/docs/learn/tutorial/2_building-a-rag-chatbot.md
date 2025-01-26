@@ -47,7 +47,7 @@ can bootstrap_frontend (token: str) {
 - `st.write()` adds a welcome message to the app.
 - `st.session_state` is used to persist data across user interactions. Here, we're using it to store the chat history (`messages`).
 
-Now, let's update the function such that when the page reloads or updates, the previous chat messages are reloaded from `st.session_state.messages`. Add the following to `bootstrap_frontend`
+Now, let's update the previous function such that when the page reloads or updates, the previous chat messages are reloaded from `st.session_state.messages`. Add the following to `bootstrap_frontend`
 
 ```jac
     for message in st.session_state.messages {
@@ -60,24 +60,7 @@ Now, let's update the function such that when the page reloads or updates, the p
 - This block loops through the stored messages in the session state.
 - For each message, we use `st.chat_message()` to display the message by its role (either `"user"` or `"assistant"`).
 
-Next, let's capture user input using `st.chat_input()`. This is where users can type their message to the chatbot.
-
-```jac
-    if prompt := st.chat_input("What is up?") {
-        # Add user message to chat history
-        st.session_state.messages.append({"role": "user", "content": prompt});
-
-        # Display user message in chat message container
-        with st.chat_message("user") {
-            st.markdown(prompt);
-        }
-    }
-```
-
-- `st.chat_input()` waits for the user to type a message and submit it.
-- Once the user submits a message, it's appended to the session state's message history and immediately displayed on the screen.
-
-Now we handle the interaction with the backend server. After the user submits a message, the assistant responds. This involves sending the user's message to the backend, receiving a response from the backend and displaying it.
+Next, let's capture user input using `st.chat_input()`. This is where users can type their message to the chatbot. Now we handle the interaction with the backend server. After the user submits a message, the assistant responds. This involves sending the user's message to the backend, receiving a response from the backend and displaying it.
 
 Add the following to `bootstrap_frontend`.
 
@@ -110,7 +93,8 @@ Add the following to `bootstrap_frontend`.
         }
     }
 ```
-
+- `st.chat_input()` waits for the user to type a message and submit it.
+- Once the user submits a message, it's appended to the session state's message history and immediately displayed on the screen.
 - The user's input (`prompt`) is sent to the backend using a POST request to the `/walker/interact` endpoint.
 - The `interact` walker, as we created in the last chapter, just returns `Hello World!` for now. This will change as we build out our chatbot.
   - `message` and `session_id` are not yet utilized at this point. They will come into play later in this chapter.
@@ -361,10 +345,11 @@ ollama serve
 You can add your documents to the `docs` directory. The documents should be in PDF format. You can add as many documents as you want to the directory. We've included a sample document [here](docs/clinical_medicine.pdf) for you to test with. Create a new directory called `docs` in the root of your project and add your documents to this directory.
 
 ### Setting up your LLM
+# Setting up your LLM and Rewriting server.jac
 
-Here we are going to use one of the key features of jaclang called [MTLLM](https://jaseci-labs.github.io/mtllm/), or Meaning-typed LLM. MTTLM facilitates the integration of generative AI models, specifically Large Language Models (LLMs) into programming at the language level.
+We need to completely rewrite our `server.jac` file to implement the RAG functionality. First, **delete all existing code in `server.jac`** from the previous chapter. Then we'll start fresh with setting up our Language Model.
 
-We will create a new server code so delete the existing code in `server.jac` that we created in the last chapter and start from scratch and add the following.
+## Initial OpenAI Setup
 
 ```jac
 import:py from mtllm.llms {OpenAI}
@@ -372,19 +357,34 @@ import:py from mtllm.llms {OpenAI}
 glob llm = OpenAI(model_name='gpt-4o');
 ```
 
-Here we use the OpenAI model gpt-4o as our Large Language Model (LLM). To use OpenAI you will need an API key. You can get an API key by signing up on the OpenAI website [here](https://platform.openai.com/). Once you have your API key, you can set it as an environment variable:
+Here we use OpenAI's GPT-4 model as our Large Language Model (LLM). To use OpenAI you will need an API key. You can get one by signing up on the [OpenAI website](https://platform.openai.com/). 
+
+Once you have your API key, set it as an environment variable:
 
 ```bash
 export OPENAI_API_KEY=""
 ```
 
-Using OpenAI is not required. You can replace this with any other LLM you want to use. For example, you can also you any Ollama generative model as your LLM. When using Ollama make sure you have the model downloaded and serving on your local machine by running the following command:
+## Alternative: Using Ollama
+
+Note: Using OpenAI is optional - you can use any other LLM. For example, you could use an Ollama model instead.
+
+### Step 1: Download the Model
+First, download your chosen Ollama model:
 
 ```bash
 ollama pull llama3.1
 ```
 
-This will download the `llama3.1` model to your local machine and make it available for inference when you run the `ollama serve` command. If you want use Ollama replace your import statement with the following:
+### Step 2: Start Ollama Server
+Make sure Ollama is running:
+
+```bash
+ollama serve
+```
+
+### Step 3: Update server.jac
+To use Ollama instead of OpenAI, replace the import and model initialization with:
 
 ```jac
 import:py from mtllm.llms {Ollama}
@@ -488,7 +488,7 @@ To summarize:
 You can now serve this code using Jac Cloud by running the following command:
 
 ```bash
-DATABASE_HOST=mongodb://localhost:27017/?replicaSet=my-rs jac serve server.jac
+jac serve server.jac
 ```
 
 Now you can test out your chatbot using the client we created earlier. The chatbot will retrieve candidate responses from the documents and generate the final response using the MTLLM model. Ask any question related to the documents you added to the `docs` directory and see how the chatbot responds.
