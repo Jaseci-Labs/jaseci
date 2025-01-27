@@ -1,31 +1,39 @@
 #!/bin/bash
 
-# Fail on error
+# Exit on any error
 set -e
 
-echo "Starting jac-cloud pod initialization..."
+echo "=== Starting jac-cloud Pod Initialization ==="
 
 # Default values for variables
 NAMESPACE=${NAMESPACE:-default}
 CONFIGMAP_NAME=${CONFIGMAP_NAME:-module-config}
-FILE_NAME=${FILE_NAME:-module-config} 
+FILE_NAME=${FILE_NAME:-example.jac}
 
+# Display configuration
 echo "Using Namespace: $NAMESPACE"
-echo "Using ConfigMap: $CONFIGMAP_NAME"
 echo "Running Jac File: $FILE_NAME"
 
-# Step 1: Initialize Pod Manager and Kubernetes setup
-echo "Running orc_initialize..."
-jac orc_initialize  $NAMESPACE
-if [ $? -ne 0 ]; then
-  echo "orc_initialize failed. Exiting..."
+# Helper function for logging
+log_info() {
+  echo "[INFO] $1"
+}
+
+log_error() {
+  echo "[ERROR] $1"
   exit 1
+}
+
+# Step 1: Initialize Pod Manager and Kubernetes setup
+log_info "Running orc_initialize for namespace: $NAMESPACE..."
+if ! jac orc_initialize "$NAMESPACE"; then
+  log_error "orc_initialize failed. Exiting..."
 fi
+log_info "orc_initialize completed successfully."
 
 # Step 2: Start Jac Serve
-echo "Starting Jac Serve with file: $FILE_NAME..."
-jac serve $FILE_NAME
-if [ $? -ne 0 ]; then
-  echo "Jac Serve failed. Exiting..."
-  exit 1
+log_info "Starting Jac Serve with file: $FILE_NAME..."
+if ! jac serve "$FILE_NAME"; then
+  log_error "Jac Serve failed. Exiting..."
 fi
+

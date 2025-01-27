@@ -1,5 +1,3 @@
-#jac-cloud.yml
-
 # 1. Namespace: littlex
 apiVersion: v1
 kind: Namespace
@@ -13,47 +11,56 @@ metadata:
   name: jac-cloud-sa
   namespace: littlex
 ---
-# 3. ClusterRole: allows listing/creating both namespaces AND serviceaccounts
+# 3. ClusterRole: Define permissions for the jac-cloud system
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: jac-cloud-namespace-role
+  name: jac-cloud-cluster-role
 rules:
-  # Permissions for namespaces
-  - apiGroups: [""]
-    resources: ["namespaces"]
-    verbs: ["*"]
-  # Permissions for serviceaccounts
-  - apiGroups: [""]
-    resources: ["serviceaccounts"]
-    verbs: ["*"]
-  - apiGroups: ["rbac.authorization.k8s.io"]
+  # Core Kubernetes resources permissions
+  - apiGroups: [""] 
     resources:
-      - "roles"
-      - "rolebindings"
-    verbs: ["*"]
-  - apiGroups: ["apps"]
+      - "namespaces"
+      - "pods"
+      - "services"
+      - "configmaps"
+    verbs: ["get", "list", "create", "delete", "watch", "patch", "update"]
+
+  # ServiceAccount permissions
+  - apiGroups: [""] 
+    resources: ["serviceaccounts"]
+    verbs: ["get", "list", "create", "delete", "watch", "patch", "update"]
+
+  # RBAC permissions
+  - apiGroups: ["rbac.authorization.k8s.io"] 
+    resources: ["roles", "rolebindings"]
+    verbs: ["get", "list", "create", "delete", "watch", "patch", "update"]
+
+  # Apps API group for managing deployments
+  - apiGroups: ["apps"] 
     resources: ["deployments"]
-    verbs: ["*"]
-  - apiGroups: [""]
-    resources: ["services"]
-    verbs: ["*"]
+    verbs: ["get", "list", "create", "delete", "watch", "patch", "update"]
+
+  # Allow access to secrets (e.g., for OpenAI API key)
+  - apiGroups: [""] 
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch"]
 ---
-# 4. ClusterRoleBinding: binds the above ClusterRole to jac-cloud-sa in littlex
+# 4. ClusterRoleBinding: Bind ClusterRole to the ServiceAccount
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: jac-cloud-namespace-binding
+  name: jac-cloud-cluster-role-binding
 subjects:
   - kind: ServiceAccount
     name: jac-cloud-sa
     namespace: littlex
 roleRef:
   kind: ClusterRole
-  name: jac-cloud-namespace-role
+  name: jac-cloud-cluster-role
   apiGroup: rbac.authorization.k8s.io
 ---
-# 5. Deployment: runs the container with the appropriate ServiceAccount
+# 5. Deployment: jac-cloud application deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -69,14 +76,14 @@ spec:
       labels:
         app: jac-cloud
     spec:
-      # Use the SA in the littlex namespace for correct RBAC
+      # Attach the ServiceAccount for RBAC
       serviceAccountName: jac-cloud-sa
       containers:
       - name: jac-cloud
-        image: ashishmahendra/littlex:0.0.15
+        image: ashishmahendra/littlex:0.1
         imagePullPolicy: Always
 
-        # Environment variables for orc_initialize
+        # Environment variables for dynamic configuration
         env:
           - name: CONFIG_FILE_PATH
             value: "/cfg/module_config.json" 
@@ -91,6 +98,8 @@ spec:
               secretKeyRef:
                 name: openai-secret
                 key: openai-key
+
+        # Mount ConfigMap for application configuration
         volumeMounts:
           - name: config-vol
             mountPath: /cfg
@@ -102,4 +111,15 @@ spec:
               - key: module_config.json
                 path: module_config.json
 
+      # Restart policy
       restartPolicy: Always
+---
+# 6. Secret: OpenAI API key (optional example for completeness)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: openai-secret
+  namespace: littlex
+type: Opaque
+data:
+  openai-key: "c2stcHJvai0xTnRDVGpoUDg4YTFCcFU0cXUyclQzQmxia0ZKRjh2NndqbHgzZDVRWWNrMjBubjY="
