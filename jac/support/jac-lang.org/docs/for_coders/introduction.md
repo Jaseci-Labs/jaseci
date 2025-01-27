@@ -47,4 +47,4 @@ Join us on this exciting journey. Let's make code art with Jac.
     - [Testing](tools/testing.md)
     - [jac-streamlit](tools/jac_streamlit.md)
     - [Jac Command Line Interface](tools/cli.md)
-- [**Manual**](jac_coding_manual.md) 
+- [**Manual**](jac_coding_manual.md)
