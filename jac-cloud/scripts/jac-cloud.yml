@@ -1,0 +1,105 @@
+#jac-cloud.yml
+
+# 1. Namespace: littlex
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: littlex
+---
+# 2. ServiceAccount: jac-cloud-sa (in the littlex namespace)
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jac-cloud-sa
+  namespace: littlex
+---
+# 3. ClusterRole: allows listing/creating both namespaces AND serviceaccounts
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: jac-cloud-namespace-role
+rules:
+  # Permissions for namespaces
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["*"]
+  # Permissions for serviceaccounts
+  - apiGroups: [""]
+    resources: ["serviceaccounts"]
+    verbs: ["*"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources:
+      - "roles"
+      - "rolebindings"
+    verbs: ["*"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["*"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["*"]
+---
+# 4. ClusterRoleBinding: binds the above ClusterRole to jac-cloud-sa in littlex
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: jac-cloud-namespace-binding
+subjects:
+  - kind: ServiceAccount
+    name: jac-cloud-sa
+    namespace: littlex
+roleRef:
+  kind: ClusterRole
+  name: jac-cloud-namespace-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# 5. Deployment: runs the container with the appropriate ServiceAccount
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jac-cloud
+  namespace: littlex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jac-cloud
+  template:
+    metadata:
+      labels:
+        app: jac-cloud
+    spec:
+      # Use the SA in the littlex namespace for correct RBAC
+      serviceAccountName: jac-cloud-sa
+      containers:
+      - name: jac-cloud
+        image: ashishmahendra/littlex:0.0.15
+        imagePullPolicy: Always
+
+        # Environment variables for orc_initialize
+        env:
+          - name: CONFIG_FILE_PATH
+            value: "/cfg/module_config.json" 
+          - name: NAMESPACE
+            value: "littlex"
+          - name: CONFIGMAP_NAME
+            value: "module-config"
+          - name: FILE_NAME
+            value: "littleX_BE/littleX_full.jac"
+          - name: OPENAI_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: openai-secret
+                key: openai-key
+        volumeMounts:
+          - name: config-vol
+            mountPath: /cfg
+      volumes:
+        - name: config-vol
+          configMap:
+            name: module-config
+            items:
+              - key: module_config.json
+                path: module_config.json
+
+      restartPolicy: Always
