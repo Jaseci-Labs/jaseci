@@ -84,25 +84,8 @@ class DefUsePass(Pass):
         type_tag: SubTag[ExprType],
         value: Optional[ExprType],
         """
+        # change_me
         node.sym_tab.def_insert(node)
-
-    def enter_has_var(self, node: ast.HasVar) -> None:
-        """Sub objects.
-
-        name: Name,
-        type_tag: SubTag[SubNodeList[TypeSpec]],
-        value: Optional[ExprType],
-        """
-        if isinstance(node.parent, ast.SubNodeList) and isinstance(
-            node.parent.parent, ast.ArchHas
-        ):
-            node.sym_tab.def_insert(
-                node,
-                single_decl="has var",
-                access_spec=node.parent.parent,
-            )
-        else:
-            self.ice("Inconsistency in AST, has var should be under arch has")
 
     def enter_assignment(self, node: ast.Assignment) -> None:
         """Sub objects.
@@ -113,6 +96,7 @@ class DefUsePass(Pass):
         is_static: bool = False,
         mutable: bool = True,
         """
+        # change_me
         for i in node.target.items:
             if isinstance(i, ast.AtomTrailer):
                 i.sym_tab.chain_def_insert(i.as_attr_list)
@@ -120,21 +104,6 @@ class DefUsePass(Pass):
                 i.sym_tab.def_insert(i)
             else:
                 self.error("Assignment target not valid")
-
-    def enter_inner_compr(self, node: ast.InnerCompr) -> None:
-        """Sub objects.
-
-        is_async: bool,
-        target: ExprType,
-        collection: ExprType,
-        conditional: Optional[ExprType],
-        """
-        if isinstance(node.target, ast.AtomTrailer):
-            node.target.sym_tab.chain_def_insert(node.target.as_attr_list)
-        elif isinstance(node.target, ast.AstSymbolNode):
-            node.target.sym_tab.def_insert(node.target)
-        else:
-            self.error("Named target not valid")
 
     def enter_atom_trailer(self, node: ast.AtomTrailer) -> None:
         """Sub objects.
@@ -286,22 +255,6 @@ class DefUsePass(Pass):
         if not isinstance(node.parent, ast.AtomTrailer):
             node.sym_tab.use_lookup(node)
 
-    def enter_in_for_stmt(self, node: ast.InForStmt) -> None:
-        """Sub objects.
-
-        target: ExprType,
-        is_async: bool,
-        collection: ExprType,
-        body: SubNodeList[CodeBlockStmt],
-        else_body: Optional[ElseStmt],
-        """
-        if isinstance(node.target, ast.AtomTrailer):
-            node.target.sym_tab.chain_def_insert(node.target.as_attr_list)
-        elif isinstance(node.target, ast.AstSymbolNode):
-            node.target.sym_tab.def_insert(node.target)
-        else:
-            self.error("For loop assignment target not valid")
-
     def enter_delete_stmt(self, node: ast.DeleteStmt) -> None:
         """Sub objects.
 
@@ -319,17 +272,3 @@ class DefUsePass(Pass):
                 i.name_spec.py_ctx_func = ast3.Del
             else:
                 self.error("Delete target not valid")
-
-    def enter_expr_as_item(self, node: ast.ExprAsItem) -> None:
-        """Sub objects.
-
-        expr: ExprType,
-        alias: Optional[ExprType],
-        """
-        if node.alias:
-            if isinstance(node.alias, ast.AtomTrailer):
-                node.alias.sym_tab.chain_def_insert(node.alias.as_attr_list)
-            elif isinstance(node.alias, ast.AstSymbolNode):
-                node.alias.sym_tab.def_insert(node.alias)
-            else:
-                self.error("For expr as target not valid")

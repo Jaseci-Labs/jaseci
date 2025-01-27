@@ -443,6 +443,24 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
+    def exit_has_var(self, node: ast.HasVar) -> None:
+        """Sub objects.
+
+        name: Name,
+        type_tag: 'TypeSpec',
+        value: Optional[ExprType],
+        """
+        if isinstance(node.parent, ast.SubNodeList) and isinstance(
+            node.parent.parent, ast.ArchHas
+        ):
+            node.sym_tab.def_insert(
+                node,
+                single_decl="has var",
+                access_spec=node.parent.parent,
+            )
+        else:
+            self.ice("Inconsistency in AST, has var should be under arch has")
+
     def enter_typed_ctx_block(self, node: ast.TypedCtxBlock) -> None:
         """Sub objects.
 
@@ -613,6 +631,12 @@ class SymTabBuildPass(Pass):
         body: SubNodeList[CodeBlockStmt],
         else_body: Optional[ElseStmt],
         """
+        if isinstance(node.target, ast.AtomTrailer):
+            node.target.sym_tab.chain_def_insert(node.target.as_attr_list)
+        elif isinstance(node.target, ast.AstSymbolNode):
+            node.target.sym_tab.def_insert(node.target)
+        else:
+            self.error("For loop assignment target not valid")
         self.pop_scope()
 
     def enter_name(self, node: ast.Name) -> None:
@@ -670,6 +694,20 @@ class SymTabBuildPass(Pass):
         alias: Optional[ExprType],
         """
         self.sync_node_to_scope(node)
+
+    def exit_expr_as_item(self, node: ast.ExprAsItem) -> None:
+        """Sub objects.
+
+        expr: ExprType,
+        alias: Optional[ExprType],
+        """
+        if node.alias:
+            if isinstance(node.alias, ast.AtomTrailer):
+                node.alias.sym_tab.chain_def_insert(node.alias.as_attr_list)
+            elif isinstance(node.alias, ast.AstSymbolNode):
+                node.alias.sym_tab.def_insert(node.alias)
+            else:
+                self.error("For expr as target not valid")
 
     def enter_raise_stmt(self, node: ast.RaiseStmt) -> None:
         """Sub objects.
@@ -946,6 +984,12 @@ class SymTabBuildPass(Pass):
         collection: ExprType,
         conditional: Optional[ExprType],
         """
+        if isinstance(node.target, ast.AtomTrailer):
+            node.target.sym_tab.chain_def_insert(node.target.as_attr_list)
+        elif isinstance(node.target, ast.AstSymbolNode):
+            node.target.sym_tab.def_insert(node.target)
+        else:
+            self.error("Named target not valid")
         self.pop_scope()
 
     def enter_dict_compr(self, node: ast.DictCompr) -> None:
