@@ -22,6 +22,37 @@ hookimpl = pluggy.HookimplMarker("jac")
 config_loader = ConfigLoader()
 
 
+def try_incluster_or_local() -> bool:
+    """
+    Attempt to load in-cluster config if we're in a real K8s Pod
+    (service account token present). If that fails, fallback
+    to local kubeconfig. Returns True if in-cluster config loaded,
+    False if local config loaded.
+    """
+    # Common check for in-cluster environment:
+    # Usually: KUBERNETES_SERVICE_HOST is set, and
+    # /var/run/secrets/kubernetes.io/serviceaccount/token exists
+    token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    if os.getenv("KUBERNETES_SERVICE_HOST") and os.path.exists(token_file):
+        logging.info("Attempting in-cluster config...")
+        try:
+            config.load_incluster_config()
+            logging.info("Successfully loaded in-cluster config.")
+            return True
+        except config.ConfigException as e:
+            logging.warning(f"Failed to load in-cluster config: {e}")
+    # Otherwise, fallback to local:
+    logging.info("Falling back to local kube config (not in-cluster).")
+    try:
+        config.load_kube_config()
+        logging.info("Local kube config loaded successfully.")
+        return False
+    except config.ConfigException as e:
+        logging.error(f"Failed to load any kube config: {e}")
+        # No config at all
+        return False
+
+
 class SpliceOrcPlugin:
     """JAC Splice-Orchestrator Plugin."""
 
@@ -45,12 +76,12 @@ class SpliceOrcPlugin:
     def create_namespace(cls, namespace_name):
         """Create a new namespace if it does not exist."""
         logging.info(f"Creating namespace '{namespace_name}'")
-        try:
-            config.load_kube_config()
-        except config.ConfigException:
-            config.load_incluster_config()
-        v1 = client.CoreV1Api()
 
+        # Attempt to load either in-cluster or local config
+        # so we can call the K8s API
+        in_cluster = try_incluster_or_local()
+
+        v1 = client.CoreV1Api()
         # Check if the namespace exists
         namespaces = v1.list_namespace()
         if any(ns.metadata.name == namespace_name for ns in namespaces.items):
@@ -62,6 +93,7 @@ class SpliceOrcPlugin:
 
     @classmethod
     def create_service_account(cls, namespace):
+        in_cluster = try_incluster_or_local()
         v1 = client.CoreV1Api()
         service_account_name = config_loader.get(
             "kubernetes", "service_account_name", default="jac-orc-sa"
@@ -94,6 +126,7 @@ class SpliceOrcPlugin:
 
     @classmethod
     def create_role_and_binding(cls, namespace, service_account_name):
+        in_cluster = try_incluster_or_local()
         rbac_api = client.RbacAuthorizationV1Api()
 
         role_name = "smartimport-role"
@@ -105,20 +138,19 @@ class SpliceOrcPlugin:
             rules=[
                 # Permissions for pods and services
                 client.V1PolicyRule(
-                    api_groups=["", "rbac.authorization.k8s.io"],
-                    resources=["*"],
-                    verbs=["*"],
+                    api_groups=[""],
+                    resources=["pods", "services", "configmaps", "roles"],
+                    verbs=["get", "watch", "list", "create", "update", "delete"],
                 ),
                 # Permissions for deployments
                 client.V1PolicyRule(
                     api_groups=["apps"],
                     resources=["deployments"],
-                    verbs=["*"],
+                    verbs=["get", "watch", "list", "create", "update", "delete"],
                 ),
             ],
         )
         try:
-            logging.info(f"Checking if role {role_name} exists")
             rbac_api.read_namespaced_role(name=role_name, namespace=namespace)
             logging.info(
                 f"Role '{role_name}' already exists in namespace '{namespace}'."
@@ -173,10 +205,7 @@ class SpliceOrcPlugin:
     @classmethod
     def apply_pod_manager_yaml(cls, namespace):
         """Generate and apply the Pod Manager Deployment and Service."""
-        try:
-            config.load_kube_config()
-        except config.ConfigException:
-            config.load_incluster_config()
+        in_cluster = try_incluster_or_local()
 
         # Read configuration
         kubernetes_config = config_loader.get("kubernetes")
@@ -196,10 +225,8 @@ class SpliceOrcPlugin:
         service_type = pod_manager_config.get("service_type", "LoadBalancer")
         if service_type == "NodePort":
             node_port = 30080
-            logging.info("Using NodePort service type for kind cluster.")
         else:
             node_port = None
-            logging.info("Using LoadBalancer service type.")
 
         # Create the Deployment object
         apps_v1 = client.AppsV1Api()
@@ -319,34 +346,62 @@ class SpliceOrcPlugin:
 
     @classmethod
     def configure_pod_manager_url(cls, namespace):
+        """
+        Dynamically set the POD_MANAGER_URL:
+          - If in-cluster: use 'pod-manager-service.{namespace}.svc.cluster.local:8000'
+          - If local dev: use 'localhost:30080'
+          - If 'LoadBalancer', call get_load_balancer_url() (optional).
+        """
+        in_cluster = try_incluster_or_local()
+
+        service_name = config_loader.get(
+            "kubernetes", "pod_manager", "service_name", default="pod-manager-service"
+        )
+        container_port = config_loader.get(
+            "kubernetes", "pod_manager", "container_port", default=8000
+        )
         service_type = config_loader.get(
             "kubernetes", "pod_manager", "service_type", default="NodePort"
         )
-        if service_type == "NodePort":
-            node_port = 30080  # The NodePort we have configured
-            pod_manager_url_local = f"http://localhost:{node_port}"
-            logging.info(f"Pod manager URL set to: {pod_manager_url_local}")
-        else:
-            # Retrieve the external IP for LoadBalancer service
-            pod_manager_url_local = cls.get_load_balancer_url(namespace)
-            if not pod_manager_url_local:
-                logging.error("Failed to retrieve the LoadBalancer URL.")
-                return
 
-        # Update the config file with the new pod_manager_url
+        if in_cluster:
+            # In-cluster => use service DNS
+            # If your Pod Manager is in the same namespace, short DNS name "pod-manager-service"
+            # or full DNS "pod-manager-service.{namespace}.svc.cluster.local"
+            pod_manager_url_local = (
+                f"http://{service_name}.{namespace}.svc.cluster.local:{container_port}"
+            )
+            logging.info(f"In-cluster mode. Pod manager URL => {pod_manager_url_local}")
+        else:
+            # Local dev => typically NodePort
+            if service_type == "NodePort":
+                node_port = 30080
+                pod_manager_url_local = f"http://localhost:{node_port}"
+                logging.info(
+                    f"Local dev mode. Pod manager URL => {pod_manager_url_local}"
+                )
+            else:
+                # If user sets 'LoadBalancer', we can try get_load_balancer_url()
+                logging.info(
+                    "Service type=LoadBalancer, but we are not in-cluster. Might fail."
+                )
+                pod_manager_url_local = cls.get_load_balancer_url(namespace)
+                if not pod_manager_url_local:
+                    logging.error(
+                        "Failed to retrieve LB URL, defaulting to localhost:30080"
+                    )
+                    pod_manager_url_local = "http://localhost:30080"
+
+        # Update the config
         config_loader.set(["environment", "POD_MANAGER_URL"], pod_manager_url_local)
         config_loader.save_config()
 
-        logging.info(f"Pod manager URL updated in config file: {pod_manager_url_local}")
+        logging.info(f"Pod manager URL updated: {pod_manager_url_local}")
 
     @classmethod
     def get_load_balancer_url(cls, namespace, timeout=300, interval=5):
         """Retrieve the LoadBalancer service URL."""
-        try:
-            config.load_kube_config()
-        except config.ConfigException:
-            config.load_incluster_config()
-
+        in_cluster = try_incluster_or_local()
         v1 = client.CoreV1Api()
         service_name = config_loader.get(
             "kubernetes", "pod_manager", "service_name", default="pod-manager-service"
@@ -362,15 +417,17 @@ class SpliceOrcPlugin:
                     ip = ingress[0].ip
                     hostname = ingress[0].hostname
                     port = service.spec.ports[0].port
-                    logging.info(f"ip: {ip}, host: {hostname}")
+                    logging.info(f"LB ingress => ip: {ip}, host: {hostname}")
                     if ip:
                         return f"http://{ip}:{port}"
                     elif hostname:
                         return f"http://{hostname}:{port}"
                 else:
-                    logging.info("Waiting for external IP to be assigned...")
+                    logging.info(
+                        "Waiting for external IP to be assigned (LoadBalancer)."
+                    )
             except client.exceptions.ApiException as e:
-                logging.error(f"Error retrieving LoadBalancer URL: {e}")
+                logging.error(f"Error retrieving LB URL: {e}")
                 return None
             if (time.time() - start_time) > timeout:
                 logging.error(
@@ -449,7 +506,7 @@ class SpliceOrcPlugin:
             pod_manager_url = config_loader.get("environment", "POD_MANAGER_URL")
             if not pod_manager_url:
                 logging.error(
-                    "POD_MANAGER_URL is not set in the config file. Please run 'jac orc_initialize' to initialize the system."
+                    "POD_MANAGER_URL is not set. Please run 'jac orc_initialize'."
                 )
                 raise Exception("POD_MANAGER_URL is not set.")
             proxy = ModuleProxy(pod_manager_url)
