@@ -3,7 +3,7 @@
 from collections import OrderedDict
 from contextlib import suppress
 from functools import wraps
-from typing import Callable, Type
+from typing import Any, Callable, Type, cast
 
 from jaclang.compiler.constant import EdgeDir
 from jaclang.plugin.default import (
@@ -26,6 +26,7 @@ from ..core.architype import (
     GenericEdge,
     NodeAnchor,
     NodeArchitype,
+    ObjectAnchor,
     ObjectArchitype,
     Permission,
     Root,
@@ -234,7 +235,61 @@ class JacEdgePlugin:
         edge.target.disconnect_edge(edge)
 
 
-class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
+class JacUtilPlugin:
+    """Jac Utility Commands."""
+
+    @staticmethod
+    @hookimpl
+    def get_architypes(type: list[str] | str | None, detailed: bool) -> dict[str, list]:
+        """Return all architype of current root."""
+        ctx = cast(JaseciContext, Jac.get_context())
+        root = ctx.root
+        root_id = root.id
+
+        architypes: dict[str, Any] = {
+            "node": [root if detailed else root.ref_id],
+            "edge": [],
+            "walker": [],
+            "object": [],
+        }
+        if isinstance(type, str):
+            type = [type]
+
+        for node in NodeAnchor.Collection.find(
+            {"_id": {"$ne": root_id}, "root": root_id}
+        ):
+            ctx.mem.__mem__[node.id] = node
+            architypes["node"].append(node if detailed else node.ref_id)
+
+        for edge in EdgeAnchor.Collection.find({"root": root_id}):
+            ctx.mem.__mem__[edge.id] = edge
+            architypes["edge"].append(edge if detailed else edge.ref_id)
+
+        for walker in WalkerAnchor.Collection.find({"root": root_id}):
+            ctx.mem.__mem__[walker.id] = walker
+            architypes["walker"].append(walker if detailed else walker.ref_id)
+
+        for obj in ObjectAnchor.Collection.find({"root": root_id}):
+            ctx.mem.__mem__[obj.id] = obj
+            architypes["object"].append(obj if detailed else obj.ref_id)
+
+        count = 0
+        total = 0
+        if type:
+            for key in set(architypes.keys()):
+                _count = len(architypes[key])
+                total += _count
+                if key not in type:
+                    architypes.pop(key)
+                else:
+                    count += _count
+
+        architypes["count"] = count
+        architypes["total"] = total
+        return architypes
+
+
+class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin, JacUtilPlugin):
     """Jaseci Implementations."""
 
     @staticmethod
@@ -273,6 +328,11 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
         for walker in WalkerAnchor.Collection.find({"root": ranchor.id}):
             ctx.mem.__mem__[walker.id] = walker
             Jac.destroy(walker)
+            deleted_count += 1
+
+        for obj in ObjectAnchor.Collection.find({"root": ranchor.id}):
+            ctx.mem.__mem__[obj.id] = obj
+            Jac.destroy(obj)
             deleted_count += 1
 
         return deleted_count

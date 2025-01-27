@@ -52,7 +52,13 @@ class FastAPI:
     def get(cls) -> _FaststAPI:
         """Get or Create new instance of FastAPI."""
         if not isinstance(cls.__app__, _FaststAPI):
-            from .routers import healthz_router, sso_router, user_router, webhook_router
+            from .routers import (
+                healthz_router,
+                sso_router,
+                user_router,
+                util_router,
+                webhook_router,
+            )
             from ..plugin.implementation import (
                 WEBSOCKET_MANAGER,
                 walker_router,
@@ -89,6 +95,7 @@ class FastAPI:
                 healthz_router,
                 sso_router,
                 user_router,
+                util_router,
                 webhook_router,
                 walker_router,
                 webhook_walker_router,

@@ -11,6 +11,7 @@ import types
 from collections import OrderedDict
 from dataclasses import field
 from functools import wraps
+from importlib.metadata import metadata
 from logging import getLogger
 from typing import Any, Callable, Mapping, Optional, Sequence, Type, Union, cast
 from uuid import UUID
@@ -20,6 +21,7 @@ from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 from jaclang.plugin.feature import (
     AccessLevel,
     Anchor,
+    ArchOptions,
     Architype,
     DSFunc,
     EdgeAnchor,
@@ -589,6 +591,127 @@ class JacCmdImpl:
         pass
 
 
+class JacUtilImpl:
+    """Jac Utility Commands."""
+
+    @staticmethod
+    @hookimpl
+    def info() -> dict[str, Any]:
+        """Return Jac Info."""
+        exclude = [
+            "metadata_version",
+            "classifier",
+            "provides_extra",
+            "description_content_type",
+            "description",
+        ]
+        return {
+            key: val
+            for key, val in metadata("jaclang").json.items()
+            if key not in exclude
+        }
+
+    @staticmethod
+    @hookimpl
+    def get_architypes(
+        type: list[ArchOptions] | ArchOptions | None, detailed: bool
+    ) -> dict[str, Any]:
+        """Return all architype of current root."""
+        ctx = Jac.get_context()
+        root_id = ctx.root.id
+        mem = cast(ShelfStorage, ctx.mem)
+
+        architypes: dict[str, Any] = {
+            "NodeAnchor": [],
+            "EdgeAnchor": [],
+            "WalkerAnchor": [],
+            "ObjectAnchor": [],
+        }
+        if isinstance(type, str):
+            type = [type]
+
+        count = 0
+        total = 0
+        if isinstance(mem.__shelf__, Shelf):
+            for sid, sanchor in mem.__shelf__.items():
+                if sanchor.root == root_id:
+                    architypes[sanchor.__class__.__name__].append(
+                        sanchor if detailed else sid
+                    )
+        else:
+            for mid, manchor in mem.__mem__.items():
+                if manchor.root == root_id:
+                    architypes[manchor.__class__.__name__].append(
+                        manchor if detailed else str(mid)
+                    )
+
+        for key in set(architypes.keys()):
+            archs = architypes.pop(key)
+            _count = len(archs)
+            total += _count
+            if (k := key[:-6].lower()) and (not type or k in type):
+                count += _count
+                architypes[k] = archs
+
+        architypes["count"] = count
+        architypes["total"] = total
+        return architypes
+
+    @staticmethod
+    @hookimpl
+    def traverse_node(
+        node: NodeAnchor | None,
+        detailed: bool,
+        show_edges: bool,
+        node_types: list[str] | None,
+        edge_types: list[str] | None,
+    ) -> dict[str, list]:
+        """Return nodes and edges via traversing."""
+        jctx = Jac.get_context()
+        if node is None:
+            node = jctx.root
+
+        nodes: list[NodeAnchor] = []
+        c_nodes: set[NodeAnchor] = set()
+        edges: list[EdgeAnchor] = []
+        c_edges: set[EdgeAnchor] = set()
+
+        queue: list[NodeAnchor] = [node]
+        while queue:
+            node = queue.pop(0)
+            if node not in c_nodes and (
+                not node_types
+                or getattr(node, "name", node.architype.__class__.__name__)
+                in node_types
+            ):
+                c_nodes.add(node)
+                nodes.append(node)
+
+                for ed in node.edges:
+                    if ed not in c_edges and (
+                        not edge_types
+                        or getattr(ed, "name", ed.architype.__class__.__name__)
+                        in edge_types
+                    ):
+                        c_edges.add(ed)
+                        edges.append(ed)
+                        if ed.source != ed.target:
+                            queue.append(ed.target if ed.source == node else ed.source)
+
+        data: dict[str, list] = {
+            "node": (
+                nodes if detailed else [nd.ref_id for nd in nodes]  # type: ignore[misc]
+            ),
+        }
+
+        if show_edges:
+            data["edge"] = (
+                edges if detailed else [ed.ref_id for ed in edges]  # type: ignore[misc]
+            )
+
+        return data
+
+
 class JacFeatureImpl(
     JacAccessValidationImpl,
     JacNodeImpl,
@@ -596,6 +719,7 @@ class JacFeatureImpl(
     JacWalkerImpl,
     JacBuiltinImpl,
     JacCmdImpl,
+    JacUtilImpl,
 ):
     """Jac Feature."""
 

@@ -7,11 +7,13 @@ import types
 from typing import (
     Any,
     Callable,
+    Literal,
     Mapping,
     Optional,
     ParamSpec,
     Sequence,
     Type,
+    TypeAlias,
     TypeVar,
     Union,
 )
@@ -41,6 +43,8 @@ plugin_manager = pluggy.PluginManager("jac")
 
 T = TypeVar("T")
 P = ParamSpec("P")
+
+ArchOptions: TypeAlias = Literal["node", "edge", "walker", "object"]
 
 
 class JacAccessValidationSpec:
@@ -228,6 +232,36 @@ class JacCmdSpec:
         raise NotImplementedError
 
 
+class JacUtilSpec:
+    """Jac Utility Commands."""
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def info() -> dict[str, Any]:
+        """Return Jac Info."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def get_architypes(
+        type: list[ArchOptions] | ArchOptions | None, detailed: bool
+    ) -> dict[str, Any]:
+        """Return all architype of current root."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def traverse_node(
+        node: NodeAnchor | None,
+        detailed: bool,
+        show_edges: bool,
+        node_types: list[str] | None,
+        edge_types: list[str] | None,
+    ) -> dict[str, list]:
+        """Return nodes and edges via traversing."""
+        raise NotImplementedError
+
+
 class JacFeatureSpec(
     JacAccessValidationSpec,
     JacNodeSpec,
@@ -235,6 +269,7 @@ class JacFeatureSpec(
     JacWalkerSpec,
     JacBuiltinSpec,
     JacCmdSpec,
+    JacUtilSpec,
 ):
     """Jac Feature."""
 

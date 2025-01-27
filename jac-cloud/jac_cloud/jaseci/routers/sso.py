@@ -34,7 +34,7 @@ from ..sso import AppleSSO, GoogleSSO
 from ..utils import logger
 from ...core.architype import BulkWrite, NodeAnchor, Root
 
-router = APIRouter(prefix="/sso", tags=["sso"])
+router = APIRouter(prefix="/sso", tags=["SSO APIs"])
 
 User = BaseUser.model()  # type: ignore[misc]
 

@@ -143,3 +143,7 @@ class User:
     def system_admin_default() -> dict[str, object]:
         """System Admin default data."""
         return {}
+
+    def check_is_admin(self) -> bool:
+        """Check is admin."""
+        return self.is_admin
