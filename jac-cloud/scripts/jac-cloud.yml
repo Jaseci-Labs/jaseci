@@ -18,7 +18,7 @@ metadata:
   name: jac-cloud-cluster-role
 rules:
   # Core Kubernetes resources permissions
-  - apiGroups: [""] 
+  - apiGroups: [""]
     resources:
       - "namespaces"
       - "pods"
@@ -27,22 +27,22 @@ rules:
     verbs: ["get", "list", "create", "delete", "watch", "patch", "update"]
 
   # ServiceAccount permissions
-  - apiGroups: [""] 
+  - apiGroups: [""]
     resources: ["serviceaccounts"]
     verbs: ["get", "list", "create", "delete", "watch", "patch", "update"]
 
   # RBAC permissions
-  - apiGroups: ["rbac.authorization.k8s.io"] 
+  - apiGroups: ["rbac.authorization.k8s.io"]
     resources: ["roles", "rolebindings"]
     verbs: ["get", "list", "create", "delete", "watch", "patch", "update"]
 
   # Apps API group for managing deployments
-  - apiGroups: ["apps"] 
+  - apiGroups: ["apps"]
     resources: ["deployments"]
     verbs: ["get", "list", "create", "delete", "watch", "patch", "update"]
 
   # Allow access to secrets (e.g., for OpenAI API key)
-  - apiGroups: [""] 
+  - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["get", "list", "watch"]
 ---
@@ -86,13 +86,13 @@ spec:
         # Environment variables for dynamic configuration
         env:
           - name: CONFIG_FILE_PATH
-            value: "/cfg/module_config.json" 
+            value: "/cfg/module_config.json"
           - name: NAMESPACE
             value: "littlex"
           - name: CONFIGMAP_NAME
             value: "module-config"
           - name: FILE_NAME
-            value: "littleX_BE/littleX_full.jac"
+            value: "littleX_BE/_archive/littleX_full.jac"
           - name: OPENAI_API_KEY
             valueFrom:
               secretKeyRef:
