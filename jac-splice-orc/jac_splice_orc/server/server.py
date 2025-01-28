@@ -11,8 +11,6 @@ from grpc_health.v1 import health, health_pb2_grpc, health_pb2
 import logging
 import traceback
 
-from grpc_health.v1 import health, health_pb2_grpc, health_pb2
-
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 

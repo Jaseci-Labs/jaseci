@@ -29,9 +29,6 @@ def try_incluster_or_local() -> bool:
     to local kubeconfig. Returns True if in-cluster config loaded,
     False if local config loaded.
     """
-    # Common check for in-cluster environment:
-    # Usually: KUBERNETES_SERVICE_HOST is set, and
-    # /var/run/secrets/kubernetes.io/serviceaccount/token exists
     token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
     if os.getenv("KUBERNETES_SERVICE_HOST") and os.path.exists(token_file):
         logging.info("Attempting in-cluster config...")
@@ -77,8 +74,6 @@ class SpliceOrcPlugin:
         """Create a new namespace if it does not exist."""
         logging.info(f"Creating namespace '{namespace_name}'")
 
-        # Attempt to load either in-cluster or local config
-        # so we can call the K8s API
         in_cluster = try_incluster_or_local()
 
         v1 = client.CoreV1Api()
@@ -93,7 +88,7 @@ class SpliceOrcPlugin:
 
     @classmethod
     def create_service_account(cls, namespace):
-        in_cluster = try_incluster_or_local()
+        _ = try_incluster_or_local()
         v1 = client.CoreV1Api()
         service_account_name = config_loader.get(
             "kubernetes", "service_account_name", default="jac-orc-sa"
@@ -126,7 +121,7 @@ class SpliceOrcPlugin:
 
     @classmethod
     def create_role_and_binding(cls, namespace, service_account_name):
-        in_cluster = try_incluster_or_local()
+        _ = try_incluster_or_local()
         rbac_api = client.RbacAuthorizationV1Api()
 
         role_name = "smartimport-role"
@@ -365,9 +360,6 @@ class SpliceOrcPlugin:
         )
 
         if in_cluster:
-            # In-cluster => use service DNS
-            # If your Pod Manager is in the same namespace, short DNS name "pod-manager-service"
-            # or full DNS "pod-manager-service.{namespace}.svc.cluster.local"
             pod_manager_url_local = (
                 f"http://{service_name}.{namespace}.svc.cluster.local:{container_port}"
             )
@@ -381,7 +373,7 @@ class SpliceOrcPlugin:
                     f"Local dev mode. Pod manager URL => {pod_manager_url_local}"
                 )
             else:
-                # If user sets 'LoadBalancer', we can try get_load_balancer_url()
+                # If user sets 'LoadBalancer'
                 logging.info(
                     "Service type=LoadBalancer, but we are not in-cluster. Might fail."
                 )
