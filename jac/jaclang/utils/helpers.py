@@ -165,7 +165,15 @@ def dump_traceback(e: Exception) -> str:
             (frame.lineno is not None) and frame.line and frame.line.strip() != ""
         ):
 
-            line_o = frame._original_line.rstrip()  # type: ignore [attr-defined]
+            # Note: This is CPython internals we're trying to get since python doesn't provide
+            # the frames original line but the stripped version so we had to do this.
+            line_o = frame.line  # Fallback line.
+            if hasattr(frame, "_original_line"):
+                line_o = frame._original_line.rstrip()  # type: ignore [attr-defined]
+            elif hasattr(frame, "_original_lines"):
+                # https://github.com/python/cpython/issues/106922
+                line_o = frame._original_lines.split("\n")[0].rstrip()  # type: ignore [attr-defined]
+
             if frame.colno is not None and frame.end_colno is not None:
                 off_start = byte_offset_to_char_offset(line_o, frame.colno) - 1
                 off_end = byte_offset_to_char_offset(line_o, frame.end_colno) - 1

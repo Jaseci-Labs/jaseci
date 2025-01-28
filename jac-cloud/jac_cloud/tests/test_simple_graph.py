@@ -537,11 +537,11 @@ class SimpleGraphTest(JacCloudTest):
 
     def trigger_upload_file(self) -> None:
         """Test upload file."""
-        with open("jac_cloud/tests/simple_graph.jac", mode="br") as s:
+        with open("jac_cloud/tests/simple.json", mode="br") as s:
             files = [
-                ("single", ("simple_graph.jac", s)),
-                ("multiple", ("simple_graph.jac", s)),
-                ("multiple", ("simple_graph.jac", s)),
+                ("single", ("simple.json", s)),
+                ("multiple", ("simple.json", s)),
+                ("multiple", ("simple.json", s)),
             ]
             res = post(
                 f"{self.host}/walker/post_with_file",
@@ -558,21 +558,21 @@ class SimpleGraphTest(JacCloudTest):
                     {
                         "single": {
                             "single": {
-                                "name": "simple_graph.jac",
-                                "content_type": "application/octet-stream",
-                                "size": 17658,
+                                "name": "simple.json",
+                                "content_type": "application/json",
+                                "size": 25,
                             }
                         },
                         "multiple": [
                             {
-                                "name": "simple_graph.jac",
-                                "content_type": "application/octet-stream",
-                                "size": 17658,
+                                "name": "simple.json",
+                                "content_type": "application/json",
+                                "size": 25,
                             },
                             {
-                                "name": "simple_graph.jac",
-                                "content_type": "application/octet-stream",
-                                "size": 17658,
+                                "name": "simple.json",
+                                "content_type": "application/json",
+                                "size": 25,
                             },
                         ],
                         "singleOptional": None,
@@ -761,6 +761,74 @@ class SimpleGraphTest(JacCloudTest):
         self.assertEqual(200, res["status"])
         self.assertIsNone(obj)
 
+    def trigger_visit_sequence(self) -> None:
+        """Test visit sequence."""
+        res = self.post_api("visit_sequence")
+
+        self.assertEqual(200, res["status"])
+        self.assertEqual(
+            [
+                "walker entry",
+                "walker enter to root",
+                "a-1",
+                "a-2",
+                "a-3",
+                "a-4",
+                "a-5",
+                "a-6",
+                "b-1",
+                "b-2",
+                "b-3",
+                "b-4",
+                "b-5",
+                "b-6",
+                "c-1",
+                "c-2",
+                "c-3",
+                "c-4",
+                "c-5",
+                "c-6",
+                "walker exit",
+            ],
+            res["returns"],
+        )
+
+    def trigger_webhook_test(self) -> None:
+        """Test webhook."""
+        res = post(
+            f"{self.host}/webhook/generate-key",
+            json={
+                "name": "test",
+                "walkers": [],
+                "nodes": [],
+                "expiration": {"count": 60, "interval": "days"},
+            },
+            headers=self.users[0]["headers"],
+        )
+
+        res.raise_for_status()
+        key = res.json()["key"]
+
+        self.assertEqual(
+            {"status": 200, "reports": [True], "returns": [None]},
+            self.post_webhook("webhook_by_header", headers={"test_key": key}),
+        )
+
+        self.assertEqual(
+            {"status": 200, "reports": [True], "returns": [None]},
+            self.post_webhook(f"webhook_by_query?test_key={key}"),
+        )
+
+        self.assertEqual(
+            {"status": 200, "reports": [True], "returns": [None]},
+            self.post_webhook(f"webhook_by_path/{key}"),
+        )
+
+        self.assertEqual(
+            {"status": 200, "reports": [True], "returns": [None]},
+            self.post_webhook("webhook_by_body", {"test_key": key}),
+        )
+
     def test_all_features(self) -> None:
         """Test Full Features."""
         self.trigger_openapi_specs_test()
@@ -864,10 +932,22 @@ class SimpleGraphTest(JacCloudTest):
 
         self.trigger_memory_sync()
 
-        ##################################################
+        ###################################################
         #                 SAVABLE OBJECT                  #
         ###################################################
 
         obj_id = self.trigger_create_custom_object_test()
         self.trigger_update_custom_object_test(obj_id)
         self.trigger_delete_custom_object_test(obj_id)
+
+        ###################################################
+        #                  VISIT SEQUENCE                 #
+        ###################################################
+
+        self.trigger_visit_sequence()
+
+        ###################################################
+        #                     WEBHOOK                     #
+        ###################################################
+
+        self.trigger_webhook_test()

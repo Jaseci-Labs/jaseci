@@ -112,3 +112,12 @@ class JacCloudTest(TestCase):
             return res.json()
         else:
             return res.status_code
+
+    def post_webhook(
+        self, api: str, json: dict | None = None, headers: dict | None = None
+    ) -> dict:
+        """Call walker post API."""
+        res = post(f"{self.host}/webhook/walker/{api}", json=json, headers=headers)
+
+        res.raise_for_status()
+        return res.json()

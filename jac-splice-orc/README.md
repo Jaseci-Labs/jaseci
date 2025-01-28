@@ -32,8 +32,6 @@ JAC Cloud Orchestrator (`jac-splice-orc`) is a system designed to dynamically im
 - [Troubleshooting](#troubleshooting)
 - [Flow Diagram](#flow-diagram)
 - [Notes](#notes)
-- [Contributing](#contributing)
-- [License](#license)
 
 ---
 

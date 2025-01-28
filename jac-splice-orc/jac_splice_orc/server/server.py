@@ -7,6 +7,7 @@ import threading
 import uuid
 from grpc_local import module_service_pb2_grpc
 from grpc_local import module_service_pb2
+from grpc_health.v1 import health, health_pb2_grpc, health_pb2
 import logging
 import traceback
 

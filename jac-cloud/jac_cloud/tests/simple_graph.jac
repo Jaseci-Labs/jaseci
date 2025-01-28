@@ -2,6 +2,7 @@
 import:py from jac_cloud.core.context {JaseciContext}
 import:py from jac_cloud.jaseci.models {User as BaseUser, NO_PASSWORD}
 import:py from jac_cloud.jaseci.utils {SendGridEmailer}
+import:py from jac_cloud.plugin {WEBSOCKET_MANAGER as socket}
 import:py from dataclasses {dataclass}
 import:py from fastapi {UploadFile}
 import:py from typing {Any}
@@ -802,5 +803,126 @@ walker delete_custom_object {
         #
         # The only difference is BaseAnchor.ref doesn't
         # load the actual object and just use it as reference
+    }
+}
+
+##################################################################
+#                     FOR SPAWN CALL SEQUENCE                    #
+##################################################################
+
+node Node {
+    has val: str;
+
+    can entry1 with entry {
+        return f"{self.val}-2";
+    }
+
+    can entry3 with visit_sequence entry {
+        return f"{self.val}-3";
+    }
+
+    can exit1 with visit_sequence exit {
+        return f"{self.val}-4";
+    }
+
+    can exit2 with exit {
+        return f"{self.val}-5";
+    }
+}
+
+walker visit_sequence {
+    can entry1 with entry {
+        return "walker entry";
+    }
+
+    can entry2 with `root entry {
+        here ++> Node(val = "a");
+        here ++> Node(val = "b");
+        here ++> Node(val = "c");
+        visit [-->];
+        return "walker enter to root";
+    }
+
+    can entry3 with Node entry {
+        return f"{here.val}-1";
+    }
+
+    can exit1 with Node exit {
+        return f"{here.val}-6";
+    }
+
+    can exit2 with exit {
+        return "walker exit";
+    }
+
+    class __specs__ {
+        has auth: bool = False;
+    }
+}
+
+#################################################################
+#                           WEBHOOKS                            #
+#################################################################
+
+walker webhook_by_header {
+    can enter1 with `root entry {
+        report True;
+    }
+
+    class __specs__ {
+        has webhook: dict = {
+            "type": "header",
+            "name": "test_key"
+        };
+    }
+}
+
+walker webhook_by_query {
+    can enter1 with `root entry {
+        report True;
+    }
+
+    class __specs__ {
+        has webhook: dict = {
+            "type": "query",
+            "name": "test_key"
+        };
+    }
+}
+
+walker webhook_by_path {
+    can enter1 with `root entry {
+        report True;
+    }
+
+    class __specs__ {
+        has webhook: dict = {
+            "type": "path",
+            "name": "test_key"
+        }, path: str = "/{test_key}";
+    }
+}
+
+walker webhook_by_body {
+    can enter1 with `root entry {
+        report True;
+    }
+
+    class __specs__ {
+        has webhook: dict = {
+            "type": "body",
+            "name": "test_key"
+        };
+    }
+}
+
+walker websocket {
+    has val: int;
+    can enter1 with `root entry {
+        socket.notify_self({"testing": self.val});
+    }
+
+    class __specs__ {
+        has methods: list = ["websocket"];
     }
 }
