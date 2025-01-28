@@ -9,7 +9,6 @@ setup(
     version=VERSION,
     packages=find_packages(include=["jac_cloud", "jac_cloud.*"]),
     install_requires=[
-        "jaclang==0.7.29",
         "fastapi~=0.111.0",
         "pydantic~=2.8.2",
         "pymongo~=4.8.0",
@@ -35,6 +34,7 @@ setup(
         "types-PyYAML~=6.0.12.20240917",
         "montydb~=2.5.3",
         "broadcaster[redis]~=0.3.1",
+        "jaclang @ git+https://github.com/Jaseci-Labs/jaseci.git@thakee-py-codegen-new#subdirectory=jac",
     ],
     package_data={},
     entry_points={
