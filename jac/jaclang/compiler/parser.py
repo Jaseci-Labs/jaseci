@@ -201,9 +201,7 @@ class JacParser(Pass):
             return None
 
         def consume(self, ty: type[T]) -> T:
-            """
-            Consume and return the specified type, if it's not exists, will be an internal compiler error.
-            """
+            """Consume and return the specified type, if it's not exists, will be an internal compiler error."""
             if node := self.match(ty):
                 return node
             raise self.ice()
