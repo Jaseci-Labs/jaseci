@@ -582,12 +582,11 @@ class JacParser(Pass):
 
             architype_def: abil_to_arch_chain member_block
             """
-            if isinstance(kid[0], ast.ArchRefChain) and isinstance(
-                kid[1], ast.SubNodeList
-            ):
+            if (archref := self.consume(ast.ArchRefChain)) and \
+               (subnodelist := self.consume(ast.SubNodeList)):
                 return ast.ArchDef(
-                    target=kid[0],
-                    body=kid[1],
+                    target=archref,
+                    body=subnodelist,
                     kid=kid,
                 )
             else:
@@ -601,8 +600,9 @@ class JacParser(Pass):
                     | KW_EDGE
                     | KW_NODE
             """
-            if isinstance(kid[0], ast.Token):
-                return kid[0]
+            if (arch_token := self.match(ast.Token)):
+                return arch_token
+
             else:
                 raise self.ice()
 
@@ -611,8 +611,11 @@ class JacParser(Pass):
 
             decorators: (DECOR_OP atomic_chain)+
             """
-            valid_decors = [i for i in kid if isinstance(i, ast.Expr)]
-            if len(valid_decors) == len(kid) / 2:
+            valid_decors = []
+            while self.match_token(Tok.DECOR_OP) is not None:
+                x = self.consume(ast.Expr)
+                valid_decors.append(x)
+            if len(valid_decors) == len(self.nodes) / 2:
                 return ast.SubNodeList[ast.Expr](
                     items=valid_decors,
                     delim=Tok.DECOR_OP,
@@ -620,7 +623,7 @@ class JacParser(Pass):
                 )
             else:
                 raise self.ice()
-
+        
         def inherited_archs(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Expr]:
             """Grammar rule.
 
