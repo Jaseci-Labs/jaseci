@@ -440,12 +440,13 @@ class SpliceOrcPlugin:
             :param config_path: Path to a custom configuration file.
             """
             # Load custom config if provided
-            custom_config = None
-            if config_path:
-                with open(config_path, "r") as file:
-                    custom_config = json.load(file)
+            if config_path and os.path.isfile(config_path):
                 global config_loader
-                config_loader = ConfigLoader(custom_config)
+                logging.info(f"Loading custom config from: {config_path}")
+                config_loader = ConfigLoader(config_file_path=config_path)
+            else:
+                # Load default config
+                logging.error(f"Configuration file not found: {config_path}")
             # Use the provided namespace if given, else read from config
             if not namespace:
                 namespace = config_loader.get(

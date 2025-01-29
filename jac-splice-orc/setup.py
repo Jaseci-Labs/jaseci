@@ -30,7 +30,6 @@ setup(
         "python-dotenv~=1.0.1",
         "numpy~=2.0.1",
         "jaclang~=0.7.27",
-        "deepmerge~=2.0",
     ],
     entry_points={
         "jac": [

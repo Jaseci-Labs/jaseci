@@ -1,20 +1,18 @@
 import os
 import json
 import logging
-from deepmerge import always_merger
 
 
 class ConfigLoader:
     """Loads and manages configurations from a JSON file."""
 
-    def __init__(self, config_file_path=None, custom_config=None):
+    def __init__(self, config_file_path=None):
         """Initialize the ConfigLoader."""
         if config_file_path is None:
             # Default config file path
             config_file_path = os.path.join(os.path.dirname(__file__), "config.json")
         self.config_file_path = config_file_path
-        self.default_config = self.load_config()
-        self.config = self.merge_configs(custom_config)
+        self.config = self.load_config()
 
     def load_config(self):
         """Load the JSON configuration file if it exists."""
@@ -27,12 +25,6 @@ class ConfigLoader:
         except json.JSONDecodeError as e:
             logging.error(f"Error parsing JSON configuration: {e}")
             raise
-
-    def merge_configs(self, custom_config):
-        """Merge custom configuration with the default and loaded configuration."""
-        loaded_config = self.load_config()
-        base_config = always_merger.merge(self.default_config, loaded_config)
-        return always_merger.merge(base_config, custom_config or {})
 
     def get(self, *keys, default=None):
         """Retrieve a configuration value using a sequence of keys."""
