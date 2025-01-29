@@ -510,8 +510,13 @@ class JacParser(Pass):
 
             import_item: named_ref (KW_AS NAME)?
             """
-            name = kid[0]
-            alias = kid[2] if len(kid) > 1 else None
+            name = self.consume(ast.Name)
+
+            if self.match_token(Tok.KW_AS):
+                alias = self.consume(ast.Name)
+            else:
+                alias = None
+
             if isinstance(name, ast.Name) and (
                 alias is None or isinstance(alias, ast.Name)
             ):
@@ -550,20 +555,17 @@ class JacParser(Pass):
 
             architype_decl: arch_type access_tag? STRING? NAME inherited_archs? (member_block | SEMI)
             """
-            arch_type = kid[0]
-            access = kid[1] if isinstance(kid[1], ast.SubTag) else None
-            semstr = (
-                kid[2]
-                if (access and isinstance(kid[2], ast.String))
-                else kid[1] if isinstance(kid[1], ast.String) else None
-            )
-            name = (
-                kid[3]
-                if (access and semstr)
-                else kid[2] if (access or semstr) else kid[1]
-            )
-            inh = kid[-2] if isinstance(kid[-2], ast.SubNodeList) else None
-            body = kid[-1] if isinstance(kid[-1], ast.SubNodeList) else None
+            arch_type = self.consume(ast.Token)
+            access = self.match(ast.SubTag)
+            semstr = self.match(ast.String)
+            name = self.consume(ast.Name)
+            inh = self.match(ast.SubNodeList)
+            body = self.match(ast.SubNodeList)
+
+            # If there's no inherited arches, then the body is the last element.
+            if body is None:
+                body, inh = inh, None
+
             if isinstance(arch_type, ast.Token) and isinstance(name, ast.Name):
                 return ast.Architype(
                     arch_type=arch_type,
