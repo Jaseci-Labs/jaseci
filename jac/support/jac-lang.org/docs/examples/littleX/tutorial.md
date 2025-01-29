@@ -236,19 +236,17 @@ Now Lets create required walkers for LittleX.
             ```
         * Walker `follow_request` spawned on followee profile will create an `Follow` edge from follower to followee.
         * How it is executed will be discussed later.
-        * `here.followees.append(self.profile_id)` Add the profile id to the followees list.
-        * `here +:follow():+> &self.profile_id` Create a follow edge from `profile` node.
 
       - **Unfollow Request Walker**
-        * Removes a user from the followees list and deletes the follow edge.
-            ```bash
+        * Removes the follow edge.
+            ```jac
             walker un_follow_request {}
             ```
-        * `here.followees.remove(self.profile_id)` Remove the profile id from the followees list.
-        * `here del-:follow:-> &self.profile_id` Delete the follow edge from `profile` node.
+        * Walker `un_follow_request` spawned on followee profile will remove the `Follow` edge from follower to followee.
+        * How it is executed will be discussed later.
 
       - **Create Tweet Walker**
-        * Creates a new tweet for a profile and adds it to the graph using a post edge.
+        * Creates a new tweet for a profile and adds it to the graph using a `Post` edge.
             ```jac
             walker create_tweet :visit_profile: {
                   has content: str;
@@ -256,13 +254,13 @@ Now Lets create required walkers for LittleX.
                   can tweet with profile entry {
                         embedding = sentence_transformer.encode(self.content).tolist();
                         tweet_node = here +:Post:+> Tweet(content=self.content, embedding=embedding);
-                        Jac.unrestrict(tweet_node[0], level="CONNECT");
                         report tweet_node;
                   }
             }
             ```
-        * `tweet_node = here +:post:+> tweet(content=self.content)` Create a new tweet with content.
-        * `visit tweet_node` Visit the newly created tweet node.
+        * `embedding = sentence_transformer.encode(self.content).tolist()` Embedding the content.
+        * `tweet_node = here +:post:+> tweet(content=self.content, embedding=embedding)` Create a new tweet with content, its embedding.
+        * `report tweet_node` reports the newly created tweet node.
 
       - **Update Tweet Walker**
         * Updates the content of an existing tweet by its ID.
@@ -271,33 +269,32 @@ Now Lets create required walkers for LittleX.
                   has updated_content: str;
             }
             ```
-        * `tweet_node = &self.tweet_id` Get the tweet node by its ID.
-        * `visit tweet_node` Visit the tweet node.
-        * `here.content = self.updated_content` Update the content of the tweet node.
+        * Walker `update_tweet` spawned on tweet node, that will update the content of the tweet.
+        * How it is executed will be discussed later.
 
       - **Remove Tweet Walker**
         * Deletes a tweet by removing its connection to the profile.
             ```jac
             walker remove_tweet {}
             ```
-        * `tweet_node = &self.tweet_id` Get the tweet node by its ID.
-        * `here del--> tweet_node` Remove the connection between the profile and the tweet node.
+        * Walker `remove_tweet` spawned on tweet node, that will remove the tweet.
+        * How it is executed will be discussed later.
 
       - **Like Tweet Walker**
         * Adds a like edge between a tweet and the profile liking it.
             ```jac
             walker like_tweet {}
             ```
-        * `tweet_node = &self.tweet_id` Get the tweet node by its ID.
-        * `tweet_node +:like():+> here` Add a like edge between the tweet and user.
+        * Walker `like_tweet` spawned on tweet node, that will like the tweet.
+        * How it is executed will be discussed later.
 
       - **Remove Like Walker**
         * Removes the like edge
             ```jac
             walker remove_like {}
             ```
-        * `tweet_node = &self.tweet_id` Get the tweet node by its ID.
-        * `tweet_node del-:like:-> here` Remove the like edge between the tweet and user.
+        * Walker `remove_like` spawned on tweet node, that will remove the like.
+        * How it is executed will be discussed later.
 
       - **Comment Tweet Walker**
         * Adds a comment to a tweet by creating a comment node and connecting it to the tweet.
@@ -306,26 +303,28 @@ Now Lets create required walkers for LittleX.
                   has content: str;
             }
             ```
-        * `comment_node = here ++> comment(content=self.content)` Create a new comment node with content.
-        * `tweet_node = &self.tweet_id` Get the tweet node by its ID.
-        * `tweet_node ++> comment_node[0]` Add a comment edge between the tweet and user.
+        * Walker `comment_tweet` spawned on tweet node, that will add a comment to tweet and create a edge with author of the comment.
+        * How it is executed will be discussed later.
+
 
       - **Load Tweet Walker**
-        * Loads detailed information about a tweet, including its content and author.
+        * Loads detailed information about a tweet, including its content, embedding and author.
             ```jac
-            walker load_tweet {
+            walker load_tweet:visit_profile: {
                   has if_report: bool = False;
+                  has tweet_info: list[TweetInfo] = [];
 
-                  can go_to_tweet with profile entry {
+                  can go_to_tweet with Profile entry {
+                        visit [-->(`?Tweet)];
                         if self.if_report {
-                              report self.tweets;
+                              report self.tweet_info;
                         }
                   }
             }
             ```
-        * `self.tweet_info["content"] = here;` Get the tweet content.
-        * `visit [<-:post:-]` Visit all post edges connected to the tweet.
-        * `self.tweet_info["username"] = here.username;` Get the tweet author.
+        * First `visit_profile` walker is called and it visits to `Profile` node.
+        * `visit [-->(`?Tweet)]` visits to each tweet and retrieve the info of tweets posted by the user.
+        * How those tweets are retrieved will be discussed later.
 
       - **Load Feed Walker**
         * Fetches all tweets for a profile, including their comments and likes.
@@ -360,9 +359,10 @@ Now Lets create required walkers for LittleX.
                   }
             }
             ```
+        * First `visit_profile` walker is called and it visits to `Profile` node.
+        * With `Profile` entry following things are executed.
         * `user_tweets = here spawn load_tweets();` Spawn load_tweets walker with current node.
-        * `self.feeds.extend(user_tweets.tweets);` Add the user's tweets to the
-            profile's feed.
+        * `feeds.extend(user_tweets.tweets);` Add the user's tweets to the profile's feed.
         * `user_node = &user;` Get the user node.
         * `self.summary: str = summarise_tweets(tweets);` Summarize the tweets.
         * `if (self.search_query) { ... } else { ... }` If a search query is provided, filter the tweets based on the query. Otherwise, return all tweets.
@@ -514,7 +514,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
 
       - Update profile
 
-        * When a user updates their profile, the system logs the changes and updates the username.
+        * A user updates their profile.
         * **Create Tweet Walker**
                   ```jac
                   can update with update_profile entry {
@@ -522,23 +522,25 @@ You leave the Living Room, and the system turns off the lights and updates its r
                         report self;
                   }
                   ```
-        * The update_profile ability updates the user's profile with a new username and logs the change.
+        * As `update_profile` walker is sapwned on `Profile`, It visits to `Profile`.
+        *  With the entry of the `update_profile` walker, Profile will be updated.
 
       - Get profile
 
-        * When a user requests their profile information, the system retrieves and logs the profile details.
+        * Get profile details.
         * **Create get ability**
                   ```jac
                   can get with get_profile entry {
                         report self;
                   }
                   ```
-        * `Jac.unrestrict(here, level="READ")` Unrestrict that tweet node to everyone with read access.
+        * As `get_profile` walker is sapwned on `Profile`, It visits to `Profile`.
+        *  With the entry of the `get_profile` walker, Profile will be reported.
 
       - Follow profile
 
-        * When a user creates a tweet, it is private by default.
-        * **Update profile Ability**
+        * Follwing a user.
+        * **Follow Request Ability**
                   ```jac
                   can follow with follow_request entry {
                         current_profile = [root-->(`?Profile)];
@@ -546,41 +548,30 @@ You leave the Living Room, and the system turns off the lights and updates its r
                         report self;
                   }
                   ```
-        * `Jac.unrestrict(here, level="READ")` Unrestrict that tweet node to everyone with read access.
+        * As `follow_request` walker is sapwned on `Profile`, It visits to `Profile`.
+        *  With the entry of the `follow_request` walker, follwe edge is created and connected.
+        * `[root-->(`?Profile)]` gets the current user profile.
+        * `current_profile[0] +:Follow():+> self` connects the followee with Follow edge.
 
       - Unfollow profile
 
-        * When a user creates a tweet, it is private by default.
+        * Unfollwing a user.
         * **Unfollow profile Ability**
-                  ```bash
+                  ```jac
                   can un_follow with un_follow_request entry {
                         current_profile = [root-->(`?Profile)];
                         current_profile[0] del-:Follow:-> self;
                         report self;
                   }
                   ```
-        * `Jac.unrestrict(here, level="READ")` Unrestrict that tweet node to everyone with read access.
-
-      - Load Tweets 
-
-        * When a user creates a tweet, it is private by default.
-        * **Load Tweets  Ability**
-                  ```jac
-                  can append_tweet with load_tweets entry {
-                        here.tweet_info = [TweetInfo(
-                              id=jid(tweet),
-                              content=tweet.content,
-                              embedding=tweet.embedding,
-                              likes=[i.username for i in [tweet-:Like:->]],
-                              comments=[{"id": jid(i), "content": i.content} for i in [tweet-->(`?Comment)]]
-                        ) for tweet in [-:Post:->(`?Tweet)]];
-                  }
-                  ```
-        * `Jac.unrestrict(here, level="READ")` Unrestrict that tweet node to everyone with read access.
+        * As `un_follow_request` walker is sapwned on `Profile`, It visits to `Profile`.
+        *  With the entry of the `un_follow_request` walker, follwe edge is disconnected.
+        * `[root-->(`?Profile)]` gets the current user profile.
+        * `current_profile[0] del-:Follow:-> self` disconnects the followee with Follow edge.
 
       - Update Tweet 
 
-        * When a user creates a tweet, it is private by default.
+        * User updated their tweet.
         * **Update Tweet  Ability**
                   ```jac
                   can update with update_tweet exit {
@@ -588,24 +579,26 @@ You leave the Living Room, and the system turns off the lights and updates its r
                         report self;
                   }
                   ```
-        * `Jac.unrestrict(here, level="READ")` Unrestrict that tweet node to everyone with read access.
-
-      **Scenarios in node**
+        * As `update_tweet` walker is sapwned on `Tweet`, It visits to `Tweet`.
+        *  With the exit of the `update_tweet` walker, tweet is updated.
+        * `self.content = here.updated_content` updated the current tweet.
 
       - Delete Tweet
 
-        * When a user creates a tweet, it is private by default.
+        * Deletes the tweet.
         * **Delete Tweet Ability**
                   ```jac
                   can delete with remove_tweet exit {
                         del self;
                   }
                   ```
-        * `Jac.unrestrict(here, level="READ")` Unrestrict that tweet node to everyone with read access.
+        * As `remove_tweet` walker is sapwned on `Tweet`, It visits to `Tweet`.
+        *  With the exit of the `remove_tweet` walker, tweet is deleted.
+        * `del self` deletes the current tweet.
 
       - Like Tweet
 
-        * When a user creates a tweet, it is private by default.
+        * User likes the tweet.
         * **Like Tweet Ability**
                   ```jac
                   can like_tweet with like_tweet entry {
@@ -614,11 +607,14 @@ You leave the Living Room, and the system turns off the lights and updates its r
                         report self;
                   }
                   ```
-        * `Jac.unrestrict(here, level="READ")` Unrestrict that tweet node to everyone with read access.
+        * As `like_tweet` walker is sapwned on `Tweet`, It visits to `Tweet`.
+        *  With the entry of the `like_tweet` walker, tweet is liked.
+        * `[root-->(`?Profile)]` gets the current user profile.
+        * `self +:Like():+> current_profile[0]` connects the user with `Like` edge.
 
       - Remove Like Ability
 
-        * When a user creates a tweet, it is private by default.
+        * User removes the like.
         * **Remove Like Ability**
                   ```jac
                   can remove_like with remove_like entry {
@@ -627,7 +623,10 @@ You leave the Living Room, and the system turns off the lights and updates its r
                         report self;
                   }
                   ```
-        * `Jac.unrestrict(here, level="READ")` Unrestrict that tweet node to everyone with read access.
+        * As `remove_like` walker is sapwned on `Tweet`, It visits to `Tweet`.
+        *  With the entry of the `remove_like` walker, like is removed.
+        * `[root-->(`?Profile)]` gets the current user profile.
+        * `self del-:Like:-> current_profile[0]` disconnects the user with `Like` edge.
 
       - Comment Ability
 
@@ -642,7 +641,29 @@ You leave the Living Room, and the system turns off the lights and updates its r
                         report comment_node[0];
                   }
                   ```
-        * `Jac.unrestrict(here, level="READ")` Unrestrict that tweet node to everyone with read access.
+        * As `comment_tweet` walker is sapwned on `Tweet`, It visits to `Tweet`.
+        *  With the entry of the `comment_tweet` walker, comment is added to the tweet.
+        * `[root-->(`?Profile)]` gets the current user profile.
+        * `comment_node = current_profile[0] ++> Comment(content=here.content)` connects the user with `Comment` node.
+
+      - Load Tweets 
+
+        * Load tweet information.
+        * **Load Tweets  Ability**
+                  ```jac
+                  can get_info()-> TweetInfo {
+                        return TweetInfo(
+                              id=jid(self),
+                              content=self.content,
+                              embedding=self.embedding,
+                              likes=[i.username for i in [self-:Like:->]],
+                              comments=[{"id": jid(i), "content": i.content} for i in [self-->(`?Comment)]]
+                        );
+                  }
+                  ```
+                  * This defines a ablitiy named `get_info` within the `Tweet` node and itnreturns an instance of the `TweetInfo` node.
+                  * `id=jid(self)`retrieves the unique jac identifier (jid) of the current `Tweet` node. 
+                  * This assigns the `content` property of the current `Tweet` object to the `content` field of the `TweetInfo` object that has variables id, content, embedding, likes, comments.
 
 === "LittleX.jac Upto Now"
     ```jac linenums="1"
