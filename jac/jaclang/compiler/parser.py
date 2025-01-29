@@ -582,12 +582,12 @@ class JacParser(Pass):
 
             architype_def: abil_to_arch_chain member_block
             """
-            if isinstance(kid[0], ast.ArchRefChain) and isinstance(
-                kid[1], ast.SubNodeList
+            if (archref := self.consume(ast.ArchRefChain)) and (
+                subnodelist := self.consume(ast.SubNodeList)
             ):
                 return ast.ArchDef(
-                    target=kid[0],
-                    body=kid[1],
+                    target=archref,
+                    body=subnodelist,
                     kid=kid,
                 )
             else:
@@ -601,8 +601,9 @@ class JacParser(Pass):
                     | KW_EDGE
                     | KW_NODE
             """
-            if isinstance(kid[0], ast.Token):
-                return kid[0]
+            if arch_token := self.match(ast.Token):
+                return arch_token
+
             else:
                 raise self.ice()
 
@@ -611,8 +612,11 @@ class JacParser(Pass):
 
             decorators: (DECOR_OP atomic_chain)+
             """
-            valid_decors = [i for i in kid if isinstance(i, ast.Expr)]
-            if len(valid_decors) == len(kid) / 2:
+            valid_decors = []
+            while self.match_token(Tok.DECOR_OP) is not None:
+                x = self.consume(ast.Expr)
+                valid_decors.append(x)
+            if len(valid_decors) == len(self.nodes) / 2:
                 return ast.SubNodeList[ast.Expr](
                     items=valid_decors,
                     delim=Tok.DECOR_OP,
@@ -627,9 +631,14 @@ class JacParser(Pass):
             inherited_archs: LT (atomic_chain COMMA)* atomic_chain GT
                            | COLON (atomic_chain COMMA)* atomic_chain COLON
             """
-            valid_inh = [i for i in kid if isinstance(i, ast.Expr)]
+            parents = []
+            self.match_token(Tok.LT) or self.match_token(Tok.COLON)
+            while parent := self.match(ast.Expr):
+                parents.append(parent)
+                self.match_token(Tok.COMMA)
+            self.match_token(Tok.GT) or self.match_token(Tok.COLON)
             return ast.SubNodeList[ast.Expr](
-                items=valid_inh,
+                items=parents,
                 delim=Tok.COMMA,
                 kid=kid,
             )
@@ -639,9 +648,10 @@ class JacParser(Pass):
 
             sub_name: COLON NAME
             """
-            if isinstance(kid[1], ast.Name):
+            self.node_idx = 1
+            if name := self.match(ast.Name):
                 return ast.SubTag[ast.Name](
-                    tag=kid[1],
+                    tag=name,
                     kid=kid,
                 )
             else:
@@ -654,8 +664,8 @@ class JacParser(Pass):
                     | KWESC_NAME
                     | NAME
             """
-            if isinstance(kid[0], ast.NameAtom):
-                return kid[0]
+            if named_reference := self.match(ast.NameAtom):
+                return named_reference
             else:
                 raise self.ice()
 
@@ -669,8 +679,8 @@ class JacParser(Pass):
                         | KW_SELF
                         | KW_HERE
             """
-            if isinstance(kid[0], ast.Name):
-                return ast.SpecialVarRef(var=kid[0])
+            if special_var_ref := self.consume(ast.Name):
+                return ast.SpecialVarRef(var=special_var_ref)
             else:
                 raise self.ice()
 
@@ -728,12 +738,12 @@ class JacParser(Pass):
 
             enum_def: arch_to_enum_chain enum_block
             """
-            if isinstance(kid[0], ast.ArchRefChain) and isinstance(
-                kid[1], ast.SubNodeList
+            if (enum_def := self.consume(ast.ArchRefChain)) and (
+                enum_subnodelist := self.consume(ast.SubNodeList)
             ):
                 return ast.EnumDef(
-                    target=kid[0],
-                    body=kid[1],
+                    target=enum_def,
+                    body=enum_subnodelist,
                     kid=kid,
                 )
             else:
@@ -746,8 +756,10 @@ class JacParser(Pass):
 
             enum_block: LBRACE ((enum_stmt COMMA)* enum_stmt COMMA?)? RBRACE
             """
-            ret = ast.SubNodeList[ast.EnumBlockStmt](items=[], delim=Tok.COMMA, kid=kid)
-            ret.items = [i for i in kid if isinstance(i, ast.EnumBlockStmt)]
+            ret = ast.SubNodeList[ast.EnumBlockStmt](
+                items=[], delim=Tok.COMMA, kid=self.nodes
+            )
+            ret.items = [i for i in self.nodes if isinstance(i, ast.EnumBlockStmt)]
             return ret
 
         def enum_stmt(self, kid: list[ast.AstNode]) -> ast.EnumBlockStmt:
@@ -894,15 +906,18 @@ class JacParser(Pass):
             ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
             """
             if (
-                isinstance(kid[0], ast.ArchRefChain)
-                and isinstance(kid[1], (ast.FuncSignature, ast.EventSignature))
-                and isinstance(kid[2], ast.SubNodeList)
+                (ability_def_target := self.match(ast.ArchRefChain))
+                and (
+                    ability_def_sign := self.match(ast.FuncSignature)
+                    or self.match(ast.EventSignature)
+                )
+                and (ability_def_body := self.match(ast.SubNodeList))
             ):
                 return ast.AbilityDef(
-                    target=kid[0],
-                    signature=kid[1],
-                    body=kid[2],
-                    kid=kid,
+                    target=ability_def_target,
+                    signature=ability_def_sign,
+                    body=ability_def_body,
+                    kid=self.nodes,
                 )
             else:
                 raise self.ice()
