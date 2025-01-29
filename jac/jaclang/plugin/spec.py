@@ -357,12 +357,6 @@ class JacFeatureSpec(
 
     @staticmethod
     @hookspec(firstresult=True)
-    def elvis(op1: Optional[T], op2: T) -> T:
-        """Jac's elvis operator feature."""
-        raise NotImplementedError
-
-    @staticmethod
-    @hookspec(firstresult=True)
     def has_instance_default(gen_func: Callable[[], T]) -> T:
         """Jac's has container default feature."""
         raise NotImplementedError

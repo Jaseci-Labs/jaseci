@@ -2482,25 +2482,6 @@ class PyastGenPass(Pass):
             return func_node.gen.py_ast
         elif node.op.name == Tok.PIPE_FWD and isinstance(node.right, ast.TupleVal):
             self.error("Invalid pipe target.")
-        elif node.op.name == Tok.ELVIS_OP:
-            self.needs_jac_feature()
-            return [
-                self.sync(
-                    ast3.Call(
-                        func=self.sync(
-                            ast3.Attribute(
-                                value=self.sync(
-                                    ast3.Name(id=Con.JAC_FEATURE.value, ctx=ast3.Load())
-                                ),
-                                attr="elvis",
-                                ctx=ast3.Load(),
-                            )
-                        ),
-                        args=[node.left.gen.py_ast[0], node.right.gen.py_ast[0]],
-                        keywords=[],
-                    )
-                )
-            ]
         else:
             self.error(
                 f"Binary operator {node.op.value} not supported in bootstrap Jac"

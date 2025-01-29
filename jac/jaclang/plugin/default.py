@@ -179,14 +179,12 @@ class JacAccessValidationImpl:
             if to_root.access.all > access_level:
                 access_level = to_root.access.all
 
-            level = to_root.access.roots.check(str(jroot.id))
-            if level > AccessLevel.NO_ACCESS and access_level == AccessLevel.NO_ACCESS:
+            if (level := to_root.access.roots.check(str(jroot.id))) is not None:
                 access_level = level
 
         # if target anchor have set allowed roots
         # if current root is allowed to target anchor
-        level = to_access.roots.check(str(jroot.id))
-        if level > AccessLevel.NO_ACCESS and access_level == AccessLevel.NO_ACCESS:
+        if (level := to_access.roots.check(str(jroot.id))) is not None:
             access_level = level
 
         return access_level
@@ -922,12 +920,6 @@ class JacFeatureImpl(
 
     @staticmethod
     @hookimpl
-    def elvis(op1: Optional[T], op2: T) -> T:
-        """Jac's elvis operator feature."""
-        return ret if (ret := op1) is not None else op2
-
-    @staticmethod
-    @hookimpl
     def has_instance_default(gen_func: Callable[[], T]) -> T:
         """Jac's has container default feature."""
         return field(default_factory=lambda: gen_func())
@@ -1032,7 +1024,7 @@ class JacFeatureImpl(
                         dir in [EdgeDir.OUT, EdgeDir.ANY]
                         and node == source
                         and target.architype in right
-                        and Jac.check_write_access(target)
+                        and Jac.check_connect_access(target)
                     ):
                         Jac.destroy(anchor) if anchor.persistent else Jac.detach(anchor)
                         disconnect_occurred = True
@@ -1040,7 +1032,7 @@ class JacFeatureImpl(
                         dir in [EdgeDir.IN, EdgeDir.ANY]
                         and node == target
                         and source.architype in right
-                        and Jac.check_write_access(source)
+                        and Jac.check_connect_access(source)
                     ):
                         Jac.destroy(anchor) if anchor.persistent else Jac.detach(anchor)
                         disconnect_occurred = True

@@ -1013,8 +1013,9 @@ class ModulePath(AstSymbolNode):
         target = self.dot_path_str
         if target_item:
             target += f".{target_item}"
-        base_path = os.path.dirname(self.loc.mod_path)
-        base_path = base_path if base_path else os.getcwd()
+        base_path = (
+            os.getenv("JACPATH") or os.path.dirname(self.loc.mod_path) or os.getcwd()
+        )
         parts = target.split(".")
         traversal_levels = self.level - 1 if self.level > 0 else 0
         actual_parts = parts[traversal_levels:]
@@ -1026,6 +1027,15 @@ class ModulePath(AstSymbolNode):
             if os.path.exists(relative_path + ".jac")
             else relative_path
         )
+        jacpath = os.getenv("JACPATH")
+        if not os.path.exists(relative_path) and jacpath:
+            name_to_find = actual_parts[-1] + ".jac"
+
+            # Walk through the single path in JACPATH
+            for root, _, files in os.walk(jacpath):
+                if name_to_find in files:
+                    relative_path = os.path.join(root, name_to_find)
+                    break
         return relative_path
 
     def normalize(self, deep: bool = False) -> bool:

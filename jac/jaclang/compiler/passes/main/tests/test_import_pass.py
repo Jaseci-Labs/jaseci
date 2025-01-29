@@ -83,7 +83,10 @@ class ImportPassPassTests(TestCase):
         for i in p:
             self.assertIn(i, build.ir.py_info.py_raise_map)
             self.assertRegex(
-                re.sub(r".*fixtures/", "", build.ir.py_info.py_raise_map[i]), p[i]
+                re.sub(r".*fixtures/", "", build.ir.py_info.py_raise_map[i]).replace(
+                    "\\", "/"
+                ),
+                p[i],
             )
 
     def test_py_raised_mods(self) -> None:

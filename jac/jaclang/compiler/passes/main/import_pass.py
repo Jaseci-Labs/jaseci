@@ -186,7 +186,7 @@ class JacImportPass(Pass):
             self.warnings_had += mod_pass.warnings_had
             mod = mod_pass.ir
         except Exception as e:
-            logger.info(e)
+            logger.error(e)
             mod = None
         if isinstance(mod, ast.Module):
             self.import_table[target] = mod
@@ -472,7 +472,7 @@ class PyImportPass(JacImportPass):
             if mod:
                 mod.name = imported_mod_name if imported_mod_name else mod.name
                 if mod.name == "__init__":
-                    mod_name = mod.loc.mod_path.split("/")[-2]
+                    mod_name = mod.loc.mod_path.split(os.sep)[-2]
                     self.__debug_print(
                         f"\tRaised the __init__ file and rename the mod to be {mod_name}"
                     )

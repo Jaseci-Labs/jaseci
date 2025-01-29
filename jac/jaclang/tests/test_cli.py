@@ -168,7 +168,7 @@ class JacCliTests(TestCase):
         cli.tool("ir", ["ast", f"{self.fixture_abs_path('import.jac')}"])
 
         sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
+        stdout_value = captured_output.getvalue().replace("\\", "/")
         self.assertRegex(
             stdout_value,
             r"1\:11 \- 1\:13.*ModulePath - os - abs_path\:.*typeshed/stdlib/os/__init__.pyi",

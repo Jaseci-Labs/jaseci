@@ -9,7 +9,7 @@
             "image_name": "ashishmahendra/jac-splice-orc:0.0.8",
             "container_port": 8000,
             "service_name": "pod-manager-service",
-            "service_type": "LoadBalancer",
+            "service_type": "NodePort",
             "env_vars": {
                 "SERVICE_TYPE": "pod_manager",
                 "NAMESPACE": "jac-splice-test",
@@ -71,6 +71,6 @@
         }
     },
     "environment": {
-        "POD_MANAGER_URL": "http://localhost:30080"
+        "POD_MANAGER_URL": "http://localhost:8000"
     }
 }
