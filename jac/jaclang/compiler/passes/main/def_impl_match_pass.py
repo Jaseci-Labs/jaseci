@@ -171,7 +171,7 @@ class DeclImplMatchPass(Pass):
                     if item.is_abstract:
                         continue
                     if (
-                        isinstance(item.name_ref, ast.SpecialVarRef)
+                        isinstance(item.name_ref, ast.Name)
                         and item.name_ref.name == "KW_POST_INIT"
                     ):
                         postinit_method = item

@@ -496,13 +496,6 @@ class JacFormatPass(Pass):
                 self.indent_level += 1
             self.emit(node, i.gen.jac)
 
-    def exit_special_var_ref(self, node: ast.SpecialVarRef) -> None:
-        """Sub objects.
-
-        var: Token,
-        """
-        self.emit(node, node.orig.value)
-
     def exit_ability_def(self, node: ast.AbilityDef) -> None:
         """Sub objects.
 
@@ -1887,7 +1880,6 @@ class JacFormatPass(Pass):
                     ast.EdgeRefTrailer,
                     ast.AtomTrailer,
                     ast.ElseStmt,
-                    ast.SpecialVarRef,
                     ast.ListCompr,
                     ast.Name,
                 ),
