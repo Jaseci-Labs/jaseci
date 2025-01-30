@@ -582,8 +582,9 @@ class JacParser(Pass):
 
             architype_def: abil_to_arch_chain member_block
             """
-            if (archref := self.consume(ast.ArchRefChain)) and \
-               (subnodelist := self.consume(ast.SubNodeList)):
+            if (archref := self.consume(ast.ArchRefChain)) and (
+                subnodelist := self.consume(ast.SubNodeList)
+            ):
                 return ast.ArchDef(
                     target=archref,
                     body=subnodelist,
@@ -600,7 +601,7 @@ class JacParser(Pass):
                     | KW_EDGE
                     | KW_NODE
             """
-            if (arch_token := self.match(ast.Token)):
+            if arch_token := self.match(ast.Token):
                 return arch_token
 
             else:
@@ -623,7 +624,7 @@ class JacParser(Pass):
                 )
             else:
                 raise self.ice()
-        
+
         def inherited_archs(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Expr]:
             """Grammar rule.
 
@@ -642,9 +643,10 @@ class JacParser(Pass):
 
             sub_name: COLON NAME
             """
-            if isinstance(kid[1], ast.Name):
+            self.consume(ast.Token)
+            if name := self.match(ast.Name):
                 return ast.SubTag[ast.Name](
-                    tag=kid[1],
+                    tag=name,
                     kid=kid,
                 )
             else:
@@ -657,8 +659,8 @@ class JacParser(Pass):
                     | KWESC_NAME
                     | NAME
             """
-            if isinstance(kid[0], ast.NameAtom):
-                return kid[0]
+            if named_reference := self.match(ast.NameAtom):
+                return named_reference
             else:
                 raise self.ice()
 
@@ -731,12 +733,12 @@ class JacParser(Pass):
 
             enum_def: arch_to_enum_chain enum_block
             """
-            if isinstance(kid[0], ast.ArchRefChain) and isinstance(
-                kid[1], ast.SubNodeList
+            if (enum_def := self.consume(ast.ArchRefChain)) and (
+                enum_subnodelist := self.consume(ast.SubNodeList)
             ):
                 return ast.EnumDef(
-                    target=kid[0],
-                    body=kid[1],
+                    target=enum_def,
+                    body=enum_subnodelist,
                     kid=kid,
                 )
             else:
