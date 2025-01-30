@@ -2730,7 +2730,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(
                 ast3.List(
-                    elts=node.values.gen.py_ast if node.values else [],
+                    elts=[expr.gen.py_ast[0] for expr in node.values],
                     ctx=node.py_ctx_func(),
                 )
             )

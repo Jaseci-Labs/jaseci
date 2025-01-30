@@ -250,7 +250,7 @@ class SymbolTable:
                 if isinstance(item, ast.UnaryExpr):
                     if isinstance(item.operand, ast.AstSymbolNode):
                         item.operand.name_spec.py_ctx_func = ast3.Store
-                elif isinstance(item, (ast.TupleVal, ast.ListVal)):
+                elif isinstance(item, ast.TupleVal):
                     for i in item.values.items if item.values else []:
                         if isinstance(i, ast.AstSymbolNode):
                             i.name_spec.py_ctx_func = ast3.Store
@@ -258,6 +258,14 @@ class SymbolTable:
                             self.chain_def_insert(i.as_attr_list)
                         if isinstance(i, (ast.TupleVal, ast.ListVal, ast.UnaryExpr)):
                             fix(i)
+                elif isinstance(item, ast.ListVal):
+                    for expr in item.values:
+                        if isinstance(expr, ast.AstSymbolNode):
+                            expr.name_spec.py_ctx_func = ast3.Store
+                        elif isinstance(expr, ast.AtomTrailer):
+                            self.chain_def_insert(expr.as_attr_list)
+                        if isinstance(expr, (ast.TupleVal, ast.ListVal, ast.UnaryExpr)):
+                            fix(expr)
 
             fix(node)
 

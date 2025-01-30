@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import ast as py_ast
 import os
-from typing import Optional, Sequence, TypeAlias, TypeVar
+from typing import Optional, Sequence, TypeAlias, TypeVar, cast
 
 # from icecream import ic
 
@@ -1610,20 +1610,19 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             ctx: expr_context
         """
         elts = [self.convert(elt) for elt in node.elts]
-        valid_elts = [elt for elt in elts if isinstance(elt, ast.Expr)]
-        if len(valid_elts) != len(elts):
+        if not all(isinstance(elt, ast.Expr) for elt in elts):
             raise self.ice("Length mismatch in list elements")
-        l_square = self.operator(Tok.LSQUARE, "[")
-        r_square = self.operator(Tok.RSQUARE, "]")
+        # self.operator() should be called self.token() imo.
+        kid: list[ast.AstNode] = []
+        kid.append(self.operator(Tok.LSQUARE, "["))
+        for idx, expr in enumerate(elts):
+            if idx != 0:
+                kid.append(self.operator(Tok.COMMA, ","))
+            kid.append(expr)
+        kid.append(self.operator(Tok.RSQUARE, "]"))
         return ast.ListVal(
-            values=(
-                ast.SubNodeList[ast.Expr](
-                    items=valid_elts, delim=Tok.COMMA, kid=valid_elts
-                )
-                if valid_elts
-                else None
-            ),
-            kid=[*valid_elts] if valid_elts else [l_square, r_square],
+            values=cast(list[ast.Expr], elts),
+            kid=kid,
         )
 
     def proc_list_comp(self, node: py_ast.ListComp) -> ast.ListCompr:
