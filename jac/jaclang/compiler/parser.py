@@ -494,7 +494,8 @@ class JacParser(Pass):
             """
             items = [self.consume(ast.ModuleItem)]
             while self.match_token(Tok.COMMA):
-                items.append(self.consume(ast.ModuleItem))
+                if module_item := self.match(ast.ModuleItem):
+                    items.append(module_item)
             ret = ast.SubNodeList[ast.ModuleItem](
                 items=items,
                 delim=Tok.COMMA,
@@ -755,51 +756,29 @@ class JacParser(Pass):
                     | abstract_ability
                     | ability
             """
-            if isinstance(kid[0], (ast.PyInlineCode, ast.Ability)):
-                return kid[0]
-            elif isinstance(kid[0], (ast.Name)):
-                if (
-                    len(kid) >= 3
-                    and isinstance(kid[-1], ast.Expr)
-                    and not isinstance(kid[-1], ast.String)
-                ):
-                    semstr = (
-                        kid[2]
-                        if len(kid) > 3 and isinstance(kid[2], ast.String)
-                        else None
-                    )
-                    targ = ast.SubNodeList[ast.Expr](
-                        items=[kid[0]], delim=Tok.COMMA, kid=[kid[0]]
-                    )
-                    kid[0] = targ
-                    return ast.Assignment(
-                        target=targ,
-                        value=kid[-1],
-                        type_tag=None,
-                        kid=kid,
-                        semstr=semstr,
-                        is_enum_stmt=True,
-                    )
-                else:
-                    semstr = (
-                        kid[2]
-                        if len(kid) == 3 and isinstance(kid[2], ast.String)
-                        else None
-                    )
-                    targ = ast.SubNodeList[ast.Expr](
-                        items=[kid[0]], delim=Tok.COMMA, kid=[kid[0]]
-                    )
-                    kid[0] = targ
-                    return ast.Assignment(
-                        target=targ,
-                        value=None,
-                        type_tag=None,
-                        kid=kid,
-                        semstr=semstr,
-                        is_enum_stmt=True,
-                    )
-            elif isinstance(kid[0], (ast.PyInlineCode, ast.ModuleCode)):
-                return kid[0]
+            if stmt := (
+                self.match(ast.PyInlineCode)
+                or self.match(ast.ModuleCode)
+                or self.match(ast.Ability)
+            ):
+                return stmt
+            elif name := self.consume(ast.Name):
+                semstr = (
+                    self.consume(ast.String) if self.match_token(Tok.COLON) else None
+                )
+                expr = self.consume(ast.Expr) if self.match_token(Tok.EQ) else None
+                targ = ast.SubNodeList[ast.Expr](
+                    items=[name], delim=Tok.COMMA, kid=[name]
+                )
+                self.nodes.insert(0, targ)
+                return ast.Assignment(
+                    target=targ,
+                    value=expr,
+                    type_tag=None,
+                    kid=kid,
+                    semstr=semstr,
+                    is_enum_stmt=True,
+                )
             raise self.ice()
 
         def ability(
