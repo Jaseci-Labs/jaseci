@@ -294,11 +294,18 @@ class FuseTypeInfoPass(Pass):
                 )
 
     @__handle_node
-    def enter_name(self, node: ast.NameAtom) -> None:
+    def enter_name(self, node: ast.Name) -> None:
         """Pass handler for name nodes."""
-        self.__collect_type_from_symbol(node)
-        if node.sym is None:
-            self.__check_builltin_symbol(node)
+        if node.py_resolve_name() == Constants.ROOT:
+            if node.gen.mypy_ast[-1] in self.node_type_hash:
+                node.name_spec.expr_type = (
+                    self.__call_type_handler(self.node_type_hash[node.gen.mypy_ast[-1]])
+                    or node.name_spec.expr_type
+                )
+        else:
+            self.__collect_type_from_symbol(node)
+            if node.sym is None:
+                self.__check_builltin_symbol(node)
 
     @__handle_node
     def enter_module_path(self, node: ast.ModulePath) -> None:
@@ -432,18 +439,6 @@ class FuseTypeInfoPass(Pass):
             )
 
     @__handle_node
-    def enter_special_var_ref(self, node: ast.SpecialVarRef) -> None:
-        """Pass handler for SpecialVarRef nodes."""
-        if node.py_resolve_name() == Constants.ROOT:
-            if node.gen.mypy_ast[-1] in self.node_type_hash:
-                node.name_spec.expr_type = (
-                    self.__call_type_handler(self.node_type_hash[node.gen.mypy_ast[-1]])
-                    or node.name_spec.expr_type
-                )
-        else:
-            self.enter_name(node)
-
-    @__handle_node
     def enter_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
         """Pass handler for EdgeOpRef nodes."""
         self.__collect_type_from_symbol(node)
@@ -536,7 +531,7 @@ class FuseTypeInfoPass(Pass):
         for target in node.target.items:
             if (
                 isinstance(target, ast.AtomTrailer)
-                and isinstance(target.target, ast.SpecialVarRef)
+                and isinstance(target.target, ast.Name)
                 and target.target.sym_name == "self"
             ):
                 self_obj = target.target

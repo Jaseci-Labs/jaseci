@@ -462,7 +462,7 @@ class JacParser(Pass):
         def import_path(self, _: None) -> ast.ModulePath:
             """Grammar rule.
 
-            import_path: named_ref (DOT named_ref)* (KW_AS NAME)?
+            import_path: name (DOT name)* (KW_AS NAME)?
             """
             valid_path = [self.consume(ast.Name)]
             while self.match_token(Tok.DOT):
@@ -494,7 +494,7 @@ class JacParser(Pass):
         def import_item(self, _: None) -> ast.ModuleItem:
             """Grammar rule.
 
-            import_item: named_ref (KW_AS NAME)?
+            import_item: name (KW_AS NAME)?
             """
             name = self.consume(ast.Name)
             alias = self.consume(ast.Name) if self.match_token(Tok.KW_AS) else None
@@ -627,7 +627,7 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def named_ref(self, kid: list[ast.AstNode]) -> ast.NameAtom:
+        def name(self, kid: list[ast.AstNode]) -> ast.NameAtom:
             """Grammar rule.
 
             named_ref: special_ref
@@ -636,21 +636,6 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.NameAtom):
                 return kid[0]
-            else:
-                raise self.ice()
-
-        def special_ref(self, kid: list[ast.AstNode]) -> ast.SpecialVarRef:
-            """Grammar rule.
-
-            special_ref: KW_INIT
-                        | KW_POST_INIT
-                        | KW_ROOT
-                        | KW_SUPER
-                        | KW_SELF
-                        | KW_HERE
-            """
-            if isinstance(kid[0], ast.Name):
-                return ast.SpecialVarRef(var=kid[0])
             else:
                 raise self.ice()
 
@@ -785,7 +770,7 @@ class JacParser(Pass):
             """Grammar rule.
 
             ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?
-                named_ref (func_decl | event_clause) (code_block | SEMI)
+                name (func_decl | event_clause) (code_block | SEMI)
             """
             signature: ast.FuncSignature | ast.EventSignature | None = None
             body: ast.SubNodeList | None = None
@@ -838,7 +823,7 @@ class JacParser(Pass):
             """Grammar rule.
 
             abstract_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?
-                named_ref (func_decl | event_clause) KW_ABSTRACT SEMI
+                name (func_decl | event_clause) KW_ABSTRACT SEMI
             """
             signature: ast.FuncSignature | ast.EventSignature | None = None
             is_override = self.match_token(Tok.KW_OVERRIDE) is not None
@@ -869,7 +854,7 @@ class JacParser(Pass):
             """Grammar rule.
 
             genai_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?
-            named_ref (func_decl) KW_BY atomic_call SEMI
+            name (func_decl) KW_BY atomic_call SEMI
             """
             is_override = self.match_token(Tok.KW_OVERRIDE) is not None
             is_static = self.match_token(Tok.KW_STATIC) is not None
@@ -1101,7 +1086,7 @@ class JacParser(Pass):
         def typed_has_clause(self, kid: list[ast.AstNode]) -> ast.HasVar:
             """Grammar rule.
 
-            typed_has_clause: named_ref (COLON STRING)? type_tag (EQ expression | KW_BY KW_POST_INIT)?
+            typed_has_clause: name (COLON STRING)? type_tag (EQ expression | KW_BY KW_POST_INIT)?
             """
             name = kid[0]
             semstr = kid[2] if len(kid) > 2 and isinstance(kid[2], ast.String) else None
@@ -2066,7 +2051,7 @@ class JacParser(Pass):
             """Grammar rule.
 
             atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | index_slice)
-                        | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) named_ref
+                        | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) name
                         | (atomic_call | atom | edge_ref_chain)
             """
             if len(kid) < 2 and isinstance(kid[0], ast.Expr):
@@ -2207,7 +2192,7 @@ class JacParser(Pass):
         def atom(self, _: None) -> ast.Expr:
             """Grammar rule.
 
-            atom: named_ref
+            atom: name
                  | LPAREN (expression | yield_expr) RPAREN
                  | atom_collection
                  | atom_literal
@@ -2442,7 +2427,7 @@ class JacParser(Pass):
         def kw_expr(self, kid: list[ast.AstNode]) -> ast.KWPair:
             """Grammar rule.
 
-            kw_expr: named_ref EQ expression | STAR_POW expression
+            kw_expr: name EQ expression | STAR_POW expression
             """
             if (
                 len(kid) == 3
@@ -2466,7 +2451,7 @@ class JacParser(Pass):
         def name_list(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Name]:
             """Grammar rule.
 
-            name_list: (named_ref COMMA)* named_ref
+            name_list: (name COMMA)* name
             """
             valid_kid = [i for i in kid if isinstance(i, ast.Name)]
             return ast.SubNodeList[ast.Name](
@@ -2787,7 +2772,7 @@ class JacParser(Pass):
         def type_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
             """Grammar rule.
 
-            type_ref: TYPE_OP (named_ref | builtin_type)
+            type_ref: TYPE_OP (name | builtin_type)
             """
             arch_type = self.consume(ast.Token)
             arch_name = self.consume(ast.NameAtom)
@@ -2813,7 +2798,7 @@ class JacParser(Pass):
         def ability_ref(self, _: None) -> ast.ArchRef:
             """Grammar rule.
 
-            ability_ref: ABILITY_OP (special_ref | name_ref)
+            ability_ref: ABILITY_OP name_ref
             """
             arch_type = self.consume_token(Tok.ABILITY_OP)
             arch_name = self.consume(ast.NameAtom)
@@ -3444,7 +3429,7 @@ class JacParser(Pass):
         ) -> ast.SubNodeList[ast.MatchKVPair]:
             """Grammar rule.
 
-            kw_pattern_list: (kw_pattern_list COMMA)? named_ref EQ pattern_seq
+            kw_pattern_list: (kw_pattern_list COMMA)? name EQ pattern_seq
             """
             consume = None
             name = None
@@ -3490,9 +3475,9 @@ class JacParser(Pass):
         def __default_token__(self, token: jl.Token) -> ast.Token:
             """Token handler."""
             ret_type = ast.Token
-            if token.type in [Tok.NAME, Tok.KWESC_NAME]:
-                ret_type = ast.Name
             if token.type in [
+                Tok.NAME,
+                Tok.KWESC_NAME,
                 Tok.KW_INIT,
                 Tok.KW_POST_INIT,
                 Tok.KW_ROOT,
@@ -3509,7 +3494,7 @@ class JacParser(Pass):
                 ret_type = ast.Ellipsis
             elif token.type == Tok.FLOAT:
                 ret_type = ast.Float
-            elif token.type in [Tok.INT, Tok.INT, Tok.HEX, Tok.BIN, Tok.OCT]:
+            elif token.type in [Tok.INT, Tok.HEX, Tok.BIN, Tok.OCT]:
                 ret_type = ast.Int
             elif token.type in [
                 Tok.STRING,
@@ -3528,12 +3513,12 @@ class JacParser(Pass):
                 orig_src=self.parse_ref.source,
                 name=token.type,
                 value=token.value[2:] if token.type == Tok.KWESC_NAME else token.value,
-                line=token.line if token.line is not None else 0,
-                end_line=token.end_line if token.end_line is not None else 0,
-                col_start=token.column if token.column is not None else 0,
-                col_end=token.end_column if token.end_column is not None else 0,
-                pos_start=token.start_pos if token.start_pos is not None else 0,
-                pos_end=token.end_pos if token.end_pos is not None else 0,
+                line=token.line or 0,
+                end_line=token.end_line or 0,
+                col_start=token.column or 0,
+                col_end=token.end_column or 0,
+                pos_start=token.start_pos or 0,
+                pos_end=token.end_pos or 0,
             )
             if isinstance(ret, ast.Name):
                 if token.type == Tok.KWESC_NAME:

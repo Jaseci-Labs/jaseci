@@ -160,13 +160,6 @@ class DefUsePass(Pass):
         is_range: bool,
         """
 
-    def enter_special_var_ref(self, node: ast.SpecialVarRef) -> None:
-        """Sub objects.
-
-        var: Token,
-        """
-        node.sym_tab.use_lookup(node)
-
     def enter_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
         """Sub objects.
 

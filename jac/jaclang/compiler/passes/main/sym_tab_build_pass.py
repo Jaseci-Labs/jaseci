@@ -279,7 +279,7 @@ class SymTabBuildPass(Pass):
     def enter_ability(self, node: ast.Ability) -> None:
         """Sub objects.
 
-        name_ref: Name | SpecialVarRef | ArchRef,
+        name_ref: Name | ArchRef,
         is_func: bool,
         is_async: bool,
         is_static: bool,
@@ -304,7 +304,7 @@ class SymTabBuildPass(Pass):
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.
 
-        name_ref: Name | SpecialVarRef | ArchRef,
+        name_ref: Name | ArchRef,
         is_func: bool,
         is_async: bool,
         is_static: bool,
@@ -1006,15 +1006,8 @@ class SymTabBuildPass(Pass):
     def enter_arch_ref(self, node: ast.ArchRef) -> None:
         """Sub objects.
 
-        name_ref: Name | SpecialVarRef,
+        name_ref: Name,
         arch: Token,
-        """
-        self.sync_node_to_scope(node)
-
-    def enter_special_var_ref(self, node: ast.SpecialVarRef) -> None:
-        """Sub objects.
-
-        var: Token,
         """
         self.sync_node_to_scope(node)
 

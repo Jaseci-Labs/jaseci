@@ -1426,8 +1426,6 @@ class Ability(
     def py_resolve_name(self) -> str:
         """Resolve name."""
         if isinstance(self.name_ref, Name):
-            return self.name_ref.value
-        elif isinstance(self.name_ref, (SpecialVarRef, ArchRef)):
             return self.name_ref.py_resolve_name()
         else:
             raise NotImplementedError
@@ -4156,10 +4154,19 @@ class Name(Token, NameAtom):
         NameAtom.__init__(self)
         AstSymbolNode.__init__(
             self,
-            sym_name=value,
+            sym_name=self.py_resolve_name(),
             name_spec=self,
             sym_category=SymbolType.VAR,
         )
+
+    def py_resolve_name(self) -> str:
+        """Resolve name."""
+        return {
+            "root": Con.ROOT.value,
+            "here": Con.HERE.value,
+            "init": "__init__",
+            "postinit": "__post_init__",
+        }.get(self.value, self.value)
 
     def unparse(self) -> str:
         """Unparse name."""
@@ -4188,53 +4195,6 @@ class Name(Token, NameAtom):
         if node._sym_tab:
             ret.sym_tab = node.sym_tab
         return ret
-
-
-class SpecialVarRef(Name):
-    """HereRef node type for Jac Ast."""
-
-    def __init__(
-        self,
-        var: Name,
-    ) -> None:
-        """Initialize special var reference expression node."""
-        self.orig = var
-        Name.__init__(
-            self,
-            orig_src=var.orig_src,
-            name=var.name,
-            value=self.py_resolve_name(),  # TODO: This shouldnt be necessary
-            line=var.line_no,
-            end_line=var.end_line,
-            col_start=var.c_start,
-            col_end=var.c_end,
-            pos_start=var.pos_start,
-            pos_end=var.pos_end,
-        )
-        NameAtom.__init__(self)
-        AstSymbolNode.__init__(
-            self,
-            sym_name=self.py_resolve_name(),
-            name_spec=self,
-            sym_category=SymbolType.VAR,
-        )
-
-    def py_resolve_name(self) -> str:
-        """Resolve name."""
-        if self.orig.name == Tok.KW_SELF:
-            return "self"
-        elif self.orig.name == Tok.KW_SUPER:
-            return "super"
-        elif self.orig.name == Tok.KW_ROOT:
-            return Con.ROOT.value
-        elif self.orig.name == Tok.KW_HERE:
-            return Con.HERE.value
-        elif self.orig.name == Tok.KW_INIT:
-            return "__init__"
-        elif self.orig.name == Tok.KW_POST_INIT:
-            return "__post_init__"
-        else:
-            raise NotImplementedError("ICE: Special var reference not implemented")
 
 
 class Literal(Token, AtomExpr):

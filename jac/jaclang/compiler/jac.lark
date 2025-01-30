@@ -32,9 +32,9 @@ import_stmt: KW_IMPORT sub_name? KW_FROM from_path LBRACE import_items RBRACE
 from_path: (DOT | ELLIPSIS)* import_path
          | (DOT | ELLIPSIS)+
 
-import_path: named_ref (DOT named_ref)* (KW_AS NAME)?
+import_path: name (DOT name)* (KW_AS NAME)?
 import_items: (import_item COMMA)* import_item COMMA?
-import_item: named_ref (KW_AS NAME)?
+import_item: name (KW_AS NAME)?
 sub_name: COLON NAME
 include_stmt: KW_INCLUDE sub_name? import_path SEMI
 
@@ -62,7 +62,7 @@ member_block: LBRACE member_stmt* RBRACE
 member_stmt: STRING? (py_code_block | abstract_ability | ability | architype | has_stmt | free_code)
 has_stmt: KW_STATIC? (KW_LET | KW_HAS) access_tag? has_assign_list SEMI
 has_assign_list: (has_assign_list COMMA)? typed_has_clause
-typed_has_clause: named_ref (COLON STRING)? type_tag (EQ expression | KW_BY KW_POST_INIT)?
+typed_has_clause: name (COLON STRING)? type_tag (EQ expression | KW_BY KW_POST_INIT)?
 type_tag: COLON expression
 
 // [Heading]: Enumerations.
@@ -85,10 +85,10 @@ ability: decorators? KW_ASYNC? ability_decl
         | decorators? genai_ability
         | ability_def
 
-ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref (func_decl | event_clause) (code_block | SEMI)
+ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? name (func_decl | event_clause) (code_block | SEMI)
 ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
-abstract_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref (func_decl | event_clause) KW_ABSTRACT SEMI
-genai_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref (func_decl) KW_BY atomic_call SEMI
+abstract_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? name (func_decl | event_clause) KW_ABSTRACT SEMI
+genai_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? name (func_decl) KW_BY atomic_call SEMI
 event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (STRING? RETURN_HINT expression)?
 func_decl: (LPAREN func_decl_params? RPAREN)? (RETURN_HINT (STRING COLON)? expression)?
 func_decl_params: (param_var COMMA)* param_var COMMA?
@@ -119,13 +119,13 @@ arch_ref: class_ref
         | edge_ref
         | node_ref
 
-node_ref: NODE_OP named_ref
-edge_ref: EDGE_OP named_ref
-walker_ref: WALKER_OP named_ref
-class_ref: CLASS_OP named_ref
-object_ref: OBJECT_OP named_ref
-enum_ref: ENUM_OP named_ref
-ability_ref: ABILITY_OP named_ref
+node_ref: NODE_OP name
+edge_ref: EDGE_OP name
+walker_ref: WALKER_OP name
+class_ref: CLASS_OP name
+object_ref: OBJECT_OP name
+enum_ref: ENUM_OP name
+ability_ref: ABILITY_OP name
 
 // [Heading]: Codeblocks and Statements.
 code_block: LBRACE statement* RBRACE
@@ -215,7 +215,7 @@ class_pattern: NAME (DOT NAME)* LPAREN kw_pattern_list? RPAREN
              | NAME (DOT NAME)* LPAREN pattern_list (COMMA kw_pattern_list)? RPAREN
 
 pattern_list: (pattern_list COMMA)? pattern_seq
-kw_pattern_list: (kw_pattern_list COMMA)? named_ref EQ pattern_seq
+kw_pattern_list: (kw_pattern_list COMMA)? name EQ pattern_seq
 
 // [Heading]: Context managers.
 with_stmt: KW_ASYNC? KW_WITH expr_as_list code_block
@@ -225,7 +225,7 @@ expr_as: expression (KW_AS expression)?
 // [Heading]: Global and nonlocal statements.
 global_ref: GLOBAL_OP name_list
 nonlocal_ref: NONLOCAL_OP name_list
-name_list: (named_ref COMMA)* named_ref
+name_list: (name COMMA)* name
 
 // [Heading]: Data spatial typed context blocks.
 typed_ctx_block: RETURN_HINT expression code_block
@@ -297,7 +297,7 @@ expression: walrus_assign (KW_IF expression KW_ELSE expression)?
           | lambda_expr
 
 // [Heading]: Walrus assignments.
-walrus_assign: (named_ref WALRUS_EQ)? pipe
+walrus_assign: (name WALRUS_EQ)? pipe
 
 // [Heading]: Lambda expressions.
 lambda_expr: KW_WITH func_decl_params? (RETURN_HINT expression)? KW_CAN expression
@@ -360,7 +360,7 @@ pipe_call: (PIPE_FWD | A_PIPE_FWD | KW_SPAWN | KW_AWAIT)? atomic_chain
 
 // [Heading]: Subscripted and dotted expressions.
 atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | index_slice)
-            | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) named_ref
+            | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) name
             | (atomic_call | atom | edge_ref_chain)
 
 index_slice: LSQUARE                                                             \
@@ -377,7 +377,7 @@ param_list: expr_list COMMA kw_expr_list COMMA?
           | expr_list COMMA?
 
 // [Heading]: Atom.
-atom: named_ref
+atom: name
     | LPAREN (expression | yield_expr) RPAREN
     | atom_collection
     | atom_literal
@@ -394,7 +394,7 @@ atom_literal: builtin_type
             | HEX
             | INT
 
-type_ref: TYPE_OP (named_ref | builtin_type)
+type_ref: TYPE_OP (name | builtin_type)
 
 multistring: (fstring | STRING)+
 
@@ -436,7 +436,7 @@ tuple_list: expression COMMA expr_list COMMA kw_expr_list COMMA?
           | kw_expr_list COMMA?
 
 kw_expr_list: (kw_expr_list COMMA)? kw_expr
-kw_expr: named_ref EQ expression | STAR_POW expression
+kw_expr: name EQ expression | STAR_POW expression
 
 // [Heading]: Data Spatial References.
 edge_ref_chain: (EDGE_OP|NODE_OP)? LSQUARE expression? (edge_op_ref (filter_compr | expression)?)+ RSQUARE
@@ -456,19 +456,17 @@ filter_compr: LPAREN NULL_OK filter_compare_list RPAREN
 assign_compr: LPAREN EQ kw_expr_list RPAREN
 filter_compare_list: (filter_compare_list COMMA)? filter_compare_item
 typed_filter_compare_list: expression (COLON filter_compare_list)?
-filter_compare_item: named_ref cmp_op expression
+filter_compare_item: name cmp_op expression
 
 // [Heading]: Names and references.
-named_ref: special_ref
-         | KWESC_NAME
-         | NAME
-
-special_ref: KW_INIT
-            | KW_POST_INIT
-            | KW_ROOT
-            | KW_SUPER
-            | KW_SELF
-            | KW_HERE
+name: NAME
+    | KWESC_NAME
+    | KW_INIT
+    | KW_POST_INIT
+    | KW_ROOT
+    | KW_SUPER
+    | KW_SELF
+    | KW_HERE
 
 // [Heading]: Builtin types.
 builtin_type: TYP_TYPE
