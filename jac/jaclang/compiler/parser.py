@@ -537,16 +537,22 @@ class JacParser(Pass):
                     | architype_def
                     | enum
             """
-            if isinstance(kid[0], ast.SubNodeList):
-                if isinstance(kid[1], ast.ArchSpec):
-                    kid[1].decorators = kid[0]
-                    kid[1].add_kids_left([kid[0]])
-                    return kid[1]
-                else:
-                    raise self.ice()
+            archspec: ast.ArchSpec | ast.ArchDef | ast.Enum | ast.EnumDef | None = None
 
-            elif isinstance(kid[0], (ast.ArchSpec, ast.ArchDef, ast.Enum, ast.EnumDef)):
-                return kid[0]
+            decorators = self.match(ast.SubNodeList)
+            if decorators is not None:
+                archspec = self.consume(ast.ArchSpec)
+                archspec.decorators = decorators
+                archspec.add_kids_left([decorators])
+            else:
+                archspec = (
+                    self.match(ast.ArchSpec)
+                    or self.match(ast.ArchDef)
+                    or self.match(ast.Enum)
+                    or self.match(ast.EnumDef)
+                )
+            if archspec is not None:
+                return archspec
             else:
                 raise self.ice()
 
