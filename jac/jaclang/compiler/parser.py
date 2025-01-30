@@ -688,17 +688,17 @@ class JacParser(Pass):
             enum: decorators? enum_decl
                 | enum_def
             """
-            if isinstance(kid[0], ast.SubNodeList):
-                if isinstance(kid[1], ast.Enum):
-                    kid[1].decorators = kid[0]
-                    kid[1].add_kids_left([kid[0]])
-                    return kid[1]
-                else:
-                    raise self.ice()
-            elif isinstance(kid[0], (ast.Enum, ast.EnumDef)):
-                return kid[0]
+            decorator = self.match(ast.SubNodeList)
+            enum_node: ast.Enum | ast.EnumDef | None = None
+            if decorator is not None:
+                enum_node = self.consume(ast.Enum)
+                enum_node.decorators = decorator
+                enum_node.add_kids_left([decorator])
             else:
-
+                enum_node = self.match(ast.Enum) or self.match(ast.EnumDef)
+            if enum_node is not None:
+                return enum_node
+            else:
                 raise self.ice()
 
         def enum_decl(self, kid: list[ast.AstNode]) -> ast.Enum:
@@ -706,30 +706,22 @@ class JacParser(Pass):
 
             enum_decl: KW_ENUM access_tag? STRING? NAME inherited_archs? (enum_block | SEMI)
             """
-            access = kid[1] if isinstance(kid[1], ast.SubTag) else None
-            semstr = (
-                kid[2]
-                if (access and isinstance(kid[2], ast.String))
-                else kid[1] if isinstance(kid[1], ast.String) else None
+            self.node_idx = 1
+            access = self.match(ast.SubTag)
+            semstr = self.match(ast.String)
+            name = self.consume(ast.Name)
+            inh = self.match(ast.SubNodeList)
+            body = self.match(ast.SubNodeList)
+            if body is None:
+                body, inh = inh, None
+            return ast.Enum(
+                semstr=semstr,
+                name=name,
+                access=access,
+                base_classes=inh,
+                body=body,
+                kid=kid,
             )
-            name = (
-                kid[3]
-                if (access and semstr)
-                else kid[2] if (access or semstr) else kid[1]
-            )
-            inh = kid[-2] if isinstance(kid[-2], ast.SubNodeList) else None
-            body = kid[-1] if isinstance(kid[-1], ast.SubNodeList) else None
-            if isinstance(name, ast.Name):
-                return ast.Enum(
-                    semstr=semstr,
-                    name=name,
-                    access=access,
-                    base_classes=inh,
-                    body=body,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
 
         def enum_def(self, kid: list[ast.AstNode]) -> ast.EnumDef:
             """Grammar rule.
