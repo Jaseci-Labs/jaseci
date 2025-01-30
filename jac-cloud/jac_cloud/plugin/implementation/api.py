@@ -4,7 +4,15 @@ from dataclasses import Field, MISSING, fields, is_dataclass
 from os import getenv
 from re import compile
 from types import NoneType
-from typing import Any, Callable, Type, TypeAlias, Union, cast, get_type_hints
+from typing import (
+    Any,
+    Callable,
+    Type,
+    TypeAlias,
+    Union,
+    cast,
+    get_type_hints,
+)
 
 from asyncer import syncify
 
@@ -169,29 +177,34 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
             node: str | None,
             payload: payload_model = Depends(),  # type: ignore # noqa: B008
         ) -> ORJSONResponse:
-            pl = cast(BaseModel, payload).model_dump()
-            body = pl.get("body", {})
-
             log = log_entry(
                 cls.__name__,
                 user.email if (user := getattr(request, "_user", None)) else None,
-                pl,
+                cast(BaseModel, payload).model_dump(),
                 node,
             )
 
-            if isinstance(body, BaseUploadFile) and body_model:
-                body = loads(syncify(body.read)())
-                try:
-                    body = body_model(**body).__dict__
-                except ValidationError as e:
-                    return ORJSONResponse({"detail": e.errors()})
+            query = payload.query.__dict__  # type: ignore[attr-defined]
+            files = payload.files.__dict__  # type: ignore[attr-defined]
+
+            if body := getattr(payload, "body", None):
+                if isinstance(body, BaseUploadFile) and body_model:
+                    body = loads(syncify(body.read)())
+                    try:
+                        body = body_model(**body).__dict__
+                    except ValidationError as e:
+                        return ORJSONResponse({"detail": e.errors()})
+                else:
+                    body = body.__dict__
+            else:
+                body = {}
 
             jctx = JaseciContext.create(request, NodeAnchor.ref(node) if node else None)
 
             validate_request(request, cls.__name__, jctx.entry_node.name or "root")
 
             if Jac.check_read_access(jctx.entry_node):
-                wlk: WalkerAnchor = cls(**body, **pl["query"], **pl["files"]).__jac__
+                wlk: WalkerAnchor = cls(**body, **query, **files).__jac__
                 Jac.spawn_call(wlk.architype, jctx.entry_node.architype)
                 jctx.close()
 
