@@ -12,7 +12,7 @@ glob examples: 'Examples for Picking Odd Word out': list[dict] = [
         "OPTIONS": ["Spain", "France", "German", "England", "Singapore"],
         "REASONING": "Spain is a country, France is a country, German is a language, ...",
         "RESULT": "German"
-    }
+    },
 ];
 
 can 'Pick only the Odd word out'

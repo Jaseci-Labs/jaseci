@@ -1650,31 +1650,19 @@ class JacFormatPass(Pass):
 
         values: Optional[SubNodeList[ExprType]],
         """
-        line_break_needed = False
-        indented = False
-        for i in node.kid:
-            if isinstance(i, ast.SubNodeList):
-                line_break_needed = self.is_line_break_needed(i.gen.jac, 88)
-                if line_break_needed:
-                    self.emit_ln(node, "")
-                    self.indent_level += 1
-                    indented = True
-                    for j in i.kid:
-                        if j.gen.jac == (","):
-                            self.indent_level -= 1
-                            self.emit(node, f"{j.gen.jac}\n")
-                            self.indent_level += 1
-                        else:
-                            self.emit(node, f"{j.gen.jac}")
-                else:
-                    self.emit(node, f"{i.gen.jac}")
-                if indented:
-                    self.indent_level -= 1
-                    self.emit(node, "\n")
-            else:
-                self.emit(node, i.gen.jac)
+        values_codgen = ", ".join([expr.gen.jac for expr in node.values])
+        if self.is_line_break_needed(values_codgen, 88):
+            self.emit(node, "[")
+            self.emit_ln(node, "")
+            self.indent_level += 1
+            for expr in node.values:
+                self.emit(node, f"{expr.gen.jac},\n")
+            self.indent_level -= 1
+            self.emit(node, "]")
+        else:
+            self.emit(node, f"[{values_codgen}]")
 
-    def exit_set_val(self, node: ast.ListVal) -> None:
+    def exit_set_val(self, node: ast.SetVal) -> None:
         """Sub objects.
 
         values: list[ExprType],

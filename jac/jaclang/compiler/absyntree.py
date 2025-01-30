@@ -2943,7 +2943,7 @@ class ListVal(AtomExpr):
 
     def __init__(
         self,
-        values: Optional[SubNodeList[Expr]],
+        values: list[Expr],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize value node."""
@@ -2955,13 +2955,14 @@ class ListVal(AtomExpr):
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ast node."""
         res = True
-        if deep:
-            res = self.values.normalize(deep) if self.values else res
-        new_kid: list[AstNode] = [
-            self.gen_token(Tok.LSQUARE),
-        ]
-        if self.values:
-            new_kid.append(self.values)
+        for expr in self.values:
+            res = expr.normalize(deep) and res
+        new_kid: list[AstNode] = []
+        new_kid.append(self.gen_token(Tok.LSQUARE))
+        for idx, expr in enumerate(self.values):
+            if idx != 0:
+                new_kid.append(self.gen_token(Tok.COMMA))
+            new_kid.append(expr)
         new_kid.append(self.gen_token(Tok.RSQUARE))
         self.set_kids(nodes=new_kid)
         return res
@@ -3410,6 +3411,7 @@ class FuncCall(Expr):
 
     def normalize(self, deep: bool = True) -> bool:
         """Normalize ast node."""
+        res = True
         if deep:
             res = self.target.normalize(deep)
             res = res and (not self.params or self.params.normalize(deep))
