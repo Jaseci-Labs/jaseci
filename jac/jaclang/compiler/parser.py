@@ -472,18 +472,12 @@ class JacParser(Pass):
 
             import_path: named_ref (DOT named_ref)* (KW_AS NAME)?
             """
-            valid_path = [i for i in kid if isinstance(i, ast.Name)]
-            alias = (
-                kid[-1]
-                if len(kid) > 2
-                and isinstance(kid[-1], ast.Name)
-                and isinstance(kid[-2], ast.Token)
-                and kid[-2].name == Tok.KW_AS
-                else None
-            )
-            if alias is not None:
-                valid_path = valid_path[:-1]
-
+            valid_path = [self.consume(ast.Name)]
+            alias = None
+            while self.match_token(Tok.DOT):
+                valid_path.append(self.consume(ast.Name))
+            if self.match_token(Tok.KW_AS):
+                alias = self.consume(ast.Name)
             return ast.ModulePath(
                 path=valid_path,
                 level=0,
@@ -498,8 +492,11 @@ class JacParser(Pass):
 
             import_items: (import_item COMMA)* import_item COMMA?
             """
+            items = [self.consume(ast.ModuleItem)]
+            while self.match_token(Tok.COMMA):
+                items.append(self.consume(ast.ModuleItem))
             ret = ast.SubNodeList[ast.ModuleItem](
-                items=[i for i in kid if isinstance(i, ast.ModuleItem)],
+                items=items,
                 delim=Tok.COMMA,
                 kid=kid,
             )
@@ -511,12 +508,10 @@ class JacParser(Pass):
             import_item: named_ref (KW_AS NAME)?
             """
             name = self.consume(ast.Name)
-
             if self.match_token(Tok.KW_AS):
                 alias = self.consume(ast.Name)
             else:
                 alias = None
-
             if isinstance(name, ast.Name) and (
                 alias is None or isinstance(alias, ast.Name)
             ):
