@@ -1247,3 +1247,17 @@ class JacLanguageTests(TestCase):
             "walker exit\n",
             captured_output.getvalue(),
         )
+
+    def test_nested_impls(self) -> None:
+        """Test complex nested impls."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("nested_impls", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("Hello,from bar in kk", stdout_value[0])
+        self.assertIn("Greeting: Hello, World!", stdout_value[1])
+        self.assertIn("Repeated: Hello", stdout_value[2])
+        self.assertIn("Hello, World!", stdout_value[3])
+        self.assertIn("Last message:!", stdout_value[4])
+        self.assertIn("Final message:!", stdout_value[5])
