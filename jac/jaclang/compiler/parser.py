@@ -631,7 +631,9 @@ class JacParser(Pass):
             inherited_archs: LT (atomic_chain COMMA)* atomic_chain GT
                            | COLON (atomic_chain COMMA)* atomic_chain COLON
             """
-            valid_inh = [i for i in kid if isinstance(i, ast.Expr)]
+            valid_inh = []
+            while self.match(ast.Expr) is not None:
+                valid_inh.append(self.consume(ast.Expr))
             return ast.SubNodeList[ast.Expr](
                 items=valid_inh,
                 delim=Tok.COMMA,
@@ -643,7 +645,7 @@ class JacParser(Pass):
 
             sub_name: COLON NAME
             """
-            self.consume(ast.Token)
+            self.node_idx = 1
             if name := self.match(ast.Name):
                 return ast.SubTag[ast.Name](
                     tag=name,
@@ -674,8 +676,8 @@ class JacParser(Pass):
                         | KW_SELF
                         | KW_HERE
             """
-            if isinstance(kid[0], ast.Name):
-                return ast.SpecialVarRef(var=kid[0])
+            if special_var_ref := self.consume(ast.Name):
+                return ast.SpecialVarRef(var=special_var_ref)
             else:
                 raise self.ice()
 
@@ -751,8 +753,8 @@ class JacParser(Pass):
 
             enum_block: LBRACE ((enum_stmt COMMA)* enum_stmt COMMA?)? RBRACE
             """
-            ret = ast.SubNodeList[ast.EnumBlockStmt](items=[], delim=Tok.COMMA, kid=kid)
-            ret.items = [i for i in kid if isinstance(i, ast.EnumBlockStmt)]
+            ret = ast.SubNodeList[ast.EnumBlockStmt](items=[], delim=Tok.COMMA, kid=self.nodes)
+            ret.items = [i for i in self.nodes if isinstance(i, ast.EnumBlockStmt)]
             return ret
 
         def enum_stmt(self, kid: list[ast.AstNode]) -> ast.EnumBlockStmt:
@@ -899,15 +901,15 @@ class JacParser(Pass):
             ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
             """
             if (
-                isinstance(kid[0], ast.ArchRefChain)
-                and isinstance(kid[1], (ast.FuncSignature, ast.EventSignature))
-                and isinstance(kid[2], ast.SubNodeList)
+                (ability_def_target := self.match(ast.ArchRefChain))
+                and (ability_def_sign := self.match(ast.FuncSignature) or self.match(ast.EventSignature))
+                and (ability_def_body := self.match(ast.SubNodeList))
             ):
                 return ast.AbilityDef(
-                    target=kid[0],
-                    signature=kid[1],
-                    body=kid[2],
-                    kid=kid,
+                    target=ability_def_target,
+                    signature=ability_def_sign,
+                    body=ability_def_body,
+                    kid=self.nodes,
                 )
             else:
                 raise self.ice()
