@@ -753,7 +753,9 @@ class JacParser(Pass):
 
             enum_block: LBRACE ((enum_stmt COMMA)* enum_stmt COMMA?)? RBRACE
             """
-            ret = ast.SubNodeList[ast.EnumBlockStmt](items=[], delim=Tok.COMMA, kid=self.nodes)
+            ret = ast.SubNodeList[ast.EnumBlockStmt](
+                items=[], delim=Tok.COMMA, kid=self.nodes
+            )
             ret.items = [i for i in self.nodes if isinstance(i, ast.EnumBlockStmt)]
             return ret
 
@@ -902,7 +904,10 @@ class JacParser(Pass):
             """
             if (
                 (ability_def_target := self.match(ast.ArchRefChain))
-                and (ability_def_sign := self.match(ast.FuncSignature) or self.match(ast.EventSignature))
+                and (
+                    ability_def_sign := self.match(ast.FuncSignature)
+                    or self.match(ast.EventSignature)
+                )
                 and (ability_def_body := self.match(ast.SubNodeList))
             ):
                 return ast.AbilityDef(
