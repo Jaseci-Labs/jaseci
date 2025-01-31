@@ -770,7 +770,7 @@ class JacParser(Pass):
                 targ = ast.SubNodeList[ast.Expr](
                     items=[name], delim=Tok.COMMA, kid=[name]
                 )
-                self.nodes.insert(0, targ)
+                self.nodes[0] = targ
                 return ast.Assignment(
                     target=targ,
                     value=expr,
