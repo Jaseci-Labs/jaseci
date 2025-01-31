@@ -336,7 +336,7 @@ Now Lets create required walkers for LittleX.
                         feeds: list = [];
                         user_tweets = here spawn load_tweets();
                         feeds.extend(user_tweets.tweet_info);
-                        
+
                         for user_node in [-:Follow:->](`?Profile) {
                               user_tweets = user_node spawn load_tweets();
                               feeds.extend(user_tweets.tweet_info);
@@ -569,7 +569,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
         * `[root-->(`?Profile)]` gets the current user profile.
         * `current_profile[0] del-:Follow:-> self` disconnects the followee with Follow edge.
 
-      - Update Tweet 
+      - Update Tweet
 
         * User updated their tweet.
         * **Update Tweet  Ability**
@@ -646,7 +646,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
         * `[root-->(`?Profile)]` gets the current user profile.
         * `comment_node = current_profile[0] ++> Comment(content=here.content)` connects the user with `Comment` node.
 
-      - Load Tweets 
+      - Load Tweets
 
         * Load tweet information.
         * **Load Tweets  Ability**
@@ -662,7 +662,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
                   }
                   ```
                   * This defines a ablitiy named `get_info` within the `Tweet` node and itnreturns an instance of the `TweetInfo` node.
-                  * `id=jid(self)`retrieves the unique jac identifier (jid) of the current `Tweet` node. 
+                  * `id=jid(self)`retrieves the unique jac identifier (jid) of the current `Tweet` node.
                   * This assigns the `content` property of the current `Tweet` object to the `content` field of the `TweetInfo` object that has variables id, content, embedding, likes, comments.
 
 === "LittleX.jac Upto Now"
