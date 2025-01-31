@@ -808,7 +808,7 @@ class JacParser(Pass):
             raise self.ice()
 
         def ability(
-            self, kid: list[ast.AstNode]
+            self, _: list[ast.AstNode]
         ) -> ast.Ability | ast.AbilityDef | ast.FuncCall:
             """Grammer rule.
 
@@ -816,21 +816,16 @@ class JacParser(Pass):
                     | decorators? genai_ability
                     | ability_def
             """
-            chomp = [*kid]
-            decorators = chomp[0] if isinstance(chomp[0], ast.SubNodeList) else None
-            chomp = chomp[1:] if decorators else chomp
-            is_async = (
-                chomp[0]
-                if isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_ASYNC
-                else None
-            )
-            ability = chomp[1] if is_async else chomp[0]
-            if not isinstance(ability, (ast.Ability, ast.AbilityDef)):
-                raise self.ice()
-            if is_async and isinstance(ability, ast.Ability):
+            ability: ast.Ability | ast.AbilityDef | None = None
+            decorators = self.match(ast.SubNodeList)
+            is_async = self.match_token(Tok.KW_ASYNC)
+            ability = self.match(ast.Ability)
+            if is_async and ability:
                 ability.is_async = True
                 ability.add_kids_left([is_async])
-            if isinstance(decorators, ast.SubNodeList):
+            if ability is None:
+                ability = self.consume(ast.AbilityDef)
+            if decorators:
                 for dec in decorators.items:
                     if (
                         isinstance(dec, ast.NameAtom)
@@ -840,7 +835,7 @@ class JacParser(Pass):
                         ability.is_static = True
                         decorators.items.remove(dec)  # noqa: B038
                         break
-                if len(decorators.items):
+                if decorators.items:
                     ability.decorators = decorators
                     ability.add_kids_left([decorators])
                 return ability
@@ -852,41 +847,29 @@ class JacParser(Pass):
             ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?
                 named_ref (func_decl | event_clause) (code_block | SEMI)
             """
-            chomp = [*kid]
-            is_override = (
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_OVERRIDE
+            signature: ast.FuncSignature | ast.EventSignature | None = None
+            is_override = self.match_token(Tok.KW_OVERRIDE) is not None
+            is_static = self.match_token(Tok.KW_STATIC) is not None
+            self.consume_token(Tok.KW_CAN)
+            access = self.match(ast.SubTag)
+            semstr = self.match(ast.String)
+            name = self.consume(ast.NameAtom)
+            signature = self.match(ast.FuncSignature) or self.consume(
+                ast.EventSignature
             )
-            chomp = chomp[1:] if is_override else chomp
-            is_static = (
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_STATIC
+            body = self.match(ast.SubNodeList)
+            return ast.Ability(
+                name_ref=name,
+                is_async=False,
+                is_override=is_override,
+                is_static=is_static,
+                is_abstract=False,
+                access=access,
+                semstr=semstr,
+                signature=signature,
+                body=body,
+                kid=kid,
             )
-            chomp = chomp[2:] if is_static else chomp[1:]
-            access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
-            chomp = chomp[1:] if access else chomp
-            semstr = chomp[0] if isinstance(chomp[0], ast.String) else None
-            chomp = chomp[1:] if semstr else chomp
-            name = chomp[0]
-            chomp = chomp[1:]
-            signature = chomp[0]
-            chomp = chomp[1:]
-            body = chomp[0] if isinstance(chomp[0], ast.SubNodeList) else None
-            if isinstance(name, ast.NameAtom) and isinstance(
-                signature, (ast.FuncSignature, ast.EventSignature)
-            ):
-                return ast.Ability(
-                    name_ref=name,
-                    is_async=False,
-                    is_override=is_override,
-                    is_static=is_static,
-                    is_abstract=False,
-                    access=access,
-                    semstr=semstr,
-                    signature=signature,
-                    body=body,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
 
         def ability_def(self, kid: list[ast.AstNode]) -> ast.AbilityDef:
             """Grammar rule.
@@ -915,41 +898,28 @@ class JacParser(Pass):
             abstract_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?
                 named_ref (func_decl | event_clause) KW_ABSTRACT SEMI
             """
-            chomp = [*kid]
-            is_override = (
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_OVERRIDE
+            signature: ast.FuncSignature | ast.EventSignature | None = None
+            is_override = self.match_token(Tok.KW_OVERRIDE) is not None
+            is_static = self.match_token(Tok.KW_STATIC) is not None
+            self.consume_token(Tok.KW_CAN)
+            access = self.match(ast.SubTag)
+            semstr = self.match(ast.String)
+            name = self.consume(ast.NameAtom)
+            signature = self.match(ast.FuncSignature) or self.consume(
+                ast.EventSignature
             )
-            chomp = chomp[1:] if is_override else chomp
-            is_static = (
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_STATIC
+            return ast.Ability(
+                name_ref=name,
+                is_async=False,
+                is_override=is_override,
+                is_static=is_static,
+                is_abstract=True,
+                access=access,
+                semstr=semstr,
+                signature=signature,
+                body=None,
+                kid=kid,
             )
-            chomp = chomp[1:] if is_static else chomp
-            chomp = chomp[1:]
-            access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
-            chomp = chomp[1:] if access else chomp
-            semstr = chomp[0] if isinstance(chomp[0], ast.String) else None
-            chomp = chomp[1:] if semstr else chomp
-            name = chomp[0]
-            chomp = chomp[1:]
-            signature = chomp[0]
-            chomp = chomp[1:]
-            if isinstance(name, ast.NameAtom) and isinstance(
-                signature, (ast.FuncSignature, ast.EventSignature)
-            ):
-                return ast.Ability(
-                    name_ref=name,
-                    is_async=False,
-                    is_override=is_override,
-                    is_static=is_static,
-                    is_abstract=True,
-                    access=access,
-                    semstr=semstr,
-                    signature=signature,
-                    body=None,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
 
         def genai_ability(self, kid: list[ast.AstNode]) -> ast.Ability:
             """Grammar rule.
@@ -957,70 +927,50 @@ class JacParser(Pass):
             genai_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?
             named_ref (func_decl) KW_BY atomic_call SEMI
             """
-            chomp = [*kid]
-            is_override = (
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_OVERRIDE
+            is_override = self.match_token(Tok.KW_OVERRIDE) is not None
+            is_static = self.match_token(Tok.KW_STATIC) is not None
+            self.consume_token(Tok.KW_CAN)
+            access = self.match(ast.SubTag)
+            semstr = self.match(ast.String)
+            name = self.consume(ast.NameAtom)
+            signature = self.match(ast.FuncSignature) or self.consume(
+                ast.EventSignature
             )
-            chomp = chomp[1:] if is_override else chomp
-            is_static = (
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_STATIC
+            self.consume_token(Tok.KW_BY)
+            body = self.consume(ast.FuncCall)
+            return ast.Ability(
+                name_ref=name,
+                is_async=False,
+                is_override=is_override,
+                is_static=is_static,
+                is_abstract=False,
+                access=access,
+                semstr=semstr,
+                signature=signature,
+                body=body,
+                kid=kid,
             )
-            chomp = chomp[1:] if is_static else chomp
-            chomp = chomp[1:]
-            access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
-            chomp = chomp[1:] if access else chomp
-            semstr = chomp[0] if isinstance(chomp[0], ast.String) else None
-            chomp = chomp[1:] if semstr else chomp
-            name = chomp[0]
-            chomp = chomp[1:]
-            signature = chomp[0]
-            chomp = chomp[1:]
-            has_by = isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_BY
-            chomp = chomp[1:] if has_by else chomp
-            if (
-                isinstance(name, ast.NameAtom)
-                and isinstance(signature, (ast.FuncSignature, ast.EventSignature))
-                and isinstance(chomp[0], ast.FuncCall)
-                and has_by
-            ):
-                return ast.Ability(
-                    name_ref=name,
-                    is_async=False,
-                    is_override=is_override,
-                    is_static=is_static,
-                    is_abstract=False,
-                    access=access,
-                    semstr=semstr,
-                    signature=signature,
-                    body=chomp[0],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
 
         def event_clause(self, kid: list[ast.AstNode]) -> ast.EventSignature:
             """Grammar rule.
 
             event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (STRING? RETURN_HINT expression)?
             """
-            type_specs = kid[1] if isinstance(kid[1], ast.Expr) else None
-            return_spec = kid[-1] if isinstance(kid[-1], ast.Expr) else None
-            semstr = (
-                kid[-3] if return_spec and isinstance(kid[-3], ast.String) else None
+            return_spec: ast.Expr | None = None
+            semstr: ast.String | None = None
+            self.match_token(Tok.KW_WITH)
+            type_specs = self.match(ast.Expr)
+            event = self.match_token(Tok.KW_EXIT) or self.consume_token(Tok.KW_ENTRY)
+            if semstr := self.match(ast.String):
+                self.consume_token(Tok.RETURN_HINT)
+                return_spec = self.consume(ast.Expr)
+            return ast.EventSignature(
+                semstr=semstr,
+                event=event,
+                arch_tag_info=type_specs,
+                return_type=return_spec,
+                kid=kid,
             )
-            event = kid[2] if type_specs else kid[1]
-            if isinstance(event, ast.Token) and (
-                isinstance(return_spec, ast.Expr) or return_spec is None
-            ):
-                return ast.EventSignature(
-                    semstr=semstr,
-                    event=event,
-                    arch_tag_info=type_specs,
-                    return_type=return_spec,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
 
         def func_decl(self, kid: list[ast.AstNode]) -> ast.FuncSignature:
             """Grammar rule.
