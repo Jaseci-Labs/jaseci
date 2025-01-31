@@ -24,19 +24,18 @@ toplevel_stmt: import_stmt
        | test
 
 // [Heading]: Import/Include Statements.
-import_stmt: KW_IMPORT sub_name? KW_FROM from_path LBRACE import_items RBRACE
-           | KW_IMPORT sub_name? KW_FROM from_path COMMA import_items SEMI  //Deprecated
-           | KW_IMPORT sub_name? import_path (COMMA import_path)* SEMI
+import_stmt: KW_IMPORT import_lang? KW_FROM from_path LBRACE import_items RBRACE
+           | KW_IMPORT import_lang? import_path (COMMA import_path)* SEMI
            | include_stmt
 
-from_path: (DOT | ELLIPSIS)* import_path
-         | (DOT | ELLIPSIS)+
+from_path: (DOT | ELLIPSIS)+
+         | (DOT | ELLIPSIS)* (name (DOT name)*)
 
 import_path: name (DOT name)* (KW_AS NAME)?
 import_items: (import_item COMMA)* import_item COMMA?
 import_item: name (KW_AS NAME)?
-sub_name: COLON NAME
-include_stmt: KW_INCLUDE sub_name? import_path SEMI
+import_lang: COLON NAME
+include_stmt: KW_INCLUDE import_lang? import_path SEMI
 
 // [Heading]: Architypes.
 architype: decorators? architype_decl
@@ -99,7 +98,7 @@ global_var: (KW_LET | KW_GLOBAL) access_tag? assignment_list SEMI
 assignment_list: (assignment_list COMMA)? assignment
 
 // [Heading]: Free code.
-free_code: KW_WITH KW_ENTRY sub_name? code_block
+free_code: KW_WITH KW_ENTRY import_lang? code_block
 
 // [Heading]: Inline python.
 py_code_block: PYNLINE

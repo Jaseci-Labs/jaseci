@@ -267,7 +267,7 @@ class JacParser(Pass):
         def free_code(self, kid: list[ast.AstNode]) -> ast.ModuleCode:
             """Grammar rule.
 
-            free_code: KW_WITH KW_ENTRY sub_name? code_block
+            free_code: KW_WITH KW_ENTRY import_lang? code_block
             """
             name = kid[2] if isinstance(kid[2], ast.SubTag) else None
             codeblock = kid[3] if name else kid[2]
@@ -300,9 +300,8 @@ class JacParser(Pass):
         def import_stmt(self, kid: list[ast.AstNode]) -> ast.Import:
             """Grammar rule.
 
-            import_stmt: KW_IMPORT sub_name? KW_FROM from_path LBRACE import_items RBRACE
-                    | KW_IMPORT sub_name? KW_FROM from_path COMMA import_items SEMI  //Deprecated
-                    | KW_IMPORT sub_name? import_path (COMMA import_path)* SEMI
+            import_stmt: KW_IMPORT import_lang? KW_FROM from_path LBRACE import_items RBRACE
+                    | KW_IMPORT import_lang? import_path (COMMA import_path)* SEMI
                     | include_stmt
             """
             if len(kid) == 1 and isinstance(kid[0], ast.Import):
@@ -322,7 +321,7 @@ class JacParser(Pass):
 
             is_absorb = False
             if isinstance(items, ast.SubNodeList):
-                ret = self.nu(
+                return self.nu(
                     ast.Import(
                         hint=lang,
                         from_loc=from_path,
@@ -331,23 +330,14 @@ class JacParser(Pass):
                         kid=kid,
                     )
                 )
-                if (
-                    from_path
-                    and isinstance(kid[-1], ast.Token)
-                    and kid[-1].name == Tok.SEMI
-                ):
-                    self.parse_ref.warning(
-                        "Deprecated syntax, use braces for multiple imports (e.g, import from mymod {a, b, c})",
-                    )
-                return ret
             else:
                 raise self.ice()
 
         def from_path(self, kid: list[ast.AstNode]) -> ast.ModulePath:
             """Grammar rule.
 
-            from_path: (DOT | ELLIPSIS)* import_path
-                    | (DOT | ELLIPSIS)+
+            from_path: (DOT | ELLIPSIS)+
+                     | (DOT | ELLIPSIS)* (name (DOT name)*)
             """
             level = 0
             for i in kid:
@@ -356,11 +346,9 @@ class JacParser(Pass):
                         level += 1
                     elif i.name == Tok.ELLIPSIS:
                         level += 3
-            if isinstance(kid[-1], ast.ModulePath):
-                ret = kid[-1]
-                adds = [i for i in kid if isinstance(i, ast.Token)]
-                ret.level = level
-                ret.add_kids_left(adds)
+            valid_path = [i for i in kid if isinstance(i, ast.Name)]
+            if valid_path:
+                ret = ast.ModulePath(path=valid_path, level=level, alias=None, kid=kid)
                 return ret
             else:
                 return self.nu(
@@ -375,7 +363,7 @@ class JacParser(Pass):
         def include_stmt(self, kid: list[ast.AstNode]) -> ast.Import:
             """Grammar rule.
 
-            include_stmt: KW_INCLUDE sub_name import_path SEMI
+            include_stmt: KW_INCLUDE import_lang import_path SEMI
             """
             lang = kid[1] if isinstance(kid[1], ast.SubTag) else None
             from_path = kid[2] if lang else kid[1]
@@ -399,7 +387,7 @@ class JacParser(Pass):
         def import_path(self, kid: list[ast.AstNode]) -> ast.ModulePath:
             """Grammar rule.
 
-            import_path: name (DOT name)* (KW_AS NAME)?
+            import_path: name (DOT name)* alias?
             """
             valid_path = [i for i in kid if isinstance(i, ast.Name)]
             alias = (
@@ -575,10 +563,10 @@ class JacParser(Pass):
                 )
             )
 
-        def sub_name(self, kid: list[ast.AstNode]) -> ast.SubTag[ast.Name]:
+        def import_lang(self, kid: list[ast.AstNode]) -> ast.SubTag[ast.Name]:
             """Grammar rule.
 
-            sub_name: COLON NAME
+            import_lang: COLON NAME
             """
             if isinstance(kid[1], ast.Name):
                 return self.nu(
@@ -1757,13 +1745,13 @@ class JacParser(Pass):
 
             visit_stmt: KW_VISIT (inherited_archs)? expression (else_stmt | SEMI)
             """
-            sub_name = kid[1] if isinstance(kid[1], ast.SubNodeList) else None
-            target = kid[2] if sub_name else kid[1]
+            import_lang = kid[1] if isinstance(kid[1], ast.SubNodeList) else None
+            target = kid[2] if import_lang else kid[1]
             else_body = kid[-1] if isinstance(kid[-1], ast.ElseStmt) else None
             if isinstance(target, ast.Expr):
                 return self.nu(
                     ast.VisitStmt(
-                        vis_type=sub_name,
+                        vis_type=import_lang,
                         target=target,
                         else_body=else_body,
                         kid=kid,
