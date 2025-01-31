@@ -1313,94 +1313,72 @@ class JacParser(Pass):
 
             if_stmt: KW_IF expression code_block (elif_stmt | else_stmt)?
             """
-            if isinstance(kid[1], ast.Expr) and isinstance(kid[2], ast.SubNodeList):
-                return ast.IfStmt(
-                    condition=kid[1],
-                    body=kid[2],
-                    else_body=(
-                        kid[3]
-                        if len(kid) > 3
-                        and isinstance(kid[3], (ast.ElseStmt, ast.ElseIf))
-                        else None
-                    ),
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.KW_IF)
+            condition = self.consume(ast.Expr)
+            body = self.consume(ast.SubNodeList)
+            else_body = self.match(ast.ElseStmt) or self.match(ast.ElseIf)
+            return ast.IfStmt(
+                condition=condition,
+                body=body,
+                else_body=else_body,
+                kid=kid,
+            )
 
         def elif_stmt(self, kid: list[ast.AstNode]) -> ast.ElseIf:
             """Grammar rule.
 
             elif_stmt: KW_ELIF expression code_block (elif_stmt | else_stmt)?
             """
-            if isinstance(kid[1], ast.Expr) and isinstance(kid[2], ast.SubNodeList):
-                return ast.ElseIf(
-                    condition=kid[1],
-                    body=kid[2],
-                    else_body=(
-                        kid[3]
-                        if len(kid) > 3
-                        and isinstance(kid[3], (ast.ElseStmt, ast.ElseIf))
-                        else None
-                    ),
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.KW_ELIF)
+            condition = self.consume(ast.Expr)
+            body = self.consume(ast.SubNodeList)
+            else_body = self.match(ast.ElseStmt) or self.match(ast.ElseIf)
+            return ast.ElseIf(
+                condition=condition,
+                body=body,
+                else_body=else_body,
+                kid=kid,
+            )
 
         def else_stmt(self, kid: list[ast.AstNode]) -> ast.ElseStmt:
             """Grammar rule.
 
             else_stmt: KW_ELSE code_block
             """
-            if isinstance(kid[1], ast.SubNodeList):
-                return ast.ElseStmt(
-                    body=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.KW_ELSE)
+            body = self.consume(ast.SubNodeList)
+            return ast.ElseStmt(
+                body=body,
+                kid=kid,
+            )
 
         def try_stmt(self, kid: list[ast.AstNode]) -> ast.TryStmt:
             """Grammar rule.
 
             try_stmt: KW_TRY code_block except_list? else_stmt? finally_stmt?
             """
-            chomp = [*kid][1:]
-            block = chomp[0]
-            chomp = chomp[1:]
-            except_list = (
-                chomp[0]
-                if len(chomp) and isinstance(chomp[0], ast.SubNodeList)
-                else None
+            self.consume_token(Tok.KW_TRY)
+            block = self.consume(ast.SubNodeList)
+            except_list = self.match(ast.SubNodeList)
+            else_stmt = self.match(ast.ElseStmt)
+            finally_stmt = self.match(ast.FinallyStmt)
+            return ast.TryStmt(
+                body=block,
+                excepts=except_list,
+                else_body=else_stmt,
+                finally_body=finally_stmt,
+                kid=kid,
             )
-            chomp = chomp[1:] if except_list else chomp
-            else_stmt = (
-                chomp[0] if len(chomp) and isinstance(chomp[0], ast.ElseStmt) else None
-            )
-            chomp = chomp[1:] if else_stmt else chomp
-            finally_stmt = (
-                chomp[0]
-                if len(chomp) and isinstance(chomp[0], ast.FinallyStmt)
-                else None
-            )
-            if isinstance(block, ast.SubNodeList):
-                return ast.TryStmt(
-                    body=block,
-                    excepts=except_list,
-                    else_body=else_stmt,
-                    finally_body=finally_stmt,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
 
-        def except_list(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Except]:
+        def except_list(self, _: list[ast.AstNode]) -> ast.SubNodeList[ast.Except]:
             """Grammar rule.
 
             except_list: except_def+
             """
-            valid_kid = [i for i in kid if isinstance(i, ast.Except)]
+            valid_kid = []
+            kid = self.nodes
+            while expt := self.match(ast.Except):
+                valid_kid.append(expt)
             if len(valid_kid) == len(kid):
                 return ast.SubNodeList[ast.Except](
                     items=valid_kid,
@@ -1415,31 +1393,31 @@ class JacParser(Pass):
 
             except_def: KW_EXCEPT expression (KW_AS NAME)? code_block
             """
-            ex_type = kid[1]
-            name = kid[3] if len(kid) > 3 and isinstance(kid[3], ast.Name) else None
-            body = kid[-1]
-            if isinstance(ex_type, ast.Expr) and isinstance(body, ast.SubNodeList):
-                return ast.Except(
-                    ex_type=ex_type,
-                    name=name,
-                    body=body,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            name = None
+            self.consume_token(Tok.KW_EXCEPT)
+            ex_type = self.consume(ast.Expr)
+            if self.match_token(Tok.KW_AS):
+                name = self.consume(ast.Name)
+            body = self.consume(ast.SubNodeList)
+            return ast.Except(
+                ex_type=ex_type,
+                name=name,
+                body=body,
+                kid=kid,
+            )
 
-        def finally_stmt(self, kid: list[ast.AstNode]) -> ast.FinallyStmt:
+        def finally_stmt(self, _: list[ast.AstNode]) -> ast.FinallyStmt:
             """Grammar rule.
 
             finally_stmt: KW_FINALLY code_block
             """
-            if isinstance(kid[1], ast.SubNodeList):
-                return ast.FinallyStmt(
-                    body=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            kid = self.nodes
+            self.consume_token(Tok.KW_FINALLY)
+            body = self.consume(ast.SubNodeList)
+            return ast.FinallyStmt(
+                body=body,
+                kid=kid,
+            )
 
         def for_stmt(self, kid: list[ast.AstNode]) -> ast.IterForStmt | ast.InForStmt:
             """Grammar rule.
