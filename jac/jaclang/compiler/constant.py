@@ -140,6 +140,19 @@ class SymbolAccess(Enum):
     PUBLIC = "public"
     PROTECTED = "protected"
 
+    @staticmethod
+    def from_token(token: str) -> "SymbolAccess":
+        """Convert token to access."""
+        # TODO: If the tokens have token type as an instance of the bellow Tokens enum,
+        # we don't have to use strings (ie. Token.name) and we can just pass the token type enum everywhere.
+        if token == Tokens.KW_PRIV:
+            return SymbolAccess.PRIVATE
+        if token == Tokens.KW_PUB:
+            return SymbolAccess.PUBLIC
+        if token == Tokens.KW_PROT:
+            return SymbolAccess.PROTECTED
+        raise ValueError(f"Invalid access token: {token}")
+
     def __str__(self) -> str:
         """Stringify."""
         return self.value

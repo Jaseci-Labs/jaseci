@@ -113,7 +113,7 @@ class SymbolTable:
     def insert(
         self,
         node: ast.AstSymbolNode,
-        access_spec: Optional[ast.AstAccessNode] | SymbolAccess = None,
+        access: SymbolAccess | None = None,
         single: bool = False,
         force_overwrite: bool = False,
     ) -> Optional[ast.AstNode]:
@@ -130,11 +130,7 @@ class SymbolTable:
         if force_overwrite or node.sym_name not in self.tab:
             self.tab[node.sym_name] = Symbol(
                 defn=node.name_spec,
-                access=(
-                    access_spec
-                    if isinstance(access_spec, SymbolAccess)
-                    else access_spec.access_type if access_spec else SymbolAccess.PUBLIC
-                ),
+                access=access or SymbolAccess.PUBLIC,
                 parent_tab=self,
             )
         else:
@@ -157,12 +153,12 @@ class SymbolTable:
     def inherit_sym_tab(self, target_sym_tab: SymbolTable) -> None:
         """Inherit symbol table."""
         for i in target_sym_tab.tab.values():
-            self.def_insert(i.decl, access_spec=i.access)
+            self.def_insert(i.decl, access=i.access)
 
     def def_insert(
         self,
         node: ast.AstSymbolNode,
-        access_spec: Optional[ast.AstAccessNode] | SymbolAccess = None,
+        access: SymbolAccess | None = None,
         single_decl: Optional[str] = None,
         force_overwrite: bool = False,
     ) -> Optional[Symbol]:
@@ -172,7 +168,7 @@ class SymbolTable:
         self.insert(
             node=node,
             single=single_decl is not None,
-            access_spec=access_spec,
+            access=access,
             force_overwrite=force_overwrite,
         )
         self.update_py_ctx_for_def(node)

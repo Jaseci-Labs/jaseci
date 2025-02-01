@@ -217,6 +217,9 @@ class AstNode:
         return res
 
 
+T = TypeVar("T", bound=AstNode)
+
+
 class AstSymbolNode(AstNode):
     """Nodes that have link to a symbol in symbol table."""
 
@@ -271,30 +274,6 @@ class AstSymbolStubNode(AstSymbolNode):
             name_spec=Name.gen_stub_from_node(self, f"[{self.__class__.__name__}]"),
             sym_category=sym_type,
         )
-
-
-class AstAccessNode(AstNode):
-    """Nodes that have access."""
-
-    def __init__(self, access: Optional[SubTag[Token]]) -> None:
-        """Initialize ast."""
-        self.access: Optional[SubTag[Token]] = access
-
-    @property
-    def access_type(self) -> SymbolAccess:
-        """Get access spec."""
-        return (
-            SymbolAccess.PRIVATE
-            if self.access and self.access.tag.name == Tok.KW_PRIV
-            else (
-                SymbolAccess.PROTECTED
-                if self.access and self.access.tag.name == Tok.KW_PROT
-                else SymbolAccess.PUBLIC
-            )
-        )
-
-
-T = TypeVar("T", bound=AstNode)
 
 
 class AstDocNode(AstNode):
@@ -709,12 +688,12 @@ class Module(AstDocNode):
         )
 
 
-class GlobalVars(ElementStmt, AstAccessNode):
+class GlobalVars(ElementStmt):
     """GlobalVars node type for Jac Ast."""
 
     def __init__(
         self,
-        access: Optional[SubTag[Token]],
+        access: SymbolAccess | None,
         assignments: SubNodeList[Assignment],
         is_frozen: bool,
         kid: Sequence[AstNode],
@@ -723,15 +702,14 @@ class GlobalVars(ElementStmt, AstAccessNode):
         """Initialize global var node."""
         self.assignments = assignments
         self.is_frozen = is_frozen
+        self.access = access
         AstNode.__init__(self, kid=kid)
-        AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize global var node."""
         res = True
         if deep:
-            res = self.access.normalize(deep) if self.access else True
             res = res and self.assignments.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
@@ -742,7 +720,17 @@ class GlobalVars(ElementStmt, AstAccessNode):
         else:
             new_kid.append(self.gen_token(Tok.KW_GLOBAL))
         if self.access:
-            new_kid.append(self.access)
+            # NOTE: This normalize method will be removed, I don't mind using the dict here.
+            new_kid.append(self.gen_token(Tok.COLON))
+            new_kid.append(
+                self.gen_token(
+                    {
+                        SymbolAccess.PUBLIC: Tok.KW_PUB,
+                        SymbolAccess.PRIVATE: Tok.KW_PRIV,
+                        SymbolAccess.PROTECTED: Tok.KW_PROT,
+                    }[self.access]
+                )
+            )
         new_kid.append(self.assignments)
         self.set_kids(nodes=new_kid)
         return res
@@ -1117,14 +1105,14 @@ class ModuleItem(AstSymbolNode):
         return res
 
 
-class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
+class Architype(ArchSpec, ArchBlockStmt, AstImplNeedingNode):
     """ObjectArch node type for Jac Ast."""
 
     def __init__(
         self,
         name: Name,
         arch_type: Token,
-        access: Optional[SubTag[Token]],
+        access: SymbolAccess | None,
         base_classes: Optional[SubNodeList[Expr]],
         body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
         kid: Sequence[AstNode],
@@ -1135,32 +1123,22 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
         """Initialize object arch node."""
         self.name = name
         self.arch_type = arch_type
+        self.access = access
         self.base_classes = base_classes
         AstNode.__init__(self, kid=kid)
+
         AstSymbolNode.__init__(
             self,
             sym_name=name.value,
             name_spec=name,
-            sym_category=(
-                SymbolType.OBJECT_ARCH
-                if arch_type.name == Tok.KW_OBJECT
-                else (
-                    SymbolType.NODE_ARCH
-                    if arch_type.name == Tok.KW_NODE
-                    else (
-                        SymbolType.EDGE_ARCH
-                        if arch_type.name == Tok.KW_EDGE
-                        else (
-                            SymbolType.WALKER_ARCH
-                            if arch_type.name == Tok.KW_WALKER
-                            else SymbolType.TYPE
-                        )
-                    )
-                )
-            ),
+            sym_category={
+                Tok.KW_OBJECT.value: SymbolType.OBJECT_ARCH,
+                Tok.KW_NODE.value: SymbolType.NODE_ARCH,
+                Tok.KW_EDGE.value: SymbolType.EDGE_ARCH,
+                Tok.KW_WALKER.value: SymbolType.WALKER_ARCH,
+            }.get(arch_type.name, SymbolType.TYPE),
         )
         AstImplNeedingNode.__init__(self, body=body)
-        AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
         AstSemStrNode.__init__(self, semstr=semstr)
         ArchSpec.__init__(self, decorators=decorators)
@@ -1181,7 +1159,6 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
         if deep:
             res = self.name.normalize(deep)
             res = res and self.arch_type.normalize(deep)
-            res = res and self.access.normalize(deep) if self.access else res
             res = (
                 res and self.base_classes.normalize(deep) if self.base_classes else res
             )
@@ -1197,7 +1174,17 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
             new_kid.append(self.decorators)
         new_kid.append(self.arch_type)
         if self.access:
-            new_kid.append(self.access)
+            # NOTE: This normalize method will be removed, I don't mind using the dict here.
+            new_kid.append(self.gen_token(Tok.COLON))
+            new_kid.append(
+                self.gen_token(
+                    {
+                        SymbolAccess.PUBLIC: Tok.KW_PUB,
+                        SymbolAccess.PRIVATE: Tok.KW_PRIV,
+                        SymbolAccess.PROTECTED: Tok.KW_PROT,
+                    }[self.access]
+                )
+            )
         if self.semstr:
             new_kid.append(self.semstr)
         new_kid.append(self.name)
@@ -1248,13 +1235,13 @@ class ArchDef(AstImplOnlyNode):
         return res
 
 
-class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
+class Enum(ArchSpec, AstImplNeedingNode, ArchBlockStmt):
     """Enum node type for Jac Ast."""
 
     def __init__(
         self,
         name: Name,
-        access: Optional[SubTag[Token]],
+        access: SymbolAccess | None,
         base_classes: Optional[SubNodeList[Expr]],
         body: Optional[SubNodeList[EnumBlockStmt] | EnumDef],
         kid: Sequence[AstNode],
@@ -1265,6 +1252,7 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
         """Initialize object arch node."""
         self.name = name
         self.base_classes = base_classes
+        self.access = access
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
@@ -1273,7 +1261,6 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
             sym_category=SymbolType.ENUM_ARCH,
         )
         AstImplNeedingNode.__init__(self, body=body)
-        AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
         AstSemStrNode.__init__(self, semstr=semstr)
         ArchSpec.__init__(self, decorators=decorators)
@@ -1283,7 +1270,6 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
         res = True
         if deep:
             res = self.name.normalize(deep)
-            res = res and self.access.normalize(deep) if self.access else res
             res = (
                 res and self.base_classes.normalize(deep) if self.base_classes else res
             )
@@ -1299,7 +1285,17 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
             new_kid.append(self.doc)
         new_kid.append(self.gen_token(Tok.KW_ENUM))
         if self.access:
-            new_kid.append(self.access)
+            # NOTE: This normalize method will be removed, I don't mind using the dict here.
+            new_kid.append(self.gen_token(Tok.COLON))
+            new_kid.append(
+                self.gen_token(
+                    {
+                        SymbolAccess.PUBLIC: Tok.KW_PUB,
+                        SymbolAccess.PRIVATE: Tok.KW_PRIV,
+                        SymbolAccess.PROTECTED: Tok.KW_PROT,
+                    }[self.access]
+                )
+            )
         if self.semstr:
             new_kid.append(self.semstr)
         new_kid.append(self.name)
@@ -1356,7 +1352,6 @@ class EnumDef(AstImplOnlyNode):
 
 
 class Ability(
-    AstAccessNode,
     ElementStmt,
     AstAsyncNode,
     ArchBlockStmt,
@@ -1374,7 +1369,7 @@ class Ability(
         is_override: bool,
         is_static: bool,
         is_abstract: bool,
-        access: Optional[SubTag[Token]],
+        access: SymbolAccess | None,
         signature: FuncSignature | EventSignature,
         body: Optional[SubNodeList[CodeBlockStmt] | AbilityDef | FuncCall],
         kid: Sequence[AstNode],
@@ -1387,6 +1382,7 @@ class Ability(
         self.is_override = is_override
         self.is_static = is_static
         self.is_abstract = is_abstract
+        self.access = access
         self.decorators = decorators
         self.signature = signature
         AstNode.__init__(self, kid=kid)
@@ -1398,7 +1394,6 @@ class Ability(
             name_spec=name_ref,
             sym_category=SymbolType.ABILITY,
         )
-        AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
         AstAsyncNode.__init__(self, is_async=is_async)
 
@@ -1437,7 +1432,6 @@ class Ability(
         res = True
         if deep:
             res = self.name_ref.normalize(deep)
-            res = res and self.access.normalize(deep) if self.access else res
             res = res and self.signature.normalize(deep) if self.signature else res
             res = res and self.body.normalize(deep) if self.body else res
             res = res and self.semstr.normalize(deep) if self.semstr else res
@@ -1458,7 +1452,17 @@ class Ability(
             new_kid.append(self.gen_token(Tok.KW_STATIC))
         new_kid.append(self.gen_token(Tok.KW_CAN))
         if self.access:
-            new_kid.append(self.access)
+            # NOTE: This normalize method will be removed, I don't mind using the dict here.
+            new_kid.append(self.gen_token(Tok.COLON))
+            new_kid.append(
+                self.gen_token(
+                    {
+                        SymbolAccess.PUBLIC: Tok.KW_PUB,
+                        SymbolAccess.PRIVATE: Tok.KW_PRIV,
+                        SymbolAccess.PROTECTED: Tok.KW_PROT,
+                    }[self.access]
+                )
+            )
         if self.semstr:
             new_kid.append(self.semstr)
         new_kid.append(self.name_ref)
@@ -1724,13 +1728,13 @@ class ParamVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
         return res
 
 
-class ArchHas(AstAccessNode, AstDocNode, ArchBlockStmt):
+class ArchHas(AstDocNode, ArchBlockStmt):
     """HasStmt node type for Jac Ast."""
 
     def __init__(
         self,
         is_static: bool,
-        access: Optional[SubTag[Token]],
+        access: SymbolAccess | None,
         vars: SubNodeList[HasVar],
         is_frozen: bool,
         kid: Sequence[AstNode],
@@ -1738,17 +1742,16 @@ class ArchHas(AstAccessNode, AstDocNode, ArchBlockStmt):
     ) -> None:
         """Initialize has statement node."""
         self.is_static = is_static
+        self.access = access
         self.vars = vars
         self.is_frozen = is_frozen
         AstNode.__init__(self, kid=kid)
-        AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize has statement node."""
         res = True
         if deep:
-            res = self.access.normalize(deep) if self.access else res
             res = res and self.vars.normalize(deep) if self.vars else res
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
@@ -1762,7 +1765,17 @@ class ArchHas(AstAccessNode, AstDocNode, ArchBlockStmt):
             else new_kid.append(self.gen_token(Tok.KW_HAS))
         )
         if self.access:
-            new_kid.append(self.access)
+            # NOTE: This normalize method will be removed, I don't mind using the dict here.
+            new_kid.append(self.gen_token(Tok.COLON))
+            new_kid.append(
+                self.gen_token(
+                    {
+                        SymbolAccess.PUBLIC: Tok.KW_PUB,
+                        SymbolAccess.PRIVATE: Tok.KW_PRIV,
+                        SymbolAccess.PROTECTED: Tok.KW_PROT,
+                    }[self.access]
+                )
+            )
         new_kid.append(self.vars)
         new_kid.append(self.gen_token(Tok.SEMI))
         self.set_kids(nodes=new_kid)

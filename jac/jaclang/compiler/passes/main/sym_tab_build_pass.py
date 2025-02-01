@@ -87,7 +87,9 @@ class SymTabBuildPass(Pass):
         for i in self.get_all_sub_nodes(node, ast.Assignment):
             for j in i.target.items:
                 if isinstance(j, ast.AstSymbolNode):
-                    j.sym_tab.def_insert(j, access_spec=node, single_decl="global var")
+                    j.sym_tab.def_insert(
+                        j, access=node.access, single_decl="global var"
+                    )
                 else:
                     self.ice("Expected name type for globabl vars")
 
@@ -236,7 +238,7 @@ class SymTabBuildPass(Pass):
         body: Optional[ArchBlock],
         """
         self.sync_node_to_scope(node)
-        node.sym_tab.def_insert(node, access_spec=node, single_decl="architype")
+        node.sym_tab.def_insert(node, access=node.access, single_decl="architype")
         self.push_scope(node.name.value, node)
         self.sync_node_to_scope(node)
 
@@ -290,7 +292,7 @@ class SymTabBuildPass(Pass):
         body: Optional[CodeBlock],
         """
         self.sync_node_to_scope(node)
-        node.sym_tab.def_insert(node, access_spec=node, single_decl="ability")
+        node.sym_tab.def_insert(node, access=node.access, single_decl="ability")
         self.push_scope(node.sym_name, node)
         self.sync_node_to_scope(node)
         if node.is_method:
@@ -385,7 +387,7 @@ class SymTabBuildPass(Pass):
         body: Optional['EnumBlock'],
         """
         self.sync_node_to_scope(node)
-        node.sym_tab.def_insert(node, access_spec=node, single_decl="enum")
+        node.sym_tab.def_insert(node, access=node.access, single_decl="enum")
         self.push_scope(node.sym_name, node)
         self.sync_node_to_scope(node)
 

@@ -10,7 +10,7 @@ from typing import Callable, TypeAlias
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler import jac_lark as jl  # type: ignore
-from jaclang.compiler.constant import EdgeDir, Tokens as Tok
+from jaclang.compiler.constant import EdgeDir, SymbolAccess, Tokens as Tok
 from jaclang.compiler.passes.ir_pass import Pass
 from jaclang.vendor.lark import Lark, Transformer, Tree, logger
 
@@ -215,7 +215,11 @@ class JacParser(Pass):
             global_var: (KW_LET | KW_GLOBAL) access_tag? assignment_list SEMI
             """
             is_frozen = isinstance(kid[0], ast.Token) and kid[0].name == Tok.KW_LET
-            access = kid[1] if isinstance(kid[1], ast.SubTag) else None
+            access = (
+                SymbolAccess.from_token(kid[1].tag.name)  # type: ignore
+                if isinstance(kid[1], ast.SubTag)
+                else None
+            )
             assignments = kid[2] if access else kid[1]
             if isinstance(assignments, ast.SubNodeList):
                 return self.nu(
@@ -494,7 +498,11 @@ class JacParser(Pass):
             architype_decl: arch_type access_tag? STRING? NAME inherited_archs? (member_block | SEMI)
             """
             arch_type = kid[0]
-            access = kid[1] if isinstance(kid[1], ast.SubTag) else None
+            access = (
+                SymbolAccess.from_token(kid[1].tag.name)  # type: ignore
+                if isinstance(kid[1], ast.SubTag)
+                else None
+            )
             semstr = (
                 kid[2]
                 if (access and isinstance(kid[2], ast.String))
@@ -651,7 +659,11 @@ class JacParser(Pass):
 
             enum_decl: KW_ENUM access_tag? STRING? NAME inherited_archs? (enum_block | SEMI)
             """
-            access = kid[1] if isinstance(kid[1], ast.SubTag) else None
+            access = (
+                SymbolAccess.from_token(kid[1].tag.name)  # type: ignore
+                if isinstance(kid[1], ast.SubTag)
+                else None
+            )
             semstr = (
                 kid[2]
                 if (access and isinstance(kid[2], ast.String))
@@ -822,7 +834,11 @@ class JacParser(Pass):
                 isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_STATIC
             )
             chomp = chomp[2:] if is_static else chomp[1:]
-            access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
+            access = (
+                SymbolAccess.from_token(chomp[0].tag.name)  # type: ignore
+                if isinstance(chomp[0], ast.SubTag)
+                else None
+            )
             chomp = chomp[1:] if access else chomp
             semstr = chomp[0] if isinstance(chomp[0], ast.String) else None
             chomp = chomp[1:] if semstr else chomp
@@ -890,7 +906,11 @@ class JacParser(Pass):
             )
             chomp = chomp[1:] if is_static else chomp
             chomp = chomp[1:]
-            access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
+            access = (
+                SymbolAccess.from_token(chomp[0].tag.name)  # type: ignore
+                if isinstance(chomp[0], ast.SubTag)
+                else None
+            )
             chomp = chomp[1:] if access else chomp
             semstr = chomp[0] if isinstance(chomp[0], ast.String) else None
             chomp = chomp[1:] if semstr else chomp
@@ -934,7 +954,11 @@ class JacParser(Pass):
             )
             chomp = chomp[1:] if is_static else chomp
             chomp = chomp[1:]
-            access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
+            access = (
+                SymbolAccess.from_token(chomp[0].tag.name)  # type: ignore
+                if isinstance(chomp[0], ast.SubTag)
+                else None
+            )
             chomp = chomp[1:] if access else chomp
             semstr = chomp[0] if isinstance(chomp[0], ast.String) else None
             chomp = chomp[1:] if semstr else chomp
@@ -1141,7 +1165,11 @@ class JacParser(Pass):
             chomp = chomp[1:] if is_static else chomp
             is_freeze = isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_LET
             chomp = chomp[1:]
-            access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
+            access = (
+                SymbolAccess.from_token(chomp[0].tag.name)  # type: ignore
+                if isinstance(chomp[0], ast.SubTag)
+                else None
+            )
             chomp = chomp[1:] if access else chomp
             assign = chomp[0]
             if isinstance(assign, ast.SubNodeList):

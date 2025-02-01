@@ -91,9 +91,19 @@ def print_ast_tree(
     print_py_raise: bool = settings.print_py_raised_ast
 
     def __node_repr_in_tree(node: AstNode) -> str:
+
+        # TODO: For now we're checking if the node has access tag by the bellow list however the tree printing
+        # method will be refactored by traversing the tree thus we can remove this check.
+        nodes_has_access = (
+            ast.GlobalVars,
+            ast.Architype,
+            ast.Enum,
+            ast.Ability,
+            ast.ArchHas,
+        )
         access = (
-            f"Access: {node.access.tag.value} ,"
-            if isinstance(node, ast.AstAccessNode) and node.access is not None
+            f"Access: {node.access.value} ,"
+            if isinstance(node, nodes_has_access) and node.access
             else ""
         )
         sym_table_link = (

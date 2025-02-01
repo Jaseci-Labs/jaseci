@@ -99,7 +99,7 @@ class DefUsePass(Pass):
             node.sym_tab.def_insert(
                 node,
                 single_decl="has var",
-                access_spec=node.parent.parent,
+                access=node.parent.parent.access,
             )
         else:
             self.ice("Inconsistency in AST, has var should be under arch has")
