@@ -807,9 +807,7 @@ class JacParser(Pass):
                 return kid[0]
             raise self.ice()
 
-        def ability(
-            self, _: None
-        ) -> ast.Ability | ast.AbilityDef | ast.FuncCall:
+        def ability(self, _: None) -> ast.Ability | ast.AbilityDef | ast.FuncCall:
             """Grammer rule.
 
             ability: decorators? KW_ASYNC? ability_decl
@@ -1412,8 +1410,8 @@ class JacParser(Pass):
             finally_stmt: KW_FINALLY code_block
             """
             self.consume_token(Tok.KW_FINALLY)
-            body=self.consume(ast.SubNodeList)
-            kid=self.nodes
+            body = self.consume(ast.SubNodeList)
+            kid = self.nodes
             return ast.FinallyStmt(
                 body=body,
                 kid=kid,
