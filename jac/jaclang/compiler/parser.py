@@ -808,7 +808,7 @@ class JacParser(Pass):
             raise self.ice()
 
         def ability(
-            self, _: list[ast.AstNode]
+            self, _: None
         ) -> ast.Ability | ast.AbilityDef | ast.FuncCall:
             """Grammer rule.
 
@@ -1370,7 +1370,7 @@ class JacParser(Pass):
                 kid=kid,
             )
 
-        def except_list(self, _: list[ast.AstNode]) -> ast.SubNodeList[ast.Except]:
+        def except_list(self, _: None) -> ast.SubNodeList[ast.Except]:
             """Grammar rule.
 
             except_list: except_def+
@@ -1393,7 +1393,7 @@ class JacParser(Pass):
 
             except_def: KW_EXCEPT expression (KW_AS NAME)? code_block
             """
-            name = None
+            name: ast.Name | None = None
             self.consume_token(Tok.KW_EXCEPT)
             ex_type = self.consume(ast.Expr)
             if self.match_token(Tok.KW_AS):
@@ -1411,9 +1411,9 @@ class JacParser(Pass):
 
             finally_stmt: KW_FINALLY code_block
             """
-            kid = self.nodes
             self.consume_token(Tok.KW_FINALLY)
-            body = self.consume(ast.SubNodeList)
+            body=self.consume(ast.SubNodeList)
+            kid=self.nodes
             return ast.FinallyStmt(
                 body=body,
                 kid=kid,
