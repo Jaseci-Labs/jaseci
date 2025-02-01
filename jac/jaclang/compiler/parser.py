@@ -1411,10 +1411,9 @@ class JacParser(Pass):
             """
             self.consume_token(Tok.KW_FINALLY)
             body = self.consume(ast.SubNodeList)
-            kid = self.nodes
             return ast.FinallyStmt(
                 body=body,
-                kid=kid,
+                kid=self.nodes,
             )
 
         def for_stmt(self, kid: list[ast.AstNode]) -> ast.IterForStmt | ast.InForStmt:
