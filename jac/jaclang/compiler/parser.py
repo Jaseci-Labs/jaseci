@@ -5,7 +5,7 @@ from __future__ import annotations
 import keyword
 import logging
 import os
-from typing import Callable, TypeAlias
+from typing import Callable, TypeAlias, cast
 
 
 import jaclang.compiler.absyntree as ast
@@ -2714,15 +2714,15 @@ class JacParser(Pass):
             if len(kid) == 2:
                 return self.nu(
                     ast.SetVal(
-                        values=None,
+                        values=[],
                         kid=kid,
                     )
                 )
             elif isinstance(kid[1], ast.SubNodeList):
                 return self.nu(
                     ast.SetVal(
-                        values=kid[1],
-                        kid=kid,
+                        values=cast(list[ast.Expr], kid[1].items),
+                        kid=[kid[0], *kid[1].kid, kid[2]],
                     )
                 )
             else:
