@@ -1,1 +1,3 @@
 .jac_mypy_cache/
+__jac_gen__/
+.vscode
