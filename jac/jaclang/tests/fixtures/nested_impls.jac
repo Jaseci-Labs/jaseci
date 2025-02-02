@@ -5,10 +5,10 @@ obj mainObject;
     obj subObject;
 }
 can foo{
-     obj kk;
-     return kk();
+     obj ObjInsideFunction;
+     return ObjInsideFunction();
 }
-:can:foo:obj:kk{
+:can:foo:obj:ObjInsideFunction{
     can bar{
         print("Hello,from bar in kk");
     }
