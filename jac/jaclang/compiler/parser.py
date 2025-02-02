@@ -473,11 +473,9 @@ class JacParser(Pass):
             import_path: named_ref (DOT named_ref)* (KW_AS NAME)?
             """
             valid_path = [self.consume(ast.Name)]
-            alias = None
             while self.match_token(Tok.DOT):
                 valid_path.append(self.consume(ast.Name))
-            if self.match_token(Tok.KW_AS):
-                alias = self.consume(ast.Name)
+            alias = self.match_token(Tok.KW_AS) and self.consume(ast.Name)
             return ast.ModulePath(
                 path=valid_path,
                 level=0,
@@ -511,18 +509,11 @@ class JacParser(Pass):
             name = self.consume(ast.Name)
             if self.match_token(Tok.KW_AS):
                 alias = self.consume(ast.Name)
-            else:
-                alias = None
-            if isinstance(name, ast.Name) and (
-                alias is None or isinstance(alias, ast.Name)
-            ):
-                return ast.ModuleItem(
-                    name=name,
-                    alias=alias,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            return ast.ModuleItem(
+                name=name,
+                alias=alias,
+                kid=kid,
+            )
 
         def architype(
             self, kid: list[ast.AstNode]
@@ -545,12 +536,9 @@ class JacParser(Pass):
                     self.match(ast.ArchSpec)
                     or self.match(ast.ArchDef)
                     or self.match(ast.Enum)
-                    or self.match(ast.EnumDef)
+                    or self.consume(ast.EnumDef)
                 )
-            if archspec is not None:
-                return archspec
-            else:
-                raise self.ice()
+            return archspec
 
         def architype_decl(self, kid: list[ast.AstNode]) -> ast.ArchSpec:
             """Grammar rule.
@@ -561,25 +549,24 @@ class JacParser(Pass):
             access = self.match(ast.SubTag)
             semstr = self.match(ast.String)
             name = self.consume(ast.Name)
-            inh = self.match(ast.SubNodeList)
-            body = self.match(ast.SubNodeList)
-
-            # If there's no inherited arches, then the body is the last element.
-            if body is None:
-                body, inh = inh, None
-
-            if isinstance(arch_type, ast.Token) and isinstance(name, ast.Name):
-                return ast.Architype(
-                    arch_type=arch_type,
-                    name=name,
-                    semstr=semstr,
-                    access=access,
-                    base_classes=inh,
-                    body=body,
-                    kid=kid,
-                )
+            sub_list1 = self.match(ast.SubNodeList)
+            sub_list2 = self.match(ast.SubNodeList)
+            if self.match_token(Tok.SEMI):
+                inh, body = sub_list1, None
             else:
-                raise self.ice()
+                body = (
+                    sub_list2 or sub_list1
+                )  # if sub_list2 is None then body is sub_list1
+                inh = sub_list2 and sub_list1  # if sub_list2 is None then inh is None.
+            return ast.Architype(
+                arch_type=arch_type,
+                name=name,
+                semstr=semstr,
+                access=access,
+                base_classes=inh,
+                body=body,
+                kid=kid,
+            )
 
         def architype_def(self, kid: list[ast.AstNode]) -> ast.ArchDef:
             """Grammar rule.
@@ -684,32 +671,29 @@ class JacParser(Pass):
             enum: decorators? enum_decl
                 | enum_def
             """
-            decorator = self.match(ast.SubNodeList)
-            enum_node: ast.Enum | ast.EnumDef | None = None
-            if decorator is not None:
-                enum_node = self.consume(ast.Enum)
-                enum_node.decorators = decorator
-                enum_node.add_kids_left([decorator])
-            else:
-                enum_node = self.match(ast.Enum) or self.match(ast.EnumDef)
-            if enum_node is not None:
-                return enum_node
-            else:
-                raise self.ice()
+            if decorator := self.match(ast.SubNodeList):
+                enum_decl = self.consume(ast.Enum)
+                enum_decl.decorators = decorator
+                enum_decl.add_kids_left([decorator])
+                return enum_decl
+            return self.match(ast.Enum) or self.consume(ast.EnumDef)
 
         def enum_decl(self, kid: list[ast.AstNode]) -> ast.Enum:
             """Grammar rule.
 
             enum_decl: KW_ENUM access_tag? STRING? NAME inherited_archs? (enum_block | SEMI)
             """
-            self.node_idx = 1
+            self.consume_token(Tok.KW_ENUM)
             access = self.match(ast.SubTag)
             semstr = self.match(ast.String)
             name = self.consume(ast.Name)
-            inh = self.match(ast.SubNodeList)
-            body = self.match(ast.SubNodeList)
-            if body is None:
-                body, inh = inh, None
+            sub_list1 = self.match(ast.SubNodeList)
+            sub_list2 = self.match(ast.SubNodeList)
+            if self.match_token(Tok.SEMI):
+                inh, body = sub_list1, None
+            else:
+                body = sub_list2 or sub_list1
+                inh = sub_list2 and sub_list1
             return ast.Enum(
                 semstr=semstr,
                 name=name,
@@ -762,24 +746,19 @@ class JacParser(Pass):
                 or self.match(ast.Ability)
             ):
                 return stmt
-            elif name := self.consume(ast.Name):
-                semstr = (
-                    self.consume(ast.String) if self.match_token(Tok.COLON) else None
-                )
-                expr = self.consume(ast.Expr) if self.match_token(Tok.EQ) else None
-                targ = ast.SubNodeList[ast.Expr](
-                    items=[name], delim=Tok.COMMA, kid=[name]
-                )
-                self.nodes[0] = targ
-                return ast.Assignment(
-                    target=targ,
-                    value=expr,
-                    type_tag=None,
-                    kid=kid,
-                    semstr=semstr,
-                    is_enum_stmt=True,
-                )
-            raise self.ice()
+            name = self.consume(ast.Name)
+            semstr = self.match_token(Tok.COLON) and self.consume(ast.String)
+            expr = self.match_token(Tok.EQ) and self.consume(ast.Expr)
+            targ = ast.SubNodeList[ast.Expr](items=[name], delim=Tok.COMMA, kid=[name])
+            self.nodes[0] = targ
+            return ast.Assignment(
+                target=targ,
+                value=expr,
+                type_tag=None,
+                kid=kid,
+                semstr=semstr,
+                is_enum_stmt=True,
+            )
 
         def ability(
             self, kid: list[ast.AstNode]
