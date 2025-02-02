@@ -1,6 +1,6 @@
 # **Building an Application with Jaseci**
 
-This guide introduces how the Jaseci Stack accelerates application development by leveraging its graph-based programming model. With Jaseci, we can focus on implementing features instead of setting up complex systems. As you explore Jaseci’s features, you’ll uncover its wide range of use cases. This guide provides a quick introduction, helping you set up the Jaseci framework, define nodes, edges, and walkers, and craft application logic for your project.
+This guide introduces how the Jaseci Stack accelerates application development by leveraging its graph-based programming model. With Jaseci, we can focus on implementing features rather than setting up complex systems. As you explore Jaseci’s features, you’ll uncover its wide range of use cases. This guide provides a quick introduction, helping you set up the Jaseci framework, define nodes, edges, and walkers, and craft application logic for your project.
 
 ## **What We Will Build**
 
@@ -28,8 +28,8 @@ To get started with building **LittleX**, ensure you have the following:
 
 - **About 15 minutes**: Time required to set up and explore the basics.
 - **A favorite text editor or IDE**: Any development environment you are comfortable with.
-- **Python 3.12 or later**: Jaseci is built on Python; ensure you have a compatible version installed.
-- **Jaclang, Jac-cloud, MTLLM, Jac-splice-orc**: Jaseci stack libraries.
+- **Python 3.12 or later**: Ensure that Python 3.12 or higher is installed in your environment.
+- **Install required libraries**: Jaclang, Jac-cloud, MTLLM, Jac-splice-orc.
 - **Node.js (optional)**: If you plan to integrate a frontend in future steps.
 
 ## **LittleX Architecture**
@@ -52,7 +52,7 @@ pip install jaclang, jac-cloud, mtllm, jac-splice-orc
 
 **Jac lang**, language used in Jaseci stack, organizes data as interconnected nodes within a spatial or graph-like structure. It focuses on the **relationships** between data points, rather than processing them **step-by-step**.
 
-**Nodes**: These are the individual entities or points in a graph. Each node represents an object, entity, or a piece of data.
+**Node**: Node is the atom of jaseci stack. Each node represents an object, entity, or a piece of data.
 
 First create a node with name Person and attributes name, age.
 ```jac
@@ -62,12 +62,12 @@ node Person{
 }
 ```
 
-* The `node` keyword defines a node entity in the graph (Person).
+* The `node` keyword defines a node entity in the graph (`Person`).
 * The `has` keyword specifies the attributes of the node.
-* `int` is used for integer values (years).
-* `str` is used for string values (names).
+* `name`, `age` are variable names (attributes of the `Person` node).
+* `str`, `int` are the corresponding data types of these variables (`str` for string, `int` for integer).
 
-Now Lets create required nodes for LittleX.
+Now, let's create the required nodes for LittleX.
 
 === "Guide"
       Nodes are essential for representing entities in LittleX. Here are the nodes we need to create:
@@ -108,10 +108,10 @@ For more explanation [visit](../../for_coders/data_spatial/nodes_and_edges.md)
 
 ### **Lesson 2: Creating Edges**
 
-**Edges**: These are the connections or relationships between nodes. Edges can be unidirectional or bidirectional.
+**Edge**: Edge represents the connections or relationships between nodes. Edges can be unidirectional or bidirectional.
 ![Image title](images/Family.jpg)
 
-First create a edge with name Relation and attribute since.
+First, create an edge named Relation with the attribute 'since'.
 ```jac
 edge Relation{
       has since: int;
@@ -123,7 +123,7 @@ edge Relation{
 * `int` is used for integer values (years).
 * `str` is used for string values (names).
 
-Now Lets create required edges for LittleX
+Now, let's create the required edges for LittleX.
 
 === "Guide"
       Edges define the relationships between nodes. Here are the edges we need to create:
@@ -154,7 +154,7 @@ For more explanation [visit](../../for_coders/data_spatial/nodes_and_edges.md)
 ### **Lesson 3: Creating our first Walker**
 Walkers are graph-traversing agents in Jaclang that perform tasks without requiring initialization and can define abilities for various node types. The Jaseci stack automatically converts walkers into RESTful API endpoints.
 
-First create a walker with name Relation and attribute since.
+First, create a walker named Relation with the attribute 'since'.
 ```jac
 walker Agent{
       has name: str;
@@ -218,7 +218,7 @@ Now Lets create required walkers for LittleX.
             ```
         * First `visit_profile` walker is called and it visits to `Profile` node.
         * `here.username = self.new_username` Update username.
-        * How `update_profile` walker sapwned on `Profile` node, update the name will be discussed later.
+        * How `update_profile` walker spawned on `Profile` node, update the name will be discussed later.
 
       - **Get Profile Walker**
         * Retrieves profile details and logs them.
@@ -373,11 +373,26 @@ Now Lets create required walkers for LittleX.
     ```
 
 **Test functionality**
-Using tools like Swagger or Postman, you've tested these APIs to confirm their functionality.
+
+Using tools like Swagger or Postman, you can test these APIs to confirm their functionality.
+
+1. Start the Server
+`jac serve filename.jac` run using command line.
+
+2. Access Swagger Docs
+Open your browser and navigate to http://localhost:8000/docs
+
+3. Test an API Endpoint
+      - Click on an endpoint
+      - Click "Try it out" to enable input fields.
+      - Enter required parameters (if any).
+      - Click "Execute" to send the request.
+      - View the response (status code, headers, and JSON response body).
 
 ### **Lesson 4: Let's add some AI magic to our application using the power of MTLLM:**
 
-In this lesson, we'll explore how to leverage AI to enhance your application. Using the power of MTLLM's Llama model, you can summarize tweets to quickly understand trends, major events, and notable interactions in one line.
+In this lesson, we'll explore how to leverage AI to enhance your application. MTLLM supports easy integration of multiple LLM models, and for this tutorial, we are using Llama. If you need more details on integrating different models, please check the [MTLLM documentation](../../for_coders/jac-mtllm/quickstart.md). (You can also explore OpenAI’s LittleX for additional insights.)
+Using Llama, you can summarize tweets to quickly understand trends, major events, and notable interactions in just one line.
 
 **Why This Feature Matters**
 
@@ -399,9 +414,16 @@ Think of your application as a personalized newsfeed or trend analyzer.
             can 'Summarize latest trends, major events, and notable interactions from the recent tweets in one line.'
                   summarise_tweets(tweets: list[str]) -> 'Summarisation': str by llm();
             ```
-=== "LittleX.jac Upto Now"
+      - **Test with Swagger**
+       * Run the above mtllm example with `jac serve mtllm_example.jac`.
+       * Register with email and password.
+       * Login with registered email and password.
+       * Copy the authentication key and paste it in authentication box.
+       * Run the get_summary api endpoint.
+
+=== "MTLLM Example"
     ```jac linenums="1"
-    --8<-- "support/jac-lang.org/docs/examples/littleX/src/LittleX_step4.jac"
+    --8<-- "support/jac-lang.org/docs/examples/littleX/src/mtllm_example.jac"
     ```
 
 ### **Lesson 5: Exploring Graph Security**
@@ -515,20 +537,49 @@ You leave the Living Room, and the system turns off the lights and updates its r
       - Update profile
 
         * A user updates their profile.
-        * **Create Tweet Walker**
+        * **Update Tweet Walker Ability**
+                  ```jac
+                  walker update_tweet :visit_profile: {
+                        has tweet_id: str;
+                        has updated_content: str;
+
+                        can visit_tweet with profile entry {
+                              tweet_node = &self.tweet_id;
+                              visit tweet_node;
+                        }
+
+                        can update_tweet with tweet entry {
+                              here.content = self.updated_content;
+                              report here;
+                        }
+                  }
+                  ```
+        * **Update Profile Node Ability**
+
+            * It replaces the abilities in walker.
                   ```jac
                   can update with update_profile entry {
                         self.username = here.new_username;
                         report self;
                   }
                   ```
-        * As `update_profile` walker is sapwned on `Profile`, It visits to `Profile`.
+        * As `update_profile` walker is spawned on `Profile`, it visits to `Profile`.
         *  With the entry of the `update_profile` walker, Profile will be updated.
 
       - Get profile
 
         * Get profile details.
+        * **Update Tweet Walker Ability**
+                  ```jac
+                  walker get_profile :visit_profile: {
+                        can get_profile with profile entry {
+                              report here;
+                        }
+                  }
+                  ```
         * **Create get ability**
+
+            * It replaces the abilities in walker.
                   ```jac
                   can get with get_profile entry {
                         report self;
@@ -539,8 +590,22 @@ You leave the Living Room, and the system turns off the lights and updates its r
 
       - Follow profile
 
-        * Follwing a user.
-        * **Follow Request Ability**
+        * Following a user.
+        * **Update Tweet Walker Ability**
+                  ```jac
+                  walker follow_request :visit_profile: {
+                        has profile_id: str;
+
+                        can follow with profile entry {
+                              here.followees.append(self.profile_id);
+                              here +:follow():+> &self.profile_id;
+                              report here;
+                        }
+                  }
+                  ```
+        * **Follow Request Node Ability**
+
+            * It replaces the abilities in walker.
                   ```jac
                   can follow with follow_request entry {
                         current_profile = [root-->(`?Profile)];
@@ -548,15 +613,29 @@ You leave the Living Room, and the system turns off the lights and updates its r
                         report self;
                   }
                   ```
-        * As `follow_request` walker is sapwned on `Profile`, It visits to `Profile`.
-        *  With the entry of the `follow_request` walker, follwe edge is created and connected.
+        * As `follow_request` walker is spawned on `Profile`, it visits to `Profile`.
+        *  With the entry of the `follow_request` walker, `Follow` edge is created and connected.
         * `[root-->(`?Profile)]` gets the current user profile.
         * `current_profile[0] +:Follow():+> self` connects the followee with Follow edge.
 
       - Unfollow profile
 
-        * Unfollwing a user.
-        * **Unfollow profile Ability**
+        * Unfollowing a user.
+        * **Unfollow Profile Walker Ability**
+                  ```jac
+                  walker un_follow_request :visit_profile: {
+                        has profile_id: str;
+
+                        can un_follow with profile entry {
+                              here.followees.remove(self.profile_id);
+                              here del-:follow:-> &self.profile_id;
+                              report here;
+                        }
+                  }
+                  ```
+        * **Unfollow Profile Node Ability**
+
+            * It replaces the abilities in walker.
                   ```jac
                   can un_follow with un_follow_request entry {
                         current_profile = [root-->(`?Profile)];
@@ -564,29 +643,62 @@ You leave the Living Room, and the system turns off the lights and updates its r
                         report self;
                   }
                   ```
-        * As `un_follow_request` walker is sapwned on `Profile`, It visits to `Profile`.
-        *  With the entry of the `un_follow_request` walker, follwe edge is disconnected.
+        * As `un_follow_request` walker is spawned on `Profile`, it visits to `Profile`.
+        *  With the entry of the `un_follow_request` walker, `Follow` edge is disconnected.
         * `[root-->(`?Profile)]` gets the current user profile.
         * `current_profile[0] del-:Follow:-> self` disconnects the followee with Follow edge.
 
       - Update Tweet
 
         * User updated their tweet.
-        * **Update Tweet  Ability**
+        * **Update Tweet Walker Ability**
+
+                  ```jac
+                  walker update_tweet :visit_profile: {
+                        has tweet_id: str;
+                        has updated_content: str;
+
+                        can visit_tweet with profile entry {
+                              tweet_node = &self.tweet_id;
+                              visit tweet_node;
+                        }
+
+                        can update_tweet with tweet entry {
+                              here.content = self.updated_content;
+                              report here;
+                        }
+                  }
+                  ```
+        * **Update Tweet Node Ability**
+
+            * It replaces the abilities in walker.
                   ```jac
                   can update with update_tweet exit {
                         self.content = here.updated_content;
                         report self;
                   }
                   ```
-        * As `update_tweet` walker is sapwned on `Tweet`, It visits to `Tweet`.
-        *  With the exit of the `update_tweet` walker, tweet is updated.
+        * As `update_tweet` walker is spawned on `Tweet`, it visits to `Tweet`.
+        *  With the exit of the `update_tweet` walker, the tweet is updated.
         * `self.content = here.updated_content` updated the current tweet.
 
       - Delete Tweet
 
         * Deletes the tweet.
-        * **Delete Tweet Ability**
+        * **Delete Tweet Walker Ability**
+                  ```jac
+                  walker remove_tweet :visit_profile: {
+                        has tweet_id: str;
+
+                        can remove_tweet with profile entry {
+                              tweet_node = &self.tweet_id;
+                              here del--> tweet_node;
+                        }
+                  }
+                  ```
+        * **Delete Tweet Node Ability**
+
+            * It replaces the abilities in walker.
                   ```jac
                   can delete with remove_tweet exit {
                         del self;
@@ -599,7 +711,22 @@ You leave the Living Room, and the system turns off the lights and updates its r
       - Like Tweet
 
         * User likes the tweet.
-        * **Like Tweet Ability**
+        * **Like Tweet Walker Ability**
+                  ```jac
+                  walker like_tweet :visit_profile: {
+                        has tweet_id: str;
+
+                        can like with profile entry {
+                              tweet_node = &self.tweet_id;
+                              Jac.unrestrict(tweet_node, level="CONNECT");
+                              tweet_node +:like():+> here;
+                              report tweet_node;
+                        }
+                  }
+                  ```
+        * **Like Tweet Node Ability**
+
+            * It replaces the abilities in walker.
                   ```jac
                   can like_tweet with like_tweet entry {
                         current_profile = [root-->(`?Profile)];
@@ -607,7 +734,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
                         report self;
                   }
                   ```
-        * As `like_tweet` walker is sapwned on `Tweet`, It visits to `Tweet`.
+        * As `like_tweet` walker is spawned on `Tweet`, it visits to `Tweet`.
         *  With the entry of the `like_tweet` walker, tweet is liked.
         * `[root-->(`?Profile)]` gets the current user profile.
         * `self +:Like():+> current_profile[0]` connects the user with `Like` edge.
@@ -615,7 +742,21 @@ You leave the Living Room, and the system turns off the lights and updates its r
       - Remove Like Ability
 
         * User removes the like.
-        * **Remove Like Ability**
+        * **Remove Like Walker Ability**
+                  ```jac
+                  walker remove_like :visit_profile: {
+                        has tweet_id: str;
+
+                        can remove_like with profile entry {
+                              tweet_node = &self.tweet_id;
+                              tweet_node del-:like:-> here;
+                              report tweet_node;
+                        }
+                  }
+                  ```
+        * **Remove Like Node Ability**
+
+            * It replaces the abilities in walker.
                   ```jac
                   can remove_like with remove_like entry {
                         current_profile = [root-->(`?Profile)];
@@ -623,7 +764,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
                         report self;
                   }
                   ```
-        * As `remove_like` walker is sapwned on `Tweet`, It visits to `Tweet`.
+        * As `remove_like` walker is spawned on `Tweet`, it visits to `Tweet`.
         *  With the entry of the `remove_like` walker, like is removed.
         * `[root-->(`?Profile)]` gets the current user profile.
         * `self del-:Like:-> current_profile[0]` disconnects the user with `Like` edge.
@@ -631,7 +772,24 @@ You leave the Living Room, and the system turns off the lights and updates its r
       - Comment Ability
 
         * When a user creates a tweet, it is private by default.
+        * **Comment Walker Ability**
+                  ```jac
+                  walker comment_tweet :visit_profile: {
+                        has tweet_id: str;
+                        has content: str;
+
+                        can add_comment with profile entry {
+                              comment_node = here ++> comment(content=self.content);
+                              tweet_node = &self.tweet_id;
+                              Jac.unrestrict(tweet_node, level="CONNECT");
+                              tweet_node ++> comment_node[0];
+                              report comment_node[0];
+                        }
+                  }
+                  ```
         * **Comment Ability**
+
+            * It replaces the abilities in walker.
                   ```jac
                   can comment with comment_tweet entry {
                         current_profile = [root-->(`?Profile)];
@@ -641,7 +799,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
                         report comment_node[0];
                   }
                   ```
-        * As `comment_tweet` walker is sapwned on `Tweet`, It visits to `Tweet`.
+        * As `comment_tweet` walker is spawned on `Tweet`, it visits to `Tweet`.
         *  With the entry of the `comment_tweet` walker, comment is added to the tweet.
         * `[root-->(`?Profile)]` gets the current user profile.
         * `comment_node = current_profile[0] ++> Comment(content=here.content)` connects the user with `Comment` node.
@@ -649,7 +807,37 @@ You leave the Living Room, and the system turns off the lights and updates its r
       - Load Tweets
 
         * Load tweet information.
-        * **Load Tweets  Ability**
+        * **Load Tweet Walker Ability**
+                  ```jac
+                  walker load_tweets :visit_profile: {
+                        has if_report: bool = False;
+                        has tweets: list = [];
+
+                        can go_to_tweet with profile entry {
+                              visit [-->](`?tweet);
+                        }
+
+                        can load_tweets with tweet entry {
+                              Jac.unrestrict(here, level="READ");
+                              comments = here spawn load_comments();
+                              likes = here spawn load_likes();
+                              tweet_content = here spawn load_tweet();
+
+                              tweet_info = {
+                                    "comments": comments.comments,
+                                    "likes": likes.likes,
+                                    "tweet": tweet_content.tweet_info
+                              };
+                              self.tweets.append(tweet_info);
+                              if self.if_report {
+                                    report self.tweets;
+                              }
+                        }
+                  }
+                  ```
+        * **Load Tweets Node Ability**
+
+            * It replaces the abilities in walker.
                   ```jac
                   can get_info()-> TweetInfo {
                         return TweetInfo(
@@ -661,7 +849,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
                         );
                   }
                   ```
-                  * This defines a ablitiy named `get_info` within the `Tweet` node and itnreturns an instance of the `TweetInfo` node.
+                  * This defines a abilitiy named `get_info` within the `Tweet` node and it returns an instance of the `TweetInfo` node.
                   * `id=jid(self)`retrieves the unique jac identifier (jid) of the current `Tweet` node.
                   * This assigns the `content` property of the current `Tweet` object to the `content` field of the `TweetInfo` object that has variables id, content, embedding, likes, comments.
 
@@ -676,7 +864,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
 
 **Why is it important?**
 
-- **Scalability at its Core**: Handles dynamic workloads by effortlessly scaling microservices.
+- **Scalability at its Core**: It handles dynamic workloads by effortlessly scaling microservices.
 - **Seamless Integration**: Makes advanced cloud-based service deployment intuitive and efficient, reducing the operational overhead.
 - **Flexible and Dynamic**: Allows you to import Python modules dynamically, adapting to evolving application requirements.
 - **Optimized for Developers**: Simplifies complex backend orchestration, enabling more focus on feature development and innovation.
