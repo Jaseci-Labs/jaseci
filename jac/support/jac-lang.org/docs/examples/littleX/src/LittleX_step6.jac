@@ -20,12 +20,80 @@ summarize_tweets(tweets: list[str]) -> 'Summarisation': str by llm();
 
 node Profile {
     has username: str = "";
+
+    can update with update_profile entry {
+        self.username = here.new_username;
+        report self;
+    }
+
+    can get with get_profile entry {
+        report self;
+    }
+
+    can follow with follow_request entry {
+        current_profile = [root-->(`?Profile)];
+        current_profile[0] +:Follow():+> self;
+        report self;
+    }
+
+    can un_follow with un_follow_request entry {
+        current_profile = [root-->(`?Profile)];
+        current_profile[0] del-:Follow:-> self;
+        report self;
+    }
+}
+
+obj TweetInfo {
+    has id: str;
+    has content: str;
+    has embedding: list;
+    has likes: list;
+    has comments: list;
 }
 
 node Tweet {
     has content: str;
     has embedding: list;
     has created_at: str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S");
+
+    can update with update_tweet exit {
+        self.content = here.updated_content;
+        report self;
+    }
+
+    can delete with remove_tweet exit {
+        del self;
+    }
+
+    can like_tweet with like_tweet entry {
+        current_profile = [root-->(`?Profile)];
+        self +:Like():+> current_profile[0];
+        report self;
+    }
+
+    can remove_like with remove_like entry {
+        current_profile = [root-->(`?Profile)];
+        self del-:Like:-> current_profile[0];
+        report self;
+    }
+
+    can comment with comment_tweet entry {
+        current_profile = [root-->(`?Profile)];
+        comment_node = current_profile[0] ++> Comment(content=here.content);
+        Jac.unrestrict(comment_node[0], level="CONNECT");
+        self ++> comment_node[0];
+        report comment_node[0];
+    }
+
+    can get_info()-> TweetInfo {
+        return TweetInfo(
+            id=jid(self),
+            content=self.content,
+            embedding=self.embedding,
+            likes=[i.username for i in [self-:Like:->]],
+            comments=[{"id": jid(i), "content": i.content} for i in [self-->(`?Comment)]]
+        );
+    }
 }
 
 node Comment {
