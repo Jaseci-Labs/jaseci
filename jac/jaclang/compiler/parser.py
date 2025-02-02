@@ -3222,7 +3222,7 @@ class JacParser(Pass):
             """
             consume = None
             name = None
-            if isinstance(kid[0], ast.SubNodeList):
+            if len(kid) == 2:
                 consume = kid[0]
                 name = kid[1]
             else:
@@ -3237,15 +3237,6 @@ class JacParser(Pass):
                     )
                 )
             else:
-                if isinstance(kid[1], ast.ArchRef) and isinstance(
-                    kid[0], ast.ArchRefChain
-                ):
-                    return self.nu(
-                        ast.ArchRefChain(
-                            archs=[*kid[0].archs, kid[1]],
-                            kid=[*kid[0].kid, kid[1]],
-                        )
-                    )
                 raise self.ice()
 
         def abil_to_arch_chain(self, kid: list[ast.AstNode]) -> ast.ArchRefChain:
