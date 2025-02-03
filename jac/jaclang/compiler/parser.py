@@ -1498,48 +1498,37 @@ class JacParser(Pass):
                         expression code_block else_stmt?
                     | KW_ASYNC? KW_FOR expression KW_IN expression code_block else_stmt?
             """
-            chomp = [*kid]
-            is_async = bool(
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_ASYNC
-            )
-            chomp = chomp[1:] if is_async else chomp
-            if isinstance(chomp[1], ast.Assignment):
-                if (
-                    isinstance(chomp[3], ast.Expr)
-                    and isinstance(chomp[5], ast.Assignment)
-                    and isinstance(chomp[6], ast.SubNodeList)
-                ):
-                    return ast.IterForStmt(
+            is_async = bool(self.match_token(Tok.KW_ASYNC))
+            self.consume_token(Tok.KW_FOR)
+            if iter := self.match(ast.Assignment):
+                self.consume_token(Tok.KW_TO)
+                condition = self.consume(ast.Expr)
+                self.consume_token(Tok.KW_BY)
+                count_by = self.consume(ast.Assignment)
+                body = self.consume(ast.SubNodeList)
+                else_body = self.match(ast.ElseStmt)
+                return ast.IterForStmt(
                         is_async=is_async,
-                        iter=chomp[1],
-                        condition=chomp[3],
-                        count_by=chomp[5],
-                        body=chomp[6],
-                        else_body=(
-                            chomp[-1] if isinstance(chomp[-1], ast.ElseStmt) else None
-                        ),
-                        kid=kid,
-                    )
-                else:
-                    raise self.ice()
-            elif isinstance(chomp[1], ast.Expr):
-                if isinstance(chomp[3], ast.Expr) and isinstance(
-                    chomp[4], ast.SubNodeList
-                ):
-                    return ast.InForStmt(
-                        is_async=is_async,
-                        target=chomp[1],
-                        collection=chomp[3],
-                        body=chomp[4],
-                        else_body=(
-                            chomp[-1] if isinstance(chomp[-1], ast.ElseStmt) else None
-                        ),
-                        kid=kid,
-                    )
-                else:
-                    raise self.ice()
-            else:
-                raise self.ice()
+                        iter=iter,
+                        condition=condition,
+                        count_by=count_by,
+                        body=body,
+                        else_body=else_body,
+                        kid=kid
+                )
+            target = self.consume(ast.Expr)
+            self.consume_token(Tok.KW_IN)
+            collection = self.consume(ast.Expr)
+            body = self.consume(ast.SubNodeList)
+            else_body = self.match(ast.ElseStmt)
+            return ast.InForStmt(
+                    is_async=is_async,
+                    target=target,
+                    collection=collection,
+                    body=body,
+                    else_body=else_body,
+                    kid=kid,
+                )
 
         def while_stmt(self, kid: list[ast.AstNode]) -> ast.WhileStmt:
             """Grammar rule.
