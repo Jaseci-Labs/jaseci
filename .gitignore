@@ -9,3 +9,4 @@ __jac_gen__/
 *.bak
 *.dat
 *.dir
+*.log

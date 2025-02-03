@@ -61,3 +61,4 @@ out.txt
 *.bak
 *.dat
 *.dir
+*.log
