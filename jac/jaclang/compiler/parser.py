@@ -467,7 +467,7 @@ class JacParser(Pass):
                 kid=kid,
             )
 
-        def import_path(self, kid: list[ast.AstNode]) -> ast.ModulePath:
+        def import_path(self, _: None) -> ast.ModulePath:
             """Grammar rule.
 
             import_path: named_ref (DOT named_ref)* (KW_AS NAME)?
@@ -480,12 +480,10 @@ class JacParser(Pass):
                 path=valid_path,
                 level=0,
                 alias=alias,
-                kid=kid,
+                kid=self.nodes,
             )
 
-        def import_items(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.ModuleItem]:
+        def import_items(self, _: None) -> ast.SubNodeList[ast.ModuleItem]:
             """Grammar rule.
 
             import_items: (import_item COMMA)* import_item COMMA?
@@ -497,11 +495,11 @@ class JacParser(Pass):
             ret = ast.SubNodeList[ast.ModuleItem](
                 items=items,
                 delim=Tok.COMMA,
-                kid=kid,
+                kid=self.nodes,
             )
             return ret
 
-        def import_item(self, kid: list[ast.AstNode]) -> ast.ModuleItem:
+        def import_item(self, _: None) -> ast.ModuleItem:
             """Grammar rule.
 
             import_item: named_ref (KW_AS NAME)?
@@ -511,11 +509,11 @@ class JacParser(Pass):
             return ast.ModuleItem(
                 name=name,
                 alias=alias,
-                kid=kid,
+                kid=self.nodes,
             )
 
         def architype(
-            self, kid: list[ast.AstNode]
+            self, _: None
         ) -> ast.ArchSpec | ast.ArchDef | ast.Enum | ast.EnumDef:
             """Grammar rule.
 
@@ -539,7 +537,7 @@ class JacParser(Pass):
                 )
             return archspec
 
-        def architype_decl(self, kid: list[ast.AstNode]) -> ast.ArchSpec:
+        def architype_decl(self, _: None) -> ast.ArchSpec:
             """Grammar rule.
 
             architype_decl: arch_type access_tag? STRING? NAME inherited_archs? (member_block | SEMI)
@@ -564,7 +562,7 @@ class JacParser(Pass):
                 access=access,
                 base_classes=inh,
                 body=body,
-                kid=kid,
+                kid=self.nodes,
             )
 
         def architype_def(self, kid: list[ast.AstNode]) -> ast.ArchDef:
@@ -664,7 +662,7 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def enum(self, kid: list[ast.AstNode]) -> ast.Enum | ast.EnumDef:
+        def enum(self, _: None) -> ast.Enum | ast.EnumDef:
             """Grammar rule.
 
             enum: decorators? enum_decl
@@ -677,7 +675,7 @@ class JacParser(Pass):
                 return enum_decl
             return self.match(ast.Enum) or self.consume(ast.EnumDef)
 
-        def enum_decl(self, kid: list[ast.AstNode]) -> ast.Enum:
+        def enum_decl(self, _: None) -> ast.Enum:
             """Grammar rule.
 
             enum_decl: KW_ENUM access_tag? STRING? NAME inherited_archs? (enum_block | SEMI)
@@ -699,7 +697,7 @@ class JacParser(Pass):
                 access=access,
                 base_classes=inh,
                 body=body,
-                kid=kid,
+                kid=self.nodes,
             )
 
         def enum_def(self, kid: list[ast.AstNode]) -> ast.EnumDef:
@@ -729,7 +727,7 @@ class JacParser(Pass):
             ret.items = [i for i in kid if isinstance(i, ast.EnumBlockStmt)]
             return ret
 
-        def enum_stmt(self, kid: list[ast.AstNode]) -> ast.EnumBlockStmt:
+        def enum_stmt(self, _: None) -> ast.EnumBlockStmt:
             """Grammar rule.
 
             enum_stmt: NAME (COLON STRING)? EQ expression
@@ -754,7 +752,7 @@ class JacParser(Pass):
                 target=targ,
                 value=expr,
                 type_tag=None,
-                kid=kid,
+                kid=self.nodes,
                 semstr=semstr,
                 is_enum_stmt=True,
             )
