@@ -540,9 +540,9 @@ class NameAtom(AtomExpr, EnumBlockStmt):
 class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode, AstSemStrNode):
     """ArchSpec node type for Jac Ast."""
 
-    def __init__(self, decorators: Optional[SubNodeList[Expr]] = None) -> None:
+    def __init__(self, decorators: Optional[list[Expr]] = None) -> None:
         """Initialize walker statement only node."""
-        self.decorators = decorators
+        self.decorators: Optional[list[Expr]] = decorators
 
 
 class MatchPattern(AstNode):
@@ -1130,7 +1130,7 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
         semstr: Optional[String] = None,
-        decorators: Optional[SubNodeList[Expr]] = None,
+        decorators: Optional[list[Expr]] = None,
     ) -> None:
         """Initialize object arch node."""
         self.name = name
@@ -1188,13 +1188,17 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
             res = res and self.body.normalize(deep) if self.body else res
             res = res and self.doc.normalize(deep) if self.doc else res
             res = res and self.semstr.normalize(deep) if self.semstr else res
-            res = res and self.decorators.normalize(deep) if self.decorators else res
+            if self.decorators:
+                for i in self.decorators:
+                    res = res and i.normalize(deep)
         new_kid: list[AstNode] = []
         if self.doc:
             new_kid.append(self.doc)
         if self.decorators:
             new_kid.append(self.gen_token(Tok.DECOR_OP))
-            new_kid.append(self.decorators)
+            for dec in self.decorators:
+                new_kid.append(dec)
+                new_kid.append(self.gen_token(Tok.WS))
         new_kid.append(self.arch_type)
         if self.access:
             new_kid.append(self.access)
@@ -1260,7 +1264,7 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
         semstr: Optional[String] = None,
-        decorators: Optional[SubNodeList[Expr]] = None,
+        decorators: Optional[list[Expr]] = None,
     ) -> None:
         """Initialize object arch node."""
         self.name = name
@@ -1290,11 +1294,15 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
             res = res and self.body.normalize(deep) if self.body else res
             res = res and self.doc.normalize(deep) if self.doc else res
             res = res and self.semstr.normalize(deep) if self.semstr else res
-            res = res and self.decorators.normalize(deep) if self.decorators else res
+            if self.decorators:
+                for i in self.decorators:
+                    res = res and i.normalize(deep)
         new_kid: list[AstNode] = []
         if self.decorators:
             new_kid.append(self.gen_token(Tok.DECOR_OP))
-            new_kid.append(self.decorators)
+            for dec in self.decorators:
+                new_kid.append(dec)
+                new_kid.append(self.gen_token(Tok.WS))
         if self.doc:
             new_kid.append(self.doc)
         new_kid.append(self.gen_token(Tok.KW_ENUM))
@@ -1329,7 +1337,6 @@ class EnumDef(AstImplOnlyNode):
         body: SubNodeList[EnumBlockStmt],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
-        decorators: Optional[SubNodeList[Expr]] = None,
         decl_link: Optional[Enum] = None,
     ) -> None:
         """Initialize arch def node."""

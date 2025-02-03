@@ -913,6 +913,8 @@ class PyastGenPass(Pass):
         """
         if isinstance(node.body, ast.AstImplOnlyNode):
             self.traverse(node.body)
+        for dec in node.decorators or []:
+            self.traverse(dec)
 
     def exit_architype(self, node: ast.Architype) -> None:
         """Sub objects.
@@ -923,17 +925,19 @@ class PyastGenPass(Pass):
         base_classes: Optional[SubNodeList[AtomType]],
         body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
         doc: Optional[String],
-        decorators: Optional[SubNodeList[ExprType]],
+        decorators: Optional[list[Expr]],
         """
         body = self.resolve_stmt_block(
             node.body.body if isinstance(node.body, ast.ArchDef) else node.body,
             doc=node.doc,
         )
-        decorators = (
-            node.decorators.gen.py_ast
-            if isinstance(node.decorators, ast.SubNodeList)
-            else []
-        )
+        decorators = []
+        if node.decorators:
+            decorators = [
+                dec.gen.py_ast[0]
+                for dec in node.decorators
+                if isinstance(dec, ast.Expr)
+            ]
 
         ds_on_entry, ds_on_exit = self.collect_events(node)
         if node.arch_type.name != Tok.KW_CLASS:
@@ -1087,6 +1091,8 @@ class PyastGenPass(Pass):
         """
         if isinstance(node.body, ast.AstImplOnlyNode):
             self.traverse(node.body)
+        for dec in node.decorators or []:
+            self.traverse(dec)
 
     def exit_enum(self, node: ast.Enum) -> None:
         """Sub objects.
@@ -1103,11 +1109,13 @@ class PyastGenPass(Pass):
             node.body.body if isinstance(node.body, ast.EnumDef) else node.body,
             doc=node.doc,
         )
-        decorators = (
-            node.decorators.gen.py_ast
-            if isinstance(node.decorators, ast.SubNodeList)
-            else []
-        )
+        decorators = []
+        if node.decorators:
+            decorators = [
+                dec.gen.py_ast[0]
+                for dec in node.decorators
+                if isinstance(dec, ast.Expr)
+            ]
         base_classes = node.base_classes.gen.py_ast if node.base_classes else []
         if isinstance(base_classes, list):
             base_classes.append(

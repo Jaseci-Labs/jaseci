@@ -354,9 +354,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         converted_decorators_list = [self.convert(i) for i in node.decorator_list]
         decorators = [i for i in converted_decorators_list if isinstance(i, ast.Expr)]
         valid_decorators = (
-            ast.SubNodeList[ast.Expr](
-                items=decorators, delim=Tok.DECOR_OP, kid=decorators
-            )
+            [dec for dec in decorators if isinstance(dec, ast.Expr)]
             if decorators
             else None
         )

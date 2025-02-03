@@ -5,7 +5,7 @@ from __future__ import annotations
 import keyword
 import logging
 import os
-from typing import Callable, TypeAlias
+from typing import Callable, TypeAlias, cast
 
 
 import jaclang.compiler.absyntree as ast
@@ -477,8 +477,8 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.SubNodeList):
                 if isinstance(kid[1], ast.ArchSpec):
-                    kid[1].decorators = kid[0]
-                    kid[1].add_kids_left([kid[0]])
+                    kid[1].decorators = [cast(ast.Expr, i) for i in kid[0].items]
+                    kid[1].add_kids_left(kid[0].items)
                     return self.nu(kid[1])
                 else:
                     raise self.ice()
@@ -635,8 +635,8 @@ class JacParser(Pass):
             """
             if isinstance(kid[0], ast.SubNodeList):
                 if isinstance(kid[1], ast.Enum):
-                    kid[1].decorators = kid[0]
-                    kid[1].add_kids_left([kid[0]])
+                    kid[1].decorators = [cast(ast.Expr, i) for i in kid[0].items]
+                    kid[1].add_kids_left(kid[0].items)
                     return self.nu(kid[1])
                 else:
                     raise self.ice()
