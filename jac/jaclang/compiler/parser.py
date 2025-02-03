@@ -1761,25 +1761,29 @@ class JacParser(Pass):
                 kid=self.nodes,
             )
         
-        def global_ref(self, kid: list[ast.AstNode]) -> ast.GlobalStmt:
+        def global_ref(self, _: None) -> ast.GlobalStmt:
             """Grammar rule.
 
             global_ref: GLOBAL_OP name_list
             """
-            if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.SubNodeList):
-                return ast.GlobalStmt(target=kid[1], kid=kid)
-            else:
-                raise self.ice()
+            self.consume_token(Tok.GLOBAL_OP)
+            target = self.consume(ast.SubNodeList)
+            return ast.GlobalStmt(
+                target=target,
+                kid=self.nodes,
+            )
             
-        def nonlocal_ref(self, kid: list[ast.AstNode]) -> ast.NonLocalStmt:
+        def nonlocal_ref(self, _: None) -> ast.NonLocalStmt:
             """Grammar rule.
 
             nonlocal_ref: NONLOCAL_OP name_list
             """
-            if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.SubNodeList):
-                return ast.NonLocalStmt(target=kid[1], kid=kid)
-            else:
-                raise self.ice()
+            self.consume_token(Tok.NONLOCAL_OP)
+            target = self.consume(ast.SubNodeList)
+            return ast.NonLocalStmt(
+                target=target,
+                kid=self.nodes,
+            )
 
         def assignment(self, kid: list[ast.AstNode]) -> ast.Assignment:
             """Grammar rule.
