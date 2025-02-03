@@ -475,7 +475,7 @@ class JacParser(Pass):
             valid_path = [self.consume(ast.Name)]
             while self.match_token(Tok.DOT):
                 valid_path.append(self.consume(ast.Name))
-            alias = self.match_token(Tok.KW_AS) and self.consume(ast.Name)
+            alias = self.consume(ast.Name) if self.match_token(Tok.KW_AS) else None
             return ast.ModulePath(
                 path=valid_path,
                 level=0,
@@ -507,8 +507,7 @@ class JacParser(Pass):
             import_item: named_ref (KW_AS NAME)?
             """
             name = self.consume(ast.Name)
-            if self.match_token(Tok.KW_AS):
-                alias = self.consume(ast.Name)
+            alias = self.consume(ast.Name) if self.match_token(Tok.KW_AS) else None
             return ast.ModuleItem(
                 name=name,
                 alias=alias,
@@ -747,8 +746,8 @@ class JacParser(Pass):
             ):
                 return stmt
             name = self.consume(ast.Name)
-            semstr = self.match_token(Tok.COLON) and self.consume(ast.String)
-            expr = self.match_token(Tok.EQ) and self.consume(ast.Expr)
+            semstr = self.consume(ast.String) if self.match_token(Tok.COLON) else None
+            expr = self.consume(ast.Expr) if self.match_token(Tok.EQ) else None
             targ = ast.SubNodeList[ast.Expr](items=[name], delim=Tok.COMMA, kid=[name])
             self.nodes[0] = targ
             return ast.Assignment(
