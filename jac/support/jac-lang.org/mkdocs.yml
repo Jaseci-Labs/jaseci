@@ -38,6 +38,7 @@ nav:
         - "for_coders/jac-cloud/jac_cloud_env_vars.md"
         - "for_coders/jac-cloud/jac_cloud_webhook.md"
         - "for_coders/jac-cloud/jac_cloud_websocket.md"
+        - "for_coders/jac-cloud/cloud-orc-integration.md"
       - Tools:
         - "for_coders/tools/testing.md"
         - "for_coders/tools/jac_streamlit.md"
