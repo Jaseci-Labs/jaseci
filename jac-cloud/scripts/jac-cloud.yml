@@ -114,7 +114,7 @@ spec:
       # Restart policy
       restartPolicy: Always
 ---
-# 6. Secret: OpenAI API key (optional example for completeness)
+# 6. Secret: OpenAI API key
 apiVersion: v1
 kind: Secret
 metadata:
@@ -122,4 +122,4 @@ metadata:
   namespace: littlex
 type: Opaque
 data:
-  openai-key: "c2stcHJvai0xTnRDVGpoUDg4YTFCcFU0cXUyclQzQmxia0ZKRjh2NndqbHgzZDVRWWNrMjBubjY="
+  openai-key: "<your_openai_key>"
