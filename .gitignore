@@ -1,3 +1,11 @@
 .jac_mypy_cache/
 __jac_gen__/
 .vscode
+
+# Jaclang session files
+*.session
+
+# session files
+*.bak
+*.dat
+*.dir
