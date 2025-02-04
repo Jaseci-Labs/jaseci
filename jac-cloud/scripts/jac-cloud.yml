@@ -4,6 +4,28 @@ kind: Namespace
 metadata:
   name: littlex
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: init-script
+  namespace: littlex
+data:
+  init_jac_cloud.sh: |
+    #!/bin/bash
+    set -e
+    echo "=== Starting jac-cloud Pod Initialization ==="
+    
+    NAMESPACE=${NAMESPACE:-default}
+    CONFIGMAP_NAME=${CONFIGMAP_NAME:-module-config}
+    FILE_NAME=${FILE_NAME:-example.jac}
+
+    echo "Using Namespace: $NAMESPACE"
+    echo "Running Jac File: $FILE_NAME"
+
+    jac orc_initialize "$NAMESPACE" || exit 1
+    jac serve "$FILE_NAME" || exit 1
+---
+
 # 2. ServiceAccount: jac-cloud-sa (in the littlex namespace)
 apiVersion: v1
 kind: ServiceAccount
@@ -80,8 +102,20 @@ spec:
       serviceAccountName: jac-cloud-sa
       containers:
       - name: jac-cloud
-        image: ashishmahendra/littlex:0.1
-        imagePullPolicy: Always
+        image: python:3.12-slim  # Use the Python base image
+        imagePullPolicy: IfNotPresent
+
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            echo "Installing dependencies..."
+            apt-get update && apt-get install -y --no-install-recommends git && apt-get clean && rm -rf /var/lib/apt/lists/*
+            echo "Cloning littleX repository..."
+            git clone --branch main --depth 1 https://github.com/Jaseci-Labs/littleX.git /app/littleX
+            echo "Installing Python dependencies..."
+            pip install --no-cache-dir -r /app/littleX/littleX_BE/requirements.txt openai jac-splice-orc
+            echo "Starting initialization script..."
+            /bin/bash /app/init_jac_cloud.sh
 
         # Environment variables for dynamic configuration
         env:
@@ -92,7 +126,7 @@ spec:
           - name: CONFIGMAP_NAME
             value: "module-config"
           - name: FILE_NAME
-            value: "littleX_BE/_archive/littleX_full.jac"
+            value: "/app/littleX/littleX_BE/_archive/littleX_full.jac"
           - name: OPENAI_API_KEY
             valueFrom:
               secretKeyRef:
@@ -103,6 +137,10 @@ spec:
         volumeMounts:
           - name: config-vol
             mountPath: /cfg
+          - name: init-script-vol
+            mountPath: /app/init_jac_cloud.sh
+            subPath: init_jac_cloud.sh
+
       volumes:
         - name: config-vol
           configMap:
@@ -110,6 +148,9 @@ spec:
             items:
               - key: module_config.json
                 path: module_config.json
+        - name: init-script-vol
+          configMap:
+            name: init-script
 
       # Restart policy
       restartPolicy: Always
