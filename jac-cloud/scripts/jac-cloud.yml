@@ -14,7 +14,7 @@ data:
     #!/bin/bash
     set -e
     echo "=== Starting jac-cloud Pod Initialization ==="
-    
+
     NAMESPACE=${NAMESPACE:-default}
     CONFIGMAP_NAME=${CONFIGMAP_NAME:-module-config}
     FILE_NAME=${FILE_NAME:-example.jac}
