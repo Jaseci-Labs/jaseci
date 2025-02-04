@@ -839,13 +839,14 @@ class JacParser(Pass):
                 return ability
             return ability
 
-        def ability_decl(self, kid: list[ast.AstNode]) -> ast.Ability:
+        def ability_decl(self, _: None) -> ast.Ability:
             """Grammar rule.
 
             ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?
                 named_ref (func_decl | event_clause) (code_block | SEMI)
             """
             signature: ast.FuncSignature | ast.EventSignature | None = None
+            body: ast.SubNodeList | None = None
             is_override = self.match_token(Tok.KW_OVERRIDE) is not None
             is_static = self.match_token(Tok.KW_STATIC) is not None
             self.consume_token(Tok.KW_CAN)
@@ -855,7 +856,8 @@ class JacParser(Pass):
             signature = self.match(ast.FuncSignature) or self.consume(
                 ast.EventSignature
             )
-            body = self.match(ast.SubNodeList)
+            if (body := self.match(ast.SubNodeList)) is None:
+                self.consume_token(Tok.SEMI)
             return ast.Ability(
                 name_ref=name,
                 is_async=False,
@@ -866,7 +868,7 @@ class JacParser(Pass):
                 semstr=semstr,
                 signature=signature,
                 body=body,
-                kid=kid,
+                kid=self.nodes,
             )
 
         def ability_def(self, kid: list[ast.AstNode]) -> ast.AbilityDef:
@@ -890,7 +892,7 @@ class JacParser(Pass):
 
         # We need separate production rule for abstract_ability because we don't
         # want to allow regular abilities outside of classed to be abstract.
-        def abstract_ability(self, kid: list[ast.AstNode]) -> ast.Ability:
+        def abstract_ability(self, _: None) -> ast.Ability:
             """Grammar rule.
 
             abstract_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?
@@ -906,6 +908,8 @@ class JacParser(Pass):
             signature = self.match(ast.FuncSignature) or self.consume(
                 ast.EventSignature
             )
+            self.consume_token(Tok.KW_ABSTRACT)
+            self.consume_token(Tok.SEMI)
             return ast.Ability(
                 name_ref=name,
                 is_async=False,
@@ -916,10 +920,10 @@ class JacParser(Pass):
                 semstr=semstr,
                 signature=signature,
                 body=None,
-                kid=kid,
+                kid=self.nodes,
             )
 
-        def genai_ability(self, kid: list[ast.AstNode]) -> ast.Ability:
+        def genai_ability(self, _: None) -> ast.Ability:
             """Grammar rule.
 
             genai_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?
@@ -936,6 +940,7 @@ class JacParser(Pass):
             )
             self.consume_token(Tok.KW_BY)
             body = self.consume(ast.FuncCall)
+            self.consume_token(Tok.SEMI)
             return ast.Ability(
                 name_ref=name,
                 is_async=False,
@@ -946,17 +951,17 @@ class JacParser(Pass):
                 semstr=semstr,
                 signature=signature,
                 body=body,
-                kid=kid,
+                kid=self.nodes,
             )
 
-        def event_clause(self, kid: list[ast.AstNode]) -> ast.EventSignature:
+        def event_clause(self, _: None) -> ast.EventSignature:
             """Grammar rule.
 
             event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (STRING? RETURN_HINT expression)?
             """
             return_spec: ast.Expr | None = None
             semstr: ast.String | None = None
-            self.match_token(Tok.KW_WITH)
+            self.consume_token(Tok.KW_WITH)
             type_specs = self.match(ast.Expr)
             event = self.match_token(Tok.KW_EXIT) or self.consume_token(Tok.KW_ENTRY)
             if semstr := self.match(ast.String):
@@ -967,7 +972,7 @@ class JacParser(Pass):
                 event=event,
                 arch_tag_info=type_specs,
                 return_type=return_spec,
-                kid=kid,
+                kid=self.nodes,
             )
 
         def func_decl(self, kid: list[ast.AstNode]) -> ast.FuncSignature:
@@ -1306,7 +1311,7 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def if_stmt(self, kid: list[ast.AstNode]) -> ast.IfStmt:
+        def if_stmt(self, _: None) -> ast.IfStmt:
             """Grammar rule.
 
             if_stmt: KW_IF expression code_block (elif_stmt | else_stmt)?
@@ -1319,10 +1324,10 @@ class JacParser(Pass):
                 condition=condition,
                 body=body,
                 else_body=else_body,
-                kid=kid,
+                kid=self.nodes,
             )
 
-        def elif_stmt(self, kid: list[ast.AstNode]) -> ast.ElseIf:
+        def elif_stmt(self, _: None) -> ast.ElseIf:
             """Grammar rule.
 
             elif_stmt: KW_ELIF expression code_block (elif_stmt | else_stmt)?
@@ -1335,10 +1340,10 @@ class JacParser(Pass):
                 condition=condition,
                 body=body,
                 else_body=else_body,
-                kid=kid,
+                kid=self.nodes,
             )
 
-        def else_stmt(self, kid: list[ast.AstNode]) -> ast.ElseStmt:
+        def else_stmt(self, _: None) -> ast.ElseStmt:
             """Grammar rule.
 
             else_stmt: KW_ELSE code_block
@@ -1347,10 +1352,10 @@ class JacParser(Pass):
             body = self.consume(ast.SubNodeList)
             return ast.ElseStmt(
                 body=body,
-                kid=kid,
+                kid=self.nodes,
             )
 
-        def try_stmt(self, kid: list[ast.AstNode]) -> ast.TryStmt:
+        def try_stmt(self, _: None) -> ast.TryStmt:
             """Grammar rule.
 
             try_stmt: KW_TRY code_block except_list? else_stmt? finally_stmt?
@@ -1365,7 +1370,7 @@ class JacParser(Pass):
                 excepts=except_list,
                 else_body=else_stmt,
                 finally_body=finally_stmt,
-                kid=kid,
+                kid=self.nodes,
             )
 
         def except_list(self, _: None) -> ast.SubNodeList[ast.Except]:
@@ -1373,20 +1378,16 @@ class JacParser(Pass):
 
             except_list: except_def+
             """
-            valid_kid = []
-            kid = self.nodes
+            items = [self.consume(ast.Except)]
             while expt := self.match(ast.Except):
-                valid_kid.append(expt)
-            if len(valid_kid) == len(kid):
-                return ast.SubNodeList[ast.Except](
-                    items=valid_kid,
-                    delim=Tok.WS,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+                items.append(expt)
+            return ast.SubNodeList[ast.Except](
+                items=items,
+                delim=Tok.WS,
+                kid=self.nodes,
+            )
 
-        def except_def(self, kid: list[ast.AstNode]) -> ast.Except:
+        def except_def(self, _: None) -> ast.Except:
             """Grammar rule.
 
             except_def: KW_EXCEPT expression (KW_AS NAME)? code_block
@@ -1401,10 +1402,10 @@ class JacParser(Pass):
                 ex_type=ex_type,
                 name=name,
                 body=body,
-                kid=kid,
+                kid=self.nodes,
             )
 
-        def finally_stmt(self, _: list[ast.AstNode]) -> ast.FinallyStmt:
+        def finally_stmt(self, _: None) -> ast.FinallyStmt:
             """Grammar rule.
 
             finally_stmt: KW_FINALLY code_block
