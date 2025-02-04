@@ -1821,38 +1821,32 @@ class JacParser(Pass):
                 semstr=semstr if isinstance(semstr, ast.String) else None,
             )
 
-        def expression(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def expression(self, _:None) -> ast.Expr:
             """Grammar rule.
 
             expression: walrus_assign
                     | pipe (KW_IF expression KW_ELSE expression)?
                     | lambda_expr
             """
-            if len(kid) > 1:
-                if (
-                    isinstance(kid[0], ast.Expr)
-                    and isinstance(kid[2], ast.Expr)
-                    and isinstance(kid[4], ast.Expr)
-                ):
-                    return ast.IfElseExpr(
-                        value=kid[0],
-                        condition=kid[2],
-                        else_value=kid[4],
-                        kid=kid,
-                    )
-                else:
-                    raise self.ice()
-            elif isinstance(kid[0], ast.Expr):
-                return kid[0]
-            else:
-                raise self.ice()
+            value = self.consume(ast.Expr)
+            if self.match_token(Tok.KW_IF):
+                condition = self.consume(ast.Expr)
+                self.consume_token(Tok.KW_ELSE)
+                else_value = self.consume(ast.Expr)
+                return ast.IfElseExpr(
+                    value=value,
+                    condition=condition,
+                    else_value=else_value,
+                    kid=self.nodes,
+                )
+            return value
 
-        def walrus_assign(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def walrus_assign(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             walrus_assign: (walrus_assign WALRUS_EQ)? pipe
             """
-            return self._binary_expr_unwind(kid)
+            return self._binary_expr_unwind(self.nodes)
 
         def lambda_expr(self, kid: list[ast.AstNode]) -> ast.LambdaExpr:
             """Grammar rule.
