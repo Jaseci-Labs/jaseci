@@ -1568,12 +1568,11 @@ class JacParser(Pass):
             items = [self.consume(ast.ExprAsItem)]
             while self.match_token(Tok.COMMA):
                 items.append(self.consume(ast.ExprAsItem))
-            ret = ast.SubNodeList[ast.ExprAsItem](
+            return ast.SubNodeList[ast.ExprAsItem](
                 items=items,
                 delim=Tok.COMMA,
                 kid=self.nodes,
             )
-            return ret
 
         def expr_as(self, _: None) -> ast.ExprAsItem:
             """Grammar rule.
