@@ -1821,7 +1821,7 @@ class JacParser(Pass):
                 semstr=semstr if isinstance(semstr, ast.String) else None,
             )
 
-        def expression(self, _:None) -> ast.Expr:
+        def expression(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             expression: walrus_assign
