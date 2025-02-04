@@ -660,7 +660,7 @@ class JacFormatPass(Pass):
         doc: Optional[Constant] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
         """
-        start = True
+        decr = True
         prev_token = None
 
         for i in node.kid:
@@ -688,21 +688,31 @@ class JacFormatPass(Pass):
                     self.emit_ln(node, i.gen.jac)
             elif isinstance(i, ast.Semi):
                 self.emit(node, i.gen.jac)
-            elif isinstance(i, ast.SubNodeList) and i.gen.jac.startswith("@"):
-                self.emit_ln(node, i.gen.jac)
+            elif (isinstance(i, ast.Token) and i.name == Tok.KW_CAN) and decr:
+                self.emit(node, i.gen.jac)
+                decr = False
             elif isinstance(i, ast.SubTag):
                 self.emit(node, i.gen.jac)
+            elif decr and not (
+                isinstance(i, ast.Token)
+                and i.gen.jac in ["override", "static", "async"]
+            ):
+                self.emit_ln(node, f"@{i.gen.jac}")
             else:
-                if start:
-                    self.emit(node, i.gen.jac)
-                    start = False
-                elif i.gen.jac[0] in [" ", "("]:
+                if i.gen.jac[0] in [" ", "("]:
                     self.emit(node, i.gen.jac)
                 else:
                     if prev_token and isinstance(prev_token, ast.String):
                         self.emit(node, i.gen.jac)
                     else:
-                        self.emit(node, f" {i.gen.jac}")
+                        if isinstance(i, ast.Token) and i.gen.jac in [
+                            "override",
+                            "static",
+                            "async",
+                        ]:
+                            self.emit(node, f"{i.gen.jac} ")
+                        else:
+                            self.emit(node, f" {i.gen.jac}")
             prev_token = i
 
     def exit_func_signature(self, node: ast.FuncSignature) -> None:
@@ -840,7 +850,7 @@ class JacFormatPass(Pass):
         base_classes: BaseClasses,
         body: Optional[EnumBlock],
         """
-        start = True
+        decr = True
         prev_token = None
         for i in node.kid:
             if isinstance(i, ast.String):
@@ -854,16 +864,16 @@ class JacFormatPass(Pass):
                     self.emit_ln(node, i.gen.jac)
             elif isinstance(i, ast.Semi):
                 self.emit(node, i.gen.jac)
-            elif isinstance(i, ast.SubNodeList) and i.gen.jac.startswith("@"):
-                self.emit_ln(node, i.gen.jac)
+            elif (isinstance(i, ast.Token) and i.name == Tok.KW_ENUM) and decr:
+                self.emit(node, i.gen.jac)
+                decr = False
+            elif decr:
+                self.emit_ln(node, f"@{i.gen.jac}")
             elif isinstance(i, ast.Token) and i.gen.jac == ":":
                 self.emit(node, f"{i.gen.jac} ")
             else:
-                if start or (
-                    prev_token and isinstance(prev_token, (ast.String, ast.Name))
-                ):
+                if prev_token and isinstance(prev_token, (ast.String, ast.Name)):
                     self.emit(node, i.gen.jac)
-                    start = False
                 else:
                     self.emit(node, f" {i.gen.jac}")
             prev_token = i
@@ -1459,7 +1469,7 @@ class JacFormatPass(Pass):
         doc: Optional[Constant] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
         """
-        start = True
+        decr = True
         prev_token = None
         for i in node.kid:
             if isinstance(i, ast.String):
@@ -1479,16 +1489,28 @@ class JacFormatPass(Pass):
                     self.emit_ln(node, "")
             elif isinstance(i, ast.Semi):
                 self.emit(node, f"{i.gen.jac} ")
-            elif isinstance(i, ast.SubNodeList) and i.gen.jac.startswith("@"):
-                self.emit_ln(node, i.gen.jac)
+
+            elif (
+                isinstance(i, ast.Token)
+                and i.name
+                in [
+                    Tok.KW_EDGE,
+                    Tok.KW_WALKER,
+                    Tok.KW_CLASS,
+                    Tok.KW_NODE,
+                    Tok.KW_OBJECT,
+                ]
+            ) and decr:
+                self.emit(node, i.gen.jac)
+                decr = False
+            elif decr:
+                self.emit_ln(node, f"@{i.gen.jac}")
+            elif (prev_token and isinstance(prev_token, ast.String)) or (
+                i.gen.jac.startswith(" ")
+            ):
+                self.emit(node, i.gen.jac)
             else:
-                if start or (prev_token and isinstance(prev_token, ast.String)):
-                    self.emit(node, i.gen.jac)
-                    start = False
-                elif i.gen.jac.startswith(" "):
-                    self.emit(node, i.gen.jac)
-                else:
-                    self.emit(node, f" {i.gen.jac}")
+                self.emit(node, f" {i.gen.jac}")
             prev_token = i
         if isinstance(node.kid[-1], ast.Semi) and not node.gen.jac.endswith("\n"):
             self.emit_ln(node, "")

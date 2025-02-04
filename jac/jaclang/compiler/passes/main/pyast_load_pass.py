@@ -195,10 +195,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         if len(valid_dec) != len(decorators):
             raise self.ice("Length mismatch in decorators on function")
         valid_decorators = (
-            ast.SubNodeList[ast.Expr](
-                items=valid_dec, delim=Tok.DECOR_OP, kid=decorators
-            )
-            if len(valid_dec)
+            [dec for dec in valid_dec if isinstance(dec, ast.Expr)]
+            if decorators
             else None
         )
         res = self.convert(node.args)

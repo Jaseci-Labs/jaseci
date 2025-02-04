@@ -1387,7 +1387,7 @@ class Ability(
         kid: Sequence[AstNode],
         semstr: Optional[String] = None,
         doc: Optional[String] = None,
-        decorators: Optional[SubNodeList[Expr]] = None,
+        decorators: Optional[list[Expr]] = None,
     ) -> None:
         """Initialize func arch node."""
         self.name_ref = name_ref
@@ -1448,15 +1448,17 @@ class Ability(
             res = res and self.signature.normalize(deep) if self.signature else res
             res = res and self.body.normalize(deep) if self.body else res
             res = res and self.semstr.normalize(deep) if self.semstr else res
-            res = res and self.decorators.normalize(deep) if self.decorators else res
+            for i in self.decorators or []:
+                res = res and i.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
         if self.doc:
             new_kid.append(self.doc)
         if self.decorators:
             new_kid.append(self.gen_token(Tok.DECOR_OP))
-            new_kid.append(self.decorators)
-            new_kid.append(self.gen_token(Tok.WS))
+            for dec in self.decorators:
+                new_kid.append(dec)
+                new_kid.append(self.gen_token(Tok.WS))
         if self.is_async:
             new_kid.append(self.gen_token(Tok.KW_ASYNC))
         if self.is_override:

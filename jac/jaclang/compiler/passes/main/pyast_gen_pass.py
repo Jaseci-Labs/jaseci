@@ -1161,6 +1161,8 @@ class PyastGenPass(Pass):
         """
         if isinstance(node.body, ast.AstImplOnlyNode):
             self.traverse(node.body)
+        for dec in node.decorators or []:
+            self.traverse(dec)
 
     def gen_llm_body(self, node: ast.Ability) -> list[ast3.AST]:
         """Generate the by LLM body."""
@@ -1181,7 +1183,7 @@ class PyastGenPass(Pass):
         signature: Optional[FuncSignature | ExprType | EventSignature],
         body: Optional[SubNodeList[CodeBlockStmt] | AbilityDef | FuncCall],
         doc: Optional[String],
-        decorators: Optional[SubNodeList[ExprType]],
+        decorators: Optional[List[ExprType]],
         """
         func_type = ast3.AsyncFunctionDef if node.is_async else ast3.FunctionDef
         body = (
@@ -1214,7 +1216,15 @@ class PyastGenPass(Pass):
                 f"Abstract ability {node.sym_name} should not have a body.",
                 node,
             )
-        decorator_list = node.decorators.gen.py_ast if node.decorators else []
+        # decorator_list = node.decorators.gen.py_ast if node.decorators else []
+        decorator_list = []
+        if node.decorators:
+            decorator_list = [
+                dec.gen.py_ast[0]
+                for dec in node.decorators
+                if isinstance(dec, ast.Expr)
+            ]
+
         if isinstance(node.body, ast.AstImplOnlyNode):
             self.needs_jac_feature()
             decorator_list.append(
