@@ -1717,6 +1717,7 @@ class JacParser(Pass):
             """
             self.consume_token(Tok.KW_IGNORE)
             target=self.consume(ast.Expr)
+            self.consume_token(Tok.SEMI)
             return ast.IgnoreStmt(
                 target=target,
                 kid=self.nodes,
@@ -1731,6 +1732,7 @@ class JacParser(Pass):
             sub_name = self.match(ast.SubNodeList)
             target=self.consume(ast.Expr)
             else_body = self.match(ast.ElseStmt)
+            self.consume_token(Tok.SEMI)
             return ast.VisitStmt(
                 vis_type=sub_name,
                 target=target,
@@ -1746,6 +1748,7 @@ class JacParser(Pass):
             self.consume_token(Tok.KW_REVISIT)
             target = self.match(ast.Expr)
             else_body = self.match(ast.ElseStmt)
+            self.consume_token(Tok.SEMI)
             return ast.RevisitStmt(
                 hops=target,
                 else_body=else_body,
@@ -1757,8 +1760,10 @@ class JacParser(Pass):
 
             disengage_stmt: KW_DISENGAGE SEMI
             """
+            kw = self.consume_token(Tok.KW_DISENGAGE)
+            semi = self.consume_token(Tok.SEMI)
             return ast.DisengageStmt(
-                kid=self.nodes,
+                kid=[kw,semi],
             )
         
         def global_ref(self, _: None) -> ast.GlobalStmt:
