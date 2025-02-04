@@ -1216,7 +1216,6 @@ class PyastGenPass(Pass):
                 f"Abstract ability {node.sym_name} should not have a body.",
                 node,
             )
-        # decorator_list = node.decorators.gen.py_ast if node.decorators else []
         decorator_list = []
         if node.decorators:
             decorator_list = [

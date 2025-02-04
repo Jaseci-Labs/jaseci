@@ -1497,12 +1497,10 @@ class AbilityDef(AstImplOnlyNode):
         body: SubNodeList[CodeBlockStmt],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
-        decorators: Optional[SubNodeList[Expr]] = None,
         decl_link: Optional[Ability] = None,
     ) -> None:
         """Initialize ability def node."""
         self.signature = signature
-        self.decorators = decorators
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
         AstImplOnlyNode.__init__(self, target=target, body=body, decl_link=decl_link)
@@ -1515,15 +1513,12 @@ class AbilityDef(AstImplOnlyNode):
             res = res and self.signature.normalize(deep)
             res = res and self.body.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
-            res = res and self.decorators.normalize(deep) if self.decorators else res
         new_kid: list[AstNode] = []
         if self.doc:
             new_kid.append(self.doc)
         new_kid.append(self.target)
         new_kid.append(self.signature)
-
         new_kid.append(self.body)
-
         self.set_kids(nodes=new_kid)
         return res
 

@@ -778,7 +778,6 @@ class JacParser(Pass):
                     | ability_def
             """
             chomp = [*kid]
-            # decorators = chomp[0] if isinstance(chomp[0], ast.SubNodeList) else None
             decorators = (
                 chomp[0].items if isinstance(chomp[0], ast.SubNodeList) else None
             )
@@ -794,7 +793,6 @@ class JacParser(Pass):
             if is_async and isinstance(ability, ast.Ability):
                 ability.is_async = True
                 ability.add_kids_left([is_async])
-            # if isinstance(decorators, ast.SubNodeList):
             if decorators:
                 for dec in decorators or []:
                     if (
@@ -805,7 +803,7 @@ class JacParser(Pass):
                         ability.is_static = True
                         decorators.remove(dec)  # noqa: B038
                         break
-            if decorators:
+            if decorators and isinstance(ability, ast.Ability):
                 ability.decorators = [cast(ast.Expr, i) for i in decorators]
                 ability.add_kids_left(decorators)
                 return self.nu(ability)
