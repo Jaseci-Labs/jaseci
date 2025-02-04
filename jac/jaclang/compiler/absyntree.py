@@ -1195,7 +1195,6 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
         if self.doc:
             new_kid.append(self.doc)
         if self.decorators:
-            new_kid.append(self.gen_token(Tok.DECOR_OP))
             for dec in self.decorators:
                 new_kid.append(dec)
                 new_kid.append(self.gen_token(Tok.WS))
@@ -1299,7 +1298,6 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
                     res = res and i.normalize(deep)
         new_kid: list[AstNode] = []
         if self.decorators:
-            new_kid.append(self.gen_token(Tok.DECOR_OP))
             for dec in self.decorators:
                 new_kid.append(dec)
                 new_kid.append(self.gen_token(Tok.WS))
@@ -1455,7 +1453,6 @@ class Ability(
         if self.doc:
             new_kid.append(self.doc)
         if self.decorators:
-            new_kid.append(self.gen_token(Tok.DECOR_OP))
             for dec in self.decorators:
                 new_kid.append(dec)
                 new_kid.append(self.gen_token(Tok.WS))

@@ -688,6 +688,9 @@ class JacFormatPass(Pass):
                     self.emit_ln(node, i.gen.jac)
             elif isinstance(i, ast.Semi):
                 self.emit(node, i.gen.jac)
+            elif isinstance(i, ast.Token) and i.value == "\n":
+                # used in unparse bcz of Tok.WS
+                continue
             elif (isinstance(i, ast.Token) and i.name == Tok.KW_CAN) and decr:
                 self.emit(node, i.gen.jac)
                 decr = False
@@ -867,7 +870,7 @@ class JacFormatPass(Pass):
             elif (isinstance(i, ast.Token) and i.name == Tok.KW_ENUM) and decr:
                 self.emit(node, i.gen.jac)
                 decr = False
-            elif decr:
+            elif decr and not (isinstance(i, ast.Token) and i.value == "\n"):
                 self.emit_ln(node, f"@{i.gen.jac}")
             elif isinstance(i, ast.Token) and i.gen.jac == ":":
                 self.emit(node, f"{i.gen.jac} ")
@@ -1503,7 +1506,7 @@ class JacFormatPass(Pass):
             ) and decr:
                 self.emit(node, i.gen.jac)
                 decr = False
-            elif decr:
+            elif decr and not (isinstance(i, ast.Token) and i.value == "\n"):
                 self.emit_ln(node, f"@{i.gen.jac}")
             elif (prev_token and isinstance(prev_token, ast.String)) or (
                 i.gen.jac.startswith(" ")
