@@ -50,6 +50,7 @@ class Gemini(BaseLLM):
     ) -> None:
         """Initialize the Anthropic API client."""
         import google.generativeai as genai  # type: ignore
+        import os
 
         super().__init__(verbose, max_tries, type_check)
         self.model_name = str(kwargs.get("model_name", "gemini-1.5-flash"))
@@ -57,7 +58,7 @@ class Gemini(BaseLLM):
         self.max_tokens = kwargs.get("max_tokens", 512)
         self.client = genai.GenerativeModel(self.model_name)
         self.genai = genai
-        genai.configure(api_key="AIzaSyDiS_9VRikDYt2nrwGl3hDm7C5G5pKEBMI")
+        genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 
     def __infer__(self, meaning_in: str | list[dict], **kwargs: dict) -> str:
         """Infer a response from the input meaning."""
