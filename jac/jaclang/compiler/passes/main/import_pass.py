@@ -347,7 +347,7 @@ class PyImportPass(JacImportPass):
         assert isinstance(sym.defn[0], ast.AstSymbolNode)
         sym_table.def_insert(
             node=sym.defn[0],
-            access_spec=sym.access,
+            access=sym.access,
             force_overwrite=True,
         )
 
