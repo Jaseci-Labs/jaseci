@@ -757,30 +757,23 @@ class JacParser(Pass):
                 is_enum_stmt=True,
             )
 
-        def ability(
-            self, kid: list[ast.AstNode]
-        ) -> ast.Ability | ast.AbilityDef | ast.FuncCall:
+        def ability(self, _: None) -> ast.Ability | ast.AbilityDef | ast.FuncCall:
             """Grammer rule.
 
             ability: decorators? KW_ASYNC? ability_decl
                     | decorators? genai_ability
                     | ability_def
             """
-            chomp = [*kid]
-            decorators = chomp[0] if isinstance(chomp[0], ast.SubNodeList) else None
-            chomp = chomp[1:] if decorators else chomp
-            is_async = (
-                chomp[0]
-                if isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_ASYNC
-                else None
-            )
-            ability = chomp[1] if is_async else chomp[0]
-            if not isinstance(ability, (ast.Ability, ast.AbilityDef)):
-                raise self.ice()
-            if is_async and isinstance(ability, ast.Ability):
+            ability: ast.Ability | ast.AbilityDef | None = None
+            decorators = self.match(ast.SubNodeList)
+            is_async = self.match_token(Tok.KW_ASYNC)
+            ability = self.match(ast.Ability)
+            if is_async and ability:
                 ability.is_async = True
                 ability.add_kids_left([is_async])
-            if isinstance(decorators, ast.SubNodeList):
+            if ability is None:
+                ability = self.consume(ast.AbilityDef)
+            if decorators:
                 for dec in decorators.items:
                     if (
                         isinstance(dec, ast.NameAtom)
@@ -790,53 +783,43 @@ class JacParser(Pass):
                         ability.is_static = True
                         decorators.items.remove(dec)  # noqa: B038
                         break
-                if len(decorators.items):
+                if decorators.items:
                     ability.decorators = decorators
                     ability.add_kids_left([decorators])
                 return ability
             return ability
 
-        def ability_decl(self, kid: list[ast.AstNode]) -> ast.Ability:
+        def ability_decl(self, _: None) -> ast.Ability:
             """Grammar rule.
 
             ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?
                 named_ref (func_decl | event_clause) (code_block | SEMI)
             """
-            chomp = [*kid]
-            is_override = (
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_OVERRIDE
+            signature: ast.FuncSignature | ast.EventSignature | None = None
+            body: ast.SubNodeList | None = None
+            is_override = self.match_token(Tok.KW_OVERRIDE) is not None
+            is_static = self.match_token(Tok.KW_STATIC) is not None
+            self.consume_token(Tok.KW_CAN)
+            access = self.match(ast.SubTag)
+            semstr = self.match(ast.String)
+            name = self.consume(ast.NameAtom)
+            signature = self.match(ast.FuncSignature) or self.consume(
+                ast.EventSignature
             )
-            chomp = chomp[1:] if is_override else chomp
-            is_static = (
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_STATIC
+            if (body := self.match(ast.SubNodeList)) is None:
+                self.consume_token(Tok.SEMI)
+            return ast.Ability(
+                name_ref=name,
+                is_async=False,
+                is_override=is_override,
+                is_static=is_static,
+                is_abstract=False,
+                access=access,
+                semstr=semstr,
+                signature=signature,
+                body=body,
+                kid=self.nodes,
             )
-            chomp = chomp[2:] if is_static else chomp[1:]
-            access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
-            chomp = chomp[1:] if access else chomp
-            semstr = chomp[0] if isinstance(chomp[0], ast.String) else None
-            chomp = chomp[1:] if semstr else chomp
-            name = chomp[0]
-            chomp = chomp[1:]
-            signature = chomp[0]
-            chomp = chomp[1:]
-            body = chomp[0] if isinstance(chomp[0], ast.SubNodeList) else None
-            if isinstance(name, ast.NameAtom) and isinstance(
-                signature, (ast.FuncSignature, ast.EventSignature)
-            ):
-                return ast.Ability(
-                    name_ref=name,
-                    is_async=False,
-                    is_override=is_override,
-                    is_static=is_static,
-                    is_abstract=False,
-                    access=access,
-                    semstr=semstr,
-                    signature=signature,
-                    body=body,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
 
         def ability_def(self, kid: list[ast.AstNode]) -> ast.AbilityDef:
             """Grammar rule.
@@ -859,118 +842,88 @@ class JacParser(Pass):
 
         # We need separate production rule for abstract_ability because we don't
         # want to allow regular abilities outside of classed to be abstract.
-        def abstract_ability(self, kid: list[ast.AstNode]) -> ast.Ability:
+        def abstract_ability(self, _: None) -> ast.Ability:
             """Grammar rule.
 
             abstract_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?
                 named_ref (func_decl | event_clause) KW_ABSTRACT SEMI
             """
-            chomp = [*kid]
-            is_override = (
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_OVERRIDE
+            signature: ast.FuncSignature | ast.EventSignature | None = None
+            is_override = self.match_token(Tok.KW_OVERRIDE) is not None
+            is_static = self.match_token(Tok.KW_STATIC) is not None
+            self.consume_token(Tok.KW_CAN)
+            access = self.match(ast.SubTag)
+            semstr = self.match(ast.String)
+            name = self.consume(ast.NameAtom)
+            signature = self.match(ast.FuncSignature) or self.consume(
+                ast.EventSignature
             )
-            chomp = chomp[1:] if is_override else chomp
-            is_static = (
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_STATIC
+            self.consume_token(Tok.KW_ABSTRACT)
+            self.consume_token(Tok.SEMI)
+            return ast.Ability(
+                name_ref=name,
+                is_async=False,
+                is_override=is_override,
+                is_static=is_static,
+                is_abstract=True,
+                access=access,
+                semstr=semstr,
+                signature=signature,
+                body=None,
+                kid=self.nodes,
             )
-            chomp = chomp[1:] if is_static else chomp
-            chomp = chomp[1:]
-            access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
-            chomp = chomp[1:] if access else chomp
-            semstr = chomp[0] if isinstance(chomp[0], ast.String) else None
-            chomp = chomp[1:] if semstr else chomp
-            name = chomp[0]
-            chomp = chomp[1:]
-            signature = chomp[0]
-            chomp = chomp[1:]
-            if isinstance(name, ast.NameAtom) and isinstance(
-                signature, (ast.FuncSignature, ast.EventSignature)
-            ):
-                return ast.Ability(
-                    name_ref=name,
-                    is_async=False,
-                    is_override=is_override,
-                    is_static=is_static,
-                    is_abstract=True,
-                    access=access,
-                    semstr=semstr,
-                    signature=signature,
-                    body=None,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
 
-        def genai_ability(self, kid: list[ast.AstNode]) -> ast.Ability:
+        def genai_ability(self, _: None) -> ast.Ability:
             """Grammar rule.
 
             genai_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?
             named_ref (func_decl) KW_BY atomic_call SEMI
             """
-            chomp = [*kid]
-            is_override = (
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_OVERRIDE
+            is_override = self.match_token(Tok.KW_OVERRIDE) is not None
+            is_static = self.match_token(Tok.KW_STATIC) is not None
+            self.consume_token(Tok.KW_CAN)
+            access = self.match(ast.SubTag)
+            semstr = self.match(ast.String)
+            name = self.consume(ast.NameAtom)
+            signature = self.match(ast.FuncSignature) or self.consume(
+                ast.EventSignature
             )
-            chomp = chomp[1:] if is_override else chomp
-            is_static = (
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_STATIC
+            self.consume_token(Tok.KW_BY)
+            body = self.consume(ast.FuncCall)
+            self.consume_token(Tok.SEMI)
+            return ast.Ability(
+                name_ref=name,
+                is_async=False,
+                is_override=is_override,
+                is_static=is_static,
+                is_abstract=False,
+                access=access,
+                semstr=semstr,
+                signature=signature,
+                body=body,
+                kid=self.nodes,
             )
-            chomp = chomp[1:] if is_static else chomp
-            chomp = chomp[1:]
-            access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
-            chomp = chomp[1:] if access else chomp
-            semstr = chomp[0] if isinstance(chomp[0], ast.String) else None
-            chomp = chomp[1:] if semstr else chomp
-            name = chomp[0]
-            chomp = chomp[1:]
-            signature = chomp[0]
-            chomp = chomp[1:]
-            has_by = isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_BY
-            chomp = chomp[1:] if has_by else chomp
-            if (
-                isinstance(name, ast.NameAtom)
-                and isinstance(signature, (ast.FuncSignature, ast.EventSignature))
-                and isinstance(chomp[0], ast.FuncCall)
-                and has_by
-            ):
-                return ast.Ability(
-                    name_ref=name,
-                    is_async=False,
-                    is_override=is_override,
-                    is_static=is_static,
-                    is_abstract=False,
-                    access=access,
-                    semstr=semstr,
-                    signature=signature,
-                    body=chomp[0],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
 
-        def event_clause(self, kid: list[ast.AstNode]) -> ast.EventSignature:
+        def event_clause(self, _: None) -> ast.EventSignature:
             """Grammar rule.
 
             event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (STRING? RETURN_HINT expression)?
             """
-            type_specs = kid[1] if isinstance(kid[1], ast.Expr) else None
-            return_spec = kid[-1] if isinstance(kid[-1], ast.Expr) else None
-            semstr = (
-                kid[-3] if return_spec and isinstance(kid[-3], ast.String) else None
+            return_spec: ast.Expr | None = None
+            semstr: ast.String | None = None
+            self.consume_token(Tok.KW_WITH)
+            type_specs = self.match(ast.Expr)
+            event = self.match_token(Tok.KW_EXIT) or self.consume_token(Tok.KW_ENTRY)
+            if semstr := self.match(ast.String):
+                self.consume_token(Tok.RETURN_HINT)
+                return_spec = self.consume(ast.Expr)
+            return ast.EventSignature(
+                semstr=semstr,
+                event=event,
+                arch_tag_info=type_specs,
+                return_type=return_spec,
+                kid=self.nodes,
             )
-            event = kid[2] if type_specs else kid[1]
-            if isinstance(event, ast.Token) and (
-                isinstance(return_spec, ast.Expr) or return_spec is None
-            ):
-                return ast.EventSignature(
-                    semstr=semstr,
-                    event=event,
-                    arch_tag_info=type_specs,
-                    return_type=return_spec,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
 
         def func_decl(self, kid: list[ast.AstNode]) -> ast.FuncSignature:
             """Grammar rule.
@@ -1308,138 +1261,111 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def if_stmt(self, kid: list[ast.AstNode]) -> ast.IfStmt:
+        def if_stmt(self, _: None) -> ast.IfStmt:
             """Grammar rule.
 
             if_stmt: KW_IF expression code_block (elif_stmt | else_stmt)?
             """
-            if isinstance(kid[1], ast.Expr) and isinstance(kid[2], ast.SubNodeList):
-                return ast.IfStmt(
-                    condition=kid[1],
-                    body=kid[2],
-                    else_body=(
-                        kid[3]
-                        if len(kid) > 3
-                        and isinstance(kid[3], (ast.ElseStmt, ast.ElseIf))
-                        else None
-                    ),
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.KW_IF)
+            condition = self.consume(ast.Expr)
+            body = self.consume(ast.SubNodeList)
+            else_body = self.match(ast.ElseStmt) or self.match(ast.ElseIf)
+            return ast.IfStmt(
+                condition=condition,
+                body=body,
+                else_body=else_body,
+                kid=self.nodes,
+            )
 
-        def elif_stmt(self, kid: list[ast.AstNode]) -> ast.ElseIf:
+        def elif_stmt(self, _: None) -> ast.ElseIf:
             """Grammar rule.
 
             elif_stmt: KW_ELIF expression code_block (elif_stmt | else_stmt)?
             """
-            if isinstance(kid[1], ast.Expr) and isinstance(kid[2], ast.SubNodeList):
-                return ast.ElseIf(
-                    condition=kid[1],
-                    body=kid[2],
-                    else_body=(
-                        kid[3]
-                        if len(kid) > 3
-                        and isinstance(kid[3], (ast.ElseStmt, ast.ElseIf))
-                        else None
-                    ),
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.KW_ELIF)
+            condition = self.consume(ast.Expr)
+            body = self.consume(ast.SubNodeList)
+            else_body = self.match(ast.ElseStmt) or self.match(ast.ElseIf)
+            return ast.ElseIf(
+                condition=condition,
+                body=body,
+                else_body=else_body,
+                kid=self.nodes,
+            )
 
-        def else_stmt(self, kid: list[ast.AstNode]) -> ast.ElseStmt:
+        def else_stmt(self, _: None) -> ast.ElseStmt:
             """Grammar rule.
 
             else_stmt: KW_ELSE code_block
             """
-            if isinstance(kid[1], ast.SubNodeList):
-                return ast.ElseStmt(
-                    body=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.KW_ELSE)
+            body = self.consume(ast.SubNodeList)
+            return ast.ElseStmt(
+                body=body,
+                kid=self.nodes,
+            )
 
-        def try_stmt(self, kid: list[ast.AstNode]) -> ast.TryStmt:
+        def try_stmt(self, _: None) -> ast.TryStmt:
             """Grammar rule.
 
             try_stmt: KW_TRY code_block except_list? else_stmt? finally_stmt?
             """
-            chomp = [*kid][1:]
-            block = chomp[0]
-            chomp = chomp[1:]
-            except_list = (
-                chomp[0]
-                if len(chomp) and isinstance(chomp[0], ast.SubNodeList)
-                else None
+            self.consume_token(Tok.KW_TRY)
+            block = self.consume(ast.SubNodeList)
+            except_list = self.match(ast.SubNodeList)
+            else_stmt = self.match(ast.ElseStmt)
+            finally_stmt = self.match(ast.FinallyStmt)
+            return ast.TryStmt(
+                body=block,
+                excepts=except_list,
+                else_body=else_stmt,
+                finally_body=finally_stmt,
+                kid=self.nodes,
             )
-            chomp = chomp[1:] if except_list else chomp
-            else_stmt = (
-                chomp[0] if len(chomp) and isinstance(chomp[0], ast.ElseStmt) else None
-            )
-            chomp = chomp[1:] if else_stmt else chomp
-            finally_stmt = (
-                chomp[0]
-                if len(chomp) and isinstance(chomp[0], ast.FinallyStmt)
-                else None
-            )
-            if isinstance(block, ast.SubNodeList):
-                return ast.TryStmt(
-                    body=block,
-                    excepts=except_list,
-                    else_body=else_stmt,
-                    finally_body=finally_stmt,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
 
-        def except_list(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Except]:
+        def except_list(self, _: None) -> ast.SubNodeList[ast.Except]:
             """Grammar rule.
 
             except_list: except_def+
             """
-            valid_kid = [i for i in kid if isinstance(i, ast.Except)]
-            if len(valid_kid) == len(kid):
-                return ast.SubNodeList[ast.Except](
-                    items=valid_kid,
-                    delim=Tok.WS,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            items = [self.consume(ast.Except)]
+            while expt := self.match(ast.Except):
+                items.append(expt)
+            return ast.SubNodeList[ast.Except](
+                items=items,
+                delim=Tok.WS,
+                kid=self.nodes,
+            )
 
-        def except_def(self, kid: list[ast.AstNode]) -> ast.Except:
+        def except_def(self, _: None) -> ast.Except:
             """Grammar rule.
 
             except_def: KW_EXCEPT expression (KW_AS NAME)? code_block
             """
-            ex_type = kid[1]
-            name = kid[3] if len(kid) > 3 and isinstance(kid[3], ast.Name) else None
-            body = kid[-1]
-            if isinstance(ex_type, ast.Expr) and isinstance(body, ast.SubNodeList):
-                return ast.Except(
-                    ex_type=ex_type,
-                    name=name,
-                    body=body,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            name: ast.Name | None = None
+            self.consume_token(Tok.KW_EXCEPT)
+            ex_type = self.consume(ast.Expr)
+            if self.match_token(Tok.KW_AS):
+                name = self.consume(ast.Name)
+            body = self.consume(ast.SubNodeList)
+            return ast.Except(
+                ex_type=ex_type,
+                name=name,
+                body=body,
+                kid=self.nodes,
+            )
 
-        def finally_stmt(self, kid: list[ast.AstNode]) -> ast.FinallyStmt:
+        def finally_stmt(self, _: None) -> ast.FinallyStmt:
             """Grammar rule.
 
             finally_stmt: KW_FINALLY code_block
             """
-            if isinstance(kid[1], ast.SubNodeList):
-                return ast.FinallyStmt(
-                    body=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.KW_FINALLY)
+            body = self.consume(ast.SubNodeList)
+            return ast.FinallyStmt(
+                body=body,
+                kid=self.nodes,
+            )
 
         def for_stmt(self, kid: list[ast.AstNode]) -> ast.IterForStmt | ast.InForStmt:
             """Grammar rule.
