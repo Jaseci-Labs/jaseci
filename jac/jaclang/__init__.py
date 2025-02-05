@@ -318,15 +318,15 @@ def jac_import(
 
 
 def field(
-    value: T = None,
-    gen: None | Callable[[], T] = None,
+    value: T = None,  # type: ignore [assignment]
+    gen: Callable[[], T] | None = None,
     postinit: bool = False,
 ) -> T:
     """Set the default value to jac architype dataclass."""
     if postinit:
         return dc_field(init=False)
     gen = gen or (lambda: value)  # noqa: E731
-    return Jac.has_instance_default(gen_func=gen)
+    return Jac.has_instance_default(gen_func=gen)  # type: ignore
 
 
 # ----------------------------------------------------------------------------
