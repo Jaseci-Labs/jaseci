@@ -24,8 +24,9 @@ toplevel_stmt: import_stmt
        | test
 
 // [Heading]: Import/Include Statements.
-import_stmt: KW_IMPORT import_lang? KW_FROM from_path LBRACE import_items RBRACE
-           | KW_IMPORT import_lang? import_path (COMMA import_path)* SEMI
+import_stmt: KW_IMPORT import_lang? import_path (COMMA import_path)* SEMI
+           | KW_IMPORT import_lang? KW_FROM from_path LBRACE import_items RBRACE
+           | KW_IMPORT import_lang? KW_FROM from_path COMMA import_items SEMI  //Deprecated
            | include_stmt
 
 from_path: (DOT | ELLIPSIS)+
