@@ -152,7 +152,6 @@ class Tokens(str, Enum):
 
     FLOAT = "FLOAT"
     STRING = "STRING"
-    DOC_STRING = "DOC_STRING"
     PYNLINE = "PYNLINE"
     BOOL = "BOOL"
     INT = "INT"
@@ -355,7 +354,7 @@ colors = [
     "#F0FFF0",
     "#F5E5FF",
     "#FFFFE0",
-    "#D2FEFF ",
+    "#D2FEFF",
     "#E8FFD7",
     "#FFDEAD",
     "#FFF0F5",

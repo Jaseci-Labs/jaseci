@@ -252,8 +252,8 @@ class JacParser(Pass):
         def module(self, _: None) -> ast.Module:
             """Grammar rule.
 
-            module: (doc_tag? element (element_with_doc | element)*)?
-            doc_tag (element_with_doc (element_with_doc | element)*)?
+            module: (toplevel_stmt (tl_stmt_with_doc | toplevel_stmt)*)?
+                | STRING (tl_stmt_with_doc | toplevel_stmt)*
             """
             doc = self.match(ast.String)
             body = self.match_many(ast.ElementStmt)
@@ -271,10 +271,12 @@ class JacParser(Pass):
             )
             return mod
 
-        def element_with_doc(self, _: None) -> ast.ElementStmt:
+        def tl_stmt_with_doc(
+            self, kid: list[ast.ElementStmt | ast.String]
+        ) -> ast.ElementStmt:
             """Grammar rule.
 
-            element_with_doc: doc_tag element
+            tl_stmt_with_doc: doc_tag toplevel_stmt
             """
             doc = self.consume(ast.String)
             element = self.consume(ast.ElementStmt)
@@ -282,7 +284,7 @@ class JacParser(Pass):
             element.add_kids_left([doc])
             return element
 
-        def element(self, _: None) -> ast.ElementStmt:
+        def toplevel_stmt(self, kid: list[ast.AstNode]) -> ast.ElementStmt:
             """Grammar rule.
 
             element: py_code_block
@@ -350,14 +352,7 @@ class JacParser(Pass):
                 kid=self.nodes,
             )
 
-        def doc_tag(self, _: None) -> ast.String:
-            """Grammar rule.
-
-            doc_tag: ( STRING | DOC_STRING )
-            """
-            return self.consume(ast.String)
-
-        def py_code_block(self, _: None) -> ast.PyInlineCode:
+        def py_code_block(self, kid: list[ast.AstNode]) -> ast.PyInlineCode:
             """Grammar rule.
 
             py_code_block: PYNLINE
@@ -2336,7 +2331,7 @@ class JacParser(Pass):
         def multistring(self, kid: list[ast.AstNode]) -> ast.AtomExpr:
             """Grammar rule.
 
-            multistring: (fstring | STRING | DOC_STRING)+
+            multistring: (fstring | STRING)+
             """
             valid_strs = [i for i in kid if isinstance(i, (ast.String, ast.FString))]
             if len(valid_strs) == len(kid):
@@ -3625,7 +3620,6 @@ class JacParser(Pass):
                 Tok.FSTR_BESC,
                 Tok.FSTR_PIECE,
                 Tok.FSTR_SQ_PIECE,
-                Tok.DOC_STRING,
             ]:
                 ret_type = ast.String
                 if token.type == Tok.FSTR_BESC:
