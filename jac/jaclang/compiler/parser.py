@@ -2023,7 +2023,7 @@ class JacParser(Pass):
                 )
             return self.consume(ast.Expr)
 
-        def compare(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def compare(self, _: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
             compare: (arithmetic cmp_op)* arithmetic
@@ -2040,10 +2040,10 @@ class JacParser(Pass):
                 left=left,
                 ops=ops,
                 rights=rights,
-                kid=kid,
+                kid=self.nodes,
             )
 
-        def cmp_op(self, kid: list[ast.AstNode]) -> ast.Token:
+        def cmp_op(self, _: None) -> ast.Token:
             """Grammar rule.
 
             cmp_op: KW_ISN
@@ -2057,40 +2057,39 @@ class JacParser(Pass):
                   | LT
                   | EE
             """
-            if isinstance(kid[0], ast.Token):
-                return kid[0]
-            else:
-                raise self.ice()
+            return self.consume(ast.Token)
 
-        def arithmetic(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def arithmetic(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             arithmetic: (arithmetic (MINUS | PLUS))? term
             """
-            return self._binary_expr_unwind(kid)
+            return self._binary_expr_unwind(self.nodes)
 
-        def term(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def term(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             term: (term (MOD | DIV | FLOOR_DIV | STAR_MUL | DECOR_OP))? power
             """
-            return self._binary_expr_unwind(kid)
+            return self._binary_expr_unwind(self.nodes)
 
-        def factor(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def factor(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             factor: (BW_NOT | MINUS | PLUS) factor | connect
             """
-            if len(kid) == 2:
-                if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.Expr):
-                    return ast.UnaryExpr(
-                        op=kid[0],
-                        operand=kid[1],
-                        kid=kid,
-                    )
-                else:
-                    raise self.ice()
-            return self._binary_expr_unwind(kid)
+            if (
+                op := self.match_token(Tok.BW_NOT)
+                or self.match_token(Tok.MINUS)
+                or self.match_token(Tok.PLUS)
+            ):
+                operand = self.consume(ast.Expr)
+                return ast.UnaryExpr(
+                    op=op,
+                    operand=operand,
+                    kid=self.nodes,
+                )
+            return self._binary_expr_unwind(self.nodes)
 
         def power(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
