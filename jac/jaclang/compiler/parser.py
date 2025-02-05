@@ -467,64 +467,53 @@ class JacParser(Pass):
                 kid=kid,
             )
 
-        def import_path(self, kid: list[ast.AstNode]) -> ast.ModulePath:
+        def import_path(self, _: None) -> ast.ModulePath:
             """Grammar rule.
 
             import_path: named_ref (DOT named_ref)* (KW_AS NAME)?
             """
-            valid_path = [i for i in kid if isinstance(i, ast.Name)]
-            alias = (
-                kid[-1]
-                if len(kid) > 2
-                and isinstance(kid[-1], ast.Name)
-                and isinstance(kid[-2], ast.Token)
-                and kid[-2].name == Tok.KW_AS
-                else None
-            )
-            if alias is not None:
-                valid_path = valid_path[:-1]
-
+            valid_path = [self.consume(ast.Name)]
+            while self.match_token(Tok.DOT):
+                valid_path.append(self.consume(ast.Name))
+            alias = self.consume(ast.Name) if self.match_token(Tok.KW_AS) else None
             return ast.ModulePath(
                 path=valid_path,
                 level=0,
                 alias=alias,
-                kid=kid,
+                kid=self.nodes,
             )
 
-        def import_items(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.ModuleItem]:
+        def import_items(self, _: None) -> ast.SubNodeList[ast.ModuleItem]:
             """Grammar rule.
 
             import_items: (import_item COMMA)* import_item COMMA?
             """
+            items = [self.consume(ast.ModuleItem)]
+            while self.match_token(Tok.COMMA):
+                if module_item := self.match(ast.ModuleItem):
+                    items.append(module_item)
             ret = ast.SubNodeList[ast.ModuleItem](
-                items=[i for i in kid if isinstance(i, ast.ModuleItem)],
+                items=items,
                 delim=Tok.COMMA,
-                kid=kid,
+                kid=self.nodes,
             )
             return ret
 
-        def import_item(self, kid: list[ast.AstNode]) -> ast.ModuleItem:
+        def import_item(self, _: None) -> ast.ModuleItem:
             """Grammar rule.
 
             import_item: named_ref (KW_AS NAME)?
             """
-            name = kid[0]
-            alias = kid[2] if len(kid) > 1 else None
-            if isinstance(name, ast.Name) and (
-                alias is None or isinstance(alias, ast.Name)
-            ):
-                return ast.ModuleItem(
-                    name=name,
-                    alias=alias,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            name = self.consume(ast.Name)
+            alias = self.consume(ast.Name) if self.match_token(Tok.KW_AS) else None
+            return ast.ModuleItem(
+                name=name,
+                alias=alias,
+                kid=self.nodes,
+            )
 
         def architype(
-            self, kid: list[ast.AstNode]
+            self, _: None
         ) -> ast.ArchSpec | ast.ArchDef | ast.Enum | ast.EnumDef:
             """Grammar rule.
 
@@ -532,50 +521,49 @@ class JacParser(Pass):
                     | architype_def
                     | enum
             """
-            if isinstance(kid[0], ast.SubNodeList):
-                if isinstance(kid[1], ast.ArchSpec):
-                    kid[1].decorators = kid[0]
-                    kid[1].add_kids_left([kid[0]])
-                    return kid[1]
-                else:
-                    raise self.ice()
+            archspec: ast.ArchSpec | ast.ArchDef | ast.Enum | ast.EnumDef | None = None
 
-            elif isinstance(kid[0], (ast.ArchSpec, ast.ArchDef, ast.Enum, ast.EnumDef)):
-                return kid[0]
+            decorators = self.match(ast.SubNodeList)
+            if decorators is not None:
+                archspec = self.consume(ast.ArchSpec)
+                archspec.decorators = decorators
+                archspec.add_kids_left([decorators])
             else:
-                raise self.ice()
+                archspec = (
+                    self.match(ast.ArchSpec)
+                    or self.match(ast.ArchDef)
+                    or self.match(ast.Enum)
+                    or self.consume(ast.EnumDef)
+                )
+            return archspec
 
-        def architype_decl(self, kid: list[ast.AstNode]) -> ast.ArchSpec:
+        def architype_decl(self, _: None) -> ast.ArchSpec:
             """Grammar rule.
 
             architype_decl: arch_type access_tag? STRING? NAME inherited_archs? (member_block | SEMI)
             """
-            arch_type = kid[0]
-            access = kid[1] if isinstance(kid[1], ast.SubTag) else None
-            semstr = (
-                kid[2]
-                if (access and isinstance(kid[2], ast.String))
-                else kid[1] if isinstance(kid[1], ast.String) else None
-            )
-            name = (
-                kid[3]
-                if (access and semstr)
-                else kid[2] if (access or semstr) else kid[1]
-            )
-            inh = kid[-2] if isinstance(kid[-2], ast.SubNodeList) else None
-            body = kid[-1] if isinstance(kid[-1], ast.SubNodeList) else None
-            if isinstance(arch_type, ast.Token) and isinstance(name, ast.Name):
-                return ast.Architype(
-                    arch_type=arch_type,
-                    name=name,
-                    semstr=semstr,
-                    access=access,
-                    base_classes=inh,
-                    body=body,
-                    kid=kid,
-                )
+            arch_type = self.consume(ast.Token)
+            access = self.match(ast.SubTag)
+            semstr = self.match(ast.String)
+            name = self.consume(ast.Name)
+            sub_list1 = self.match(ast.SubNodeList)
+            sub_list2 = self.match(ast.SubNodeList)
+            if self.match_token(Tok.SEMI):
+                inh, body = sub_list1, None
             else:
-                raise self.ice()
+                body = (
+                    sub_list2 or sub_list1
+                )  # if sub_list2 is None then body is sub_list1
+                inh = sub_list2 and sub_list1  # if sub_list2 is None then inh is None.
+            return ast.Architype(
+                arch_type=arch_type,
+                name=name,
+                semstr=semstr,
+                access=access,
+                base_classes=inh,
+                body=body,
+                kid=self.nodes,
+            )
 
         def architype_def(self, kid: list[ast.AstNode]) -> ast.ArchDef:
             """Grammar rule.
@@ -674,54 +662,43 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def enum(self, kid: list[ast.AstNode]) -> ast.Enum | ast.EnumDef:
+        def enum(self, _: None) -> ast.Enum | ast.EnumDef:
             """Grammar rule.
 
             enum: decorators? enum_decl
                 | enum_def
             """
-            if isinstance(kid[0], ast.SubNodeList):
-                if isinstance(kid[1], ast.Enum):
-                    kid[1].decorators = kid[0]
-                    kid[1].add_kids_left([kid[0]])
-                    return kid[1]
-                else:
-                    raise self.ice()
-            elif isinstance(kid[0], (ast.Enum, ast.EnumDef)):
-                return kid[0]
-            else:
+            if decorator := self.match(ast.SubNodeList):
+                enum_decl = self.consume(ast.Enum)
+                enum_decl.decorators = decorator
+                enum_decl.add_kids_left([decorator])
+                return enum_decl
+            return self.match(ast.Enum) or self.consume(ast.EnumDef)
 
-                raise self.ice()
-
-        def enum_decl(self, kid: list[ast.AstNode]) -> ast.Enum:
+        def enum_decl(self, _: None) -> ast.Enum:
             """Grammar rule.
 
             enum_decl: KW_ENUM access_tag? STRING? NAME inherited_archs? (enum_block | SEMI)
             """
-            access = kid[1] if isinstance(kid[1], ast.SubTag) else None
-            semstr = (
-                kid[2]
-                if (access and isinstance(kid[2], ast.String))
-                else kid[1] if isinstance(kid[1], ast.String) else None
-            )
-            name = (
-                kid[3]
-                if (access and semstr)
-                else kid[2] if (access or semstr) else kid[1]
-            )
-            inh = kid[-2] if isinstance(kid[-2], ast.SubNodeList) else None
-            body = kid[-1] if isinstance(kid[-1], ast.SubNodeList) else None
-            if isinstance(name, ast.Name):
-                return ast.Enum(
-                    semstr=semstr,
-                    name=name,
-                    access=access,
-                    base_classes=inh,
-                    body=body,
-                    kid=kid,
-                )
+            self.consume_token(Tok.KW_ENUM)
+            access = self.match(ast.SubTag)
+            semstr = self.match(ast.String)
+            name = self.consume(ast.Name)
+            sub_list1 = self.match(ast.SubNodeList)
+            sub_list2 = self.match(ast.SubNodeList)
+            if self.match_token(Tok.SEMI):
+                inh, body = sub_list1, None
             else:
-                raise self.ice()
+                body = sub_list2 or sub_list1
+                inh = sub_list2 and sub_list1
+            return ast.Enum(
+                semstr=semstr,
+                name=name,
+                access=access,
+                base_classes=inh,
+                body=body,
+                kid=self.nodes,
+            )
 
         def enum_def(self, kid: list[ast.AstNode]) -> ast.EnumDef:
             """Grammar rule.
@@ -750,7 +727,7 @@ class JacParser(Pass):
             ret.items = [i for i in kid if isinstance(i, ast.EnumBlockStmt)]
             return ret
 
-        def enum_stmt(self, kid: list[ast.AstNode]) -> ast.EnumBlockStmt:
+        def enum_stmt(self, _: None) -> ast.EnumBlockStmt:
             """Grammar rule.
 
             enum_stmt: NAME (COLON STRING)? EQ expression
@@ -760,52 +737,25 @@ class JacParser(Pass):
                     | abstract_ability
                     | ability
             """
-            if isinstance(kid[0], (ast.PyInlineCode, ast.Ability)):
-                return kid[0]
-            elif isinstance(kid[0], (ast.Name)):
-                if (
-                    len(kid) >= 3
-                    and isinstance(kid[-1], ast.Expr)
-                    and not isinstance(kid[-1], ast.String)
-                ):
-                    semstr = (
-                        kid[2]
-                        if len(kid) > 3 and isinstance(kid[2], ast.String)
-                        else None
-                    )
-                    targ = ast.SubNodeList[ast.Expr](
-                        items=[kid[0]], delim=Tok.COMMA, kid=[kid[0]]
-                    )
-                    kid[0] = targ
-                    return ast.Assignment(
-                        target=targ,
-                        value=kid[-1],
-                        type_tag=None,
-                        kid=kid,
-                        semstr=semstr,
-                        is_enum_stmt=True,
-                    )
-                else:
-                    semstr = (
-                        kid[2]
-                        if len(kid) == 3 and isinstance(kid[2], ast.String)
-                        else None
-                    )
-                    targ = ast.SubNodeList[ast.Expr](
-                        items=[kid[0]], delim=Tok.COMMA, kid=[kid[0]]
-                    )
-                    kid[0] = targ
-                    return ast.Assignment(
-                        target=targ,
-                        value=None,
-                        type_tag=None,
-                        kid=kid,
-                        semstr=semstr,
-                        is_enum_stmt=True,
-                    )
-            elif isinstance(kid[0], (ast.PyInlineCode, ast.ModuleCode)):
-                return kid[0]
-            raise self.ice()
+            if stmt := (
+                self.match(ast.PyInlineCode)
+                or self.match(ast.ModuleCode)
+                or self.match(ast.Ability)
+            ):
+                return stmt
+            name = self.consume(ast.Name)
+            semstr = self.consume(ast.String) if self.match_token(Tok.COLON) else None
+            expr = self.consume(ast.Expr) if self.match_token(Tok.EQ) else None
+            targ = ast.SubNodeList[ast.Expr](items=[name], delim=Tok.COMMA, kid=[name])
+            self.nodes[0] = targ
+            return ast.Assignment(
+                target=targ,
+                value=expr,
+                type_tag=None,
+                kid=self.nodes,
+                semstr=semstr,
+                is_enum_stmt=True,
+            )
 
         def ability(
             self, kid: list[ast.AstNode]
@@ -1871,38 +1821,32 @@ class JacParser(Pass):
                 semstr=semstr if isinstance(semstr, ast.String) else None,
             )
 
-        def expression(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def expression(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             expression: walrus_assign
                     | pipe (KW_IF expression KW_ELSE expression)?
                     | lambda_expr
             """
-            if len(kid) > 1:
-                if (
-                    isinstance(kid[0], ast.Expr)
-                    and isinstance(kid[2], ast.Expr)
-                    and isinstance(kid[4], ast.Expr)
-                ):
-                    return ast.IfElseExpr(
-                        value=kid[0],
-                        condition=kid[2],
-                        else_value=kid[4],
-                        kid=kid,
-                    )
-                else:
-                    raise self.ice()
-            elif isinstance(kid[0], ast.Expr):
-                return kid[0]
-            else:
-                raise self.ice()
+            value = self.consume(ast.Expr)
+            if self.match_token(Tok.KW_IF):
+                condition = self.consume(ast.Expr)
+                self.consume_token(Tok.KW_ELSE)
+                else_value = self.consume(ast.Expr)
+                return ast.IfElseExpr(
+                    value=value,
+                    condition=condition,
+                    else_value=else_value,
+                    kid=self.nodes,
+                )
+            return value
 
-        def walrus_assign(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def walrus_assign(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             walrus_assign: (walrus_assign WALRUS_EQ)? pipe
             """
-            return self._binary_expr_unwind(kid)
+            return self._binary_expr_unwind(self.nodes)
 
         def lambda_expr(self, kid: list[ast.AstNode]) -> ast.LambdaExpr:
             """Grammar rule.
