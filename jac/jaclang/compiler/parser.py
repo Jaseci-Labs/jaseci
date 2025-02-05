@@ -1651,19 +1651,23 @@ class JacParser(Pass):
             return ast.CheckStmt(
                 target=target,
                 kid=self.nodes,
-            ) 
+            )
 
-        def ctrl_stmt(self, _:None) -> ast.CtrlStmt:
+        def ctrl_stmt(self, _: None) -> ast.CtrlStmt:
             """Grammar rule.
 
             ctrl_stmt: KW_SKIP | KW_BREAK | KW_CONTINUE
             """
-            tok=self.match_token(Tok.KW_SKIP) or self.match_token(Tok.KW_BREAK) or self.consume_token(Tok.KW_CONTINUE)
+            tok = (
+                self.match_token(Tok.KW_SKIP)
+                or self.match_token(Tok.KW_BREAK)
+                or self.consume_token(Tok.KW_CONTINUE)
+            )
             return ast.CtrlStmt(
-                    ctrl=tok,
-                    kid=self.nodes,
-                )
-        
+                ctrl=tok,
+                kid=self.nodes,
+            )
+
         def delete_stmt(self, _: None) -> ast.DeleteStmt:
             """Grammar rule.
 
@@ -1682,11 +1686,11 @@ class JacParser(Pass):
             report_stmt: KW_REPORT expression
             """
             self.consume_token(Tok.KW_REPORT)
-            target=self.consume(ast.Expr)
+            target = self.consume(ast.Expr)
             return ast.ReportStmt(
                 expr=target,
                 kid=self.nodes,
-                )
+            )
 
         def return_stmt(self, _: None) -> ast.ReturnStmt:
             """Grammar rule.
@@ -1696,10 +1700,10 @@ class JacParser(Pass):
             self.consume_token(Tok.KW_RETURN)
             expr = self.match(ast.Expr)
             return ast.ReturnStmt(
-                        expr=expr,
-                        kid=self.nodes,
+                expr=expr,
+                kid=self.nodes,
             )
-                
+
         def walker_stmt(self, kid: list[ast.AstNode]) -> ast.CodeBlockStmt:
             """Grammar rule.
 
@@ -1716,7 +1720,7 @@ class JacParser(Pass):
             ignore_stmt: KW_IGNORE expression SEMI
             """
             self.consume_token(Tok.KW_IGNORE)
-            target=self.consume(ast.Expr)
+            target = self.consume(ast.Expr)
             self.consume_token(Tok.SEMI)
             return ast.IgnoreStmt(
                 target=target,
@@ -1730,9 +1734,10 @@ class JacParser(Pass):
             """
             self.consume_token(Tok.KW_VISIT)
             sub_name = self.match(ast.SubNodeList)
-            target=self.consume(ast.Expr)
+            target = self.consume(ast.Expr)
             else_body = self.match(ast.ElseStmt)
-            self.consume_token(Tok.SEMI)
+            if else_body is None:
+                self.consume_token(Tok.SEMI)
             return ast.VisitStmt(
                 vis_type=sub_name,
                 target=target,
@@ -1748,7 +1753,8 @@ class JacParser(Pass):
             self.consume_token(Tok.KW_REVISIT)
             target = self.match(ast.Expr)
             else_body = self.match(ast.ElseStmt)
-            self.consume_token(Tok.SEMI)
+            if else_body is None:
+                self.consume_token(Tok.SEMI)
             return ast.RevisitStmt(
                 hops=target,
                 else_body=else_body,
@@ -1763,9 +1769,9 @@ class JacParser(Pass):
             kw = self.consume_token(Tok.KW_DISENGAGE)
             semi = self.consume_token(Tok.SEMI)
             return ast.DisengageStmt(
-                kid=[kw,semi],
+                kid=[kw, semi],
             )
-        
+
         def global_ref(self, _: None) -> ast.GlobalStmt:
             """Grammar rule.
 
@@ -1777,7 +1783,7 @@ class JacParser(Pass):
                 target=target,
                 kid=self.nodes,
             )
-            
+
         def nonlocal_ref(self, _: None) -> ast.NonLocalStmt:
             """Grammar rule.
 
