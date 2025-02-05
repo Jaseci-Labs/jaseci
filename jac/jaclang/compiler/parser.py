@@ -135,7 +135,7 @@ class JacParser(Pass):
             # TODO: Once the kid is removed from the ast, we can get rid of this
             # node_idx and directly pop(0) kid as we process the nodes.
             self.node_idx = 0
-            self.nodes: list[ast.AstNode] = []
+            self.cur_nodes: list[ast.AstNode] = []
 
         def ice(self) -> Exception:
             """Raise internal compiler error."""
@@ -153,11 +153,11 @@ class JacParser(Pass):
         def _call_userfunc(
             self, tree: jl.Tree, new_children: None | list[ast.AstNode] = None
         ) -> ast.AstNode:
-            self.nodes = new_children or tree.children  # type: ignore[assignment]
+            self.cur_nodes = new_children or tree.children  # type: ignore[assignment]
             try:
                 return self._node_update(super()._call_userfunc(tree, new_children))
             finally:
-                self.nodes = []
+                self.cur_nodes = []
                 self.node_idx = 0
 
         def _call_userfunc_token(self, token: jl.Token) -> ast.AstNode:
@@ -193,11 +193,11 @@ class JacParser(Pass):
 
         def match(self, ty: type[T]) -> T | None:
             """Return a node matching type 'ty' if possible from the current nodes."""
-            if (self.node_idx < len(self.nodes)) and isinstance(
-                self.nodes[self.node_idx], ty
+            if (self.node_idx < len(self.cur_nodes)) and isinstance(
+                self.cur_nodes[self.node_idx], ty
             ):
                 self.node_idx += 1
-                return self.nodes[self.node_idx - 1]  # type: ignore[return-value]
+                return self.cur_nodes[self.node_idx - 1]  # type: ignore[return-value]
             return None
 
         def consume(self, ty: type[T]) -> T:
@@ -265,7 +265,7 @@ class JacParser(Pass):
                 is_imported=False,
                 terminals=self.terminals,
                 kid=(
-                    self.nodes
+                    self.cur_nodes
                     or [ast.EmptyToken(ast.JacSource("", self.parse_ref.mod_path))]
                 ),
             )
@@ -308,7 +308,7 @@ class JacParser(Pass):
                 access=access_tag,
                 assignments=assignments,
                 is_frozen=is_frozen,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def access_tag(self, _: None) -> ast.SubTag[ast.Token]:
@@ -318,7 +318,7 @@ class JacParser(Pass):
             """
             self.consume_token(Tok.COLON)
             access = self.consume(ast.Token)
-            return ast.SubTag[ast.Token](tag=access, kid=self.nodes)
+            return ast.SubTag[ast.Token](tag=access, kid=self.cur_nodes)
 
         def test(self, _: None) -> ast.Test:
             """Grammar rule.
@@ -332,7 +332,7 @@ class JacParser(Pass):
             return ast.Test(
                 name=name,
                 body=codeblock,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def free_code(self, _: None) -> ast.ModuleCode:
@@ -347,7 +347,7 @@ class JacParser(Pass):
             return ast.ModuleCode(
                 name=name,
                 body=codeblock,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def doc_tag(self, _: None) -> ast.String:
@@ -365,7 +365,7 @@ class JacParser(Pass):
             pyinline = self.consume_token(Tok.PYNLINE)
             return ast.PyInlineCode(
                 code=pyinline,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def import_stmt(self, _: None) -> ast.Import:
@@ -380,7 +380,7 @@ class JacParser(Pass):
                 return import_stmt
 
             # TODO: kid will be removed so let's keep as it is for now.
-            kid = self.nodes
+            kid = self.cur_nodes
 
             from_path: ast.ModulePath | None = None
             self.consume_token(Tok.KW_IMPORT)
@@ -403,7 +403,7 @@ class JacParser(Pass):
                     items=paths,
                     delim=Tok.COMMA,
                     # TODO: kid will be removed so let's keep as it is for now.
-                    kid=self.nodes[2 if lang else 1 : -1],
+                    kid=self.cur_nodes[2 if lang else 1 : -1],
                 )
                 kid = (kid[:2] if lang else kid[:1]) + [items] + kid[-1:]
 
@@ -431,7 +431,7 @@ class JacParser(Pass):
                 else:
                     break
             if import_path := self.match(ast.ModulePath):
-                kids = [i for i in self.nodes if isinstance(i, ast.Token)]
+                kids = [i for i in self.cur_nodes if isinstance(i, ast.Token)]
                 import_path.level = level
                 import_path.add_kids_left(kids)
                 return import_path
@@ -440,7 +440,7 @@ class JacParser(Pass):
                 path=None,
                 level=level,
                 alias=None,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def include_stmt(self, _: None) -> ast.Import:
@@ -448,7 +448,7 @@ class JacParser(Pass):
 
             include_stmt: KW_INCLUDE sub_name? import_path SEMI
             """
-            kid = self.nodes  # TODO: Will be removed.
+            kid = self.cur_nodes  # TODO: Will be removed.
             self.consume_token(Tok.KW_INCLUDE)
             lang = self.match(ast.SubTag)
             from_path = self.consume(ast.ModulePath)
@@ -480,7 +480,7 @@ class JacParser(Pass):
                 path=valid_path,
                 level=0,
                 alias=alias,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def import_items(self, _: None) -> ast.SubNodeList[ast.ModuleItem]:
@@ -495,7 +495,7 @@ class JacParser(Pass):
             ret = ast.SubNodeList[ast.ModuleItem](
                 items=items,
                 delim=Tok.COMMA,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
             return ret
 
@@ -509,7 +509,7 @@ class JacParser(Pass):
             return ast.ModuleItem(
                 name=name,
                 alias=alias,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def architype(
@@ -562,7 +562,7 @@ class JacParser(Pass):
                 access=access,
                 base_classes=inh,
                 body=body,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def architype_def(self, kid: list[ast.AstNode]) -> ast.ArchDef:
@@ -697,7 +697,7 @@ class JacParser(Pass):
                 access=access,
                 base_classes=inh,
                 body=body,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def enum_def(self, kid: list[ast.AstNode]) -> ast.EnumDef:
@@ -747,12 +747,12 @@ class JacParser(Pass):
             semstr = self.consume(ast.String) if self.match_token(Tok.COLON) else None
             expr = self.consume(ast.Expr) if self.match_token(Tok.EQ) else None
             targ = ast.SubNodeList[ast.Expr](items=[name], delim=Tok.COMMA, kid=[name])
-            self.nodes[0] = targ
+            self.cur_nodes[0] = targ
             return ast.Assignment(
                 target=targ,
                 value=expr,
                 type_tag=None,
-                kid=self.nodes,
+                kid=self.cur_nodes,
                 semstr=semstr,
                 is_enum_stmt=True,
             )
@@ -818,7 +818,7 @@ class JacParser(Pass):
                 semstr=semstr,
                 signature=signature,
                 body=body,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def ability_def(self, kid: list[ast.AstNode]) -> ast.AbilityDef:
@@ -870,7 +870,7 @@ class JacParser(Pass):
                 semstr=semstr,
                 signature=signature,
                 body=None,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def genai_ability(self, _: None) -> ast.Ability:
@@ -901,7 +901,7 @@ class JacParser(Pass):
                 semstr=semstr,
                 signature=signature,
                 body=body,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def event_clause(self, _: None) -> ast.EventSignature:
@@ -922,7 +922,7 @@ class JacParser(Pass):
                 event=event,
                 arch_tag_info=type_specs,
                 return_type=return_spec,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def func_decl(self, kid: list[ast.AstNode]) -> ast.FuncSignature:
@@ -1274,7 +1274,7 @@ class JacParser(Pass):
                 condition=condition,
                 body=body,
                 else_body=else_body,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def elif_stmt(self, _: None) -> ast.ElseIf:
@@ -1290,7 +1290,7 @@ class JacParser(Pass):
                 condition=condition,
                 body=body,
                 else_body=else_body,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def else_stmt(self, _: None) -> ast.ElseStmt:
@@ -1302,7 +1302,7 @@ class JacParser(Pass):
             body = self.consume(ast.SubNodeList)
             return ast.ElseStmt(
                 body=body,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def try_stmt(self, _: None) -> ast.TryStmt:
@@ -1320,7 +1320,7 @@ class JacParser(Pass):
                 excepts=except_list,
                 else_body=else_stmt,
                 finally_body=finally_stmt,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def except_list(self, _: None) -> ast.SubNodeList[ast.Except]:
@@ -1334,7 +1334,7 @@ class JacParser(Pass):
             return ast.SubNodeList[ast.Except](
                 items=items,
                 delim=Tok.WS,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def except_def(self, _: None) -> ast.Except:
@@ -1352,7 +1352,7 @@ class JacParser(Pass):
                 ex_type=ex_type,
                 name=name,
                 body=body,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def finally_stmt(self, _: None) -> ast.FinallyStmt:
@@ -1364,7 +1364,7 @@ class JacParser(Pass):
             body = self.consume(ast.SubNodeList)
             return ast.FinallyStmt(
                 body=body,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def for_stmt(self, kid: list[ast.AstNode]) -> ast.IterForStmt | ast.InForStmt:
@@ -1763,7 +1763,7 @@ class JacParser(Pass):
                     value=value,
                     condition=condition,
                     else_value=else_value,
-                    kid=self.nodes,
+                    kid=self.cur_nodes,
                 )
             return value
 
@@ -1772,7 +1772,7 @@ class JacParser(Pass):
 
             walrus_assign: (walrus_assign WALRUS_EQ)? pipe
             """
-            return self._binary_expr_unwind(self.nodes)
+            return self._binary_expr_unwind(self.cur_nodes)
 
         def lambda_expr(self, kid: list[ast.AstNode]) -> ast.LambdaExpr:
             """Grammar rule.
