@@ -1971,7 +1971,7 @@ class JacParser(Pass):
             """
             return self._binary_expr_unwind(kid)
 
-        def logical_or(self, _:None) -> ast.Expr:
+        def logical_or(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             logical_or: logical_and (KW_OR logical_and)*
@@ -2009,24 +2009,19 @@ class JacParser(Pass):
                 kid=self.nodes,
             )
 
-        def logical_not(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def logical_not(self, _: None) -> ast.Expr:
             """Grammar rule.
 
-            logical_or: (logical_or KW_OR)? logical_and
+            logical_not: NOT logical_not | compare
             """
-            if len(kid) == 2:
-                if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.Expr):
-                    return ast.UnaryExpr(
-                        op=kid[0],
-                        operand=kid[1],
-                        kid=kid,
-                    )
-                else:
-                    raise self.ice()
-            if isinstance(kid[0], ast.Expr):
-                return kid[0]
-            else:
-                raise self.ice()
+            if op := self.match_token(Tok.NOT):
+                operand = self.consume(ast.Expr)
+                return ast.UnaryExpr(
+                    op=op,
+                    operand=operand,
+                    kid=self.nodes,
+                )
+            return self.consume(ast.Expr)
 
         def compare(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
