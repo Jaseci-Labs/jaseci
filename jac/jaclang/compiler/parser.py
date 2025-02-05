@@ -2028,23 +2028,20 @@ class JacParser(Pass):
 
             compare: (arithmetic cmp_op)* arithmetic
             """
-            if len(kid) > 1:
-                ops = [i for i in kid[1::2] if isinstance(i, ast.Token)]
-                left = kid[0]
-                rights = [i for i in kid[1:][1::2] if isinstance(i, ast.Expr)]
-                if isinstance(left, ast.Expr) and len(ops) == len(rights):
-                    return ast.CompareExpr(
-                        left=left,
-                        ops=ops,
-                        rights=rights,
-                        kid=kid,
-                    )
-                else:
-                    raise self.ice()
-            elif isinstance(kid[0], ast.Expr):
-                return kid[0]
-            else:
-                raise self.ice()
+            ops: list = []
+            rights: list = []
+            left = self.consume(ast.Expr)
+            while op := self.match(ast.Token):
+                ops.append(op)
+                rights.append(self.consume(ast.Expr))
+            if not ops:
+                return left
+            return ast.CompareExpr(
+                left=left,
+                ops=ops,
+                rights=rights,
+                kid=kid,
+            )
 
         def cmp_op(self, kid: list[ast.AstNode]) -> ast.Token:
             """Grammar rule.
