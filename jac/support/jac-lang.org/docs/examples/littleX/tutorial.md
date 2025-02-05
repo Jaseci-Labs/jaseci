@@ -4,7 +4,7 @@ This guide introduces how the Jaseci Stack accelerates application development b
 
 ## **What We Will Build**
 
-We’ll develop a web application called **LittleX**, a streamlined and efficient version of Elon Musk’s X, using the Jaseci Stack. This project highlights the simplicity and power of Jaseci, enabling us to implement advanced features with minimal code and effort—tasks that typically require significant time in traditional frameworks.
+We’ll develop a web application called **LittleX**, a streamlined and efficient version of Elon Musk’s X, using the Jaseci Stack. This project highlights the simplicity and power of Jaseci, enabling us to implement advanced features with minimal code and effort, tasks that typically require considerable time in traditional frameworks.
 
 ## **Key Features**
 - **User authentication:** Sign up, log in, and profile management.
@@ -29,7 +29,7 @@ To get started with building **LittleX**, ensure you have the following:
 - **About 15 minutes**: Time required to set up and explore the basics.
 - **A favorite text editor or IDE**: Any development environment you are comfortable with.
 - **Python 3.12 or later**: Ensure that Python 3.12 or higher is installed in your environment.
-- **Install required libraries**: Jaclang, Jac-cloud, MTLLM, Jac-splice-orc.
+- **Install required libraries**: Jaclang, Jac-Cloud, MTLLM, and Jac-Splice-Orc.
 - **Node.js (optional)**: If you plan to integrate a frontend in future steps.
 
 ## **LittleX Architecture**
@@ -45,18 +45,18 @@ LittleX’s graph-based architecture uses nodes for entities like users and post
 
 ### **Set Up Jaseci**
 ```bash
-pip install jaclang, jac-cloud, mtllm, jac-splice-orc
+pip install jaclang jac-cloud mtllm jac-splice-orc
 ```
 
 ### **Lesson 1: Let's create our first Node**
 
-**Jac lang**, language used in Jaseci stack, organizes data as interconnected nodes within a spatial or graph-like structure. It focuses on the **relationships** between data points, rather than processing them **step-by-step**.
+**Jaclang**, language used in Jaseci stack, organizes data as interconnected nodes within a spatial or graph-like structure. It focuses on the **relationships** between data points, rather than processing them **step-by-step**.
 
-**Node**: Node is the atom of jaseci stack. Each node represents an object, entity, or a piece of data.
+**Node**: A node is the fundamental unit of the Jaseci stack. Each node represents an object, entity, or a piece of data.
 
 First create a node with name Person and attributes name, age.
 ```jac
-node Person{
+node Person {
       has name: str;
       has age: int;
 }
@@ -113,7 +113,7 @@ For more explanation [visit](../../for_coders/data_spatial/nodes_and_edges.md)
 
 First, create an edge named Relation with the attribute 'since'.
 ```jac
-edge Relation{
+edge Relation {
       has since: int;
 }
 ```
@@ -156,7 +156,7 @@ Walkers are graph-traversing agents in Jaclang that perform tasks without requir
 
 First, create a walker named Relation with the attribute 'since'.
 ```jac
-walker Agent{
+walker Agent {
       has name: str;
 }
 ```
@@ -165,7 +165,7 @@ Now Lets create required walkers for LittleX.
 === "Guide"
       Walkers are graph-traversing agents that perform tasks. Here are the walkers we need to create:
 
-      - **User Initialize Walker**
+      - **User Initialization Walker**
         * Creates or visits a new profile node for a user.
         * Ensures profiles exist in the system for any user action.
             ```jac
@@ -227,14 +227,14 @@ Now Lets create required walkers for LittleX.
             }
             ```
         * First `visit_profile` walker is called and it visits to `Profile` node.
-        * How `get_profile` walker sapwned on `Profile` node, get the profile detailes will be discussed later.
+        * How `get_profile` walker spawned on `Profile` node, get the profile detailes will be discussed later.
 
       - **Follow Request Walker**
         * Creates a follow edge.
             ```jac
             walker follow_request {}
             ```
-        * Walker `follow_request` spawned on followee profile will create an `Follow` edge from follower to followee.
+        * Walker `follow_request`, when spawned on the followee profile, will create a Follow edge from the follower to the followee.
         * How it is executed will be discussed later.
 
       - **Unfollow Request Walker**
@@ -277,7 +277,7 @@ Now Lets create required walkers for LittleX.
             ```jac
             walker remove_tweet {}
             ```
-        * Walker `remove_tweet` spawned on tweet node, that will remove the tweet.
+        * Walker `remove_tweet`, when spawned on a tweet node, will remove the tweet.
         * How it is executed will be discussed later.
 
       - **Like Tweet Walker**
@@ -437,7 +437,7 @@ Now, imagine scaling this application to handle multiple users. Questions arise,
 
 This is where graph security in Jaclang simplifies managing access and permissions between users' graphs.
 
-Jaclang provides explicit access control to ensure data privacy and controlled interaction between users. Permissions define what other users can do with specific parts of a graph.
+Jaclang offers explicit access control, ensuring data privacy and secure interactions between user graphs. Permissions define what other users can do with specific parts of a graph.
 
 **Access Levels**
 
@@ -585,7 +585,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
                         report self;
                   }
                   ```
-        * As `get_profile` walker is sapwned on `Profile`, It visits to `Profile`.
+        * As `get_profile` walker is spawned on `Profile`, It visits to `Profile`.
         *  With the entry of the `get_profile` walker, Profile will be reported.
 
       - Follow profile
@@ -704,7 +704,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
                         del self;
                   }
                   ```
-        * As `remove_tweet` walker is sapwned on `Tweet`, It visits to `Tweet`.
+        * As `remove_tweet` walker is spawned on `Tweet`, It visits to `Tweet`.
         *  With the exit of the `remove_tweet` walker, tweet is deleted.
         * `del self` deletes the current tweet.
 
