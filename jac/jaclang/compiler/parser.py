@@ -2912,7 +2912,7 @@ class JacParser(Pass):
             """
             consume = None
             name = None
-            if isinstance(kid[0], ast.SubNodeList):
+            if len(kid) == 2:
                 consume = kid[0]
                 name = kid[1]
             else:
