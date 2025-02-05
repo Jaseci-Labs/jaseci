@@ -1971,47 +1971,43 @@ class JacParser(Pass):
             """
             return self._binary_expr_unwind(kid)
 
-        def logical_or(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def logical_or(self, _:None) -> ast.Expr:
             """Grammar rule.
 
             logical_or: logical_and (KW_OR logical_and)*
             """
-            if len(kid) > 1:
-                values = [i for i in kid if isinstance(i, ast.Expr)]
-                ops = kid[1] if isinstance(kid[1], ast.Token) else None
-                if not ops:
-                    raise self.ice()
-                return ast.BoolExpr(
-                    op=ops,
-                    values=values,
-                    kid=kid,
-                )
-            elif isinstance(kid[0], ast.Expr):
-                return kid[0]
-            else:
+            value = self.consume(ast.Expr)
+            if not (ops := self.match_token(Tok.KW_OR)):
+                return value
+            values: list = [value]
+            while value := self.consume(ast.Expr):
+                values.append(value)
+                if not self.match_token(Tok.KW_OR):
+                    break
+            return ast.BoolExpr(
+                op=ops,
+                values=values,
+                kid=self.nodes,
+            )
 
-                raise self.ice()
-
-        def logical_and(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def logical_and(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             logical_and: logical_not (KW_AND logical_not)*
             """
-            if len(kid) > 1:
-                values = [i for i in kid if isinstance(i, ast.Expr)]
-                ops = kid[1] if isinstance(kid[1], ast.Token) else None
-                if not ops:
-                    raise self.ice()
-                return ast.BoolExpr(
-                    op=ops,
-                    values=values,
-                    kid=kid,
-                )
-            elif isinstance(kid[0], ast.Expr):
-                return kid[0]
-            else:
-
-                raise self.ice()
+            value = self.consume(ast.Expr)
+            if not (ops := self.match_token(Tok.KW_AND)):
+                return value
+            values: list = [value]
+            while value := self.consume(ast.Expr):
+                values.append(value)
+                if not self.match_token(Tok.KW_AND):
+                    break
+            return ast.BoolExpr(
+                op=ops,
+                values=values,
+                kid=self.nodes,
+            )
 
         def logical_not(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
