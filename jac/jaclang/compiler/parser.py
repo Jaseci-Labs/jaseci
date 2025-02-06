@@ -554,12 +554,15 @@ class JacParser(Pass):
                     sub_list2 or sub_list1
                 )  # if sub_list2 is None then body is sub_list1
                 inh = sub_list2 and sub_list1  # if sub_list2 is None then inh is None.
+            base_classes = (
+                [i for i in inh.items if isinstance(i, ast.Expr)] if inh else []
+            )
             return ast.Architype(
                 arch_type=arch_type,
                 name=name,
                 semstr=semstr,
                 access=access,
-                base_classes=inh,
+                base_classes=base_classes,
                 body=body,
                 kid=self.cur_nodes,
             )
@@ -690,11 +693,14 @@ class JacParser(Pass):
             else:
                 body = sub_list2 or sub_list1
                 inh = sub_list2 and sub_list1
+            base_classes = (
+                [i for i in inh.items if isinstance(i, ast.Expr)] if inh else []
+            )
             return ast.Enum(
                 semstr=semstr,
                 name=name,
                 access=access,
-                base_classes=inh,
+                base_classes=base_classes,
                 body=body,
                 kid=self.cur_nodes,
             )

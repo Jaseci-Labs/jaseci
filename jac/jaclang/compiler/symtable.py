@@ -264,7 +264,7 @@ class SymbolTable:
     def inherit_baseclasses_sym(self, node: ast.Architype | ast.Enum) -> None:
         """Inherit base classes symbol tables."""
         if node.base_classes:
-            for base_cls in node.base_classes.items:
+            for base_cls in node.base_classes:
                 if (
                     isinstance(base_cls, ast.AstSymbolNode)
                     and (found := self.use_lookup(base_cls))

@@ -920,7 +920,7 @@ class PyastGenPass(Pass):
         name: Name,
         arch_type: Token,
         access: Optional[SubTag[Token]],
-        base_classes: Optional[SubNodeList[AtomType]],
+        base_classes: List[Expr],
         body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
@@ -993,7 +993,7 @@ class PyastGenPass(Pass):
                     )
                 )
             )
-        base_classes = node.base_classes.gen.py_ast if node.base_classes else []
+        base_classes = [base_class.gen.py_ast[0] for base_class in node.base_classes]
         if node.arch_type.name != Tok.KW_CLASS:
             base_classes.append(
                 self.sync(
@@ -1108,7 +1108,7 @@ class PyastGenPass(Pass):
             if isinstance(node.decorators, ast.SubNodeList)
             else []
         )
-        base_classes = node.base_classes.gen.py_ast if node.base_classes else []
+        base_classes = [base_class.gen.py_ast[0] for base_class in node.base_classes]
         if isinstance(base_classes, list):
             base_classes.append(
                 self.sync(ast3.Name(id="__jac_Enum__", ctx=ast3.Load()))

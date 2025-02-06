@@ -1125,7 +1125,7 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
         name: Name,
         arch_type: Token,
         access: Optional[SubTag[Token]],
-        base_classes: Optional[SubNodeList[Expr]],
+        base_classes: list[Expr],
         body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
@@ -1182,9 +1182,8 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
             res = self.name.normalize(deep)
             res = res and self.arch_type.normalize(deep)
             res = res and self.access.normalize(deep) if self.access else res
-            res = (
-                res and self.base_classes.normalize(deep) if self.base_classes else res
-            )
+            for base_class in self.base_classes:
+                res = res and base_class.normalize(deep)
             res = res and self.body.normalize(deep) if self.body else res
             res = res and self.doc.normalize(deep) if self.doc else res
             res = res and self.semstr.normalize(deep) if self.semstr else res
@@ -1203,8 +1202,10 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
         new_kid.append(self.name)
         if self.base_classes:
             new_kid.append(self.gen_token(Tok.COLON))
-            new_kid.append(self.base_classes)
-            new_kid.append(self.gen_token(Tok.COLON))
+            for base_class in self.base_classes:
+                new_kid.append(base_class)
+                new_kid.append(self.gen_token(Tok.COMMA))
+            new_kid[-1] = self.gen_token(Tok.COLON)
         if self.body:
             if isinstance(self.body, AstImplOnlyNode):
                 new_kid.append(self.gen_token(Tok.SEMI))
@@ -1255,7 +1256,7 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
         self,
         name: Name,
         access: Optional[SubTag[Token]],
-        base_classes: Optional[SubNodeList[Expr]],
+        base_classes: list[Expr],
         body: Optional[SubNodeList[EnumBlockStmt] | EnumDef],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
@@ -1284,9 +1285,8 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
         if deep:
             res = self.name.normalize(deep)
             res = res and self.access.normalize(deep) if self.access else res
-            res = (
-                res and self.base_classes.normalize(deep) if self.base_classes else res
-            )
+            for base_class in self.base_classes:
+                res = res and base_class.normalize(deep)
             res = res and self.body.normalize(deep) if self.body else res
             res = res and self.doc.normalize(deep) if self.doc else res
             res = res and self.semstr.normalize(deep) if self.semstr else res
@@ -1305,8 +1305,10 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
         new_kid.append(self.name)
         if self.base_classes:
             new_kid.append(self.gen_token(Tok.COLON))
-            new_kid.append(self.base_classes)
-            new_kid.append(self.gen_token(Tok.COLON))
+            for base_class in self.base_classes:
+                new_kid.append(base_class)
+                new_kid.append(self.gen_token(Tok.COMMA))
+            new_kid[-1] = self.gen_token(Tok.COLON)
         if self.body:
             if isinstance(self.body, AstImplOnlyNode):
                 new_kid.append(self.gen_token(Tok.SEMI))

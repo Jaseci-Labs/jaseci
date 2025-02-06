@@ -246,8 +246,10 @@ class JacLangServer(LanguageServer):
                     and temp_tab.owner.base_classes
                 ):
                     base = []
-                    for base_name in temp_tab.owner.base_classes.items:
-                        if isinstance(base_name, ast.Name) and base_name.sym:
+                    for base_name in temp_tab.owner.base_classes:
+                        if (
+                            isinstance(base_name, ast.Name) and base_name.sym
+                        ):  # TODO: need to support all expr (atomtrailer, indexslice,...)
                             base.append(base_name.sym)
                     for base_class_symbol in base:
                         if base_class_symbol.fetch_sym_tab:

@@ -344,13 +344,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         base_classes: list[ast.Expr] = [
             base for base in converted_base_classes if isinstance(base, ast.Expr)
         ]
-        valid_bases = (
-            ast.SubNodeList[ast.Expr](
-                items=base_classes, delim=Tok.COMMA, kid=base_classes
-            )
-            if base_classes
-            else None
-        )
         converted_decorators_list = [self.convert(i) for i in node.decorator_list]
         decorators = [i for i in converted_decorators_list if isinstance(i, ast.Expr)]
         valid_decorators = (
@@ -411,7 +404,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             return ast.Enum(
                 name=name,
                 access=None,
-                base_classes=None,
+                base_classes=[],
                 body=enum_body,
                 kid=(
                     [doc, name, enum_body]
@@ -426,11 +419,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 decorators=valid_decorators,
             )
         kid = (
-            [name, valid_bases, valid_body, doc]
-            if doc and valid_bases
+            [name, *base_classes, valid_body, doc]
+            if doc and base_classes
             else (
-                [name, valid_bases, valid_body]
-                if valid_bases
+                [name, *base_classes, valid_body]
+                if base_classes
                 else [name, valid_body, doc] if doc else [name, valid_body]
             )
         )
@@ -438,7 +431,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             arch_type=arch_type,
             name=name,
             access=None,
-            base_classes=valid_bases,
+            base_classes=base_classes,
             body=valid_body,
             kid=kid,
             doc=doc,
