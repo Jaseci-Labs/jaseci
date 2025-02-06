@@ -540,9 +540,9 @@ class NameAtom(AtomExpr, EnumBlockStmt):
 class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode, AstSemStrNode):
     """ArchSpec node type for Jac Ast."""
 
-    def __init__(self, decorators: Optional[list[Expr]] = None) -> None:
+    def __init__(self, decorators: list[Expr]) -> None:
         """Initialize walker statement only node."""
-        self.decorators: Optional[list[Expr]] = decorators
+        self.decorators: list[Expr] = decorators
 
 
 class MatchPattern(AstNode):
@@ -1128,9 +1128,9 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
         base_classes: Optional[SubNodeList[Expr]],
         body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
         kid: Sequence[AstNode],
+        decorators: list[Expr],
         doc: Optional[String] = None,
         semstr: Optional[String] = None,
-        decorators: Optional[list[Expr]] = None,
     ) -> None:
         """Initialize object arch node."""
         self.name = name
@@ -1188,16 +1188,14 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
             res = res and self.body.normalize(deep) if self.body else res
             res = res and self.doc.normalize(deep) if self.doc else res
             res = res and self.semstr.normalize(deep) if self.semstr else res
-            if self.decorators:
-                for i in self.decorators:
-                    res = res and i.normalize(deep)
+            for i in self.decorators:
+                res = res and i.normalize(deep)
         new_kid: list[AstNode] = []
         if self.doc:
             new_kid.append(self.doc)
-        if self.decorators:
-            for dec in self.decorators:
-                new_kid.append(dec)
-                new_kid.append(self.gen_token(Tok.WS))
+        for dec in self.decorators:
+            new_kid.append(dec)
+            new_kid.append(self.gen_token(Tok.WS))
         new_kid.append(self.arch_type)
         if self.access:
             new_kid.append(self.access)
@@ -1261,9 +1259,9 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
         base_classes: Optional[SubNodeList[Expr]],
         body: Optional[SubNodeList[EnumBlockStmt] | EnumDef],
         kid: Sequence[AstNode],
+        decorators: list[Expr],
         doc: Optional[String] = None,
         semstr: Optional[String] = None,
-        decorators: Optional[list[Expr]] = None,
     ) -> None:
         """Initialize object arch node."""
         self.name = name
@@ -1293,14 +1291,12 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
             res = res and self.body.normalize(deep) if self.body else res
             res = res and self.doc.normalize(deep) if self.doc else res
             res = res and self.semstr.normalize(deep) if self.semstr else res
-            if self.decorators:
-                for i in self.decorators:
-                    res = res and i.normalize(deep)
+            for i in self.decorators:
+                res = res and i.normalize(deep)
         new_kid: list[AstNode] = []
-        if self.decorators:
-            for dec in self.decorators:
-                new_kid.append(dec)
-                new_kid.append(self.gen_token(Tok.WS))
+        for dec in self.decorators:
+            new_kid.append(dec)
+            new_kid.append(self.gen_token(Tok.WS))
         if self.doc:
             new_kid.append(self.doc)
         new_kid.append(self.gen_token(Tok.KW_ENUM))
@@ -1383,9 +1379,9 @@ class Ability(
         signature: FuncSignature | EventSignature,
         body: Optional[SubNodeList[CodeBlockStmt] | AbilityDef | FuncCall],
         kid: Sequence[AstNode],
+        decorators: list[Expr],
         semstr: Optional[String] = None,
         doc: Optional[String] = None,
-        decorators: Optional[list[Expr]] = None,
     ) -> None:
         """Initialize func arch node."""
         self.name_ref = name_ref
@@ -1446,16 +1442,15 @@ class Ability(
             res = res and self.signature.normalize(deep) if self.signature else res
             res = res and self.body.normalize(deep) if self.body else res
             res = res and self.semstr.normalize(deep) if self.semstr else res
-            for i in self.decorators or []:
+            for i in self.decorators:
                 res = res and i.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
         if self.doc:
             new_kid.append(self.doc)
-        if self.decorators:
-            for dec in self.decorators:
-                new_kid.append(dec)
-                new_kid.append(self.gen_token(Tok.WS))
+        for dec in self.decorators:
+            new_kid.append(dec)
+            new_kid.append(self.gen_token(Tok.WS))
         if self.is_async:
             new_kid.append(self.gen_token(Tok.KW_ASYNC))
         if self.is_override:

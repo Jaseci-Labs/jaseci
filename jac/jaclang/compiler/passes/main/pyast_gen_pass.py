@@ -909,11 +909,11 @@ class PyastGenPass(Pass):
         base_classes: Optional[SubNodeList[AtomType]],
         body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
         doc: Optional[String],
-        decorators: Optional[SubNodeList[ExprType]],
+        decorators: List[Expr],
         """
         if isinstance(node.body, ast.AstImplOnlyNode):
             self.traverse(node.body)
-        for dec in node.decorators or []:
+        for dec in node.decorators:
             self.traverse(dec)
 
     def exit_architype(self, node: ast.Architype) -> None:
@@ -925,19 +925,15 @@ class PyastGenPass(Pass):
         base_classes: Optional[SubNodeList[AtomType]],
         body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
         doc: Optional[String],
-        decorators: Optional[list[Expr]],
+        decorators: list[Expr],
         """
         body = self.resolve_stmt_block(
             node.body.body if isinstance(node.body, ast.ArchDef) else node.body,
             doc=node.doc,
         )
-        decorators = []
-        if node.decorators:
-            decorators = [
-                dec.gen.py_ast[0]
-                for dec in node.decorators
-                if isinstance(dec, ast.Expr)
-            ]
+        decorators = [
+            dec.gen.py_ast[0] for dec in node.decorators if isinstance(dec, ast.Expr)
+        ]
 
         ds_on_entry, ds_on_exit = self.collect_events(node)
         if node.arch_type.name != Tok.KW_CLASS:
@@ -1076,7 +1072,7 @@ class PyastGenPass(Pass):
         target: ArchRefChain,
         body: SubNodeList[ArchBlockStmt],
         doc: Optional[String],
-        decorators: Optional[SubNodeList[ExprType]],
+        decorators: List[Expr],
         """
 
     def enter_enum(self, node: ast.Enum) -> None:
@@ -1087,11 +1083,11 @@ class PyastGenPass(Pass):
         base_classes: Optional[SubNodeList[AtomType]],
         body: Optional[SubNodeList[EnumBlockStmt] | EnumDef],
         doc: Optional[String],
-        decorators: Optional[SubNodeList[ExprType]],
+        decorators: List[ExprType],
         """
         if isinstance(node.body, ast.AstImplOnlyNode):
             self.traverse(node.body)
-        for dec in node.decorators or []:
+        for dec in node.decorators:
             self.traverse(dec)
 
     def exit_enum(self, node: ast.Enum) -> None:
@@ -1102,20 +1098,16 @@ class PyastGenPass(Pass):
         base_classes: Optional[Optional[SubNodeList[AtomType]]],
         body: Optional[SubNodeList[EnumBlockStmt] | EnumDef],
         doc: Optional[String],
-        decorators: Optional[SubNodeList[ExprType]],
+        decorators: List[Expr],
         """
         self.needs_enum()
         body = self.resolve_stmt_block(
             node.body.body if isinstance(node.body, ast.EnumDef) else node.body,
             doc=node.doc,
         )
-        decorators = []
-        if node.decorators:
-            decorators = [
-                dec.gen.py_ast[0]
-                for dec in node.decorators
-                if isinstance(dec, ast.Expr)
-            ]
+        decorators = [
+            dec.gen.py_ast[0] for dec in node.decorators if isinstance(dec, ast.Expr)
+        ]
         base_classes = node.base_classes.gen.py_ast if node.base_classes else []
         if isinstance(base_classes, list):
             base_classes.append(
@@ -1142,7 +1134,7 @@ class PyastGenPass(Pass):
         target: ArchRefChain,
         body: SubNodeList[EnumBlockStmt],
         doc: Optional[String],
-        decorators: Optional[SubNodeList[ExprType]],
+        decorators: List[Expr],
         """
 
     def enter_ability(self, node: ast.Ability) -> None:
@@ -1157,11 +1149,11 @@ class PyastGenPass(Pass):
         signature: Optional[FuncSignature | ExprType | EventSignature],
         body: Optional[SubNodeList[CodeBlockStmt] | AbilityDef | FuncCall],
         doc: Optional[String],
-        decorators: Optional[SubNodeList[ExprType]],
+        decorators: List[Expr],
         """
         if isinstance(node.body, ast.AstImplOnlyNode):
             self.traverse(node.body)
-        for dec in node.decorators or []:
+        for dec in node.decorators:
             self.traverse(dec)
 
     def gen_llm_body(self, node: ast.Ability) -> list[ast3.AST]:
@@ -1183,7 +1175,7 @@ class PyastGenPass(Pass):
         signature: Optional[FuncSignature | ExprType | EventSignature],
         body: Optional[SubNodeList[CodeBlockStmt] | AbilityDef | FuncCall],
         doc: Optional[String],
-        decorators: Optional[List[ExprType]],
+        decorators: List[Expr],
         """
         func_type = ast3.AsyncFunctionDef if node.is_async else ast3.FunctionDef
         body = (
@@ -1216,13 +1208,9 @@ class PyastGenPass(Pass):
                 f"Abstract ability {node.sym_name} should not have a body.",
                 node,
             )
-        decorator_list = []
-        if node.decorators:
-            decorator_list = [
-                dec.gen.py_ast[0]
-                for dec in node.decorators
-                if isinstance(dec, ast.Expr)
-            ]
+        decorator_list = [
+            dec.gen.py_ast[0] for dec in node.decorators if isinstance(dec, ast.Expr)
+        ]
 
         if isinstance(node.body, ast.AstImplOnlyNode):
             self.needs_jac_feature()
@@ -1306,7 +1294,7 @@ class PyastGenPass(Pass):
         signature: FuncSignature | EventSignature,
         body: SubNodeList[CodeBlockStmt],
         doc: Optional[String],
-        decorators: Optional[SubNodeList[ExprType]],
+        decorators: List[Expr],
         """
 
     def exit_func_signature(self, node: ast.FuncSignature) -> None:
