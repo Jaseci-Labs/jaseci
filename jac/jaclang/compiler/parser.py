@@ -303,7 +303,6 @@ class JacParser(Pass):
             is_frozen = self.consume(ast.Token).name == Tok.KW_LET
             access_tag = self.match(ast.SubTag)
             assignments = self.consume(ast.SubNodeList)
-            self.consume_token(Tok.SEMI)
             return ast.GlobalVars(
                 access=access_tag,
                 assignments=assignments,
@@ -1518,73 +1517,68 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def check_stmt(self, kid: list[ast.AstNode]) -> ast.CheckStmt:
+        def check_stmt(self, _: None) -> ast.CheckStmt:
             """Grammar rule.
 
             check_stmt: KW_CHECK expression
             """
-            if isinstance(kid[1], ast.Expr):
-                return ast.CheckStmt(
-                    target=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.KW_CHECK)
+            target = self.consume(ast.Expr)
+            return ast.CheckStmt(
+                target=target,
+                kid=self.nodes,
+            )
 
-        def ctrl_stmt(self, kid: list[ast.AstNode]) -> ast.CtrlStmt:
+        def ctrl_stmt(self, _: None) -> ast.CtrlStmt:
             """Grammar rule.
 
             ctrl_stmt: KW_SKIP | KW_BREAK | KW_CONTINUE
             """
-            if isinstance(kid[0], ast.Token):
-                return ast.CtrlStmt(
-                    ctrl=kid[0],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            tok = (
+                self.match_token(Tok.KW_SKIP)
+                or self.match_token(Tok.KW_BREAK)
+                or self.consume_token(Tok.KW_CONTINUE)
+            )
+            return ast.CtrlStmt(
+                ctrl=tok,
+                kid=self.nodes,
+            )
 
-        def delete_stmt(self, kid: list[ast.AstNode]) -> ast.DeleteStmt:
+        def delete_stmt(self, _: None) -> ast.DeleteStmt:
             """Grammar rule.
 
             delete_stmt: KW_DELETE expression
             """
-            if isinstance(kid[1], ast.Expr):
-                return ast.DeleteStmt(
-                    target=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.KW_DELETE)
+            target = self.consume(ast.Expr)
+            return ast.DeleteStmt(
+                target=target,
+                kid=self.nodes,
+            )
 
-        def report_stmt(self, kid: list[ast.AstNode]) -> ast.ReportStmt:
+        def report_stmt(self, _: None) -> ast.ReportStmt:
             """Grammar rule.
 
             report_stmt: KW_REPORT expression
             """
-            if isinstance(kid[1], ast.Expr):
-                return ast.ReportStmt(
-                    expr=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.KW_REPORT)
+            target = self.consume(ast.Expr)
+            return ast.ReportStmt(
+                expr=target,
+                kid=self.nodes,
+            )
 
-        def return_stmt(self, kid: list[ast.AstNode]) -> ast.ReturnStmt:
+        def return_stmt(self, _: None) -> ast.ReturnStmt:
             """Grammar rule.
 
             return_stmt: KW_RETURN expression?
             """
-            if len(kid) > 1:
-                return ast.ReturnStmt(
-                    expr=kid[1] if isinstance(kid[1], ast.Expr) else None,
-                    kid=kid,
-                )
-            else:
-                return ast.ReturnStmt(
-                    expr=None,
-                    kid=kid,
-                )
+            self.consume_token(Tok.KW_RETURN)
+            expr = self.match(ast.Expr)
+            return ast.ReturnStmt(
+                expr=expr,
+                kid=self.nodes,
+            )
 
         def walker_stmt(self, kid: list[ast.AstNode]) -> ast.CodeBlockStmt:
             """Grammar rule.
@@ -1596,78 +1590,87 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def ignore_stmt(self, kid: list[ast.AstNode]) -> ast.IgnoreStmt:
+        def ignore_stmt(self, _: None) -> ast.IgnoreStmt:
             """Grammar rule.
 
             ignore_stmt: KW_IGNORE expression SEMI
             """
-            if isinstance(kid[1], ast.Expr):
-                return ast.IgnoreStmt(
-                    target=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.KW_IGNORE)
+            target = self.consume(ast.Expr)
+            self.consume_token(Tok.SEMI)
+            return ast.IgnoreStmt(
+                target=target,
+                kid=self.nodes,
+            )
 
-        def visit_stmt(self, kid: list[ast.AstNode]) -> ast.VisitStmt:
+        def visit_stmt(self, _: None) -> ast.VisitStmt:
             """Grammar rule.
 
             visit_stmt: KW_VISIT (inherited_archs)? expression (else_stmt | SEMI)
             """
-            sub_name = kid[1] if isinstance(kid[1], ast.SubNodeList) else None
-            target = kid[2] if sub_name else kid[1]
-            else_body = kid[-1] if isinstance(kid[-1], ast.ElseStmt) else None
-            if isinstance(target, ast.Expr):
-                return ast.VisitStmt(
-                    vis_type=sub_name,
-                    target=target,
-                    else_body=else_body,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.KW_VISIT)
+            sub_name = self.match(ast.SubNodeList)
+            target = self.consume(ast.Expr)
+            else_body = self.match(ast.ElseStmt)
+            if else_body is None:
+                self.consume_token(Tok.SEMI)
+            return ast.VisitStmt(
+                vis_type=sub_name,
+                target=target,
+                else_body=else_body,
+                kid=self.nodes,
+            )
 
-        def revisit_stmt(self, kid: list[ast.AstNode]) -> ast.RevisitStmt:
+        def revisit_stmt(self, _: None) -> ast.RevisitStmt:
             """Grammar rule.
 
             revisit_stmt: KW_REVISIT expression? (else_stmt | SEMI)
             """
-            target = kid[1] if isinstance(kid[1], ast.Expr) else None
-            else_body = kid[-1] if isinstance(kid[-1], ast.ElseStmt) else None
+            self.consume_token(Tok.KW_REVISIT)
+            target = self.match(ast.Expr)
+            else_body = self.match(ast.ElseStmt)
+            if else_body is None:
+                self.consume_token(Tok.SEMI)
             return ast.RevisitStmt(
                 hops=target,
                 else_body=else_body,
-                kid=kid,
+                kid=self.nodes,
             )
 
-        def disengage_stmt(self, kid: list[ast.AstNode]) -> ast.DisengageStmt:
+        def disengage_stmt(self, _: None) -> ast.DisengageStmt:
             """Grammar rule.
 
             disengage_stmt: KW_DISENGAGE SEMI
             """
+            kw = self.consume_token(Tok.KW_DISENGAGE)
+            semi = self.consume_token(Tok.SEMI)
             return ast.DisengageStmt(
-                kid=kid,
+                kid=[kw, semi],
             )
 
-        def global_ref(self, kid: list[ast.AstNode]) -> ast.GlobalStmt:
+        def global_ref(self, _: None) -> ast.GlobalStmt:
             """Grammar rule.
 
             global_ref: GLOBAL_OP name_list
             """
-            if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.SubNodeList):
-                return ast.GlobalStmt(target=kid[1], kid=kid)
-            else:
-                raise self.ice()
+            self.consume_token(Tok.GLOBAL_OP)
+            target = self.consume(ast.SubNodeList)
+            return ast.GlobalStmt(
+                target=target,
+                kid=self.nodes,
+            )
 
-        def nonlocal_ref(self, kid: list[ast.AstNode]) -> ast.NonLocalStmt:
+        def nonlocal_ref(self, _: None) -> ast.NonLocalStmt:
             """Grammar rule.
 
             nonlocal_ref: NONLOCAL_OP name_list
             """
-            if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.SubNodeList):
-                return ast.NonLocalStmt(target=kid[1], kid=kid)
-            else:
-                raise self.ice()
+            self.consume_token(Tok.NONLOCAL_OP)
+            target = self.consume(ast.SubNodeList)
+            return ast.NonLocalStmt(
+                target=target,
+                kid=self.nodes,
+            )
 
         def assignment(self, kid: list[ast.AstNode]) -> ast.Assignment:
             """Grammar rule.
