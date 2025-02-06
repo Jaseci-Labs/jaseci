@@ -108,40 +108,6 @@ components:
       - multiple
       title: Body_api_root_walker_post_with_file_post
       type: object
-    Child:
-      properties:
-        arr:
-          items:
-            type: integer
-          title: Arr
-          type: array
-        enum_field:
-          description: "Create a collection of name/value pairs.\n\nExample enumeration:\n\
-            \n>>> class Color(Enum):\n...     RED = 1\n...     BLUE = 2\n...     GREEN\
-            \ = 3\n\nAccess them by:\n\n- attribute access:\n\n  >>> Color.RED\n \
-            \ <Color.RED: 1>\n\n- value lookup:\n\n  >>> Color(1)\n  <Color.RED: 1>\n\
-            \n- name lookup:\n\n  >>> Color['RED']\n  <Color.RED: 1>\n\nEnumerations\
-            \ can be iterated over, and know how many members they have:\n\n>>> len(Color)\n\
-            3\n\n>>> list(Color)\n[<Color.RED: 1>, <Color.BLUE: 2>, <Color.GREEN:\
-            \ 3>]\n\nMethods can be added to enumerations, and members can have their\
-            \ own\nattributes -- see the documentation for details."
-          enum: []
-          title: Enum
-        json:
-          additionalProperties:
-            type: integer
-          title: Json
-          type: object
-        val:
-          title: Val
-          type: integer
-      required:
-      - val
-      - arr
-      - json
-      - enum_field
-      title: Child
-      type: object
     ContextResponse_NoneType_:
       properties:
         reports:
@@ -164,36 +130,6 @@ components:
       - status
       title: ContextResponse
       type: object
-    ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__:
-      properties:
-        reports:
-          anyOf:
-          - items: {}
-            type: array
-          - type: 'null'
-          title: Reports
-        returns:
-          anyOf:
-          - items:
-              anyOf:
-              - type: integer
-              - type: string
-              - type: boolean
-              - $ref: '#/components/schemas/Parent'
-              - items: {}
-                type: array
-              - type: object
-              - type: 'null'
-            type: array
-          - type: 'null'
-          title: Returns
-        status:
-          title: Status
-          type: integer
-      required:
-      - status
-      title: ContextResponse
-      type: object
     DetachSSO:
       description: Attach SSO Request Model.
       properties:
@@ -204,18 +140,6 @@ components:
       - platform
       title: DetachSSO
       type: object
-    Enum:
-      description: "Create a collection of name/value pairs.\n\nExample enumeration:\n\
-        \n>>> class Color(Enum):\n...     RED = 1\n...     BLUE = 2\n...     GREEN\
-        \ = 3\n\nAccess them by:\n\n- attribute access:\n\n  >>> Color.RED\n  <Color.RED:\
-        \ 1>\n\n- value lookup:\n\n  >>> Color(1)\n  <Color.RED: 1>\n\n- name lookup:\n\
-        \n  >>> Color['RED']\n  <Color.RED: 1>\n\nEnumerations can be iterated over,\
-        \ and know how many members they have:\n\n>>> len(Color)\n3\n\n>>> list(Color)\n\
-        [<Color.RED: 1>, <Color.BLUE: 2>, <Color.GREEN: 3>]\n\nMethods can be added\
-        \ to enumerations, and members can have their own\nattributes -- see the documentation\
-        \ for details."
-      enum: []
-      title: Enum
     Expiration:
       description: Key Expiration.
       properties:
@@ -279,43 +203,6 @@ components:
       required:
       - ids
       title: KeyIDs
-      type: object
-    Parent:
-      properties:
-        arr:
-          items:
-            type: integer
-          title: Arr
-          type: array
-        child:
-          $ref: '#/components/schemas/Child'
-        enum_field:
-          description: "Create a collection of name/value pairs.\n\nExample enumeration:\n\
-            \n>>> class Color(Enum):\n...     RED = 1\n...     BLUE = 2\n...     GREEN\
-            \ = 3\n\nAccess them by:\n\n- attribute access:\n\n  >>> Color.RED\n \
-            \ <Color.RED: 1>\n\n- value lookup:\n\n  >>> Color(1)\n  <Color.RED: 1>\n\
-            \n- name lookup:\n\n  >>> Color['RED']\n  <Color.RED: 1>\n\nEnumerations\
-            \ can be iterated over, and know how many members they have:\n\n>>> len(Color)\n\
-            3\n\n>>> list(Color)\n[<Color.RED: 1>, <Color.BLUE: 2>, <Color.GREEN:\
-            \ 3>]\n\nMethods can be added to enumerations, and members can have their\
-            \ own\nattributes -- see the documentation for details."
-          enum: []
-          title: Enum
-        json:
-          additionalProperties:
-            type: integer
-          title: Json
-          type: object
-        val:
-          title: Val
-          type: integer
-      required:
-      - val
-      - arr
-      - json
-      - enum_field
-      - child
-      title: Parent
       type: object
     UserChangePassword:
       description: User Creation Request Model.
@@ -2509,7 +2396,7 @@ paths:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__'
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
                 - {}
                 title: Response Api Root Walker Different Return Post
           description: Successful Response
@@ -2534,7 +2421,7 @@ paths:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__'
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
                 - {}
                 title: Response Api Entry Walker Different Return  Node  Post
           description: Successful Response
