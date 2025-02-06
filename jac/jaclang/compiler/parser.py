@@ -1526,7 +1526,7 @@ class JacParser(Pass):
             target = self.consume(ast.Expr)
             return ast.CheckStmt(
                 target=target,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def ctrl_stmt(self, _: None) -> ast.CtrlStmt:
@@ -1541,7 +1541,7 @@ class JacParser(Pass):
             )
             return ast.CtrlStmt(
                 ctrl=tok,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def delete_stmt(self, _: None) -> ast.DeleteStmt:
@@ -1553,7 +1553,7 @@ class JacParser(Pass):
             target = self.consume(ast.Expr)
             return ast.DeleteStmt(
                 target=target,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def report_stmt(self, _: None) -> ast.ReportStmt:
@@ -1565,7 +1565,7 @@ class JacParser(Pass):
             target = self.consume(ast.Expr)
             return ast.ReportStmt(
                 expr=target,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def return_stmt(self, _: None) -> ast.ReturnStmt:
@@ -1577,7 +1577,7 @@ class JacParser(Pass):
             expr = self.match(ast.Expr)
             return ast.ReturnStmt(
                 expr=expr,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def walker_stmt(self, kid: list[ast.AstNode]) -> ast.CodeBlockStmt:
@@ -1600,7 +1600,7 @@ class JacParser(Pass):
             self.consume_token(Tok.SEMI)
             return ast.IgnoreStmt(
                 target=target,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def visit_stmt(self, _: None) -> ast.VisitStmt:
@@ -1618,7 +1618,7 @@ class JacParser(Pass):
                 vis_type=sub_name,
                 target=target,
                 else_body=else_body,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def revisit_stmt(self, _: None) -> ast.RevisitStmt:
@@ -1634,7 +1634,7 @@ class JacParser(Pass):
             return ast.RevisitStmt(
                 hops=target,
                 else_body=else_body,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def disengage_stmt(self, _: None) -> ast.DisengageStmt:
@@ -1657,7 +1657,7 @@ class JacParser(Pass):
             target = self.consume(ast.SubNodeList)
             return ast.GlobalStmt(
                 target=target,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def nonlocal_ref(self, _: None) -> ast.NonLocalStmt:
@@ -1669,7 +1669,7 @@ class JacParser(Pass):
             target = self.consume(ast.SubNodeList)
             return ast.NonLocalStmt(
                 target=target,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def assignment(self, kid: list[ast.AstNode]) -> ast.Assignment:
@@ -2803,7 +2803,7 @@ class JacParser(Pass):
             return ast.ArchRef(
                 arch_type=arch_type,
                 arch_name=arch_name,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def edge_ref(self, _: None) -> ast.ArchRef:
@@ -2816,7 +2816,7 @@ class JacParser(Pass):
             return ast.ArchRef(
                 arch_type=arch_type,
                 arch_name=arch_name,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def walker_ref(self, _: None) -> ast.ArchRef:
@@ -2829,7 +2829,7 @@ class JacParser(Pass):
             return ast.ArchRef(
                 arch_type=arch_type,
                 arch_name=arch_name,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def class_ref(self, _: None) -> ast.ArchRef:
@@ -2842,7 +2842,7 @@ class JacParser(Pass):
             return ast.ArchRef(
                 arch_type=arch_type,
                 arch_name=arch_name,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def object_ref(self, _: None) -> ast.ArchRef:
@@ -2855,7 +2855,7 @@ class JacParser(Pass):
             return ast.ArchRef(
                 arch_type=arch_type,
                 arch_name=arch_name,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def type_ref(self, _: None) -> ast.ArchRef:
@@ -2868,7 +2868,7 @@ class JacParser(Pass):
             return ast.ArchRef(
                 arch_type=arch_type,
                 arch_name=arch_name,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def enum_ref(self, _: None) -> ast.ArchRef:
@@ -2881,7 +2881,7 @@ class JacParser(Pass):
             return ast.ArchRef(
                 arch_type=arch_type,
                 arch_name=arch_name,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def ability_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
@@ -2925,38 +2925,46 @@ class JacParser(Pass):
 
             abil_to_arch_chain: arch_or_ability_chain? arch_ref
             """
-            if len(self.nodes) == 2:
-                kid_1 = self.consume(ast.ArchRef)
-                kid_2 = self.consume(ast.ArchRefChain)
+            if len(kid) == 2:
+                if isinstance(kid[1], ast.ArchRef) and isinstance(
+                    kid[0], ast.ArchRefChain
+                ):
+                    return ast.ArchRefChain(
+                        archs=[*(kid[0].archs), kid[1]],
+                        kid=[*(kid[0].kid), kid[1]],
+                    )
+                else:
+                    raise self.ice()
+            elif isinstance(kid[0], ast.ArchRef):
                 return ast.ArchRefChain(
-                    archs=[*(kid_2.archs), kid_1],
-                    kid=[*(kid_2.kid), kid_1],
+                    archs=[kid[0]],
+                    kid=kid,
                 )
             else:
-                arch_kid = self.consume(ast.ArchRef)
-                return ast.ArchRefChain(
-                    archs=[arch_kid],
-                    kid=self.nodes,
-                )
+                raise self.ice()
 
         def arch_to_abil_chain(self, kid: list[ast.AstNode]) -> ast.ArchRefChain:
             """Grammar rule.
 
             arch_to_abil_chain: arch_or_ability_chain? ability_ref
             """
-            if len(self.nodes) == 2:
-                kid_1 = self.consume(ast.ArchRef)
-                kid_2 = self.consume(ast.ArchRefChain)
+            if len(kid) == 2:
+                if isinstance(kid[1], ast.ArchRef) and isinstance(
+                    kid[0], ast.ArchRefChain
+                ):
+                    return ast.ArchRefChain(
+                        archs=[*(kid[0].archs), kid[1]],
+                        kid=[*(kid[0].kid), kid[1]],
+                    )
+                else:
+                    raise self.ice()
+            elif isinstance(kid[0], ast.ArchRef):
                 return ast.ArchRefChain(
-                    archs=[*(kid_2.archs), kid_1],
-                    kid=[*(kid_2.kid), kid_1],
+                    archs=[kid[0]],
+                    kid=kid,
                 )
             else:
-                arch_kid = self.consume(ast.ArchRef)
-                return ast.ArchRefChain(
-                    archs=[arch_kid],
-                    kid=self.nodes,
-                )
+                raise self.ice()
 
         def arch_to_enum_chain(self, kid: list[ast.AstNode]) -> ast.ArchRefChain:
             """Grammar rule.
