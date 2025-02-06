@@ -393,7 +393,7 @@ class JacFeature(
         target_obj: Optional[NodeArchitype | list[NodeArchitype]],
         dir: EdgeDir,
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-        edges_only: Optional[bool] = False,
+        edges_only: bool = False,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's apply_dir stmt feature."""
         return plugin_manager.hook.edge_ref(
