@@ -2124,7 +2124,7 @@ class PyastGenPass(Pass):
     def exit_visit_stmt(self, node: ast.VisitStmt) -> None:
         """Sub objects.
 
-        vis_type: Optional[SubNodeList[AtomType]],
+        vis_type: list[AtomType],
         target: ExprType,
         else_body: Optional[ElseStmt],
         """

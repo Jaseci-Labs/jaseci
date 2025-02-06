@@ -738,7 +738,7 @@ class SymTabBuildPass(Pass):
     def enter_visit_stmt(self, node: ast.VisitStmt) -> None:
         """Sub objects.
 
-        vis_type: Optional[Token],
+        vis_type: list[Token],
         target: ExprType,
         else_body: Optional['ElseStmt'],
         from_walker: bool,
