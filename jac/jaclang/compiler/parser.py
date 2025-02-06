@@ -2891,19 +2891,18 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def ability_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
+        def ability_ref(self, _: None) -> ast.ArchRef:
             """Grammar rule.
 
             ability_ref: ABILITY_OP (special_ref | name_ref)
             """
-            if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameAtom):
-                return ast.ArchRef(
-                    arch_type=kid[0],
-                    arch_name=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            arch_type = self.consume_token(Tok.ABILITY_OP)
+            arch_name = self.consume(ast.NameAtom)
+            return ast.ArchRef(
+                arch_type=arch_type,
+                arch_name=arch_name,
+                kid=self.cur_nodes,
+            )
 
         def arch_or_ability_chain(self, kid: list[ast.AstNode]) -> ast.ArchRefChain:
             """Grammar rule.
@@ -3305,21 +3304,19 @@ class JacParser(Pass):
                     kid=kid,
                 )
 
-        def as_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+        def as_pattern(self, _: None) -> ast.MatchPattern:
             """Grammar rule.
 
             as_pattern: pattern KW_AS NAME
             """
-            if isinstance(kid[0], ast.MatchPattern) and isinstance(
-                kid[2], ast.NameAtom
-            ):
-                return ast.MatchAs(
-                    pattern=kid[0],
-                    name=kid[2],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            pattern = self.consume(ast.MatchPattern)
+            self.consume_token(Tok.KW_AS)
+            name = self.consume(ast.NameAtom)
+            return ast.MatchAs(
+                pattern=pattern,
+                name=name,
+                kid=self.cur_nodes,
+            )
 
         def pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
             """Grammar rule.
@@ -3330,23 +3327,18 @@ class JacParser(Pass):
                 | mapping_pattern
                 | class_pattern
             """
-            if isinstance(kid[0], ast.MatchPattern):
-                return kid[0]
-            else:
-                raise self.ice()
+            return self.consume(ast.MatchPattern)
 
-        def literal_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+        def literal_pattern(self, _: None) -> ast.MatchPattern:
             """Grammar rule.
 
             literal_pattern: (INT | FLOAT | multistring)
             """
-            if isinstance(kid[0], ast.Expr):
-                return ast.MatchValue(
-                    value=kid[0],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            value = self.consume(ast.Expr)
+            return ast.MatchValue(
+                value=value,
+                kid=self.cur_nodes,
+            )
 
         def singleton_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
             """Grammar rule.
