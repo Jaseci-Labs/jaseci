@@ -673,6 +673,7 @@ class JacParser(Pass):
                         access=access,
                         base_classes=inh,
                         body=body,
+                        decorators=[],
                         kid=kid,
                     )
                 )
@@ -845,6 +846,7 @@ class JacParser(Pass):
                         access=access,
                         semstr=semstr,
                         signature=signature,
+                        decorators=[],
                         body=body,
                         kid=kid,
                     )
@@ -912,6 +914,7 @@ class JacParser(Pass):
                         access=access,
                         semstr=semstr,
                         signature=signature,
+                        decorators=[],
                         body=None,
                         kid=kid,
                     )
@@ -962,6 +965,7 @@ class JacParser(Pass):
                         semstr=semstr,
                         signature=signature,
                         body=chomp[0],
+                        decorators=[],
                         kid=kid,
                     )
                 )
