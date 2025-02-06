@@ -1024,7 +1024,7 @@ class JacFeatureImpl(
                         dir in [EdgeDir.OUT, EdgeDir.ANY]
                         and node == source
                         and target.architype in right
-                        and Jac.check_write_access(target)
+                        and Jac.check_connect_access(target)
                     ):
                         Jac.destroy(anchor) if anchor.persistent else Jac.detach(anchor)
                         disconnect_occurred = True
@@ -1032,7 +1032,7 @@ class JacFeatureImpl(
                         dir in [EdgeDir.IN, EdgeDir.ANY]
                         and node == target
                         and source.architype in right
-                        and Jac.check_write_access(source)
+                        and Jac.check_connect_access(source)
                     ):
                         Jac.destroy(anchor) if anchor.persistent else Jac.detach(anchor)
                         disconnect_occurred = True

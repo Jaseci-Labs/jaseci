@@ -6,14 +6,14 @@
             "deployment_name": "pod-manager-deployment",
             "service_account_name": "jac-orc-sa",
             "container_name": "pod-manager",
-            "image_name": "ashishmahendra/jac-splice-orc:0.0.6",
+            "image_name": "ashishmahendra/jac-splice-orc:0.0.8",
             "container_port": 8000,
             "service_name": "pod-manager-service",
-            "service_type": "LoadBalancer",
+            "service_type": "NodePort",
             "env_vars": {
                 "SERVICE_TYPE": "pod_manager",
                 "NAMESPACE": "jac-splice-test",
-                "IMAGE_NAME": "ashishmahendra/jac-splice-orc:0.0.6"
+                "IMAGE_NAME": "ashishmahendra/jac-splice-orc:0.0.8"
             },
             "resources": {
                 "requests": {
@@ -71,6 +71,6 @@
         }
     },
     "environment": {
-        "POD_MANAGER_URL": "http://a88a549ed32f14b14b1333a81ebd7a2a-1627559794.us-west-2.elb.amazonaws.com:8000"
+        "POD_MANAGER_URL": "http://localhost:8000"
     }
 }

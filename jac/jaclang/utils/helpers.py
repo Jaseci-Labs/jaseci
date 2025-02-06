@@ -95,7 +95,7 @@ def auto_generate_refs() -> None:
     result = extract_headings(file_path)
     created_file_path = os.path.join(
         os.path.split(os.path.dirname(__file__))[0],
-        "../support/jac-lang.org/docs/learn/jac_ref.md",
+        "../support/jac-lang.org/docs/lang_ref/jac_ref.md",
     )
     destination_folder = os.path.join(
         os.path.split(os.path.dirname(__file__))[0], "../examples/reference/"
