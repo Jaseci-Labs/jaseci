@@ -2464,7 +2464,7 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
 
     def __init__(
         self,
-        vis_type: Optional[SubNodeList[Expr]],
+        vis_type: list[Expr],
         target: Expr,
         else_body: Optional[ElseStmt],
         kid: Sequence[AstNode],
@@ -2479,15 +2479,24 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
     def normalize(self, deep: bool = False) -> bool:
         """Normalize visit statement node."""
         res = True
+        if self.vis_type:
+            res = (
+                all(
+                    expr.normalize(deep)
+                    for expr in self.vis_type
+                    if isinstance(expr, Expr)
+                )
+                and res
+            )
         if deep:
-            res = self.vis_type.normalize(deep) if self.vis_type else res
             res = self.target.normalize(deep)
             res = res and self.else_body.normalize(deep) if self.else_body else res
         new_kid: list[AstNode] = []
         new_kid.append(self.gen_token(Tok.KW_VISIT))
         if self.vis_type:
-            new_kid.append(self.gen_token(Tok.COLON))
-            new_kid.append(self.vis_type)
+            for expr in self.vis_type:
+                new_kid.append(self.gen_token(Tok.COLON))
+                new_kid.append(expr)
             new_kid.append(self.gen_token(Tok.COLON))
         new_kid.append(self.target)
         if self.else_body:
