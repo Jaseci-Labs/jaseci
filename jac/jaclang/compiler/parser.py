@@ -3340,18 +3340,16 @@ class JacParser(Pass):
                 kid=self.cur_nodes,
             )
 
-        def singleton_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+        def singleton_pattern(self, _:None) -> ast.MatchPattern:
             """Grammar rule.
 
             singleton_pattern: (NULL | BOOL)
             """
-            if isinstance(kid[0], (ast.Bool, ast.Null)):
-                return ast.MatchSingleton(
-                    value=kid[0],
-                    kid=kid,
+            value = self.match_token(Tok.NULL) or self.consume_token(Tok.BOOL)
+            return ast.MatchSingleton(
+                    value=value,
+                    kid=self.cur_nodes,
                 )
-            else:
-                raise self.ice()
 
         def capture_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
             """Grammar rule.
@@ -3375,16 +3373,20 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def sequence_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+        def sequence_pattern(self, _:None) -> ast.MatchPattern:
             """Grammar rule.
 
             sequence_pattern: LSQUARE list_inner_pattern (COMMA list_inner_pattern)* RSQUARE
                             | LPAREN list_inner_pattern (COMMA list_inner_pattern)* RPAREN
             """
-            patterns = [i for i in kid if isinstance(i, ast.MatchPattern)]
+            self.consume_token(Tok.LSQUARE) or self.consume_token(Tok.LPAREN)
+            patterns = [self.consume(ast.MatchPattern)]
+            while self.match_token(Tok.COMMA):
+                patterns.append(self.consume(ast.MatchPattern))
+            self.consume_token(Tok.RSQUARE) or self.consume_token(Tok.RPAREN)
             return ast.MatchSequence(
                 values=patterns,
-                kid=kid,
+                kid=self.cur_nodes,
             )
 
         def mapping_pattern(self, kid: list[ast.AstNode]) -> ast.MatchMapping:
