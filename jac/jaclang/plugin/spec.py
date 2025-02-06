@@ -374,7 +374,7 @@ class JacFeatureSpec(
         target_obj: Optional[NodeArchitype | list[NodeArchitype]],
         dir: EdgeDir,
         filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-        edges_only: bool,
+        edges_only: Optional[bool],
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's apply_dir stmt feature."""
         raise NotImplementedError
