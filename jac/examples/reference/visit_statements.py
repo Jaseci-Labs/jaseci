@@ -6,7 +6,7 @@ from jaclang.plugin.feature import JacFeature as _Jac
 class Visitor:
     def travel(self, _jac_here_: _Jac.get_root_type()) -> None:
         if _Jac.visit_node(
-            self, _Jac.edge_ref(_jac_here_, None, _Jac.EdgeDir.OUT, None, None)
+            self, _Jac.edge_ref(_jac_here_, None, _Jac.EdgeDir.OUT, None, False)
         ):
             pass
         elif _Jac.visit_node(self, _Jac.get_root()):

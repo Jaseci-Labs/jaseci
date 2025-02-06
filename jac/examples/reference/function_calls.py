@@ -1,4 +1,4 @@
-def foo(x: int, y: int, z: int) -> None:
+def foo(x: int, y: int, z: int) -> tuple[int, int]:
     return (x * y, y * z)
 
 

@@ -55,3 +55,10 @@ out.txt
 
 # Jaclang session files
 *.session
+
+
+# session files
+*.bak
+*.dat
+*.dir
+*.log
