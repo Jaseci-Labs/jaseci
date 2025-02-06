@@ -1366,123 +1366,101 @@ class JacParser(Pass):
                 kid=self.cur_nodes,
             )
 
-        def for_stmt(self, kid: list[ast.AstNode]) -> ast.IterForStmt | ast.InForStmt:
+        def for_stmt(self, _: None) -> ast.IterForStmt | ast.InForStmt:
             """Grammar rule.
 
             for_stmt: KW_ASYNC? KW_FOR assignment KW_TO expression KW_BY
                         expression code_block else_stmt?
                     | KW_ASYNC? KW_FOR expression KW_IN expression code_block else_stmt?
             """
-            chomp = [*kid]
-            is_async = bool(
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_ASYNC
+            is_async = bool(self.match_token(Tok.KW_ASYNC))
+            self.consume_token(Tok.KW_FOR)
+            if iter := self.match(ast.Assignment):
+                self.consume_token(Tok.KW_TO)
+                condition = self.consume(ast.Expr)
+                self.consume_token(Tok.KW_BY)
+                count_by = self.consume(ast.Assignment)
+                body = self.consume(ast.SubNodeList)
+                else_body = self.match(ast.ElseStmt)
+                return ast.IterForStmt(
+                    is_async=is_async,
+                    iter=iter,
+                    condition=condition,
+                    count_by=count_by,
+                    body=body,
+                    else_body=else_body,
+                    kid=self.nodes,
+                )
+            target = self.consume(ast.Expr)
+            self.consume_token(Tok.KW_IN)
+            collection = self.consume(ast.Expr)
+            body = self.consume(ast.SubNodeList)
+            else_body = self.match(ast.ElseStmt)
+            return ast.InForStmt(
+                is_async=is_async,
+                target=target,
+                collection=collection,
+                body=body,
+                else_body=else_body,
+                kid=self.nodes,
             )
-            chomp = chomp[1:] if is_async else chomp
-            if isinstance(chomp[1], ast.Assignment):
-                if (
-                    isinstance(chomp[3], ast.Expr)
-                    and isinstance(chomp[5], ast.Assignment)
-                    and isinstance(chomp[6], ast.SubNodeList)
-                ):
-                    return ast.IterForStmt(
-                        is_async=is_async,
-                        iter=chomp[1],
-                        condition=chomp[3],
-                        count_by=chomp[5],
-                        body=chomp[6],
-                        else_body=(
-                            chomp[-1] if isinstance(chomp[-1], ast.ElseStmt) else None
-                        ),
-                        kid=kid,
-                    )
-                else:
-                    raise self.ice()
-            elif isinstance(chomp[1], ast.Expr):
-                if isinstance(chomp[3], ast.Expr) and isinstance(
-                    chomp[4], ast.SubNodeList
-                ):
-                    return ast.InForStmt(
-                        is_async=is_async,
-                        target=chomp[1],
-                        collection=chomp[3],
-                        body=chomp[4],
-                        else_body=(
-                            chomp[-1] if isinstance(chomp[-1], ast.ElseStmt) else None
-                        ),
-                        kid=kid,
-                    )
-                else:
-                    raise self.ice()
-            else:
-                raise self.ice()
 
-        def while_stmt(self, kid: list[ast.AstNode]) -> ast.WhileStmt:
+        def while_stmt(self, _: None) -> ast.WhileStmt:
             """Grammar rule.
 
             while_stmt: KW_WHILE expression code_block
             """
-            if isinstance(kid[1], ast.Expr) and isinstance(kid[2], ast.SubNodeList):
-                return ast.WhileStmt(
-                    condition=kid[1],
-                    body=kid[2],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.KW_WHILE)
+            condition = self.consume(ast.Expr)
+            body = self.consume(ast.SubNodeList)
+            return ast.WhileStmt(
+                condition=condition,
+                body=body,
+                kid=self.nodes,
+            )
 
-        def with_stmt(self, kid: list[ast.AstNode]) -> ast.WithStmt:
+        def with_stmt(self, _: None) -> ast.WithStmt:
             """Grammar rule.
 
             with_stmt: KW_ASYNC? KW_WITH expr_as_list code_block
             """
-            chomp = [*kid]
-            is_async = bool(
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_ASYNC
+            is_async = bool(self.match_token(Tok.KW_ASYNC))
+            self.consume_token(Tok.KW_WITH)
+            exprs = self.consume(ast.SubNodeList)
+            body = self.consume(ast.SubNodeList)
+            return ast.WithStmt(
+                is_async=is_async,
+                exprs=exprs,
+                body=body,
+                kid=self.nodes,
             )
-            chomp = chomp[1:] if is_async else chomp
-            if isinstance(chomp[1], ast.SubNodeList) and isinstance(
-                chomp[2], ast.SubNodeList
-            ):
-                return ast.WithStmt(
-                    is_async=is_async,
-                    exprs=chomp[1],
-                    body=chomp[2],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
 
-        def expr_as_list(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.ExprAsItem]:
+        def expr_as_list(self, _: None) -> ast.SubNodeList[ast.ExprAsItem]:
             """Grammar rule.
 
             expr_as_list: (expr_as COMMA)* expr_as
             """
-            ret = ast.SubNodeList[ast.ExprAsItem](
-                items=[i for i in kid if isinstance(i, ast.ExprAsItem)],
+            items = [self.consume(ast.ExprAsItem)]
+            while self.match_token(Tok.COMMA):
+                items.append(self.consume(ast.ExprAsItem))
+            return ast.SubNodeList[ast.ExprAsItem](
+                items=items,
                 delim=Tok.COMMA,
-                kid=kid,
+                kid=self.nodes,
             )
-            return ret
 
-        def expr_as(self, kid: list[ast.AstNode]) -> ast.ExprAsItem:
+        def expr_as(self, _: None) -> ast.ExprAsItem:
             """Grammar rule.
 
             expr_as: expression (KW_AS expression)?
             """
-            expr = kid[0]
-            alias = kid[2] if len(kid) > 1 else None
-            if isinstance(expr, ast.Expr) and (
-                alias is None or isinstance(alias, ast.Expr)
-            ):
-                return ast.ExprAsItem(
-                    expr=expr,
-                    alias=alias,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            expr = self.consume(ast.Expr)
+            alias = self.consume(ast.Expr) if self.match_token(Tok.KW_AS) else None
+            return ast.ExprAsItem(
+                expr=expr,
+                alias=alias,
+                kid=self.nodes,
+            )
 
         def raise_stmt(self, kid: list[ast.AstNode]) -> ast.RaiseStmt:
             """Grammar rule.
@@ -1866,91 +1844,79 @@ class JacParser(Pass):
             """
             return self._binary_expr_unwind(kid)
 
-        def logical_or(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def logical_or(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             logical_or: logical_and (KW_OR logical_and)*
             """
-            if len(kid) > 1:
-                values = [i for i in kid if isinstance(i, ast.Expr)]
-                ops = kid[1] if isinstance(kid[1], ast.Token) else None
-                if not ops:
-                    raise self.ice()
-                return ast.BoolExpr(
-                    op=ops,
-                    values=values,
-                    kid=kid,
-                )
-            elif isinstance(kid[0], ast.Expr):
-                return kid[0]
-            else:
+            value = self.consume(ast.Expr)
+            if not (ops := self.match_token(Tok.KW_OR)):
+                return value
+            values: list = [value]
+            while value := self.consume(ast.Expr):
+                values.append(value)
+                if not self.match_token(Tok.KW_OR):
+                    break
+            return ast.BoolExpr(
+                op=ops,
+                values=values,
+                kid=self.nodes,
+            )
 
-                raise self.ice()
-
-        def logical_and(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def logical_and(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             logical_and: logical_not (KW_AND logical_not)*
             """
-            if len(kid) > 1:
-                values = [i for i in kid if isinstance(i, ast.Expr)]
-                ops = kid[1] if isinstance(kid[1], ast.Token) else None
-                if not ops:
-                    raise self.ice()
-                return ast.BoolExpr(
-                    op=ops,
-                    values=values,
-                    kid=kid,
-                )
-            elif isinstance(kid[0], ast.Expr):
-                return kid[0]
-            else:
+            value = self.consume(ast.Expr)
+            if not (ops := self.match_token(Tok.KW_AND)):
+                return value
+            values: list = [value]
+            while value := self.consume(ast.Expr):
+                values.append(value)
+                if not self.match_token(Tok.KW_AND):
+                    break
+            return ast.BoolExpr(
+                op=ops,
+                values=values,
+                kid=self.nodes,
+            )
 
-                raise self.ice()
-
-        def logical_not(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def logical_not(self, _: None) -> ast.Expr:
             """Grammar rule.
 
-            logical_or: (logical_or KW_OR)? logical_and
+            logical_not: NOT logical_not | compare
             """
-            if len(kid) == 2:
-                if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.Expr):
-                    return ast.UnaryExpr(
-                        op=kid[0],
-                        operand=kid[1],
-                        kid=kid,
-                    )
-                else:
-                    raise self.ice()
-            if isinstance(kid[0], ast.Expr):
-                return kid[0]
-            else:
-                raise self.ice()
+            if op := self.match_token(Tok.NOT):
+                operand = self.consume(ast.Expr)
+                return ast.UnaryExpr(
+                    op=op,
+                    operand=operand,
+                    kid=self.nodes,
+                )
+            return self.consume(ast.Expr)
 
-        def compare(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def compare(self, _: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
 
             compare: (arithmetic cmp_op)* arithmetic
             """
-            if len(kid) > 1:
-                ops = [i for i in kid[1::2] if isinstance(i, ast.Token)]
-                left = kid[0]
-                rights = [i for i in kid[1:][1::2] if isinstance(i, ast.Expr)]
-                if isinstance(left, ast.Expr) and len(ops) == len(rights):
-                    return ast.CompareExpr(
-                        left=left,
-                        ops=ops,
-                        rights=rights,
-                        kid=kid,
-                    )
-                else:
-                    raise self.ice()
-            elif isinstance(kid[0], ast.Expr):
-                return kid[0]
-            else:
-                raise self.ice()
+            ops: list = []
+            rights: list = []
+            left = self.consume(ast.Expr)
+            while op := self.match(ast.Token):
+                ops.append(op)
+                rights.append(self.consume(ast.Expr))
+            if not ops:
+                return left
+            return ast.CompareExpr(
+                left=left,
+                ops=ops,
+                rights=rights,
+                kid=self.nodes,
+            )
 
-        def cmp_op(self, kid: list[ast.AstNode]) -> ast.Token:
+        def cmp_op(self, _: None) -> ast.Token:
             """Grammar rule.
 
             cmp_op: KW_ISN
@@ -1964,40 +1930,39 @@ class JacParser(Pass):
                   | LT
                   | EE
             """
-            if isinstance(kid[0], ast.Token):
-                return kid[0]
-            else:
-                raise self.ice()
+            return self.consume(ast.Token)
 
-        def arithmetic(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def arithmetic(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             arithmetic: (arithmetic (MINUS | PLUS))? term
             """
-            return self._binary_expr_unwind(kid)
+            return self._binary_expr_unwind(self.nodes)
 
-        def term(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def term(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             term: (term (MOD | DIV | FLOOR_DIV | STAR_MUL | DECOR_OP))? power
             """
-            return self._binary_expr_unwind(kid)
+            return self._binary_expr_unwind(self.nodes)
 
-        def factor(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def factor(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             factor: (BW_NOT | MINUS | PLUS) factor | connect
             """
-            if len(kid) == 2:
-                if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.Expr):
-                    return ast.UnaryExpr(
-                        op=kid[0],
-                        operand=kid[1],
-                        kid=kid,
-                    )
-                else:
-                    raise self.ice()
-            return self._binary_expr_unwind(kid)
+            if (
+                op := self.match_token(Tok.BW_NOT)
+                or self.match_token(Tok.MINUS)
+                or self.match_token(Tok.PLUS)
+            ):
+                operand = self.consume(ast.Expr)
+                return ast.UnaryExpr(
+                    op=op,
+                    operand=operand,
+                    kid=self.nodes,
+                )
+            return self._binary_expr_unwind(self.nodes)
 
         def power(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
