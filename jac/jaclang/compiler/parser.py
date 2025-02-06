@@ -1389,7 +1389,7 @@ class JacParser(Pass):
                     count_by=count_by,
                     body=body,
                     else_body=else_body,
-                    kid=self.nodes,
+                    kid=self.cur_nodes,
                 )
             target = self.consume(ast.Expr)
             self.consume_token(Tok.KW_IN)
@@ -1402,7 +1402,7 @@ class JacParser(Pass):
                 collection=collection,
                 body=body,
                 else_body=else_body,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def while_stmt(self, _: None) -> ast.WhileStmt:
@@ -1416,7 +1416,7 @@ class JacParser(Pass):
             return ast.WhileStmt(
                 condition=condition,
                 body=body,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def with_stmt(self, _: None) -> ast.WithStmt:
@@ -1432,7 +1432,7 @@ class JacParser(Pass):
                 is_async=is_async,
                 exprs=exprs,
                 body=body,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def expr_as_list(self, _: None) -> ast.SubNodeList[ast.ExprAsItem]:
@@ -1446,7 +1446,7 @@ class JacParser(Pass):
             return ast.SubNodeList[ast.ExprAsItem](
                 items=items,
                 delim=Tok.COMMA,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def expr_as(self, _: None) -> ast.ExprAsItem:
@@ -1459,7 +1459,7 @@ class JacParser(Pass):
             return ast.ExprAsItem(
                 expr=expr,
                 alias=alias,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def raise_stmt(self, kid: list[ast.AstNode]) -> ast.RaiseStmt:
@@ -1504,7 +1504,7 @@ class JacParser(Pass):
             target = self.consume(ast.Expr)
             return ast.CheckStmt(
                 target=target,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def ctrl_stmt(self, _: None) -> ast.CtrlStmt:
@@ -1519,7 +1519,7 @@ class JacParser(Pass):
             )
             return ast.CtrlStmt(
                 ctrl=tok,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def delete_stmt(self, _: None) -> ast.DeleteStmt:
@@ -1531,7 +1531,7 @@ class JacParser(Pass):
             target = self.consume(ast.Expr)
             return ast.DeleteStmt(
                 target=target,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def report_stmt(self, _: None) -> ast.ReportStmt:
@@ -1543,7 +1543,7 @@ class JacParser(Pass):
             target = self.consume(ast.Expr)
             return ast.ReportStmt(
                 expr=target,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def return_stmt(self, _: None) -> ast.ReturnStmt:
@@ -1555,7 +1555,7 @@ class JacParser(Pass):
             expr = self.match(ast.Expr)
             return ast.ReturnStmt(
                 expr=expr,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def walker_stmt(self, kid: list[ast.AstNode]) -> ast.CodeBlockStmt:
@@ -1578,7 +1578,7 @@ class JacParser(Pass):
             self.consume_token(Tok.SEMI)
             return ast.IgnoreStmt(
                 target=target,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def visit_stmt(self, _: None) -> ast.VisitStmt:
@@ -1596,7 +1596,7 @@ class JacParser(Pass):
                 vis_type=sub_name,
                 target=target,
                 else_body=else_body,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def revisit_stmt(self, _: None) -> ast.RevisitStmt:
@@ -1612,7 +1612,7 @@ class JacParser(Pass):
             return ast.RevisitStmt(
                 hops=target,
                 else_body=else_body,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def disengage_stmt(self, _: None) -> ast.DisengageStmt:
@@ -1635,7 +1635,7 @@ class JacParser(Pass):
             target = self.consume(ast.SubNodeList)
             return ast.GlobalStmt(
                 target=target,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def nonlocal_ref(self, _: None) -> ast.NonLocalStmt:
@@ -1647,7 +1647,7 @@ class JacParser(Pass):
             target = self.consume(ast.SubNodeList)
             return ast.NonLocalStmt(
                 target=target,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def assignment(self, kid: list[ast.AstNode]) -> ast.Assignment:
@@ -1860,7 +1860,7 @@ class JacParser(Pass):
             return ast.BoolExpr(
                 op=ops,
                 values=values,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def logical_and(self, _: None) -> ast.Expr:
@@ -1879,7 +1879,7 @@ class JacParser(Pass):
             return ast.BoolExpr(
                 op=ops,
                 values=values,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def logical_not(self, _: None) -> ast.Expr:
@@ -1892,7 +1892,7 @@ class JacParser(Pass):
                 return ast.UnaryExpr(
                     op=op,
                     operand=operand,
-                    kid=self.nodes,
+                    kid=self.cur_nodes,
                 )
             return self.consume(ast.Expr)
 
@@ -1913,7 +1913,7 @@ class JacParser(Pass):
                 left=left,
                 ops=ops,
                 rights=rights,
-                kid=self.nodes,
+                kid=self.cur_nodes,
             )
 
         def cmp_op(self, _: None) -> ast.Token:
@@ -1937,14 +1937,14 @@ class JacParser(Pass):
 
             arithmetic: (arithmetic (MINUS | PLUS))? term
             """
-            return self._binary_expr_unwind(self.nodes)
+            return self._binary_expr_unwind(self.cur_nodes)
 
         def term(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             term: (term (MOD | DIV | FLOOR_DIV | STAR_MUL | DECOR_OP))? power
             """
-            return self._binary_expr_unwind(self.nodes)
+            return self._binary_expr_unwind(self.cur_nodes)
 
         def factor(self, _: None) -> ast.Expr:
             """Grammar rule.
@@ -1960,9 +1960,9 @@ class JacParser(Pass):
                 return ast.UnaryExpr(
                     op=op,
                     operand=operand,
-                    kid=self.nodes,
+                    kid=self.cur_nodes,
                 )
-            return self._binary_expr_unwind(self.nodes)
+            return self._binary_expr_unwind(self.cur_nodes)
 
         def power(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
