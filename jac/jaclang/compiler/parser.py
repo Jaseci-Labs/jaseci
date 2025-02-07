@@ -1832,36 +1832,36 @@ class JacParser(Pass):
             """
             return self._binary_expr_unwind(kid)
 
-        def bitwise_or(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def bitwise_or(self, _:None) -> ast.Expr:
             """Grammar rule.
 
             bitwise_or: bitwise_xor BW_OR bitwise_or
                       | bitwise_xor
             """
-            return self._binary_expr_unwind(kid)
+            return self._binary_expr_unwind(self.cur_nodes)
 
-        def bitwise_xor(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def bitwise_xor(self, _:None) -> ast.Expr:
             """Grammar rule.
 
             bitwise_xor: bitwise_and BW_XOR bitwise_xor
                        | bitwise_and
             """
-            return self._binary_expr_unwind(kid)
+            return self._binary_expr_unwind(self.cur_nodes)
 
-        def bitwise_and(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def bitwise_and(self, _:None) -> ast.Expr:
             """Grammar rule.
 
             bitwise_and: shift BW_AND bitwise_and
                        | shift
             """
-            return self._binary_expr_unwind(kid)
+            return self._binary_expr_unwind(self.cur_nodes)
 
-        def shift(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def shift(self, _:None) -> ast.Expr:
             """Grammar rule.
 
             shift: (shift (RSHIFT | LSHIFT))? logical_or
             """
-            return self._binary_expr_unwind(kid)
+            return self._binary_expr_unwind(self.cur_nodes)
 
         def logical_or(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
