@@ -3384,34 +3384,33 @@ class JacParser(Pass):
                 kid=self.cur_nodes,
             )
 
-        def mapping_pattern(self, kid: list[ast.AstNode]) -> ast.MatchMapping:
+        def mapping_pattern(self, _:None) -> ast.MatchMapping:
             """Grammar rule.
 
             mapping_pattern: LBRACE (dict_inner_pattern (COMMA dict_inner_pattern)*)? RBRACE
             """
-            patterns = [
-                i for i in kid if isinstance(i, (ast.MatchKVPair, ast.MatchStar))
-            ]
+            self.consume_token(Tok.LBRACE)
+            patterns = [self.match(ast.MatchKVPair) or self.match(ast.MatchStar)]
+            while self.match_token(Tok.COMMA):
+                patterns.append(self.match(ast.MatchPattern) or self.consume(ast.MatchStar))
             return ast.MatchMapping(
                 values=patterns,
-                kid=kid,
+                kid=self.cur_nodes,
             )
 
-        def list_inner_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+        def list_inner_pattern(self, _:None) -> ast.MatchPattern:
             """Grammar rule.
 
             list_inner_pattern: (pattern_seq | STAR_MUL NAME)
             """
-            if isinstance(kid[0], ast.MatchPattern):
-                return kid[0]
-            elif isinstance(kid[-1], ast.Name):
+            if self.match_token(Tok.STAR_MUL):
+                name = self.consume_token(Tok.NAME)
                 return ast.MatchStar(
                     is_list=True,
-                    name=kid[-1],
-                    kid=kid,
+                    name=name,
+                    kid=self.cur_nodes,
                 )
-            else:
-                raise self.ice()
+            return self.consume(ast.MatchPattern)
 
         def dict_inner_pattern(
             self, kid: list[ast.AstNode]
@@ -3420,6 +3419,7 @@ class JacParser(Pass):
 
             dict_inner_pattern: (pattern_seq COLON pattern_seq | STAR_POW NAME)
             """
+            print(kid)
             if isinstance(kid[0], ast.MatchPattern) and isinstance(
                 kid[2], ast.MatchPattern
             ):
