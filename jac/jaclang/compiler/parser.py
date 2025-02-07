@@ -1832,7 +1832,7 @@ class JacParser(Pass):
             """
             return self._binary_expr_unwind(kid)
 
-        def bitwise_or(self, _:None) -> ast.Expr:
+        def bitwise_or(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             bitwise_or: bitwise_xor BW_OR bitwise_or
@@ -1840,7 +1840,7 @@ class JacParser(Pass):
             """
             return self._binary_expr_unwind(self.cur_nodes)
 
-        def bitwise_xor(self, _:None) -> ast.Expr:
+        def bitwise_xor(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             bitwise_xor: bitwise_and BW_XOR bitwise_xor
@@ -1848,7 +1848,7 @@ class JacParser(Pass):
             """
             return self._binary_expr_unwind(self.cur_nodes)
 
-        def bitwise_and(self, _:None) -> ast.Expr:
+        def bitwise_and(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             bitwise_and: shift BW_AND bitwise_and
@@ -1856,7 +1856,7 @@ class JacParser(Pass):
             """
             return self._binary_expr_unwind(self.cur_nodes)
 
-        def shift(self, _:None) -> ast.Expr:
+        def shift(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             shift: (shift (RSHIFT | LSHIFT))? logical_or
@@ -3335,16 +3335,16 @@ class JacParser(Pass):
                 kid=self.cur_nodes,
             )
 
-        def singleton_pattern(self, _:None) -> ast.MatchPattern:
+        def singleton_pattern(self, _: None) -> ast.MatchPattern:
             """Grammar rule.
 
             singleton_pattern: (NULL | BOOL)
             """
-            value = self.match_token(Tok.NULL) or self.consume_token(Tok.BOOL)
+            value = self.match(ast.Null) or self.consume(ast.Bool)
             return ast.MatchSingleton(
-                    value=value,
-                    kid=self.cur_nodes,
-                )
+                value=value,
+                kid=self.cur_nodes,
+            )
 
         def capture_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
             """Grammar rule.
@@ -3368,7 +3368,7 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def sequence_pattern(self, _:None) -> ast.MatchPattern:
+        def sequence_pattern(self, _: None) -> ast.MatchPattern:
             """Grammar rule.
 
             sequence_pattern: LSQUARE list_inner_pattern (COMMA list_inner_pattern)* RSQUARE
@@ -3384,27 +3384,30 @@ class JacParser(Pass):
                 kid=self.cur_nodes,
             )
 
-        def mapping_pattern(self, _:None) -> ast.MatchMapping:
+        def mapping_pattern(self, _: None) -> ast.MatchMapping:
             """Grammar rule.
 
             mapping_pattern: LBRACE (dict_inner_pattern (COMMA dict_inner_pattern)*)? RBRACE
             """
             self.consume_token(Tok.LBRACE)
-            patterns = [self.match(ast.MatchKVPair) or self.match(ast.MatchStar)]
+            patterns = [self.match(ast.MatchKVPair) or self.consume(ast.MatchStar)]
             while self.match_token(Tok.COMMA):
-                patterns.append(self.match(ast.MatchPattern) or self.consume(ast.MatchStar))
+                patterns.append(
+                    self.match(ast.MatchKVPair) or self.consume(ast.MatchStar)
+                )
+            self.consume_token(Tok.RBRACE)
             return ast.MatchMapping(
                 values=patterns,
                 kid=self.cur_nodes,
             )
 
-        def list_inner_pattern(self, _:None) -> ast.MatchPattern:
+        def list_inner_pattern(self, _: None) -> ast.MatchPattern:
             """Grammar rule.
 
             list_inner_pattern: (pattern_seq | STAR_MUL NAME)
             """
             if self.match_token(Tok.STAR_MUL):
-                name = self.consume_token(Tok.NAME)
+                name = self.consume(ast.Name)
                 return ast.MatchStar(
                     is_list=True,
                     name=name,
