@@ -3287,17 +3287,15 @@ class JacParser(Pass):
 
             or_pattern: (pattern BW_OR)* pattern
             """
-            if len(kid) == 1:
-                if isinstance(kid[0], ast.MatchPattern):
-                    return kid[0]
-                else:
-                    raise self.ice()
-            else:
-                patterns = [i for i in kid if isinstance(i, ast.MatchPattern)]
-                return ast.MatchOr(
-                    patterns=patterns,
-                    kid=kid,
-                )
+            patterns: list = [self.consume(ast.MatchPattern)]
+            while self.match_token(Tok.BW_OR):
+                patterns.append(self.consume(ast.MatchPattern))
+            if len(patterns) == 1:
+                return patterns[0]
+            return ast.MatchOr(
+                patterns=patterns,
+                kid=kid,
+            )
 
         def as_pattern(self, _: None) -> ast.MatchPattern:
             """Grammar rule.
