@@ -3272,17 +3272,14 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def pattern_seq(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+        def pattern_seq(self, _: None) -> ast.MatchPattern:
             """Grammar rule.
 
             pattern_seq: (or_pattern | as_pattern)
             """
-            if isinstance(kid[0], ast.MatchPattern):
-                return kid[0]
-            else:
-                raise self.ice()
+            return self.consume(ast.MatchPattern)
 
-        def or_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+        def or_pattern(self, _: None) -> ast.MatchPattern:
             """Grammar rule.
 
             or_pattern: (pattern BW_OR)* pattern
@@ -3294,7 +3291,7 @@ class JacParser(Pass):
                 return patterns[0]
             return ast.MatchOr(
                 patterns=patterns,
-                kid=kid,
+                kid=self.cur_nodes,
             )
 
         def as_pattern(self, _: None) -> ast.MatchPattern:
