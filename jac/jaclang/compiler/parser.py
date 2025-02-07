@@ -2420,13 +2420,13 @@ class JacParser(Pass):
             """
             if len(kid) == 2:
                 return ast.SetVal(
-                    values=None,
+                    values=[],
                     kid=kid,
                 )
             elif isinstance(kid[1], ast.SubNodeList):
                 return ast.SetVal(
-                    values=kid[1],
-                    kid=kid,
+                    values=cast(list[ast.Expr], kid[1].items),
+                    kid=[kid[0], *kid[1].kid, kid[2]],
                 )
             else:
                 raise self.ice()
