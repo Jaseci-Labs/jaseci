@@ -17,10 +17,8 @@ T = TypeVar("T", bound=ast.AstNode)
 
 
 class PyastBuildPass(Pass[ast.PythonModuleAst]):
-    """Jac Parser."""
 
     def __init__(self, input_ir: ast.PythonModuleAst) -> None:
-        """Initialize parser."""
         self.mod_path = input_ir.loc.mod_path
         self.orig_src = input_ir.loc.orig_src
         Pass.__init__(self, input_ir=input_ir, prior=None)
@@ -53,7 +51,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         return ret
 
     def transform(self, ir: ast.PythonModuleAst) -> ast.Module:
-        """Transform input IR."""
         self.ir: ast.Module = self.proc_module(ir.ast)
         return self.ir
 

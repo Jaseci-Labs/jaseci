@@ -14,10 +14,8 @@ from jaclang.compiler.symtable import Symbol, SymbolTable
 
 
 class DeclImplMatchPass(Pass):
-    """Decls and Def matching pass."""
 
     def enter_module(self, node: ast.Module) -> None:
-        """Enter module."""
         if not node.sym_tab:
             self.error(
                 f"Expected symbol table on node {node.__class__.__name__}. Perhaps an earlier pass failed."
@@ -41,7 +39,6 @@ class DeclImplMatchPass(Pass):
         return None
 
     def connect_def_impl(self, sym_tab: SymbolTable) -> None:
-        """Connect Decls and Defs."""
         for sym in sym_tab.tab.values():
             if isinstance(sym.decl.name_of, ast.AstImplOnlyNode):
                 # currently strips the type info from impls
@@ -107,7 +104,6 @@ class DeclImplMatchPass(Pass):
             self.connect_def_impl(i)
 
     def validate_params_match(self, sym: Symbol, valid_decl: ast.AstSymbolNode) -> None:
-        """Validate if the parameters match."""
         if (
             isinstance(valid_decl, ast.Ability)
             and isinstance(sym.decl.name_of, ast.AbilityDef)
@@ -137,7 +133,6 @@ class DeclImplMatchPass(Pass):
                         params_decl.kid[idx] = params_defn.kid[idx]
 
     def exit_architype(self, node: ast.Architype) -> None:
-        """Exit Architype."""
         if node.arch_type.name == Tok.KW_OBJECT and isinstance(
             node.body, ast.SubNodeList
         ):

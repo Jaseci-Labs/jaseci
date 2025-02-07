@@ -13,7 +13,6 @@ from jaclang.utils.treeprinter import dotgen_symtab_tree, print_symtab_tree
 # Symbols can have mulitple definitions but resolves decl to be the
 # first such definition in a given scope.
 class Symbol:
-    """Symbol."""
 
     def __init__(
         self,
@@ -21,7 +20,6 @@ class Symbol:
         access: SymbolAccess,
         parent_tab: SymbolTable,
     ) -> None:
-        """Initialize."""
         self.defn: list[ast.NameAtom] = [defn]
         self.uses: list[ast.NameAtom] = []
         defn.sym = self
@@ -30,17 +28,14 @@ class Symbol:
 
     @property
     def decl(self) -> ast.NameAtom:
-        """Get decl."""
         return self.defn[0]
 
     @property
     def sym_name(self) -> str:
-        """Get name."""
         return self.decl.sym_name
 
     @property
     def sym_type(self) -> SymbolType:
-        """Get sym_type."""
         return self.decl.sym_category
 
     @property
@@ -56,31 +51,25 @@ class Symbol:
 
     @property
     def fetch_sym_tab(self) -> Optional[SymbolTable]:
-        """Get symbol table."""
         return self.parent_tab.find_scope(self.sym_name)
 
     def add_defn(self, node: ast.NameAtom) -> None:
-        """Add defn."""
         self.defn.append(node)
         node.sym = self
 
     def add_use(self, node: ast.NameAtom) -> None:
-        """Add use."""
         self.uses.append(node)
         node.sym = self
 
     def __repr__(self) -> str:
-        """Repr."""
         return f"Symbol({self.sym_name}, {self.sym_type}, {self.access}, {self.defn})"
 
 
 class SymbolTable:
-    """Symbol Table."""
 
     def __init__(
         self, name: str, owner: ast.AstNode, parent: Optional[SymbolTable] = None
     ) -> None:
-        """Initialize."""
         self.name = name
         self.owner = owner
         self.parent = parent
@@ -89,13 +78,11 @@ class SymbolTable:
         self.inherit: list[SymbolTable] = []
 
     def get_type(self) -> SymbolType:
-        """Get type."""
         if isinstance(self.owner, ast.AstSymbolNode):
             return self.owner.sym_category
         return SymbolType.VAR
 
     def get_parent(self) -> Optional[SymbolTable]:
-        """Get parent."""
         return self.parent
 
     def lookup(self, name: str, deep: bool = True) -> Optional[Symbol]:
@@ -282,7 +269,6 @@ class SymbolTable:
         return dotgen_symtab_tree(self)
 
     def __repr__(self) -> str:
-        """Repr."""
         out = f"{self.name} {super().__repr__()}:\n"
         for k, v in self.tab.items():
             out += f"    {k}: {v}\n"

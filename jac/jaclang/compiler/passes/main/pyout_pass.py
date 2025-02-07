@@ -17,19 +17,9 @@ class PyOutPass(Pass):
     """Python and bytecode file printing pass."""
 
     def before_pass(self) -> None:
-        """Before pass."""
         return super().before_pass()
 
     def enter_module(self, node: ast.Module) -> None:
-        """Sub objects.
-
-        name: str,
-        doc: Token,
-        body: Optional['Elements'],
-        mod_path: str,
-        is_imported: bool,
-        sym_tab: Optional[SymbolTable],
-        """
         if not (os.path.exists(node.loc.mod_path) and node.gen.py_ast):
             self.error(
                 f"Unable to find module {node.loc.mod_path} or no code present.", node

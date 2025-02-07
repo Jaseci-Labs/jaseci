@@ -28,11 +28,9 @@ class JacImportPass(Pass):
     """Jac statically imports Jac modules."""
 
     def before_pass(self) -> None:
-        """Run once before pass."""
         self.import_table: dict[str, ast.Module] = {}
 
     def enter_module(self, node: ast.Module) -> None:
-        """Run Importer."""
         self.cur_node = node
         self.import_table[node.loc.mod_path] = node
         self.annex_impl(node)
@@ -49,7 +47,6 @@ class JacImportPass(Pass):
         node.mod_deps.update(self.import_table)
 
     def process_import(self, i: ast.ModulePath) -> None:
-        """Process an import."""
         imp_node = i.parent_of_type(ast.Import)
         if imp_node.is_jac and not i.sub_module:
             self.import_jac_module(node=i)
@@ -57,7 +54,6 @@ class JacImportPass(Pass):
     def attach_mod_to_node(
         self, node: ast.ModulePath | ast.ModuleItem, mod: ast.Module | None
     ) -> None:
-        """Attach a module to a node."""
         if mod:
             self.run_again = True
             node.sub_module = mod
@@ -66,7 +62,6 @@ class JacImportPass(Pass):
             mod.parent = node
 
     def annex_impl(self, node: ast.Module) -> None:
-        """Annex impl and test modules."""
         if node.stub_only:
             return
         if not node.loc.mod_path:
@@ -116,18 +111,11 @@ class JacImportPass(Pass):
                     mod.parent = node
 
     def enter_module_path(self, node: ast.ModulePath) -> None:
-        """Sub objects.
-
-        path: Sequence[Token],
-        alias: Optional[Name],
-        sub_module: Optional[Module] = None,
-        """
         if node.alias and node.sub_module:
             node.sub_module.name = node.alias.value
         # Items matched during def/decl pass
 
     def import_jac_module(self, node: ast.ModulePath) -> None:
-        """Import a module."""
         self.cur_node = node  # impacts error reporting
         target = node.resolve_relative_path()
         # If the module is a package (dir)
@@ -154,7 +142,6 @@ class JacImportPass(Pass):
             self.attach_mod_to_node(node, self.import_jac_mod_from_file(target))
 
     def import_jac_mod_from_dir(self, target: str) -> ast.Module | None:
-        """Import a module from a directory."""
         with_init = os.path.join(target, "__init__.jac")
         if os.path.exists(with_init):
             return self.import_jac_mod_from_file(with_init)
@@ -171,7 +158,6 @@ class JacImportPass(Pass):
             )
 
     def import_jac_mod_from_file(self, target: str) -> ast.Module | None:
-        """Import a module from a file."""
         from jaclang.compiler.compile import jac_file_to_pass
         from jaclang.compiler.passes.main import SubNodeTabPass
 
@@ -212,12 +198,10 @@ class PyImportPass(JacImportPass):
         self.__load_builtins()
 
     def after_pass(self) -> None:
-        """Build symbol tables for import from nodes."""
         self.__import_from_symbol_table_build()
         return super().after_pass()
 
     def process_import(self, i: ast.ModulePath) -> None:
-        """Process an import."""
         # Process import is orginally implemented to handle ModulePath in Jaclang
         # This won't work with py imports as this will fail to import stuff in form of
         #      from a import b

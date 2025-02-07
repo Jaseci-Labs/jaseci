@@ -76,7 +76,6 @@ class Transform(ABC, Generic[T]):
         pass
 
     def log_error(self, msg: str, node_override: Optional[AstNode] = None) -> None:
-        """Pass Error."""
         alrt = Alert(
             msg,
             self.cur_node.loc if not node_override else node_override.loc,
@@ -86,7 +85,6 @@ class Transform(ABC, Generic[T]):
         self.logger.error(alrt.as_log())
 
     def log_warning(self, msg: str, node_override: Optional[AstNode] = None) -> None:
-        """Pass Error."""
         alrt = Alert(
             msg,
             self.cur_node.loc if not node_override else node_override.loc,
@@ -96,5 +94,4 @@ class Transform(ABC, Generic[T]):
         self.logger.warning(alrt.as_log())
 
     def log_info(self, msg: str) -> None:
-        """Log info."""
         self.logger.info(msg)

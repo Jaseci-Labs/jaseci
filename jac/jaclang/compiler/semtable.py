@@ -22,14 +22,12 @@ class SemInfo:
         type_str: Optional[str] = None,
         semstr: str = "",
     ) -> None:
-        """Initialize the class."""
         self.node_type = type(node)
         self.name = name
         self.type = type_str
         self.semstr = semstr
 
     def __repr__(self) -> str:
-        """Return the string representation of the class."""
         return f"{self.semstr} ({self.type}) ({self.name})"
 
     def get_children(
@@ -45,30 +43,25 @@ class SemInfo:
 
 
 class SemScope:
-    """Scope class."""
 
     def __init__(
         self, scope: str, type: str, parent: Optional[SemScope] = None
     ) -> None:
-        """Initialize the class."""
         self.parent = parent
         self.type = type
         self.scope = scope
 
     def __str__(self) -> str:
-        """Return the string representation of the class."""
         if self.parent:
             return f"{self.parent}.{self.scope}({self.type})"
         else:
             return f"{self.scope}({self.type})"
 
     def __repr__(self) -> str:
-        """Return the string representation of the class."""
         return self.__str__()
 
     @staticmethod
     def get_scope_from_str(scope_str: str) -> Optional[SemScope]:
-        """Get scope from string."""
         scope_list = scope_str.split(".")
         parent = None
         for scope in scope_list:
@@ -93,10 +86,8 @@ class SemScope:
 
 
 class SemRegistry:
-    """Registry class."""
 
     def __init__(self) -> None:
-        """Initialize the class."""
         self.registry: dict[SemScope, list[SemInfo]] = {}
 
     def add(self, scope: SemScope, seminfo: SemInfo) -> None:

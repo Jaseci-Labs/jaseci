@@ -15,7 +15,6 @@ class Pass(Transform[T]):
     """Abstract class for IR passes."""
 
     def __init__(self, input_ir: T, prior: Optional[Transform]) -> None:
-        """Initialize parser."""
         self.term_signal = False
         self.prune_signal = False
         self.ir: ast.AstNode = input_ir
@@ -24,11 +23,9 @@ class Pass(Transform[T]):
 
     def before_pass(self) -> None:
         """Run once before pass."""
-        pass
 
     def after_pass(self) -> None:
         """Run once after pass."""
-        pass
 
     def enter_node(self, node: ast.AstNode) -> None:
         """Run on entering node."""
@@ -139,15 +136,13 @@ class Pass(Transform[T]):
         return node
 
     def error(self, msg: str, node_override: Optional[ast.AstNode] = None) -> None:
-        """Pass Error."""
         self.log_error(msg, node_override=node_override)
 
     def warning(self, msg: str, node_override: Optional[ast.AstNode] = None) -> None:
-        """Pass Error."""
         self.log_warning(msg, node_override=node_override)
 
     def ice(self, msg: str = "Something went horribly wrong!") -> RuntimeError:
-        """Pass Error."""
+        """Internal compiler error (BUG report)."""
         self.log_error(f"ICE: Pass {self.__class__.__name__} - {msg}")
         return RuntimeError(
             f"Internal Compiler Error: Pass {self.__class__.__name__} - {msg}"

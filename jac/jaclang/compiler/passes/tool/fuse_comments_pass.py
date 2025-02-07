@@ -19,7 +19,6 @@ class FuseCommentsPass(Pass):
         return super().before_pass()
 
     def exit_node(self, node: ast.AstNode) -> None:
-        """Exit node."""
         if isinstance(node, ast.Token):
             self.all_tokens.append(node)
 

@@ -13,14 +13,12 @@ from jaclang.settings import settings
 
 
 class AccessCheckPass(Pass):
-    """Jac Ast Access Check pass."""
 
     # NOTE: This method is a hacky way to detect if the drivied class is inherit from base class, it
     # doesn't work if the base class was provided as an expression (ex. obj Dri :module.Base: {...}).
     def is_class_inherited_from(
         self, dri_class: ast.Architype, base_class: ast.Architype
     ) -> bool:
-        """Return true if the dri_class inherited from base_class."""
         if dri_class.base_classes is None:
             return False
         for expr in dri_class.base_classes.items:
@@ -39,7 +37,6 @@ class AccessCheckPass(Pass):
         self.error(message, node)
 
     def exit_node(self, node: ast.AstNode) -> None:  # TODO: Move to debug pass
-        """Exit node."""
         super().exit_node(node)
         if (
             settings.lsp_debug
@@ -55,15 +52,6 @@ class AccessCheckPass(Pass):
             self.warning(f"Name {node.sym_name} not present in symbol table")
 
     def enter_name(self, node: ast.Name) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        col_start: int,
-        col_end: int,
-        pos_start: int,
-        pos_end: int,
-        """
         # TODO: Enums are not considered at the moment, I'll need to test and add them bellow.
 
         # If the current node is a global variable's name there is no access, it's just the declaration.

@@ -33,7 +33,6 @@ class FuseTypeInfoPass(Pass):
 
     # Override this to support enter expression.
     def enter_node(self, node: ast.AstNode) -> None:
-        """Run on entering node."""
         super().enter_node(node)
 
         if isinstance(node, ast.Expr):
@@ -295,44 +294,36 @@ class FuseTypeInfoPass(Pass):
 
     @__handle_node
     def enter_name(self, node: ast.NameAtom) -> None:
-        """Pass handler for name nodes."""
         self.__collect_type_from_symbol(node)
         if node.sym is None:
             self.__check_builltin_symbol(node)
 
     @__handle_node
     def enter_module_path(self, node: ast.ModulePath) -> None:
-        """Pass handler for ModulePath nodes."""
         self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
     def enter_module_item(self, node: ast.ModuleItem) -> None:
-        """Pass handler for ModuleItem nodes."""
         self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
     def enter_architype(self, node: ast.Architype) -> None:
-        """Pass handler for Architype nodes."""
         self.__collect_type_from_symbol(node)
 
     @__handle_node
     def enter_arch_def(self, node: ast.ArchDef) -> None:
-        """Pass handler for ArchDef nodes."""
         self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
     def enter_enum(self, node: ast.Enum) -> None:
-        """Pass handler for Enum nodes."""
         self.__collect_type_from_symbol(node)
 
     @__handle_node
     def enter_enum_def(self, node: ast.EnumDef) -> None:
-        """Pass handler for EnumDef nodes."""
         self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
     def enter_ability(self, node: ast.Ability) -> None:
-        """Pass handler for Ability nodes."""
         if isinstance(node.gen.mypy_ast[0], MypyNodes.FuncDef):
             node.name_spec.expr_type = (
                 self.__call_type_handler(node.gen.mypy_ast[0].type.ret_type)
@@ -346,7 +337,6 @@ class FuseTypeInfoPass(Pass):
 
     @__handle_node
     def enter_ability_def(self, node: ast.AbilityDef) -> None:
-        """Pass handler for AbilityDef nodes."""
         if isinstance(node.gen.mypy_ast[0], MypyNodes.FuncDef):
             node.name_spec.expr_type = (
                 self.__call_type_handler(node.gen.mypy_ast[0].type.ret_type)
@@ -360,7 +350,6 @@ class FuseTypeInfoPass(Pass):
 
     @__handle_node
     def enter_param_var(self, node: ast.ParamVar) -> None:
-        """Pass handler for ParamVar nodes."""
         if isinstance(node.gen.mypy_ast[0], MypyNodes.Argument):
             mypy_node: MypyNodes.Argument = node.gen.mypy_ast[0]
             if mypy_node.variable.type:
@@ -376,7 +365,6 @@ class FuseTypeInfoPass(Pass):
     # TODO: support all lhs if needed
     @__handle_node
     def enter_has_var(self, node: ast.HasVar) -> None:
-        """Pass handler for HasVar nodes."""
         mypy_node = node.gen.mypy_ast[0]
         if isinstance(mypy_node, MypyNodes.AssignmentStmt):
             n = mypy_node.lvalues[0].node
@@ -394,28 +382,22 @@ class FuseTypeInfoPass(Pass):
             )
 
     def exit_has_var(self, node: ast.HasVar) -> None:
-        """Pass handler for HasVar nodes."""
-        node.name_spec.expr_type = node.name.expr_type
         node.name_spec.type_sym_tab = node.name.type_sym_tab
 
     @__handle_node
     def enter_multi_string(self, node: ast.MultiString) -> None:
-        """Pass handler for MultiString nodes."""
         node.name_spec.expr_type = "builtins.str"
 
     @__handle_node
     def enter_f_string(self, node: ast.FString) -> None:
-        """Pass handler for FString nodes."""
         self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
     def enter_index_slice(self, node: ast.IndexSlice) -> None:
-        """Pass handler for IndexSlice nodes."""
         self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
     def enter_arch_ref(self, node: ast.ArchRef) -> None:
-        """Pass handler for ArchRef nodes."""
         if isinstance(node.gen.mypy_ast[0], MypyNodes.ClassDef):
             mypy_node: MypyNodes.ClassDef = node.gen.mypy_ast[0]
             node.name_spec.expr_type = mypy_node.fullname
@@ -433,7 +415,6 @@ class FuseTypeInfoPass(Pass):
 
     @__handle_node
     def enter_special_var_ref(self, node: ast.SpecialVarRef) -> None:
-        """Pass handler for SpecialVarRef nodes."""
         if node.py_resolve_name() == Constants.ROOT:
             if node.gen.mypy_ast[-1] in self.node_type_hash:
                 node.name_spec.expr_type = (
@@ -445,47 +426,38 @@ class FuseTypeInfoPass(Pass):
 
     @__handle_node
     def enter_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
-        """Pass handler for EdgeOpRef nodes."""
         self.__collect_type_from_symbol(node)
 
     @__handle_node
     def enter_filter_compr(self, node: ast.FilterCompr) -> None:
-        """Pass handler for FilterCompr nodes."""
         self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
     def enter_assign_compr(self, node: ast.AssignCompr) -> None:
-        """Pass handler for AssignCompr nodes."""
         self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
     def enter_int(self, node: ast.Int) -> None:
-        """Pass handler for Int nodes."""
         node.name_spec.expr_type = "builtins.int"
 
     @__handle_node
     def enter_float(self, node: ast.Float) -> None:
-        """Pass handler for Float nodes."""
         node.name_spec.expr_type = "builtins.float"
 
     @__handle_node
     def enter_string(self, node: ast.String) -> None:
-        """Pass handler for String nodes."""
         node.name_spec.expr_type = "builtins.str"
 
     @__handle_node
     def enter_bool(self, node: ast.Bool) -> None:
-        """Pass handler for Bool nodes."""
         node.name_spec.expr_type = "builtins.bool"
 
     @__handle_node
     def enter_builtin_type(self, node: ast.BuiltinType) -> None:
-        """Pass handler for BuiltinType nodes."""
         self.__check_builltin_symbol(node)
         node.name_spec.expr_type = f"builtins.{node.sym_name}"
 
     def get_type_from_instance(self, mypy_type: MypyTypes.Instance) -> Optional[str]:
-        """Get type info from mypy type Instance."""
         #  FIXME: Returning str(mypy_type) won't work for literal values since it would be
         # like Literal['foo'] instead of builtins.str, so we need to get the type fullname.
         # Not sure if this is the best way to do it.
@@ -497,36 +469,29 @@ class FuseTypeInfoPass(Pass):
     def get_type_from_callable_type(
         self, mypy_type: MypyTypes.CallableType
     ) -> Optional[str]:
-        """Get type info from mypy type CallableType."""
         return self.__call_type_handler(mypy_type.ret_type)
 
     # TODO: Which overloaded function to get the return value from?
     def get_type_from_overloaded(
         self, mypy_type: MypyTypes.Overloaded
     ) -> Optional[str]:
-        """Get type info from mypy type Overloaded."""
         return self.__call_type_handler(mypy_type.items[-1])
 
     def get_type_from_none_type(self, mypy_type: MypyTypes.NoneType) -> Optional[str]:
-        """Get type info from mypy type NoneType."""
         return "None"
 
     def get_type_from_any_type(self, mypy_type: MypyTypes.AnyType) -> Optional[str]:
-        """Get type info from mypy type NoneType."""
         return "Any"
 
     def get_type_from_tuple_type(self, mypy_type: MypyTypes.TupleType) -> Optional[str]:
-        """Get type info from mypy type TupleType."""
         return "builtins.tuple"
 
     def get_type_from_type_type(self, mypy_type: MypyTypes.TypeType) -> Optional[str]:
-        """Get type info from mypy type TypeType."""
         return str(mypy_type.item)
 
     def get_type_from_type_var_type(
         self, mypy_type: MypyTypes.TypeVarType
     ) -> Optional[str]:
-        """Get type info from mypy type TypeType."""
         return str(mypy_type.name)
 
     def exit_assignment(self, node: ast.Assignment) -> None:

@@ -15,12 +15,10 @@ class SubNodeTabPass(Pass):
     """AST Enrichment Pass for basic high level semantics."""
 
     def enter_node(self, node: ast.AstNode) -> None:
-        """Table builder."""
         super().enter_node(node)
         node._sub_node_tab = {}  # clears on entry
 
     def exit_node(self, node: ast.AstNode) -> None:
-        """Table builder."""
         super().exit_node(node)
         for i in node.kid:
             if not i:
