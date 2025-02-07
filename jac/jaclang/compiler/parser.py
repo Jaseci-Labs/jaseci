@@ -3346,27 +3346,22 @@ class JacParser(Pass):
                 kid=self.cur_nodes,
             )
 
-        def capture_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+        def capture_pattern(self, _: None) -> ast.MatchPattern:
             """Grammar rule.
 
             capture_pattern: NAME
             """
-            if (
-                len(kid) == 1
-                and isinstance(kid[0], ast.Name)
-                and kid[0].sym_name == "_"
-            ):
-                return ast.MatchWild(
-                    kid=kid,
-                )
-            if isinstance(kid[0], ast.NameAtom):
-                return ast.MatchAs(
-                    name=kid[0],
-                    pattern=None,
-                    kid=kid,
-                )
-            else:
+            name: ast.Name | ast.NameAtom | None = None
+            if name := self.match(ast.Name):
+                if name.sym_name == "_":
+                    return ast.MatchWild(kid=self.cur_nodes)
                 raise self.ice()
+            name = self.consume(ast.NameAtom)
+            return ast.MatchAs(
+                name=name,
+                pattern=None,
+                kid=self.cur_nodes,
+            )
 
         def sequence_pattern(self, _: None) -> ast.MatchPattern:
             """Grammar rule.
@@ -3415,30 +3410,22 @@ class JacParser(Pass):
                 )
             return self.consume(ast.MatchPattern)
 
-        def dict_inner_pattern(
-            self, kid: list[ast.AstNode]
-        ) -> ast.MatchKVPair | ast.MatchStar:
+        def dict_inner_pattern(self, _: None) -> ast.MatchKVPair | ast.MatchStar:
             """Grammar rule.
 
             dict_inner_pattern: (pattern_seq COLON pattern_seq | STAR_POW NAME)
             """
-            print(kid)
-            if isinstance(kid[0], ast.MatchPattern) and isinstance(
-                kid[2], ast.MatchPattern
-            ):
-                return ast.MatchKVPair(
-                    key=kid[0],
-                    value=kid[2],
-                    kid=kid,
-                )
-            elif isinstance(kid[-1], ast.Name):
+            if self.match_token(Tok.STAR_POW):
+                name = self.consume(ast.Name)
                 return ast.MatchStar(
                     is_list=False,
-                    name=kid[-1],
-                    kid=kid,
+                    name=name,
+                    kid=self.cur_nodes,
                 )
-            else:
-                raise self.ice()
+            pattern = self.consume(ast.MatchPattern)
+            self.consume_token(Tok.COLON)
+            value = self.consume(ast.MatchPattern)
+            return ast.MatchKVPair(key=pattern, value=value, kid=self.cur_nodes)
 
         def class_pattern(self, kid: list[ast.AstNode]) -> ast.MatchArch:
             """Grammar rule.
