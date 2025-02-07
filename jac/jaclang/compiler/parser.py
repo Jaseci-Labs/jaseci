@@ -2225,7 +2225,7 @@ class JacParser(Pass):
                     kid=kid,
                 )
 
-        def atom(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def atom(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             atom: named_ref
@@ -2234,39 +2234,27 @@ class JacParser(Pass):
                  | atom_literal
                  | type_ref
             """
-            if len(kid) == 1:
-                if isinstance(kid[0], ast.AtomExpr):
-                    return kid[0]
-                else:
-                    raise self.ice()
-            elif len(kid) == 3:
-                if (
-                    isinstance(kid[0], ast.Token)
-                    and isinstance(kid[1], (ast.Expr, ast.YieldExpr))
-                    and isinstance(kid[2], ast.Token)
-                ):
-                    ret = ast.AtomUnit(value=kid[1], kid=kid)
-                    return ret
-                else:
-                    raise self.ice()
-            else:
-                raise self.ice()
+            if self.match_token(Tok.LPAREN):
+                value = self.match(ast.Expr) or self.consume(ast.YieldExpr)
+                self.consume_token(Tok.RPAREN)
+                return ast.AtomUnit(value=value, kid=self.cur_nodes)
+            return self.consume(ast.AtomExpr)
 
-        def yield_expr(self, kid: list[ast.AstNode]) -> ast.YieldExpr:
+        def yield_expr(self, _: None) -> ast.YieldExpr:
             """Grammar rule.
 
             yield_expr: KW_YIELD KW_FROM? expression
             """
-            if isinstance(kid[-1], ast.Expr):
-                return ast.YieldExpr(
-                    expr=kid[-1],
-                    with_from=len(kid) > 2,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.KW_YIELD)
+            is_with_from = bool(self.match_token(Tok.KW_FROM))
+            expr = self.consume(ast.Expr)
+            return ast.YieldExpr(
+                expr=expr,
+                with_from=is_with_from,
+                kid=self.cur_nodes,
+            )
 
-        def atom_literal(self, kid: list[ast.AstNode]) -> ast.AtomExpr:
+        def atom_literal(self, _: None) -> ast.AtomExpr:
             """Grammar rule.
 
             atom_literal: builtin_type
@@ -2279,10 +2267,7 @@ class JacParser(Pass):
                         | HEX
                         | INT
             """
-            if isinstance(kid[0], ast.AtomExpr):
-                return kid[0]
-            else:
-                raise self.ice()
+            return self.consume(ast.AtomExpr)
 
         def atom_collection(self, kid: list[ast.AstNode]) -> ast.AtomExpr:
             """Grammar rule.
@@ -2296,10 +2281,7 @@ class JacParser(Pass):
                            | tuple_val
                            | list_val
             """
-            if isinstance(kid[0], ast.AtomExpr):
-                return kid[0]
-            else:
-                raise self.ice()
+            return self.consume(ast.AtomExpr)
 
         def multistring(self, kid: list[ast.AstNode]) -> ast.AtomExpr:
             """Grammar rule.
