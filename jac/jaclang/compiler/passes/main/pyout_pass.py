@@ -53,7 +53,7 @@ class PyOutPass(Pass):
 
     def gen_python(self, node: ast.Module, out_path: str) -> None:
         """Generate Python."""
-        with open(out_path, "w") as f:
+        with open(out_path, "w", encoding="utf-8") as f:
             f.write(node.gen.py)
 
     def dump_bytecode(self, node: ast.Module, mod_path: str, out_path: str) -> None:
