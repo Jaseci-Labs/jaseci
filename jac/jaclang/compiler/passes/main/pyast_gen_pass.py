@@ -533,7 +533,7 @@ class PyastGenPass(Pass):
         )
         imp_from = {}
         if node.items:
-            for item in node.items.items:
+            for item in node.items:
                 if isinstance(item, ast.ModuleItem):
                     imp_from[item.name.sym_name] = (
                         item.alias.sym_name if item.alias else None
@@ -822,7 +822,7 @@ class PyastGenPass(Pass):
                 )
             )
         if node.is_absorb:
-            source = node.items.items[0]
+            source = node.items[0]
             if not isinstance(source, ast.ModulePath):
                 raise self.ice()
             typecheck_nodes.append(
@@ -836,21 +836,25 @@ class PyastGenPass(Pass):
                 )
             )
         elif not node.from_loc:
-            typecheck_nodes.append(self.sync(ast3.Import(names=node.items.gen.py_ast)))
+            for i in node.items:
+                typecheck_nodes.append(
+                    self.sync(ast3.Import(names=i.gen.py_ast))
+                )  # TODO: Check this
         else:
-            typecheck_nodes.append(
-                self.sync(
-                    ast3.ImportFrom(
-                        module=(
-                            node.from_loc.dot_path_str.lstrip(".")
-                            if node.from_loc
-                            else None
-                        ),
-                        names=node.items.gen.py_ast,
-                        level=0,
+            for i in node.items:
+                typecheck_nodes.append(
+                    self.sync(
+                        ast3.ImportFrom(
+                            module=(
+                                node.from_loc.dot_path_str.lstrip(".")
+                                if node.from_loc
+                                else None
+                            ),
+                            names=i.gen.py_ast,  # TODO: Check this
+                            level=0,
+                        )
                     )
                 )
-            )
         self.needs_typing()
         py_nodes.append(
             self.sync(

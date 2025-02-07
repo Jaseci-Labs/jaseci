@@ -38,6 +38,29 @@ if TYPE_CHECKING:
     from jaclang.compiler.symtable import Symbol, SymbolTable
 
 
+def import__sub_node_list_normalize(
+    parent_node: AstNode,
+    node_list: Sequence[AstNode],
+    deep: bool = False,
+    delim: Optional[Tok] = Tok.COMMA,
+    left_enc: Optional[Token] = None,
+    right_enc: Optional[Token] = None,
+) -> bool:
+    res = True
+    if deep:
+        for i in node_list:
+            res = res and i.normalize()
+    new_kid: list[AstNode] = []
+    for i in node_list:
+        new_kid.append(i)
+        if delim:
+            new_kid.append(parent_node.gen_token(delim))
+    if delim and node_list:
+        new_kid.pop()
+    # self.set_kids(nodes=new_kid if len(new_kid) else [EmptyToken()])
+    return len(new_kid) > 0
+
+
 class AstNode:
     """Abstract syntax tree node for Jac."""
 
@@ -884,7 +907,7 @@ class Import(ElementStmt, CodeBlockStmt):
         self,
         hint: Optional[SubTag[Name]],
         from_loc: Optional[ModulePath],
-        items: SubNodeList[ModuleItem] | SubNodeList[ModulePath],
+        items: Sequence[ModuleItem | ModulePath],
         is_absorb: bool,  # For includes
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
@@ -926,7 +949,7 @@ class Import(ElementStmt, CodeBlockStmt):
                     os.path.join(self.from_loc.resolve_relative_path(), "__init__.jac")
                 ):
                     return True
-                for i in self.items.items:
+                for i in self.items:
                     if isinstance(
                         i, ModuleItem
                     ) and self.from_loc.resolve_relative_path(i.name.value).endswith(
@@ -935,7 +958,7 @@ class Import(ElementStmt, CodeBlockStmt):
                         return True
         return any(
             isinstance(i, ModulePath) and i.resolve_relative_path().endswith(".jac")
-            for i in self.items.items
+            for i in self.items
         )
 
     def normalize(self, deep: bool = False) -> bool:
@@ -944,7 +967,8 @@ class Import(ElementStmt, CodeBlockStmt):
         if deep:
             res = self.hint.normalize(deep) if self.hint else res
             res = res and self.from_loc.normalize(deep) if self.from_loc else res
-            res = res and self.items.normalize(deep)
+            # res = res and self.items.normalize(deep)                # TODO Check this
+            res = res and import__sub_node_list_normalize(self, self.items, deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
         if self.doc:
@@ -959,7 +983,8 @@ class Import(ElementStmt, CodeBlockStmt):
             new_kid.append(self.gen_token(Tok.KW_FROM))
             new_kid.append(self.from_loc)
             new_kid.append(self.gen_token(Tok.COMMA))
-        new_kid.append(self.items)
+        # new_kid.append(self.items)                                  # TODO Check this
+        new_kid += self.items
         new_kid.append(self.gen_token(Tok.SEMI))
         self.set_kids(nodes=new_kid)
         return res

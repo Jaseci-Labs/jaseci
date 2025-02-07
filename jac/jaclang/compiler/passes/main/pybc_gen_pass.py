@@ -38,6 +38,7 @@ class PyBytecodeGenPass(Pass):
                     node,
                 )
                 continue
+                
             mod.gen.py_bytecode = marshal.dumps(
                 compile(
                     source=mod.gen.py_ast[0], filename=mod.loc.mod_path, mode="exec"

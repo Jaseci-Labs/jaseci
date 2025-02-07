@@ -388,7 +388,8 @@ class JacParser(Pass):
             if self.match_token(Tok.KW_FROM):
                 from_path = self.consume(ast.ModulePath)
                 self.consume(ast.Token)  # LBRACE or COMMA
-                items = self.consume(ast.SubNodeList)
+                items = self.consume(ast.SubNodeList)  # TODO: Fix me
+                items = []
                 if self.consume(ast.Token).name == Tok.SEMI:  # RBRACE or SEMI
                     self.parse_ref.warning(
                         "Deprecated syntax, use braces for multiple imports (e.g, import from mymod {a, b, c})",
@@ -398,13 +399,14 @@ class JacParser(Pass):
                 while self.match_token(Tok.COMMA):
                     paths.append(self.consume(ast.ModulePath))
                 self.consume_token(Tok.SEMI)
-                items = ast.SubNodeList[ast.ModulePath](
-                    items=paths,
-                    delim=Tok.COMMA,
-                    # TODO: kid will be removed so let's keep as it is for now.
-                    kid=self.cur_nodes[2 if lang else 1 : -1],
-                )
-                kid = (kid[:2] if lang else kid[:1]) + [items] + kid[-1:]
+                # items = ast.SubNodeList[ast.ModulePath](
+                #     items=paths,
+                #     delim=Tok.COMMA,
+                #     # TODO: kid will be removed so let's keep as it is for now.
+                #     kid=self.cur_nodes[2 if lang else 1 : -1],
+                # )
+                items = paths
+                kid = (kid[:2] if lang else kid[:1]) + items + kid[-1:]
 
             is_absorb = False
             return ast.Import(
@@ -451,11 +453,12 @@ class JacParser(Pass):
             self.consume_token(Tok.KW_INCLUDE)
             lang = self.match(ast.SubTag)
             from_path = self.consume(ast.ModulePath)
-            items = ast.SubNodeList[ast.ModulePath](
-                items=[from_path], delim=Tok.COMMA, kid=[from_path]
-            )
+            # items = ast.SubNodeList[ast.ModulePath](
+            #     items=[from_path], delim=Tok.COMMA, kid=[from_path]
+            # )
+            items = [from_path]
             kid = (
-                (kid[:2] if lang else kid[:1]) + [items] + kid[-1:]
+                (kid[:2] if lang else kid[:1]) + items + kid[-1:]
             )  # TODO: Will be removed.
             is_absorb = True
             return ast.Import(
