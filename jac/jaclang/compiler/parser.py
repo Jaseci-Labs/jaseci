@@ -3341,22 +3341,22 @@ class JacParser(Pass):
                 kid=self.cur_nodes,
             )
 
-        def capture_pattern(self, _: None) -> ast.MatchPattern:
+        def capture_pattern(self, _:None) -> ast.MatchPattern:
             """Grammar rule.
 
             capture_pattern: NAME
             """
-            name: ast.Name | ast.NameAtom | None = None
-            if name := self.match(ast.Name):
-                if name.sym_name == "_":
-                    return ast.MatchWild(kid=self.cur_nodes)
-                raise self.ice()
-            name = self.consume(ast.NameAtom)
+            name = self.consume(ast.Name)
+            if name.sym_name == "_":
+                return ast.MatchWild(
+                    kid=self.cur_nodes,
+                )
             return ast.MatchAs(
                 name=name,
                 pattern=None,
                 kid=self.cur_nodes,
             )
+            
 
         def sequence_pattern(self, _: None) -> ast.MatchPattern:
             """Grammar rule.
