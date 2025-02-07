@@ -3341,7 +3341,7 @@ class JacParser(Pass):
                 kid=self.cur_nodes,
             )
 
-        def capture_pattern(self, _:None) -> ast.MatchPattern:
+        def capture_pattern(self, _: None) -> ast.MatchPattern:
             """Grammar rule.
 
             capture_pattern: NAME
@@ -3356,7 +3356,6 @@ class JacParser(Pass):
                 pattern=None,
                 kid=self.cur_nodes,
             )
-            
 
         def sequence_pattern(self, _: None) -> ast.MatchPattern:
             """Grammar rule.
