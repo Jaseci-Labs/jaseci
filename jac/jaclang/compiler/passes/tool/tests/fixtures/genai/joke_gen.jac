@@ -12,7 +12,7 @@ JokeList {
         {
             "joke": "Which knight invented King Arthur's Round Table?",
             "punchline": "Sir Cumference."
-        }
+        },
     ];
 
     can 'Generate a Joke with a Punchline'

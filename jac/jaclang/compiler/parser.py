@@ -5,7 +5,7 @@ from __future__ import annotations
 import keyword
 import logging
 import os
-from typing import Callable, TypeAlias, TypeVar
+from typing import Callable, TypeAlias, TypeVar, cast
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler import jac_lark as jl  # type: ignore
@@ -2150,20 +2150,19 @@ class JacParser(Pass):
             if len(kid) == 1:
                 index = kid[0]
                 if isinstance(index, ast.ListVal):
-                    if not index.values:
+                    if len(index.values) == 0:
                         raise self.ice()
-                    if len(index.values.items) == 1:
-                        expr = index.values.items[0] if index.values else None
+                    if len(index.values) == 1:
+                        expr = index.values[0]
                     else:
                         sublist = ast.SubNodeList[ast.Expr | ast.KWPair](
-                            items=[*index.values.items], delim=Tok.COMMA, kid=index.kid
+                            items=[*index.values], delim=Tok.COMMA, kid=index.kid[1:-1]
                         )
                         expr = ast.TupleVal(values=sublist, kid=[sublist])
-                        kid = [expr]
                     return ast.IndexSlice(
                         slices=[ast.IndexSlice.Slice(start=expr, stop=None, step=None)],
                         is_range=False,
-                        kid=kid,
+                        kid=[index.kid[0], expr, index.kid[-1]],
                     )
                 else:
                     raise self.ice()
@@ -2346,13 +2345,13 @@ class JacParser(Pass):
             """
             if len(kid) == 2:
                 return ast.ListVal(
-                    values=None,
+                    values=[],
                     kid=kid,
                 )
             elif isinstance(kid[1], ast.SubNodeList):
                 return ast.ListVal(
-                    values=kid[1],
-                    kid=kid,
+                    values=cast(list[ast.Expr], kid[1].items),
+                    kid=[kid[0], *kid[1].kid, kid[2]],
                 )
             else:
                 raise self.ice()
