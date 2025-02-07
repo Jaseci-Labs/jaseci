@@ -233,7 +233,7 @@ class JacFormatPass(Pass):
             if (
                 prev_token
                 and prev_token.gen.jac.endswith("}")
-                and not isinstance(prev_token, (ast.DictVal, ast.SetVal))
+                and not isinstance(prev_token, ast.DictVal)
             ):
                 self.indent_level -= 1
                 self.emit_ln(node, "")
@@ -1667,11 +1667,17 @@ class JacFormatPass(Pass):
 
         values: list[ExprType],
         """
-        if node.values is not None:
-            self.emit(
-                node,
-                f"{{{node.values.gen.jac}}}",
-            )
+        values_codgen = ", ".join([expr.gen.jac for expr in node.values])
+        if self.is_line_break_needed(values_codgen, 88):
+            self.emit(node, "{")
+            self.emit_ln(node, "")
+            self.indent_level += 1
+            for expr in node.values:
+                self.emit(node, f"{expr.gen.jac},\n")
+            self.indent_level -= 1
+            self.emit(node, "}")
+        else:
+            self.emit(node, f"{{{values_codgen}}}")
 
     def exit_dict_val(self, node: ast.DictVal) -> None:
         """Sub objects.

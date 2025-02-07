@@ -1971,21 +1971,21 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         class Set(expr):
             elts: list[expr]
         """
-        if len(node.elts) != 0:
-            elts = [self.convert(i) for i in node.elts]
-            valid = [i for i in elts if isinstance(i, (ast.Expr))]
-            if len(valid) != len(elts):
-                raise self.ice("Length mismatch in set body")
-            valid_elts = ast.SubNodeList[ast.Expr](
-                items=valid, delim=Tok.COMMA, kid=valid
-            )
-            kid: list[ast.AstNode] = [*valid]
-        else:
-            valid_elts = None
-            l_brace = self.operator(Tok.LBRACE, "{")
-            r_brace = self.operator(Tok.RBRACE, "}")
-            kid = [l_brace, r_brace]
-        return ast.SetVal(values=valid_elts, kid=kid)
+        elts = [self.convert(elt) for elt in node.elts]
+        if not all(isinstance(elt, ast.Expr) for elt in elts):
+            raise self.ice("Length mismatch in set elements")
+        # self.operator() should be called self.token() imo.
+        kid: list[ast.AstNode] = []
+        kid.append(self.operator(Tok.LBRACE, "{"))
+        for idx, expr in enumerate(elts):
+            if idx != 0:
+                kid.append(self.operator(Tok.COMMA, ","))
+            kid.append(expr)
+        kid.append(self.operator(Tok.RBRACE, "}"))
+        return ast.SetVal(
+            values=cast(list[ast.Expr], elts),
+            kid=kid,
+        )
 
     def proc_set_comp(self, node: py_ast.SetComp) -> ast.ListCompr:
         """Process python node.
