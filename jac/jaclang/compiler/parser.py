@@ -599,19 +599,20 @@ class JacParser(Pass):
                 kid=self.cur_nodes,
             )
 
-        def inherited_archs(self, _: None) -> ast.SubNodeList[ast.Expr]:
+        
+        def inherited_archs(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Expr]:
             """Grammar rule.
 
             inherited_archs: LT (atomic_chain COMMA)* atomic_chain GT
                            | COLON (atomic_chain COMMA)* atomic_chain COLON
             """
-            self.consume_token(Tok.COLON)
-            items = self.consume_many(ast.Expr)
-            return ast.SubNodeList[ast.Expr](
-                items=items,
-                delim=Tok.COMMA,
-                kid=self.cur_nodes,
-            )
+            self.match_token(Tok.LT) or self.consume_token(Tok.COLON)
+            items: list = []
+            while inherited_arch := self.match(ast.Expr):
+                items.append(inherited_arch)
+                self.match_token(Tok.COMMA)
+            self.match_token(Tok.LT) or self.consume_token(Tok.COLON) 
+            return ast.SubNodeList[ast.Expr](items=items, delim=Tok.COMMA, kid=kid)
 
         def sub_name(self, _: None) -> ast.SubTag[ast.Name]:
             """Grammar rule.
@@ -634,7 +635,7 @@ class JacParser(Pass):
             """
             return self.consume(ast.NameAtom)
 
-        def special_ref(self, kid: list[ast.AstNode]) -> ast.SpecialVarRef:
+        def special_ref(self, _: None) -> ast.SpecialVarRef:
             """Grammar rule.
 
             special_ref: KW_INIT
@@ -814,9 +815,7 @@ class JacParser(Pass):
             ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
             """
             target = self.consume(ast.ArchRefChain)
-            signature = self.match(ast.FuncSignature) or self.consume(
-                ast.EventSignature
-            )
+            signature = self.match(ast.FuncSignature) or self.consume(ast.EventSignature)
             body = self.consume(ast.SubNodeList)
 
             return ast.AbilityDef(
