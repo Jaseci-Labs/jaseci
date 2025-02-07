@@ -1305,23 +1305,16 @@ class PyastGenPass(Pass):
         )
         vararg = None
         kwarg = None
-        if isinstance(node.params, ast.SubNodeList):
-            for i in node.params.items:
-                if i.unpack and i.unpack.value == "*":
-                    vararg = i.gen.py_ast[0]
-                elif i.unpack and i.unpack.value == "**":
-                    kwarg = i.gen.py_ast[0]
-                else:
-                    (
-                        params.append(i.gen.py_ast[0])
-                        if isinstance(i.gen.py_ast[0], ast3.arg)
-                        else self.ice("This list should only be Args")
-                    )
-        defaults = (
-            [x.value.gen.py_ast[0] for x in node.params.items if x.value]
-            if node.params
-            else []
-        )
+        for param in node.params:
+            if param.unpack and param.unpack.value == "*":
+                vararg = param.gen.py_ast[0]
+            elif param.unpack and param.unpack.value == "**":
+                kwarg = param.gen.py_ast[0]
+            else:
+                if not isinstance(param.gen.py_ast[0], ast3.arg):
+                    raise self.ice("This list should only be Args")
+                params.append(param.gen.py_ast[0])
+        defaults = [param.value.gen.py_ast[0] for param in node.params if param.value]
         node.gen.py_ast = [
             self.sync(
                 ast3.arguments(
@@ -2641,7 +2634,7 @@ class PyastGenPass(Pass):
                 )
             ]
         else:
-            self.ice(f"Unknown Unary operator {node.op.value}")
+            raise self.ice(f"Unknown Unary operator {node.op.value}")
 
     def exit_if_else_expr(self, node: ast.IfElseExpr) -> None:
         """Sub objects.
@@ -3042,7 +3035,7 @@ class PyastGenPass(Pass):
                 ):
                     keywords.append(x.gen.py_ast[0])
                 else:
-                    self.ice("Invalid Parameter")
+                    raise self.ice("Invalid Parameter")
         if node.genai_call:
             self.needs_jac_feature()
             by_llm_call_args = self.get_by_llm_call_args(node)

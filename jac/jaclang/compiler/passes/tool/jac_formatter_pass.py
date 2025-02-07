@@ -706,37 +706,23 @@ class JacFormatPass(Pass):
             prev_token = i
 
     def exit_func_signature(self, node: ast.FuncSignature) -> None:
-        """Sub objects.
-
-        params: Optional[SubNodeList[ParamVar]],
-        return_type: Optional[SubNodeList[TypeSpec]],
         """
-        prev_token = None
-        for i in node.kid:
-            if isinstance(i, ast.SubTag):
-                for j in i.kid:
-                    if (
-                        prev_token
-                        and isinstance(prev_token, ast.Token)
-                        and prev_token.gen.jac == "("
-                    ):
-                        self.emit(node, f"{j.gen.jac}")
-                    else:
-                        self.emit(node, f" {j.gen.jac}")
-            elif isinstance(i, ast.SubNodeList):
-                for j in i.kid:
-                    if j.gen.jac == ",":
-                        self.emit(node, f"{j.gen.jac.strip()} ")
-                    else:
-                        self.emit(node, f"{j.gen.jac.strip()}")
-            elif isinstance(i, ast.Token) and i.gen.jac == ":":
-                self.emit(node, f"{i.gen.jac} ")
-            else:
-                if i.gen.jac == "->":
-                    self.emit(node, f" {i.gen.jac} ")
-                else:
-                    self.emit(node, i.gen.jac)
-            prev_token = i
+        Syntax:
+        (LPAREN func_decl_params? RPAREN)? (RETURN_HINT (STRING COLON)? expression)?
+        """
+        if node.params:
+            self.emit(node, "(")
+            for idx, param in enumerate(node.params):
+                if idx != 0:
+                    self.emit(node, ", ")
+                self.emit(node, param.gen.jac)
+            self.emit(node, ")")
+
+        if node.return_type:
+            self.emit(node, " ->")
+            if node.semstr:
+                self.emit(node, f" {node.semstr.gen.jac}:")
+            self.emit(node, f" {node.return_type.gen.jac}")
 
     def exit_arch_has(self, node: ast.ArchHas) -> None:
         """Sub objects.
@@ -1564,18 +1550,18 @@ class JacFormatPass(Pass):
             self.emit(node, test_str)
 
     def exit_lambda_expr(self, node: ast.LambdaExpr) -> None:
-        """Sub objects.
-
-        signature: FuncSignature,
-        body: Expr,
         """
-        out = ""
-        if node.signature and node.signature.params:
-            self.comma_sep_node_list(node.signature.params)
-            out += node.signature.params.gen.jac
-        if node.signature and node.signature.return_type:
-            out += f" -> {node.signature.return_type.gen.jac}"
-        self.emit(node, f"with {out} can {node.body.gen.jac}")
+        Syntax:
+        KW_WITH func_decl_params? (RETURN_HINT expression)? KW_CAN expression
+        """
+        self.emit(node, "with")
+        if node.signature:
+            for idx, param in enumerate(node.signature.params):
+                self.emit(node, ", " if idx > 0 else " ")
+                self.emit(node, param.gen.jac)
+            if ret_type := node.signature.return_type:
+                self.emit(node, f" -> {ret_type.gen.jac}")
+        self.emit(node, f" can {node.body.gen.jac}")
 
     def exit_unary_expr(self, node: ast.UnaryExpr) -> None:
         """Sub objects.
