@@ -564,23 +564,20 @@ class JacParser(Pass):
                 kid=self.cur_nodes,
             )
 
-        def architype_def(self, kid: list[ast.AstNode]) -> ast.ArchDef:
+        def architype_def(self, _: None) -> ast.ArchDef:
             """Grammar rule.
 
             architype_def: abil_to_arch_chain member_block
             """
-            if isinstance(kid[0], ast.ArchRefChain) and isinstance(
-                kid[1], ast.SubNodeList
-            ):
-                return ast.ArchDef(
-                    target=kid[0],
-                    body=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            archref = self.consume(ast.ArchRefChain)
+            subnodelist = self.consume(ast.SubNodeList)
+            return ast.ArchDef(
+                target=archref,
+                body=subnodelist,
+                kid=self.cur_nodes,
+            )
 
-        def arch_type(self, kid: list[ast.AstNode]) -> ast.Token:
+        def arch_type(self, _: None) -> ast.Token:
             """Grammar rule.
 
             arch_type: KW_WALKER
@@ -588,63 +585,54 @@ class JacParser(Pass):
                     | KW_EDGE
                     | KW_NODE
             """
-            if isinstance(kid[0], ast.Token):
-                return kid[0]
-            else:
-                raise self.ice()
+            return self.consume(ast.Token)
 
-        def decorators(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Expr]:
+        def decorators(self, _: None) -> ast.SubNodeList[ast.Expr]:
             """Grammar rule.
 
             decorators: (DECOR_OP atomic_chain)+
             """
-            valid_decors = [i for i in kid if isinstance(i, ast.Expr)]
-            if len(valid_decors) == len(kid) / 2:
-                return ast.SubNodeList[ast.Expr](
-                    items=valid_decors,
-                    delim=Tok.DECOR_OP,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.DECOR_OP)
+            return ast.SubNodeList[ast.Expr](
+                items=self.consume_many(ast.Expr),
+                delim=Tok.DECOR_OP,
+                kid=self.cur_nodes,
+            )
 
-        def inherited_archs(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Expr]:
+        def inherited_archs(self, _: None) -> ast.SubNodeList[ast.Expr]:
             """Grammar rule.
 
             inherited_archs: LT (atomic_chain COMMA)* atomic_chain GT
                            | COLON (atomic_chain COMMA)* atomic_chain COLON
             """
-            valid_inh = [i for i in kid if isinstance(i, ast.Expr)]
+            self.consume_token(Tok.COLON)
+            items = self.consume_many(ast.Expr)
             return ast.SubNodeList[ast.Expr](
-                items=valid_inh,
+                items=items,
                 delim=Tok.COMMA,
-                kid=kid,
+                kid=self.cur_nodes,
             )
 
-        def sub_name(self, kid: list[ast.AstNode]) -> ast.SubTag[ast.Name]:
+        def sub_name(self, _: None) -> ast.SubTag[ast.Name]:
             """Grammar rule.
 
             sub_name: COLON NAME
             """
-            if isinstance(kid[1], ast.Name):
-                return ast.SubTag[ast.Name](
-                    tag=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.COLON)
+            target = self.consume(ast.Name)
+            return ast.SubTag(
+                tag=target,
+                kid=self.cur_nodes,
+            )
 
-        def named_ref(self, kid: list[ast.AstNode]) -> ast.NameAtom:
+        def named_ref(self, _: None) -> ast.NameAtom:
             """Grammar rule.
 
             named_ref: special_ref
                     | KWESC_NAME
                     | NAME
             """
-            if isinstance(kid[0], ast.NameAtom):
-                return kid[0]
-            else:
-                raise self.ice()
+            return self.consume(ast.NameAtom)
 
         def special_ref(self, kid: list[ast.AstNode]) -> ast.SpecialVarRef:
             """Grammar rule.
@@ -656,10 +644,7 @@ class JacParser(Pass):
                         | KW_SELF
                         | KW_HERE
             """
-            if isinstance(kid[0], ast.Name):
-                return ast.SpecialVarRef(var=kid[0])
-            else:
-                raise self.ice()
+            return ast.SpecialVarRef(var=self.consume(ast.Name))
 
         def enum(self, _: None) -> ast.Enum | ast.EnumDef:
             """Grammar rule.
@@ -699,32 +684,35 @@ class JacParser(Pass):
                 kid=self.cur_nodes,
             )
 
-        def enum_def(self, kid: list[ast.AstNode]) -> ast.EnumDef:
+        def enum_def(self, _: None) -> ast.EnumDef:
             """Grammar rule.
 
             enum_def: arch_to_enum_chain enum_block
             """
-            if isinstance(kid[0], ast.ArchRefChain) and isinstance(
-                kid[1], ast.SubNodeList
-            ):
-                return ast.EnumDef(
-                    target=kid[0],
-                    body=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            enum_def = self.consume(ast.ArchRefChain)
+            enum_block = self.consume(ast.SubNodeList)
+            return ast.EnumDef(
+                target=enum_def,
+                body=enum_block,
+                kid=self.cur_nodes,
+            )
 
-        def enum_block(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.EnumBlockStmt]:
+        def enum_block(self, _: None) -> ast.SubNodeList[ast.EnumBlockStmt]:
             """Grammar rule.
 
             enum_block: LBRACE ((enum_stmt COMMA)* enum_stmt COMMA?)? RBRACE
             """
-            ret = ast.SubNodeList[ast.EnumBlockStmt](items=[], delim=Tok.COMMA, kid=kid)
-            ret.items = [i for i in kid if isinstance(i, ast.EnumBlockStmt)]
-            return ret
+            self.consume_token(Tok.LBRACE)
+            enum_statements: list = []
+            while enum_stmt := self.match(ast.EnumBlockStmt):
+                enum_statements.append(enum_stmt)
+                self.match_token(Tok.COMMA)
+            self.consume_token(Tok.RBRACE)
+            return ast.SubNodeList[ast.EnumBlockStmt](
+                items=enum_statements,
+                delim=Tok.COMMA,
+                kid=self.cur_nodes,
+            )
 
         def enum_stmt(self, _: None) -> ast.EnumBlockStmt:
             """Grammar rule.
@@ -825,19 +813,18 @@ class JacParser(Pass):
 
             ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
             """
-            if (
-                isinstance(kid[0], ast.ArchRefChain)
-                and isinstance(kid[1], (ast.FuncSignature, ast.EventSignature))
-                and isinstance(kid[2], ast.SubNodeList)
-            ):
-                return ast.AbilityDef(
-                    target=kid[0],
-                    signature=kid[1],
-                    body=kid[2],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            target = self.consume(ast.ArchRefChain)
+            signature = self.match(ast.FuncSignature) or self.consume(
+                ast.EventSignature
+            )
+            body = self.consume(ast.SubNodeList)
+
+            return ast.AbilityDef(
+                target=target,
+                signature=signature,
+                body=body,
+                kid=self.cur_nodes,
+            )
 
         # We need separate production rule for abstract_ability because we don't
         # want to allow regular abilities outside of classed to be abstract.
