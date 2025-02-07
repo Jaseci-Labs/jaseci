@@ -1127,18 +1127,14 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def type_tag(self, kid: list[ast.AstNode]) -> ast.SubTag[ast.Expr]:
+        def type_tag(self, _: None) -> ast.SubTag[ast.Expr]:
             """Grammar rule.
 
             type_tag: COLON expression
             """
-            if isinstance(kid[1], ast.Expr):
-                return ast.SubTag[ast.Expr](
-                    tag=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.COLON)
+            tag = self.consume(ast.Expr)
+            return ast.SubTag[ast.Expr](tag=tag, kid=self.cur_nodes)
 
         def builtin_type(self, kid: list[ast.AstNode]) -> ast.Token:
             """Grammar rule.
@@ -1155,20 +1151,18 @@ class JacParser(Pass):
                         | TYP_BYTES
                         | TYP_STRING
             """
-            if isinstance(kid[0], ast.Token):
-                return ast.BuiltinType(
-                    name=kid[0].name,
-                    orig_src=self.parse_ref.source,
-                    value=kid[0].value,
-                    line=kid[0].loc.first_line,
-                    end_line=kid[0].loc.last_line,
-                    col_start=kid[0].loc.col_start,
-                    col_end=kid[0].loc.col_end,
-                    pos_start=kid[0].pos_start,
-                    pos_end=kid[0].pos_end,
-                )
-            else:
-                raise self.ice()
+            token = self.consume(ast.Token)
+            return ast.BuiltinType(
+                name=token.name,
+                orig_src=self.parse_ref.source,
+                value=token.value,
+                line=token.loc.first_line,
+                end_line=token.loc.last_line,
+                col_start=token.loc.col_start,
+                col_end=token.loc.col_end,
+                pos_start=token.pos_start,
+                pos_end=token.pos_end,
+            )
 
         def code_block(
             self, kid: list[ast.AstNode]
