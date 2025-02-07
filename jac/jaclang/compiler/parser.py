@@ -599,7 +599,6 @@ class JacParser(Pass):
                 kid=self.cur_nodes,
             )
 
-        
         def inherited_archs(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Expr]:
             """Grammar rule.
 
@@ -611,7 +610,7 @@ class JacParser(Pass):
             while inherited_arch := self.match(ast.Expr):
                 items.append(inherited_arch)
                 self.match_token(Tok.COMMA)
-            self.match_token(Tok.LT) or self.consume_token(Tok.COLON) 
+            self.match_token(Tok.LT) or self.consume_token(Tok.COLON)
             return ast.SubNodeList[ast.Expr](items=items, delim=Tok.COMMA, kid=kid)
 
         def sub_name(self, _: None) -> ast.SubTag[ast.Name]:
@@ -815,7 +814,9 @@ class JacParser(Pass):
             ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
             """
             target = self.consume(ast.ArchRefChain)
-            signature = self.match(ast.FuncSignature) or self.consume(ast.EventSignature)
+            signature = self.match(ast.FuncSignature) or self.consume(
+                ast.EventSignature
+            )
             body = self.consume(ast.SubNodeList)
 
             return ast.AbilityDef(
