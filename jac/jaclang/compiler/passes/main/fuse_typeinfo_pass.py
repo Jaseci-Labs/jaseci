@@ -486,7 +486,6 @@ class FuseTypeInfoPass(UniPass):
         node.name_spec.expr_type = f"builtins.{node.sym_name}"
 
     def get_type_from_instance(self, mypy_type: MypyTypes.Instance) -> Optional[str]:
-        """Get type info from mypy type Instance."""
         #  FIXME: Returning str(mypy_type) won't work for literal values since it would be
         # like Literal['foo'] instead of builtins.str, so we need to get the type fullname.
         # Not sure if this is the best way to do it.
@@ -498,36 +497,29 @@ class FuseTypeInfoPass(UniPass):
     def get_type_from_callable_type(
         self, mypy_type: MypyTypes.CallableType
     ) -> Optional[str]:
-        """Get type info from mypy type CallableType."""
         return self.__call_type_handler(mypy_type.ret_type)
 
     # TODO: Which overloaded function to get the return value from?
     def get_type_from_overloaded(
         self, mypy_type: MypyTypes.Overloaded
     ) -> Optional[str]:
-        """Get type info from mypy type Overloaded."""
         return self.__call_type_handler(mypy_type.items[-1])
 
     def get_type_from_none_type(self, mypy_type: MypyTypes.NoneType) -> Optional[str]:
-        """Get type info from mypy type NoneType."""
         return "None"
 
     def get_type_from_any_type(self, mypy_type: MypyTypes.AnyType) -> Optional[str]:
-        """Get type info from mypy type NoneType."""
         return "Any"
 
     def get_type_from_tuple_type(self, mypy_type: MypyTypes.TupleType) -> Optional[str]:
-        """Get type info from mypy type TupleType."""
         return "builtins.tuple"
 
     def get_type_from_type_type(self, mypy_type: MypyTypes.TypeType) -> Optional[str]:
-        """Get type info from mypy type TypeType."""
         return str(mypy_type.item)
 
     def get_type_from_type_var_type(
         self, mypy_type: MypyTypes.TypeVarType
     ) -> Optional[str]:
-        """Get type info from mypy type TypeType."""
         return str(mypy_type.name)
 
     def exit_assignment(self, node: uni.Assignment) -> None:

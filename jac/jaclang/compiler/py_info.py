@@ -7,7 +7,6 @@ class PyInfo:
     """Python info related to python imports."""
 
     def __init__(self) -> None:
-        """Object Initialization."""
         # Module dependacy map used to store all module dependacies detected
         # by mypy. The dependacies are computed using the mypy graph in
         # TypeCheck pass
