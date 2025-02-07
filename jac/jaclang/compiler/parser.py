@@ -1479,21 +1479,20 @@ class JacParser(Pass):
                 kid=kid,
             )
 
-        def assert_stmt(self, kid: list[ast.AstNode]) -> ast.AssertStmt:
+        def assert_stmt(self, _: None) -> ast.AssertStmt:
             """Grammar rule.
 
             assert_stmt: KW_ASSERT expression (COMMA expression)?
             """
-            condition = kid[1]
-            error_msg = kid[3] if len(kid) > 3 else None
-            if isinstance(condition, ast.Expr):
-                return ast.AssertStmt(
-                    condition=condition,
-                    error_msg=(error_msg if isinstance(error_msg, ast.Expr) else None),
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.KW_ASSERT)
+            condition = self.consume(ast.Expr)
+            if self.match_token(Tok.COMMA):
+                error_msg = self.consume(ast.Expr)
+            return ast.AssertStmt(
+                condition=condition,
+                error_msg=error_msg,
+                kid=self.cur_nodes,
+            )
 
         def check_stmt(self, _: None) -> ast.CheckStmt:
             """Grammar rule.
@@ -3198,53 +3197,55 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def assign_compr(self, kid: list[ast.AstNode]) -> ast.AssignCompr:
+        def assign_compr(self, _: None) -> ast.AssignCompr:
             """Grammar rule.
 
             filter_compr: LPAREN EQ kw_expr_list RPAREN
             """
-            if isinstance(kid[2], ast.SubNodeList):
-                return ast.AssignCompr(
-                    assigns=kid[2],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.LPAREN)
+            self.consume_token(Tok.EQ)
+            assigns = self.consume(ast.SubNodeList)
+            self.consume_token(Tok.RPAREN)
+            return ast.AssignCompr(assigns=assigns, kid=self.cur_nodes)
 
-        def match_stmt(self, kid: list[ast.AstNode]) -> ast.MatchStmt:
+        def match_stmt(self, _: None) -> ast.MatchStmt:
             """Grammar rule.
 
             match_stmt: KW_MATCH expr_list LBRACE match_case_block+ RBRACE
             """
-            cases = [i for i in kid if isinstance(i, ast.MatchCase)]
-            if isinstance(kid[1], ast.Expr):
-                return ast.MatchStmt(
-                    target=kid[1],
-                    cases=cases,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.KW_MATCH)
+            target = self.consume(ast.Expr)
+            self.consume_token(Tok.LBRACE)
+            cases = [self.consume(ast.MatchCase)]
+            while case := self.match(ast.MatchCase):
+                cases.append(case)
+            self.consume_token(Tok.RBRACE)
+            return ast.MatchStmt(
+                target=target,
+                cases=cases,
+                kid=self.cur_nodes,
+            )
 
-        def match_case_block(self, kid: list[ast.AstNode]) -> ast.MatchCase:
+        def match_case_block(self, _: None) -> ast.MatchCase:
             """Grammar rule.
 
             match_case_block: KW_CASE pattern_seq (KW_IF expression)? COLON statement_list
             """
-            pattern = kid[1]
-            guard = kid[3] if isinstance(kid[3], ast.Expr) else None
-            stmts = [i for i in kid if isinstance(i, ast.CodeBlockStmt)]
-            if isinstance(pattern, ast.MatchPattern) and isinstance(
-                guard, (ast.Expr, type(None))
-            ):
-                return ast.MatchCase(
-                    pattern=pattern,
-                    guard=guard,
-                    body=stmts,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            guard: ast.Expr | None = None
+            self.consume_token(Tok.KW_CASE)
+            pattern = self.consume(ast.MatchPattern)
+            if self.match_token(Tok.KW_IF):
+                guard = self.consume(ast.Expr)
+            self.consume_token(Tok.COLON)
+            stmts = [self.consume(ast.CodeBlockStmt)]
+            while stmt := self.match(ast.CodeBlockStmt):
+                stmts.append(stmt)
+            return ast.MatchCase(
+                pattern=pattern,
+                guard=guard,
+                body=stmts,
+                kid=self.cur_nodes,
+            )
 
         def pattern_seq(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
             """Grammar rule.
