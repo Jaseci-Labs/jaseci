@@ -1484,6 +1484,7 @@ class JacParser(Pass):
 
             assert_stmt: KW_ASSERT expression (COMMA expression)?
             """
+            error_msg: ast.Expr | None = None
             self.consume_token(Tok.KW_ASSERT)
             condition = self.consume(ast.Expr)
             if self.match_token(Tok.COMMA):
