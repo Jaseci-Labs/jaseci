@@ -1791,21 +1791,21 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def pipe(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def pipe(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             pipe: pipe_back PIPE_FWD pipe
                 | pipe_back
             """
-            return self._binary_expr_unwind(kid)
+            return self._binary_expr_unwind(self.cur_nodes)
 
-        def pipe_back(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def pipe_back(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             pipe_back: bitwise_or PIPE_BKWD pipe_back
                      | bitwise_or
             """
-            return self._binary_expr_unwind(kid)
+            return self._binary_expr_unwind(self.cur_nodes)
 
         def bitwise_or(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
@@ -1958,56 +1958,54 @@ class JacParser(Pass):
                 )
             return self._binary_expr_unwind(self.cur_nodes)
 
-        def power(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def power(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             power: (power STAR_POW)? factor
             """
-            return self._binary_expr_unwind(kid)
+            return self._binary_expr_unwind(self.cur_nodes)
 
-        def connect(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def connect(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             connect: (connect (connect_op | disconnect_op))? atomic_pipe
             """
-            return self._binary_expr_unwind(kid)
+            return self._binary_expr_unwind(self.cur_nodes)
 
-        def atomic_pipe(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def atomic_pipe(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             atomic_pipe: (atomic_pipe A_PIPE_FWD)? atomic_pipe_back
             """
-            return self._binary_expr_unwind(kid)
+            return self._binary_expr_unwind(self.cur_nodes)
 
-        def atomic_pipe_back(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def atomic_pipe_back(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             atomic_pipe_back: (atomic_pipe_back A_PIPE_BKWD)? ds_spawn
             """
-            return self._binary_expr_unwind(kid)
+            return self._binary_expr_unwind(self.cur_nodes)
 
-        def ds_spawn(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def ds_spawn(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             ds_spawn: (ds_spawn KW_SPAWN)? unpack
             """
-            return self._binary_expr_unwind(kid)
+            return self._binary_expr_unwind(self.cur_nodes)
 
-        def unpack(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def unpack(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             unpack: STAR_MUL? ref
             """
-            if len(kid) == 2:
-                if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.Expr):
-                    return ast.UnaryExpr(
-                        op=kid[0],
-                        operand=kid[1],
-                        kid=kid,
-                    )
-                else:
-                    raise self.ice()
-            return self._binary_expr_unwind(kid)
+            if op := self.match_token(Tok.STAR_MUL):
+                operand = self.consume(ast.Expr)
+                return ast.UnaryExpr(
+                    op=op,
+                    operand=operand,
+                    kid=self.cur_nodes,
+                )
+            return self._binary_expr_unwind(self.cur_nodes)
 
         def ref(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
