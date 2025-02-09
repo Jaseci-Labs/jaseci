@@ -2478,29 +2478,23 @@ class JacParser(Pass):
                 kid=new_kid,
             )
 
-        def kw_expr(self, kid: list[ast.AstNode]) -> ast.KWPair:
+        def kw_expr(self, _: None) -> ast.KWPair:
             """Grammar rule.
 
             kw_expr: named_ref EQ expression | STAR_POW expression
             """
-            if (
-                len(kid) == 3
-                and isinstance(kid[0], ast.NameAtom)
-                and isinstance(kid[2], ast.Expr)
-            ):
-                return ast.KWPair(
-                    key=kid[0],
-                    value=kid[2],
-                    kid=kid,
-                )
-            elif len(kid) == 2 and isinstance(kid[1], ast.Expr):
-                return ast.KWPair(
-                    key=None,
-                    value=kid[1],
-                    kid=kid,
-                )
+            if self.match_token(Tok.STAR_POW):
+                value = self.consume(ast.Expr)
+                key = None
             else:
-                raise self.ice()
+                key = self.consume(ast.Name)
+                self.consume_token(Tok.EQ)
+                value = self.consume(ast.Expr)
+            return ast.KWPair(
+                key=key,
+                value=value,
+                kid=self.cur_nodes,
+            )
 
         def name_list(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Name]:
             """Grammar rule.
