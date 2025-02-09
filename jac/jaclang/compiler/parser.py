@@ -2971,41 +2971,53 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def edge_to(self, kid: list[ast.AstNode]) -> ast.EdgeOpRef:
+        def edge_to(self, _: None) -> ast.EdgeOpRef:
             """Grammar rule.
 
             edge_to: ARROW_R_P1 typed_filter_compare_list ARROW_R_P2
                    | ARROW_R
             """
-            fcond = kid[1] if len(kid) > 1 else None
-            if isinstance(fcond, ast.FilterCompr) or fcond is None:
-                return ast.EdgeOpRef(filter_cond=fcond, edge_dir=EdgeDir.OUT, kid=kid)
+            if self.match_token(Tok.ARROW_R):
+                fcond = None
             else:
-                raise self.ice()
+                self.consume_token(Tok.ARROW_R_P1)
+                fcond = self.consume(ast.FilterCompr)
+                self.consume_token(Tok.ARROW_R_P2)
+            return ast.EdgeOpRef(
+                filter_cond=fcond, edge_dir=EdgeDir.OUT, kid=self.cur_nodes
+            )
 
-        def edge_from(self, kid: list[ast.AstNode]) -> ast.EdgeOpRef:
+        def edge_from(self, _: None) -> ast.EdgeOpRef:
             """Grammar rule.
 
             edge_from: ARROW_L_P1 typed_filter_compare_list ARROW_L_P2
                      | ARROW_L
             """
-            fcond = kid[1] if len(kid) > 1 else None
-            if isinstance(fcond, ast.FilterCompr) or fcond is None:
-                return ast.EdgeOpRef(filter_cond=fcond, edge_dir=EdgeDir.IN, kid=kid)
+            if self.match_token(Tok.ARROW_L):
+                fcond = None
             else:
-                raise self.ice()
+                self.consume_token(Tok.ARROW_L_P1)
+                fcond = self.consume(ast.FilterCompr)
+                self.consume_token(Tok.ARROW_L_P2)
+            return ast.EdgeOpRef(
+                filter_cond=fcond, edge_dir=EdgeDir.IN, kid=self.cur_nodes
+            )
 
-        def edge_any(self, kid: list[ast.AstNode]) -> ast.EdgeOpRef:
+        def edge_any(self, _: None) -> ast.EdgeOpRef:
             """Grammar rule.
 
             edge_any: ARROW_L_P1 typed_filter_compare_list ARROW_R_P2
                     | ARROW_BI
             """
-            fcond = kid[1] if len(kid) > 1 else None
-            if isinstance(fcond, ast.FilterCompr) or fcond is None:
-                return ast.EdgeOpRef(filter_cond=fcond, edge_dir=EdgeDir.ANY, kid=kid)
+            if self.match_token(Tok.ARROW_BI):
+                fcond = None
             else:
-                raise self.ice()
+                self.consume_token(Tok.ARROW_L_P1)
+                fcond = self.consume(ast.FilterCompr)
+                self.consume_token(Tok.ARROW_R_P2)
+            return ast.EdgeOpRef(
+                filter_cond=fcond, edge_dir=EdgeDir.ANY, kid=self.cur_nodes
+            )
 
         def connect_op(self, kid: list[ast.AstNode]) -> ast.ConnectOp:
             """Grammar rule.
