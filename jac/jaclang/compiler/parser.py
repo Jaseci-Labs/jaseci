@@ -3122,20 +3122,29 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def filter_compr(self, kid: list[ast.AstNode]) -> ast.FilterCompr:
+        def filter_compr(self, _: None) -> ast.FilterCompr:
             """Grammar rule.
 
             filter_compr: LPAREN NULL_OK filter_compare_list RPAREN
                         | LPAREN TYPE_OP NULL_OK typed_filter_compare_list RPAREN
             """
-            if isinstance(kid[2], ast.SubNodeList):
-                return ast.FilterCompr(compares=kid[2], f_type=None, kid=kid)
-            elif isinstance(kid[3], ast.FilterCompr):
-                kid[3].add_kids_left(kid[:3])
-                kid[3].add_kids_right(kid[4:])
-                return kid[3]
-            else:
-                raise self.ice()
+            kid = self.cur_nodes
+            self.consume_token(Tok.LPAREN)
+            if self.match_token(Tok.TYPE_OP):
+                self.consume_token(Tok.NULL_OK)
+                f_type = self.consume(ast.FilterCompr)
+                f_type.add_kids_left(kid[:3])
+                f_type.add_kids_right(kid[4:])
+                self.consume_token(Tok.RPAREN)
+                return f_type
+            self.consume_token(Tok.NULL_OK)
+            compares = self.consume(ast.SubNodeList)
+            self.consume_token(Tok.RPAREN)
+            return ast.FilterCompr(
+                compares=compares,
+                f_type=None,
+                kid=self.cur_nodes,
+            )
 
         def filter_compare_list(
             self, kid: list[ast.AstNode]
