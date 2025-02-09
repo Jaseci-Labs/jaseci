@@ -2007,24 +2007,22 @@ class JacParser(Pass):
                 )
             return self._binary_expr_unwind(self.cur_nodes)
 
-        def ref(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def ref(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             ref: walrus_assign
                | BW_AND walrus_assign
             """
-            if len(kid) == 2:
-                if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.Expr):
-                    return ast.UnaryExpr(
-                        op=kid[0],
-                        operand=kid[1],
-                        kid=kid,
-                    )
-                else:
-                    raise self.ice()
-            return self._binary_expr_unwind(kid)
+            if op := self.match_token(Tok.BW_AND):
+                operand = self.consume(ast.Expr)
+                return ast.UnaryExpr(
+                    op=op,
+                    operand=operand,
+                    kid=self.cur_nodes,
+                )
+            return self._binary_expr_unwind(self.cur_nodes)
 
-        def pipe_call(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def pipe_call(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             pipe_call: atomic_chain
@@ -2033,25 +2031,21 @@ class JacParser(Pass):
                 | KW_SPAWN atomic_chain
                 | KW_AWAIT atomic_chain
             """
-            if len(kid) == 2:
-                if (
-                    isinstance(kid[0], ast.Token)
-                    and kid[0].name == Tok.KW_AWAIT
-                    and isinstance(kid[1], ast.Expr)
-                ):
+            if len(self.cur_nodes) == 2:
+                if self.match_token(Tok.KW_AWAIT):
+                    target = self.consume(ast.Expr)
                     return ast.AwaitExpr(
-                        target=kid[1],
-                        kid=kid,
+                        target=target,
+                        kid=self.cur_nodes,
                     )
-                elif isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.Expr):
+                elif op := self.match(ast.Token):
+                    operand = self.consume(ast.Expr)
                     return ast.UnaryExpr(
-                        op=kid[0],
-                        operand=kid[1],
-                        kid=kid,
+                        op=op,
+                        operand=operand,
+                        kid=self.cur_nodes,
                     )
-                else:
-                    raise self.ice()
-            return self._binary_expr_unwind(kid)
+            return self._binary_expr_unwind(self.cur_nodes)
 
         def aug_op(self, kid: list[ast.AstNode]) -> ast.Token:
             """Grammar rule.
