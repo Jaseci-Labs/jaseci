@@ -924,39 +924,31 @@ class JacParser(Pass):
                 kid=self.cur_nodes,
             )
 
-        def func_decl(self, kid: list[ast.AstNode]) -> ast.FuncSignature:
+        def func_decl(self, _: None) -> ast.FuncSignature:
             """Grammar rule.
 
             func_decl: (LPAREN func_decl_params? RPAREN)? (RETURN_HINT (STRING COLON)? expression)?
             """
-            params = (
-                kid[1] if len(kid) > 1 and isinstance(kid[1], ast.SubNodeList) else None
+            params: ast.SubNodeList | None = None
+            return_spec: ast.Expr | None = None
+            semstr: ast.String | None = None
+            if self.match_token(Tok.LPAREN):
+                params = self.match(ast.SubNodeList)
+                self.consume_token(Tok.RPAREN)
+            if self.match_token(Tok.RETURN_HINT):
+                if semstr := self.match(ast.String):
+                    self.consume_token(Tok.COLON)
+                return_spec = self.match(ast.Expr)
+            return ast.FuncSignature(
+                semstr=semstr,
+                params=params,
+                return_type=return_spec,
+                kid=(
+                    self.cur_nodes
+                    if len(self.cur_nodes)
+                    else [ast.EmptyToken(ast.JacSource("", self.parse_ref.mod_path))]
+                ),
             )
-            return_spec = (
-                kid[-1] if len(kid) and isinstance(kid[-1], ast.Expr) else None
-            )
-            semstr = (
-                kid[-3]
-                if return_spec and len(kid) > 3 and isinstance(kid[-3], ast.String)
-                else None
-            )
-            if (isinstance(params, ast.SubNodeList) or params is None) and (
-                isinstance(return_spec, ast.Expr) or return_spec is None
-            ):
-                return ast.FuncSignature(
-                    semstr=semstr,
-                    params=params,
-                    return_type=return_spec,
-                    kid=(
-                        kid
-                        if len(kid)
-                        else [
-                            ast.EmptyToken(ast.JacSource("", self.parse_ref.mod_path))
-                        ]
-                    ),
-                )
-            else:
-                raise self.ice()
 
         def func_decl_params(
             self, kid: list[ast.AstNode]
