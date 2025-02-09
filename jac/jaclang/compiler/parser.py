@@ -1012,21 +1012,19 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def member_block(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.ArchBlockStmt]:
+        def member_block(self, _: None) -> ast.SubNodeList[ast.ArchBlockStmt]:
             """Grammar rule.
 
             member_block: LBRACE member_stmt* RBRACE
             """
+            self.consume_token(Tok.LBRACE)
+            items = self.match_many(ast.ArchBlockStmt)
+            self.consume_token(Tok.RBRACE)
             ret = ast.SubNodeList[ast.ArchBlockStmt](
-                items=[],
+                items=items,
                 delim=Tok.WS,
-                kid=kid,
+                kid=self.cur_nodes,
             )
-            ret.items = [i for i in kid if isinstance(i, ast.ArchBlockStmt)]
-            ret.left_enc = kid[0] if isinstance(kid[0], ast.Token) else None
-            ret.right_enc = kid[-1] if isinstance(kid[-1], ast.Token) else None
             return ret
 
         def member_stmt(self, kid: list[ast.AstNode]) -> ast.ArchBlockStmt:
@@ -2078,10 +2076,7 @@ class JacParser(Pass):
                      | ADD_EQ
                      | WALRUS_EQ
             """
-            if isinstance(kid[0], ast.Token):
-                return kid[0]
-            else:
-                raise self.ice()
+            return self.consume(ast.Token)
 
         def atomic_chain(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
@@ -2576,39 +2571,36 @@ class JacParser(Pass):
 
             kv_pair: expression COLON expression | STAR_POW expression
             """
-            if (
-                len(kid) == 3
-                and isinstance(kid[0], ast.Expr)
-                and isinstance(kid[2], ast.Expr)
-            ):
-                return ast.KVPair(
-                    key=kid[0],
-                    value=kid[2],
-                    kid=kid,
-                )
-            elif len(kid) == 2 and isinstance(kid[1], ast.Expr):
+            if self.match_token(Tok.STAR_POW):
+                value = self.consume(ast.Expr)
                 return ast.KVPair(
                     key=None,
-                    value=kid[1],
-                    kid=kid,
+                    value=value,
+                    kid=self.cur_nodes,
                 )
-            else:
-                raise self.ice()
+            key = self.consume(ast.Expr)
+            self.consume_token(Tok.COLON)
+            value = self.consume(ast.Expr)
+            return ast.KVPair(
+                key=key,
+                value=value,
+                kid=self.cur_nodes,
+            )
 
         def list_compr(self, kid: list[ast.AstNode]) -> ast.ListCompr:
             """Grammar rule.
 
             list_compr: LSQUARE expression inner_compr+ RSQUARE
             """
-            comprs = [i for i in kid if isinstance(i, ast.InnerCompr)]
-            if isinstance(kid[1], ast.Expr):
-                return ast.ListCompr(
-                    out_expr=kid[1],
-                    compr=comprs,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.LSQUARE)
+            out_expr = self.consume(ast.Expr)
+            comprs = self.consume_many(ast.InnerCompr)
+            self.consume_token(Tok.RSQUARE)
+            return ast.ListCompr(
+                out_expr=out_expr,
+                compr=comprs,
+                kid=kid,
+            )
 
         def gen_compr(self, kid: list[ast.AstNode]) -> ast.GenCompr:
             """Grammar rule.
