@@ -1105,27 +1105,30 @@ class JacParser(Pass):
                 kid=new_kid,
             )
 
-        def typed_has_clause(self, kid: list[ast.AstNode]) -> ast.HasVar:
+        def typed_has_clause(self, _: None) -> ast.HasVar:
             """Grammar rule.
 
             typed_has_clause: named_ref (COLON STRING)? type_tag (EQ expression | KW_BY KW_POST_INIT)?
             """
-            name = kid[0]
-            semstr = kid[2] if len(kid) > 2 and isinstance(kid[2], ast.String) else None
-            type_tag = kid[3] if semstr else kid[1]
-            defer = isinstance(kid[-1], ast.Token) and kid[-1].name == Tok.KW_POST_INIT
-            value = kid[-1] if not defer and isinstance(kid[-1], ast.Expr) else None
-            if isinstance(name, ast.Name) and isinstance(type_tag, ast.SubTag):
-                return ast.HasVar(
-                    semstr=semstr,
-                    name=name,
-                    type_tag=type_tag,
-                    defer=defer,
-                    value=value,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            semstr: ast.String | None = None
+            value: ast.Expr | None = None
+            defer: bool = False
+            name = self.consume(ast.Name)
+            if self.match_token(Tok.COLON):
+                semstr = self.consume(ast.String)
+            type_tag = self.consume(ast.SubTag)
+            if self.match_token(Tok.EQ):
+                value = self.consume(ast.Expr)
+            elif self.match_token(Tok.KW_BY):
+                defer = bool(self.consume_token(Tok.KW_POST_INIT))
+            return ast.HasVar(
+                semstr=semstr,
+                name=name,
+                type_tag=type_tag,
+                defer=defer,
+                value=value,
+                kid=self.cur_nodes,
+            )
 
         def type_tag(self, kid: list[ast.AstNode]) -> ast.SubTag[ast.Expr]:
             """Grammar rule.
@@ -2378,23 +2381,19 @@ class JacParser(Pass):
                 kid=valid_parts,
             )
 
-        def list_val(self, kid: list[ast.AstNode]) -> ast.ListVal:
+        def list_val(self, _: None) -> ast.ListVal:
             """Grammar rule.
 
             list_val: LSQUARE (expr_list COMMA?)? RSQUARE
             """
-            if len(kid) == 2:
-                return ast.ListVal(
-                    values=None,
-                    kid=kid,
-                )
-            elif isinstance(kid[1], ast.SubNodeList):
-                return ast.ListVal(
-                    values=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.LSQUARE)
+            values = self.match(ast.SubNodeList)
+            self.match_token(Tok.COMMA)
+            self.consume_token(Tok.RSQUARE)
+            return ast.ListVal(
+                values=values,
+                kid=self.cur_nodes,
+            )
 
         def tuple_val(self, kid: list[ast.AstNode]) -> ast.TupleVal:
             """Grammar rule.
@@ -3159,27 +3158,16 @@ class JacParser(Pass):
                 kid=new_kid,
             )
 
-        def typed_filter_compare_list(self, kid: list[ast.AstNode]) -> ast.FilterCompr:
+        def typed_filter_compare_list(self, _: None) -> ast.FilterCompr:
             """Grammar rule.
 
             typed_filter_compare_list: expression (COLON filter_compare_list)?
             """
-            chomp = [*kid]
-            expr = chomp[0]
-            chomp = chomp[1:]
-            compares = (
-                chomp[1]
-                if len(chomp)
-                and isinstance(chomp[0], ast.Token)
-                and chomp[0].name == Tok.COLON
-                else None
-            )
-            if isinstance(expr, ast.Expr) and (
-                (isinstance(compares, ast.SubNodeList)) or compares is None
-            ):
-                return ast.FilterCompr(compares=compares, f_type=expr, kid=kid)
-            else:
-                raise self.ice()
+            compares: ast.SubNodeList | None = None
+            expr = self.consume(ast.Expr)
+            if self.match_token(Tok.COLON):
+                compares = self.consume(ast.SubNodeList)
+            return ast.FilterCompr(compares=compares, f_type=expr, kid=self.cur_nodes)
 
         def filter_compare_item(self, kid: list[ast.AstNode]) -> ast.CompareExpr:
             """Grammar rule.
