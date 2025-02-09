@@ -972,45 +972,24 @@ class JacParser(Pass):
             )
             return ret
 
-        def param_var(self, kid: list[ast.AstNode]) -> ast.ParamVar:
+        def param_var(self, _: None) -> ast.ParamVar:
             """Grammar rule.
 
             param_var: (STAR_POW | STAR_MUL)? NAME (COLON STRING)? type_tag (EQ expression)?
             """
-            star = (
-                kid[0]
-                if isinstance(kid[0], ast.Token)
-                and kid[0].name != Tok.NAME
-                and not isinstance(kid[0], ast.String)
-                else None
+            star = self.match_token(Tok.STAR_POW) or self.match_token(Tok.STAR_MUL)
+            name = self.consume(ast.Name)
+            semstr = self.match(ast.String) if self.match_token(Tok.COLON) else None
+            type_tag = self.consume(ast.SubTag)
+            value = self.consume(ast.Expr) if self.match_token(Tok.EQ) else None
+            return ast.ParamVar(
+                semstr=semstr,
+                name=name,
+                type_tag=type_tag,
+                value=value,
+                unpack=star,
+                kid=self.cur_nodes,
             )
-            name = kid[1] if (star) else kid[0]
-            value = kid[-1] if isinstance(kid[-1], ast.Expr) else None
-            type_tag = kid[-3] if value else kid[-1]
-            semstr = (
-                kid[3]
-                if star and len(kid) > 3 and isinstance(kid[3], ast.String)
-                else (
-                    kid[2]
-                    if len(kid) > 4 and value and isinstance(kid[2], ast.String)
-                    else (
-                        kid[2]
-                        if len(kid) > 2 and isinstance(kid[2], ast.String)
-                        else None
-                    )
-                )
-            )
-            if isinstance(name, ast.Name) and isinstance(type_tag, ast.SubTag):
-                return ast.ParamVar(
-                    semstr=semstr,
-                    name=name,
-                    type_tag=type_tag,
-                    value=value,
-                    unpack=star,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
 
         def member_block(
             self, kid: list[ast.AstNode]
@@ -1465,21 +1444,22 @@ class JacParser(Pass):
                 kid=self.cur_nodes,
             )
 
-        def raise_stmt(self, kid: list[ast.AstNode]) -> ast.RaiseStmt:
+        def raise_stmt(self, _: None) -> ast.RaiseStmt:
             """Grammar rule.
 
             raise_stmt: KW_RAISE (expression (KW_FROM expression)?)?
             """
-            chomp = [*kid][1:]
-            e_type = (
-                chomp[0] if len(chomp) > 0 and isinstance(chomp[0], ast.Expr) else None
-            )
-            chomp = chomp[2:] if e_type and len(chomp) > 1 else chomp[1:]
-            e = chomp[0] if len(chomp) > 0 and isinstance(chomp[0], ast.Expr) else None
+            e_type: ast.Expr | None = None
+            from_target: ast.Expr | None = None
+            self.consume_token(Tok.KW_RAISE)
+            if e_type := self.match(ast.Expr):
+                from_target = (
+                    self.consume(ast.Expr) if self.match_token(Tok.KW_FROM) else None
+                )
             return ast.RaiseStmt(
                 cause=e_type,
-                from_target=e,
-                kid=kid,
+                from_target=from_target,
+                kid=self.cur_nodes,
             )
 
         def assert_stmt(self, kid: list[ast.AstNode]) -> ast.AssertStmt:
