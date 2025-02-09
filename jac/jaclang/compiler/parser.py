@@ -2053,7 +2053,7 @@ class JacParser(Pass):
                     raise self.ice()
             return self._binary_expr_unwind(kid)
 
-        def aug_op(self, kid: list[ast.AstNode]) -> ast.Token:
+        def aug_op(self, _:None) -> ast.Token:
             """Grammar rule.
 
             aug_op: RSHIFT_EQ
