@@ -1136,7 +1136,7 @@ class JacParser(Pass):
             tag = self.consume(ast.Expr)
             return ast.SubTag[ast.Expr](tag=tag, kid=self.cur_nodes)
 
-        def builtin_type(self, kid: list[ast.AstNode]) -> ast.Token:
+        def builtin_type(self, _:None) -> ast.Token:
             """Grammar rule.
 
             builtin_type: TYP_TYPE
