@@ -1017,14 +1017,16 @@ class JacParser(Pass):
 
             member_block: LBRACE member_stmt* RBRACE
             """
-            self.consume_token(Tok.LBRACE)
+            left_enc = self.consume_token(Tok.LBRACE)
             items = self.match_many(ast.ArchBlockStmt)
-            self.consume_token(Tok.RBRACE)
+            right_enc = self.consume_token(Tok.RBRACE)
             ret = ast.SubNodeList[ast.ArchBlockStmt](
                 items=items,
                 delim=Tok.WS,
                 kid=self.cur_nodes,
             )
+            ret.left_enc = left_enc
+            ret.right_enc = right_enc
             return ret
 
         def member_stmt(self, kid: list[ast.AstNode]) -> ast.ArchBlockStmt:
@@ -2554,19 +2556,23 @@ class JacParser(Pass):
                 kid=kid,
             )
 
-        def dict_val(self, kid: list[ast.AstNode]) -> ast.DictVal:
+        def dict_val(self, _: None) -> ast.DictVal:
             """Grammar rule.
 
             dict_val: LBRACE ((kv_pair COMMA)* kv_pair COMMA?)? RBRACE
             """
-            ret = ast.DictVal(
-                kv_pairs=[],
-                kid=kid,
+            self.consume_token(Tok.LBRACE)
+            kv_pairs: list = []
+            while item := self.match(ast.KVPair):
+                kv_pairs.append(item)
+                self.match_token(Tok.COMMA)
+            self.consume_token(Tok.RBRACE)
+            return ast.DictVal(
+                kv_pairs=kv_pairs,
+                kid=self.cur_nodes,
             )
-            ret.kv_pairs = [i for i in kid if isinstance(i, ast.KVPair)]
-            return ret
 
-        def kv_pair(self, kid: list[ast.AstNode]) -> ast.KVPair:
+        def kv_pair(self, _: None) -> ast.KVPair:
             """Grammar rule.
 
             kv_pair: expression COLON expression | STAR_POW expression
@@ -2587,7 +2593,7 @@ class JacParser(Pass):
                 kid=self.cur_nodes,
             )
 
-        def list_compr(self, kid: list[ast.AstNode]) -> ast.ListCompr:
+        def list_compr(self, _: None) -> ast.ListCompr:
             """Grammar rule.
 
             list_compr: LSQUARE expression inner_compr+ RSQUARE
@@ -2599,79 +2605,74 @@ class JacParser(Pass):
             return ast.ListCompr(
                 out_expr=out_expr,
                 compr=comprs,
-                kid=kid,
+                kid=self.cur_nodes,
             )
 
-        def gen_compr(self, kid: list[ast.AstNode]) -> ast.GenCompr:
+        def gen_compr(self, _: None) -> ast.GenCompr:
             """Grammar rule.
 
             gen_compr: LPAREN expression inner_compr+ RPAREN
             """
-            comprs = [i for i in kid if isinstance(i, ast.InnerCompr)]
-            if isinstance(kid[1], ast.Expr):
-                return ast.GenCompr(
-                    out_expr=kid[1],
-                    compr=comprs,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.LPAREN)
+            out_expr = self.consume(ast.Expr)
+            comprs = self.consume_many(ast.InnerCompr)
+            self.consume_token(Tok.RPAREN)
+            return ast.GenCompr(
+                out_expr=out_expr,
+                compr=comprs,
+                kid=self.cur_nodes,
+            )
 
-        def set_compr(self, kid: list[ast.AstNode]) -> ast.SetCompr:
+        def set_compr(self, _: None) -> ast.SetCompr:
             """Grammar rule.
 
             set_compr: LBRACE expression inner_compr+ RBRACE
             """
-            comprs = [i for i in kid if isinstance(i, ast.InnerCompr)]
-            if isinstance(kid[1], ast.Expr) and isinstance(kid[2], ast.InnerCompr):
-                return ast.SetCompr(
-                    out_expr=kid[1],
-                    compr=comprs,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.LBRACE)
+            out_expr = self.consume(ast.Expr)
+            comprs = self.consume_many(ast.InnerCompr)
+            self.consume_token(Tok.RBRACE)
+            return ast.SetCompr(
+                out_expr=out_expr,
+                compr=comprs,
+                kid=self.cur_nodes,
+            )
 
-        def dict_compr(self, kid: list[ast.AstNode]) -> ast.DictCompr:
+        def dict_compr(self, _: None) -> ast.DictCompr:
             """Grammar rule.
 
             dict_compr: LBRACE kv_pair inner_compr+ RBRACE
             """
-            comprs = [i for i in kid if isinstance(i, ast.InnerCompr)]
-            if isinstance(kid[1], ast.KVPair) and isinstance(kid[2], ast.InnerCompr):
-                return ast.DictCompr(
-                    kv_pair=kid[1],
-                    compr=comprs,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.LBRACE)
+            kv_pair = self.consume(ast.KVPair)
+            comprs = self.consume_many(ast.InnerCompr)
+            self.consume_token(Tok.RBRACE)
+            return ast.DictCompr(
+                kv_pair=kv_pair,
+                compr=comprs,
+                kid=self.cur_nodes,
+            )
 
-        def inner_compr(self, kid: list[ast.AstNode]) -> ast.InnerCompr:
+        def inner_compr(self, _: None) -> ast.InnerCompr:
             """Grammar rule.
 
             inner_compr: KW_ASYNC? KW_FOR atomic_chain KW_IN pipe_call (KW_IF walrus_assign)*
             """
-            chomp = [*kid]
-            is_async = bool(
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_ASYNC
+            conditional: list = []
+            is_async = bool(self.match_token(Tok.KW_ASYNC))
+            self.consume_token(Tok.KW_FOR)
+            target = self.consume(ast.Expr)
+            self.consume_token(Tok.KW_IN)
+            collection = self.consume(ast.Expr)
+            while self.match_token(Tok.KW_IF):
+                conditional.append(self.consume(ast.Expr))
+            return ast.InnerCompr(
+                is_async=is_async,
+                target=target,
+                collection=collection,
+                conditional=conditional,
+                kid=self.cur_nodes,
             )
-            chomp = chomp[1:] if is_async else chomp
-            chomp = chomp[1:]
-            if isinstance(chomp[0], ast.Expr) and isinstance(chomp[2], ast.Expr):
-                return ast.InnerCompr(
-                    is_async=is_async,
-                    target=chomp[0],
-                    collection=chomp[2],
-                    conditional=(
-                        [i for i in chomp[4:] if isinstance(i, ast.Expr)]
-                        if len(chomp) > 4 and isinstance(chomp[4], ast.Expr)
-                        else None
-                    ),
-                    kid=chomp,
-                )
-            else:
-                raise self.ice()
 
         def param_list(
             self, kid: list[ast.AstNode]
