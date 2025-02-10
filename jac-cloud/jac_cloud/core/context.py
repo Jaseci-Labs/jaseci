@@ -80,8 +80,9 @@ class JaseciContext(ExecutionContext):
         ctx.reports = []
         ctx.status = 200
 
+        system_root: NodeAnchor | None = None
         if not isinstance(system_root := ctx.mem.find_by_id(SUPER_ROOT), NodeAnchor):
-            system_root: NodeAnchor = Root().__jac__
+            system_root = Root().__jac__  # type: ignore[attr-defined]
             system_root.id = SUPER_ROOT_ID
             system_root.state.connected = True
             system_root.persistent = True
@@ -98,7 +99,7 @@ class JaseciContext(ExecutionContext):
             if not isinstance(
                 public_root := ctx.mem.find_by_id(PUBLIC_ROOT), NodeAnchor
             ):
-                public_root: NodeAnchor = Root().__jac__
+                public_root = Root().__jac__  # type: ignore[attr-defined]
                 public_root.id = PUBLIC_ROOT_ID
                 public_root.access.all = AccessLevel.WRITE
                 public_root.persistent = True

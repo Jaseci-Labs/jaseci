@@ -43,7 +43,7 @@ def register(req: User.register_type()) -> ORJSONResponse:  # type: ignore
     log = log_entry("register", req.email, req.printable())
 
     with User.Collection.get_session() as session, session.start_transaction():
-        root = Root().__jac__
+        root = Root().__jac__  # type: ignore[attr-defined]
 
         req_obf: dict = req.obfuscate()
         req_obf["root_id"] = root.id

@@ -231,7 +231,7 @@ def register(platform: str, open_id: OpenID) -> Response:
                     },
                     session=session,
                 ).modified_count:
-                    root = Root().__jac__
+                    root = Root().__jac__  # type: ignore[attr-defined]
                     ureq: dict[str, object] = User.register_type()(
                         email=open_id.email,
                         password=NO_PASSWORD,
