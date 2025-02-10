@@ -2405,17 +2405,12 @@ class JacParser(Pass):
 
             expr_list: (expr_list COMMA)? expression
             """
-            consume = None
-            expr = None
-            comma = None
-            if isinstance(kid[0], ast.SubNodeList):
-                consume = kid[0]
-                comma = kid[1]
-                expr = kid[2]
-                new_kid = [*consume.kid, comma, expr]
-            else:
-                expr = kid[0]
-                new_kid = [expr]
+            new_kid: list = []
+            if consume := self.match(ast.SubNodeList):
+                comma = self.consume_token(Tok.COMMA)
+                new_kid.extend([*consume.kid, comma])
+            expr = self.consume(ast.Expr)
+            new_kid.extend([expr])
             valid_kid = [i for i in new_kid if isinstance(i, ast.Expr)]
             return ast.SubNodeList[ast.Expr](
                 items=valid_kid,
@@ -2896,16 +2891,23 @@ class JacParser(Pass):
                 kid=[enum_ref],
             )
 
-        def edge_ref_chain(self, kid: list[ast.AstNode]) -> ast.EdgeRefTrailer:
+        def edge_ref_chain(self, _: None) -> ast.EdgeRefTrailer:
             """Grammar rule.
 
             (EDGE_OP|NODE_OP)? LSQUARE expression? (edge_op_ref (filter_compr | expression)?)+ RSQUARE
             """
-            valid_chain = [i for i in kid if isinstance(i, (ast.Expr, ast.FilterCompr))]
+            edges_only = bool(self.match_token(Tok.EDGE_OP))
+            self.match_token(Tok.NODE_OP)
+            self.consume_token(Tok.LSQUARE)
+            valid_chain = []
+            if expr := self.match(ast.Expr):
+                valid_chain.append(expr)
+            valid_chain.extend(self.match_many(ast.Expr))
+            self.consume_token(Tok.RSQUARE)
             return ast.EdgeRefTrailer(
                 chain=valid_chain,
-                edges_only=isinstance(kid[0], ast.Token) and kid[0].name == Tok.EDGE_OP,
-                kid=kid,
+                edges_only=edges_only,
+                kid=self.cur_nodes,
             )
 
         def edge_op_ref(self, kid: list[ast.AstNode]) -> ast.EdgeOpRef:
