@@ -730,6 +730,22 @@ class JacFeatureImpl(
 
     @staticmethod
     @hookimpl
+    def make_root(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a obj architype."""
+
+        def decorator(cls: Type[Architype]) -> Type[Architype]:
+            """Decorate class."""
+            cls = Jac.make_architype(
+                cls=cls, arch_base=Root, on_entry=on_entry, on_exit=on_exit
+            )
+            return cls
+
+        return decorator
+
+    @staticmethod
+    @hookimpl
     def make_edge(
         on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
@@ -739,6 +755,25 @@ class JacFeatureImpl(
             """Decorate class."""
             cls = Jac.make_architype(
                 cls=cls, arch_base=EdgeArchitype, on_entry=on_entry, on_exit=on_exit
+            )
+            return cls
+
+        return decorator
+
+    @staticmethod
+    @hookimpl
+    def make_generic_edge(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a edge architype."""
+
+        def decorator(cls: Type[Architype]) -> Type[Architype]:
+            """Decorate class."""
+            cls = Jac.make_architype(
+                cls=cls,
+                arch_base=GenericEdge,
+                on_entry=on_entry,
+                on_exit=on_exit,
             )
             return cls
 
@@ -1065,6 +1100,8 @@ class JacFeatureImpl(
     @hookimpl
     def get_root_type() -> Type[Root]:
         """Jac's root getter."""
+        from jaclang import Root
+
         return Root
 
     @staticmethod
@@ -1075,6 +1112,8 @@ class JacFeatureImpl(
         conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchitype]:
         """Jac's root getter."""
+        from jaclang import GenericEdge
+
         conn_type = conn_type if conn_type else GenericEdge
 
         def builder(source: NodeAnchor, target: NodeAnchor) -> EdgeArchitype:

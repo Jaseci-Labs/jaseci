@@ -70,7 +70,7 @@ class MypyTypeCheckPassTests(TestCase):
         )
         self.assertRegex(
             out,
-            r"129:24 - 129:28.*SpecialVarRef - Jac.get_root\(\) \- Type\: jaclang.runtimelib.architype.Root",
+            r"129:24 - 129:28.*SpecialVarRef - Jac.get_root\(\) \- Type\: jaclang.Root",
         )
 
         self.assertRegex(out, r"129:11 - 129:29.*FuncCall \- Type\: builtins\.str")

@@ -8,7 +8,7 @@ from enum import IntEnum
 from functools import cached_property
 from logging import getLogger
 from pickle import dumps
-from types import MethodType, UnionType
+from types import UnionType
 from typing import Any, Callable, ClassVar, Optional, TypeVar
 from uuid import UUID, uuid4
 
@@ -286,80 +286,16 @@ class ObjectArchitype(Architype):
         self.__jac__ = ObjectAnchor(architype=self)
 
 
-@dataclass(eq=False)
 class GenericEdge(EdgeArchitype):
-    """Generic Root Node."""
-
-    __slots__ = ("spawn",)
-
-    _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
-    _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
-
-    _method_bounds: ClassVar[dict[str, Callable]] = {
-        "spawn": lambda _: None,
-    }
-
-    def __init__(self) -> None:
-        """Create Generic Edge."""
-        # To avoide circular dependency between this file and jaclib/__init__.py we need to
-        # import the types here.
-        from jaclang import _ArchiTypeBase, Edge, Walker
-
-        self.spawn: Callable[[_ArchiTypeBase], Walker] = MethodType(Edge.spawn, self)
-
-    def load_method_bounds(self) -> None:
-        """Load method bounds."""
-        # Since the Shelf doesn't store the metod objects to the session dump, it doesn't
-        # load the methods again, so we need to load them manually.
-        for name, func in self._method_bounds.items():
-            setattr(self, name, MethodType(func, self))
+    """Generic Edge."""
 
 
-@dataclass(eq=False)
 class Root(NodeArchitype):
     """Generic Root Node."""
-
-    # We define the 'spawn' and 'connect' here which will be added to the root instance
-    # as method bound. This slots definition here will allow the type checker to
-    # assign dynamic attributes.
-    __slots__ = ("__jac__", "spawn", "connect", "disconnect", "refs")
-
-    _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
-    _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
-
-    _method_bounds: ClassVar[dict[str, Callable]] = {
-        "spawn": lambda _: None,
-        "connect": lambda _: None,
-        "disconnect": lambda _: None,
-        "refs": lambda _: None,
-    }
 
     def __init__(self) -> None:
         """Create root node."""
         self.__jac__ = NodeAnchor(architype=self, persistent=True, edges=[])
-
-        # To avoide circular dependency between this file and jaclib/__init__.py we need to
-        # import the types here.
-        from jaclang import _ArchiTypeBase, Edge, Node, Walker, JacList
-
-        # We have to mark the parameter as variable number cause, they have default vaules
-        # and cannot be annotate the default values as such, so calling with no arguments
-        # for the default parameters will error in type checking.
-        self.spawn: Callable[[_ArchiTypeBase], Walker] = MethodType(Node.spawn, self)
-        self.connect: Callable[..., JacList[Node | Root | Edge]] = MethodType(
-            Node.connect, self
-        )
-        self.disconnect: Callable[..., bool] = MethodType(Node.disconnect, self)
-        self.refs: Callable[..., JacList[Node | Root | Edge]] = MethodType(
-            Node.refs, self
-        )
-
-    def load_method_bounds(self) -> None:
-        """Load method bounds."""
-        # Since the Shelf doesn't store the metod objects to the session dump, it doesn't
-        # load the methods again, so we need to load them manually.
-        for name, func in self._method_bounds.items():
-            setattr(self, name, MethodType(func, self))
 
 
 @dataclass(eq=False)

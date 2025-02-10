@@ -14,10 +14,8 @@ from jaclang.runtimelib.context import EXECUTION_CONTEXT, ExecutionContext
 from .architype import (
     AccessLevel,
     Anchor,
-    AnchorState,
     BaseArchitype,
     NodeAnchor,
-    Permission,
     Root,
     asdict,
 )
@@ -73,6 +71,8 @@ class JaseciContext(ExecutionContext):
         connection: Request | WebSocket, entry: NodeAnchor | None = None
     ) -> "JaseciContext":
         """Create JacContext."""
+        from jaclang import Root
+
         ctx = JaseciContext()
         ctx.base = EXECUTION_CONTEXT.get(None)
         ctx.connection = connection
@@ -81,15 +81,10 @@ class JaseciContext(ExecutionContext):
         ctx.status = 200
 
         if not isinstance(system_root := ctx.mem.find_by_id(SUPER_ROOT), NodeAnchor):
-            system_root = NodeAnchor(
-                architype=object.__new__(Root),
-                id=SUPER_ROOT_ID,
-                access=Permission(),
-                state=AnchorState(connected=True),
-                persistent=True,
-                edges=[],
-            )
-            system_root.architype.__jac__ = system_root
+            system_root: NodeAnchor = Root().__jac__
+            system_root.id = SUPER_ROOT_ID
+            system_root.state.connected = True
+            system_root.persistent = True
             NodeAnchor.Collection.insert_one(system_root.serialize())
             system_root.sync_hash()
             ctx.mem.set(system_root.id, system_root)
@@ -103,15 +98,10 @@ class JaseciContext(ExecutionContext):
             if not isinstance(
                 public_root := ctx.mem.find_by_id(PUBLIC_ROOT), NodeAnchor
             ):
-                public_root = NodeAnchor(
-                    architype=object.__new__(Root),
-                    id=PUBLIC_ROOT_ID,
-                    access=Permission(all=AccessLevel.WRITE),
-                    state=AnchorState(),
-                    persistent=True,
-                    edges=[],
-                )
-                public_root.architype.__jac__ = public_root
+                public_root: NodeAnchor = Root().__jac__
+                public_root.id = PUBLIC_ROOT_ID
+                public_root.access.all = AccessLevel.WRITE
+                public_root.persistent = True
                 ctx.mem.set(public_root.id, public_root)
 
             ctx.root = public_root

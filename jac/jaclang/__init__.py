@@ -23,7 +23,6 @@ from jaclang.plugin.builtin import dotgen, jid, jobj  # noqa: F401
 from jaclang.plugin.default import JacFeatureImpl
 from jaclang.plugin.feature import JacFeature as Jac, plugin_manager
 from jaclang.plugin.spec import EdgeDir
-from jaclang.runtimelib.architype import GenericEdge, Root
 from jaclang.runtimelib.context import ExecutionContext
 
 __all__ = [
@@ -126,7 +125,7 @@ class Walker(_ArchiTypeBase, metaclass=JacMeta):
 
     _MAKE_FN = Jac.make_walker
 
-    def spawn(self, node: "_ArchiTypeBase | Root") -> "Walker":
+    def spawn(self, node: "Node | Root") -> "Walker":
         """Spawn a new node from the walker."""
         return Jac.spawn_call(self, node)  # type: ignore [arg-type, return-value]
 
@@ -166,7 +165,78 @@ class Node(_ArchiTypeBase, metaclass=JacMeta):
 
     _MAKE_FN = Jac.make_node
 
-    def spawn(self, archi: _ArchiTypeBase) -> "Walker":
+    def spawn(self, archi: Walker) -> "Walker":
+        """Spawn a new node from the walker."""
+        return Jac.spawn_call(self, archi)  # type: ignore [arg-type, return-value]
+
+    def connect(
+        self,
+        node: "Node | Root | JacList[Node | Root]",
+        edge: "type[Edge] | Edge | None" = None,
+        unidir: bool = False,
+        conn_assign: tuple[tuple, tuple] | None = None,
+        edges_only: bool = False,
+    ) -> "JacList[Node | Root| Edge]":
+        """Connect the current node to another node."""
+        # TODO: The above edge type should be reviewed, as the bellow can also take None, Edge, type[Edge].
+        ret = Jac.connect(
+            left=self,  # type: ignore [arg-type]
+            right=node,  # type: ignore [arg-type]
+            edge_spec=Jac.build_edge(
+                is_undirected=unidir, conn_type=edge, conn_assign=conn_assign  # type: ignore [arg-type]
+            ),
+            edges_only=edges_only,
+        )
+        return JacList(ret)  # type: ignore [arg-type]
+
+    def disconnect(
+        self,
+        node: "Node | Root | JacList[Node | Root]",
+        edge: "type[Edge] | None" = None,
+        dir: EdgeDir = EdgeDir.OUT,
+    ) -> bool:
+        """Disconnect the current node from the graph."""
+        filter_func = None
+        if edge:
+            filter_func = lambda edges: [  # noqa: E731
+                ed for ed in edges if isinstance(ed, edge)
+            ]
+        return Jac.disconnect(self, node, dir=dir, filter_func=filter_func)  # type: ignore [arg-type]
+
+    def refs(
+        self,
+        edge: "type[Edge] | None" = None,
+        cond: "Callable[[Edge], bool] | None" = None,
+        target: "Node | Root | JacList[Node|Root] | None" = None,
+        dir: EdgeDir = EdgeDir.OUT,
+        edges_only: bool = False,
+    ) -> "JacList[Node | Root | Edge]":
+        """Return all the connected nodes / edges."""
+        filter_func = (
+            (
+                lambda edges: (  # noqa: E731
+                    [ed for ed in edges if isinstance(ed, edge) if not cond or cond(ed)]
+                )
+            )
+            if edge
+            else None
+        )
+        ret = plugin_manager.hook.edge_ref(
+            node_obj=self,
+            target_obj=target,
+            dir=dir,
+            filter_func=filter_func,
+            edges_only=edges_only,
+        )
+        return JacList(ret)
+
+
+class Root(_ArchiTypeBase, metaclass=JacMeta):
+    """Base class for jac root type."""
+
+    _MAKE_FN = Jac.make_root
+
+    def spawn(self, archi: Walker) -> "Walker":
         """Spawn a new node from the walker."""
         return Jac.spawn_call(self, archi)  # type: ignore [arg-type, return-value]
 
@@ -237,7 +307,17 @@ class Edge(_ArchiTypeBase, metaclass=JacMeta):
 
     _MAKE_FN = Jac.make_edge
 
-    def spawn(self, archi: _ArchiTypeBase) -> "Walker":
+    def spawn(self, archi: Walker) -> "Walker":
+        """Spawn a new node from the walker."""
+        return Jac.spawn_call(self, archi)  # type: ignore [arg-type, return-value]
+
+
+class GenericEdge(_ArchiTypeBase, metaclass=JacMeta):
+    """Base class for jac root type."""
+
+    _MAKE_FN = Jac.make_generic_edge
+
+    def spawn(self, archi: Walker) -> "Walker":
         """Spawn a new node from the walker."""
         return Jac.spawn_call(self, archi)  # type: ignore [arg-type, return-value]
 
@@ -336,29 +416,13 @@ def field(
 jac_test = Jac.create_test
 static = ClassVar
 
-# ----------------------------------------------------------------------------
-# Root Node and Generic Edge.
-# ----------------------------------------------------------------------------
-
-Root._method_bounds = {
-    "spawn": Node.spawn,
-    "connect": Node.connect,
-    "disconnect": Node.disconnect,
-    "refs": Node.refs,
-}
-
-GenericEdge._method_bounds = {
-    "spawn": Edge.spawn,
-}
-
-root = Jac.get_root()
-root.load_method_bounds()
+root = cast(Root, Jac.get_root())
 
 
 # Listen to context change and update the above global root here.
 def _update_root() -> None:
     global root
-    root = ExecutionContext.get_root()
+    root = cast(Root, ExecutionContext.get_root())
 
 
 ExecutionContext.on_ctx_change.append(lambda ctx: _update_root())

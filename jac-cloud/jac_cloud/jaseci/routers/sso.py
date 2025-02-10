@@ -32,7 +32,7 @@ from ..models import NO_PASSWORD, User as BaseUser
 from ..security import authenticator, create_code, create_token
 from ..sso import AppleSSO, GoogleSSO
 from ..utils import logger
-from ...core.architype import BulkWrite, NodeAnchor, Root
+from ...core.architype import BulkWrite, NodeAnchor
 
 router = APIRouter(prefix="/sso", tags=["sso"])
 
@@ -202,6 +202,8 @@ def login(platform: str, open_id: OpenID) -> Response:
 
 def register(platform: str, open_id: OpenID) -> Response:
     """Register user method."""
+    from jaclang import Root
+
     if user := User.Collection.find_one(
         {
             "$or": [

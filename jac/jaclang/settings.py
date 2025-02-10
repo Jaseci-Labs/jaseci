@@ -23,7 +23,7 @@ class Settings:
     disable_mtllm: bool = False
     ignore_test_annex: bool = False
     allow_import_from: bool = False
-    pyout_jaclib_import_all = True
+    pyout_jaclib_import_all: bool = True
     pyout_jaclib_alias = "jl"
 
     # Formatter configuration
