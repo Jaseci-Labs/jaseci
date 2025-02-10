@@ -2686,23 +2686,17 @@ class JacParser(Pass):
                     raise self.ice()
             raise self.ice()
 
-        def assignment_list(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.Assignment]:
+        def assignment_list(self, _: None) -> ast.SubNodeList[ast.Assignment]:
             """Grammar rule.
 
             assignment_list: assignment_list COMMA assignment | assignment
             """
-            consume = None
-            assign = None
-            comma = None
-            if isinstance(kid[0], ast.SubNodeList):
-                consume = kid[0]
-                comma = kid[1]
-                assign = kid[2]
+            if consume := self.match(ast.SubNodeList):
+                comma = self.consume_token(Tok.COMMA)
+                assign = self.consume(ast.Assignment)
                 new_kid = [*consume.kid, comma, assign]
             else:
-                assign = kid[0]
+                assign = self.consume(ast.Assignment)
                 new_kid = [assign]
             valid_kid = [i for i in new_kid if isinstance(i, ast.Assignment)]
             return ast.SubNodeList[ast.Assignment](
@@ -2885,28 +2879,22 @@ class JacParser(Pass):
                 kid=[abil_ref],
             )
 
-        def arch_to_enum_chain(self, kid: list[ast.AstNode]) -> ast.ArchRefChain:
+        def arch_to_enum_chain(self, _: None) -> ast.ArchRefChain:
             """Grammar rule.
 
             arch_to_enum_chain: arch_or_ability_chain? enum_ref
             """
-            if len(kid) == 2:
-                if isinstance(kid[1], ast.ArchRef) and isinstance(
-                    kid[0], ast.ArchRefChain
-                ):
-                    return ast.ArchRefChain(
-                        archs=[*(kid[0].archs), kid[1]],
-                        kid=[*(kid[0].kid), kid[1]],
-                    )
-                else:
-                    raise self.ice()
-            elif isinstance(kid[0], ast.ArchRef):
+            arch_chain = self.match(ast.ArchRefChain)
+            enum_ref = self.consume(ast.ArchRef)
+            if arch_chain:
                 return ast.ArchRefChain(
-                    archs=[kid[0]],
-                    kid=kid,
+                    archs=[*arch_chain.archs, enum_ref],
+                    kid=[*arch_chain.kid, enum_ref],
                 )
-            else:
-                raise self.ice()
+            return ast.ArchRefChain(
+                archs=[enum_ref],
+                kid=[enum_ref],
+            )
 
         def edge_ref_chain(self, kid: list[ast.AstNode]) -> ast.EdgeRefTrailer:
             """Grammar rule.
