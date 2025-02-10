@@ -2842,22 +2842,14 @@ class JacParser(Pass):
 
             arch_or_ability_chain: arch_or_ability_chain? (ability_ref | arch_ref)
             """
-            consume = None
-            name = None
-            if len(kid) == 2:
-                consume = kid[0]
-                name = kid[1]
-            else:
-                name = kid[0]
+            consume = self.match(ast.ArchRefChain)
+            name = self.consume(ast.ArchRef)
             new_kid = [*consume.kid, name] if consume else [name]
             valid_kid = [i for i in new_kid if isinstance(i, ast.ArchRef)]
-            if len(valid_kid) == len(new_kid):
-                return ast.ArchRefChain(
-                    archs=valid_kid,
-                    kid=new_kid,
-                )
-            else:
-                raise self.ice()
+            return ast.ArchRefChain(
+                archs=valid_kid,
+                kid=new_kid,
+            )
 
         def abil_to_arch_chain(self, _: None) -> ast.ArchRefChain:
             """Grammar rule.
