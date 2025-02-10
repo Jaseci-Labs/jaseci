@@ -170,9 +170,6 @@ class ShelfStorage(Memory[UUID, Anchor]):
             and isinstance(self.__shelf__, Shelf)
             and (data := self.__shelf__.get(str(id)))
         ):
-            # Since the method bounds are not stored inside the shelf, we need to load them manually.
-            if isinstance(data, NodeAnchor) and isinstance(data.architype, Root):
-                data.architype.load_method_bounds()
             self.__mem__[id] = data
 
         return data

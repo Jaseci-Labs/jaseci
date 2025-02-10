@@ -26,7 +26,7 @@ from ..security import (
     verify_code,
 )
 from ..utils import Emailer, log_entry, log_exit, logger
-from ...core.architype import BulkWrite, NodeAnchor, Root
+from ...core.architype import BulkWrite, NodeAnchor
 
 
 RESTRICT_UNVERIFIED_USER = getenv("RESTRICT_UNVERIFIED_USER") == "true"
@@ -38,6 +38,8 @@ User = BaseUser.model()  # type: ignore[misc]
 @router.post("/register", status_code=status.HTTP_200_OK)
 def register(req: User.register_type()) -> ORJSONResponse:  # type: ignore
     """Register user API."""
+    from jaclang import Root
+
     log = log_entry("register", req.email, req.printable())
 
     with User.Collection.get_session() as session, session.start_transaction():

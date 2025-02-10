@@ -11,7 +11,7 @@ from jaclang import jac_import
 from jaclang.cli import cli
 from jaclang.compiler.compile import jac_file_to_pass, jac_pass_to_pass, jac_str_to_pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
-from jaclang.runtimelib.context import SUPER_ROOT_ANCHOR
+from jaclang.runtimelib.context import ExecutionContext
 from jaclang.runtimelib.machine import JacMachine, JacProgram
 from jaclang.utils.test import TestCase
 
@@ -21,7 +21,7 @@ class JacLanguageTests(TestCase):
 
     def setUp(self) -> None:
         """Set up test."""
-        SUPER_ROOT_ANCHOR.edges.clear()
+        ExecutionContext.global_system_root().edges.clear()
         JacMachine(self.fixture_abs_path("./")).attach_program(
             JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
         )
