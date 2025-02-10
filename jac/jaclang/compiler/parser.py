@@ -1755,24 +1755,19 @@ class JacParser(Pass):
             """
             return self._binary_expr_unwind(self.cur_nodes)
 
-        def lambda_expr(self, kid: list[ast.AstNode]) -> ast.LambdaExpr:
+        def lambda_expr(self, _: None) -> ast.LambdaExpr:
             """Grammar rule.
 
             lamda_expr: KW_WITH func_decl_params? (RETURN_HINT expression)? KW_CAN expression
             """
-            chomp = [*kid][1:]
-            params = chomp[0] if isinstance(chomp[0], ast.SubNodeList) else None
-            chomp = chomp[1:] if params else chomp
-            return_type = (
-                chomp[1]
-                if isinstance(chomp[0], ast.Token)
-                and chomp[0].name == Tok.RETURN_HINT
-                and isinstance(chomp[1], ast.Expr)
-                else None
-            )
-            chomp = chomp[2:] if return_type else chomp
-            chomp = chomp[1:]
+            return_type: ast.Expr | None = None
             sig_kid: list[ast.AstNode] = []
+            self.consume_token(Tok.KW_WITH)
+            params = self.match(ast.SubNodeList)
+            if self.match_token(Tok.RETURN_HINT):
+                return_type = self.consume(ast.Expr)
+            self.consume_token(Tok.KW_CAN)
+            body = self.consume(ast.Expr)
             if params:
                 sig_kid.append(params)
             if return_type:
@@ -1786,16 +1781,13 @@ class JacParser(Pass):
                 if params or return_type
                 else None
             )
-            new_kid = [i for i in kid if i != params and i != return_type]
+            new_kid = [i for i in self.cur_nodes if i != params and i != return_type]
             new_kid.insert(1, signature) if signature else None
-            if isinstance(chomp[0], ast.Expr):
-                return ast.LambdaExpr(
-                    signature=signature,
-                    body=chomp[0],
-                    kid=new_kid,
-                )
-            else:
-                raise self.ice()
+            return ast.LambdaExpr(
+                signature=signature,
+                body=body,
+                kid=new_kid,
+            )
 
         def pipe(self, kid: list[ast.AstNode]) -> ast.Expr:
             """Grammar rule.
