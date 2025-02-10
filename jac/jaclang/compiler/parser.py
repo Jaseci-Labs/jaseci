@@ -1221,19 +1221,15 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def typed_ctx_block(self, kid: list[ast.AstNode]) -> ast.TypedCtxBlock:
+        def typed_ctx_block(self, _: None) -> ast.TypedCtxBlock:
             """Grammar rule.
 
             typed_ctx_block: RETURN_HINT expression code_block
             """
-            if isinstance(kid[1], ast.Expr) and isinstance(kid[2], ast.SubNodeList):
-                return ast.TypedCtxBlock(
-                    type_ctx=kid[1],
-                    body=kid[2],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.consume_token(Tok.RETURN_HINT)
+            type_ctx = self.consume(ast.Expr)
+            body = self.consume(ast.SubNodeList)
+            return ast.TypedCtxBlock(type_ctx=type_ctx, body=body, kid=self.cur_nodes)
 
         def if_stmt(self, _: None) -> ast.IfStmt:
             """Grammar rule.
@@ -2863,51 +2859,39 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def abil_to_arch_chain(self, kid: list[ast.AstNode]) -> ast.ArchRefChain:
+        def abil_to_arch_chain(self, _: None) -> ast.ArchRefChain:
             """Grammar rule.
 
             abil_to_arch_chain: arch_or_ability_chain? arch_ref
             """
-            if len(kid) == 2:
-                if isinstance(kid[1], ast.ArchRef) and isinstance(
-                    kid[0], ast.ArchRefChain
-                ):
-                    return ast.ArchRefChain(
-                        archs=[*(kid[0].archs), kid[1]],
-                        kid=[*(kid[0].kid), kid[1]],
-                    )
-                else:
-                    raise self.ice()
-            elif isinstance(kid[0], ast.ArchRef):
+            arch_chain = self.match(ast.ArchRefChain)
+            arch_ref = self.consume(ast.ArchRef)
+            if arch_chain:
                 return ast.ArchRefChain(
-                    archs=[kid[0]],
-                    kid=kid,
+                    archs=[*arch_chain.archs, arch_ref],
+                    kid=[*arch_chain.kid, arch_ref],
                 )
-            else:
-                raise self.ice()
+            return ast.ArchRefChain(
+                archs=[arch_ref],
+                kid=[arch_ref],
+            )
 
-        def arch_to_abil_chain(self, kid: list[ast.AstNode]) -> ast.ArchRefChain:
+        def arch_to_abil_chain(self, _: None) -> ast.ArchRefChain:
             """Grammar rule.
 
             arch_to_abil_chain: arch_or_ability_chain? ability_ref
             """
-            if len(kid) == 2:
-                if isinstance(kid[1], ast.ArchRef) and isinstance(
-                    kid[0], ast.ArchRefChain
-                ):
-                    return ast.ArchRefChain(
-                        archs=[*(kid[0].archs), kid[1]],
-                        kid=[*(kid[0].kid), kid[1]],
-                    )
-                else:
-                    raise self.ice()
-            elif isinstance(kid[0], ast.ArchRef):
+            arch_chain = self.match(ast.ArchRefChain)
+            abil_ref = self.consume(ast.ArchRef)
+            if arch_chain:
                 return ast.ArchRefChain(
-                    archs=[kid[0]],
-                    kid=kid,
+                    archs=[*arch_chain.archs, abil_ref],
+                    kid=[*arch_chain.kid, abil_ref],
                 )
-            else:
-                raise self.ice()
+            return ast.ArchRefChain(
+                archs=[abil_ref],
+                kid=[abil_ref],
+            )
 
         def arch_to_enum_chain(self, kid: list[ast.AstNode]) -> ast.ArchRefChain:
             """Grammar rule.
