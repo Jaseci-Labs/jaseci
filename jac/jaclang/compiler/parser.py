@@ -1008,7 +1008,7 @@ class JacParser(Pass):
             ret.right_enc = kid[-1] if isinstance(kid[-1], ast.Token) else None
             return ret
 
-        def member_stmt(self, kid: list[ast.AstNode]) -> ast.ArchBlockStmt:
+        def member_stmt(self, _: None) -> ast.ArchBlockStmt:
             """Grammar rule.
 
             member_stmt: doc_tag? py_code_block
@@ -1017,18 +1017,11 @@ class JacParser(Pass):
                         | doc_tag? architype
                         | doc_tag? has_stmt
             """
-            if isinstance(kid[0], ast.ArchBlockStmt):
-                ret = kid[0]
-            elif (
-                isinstance(kid[1], ast.ArchBlockStmt)
-                and isinstance(kid[1], ast.AstDocNode)
-                and isinstance(kid[0], ast.String)
-            ):
-                kid[1].doc = kid[0]
-                kid[1].add_kids_left([kid[0]])
-                ret = kid[1]
-            else:
-                raise self.ice()
+            doc = self.match(ast.String)
+            ret = self.consume(ast.ArchBlockStmt)
+            if doc and isinstance(ret, ast.AstDocNode):
+                ret.doc = doc
+                ret.add_kids_left([doc])
             if isinstance(ret, ast.Ability):
                 ret.signature.is_method = True
             return ret
