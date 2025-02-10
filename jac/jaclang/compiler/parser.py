@@ -2475,16 +2475,18 @@ class JacParser(Pass):
                 kid=self.cur_nodes,
             )
 
-        def name_list(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Name]:
+        def name_list(self, _: None) -> ast.SubNodeList[ast.Name]:
             """Grammar rule.
 
             name_list: (named_ref COMMA)* named_ref
             """
-            valid_kid = [i for i in kid if isinstance(i, ast.Name)]
+            valid_kid = [self.consume(ast.Name)]
+            while self.match_token(Tok.COMMA):
+                valid_kid.append(self.consume(ast.Name))
             return ast.SubNodeList[ast.Name](
                 items=valid_kid,
                 delim=Tok.COMMA,
-                kid=kid,
+                kid=self.cur_nodes,
             )
 
         def tuple_list(
