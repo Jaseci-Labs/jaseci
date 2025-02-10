@@ -952,12 +952,24 @@ class JacParser(Pass):
 
             func_decl_params: (param_var COMMA)* param_var COMMA?
             """
-            ret = ast.SubNodeList[ast.ParamVar](
-                items=[i for i in kid if isinstance(i, ast.ParamVar)],
+            # paramvar = []
+            # while self.match_token(Tok.COMMA):
+            #     paramvar.append(self.match(ast.ParamVar))
+            # self.match_token(Tok.COMMA)
+            # return ast.SubNodeList[ast.ParamVar](
+            #     items=paramvar,
+            #     delim=Tok.COMMA,
+            #     kid=kid,
+            # )
+            paramvar: list = []
+            while param_stmt := self.match(ast.ParamVar):
+                paramvar.append(param_stmt)
+                self.match_token(Tok.COMMA)
+            return ast.SubNodeList[ast.ParamVar](
+                items=paramvar,
                 delim=Tok.COMMA,
-                kid=kid,
+                kid=self.cur_nodes,
             )
-            return ret
 
         def param_var(self, kid: list[ast.AstNode]) -> ast.ParamVar:
             """Grammar rule.
@@ -1238,14 +1250,22 @@ class JacParser(Pass):
 
             typed_ctx_block: RETURN_HINT expression code_block
             """
-            if isinstance(kid[1], ast.Expr) and isinstance(kid[2], ast.SubNodeList):
-                return ast.TypedCtxBlock(
-                    type_ctx=kid[1],
-                    body=kid[2],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            # if isinstance(kid[1], ast.Expr) and isinstance(kid[2], ast.SubNodeList):
+            #     return ast.TypedCtxBlock(
+            #         type_ctx=kid[1],
+            #         body=kid[2],
+            #         kid=kid,
+            #     )
+            # else:
+            #     raise self.ice()
+            self.consume_token(Tok.RETURN_HINT)
+            ctx = self.consume(ast.Expr)
+            body = self.consume(ast.SubNodeList)
+            return ast.TypedCtxBlock(
+                type_ctx=ctx,
+                body=body,
+                kid=self.cur_nodes,
+            )
 
         def if_stmt(self, _: None) -> ast.IfStmt:
             """Grammar rule.
@@ -1545,15 +1565,16 @@ class JacParser(Pass):
                 kid=self.cur_nodes,
             )
 
-        def walker_stmt(self, kid: list[ast.AstNode]) -> ast.CodeBlockStmt:
+        def walker_stmt(self, _: None) -> ast.CodeBlockStmt:
             """Grammar rule.
 
             walker_stmt: disengage_stmt | revisit_stmt | visit_stmt | ignore_stmt
             """
-            if isinstance(kid[0], ast.CodeBlockStmt):
-                return kid[0]
-            else:
-                raise self.ice()
+            return self.consume(ast.CodeBlockStmt)
+            # if isinstance(kid[0], ast.CodeBlockStmt):
+            #     return kid[0]
+            # else:
+            #     raise self.ice()
 
         def ignore_stmt(self, _: None) -> ast.IgnoreStmt:
             """Grammar rule.
@@ -2288,16 +2309,18 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def multistring(self, kid: list[ast.AstNode]) -> ast.AtomExpr:
+        def multistring(self, _: None) -> ast.AtomExpr:
             """Grammar rule.
 
             multistring: (fstring | STRING | DOC_STRING)+
             """
-            valid_strs = [i for i in kid if isinstance(i, (ast.String, ast.FString))]
-            if len(valid_strs) == len(kid):
+            valid_strs = []
+            while node := (self.match(ast.String) or self.match(ast.FString)):
+                valid_strs.append(node)
+            if len(valid_strs) == len(self.cur_nodes):
                 return ast.MultiString(
                     strings=valid_strs,
-                    kid=kid,
+                    kid=self.cur_nodes,
                 )
             else:
                 raise self.ice()
@@ -2308,18 +2331,13 @@ class JacParser(Pass):
             fstring: FSTR_START fstr_parts FSTR_END
                 | FSTR_SQ_START fstr_sq_parts FSTR_SQ_END
             """
-            if len(kid) == 2:
-                return ast.FString(
-                    parts=None,
-                    kid=kid,
-                )
-            elif isinstance(kid[1], ast.SubNodeList):
-                return ast.FString(
-                    parts=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.match_token(Tok.FSTR_START) or self.consume_token(Tok.FSTR_SQ_START)
+            target = self.match(ast.SubNodeList)
+            self.match_token(Tok.FSTR_END) or self.consume_token(Tok.FSTR_SQ_END)
+            return ast.FString(
+                parts=target,
+                kid=self.cur_nodes,
+            )
 
         def fstr_parts(
             self, kid: list[ast.AstNode]
@@ -2388,36 +2406,40 @@ class JacParser(Pass):
 
             tuple_val: LPAREN tuple_list? RPAREN
             """
-            if len(kid) == 2:
-                return ast.TupleVal(
-                    values=None,
-                    kid=kid,
-                )
-            elif isinstance(kid[1], ast.SubNodeList):
-                return ast.TupleVal(
-                    values=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            # if len(kid) == 2:
+            #     return ast.TupleVal(
+            #         values=None,
+            #         kid=kid,
+            #     )
+            # elif isinstance(kid[1], ast.SubNodeList):
+            #     return ast.TupleVal(
+            #         values=kid[1],
+            #         kid=kid,
+            #     )
+            # else:
+            #     raise self.ice()
+
+            self.consume_token(Tok.LPAREN)
+            target = self.match(ast.SubNodeList)
+            self.consume_token(Tok.RPAREN)
+            return ast.TupleVal(
+                values=target,
+                kid=self.cur_nodes,
+            )
 
         def set_val(self, kid: list[ast.AstNode]) -> ast.SetVal:
             """Grammar rule.
 
             set_val: LBRACE expr_list COMMA? RBRACE
             """
-            if len(kid) == 2:
-                return ast.SetVal(
-                    values=None,
-                    kid=kid,
-                )
-            elif isinstance(kid[1], ast.SubNodeList):
-                return ast.SetVal(
-                    values=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            self.match_token(Tok.LBRACE)
+            expr_list = self.match(ast.SubNodeList)
+            self.match_token(Tok.COMMA)
+            self.match_token(Tok.RBRACE)
+            return ast.SetVal(
+                values=expr_list,
+                kid=kid,
+            )
 
         def expr_list(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Expr]:
             """Grammar rule.
