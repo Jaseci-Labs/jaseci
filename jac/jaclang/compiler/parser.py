@@ -3495,53 +3495,27 @@ class JacParser(Pass):
                 kid=kid,
             )
 
-        def kw_pattern_list(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.MatchKVPair]:
+        def kw_pattern_list(self, _: None) -> ast.SubNodeList[ast.MatchKVPair]:
             """Grammar rule.
 
             kw_pattern_list: (kw_pattern_list COMMA)? named_ref EQ pattern_seq
             """
-            consume = None
-            name = None
-            eq = None
-            value = None
-            comma = None
-            if isinstance(kid[0], ast.SubNodeList):
-                consume = kid[0]
-                comma = kid[1]
-                name = kid[2]
-                eq = kid[3]
-                value = kid[4]
-                if not isinstance(name, ast.NameAtom) or not isinstance(
-                    value, ast.MatchPattern
-                ):
-                    raise self.ice()
-                new_kid = [
-                    *consume.kid,
-                    comma,
-                    ast.MatchKVPair(key=name, value=value, kid=[name, eq, value]),
-                ]
-            else:
-                name = kid[0]
-                eq = kid[1]
-                value = kid[2]
-                if not isinstance(name, ast.NameAtom) or not isinstance(
-                    value, ast.MatchPattern
-                ):
-                    raise self.ice()
-                new_kid = [
-                    ast.MatchKVPair(key=name, value=value, kid=[name, eq, value])
-                ]
-            if isinstance(name, ast.NameAtom) and isinstance(value, ast.MatchPattern):
-                valid_kid = [i for i in new_kid if isinstance(i, ast.MatchKVPair)]
-                return ast.SubNodeList[ast.MatchKVPair](
-                    items=valid_kid,
-                    delim=Tok.COMMA,
-                    kid=new_kid,
-                )
-            else:
-                raise self.ice()
+            new_kid: list = []
+            if consume := self.match(ast.SubNodeList):
+                comma = self.consume_token(Tok.COMMA)
+                new_kid.extend([*consume.kid, comma])
+            name = self.consume(ast.NameAtom)
+            eq = self.consume_token(Tok.EQ)
+            value = self.consume(ast.MatchPattern)
+            new_kid.extend(
+                [ast.MatchKVPair(key=name, value=value, kid=[name, eq, value])]
+            )
+            valid_kid = [i for i in new_kid if isinstance(i, ast.MatchKVPair)]
+            return ast.SubNodeList[ast.MatchKVPair](
+                items=valid_kid,
+                delim=Tok.COMMA,
+                kid=new_kid,
+            )
 
         def __default_token__(self, token: jl.Token) -> ast.Token:
             """Token handler."""
