@@ -1100,9 +1100,9 @@ class JacFeatureImpl(
     @hookimpl
     def get_root_type() -> Type[Root]:
         """Jac's root getter."""
-        from jaclang import Root
+        from jaclang import Root as JRoot
 
-        return Root
+        return cast(Type[Root], JRoot)
 
     @staticmethod
     @hookimpl
@@ -1114,10 +1114,10 @@ class JacFeatureImpl(
         """Jac's root getter."""
         from jaclang import GenericEdge
 
-        conn_type = conn_type if conn_type else GenericEdge
+        ct = conn_type if conn_type else GenericEdge
 
         def builder(source: NodeAnchor, target: NodeAnchor) -> EdgeArchitype:
-            edge = conn_type() if isinstance(conn_type, type) else conn_type
+            edge = ct() if isinstance(ct, type) else ct
 
             eanch = edge.__jac__ = EdgeAnchor(
                 architype=edge,
