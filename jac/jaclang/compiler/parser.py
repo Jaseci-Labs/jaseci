@@ -1587,7 +1587,10 @@ class JacParser(Pass):
             visit_stmt: KW_VISIT (inherited_archs)? expression (else_stmt | SEMI)
             """
             self.consume_token(Tok.KW_VISIT)
-            sub_name = self.match(ast.SubNodeList)
+            if sub_name_list := self.match(ast.SubNodeList):
+                sub_name = [i for i in sub_name_list.items if isinstance(i, ast.Expr)]
+            else:
+                sub_name = []
             target = self.consume(ast.Expr)
             else_body = self.match(ast.ElseStmt)
             if else_body is None:
