@@ -2075,49 +2075,39 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def atomic_chain(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def atomic_chain(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | index_slice)
                         | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) named_ref
                         | (atomic_call | atom | edge_ref_chain)
             """
-            if len(kid) < 2 and isinstance(kid[0], ast.Expr):
-                return kid[0]
-            chomp = [*kid]
-            target = chomp[0]
-            chomp = chomp[1:]
-            is_null_ok = False
-            if isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.NULL_OK:
-                is_null_ok = True
-                chomp = chomp[1:]
-            if (
-                len(chomp) == 1
-                and isinstance(chomp[0], ast.AtomExpr)
-                and isinstance(target, ast.Expr)
-            ):
+            if len(self.cur_nodes) == 1:
+                return self.consume(ast.Expr)
+            target = self.consume(ast.Expr)
+            is_null_ok = bool(self.match_token(Tok.NULL_OK))
+            if right := self.match(ast.AtomExpr):
                 return ast.AtomTrailer(
                     target=target,
-                    right=chomp[0],
-                    is_null_ok=is_null_ok,
-                    is_attr=False,
-                    kid=kid,
-                )
-            elif (
-                len(chomp) > 1
-                and isinstance(chomp[0], ast.Token)
-                and isinstance(chomp[1], (ast.AtomExpr, ast.AtomTrailer))
-                and isinstance(target, ast.Expr)
-            ):
-                return ast.AtomTrailer(
-                    target=(target if chomp[0].name != Tok.DOT_BKWD else chomp[1]),
-                    right=(chomp[1] if chomp[0].name != Tok.DOT_BKWD else target),
+                    right=right,
                     is_null_ok=is_null_ok,
                     is_attr=True,
-                    kid=kid,
+                    kid=self.cur_nodes,
                 )
-            else:
-                raise self.ice()
+            token = (
+                self.match_token(Tok.DOT_BKWD)
+                or self.match_token(Tok.DOT_FWD)
+                or self.consume_token(Tok.DOT)
+            )
+            name = self.match(ast.AtomExpr) or self.consume(ast.AtomTrailer)
+            print(f"name: {name}")
+            return ast.AtomTrailer(
+                target=target if token.name != Tok.DOT_BKWD else name,
+                right=name if token.name != Tok.DOT_BKWD else target,
+                is_null_ok=is_null_ok,
+                is_attr=False,
+                kid=self.cur_nodes,
+            )
 
         def atomic_call(self, _: None) -> ast.FuncCall:
             """Grammar rule.
