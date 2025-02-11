@@ -2998,32 +2998,37 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def connect_to(self, kid: list[ast.AstNode]) -> ast.ConnectOp:
+        def connect_to(self, _: None) -> ast.ConnectOp:
             """Grammar rule.
 
             connect_to: CARROW_R_P1 expression (COLON kw_expr_list)? CARROW_R_P2
                       | CARROW_R
             """
-            conn_type = kid[1] if len(kid) >= 3 else None
-            conn_assign = kid[3] if len(kid) >= 5 else None
-            if (isinstance(conn_type, ast.Expr) or conn_type is None) and (
-                isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
-            ):
-                conn_assign = (
-                    ast.AssignCompr(assigns=conn_assign, kid=[conn_assign])
-                    if conn_assign
+            conn_type: ast.Expr | None = None
+            conn_assign_sub: ast.SubNodeList | None = None
+            if self.match_token(Tok.CARROW_R_P1):
+                conn_type = self.consume(ast.Expr)
+                conn_assign_sub = (
+                    self.consume(ast.SubNodeList)
+                    if self.match_token(Tok.COLON)
                     else None
                 )
-                if conn_assign:
-                    kid[3] = conn_assign
-                return ast.ConnectOp(
-                    conn_type=conn_type,
-                    conn_assign=conn_assign,
-                    edge_dir=EdgeDir.OUT,
-                    kid=kid,
-                )
+                self.consume_token(Tok.CARROW_R_P2)
             else:
-                raise self.ice()
+                self.consume_token(Tok.CARROW_R)
+            conn_assign = (
+                ast.AssignCompr(assigns=conn_assign_sub, kid=[conn_assign_sub])
+                if conn_assign_sub
+                else None
+            )
+            if conn_assign:
+                self.cur_nodes[3] = conn_assign
+            return ast.ConnectOp(
+                conn_type=conn_type,
+                conn_assign=conn_assign,
+                edge_dir=EdgeDir.OUT,
+                kid=self.cur_nodes,
+            )
 
         def connect_from(self, kid: list[ast.AstNode]) -> ast.ConnectOp:
             """Grammar rule.
