@@ -2660,46 +2660,34 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def param_list(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.Expr | ast.KWPair]:
+        def param_list(self, _: None) -> ast.SubNodeList[ast.Expr | ast.KWPair]:
             """Grammar rule.
 
             param_list: expr_list    COMMA kw_expr_list COMMA?
                       | kw_expr_list COMMA?
                       | expr_list    COMMA?
             """
-            ends_with_comma = (
-                len(kid) > 1
-                and isinstance(kid[-1], ast.Token)
-                and kid[-1].name == "COMMA"
-            )
-            if len(kid) == 1 or (len(kid) == 2 and ends_with_comma):
-                if isinstance(kid[0], ast.SubNodeList):
-                    if (
-                        ends_with_comma
-                    ):  # Append the trailing comma to the subnode list.
-                        kid[0].kid.append(kid[1])
-                    return kid[0]
-                else:
-                    raise self.ice()
-            elif isinstance(kid[0], ast.SubNodeList) and isinstance(
-                kid[2], ast.SubNodeList
-            ):
+            kw_expr_list: ast.SubNodeList | None = None
+            expr_list = self.consume(ast.SubNodeList)
+            if len(self.cur_nodes) > 2:
+                self.consume_token(Tok.COMMA)
+                kw_expr_list = self.consume(ast.SubNodeList)
+            ends_comma = self.match_token(Tok.COMMA)
+            if kw_expr_list:
                 valid_kid = [
                     i
-                    for i in [*kid[0].items, *kid[2].items]
+                    for i in [*expr_list.items, *kw_expr_list.items]
                     if isinstance(i, (ast.Expr, ast.KWPair))
                 ]
-                if len(valid_kid) == len(kid[0].items) + len(kid[2].items):
-                    return ast.SubNodeList[ast.Expr | ast.KWPair](
-                        items=valid_kid,
-                        delim=Tok.COMMA,
-                        kid=kid,
-                    )
-                else:
-                    raise self.ice()
-            raise self.ice()
+                return ast.SubNodeList[ast.Expr | ast.KWPair](
+                    items=valid_kid,
+                    delim=Tok.COMMA,
+                    kid=self.cur_nodes,
+                )
+            else:
+                if ends_comma:
+                    expr_list.kid.append(ends_comma)
+                return expr_list
 
         def assignment_list(
             self, kid: list[ast.AstNode]
