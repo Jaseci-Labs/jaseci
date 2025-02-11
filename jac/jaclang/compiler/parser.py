@@ -1650,70 +1650,55 @@ class JacParser(Pass):
                 kid=self.cur_nodes,
             )
 
-        def assignment(self, kid: list[ast.AstNode]) -> ast.Assignment:
+        def assignment(self, _: None) -> ast.Assignment:
             """Grammar rule.
 
             assignment: KW_LET? (atomic_chain EQ)+ (yield_expr | expression)
                     | atomic_chain (COLON STRING)? type_tag (EQ (yield_expr | expression))?
                     | atomic_chain aug_op (yield_expr | expression)
             """
-            chomp = [*kid]
-            is_frozen = isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_LET
-            is_aug = None
-            assignees = []
-            chomp = chomp[1:] if is_frozen else chomp
-            value = chomp[-1] if isinstance(chomp[-1], ast.Expr) else None
-            chomp = (
-                chomp[:-2]
-                if value and isinstance(chomp[-3], ast.SubTag)
-                else chomp[:-1] if value else chomp
-            )
-            type_tag = chomp[-1] if isinstance(chomp[-1], ast.SubTag) else None
-            if not value:
-                semstr = chomp[2] if len(chomp) > 2 else None
-                chomp = chomp[:-2] if semstr else chomp
-            else:
-                if type_tag:
-                    chomp = chomp[:-1]
-                    semstr = (
-                        chomp[-1]
-                        if len(chomp) > 1 and isinstance(chomp[-1], ast.String)
-                        else None
-                    )
-                    chomp = chomp[:-2] if semstr else chomp
-                else:
-                    semstr = None
-                    if (
-                        isinstance(chomp[1], ast.Token)
-                        and chomp[1].name != Tok.EQ
-                        and chomp[1].name != Tok.COLON
-                    ):
-                        assignees += [chomp[0]]
-                        is_aug = chomp[1]
-                        chomp = chomp[2:]
-                    else:
-                        while (
-                            len(chomp) > 1
-                            and isinstance(chomp[0], ast.Expr)
-                            and isinstance(chomp[1], ast.Token)
-                            and chomp[1].name == Tok.EQ
-                        ):
-                            assignees += [chomp[0], chomp[1]]
-                            chomp = chomp[2:]
+            assignees: list = []
+            type_tag: ast.SubTag | None = None
+            is_aug: ast.Token | None = None
+            semstr: ast.String | None = None
 
-            assignees += chomp
+            is_frozen = bool(self.match_token(Tok.KW_LET))
+            if first_expr := self.match(ast.Expr):
+                assignees.append(first_expr)
+
+            token = self.match(ast.Token)
+            if token and (token.name == Tok.EQ):
+                assignees.append(token)
+                while expr := self.match(ast.Expr):
+                    eq = self.match_token(Tok.EQ)
+                    assignees.append(expr)
+                    if eq:
+                        assignees.append(eq)
+                value = assignees.pop()
+            elif token and (token.name not in {Tok.COLON, Tok.EQ}):
+                is_aug = token
+                value = self.consume(ast.Expr)
+            else:
+                semstr = (
+                    self.match(ast.String)
+                    if (token and (token.name == Tok.COLON))
+                    else None
+                )
+                type_tag = self.consume(ast.SubTag)
+                value = self.consume(ast.Expr) if self.match_token(Tok.EQ) else None
+
             valid_assignees = [i for i in assignees if isinstance(i, (ast.Expr))]
             new_targ = ast.SubNodeList[ast.Expr](
                 items=valid_assignees,
                 delim=Tok.EQ,
                 kid=assignees,
             )
-            kid = [x for x in kid if x not in assignees]
+            kid = [x for x in self.cur_nodes if x not in assignees]
             kid.insert(1, new_targ) if is_frozen else kid.insert(0, new_targ)
             if is_aug:
                 return ast.Assignment(
                     target=new_targ,
-                    type_tag=type_tag if isinstance(type_tag, ast.SubTag) else None,
+                    type_tag=type_tag,
                     value=value,
                     mutable=is_frozen,
                     aug_op=is_aug,
@@ -1721,11 +1706,11 @@ class JacParser(Pass):
                 )
             return ast.Assignment(
                 target=new_targ,
-                type_tag=type_tag if isinstance(type_tag, ast.SubTag) else None,
+                type_tag=type_tag,
                 value=value,
                 mutable=is_frozen,
                 kid=kid,
-                semstr=semstr if isinstance(semstr, ast.String) else None,
+                semstr=semstr,
             )
 
         def expression(self, _: None) -> ast.Expr:
