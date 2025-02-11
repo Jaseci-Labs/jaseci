@@ -1813,36 +1813,36 @@ class JacParser(Pass):
             """
             return self._binary_expr_unwind(kid)
 
-        def bitwise_or(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def bitwise_or(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             bitwise_or: bitwise_xor BW_OR bitwise_or
                       | bitwise_xor
             """
-            return self._binary_expr_unwind(kid)
+            return self._binary_expr_unwind(self.cur_nodes)
 
-        def bitwise_xor(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def bitwise_xor(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             bitwise_xor: bitwise_and BW_XOR bitwise_xor
                        | bitwise_and
             """
-            return self._binary_expr_unwind(kid)
+            return self._binary_expr_unwind(self.cur_nodes)
 
-        def bitwise_and(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def bitwise_and(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             bitwise_and: shift BW_AND bitwise_and
                        | shift
             """
-            return self._binary_expr_unwind(kid)
+            return self._binary_expr_unwind(self.cur_nodes)
 
-        def shift(self, kid: list[ast.AstNode]) -> ast.Expr:
+        def shift(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             shift: (shift (RSHIFT | LSHIFT))? logical_or
             """
-            return self._binary_expr_unwind(kid)
+            return self._binary_expr_unwind(self.cur_nodes)
 
         def logical_or(self, _: None) -> ast.Expr:
             """Grammar rule.
@@ -2859,32 +2859,26 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def ability_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
+        def ability_ref(self, _: None) -> ast.ArchRef:
             """Grammar rule.
 
             ability_ref: ABILITY_OP (special_ref | name_ref)
             """
-            if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameAtom):
-                return ast.ArchRef(
-                    arch_type=kid[0],
-                    arch_name=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            arch_type = self.consume_token(Tok.ABILITY_OP)
+            arch_name = self.consume(ast.NameAtom)
+            return ast.ArchRef(
+                arch_type=arch_type,
+                arch_name=arch_name,
+                kid=self.cur_nodes,
+            )
 
         def arch_or_ability_chain(self, kid: list[ast.AstNode]) -> ast.ArchRefChain:
             """Grammar rule.
 
             arch_or_ability_chain: arch_or_ability_chain? (ability_ref | arch_ref)
             """
-            consume = None
-            name = None
-            if len(kid) == 2:
-                consume = kid[0]
-                name = kid[1]
-            else:
-                name = kid[0]
+            consume = self.match(ast.ArchRefChain)
+            name = self.consume(ast.ArchRef)
             new_kid = [*consume.kid, name] if consume else [name]
             valid_kid = [i for i in new_kid if isinstance(i, ast.ArchRef)]
             if len(valid_kid) == len(new_kid):
@@ -3246,48 +3240,41 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def pattern_seq(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+        def pattern_seq(self, _: None) -> ast.MatchPattern:
             """Grammar rule.
 
             pattern_seq: (or_pattern | as_pattern)
             """
-            if isinstance(kid[0], ast.MatchPattern):
-                return kid[0]
-            else:
-                raise self.ice()
+            return self.consume(ast.MatchPattern)
 
-        def or_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+        def or_pattern(self, _: None) -> ast.MatchPattern:
             """Grammar rule.
 
             or_pattern: (pattern BW_OR)* pattern
             """
-            if len(kid) == 1:
-                if isinstance(kid[0], ast.MatchPattern):
-                    return kid[0]
-                else:
-                    raise self.ice()
-            else:
-                patterns = [i for i in kid if isinstance(i, ast.MatchPattern)]
-                return ast.MatchOr(
-                    patterns=patterns,
-                    kid=kid,
-                )
+            patterns: list = [self.consume(ast.MatchPattern)]
+            while self.match_token(Tok.BW_OR):
+                patterns.append(self.consume(ast.MatchPattern))
+            if len(patterns) == 1:
+                return patterns[0]
+            return ast.MatchOr(
+                patterns=patterns,
+                kid=self.cur_nodes,
+            )
 
-        def as_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+        def as_pattern(self, _: None) -> ast.MatchPattern:
             """Grammar rule.
 
             as_pattern: pattern KW_AS NAME
             """
-            if isinstance(kid[0], ast.MatchPattern) and isinstance(
-                kid[2], ast.NameAtom
-            ):
-                return ast.MatchAs(
-                    pattern=kid[0],
-                    name=kid[2],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            pattern = self.consume(ast.MatchPattern)
+            self.consume_token(Tok.KW_AS)
+            name = self.consume(ast.NameAtom)
+            return ast.MatchAs(
+                pattern=pattern,
+                name=name,
+                kid=self.cur_nodes,
+            )
 
         def pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
             """Grammar rule.
@@ -3298,123 +3285,109 @@ class JacParser(Pass):
                 | mapping_pattern
                 | class_pattern
             """
-            if isinstance(kid[0], ast.MatchPattern):
-                return kid[0]
-            else:
-                raise self.ice()
+            return self.consume(ast.MatchPattern)
 
-        def literal_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+        def literal_pattern(self, _: None) -> ast.MatchPattern:
             """Grammar rule.
 
             literal_pattern: (INT | FLOAT | multistring)
             """
-            if isinstance(kid[0], ast.Expr):
-                return ast.MatchValue(
-                    value=kid[0],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            value = self.consume(ast.Expr)
+            return ast.MatchValue(
+                value=value,
+                kid=self.cur_nodes,
+            )
 
-        def singleton_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+        def singleton_pattern(self, _: None) -> ast.MatchPattern:
             """Grammar rule.
 
             singleton_pattern: (NULL | BOOL)
             """
-            if isinstance(kid[0], (ast.Bool, ast.Null)):
-                return ast.MatchSingleton(
-                    value=kid[0],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            value = self.match(ast.Null) or self.consume(ast.Bool)
+            return ast.MatchSingleton(
+                value=value,
+                kid=self.cur_nodes,
+            )
 
-        def capture_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+        def capture_pattern(self, _: None) -> ast.MatchPattern:
             """Grammar rule.
 
             capture_pattern: NAME
             """
-            if (
-                len(kid) == 1
-                and isinstance(kid[0], ast.Name)
-                and kid[0].sym_name == "_"
-            ):
+            name = self.consume(ast.Name)
+            if name.sym_name == "_":
                 return ast.MatchWild(
-                    kid=kid,
+                    kid=self.cur_nodes,
                 )
-            if isinstance(kid[0], ast.NameAtom):
-                return ast.MatchAs(
-                    name=kid[0],
-                    pattern=None,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            return ast.MatchAs(
+                name=name,
+                pattern=None,
+                kid=self.cur_nodes,
+            )
 
-        def sequence_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+        def sequence_pattern(self, _: None) -> ast.MatchPattern:
             """Grammar rule.
 
             sequence_pattern: LSQUARE list_inner_pattern (COMMA list_inner_pattern)* RSQUARE
                             | LPAREN list_inner_pattern (COMMA list_inner_pattern)* RPAREN
             """
-            patterns = [i for i in kid if isinstance(i, ast.MatchPattern)]
+            self.consume_token(Tok.LSQUARE) or self.consume_token(Tok.LPAREN)
+            patterns = [self.consume(ast.MatchPattern)]
+            while self.match_token(Tok.COMMA):
+                patterns.append(self.consume(ast.MatchPattern))
+            self.consume_token(Tok.RSQUARE) or self.consume_token(Tok.RPAREN)
             return ast.MatchSequence(
                 values=patterns,
-                kid=kid,
+                kid=self.cur_nodes,
             )
 
-        def mapping_pattern(self, kid: list[ast.AstNode]) -> ast.MatchMapping:
+        def mapping_pattern(self, _: None) -> ast.MatchMapping:
             """Grammar rule.
 
             mapping_pattern: LBRACE (dict_inner_pattern (COMMA dict_inner_pattern)*)? RBRACE
             """
-            patterns = [
-                i for i in kid if isinstance(i, (ast.MatchKVPair, ast.MatchStar))
-            ]
+            self.consume_token(Tok.LBRACE)
+            patterns = [self.match(ast.MatchKVPair) or self.consume(ast.MatchStar)]
+            while self.match_token(Tok.COMMA):
+                patterns.append(
+                    self.match(ast.MatchKVPair) or self.consume(ast.MatchStar)
+                )
+            self.consume_token(Tok.RBRACE)
             return ast.MatchMapping(
                 values=patterns,
-                kid=kid,
+                kid=self.cur_nodes,
             )
 
-        def list_inner_pattern(self, kid: list[ast.AstNode]) -> ast.MatchPattern:
+        def list_inner_pattern(self, _: None) -> ast.MatchPattern:
             """Grammar rule.
 
             list_inner_pattern: (pattern_seq | STAR_MUL NAME)
             """
-            if isinstance(kid[0], ast.MatchPattern):
-                return kid[0]
-            elif isinstance(kid[-1], ast.Name):
+            if self.match_token(Tok.STAR_MUL):
+                name = self.consume(ast.Name)
                 return ast.MatchStar(
                     is_list=True,
-                    name=kid[-1],
-                    kid=kid,
+                    name=name,
+                    kid=self.cur_nodes,
                 )
-            else:
-                raise self.ice()
+            return self.consume(ast.MatchPattern)
 
-        def dict_inner_pattern(
-            self, kid: list[ast.AstNode]
-        ) -> ast.MatchKVPair | ast.MatchStar:
+        def dict_inner_pattern(self, _: None) -> ast.MatchKVPair | ast.MatchStar:
             """Grammar rule.
 
             dict_inner_pattern: (pattern_seq COLON pattern_seq | STAR_POW NAME)
             """
-            if isinstance(kid[0], ast.MatchPattern) and isinstance(
-                kid[2], ast.MatchPattern
-            ):
-                return ast.MatchKVPair(
-                    key=kid[0],
-                    value=kid[2],
-                    kid=kid,
-                )
-            elif isinstance(kid[-1], ast.Name):
+            if self.match_token(Tok.STAR_POW):
+                name = self.consume(ast.Name)
                 return ast.MatchStar(
                     is_list=False,
-                    name=kid[-1],
-                    kid=kid,
+                    name=name,
+                    kid=self.cur_nodes,
                 )
-            else:
-                raise self.ice()
+            pattern = self.consume(ast.MatchPattern)
+            self.consume_token(Tok.COLON)
+            value = self.consume(ast.MatchPattern)
+            return ast.MatchKVPair(key=pattern, value=value, kid=self.cur_nodes)
 
         def class_pattern(self, kid: list[ast.AstNode]) -> ast.MatchArch:
             """Grammar rule.
