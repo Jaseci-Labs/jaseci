@@ -3460,14 +3460,21 @@ class PyastGenPass(Pass):
     def exit_assign_compr(self, node: ast.AssignCompr) -> None:
         """Sub objects.
 
-        assigns: SubNodeList[KWPair],
+        assigns: SubNodeList[KWPair] | list[KWPair],
         """
         keys = []
         values = []
-        for i in node.assigns.items:
-            if i.key:  # TODO: add support for **kwargs in assign_compr
-                keys.append(self.sync(ast3.Constant(i.key.sym_name)))
-                values.append(i.value.gen.py_ast[0])
+        if isinstance(node.assigns, ast.SubNodeList):
+            for i in node.assigns.items:
+                if i.key:  # TODO: add support for **kwargs in assign_compr
+                    keys.append(self.sync(ast3.Constant(i.key.sym_name)))
+                    values.append(i.value.gen.py_ast[0])
+        else:
+            if node.assigns:
+                for i in node.assigns:
+                    if i.key:
+                        keys.append(self.sync(ast3.Constant(i.key.sym_name)))
+                        values.append(i.value.gen.py_ast[0])
         key_tup = self.sync(ast3.Tuple(elts=keys, ctx=ast3.Load()))
         val_tup = self.sync(ast3.Tuple(elts=values, ctx=ast3.Load()))
         node.gen.py_ast = [
