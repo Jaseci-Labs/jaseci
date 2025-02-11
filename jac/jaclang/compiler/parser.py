@@ -1080,23 +1080,17 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def has_assign_list(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.HasVar]:
+        def has_assign_list(self, _: None) -> ast.SubNodeList[ast.HasVar]:
             """Grammar rule.
 
             has_assign_list: (has_assign_list COMMA)? typed_has_clause
             """
-            consume = None
-            assign = None
-            comma = None
-            if isinstance(kid[0], ast.SubNodeList):
-                consume = kid[0]
-                comma = kid[1]
-                assign = kid[2]
+            if consume := self.match(ast.SubNodeList):
+                comma = self.consume_token(Tok.COMMA)
+                assign = self.consume(ast.HasVar)
                 new_kid = [*consume.kid, comma, assign]
             else:
-                assign = kid[0]
+                assign = self.consume(ast.HasVar)
                 new_kid = [assign]
             valid_kid = [i for i in new_kid if isinstance(i, ast.HasVar)]
             return ast.SubNodeList[ast.HasVar](
@@ -1220,15 +1214,17 @@ class JacParser(Pass):
                     | walker_stmt
                     | SEMI
             """
-            if isinstance(kid[0], ast.CodeBlockStmt) and len(kid) < 2:
-                return kid[0]
-            elif isinstance(kid[0], ast.Token) and kid[0].name == Tok.KW_YIELD:
+            if (code_block := self.match(ast.CodeBlockStmt)) and len(
+                self.cur_nodes
+            ) < 2:
+                return code_block
+            elif (token := self.match(ast.Token)) and token.name == Tok.KW_YIELD:
                 return ast.ExprStmt(
                     expr=(
                         expr := ast.YieldExpr(
                             expr=None,
                             with_from=False,
-                            kid=kid,
+                            kid=self.cur_nodes,
                         )
                     ),
                     in_fstring=False,
@@ -1238,7 +1234,7 @@ class JacParser(Pass):
                 return ast.ExprStmt(
                     expr=kid[0],
                     in_fstring=False,
-                    kid=kid,
+                    kid=self.cur_nodes,
                 )
             elif isinstance(kid[0], ast.CodeBlockStmt):
                 kid[0].add_kids_right([kid[1]])
@@ -2334,9 +2330,7 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def fstr_parts(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.String | ast.ExprStmt]:
+        def fstr_parts(self, _: None) -> ast.SubNodeList[ast.String | ast.ExprStmt]:
             """Grammar rule.
 
             fstr_parts: (FSTR_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
@@ -2347,7 +2341,7 @@ class JacParser(Pass):
                     if isinstance(i, ast.String)
                     else ast.ExprStmt(expr=i, in_fstring=True, kid=[i])
                 )
-                for i in kid
+                for i in self.cur_nodes
                 if isinstance(i, ast.Expr)
             ]
             return ast.SubNodeList[ast.String | ast.ExprStmt](
@@ -2356,9 +2350,7 @@ class JacParser(Pass):
                 kid=valid_parts,
             )
 
-        def fstr_sq_parts(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.String | ast.ExprStmt]:
+        def fstr_sq_parts(self, _: None) -> ast.SubNodeList[ast.String | ast.ExprStmt]:
             """Grammar rule.
 
             fstr_sq_parts: (FSTR_SQ_PIECE | FSTR_BESC | LBRACE expression RBRACE )*
@@ -2369,7 +2361,7 @@ class JacParser(Pass):
                     if isinstance(i, ast.String)
                     else ast.ExprStmt(expr=i, in_fstring=True, kid=[i])
                 )
-                for i in kid
+                for i in self.cur_nodes
                 if isinstance(i, ast.Expr)
             ]
             return ast.SubNodeList[ast.String | ast.ExprStmt](
@@ -2460,16 +2452,29 @@ class JacParser(Pass):
 
             kw_expr_list: (kw_expr_list COMMA)? kw_expr
             """
-            consume = None
-            expr = None
-            comma = None
-            if isinstance(kid[0], ast.SubNodeList):
-                consume = kid[0]
-                comma = kid[1]
-                expr = kid[2]
+            # consume = None
+            # expr = None
+            # comma = None
+            # if isinstance(kid[0], ast.SubNodeList):
+            #     consume = kid[0]
+            #     comma = kid[1]
+            #     expr = kid[2]
+            #     new_kid = [*consume.kid, comma, expr]
+            # else:
+            #     expr = kid[0]
+            #     new_kid = [expr]
+            # valid_kid = [i for i in new_kid if isinstance(i, ast.KWPair)]
+            # return ast.SubNodeList[ast.KWPair](
+            #     items=valid_kid,
+            #     delim=Tok.COMMA,
+            #     kid=new_kid,
+            # )
+            if consume := self.match(ast.SubNodeList):
+                comma = self.consume_token(Tok.COMMA)
+                expr = self.consume(ast.KWPair)
                 new_kid = [*consume.kid, comma, expr]
             else:
-                expr = kid[0]
+                expr = self.consume(ast.KWPair)
                 new_kid = [expr]
             valid_kid = [i for i in new_kid if isinstance(i, ast.KWPair)]
             return ast.SubNodeList[ast.KWPair](
@@ -3140,23 +3145,17 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def filter_compare_list(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.CompareExpr]:
+        def filter_compare_list(self, _: None) -> ast.SubNodeList[ast.CompareExpr]:
             """Grammar rule.
 
             filter_compare_list: (filter_compare_list COMMA)? filter_compare_item
             """
-            consume = None
-            expr = None
-            comma = None
-            if isinstance(kid[0], ast.SubNodeList):
-                consume = kid[0]
-                comma = kid[1]
-                expr = kid[2]
+            if consume := self.match(ast.SubNodeList):
+                comma = self.consume_token(Tok.COMMA)
+                expr = self.consume(ast.CompareExpr)
                 new_kid = [*consume.kid, comma, expr]
             else:
-                expr = kid[0]
+                expr = self.consume(ast.CompareExpr)
                 new_kid = [expr]
             valid_kid = [i for i in new_kid if isinstance(i, ast.CompareExpr)]
             return ast.SubNodeList[ast.CompareExpr](
@@ -3187,12 +3186,12 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def filter_compare_item(self, kid: list[ast.AstNode]) -> ast.CompareExpr:
+        def filter_compare_item(self, _: None) -> ast.CompareExpr:
             """Grammar rule.
 
             filter_compare_item: name_ref cmp_op expression
             """
-            ret = self.compare(kid)
+            ret = self.compare(self.cur_nodes)
             if isinstance(ret, ast.CompareExpr):
                 return ret
             else:
@@ -3492,28 +3491,22 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def pattern_list(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.MatchPattern]:
+        def pattern_list(self, _: None) -> ast.SubNodeList[ast.MatchPattern]:
             """Grammar rule.
 
             pattern_list: (pattern_list COMMA)? pattern_seq
             """
-            consume = None
-            pattern = None
-            comma = None
-            if isinstance(kid[0], ast.SubNodeList):
-                consume = kid[0]
-                comma = kid[1]
-                pattern = kid[2]
+            if consume := self.match(ast.SubNodeList):
+                comma = self.consume_token(Tok.COMMA)
+                pattern = self.consume(ast.MatchPattern)
             else:
-                pattern = kid[0]
+                pattern = self.consume(ast.MatchPattern)
             new_kid = [*consume.kid, comma, pattern] if consume else [pattern]
             valid_kid = [i for i in new_kid if isinstance(i, ast.MatchPattern)]
             return ast.SubNodeList[ast.MatchPattern](
                 items=valid_kid,
                 delim=Tok.COMMA,
-                kid=kid,
+                kid=new_kid,
             )
 
         def kw_pattern_list(
