@@ -2100,7 +2100,6 @@ class JacParser(Pass):
                 or self.consume_token(Tok.DOT)
             )
             name = self.match(ast.AtomExpr) or self.consume(ast.AtomTrailer)
-            print(f"name: {name}")
             return ast.AtomTrailer(
                 target=target if token.name != Tok.DOT_BKWD else name,
                 right=name if token.name != Tok.DOT_BKWD else target,
@@ -2984,10 +2983,7 @@ class JacParser(Pass):
 
             connect_op: connect_from | connect_to | connect_any
             """
-            if len(kid) < 2 and isinstance(kid[0], ast.ConnectOp):
-                return kid[0]
-            else:
-                raise self.ice()
+            return self.consume(ast.ConnectOp)
 
         def disconnect_op(self, kid: list[ast.AstNode]) -> ast.DisconnectOp:
             """Grammar rule.
