@@ -3191,11 +3191,12 @@ class JacParser(Pass):
 
             filter_compare_item: name_ref cmp_op expression
             """
-            ret = self.compare(self.cur_nodes)
-            if isinstance(ret, ast.CompareExpr):
-                return ret
-            else:
-                raise self.ice()
+            name_ref = self.consume(ast.Name)
+            cmp_op = self.consume(ast.Token)
+            expr = self.consume(ast.Int)
+            return ast.CompareExpr(
+                left=name_ref, ops=[cmp_op], rights=[expr], kid=self.cur_nodes
+            )
 
         def assign_compr(self, kid: list[ast.AstNode]) -> ast.AssignCompr:
             """Grammar rule.
