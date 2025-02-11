@@ -2756,108 +2756,98 @@ class JacParser(Pass):
                     | node_ref
                     | type_ref
             """
-            if isinstance(kid[0], ast.ArchRef):
-                return kid[0]
-            else:
-                raise self.ice()
+            return self.consume(ast.ArchRef)
 
         def node_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
             """Grammar rule.
 
             node_ref: NODE_OP NAME
             """
-            if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameAtom):
-                return ast.ArchRef(
-                    arch_type=kid[0],
-                    arch_name=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            arch_type = self.consume(ast.Token)
+            arch_name = self.consume(ast.NameAtom)
+            return ast.ArchRef(
+                arch_type=arch_type,
+                arch_name=arch_name,
+                kid=self.cur_nodes,
+            )
 
         def edge_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
             """Grammar rule.
 
             edge_ref: EDGE_OP NAME
             """
-            if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameAtom):
-                return ast.ArchRef(
-                    arch_type=kid[0],
-                    arch_name=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            arch_type = self.consume(ast.Token)
+            arch_name = self.consume(ast.NameAtom)
+            return ast.ArchRef(
+                arch_type=arch_type,
+                arch_name=arch_name,
+                kid=self.cur_nodes,
+            )
 
         def walker_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
             """Grammar rule.
 
             walker_ref: WALKER_OP NAME
             """
-            if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameAtom):
-                return ast.ArchRef(
-                    arch_type=kid[0],
-                    arch_name=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            arch_type = self.consume(ast.Token)
+            arch_name = self.consume(ast.NameAtom)
+            return ast.ArchRef(
+                arch_type=arch_type,
+                arch_name=arch_name,
+                kid=self.cur_nodes,
+            )
 
         def class_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
             """Grammar rule.
 
             class_ref: CLASS_OP name_ref
             """
-            if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameAtom):
-                return ast.ArchRef(
-                    arch_type=kid[0],
-                    arch_name=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            arch_type = self.consume(ast.Token)
+            arch_name = self.consume(ast.NameAtom)
+            return ast.ArchRef(
+                arch_type=arch_type,
+                arch_name=arch_name,
+                kid=self.cur_nodes,
+            )
 
         def object_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
             """Grammar rule.
 
             object_ref: OBJECT_OP name_ref
             """
-            if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameAtom):
-                return ast.ArchRef(
-                    arch_type=kid[0],
-                    arch_name=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            arch_type = self.consume(ast.Token)
+            arch_name = self.consume(ast.NameAtom)
+            return ast.ArchRef(
+                arch_type=arch_type,
+                arch_name=arch_name,
+                kid=self.cur_nodes,
+            )
 
         def type_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
             """Grammar rule.
 
             type_ref: TYPE_OP (named_ref | builtin_type)
             """
-            if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameAtom):
-                return ast.ArchRef(
-                    arch_type=kid[0],
-                    arch_name=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            arch_type = self.consume(ast.Token)
+            arch_name = self.consume(ast.NameAtom)
+            return ast.ArchRef(
+                arch_type=arch_type,
+                arch_name=arch_name,
+                kid=self.cur_nodes,
+            )
 
         def enum_ref(self, kid: list[ast.AstNode]) -> ast.ArchRef:
             """Grammar rule.
 
             enum_ref: ENUM_OP NAME
             """
-            if isinstance(kid[0], ast.Token) and isinstance(kid[1], ast.NameAtom):
-                return ast.ArchRef(
-                    arch_type=kid[0],
-                    arch_name=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            arch_type = self.consume(ast.Token)
+            arch_name = self.consume(ast.NameAtom)
+            return ast.ArchRef(
+                arch_type=arch_type,
+                arch_name=arch_name,
+                kid=self.cur_nodes,
+            )
 
         def ability_ref(self, _: None) -> ast.ArchRef:
             """Grammar rule.
@@ -2975,10 +2965,7 @@ class JacParser(Pass):
 
             edge_op_ref: (edge_any | edge_from | edge_to)
             """
-            if isinstance(kid[0], ast.EdgeOpRef):
-                return kid[0]
-            else:
-                raise self.ice()
+            return self.consume(ast.EdgeOpRef)
 
         def edge_to(self, kid: list[ast.AstNode]) -> ast.EdgeOpRef:
             """Grammar rule.
