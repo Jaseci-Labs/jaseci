@@ -2978,7 +2978,7 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def connect_op(self, _:None) -> ast.ConnectOp:
+        def connect_op(self, _: None) -> ast.ConnectOp:
             """Grammar rule.
 
             connect_op: connect_from | connect_to | connect_any
