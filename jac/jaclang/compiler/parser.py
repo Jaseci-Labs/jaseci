@@ -2101,10 +2101,10 @@ class JacParser(Pass):
             )
             name = self.match(ast.AtomExpr) or self.consume(ast.AtomTrailer)
             return ast.AtomTrailer(
-                target=target if token.name != Tok.DOT_BKWD else name,
-                right=name if token.name != Tok.DOT_BKWD else target,
+                target=(target if token.name != Tok.DOT_BKWD else name),
+                right=(name if token.name != Tok.DOT_BKWD else target),
                 is_null_ok=is_null_ok,
-                is_attr=False,
+                is_attr=True,
                 kid=self.cur_nodes,
             )
 
