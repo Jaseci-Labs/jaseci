@@ -2082,7 +2082,6 @@ class JacParser(Pass):
                         | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) named_ref
                         | (atomic_call | atom | edge_ref_chain)
             """
-            print(self.cur_nodes)
             if len(self.cur_nodes) == 1:
                 return self.consume(ast.Expr)
             target = self.consume(ast.Expr)
@@ -2979,7 +2978,7 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def connect_op(self, kid: list[ast.AstNode]) -> ast.ConnectOp:
+        def connect_op(self, _:None) -> ast.ConnectOp:
             """Grammar rule.
 
             connect_op: connect_from | connect_to | connect_any
