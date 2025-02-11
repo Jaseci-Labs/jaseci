@@ -2082,6 +2082,7 @@ class JacParser(Pass):
                         | atomic_chain NULL_OK? (DOT_BKWD | DOT_FWD | DOT) named_ref
                         | (atomic_call | atom | edge_ref_chain)
             """
+            print(self.cur_nodes)
             if len(self.cur_nodes) == 1:
                 return self.consume(ast.Expr)
             target = self.consume(ast.Expr)
@@ -2091,7 +2092,7 @@ class JacParser(Pass):
                     target=target,
                     right=right,
                     is_null_ok=is_null_ok,
-                    is_attr=True,
+                    is_attr=False,
                     kid=self.cur_nodes,
                 )
             token = (
