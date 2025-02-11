@@ -252,15 +252,25 @@ class JacParser(Pass):
         def module(self, _: None) -> ast.Module:
             """Grammar rule.
 
-            module: (doc_tag? element (element_with_doc | element)*)?
-            doc_tag (element_with_doc (element_with_doc | element)*)?
+            module: ((STRING | toplevel_stmt) (STRING? toplevel_stmt)*)?
             """
-            doc = self.match(ast.String)
-            body = self.match_many(ast.ElementStmt)
+            module_doc = self.match(ast.String)
+            tl_stmts = [self.match(ast.ElementStmt)] if not module_doc else []
+            while True:
+                doc = self.match(ast.String)
+                tl_stmt = self.match(ast.ElementStmt)
+                if not tl_stmt:
+                    break
+                tl_stmts.append(tl_stmt)
+                if doc:
+                    tl_stmt.doc = doc
+                    tl_stmt.add_kids_left([doc])
+            body = tl_stmts
+
             mod = ast.Module(
                 name=self.parse_ref.mod_path.split(os.path.sep)[-1].rstrip(".jac"),
                 source=self.parse_ref.source,
-                doc=doc,
+                doc=module_doc,
                 body=body,
                 is_imported=False,
                 terminals=self.terminals,
@@ -271,27 +281,16 @@ class JacParser(Pass):
             )
             return mod
 
-        def element_with_doc(self, _: None) -> ast.ElementStmt:
+        def toplevel_stmt(self, _: None) -> ast.ElementStmt:
             """Grammar rule.
 
-            element_with_doc: doc_tag element
-            """
-            doc = self.consume(ast.String)
-            element = self.consume(ast.ElementStmt)
-            element.doc = doc
-            element.add_kids_left([doc])
-            return element
-
-        def element(self, _: None) -> ast.ElementStmt:
-            """Grammar rule.
-
-            element: py_code_block
-                | import_stmt
-                | ability
-                | architype
-                | free_code
-                | test
-                | global_var
+            toplevel_stmt: import_stmt
+                        | architype
+                        | ability
+                        | global_var
+                        | free_code
+                        | py_code_block
+                        | test
             """
             return self.consume(ast.ElementStmt)
 
@@ -348,13 +347,6 @@ class JacParser(Pass):
                 body=codeblock,
                 kid=self.cur_nodes,
             )
-
-        def doc_tag(self, _: None) -> ast.String:
-            """Grammar rule.
-
-            doc_tag: ( STRING | DOC_STRING )
-            """
-            return self.consume(ast.String)
 
         def py_code_block(self, _: None) -> ast.PyInlineCode:
             """Grammar rule.
@@ -2272,7 +2264,7 @@ class JacParser(Pass):
         def multistring(self, kid: list[ast.AstNode]) -> ast.AtomExpr:
             """Grammar rule.
 
-            multistring: (fstring | STRING | DOC_STRING)+
+            multistring: (fstring | STRING)+
             """
             valid_strs = [i for i in kid if isinstance(i, (ast.String, ast.FString))]
             if len(valid_strs) == len(kid):
@@ -3523,7 +3515,6 @@ class JacParser(Pass):
                 Tok.FSTR_BESC,
                 Tok.FSTR_PIECE,
                 Tok.FSTR_SQ_PIECE,
-                Tok.DOC_STRING,
             ]:
                 ret_type = ast.String
                 if token.type == Tok.FSTR_BESC:

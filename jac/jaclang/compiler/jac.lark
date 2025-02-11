@@ -1,13 +1,9 @@
 // [Heading]: Base Module structure.
 start: module
 
-module: (doc_tag? element (element_with_doc | element)*)?
-      | doc_tag (element_with_doc (element_with_doc | element)*)?
+module: ((STRING | toplevel_stmt) (STRING? toplevel_stmt)*)?
 
-doc_tag: STRING | DOC_STRING
-element_with_doc: doc_tag element
-
-element: import_stmt
+toplevel_stmt: import_stmt
        | architype
        | ability
        | global_var
@@ -51,7 +47,7 @@ arch_type: KW_WALKER
 
 // [Heading]: Architype bodies.
 member_block: LBRACE member_stmt* RBRACE
-member_stmt: doc_tag? (py_code_block | abstract_ability | ability | architype | has_stmt | free_code)
+member_stmt: STRING? (py_code_block | abstract_ability | ability | architype | has_stmt | free_code)
 has_stmt: KW_STATIC? (KW_LET | KW_HAS) access_tag? has_assign_list SEMI
 has_assign_list: (has_assign_list COMMA)? typed_has_clause
 typed_has_clause: named_ref (COLON STRING)? type_tag (EQ expression | KW_BY KW_POST_INIT)?
@@ -388,7 +384,7 @@ atom_literal: builtin_type
 
 type_ref: TYPE_OP (named_ref | builtin_type)
 
-multistring: (fstring | STRING | DOC_STRING)+
+multistring: (fstring | STRING)+
 
 fstring: FSTR_START fstr_parts FSTR_END
        | FSTR_SQ_START fstr_sq_parts FSTR_SQ_END
@@ -606,8 +602,8 @@ NOT: "not" // TODO:AST: Rename to KW_NOT
 
 NULL.1: "None"
 BOOL.1: /True|False/
-STRING: /(r?b?|b?r?)"[^"\r\n]*"|(r?b?|b?r?)'[^'\r\n]*'/
-DOC_STRING.1: /"""(.|\n|\r)*?"""|'''(.|\n|\r)*?'''/
+STRING: /(r?b?|b?r?)("[^"\r\n]*"|'[^'\r\n]*')/
+       | /(r?b?|b?r?)("""(.|\r|\n)*?"""|'''(.|\r|\n)*?''')/
 FLOAT: /(\d+(\.\d*)|\.\d+)([eE][+-]?\d+)?|\d+([eE][-+]?\d+)/
 HEX.1: /0[xX][0-9a-fA-F_]+/
 BIN.1: /0[bB][01_]+/
