@@ -3062,7 +3062,7 @@ class JacParser(Pass):
                 kid=self.cur_nodes,
             )
 
-        def connect_any(self, kid: list[ast.AstNode]) -> ast.ConnectOp:
+        def connect_any(self, _: None) -> ast.ConnectOp:
             """Grammar rule.
 
             connect_any: CARROW_BI | CARROW_L_P1 expression (COLON kw_expr_list)? CARROW_R_P2
