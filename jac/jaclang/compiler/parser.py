@@ -3030,58 +3030,68 @@ class JacParser(Pass):
                 kid=self.cur_nodes,
             )
 
-        def connect_from(self, kid: list[ast.AstNode]) -> ast.ConnectOp:
+        def connect_from(self, _: None) -> ast.ConnectOp:
             """Grammar rule.
 
             connect_from: CARROW_L_P1 expression (COLON kw_expr_list)? CARROW_L_P2
                         | CARROW_L
             """
-            conn_type = kid[1] if len(kid) >= 3 else None
-            conn_assign = kid[3] if len(kid) >= 5 else None
-            if (isinstance(conn_type, ast.Expr) or conn_type is None) and (
-                isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
-            ):
-                conn_assign = (
-                    ast.AssignCompr(assigns=conn_assign, kid=[conn_assign])
-                    if conn_assign
+            conn_type: ast.Expr | None = None
+            conn_assign_sub: ast.SubNodeList | None = None
+            if self.match_token(Tok.CARROW_L_P1):
+                conn_type = self.consume(ast.Expr)
+                conn_assign_sub = (
+                    self.consume(ast.SubNodeList)
+                    if self.match_token(Tok.COLON)
                     else None
                 )
-                if conn_assign:
-                    kid[3] = conn_assign
-                return ast.ConnectOp(
-                    conn_type=conn_type,
-                    conn_assign=conn_assign,
-                    edge_dir=EdgeDir.IN,
-                    kid=kid,
-                )
+                self.consume_token(Tok.CARROW_L_P2)
             else:
-                raise self.ice()
+                self.consume_token(Tok.CARROW_L)
+            conn_assign = (
+                ast.AssignCompr(assigns=conn_assign_sub, kid=[conn_assign_sub])
+                if conn_assign_sub
+                else None
+            )
+            if conn_assign:
+                self.cur_nodes[3] = conn_assign
+            return ast.ConnectOp(
+                conn_type=conn_type,
+                conn_assign=conn_assign,
+                edge_dir=EdgeDir.IN,
+                kid=self.cur_nodes,
+            )
 
         def connect_any(self, kid: list[ast.AstNode]) -> ast.ConnectOp:
             """Grammar rule.
 
             connect_any: CARROW_BI | CARROW_L_P1 expression (COLON kw_expr_list)? CARROW_R_P2
             """
-            conn_type = kid[1] if len(kid) >= 3 else None
-            conn_assign = kid[3] if len(kid) >= 5 else None
-            if (isinstance(conn_type, ast.Expr) or conn_type is None) and (
-                isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
-            ):
-                conn_assign = (
-                    ast.AssignCompr(assigns=conn_assign, kid=[conn_assign])
-                    if conn_assign
+            conn_type: ast.Expr | None = None
+            conn_assign_sub: ast.SubNodeList | None = None
+            if self.match_token(Tok.CARROW_L_P1):
+                conn_type = self.consume(ast.Expr)
+                conn_assign_sub = (
+                    self.consume(ast.SubNodeList)
+                    if self.match_token(Tok.COLON)
                     else None
                 )
-                if conn_assign:
-                    kid[3] = conn_assign
-                return ast.ConnectOp(
-                    conn_type=conn_type,
-                    conn_assign=conn_assign,
-                    edge_dir=EdgeDir.ANY,
-                    kid=kid,
-                )
+                self.consume_token(Tok.CARROW_R_P2)
             else:
-                raise self.ice()
+                self.consume_token(Tok.CARROW_BI)
+            conn_assign = (
+                ast.AssignCompr(assigns=conn_assign_sub, kid=[conn_assign_sub])
+                if conn_assign_sub
+                else None
+            )
+            if conn_assign:
+                self.cur_nodes[3] = conn_assign
+            return ast.ConnectOp(
+                conn_type=conn_type,
+                conn_assign=conn_assign,
+                edge_dir=EdgeDir.ANY,
+                kid=self.cur_nodes,
+            )
 
         def filter_compr(self, kid: list[ast.AstNode]) -> ast.FilterCompr:
             """Grammar rule.
