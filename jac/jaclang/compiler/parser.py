@@ -3383,81 +3383,65 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def class_pattern(self, kid: list[ast.AstNode]) -> ast.MatchArch:
+        def class_pattern(self, _: None) -> ast.MatchArch:
             """Grammar rule.
 
             class_pattern: NAME (DOT NAME)* LPAREN kw_pattern_list? RPAREN
                         | NAME (DOT NAME)* LPAREN pattern_list (COMMA kw_pattern_list)? RPAREN
             """
-            chomp = [*kid]
-            cur_element = chomp[0]
-            chomp = chomp[1:]
-            while not (isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.LPAREN):
-                if isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.DOT:
-                    target_ = cur_element
-                    right_ = chomp[1]
-                    if isinstance(right_, (ast.Expr, ast.AtomExpr)) and isinstance(
-                        target_, ast.Expr
-                    ):
-                        cur_element = ast.AtomTrailer(
-                            target=target_,
-                            right=right_,
-                            is_attr=True,
-                            is_null_ok=False,
-                            kid=[target_, chomp[0], right_],
-                        )
-                        chomp = chomp[2:]
-                    else:
-                        raise self.ice()
-                elif isinstance(cur_element, ast.NameAtom):
-                    chomp = chomp[1:]
-                else:
-                    break
-            name = cur_element
-            lparen = chomp[0]
-            rapren = chomp[-1]
-            first = chomp[1]
-            if len(chomp) > 4:
-                second = chomp[3]
-                comma = chomp[2]
-            else:
-                second = None
-                comma = None
+            cur_element = self.consume(ast.NameAtom)
+            trailer: ast.AtomTrailer | None = None
+            while dot := self.match_token(Tok.DOT):
+                target = trailer if trailer else cur_element
+                right = self.consume(ast.Expr)
+                trailer = ast.AtomTrailer(
+                    target=target,
+                    right=right,
+                    is_attr=True,
+                    is_null_ok=False,
+                    kid=[target, dot, right],
+                )
+            name = trailer if trailer else cur_element
+            if not isinstance(name, (ast.NameAtom, ast.AtomTrailer)):
+                raise TypeError(
+                    f"Expected name to be either NameAtom or AtomTrailer, got {type(name)}"
+                )
+            lparen = self.consume_token(Tok.LPAREN)
+            first = self.match(ast.SubNodeList)
+            second = (
+                self.consume(ast.SubNodeList)
+                if (comma := self.match_token(Tok.COMMA))
+                else None
+            )
+            rparen = self.consume_token(Tok.RPAREN)
             arg = (
                 first
-                if isinstance(first, ast.SubNodeList)
-                and isinstance(first.items[0], ast.MatchPattern)
+                if (first and isinstance(first.items[0], ast.MatchPattern))
                 else None
             )
             kw = (
                 second
-                if isinstance(second, ast.SubNodeList)
-                and isinstance(second.items[0], ast.MatchKVPair)
+                if (second and isinstance(second.items[0], ast.MatchKVPair))
                 else (
                     first
-                    if isinstance(first, ast.SubNodeList)
-                    and isinstance(first.items[0], ast.MatchKVPair)
+                    if (first and isinstance(first.items[0], ast.MatchKVPair))
                     else None
                 )
             )
-            if isinstance(name, (ast.NameAtom, ast.AtomTrailer)):
-                kid_nodes = [name, lparen]
-                if arg:
-                    kid_nodes.append(arg)
-                    if kw:
-                        kid_nodes.extend([comma, kw]) if comma else kid_nodes.append(kw)
-                elif kw:
-                    kid_nodes.append(kw)
-                kid_nodes.append(rapren)
-
-                return ast.MatchArch(
-                    name=name,
-                    arg_patterns=arg,
-                    kw_patterns=kw,
-                    kid=kid_nodes,
-                )
-            else:
-                raise self.ice()
+            kid_nodes: list = [name, lparen]
+            if arg:
+                kid_nodes.append(arg)
+                if kw:
+                    kid_nodes.extend([comma, kw]) if comma else kid_nodes.append(kw)
+            elif kw:
+                kid_nodes.append(kw)
+            kid_nodes.append(rparen)
+            return ast.MatchArch(
+                name=name,
+                arg_patterns=arg,
+                kw_patterns=kw,
+                kid=kid_nodes,
+            )
 
         def pattern_list(
             self, kid: list[ast.AstNode]
