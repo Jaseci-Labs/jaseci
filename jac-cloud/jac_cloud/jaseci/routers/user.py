@@ -30,7 +30,7 @@ from ...core.architype import BulkWrite, NodeAnchor, Root
 
 
 RESTRICT_UNVERIFIED_USER = getenv("RESTRICT_UNVERIFIED_USER") == "true"
-router = APIRouter(prefix="/user", tags=["user"])
+router = APIRouter(prefix="/user", tags=["User APIs"])
 
 User = BaseUser.model()  # type: ignore[misc]
 

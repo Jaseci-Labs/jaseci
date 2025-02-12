@@ -816,6 +816,19 @@ class EdgeAnchor(BaseAnchor, _EdgeAnchor):  # type: ignore[misc]
 
         bulk_write.del_edge(self.id)
 
+    def report(self) -> dict[str, object]:  # type: ignore[override]
+        """Report Anchor."""
+        return {
+            "id": self.ref_id,
+            "source": self.source.ref_id,
+            "target": self.target.ref_id,
+            "context": (
+                self.architype.__serialize__()  # type:ignore[attr-defined] # mypy issue
+                if is_dataclass(self.architype) and not isinstance(self.architype, type)
+                else {}
+            ),
+        }
+
     def serialize(self) -> dict[str, object]:
         """Serialize Node Anchor."""
         return {

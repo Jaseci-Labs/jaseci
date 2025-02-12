@@ -513,6 +513,15 @@ def jac2py(filename: str) -> None:
         print("Not a .jac file.", file=sys.stderr)
 
 
+@cmd_registry.register
+def util(name: str) -> None:
+    """Trigger Jac Utility."""
+    if func := getattr(Jac, name, None):
+        print(func())
+    else:
+        print("Not supported!")
+
+
 def start_cli() -> None:
     """
     Start the command line interface.

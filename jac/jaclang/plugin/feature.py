@@ -20,6 +20,7 @@ from uuid import UUID
 from jaclang.plugin.spec import (
     AccessLevel,
     Anchor,
+    ArchOptions,
     Architype,
     DSFunc,
     EdgeAnchor,
@@ -238,6 +239,39 @@ class JacCmd:
         return plugin_manager.hook.create_cmd()
 
 
+class JacUtil:
+    """Jac Utility Commands."""
+
+    @staticmethod
+    def info() -> dict[str, Any]:
+        """Return Jac Info."""
+        return plugin_manager.hook.info()
+
+    @staticmethod
+    def get_architypes(
+        type: list[ArchOptions] | ArchOptions | None = None, detailed: bool = False
+    ) -> dict[str, Any]:
+        """Return all architype of current root."""
+        return plugin_manager.hook.get_architypes(type=type, detailed=detailed)
+
+    @staticmethod
+    def traverse_node(
+        node: NodeAnchor | None = None,
+        detailed: bool = False,
+        show_edges: bool = False,
+        node_types: list[str] | None = None,
+        edge_types: list[str] | None = None,
+    ) -> dict[str, list]:
+        """Return nodes and edges via traversing."""
+        return plugin_manager.hook.traverse_node(
+            node=node,
+            detailed=detailed,
+            show_edges=show_edges,
+            node_types=node_types,
+            edge_types=edge_types,
+        )
+
+
 class JacFeature(
     JacClassReferences,
     JacAccessValidation,
@@ -246,6 +280,7 @@ class JacFeature(
     JacWalker,
     JacBuiltin,
     JacCmd,
+    JacUtil,
 ):
     """Jac Feature."""
 

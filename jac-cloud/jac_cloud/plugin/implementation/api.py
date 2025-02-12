@@ -42,8 +42,10 @@ FILE_TYPES = {
     list[UploadFile] | None,
 }
 
-walker_router = APIRouter(prefix="/walker", tags=["walker"])
-webhook_walker_router = APIRouter(prefix="/webhook/walker", tags=["webhook-walker"])
+walker_router = APIRouter(prefix="/walker", tags=["Walker APIs"])
+webhook_walker_router = APIRouter(
+    prefix="/webhook/walker", tags=["Webhook Walker APIs"]
+)
 
 
 class DefaultSpecs:

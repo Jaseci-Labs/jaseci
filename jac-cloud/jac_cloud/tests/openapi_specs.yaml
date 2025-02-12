@@ -446,7 +446,7 @@ paths:
           description: Successful Response
       summary: Healthz
       tags:
-      - monitoring
+      - Monitoring APIs
   /sso/attach:
     post:
       description: Generate token from user.
@@ -473,7 +473,7 @@ paths:
       - HTTPBearer: []
       summary: Sso Attach
       tags:
-      - sso
+      - SSO APIs
   /sso/detach:
     delete:
       description: Generate token from user.
@@ -500,7 +500,7 @@ paths:
       - HTTPBearer: []
       summary: Sso Detach
       tags:
-      - sso
+      - SSO APIs
   /sso/{platform}/{operation}:
     get:
       description: SSO Login API.
@@ -548,7 +548,7 @@ paths:
           description: Validation Error
       summary: Sso Operation
       tags:
-      - sso
+      - SSO APIs
   /sso/{platform}/{operation}/callback:
     get:
       description: SSO Login API.
@@ -588,7 +588,7 @@ paths:
           description: Validation Error
       summary: Sso Callback
       tags:
-      - sso
+      - SSO APIs
   /user/change_password:
     post:
       description: Register user API.
@@ -615,7 +615,7 @@ paths:
       - HTTPBearer: []
       summary: Change Password
       tags:
-      - user
+      - User APIs
   /user/forgot_password:
     post:
       description: Forgot password API.
@@ -640,7 +640,7 @@ paths:
           description: Validation Error
       summary: Forgot Password
       tags:
-      - user
+      - User APIs
   /user/login:
     post:
       description: Login user API.
@@ -665,7 +665,7 @@ paths:
           description: Validation Error
       summary: Login
       tags:
-      - user
+      - User APIs
   /user/register:
     post:
       description: Register user API.
@@ -690,7 +690,7 @@ paths:
           description: Validation Error
       summary: Register
       tags:
-      - user
+      - User APIs
   /user/reset_password:
     post:
       description: Reset password API.
@@ -715,7 +715,7 @@ paths:
           description: Validation Error
       summary: Reset Password
       tags:
-      - user
+      - User APIs
   /user/send-verification-code:
     post:
       description: Verify user API.
@@ -730,7 +730,7 @@ paths:
       - HTTPBearer: []
       summary: Send Verification Code
       tags:
-      - user
+      - User APIs
   /user/verify:
     post:
       description: Verify user API.
@@ -755,7 +755,128 @@ paths:
           description: Validation Error
       summary: Verify
       tags:
-      - user
+      - User APIs
+  /util/get_architypes:
+    get:
+      description: Healthz API.
+      operationId: get_architypes_util_get_architypes_get
+      parameters:
+      - in: query
+        name: type
+        required: false
+        schema:
+          anyOf:
+          - items:
+              enum:
+              - node
+              - edge
+              - walker
+              - object
+              type: string
+            type: array
+          - type: 'null'
+          title: Type
+      - in: query
+        name: detailed
+        required: false
+        schema:
+          default: false
+          title: Detailed
+          type: boolean
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Architypes
+      tags:
+      - Utility APIs
+  /util/info:
+    get:
+      description: Healthz API.
+      operationId: info_util_info_get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+      summary: Info
+      tags:
+      - Utility APIs
+  /util/traverse_node:
+    get:
+      description: Healthz API.
+      operationId: traverse_node_util_traverse_node_get
+      parameters:
+      - in: query
+        name: node
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      - in: query
+        name: detailed
+        required: false
+        schema:
+          default: false
+          title: Detailed
+          type: boolean
+      - in: query
+        name: show_edges
+        required: false
+        schema:
+          default: false
+          title: Show Edges
+          type: boolean
+      - in: query
+        name: node_types
+        required: false
+        schema:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Node Types
+      - in: query
+        name: edge_types
+        required: false
+        schema:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Edge Types
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Traverse Node
+      tags:
+      - Utility APIs
   /walker/allow_other_root_access:
     post:
       operationId: api_root_walker_allow_other_root_access_post
@@ -785,7 +906,7 @@ paths:
       - HTTPBearer: []
       summary: /allow_other_root_access
       tags:
-      - walker
+      - Walker APIs
   /walker/allow_other_root_access/{node}:
     post:
       operationId: api_entry_walker_allow_other_root_access__node__post
@@ -824,7 +945,7 @@ paths:
       - HTTPBearer: []
       summary: /allow_other_root_access/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/check_memory_sync:
     post:
       operationId: api_root_walker_check_memory_sync_post
@@ -854,7 +975,7 @@ paths:
       - HTTPBearer: []
       summary: /check_memory_sync
       tags:
-      - walker
+      - Walker APIs
   /walker/check_memory_sync/{node}:
     post:
       operationId: api_entry_walker_check_memory_sync__node__post
@@ -893,7 +1014,7 @@ paths:
       - HTTPBearer: []
       summary: /check_memory_sync/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/check_populated_graph:
     post:
       operationId: api_root_walker_check_populated_graph_post
@@ -911,7 +1032,7 @@ paths:
       - HTTPBearer: []
       summary: /check_populated_graph
       tags:
-      - walker
+      - Walker APIs
   /walker/check_populated_graph/{node}:
     post:
       operationId: api_entry_walker_check_populated_graph__node__post
@@ -944,7 +1065,7 @@ paths:
       - HTTPBearer: []
       summary: /check_populated_graph/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/combination1:
     get:
       operationId: api_root_walker_combination1_get
@@ -987,7 +1108,7 @@ paths:
       - HTTPBearer: []
       summary: /combination1
       tags:
-      - walker
+      - Walker APIs
     post:
       operationId: api_root_walker_combination1_post
       parameters:
@@ -1029,7 +1150,7 @@ paths:
       - HTTPBearer: []
       summary: /combination1
       tags:
-      - walker
+      - Walker APIs
   /walker/combination1/{node}:
     get:
       operationId: api_entry_walker_combination1__node__get
@@ -1080,7 +1201,7 @@ paths:
       - HTTPBearer: []
       summary: /combination1/{node}
       tags:
-      - walker
+      - Walker APIs
     post:
       operationId: api_entry_walker_combination1__node__post
       parameters:
@@ -1130,7 +1251,7 @@ paths:
       - HTTPBearer: []
       summary: /combination1/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/combination2/{a}:
     delete:
       operationId: api_root_walker_combination2__a__delete
@@ -1173,7 +1294,7 @@ paths:
       - HTTPBearer: []
       summary: /combination2/{a}
       tags:
-      - walker
+      - Walker APIs
     get:
       operationId: api_root_walker_combination2__a__get
       parameters:
@@ -1215,7 +1336,7 @@ paths:
       - HTTPBearer: []
       summary: /combination2/{a}
       tags:
-      - walker
+      - Walker APIs
     head:
       operationId: api_root_walker_combination2__a__head
       parameters:
@@ -1257,7 +1378,7 @@ paths:
       - HTTPBearer: []
       summary: /combination2/{a}
       tags:
-      - walker
+      - Walker APIs
     options:
       operationId: api_root_walker_combination2__a__options
       parameters:
@@ -1293,7 +1414,7 @@ paths:
       - HTTPBearer: []
       summary: /combination2/{a}
       tags:
-      - walker
+      - Walker APIs
     patch:
       operationId: api_root_walker_combination2__a__patch
       parameters:
@@ -1335,7 +1456,7 @@ paths:
       - HTTPBearer: []
       summary: /combination2/{a}
       tags:
-      - walker
+      - Walker APIs
     post:
       operationId: api_root_walker_combination2__a__post
       parameters:
@@ -1377,7 +1498,7 @@ paths:
       - HTTPBearer: []
       summary: /combination2/{a}
       tags:
-      - walker
+      - Walker APIs
     put:
       operationId: api_root_walker_combination2__a__put
       parameters:
@@ -1419,7 +1540,7 @@ paths:
       - HTTPBearer: []
       summary: /combination2/{a}
       tags:
-      - walker
+      - Walker APIs
     trace:
       operationId: api_root_walker_combination2__a__trace
       parameters:
@@ -1455,7 +1576,7 @@ paths:
       - HTTPBearer: []
       summary: /combination2/{a}
       tags:
-      - walker
+      - Walker APIs
   /walker/combination2/{node}/{a}:
     delete:
       operationId: api_entry_walker_combination2__node___a__delete
@@ -1506,7 +1627,7 @@ paths:
       - HTTPBearer: []
       summary: /combination2/{node}/{a}
       tags:
-      - walker
+      - Walker APIs
     get:
       operationId: api_entry_walker_combination2__node___a__get
       parameters:
@@ -1556,7 +1677,7 @@ paths:
       - HTTPBearer: []
       summary: /combination2/{node}/{a}
       tags:
-      - walker
+      - Walker APIs
     head:
       operationId: api_entry_walker_combination2__node___a__head
       parameters:
@@ -1606,7 +1727,7 @@ paths:
       - HTTPBearer: []
       summary: /combination2/{node}/{a}
       tags:
-      - walker
+      - Walker APIs
     options:
       operationId: api_entry_walker_combination2__node___a__options
       parameters:
@@ -1650,7 +1771,7 @@ paths:
       - HTTPBearer: []
       summary: /combination2/{node}/{a}
       tags:
-      - walker
+      - Walker APIs
     patch:
       operationId: api_entry_walker_combination2__node___a__patch
       parameters:
@@ -1700,7 +1821,7 @@ paths:
       - HTTPBearer: []
       summary: /combination2/{node}/{a}
       tags:
-      - walker
+      - Walker APIs
     post:
       operationId: api_entry_walker_combination2__node___a__post
       parameters:
@@ -1750,7 +1871,7 @@ paths:
       - HTTPBearer: []
       summary: /combination2/{node}/{a}
       tags:
-      - walker
+      - Walker APIs
     put:
       operationId: api_entry_walker_combination2__node___a__put
       parameters:
@@ -1800,7 +1921,7 @@ paths:
       - HTTPBearer: []
       summary: /combination2/{node}/{a}
       tags:
-      - walker
+      - Walker APIs
     trace:
       operationId: api_entry_walker_combination2__node___a__trace
       parameters:
@@ -1844,7 +1965,7 @@ paths:
       - HTTPBearer: []
       summary: /combination2/{node}/{a}
       tags:
-      - walker
+      - Walker APIs
   /walker/create_custom_object:
     post:
       operationId: api_root_walker_create_custom_object_post
@@ -1862,7 +1983,7 @@ paths:
       - HTTPBearer: []
       summary: /create_custom_object
       tags:
-      - walker
+      - Walker APIs
   /walker/create_custom_object/{node}:
     post:
       operationId: api_entry_walker_create_custom_object__node__post
@@ -1895,7 +2016,7 @@ paths:
       - HTTPBearer: []
       summary: /create_custom_object/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/create_graph:
     post:
       operationId: api_root_walker_create_graph_post
@@ -1913,7 +2034,7 @@ paths:
       - HTTPBearer: []
       summary: /create_graph
       tags:
-      - walker
+      - Walker APIs
   /walker/create_graph/{node}:
     post:
       operationId: api_entry_walker_create_graph__node__post
@@ -1946,7 +2067,7 @@ paths:
       - HTTPBearer: []
       summary: /create_graph/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/create_nested_node:
     post:
       operationId: api_root_walker_create_nested_node_post
@@ -1964,7 +2085,7 @@ paths:
       - HTTPBearer: []
       summary: /create_nested_node
       tags:
-      - walker
+      - Walker APIs
   /walker/create_nested_node/{node}:
     post:
       operationId: api_entry_walker_create_nested_node__node__post
@@ -1997,7 +2118,7 @@ paths:
       - HTTPBearer: []
       summary: /create_nested_node/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/custom_report:
     post:
       operationId: api_root_walker_custom_report_post
@@ -2013,7 +2134,7 @@ paths:
           description: Successful Response
       summary: /custom_report
       tags:
-      - walker
+      - Walker APIs
   /walker/custom_report/{node}:
     post:
       operationId: api_entry_walker_custom_report__node__post
@@ -2044,7 +2165,7 @@ paths:
           description: Validation Error
       summary: /custom_report/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/custom_status_code:
     post:
       operationId: api_root_walker_custom_status_code_post
@@ -2074,7 +2195,7 @@ paths:
       - HTTPBearer: []
       summary: /custom_status_code
       tags:
-      - walker
+      - Walker APIs
   /walker/custom_status_code/{node}:
     post:
       operationId: api_entry_walker_custom_status_code__node__post
@@ -2113,7 +2234,7 @@ paths:
       - HTTPBearer: []
       summary: /custom_status_code/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/delete_custom_object:
     post:
       operationId: api_root_walker_delete_custom_object_post
@@ -2143,7 +2264,7 @@ paths:
       - HTTPBearer: []
       summary: /delete_custom_object
       tags:
-      - walker
+      - Walker APIs
   /walker/delete_custom_object/{node}:
     post:
       operationId: api_entry_walker_delete_custom_object__node__post
@@ -2182,7 +2303,7 @@ paths:
       - HTTPBearer: []
       summary: /delete_custom_object/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/delete_nested_edge:
     post:
       operationId: api_root_walker_delete_nested_edge_post
@@ -2200,7 +2321,7 @@ paths:
       - HTTPBearer: []
       summary: /delete_nested_edge
       tags:
-      - walker
+      - Walker APIs
   /walker/delete_nested_edge/{node}:
     post:
       operationId: api_entry_walker_delete_nested_edge__node__post
@@ -2233,7 +2354,7 @@ paths:
       - HTTPBearer: []
       summary: /delete_nested_edge/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/delete_nested_node:
     post:
       operationId: api_root_walker_delete_nested_node_post
@@ -2251,7 +2372,7 @@ paths:
       - HTTPBearer: []
       summary: /delete_nested_node
       tags:
-      - walker
+      - Walker APIs
   /walker/delete_nested_node/{node}:
     post:
       operationId: api_entry_walker_delete_nested_node__node__post
@@ -2284,7 +2405,7 @@ paths:
       - HTTPBearer: []
       summary: /delete_nested_node/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/detach_nested_node:
     post:
       operationId: api_root_walker_detach_nested_node_post
@@ -2302,7 +2423,7 @@ paths:
       - HTTPBearer: []
       summary: /detach_nested_node
       tags:
-      - walker
+      - Walker APIs
   /walker/detach_nested_node/{node}:
     post:
       operationId: api_entry_walker_detach_nested_node__node__post
@@ -2335,7 +2456,7 @@ paths:
       - HTTPBearer: []
       summary: /detach_nested_node/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/detach_node:
     post:
       operationId: api_root_walker_detach_node_post
@@ -2353,7 +2474,7 @@ paths:
       - HTTPBearer: []
       summary: /detach_node
       tags:
-      - walker
+      - Walker APIs
   /walker/detach_node/{node}:
     post:
       operationId: api_entry_walker_detach_node__node__post
@@ -2386,7 +2507,7 @@ paths:
       - HTTPBearer: []
       summary: /detach_node/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/different_return:
     post:
       operationId: api_root_walker_different_return_post
@@ -2402,7 +2523,7 @@ paths:
           description: Successful Response
       summary: /different_return
       tags:
-      - walker
+      - Walker APIs
   /walker/different_return/{node}:
     post:
       operationId: api_entry_walker_different_return__node__post
@@ -2433,7 +2554,7 @@ paths:
           description: Validation Error
       summary: /different_return/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/disallow_other_root_access:
     post:
       operationId: api_root_walker_disallow_other_root_access_post
@@ -2463,7 +2584,7 @@ paths:
       - HTTPBearer: []
       summary: /disallow_other_root_access
       tags:
-      - walker
+      - Walker APIs
   /walker/disallow_other_root_access/{node}:
     post:
       operationId: api_entry_walker_disallow_other_root_access__node__post
@@ -2502,7 +2623,7 @@ paths:
       - HTTPBearer: []
       summary: /disallow_other_root_access/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/get_all_query:
     get:
       operationId: api_root_walker_get_all_query_get
@@ -2537,7 +2658,7 @@ paths:
           description: Validation Error
       summary: /get_all_query
       tags:
-      - walker
+      - Walker APIs
   /walker/get_all_query/{node}:
     get:
       operationId: api_entry_walker_get_all_query__node__get
@@ -2580,7 +2701,7 @@ paths:
           description: Validation Error
       summary: /get_all_query/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/get_custom_object:
     post:
       operationId: api_root_walker_get_custom_object_post
@@ -2610,7 +2731,7 @@ paths:
       - HTTPBearer: []
       summary: /get_custom_object
       tags:
-      - walker
+      - Walker APIs
   /walker/get_custom_object/{node}:
     post:
       operationId: api_entry_walker_get_custom_object__node__post
@@ -2649,7 +2770,7 @@ paths:
       - HTTPBearer: []
       summary: /get_custom_object/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/get_no_body:
     get:
       operationId: api_root_walker_get_no_body_get
@@ -2667,7 +2788,7 @@ paths:
       - HTTPBearer: []
       summary: /get_no_body
       tags:
-      - walker
+      - Walker APIs
   /walker/get_no_body/{node}:
     get:
       operationId: api_entry_walker_get_no_body__node__get
@@ -2700,7 +2821,7 @@ paths:
       - HTTPBearer: []
       summary: /get_no_body/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/get_with_query:
     get:
       operationId: api_root_walker_get_with_query_get
@@ -2731,7 +2852,7 @@ paths:
       - HTTPBearer: []
       summary: /get_with_query
       tags:
-      - walker
+      - Walker APIs
   /walker/get_with_query/{node}:
     get:
       operationId: api_entry_walker_get_with_query__node__get
@@ -2770,7 +2891,7 @@ paths:
       - HTTPBearer: []
       summary: /get_with_query/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/manual_create_nested_node:
     post:
       operationId: api_root_walker_manual_create_nested_node_post
@@ -2788,7 +2909,7 @@ paths:
       - HTTPBearer: []
       summary: /manual_create_nested_node
       tags:
-      - walker
+      - Walker APIs
   /walker/manual_create_nested_node/{node}:
     post:
       operationId: api_entry_walker_manual_create_nested_node__node__post
@@ -2821,7 +2942,7 @@ paths:
       - HTTPBearer: []
       summary: /manual_create_nested_node/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/manual_delete_nested_edge:
     post:
       operationId: api_root_walker_manual_delete_nested_edge_post
@@ -2839,7 +2960,7 @@ paths:
       - HTTPBearer: []
       summary: /manual_delete_nested_edge
       tags:
-      - walker
+      - Walker APIs
   /walker/manual_delete_nested_edge/{node}:
     post:
       operationId: api_entry_walker_manual_delete_nested_edge__node__post
@@ -2872,7 +2993,7 @@ paths:
       - HTTPBearer: []
       summary: /manual_delete_nested_edge/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/manual_delete_nested_node:
     post:
       operationId: api_root_walker_manual_delete_nested_node_post
@@ -2890,7 +3011,7 @@ paths:
       - HTTPBearer: []
       summary: /manual_delete_nested_node
       tags:
-      - walker
+      - Walker APIs
   /walker/manual_delete_nested_node/{node}:
     post:
       operationId: api_entry_walker_manual_delete_nested_node__node__post
@@ -2923,7 +3044,7 @@ paths:
       - HTTPBearer: []
       summary: /manual_delete_nested_node/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/manual_detach_nested_node:
     post:
       operationId: api_root_walker_manual_detach_nested_node_post
@@ -2941,7 +3062,7 @@ paths:
       - HTTPBearer: []
       summary: /manual_detach_nested_node
       tags:
-      - walker
+      - Walker APIs
   /walker/manual_detach_nested_node/{node}:
     post:
       operationId: api_entry_walker_manual_detach_nested_node__node__post
@@ -2974,7 +3095,7 @@ paths:
       - HTTPBearer: []
       summary: /manual_detach_nested_node/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/manual_update_nested_node:
     post:
       operationId: api_root_walker_manual_update_nested_node_post
@@ -2992,7 +3113,7 @@ paths:
       - HTTPBearer: []
       summary: /manual_update_nested_node
       tags:
-      - walker
+      - Walker APIs
   /walker/manual_update_nested_node/{node}:
     post:
       operationId: api_entry_walker_manual_update_nested_node__node__post
@@ -3025,7 +3146,7 @@ paths:
       - HTTPBearer: []
       summary: /manual_update_nested_node/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/populate_graph:
     post:
       operationId: api_root_walker_populate_graph_post
@@ -3043,7 +3164,7 @@ paths:
       - HTTPBearer: []
       summary: /populate_graph
       tags:
-      - walker
+      - Walker APIs
   /walker/populate_graph/{node}:
     post:
       operationId: api_entry_walker_populate_graph__node__post
@@ -3076,7 +3197,7 @@ paths:
       - HTTPBearer: []
       summary: /populate_graph/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/post_all_excluded:
     post:
       operationId: api_root_walker_post_all_excluded_post
@@ -3092,7 +3213,7 @@ paths:
           description: Successful Response
       summary: /post_all_excluded
       tags:
-      - walker
+      - Walker APIs
   /walker/post_all_excluded/{node}:
     post:
       operationId: api_entry_walker_post_all_excluded__node__post
@@ -3123,7 +3244,7 @@ paths:
           description: Validation Error
       summary: /post_all_excluded/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/post_no_body:
     post:
       operationId: api_root_walker_post_no_body_post
@@ -3141,7 +3262,7 @@ paths:
       - HTTPBearer: []
       summary: /post_no_body
       tags:
-      - walker
+      - Walker APIs
   /walker/post_no_body/{node}:
     post:
       operationId: api_entry_walker_post_no_body__node__post
@@ -3174,7 +3295,7 @@ paths:
       - HTTPBearer: []
       summary: /post_no_body/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/post_partial_excluded:
     post:
       operationId: api_root_walker_post_partial_excluded_post
@@ -3204,7 +3325,7 @@ paths:
       - HTTPBearer: []
       summary: /post_partial_excluded
       tags:
-      - walker
+      - Walker APIs
   /walker/post_partial_excluded/{node}:
     post:
       operationId: api_entry_walker_post_partial_excluded__node__post
@@ -3243,7 +3364,7 @@ paths:
       - HTTPBearer: []
       summary: /post_partial_excluded/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/post_path_var/{a}:
     get:
       operationId: api_root_walker_post_path_var__a__get
@@ -3274,7 +3395,7 @@ paths:
       - HTTPBearer: []
       summary: /post_path_var/{a}
       tags:
-      - walker
+      - Walker APIs
     post:
       operationId: api_root_walker_post_path_var__a__post
       parameters:
@@ -3304,7 +3425,7 @@ paths:
       - HTTPBearer: []
       summary: /post_path_var/{a}
       tags:
-      - walker
+      - Walker APIs
   /walker/post_path_var/{node}/{a}:
     get:
       operationId: api_entry_walker_post_path_var__node___a__get
@@ -3343,7 +3464,7 @@ paths:
       - HTTPBearer: []
       summary: /post_path_var/{node}/{a}
       tags:
-      - walker
+      - Walker APIs
     post:
       operationId: api_entry_walker_post_path_var__node___a__post
       parameters:
@@ -3381,7 +3502,7 @@ paths:
       - HTTPBearer: []
       summary: /post_path_var/{node}/{a}
       tags:
-      - walker
+      - Walker APIs
   /walker/post_with_body:
     post:
       operationId: api_root_walker_post_with_body_post
@@ -3411,7 +3532,7 @@ paths:
       - HTTPBearer: []
       summary: /post_with_body
       tags:
-      - walker
+      - Walker APIs
   /walker/post_with_body/{node}:
     post:
       operationId: api_entry_walker_post_with_body__node__post
@@ -3450,7 +3571,7 @@ paths:
       - HTTPBearer: []
       summary: /post_with_body/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/post_with_body_and_file:
     post:
       operationId: api_root_walker_post_with_body_and_file_post
@@ -3478,7 +3599,7 @@ paths:
           description: Validation Error
       summary: /post_with_body_and_file
       tags:
-      - walker
+      - Walker APIs
   /walker/post_with_body_and_file/{node}:
     post:
       operationId: api_entry_walker_post_with_body_and_file__node__post
@@ -3515,7 +3636,7 @@ paths:
           description: Validation Error
       summary: /post_with_body_and_file/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/post_with_file:
     post:
       operationId: api_root_walker_post_with_file_post
@@ -3545,7 +3666,7 @@ paths:
       - HTTPBearer: []
       summary: /post_with_file
       tags:
-      - walker
+      - Walker APIs
   /walker/post_with_file/{node}:
     post:
       operationId: api_entry_walker_post_with_file__node__post
@@ -3584,7 +3705,7 @@ paths:
       - HTTPBearer: []
       summary: /post_with_file/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/purge_populated_graph:
     post:
       operationId: api_root_walker_purge_populated_graph_post
@@ -3602,7 +3723,7 @@ paths:
       - HTTPBearer: []
       summary: /purge_populated_graph
       tags:
-      - walker
+      - Walker APIs
   /walker/purge_populated_graph/{node}:
     post:
       operationId: api_entry_walker_purge_populated_graph__node__post
@@ -3635,7 +3756,7 @@ paths:
       - HTTPBearer: []
       summary: /purge_populated_graph/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/traverse_graph:
     post:
       operationId: api_root_walker_traverse_graph_post
@@ -3653,7 +3774,7 @@ paths:
       - HTTPBearer: []
       summary: /traverse_graph
       tags:
-      - walker
+      - Walker APIs
   /walker/traverse_graph/{node}:
     post:
       operationId: api_entry_walker_traverse_graph__node__post
@@ -3686,7 +3807,7 @@ paths:
       - HTTPBearer: []
       summary: /traverse_graph/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/traverse_populated_graph:
     post:
       operationId: api_root_walker_traverse_populated_graph_post
@@ -3704,7 +3825,7 @@ paths:
       - HTTPBearer: []
       summary: /traverse_populated_graph
       tags:
-      - walker
+      - Walker APIs
   /walker/traverse_populated_graph/{node}:
     post:
       operationId: api_entry_walker_traverse_populated_graph__node__post
@@ -3737,7 +3858,7 @@ paths:
       - HTTPBearer: []
       summary: /traverse_populated_graph/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/update_custom_object:
     post:
       operationId: api_root_walker_update_custom_object_post
@@ -3767,7 +3888,7 @@ paths:
       - HTTPBearer: []
       summary: /update_custom_object
       tags:
-      - walker
+      - Walker APIs
   /walker/update_custom_object/{node}:
     post:
       operationId: api_entry_walker_update_custom_object__node__post
@@ -3806,7 +3927,7 @@ paths:
       - HTTPBearer: []
       summary: /update_custom_object/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/update_graph:
     post:
       operationId: api_root_walker_update_graph_post
@@ -3824,7 +3945,7 @@ paths:
       - HTTPBearer: []
       summary: /update_graph
       tags:
-      - walker
+      - Walker APIs
   /walker/update_graph/{node}:
     post:
       operationId: api_entry_walker_update_graph__node__post
@@ -3857,7 +3978,7 @@ paths:
       - HTTPBearer: []
       summary: /update_graph/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/update_nested_node:
     post:
       operationId: api_root_walker_update_nested_node_post
@@ -3875,7 +3996,7 @@ paths:
       - HTTPBearer: []
       summary: /update_nested_node
       tags:
-      - walker
+      - Walker APIs
   /walker/update_nested_node/{node}:
     post:
       operationId: api_entry_walker_update_nested_node__node__post
@@ -3908,7 +4029,7 @@ paths:
       - HTTPBearer: []
       summary: /update_nested_node/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/visit_nested_node:
     post:
       operationId: api_root_walker_visit_nested_node_post
@@ -3926,7 +4047,7 @@ paths:
       - HTTPBearer: []
       summary: /visit_nested_node
       tags:
-      - walker
+      - Walker APIs
   /walker/visit_nested_node/{node}:
     post:
       operationId: api_entry_walker_visit_nested_node__node__post
@@ -3959,7 +4080,7 @@ paths:
       - HTTPBearer: []
       summary: /visit_nested_node/{node}
       tags:
-      - walker
+      - Walker APIs
   /walker/visit_sequence:
     post:
       operationId: api_root_walker_visit_sequence_post
@@ -3975,7 +4096,7 @@ paths:
           description: Successful Response
       summary: /visit_sequence
       tags:
-      - walker
+      - Walker APIs
   /walker/visit_sequence/{node}:
     post:
       operationId: api_entry_walker_visit_sequence__node__post
@@ -4006,7 +4127,7 @@ paths:
           description: Validation Error
       summary: /visit_sequence/{node}
       tags:
-      - walker
+      - Walker APIs
   /webhook:
     get:
       description: Get keys API.
@@ -4021,7 +4142,7 @@ paths:
       - HTTPBearer: []
       summary: Get
       tags:
-      - webhook
+      - Webhook APIs
   /webhook/delete:
     delete:
       description: Delete keys API.
@@ -4048,7 +4169,7 @@ paths:
       - HTTPBearer: []
       summary: Delete
       tags:
-      - webhook
+      - Webhook APIs
   /webhook/extend/{id}:
     patch:
       description: Generate key API.
@@ -4082,7 +4203,7 @@ paths:
       - HTTPBearer: []
       summary: Extend
       tags:
-      - webhook
+      - Webhook APIs
   /webhook/generate-key:
     post:
       description: Generate key API.
@@ -4109,7 +4230,7 @@ paths:
       - HTTPBearer: []
       summary: Generate Key
       tags:
-      - webhook
+      - Webhook APIs
   /webhook/walker/webhook_by_body:
     post:
       operationId: api_root_webhook_walker_webhook_by_body_post
@@ -4125,7 +4246,7 @@ paths:
           description: Successful Response
       summary: /webhook_by_body
       tags:
-      - webhook-walker
+      - Webhook Walker APIs
   /webhook/walker/webhook_by_body/{node}:
     post:
       operationId: api_entry_webhook_walker_webhook_by_body__node__post
@@ -4156,7 +4277,7 @@ paths:
           description: Validation Error
       summary: /webhook_by_body/{node}
       tags:
-      - webhook-walker
+      - Webhook Walker APIs
   /webhook/walker/webhook_by_header:
     post:
       operationId: api_root_webhook_walker_webhook_by_header_post
@@ -4174,7 +4295,7 @@ paths:
       - APIKeyHeader: []
       summary: /webhook_by_header
       tags:
-      - webhook-walker
+      - Webhook Walker APIs
   /webhook/walker/webhook_by_header/{node}:
     post:
       operationId: api_entry_webhook_walker_webhook_by_header__node__post
@@ -4207,7 +4328,7 @@ paths:
       - APIKeyHeader: []
       summary: /webhook_by_header/{node}
       tags:
-      - webhook-walker
+      - Webhook Walker APIs
   /webhook/walker/webhook_by_path/{node}/{test_key}:
     post:
       operationId: api_entry_webhook_walker_webhook_by_path__node___test_key__post
@@ -4239,7 +4360,7 @@ paths:
           description: Validation Error
       summary: /webhook_by_path/{node}/{test_key}
       tags:
-      - webhook-walker
+      - Webhook Walker APIs
   /webhook/walker/webhook_by_path/{test_key}:
     post:
       operationId: api_root_webhook_walker_webhook_by_path__test_key__post
@@ -4255,7 +4376,7 @@ paths:
           description: Successful Response
       summary: /webhook_by_path/{test_key}
       tags:
-      - webhook-walker
+      - Webhook Walker APIs
   /webhook/walker/webhook_by_query:
     post:
       operationId: api_root_webhook_walker_webhook_by_query_post
@@ -4273,7 +4394,7 @@ paths:
       - APIKeyQuery: []
       summary: /webhook_by_query
       tags:
-      - webhook-walker
+      - Webhook Walker APIs
   /webhook/walker/webhook_by_query/{node}:
     post:
       operationId: api_entry_webhook_walker_webhook_by_query__node__post
@@ -4306,4 +4427,4 @@ paths:
       - APIKeyQuery: []
       summary: /webhook_by_query/{node}
       tags:
-      - webhook-walker
+      - Webhook Walker APIs

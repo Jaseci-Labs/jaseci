@@ -99,3 +99,9 @@ walker check {
         print(len(Jac.get_context().mem.__shelf__.values()));
     }
 }
+
+walker check_architypes {
+    can enter with `root entry {
+        print(Jac.get_architypes());
+    }
+}

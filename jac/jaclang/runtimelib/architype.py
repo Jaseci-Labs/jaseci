@@ -76,6 +76,11 @@ class Anchor:
     persistent: bool = False
     hash: int = 0
 
+    @property
+    def ref_id(self) -> str:
+        """Return id in reference type."""
+        return str(self.id)
+
     def is_populated(self) -> bool:
         """Check if state."""
         return "architype" in self.__dict__

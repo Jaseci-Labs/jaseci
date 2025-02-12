@@ -3,6 +3,8 @@
 import io
 import os
 import sys
+from json import loads
+from uuid import UUID
 
 from jaclang.cli import cli
 from jaclang.utils.test import TestCase
@@ -291,12 +293,6 @@ class TestJaseciPlugin(TestCase):
             entrypoint="check",
             args=[],
         )
-        cli.enter(
-            filename=self.fixture_abs_path("graph_purger.jac"),
-            session=session,
-            entrypoint="purge",
-            args=[],
-        )
         output = self.capturedOutput.getvalue().strip()
         self.assertEqual(
             output,
@@ -311,9 +307,58 @@ class TestJaseciPlugin(TestCase):
                 "E(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\n"
                 "E(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\n"
                 "E(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\n"
-                "125\n124"
+                "125"
             ),
         )
+        self._output2buffer()
+        cli.enter(
+            filename=self.fixture_abs_path("graph_purger.jac"),
+            session=session,
+            entrypoint="check_architypes",
+            args=[],
+        )
+        output = self.capturedOutput.getvalue().strip()
+        data = loads(output.replace("'", '"'))
+
+        self.assertEqual(
+            {"walker", "edge", "node", "object", "count", "total"}, set(data.keys())
+        )
+        self.assertEqual(63, len(data["node"]))
+        self.assertEqual(62, len(data["edge"]))
+
+        try:
+            [UUID(id) for id in data["node"]]
+            [UUID(id) for id in data["edge"]]
+        except Exception:
+            self.fail("Invalid UUID format.")
+
+        self._output2buffer()
+        cli.enter(
+            filename=self.fixture_abs_path("graph_purger.jac"),
+            session=session,
+            entrypoint="purge",
+            args=[],
+        )
+        output = self.capturedOutput.getvalue().strip()
+        self.assertEqual(output, "124")
+
+        self._output2buffer()
+        cli.enter(
+            filename=self.fixture_abs_path("graph_purger.jac"),
+            session=session,
+            entrypoint="check_architypes",
+            args=[],
+        )
+        output = self.capturedOutput.getvalue().strip()
+        data = loads(output.replace("'", '"'))
+
+        self.assertEqual(
+            {"walker", "edge", "node", "object", "count", "total"}, set(data.keys())
+        )
+        self.assertEqual(1, len(data["node"]))
+        self.assertEqual(0, len(data["edge"]))
+        self.assertEqual("00000000-0000-0000-0000-000000000000", data["node"][0])
+
         self._output2buffer()
         cli.enter(
             filename=self.fixture_abs_path("graph_purger.jac"),
