@@ -339,15 +339,24 @@ class JacParser(Pass):
 
             free_code: KW_WITH KW_ENTRY sub_name? code_block
             """
-            self.consume_token(Tok.KW_WITH)
-            self.consume_token(Tok.KW_ENTRY)
+            # tok_with = self.consume(Tok.KW_WITH)
+            # tok_entry = self.consume(Tok.KW_ENTRY)
+            # kids = [tok_with, tok_entry]
+
+            kids: list[ast.AstNode] = [
+                self.consume_token(tok) for tok in (Tok.KW_WITH, Tok.KW_ENTRY)
+            ]
+
             name = self.match(ast.SubTag)
-            codeblock = self.consume(ast.SubNodeList)
-            return ast.ModuleCode(
-                name=name,
-                body=codeblock,
-                kid=self.cur_nodes,
-            )
+            codeblock_stmts: list[ast.CodeBlockStmt] = self.consume(
+                ast.SubNodeList
+            ).items
+
+            if name:
+                kids.append(name)
+            kids.extend(codeblock_stmts)
+
+            return ast.ModuleCode(name=name, body=codeblock_stmts, kid=kids)
 
         def py_code_block(self, _: None) -> ast.PyInlineCode:
             """Grammar rule.

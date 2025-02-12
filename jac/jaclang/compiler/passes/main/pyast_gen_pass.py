@@ -299,6 +299,35 @@ class PyastGenPass(Pass):
             ret = [self.sync(ast3.Expr(value=doc.gen.py_ast[0]), jac_node=doc), *ret]
         return ret
 
+    def jacast_list_to_pyast_list(
+        self,
+        node_list: (
+            list[ast.CodeBlockStmt]
+            | list[ast.ArchBlockStmt]
+            | list[ast.EnumBlockStmt]
+            | None
+        ),
+        doc: Optional[ast.String] = None,
+    ) -> list[ast3.AST]:
+        """Unwind codeblock."""
+        valid_stmts = (
+            [i for i in node_list if not isinstance(i, ast.Semi)] if node_list else []
+        )
+        ret: list[ast3.AST] = []
+
+        if isinstance(node_list, list) and not valid_stmts:
+            ret.append(self.sync(ast3.Pass(), node_list)) # Fix Me
+            pass
+        elif node_list:
+            for x in valid_stmts:
+                if not isinstance(x, ast.AstImplOnlyNode):
+                    ret.append(x.gen.py_ast)
+            ret = self.flatten(ret)
+
+        if doc:
+            ret = [self.sync(ast3.Expr(value=doc.gen.py_ast[0]), jac_node=doc), *ret]
+        return ret
+
     def sync_many(self, py_nodes: list[T], jac_node: ast.AstNode) -> list[T]:
         """Sync ast locations."""
         for py_node in py_nodes:
@@ -473,7 +502,7 @@ class PyastGenPass(Pass):
         body: SubNodeList[CodeBlockStmt],
         doc: Optional[String],
         """
-        node.gen.py_ast = self.resolve_stmt_block(node.body, doc=node.doc)
+        node.gen.py_ast = self.jacast_list_to_pyast_list(node.body, doc=node.doc)
         if node.name:
             node.gen.py_ast = [
                 self.sync(
