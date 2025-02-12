@@ -4,7 +4,7 @@ __jac_gen__/
 # Jaclang session files
 *.session
 
-# Mypy files 
+# Mypy files
 .mypy_cache*
 .jac_mypy_cache/
 
