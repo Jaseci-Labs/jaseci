@@ -8,6 +8,7 @@ import html
 from typing import Optional, TYPE_CHECKING
 
 import jaclang.compiler.absyntree as ast
+from jaclang.compiler.constant import Tokens as Tok
 from jaclang.settings import settings
 
 if TYPE_CHECKING:
@@ -103,8 +104,21 @@ def print_ast_tree(
         )
 
         if isinstance(node, Token) and isinstance(node, AstSymbolNode):
+            # NOTE: The values are changed with the following keyword names because they were previously a called
+            # SpecialVarRef, removing this special case and handle them like other names would result changine some
+            # tests and that might be okey.
+            value = node.value
+            if node.name in [
+                Tok.KW_HERE,
+                Tok.KW_SELF,
+                Tok.KW_INIT,
+                Tok.KW_SUPER,
+                Tok.KW_ROOT,
+                Tok.KW_POST_INIT,
+            ]:
+                value = node.name_spec.sym_name
             out = (
-                f"{node.__class__.__name__} - {node.value} - "
+                f"{node.__class__.__name__} - {value} - "
                 f"Type: {node.expr_type}, {access} {sym_table_link}"
             )
             if settings.ast_symbol_info_detailed:

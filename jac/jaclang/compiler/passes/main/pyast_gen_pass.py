@@ -1378,8 +1378,8 @@ class PyastGenPass(Pass):
         """
         if node.arch_type.name == Tok.TYPE_OP:
             if (
-                isinstance(node.arch_name, ast.SpecialVarRef)
-                and node.arch_name.orig.name == Tok.KW_ROOT
+                isinstance(node.arch_name, ast.Name)
+                and node.arch_name.name == Tok.KW_ROOT
             ):
                 node.gen.py_ast = [
                     self.sync(
@@ -3106,7 +3106,7 @@ class PyastGenPass(Pass):
             else:
                 node.gen.py_ast = []
 
-    def exit_special_var_ref(self, node: ast.SpecialVarRef) -> None:
+    def exit_name(self, node: ast.Name) -> None:
         """Sub objects.
 
         var: Token,
@@ -3707,21 +3707,6 @@ class PyastGenPass(Pass):
             node.gen.py_ast = [self.sync(ast3.NotEq())]
         elif node.name == Tok.KW_NIN:
             node.gen.py_ast = [self.sync(ast3.NotIn())]
-
-    def exit_name(self, node: ast.Name) -> None:
-        """Sub objects.
-
-        file_path: str,
-        name: str,
-        value: str,
-        col_start: int,
-        col_end: int,
-        pos_start: int,
-        pos_end: int,
-        """
-        node.gen.py_ast = [
-            self.sync(ast3.Name(id=node.sym_name, ctx=node.py_ctx_func()))
-        ]
 
     def exit_float(self, node: ast.Float) -> None:
         """Sub objects.
