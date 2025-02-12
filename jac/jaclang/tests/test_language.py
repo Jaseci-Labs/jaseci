@@ -584,7 +584,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("can greet2(**kwargs: Any) {", output)
         self.assertIn("squares_dict = {x: (x ** 2)  for x in numbers};", output)
         self.assertIn(
-            '\n\n@ my_decorator \n can say_hello() {\n\n    """Say hello""" ;', output
+            '\n\n@ my_decorator \n can say_hello {\n\n    """Say hello""" ;', output
         )
 
     def test_needs_import_2(self) -> None:
@@ -873,7 +873,7 @@ class JacLanguageTests(TestCase):
         ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
         jac_ast = ir.pp()
         self.assertIn(" |   +-- String - 'Loop completed normally{}'", jac_ast)
-        self.assertEqual(len(ir.get_all_sub_nodes(ast.SubNodeList)), 586)
+        self.assertEqual(len(ir.get_all_sub_nodes(ast.SubNodeList)), 495)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("deep_convert", base_path=self.fixture_abs_path("./"))
