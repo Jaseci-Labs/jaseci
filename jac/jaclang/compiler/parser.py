@@ -1339,17 +1339,22 @@ class JacParser(Pass):
 
             except_def: KW_EXCEPT expression (KW_AS NAME)? code_block
             """
-            name: ast.Name | None = None
             self.consume_token(Tok.KW_EXCEPT)
             ex_type = self.consume(ast.Expr)
-            if self.match_token(Tok.KW_AS):
-                name = self.consume(ast.Name)
+            name = self.consume(ast.Name) if self.match_token(Tok.KW_AS) else None
             body = self.consume(ast.SubNodeList)
+            left_enc, right_enc = body.left_enc, body.right_enc
+            assert left_enc and right_enc
             return ast.Except(
                 ex_type=ex_type,
                 name=name,
-                body=body,
-                kid=self.cur_nodes,
+                body=body.items,
+                kid=[
+                    *self.cur_nodes[:-1],
+                    left_enc,
+                    *body.items,
+                    right_enc,
+                ],
             )
 
         def finally_stmt(self, _: None) -> ast.FinallyStmt:

@@ -1260,7 +1260,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """
         type = self.convert(node.type) if node.type else None
         name: ast.Name | None = None
-        if not type and not node.name:
+        # TODO: Exception type should be optional.
+        if not type:
             type = ast.Name(
                 orig_src=self.orig_src,
                 name=Tok.NAME,
@@ -1283,47 +1284,30 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 pos_start=0,
                 pos_end=0,
             )
-        else:
-            # type = ast.Name(
-            #     orig_src=self.orig_src,
-            #     name=Tok.NAME,
-            #     value=no,
-            #     line=node.lineno,
-            #     end_line = (node.end_lineno if node.end_lineno else node.lineno,)
-            #     col_start=node.col_offset,
-            #     col_end=node.col_offset + 9,
-            #     pos_start=0,
-            #     pos_end=0,
-            # )
-            name = (
-                ast.Name(
-                    orig_src=self.orig_src,
-                    name=Tok.NAME,
-                    value=node.name,
-                    line=node.lineno,
-                    end_line=node.end_lineno if node.end_lineno else node.lineno,
-                    col_start=node.col_offset,
-                    col_end=node.col_offset + len(node.name),
-                    pos_start=0,
-                    pos_end=0,
-                )
-                if node.name
-                else None
+        elif node.name:
+            name = ast.Name(
+                orig_src=self.orig_src,
+                name=Tok.NAME,
+                value=node.name,
+                line=node.lineno,
+                end_line=node.end_lineno or node.lineno,
+                col_start=node.col_offset,
+                col_end=node.col_offset + len(node.name),
+                pos_start=0,
+                pos_end=0,
             )
 
         body = [self.convert(i) for i in node.body]
-        valid = [i for i in body if isinstance(i, (ast.CodeBlockStmt))]
-        if len(valid) != len(body):
+        valid_body = [i for i in body if isinstance(i, (ast.CodeBlockStmt))]
+        if len(valid_body) != len(body):
             raise self.ice("Length mismatch in except handler body")
-        valid_body = ast.SubNodeList[ast.CodeBlockStmt](
-            items=valid,
-            delim=Tok.WS,
-            kid=valid,
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
-        )
-        kid = [item for item in [type, name, valid_body] if item]
         if isinstance(type, ast.Expr) and (isinstance(name, ast.Name) or not name):
+            kid: list[ast.AstNode] = [type]
+            if name:
+                kid.append(name)
+            kid.append(self.operator(Tok.LBRACE, "{"))
+            kid.extend(valid_body)
+            kid.append(self.operator(Tok.RBRACE, "}"))
             return ast.Except(
                 ex_type=type,
                 name=name,
