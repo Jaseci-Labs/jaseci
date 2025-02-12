@@ -756,6 +756,57 @@ paths:
       summary: Verify
       tags:
       - user
+  /walker/Walker:
+    post:
+      operationId: api_root_walker_Walker_post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Walker Post
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: /Walker
+      tags:
+      - walker
+  /walker/Walker/{node}:
+    post:
+      operationId: api_entry_walker_Walker__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Walker  Node  Post
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: /Walker/{node}
+      tags:
+      - walker
   /walker/allow_other_root_access:
     post:
       operationId: api_root_walker_allow_other_root_access_post

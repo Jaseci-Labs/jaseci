@@ -604,8 +604,8 @@ class FuseTypeInfoPass(Pass):
                 node_type: str = ""
 
                 # left type is a list
-                if left.expr_type.startswith("builtins.list["):
-                    node_type = left.expr_type[len("builtins.list[") : -1]
+                if left.expr_type.startswith(("builtins.list[", "jaclang.JacList[")):
+                    node_type = left.expr_type[left.expr_type.find("[") + 1 : -1]
 
                     # right index slice is a range then it's type is the same as left
                     if right.is_range:

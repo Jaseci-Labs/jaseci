@@ -12,6 +12,7 @@ from types import UnionType
 from typing import Any, Callable, ClassVar, Optional, TypeVar
 from uuid import UUID, uuid4
 
+
 logger = getLogger(__name__)
 
 TARCH = TypeVar("TARCH", bound="Architype")
@@ -285,20 +286,12 @@ class ObjectArchitype(Architype):
         self.__jac__ = ObjectAnchor(architype=self)
 
 
-@dataclass(eq=False)
 class GenericEdge(EdgeArchitype):
-    """Generic Root Node."""
-
-    _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
-    _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
+    """Generic Edge."""
 
 
-@dataclass(eq=False)
 class Root(NodeArchitype):
     """Generic Root Node."""
-
-    _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
-    _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
 
     def __init__(self) -> None:
         """Create root node."""
@@ -315,16 +308,13 @@ class DSFunc:
     @cached_property
     def trigger(self) -> type | UnionType | tuple[type | UnionType, ...] | None:
         """Get function parameter annotations."""
-        t = (
-            (
-                inspect.signature(self.func, eval_str=True)
-                .parameters["_jac_here_"]
-                .annotation
-            )
-            if self.func
-            else None
-        )
-        return None if t is inspect._empty else t
+        if self.func:
+            parameters = inspect.signature(self.func, eval_str=True).parameters
+            if len(parameters) >= 2:
+                second_param = list(parameters.values())[1]
+                ty = second_param.annotation
+                return ty if ty != inspect._empty else None
+        return None
 
     def resolve(self, cls: type) -> None:
         """Resolve the function."""
