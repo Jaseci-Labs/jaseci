@@ -2006,9 +2006,9 @@ class Except(CodeBlockStmt):
 
     def __init__(
         self,
-        ex_type: Expr,
+        ex_type: Expr,  # TODO: This should be optional.
         name: Optional[Name],
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize except node."""
@@ -2023,7 +2023,8 @@ class Except(CodeBlockStmt):
         if deep:
             res = self.ex_type.normalize(deep)
             res = res and self.name.normalize(deep) if self.name else res
-            res = res and self.body.normalize(deep) if self.body else res
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
         new_kid: list[AstNode] = [
             self.gen_token(Tok.KW_EXCEPT),
             self.ex_type,
@@ -2031,7 +2032,9 @@ class Except(CodeBlockStmt):
         if self.name:
             new_kid.append(self.gen_token(Tok.KW_AS))
             new_kid.append(self.name)
-        new_kid.append(self.body)
+        new_kid.append(self.gen_token(Tok.LBRACE))
+        new_kid.extend(self.body)
+        new_kid.append(self.gen_token(Tok.RBRACE))
         self.set_kids(nodes=new_kid)
         return res
 

@@ -1718,7 +1718,7 @@ class PyastGenPass(Pass):
                 ast3.ExceptHandler(
                     type=node.ex_type.gen.py_ast[0],
                     name=node.name.sym_name if node.name else None,
-                    body=self.resolve_stmt_block(node.body),
+                    body=self.resolve_body_stmts(node.body),
                 )
             )
         ]

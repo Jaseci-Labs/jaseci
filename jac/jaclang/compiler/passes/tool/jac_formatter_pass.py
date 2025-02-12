@@ -1199,11 +1199,8 @@ class JacFormatPass(Pass):
             self.emit_ln(node, "")
 
     def exit_except(self, node: ast.Except) -> None:
-        """Sub objects.
-
-        typ: ExprType,
-        name: Optional[Token],
-        body: CodeBlock,
+        """Grammar:
+        except_def: KW_EXCEPT expression (KW_AS NAME)? code_block
         """
         if (
             node.parent
@@ -1211,28 +1208,19 @@ class JacFormatPass(Pass):
             and isinstance(node.parent.parent, (ast.Ability))
         ):
             self.emit_ln(node, "")
-        start = True
-        for i in node.kid:
-            if isinstance(i, ast.CommentToken):
-                if i.is_inline:
-                    self.emit(node, f" {i.gen.jac}")
-                else:
-                    if not node.gen.jac.endswith("\n"):
-                        self.emit_ln(node, "")
-                    self.emit_ln(node, "")
-                    self.emit(node, i.gen.jac)
-            elif isinstance(i, ast.Semi):
-                self.emit(node, i.gen.jac)
-            else:
-                if start or isinstance(i, ast.SubNodeList):
-                    self.emit(node, i.gen.jac)
-                    start = False
-                else:
-                    self.emit(node, f" {i.gen.jac}")
-        if isinstance(
-            node.kid[-1], (ast.Semi, ast.CommentToken)
-        ) and not node.gen.jac.endswith("\n"):
-            self.emit_ln(node, "")
+
+        self.emit(node, f"except {node.ex_type.gen.jac} ")
+        if node.name:
+            self.emit(node, f"as {node.name.gen.jac} ")
+        self.emit(node, "{\n")
+        self.indent_level += 1
+        for stmt in node.body:
+            # The emit(), emit_ln are messed up.
+            # Imma do it this way and come back to fix the format pass.
+            for line in stmt.gen.jac.splitlines():
+                node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
+        self.indent_level -= 1
+        self.emit(node, "}\n")
 
     def exit_finally_stmt(self, node: ast.FinallyStmt) -> None:
         """Sub objects.
