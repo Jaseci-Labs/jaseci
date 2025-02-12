@@ -720,18 +720,16 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid_body = [stmt for stmt in body if isinstance(stmt, ast.CodeBlockStmt)]
         if len(valid_body) != len(body):
             raise self.ice("Length mismatch in while body")
-        fin_body = ast.SubNodeList[ast.CodeBlockStmt](
-            items=valid_body,
-            delim=Tok.WS,
-            kid=valid_body,
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
-        )
         if isinstance(test, ast.Expr):
             return ast.WhileStmt(
                 condition=test,
-                body=fin_body,
-                kid=[test, fin_body],
+                body=valid_body,
+                kid=[
+                    test,
+                    self.operator(Tok.LBRACE, "{"),
+                    *valid_body,
+                    self.operator(Tok.RBRACE, "}"),
+                ],
             )
         else:
             raise self.ice()

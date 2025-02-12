@@ -2158,7 +2158,7 @@ class WhileStmt(CodeBlockStmt):
     def __init__(
         self,
         condition: Expr,
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize while statement node."""
@@ -2171,14 +2171,17 @@ class WhileStmt(CodeBlockStmt):
         res = True
         if deep:
             res = self.condition.normalize(deep)
-            res = res and self.body.normalize(deep)
-        new_kid: list[AstNode] = [
-            self.gen_token(Tok.KW_WHILE),
-            self.condition,
-        ]
-        if self.body:
-            new_kid.append(self.body)
-        self.set_kids(nodes=new_kid)
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
+        self.set_kids(
+            nodes=[
+                self.gen_token(Tok.KW_WHILE),
+                self.condition,
+                self.gen_token(Tok.LBRACE),
+                *self.body,
+                self.gen_token(Tok.RBRACE),
+            ]
+        )
         return res
 
 

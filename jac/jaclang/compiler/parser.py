@@ -1408,13 +1408,20 @@ class JacParser(Pass):
 
             while_stmt: KW_WHILE expression code_block
             """
-            self.consume_token(Tok.KW_WHILE)
+            tok_while = self.consume_token(Tok.KW_WHILE)
             condition = self.consume(ast.Expr)
             body = self.consume(ast.SubNodeList)
+            assert body.left_enc and body.right_enc
             return ast.WhileStmt(
                 condition=condition,
-                body=body,
-                kid=self.cur_nodes,
+                body=cast(list[ast.CodeBlockStmt], body.items),
+                kid=[
+                    tok_while,
+                    condition,
+                    body.left_enc,
+                    *body.items,
+                    body.right_enc,
+                ],
             )
 
         def with_stmt(self, _: None) -> ast.WithStmt:
