@@ -2467,9 +2467,7 @@ class JacParser(Pass):
                 kid=kid,
             )
 
-        def tuple_list(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.Expr | ast.KWPair]:
+        def tuple_list(self, _: None) -> ast.SubNodeList[ast.Expr | ast.KWPair]:
             """Grammar rule.
 
             tuple_list: expression COMMA expr_list    COMMA kw_expr_list COMMA?
@@ -2478,38 +2476,28 @@ class JacParser(Pass):
                       | expression COMMA
                       | kw_expr_list COMMA?
             """
-            chomp = [*kid]
-            first_expr = None
-            if isinstance(chomp[0], ast.SubNodeList):
-                # The chomp will be like this:
-                #     kw_expr_list, [COMMA]
-                if len(chomp) > 1:
-                    # Add the comma to the subnode list if it exists, otherwise the last comma will not be a part of
-                    # the ast, we need it for formatting.
-                    chomp[0].kid.append(chomp[1])
-                return chomp[0]
-            else:
-                # The chomp will be like this:
-                #     expression, COMMA, [subnode_list, [COMMA, [kw_expr_list, [COMMA]]]]
-                # Pop the first expression from chomp.
-                first_expr = chomp[0]  # Get the first expression.
-                chomp = chomp[2:]  # Get rid of expr and comma.
-
-            # The chomp will be like this:
-            #     [subnode_list, [COMMA, [kw_expr_list, [COMMA]]]]
-            expr_list = []
-            if len(chomp):
-                expr_list = chomp[0].kid  # Get the kids subnode list.
-                chomp = chomp[2:]  # Get rid of the subnode list and a comma if exists.
-                if len(chomp):
-                    # The chomp will be like this: [kw_expr_list, [COMMA]]
-                    expr_list = [*expr_list, *chomp[0].kid]
-            expr_list = [first_expr, *expr_list]
+            if first_expr := self.match(ast.SubNodeList):
+                comma = self.match_token(Tok.COMMA)
+                if comma:
+                    first_expr.kid.append(comma)
+                return first_expr
+            expr = self.consume(ast.Expr)
+            self.consume_token(Tok.COMMA)
+            second_expr = self.match(ast.SubNodeList)
+            self.match_token(Tok.COMMA)
+            kw_expr_list = self.match(ast.SubNodeList)
+            self.match_token(Tok.COMMA)
+            expr_list: list = []
+            if second_expr:
+                expr_list = second_expr.kid
+                if kw_expr_list:
+                    expr_list = [*expr_list, *kw_expr_list.kid]
+            expr_list = [expr, *expr_list]
             valid_kid = [i for i in expr_list if isinstance(i, (ast.Expr, ast.KWPair))]
             return ast.SubNodeList[ast.Expr | ast.KWPair](
                 items=valid_kid,
                 delim=Tok.COMMA,
-                kid=kid,
+                kid=self.cur_nodes,
             )
 
         def dict_val(self, kid: list[ast.AstNode]) -> ast.DictVal:
