@@ -12,6 +12,7 @@ from typing import (
     Any,
     Callable,
     Generic,
+    List,
     Optional,
     Sequence,
     TYPE_CHECKING,
@@ -399,7 +400,7 @@ class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
     """ImplOnly node type for Jac Ast."""
 
     def __init__(
-        self, target: ArchRefChain, body: SubNodeList, decl_link: Optional[AstNode]
+        self, target: ArchRefChain, body: List, decl_link: Optional[AstNode]
     ) -> None:
         """Initialize impl only node."""
         self.target = target
@@ -748,7 +749,7 @@ class GlobalVars(ElementStmt, AstAccessNode):
         return res
 
 
-class Test(AstSymbolNode, ElementStmt):
+class Test(AstSymbolNode, ElementStmt):  # 1
     """Test node type for Jac Ast."""
 
     TEST_COUNT = 0
@@ -756,7 +757,7 @@ class Test(AstSymbolNode, ElementStmt):
     def __init__(
         self,
         name: Name | Token,
-        body: SubNodeList[CodeBlockStmt],
+        body: List[CodeBlockStmt],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
     ) -> None:
@@ -800,25 +801,29 @@ class Test(AstSymbolNode, ElementStmt):
         res = True
         if deep:
             res = self.name.normalize(deep)
-            res = res and self.body.normalize(deep)
+            # res = res and self.body.normalize(deep)
+            for i in self.body:
+                res = res and i.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
         if self.doc:
             new_kid.append(self.doc)
         new_kid.append(self.gen_token(Tok.KW_TEST))
         new_kid.append(self.name)
-        new_kid.append(self.body)
+        # new_kid.append(self.body)
+        for i in self.body:
+            new_kid.append(i)
         self.set_kids(nodes=new_kid)
         return res
 
 
-class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
+class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):  # 3
     """Free mod code for Jac Ast."""
 
     def __init__(
         self,
         name: Optional[SubTag[Name]],
-        body: SubNodeList[CodeBlockStmt],
+        body: List[CodeBlockStmt],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
     ) -> None:
@@ -833,7 +838,9 @@ class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
         res = True
         if deep:
             res = self.name.normalize(deep) if self.name else res
-            res = res and self.body.normalize(deep)
+            # res = res and self.body.normalize(deep)
+            for i in self.body:
+                res = res and i.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
         if self.doc:
@@ -842,7 +849,9 @@ class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
         new_kid.append(self.gen_token(Tok.KW_ENTRY))
         if self.name:
             new_kid.append(self.name)
-        new_kid.append(self.body)
+        # new_kid.append(self.body)
+        for i in self.body:
+            new_kid.append(i)
         self.set_kids(nodes=new_kid)
         return res
 
@@ -1117,7 +1126,7 @@ class ModuleItem(AstSymbolNode):
         return res
 
 
-class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
+class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):  # 2
     """ObjectArch node type for Jac Ast."""
 
     def __init__(
@@ -1126,7 +1135,7 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
         arch_type: Token,
         access: Optional[SubTag[Token]],
         base_classes: Optional[SubNodeList[Expr]],
-        body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
+        body: List[ArchBlockStmt] | ArchDef,
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
         semstr: Optional[String] = None,
@@ -1170,8 +1179,12 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
         """Check if has an abstract method."""
         body = (
             self.body.items
-            if isinstance(self.body, SubNodeList)
-            else self.body.body.items if isinstance(self.body, ArchDef) else []
+
+
+
+
+            if isinstance(self.body, List)
+            else self.body.body if isinstance(self.body, ArchDef) else []
         )
         return any(isinstance(i, Ability) and i.is_abstract for i in body)
 
@@ -1185,7 +1198,8 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
             res = (
                 res and self.base_classes.normalize(deep) if self.base_classes else res
             )
-            res = res and self.body.normalize(deep) if self.body else res
+            for i in self.body:
+                res = res and i.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
             res = res and self.semstr.normalize(deep) if self.semstr else res
             res = res and self.decorators.normalize(deep) if self.decorators else res
@@ -1209,20 +1223,21 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
             if isinstance(self.body, AstImplOnlyNode):
                 new_kid.append(self.gen_token(Tok.SEMI))
             else:
-                new_kid.append(self.body)
+                for i in self.body:
+                    new_kid.append(i)
         else:
             new_kid.append(self.gen_token(Tok.SEMI))
         self.set_kids(nodes=new_kid)
         return res
 
 
-class ArchDef(AstImplOnlyNode):
+class ArchDef(AstImplOnlyNode):  # 4
     """ArchDef node type for Jac Ast."""
 
     def __init__(
         self,
         target: ArchRefChain,
-        body: SubNodeList[ArchBlockStmt],
+        body: List[ArchBlockStmt],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
         decl_link: Optional[Architype] = None,
@@ -1237,18 +1252,22 @@ class ArchDef(AstImplOnlyNode):
         res = True
         if deep:
             res = self.target.normalize(deep)
-            res = res and self.body.normalize(deep)
+            # res = res and self.body.normalize(deep)
+            for i in self.body:
+                res = res and i.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
         if self.doc:
             new_kid.append(self.doc)
         new_kid.append(self.target)
-        new_kid.append(self.body)
+        # new_kid.append(self.body)
+        for i in self.body:
+            new_kid.append(i)
         self.set_kids(nodes=new_kid)
         return res
 
 
-class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
+class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):  # 5
     """Enum node type for Jac Ast."""
 
     def __init__(
@@ -1256,7 +1275,7 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
         name: Name,
         access: Optional[SubTag[Token]],
         base_classes: Optional[SubNodeList[Expr]],
-        body: Optional[SubNodeList[EnumBlockStmt] | EnumDef],
+        body: List[EnumBlockStmt] | EnumDef,
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
         semstr: Optional[String] = None,
@@ -1287,7 +1306,9 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
             res = (
                 res and self.base_classes.normalize(deep) if self.base_classes else res
             )
-            res = res and self.body.normalize(deep) if self.body else res
+            # res = res and self.body.normalize(deep) if self.body else res
+            for i in self.body:
+                res = res and i.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
             res = res and self.semstr.normalize(deep) if self.semstr else res
             res = res and self.decorators.normalize(deep) if self.decorators else res
@@ -1312,7 +1333,9 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
                 new_kid.append(self.gen_token(Tok.SEMI))
             else:
                 new_kid.append(self.gen_token(Tok.LBRACE))
-                new_kid.append(self.body)
+                # new_kid.append(self.body)
+                for i in self.body:
+                    new_kid.append(i)
                 new_kid.append(self.gen_token(Tok.RBRACE))
         else:
             new_kid.append(self.gen_token(Tok.SEMI))
@@ -1320,13 +1343,13 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
         return res
 
 
-class EnumDef(AstImplOnlyNode):
+class EnumDef(AstImplOnlyNode):  # 6
     """EnumDef node type for Jac Ast."""
 
     def __init__(
         self,
         target: ArchRefChain,
-        body: SubNodeList[EnumBlockStmt],
+        body: List[EnumBlockStmt],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
         decorators: Optional[SubNodeList[Expr]] = None,
@@ -1342,14 +1365,18 @@ class EnumDef(AstImplOnlyNode):
         res = True
         if deep:
             res = self.target.normalize(deep)
-            res = res and self.body.normalize(deep)
+            # res = res and self.body.normalize(deep)
+            for i in self.body:
+                res = res and i.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
         if self.doc:
             new_kid.append(self.doc)
         new_kid.append(self.target)
         new_kid.append(self.gen_token(Tok.LBRACE))
-        new_kid.append(self.body)
+        # new_kid.append(self.body)
+        for i in self.body:
+            new_kid.append(i)
         new_kid.append(self.gen_token(Tok.RBRACE))
         self.set_kids(nodes=new_kid)
         return res
@@ -1364,7 +1391,7 @@ class Ability(
     CodeBlockStmt,
     AstSemStrNode,
     AstImplNeedingNode,
-):
+):  # 7
     """Ability node type for Jac Ast."""
 
     def __init__(
@@ -1376,7 +1403,7 @@ class Ability(
         is_abstract: bool,
         access: Optional[SubTag[Token]],
         signature: FuncSignature | EventSignature,
-        body: Optional[SubNodeList[CodeBlockStmt] | AbilityDef | FuncCall],
+        body: List[CodeBlockStmt] | AbilityDef | FuncCall,
         kid: Sequence[AstNode],
         semstr: Optional[String] = None,
         doc: Optional[String] = None,
@@ -1439,7 +1466,9 @@ class Ability(
             res = self.name_ref.normalize(deep)
             res = res and self.access.normalize(deep) if self.access else res
             res = res and self.signature.normalize(deep) if self.signature else res
-            res = res and self.body.normalize(deep) if self.body else res
+            # res = res and self.body.normalize(deep) if self.body else res
+            for i in self.body:
+                res = res and i.normalize(deep)
             res = res and self.semstr.normalize(deep) if self.semstr else res
             res = res and self.decorators.normalize(deep) if self.decorators else res
             res = res and self.doc.normalize(deep) if self.doc else res
@@ -1472,7 +1501,12 @@ class Ability(
             if isinstance(self.body, AstImplOnlyNode):
                 new_kid.append(self.gen_token(Tok.SEMI))
             else:
-                new_kid.append(self.body)
+                # new_kid.append(self.body)
+                if isinstance(self.body, (FuncCall, AbilityDef)):
+                    new_kid.append(self.body)
+                else:
+                    for i in self.body:
+                        new_kid.append(i)
                 if self.is_genai_ability:
                     new_kid.append(self.gen_token(Tok.SEMI))
         else:
@@ -1481,14 +1515,14 @@ class Ability(
         return res
 
 
-class AbilityDef(AstImplOnlyNode):
+class AbilityDef(AstImplOnlyNode):  # 8
     """AbilityDef node type for Jac Ast."""
 
     def __init__(
         self,
         target: ArchRefChain,
         signature: FuncSignature | EventSignature,
-        body: SubNodeList[CodeBlockStmt],
+        body: List[CodeBlockStmt],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
         decorators: Optional[SubNodeList[Expr]] = None,
@@ -1507,7 +1541,9 @@ class AbilityDef(AstImplOnlyNode):
         if deep:
             res = self.target.normalize(deep)
             res = res and self.signature.normalize(deep)
-            res = res and self.body.normalize(deep)
+            # res = res and self.body.normalize(deep)
+            for i in self.body:
+                res = res and i.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
             res = res and self.decorators.normalize(deep) if self.decorators else res
         new_kid: list[AstNode] = []
@@ -1516,7 +1552,9 @@ class AbilityDef(AstImplOnlyNode):
         new_kid.append(self.target)
         new_kid.append(self.signature)
 
-        new_kid.append(self.body)
+        # new_kid.append(self.body)
+        for i in self.body:
+            new_kid.append(i)
 
         self.set_kids(nodes=new_kid)
         return res
@@ -1819,13 +1857,13 @@ class HasVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
         return res
 
 
-class TypedCtxBlock(CodeBlockStmt):
+class TypedCtxBlock(CodeBlockStmt):  # 9
     """TypedCtxBlock node type for Jac Ast."""
 
     def __init__(
         self,
         type_ctx: Expr,
-        body: SubNodeList[CodeBlockStmt],
+        body: List[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize typed context block node."""
@@ -1838,23 +1876,26 @@ class TypedCtxBlock(CodeBlockStmt):
         res = True
         if deep:
             res = self.type_ctx.normalize(deep)
-            res = res and self.body.normalize(deep)
+            # res = res and self.body.normalize(deep)
+            for i in self.body:
+                res = res and i.normalize(deep)
         new_kid: list[AstNode] = [
             self.gen_token(Tok.RETURN_HINT),
             self.type_ctx,
-            self.body,
         ]
+        for i in self.body:
+            new_kid.append(i)
         self.set_kids(nodes=new_kid)
         return res
 
 
-class IfStmt(CodeBlockStmt, AstElseBodyNode):
+class IfStmt(CodeBlockStmt, AstElseBodyNode):  # 10
     """IfStmt node type for Jac Ast."""
 
     def __init__(
         self,
         condition: Expr,
-        body: SubNodeList[CodeBlockStmt],
+        body: List[CodeBlockStmt],
         else_body: Optional[ElseStmt | ElseIf],
         kid: Sequence[AstNode],
     ) -> None:
@@ -1869,20 +1910,24 @@ class IfStmt(CodeBlockStmt, AstElseBodyNode):
         res = True
         if deep:
             res = self.condition.normalize(deep)
-            res = res and self.body.normalize(deep)
+            # res = res and self.body.normalize(deep)
+            for i in self.body:
+                res = res and i.normalize(deep)
             res = res and self.else_body.normalize(deep) if self.else_body else res
         new_kid: list[AstNode] = [
             self.gen_token(Tok.KW_IF),
             self.condition,
-            self.body,
+            # self.body,
         ]
+        for i in self.body:
+            new_kid.append(i)
         if self.else_body:
             new_kid.append(self.else_body)
         self.set_kids(nodes=new_kid)
         return res
 
 
-class ElseIf(IfStmt):
+class ElseIf(IfStmt):  # 11
     """ElseIfs node type for Jac Ast."""
 
     def normalize(self, deep: bool = False) -> bool:
@@ -1890,25 +1935,29 @@ class ElseIf(IfStmt):
         res = True
         if deep:
             res = self.condition.normalize(deep)
-            res = res and self.body.normalize(deep)
+            # res = res and self.body.normalize(deep)
+            for i in self.body:
+                res = res and i.normalize(deep)
             res = res and self.else_body.normalize(deep) if self.else_body else res
         new_kid: list[AstNode] = [
             self.gen_token(Tok.KW_ELIF),
             self.condition,
-            self.body,
+            # self.body,
         ]
+        for i in self.body:
+            new_kid.append(i)
         if self.else_body:
             new_kid.append(self.else_body)
         self.set_kids(nodes=new_kid)
         return res
 
 
-class ElseStmt(AstNode):
+class ElseStmt(AstNode):  # 12
     """Else node type for Jac Ast."""
 
     def __init__(
         self,
-        body: SubNodeList[CodeBlockStmt],
+        body: List[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize else node."""
@@ -1919,11 +1968,14 @@ class ElseStmt(AstNode):
         """Normalize else statement node."""
         res = True
         if deep:
-            res = self.body.normalize(deep)
+            # res = self.body.normalize(deep)
+            for i in self.body:
+                res = res and i.normalize(deep)
         new_kid: list[AstNode] = [
             self.gen_token(Tok.KW_ELSE),
-            self.body,
         ]
+        for i in self.body:
+            new_kid.append(i)
         self.set_kids(nodes=new_kid)
         return res
 
@@ -1956,12 +2008,12 @@ class ExprStmt(CodeBlockStmt):
         return res and self.expr is not None
 
 
-class TryStmt(AstElseBodyNode, CodeBlockStmt):
+class TryStmt(AstElseBodyNode, CodeBlockStmt):  # 13
     """TryStmt node type for Jac Ast."""
 
     def __init__(
         self,
-        body: SubNodeList[CodeBlockStmt],
+        body: List[CodeBlockStmt],
         excepts: Optional[SubNodeList[Except]],
         else_body: Optional[ElseStmt],
         finally_body: Optional[FinallyStmt],
@@ -1978,7 +2030,8 @@ class TryStmt(AstElseBodyNode, CodeBlockStmt):
         """Normalize try statement node."""
         res = True
         if deep:
-            res = self.body.normalize(deep)
+            for i in self.body:
+                res = res and i.normalize(deep)
             res = res and self.excepts.normalize(deep) if self.excepts else res
             res = res and self.else_body.normalize(deep) if self.else_body else res
             res = (
@@ -1987,7 +2040,9 @@ class TryStmt(AstElseBodyNode, CodeBlockStmt):
         new_kid: list[AstNode] = [
             self.gen_token(Tok.KW_TRY),
         ]
-        new_kid.append(self.body)
+        # new_kid.append(self.body)
+        for i in self.body:
+            new_kid.append(i)
         if self.excepts:
             new_kid.append(self.excepts)
         if self.else_body:
@@ -1998,14 +2053,14 @@ class TryStmt(AstElseBodyNode, CodeBlockStmt):
         return res
 
 
-class Except(CodeBlockStmt):
+class Except(CodeBlockStmt):  # 14
     """Except node type for Jac Ast."""
 
     def __init__(
         self,
         ex_type: Expr,
         name: Optional[Name],
-        body: SubNodeList[CodeBlockStmt],
+        body: List[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize except node."""
@@ -2020,7 +2075,8 @@ class Except(CodeBlockStmt):
         if deep:
             res = self.ex_type.normalize(deep)
             res = res and self.name.normalize(deep) if self.name else res
-            res = res and self.body.normalize(deep) if self.body else res
+            for i in self.body:
+                res = res and i.normalize(deep)
         new_kid: list[AstNode] = [
             self.gen_token(Tok.KW_EXCEPT),
             self.ex_type,
@@ -2028,17 +2084,19 @@ class Except(CodeBlockStmt):
         if self.name:
             new_kid.append(self.gen_token(Tok.KW_AS))
             new_kid.append(self.name)
-        new_kid.append(self.body)
+        # new_kid.append(self.body)
+        for i in self.body:
+            new_kid.append(i)
         self.set_kids(nodes=new_kid)
         return res
 
 
-class FinallyStmt(CodeBlockStmt):
+class FinallyStmt(CodeBlockStmt):  # 15
     """FinallyStmt node type for Jac Ast."""
 
     def __init__(
         self,
-        body: SubNodeList[CodeBlockStmt],
+        body: List[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize finally statement node."""
@@ -2049,16 +2107,20 @@ class FinallyStmt(CodeBlockStmt):
         """Normalize finally statement node."""
         res = True
         if deep:
-            res = self.body.normalize(deep)
+            # res = self.body.normalize(deep)
+            for i in self.body:
+                res = res and i.normalize(deep)
         new_kid: list[AstNode] = [
             self.gen_token(Tok.KW_FINALLY),
         ]
-        new_kid.append(self.body)
+        # new_kid.append(self.body)
+        for i in self.body:
+            new_kid.append(i)
         self.set_kids(nodes=new_kid)
         return res
 
 
-class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
+class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):  # 16
     """IterFor node type for Jac Ast."""
 
     def __init__(
@@ -2067,7 +2129,7 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         is_async: bool,
         condition: Expr,
         count_by: Assignment,
-        body: SubNodeList[CodeBlockStmt],
+        body: List[CodeBlockStmt],
         else_body: Optional[ElseStmt],
         kid: Sequence[AstNode],
     ) -> None:
@@ -2087,7 +2149,9 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
             res = self.iter.normalize(deep)
             res = self.condition.normalize(deep)
             res = self.count_by.normalize(deep)
-            res = self.body.normalize(deep)
+            # res = self.body.normalize(deep)
+            for i in self.body:
+                res = res and i.normalize(deep)
             res = self.else_body.normalize(deep) if self.else_body else res
         new_kid: list[AstNode] = []
         if self.is_async:
@@ -2098,14 +2162,16 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         new_kid.append(self.condition)
         new_kid.append(self.gen_token(Tok.KW_BY))
         new_kid.append(self.count_by)
-        new_kid.append(self.body)
+        # new_kid.append(self.body)
+        for i in self.body:
+            new_kid.append(i)
         if self.else_body:
             new_kid.append(self.else_body)
         self.set_kids(nodes=new_kid)
         return res
 
 
-class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
+class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):  # 17
     """InFor node type for Jac Ast."""
 
     def __init__(
@@ -2113,7 +2179,7 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         target: Expr,
         is_async: bool,
         collection: Expr,
-        body: SubNodeList[CodeBlockStmt],
+        body: List[CodeBlockStmt],
         else_body: Optional[ElseStmt],
         kid: Sequence[AstNode],
     ) -> None:
@@ -2131,7 +2197,9 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         if deep:
             res = self.target.normalize(deep)
             res = res and self.collection.normalize(deep)
-            res = res and self.body.normalize(deep)
+            # res = res and self.body.normalize(deep)
+            for i in self.body:
+                res = res and i.normalize(deep)
             res = res and self.else_body.normalize(deep) if self.else_body else res
         new_kid: list[AstNode] = []
         if self.is_async:
@@ -2141,21 +2209,23 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         new_kid.append(self.gen_token(Tok.KW_IN))
         new_kid.append(self.collection)
 
-        if self.body:
-            new_kid.append(self.body)
+        # if self.body:
+        #     new_kid.append(self.body)
+        for i in self.body:
+            new_kid.append(i)
         if self.else_body:
             new_kid.append(self.else_body)
         self.set_kids(nodes=new_kid)
         return res
 
 
-class WhileStmt(CodeBlockStmt):
+class WhileStmt(CodeBlockStmt):  # 18
     """WhileStmt node type for Jac Ast."""
 
     def __init__(
         self,
         condition: Expr,
-        body: SubNodeList[CodeBlockStmt],
+        body: List[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize while statement node."""
@@ -2168,13 +2238,15 @@ class WhileStmt(CodeBlockStmt):
         res = True
         if deep:
             res = self.condition.normalize(deep)
-            res = res and self.body.normalize(deep)
+            # res = res and self.body.normalize(deep)
+            for i in self.body:
+                res = res and i.normalize(deep)
         new_kid: list[AstNode] = [
             self.gen_token(Tok.KW_WHILE),
             self.condition,
         ]
-        if self.body:
-            new_kid.append(self.body)
+        for i in self.body:
+            new_kid.append(i)
         self.set_kids(nodes=new_kid)
         return res
 
@@ -2186,7 +2258,7 @@ class WithStmt(AstAsyncNode, CodeBlockStmt):
         self,
         is_async: bool,
         exprs: SubNodeList[ExprAsItem],
-        body: SubNodeList[CodeBlockStmt],
+        body: List[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize with statement node."""
@@ -2200,14 +2272,18 @@ class WithStmt(AstAsyncNode, CodeBlockStmt):
         res = True
         if deep:
             res = self.exprs.normalize(deep)
-            res = res and self.body.normalize(deep)
+            # res = res and self.body.normalize(deep)
+            for i in self.body:
+                res = res and i.normalize(deep)
         new_kid: list[AstNode] = []
         if self.is_async:
             new_kid.append(self.gen_token(Tok.KW_ASYNC))
         new_kid.append(self.gen_token(Tok.KW_WITH))
         new_kid.append(self.exprs)
         new_kid.append(self.gen_token(Tok.LBRACE))
-        new_kid.append(self.body)
+        # new_kid.append(self.body)
+        for i in self.body:
+            new_kid.append(i)
         new_kid.append(self.gen_token(Tok.RBRACE))
 
         self.set_kids(nodes=new_kid)

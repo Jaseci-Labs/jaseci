@@ -327,11 +327,12 @@ class JacParser(Pass):
             # Q(thakee): Why the name should be KW_TEST if no name present?
             test_tok = self.consume_token(Tok.KW_TEST)
             name = self.match(ast.Name) or test_tok
-            codeblock = self.consume(ast.SubNodeList)
+            codeblock_stmts = self.consume(ast.SubNodeList).items
+            kids = [test_tok, name] + codeblock_stmts
             return ast.Test(
                 name=name,
-                body=codeblock,
-                kid=self.cur_nodes,
+                body=codeblock_stmts,
+                kid=kids,
             )
 
         def free_code(self, _: None) -> ast.ModuleCode:
@@ -342,11 +343,12 @@ class JacParser(Pass):
             self.consume_token(Tok.KW_WITH)
             self.consume_token(Tok.KW_ENTRY)
             name = self.match(ast.SubTag)
-            codeblock = self.consume(ast.SubNodeList)
+            codeblock_stmts = self.consume(ast.SubNodeList).items
+            kids = [name] + codeblock_stmts if name else codeblock_stmts
             return ast.ModuleCode(
                 name=name,
-                body=codeblock,
-                kid=self.cur_nodes,
+                body=codeblock_stmts,
+                kid=kids,
             )
 
         def doc_tag(self, _: None) -> ast.String:
@@ -536,7 +538,7 @@ class JacParser(Pass):
                 )
             return archspec
 
-        def architype_decl(self, _: None) -> ast.ArchSpec:
+        def architype_decl(self, _: None) -> ast.ArchSpec:  # 1
             """Grammar rule.
 
             architype_decl: arch_type access_tag? STRING? NAME inherited_archs? (member_block | SEMI)
@@ -548,11 +550,14 @@ class JacParser(Pass):
             sub_list1 = self.match(ast.SubNodeList)
             sub_list2 = self.match(ast.SubNodeList)
             if self.match_token(Tok.SEMI):
-                inh, body = sub_list1, None
+                inh, body = sub_list1, []
             else:
-                body = (
-                    sub_list2 or sub_list1
-                )  # if sub_list2 is None then body is sub_list1
+                if sub_list2:
+                    body = sub_list2.items
+                elif sub_list1:
+                    body = sub_list1.items
+                else:
+                    body = []
                 inh = sub_list2 and sub_list1  # if sub_list2 is None then inh is None.
             return ast.Architype(
                 arch_type=arch_type,
@@ -564,7 +569,7 @@ class JacParser(Pass):
                 kid=self.cur_nodes,
             )
 
-        def architype_def(self, kid: list[ast.AstNode]) -> ast.ArchDef:
+        def architype_def(self, kid: list[ast.AstNode]) -> ast.ArchDef:  # 2
             """Grammar rule.
 
             architype_def: abil_to_arch_chain member_block
@@ -572,10 +577,12 @@ class JacParser(Pass):
             if isinstance(kid[0], ast.ArchRefChain) and isinstance(
                 kid[1], ast.SubNodeList
             ):
+                codeblock_stmts = kid[1].items
+                kids = [kid[0]] + codeblock_stmts
                 return ast.ArchDef(
                     target=kid[0],
-                    body=kid[1],
-                    kid=kid,
+                    body=codeblock_stmts,
+                    kid=kids,
                 )
             else:
                 raise self.ice()
@@ -686,9 +693,16 @@ class JacParser(Pass):
             sub_list1 = self.match(ast.SubNodeList)
             sub_list2 = self.match(ast.SubNodeList)
             if self.match_token(Tok.SEMI):
-                inh, body = sub_list1, None
+                inh, body = sub_list1, []
             else:
-                body = sub_list2 or sub_list1
+                # body = sub_list2 or sub_list1
+                # inh = sub_list2 and sub_list1
+                if sub_list2:
+                    body = sub_list2.items
+                elif sub_list1:
+                    body = sub_list1.items
+                else:
+                    body = []
                 inh = sub_list2 and sub_list1
             return ast.Enum(
                 semstr=semstr,
@@ -707,10 +721,12 @@ class JacParser(Pass):
             if isinstance(kid[0], ast.ArchRefChain) and isinstance(
                 kid[1], ast.SubNodeList
             ):
+                codeblock_stmts = kid[1].items
+                kids = [kid[0]] + codeblock_stmts
                 return ast.EnumDef(
                     target=kid[0],
-                    body=kid[1],
-                    kid=kid,
+                    body=codeblock_stmts,
+                    kid=kids,
                 )
             else:
                 raise self.ice()
@@ -805,7 +821,11 @@ class JacParser(Pass):
             signature = self.match(ast.FuncSignature) or self.consume(
                 ast.EventSignature
             )
-            if (body := self.match(ast.SubNodeList)) is None:
+            body = self.match(ast.SubNodeList)
+            codeblock = body.items if body else []
+            kids = self.cur_nodes[:-1] + codeblock if body else self.cur_nodes
+
+            if not body:
                 self.consume_token(Tok.SEMI)
             return ast.Ability(
                 name_ref=name,
@@ -816,8 +836,8 @@ class JacParser(Pass):
                 access=access,
                 semstr=semstr,
                 signature=signature,
-                body=body,
-                kid=self.cur_nodes,
+                body=codeblock,
+                kid=kids,
             )
 
         def ability_def(self, kid: list[ast.AstNode]) -> ast.AbilityDef:
@@ -830,11 +850,13 @@ class JacParser(Pass):
                 and isinstance(kid[1], (ast.FuncSignature, ast.EventSignature))
                 and isinstance(kid[2], ast.SubNodeList)
             ):
+                codeblock_stmts = kid[2].items
+                kids = [kid[0], kid[1]] + codeblock_stmts
                 return ast.AbilityDef(
                     target=kid[0],
                     signature=kid[1],
-                    body=kid[2],
-                    kid=kid,
+                    body=codeblock_stmts,
+                    kid=kids,
                 )
             else:
                 raise self.ice()
@@ -868,7 +890,7 @@ class JacParser(Pass):
                 access=access,
                 semstr=semstr,
                 signature=signature,
-                body=None,
+                body=[],
                 kid=self.cur_nodes,
             )
 
@@ -1252,10 +1274,12 @@ class JacParser(Pass):
             typed_ctx_block: RETURN_HINT expression code_block
             """
             if isinstance(kid[1], ast.Expr) and isinstance(kid[2], ast.SubNodeList):
+                body = kid[2].items
+                kids = [kid[0], kid[1]] + body
                 return ast.TypedCtxBlock(
                     type_ctx=kid[1],
-                    body=kid[2],
-                    kid=kid,
+                    body=body,
+                    kid=kids,
                 )
             else:
                 raise self.ice()
@@ -1265,15 +1289,16 @@ class JacParser(Pass):
 
             if_stmt: KW_IF expression code_block (elif_stmt | else_stmt)?
             """
-            self.consume_token(Tok.KW_IF)
+            if_tok = self.consume_token(Tok.KW_IF)
             condition = self.consume(ast.Expr)
-            body = self.consume(ast.SubNodeList)
+            body_stmt = self.consume(ast.SubNodeList).items
             else_body = self.match(ast.ElseStmt) or self.match(ast.ElseIf)
+            kids = [if_tok, condition] + body_stmt + [else_body] if else_body else []
             return ast.IfStmt(
                 condition=condition,
-                body=body,
+                body=body_stmt,
                 else_body=else_body,
-                kid=self.cur_nodes,
+                kid=kids,
             )
 
         def elif_stmt(self, _: None) -> ast.ElseIf:
@@ -1281,15 +1306,16 @@ class JacParser(Pass):
 
             elif_stmt: KW_ELIF expression code_block (elif_stmt | else_stmt)?
             """
-            self.consume_token(Tok.KW_ELIF)
+            elif_tok = self.consume_token(Tok.KW_ELIF)
             condition = self.consume(ast.Expr)
-            body = self.consume(ast.SubNodeList)
+            body_stmts = self.consume(ast.SubNodeList).items
             else_body = self.match(ast.ElseStmt) or self.match(ast.ElseIf)
+            kids = [elif_tok, condition] + body_stmts + [else_body] if else_body else []
             return ast.ElseIf(
                 condition=condition,
-                body=body,
+                body=body_stmts,
                 else_body=else_body,
-                kid=self.cur_nodes,
+                kid=kids,
             )
 
         def else_stmt(self, _: None) -> ast.ElseStmt:
@@ -1298,10 +1324,11 @@ class JacParser(Pass):
             else_stmt: KW_ELSE code_block
             """
             self.consume_token(Tok.KW_ELSE)
-            body = self.consume(ast.SubNodeList)
+            body_stmts = self.consume(ast.SubNodeList).items
+            kids = self.cur_nodes[:-1] + body_stmts
             return ast.ElseStmt(
-                body=body,
-                kid=self.cur_nodes,
+                body=body_stmts,
+                kid=kids,
             )
 
         def try_stmt(self, _: None) -> ast.TryStmt:
@@ -1310,16 +1337,17 @@ class JacParser(Pass):
             try_stmt: KW_TRY code_block except_list? else_stmt? finally_stmt?
             """
             self.consume_token(Tok.KW_TRY)
-            block = self.consume(ast.SubNodeList)
+            block_stmts = self.consume(ast.SubNodeList).items
             except_list = self.match(ast.SubNodeList)
             else_stmt = self.match(ast.ElseStmt)
             finally_stmt = self.match(ast.FinallyStmt)
+            kids = self.cur_nodes[:-1] + block_stmts
             return ast.TryStmt(
-                body=block,
+                body=block_stmts,
                 excepts=except_list,
                 else_body=else_stmt,
                 finally_body=finally_stmt,
-                kid=self.cur_nodes,
+                kid=kids,
             )
 
         def except_list(self, _: None) -> ast.SubNodeList[ast.Except]:
@@ -1346,12 +1374,13 @@ class JacParser(Pass):
             ex_type = self.consume(ast.Expr)
             if self.match_token(Tok.KW_AS):
                 name = self.consume(ast.Name)
-            body = self.consume(ast.SubNodeList)
+            body_stmt = self.consume(ast.SubNodeList).items
+            kids = self.cur_nodes[:-1] + body_stmt
             return ast.Except(
                 ex_type=ex_type,
                 name=name,
-                body=body,
-                kid=self.cur_nodes,
+                body=body_stmt,
+                kid=kids,
             )
 
         def finally_stmt(self, _: None) -> ast.FinallyStmt:
@@ -1360,10 +1389,11 @@ class JacParser(Pass):
             finally_stmt: KW_FINALLY code_block
             """
             self.consume_token(Tok.KW_FINALLY)
-            body = self.consume(ast.SubNodeList)
+            body_stmts = self.consume(ast.SubNodeList).items
+            kids = self.cur_nodes[:-1] + body_stmts
             return ast.FinallyStmt(
-                body=body,
-                kid=self.cur_nodes,
+                body=body_stmts,
+                kid=kids,
             )
 
         def for_stmt(self, _: None) -> ast.IterForStmt | ast.InForStmt:
@@ -1380,29 +1410,43 @@ class JacParser(Pass):
                 condition = self.consume(ast.Expr)
                 self.consume_token(Tok.KW_BY)
                 count_by = self.consume(ast.Assignment)
-                body = self.consume(ast.SubNodeList)
+                body_stmt = self.consume(ast.SubNodeList).items
                 else_body = self.match(ast.ElseStmt)
+                kids = (
+                    self.cur_nodes[:-2]
+                    if else_body
+                    else (
+                        self.cur_nodes[:-1] + body_stmt + [else_body]
+                        if else_body
+                        else []
+                    )
+                )
                 return ast.IterForStmt(
                     is_async=is_async,
                     iter=iter,
                     condition=condition,
                     count_by=count_by,
-                    body=body,
+                    body=body_stmt,
                     else_body=else_body,
-                    kid=self.cur_nodes,
+                    kid=kids,
                 )
             target = self.consume(ast.Expr)
             self.consume_token(Tok.KW_IN)
             collection = self.consume(ast.Expr)
-            body = self.consume(ast.SubNodeList)
+            body_stmt = self.consume(ast.SubNodeList).items
             else_body = self.match(ast.ElseStmt)
+            kids = (
+                self.cur_nodes[:-2]
+                if else_body
+                else self.cur_nodes[:-1] + body_stmt + [else_body] if else_body else []
+            )
             return ast.InForStmt(
                 is_async=is_async,
                 target=target,
                 collection=collection,
-                body=body,
+                body=body_stmt,
                 else_body=else_body,
-                kid=self.cur_nodes,
+                kid=kids,
             )
 
         def while_stmt(self, _: None) -> ast.WhileStmt:
@@ -1412,11 +1456,12 @@ class JacParser(Pass):
             """
             self.consume_token(Tok.KW_WHILE)
             condition = self.consume(ast.Expr)
-            body = self.consume(ast.SubNodeList)
+            body_stmt = self.consume(ast.SubNodeList).items
+            kids = self.cur_nodes[:-1] + body_stmt
             return ast.WhileStmt(
                 condition=condition,
-                body=body,
-                kid=self.cur_nodes,
+                body=body_stmt,
+                kid=kids,
             )
 
         def with_stmt(self, _: None) -> ast.WithStmt:
@@ -1427,12 +1472,13 @@ class JacParser(Pass):
             is_async = bool(self.match_token(Tok.KW_ASYNC))
             self.consume_token(Tok.KW_WITH)
             exprs = self.consume(ast.SubNodeList)
-            body = self.consume(ast.SubNodeList)
+            body_stmt = self.consume(ast.SubNodeList).items
+            kids = self.cur_nodes[:-1] + body_stmt
             return ast.WithStmt(
                 is_async=is_async,
                 exprs=exprs,
-                body=body,
-                kid=self.cur_nodes,
+                body=body_stmt,
+                kid=kids,
             )
 
         def expr_as_list(self, _: None) -> ast.SubNodeList[ast.ExprAsItem]:
