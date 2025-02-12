@@ -1527,7 +1527,7 @@ class FuncSignature(AstSemStrNode):
 
     def __init__(
         self,
-        params: Optional[SubNodeList[ParamVar]],
+        params: list[ParamVar],
         return_type: Optional[Expr],
         kid: Sequence[AstNode],
         semstr: Optional[String] = None,
@@ -1543,12 +1543,15 @@ class FuncSignature(AstSemStrNode):
         """Normalize ast node."""
         res = True
         if deep:
-            res = self.params.normalize(deep) if self.params else res
+            for param in self.params:
+                res = res and param.normalize(deep)
             res = res and self.return_type.normalize(deep) if self.return_type else res
             res = res and self.semstr.normalize(deep) if self.semstr else res
         new_kid: list[AstNode] = [self.gen_token(Tok.LPAREN)]
-        if self.params:
-            new_kid.append(self.params)
+        for idx, param in enumerate(self.params):
+            if idx > 0:
+                new_kid.append(self.gen_token(Tok.COMMA))
+            new_kid.append(param)
         new_kid.append(self.gen_token(Tok.RPAREN))
         if self.return_type:
             new_kid.append(self.gen_token(Tok.RETURN_HINT))

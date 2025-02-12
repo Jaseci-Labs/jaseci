@@ -936,9 +936,20 @@ class JacParser(Pass):
             if (isinstance(params, ast.SubNodeList) or params is None) and (
                 isinstance(return_spec, ast.Expr) or return_spec is None
             ):
+                # Remove the subnode list from the kids. This bellow line is temproary and
+                # will be gone after removing subnode list.
+                new_kids: list[ast.AstNode] = kid[:]
+                if params in new_kids:
+                    params_index = new_kids.index(params)
+                    new_kids = (
+                        new_kids[:params_index]
+                        + params.kid
+                        + new_kids[params_index + 1 :]
+                    )
+
                 return ast.FuncSignature(
                     semstr=semstr,
-                    params=params,
+                    params=params.items if params else [],
                     return_type=return_spec,
                     kid=(
                         kid
@@ -1761,16 +1772,16 @@ class JacParser(Pass):
             chomp = chomp[1:]
             sig_kid: list[ast.AstNode] = []
             if params:
-                sig_kid.append(params)
+                sig_kid += params.kid
             if return_type:
                 sig_kid.append(return_type)
             signature = (
                 ast.FuncSignature(
-                    params=params,
+                    params=params.items if params else [],
                     return_type=return_type,
                     kid=sig_kid,
                 )
-                if params or return_type
+                if (params and params.items) or return_type
                 else None
             )
             new_kid = [i for i in kid if i != params and i != return_type]
