@@ -219,11 +219,11 @@ class PyastGenPass(Pass):
     def flatten(self, body: list[T | list[T] | None]) -> list[T]:
         """Flatten ast list."""
         new_body = []
-        for i in body:
-            if isinstance(i, list):
-                new_body += i
-            elif i is not None:
-                new_body.append(i) if i else None
+        for stmt in body:
+            if isinstance(stmt, list):
+                new_body.extend(stmt)
+            elif stmt is not None:
+                new_body.append(stmt)
         return new_body
 
     def sync(
@@ -265,6 +265,33 @@ class PyastGenPass(Pass):
                         i.end_lineno += self.cur_node.loc.first_line
                     i.jac_link: ast3.AST = [self.cur_node]  # type: ignore
         return py_nodes
+
+    # NOTE: this method is the list version of resolve_stmt_block().
+    # This is temproary  and will be gone in the future.
+    def resolve_body_stmts(
+        self,
+        body: list[ast.CodeBlockStmt],
+        doc: Optional[ast.String] = None,
+    ) -> list[ast3.AST]:
+
+        # 1. Filter valid statements.
+        valid_stmts = [
+            stmt
+            for stmt in body
+            if not isinstance(stmt, (ast.Semi, ast.AstImplOnlyNode))
+        ]
+
+        if not valid_stmts and not doc:
+            return [self.sync(ast3.Pass())]
+
+        # 2. Flattern the body, this is for with entry {} code.
+        ret: list[ast3.AST] = self.flatten([stmt.gen.py_ast for stmt in valid_stmts])
+
+        # 3. Insert the docstring as the first statement of the body.
+        if doc:
+            ret.insert(0, self.sync(ast3.Expr(value=doc.gen.py_ast[0]), jac_node=doc))
+
+        return ret
 
     def resolve_stmt_block(
         self,
@@ -1766,7 +1793,7 @@ class PyastGenPass(Pass):
             self.sync(
                 ast3.While(
                     test=node.condition.gen.py_ast[0],
-                    body=self.resolve_stmt_block(node.body),
+                    body=self.resolve_body_stmts(node.body),
                     orelse=[],
                 )
             )
