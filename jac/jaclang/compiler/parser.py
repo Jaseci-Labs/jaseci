@@ -1892,7 +1892,7 @@ class JacParser(Pass):
                 )
             return self.consume(ast.Expr)
 
-        def compare(self, _: list[ast.AstNode]) -> ast.Expr:
+        def compare(self, _: None) -> ast.Expr:
             """Grammar rule.
 
             compare: (arithmetic cmp_op)* arithmetic
@@ -2164,26 +2164,23 @@ class JacParser(Pass):
                          RSQUARE
                         | list_val
             """
-            if len(kid) == 1:
-                index = kid[0]
-                if isinstance(index, ast.ListVal):
-                    if not index.values:
-                        raise self.ice()
-                    if len(index.values.items) == 1:
-                        expr = index.values.items[0] if index.values else None
-                    else:
-                        sublist = ast.SubNodeList[ast.Expr | ast.KWPair](
-                            items=[*index.values.items], delim=Tok.COMMA, kid=index.kid
-                        )
-                        expr = ast.TupleVal(values=sublist, kid=[sublist])
-                        kid = [expr]
-                    return ast.IndexSlice(
-                        slices=[ast.IndexSlice.Slice(start=expr, stop=None, step=None)],
-                        is_range=False,
-                        kid=kid,
-                    )
-                else:
+            if len(self.cur_nodes) == 1:
+                index = self.consume(ast.ListVal)
+                if not index.values:
                     raise self.ice()
+                if len(index.values.items) == 1:
+                    expr = index.values.items[0] if index.values else None
+                else:
+                    sublist = ast.SubNodeList[ast.Expr | ast.KWPair](
+                        items=[*index.values.items], delim=Tok.COMMA, kid=index.kid
+                    )
+                    expr = ast.TupleVal(values=sublist, kid=[sublist])
+                    kid = [expr]
+                return ast.IndexSlice(
+                    slices=[ast.IndexSlice.Slice(start=expr, stop=None, step=None)],
+                    is_range=False,
+                    kid=kid,
+                )
             else:
                 slices: list[ast.IndexSlice.Slice] = []
                 chomp = kid[1:]
@@ -3193,7 +3190,7 @@ class JacParser(Pass):
             """
             name_ref = self.consume(ast.Name)
             cmp_op = self.consume(ast.Token)
-            expr = self.consume(ast.Int)
+            expr = self.consume(ast.Expr)
             return ast.CompareExpr(
                 left=name_ref, ops=[cmp_op], rights=[expr], kid=self.cur_nodes
             )
