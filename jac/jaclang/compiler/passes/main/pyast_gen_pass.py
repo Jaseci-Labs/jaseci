@@ -447,7 +447,7 @@ class PyastGenPass(Pass):
                         defaults=[],
                     )
                 ),
-                body=self.resolve_stmt_block(node.body, doc=node.doc),
+                body=self.resolve_body_stmts(node.body, doc=node.doc),
                 decorator_list=[
                     self.sync(
                         ast3.Attribute(
@@ -483,7 +483,7 @@ class PyastGenPass(Pass):
                                 ast3.keyword(
                                     arg="file_loc",
                                     value=self.sync(
-                                        ast3.Constant(value=node.body.loc.mod_path)
+                                        ast3.Constant(value=node.body[0].loc.mod_path)
                                     ),
                                 )
                             ),

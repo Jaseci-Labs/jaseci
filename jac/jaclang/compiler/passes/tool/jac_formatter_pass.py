@@ -2063,22 +2063,15 @@ class JacFormatPass(Pass):
         doc: Optional[Token],
         body: CodeBlock,
         """
-        for i in node.kid:
-            if isinstance(i, ast.CommentToken):
-                if i.is_inline:
-                    self.emit(node, f" {i.gen.jac}")
-                else:
-                    self.emit_ln(node, "")
-                    self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, ast.Semi):
-                self.emit(node, i.gen.jac)
-            elif isinstance(i, ast.Name):
-                if not i.value.startswith("_jac_gen_"):
-                    self.emit(node, f" {i.value}")
-            else:
-                self.emit(node, i.gen.jac)
-        if isinstance(node.kid[-1], (ast.Semi, ast.CommentToken)):
-            self.emit_ln(node, "")
+        self.emit_ln(node,node.doc.gen.jac) if node.doc else None
+        self.emit(node, f"test {node.name.value} {{\n")
+        self.indent_level += 1
+        for stmt in node.body:
+            for line in stmt.gen.jac.splitlines():
+                node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
+        self.indent_level -= 1
+
+        self.emit(node, "}\n")
 
     def exit_py_inline_code(self, node: ast.PyInlineCode) -> None:
         """Sub objects.
