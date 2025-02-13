@@ -2155,7 +2155,7 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def index_slice(self, kid: list[ast.AstNode]) -> ast.IndexSlice:
+        def index_slice(self, _: None) -> ast.IndexSlice:
             """Grammar rule.
 
             index_slice: LSQUARE                                                        \
@@ -2170,6 +2170,7 @@ class JacParser(Pass):
                     raise self.ice()
                 if len(index.values.items) == 1:
                     expr = index.values.items[0] if index.values else None
+                    kid = self.cur_nodes
                 else:
                     sublist = ast.SubNodeList[ast.Expr | ast.KWPair](
                         items=[*index.values.items], delim=Tok.COMMA, kid=index.kid
@@ -2182,40 +2183,23 @@ class JacParser(Pass):
                     kid=kid,
                 )
             else:
+                self.consume_token(Tok.LSQUARE)
                 slices: list[ast.IndexSlice.Slice] = []
-                chomp = kid[1:]
-
-                while not (
-                    isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.RSQUARE
-                ):
-                    expr1 = expr2 = expr3 = None
-
-                    if isinstance(chomp[0], ast.Expr):
-                        expr1 = chomp[0]
-                        chomp.pop(0)
-                    chomp.pop(0)
-
-                    if isinstance(chomp[0], ast.Expr):
-                        expr2 = chomp[0]
-                        chomp.pop(0)
-
-                    if isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.COLON:
-                        chomp.pop(0)
-                        if isinstance(chomp[0], ast.Expr):
-                            expr3 = chomp[0]
-                            chomp.pop(0)
-
-                    if isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.COMMA:
-                        chomp.pop(0)
-
+                while not self.match_token(Tok.RSQUARE):
+                    expr1 = self.match(ast.Expr)
+                    self.consume_token(Tok.COLON)
+                    expr2 = self.match(ast.Expr)
+                    expr3 = (
+                        self.match(ast.Expr) if self.match_token(Tok.COLON) else None
+                    )
+                    self.match_token(Tok.COMMA)
                     slices.append(
                         ast.IndexSlice.Slice(start=expr1, stop=expr2, step=expr3)
                     )
-
                 return ast.IndexSlice(
                     slices=slices,
                     is_range=True,
-                    kid=kid,
+                    kid=self.cur_nodes,
                 )
 
         def atom(self, kid: list[ast.AstNode]) -> ast.Expr:
