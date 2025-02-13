@@ -13,7 +13,7 @@ class node_a(Jac.Node):
 @Jac.make_walker(on_entry=[Jac.DSFunc("create"), Jac.DSFunc("travel")], on_exit=[])
 @dataclass(eq=False)
 class Creator(Jac.Walker):
-    def create(self, _jac_here_: Jac.RootType) -> None:
+    def create(self, _jac_here_: Jac.Root) -> None:
         end = _jac_here_
         i = 0
         while i < 7:
@@ -37,7 +37,7 @@ class Creator(Jac.Walker):
                 )
             i += 1
 
-    def travel(self, _jac_here_: Jac.RootType | node_a) -> None:
+    def travel(self, _jac_here_: Jac.Root | node_a) -> None:
         for i in Jac.edge_ref(
             _jac_here_,
             target_obj=None,

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 @Jac.make_walker(on_entry=[Jac.DSFunc("do")], on_exit=[])
 @dataclass(eq=False)
 class Adder(Jac.Walker):
-    def do(self, _jac_here_: Jac.RootType) -> None:
+    def do(self, _jac_here_: Jac.Root) -> None:
         Jac.connect(
             left=_jac_here_,
             right=node_a(),

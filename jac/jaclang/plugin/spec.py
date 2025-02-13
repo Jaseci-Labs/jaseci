@@ -281,6 +281,12 @@ class JacFeatureSpec(
 
     @staticmethod
     @hookspec(firstresult=True)
+    def make_architype2(cls: type[Architype]) -> Type[Architype]:
+        """Create a obj architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
     def make_obj(
         on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:

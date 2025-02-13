@@ -2,16 +2,14 @@
 
 import inspect
 import os
-from abc import ABCMeta, abstractmethod as abstract
-from dataclasses import dataclass, field as dc_field
+from abc import abstractmethod as abstract
+from dataclasses import field as dc_field
 from types import ModuleType
 from typing import (
     Any,
     Callable,
     ClassVar,
-    Dict,
     Generic,
-    Tuple,
     Type,
     TypeGuard,
     TypeVar,
@@ -23,7 +21,6 @@ from jaclang.plugin.builtin import dotgen, jid, jobj  # noqa: F401
 from jaclang.plugin.default import JacFeatureImpl
 from jaclang.plugin.feature import JacFeature as Jac, plugin_manager
 from jaclang.plugin.spec import EdgeDir
-from jaclang.runtimelib.context import ExecutionContext
 
 __all__ = [
     # Jac types.
@@ -68,267 +65,8 @@ S = TypeVar("S")  # S is a subtype of T.
 # ----------------------------------------------------------------------------
 
 
-# Since the meta class of the architypes are changine the base class to it's
-# suitable archi type, If a class doesn't have a parent class (ie. by default
-# inherit from object) __bases__ will be immutable. So we need to use a dummy
-# parent class to make it mutable.
-#
-# Reference: https://stackoverflow.com/a/9639512/10846399
-#
-class _ArchiTypeBase:
-
-    def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
-        """Initialize Jac architype base."""
-
-
-class JacMeta(ABCMeta):
-    """Common metaclass for Jac types."""
-
-    def __new__(  # noqa: D102
-        cls,
-        name: str,
-        bases: Tuple[Type, ...],
-        dct: Dict[str, Any],
-    ) -> "JacMeta":
-
-        # We have added this "__init__" to the jac base class just to make the type checkers happy.
-        # Actually the dataclass decorator will create an __init__ function and assign it here bellow.
-        if bases == (_ArchiTypeBase,) and "__init__" in dct:
-            del dct["__init__"]
-
-        on_entry, on_exit = [], []
-        for func in dct.values():
-            if hasattr(func, "__jac_entry"):
-                on_entry.append(Jac.DSFunc(func.__name__, func))
-            if hasattr(func, "__jac_exit"):
-                on_exit.append(Jac.DSFunc(func.__name__, func))
-
-        inst = super().__new__(cls, name, bases, dct)
-        inst = dataclass(eq=False)(inst)  # type: ignore [arg-type, assignment]
-        inst = inst._MAKE_FN(on_entry, on_exit)(inst)  # type: ignore [assignment, attr-defined]
-        return inst
-
-
-# ----------------------------------------------------------------------------
-# Base classes.
-# ----------------------------------------------------------------------------
-
-
-class Obj(_ArchiTypeBase, metaclass=JacMeta):
-    """Base class for all the jac object types."""
-
-    _MAKE_FN = Jac.make_obj
-
-
-class Walker(_ArchiTypeBase, metaclass=JacMeta):
-    """Base class for all the jac walker types."""
-
-    _MAKE_FN = Jac.make_walker
-
-    def spawn(self, node: "Node | Root") -> "Walker":
-        """Spawn a new node from the walker."""
-        return Jac.spawn_call(self, node)  # type: ignore [arg-type, return-value]
-
-    def ignore(
-        self,
-        expr: """(
-        Root
-        | Node
-        | Edge
-        | list[Node | Root | Edge]
-        | JacList[Node | Root | Edge]
-        )""",
-    ) -> bool:
-        """Ignore statement."""
-        return Jac.ignore(self, expr)  # type: ignore [arg-type]
-
-    def visit(
-        self,
-        expr: """(
-            Root
-            | Node
-            | Edge
-            | list[Node | Root | Edge]
-            | JacList[Node | Root | Edge]
-        )""",
-    ) -> bool:
-        """Visit statement."""
-        return Jac.visit_node(self, expr)  # type: ignore [arg-type]
-
-    def disengage(self) -> None:
-        """Disengage statement."""
-        Jac.disengage(self)  # type: ignore [arg-type]
-
-
-class Node(_ArchiTypeBase, metaclass=JacMeta):
-    """Base class for all the jac node types."""
-
-    _MAKE_FN = Jac.make_node
-
-    def spawn(self, archi: Walker) -> "Walker":
-        """Spawn a new node from the walker."""
-        return Jac.spawn_call(self, archi)  # type: ignore [arg-type, return-value]
-
-    def connect(
-        self,
-        node: "Node | Root | JacList[Node | Root]",
-        edge: "type[Edge] | Edge | None" = None,
-        unidir: bool = False,
-        conn_assign: tuple[tuple, tuple] | None = None,
-        edges_only: bool = False,
-    ) -> "JacList[Node | Root| Edge]":
-        """Connect the current node to another node."""
-        # TODO: The above edge type should be reviewed, as the bellow can also take None, Edge, type[Edge].
-        ret = Jac.connect(
-            left=self,  # type: ignore [arg-type]
-            right=node,  # type: ignore [arg-type]
-            edge_spec=Jac.build_edge(
-                is_undirected=unidir, conn_type=edge, conn_assign=conn_assign  # type: ignore [arg-type]
-            ),
-            edges_only=edges_only,
-        )
-        return JacList(ret)  # type: ignore [arg-type]
-
-    def disconnect(
-        self,
-        node: "Node | Root | JacList[Node | Root]",
-        edge: "type[Edge] | None" = None,
-        dir: EdgeDir = EdgeDir.OUT,
-    ) -> bool:
-        """Disconnect the current node from the graph."""
-        filter_func = None
-        if edge:
-            filter_func = lambda edges: [  # noqa: E731
-                ed for ed in edges if isinstance(ed, edge)
-            ]
-        return Jac.disconnect(self, node, dir=dir, filter_func=filter_func)  # type: ignore [arg-type]
-
-    def refs(
-        self,
-        edge: "type[Edge] | None" = None,
-        cond: "Callable[[Edge], bool] | None" = None,
-        target: "Node | Root | JacList[Node|Root] | None" = None,
-        dir: EdgeDir = EdgeDir.OUT,
-        edges_only: bool = False,
-    ) -> "JacList[Node | Root | Edge]":
-        """Return all the connected nodes / edges."""
-        filter_func = (
-            (
-                lambda edges: (  # noqa: E731
-                    [ed for ed in edges if isinstance(ed, edge) if not cond or cond(ed)]
-                )
-            )
-            if edge
-            else None
-        )
-        ret = plugin_manager.hook.edge_ref(
-            node_obj=self,
-            target_obj=target,
-            dir=dir,
-            filter_func=filter_func,
-            edges_only=edges_only,
-        )
-        return JacList(ret)
-
-
-class Root(_ArchiTypeBase, metaclass=JacMeta):
-    """Base class for jac root type."""
-
-    _MAKE_FN = Jac.make_root
-
-    def spawn(self, archi: Walker) -> "Walker":
-        """Spawn a new node from the walker."""
-        return Jac.spawn_call(self, archi)  # type: ignore [arg-type, return-value]
-
-    def connect(
-        self,
-        node: "Node | Root | JacList[Node | Root]",
-        edge: "type[Edge] | Edge | None" = None,
-        unidir: bool = False,
-        conn_assign: tuple[tuple, tuple] | None = None,
-        edges_only: bool = False,
-    ) -> "JacList[Node | Root| Edge]":
-        """Connect the current node to another node."""
-        # TODO: The above edge type should be reviewed, as the bellow can also take None, Edge, type[Edge].
-        ret = Jac.connect(
-            left=self,  # type: ignore [arg-type]
-            right=node,  # type: ignore [arg-type]
-            edge_spec=Jac.build_edge(
-                is_undirected=unidir, conn_type=edge, conn_assign=conn_assign  # type: ignore [arg-type]
-            ),
-            edges_only=edges_only,
-        )
-        return JacList(ret)  # type: ignore [arg-type]
-
-    def disconnect(
-        self,
-        node: "Node | Root | JacList[Node | Root]",
-        edge: "type[Edge] | None" = None,
-        dir: EdgeDir = EdgeDir.OUT,
-    ) -> bool:
-        """Disconnect the current node from the graph."""
-        filter_func = None
-        if edge:
-            filter_func = lambda edges: [  # noqa: E731
-                ed for ed in edges if isinstance(ed, edge)
-            ]
-        return Jac.disconnect(self, node, dir=dir, filter_func=filter_func)  # type: ignore [arg-type]
-
-    def refs(
-        self,
-        edge: "type[Edge] | None" = None,
-        cond: "Callable[[Edge], bool] | None" = None,
-        target: "Node | Root | JacList[Node|Root] | None" = None,
-        dir: EdgeDir = EdgeDir.OUT,
-        edges_only: bool = False,
-    ) -> "JacList[Node | Root | Edge]":
-        """Return all the connected nodes / edges."""
-        filter_func = (
-            (
-                lambda edges: (  # noqa: E731
-                    [ed for ed in edges if isinstance(ed, edge) if not cond or cond(ed)]
-                )
-            )
-            if edge
-            else None
-        )
-        ret = plugin_manager.hook.edge_ref(
-            node_obj=self,
-            target_obj=target,
-            dir=dir,
-            filter_func=filter_func,
-            edges_only=edges_only,
-        )
-        return JacList(ret)
-
-
-class Edge(_ArchiTypeBase, metaclass=JacMeta):
-    """Base class for all the jac edge types."""
-
-    _MAKE_FN = Jac.make_edge
-
-    def spawn(self, archi: Walker) -> "Walker":
-        """Spawn a new node from the walker."""
-        return Jac.spawn_call(self, archi)  # type: ignore [arg-type, return-value]
-
-
-class GenericEdge(_ArchiTypeBase, metaclass=JacMeta):
-    """Base class for jac root type."""
-
-    _MAKE_FN = Jac.make_generic_edge
-
-    def spawn(self, archi: Walker) -> "Walker":
-        """Spawn a new node from the walker."""
-        return Jac.spawn_call(self, archi)  # type: ignore [arg-type, return-value]
-
-
 class JacList(Generic[T], list[T]):
     """List with jac methods."""
-
-    # Reuse the methods.
-    connect = Node.connect
-    disconnect = Node.disconnect
-    refs = Node.refs
 
     def filter(
         self,
@@ -415,14 +153,3 @@ def field(
 
 jac_test = Jac.create_test
 static = ClassVar
-
-root = cast(Root, Jac.get_root())
-
-
-# Listen to context change and update the above global root here.
-def _update_root() -> None:
-    global root
-    root = cast(Root, ExecutionContext.get_root())
-
-
-ExecutionContext.on_ctx_change.append(lambda ctx: _update_root())

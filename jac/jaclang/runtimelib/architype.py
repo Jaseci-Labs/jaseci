@@ -241,9 +241,10 @@ class Architype:
     _jac_entry_funcs_: ClassVar[list[DSFunc]]
     _jac_exit_funcs_: ClassVar[list[DSFunc]]
 
-    def __init__(self) -> None:
-        """Create default architype."""
-        self.__jac__ = Anchor(architype=self)
+    @cached_property
+    def __jac__(self) -> Anchor:
+        """Initialize Anchor."""
+        raise NotImplementedError("__jac__ is not implemented yet!")
 
     def __repr__(self) -> str:
         """Override repr for architype."""
@@ -253,11 +254,10 @@ class Architype:
 class NodeArchitype(Architype):
     """Node Architype Protocol."""
 
-    __jac__: NodeAnchor
-
-    def __init__(self) -> None:
-        """Create node architype."""
-        self.__jac__ = NodeAnchor(architype=self, edges=[])
+    @cached_property
+    def __jac__(self) -> NodeAnchor:
+        """Initialize NodeAnchor."""
+        return NodeAnchor(architype=self, edges=[])
 
 
 class EdgeArchitype(Architype):
@@ -269,33 +269,37 @@ class EdgeArchitype(Architype):
 class WalkerArchitype(Architype):
     """Walker Architype Protocol."""
 
-    __jac__: WalkerAnchor
-
-    def __init__(self) -> None:
-        """Create walker architype."""
-        self.__jac__ = WalkerAnchor(architype=self)
+    @cached_property
+    def __jac__(self) -> WalkerAnchor:
+        """Initialize WalkerAnchor."""
+        return WalkerAnchor(architype=self)
 
 
 class ObjectArchitype(Architype):
     """Walker Architype Protocol."""
 
-    __jac__: ObjectAnchor
+    @cached_property
+    def __jac__(self) -> ObjectAnchor:
+        """Initialize ObjectAnchor."""
+        return ObjectAnchor(architype=self)
 
-    def __init__(self) -> None:
-        """Create walker architype."""
-        self.__jac__ = ObjectAnchor(architype=self)
 
-
+@dataclass(eq=False)
 class GenericEdge(EdgeArchitype):
     """Generic Edge."""
 
 
+@dataclass(eq=False)
 class Root(NodeArchitype):
     """Generic Root Node."""
 
-    def __init__(self) -> None:
-        """Create root node."""
-        self.__jac__ = NodeAnchor(architype=self, persistent=True, edges=[])
+    _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
+    _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
+
+    @cached_property
+    def __jac__(self) -> NodeAnchor:
+        """Initialize NodeAnchor."""
+        return NodeAnchor(architype=self, persistent=True, edges=[])
 
 
 @dataclass(eq=False)

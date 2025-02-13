@@ -195,7 +195,7 @@ class JacClassReferences:
 
     EdgeDir: ClassVar[TypeAlias] = EdgeDir
     DSFunc: ClassVar[TypeAlias] = DSFunc
-    RootType: ClassVar[TypeAlias] = Root
+    Root: ClassVar[TypeAlias] = Root
     Obj: ClassVar[TypeAlias] = Architype
     Node: ClassVar[TypeAlias] = NodeArchitype
     Edge: ClassVar[TypeAlias] = EdgeArchitype
@@ -236,6 +236,16 @@ class JacCmd:
     def create_cmd() -> None:
         """Create Jac CLI cmds."""
         return plugin_manager.hook.create_cmd()
+
+
+# class JacShortcut:
+#     """Jac Parser Shortcuts."""
+
+#     @classmethod
+#     @property
+#     def root(cls) -> Root:
+#         """Jac's root getter."""
+#         return plugin_manager.hook.get_root()
 
 
 class JacFeature(
@@ -290,6 +300,13 @@ class JacFeature(
         return plugin_manager.hook.make_architype(
             cls=cls, on_entry=on_entry, on_exit=on_exit, arch_base=arch_base
         )
+
+    @staticmethod
+    def make_architype2(
+        cls: type[Architype],
+    ) -> Type[Architype]:
+        """Create a obj architype."""
+        return plugin_manager.hook.make_architype2(cls=cls)
 
     @staticmethod
     def make_obj(

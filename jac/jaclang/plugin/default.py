@@ -9,7 +9,7 @@ import inspect
 import os
 import types
 from collections import OrderedDict
-from dataclasses import field
+from dataclasses import dataclass, field
 from functools import wraps
 from logging import getLogger
 from typing import Any, Callable, Mapping, Optional, Sequence, Type, Union, cast
@@ -698,6 +698,23 @@ class JacFeatureImpl(
 
     @staticmethod
     @hookimpl
+    def make_architype2(cls: type[Architype]) -> Type[Architype]:
+        """Create a new architype."""
+        on_entry, on_exit = [], []
+        for attr in dir(cls):
+            if callable(func := getattr(cls, attr)):
+                if hasattr(func, "__jac_entry"):
+                    on_entry.append(Jac.DSFunc(func.__name__, func))
+                if hasattr(func, "__jac_exit"):
+                    on_exit.append(Jac.DSFunc(func.__name__, func))
+
+        cls._jac_entry_funcs_ = on_entry
+        cls._jac_exit_funcs_ = on_exit
+
+        return dataclass(eq=False)(cls)
+
+    @staticmethod
+    @hookimpl
     def make_obj(
         on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
@@ -1100,9 +1117,7 @@ class JacFeatureImpl(
     @hookimpl
     def get_root_type() -> Type[Root]:
         """Jac's root getter."""
-        from jaclang import Root as JRoot
-
-        return cast(Type[Root], JRoot)
+        return Root
 
     @staticmethod
     @hookimpl
@@ -1112,8 +1127,6 @@ class JacFeatureImpl(
         conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchitype]:
         """Jac's root getter."""
-        from jaclang import GenericEdge
-
         ct = conn_type if conn_type else GenericEdge
 
         def builder(source: NodeAnchor, target: NodeAnchor) -> EdgeArchitype:
