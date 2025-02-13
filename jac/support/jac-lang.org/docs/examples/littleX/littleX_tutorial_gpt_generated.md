@@ -1,9 +1,9 @@
 # littleX: A Jac Programming Language Code‐Along Tutorial
 
-Jac is a native superset of Python that not only inherits all of Python’s features but also adds innovative constructs for data spatial programming and direct integration with large language models (LLMs). In this tutorial, you will build **littleX**—a miniature social network (think of it as a simplified Twitter/X)—using Jac’s graph-based abstractions (nodes, edges, and walkers) alongside LLM integration via the `by llm` syntax.
+Jac is a native superset of Python that not only inherits all of Python’s features but also adds innovative constructs for data spatial programming and direct integration with large language models (LLMs). In this tutorial, you will build **littleX**—a miniature social network (think of it as a simplified Twitter/X)—using Jac’s data-spatial abstractions (nodes, edges, and walkers) alongside LLM integration via the `by llm` syntax.
 
-> **Prerequisites:**  
-> You should have a background in Python. Although Jac builds on Python, its additional graph-centric constructs and special syntax are new. Follow along step by step: type the snippets into your Jac environment and experiment with modifying or extending the code.
+> **Prerequisites:**
+> You should have a background in Python. Although Jac builds on Python, its additional data-spatial constructs and special syntax are new. Follow along step by step: type the snippets into your Jac environment and experiment with modifying or extending the code.
 
 ---
 
@@ -18,17 +18,9 @@ Two of Jac’s most innovative features come into play:
 1. **Data Spatial Programming:** Instead of traditional procedural code, Jac lets you structure your application as a graph. Data entities are nodes, relationships are edges, and specialized walkers traverse the graph to perform operations.
 2. **LLM Integration:** With the `by llm` syntax, you can define functions and methods whose implementations are handled by LLMs—removing the need for prompt engineering and manual API calls.
 
-For additional details on Jac’s data spatial concepts, see:
-- [Nodes and Edges](https://www.jac-lang.org/for_coders/data_spatial/nodes_and_edges/#connecting-nodes) cite1†
-- [Walkers](https://www.jac-lang.org/for_coders/data_spatial/walkers/) cite14†
-- [Node and Edge Filtering](https://www.jac-lang.org/for_coders/data_spatial/filtering/) cite16†
-
-And for LLM integration:
-- [Usage of MTLLM](https://www.jac-lang.org/for_coders/jac-mtllm/usage/) cite22†
-
 ---
 
-## 2. Environment Setup and Global Variables
+## 2. Setting up Dependencies and Imports
 
 Jac seamlessly reuses Python libraries. At the start of the program, several modules are imported using the `import:py` directive:
 
@@ -70,7 +62,7 @@ The function `search_tweets` calculates cosine similarity between a query embedd
 can search_tweets(query: str, tweets: list, tweet_embeddings: any, similarity_threshold: float=0.25) -> list {
     query_embedding = sentence_transformer.encode([query]);
     similarities = cosine_similarity(query_embedding, tweet_embeddings)[0];
-    results = [{**{"Tweet_Info": tweets[i]}, "similarity": similarities[i]} 
+    results = [{**{"Tweet_Info": tweets[i]}, "similarity": similarities[i]}
                for i in range(len(similarities)) if similarities[i] >= similarity_threshold];
     return results;
 }
@@ -101,7 +93,7 @@ For further examples of LLM integration, refer to the [Usage of MTLLM documentat
 
 ## 4. Data Structures: Nodes, Objects, and Edges
 
-Jac uses a graph model where data are represented as nodes and relationships as edges.
+Jac uses a gdata-spatial model where data are represented as nodes and relationships as edges.
 
 ### 4.1 Profile Node
 
@@ -205,7 +197,13 @@ node Comment {
 **Key Points:**
 - **TweetInfo** is a structured object (like a data class) holding tweet metadata.
 - The **Tweet node** includes abilities for updating, deleting, liking, and commenting.
-- Graph traversal (using edges like `+:Like():+>`) is used to manage relationships.
+- `like` ability will be executed when `like_tweet` walker enter the tweet node.
+- ```[root-->(`?Profile)]``` get all the nodes connected to `root` node and filter the node that are `Profile` nodes and return them.
+- `self +:Like():+> current_profile[0]` creates and connects `self` which is current `Tweet` node with the filtered `Profile` node.
+- `report` reports `self` that means the current node as response.
+- `update` ability will be executed when `update_tweet` walker exit the tweet node.
+- Within a node, `self` referes that node. And `here` referes the walker which was currently spawned on that node.
+- `Jac.unrestrict(comment_node[0], level="CONNECT")` sets the permission level of the `Comment` node to `CONNECT` so that other nodes can be connected to this node if required.
 
 ### 4.3 Edge Declarations
 
@@ -221,7 +219,43 @@ edge Post {}
 - These edge types are used in connecting nodes (e.g., a Profile following another Profile or a Profile posting a Tweet).
 - Custom edges can also include attributes, as seen when using connection syntax with additional parameters.
 
-For more on connecting nodes and custom edges, see [Nodes and Edges documentation](https://www.jac-lang.org/for_coders/data_spatial/nodes_and_edges/#connecting-nodes) cite1†.
+#### Edge Operations
+
+- **`++>` (Unidirectional Edge Creation):**
+  Use this operator to create a one-way connection between nodes.
+  ```jac
+  first_node = MyNode();
+  second_node = MyNode();
+  root ++> first_node;
+  first_node ++> second_node;
+  ```
+  This means the edge flows from `root` to `first_node` and then from `first_node` to `second_node`.
+
+- **`<++>` (Bidirectional Edge Creation):**
+  To connect two nodes in both directions, use:
+  ```jac
+  node_1 <++> node_2;
+  ```
+  This creates a bidirectional link, so traversal is possible in either direction.
+
+- **Custom Edges with Attributes:**
+  Custom edges can have properties:
+  ```jac
+  edge Follow {
+      has status: str;
+  }
+
+  with entry {
+      profile1 +:Follow:status='active':+> profile2;
+  }
+  ```
+  This creates a Follow edge with an attribute `status`.
+
+- **Deleting Edges:**
+  Remove an edge with:
+  ```jac
+  node_1 del --> node_2;
+  ```
 
 ---
 
@@ -241,14 +275,116 @@ walker visit_profile {
         }
     }
 }
+
+walker update_profile :visit_profile: {
+    has new_username: str;
+}
+
+walker get_profile :visit_profile: {}
+
+walker load_user_profiles {
+    obj __specs__ {
+        static has auth: bool = False;
+    }
+    can load_profiles with `root entry {
+        self.profiles: list = [];
+
+        for user in NodeAnchor.Collection.find({"name": "Profile"}) {
+            user_node = user.architype;
+            self.profiles.append(
+                {"name": user_node.username, "id": jid(user_node)}
+            );
+        }
+        report self.profiles;
+    }
+}
+
+walker follow_request {}
+
+walker un_follow_request {}
+
+walker create_tweet :visit_profile: {
+    has content: str;
+
+    can tweet with Profile entry {
+        embedding = sentence_transformer.encode(self.content).tolist();
+        tweet_node = here +:Post:+> Tweet(content=self.content, embedding=embedding);
+        Jac.unrestrict(tweet_node[0], level="CONNECT");
+        report tweet_node;
+    }
+}
+
+walker update_tweet {
+    has updated_content: str;
+}
+
+walker remove_tweet {}
+
+walker like_tweet {}
+
+walker remove_like {}
+
+walker comment_tweet {
+    has content: str;
+}
+
+walker update_comment {
+    has updated_content: str;
+}
+
+walker remove_comment {}
+
+walker load_tweets :visit_profile: {
+    has if_report: bool = False;
+    has tweet_info: list[TweetInfo] = [];
+
+    can go_to_tweet with Profile entry {
+        visit [-->(`?Tweet)];
+        if (self.if_report) {
+            report self.tweet_info;
+        }
+    }
+
+    can report_tweet with Tweet entry {
+        self.tweet_info.append(here.get_info());
+    }
+}
+
+walker load_feed :visit_profile: {
+    has search_query: str = "";
+
+    can load with Profile entry {
+        feeds: list = [];
+        user_tweets = here spawn load_tweets();
+        feeds.extend(user_tweets.tweet_info);
+
+        for user_node in [-:Follow:->](`?Profile) {
+            user_tweets = user_node spawn load_tweets();
+            feeds.extend(user_tweets.tweet_info);
+        }
+        tweets = [feed.content for feed in feeds];
+        tweet_embeddings = [numpy.array(feed.embedding) for feed in feeds];
+        summary: str = summarize_tweets(tweets);
+
+        # Filter tweets based on search query
+        if (self.search_query) {
+            filtered_results = search_tweets(
+                self.search_query,
+                feeds,
+                tweet_embeddings
+            );
+            report {"feeds": filtered_results, "summary": summary};
+        } else {
+            report {"feeds": feeds, "summary": summary};
+        }
+    }
+}
 ```
 
 **Key Points:**
 - **Walker Declaration:** A walker type named `visit_profile` is defined.
-- **Traversal with `visit`:** The walker attempts to visit a node of type `Profile` using the `visit` keyword and the traversal operator `[-->(`?Profile)]`.
+- **Traversal with `visit`:** The walker attempts to visit all the nodes with `Profile` type using the `visit` keyword and the traversal operator `[-->(`?Profile)]`.
 - **Fallback Action:** If no Profile node is found, the walker creates one and then visits it.
-
-For further details on walkers, see [Walkers documentation](https://www.jac-lang.org/for_coders/data_spatial/walkers/) cite14†.
 
 ### 5.2 Creating Tweets via Walkers
 
@@ -286,7 +422,7 @@ walker load_feed :visit_profile: {
         feeds: list = [];
         user_tweets = here spawn load_tweets();
         feeds.extend(user_tweets.tweet_info);
-        
+
         for user_node in [-:Follow:->](`?Profile) {
             user_tweets = user_node spawn load_tweets();
             feeds.extend(user_tweets.tweet_info);
@@ -325,7 +461,7 @@ Jac’s unique syntax makes graph manipulation intuitive. Let’s dive deeper in
 
 #### a. Unidirectional and Bidirectional Connections
 
-- **`++>` (Unidirectional Edge Creation):**  
+- **`++>` (Unidirectional Edge Creation):**
   Use this operator to create a one-way connection between nodes.
   ```jac
   first_node = MyNode();
@@ -335,14 +471,14 @@ Jac’s unique syntax makes graph manipulation intuitive. Let’s dive deeper in
   ```
   This means the edge flows from `root` to `first_node` and then from `first_node` to `second_node`.
 
-- **`<++>` (Bidirectional Edge Creation):**  
+- **`<++>` (Bidirectional Edge Creation):**
   To connect two nodes in both directions, use:
   ```jac
   node_1 <++> node_2;
   ```
   This creates a bidirectional link, so traversal is possible in either direction.
 
-- **Custom Edges with Attributes:**  
+- **Custom Edges with Attributes:**
   Custom edges can have properties:
   ```jac
   edge Follow {
@@ -355,13 +491,11 @@ Jac’s unique syntax makes graph manipulation intuitive. Let’s dive deeper in
   ```
   This creates a Follow edge with an attribute `status`.
 
-- **Deleting Edges:**  
+- **Deleting Edges:**
   Remove an edge with:
   ```jac
   node_1 del --> node_2;
   ```
-
-*These operators allow you to build and modify the graph’s structure dynamically. (See [Nodes and Edges](https://www.jac-lang.org/for_coders/data_spatial/nodes_and_edges/#connecting-nodes) cite1† for additional examples.)*
 
 #### b. Traversal Operators in Filtering
 
@@ -384,11 +518,11 @@ The `visit` keyword directs walkers to navigate the graph:
 visit [-->(`?Profile)];
 ```
 **Explanation:**
-- **`-->` in Traversal:**  
+- **`-->` in Traversal:**
   Inside a `visit` expression, the arrow indicates the direction of traversal (following outgoing edges).
-- **Type Filtering:**  
+- **Type Filtering:**
   The pattern ``(`?Profile)`` filters for nodes of type `Profile`.
-- **Conditional Traversal:**  
+- **Conditional Traversal:**
   Walkers can also include an `else` clause to handle missing nodes:
   ```jac
   walker visit_profile {
@@ -403,8 +537,6 @@ visit [-->(`?Profile)];
   ```
   If no `Profile` node exists, the walker creates one before proceeding.
 
-*These traversal constructs make graph navigation clear and concise. (For more on walkers and filtering, see [Walkers](https://www.jac-lang.org/for_coders/data_spatial/walkers/) cite14† and [Node and Edge Filtering](https://www.jac-lang.org/for_coders/data_spatial/filtering/) cite16†.)*
-
 ---
 
 ## 7. Conclusion and Next Steps
@@ -415,18 +547,12 @@ In this combined tutorial, we have:
 - **Set up the environment:** Imported Python libraries and defined global variables for LLM and embedding functionality.
 - **Defined functions and data structures:** Used the `can` keyword for functions (including LLM-based implementations) and declared nodes/objects (Profile, Tweet, Comment, and TweetInfo) to model the application data.
 - **Explained walkers:** Demonstrated how walkers traverse the graph with the `visit` keyword and how they spawn to execute operations like creating tweets.
-- **Detailed data spatial syntax:** Provided an in-depth look at edge operators (`++>`, `<++>`, `-->`), traversal filtering, and the special `visit` keyword that power Jac’s graph-based programming model.
+- **Detailed data spatial syntax:** Provided an in-depth look at edge operators (`++>`, `<++>`, `-->`), traversal filtering, and the special `visit` keyword that power Jac’s data-spatial programming model.
 
-With these foundations, you are now equipped to experiment with Jac’s powerful, hybrid approach. Try extending littleX by adding new abilities (such as retweeting or sentiment-based filtering), or design your own graph-based application. Jac’s natural integration with Python and LLMs offers a versatile platform for building modern, scalable applications.
+With these foundations, you are now equipped to experiment with Jac’s powerful, hybrid approach. Try extending littleX by adding new abilities (such as retweeting or sentiment-based filtering), or design your own data-spatial application. Jac’s natural integration with Python and LLMs offers a versatile platform for building modern, scalable applications.
 
 Happy coding with Jac!
 
 ---
-
-*References:*  
-- [Nodes and Edges](https://www.jac-lang.org/for_coders/data_spatial/nodes_and_edges/#connecting-nodes) cite1†  
-- [Walkers](https://www.jac-lang.org/for_coders/data_spatial/walkers/) cite14†  
-- [Node and Edge Filtering](https://www.jac-lang.org/for_coders/data_spatial/filtering/) cite16†  
-- [Usage of MTLLM](https://www.jac-lang.org/for_coders/jac-mtllm/usage/) cite22†
 
 This completes the comprehensive tutorial on littleX and the unique data spatial syntax of the Jac programming language. Enjoy exploring and building with Jac!
