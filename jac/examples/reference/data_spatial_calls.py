@@ -7,7 +7,7 @@ from dataclasses import dataclass
 @Jac.make_walker(on_entry=[Jac.DSFunc("func2")], on_exit=[])
 @dataclass(eq=False)
 class Creator(Jac.Walker):
-    def func2(self, _jac_here_: Jac.Root) -> None:
+    def func2(self, _jac_here_: Jac.RootType) -> None:
         end = _jac_here_
         i = 0
         while i < 5:

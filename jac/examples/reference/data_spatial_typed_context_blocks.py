@@ -8,7 +8,7 @@ from dataclasses import dataclass
 @dataclass(eq=False)
 class Producer(Jac.Walker):
 
-    def produce(self, _jac_here_: Jac.Root) -> None:
+    def produce(self, _jac_here_: Jac.RootType) -> None:
         end = _jac_here_
         i = 0
         while i <= 2:

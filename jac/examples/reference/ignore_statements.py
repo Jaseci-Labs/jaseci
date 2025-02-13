@@ -8,7 +8,7 @@ from dataclasses import dataclass
 @dataclass(eq=False)
 class Visitor(Jac.Walker):
 
-    def travel(self, _jac_here_: Jac.Root) -> None:
+    def travel(self, _jac_here_: Jac.RootType) -> None:
         Jac.ignore(
             self,
             Jac.edge_ref(
