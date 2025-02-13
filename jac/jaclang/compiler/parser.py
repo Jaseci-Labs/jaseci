@@ -2142,7 +2142,11 @@ class JacParser(Pass):
             ):
                 return ast.FuncCall(
                     target=kid[0],
-                    params=kid[2] if isinstance(kid[2], ast.SubNodeList) else None,
+                    params=(
+                        [i for i in kid[2].items if isinstance(i, ast.KWPair)]
+                        if isinstance(kid[2], ast.SubNodeList)
+                        else []
+                    ),
                     genai_call=kid[-2],
                     kid=kid,
                 )
@@ -2152,12 +2156,10 @@ class JacParser(Pass):
                 and isinstance(kid[2], ast.SubNodeList)
             ):
                 return ast.FuncCall(
-                    target=kid[0], params=kid[2], genai_call=None, kid=kid
+                    target=kid[0], params=kid[2].items, genai_call=None, kid=kid
                 )
             elif len(kid) == 3 and isinstance(kid[0], ast.Expr):
-                return ast.FuncCall(
-                    target=kid[0], params=None, genai_call=None, kid=kid
-                )
+                return ast.FuncCall(target=kid[0], params=[], genai_call=None, kid=kid)
             else:
                 raise self.ice()
 

@@ -3408,7 +3408,7 @@ class FuncCall(Expr):
     def __init__(
         self,
         target: Expr,
-        params: Optional[SubNodeList[Expr | KWPair]],
+        params: list[Expr | KWPair],
         genai_call: Optional[FuncCall],
         kid: Sequence[AstNode],
     ) -> None:
@@ -3424,10 +3424,13 @@ class FuncCall(Expr):
         res = True
         if deep:
             res = self.target.normalize(deep)
-            res = res and (not self.params or self.params.normalize(deep))
+            for param in self.params:
+                res = res and param.normalize(deep)
         new_kids = [self.target, self.gen_token(Tok.LPAREN, "(")]
-        if self.params:
-            new_kids.append(self.params)
+        for idx, param in enumerate(self.params):
+            if idx > 0:
+                new_kids.append(self.gen_token(Tok.COMMA))
+            new_kids.append(param)
         if self.genai_call:
             new_kids.append(self.gen_token(Tok.KW_BY))
             new_kids.append(self.genai_call)

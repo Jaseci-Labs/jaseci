@@ -1900,9 +1900,9 @@ class PyastGenPass(Pass):
             # since the type can be: Optional[SubNodeList[Expr | KWPair]].
             if not (
                 node.params is not None
-                and len(node.params.items) == 2
-                and isinstance(node.params.items[0], ast.Expr)
-                and isinstance(node.params.items[1], ast.Expr)
+                and len(node.params) == 2
+                and isinstance(node.params[0], ast.Expr)
+                and isinstance(node.params[1], ast.Expr)
             ):
                 return CheckNodeIsinstanceCallResult()
 
@@ -1912,8 +1912,8 @@ class PyastGenPass(Pass):
 
             return CheckNodeIsinstanceCallResult(
                 True,
-                node.params.items[0].gen.py_ast[0],
-                node.params.items[1].gen.py_ast[0],
+                node.params[0].gen.py_ast[0],
+                node.params[1].gen.py_ast[0],
             )
 
         # By default the check expression will become assertTrue(<expr>), unless any pattern detected.
@@ -2000,7 +2000,7 @@ class PyastGenPass(Pass):
                 assert_func_name = "assertAlmostEqual"
                 assert_args_list = []
                 if node.target.params is not None:
-                    for param in node.target.params.items:
+                    for param in node.target.params:
                         assert_args_list.append(param.gen.py_ast[0])
 
         # assert_func_expr = "_jac_check.assertXXX"
@@ -2452,11 +2452,13 @@ class PyastGenPass(Pass):
             func_node = ast.FuncCall(
                 target=node.right,
                 params=(
-                    node.left.values
-                    if isinstance(node.left, ast.TupleVal)
-                    else ast.SubNodeList(
-                        items=[node.left], delim=Tok.COMMA, kid=[node.left]
+                    (
+                        node.left.values.items
+                        if isinstance(node.left.values, ast.SubNodeList)
+                        else []
                     )
+                    if isinstance(node.left, ast.TupleVal)
+                    else [node.left]
                 ),
                 genai_call=None,
                 kid=node.kid,
@@ -2487,13 +2489,15 @@ class PyastGenPass(Pass):
             Tok.A_PIPE_BKWD,
         ]:
             func_node = ast.FuncCall(
-                target=node.left,
+                target=node.right,
                 params=(
-                    node.right.values
-                    if isinstance(node.right, ast.TupleVal)
-                    else ast.SubNodeList(
-                        items=[node.right], delim=Tok.COMMA, kid=[node.right]
+                    (
+                        node.right.values.items
+                        if isinstance(node.right.values, ast.SubNodeList)
+                        else []
                     )
+                    if isinstance(node.right, ast.TupleVal)
+                    else [node.right]
                 ),
                 genai_call=None,
                 kid=node.kid,
@@ -3044,13 +3048,13 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         target: Expr,
-        params: Optional[SubNodeList[Expr | KWPair]],
+        params: list[Expr | KWPair],
         """
         func = node.target.gen.py_ast[0]
         args = []
         keywords = []
-        if node.params and len(node.params.items) > 0:
-            for x in node.params.items:
+        if node.params and len(node.params) > 0:
+            for x in node.params:
                 if isinstance(x, ast.UnaryExpr) and x.op.name == Tok.STAR_POW:
                     keywords.append(
                         self.sync(ast3.keyword(value=x.operand.gen.py_ast[0]), x)
