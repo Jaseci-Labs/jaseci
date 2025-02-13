@@ -756,7 +756,7 @@ class Test(AstSymbolNode, ElementStmt):
     def __init__(
         self,
         name: Name | Token,
-        body: list[CodeBlockStmt],
+        body: SubNodeList[CodeBlockStmt],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
     ) -> None:
@@ -800,17 +800,14 @@ class Test(AstSymbolNode, ElementStmt):
         res = True
         if deep:
             res = self.name.normalize(deep)
-            for stmt in self.body:
-                res = res and stmt.normalize(deep)
+            res = res and self.body.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
         if self.doc:
             new_kid.append(self.doc)
         new_kid.append(self.gen_token(Tok.KW_TEST))
         new_kid.append(self.name)
-        new_kid.append(self.gen_token(Tok.LBRACE))
-        new_kid.extend(self.body)
-        new_kid.append(self.gen_token(Tok.RBRACE))
+        new_kid.append(self.body)
         self.set_kids(nodes=new_kid)
         return res
 
