@@ -2064,7 +2064,8 @@ class JacFormatPass(Pass):
         body: CodeBlock,
         """
         self.emit_ln(node, node.doc.gen.jac) if node.doc else None
-        self.emit(node, f"test {node.name.value} {{\n")
+        name = "" if node.name.value.startswith("_jac_gen_") else node.name.value
+        self.emit(node, f"test {name} {{\n")
         self.indent_level += 1
         for stmt in node.body:
             for line in stmt.gen.jac.splitlines():
