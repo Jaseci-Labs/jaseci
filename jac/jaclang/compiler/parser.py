@@ -388,8 +388,7 @@ class JacParser(Pass):
             if self.match_token(Tok.KW_FROM):
                 from_path = self.consume(ast.ModulePath)
                 self.consume(ast.Token)  # LBRACE or COMMA
-                items = self.consume(ast.SubNodeList)  # TODO: Fix me
-                items = []
+                items = self.consume(ast.SubNodeList).items
                 if self.consume(ast.Token).name == Tok.SEMI:  # RBRACE or SEMI
                     self.parse_ref.warning(
                         "Deprecated syntax, use braces for multiple imports (e.g, import from mymod {a, b, c})",
