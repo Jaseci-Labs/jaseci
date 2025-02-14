@@ -38,29 +38,6 @@ if TYPE_CHECKING:
     from jaclang.compiler.symtable import Symbol, SymbolTable
 
 
-def import__sub_node_list_normalize(
-    parent_node: AstNode,
-    node_list: Sequence[AstNode],
-    deep: bool = False,
-    delim: Optional[Tok] = Tok.COMMA,
-    left_enc: Optional[Token] = None,
-    right_enc: Optional[Token] = None,
-) -> bool:
-    res = True
-    if deep:
-        for i in node_list:
-            res = res and i.normalize()
-    new_kid: list[AstNode] = []
-    for i in node_list:
-        new_kid.append(i)
-        if delim:
-            new_kid.append(parent_node.gen_token(delim))
-    if delim and node_list:
-        new_kid.pop()
-    # self.set_kids(nodes=new_kid if len(new_kid) else [EmptyToken()])
-    return len(new_kid) > 0
-
-
 class AstNode:
     """Abstract syntax tree node for Jac."""
 
@@ -967,8 +944,17 @@ class Import(ElementStmt, CodeBlockStmt):
         if deep:
             res = self.hint.normalize(deep) if self.hint else res
             res = res and self.from_loc.normalize(deep) if self.from_loc else res
-            # res = res and self.items.normalize(deep)                # TODO Check this
-            res = res and import__sub_node_list_normalize(self, self.items, deep)
+            if deep:
+                for i in self.items:
+                    res = res and i.normalize()
+            t: list[AstNode] = []
+            for i in self.items:
+                t.append(i)
+                if Tok.COMMA:
+                    t.append(self.gen_token(Tok.COMMA))
+            if Tok.COMMA and self.items:
+                t.pop()
+            res = res and len(t) > 0
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
         if self.doc:
@@ -983,7 +969,6 @@ class Import(ElementStmt, CodeBlockStmt):
             new_kid.append(self.gen_token(Tok.KW_FROM))
             new_kid.append(self.from_loc)
             new_kid.append(self.gen_token(Tok.COMMA))
-        # new_kid.append(self.items)                                  # TODO Check this
         new_kid += self.items
         new_kid.append(self.gen_token(Tok.SEMI))
         self.set_kids(nodes=new_kid)
