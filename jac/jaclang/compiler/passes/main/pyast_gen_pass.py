@@ -219,11 +219,11 @@ class PyastGenPass(Pass):
     def flatten(self, body: list[T | list[T] | None]) -> list[T]:
         """Flatten ast list."""
         new_body = []
-        for i in body:
-            if isinstance(i, list):
-                new_body += i
-            elif i is not None:
-                new_body.append(i) if i else None
+        for stmt in body:
+            if isinstance(stmt, list):
+                new_body.extend(stmt)
+            elif stmt is not None:
+                new_body.append(stmt)
         return new_body
 
     def sync(
@@ -265,6 +265,33 @@ class PyastGenPass(Pass):
                         i.end_lineno += self.cur_node.loc.first_line
                     i.jac_link: ast3.AST = [self.cur_node]  # type: ignore
         return py_nodes
+
+    # NOTE: this method is the list version of resolve_stmt_block().
+    # This is temproary  and will be gone in the future.
+    def resolve_body_stmts(
+        self,
+        body: list[ast.CodeBlockStmt],
+        doc: Optional[ast.String] = None,
+    ) -> list[ast3.AST]:
+
+        # 1. Filter valid statements.
+        valid_stmts = [
+            stmt
+            for stmt in body
+            if not isinstance(stmt, (ast.Semi, ast.AstImplOnlyNode))
+        ]
+
+        if not valid_stmts and not doc:
+            return [self.sync(ast3.Pass())]
+
+        # 2. Flattern the body, this is for with entry {} code.
+        ret: list[ast3.AST] = self.flatten([stmt.gen.py_ast for stmt in valid_stmts])
+
+        # 3. Insert the docstring as the first statement of the body.
+        if doc:
+            ret.insert(0, self.sync(ast3.Expr(value=doc.gen.py_ast[0]), jac_node=doc))
+
+        return ret
 
     def resolve_stmt_block(
         self,
@@ -1309,23 +1336,16 @@ class PyastGenPass(Pass):
         )
         vararg = None
         kwarg = None
-        if isinstance(node.params, ast.SubNodeList):
-            for i in node.params.items:
-                if i.unpack and i.unpack.value == "*":
-                    vararg = i.gen.py_ast[0]
-                elif i.unpack and i.unpack.value == "**":
-                    kwarg = i.gen.py_ast[0]
-                else:
-                    (
-                        params.append(i.gen.py_ast[0])
-                        if isinstance(i.gen.py_ast[0], ast3.arg)
-                        else self.ice("This list should only be Args")
-                    )
-        defaults = (
-            [x.value.gen.py_ast[0] for x in node.params.items if x.value]
-            if node.params
-            else []
-        )
+        for param in node.params:
+            if param.unpack and param.unpack.value == "*":
+                vararg = param.gen.py_ast[0]
+            elif param.unpack and param.unpack.value == "**":
+                kwarg = param.gen.py_ast[0]
+            else:
+                if not isinstance(param.gen.py_ast[0], ast3.arg):
+                    raise self.ice("This list should only be Args")
+                params.append(param.gen.py_ast[0])
+        defaults = [param.value.gen.py_ast[0] for param in node.params if param.value]
         node.gen.py_ast = [
             self.sync(
                 ast3.arguments(
@@ -1702,7 +1722,7 @@ class PyastGenPass(Pass):
                 ast3.ExceptHandler(
                     type=node.ex_type.gen.py_ast[0],
                     name=node.name.sym_name if node.name else None,
-                    body=self.resolve_stmt_block(node.body),
+                    body=self.resolve_body_stmts(node.body),
                 )
             )
         ]
@@ -1777,7 +1797,7 @@ class PyastGenPass(Pass):
             self.sync(
                 ast3.While(
                     test=node.condition.gen.py_ast[0],
-                    body=self.resolve_stmt_block(node.body),
+                    body=self.resolve_body_stmts(node.body),
                     orelse=[],
                 )
             )
@@ -2645,7 +2665,7 @@ class PyastGenPass(Pass):
                 )
             ]
         else:
-            self.ice(f"Unknown Unary operator {node.op.value}")
+            raise self.ice(f"Unknown Unary operator {node.op.value}")
 
     def exit_if_else_expr(self, node: ast.IfElseExpr) -> None:
         """Sub objects.
@@ -3046,7 +3066,7 @@ class PyastGenPass(Pass):
                 ):
                     keywords.append(x.gen.py_ast[0])
                 else:
-                    self.ice("Invalid Parameter")
+                    raise self.ice("Invalid Parameter")
         if node.genai_call:
             self.needs_jac_feature()
             by_llm_call_args = self.get_by_llm_call_args(node)

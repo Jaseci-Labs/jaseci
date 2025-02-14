@@ -25,7 +25,7 @@ obj ExecutionContext {
         memory: Memory = Memory();
 
     can reset;
-    can get_root() -> Architype;
+    can get_root -> Architype;
 }
 
 "Global Execution Context, should be monkey patched by the user."
@@ -117,7 +117,7 @@ obj JacPlugin {
     @hookimpl
     static can bind_architype(arch: AT, arch_type: str, on_entry: list[str], on_exit: list[str]) -> bool;
     @hookimpl
-    static can get_root() -> Architype;
+    static can get_root -> Architype;
     @hookimpl
     static can build_edge(edge_spec: tuple[int, Optional[tuple], Optional[tuple]]) -> Architype;
     @hookimpl
@@ -181,7 +181,7 @@ obj JacPlugin {
     return (self.index |> sys.getsizeof) / 1024.0;
 }
 
-:obj:ExecutionContext:c:get_root() {
+:obj:ExecutionContext:c:get_root {
     if self.master :> type == UUID {
         self.master = Master();
     }
@@ -447,7 +447,7 @@ obj JacPlugin {
     return True;
 }
 
-:obj:JacPlugin:can:get_root() -> None {
+:obj:JacPlugin:can:get_root -> None {
     return exec_ctx.get_root();
 }
 

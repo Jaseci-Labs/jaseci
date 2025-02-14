@@ -1537,7 +1537,7 @@ class FuncSignature(AstSemStrNode):
 
     def __init__(
         self,
-        params: Optional[SubNodeList[ParamVar]],
+        params: list[ParamVar],
         return_type: Optional[Expr],
         kid: Sequence[AstNode],
         semstr: Optional[String] = None,
@@ -1553,12 +1553,15 @@ class FuncSignature(AstSemStrNode):
         """Normalize ast node."""
         res = True
         if deep:
-            res = self.params.normalize(deep) if self.params else res
+            for param in self.params:
+                res = res and param.normalize(deep)
             res = res and self.return_type.normalize(deep) if self.return_type else res
             res = res and self.semstr.normalize(deep) if self.semstr else res
         new_kid: list[AstNode] = [self.gen_token(Tok.LPAREN)]
-        if self.params:
-            new_kid.append(self.params)
+        for idx, param in enumerate(self.params):
+            if idx > 0:
+                new_kid.append(self.gen_token(Tok.COMMA))
+            new_kid.append(param)
         new_kid.append(self.gen_token(Tok.RPAREN))
         if self.return_type:
             new_kid.append(self.gen_token(Tok.RETURN_HINT))
@@ -2013,9 +2016,9 @@ class Except(CodeBlockStmt):
 
     def __init__(
         self,
-        ex_type: Expr,
+        ex_type: Expr,  # TODO: This should be optional.
         name: Optional[Name],
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize except node."""
@@ -2030,7 +2033,8 @@ class Except(CodeBlockStmt):
         if deep:
             res = self.ex_type.normalize(deep)
             res = res and self.name.normalize(deep) if self.name else res
-            res = res and self.body.normalize(deep) if self.body else res
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
         new_kid: list[AstNode] = [
             self.gen_token(Tok.KW_EXCEPT),
             self.ex_type,
@@ -2038,7 +2042,9 @@ class Except(CodeBlockStmt):
         if self.name:
             new_kid.append(self.gen_token(Tok.KW_AS))
             new_kid.append(self.name)
-        new_kid.append(self.body)
+        new_kid.append(self.gen_token(Tok.LBRACE))
+        new_kid.extend(self.body)
+        new_kid.append(self.gen_token(Tok.RBRACE))
         self.set_kids(nodes=new_kid)
         return res
 
@@ -2165,7 +2171,7 @@ class WhileStmt(CodeBlockStmt):
     def __init__(
         self,
         condition: Expr,
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize while statement node."""
@@ -2178,14 +2184,17 @@ class WhileStmt(CodeBlockStmt):
         res = True
         if deep:
             res = self.condition.normalize(deep)
-            res = res and self.body.normalize(deep)
-        new_kid: list[AstNode] = [
-            self.gen_token(Tok.KW_WHILE),
-            self.condition,
-        ]
-        if self.body:
-            new_kid.append(self.body)
-        self.set_kids(nodes=new_kid)
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
+        self.set_kids(
+            nodes=[
+                self.gen_token(Tok.KW_WHILE),
+                self.condition,
+                self.gen_token(Tok.LBRACE),
+                *self.body,
+                self.gen_token(Tok.RBRACE),
+            ]
+        )
         return res
 
 
