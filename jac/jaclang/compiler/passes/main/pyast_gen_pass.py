@@ -415,14 +415,19 @@ class PyastGenPass(Pass):
         """
         if node.doc:
             doc = self.sync(ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc)
-            if isinstance(doc, ast3.AST) and isinstance(
-                node.assignments.gen.py_ast, list
-            ):
-                node.gen.py_ast = [doc] + node.assignments.gen.py_ast
+            if isinstance(doc, ast3.AST) and len(node.assignments) > 0:
+                node.gen.py_ast = [doc]
+                for i in node.assignments:
+                    node.gen.py_ast += i.gen.py_ast
             else:
                 raise self.ice()
         else:
-            node.gen.py_ast = node.assignments.gen.py_ast
+            if len(node.assignments) == 0:
+                node.gen.py_ast = None
+            else:
+                node.gen.py_ast = []
+                for i in node.assignments:
+                    node.gen.py_ast += i.gen.py_ast
 
     def exit_test(self, node: ast.Test) -> None:
         """Sub objects.

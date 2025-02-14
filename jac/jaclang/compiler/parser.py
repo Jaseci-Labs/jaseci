@@ -302,7 +302,7 @@ class JacParser(Pass):
             """
             is_frozen = self.consume(ast.Token).name == Tok.KW_LET
             access_tag = self.match(ast.SubTag)
-            assignments = self.consume(ast.SubNodeList)
+            assignments = self.consume(ast.SubNodeList).items
             return ast.GlobalVars(
                 access=access_tag,
                 assignments=assignments,

@@ -38,6 +38,29 @@ if TYPE_CHECKING:
     from jaclang.compiler.symtable import Symbol, SymbolTable
 
 
+def global_var__sub_node_list_normalize(
+    parent_node: AstNode,
+    node_list: Sequence[AstNode],
+    deep: bool = False,
+    delim: Optional[Tok] = Tok.COMMA,
+    left_enc: Optional[Token] = None,
+    right_enc: Optional[Token] = None,
+) -> bool:
+    res = True
+    if deep:
+        for i in node_list:
+            res = res and i.normalize()
+    new_kid: list[AstNode] = []
+    for i in node_list:
+        new_kid.append(i)
+        if delim:
+            new_kid.append(parent_node.gen_token(delim))
+    if delim and node_list:
+        new_kid.pop()
+    # self.set_kids(nodes=new_kid if len(new_kid) else [EmptyToken()])
+    return len(new_kid) > 0
+
+
 class AstNode:
     """Abstract syntax tree node for Jac."""
 
@@ -715,7 +738,7 @@ class GlobalVars(ElementStmt, AstAccessNode):
     def __init__(
         self,
         access: Optional[SubTag[Token]],
-        assignments: SubNodeList[Assignment],
+        assignments: Sequence[Assignment],
         is_frozen: bool,
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
@@ -732,7 +755,9 @@ class GlobalVars(ElementStmt, AstAccessNode):
         res = True
         if deep:
             res = self.access.normalize(deep) if self.access else True
-            res = res and self.assignments.normalize(deep)
+            res = res and global_var__sub_node_list_normalize(
+                self, self.assignments, deep
+            )
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
         if self.doc:
@@ -743,7 +768,7 @@ class GlobalVars(ElementStmt, AstAccessNode):
             new_kid.append(self.gen_token(Tok.KW_GLOBAL))
         if self.access:
             new_kid.append(self.access)
-        new_kid.append(self.assignments)
+        new_kid += self.assignments
         self.set_kids(nodes=new_kid)
         return res
 
