@@ -810,15 +810,16 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid_body = [stmt for stmt in body if isinstance(stmt, ast.CodeBlockStmt)]
         if len(valid_body) != len(body):
             raise self.ice("Length mismatch in async for body")
-        body_sub = ast.SubNodeList[ast.CodeBlockStmt](
-            items=valid_body,
-            delim=Tok.WS,
-            kid=body,
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
-        )
         return ast.WithStmt(
-            is_async=False, exprs=items_sub, body=body_sub, kid=[items_sub, body_sub]
+            is_async=False,
+            exprs=items_sub,
+            body=valid_body,
+            kid=[
+                items_sub,
+                self.operator(Tok.LBRACE, "{"),
+                *valid_body,
+                self.operator(Tok.RBRACE, "}"),
+            ],
         )
 
     def proc_async_with(self, node: py_ast.AsyncWith) -> ast.WithStmt:
@@ -840,15 +841,16 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid_body = [stmt for stmt in body if isinstance(stmt, ast.CodeBlockStmt)]
         if len(valid_body) != len(body):
             raise self.ice("Length mismatch in async for body")
-        body_sub = ast.SubNodeList[ast.CodeBlockStmt](
-            items=valid_body,
-            delim=Tok.WS,
-            kid=body,
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
-        )
         return ast.WithStmt(
-            is_async=True, exprs=items_sub, body=body_sub, kid=[items_sub, body_sub]
+            is_async=True,
+            exprs=items_sub,
+            body=valid_body,
+            kid=[
+                items_sub,
+                self.operator(Tok.LBRACE, "{"),
+                *valid_body,
+                self.operator(Tok.RBRACE, "}"),
+            ],
         )
 
     def proc_raise(self, node: py_ast.Raise) -> ast.RaiseStmt:

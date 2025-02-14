@@ -1810,7 +1810,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(
                 with_node(
-                    items=node.exprs.gen.py_ast, body=self.resolve_stmt_block(node.body)
+                    items=node.exprs.gen.py_ast, body=self.resolve_body_stmts(node.body)
                 )
             )
         ]

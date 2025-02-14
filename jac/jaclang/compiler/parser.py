@@ -1434,15 +1434,21 @@ class JacParser(Pass):
 
             with_stmt: KW_ASYNC? KW_WITH expr_as_list code_block
             """
-            is_async = bool(self.match_token(Tok.KW_ASYNC))
-            self.consume_token(Tok.KW_WITH)
-            exprs = self.consume(ast.SubNodeList)
-            body = self.consume(ast.SubNodeList)
+            async_tok = self.match_token(Tok.KW_ASYNC)
+            tok_with = self.consume_token(Tok.KW_WITH)
+            exprs, body_stmts = (
+                self.consume(ast.SubNodeList),
+                self.consume(ast.SubNodeList).items,
+            )
             return ast.WithStmt(
-                is_async=is_async,
+                is_async=bool(async_tok),
                 exprs=exprs,
-                body=body,
-                kid=self.cur_nodes,
+                body=body_stmts,
+                kid=(
+                    [async_tok, tok_with, exprs, *body_stmts]
+                    if async_tok
+                    else [tok_with, exprs, *body_stmts]
+                ),
             )
 
         def expr_as_list(self, _: None) -> ast.SubNodeList[ast.ExprAsItem]:

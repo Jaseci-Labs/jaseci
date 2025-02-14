@@ -2195,7 +2195,7 @@ class WithStmt(AstAsyncNode, CodeBlockStmt):
         self,
         is_async: bool,
         exprs: SubNodeList[ExprAsItem],
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize with statement node."""
@@ -2209,14 +2209,15 @@ class WithStmt(AstAsyncNode, CodeBlockStmt):
         res = True
         if deep:
             res = self.exprs.normalize(deep)
-            res = res and self.body.normalize(deep)
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
         new_kid: list[AstNode] = []
         if self.is_async:
             new_kid.append(self.gen_token(Tok.KW_ASYNC))
         new_kid.append(self.gen_token(Tok.KW_WITH))
         new_kid.append(self.exprs)
         new_kid.append(self.gen_token(Tok.LBRACE))
-        new_kid.append(self.body)
+        new_kid.extend(self.body)
         new_kid.append(self.gen_token(Tok.RBRACE))
 
         self.set_kids(nodes=new_kid)
