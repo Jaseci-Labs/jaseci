@@ -152,7 +152,6 @@ class Tokens(str, Enum):
 
     FLOAT = "FLOAT"
     STRING = "STRING"
-    DOC_STRING = "DOC_STRING"
     PYNLINE = "PYNLINE"
     BOOL = "BOOL"
     INT = "INT"

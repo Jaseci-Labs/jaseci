@@ -255,23 +255,21 @@ class JacParser(Pass):
             module: ((STRING | toplevel_stmt) (STRING? toplevel_stmt)*)?
             """
             module_doc = self.match(ast.String)
-            tl_stmts = [self.match(ast.ElementStmt)] if not module_doc else []
+            tl_stmts: list[ast.ElementStmt] = []
             while True:
                 doc = self.match(ast.String)
-                tl_stmt = self.match(ast.ElementStmt)
-                if not tl_stmt:
+                if tl_stmt := self.match(ast.ElementStmt):
+                    tl_stmts.append(tl_stmt)
+                    if doc:
+                        tl_stmt.doc = doc
+                        tl_stmt.add_kids_left([doc])
+                else:
                     break
-                tl_stmts.append(tl_stmt)
-                if doc:
-                    tl_stmt.doc = doc
-                    tl_stmt.add_kids_left([doc])
-            body = tl_stmts
-
             mod = ast.Module(
                 name=self.parse_ref.mod_path.split(os.path.sep)[-1].rstrip(".jac"),
                 source=self.parse_ref.source,
                 doc=module_doc,
-                body=body,
+                body=tl_stmts,
                 is_imported=False,
                 terminals=self.terminals,
                 kid=(
