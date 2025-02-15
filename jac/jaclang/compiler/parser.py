@@ -1376,8 +1376,8 @@ class JacParser(Pass):
                         expression code_block else_stmt?
                     | KW_ASYNC? KW_FOR expression KW_IN expression code_block else_stmt?
             """
-            is_async = bool(self.match_token(Tok.KW_ASYNC))
-            self.consume_token(Tok.KW_FOR)
+            async_tok = self.match_token(Tok.KW_ASYNC)
+            for_tok = self.consume_token(Tok.KW_FOR)
             if iter := self.match(ast.Assignment):
                 self.consume_token(Tok.KW_TO)
                 condition = self.consume(ast.Expr)
@@ -1386,7 +1386,7 @@ class JacParser(Pass):
                 body = self.consume(ast.SubNodeList)
                 else_body = self.match(ast.ElseStmt)
                 return ast.IterForStmt(
-                    is_async=is_async,
+                    is_async=bool(async_tok),
                     iter=iter,
                     condition=condition,
                     count_by=count_by,
@@ -1395,17 +1395,25 @@ class JacParser(Pass):
                     kid=self.cur_nodes,
                 )
             target = self.consume(ast.Expr)
-            self.consume_token(Tok.KW_IN)
+            in_tok = self.consume_token(Tok.KW_IN)
             collection = self.consume(ast.Expr)
-            body = self.consume(ast.SubNodeList)
+            body_stmts = self.consume(ast.SubNodeList).items
             else_body = self.match(ast.ElseStmt)
             return ast.InForStmt(
-                is_async=is_async,
+                is_async=bool(async_tok),
                 target=target,
                 collection=collection,
-                body=body,
+                body=body_stmts,
                 else_body=else_body,
-                kid=self.cur_nodes,
+                kid=[
+                    *([async_tok] if async_tok else []),
+                    for_tok,
+                    target,
+                    in_tok,
+                    collection,
+                    *body_stmts,
+                    *([else_body] if else_body else []),
+                ],
             )
 
         def while_stmt(self, _: None) -> ast.WhileStmt:

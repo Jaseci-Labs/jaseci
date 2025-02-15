@@ -2119,7 +2119,7 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         target: Expr,
         is_async: bool,
         collection: Expr,
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         else_body: Optional[ElseStmt],
         kid: Sequence[AstNode],
     ) -> None:
@@ -2137,7 +2137,8 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         if deep:
             res = self.target.normalize(deep)
             res = res and self.collection.normalize(deep)
-            res = res and self.body.normalize(deep)
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
             res = res and self.else_body.normalize(deep) if self.else_body else res
         new_kid: list[AstNode] = []
         if self.is_async:
@@ -2148,7 +2149,7 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         new_kid.append(self.collection)
 
         if self.body:
-            new_kid.append(self.body)
+            new_kid.extend(self.body)
         if self.else_body:
             new_kid.append(self.else_body)
         self.set_kids(nodes=new_kid)

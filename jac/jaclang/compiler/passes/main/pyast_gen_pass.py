@@ -1768,7 +1768,7 @@ class PyastGenPass(Pass):
         target: Expr,
         is_async: bool,
         collection: Expr,
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         else_body: Optional[ElseStmt],
         """
         for_node = ast3.AsyncFor if node.is_async else ast3.For
@@ -1777,7 +1777,7 @@ class PyastGenPass(Pass):
                 for_node(
                     target=node.target.gen.py_ast[0],
                     iter=node.collection.gen.py_ast[0],
-                    body=self.resolve_stmt_block(node.body),
+                    body=self.resolve_body_stmts(node.body),
                     orelse=node.else_body.gen.py_ast if node.else_body else [],
                 )
             )

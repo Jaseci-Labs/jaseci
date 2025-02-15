@@ -604,14 +604,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         val_body = [i for i in body if isinstance(i, ast.CodeBlockStmt)]
         if len(val_body) != len(body):
             raise self.ice("Length mismatch in for body")
-
-        valid_body = ast.SubNodeList[ast.CodeBlockStmt](
-            items=val_body,
-            delim=Tok.WS,
-            kid=val_body,
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
-        )
         orelse = [self.convert(i) for i in node.orelse]
         val_orelse = [i for i in orelse if isinstance(i, ast.CodeBlockStmt)]
         if len(val_orelse) != len(orelse):
@@ -636,12 +628,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 target=target,
                 is_async=False,
                 collection=iter,
-                body=valid_body,
+                body=val_body,
                 else_body=fin_orelse,
                 kid=(
-                    [target, iter, valid_body, fin_orelse]
+                    [target, iter, *val_body, fin_orelse]
                     if fin_orelse
-                    else [target, iter, valid_body]
+                    else [target, iter, *val_body]
                 ),
             )
         else:
@@ -663,14 +655,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         val_body = [i for i in body if isinstance(i, ast.CodeBlockStmt)]
         if len(val_body) != len(body):
             raise self.ice("Length mismatch in for body")
-
-        valid_body = ast.SubNodeList[ast.CodeBlockStmt](
-            items=val_body,
-            delim=Tok.WS,
-            kid=val_body,
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
-        )
         orelse = [self.convert(i) for i in node.orelse]
         val_orelse = [i for i in orelse if isinstance(i, ast.CodeBlockStmt)]
         if len(val_orelse) != len(orelse):
@@ -695,12 +679,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 target=target,
                 is_async=True,
                 collection=iter,
-                body=valid_body,
+                body=val_body,
                 else_body=fin_orelse,
                 kid=(
-                    [target, iter, valid_body, fin_orelse]
+                    [target, iter, *val_body, fin_orelse]
                     if fin_orelse
-                    else [target, iter, valid_body]
+                    else [target, iter, *val_body]
                 ),
             )
         else:
