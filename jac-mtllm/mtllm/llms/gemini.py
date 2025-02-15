@@ -46,20 +46,26 @@ class Gemini(BaseLLM):
         verbose: bool = False,
         max_tries: int = 10,
         type_check: bool = False,
+        api_key: str = None,
         **kwargs: dict,
     ) -> None:
-        """Initialize the Anthropic API client."""
-        import google.generativeai as genai  # type: ignore
+        """Initialize the Gemini API client."""
+        from google import genai
+        from google.genai import types  
         import os
 
         super().__init__(verbose, max_tries, type_check)
         self.model_name = str(kwargs.get("model_name", "gemini-1.5-flash"))
-        self.temperature = kwargs.get("temperature", 0.8)
+        self.client = genai.Client(api_key=(api_key or os.environ["GEMINI_API_KEY"]))
+        self.types = types
+        self.temperature = kwargs.get("temperature", 0.7)
         self.max_tokens = kwargs.get("max_tokens", 1024)
-        self.client = genai.GenerativeModel(self.model_name)
-        self.genai = genai
-        genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-
+        self.top_k = kwargs.get("top_k", 2)
+        self.top_p = kwargs.get("top_p", 0.5)
+        self.system_instruction = kwargs.get("system_instruction", None)
+        self.stop_sequences = kwargs.get("stop_sequences", ['\n'])
+        self.seed = kwargs.get("seed", 42)
+    
     def __infer__(self, meaning_in: str | list[dict], **kwargs: dict) -> str:
         """Infer a response from the input meaning."""
         if not isinstance(meaning_in, str):
@@ -67,15 +73,27 @@ class Gemini(BaseLLM):
                 ("gemini")
             ), f"Model {self.model_name} is not multimodal, use a multimodal model instead."
 
-        messages = [{"role": "user", "parts": [{"text": meaning_in}]}]  # FIXED FORMAT
+        messages = meaning_in
 
-        output = self.client.generate_content(
-            messages,
-            generation_config = self.genai.GenerationConfig(
-                max_output_tokens = kwargs.get("max_tokens", self.max_tokens),
-                temperature = kwargs.get("temperature", self.temperature),
+        output = self.client.models.generate_content(
+            model=self.model_name,
+            contents=messages,
+            config=self.types.GenerateContentConfig(
+                tools=[self.types.Tool(code_execution=self.types.CodeExecution())],
+                system_instruction=self.system_instruction,
+                max_output_tokens= self.max_tokens,
+                top_k= self.top_k,
+                top_p= self.top_p,
+                temperature= self.temperature,
+                # response_mime_type= 'application/json',
+                stop_sequences= self.stop_sequences,
+                seed=self.seed,
+                safety_settings= [
+                self.types.SafetySetting(
+                    category='HARM_CATEGORY_HATE_SPEECH',
+                    threshold='BLOCK_ONLY_HIGH'
+                ),
+            ]
             ),
-            stream=True
         )
-        response_text = "".join(chunk.text for chunk in output)
-        return response_text
+        return output.text
