@@ -46,12 +46,12 @@ class Gemini(BaseLLM):
         verbose: bool = False,
         max_tries: int = 10,
         type_check: bool = False,
-        api_key: str = None,
+        api_key: str = "",
         **kwargs: dict,
     ) -> None:
         """Initialize the Gemini API client."""
         from google import genai
-        from google.genai import types  
+        from google.genai import types
         import os
 
         super().__init__(verbose, max_tries, type_check)
@@ -62,10 +62,10 @@ class Gemini(BaseLLM):
         self.max_tokens = kwargs.get("max_tokens", 1024)
         self.top_k = kwargs.get("top_k", 2)
         self.top_p = kwargs.get("top_p", 0.5)
-        self.system_instruction = kwargs.get("system_instruction", None)
-        self.stop_sequences = kwargs.get("stop_sequences", ['\n'])
+        self.system_instruction = kwargs.get("system_instruction")
+        self.stop_sequences = kwargs.get("stop_sequences", ["\n"])
         self.seed = kwargs.get("seed", 42)
-    
+
     def __infer__(self, meaning_in: str | list[dict], **kwargs: dict) -> str:
         """Infer a response from the input meaning."""
         if not isinstance(meaning_in, str):
@@ -79,21 +79,20 @@ class Gemini(BaseLLM):
             model=self.model_name,
             contents=messages,
             config=self.types.GenerateContentConfig(
-                tools=[self.types.Tool(code_execution=self.types.CodeExecution())],
                 system_instruction=self.system_instruction,
-                max_output_tokens= self.max_tokens,
-                top_k= self.top_k,
-                top_p= self.top_p,
-                temperature= self.temperature,
+                max_output_tokens=self.max_tokens,
+                top_k=self.top_k,
+                top_p=self.top_p,
+                temperature=self.temperature,
                 # response_mime_type= 'application/json',
-                stop_sequences= self.stop_sequences,
+                stop_sequences=self.stop_sequences,
                 seed=self.seed,
-                safety_settings= [
-                self.types.SafetySetting(
-                    category='HARM_CATEGORY_HATE_SPEECH',
-                    threshold='BLOCK_ONLY_HIGH'
-                ),
-            ]
+                safety_settings=[
+                    self.types.SafetySetting(
+                        category="HARM_CATEGORY_HATE_SPEECH",
+                        threshold="BLOCK_ONLY_HIGH",
+                    ),
+                ],
             ),
         )
         return output.text
