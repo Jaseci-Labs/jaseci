@@ -2590,7 +2590,7 @@ class GlobalStmt(CodeBlockStmt):
 
     def __init__(
         self,
-        target: SubNodeList[NameAtom],
+        target: list[NameAtom],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize global statement node."""
@@ -2601,10 +2601,11 @@ class GlobalStmt(CodeBlockStmt):
         """Normalize global statement node."""
         res = True
         if deep:
-            res = self.target.normalize(deep)
+            for stmt in self.target:
+                res = res and stmt.normalize(deep)
         new_kid: list[AstNode] = [
             self.gen_token(Tok.GLOBAL_OP),
-            self.target,
+            *self.target,
             self.gen_token(Tok.SEMI),
         ]
         self.set_kids(nodes=new_kid)
@@ -2618,10 +2619,11 @@ class NonLocalStmt(GlobalStmt):
         """Normalize nonlocal statement node."""
         res = True
         if deep:
-            res = self.target.normalize(deep)
+            for target_node in self.target:
+                res = res and target_node.normalize(deep)
         new_kid: list[AstNode] = [
             self.gen_token(Tok.NONLOCAL_OP),
-            self.target,
+            *self.target,
             self.gen_token(Tok.SEMI),
         ]
         self.set_kids(nodes=new_kid)
