@@ -7,17 +7,15 @@ from typing import Any, Generic, TypeVar, cast
 
 from bson import ObjectId
 
-from fastapi import Request
+from fastapi import Request, WebSocket
 
-from jaclang.runtimelib.context import ExecutionContext
+from jaclang.runtimelib.context import EXECUTION_CONTEXT, ExecutionContext
 
 from .architype import (
     AccessLevel,
     Anchor,
-    AnchorState,
     BaseArchitype,
     NodeAnchor,
-    Permission,
     Root,
     asdict,
 )
@@ -61,55 +59,50 @@ class JaseciContext(ExecutionContext):
     system_root: NodeAnchor
     root: NodeAnchor
     entry_node: NodeAnchor
-    base: ExecutionContext
-    request: Request
+    base: ExecutionContext | None
+    connection: Request | WebSocket
 
     def close(self) -> None:
         """Clean up context."""
         self.mem.close()
 
     @staticmethod
-    def create(request: Request, entry: NodeAnchor | None = None) -> "JaseciContext":  # type: ignore[override]
+    def create(  # type: ignore[override]
+        connection: Request | WebSocket, entry: NodeAnchor | None = None
+    ) -> "JaseciContext":
         """Create JacContext."""
+        from jaclang import Root
+
         ctx = JaseciContext()
-        ctx.base = ExecutionContext.get()
-        ctx.request = request
+        ctx.base = EXECUTION_CONTEXT.get(None)
+        ctx.connection = connection
         ctx.mem = MongoDB()
         ctx.reports = []
         ctx.status = 200
 
+        system_root: NodeAnchor | None = None
         if not isinstance(system_root := ctx.mem.find_by_id(SUPER_ROOT), NodeAnchor):
-            system_root = NodeAnchor(
-                architype=object.__new__(Root),
-                id=SUPER_ROOT_ID,
-                access=Permission(),
-                state=AnchorState(connected=True),
-                persistent=True,
-                edges=[],
-            )
-            system_root.architype.__jac__ = system_root
+            system_root = Root().__jac__  # type: ignore[attr-defined]
+            system_root.id = SUPER_ROOT_ID
+            system_root.state.connected = True
+            system_root.persistent = True
             NodeAnchor.Collection.insert_one(system_root.serialize())
             system_root.sync_hash()
             ctx.mem.set(system_root.id, system_root)
 
         ctx.system_root = system_root
 
-        if _root := getattr(request, "_root", None):
+        if _root := getattr(connection, "_root", None):
             ctx.root = _root
             ctx.mem.set(_root.id, _root)
         else:
             if not isinstance(
                 public_root := ctx.mem.find_by_id(PUBLIC_ROOT), NodeAnchor
             ):
-                public_root = NodeAnchor(
-                    architype=object.__new__(Root),
-                    id=PUBLIC_ROOT_ID,
-                    access=Permission(all=AccessLevel.WRITE),
-                    state=AnchorState(),
-                    persistent=True,
-                    edges=[],
-                )
-                public_root.architype.__jac__ = public_root
+                public_root = Root().__jac__  # type: ignore[attr-defined]
+                public_root.id = PUBLIC_ROOT_ID
+                public_root.access.all = AccessLevel.WRITE
+                public_root.persistent = True
                 ctx.mem.set(public_root.id, public_root)
 
             ctx.root = public_root

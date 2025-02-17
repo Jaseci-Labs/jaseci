@@ -38,6 +38,7 @@ class JacMachine:
         self.loaded_modules: dict[str, types.ModuleType] = {}
         if not base_path:
             base_path = os.getcwd()
+        # Ensure the base_path is a list rather than a string
         self.base_path = base_path
         self.base_path_dir = (
             os.path.dirname(base_path)
@@ -306,12 +307,11 @@ class JacProgram:
                 return marshal.load(f)
 
         result = compile_jac(full_target, cache_result=cachable)
-        if result.errors_had or not result.ir.gen.py_bytecode:
+        if result.errors_had:
             for alrt in result.errors_had:
                 # We're not logging here, it already gets logged as the errors were added to the errors_had list.
                 # Regardless of the logging, this needs to be sent to the end user, so we'll printing it to stderr.
                 logger.error(alrt.pretty_print())
-            return None
         if result.ir.gen.py_bytecode is not None:
             return marshal.loads(result.ir.gen.py_bytecode)
         else:

@@ -25,6 +25,10 @@ class Memory(Generic[ID, TANCH]):
         self.__mem__.clear()
         self.__gc__.clear()
 
+    def is_cached(self, id: ID) -> bool:
+        """Check if id if already cached."""
+        return id in self.__mem__
+
     def find(
         self,
         ids: ID | Iterable[ID],
@@ -80,14 +84,32 @@ class ShelfStorage(Memory[UUID, Anchor]):
     def close(self) -> None:
         """Close memory handler."""
         if isinstance(self.__shelf__, Shelf):
-            from jaclang.plugin.feature import JacFeature as Jac
-
             for anchor in self.__gc__:
                 self.__shelf__.pop(str(anchor.id), None)
                 self.__mem__.pop(anchor.id, None)
 
-            for d in self.__mem__.values():
-                if d.persistent and d.hash != hash(dumps(d)):
+            keys = set(self.__mem__.keys())
+
+            # current memory
+            self.sync_mem_to_db(keys)
+
+            # additional after memory sync
+            self.sync_mem_to_db(set(self.__mem__.keys() - keys))
+
+            self.__shelf__.close()
+        super().close()
+
+    def sync_mem_to_db(self, keys: Iterable[UUID]) -> None:
+        """Manually sync memory to db."""
+        from jaclang.plugin.feature import JacFeature as Jac
+
+        if isinstance(self.__shelf__, Shelf):
+            for key in keys:
+                if (
+                    (d := self.__mem__.get(key))
+                    and d.persistent
+                    and d.hash != hash(dumps(d))
+                ):
                     _id = str(d.id)
                     if p_d := self.__shelf__.get(_id):
                         if (
@@ -96,7 +118,7 @@ class ShelfStorage(Memory[UUID, Anchor]):
                             and p_d.edges != d.edges
                             and Jac.check_connect_access(d)
                         ):
-                            if not d.edges:
+                            if not d.edges and not isinstance(d.architype, Root):
                                 self.__shelf__.pop(_id, None)
                                 continue
                             p_d.edges = d.edges
@@ -114,9 +136,6 @@ class ShelfStorage(Memory[UUID, Anchor]):
                         and not d.edges
                     ):
                         self.__shelf__[_id] = d
-
-            self.__shelf__.close()
-        super().close()
 
     def find(
         self,

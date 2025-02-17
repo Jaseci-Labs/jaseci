@@ -1,0 +1,5 @@
+*.egg-info
+__jac_gen__
+build
+*.pyc
+__pycache__

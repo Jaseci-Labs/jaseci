@@ -91,8 +91,9 @@ class Constants(StrEnum):
     """Token constants for Jac."""
 
     JAC_LANG_IMP = "jac"
-    HERE = "_jac_here_"
-    JAC_FEATURE = "_Jac"
+    HERE = "here"  # "_jac_here_"
+    JAC_CHECK = "_check"
+    JAC_FEATURE = "Jac"  # "_Jac"
     ROOT = f"{JAC_FEATURE}.get_root()"
     EDGES_TO_NODE = "__jac__.edges_to_nodes"
     EDGE_REF = "__jac__.edge_ref"
@@ -152,7 +153,6 @@ class Tokens(str, Enum):
 
     FLOAT = "FLOAT"
     STRING = "STRING"
-    DOC_STRING = "DOC_STRING"
     PYNLINE = "PYNLINE"
     BOOL = "BOOL"
     INT = "INT"
@@ -315,7 +315,6 @@ class Tokens(str, Enum):
     ABILITY_OP = "ABILITY_OP"
     A_PIPE_FWD = "A_PIPE_FWD"
     A_PIPE_BKWD = "A_PIPE_BKWD"
-    ELVIS_OP = "ELVIS_OP"
     RETURN_HINT = "RETURN_HINT"
     NULL_OK = "NULL_OK"
     DECOR_OP = "DECOR_OP"
@@ -356,7 +355,7 @@ colors = [
     "#F0FFF0",
     "#F5E5FF",
     "#FFFFE0",
-    "#D2FEFF ",
+    "#D2FEFF",
     "#E8FFD7",
     "#FFDEAD",
     "#FFF0F5",

@@ -41,12 +41,12 @@ class TestCase(_TestCase):
             raise ValueError("Unable to determine the file of the module.")
         fixture_src = module.__file__
         fixture_path = os.path.join(os.path.dirname(fixture_src), "fixtures", fixture)
-        with open(fixture_path, "r") as f:
+        with open(fixture_path, "r", encoding="utf-8") as f:
             return f.read()
 
     def file_to_str(self, file_path: str) -> str:
         """Load fixture from fixtures directory."""
-        with open(file_path, "r") as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             return f.read()
 
     def fixture_abs_path(self, fixture: str) -> str:

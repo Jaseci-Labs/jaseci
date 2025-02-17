@@ -8,6 +8,16 @@ from .user import (
     UserResetPassword,
     UserVerification,
 )
+from .webhook import Expiration, GenerateKey, KeyIDs
+from .websocket import (
+    ChangeUserEvent,
+    ChannelEvent,
+    ClientEvent,
+    ConnectionEvent,
+    UserEvent,
+    WalkerEvent,
+    WebSocketEvent,
+)
 
 
 __all__ = [
@@ -18,4 +28,14 @@ __all__ = [
     "UserRequest",
     "UserResetPassword",
     "UserVerification",
+    "Expiration",
+    "GenerateKey",
+    "KeyIDs",
+    "ChangeUserEvent",
+    "ChannelEvent",
+    "ClientEvent",
+    "ConnectionEvent",
+    "UserEvent",
+    "WalkerEvent",
+    "WebSocketEvent",
 ]

@@ -4,8 +4,8 @@ from getpass import getpass
 from os import getenv
 from os.path import split
 from pickle import load
+from typing import Any
 
-from jaclang import jac_import
 from jaclang.cli.cmdreg import cmd_registry
 from jaclang.plugin.default import hookimpl
 from jaclang.runtimelib.context import ExecutionContext
@@ -13,9 +13,8 @@ from jaclang.runtimelib.machine import JacMachine, JacProgram
 
 from pymongo.errors import ConnectionFailure, OperationFailure
 
-from .mini.cli_mini import serve_mini
-from ..core.architype import BulkWrite
-from ..core.context import SUPER_ROOT_ID
+from ..core.architype import BulkWrite, NodeAnchor
+from ..core.context import PUBLIC_ROOT_ID, SUPER_ROOT_ID
 from ..jaseci.datasources import Collection
 from ..jaseci.models import User as BaseUser
 from ..jaseci.utils import logger
@@ -31,10 +30,7 @@ class JacCmd:
 
         @cmd_registry.register
         def serve(filename: str, host: str = "0.0.0.0", port: int = 8000) -> None:
-            if not getenv("DATABASE_HOST"):
-                serve_mini(filename=filename, host=host, port=port)
-                return
-
+            from jaclang import jac_import
             from jac_cloud import FastAPI
 
             """Serve the jac application."""
@@ -77,6 +73,8 @@ class JacCmd:
         def create_system_admin(
             filename: str, email: str = "", password: str = ""
         ) -> str:
+            from jaclang import jac_import
+
             if not getenv("DATABASE_HOST"):
                 raise NotImplementedError(
                     "DATABASE_HOST env-var is required for this API!"
@@ -140,28 +138,56 @@ class JacCmd:
                 )
 
                 retry = 0
-                max_retry = BulkWrite.SESSION_MAX_TRANSACTION_RETRY
-                while retry <= max_retry:
+                while True:
                     try:
+                        default_data: dict[str, Any] = {
+                            "name": None,
+                            "root": None,
+                            "access": {
+                                "all": "NO_ACCESS",
+                                "roots": {"anchors": {}},
+                            },
+                            "architype": {},
+                            "edges": [],
+                        }
+
+                        if not NodeAnchor.Collection.find_by_id(
+                            PUBLIC_ROOT_ID, session=session
+                        ):
+                            NodeAnchor.Collection.insert_one(
+                                {"_id": PUBLIC_ROOT_ID, **default_data},
+                                session=session,
+                            )
+                        if not NodeAnchor.Collection.find_by_id(
+                            SUPER_ROOT_ID, session=session
+                        ):
+                            NodeAnchor.Collection.insert_one(
+                                {"_id": SUPER_ROOT_ID, **default_data},
+                                session=session,
+                            )
                         if id := (
                             user_model.Collection.insert_one(req_obf, session=session)
                         ).inserted_id:
                             BulkWrite.commit(session)
                             return f"System Admin created with id: {id}"
+                        raise SystemError("Can't create System Admin!")
                     except (ConnectionFailure, OperationFailure) as ex:
-                        if ex.has_error_label("TransientTransactionError"):
+                        if (
+                            ex.has_error_label("TransientTransactionError")
+                            and retry <= BulkWrite.SESSION_MAX_TRANSACTION_RETRY
+                        ):
                             retry += 1
                             logger.error(
                                 "Error executing bulk write! "
-                                f"Retrying [{retry}/{max_retry}] ..."
+                                f"Retrying [{retry}/{BulkWrite.SESSION_MAX_TRANSACTION_RETRY}] ..."
                             )
                             continue
-                        logger.exception("Error executing bulk write!")
-                        session.abort_transaction()
+                        logger.exception(
+                            f"Error executing bulk write after max retry [{BulkWrite.SESSION_MAX_TRANSACTION_RETRY}] !"
+                        )
                         raise
                     except Exception:
                         logger.exception("Error executing bulk write!")
-                        session.abort_transaction()
                         raise
 
             raise Exception("Can't process registration. Please try again!")

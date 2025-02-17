@@ -2,42 +2,24 @@
 
 from collections import OrderedDict
 from contextlib import suppress
-from dataclasses import Field, MISSING, fields, is_dataclass
 from functools import wraps
-from os import getenv
-from re import compile
-from types import NoneType
-from typing import Any, Callable, Type, TypeAlias, TypeVar, Union, cast, get_type_hints
-
-from asyncer import syncify
-
-from fastapi import (
-    APIRouter,
-    Depends,
-    File,
-    HTTPException,
-    Request,
-    Response,
-    UploadFile,
-)
-from fastapi.responses import ORJSONResponse
+from typing import Callable, Type
 
 from jaclang.compiler.constant import EdgeDir
-from jaclang.plugin.default import JacFeatureImpl, hookimpl
+from jaclang.plugin.default import (
+    JacCallableImplementation as _JacCallableImplementation,
+    JacFeatureImpl,
+    hookimpl,
+)
 from jaclang.plugin.feature import JacFeature as Jac
-from jaclang.runtimelib.architype import DSFunc
+from jaclang.runtimelib.architype import Architype, DSFunc
+from jaclang.runtimelib.utils import all_issubclass
 
-from orjson import loads
-
-from pydantic import BaseModel, Field as pyField, ValidationError, create_model
-
-from starlette.datastructures import UploadFile as BaseUploadFile
-
+from .implementation.api import populate_apis
 from ..core.architype import (
     AccessLevel,
     Anchor,
     AnchorState,
-    Architype,
     BaseAnchor,
     EdgeAnchor,
     EdgeArchitype,
@@ -50,260 +32,24 @@ from ..core.architype import (
     WalkerAnchor,
     WalkerArchitype,
 )
-from ..core.context import ContextResponse, ExecutionContext, JaseciContext
+from ..core.context import ExecutionContext, JaseciContext
 from ..jaseci import FastAPI
-from ..jaseci.security import authenticator
-
-# from ..jaseci.utils import log_entry, log_exit
 
 
-T = TypeVar("T")
-DISABLE_AUTO_ENDPOINT = getenv("DISABLE_AUTO_ENDPOINT") == "true"
-PATH_VARIABLE_REGEX = compile(r"{([^\}]+)}")
-FILE_TYPES = {
-    UploadFile,
-    list[UploadFile],
-    UploadFile | None,
-    list[UploadFile] | None,
-}
+class JacCallableImplementation:
+    """Callable Implementations."""
 
-walker_router = APIRouter(prefix="/walker", tags=["walker"])
+    @staticmethod
+    def get_object(id: str) -> Architype | None:
+        """Get object by id."""
+        if not FastAPI.is_enabled():
+            return _JacCallableImplementation.get_object(id=id)
 
+        with suppress(ValueError):
+            if isinstance(architype := BaseAnchor.ref(id).architype, Architype):
+                return architype
 
-def get_specs(cls: type) -> Type["DefaultSpecs"] | None:
-    """Get Specs and inherit from DefaultSpecs."""
-    specs = getattr(cls, "__specs__", None)
-    if specs is None:
-        if DISABLE_AUTO_ENDPOINT:
-            return None
-        specs = DefaultSpecs
-
-    if not issubclass(specs, DefaultSpecs):
-        specs = type(specs.__name__, (specs, DefaultSpecs), {})
-
-    return specs
-
-
-def gen_model_field(cls: type, field: Field, is_file: bool = False) -> tuple[type, Any]:
-    """Generate Specs for Model Field."""
-    if field.default is not MISSING:
-        consts = (cls, pyField(default=field.default))
-    elif callable(field.default_factory):
-        consts = (cls, pyField(default_factory=field.default_factory))
-    else:
-        consts = (cls, File(...) if is_file else ...)
-
-    return consts
-
-
-def populate_apis(cls: Type[WalkerArchitype]) -> None:
-    """Generate FastAPI endpoint based on WalkerArchitype class."""
-    if (specs := get_specs(cls)) and not specs.private:
-        path: str = specs.path or ""
-        methods: list = specs.methods or []
-        as_query: str | list[str] = specs.as_query or []
-        excluded: str | list[str] = specs.excluded or []
-        auth: bool = specs.auth or False
-
-        query: dict[str, Any] = {}
-        body: dict[str, Any] = {}
-        files: dict[str, Any] = {}
-
-        if path:
-            if not path.startswith("/"):
-                path = f"/{path}"
-            if isinstance(as_query, list):
-                as_query += PATH_VARIABLE_REGEX.findall(path)
-
-        hintings = get_type_hints(cls)
-
-        if is_dataclass(cls):
-            if excluded != "*":
-                if isinstance(excluded, str):
-                    excluded = [excluded]
-
-                for f in fields(cls):
-                    if f.name in excluded:
-                        if f.default is MISSING and not callable(f.default_factory):
-                            raise AttributeError(
-                                f"{cls.__name__} {f.name} should have default or default_factory."
-                            )
-                        continue
-
-                    f_name = f.name
-                    f_type = hintings[f_name]
-                    if f_type in FILE_TYPES:
-                        files[f_name] = gen_model_field(f_type, f, True)
-                    else:
-                        consts = gen_model_field(f_type, f)
-
-                        if as_query == "*" or f_name in as_query:
-                            query[f_name] = consts
-                        else:
-                            body[f_name] = consts
-            elif any(
-                f.default is MISSING and not callable(f.default_factory)
-                for f in fields(cls)
-            ):
-                raise AttributeError(
-                    f"{cls.__name__} fields should all have default or default_factory."
-                )
-
-        payload: dict[str, Any] = {
-            "query": (
-                create_model(f"{cls.__name__.lower()}_query_model", **query),
-                Depends(),
-            ),
-            "files": (
-                create_model(f"{cls.__name__.lower()}_files_model", **files),
-                Depends(),
-            ),
-        }
-
-        body_model = None
-        if body:
-            body_model = create_model(f"{cls.__name__.lower()}_body_model", **body)
-
-            if files:
-                payload["body"] = (UploadFile, File(...))
-            else:
-                payload["body"] = (body_model, ...)
-
-        payload_model = create_model(f"{cls.__name__.lower()}_request_model", **payload)
-
-        def api_entry(
-            request: Request,
-            node: str | None,
-            payload: payload_model = Depends(),  # type: ignore # noqa: B008
-        ) -> ORJSONResponse:
-            pl = cast(BaseModel, payload).model_dump()
-            body = pl.get("body", {})
-
-            # log = log_entry(
-            #     cls.__name__,
-            #     user.email if (user := getattr(request, "_user", None)) else None,
-            #     pl,
-            #     node,
-            # )
-
-            if isinstance(body, BaseUploadFile) and body_model:
-                body = loads(syncify(body.read)())
-                try:
-                    body = body_model(**body).model_dump()
-                except ValidationError as e:
-                    return ORJSONResponse({"detail": e.errors()})
-
-            jctx = JaseciContext.create(request, NodeAnchor.ref(node) if node else None)
-
-            wlk: WalkerAnchor = cls(**body, **pl["query"], **pl["files"]).__jac__
-            if Jac.check_read_access(jctx.entry_node):
-                Jac.spawn_call(wlk.architype, jctx.entry_node.architype)
-                jctx.close()
-
-                if jctx.custom is not MISSING:
-                    return jctx.custom
-
-                resp = jctx.response(wlk.returns)
-                # log_exit(resp, log)
-
-                return ORJSONResponse(resp, jctx.status)
-            else:
-                error = {
-                    "error": f"You don't have access on target entry{cast(Anchor, jctx.entry_node).ref_id}!"
-                }
-                jctx.close()
-
-                # log_exit(error, log)
-                raise HTTPException(403, error)
-
-        def api_root(
-            request: Request,
-            payload: payload_model = Depends(),  # type: ignore # noqa: B008
-        ) -> Response:
-            return api_entry(request, None, payload)
-
-        for method in methods:
-            method = method.lower()
-
-            walker_method = getattr(walker_router, method)
-
-            raw_types: list[Type] = [
-                get_type_hints(jef.func).get("return", NoneType)
-                for jef in (*cls._jac_entry_funcs_, *cls._jac_exit_funcs_)
-            ]
-
-            if raw_types:
-                if len(raw_types) > 1:
-                    ret_types: TypeAlias = Union[*raw_types]  # type: ignore[valid-type]
-                else:
-                    ret_types = raw_types[0]  # type: ignore[misc]
-            else:
-                ret_types = NoneType  # type: ignore[misc]
-
-            settings: dict[str, Any] = {
-                "tags": ["walker"],
-                "response_model": ContextResponse[ret_types] | Any,
-            }
-            if auth:
-                settings["dependencies"] = cast(list, authenticator)
-
-            walker_method(url := f"/{cls.__name__}{path}", summary=url, **settings)(
-                api_root
-            )
-            walker_method(
-                url := f"/{cls.__name__}/{{node}}{path}", summary=url, **settings
-            )(api_entry)
-
-
-def specs(
-    cls: Type[WalkerArchitype] | None = None,
-    *,
-    path: str = "",
-    methods: list[str] = ["post"],  # noqa: B006
-    as_query: str | list[str] = [],  # noqa: B006
-    excluded: str | list[str] = [],  # noqa: B006
-    auth: bool = True,
-    private: bool = False,
-) -> Callable:
-    """Walker Decorator."""
-
-    def wrapper(cls: Type[WalkerArchitype]) -> Type[WalkerArchitype]:
-        if get_specs(cls) is None:
-            p = path
-            m = methods
-            aq = as_query
-            ex = excluded
-            a = auth
-            pv = private
-
-            class __specs__(DefaultSpecs):  # noqa: N801
-                path: str = p
-                methods: list[str] = m
-                as_query: str | list[str] = aq
-                excluded: str | list[str] = ex
-                auth: bool = a
-                private: bool = pv
-
-            cls.__specs__ = __specs__  # type: ignore[attr-defined]
-
-            populate_apis(cls)
-        return cls
-
-    if cls:
-        return wrapper(cls)
-
-    return wrapper
-
-
-class DefaultSpecs:
-    """Default API specs."""
-
-    path: str = ""
-    methods: list[str] = ["post"]
-    as_query: str | list[str] = []
-    excluded: str | list[str] = []
-    auth: bool = True
-    private: bool = False
+        return None
 
 
 class JacAccessValidationPlugin:
@@ -328,7 +74,7 @@ class JacAccessValidationPlugin:
         if (
             isinstance(anchor, BaseAnchor)
             and (ref_id := root_id.ref_id)
-            and level != access.anchors.get(ref_id, AccessLevel.NO_ACCESS)
+            and level != access.anchors.get(ref_id)
         ):
             access.anchors[ref_id] = level
             anchor._set.update({f"access.roots.anchors.{ref_id}": level.name})
@@ -423,14 +169,12 @@ class JacAccessValidationPlugin:
             if to_root.access.all > access_level:
                 access_level = to_root.access.all
 
-            level = to_root.access.roots.check(jroot.ref_id)
-            if level > AccessLevel.NO_ACCESS and access_level == AccessLevel.NO_ACCESS:
+            if (level := to_root.access.roots.check(jroot.ref_id)) is not None:
                 access_level = level
 
         # if target anchor have set allowed roots
         # if current root is allowed to target anchor
-        level = to_access.roots.check(jroot.ref_id)
-        if level > AccessLevel.NO_ACCESS and access_level == AccessLevel.NO_ACCESS:
+        if (level := to_access.roots.check(jroot.ref_id)) is not None:
             access_level = level
 
         return access_level
@@ -504,6 +248,37 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
+    def reset_graph(root: Root | None = None) -> int:
+        """Purge current or target graph."""
+        if not FastAPI.is_enabled():
+            return JacFeatureImpl.reset_graph(root=root)  # type: ignore[arg-type]
+
+        ctx = JaseciContext.get()
+        ranchor = root.__jac__ if root else ctx.root
+
+        deleted_count = 0  # noqa: SIM113
+
+        for node in NodeAnchor.Collection.find(
+            {"_id": {"$ne": ranchor.id}, "root": ranchor.id}
+        ):
+            ctx.mem.__mem__[node.id] = node
+            Jac.destroy(node)
+            deleted_count += 1
+
+        for edge in EdgeAnchor.Collection.find({"root": ranchor.id}):
+            ctx.mem.__mem__[edge.id] = edge
+            Jac.destroy(edge)
+            deleted_count += 1
+
+        for walker in WalkerAnchor.Collection.find({"root": ranchor.id}):
+            ctx.mem.__mem__[walker.id] = walker
+            Jac.destroy(walker)
+            deleted_count += 1
+
+        return deleted_count
+
+    @staticmethod
+    @hookimpl
     def make_architype(
         cls: type,
         arch_base: Type[Architype],
@@ -511,10 +286,6 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
         on_exit: list[DSFunc],
     ) -> Type[Architype]:
         """Create a new architype."""
-        if not FastAPI.is_enabled():
-            return JacFeatureImpl.make_architype(
-                cls=cls, arch_base=arch_base, on_entry=on_entry, on_exit=on_exit
-            )
         for i in on_entry + on_exit:
             i.resolve(cls)
         if not hasattr(cls, "_jac_entry_funcs_") or not hasattr(
@@ -522,9 +293,13 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
         ):
             # Saving the module path and reassign it after creating cls
             # So the jac modules are part of the correct module
-            cur_module = cls.__module__
-            cls = type(cls.__name__, (cls, arch_base), {})
-            cls.__module__ = cur_module
+            assert cls.__bases__ != (object,)
+            bases = (
+                (cls.__bases__ + (arch_base,))
+                if arch_base not in cls.__bases__
+                else cls.__bases__
+            )
+            cls.__bases__ = bases
             cls._jac_entry_funcs_ = on_entry  # type: ignore
             cls._jac_exit_funcs_ = on_exit  # type: ignore
         else:
@@ -558,8 +333,6 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
         on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
         """Create a new architype."""
-        if not FastAPI.is_enabled():
-            return JacFeatureImpl.make_obj(on_entry=on_entry, on_exit=on_exit)
 
         def decorator(cls: Type[Architype]) -> Type[Architype]:
             """Decorate class."""
@@ -579,8 +352,6 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
         on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
         """Create a obj architype."""
-        if not FastAPI.is_enabled():
-            return JacFeatureImpl.make_node(on_entry=on_entry, on_exit=on_exit)
 
         def decorator(cls: Type[Architype]) -> Type[Architype]:
             """Decorate class."""
@@ -593,12 +364,26 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
+    def make_root(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a obj architype."""
+
+        def decorator(cls: Type[Architype]) -> Type[Architype]:
+            """Decorate class."""
+            cls = Jac.make_architype(
+                cls=cls, arch_base=Root, on_entry=on_entry, on_exit=on_exit
+            )
+            return cls
+
+        return decorator
+
+    @staticmethod
+    @hookimpl
     def make_edge(
         on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
         """Create a edge architype."""
-        if not FastAPI.is_enabled():
-            return JacFeatureImpl.make_edge(on_entry=on_entry, on_exit=on_exit)
 
         def decorator(cls: Type[Architype]) -> Type[Architype]:
             """Decorate class."""
@@ -611,12 +396,29 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
+    def make_generic_edge(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a edge architype."""
+
+        def decorator(cls: Type[Architype]) -> Type[Architype]:
+            """Decorate class."""
+            cls = Jac.make_architype(
+                cls=cls,
+                arch_base=GenericEdge,
+                on_entry=on_entry,
+                on_exit=on_exit,
+            )
+            return cls
+
+        return decorator
+
+    @staticmethod
+    @hookimpl
     def make_walker(
         on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
         """Create a walker architype."""
-        if not FastAPI.is_enabled():
-            return JacFeatureImpl.make_walker(on_entry=on_entry, on_exit=on_exit)
 
         def decorator(cls: Type[Architype]) -> Type[Architype]:
             """Decorate class."""
@@ -642,21 +444,14 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
-    def get_root_type() -> Type[Root]:
-        """Jac's root getter."""
-        if not FastAPI.is_enabled():
-            return JacFeatureImpl.get_root_type()  # type:ignore[return-value]
-
-        return Root
-
-    @staticmethod
-    @hookimpl
     def build_edge(
         is_undirected: bool,
         conn_type: Type[EdgeArchitype] | EdgeArchitype | None,
         conn_assign: tuple[tuple, tuple] | None,
     ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchitype]:
         """Jac's root getter."""
+        from jaclang import GenericEdge
+
         if not FastAPI.is_enabled():
             return JacFeatureImpl.build_edge(  # type:ignore[return-value]
                 is_undirected=is_undirected,
@@ -664,10 +459,10 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                 conn_assign=conn_assign,
             )
 
-        conn_type = conn_type if conn_type else GenericEdge
+        ct = conn_type if conn_type else GenericEdge  # type: ignore[assignment]
 
         def builder(source: NodeAnchor, target: NodeAnchor) -> EdgeArchitype:
-            edge = conn_type() if isinstance(conn_type, type) else conn_type
+            edge = ct() if isinstance(ct, type) else ct
 
             eanch = edge.__jac__ = EdgeAnchor(
                 architype=edge,
@@ -699,16 +494,9 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
-    def get_object(id: str) -> Architype | None:
-        """Get object via reference id."""
-        if not FastAPI.is_enabled():
-            return JacFeatureImpl.get_object(id=id)
-
-        with suppress(ValueError):
-            if isinstance(architype := BaseAnchor.ref(id).architype, Architype):
-                return architype
-
-        return None
+    def get_object_func() -> Callable[[str], Architype | None]:
+        """Get object by id func."""
+        return JacCallableImplementation.get_object
 
     @staticmethod
     @hookimpl
@@ -752,59 +540,85 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
         walker.path = []
         walker.next = [node]
         walker.returns = []
+        current_node = node.architype
 
-        if walker.next:
-            current_node = walker.next[-1].architype
-            for i in warch._jac_entry_funcs_:
-                if not i.trigger:
-                    if i.func:
-                        walker.returns.append(i.func(warch, current_node))
-                    else:
-                        raise ValueError(f"No function {i.name} to call.")
+        # walker entry
+        for i in warch._jac_entry_funcs_:
+            if i.func and not i.trigger:
+                walker.returns.append(i.func(warch, current_node))
+            if walker.disengaged:
+                return warch
+
         while len(walker.next):
             if current_node := walker.next.pop(0).architype:
-                for i in current_node._jac_entry_funcs_:
-                    if not i.trigger or isinstance(walker, i.trigger):
-                        if i.func:
-                            walker.returns.append(i.func(current_node, warch))
-                        else:
-                            raise ValueError(f"No function {i.name} to call.")
-                    if walker.disengaged:
-                        return warch
+                # walker entry with
                 for i in warch._jac_entry_funcs_:
-                    if not i.trigger or isinstance(current_node, i.trigger):
-                        if i.func and i.trigger:
-                            walker.returns.append(i.func(warch, current_node))
-                        elif not i.trigger:
-                            continue
-                        else:
-                            raise ValueError(f"No function {i.name} to call.")
+                    if (
+                        i.func
+                        and i.trigger
+                        and all_issubclass(i.trigger, NodeArchitype)
+                        and isinstance(current_node, i.trigger)
+                    ):
+                        walker.returns.append(i.func(warch, current_node))
                     if walker.disengaged:
                         return warch
-                for i in warch._jac_exit_funcs_:
-                    if not i.trigger or isinstance(current_node, i.trigger):
-                        if i.func and i.trigger:
-                            walker.returns.append(i.func(warch, current_node))
-                        elif not i.trigger:
-                            continue
-                        else:
-                            raise ValueError(f"No function {i.name} to call.")
+
+                # node entry
+                for i in current_node._jac_entry_funcs_:
+                    if i.func and not i.trigger:
+                        walker.returns.append(i.func(current_node, warch))
                     if walker.disengaged:
                         return warch
+
+                # node entry with
+                for i in current_node._jac_entry_funcs_:
+                    if (
+                        i.func
+                        and i.trigger
+                        and all_issubclass(i.trigger, WalkerArchitype)
+                        and isinstance(warch, i.trigger)
+                    ):
+                        walker.returns.append(i.func(current_node, warch))
+                    if walker.disengaged:
+                        return warch
+
+                # node exit with
                 for i in current_node._jac_exit_funcs_:
-                    if not i.trigger or isinstance(walker, i.trigger):
-                        if i.func:
-                            walker.returns.append(i.func(current_node, warch))
-                        else:
-                            raise ValueError(f"No function {i.name} to call.")
+                    if (
+                        i.func
+                        and i.trigger
+                        and all_issubclass(i.trigger, WalkerArchitype)
+                        and isinstance(warch, i.trigger)
+                    ):
+                        walker.returns.append(i.func(current_node, warch))
                     if walker.disengaged:
                         return warch
+
+                # node exit
+                for i in current_node._jac_exit_funcs_:
+                    if i.func and not i.trigger:
+                        walker.returns.append(i.func(current_node, warch))
+                    if walker.disengaged:
+                        return warch
+
+                # walker exit with
+                for i in warch._jac_exit_funcs_:
+                    if (
+                        i.func
+                        and i.trigger
+                        and all_issubclass(i.trigger, NodeArchitype)
+                        and isinstance(current_node, i.trigger)
+                    ):
+                        walker.returns.append(i.func(warch, current_node))
+                    if walker.disengaged:
+                        return warch
+        # walker exit
         for i in warch._jac_exit_funcs_:
-            if not i.trigger:
-                if i.func:
-                    walker.returns.append(i.func(warch, current_node))
-                else:
-                    raise ValueError(f"No function {i.name} to call.")
+            if i.func and not i.trigger:
+                walker.returns.append(i.func(warch, current_node))
+            if walker.disengaged:
+                return warch
+
         walker.ignores = []
         return warch
 

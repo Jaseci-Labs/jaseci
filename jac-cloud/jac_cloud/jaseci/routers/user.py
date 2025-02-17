@@ -8,7 +8,7 @@ from fastapi.responses import ORJSONResponse
 
 from passlib.hash import pbkdf2_sha512
 
-from pymongo.errors import ConnectionFailure, OperationFailure
+from pymongo.errors import ConnectionFailure, DuplicateKeyError, OperationFailure
 
 from ..dtos import (
     UserChangePassword,
@@ -25,8 +25,8 @@ from ..security import (
     invalidate_token,
     verify_code,
 )
-from ..utils import Emailer, logger
-from ...core.architype import BulkWrite, NodeAnchor, Root
+from ..utils import Emailer, log_entry, log_exit, logger
+from ...core.architype import BulkWrite, NodeAnchor
 
 
 RESTRICT_UNVERIFIED_USER = getenv("RESTRICT_UNVERIFIED_USER") == "true"
@@ -38,10 +38,12 @@ User = BaseUser.model()  # type: ignore[misc]
 @router.post("/register", status_code=status.HTTP_200_OK)
 def register(req: User.register_type()) -> ORJSONResponse:  # type: ignore
     """Register user API."""
-    # log = log_entry("register", req.email, req.printable())
+    from jaclang import Root
+
+    log = log_entry("register", req.email, req.printable())
 
     with User.Collection.get_session() as session, session.start_transaction():
-        root = Root().__jac__
+        root = Root().__jac__  # type: ignore[attr-defined]
 
         req_obf: dict = req.obfuscate()
         req_obf["root_id"] = root.id
@@ -49,8 +51,7 @@ def register(req: User.register_type()) -> ORJSONResponse:  # type: ignore
         is_activated = req_obf["is_activated"] = not Emailer.has_client()
 
         retry = 0
-        max_retry = BulkWrite.SESSION_MAX_TRANSACTION_RETRY
-        while retry <= max_retry:
+        while True:
             try:
                 NodeAnchor.Collection.insert_one(root.serialize(), session)
                 if id := (
@@ -60,26 +61,32 @@ def register(req: User.register_type()) -> ORJSONResponse:  # type: ignore
                     if not is_activated:
                         User.send_verification_code(create_code(id), req.email)
                     resp = {"message": "Successfully Registered!"}
-                    # log_exit(resp, log)
+                    log_exit(resp, log)
                     return ORJSONResponse(resp, 201)
+                raise SystemError("Can't create System Admin!")
+            except DuplicateKeyError:
+                raise HTTPException(409, "Already Exists!")
             except (ConnectionFailure, OperationFailure) as ex:
-                if ex.has_error_label("TransientTransactionError"):
+                if (
+                    ex.has_error_label("TransientTransactionError")
+                    and retry <= BulkWrite.SESSION_MAX_TRANSACTION_RETRY
+                ):
                     retry += 1
                     logger.error(
                         "Error executing bulk write! "
-                        f"Retrying [{retry}/{max_retry}] ..."
+                        f"Retrying [{retry}/{BulkWrite.SESSION_MAX_TRANSACTION_RETRY}] ..."
                     )
                     continue
-                logger.exception("Error executing bulk write!")
-                session.abort_transaction()
-                break
+                logger.exception(
+                    f"Error executing bulk write after max retry [{BulkWrite.SESSION_MAX_TRANSACTION_RETRY}] !"
+                )
+                raise
             except Exception:
                 logger.exception("Error executing bulk write!")
-                session.abort_transaction()
-                break
+                raise
 
     resp = {"message": "Registration Failed!"}
-    # log_exit(resp, log)
+    log_exit(resp, log)
     return ORJSONResponse(resp, 409)
 
 
@@ -110,11 +117,15 @@ def verify(req: UserVerification) -> ORJSONResponse:
 
 
 @router.post("/login")
-def root(req: UserRequest) -> ORJSONResponse:
+def login(req: UserRequest) -> ORJSONResponse:
     """Login user API."""
+    log = log_entry("login", req.email, {"email": req.email, "password": "****"})
+
     user: BaseUser = User.Collection.find_by_email(req.email)  # type: ignore
     if not user or not pbkdf2_sha512.verify(req.password, user.password):
-        raise HTTPException(status_code=400, detail="Invalid Email/Password!")
+        resp = {"message": "Invalid Email/Password!"}
+        log_exit(resp, log)
+        return ORJSONResponse(resp, 400)
 
     if RESTRICT_UNVERIFIED_USER and not user.is_activated:
         User.send_verification_code(create_code(user.id), req.email)
@@ -126,6 +137,7 @@ def root(req: UserRequest) -> ORJSONResponse:
     user_json = user.serialize()
     token = create_token(user_json)
 
+    log_exit({"token": "****", "user": {**user_json, "state": "****"}}, log)
     return ORJSONResponse(content={"token": token, "user": user_json})
 
 

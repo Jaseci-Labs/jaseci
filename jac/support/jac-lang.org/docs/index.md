@@ -15,7 +15,7 @@
 
 <div class="grid cards" style="text-align: center;" markdown>
 
-[Dive into Jac!](start/about.md){ .md-button }
+[Dive into Jac!](for_coders/introduction.md){ .md-button }
 
 </div>
 

@@ -16,10 +16,15 @@ class Settings:
     pass_timer: bool = False
     collect_py_dep_debug: bool = False
     print_py_raised_ast: bool = False
+    py_import_pass_debug: bool = False
+    inherit_pass_debug: bool = False
 
     # Compiler configuration
     disable_mtllm: bool = False
     ignore_test_annex: bool = False
+    allow_import_from: bool = False
+    pyout_jaclib_import_all: bool = True
+    pyout_jaclib_alias = "jl"
 
     # Formatter configuration
     max_line_length: int = 88

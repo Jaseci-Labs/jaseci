@@ -269,6 +269,75 @@ class TestJaseciPlugin(TestCase):
         )
         self._del_session(session)
 
+    def test_walker_purger(self) -> None:
+        """Test simple persistent object."""
+        session = self.fixture_abs_path("test_walker_purger.session")
+        self._output2buffer()
+        cli.enter(
+            filename=self.fixture_abs_path("graph_purger.jac"),
+            session=session,
+            entrypoint="populate",
+            args=[],
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("graph_purger.jac"),
+            session=session,
+            entrypoint="traverse",
+            args=[],
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("graph_purger.jac"),
+            session=session,
+            entrypoint="check",
+            args=[],
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("graph_purger.jac"),
+            session=session,
+            entrypoint="purge",
+            args=[],
+        )
+        output = self.capturedOutput.getvalue().strip()
+        self.assertEqual(
+            output,
+            (
+                "Root()\n"
+                "A(id=0)\nA(id=1)\n"
+                "B(id=0)\nB(id=1)\nB(id=0)\nB(id=1)\n"
+                "C(id=0)\nC(id=1)\nC(id=0)\nC(id=1)\nC(id=0)\nC(id=1)\nC(id=0)\nC(id=1)\n"
+                "D(id=0)\nD(id=1)\nD(id=0)\nD(id=1)\nD(id=0)\nD(id=1)\nD(id=0)\nD(id=1)\n"
+                "D(id=0)\nD(id=1)\nD(id=0)\nD(id=1)\nD(id=0)\nD(id=1)\nD(id=0)\nD(id=1)\n"
+                "E(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\n"
+                "E(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\n"
+                "E(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\n"
+                "E(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\nE(id=0)\nE(id=1)\n"
+                "125\n124"
+            ),
+        )
+        self._output2buffer()
+        cli.enter(
+            filename=self.fixture_abs_path("graph_purger.jac"),
+            session=session,
+            entrypoint="traverse",
+            args=[],
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("graph_purger.jac"),
+            session=session,
+            entrypoint="check",
+            args=[],
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("graph_purger.jac"),
+            session=session,
+            entrypoint="purge",
+            args=[],
+        )
+        output = self.capturedOutput.getvalue().strip()
+        self.assertEqual(output, "Root()\n1\n0")
+
+        self._del_session(session)
+
     def trigger_access_validation_test(
         self, give_access_to_full_graph: bool, via_all: bool = False
     ) -> None:
@@ -318,6 +387,22 @@ class TestJaseciPlugin(TestCase):
 
         cli.enter(
             filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="update_target_node",
+            args=[20, self.nodes[1]],
+            session=session,
+            root=self.roots[0],
+        )
+
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="update_target_node",
+            args=[10, self.nodes[0]],
+            session=session,
+            root=self.roots[1],
+        )
+
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
             entrypoint="check_node",
             args=[],
             session=session,
@@ -339,6 +424,55 @@ class TestJaseciPlugin(TestCase):
 
         self.assertEqual(archs[0], "A(val=2)")
         self.assertEqual(archs[1], "A(val=1)")
+
+        ##############################################
+        #        WITH READ ACCESS BUT ELEVATED       #
+        ##############################################
+
+        self._output2buffer()
+
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="update_node_forced",
+            args=[20],
+            session=session,
+            root=self.roots[0],
+            node=self.nodes[1],
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="update_node_forced",
+            args=[10],
+            session=session,
+            root=self.roots[1],
+            node=self.nodes[0],
+        )
+
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="check_node",
+            args=[],
+            session=session,
+            root=self.roots[0],
+            node=self.nodes[1],
+        )
+        cli.enter(
+            filename=self.fixture_abs_path("other_root_access.jac"),
+            entrypoint="check_node",
+            args=[],
+            session=session,
+            root=self.roots[1],
+            node=self.nodes[0],
+        )
+        archs = self.capturedOutput.getvalue().strip().split("\n")
+        self.assertTrue(len(archs) == 2)
+
+        # ---------- UPDATE SHOULD HAPPEN ---------- #
+
+        self.assertEqual(archs[0], "A(val=20)")
+        self.assertEqual(archs[1], "A(val=10)")
+
+        # ---------- DISALLOW READ ACCESS ---------- #
 
         self._output2buffer()
         cli.enter(
@@ -400,7 +534,7 @@ class TestJaseciPlugin(TestCase):
         cli.enter(
             filename=self.fixture_abs_path("other_root_access.jac"),
             entrypoint="update_node",
-            args=[20],
+            args=[200],
             root=self.roots[0],
             node=self.nodes[1],
             session=session,
@@ -408,7 +542,7 @@ class TestJaseciPlugin(TestCase):
         cli.enter(
             filename=self.fixture_abs_path("other_root_access.jac"),
             entrypoint="update_node",
-            args=[10],
+            args=[100],
             session=session,
             root=self.roots[1],
             node=self.nodes[0],
@@ -433,10 +567,12 @@ class TestJaseciPlugin(TestCase):
         archs = self.capturedOutput.getvalue().strip().split("\n")
         self.assertTrue(len(archs) == 2)
 
-        # --------- UPDATE SHOULD HAPPEN -------- #
+        # ---------- UPDATE SHOULD HAPPEN ---------- #
 
-        self.assertEqual(archs[0], "A(val=20)")
-        self.assertEqual(archs[1], "A(val=10)")
+        self.assertEqual(archs[0], "A(val=200)")
+        self.assertEqual(archs[1], "A(val=100)")
+
+        # ---------- DISALLOW WRITE ACCESS --------- #
 
         self._output2buffer()
         cli.enter(
@@ -474,7 +610,7 @@ class TestJaseciPlugin(TestCase):
         )
         self.assertFalse(self.capturedOutput.getvalue().strip())
 
-        # --------- ROOTS RESET OWN NODE -------- #
+        # ---------- ROOTS RESET OWN NODE ---------- #
 
         cli.enter(
             filename=self.fixture_abs_path("other_root_access.jac"),
@@ -608,3 +744,75 @@ class TestJaseciPlugin(TestCase):
         )
 
         self._del_session(session)
+
+    def test_savable_object(self) -> None:
+        """Test ObjectAnchor save."""
+        global session
+        session = self.fixture_abs_path("savable_object.session")
+
+        self._output2buffer()
+
+        cli.enter(
+            filename=self.fixture_abs_path("savable_object.jac"),
+            entrypoint="create_custom_object",
+            args=[],
+            session=session,
+        )
+
+        prints = self.capturedOutput.getvalue().strip().split("\n")
+        id = prints[0]
+
+        self.assertEqual(
+            "SavableObject(val=0, arr=[], json={}, parent=Parent(val=1, arr=[1], json"
+            "={'a': 1}, enum_field=<Enum.B: 'b'>, child=Child(val=2, arr=[1, 2], json"
+            "={'a': 1, 'b': 2}, enum_field=<Enum.C: 'c'>)), enum_field=<Enum.A: 'a'>)",
+            prints[1],
+        )
+
+        self._output2buffer()
+
+        cli.enter(
+            filename=self.fixture_abs_path("savable_object.jac"),
+            entrypoint="get_custom_object",
+            args=[id],
+            session=session,
+        )
+        self.assertEqual(
+            "SavableObject(val=0, arr=[], json={}, parent=Parent(val=1, arr=[1], json"
+            "={'a': 1}, enum_field=<Enum.B: 'b'>, child=Child(val=2, arr=[1, 2], json"
+            "={'a': 1, 'b': 2}, enum_field=<Enum.C: 'c'>)), enum_field=<Enum.A: 'a'>)",
+            self.capturedOutput.getvalue().strip(),
+        )
+
+        self._output2buffer()
+
+        cli.enter(
+            filename=self.fixture_abs_path("savable_object.jac"),
+            entrypoint="update_custom_object",
+            args=[id],
+            session=session,
+        )
+
+        self.assertEqual(
+            "SavableObject(val=1, arr=[1], json={'a': 1}, parent=Parent(val=2, arr=[1, 2], json"
+            "={'a': 1, 'b': 2}, enum_field=<Enum.C: 'c'>, child=Child(val=3, arr=[1, 2, 3], json"
+            "={'a': 1, 'b': 2, 'c': 3}, enum_field=<Enum.A: 'a'>)), enum_field=<Enum.B: 'b'>)",
+            self.capturedOutput.getvalue().strip(),
+        )
+
+        self._output2buffer()
+
+        cli.enter(
+            filename=self.fixture_abs_path("savable_object.jac"),
+            entrypoint="delete_custom_object",
+            args=[id],
+            session=session,
+        )
+
+        cli.enter(
+            filename=self.fixture_abs_path("savable_object.jac"),
+            entrypoint="get_custom_object",
+            args=[id],
+            session=session,
+        )
+        self.assertEqual("None", self.capturedOutput.getvalue().strip())

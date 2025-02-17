@@ -62,3 +62,30 @@ class MypyTypeCheckPassTests(TestCase):
         self.assertEqual(out.count("Type: builtins.str"), 35)
         for i in lis:
             self.assertNotIn(i, out)
+
+    def test_data_spatial_type_info(self) -> None:
+        """Testing for type info for dataspatial constructs."""
+        out = AstTool().ir(
+            ["ast", f"{self.fixture_abs_path('data_spatial_types.jac')}"]
+        )
+        self.assertRegex(
+            out,
+            r"129:24 - 129:28.*SpecialVarRef - Jac.get_root\(\) \- Type\: jaclang.Root",
+        )
+
+        self.assertRegex(out, r"129:11 - 129:29.*FuncCall \- Type\: builtins\.str")
+        self.assertRegex(
+            out,
+            r"129:15 - 129:23.*Name \- node_dot \- Type\: builtins.str,  SymbolTable\: str",
+        )
+
+        self.assertRegex(
+            out,
+            r"128:5 - 128:25.*BinaryExpr \- Type\: jaclang.Walker",
+        )
+        self.assertRegex(
+            out,
+            r"48:11 - 48:28.*EdgeRefTrailer \- Type\: jaclang.JacList\[data_spatial_types.A\]",
+        )
+
+        self.assertRegex(out, r"24:5 - 24:25.*BinaryExpr \- Type\: builtins.bool", out)

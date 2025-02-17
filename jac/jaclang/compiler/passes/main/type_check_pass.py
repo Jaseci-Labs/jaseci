@@ -115,13 +115,14 @@ class JacTypeCheckPass(Pass):
             for k, v in mypy_graph.items()
             if (
                 k.startswith("jaclang.plugin")
+                or k.startswith("jaclang.runtimelib")
                 or not (k.startswith("jaclang.") or k.startswith("mypy."))
             )
         }
         for i in mypy_graph:
-            self.ir.py_mod_dep_map[i] = mypy_graph[i].xpath
+            self.ir.py_info.py_mod_dep_map[i] = mypy_graph[i].xpath
             for j in mypy_graph[i].dependencies:
-                self.ir.py_mod_dep_map[j] = str(
+                self.ir.py_info.py_mod_dep_map[j] = str(
                     myab.find_module_with_reason(j, manager)
                 )
         myab.process_graph(mypy_graph, manager)

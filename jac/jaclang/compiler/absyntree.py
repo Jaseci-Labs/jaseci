@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast as ast3
 import builtins
 import os
+from dataclasses import dataclass
 from hashlib import md5
 from types import EllipsisType
 from typing import (
@@ -29,6 +30,7 @@ from jaclang.compiler.constant import (
     SymbolType,
 )
 from jaclang.compiler.constant import DELIM_MAP, SymbolAccess, Tokens as Tok
+from jaclang.compiler.py_info import PyInfo
 from jaclang.compiler.semtable import SemRegistry
 from jaclang.utils.treeprinter import dotgen_ast_tree, print_ast_tree
 
@@ -460,7 +462,7 @@ class NameAtom(AtomExpr, EnumBlockStmt):
         self._sym: Optional[Symbol] = None
         self._sym_name: str = ""
         self._sym_category: SymbolType = SymbolType.UNKNOWN
-        self._py_ctx_func: Type[ast3.AST] = ast3.Load
+        self._py_ctx_func: Type[ast3.expr_context] = ast3.Load
         AtomExpr.__init__(self)
 
     @property
@@ -490,12 +492,12 @@ class NameAtom(AtomExpr, EnumBlockStmt):
         return ret_type
 
     @property
-    def py_ctx_func(self) -> Type[ast3.AST]:
+    def py_ctx_func(self) -> Type[ast3.expr_context]:
         """Get python context function."""
         return self._py_ctx_func
 
     @py_ctx_func.setter
-    def py_ctx_func(self, py_ctx_func: Type[ast3.AST]) -> None:
+    def py_ctx_func(self, py_ctx_func: Type[ast3.expr_context]) -> None:
         """Set python context function."""
         self._py_ctx_func = py_ctx_func
 
@@ -635,11 +637,10 @@ class Module(AstDocNode):
         self.impl_mod: list[Module] = []
         self.test_mod: list[Module] = []
         self.mod_deps: dict[str, Module] = {}
-        self.py_mod_dep_map: dict[str, str] = {}
-        self.py_raise_map: dict[str, str] = {}
         self.registry = registry
         self.terminals: list[Token] = terminals
-        self.is_raised_from_py: bool = False
+        self.py_info: PyInfo = PyInfo()
+
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
 
@@ -691,6 +692,21 @@ class Module(AstDocNode):
         """Unparse module node."""
         super().unparse()
         return self.format()
+
+    @staticmethod
+    def get_href_path(node: AstNode) -> str:
+        """Return the full path of the module that contains this node."""
+        parent = node.find_parent_of_type(Module)
+        mod_list: list[Module | Architype] = []
+        if isinstance(node, (Module, Architype)):
+            mod_list.append(node)
+        while parent is not None:
+            mod_list.append(parent)
+            parent = parent.find_parent_of_type(Module)
+        mod_list.reverse()
+        return ".".join(
+            p.name if isinstance(p, Module) else p.name.sym_name for p in mod_list
+        )
 
 
 class GlobalVars(ElementStmt, AstAccessNode):
@@ -997,8 +1013,9 @@ class ModulePath(AstSymbolNode):
         target = self.dot_path_str
         if target_item:
             target += f".{target_item}"
-        base_path = os.path.dirname(self.loc.mod_path)
-        base_path = base_path if base_path else os.getcwd()
+        base_path = (
+            os.getenv("JACPATH") or os.path.dirname(self.loc.mod_path) or os.getcwd()
+        )
         parts = target.split(".")
         traversal_levels = self.level - 1 if self.level > 0 else 0
         actual_parts = parts[traversal_levels:]
@@ -1010,6 +1027,15 @@ class ModulePath(AstSymbolNode):
             if os.path.exists(relative_path + ".jac")
             else relative_path
         )
+        jacpath = os.getenv("JACPATH")
+        if not os.path.exists(relative_path) and jacpath:
+            name_to_find = actual_parts[-1] + ".jac"
+
+            # Walk through the single path in JACPATH
+            for root, _, files in os.walk(jacpath):
+                if name_to_find in files:
+                    relative_path = os.path.join(root, name_to_find)
+                    break
         return relative_path
 
     def normalize(self, deep: bool = False) -> bool:
@@ -3401,18 +3427,22 @@ class FuncCall(Expr):
 class IndexSlice(AtomExpr):
     """IndexSlice node type for Jac Ast."""
 
+    @dataclass
+    class Slice:
+        """Slice node for index slice."""
+
+        start: Optional[Expr]
+        stop: Optional[Expr]
+        step: Optional[Expr]
+
     def __init__(
         self,
-        start: Optional[Expr],
-        stop: Optional[Expr],
-        step: Optional[Expr],
+        slices: list[Slice],
         is_range: bool,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize index slice expression node."""
-        self.start = start
-        self.stop = stop
-        self.step = step
+        self.slices = slices
         self.is_range = is_range
         AstNode.__init__(self, kid=kid)
         Expr.__init__(self)
@@ -3422,22 +3452,26 @@ class IndexSlice(AtomExpr):
         """Normalize ast node."""
         res = True
         if deep:
-            res = self.start.normalize(deep) if self.start else res
-            res = res and self.stop.normalize(deep) if self.stop else res
-            res = res and self.step.normalize(deep) if self.step else res
+            for slice in self.slices:
+                res = slice.start.normalize(deep) if slice.start else res
+                res = res and slice.stop.normalize(deep) if slice.stop else res
+                res = res and slice.step.normalize(deep) if slice.step else res
         new_kid: list[AstNode] = []
         new_kid.append(self.gen_token(Tok.LSQUARE))
         if self.is_range:
-            if self.start:
-                new_kid.append(self.start)
-            if self.stop:
+            for i, slice in enumerate(self.slices):
+                if i > 0:
+                    new_kid.append(self.gen_token(Tok.COMMA))
+                if slice.start:
+                    new_kid.append(slice.start)
                 new_kid.append(self.gen_token(Tok.COLON))
-                new_kid.append(self.stop)
-            if self.step:
-                new_kid.append(self.gen_token(Tok.COLON))
-                new_kid.append(self.step)
-        elif self.start:
-            new_kid.append(self.start)
+                if slice.stop:
+                    new_kid.append(slice.stop)
+                if slice.step:
+                    new_kid.append(self.gen_token(Tok.COLON))
+                    new_kid.append(slice.step)
+        elif len(self.slices) == 1 and self.slices[0].start:
+            new_kid.append(self.slices[0].start)
         else:
             res = False
         new_kid.append(self.gen_token(Tok.RSQUARE))

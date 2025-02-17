@@ -1,0 +1,7 @@
+kubernetes==26.1.0
+grpcio==1.57.0
+grpcio-tools==1.57.0
+protobuf==4.23.4
+pluggy==1.2.0
+jaclang
+numpy

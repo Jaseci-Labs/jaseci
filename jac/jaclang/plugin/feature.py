@@ -42,6 +42,11 @@ class JacAccessValidation:
     """Jac Access Validation Specs."""
 
     @staticmethod
+    def elevate_root() -> None:
+        """Elevate context root to system_root."""
+        plugin_manager.hook.elevate_root()
+
+    @staticmethod
     def allow_root(
         architype: Architype,
         root_id: UUID,
@@ -255,9 +260,19 @@ class JacFeature(
         return plugin_manager.hook.get_context()
 
     @staticmethod
+    def reset_graph(root: Optional[Root] = None) -> int:
+        """Purge current or target graph."""
+        return plugin_manager.hook.reset_graph(root=root)
+
+    @staticmethod
     def get_object(id: str) -> Architype | None:
         """Get object given id."""
-        return plugin_manager.hook.get_object(id=id)
+        return plugin_manager.hook.get_object_func()(id=id)
+
+    @staticmethod
+    def get_object_func() -> Callable[[str], Architype | None]:
+        """Get object given id."""
+        return plugin_manager.hook.get_object_func()
 
     @staticmethod
     def object_ref(obj: Architype) -> str:
@@ -291,11 +306,25 @@ class JacFeature(
         return plugin_manager.hook.make_node(on_entry=on_entry, on_exit=on_exit)
 
     @staticmethod
+    def make_root(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a root node architype."""
+        return plugin_manager.hook.make_root(on_entry=on_entry, on_exit=on_exit)
+
+    @staticmethod
     def make_edge(
         on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
         """Create a edge architype."""
         return plugin_manager.hook.make_edge(on_entry=on_entry, on_exit=on_exit)
+
+    @staticmethod
+    def make_generic_edge(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a edge architype."""
+        return plugin_manager.hook.make_generic_edge(on_entry=on_entry, on_exit=on_exit)
 
     @staticmethod
     def make_walker(
@@ -344,6 +373,7 @@ class JacFeature(
     @staticmethod
     def run_test(
         filepath: str,
+        func_name: Optional[str] = None,
         filter: Optional[str] = None,
         xit: bool = False,
         maxfail: Optional[int] = None,
@@ -353,17 +383,13 @@ class JacFeature(
         """Run the test suite in the specified .jac file."""
         return plugin_manager.hook.run_test(
             filepath=filepath,
+            func_name=func_name,
             filter=filter,
             xit=xit,
             maxfail=maxfail,
             directory=directory,
             verbose=verbose,
         )
-
-    @staticmethod
-    def elvis(op1: Optional[T], op2: T) -> T:
-        """Jac's elvis operator feature."""
-        return plugin_manager.hook.elvis(op1=op1, op2=op2)
 
     @staticmethod
     def has_instance_default(gen_func: Callable[[], T]) -> T:

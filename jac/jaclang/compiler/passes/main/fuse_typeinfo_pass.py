@@ -10,6 +10,7 @@ import re
 from typing import Callable, Optional, TypeVar
 
 import jaclang.compiler.absyntree as ast
+from jaclang.compiler.constant import Constants, Tokens
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.symtable import SymbolTable
 from jaclang.settings import settings
@@ -76,35 +77,6 @@ class FuseTypeInfoPass(Pass):
         if typ_sym_table != self.ir.sym_tab:
             node.name_spec.type_sym_tab = typ_sym_table
 
-    def __collect_python_dependencies(self, node: ast.AstNode) -> None:
-        assert isinstance(node, ast.AstSymbolNode)
-        assert isinstance(self.ir, ast.Module)
-
-        mypy_node = node.gen.mypy_ast[0]
-
-        if isinstance(mypy_node, MypyNodes.RefExpr) and mypy_node.node:
-            node_full_name = mypy_node.node.fullname
-            if "." in node_full_name:
-                mod_name = node_full_name[: node_full_name.rindex(".")]
-            else:
-                mod_name = node_full_name
-
-            if mod_name not in self.ir.py_mod_dep_map:
-                self.__debug_print(
-                    f"Can't find a python file associated with {type(node)}::{node.loc}"
-                )
-                return
-
-            mode_path = self.ir.py_mod_dep_map[mod_name]
-            if mode_path.endswith(".jac"):
-                return
-
-            self.ir.py_raise_map[mod_name] = mode_path
-        else:
-            self.__debug_print(
-                f"Collect python dependencies is not supported in {type(node)}::{node.loc}"
-            )
-
     @staticmethod
     def __handle_node(
         func: Callable[[FuseTypeInfoPass, T], None]
@@ -126,7 +98,6 @@ class FuseTypeInfoPass(Pass):
                 if len(node.gen.mypy_ast) == 1:
                     func(self, node)
                     self.__set_type_sym_table_link(node)
-                    self.__collect_python_dependencies(node)
 
                 # Jac node has multiple mypy nodes linked to it
                 elif len(node.gen.mypy_ast) > 1:
@@ -150,7 +121,6 @@ class FuseTypeInfoPass(Pass):
                         )
                         func(self, node)
                         self.__set_type_sym_table_link(node)
-                        self.__collect_python_dependencies(node)
 
                 # Special handing for BuiltinType
                 elif isinstance(node, ast.BuiltinType):
@@ -264,6 +234,43 @@ class FuseTypeInfoPass(Pass):
     def enter_expr(self: FuseTypeInfoPass, node: ast.Expr) -> None:
         """Enter an expression node."""
         if len(node.gen.mypy_ast) == 0:
+            return
+
+        # No need to run this handling in case of a previous type
+        # was set during the pass, if not then we hope that the
+        # mypy node has a type associated to it
+        if node.expr_type != "NoType":
+            return
+
+        # Check if the expression is a data spatial expression
+        # Support disconnectOp
+        if isinstance(node, ast.BinaryExpr):
+            if isinstance(node.op, ast.DisconnectOp):
+                node.expr_type = "builtins.bool"
+                return
+
+            # Support spwan and connectOp
+            elif (
+                isinstance(node.op, ast.ConnectOp)
+                or node.op.name == Tokens.KW_SPAWN.value
+            ):
+                if node.gen.mypy_ast[-1] in self.node_type_hash:
+                    node.expr_type = (
+                        self.__call_type_handler(
+                            self.node_type_hash[node.gen.mypy_ast[-1]]
+                        )
+                        or node.expr_type
+                    )
+                return
+
+        if isinstance(node, ast.EdgeRefTrailer) and any(
+            isinstance(k, ast.FilterCompr) for k in node.kid
+        ):
+            if node.gen.mypy_ast[-1] in self.node_type_hash:
+                node.expr_type = (
+                    self.__call_type_handler(self.node_type_hash[node.gen.mypy_ast[-1]])
+                    or node.expr_type
+                )
             return
 
         # If the corrosponding mypy ast node type has stored here, get the values.
@@ -427,7 +434,14 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_special_var_ref(self, node: ast.SpecialVarRef) -> None:
         """Pass handler for SpecialVarRef nodes."""
-        return self.enter_name(node)
+        if node.py_resolve_name() == Constants.ROOT:
+            if node.gen.mypy_ast[-1] in self.node_type_hash:
+                node.name_spec.expr_type = (
+                    self.__call_type_handler(self.node_type_hash[node.gen.mypy_ast[-1]])
+                    or node.name_spec.expr_type
+                )
+        else:
+            self.enter_name(node)
 
     @__handle_node
     def enter_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
@@ -491,7 +505,7 @@ class FuseTypeInfoPass(Pass):
         self, mypy_type: MypyTypes.Overloaded
     ) -> Optional[str]:
         """Get type info from mypy type Overloaded."""
-        return self.__call_type_handler(mypy_type.items[0])
+        return self.__call_type_handler(mypy_type.items[-1])
 
     def get_type_from_none_type(self, mypy_type: MypyTypes.NoneType) -> Optional[str]:
         """Get type info from mypy type NoneType."""
@@ -508,6 +522,12 @@ class FuseTypeInfoPass(Pass):
     def get_type_from_type_type(self, mypy_type: MypyTypes.TypeType) -> Optional[str]:
         """Get type info from mypy type TypeType."""
         return str(mypy_type.item)
+
+    def get_type_from_type_var_type(
+        self, mypy_type: MypyTypes.TypeVarType
+    ) -> Optional[str]:
+        """Get type info from mypy type TypeType."""
+        return str(mypy_type.name)
 
     def exit_assignment(self, node: ast.Assignment) -> None:
         """Add new symbols in the symbol table in case of self."""
@@ -584,12 +604,13 @@ class FuseTypeInfoPass(Pass):
                 node_type: str = ""
 
                 # left type is a list
-                if left.expr_type.startswith("builtins.list["):
-                    node_type = left.expr_type[len("builtins.list[") : -1]
+                if left.expr_type.startswith(("builtins.list[", "jaclang.JacList[")):
+                    node_type = left.expr_type[left.expr_type.find("[") + 1 : -1]
 
                     # right index slice is a range then it's type is the same as left
                     if right.is_range:
                         right.expr_type = left.expr_type
+                        right.parent_of_type(ast.AtomTrailer).expr_type = node_type
                         continue
 
                 # left type is a dictionary
@@ -603,6 +624,7 @@ class FuseTypeInfoPass(Pass):
                     continue
 
                 right.expr_type = node_type
+                right.parent_of_type(ast.AtomTrailer).expr_type = node_type
 
                 # Getting the correct symbol table and link it
                 type_symtab: Optional[SymbolTable] = self.ir.sym_tab
@@ -621,6 +643,13 @@ class FuseTypeInfoPass(Pass):
                 right.type_sym_tab = type_symtab
 
             else:
+                # Fix the symbolTable linking in case of type annotations
+                if left.type_sym_tab is None and isinstance(node.parent, ast.SubTag):
+                    assert isinstance(left, ast.AstSymbolNode)
+                    left.name_spec.type_sym_tab = self.ir.sym_tab.find_scope(
+                        left.sym_name
+                    )
+
                 if left.type_sym_tab:
                     right.name_spec.sym = left.type_sym_tab.lookup(right.sym_name)
                     if right.name_spec.sym:

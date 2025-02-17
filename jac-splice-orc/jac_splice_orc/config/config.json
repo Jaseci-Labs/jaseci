@@ -1,0 +1,76 @@
+{
+    "kubernetes": {
+        "namespace": "jac-splice-test",
+        "service_account_name": "jac-orc-sa",
+        "pod_manager": {
+            "deployment_name": "pod-manager-deployment",
+            "service_account_name": "jac-orc-sa",
+            "container_name": "pod-manager",
+            "image_name": "ashishmahendra/jac-splice-orc:0.0.8",
+            "container_port": 8000,
+            "service_name": "pod-manager-service",
+            "service_type": "NodePort",
+            "env_vars": {
+                "SERVICE_TYPE": "pod_manager",
+                "NAMESPACE": "jac-splice-test",
+                "IMAGE_NAME": "ashishmahendra/jac-splice-orc:0.0.8"
+            },
+            "resources": {
+                "requests": {
+                    "memory": "1500Mi",
+                    "cpu": "500m"
+                },
+                "limits": {
+                    "memory": "2000Mi",
+                    "cpu": "1"
+                }
+            }
+        }
+    },
+    "module_config": {
+        "numpy": {
+            "lib_mem_size_req": "100Mi",
+            "dependency": [],
+            "lib_cpu_req": "500m",
+            "load_type": "remote"
+        },
+        "pandas": {
+            "lib_mem_size_req": "200Mi",
+            "dependency": [
+                "numpy",
+                "pytz",
+                "dateutil"
+            ],
+            "lib_cpu_req": "700m",
+            "load_type": "remote"
+        },
+        "transformers": {
+            "lib_mem_size_req": "2000Mi",
+            "dependency": [
+                "torch",
+                "transformers"
+            ],
+            "lib_cpu_req": "1.0",
+            "load_type": "remote"
+        },
+        "sentence_transformers": {
+            "lib_mem_size_req": "2000Mi",
+            "dependency": [
+                "sentence-transformers"
+            ],
+            "lib_cpu_req": "1.0",
+            "load_type": "remote"
+        },
+        "ollama": {
+            "lib_mem_size_req": "300Mi",
+            "dependency": [
+                "ollama"
+            ],
+            "lib_cpu_req": "500m",
+            "load_type": "remote"
+        }
+    },
+    "environment": {
+        "POD_MANAGER_URL": "http://localhost:8000"
+    }
+}

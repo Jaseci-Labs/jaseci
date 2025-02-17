@@ -4,6 +4,8 @@ This pass builds the symbol table tree for the Jaseci Ast. It also adds symbols
 for globals, imports, architypes, and abilities declarations and definitions.
 """
 
+from typing import TypeVar
+
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.symtable import SymbolTable
@@ -19,6 +21,7 @@ class SymTabBuildPass(Pass):
     def push_scope(self, name: str, key_node: ast.AstNode) -> None:
         """Push scope."""
         inherit = key_node.parent
+
         if not len(self.cur_sym_tab) and not inherit:
             self.cur_sym_tab.append(SymbolTable(name, key_node))
         elif not len(self.cur_sym_tab) and inherit:
@@ -995,8 +998,7 @@ class SymTabBuildPass(Pass):
     def enter_index_slice(self, node: ast.IndexSlice) -> None:
         """Sub objects.
 
-        start: Optional[ExprType],
-        stop: Optional[ExprType],
+        slices: list[Slice],
         is_range: bool,
         """
         self.sync_node_to_scope(node)
@@ -1285,3 +1287,17 @@ class SymTabBuildPass(Pass):
     def enter_comment_token(self, node: ast.CommentToken) -> None:
         """Sub objects."""
         self.sync_node_to_scope(node)
+
+
+T = TypeVar("T", bound=ast.AstNode)
+
+
+class PyInspectSymTabBuildPass(SymTabBuildPass):
+    """Jac Symbol table build pass."""
+
+    def push_scope(self, name: str, key_node: ast.AstNode) -> None:
+        """Push scope."""
+        if not len(self.cur_sym_tab):
+            self.cur_sym_tab.append(SymbolTable(name, key_node))
+        else:
+            self.cur_sym_tab.append(self.cur_scope.push_kid_scope(name, key_node))

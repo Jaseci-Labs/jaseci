@@ -1,37 +1,53 @@
 from __future__ import annotations
 from jaclang.plugin.feature import JacFeature as Jac
+from jaclang.plugin.builtin import *
 from dataclasses import dataclass
 
 
-@Jac.make_walker(on_entry=[Jac.DSFunc("func2", Jac.get_root_type())], on_exit=[])
+@Jac.make_walker(on_entry=[Jac.DSFunc("func2")], on_exit=[])
 @dataclass(eq=False)
-class Creator:
-
-    def func2(self, here: Jac.get_root_type()) -> None:
-        end = here
+class Creator(Jac.Walker):
+    def func2(self, _jac_here_: Jac.RootType) -> None:
+        end = _jac_here_
         i = 0
         while i < 5:
             Jac.connect(
-                end, (end := node_1(val=i + 1)), Jac.build_edge(False, None, None)
+                left=end,
+                right=(end := node_1(val=i + 1)),
+                edge_spec=Jac.build_edge(
+                    is_undirected=False, conn_type=None, conn_assign=None
+                ),
             )
             i += 1
         if Jac.visit_node(
             self,
-            Jac.edge_ref(here, None, Jac.EdgeDir.OUT, filter_func=None),
+            Jac.edge_ref(
+                _jac_here_,
+                target_obj=None,
+                dir=Jac.EdgeDir.OUT,
+                filter_func=None,
+                edges_only=False,
+            ),
         ):
             pass
 
 
-@Jac.make_node(on_entry=[Jac.DSFunc("func_1", Creator)], on_exit=[])
+@Jac.make_node(on_entry=[Jac.DSFunc("func_1")], on_exit=[])
 @dataclass(eq=False)
-class node_1:
+class node_1(Jac.Node):
     val: int
 
-    def func_1(self, here: Creator) -> None:
+    def func_1(self, _jac_here_: Creator) -> None:
         print("visiting ", self)
         if Jac.visit_node(
-            here,
-            Jac.edge_ref(self, None, Jac.EdgeDir.OUT, filter_func=None),
+            _jac_here_,
+            Jac.edge_ref(
+                self,
+                target_obj=None,
+                dir=Jac.EdgeDir.OUT,
+                filter_func=None,
+                edges_only=False,
+            ),
         ):
             pass
 

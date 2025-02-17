@@ -1,6 +1,7 @@
 """Tests for Jac parser."""
 
 import inspect
+import os
 
 from jaclang.compiler import jac_lark as jl
 from jaclang.compiler.absyntree import JacSource
@@ -27,7 +28,12 @@ class TestLarkParser(TestCaseMicroSuite):
         prse = JacParser(
             input_ir=JacSource(self.file_to_str(filename), mod_path=filename),
         )
-        self.assertFalse(prse.errors_had)
+        # A list of files where the errors are expected.
+        files_expected_errors = [
+            "uninitialized_hasvars.jac",
+        ]
+        if os.path.basename(filename) not in files_expected_errors:
+            self.assertFalse(prse.errors_had)
 
     def test_parser_fam(self) -> None:
         """Parse micro jac file."""
@@ -83,12 +89,20 @@ class TestLarkParser(TestCaseMicroSuite):
                 JacParser.TreeToAST.__base__, value.__name__, False
             ):
                 parse_funcs.append(name)
-        for i in rules:
-            self.assertIn(i, parse_funcs)
-        for i in parse_funcs:
-            if i in ["binary_expr_unwind", "ice", "nu"]:
+        for rule in rules:
+            self.assertIn(rule, parse_funcs)
+        for fn in parse_funcs:
+            if fn.startswith("_") or fn in [
+                "ice",
+                "match",
+                "consume",
+                "match_token",
+                "consume_token",
+                "match_many",
+                "consume_many",
+            ]:
                 continue
-            self.assertIn(i, rules)
+            self.assertIn(fn, rules)
 
     def test_all_ast_has_normalize(self) -> None:
         """Test for enter/exit name diffs with parser."""

@@ -48,6 +48,12 @@ class JacAccessValidationSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
+    def elevate_root() -> None:
+        """Elevate context root to system_root."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
     def allow_root(
         architype: Architype, root_id: UUID, level: AccessLevel | int | str
     ) -> None:
@@ -246,8 +252,14 @@ class JacFeatureSpec(
 
     @staticmethod
     @hookspec(firstresult=True)
-    def get_object(id: str) -> Architype | None:
-        """Get object by id."""
+    def reset_graph(root: Optional[Root]) -> int:
+        """Purge current or target graph."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def get_object_func() -> Callable[[str], Architype | None]:
+        """Get object by id func."""
         raise NotImplementedError
 
     @staticmethod
@@ -285,10 +297,26 @@ class JacFeatureSpec(
 
     @staticmethod
     @hookspec(firstresult=True)
+    def make_root(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a root node architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
     def make_edge(
         on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
         """Create a edge architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def make_generic_edge(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a generic edge architype."""
         raise NotImplementedError
 
     @staticmethod
@@ -333,6 +361,7 @@ class JacFeatureSpec(
     @hookspec(firstresult=True)
     def run_test(
         filepath: str,
+        func_name: Optional[str],
         filter: Optional[str],
         xit: bool,
         maxfail: Optional[int],
@@ -340,12 +369,6 @@ class JacFeatureSpec(
         verbose: bool,
     ) -> int:
         """Run the test suite in the specified .jac file."""
-        raise NotImplementedError
-
-    @staticmethod
-    @hookspec(firstresult=True)
-    def elvis(op1: Optional[T], op2: T) -> T:
-        """Jac's elvis operator feature."""
         raise NotImplementedError
 
     @staticmethod

@@ -97,3 +97,19 @@ def get_filtered_registry(mod_registry: SemRegistry, scope: SemScope) -> SemRegi
             filtered_registry.registry[_scope] = sem_info_list
 
     return filtered_registry
+
+
+def extract_template_placeholders(template: str) -> list:
+    """Extract placeholders from the template."""
+    return re.findall(r"{(.*?)}", template)
+
+
+def format_template_section(template_section: str, values_dict: dict) -> str:
+    """Format a template section with given values."""
+    placeholders = extract_template_placeholders(template_section)
+    formatted_sections = []
+    for placeholder in placeholders:
+        if placeholder in values_dict and values_dict[placeholder]:
+            section_template = f"[{placeholder.title()}]\n{values_dict[placeholder]}"
+            formatted_sections.append(section_template)
+    return "\n\n".join(formatted_sections).strip()
