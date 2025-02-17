@@ -1397,13 +1397,14 @@ class JacParser(Pass):
             target = self.consume(ast.Expr)
             in_tok = self.consume_token(Tok.KW_IN)
             collection = self.consume(ast.Expr)
-            body_stmts = self.consume(ast.SubNodeList).items
+            body = self.consume(ast.SubNodeList)
             else_body = self.match(ast.ElseStmt)
+            assert body.left_enc and body.right_enc
             return ast.InForStmt(
                 is_async=bool(async_tok),
                 target=target,
                 collection=collection,
-                body=body_stmts,
+                body=cast(list[ast.CodeBlockStmt], body.items),
                 else_body=else_body,
                 kid=[
                     *([async_tok] if async_tok else []),
@@ -1411,7 +1412,9 @@ class JacParser(Pass):
                     target,
                     in_tok,
                     collection,
-                    *body_stmts,
+                    body.left_enc,
+                    *body.items,
+                    body.right_enc,
                     *([else_body] if else_body else []),
                 ],
             )
