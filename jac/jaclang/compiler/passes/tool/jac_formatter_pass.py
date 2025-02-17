@@ -2030,8 +2030,7 @@ class JacFormatPass(Pass):
             for line in stmt.gen.jac.splitlines():
                 node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
         self.indent_level -= 1
-
-        self.emit(node, "}\n")
+        self.emit(node, "}")
 
     def exit_test(self, node: ast.Test) -> None:
         """Sub objects.
