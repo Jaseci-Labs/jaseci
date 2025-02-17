@@ -2148,8 +2148,7 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         new_kid.append(self.gen_token(Tok.KW_IN))
         new_kid.append(self.collection)
 
-        if self.body:
-            new_kid.extend(self.body)
+        new_kid.extend(self.body)
         if self.else_body:
             new_kid.append(self.else_body)
         self.set_kids(nodes=new_kid)
