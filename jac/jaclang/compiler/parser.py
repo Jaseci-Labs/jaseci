@@ -2291,16 +2291,13 @@ class JacParser(Pass):
 
             multistring: (fstring | STRING | DOC_STRING)+
             """
-            valid_strs = []
+            valid_strs = [self.match(ast.String) or self.consume(ast.FString)]
             while node := (self.match(ast.String) or self.match(ast.FString)):
                 valid_strs.append(node)
-            if len(valid_strs) == len(self.cur_nodes):
-                return ast.MultiString(
-                    strings=valid_strs,
-                    kid=self.cur_nodes,
-                )
-            else:
-                raise self.ice()
+            return ast.MultiString(
+                strings=valid_strs,
+                kid=self.cur_nodes,
+            )
 
         def fstring(self, _: None) -> ast.FString:
             """Grammar rule.
