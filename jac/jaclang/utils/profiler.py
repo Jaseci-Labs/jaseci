@@ -1,6 +1,10 @@
 import time
+from contextlib import contextmanager
 from functools import wraps
-from typing import Any, Callable, Dict
+from typing import Callable, Dict, Generator, ParamSpec, TypeVar
+
+P = ParamSpec("P")
+R = TypeVar("R")
 
 
 class CodeProfiler:
@@ -8,11 +12,11 @@ class CodeProfiler:
     markers: Dict[str, float] = {}
 
     @staticmethod
-    def time_function(func: Callable):
+    def time_function(func: Callable[P, R]) -> Callable[P, R]:
         """Measure and print the execution time of a function."""
 
         @wraps(func)
-        def wrapper(*args, **kwargs) -> Any:
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             start_time = time.perf_counter()
             result = func(*args, **kwargs)
             end_time = time.perf_counter()
@@ -39,3 +43,20 @@ class CodeProfiler:
         start_time = CodeProfiler.markers.pop(marker_name)
         end_time = time.perf_counter()
         print(f"Marker '{marker_name}' took {end_time - start_time:.6f} seconds")
+
+    @staticmethod
+    @contextmanager
+    def profile_section(section_name: str) -> Generator[None, None, None]:
+        """
+        A context manager for profiling a block of code.
+
+        Usage:
+            with CodeProfiler.profile_section("My Block"):
+                # code to profile
+        """
+        start_time = time.perf_counter()
+        try:
+            yield
+        finally:
+            end_time = time.perf_counter()
+            print(f"Section '{section_name}' took {end_time - start_time:.6f} seconds")
