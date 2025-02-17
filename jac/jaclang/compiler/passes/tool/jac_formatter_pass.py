@@ -2065,7 +2065,9 @@ class JacFormatPass(Pass):
         """
         self.emit_ln(node, node.doc.gen.jac) if node.doc else None
         name = (
-            "" if node.name.value.startswith(Constants.JAC_TEST_NAME_PREFIX.value) else node.name.value
+            ""
+            if node.name.value.startswith(Constants.JAC_TEST_NAME_PREFIX.value)
+            else node.name.value
         )
         self.emit(node, f"test {name} {{\n")
         self.indent_level += 1
