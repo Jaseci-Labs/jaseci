@@ -803,19 +803,16 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid_items = [item for item in items if isinstance(item, ast.ExprAsItem)]
         if len(valid_items) != len(items):
             raise self.ice("Length mismatch in with items")
-        items_sub = ast.SubNodeList[ast.ExprAsItem](
-            items=valid_items, delim=Tok.COMMA, kid=items
-        )
         body = [self.convert(stmt) for stmt in node.body]
         valid_body = [stmt for stmt in body if isinstance(stmt, ast.CodeBlockStmt)]
         if len(valid_body) != len(body):
             raise self.ice("Length mismatch in async for body")
         return ast.WithStmt(
             is_async=False,
-            exprs=items_sub,
+            exprs=valid_items,
             body=valid_body,
             kid=[
-                items_sub,
+                *valid_items,
                 self.operator(Tok.LBRACE, "{"),
                 *valid_body,
                 self.operator(Tok.RBRACE, "}"),
@@ -834,19 +831,19 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid_items = [item for item in items if isinstance(item, ast.ExprAsItem)]
         if len(valid_items) != len(items):
             raise self.ice("Length mismatch in with items")
-        items_sub = ast.SubNodeList[ast.ExprAsItem](
-            items=valid_items, delim=Tok.COMMA, kid=items
-        )
+        expr_list = []
+        for item in valid_items:
+            expr_list.append(item)
         body = [self.convert(stmt) for stmt in node.body]
         valid_body = [stmt for stmt in body if isinstance(stmt, ast.CodeBlockStmt)]
         if len(valid_body) != len(body):
             raise self.ice("Length mismatch in async for body")
         return ast.WithStmt(
             is_async=True,
-            exprs=items_sub,
+            exprs=expr_list,
             body=valid_body,
             kid=[
-                items_sub,
+                *expr_list,
                 self.operator(Tok.LBRACE, "{"),
                 *valid_body,
                 self.operator(Tok.RBRACE, "}"),

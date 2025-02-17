@@ -1255,8 +1255,10 @@ class JacFormatPass(Pass):
         exprs: "ExprAsItemList",
         body: "CodeBlock",
         """
-        self.comma_sep_node_list(node.exprs)
-        self.emit(node, f"with {node.exprs.gen.jac} {{\n")
+        self.emit(node, "with ")
+        for s in ", ".join([i.gen.jac for i in node.exprs]):
+            self.emit(node, s)
+        self.emit_ln(node, "{\n")
 
         self.indent_level += 1
         for stmt in node.body:

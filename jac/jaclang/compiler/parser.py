@@ -1436,18 +1436,18 @@ class JacParser(Pass):
             """
             async_tok = self.match_token(Tok.KW_ASYNC)
             tok_with = self.consume_token(Tok.KW_WITH)
-            exprs, body_stmts = (
-                self.consume(ast.SubNodeList),
+            expr_stmt, body_stmts = (
+                self.consume(ast.SubNodeList).items,
                 self.consume(ast.SubNodeList).items,
             )
             return ast.WithStmt(
                 is_async=bool(async_tok),
-                exprs=exprs,
+                exprs=expr_stmt,
                 body=body_stmts,
                 kid=(
-                    [async_tok, tok_with, exprs, *body_stmts]
+                    [async_tok, tok_with, *expr_stmt, *body_stmts]
                     if async_tok
-                    else [tok_with, exprs, *body_stmts]
+                    else [tok_with, *expr_stmt, *body_stmts]
                 ),
             )
 
