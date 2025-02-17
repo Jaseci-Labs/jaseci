@@ -1,4 +1,4 @@
-let:priv a = 5;
+glob:priv a = 5;
 
 glob:pub X = 10;
 

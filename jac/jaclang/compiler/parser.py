@@ -5,7 +5,7 @@ from __future__ import annotations
 import keyword
 import logging
 import os
-from typing import Callable, TypeAlias, TypeVar
+from typing import Callable, TypeAlias, TypeVar, cast
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler import jac_lark as jl  # type: ignore
@@ -15,6 +15,15 @@ from jaclang.vendor.lark import Lark, Transformer, Tree, logger
 
 
 T = TypeVar("T", bound=ast.AstNode)
+
+
+# TODO: Move this to somewhere else.
+class JacSyntaxError(Exception):
+
+    def __init__(self, node: ast.AstNode, msg: str) -> None:
+        self.node = node  # Node where we had the error.
+        self.msg = msg
+        super().__init__()
 
 
 class JacParser(Pass):
@@ -43,6 +52,7 @@ class JacParser(Pass):
                 return mod
             else:
                 raise self.ice()
+
         except jl.UnexpectedInput as e:
             catch_error = ast.EmptyToken()
             catch_error.orig_src = self.source
@@ -58,8 +68,15 @@ class JacParser(Pass):
                 error_msg += e.args[0]
             self.error(error_msg, node_override=catch_error)
 
+        except jl.VisitError as e:
+            err = cast(JacSyntaxError, e.orig_exc)
+            self.error(f"Syntax Error: {err.msg}", node_override=err.node)
+
+        except JacSyntaxError as e:
+            self.error(f"Syntax Error: {e.msg}", node_override=e.node)
+
         except Exception as e:
-            self.error(f"Internal Error: {e}")
+            self.error(f" {type(e)} Internal Error: {e}")
 
         return ast.Module(
             name="",
@@ -252,61 +269,53 @@ class JacParser(Pass):
         def module(self, _: None) -> ast.Module:
             """Grammar rule.
 
-            module: (toplevel_stmt (tl_stmt_with_doc | toplevel_stmt)*)?
-                | STRING (tl_stmt_with_doc | toplevel_stmt)*
+            module: ((STRING | statement) (STRING? statement)*)?
             """
-            doc = self.match(ast.String)
-            body = self.match_many(ast.ElementStmt)
+            module_doc = self.match(ast.String)
+            module_body: list[ast.ModuleBlockStmt] = []
+
+            while True:
+                doc = self.match(ast.String)
+                if stmt := self.match(ast.Statement):
+                    if not isinstance(stmt, ast.ModuleBlockStmt):
+                        raise JacSyntaxError(
+                            stmt, "Statement now allowed at the module level."
+                        )
+                    if doc:
+                        stmt.doc = doc
+                        stmt.add_kids_left([doc])
+                    module_body.append(stmt)
+                else:
+                    break
+
+            kid: list[ast.AstNode] = []
+            if module_doc:
+                kid.append(module_doc)
+            kid.extend(module_body)
+            if not kid:
+                kid.append(ast.EmptyToken(ast.JacSource("", self.parse_ref.mod_path)))
             mod = ast.Module(
                 name=self.parse_ref.mod_path.split(os.path.sep)[-1].rstrip(".jac"),
                 source=self.parse_ref.source,
-                doc=doc,
-                body=body,
+                doc=module_doc,
+                body=module_body,
                 is_imported=False,
                 terminals=self.terminals,
-                kid=(
-                    self.cur_nodes
-                    or [ast.EmptyToken(ast.JacSource("", self.parse_ref.mod_path))]
-                ),
+                kid=kid,
             )
             return mod
-
-        def tl_stmt_with_doc(self, _: None) -> ast.ElementStmt:
-            """Grammar rule.
-
-            tl_stmt_with_doc: doc_tag toplevel_stmt
-            """
-            doc = self.consume(ast.String)
-            element = self.consume(ast.ElementStmt)
-            element.doc = doc
-            element.add_kids_left([doc])
-            return element
-
-        def toplevel_stmt(self, _: None) -> ast.ElementStmt:
-            """Grammar rule.
-
-            element: py_code_block
-                | import_stmt
-                | ability
-                | architype
-                | free_code
-                | test
-                | global_var
-            """
-            return self.consume(ast.ElementStmt)
 
         def global_var(self, _: None) -> ast.GlobalVars:
             """Grammar rule.
 
-            global_var: (KW_LET | KW_GLOBAL) access_tag? assignment_list SEMI
+            global_var: KW_GLOBAL access_tag? assignment_list SEMI
             """
-            is_frozen = self.consume(ast.Token).name == Tok.KW_LET
+            self.consume_token(Tok.KW_GLOBAL)
             access_tag = self.match(ast.SubTag)
             assignments = self.consume(ast.SubNodeList)
             return ast.GlobalVars(
                 access=access_tag,
                 assignments=assignments,
-                is_frozen=is_frozen,
                 kid=self.cur_nodes,
             )
 
@@ -1178,10 +1187,13 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def statement(self, kid: list[ast.AstNode]) -> ast.CodeBlockStmt:
+        def statement(self, kid: list[ast.AstNode]) -> ast.Statement:
             """Grammar rule.
 
             statement: import_stmt
+                    | global_var
+                    | free_code
+                    | test
                     | ability
                     | architype
                     | if_stmt
@@ -1207,7 +1219,7 @@ class JacParser(Pass):
                     | walker_stmt
                     | SEMI
             """
-            if isinstance(kid[0], ast.CodeBlockStmt) and len(kid) < 2:
+            if isinstance(kid[0], ast.Statement) and len(kid) < 2:
                 return kid[0]
             elif isinstance(kid[0], ast.Token) and kid[0].name == Tok.KW_YIELD:
                 return ast.ExprStmt(
@@ -1227,7 +1239,7 @@ class JacParser(Pass):
                     in_fstring=False,
                     kid=kid,
                 )
-            elif isinstance(kid[0], ast.CodeBlockStmt):
+            elif isinstance(kid[0], ast.Statement):
                 kid[0].add_kids_right([kid[1]])
                 return kid[0]
             else:
@@ -1640,15 +1652,13 @@ class JacParser(Pass):
         def assignment(self, kid: list[ast.AstNode]) -> ast.Assignment:
             """Grammar rule.
 
-            assignment: KW_LET? (atomic_chain EQ)+ (yield_expr | expression)
+            assignment: (atomic_chain EQ)+ (yield_expr | expression)
                     | atomic_chain (COLON STRING)? type_tag (EQ (yield_expr | expression))?
                     | atomic_chain aug_op (yield_expr | expression)
             """
             chomp = [*kid]
-            is_frozen = isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_LET
             is_aug = None
             assignees = []
-            chomp = chomp[1:] if is_frozen else chomp
             value = chomp[-1] if isinstance(chomp[-1], ast.Expr) else None
             chomp = (
                 chomp[:-2]
@@ -1696,13 +1706,12 @@ class JacParser(Pass):
                 kid=assignees,
             )
             kid = [x for x in kid if x not in assignees]
-            kid.insert(1, new_targ) if is_frozen else kid.insert(0, new_targ)
+            kid.insert(0, new_targ)
             if is_aug:
                 return ast.Assignment(
                     target=new_targ,
                     type_tag=type_tag if isinstance(type_tag, ast.SubTag) else None,
                     value=value,
-                    mutable=is_frozen,
                     aug_op=is_aug,
                     kid=kid,
                 )
@@ -1710,7 +1719,6 @@ class JacParser(Pass):
                 target=new_targ,
                 type_tag=type_tag if isinstance(type_tag, ast.SubTag) else None,
                 value=value,
-                mutable=is_frozen,
                 kid=kid,
                 semstr=semstr if isinstance(semstr, ast.String) else None,
             )
@@ -3539,9 +3547,8 @@ class JacParser(Pass):
                 if token.type == Tok.KWESC_NAME:
                     ret.is_kwesc = True
                 if ret.value in keyword.kwlist:
-                    err = jl.UnexpectedInput(f"Python keyword {ret.value} used as name")
-                    err.line = ret.loc.first_line
-                    err.column = ret.loc.col_start
-                    raise err
+                    raise JacSyntaxError(
+                        ret, f"Python keyword {ret.value} used as name"
+                    )
             self.terminals.append(ret)
             return ret
