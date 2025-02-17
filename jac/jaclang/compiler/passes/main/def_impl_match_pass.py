@@ -118,23 +118,25 @@ class DeclImplMatchPass(Pass):
             params_decl = valid_decl.signature.params
             params_defn = sym.decl.name_of.signature.params
 
-            if params_decl and params_defn:
-                # Check if the parameter count is matched.
-                if len(params_defn.items) != len(params_decl.items):
-                    self.error(
-                        f"Parameter count mismatch for ability {sym.sym_name}.",
-                        sym.decl.name_of.name_spec,
-                    )
-                    self.error(
-                        f"From the declaration of {valid_decl.name_spec.sym_name}.",
-                        valid_decl.name_spec,
-                    )
-                else:
-                    # Copy the parameter names from the declaration to the definition.
-                    for idx in range(len(params_defn.items)):
-                        params_decl.items[idx] = params_defn.items[idx]
-                    for idx in range(len(params_defn.kid)):
-                        params_decl.kid[idx] = params_defn.kid[idx]
+            # Check if the parameter count is matched.
+            if len(params_defn) != len(params_decl):
+                self.error(
+                    f"Parameter count mismatch for ability {sym.sym_name}.",
+                    sym.decl.name_of.name_spec,
+                )
+                self.error(
+                    f"From the declaration of {valid_decl.name_spec.sym_name}.",
+                    valid_decl.name_spec,
+                )
+            else:
+                # Copy the parameter names and the kids from the declaration to the definition.
+                # Since we're copying all the kids, we must need to copy both the params and return type
+                # as those are the nodes in the kids and will be processed. This behavior will removed.
+                params_decl[:] = params_defn
+                valid_decl.signature.return_type = (
+                    sym.decl.name_of.signature.return_type
+                )
+                valid_decl.signature.kid = sym.decl.name_of.signature.kid
 
     def exit_architype(self, node: ast.Architype) -> None:
         """Exit Architype."""

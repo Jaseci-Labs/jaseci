@@ -5,7 +5,7 @@ from __future__ import annotations
 import keyword
 import logging
 import os
-from typing import Callable, TypeAlias, TypeVar
+from typing import Callable, TypeAlias, TypeVar, cast
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler import jac_lark as jl  # type: ignore
@@ -942,9 +942,20 @@ class JacParser(Pass):
             if (isinstance(params, ast.SubNodeList) or params is None) and (
                 isinstance(return_spec, ast.Expr) or return_spec is None
             ):
+                # Remove the subnode list from the kids. This bellow line is temproary and
+                # will be gone after removing subnode list.
+                new_kids: list[ast.AstNode] = kid[:]
+                if params in new_kids:
+                    params_index = new_kids.index(params)
+                    new_kids = (
+                        new_kids[:params_index]
+                        + params.kid
+                        + new_kids[params_index + 1 :]
+                    )
+
                 return ast.FuncSignature(
                     semstr=semstr,
-                    params=params,
+                    params=params.items if params else [],
                     return_type=return_spec,
                     kid=(
                         kid
@@ -1334,17 +1345,22 @@ class JacParser(Pass):
 
             except_def: KW_EXCEPT expression (KW_AS NAME)? code_block
             """
-            name: ast.Name | None = None
             self.consume_token(Tok.KW_EXCEPT)
             ex_type = self.consume(ast.Expr)
-            if self.match_token(Tok.KW_AS):
-                name = self.consume(ast.Name)
+            name = self.consume(ast.Name) if self.match_token(Tok.KW_AS) else None
             body = self.consume(ast.SubNodeList)
+            left_enc, right_enc = body.left_enc, body.right_enc
+            assert left_enc and right_enc
             return ast.Except(
                 ex_type=ex_type,
                 name=name,
-                body=body,
-                kid=self.cur_nodes,
+                body=body.items,
+                kid=[
+                    *self.cur_nodes[:-1],
+                    left_enc,
+                    *body.items,
+                    right_enc,
+                ],
             )
 
         def finally_stmt(self, _: None) -> ast.FinallyStmt:
@@ -1403,13 +1419,20 @@ class JacParser(Pass):
 
             while_stmt: KW_WHILE expression code_block
             """
-            self.consume_token(Tok.KW_WHILE)
+            tok_while = self.consume_token(Tok.KW_WHILE)
             condition = self.consume(ast.Expr)
             body = self.consume(ast.SubNodeList)
+            assert body.left_enc and body.right_enc
             return ast.WhileStmt(
                 condition=condition,
-                body=body,
-                kid=self.cur_nodes,
+                body=cast(list[ast.CodeBlockStmt], body.items),
+                kid=[
+                    tok_while,
+                    condition,
+                    body.left_enc,
+                    *body.items,
+                    body.right_enc,
+                ],
             )
 
         def with_stmt(self, _: None) -> ast.WithStmt:
@@ -1767,16 +1790,16 @@ class JacParser(Pass):
             chomp = chomp[1:]
             sig_kid: list[ast.AstNode] = []
             if params:
-                sig_kid.append(params)
+                sig_kid += params.kid
             if return_type:
                 sig_kid.append(return_type)
             signature = (
                 ast.FuncSignature(
-                    params=params,
+                    params=params.items if params else [],
                     return_type=return_type,
                     kid=sig_kid,
                 )
-                if params or return_type
+                if (params and params.items) or return_type
                 else None
             )
             new_kid = [i for i in kid if i != params and i != return_type]
@@ -2156,20 +2179,19 @@ class JacParser(Pass):
             if len(kid) == 1:
                 index = kid[0]
                 if isinstance(index, ast.ListVal):
-                    if not index.values:
+                    if len(index.values) == 0:
                         raise self.ice()
-                    if len(index.values.items) == 1:
-                        expr = index.values.items[0] if index.values else None
+                    if len(index.values) == 1:
+                        expr = index.values[0]
                     else:
                         sublist = ast.SubNodeList[ast.Expr | ast.KWPair](
-                            items=[*index.values.items], delim=Tok.COMMA, kid=index.kid
+                            items=[*index.values], delim=Tok.COMMA, kid=index.kid[1:-1]
                         )
                         expr = ast.TupleVal(values=sublist, kid=[sublist])
-                        kid = [expr]
                     return ast.IndexSlice(
                         slices=[ast.IndexSlice.Slice(start=expr, stop=None, step=None)],
                         is_range=False,
-                        kid=kid,
+                        kid=[index.kid[0], expr, index.kid[-1]],
                     )
                 else:
                     raise self.ice()
@@ -2352,13 +2374,13 @@ class JacParser(Pass):
             """
             if len(kid) == 2:
                 return ast.ListVal(
-                    values=None,
+                    values=[],
                     kid=kid,
                 )
             elif isinstance(kid[1], ast.SubNodeList):
                 return ast.ListVal(
-                    values=kid[1],
-                    kid=kid,
+                    values=cast(list[ast.Expr], kid[1].items),
+                    kid=[kid[0], *kid[1].kid, kid[2]],
                 )
             else:
                 raise self.ice()
@@ -2388,13 +2410,13 @@ class JacParser(Pass):
             """
             if len(kid) == 2:
                 return ast.SetVal(
-                    values=None,
+                    values=[],
                     kid=kid,
                 )
             elif isinstance(kid[1], ast.SubNodeList):
                 return ast.SetVal(
-                    values=kid[1],
-                    kid=kid,
+                    values=cast(list[ast.Expr], kid[1].items),
+                    kid=[kid[0], *kid[1].kid, kid[2]],
                 )
             else:
                 raise self.ice()
