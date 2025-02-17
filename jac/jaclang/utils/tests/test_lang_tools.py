@@ -107,8 +107,10 @@ class JacFormatPassTests(TestCase):
 
     def test_sym_sym_dot(self) -> None:
         """Testing for sym, sym. AstTool."""
-        jac_file = os.path.join(
-            os.path.dirname(jaclang.__file__), "../examples/reference/atom.jac"
+        jac_file = os.path.normpath(
+            os.path.join(
+                os.path.dirname(jaclang.__file__), "../examples/reference/atom.jac"
+            )
         )
         out = AstTool().ir(["sym", jac_file])
         self.assertNotIn(

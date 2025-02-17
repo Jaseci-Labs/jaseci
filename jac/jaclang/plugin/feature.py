@@ -306,11 +306,25 @@ class JacFeature(
         return plugin_manager.hook.make_node(on_entry=on_entry, on_exit=on_exit)
 
     @staticmethod
+    def make_root(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a root node architype."""
+        return plugin_manager.hook.make_root(on_entry=on_entry, on_exit=on_exit)
+
+    @staticmethod
     def make_edge(
         on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
         """Create a edge architype."""
         return plugin_manager.hook.make_edge(on_entry=on_entry, on_exit=on_exit)
+
+    @staticmethod
+    def make_generic_edge(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a edge architype."""
+        return plugin_manager.hook.make_generic_edge(on_entry=on_entry, on_exit=on_exit)
 
     @staticmethod
     def make_walker(
@@ -376,11 +390,6 @@ class JacFeature(
             directory=directory,
             verbose=verbose,
         )
-
-    @staticmethod
-    def elvis(op1: Optional[T], op2: T) -> T:
-        """Jac's elvis operator feature."""
-        return plugin_manager.hook.elvis(op1=op1, op2=op2)
 
     @staticmethod
     def has_instance_default(gen_func: Callable[[], T]) -> T:

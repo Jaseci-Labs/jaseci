@@ -11,7 +11,7 @@ from jaclang import jac_import
 from jaclang.cli import cli
 from jaclang.compiler.compile import jac_file_to_pass, jac_pass_to_pass, jac_str_to_pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
-from jaclang.runtimelib.context import SUPER_ROOT_ANCHOR
+from jaclang.runtimelib.context import ExecutionContext
 from jaclang.runtimelib.machine import JacMachine, JacProgram
 from jaclang.utils.test import TestCase
 
@@ -21,7 +21,7 @@ class JacLanguageTests(TestCase):
 
     def setUp(self) -> None:
         """Set up test."""
-        SUPER_ROOT_ANCHOR.edges.clear()
+        ExecutionContext.global_system_root().edges.clear()
         JacMachine(self.fixture_abs_path("./")).attach_program(
             JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
         )
@@ -118,19 +118,19 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
 
         expected_outputs = [
-            "+-- AtomTrailer - Type: builtins.list[builtins.int]",
-            "    +-- Name - arr - Type: builtins.list[builtins.list[builtins.int]],  SymbolTable: list",
-            "    +-- IndexSlice - [IndexSlice] - Type: builtins.list[builtins.list[builtins.int]],  SymbolTable: None",
-            "        +-- Token - [,",
+            "+-- AtomTrailer - Type: jaclang.JacList[builtins.int]",
+            "    +-- Name - arr - Type: jaclang.JacList[jaclang.JacList[builtins.int]],  SymbolTable: None",
+            "+-- IndexSlice - [IndexSlice] - Type: jaclang.JacList[jaclang.JacList[builtins.int]],  SymbolTable: None",
+            "        +-- Token - [, ",
             "        +-- Int - 1 - Type: Literal[1]?,  SymbolTable: None",
-            "        +-- Token - :,",
+            "        +-- Token - :, ",
             "        +-- Int - 3 - Type: Literal[3]?,  SymbolTable: None",
-            "        +-- Token - ,,",
+            "        +-- Token - ,, ",
             "        +-- Int - 1 - Type: Literal[1]?,  SymbolTable: None",
-            "        +-- Token - :,",
-            "        +-- Token - :,",
+            "        +-- Token - :, ",
+            "        +-- Token - :, ",
             "        +-- Int - 2 - Type: Literal[2]?,  SymbolTable: None",
-            "        +-- Token - ],",
+            "        +-- Token - ], ",
         ]
 
         for expected in expected_outputs:
@@ -1033,11 +1033,11 @@ class JacLanguageTests(TestCase):
             stdout_value,
         )
         self.assertIn(
-            "Walkers in bar:\n  - Walker: bar_walk",
+            "Walkers in bar:\n  - Walker: Walker\n  - Walker: bar_walk",
             stdout_value,
         )
         self.assertIn("Nodes in bar:\n  - Node: Item", stdout_value)
-        self.assertIn("Edges in bar:\n  - Edge: Link", stdout_value)
+        self.assertIn("Edges in bar:\n  - Edge: Edge\n  - Edge: Link", stdout_value)
         self.assertIn("Item value: 0", stdout_value)
         self.assertIn("Created 5 items.", stdout_value)
 
@@ -1230,5 +1230,34 @@ class JacLanguageTests(TestCase):
         jac_import("architype_def_bug", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
-        self.assertIn("MyNode", stdout_value[0])
-        self.assertIn("MyWalker", stdout_value[1])
+        self.assertIn("MyWalker", stdout_value[0])
+        self.assertIn("MyNode", stdout_value[1])
+
+    def test_visit_sequence(self) -> None:
+        """Test conn assign on edges."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("visit_sequence", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        self.assertEqual(
+            "walker entry\nwalker enter to root\n"
+            "a-1\na-2\na-3\na-4\na-5\na-6\n"
+            "b-1\nb-2\nb-3\nb-4\nb-5\nb-6\n"
+            "c-1\nc-2\nc-3\nc-4\nc-5\nc-6\n"
+            "walker exit\n",
+            captured_output.getvalue(),
+        )
+
+    def test_nested_impls(self) -> None:
+        """Test complex nested impls."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("nested_impls", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("Hello,from bar in kk", stdout_value[0])
+        self.assertIn("Greeting: Hello, World!", stdout_value[1])
+        self.assertIn("Repeated: Hello", stdout_value[2])
+        self.assertIn("Hello, World!", stdout_value[3])
+        self.assertIn("Last message:!", stdout_value[4])
+        self.assertIn("Final message:!", stdout_value[5])

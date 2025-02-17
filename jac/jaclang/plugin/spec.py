@@ -297,10 +297,26 @@ class JacFeatureSpec(
 
     @staticmethod
     @hookspec(firstresult=True)
+    def make_root(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a root node architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
     def make_edge(
         on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
         """Create a edge architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def make_generic_edge(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a generic edge architype."""
         raise NotImplementedError
 
     @staticmethod
@@ -353,12 +369,6 @@ class JacFeatureSpec(
         verbose: bool,
     ) -> int:
         """Run the test suite in the specified .jac file."""
-        raise NotImplementedError
-
-    @staticmethod
-    @hookspec(firstresult=True)
-    def elvis(op1: Optional[T], op2: T) -> T:
-        """Jac's elvis operator feature."""
         raise NotImplementedError
 
     @staticmethod

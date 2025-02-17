@@ -5,6 +5,8 @@ from os import getenv
 from traceback import format_exception
 from typing import Any, AsyncGenerator
 
+from anyio import create_task_group
+
 from fastapi import FastAPI as _FaststAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
@@ -50,13 +52,26 @@ class FastAPI:
     def get(cls) -> _FaststAPI:
         """Get or Create new instance of FastAPI."""
         if not isinstance(cls.__app__, _FaststAPI):
+            from .routers import healthz_router, sso_router, user_router, webhook_router
+            from ..plugin.implementation import (
+                WEBSOCKET_MANAGER,
+                walker_router,
+                webhook_walker_router,
+                websocket_router,
+            )
 
             @asynccontextmanager
             async def lifespan(app: _FaststAPI) -> AsyncGenerator[None, _FaststAPI]:
                 from .datasources import Collection
 
                 Collection.apply_indexes()
-                yield
+
+                async with create_task_group() as task_group:
+                    await WEBSOCKET_MANAGER.open_broadcaster(task_group)
+
+                    yield
+
+                    await WEBSOCKET_MANAGER.close_broadcaster(task_group)
 
             cls.__app__ = _FaststAPI(lifespan=lifespan)
 
@@ -70,10 +85,15 @@ class FastAPI:
 
             populate_yaml_specs(cls.__app__)
 
-            from .routers import healthz_router, sso_router, user_router
-            from ..plugin.jaseci import walker_router
-
-            for router in [healthz_router, sso_router, user_router, walker_router]:
+            for router in [
+                healthz_router,
+                sso_router,
+                user_router,
+                webhook_router,
+                walker_router,
+                webhook_walker_router,
+                websocket_router,
+            ]:
                 cls.__app__.include_router(router)
 
             @cls.__app__.exception_handler(Exception)

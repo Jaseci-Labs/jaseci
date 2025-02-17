@@ -1,3 +1,5 @@
+import:py from jaclang.plugin.feature {JacFeature as Jac}
+
 node A {
     has id: int;
 }

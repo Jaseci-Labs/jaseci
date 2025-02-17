@@ -55,7 +55,7 @@ TOKEN_MAP.update(
         "CARROW_L": "<++", "CARROW_R": "++>", "GLOBAL_OP": ":global:",
         "NONLOCAL_OP": ":nonlocal:", "WALKER_OP": ":walker:", "NODE_OP": ":node:",
         "EDGE_OP": ":edge:", "CLASS_OP": ":class:", "OBJECT_OP": ":obj:",
-        "TYPE_OP": "`", "ABILITY_OP": ":can:", "ELVIS_OP": "?:", "NULL_OK": "?",
+        "TYPE_OP": "`", "ABILITY_OP": ":can:", "NULL_OK": "?",
         "KW_OR": "|", "ARROW_BI": "<-->", "ARROW_L": "<--",
         "ARROW_R": "-->", "ARROW_L_P1": "<-:", "ARROW_R_P2": ":->",
         "ARROW_L_P2": ":-", "ARROW_R_P1": "-:", "CARROW_BI": "<++>",

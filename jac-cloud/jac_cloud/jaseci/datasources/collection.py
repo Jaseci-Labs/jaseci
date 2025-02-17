@@ -148,13 +148,14 @@ class Collection(Generic[T]):
                 )
             else:
                 logger.info("DATABASE_HOST is not available! Using LocalDB...")
+                path = getenv("DATABASE_PATH") or "mydatabase"
                 set_storage(
-                    repository="mydatabase",
+                    repository=path,
                     storage="sqlite",
                     mongo_version="4.4",
                     use_bson=True,
                 )
-                client = Collection.__client__ = MontyClient("mydatabase")
+                client = Collection.__client__ = MontyClient(path)
 
         return client
 

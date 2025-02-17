@@ -168,7 +168,7 @@ class JacCliTests(TestCase):
         cli.tool("ir", ["ast", f"{self.fixture_abs_path('import.jac')}"])
 
         sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
+        stdout_value = captured_output.getvalue().replace("\\", "/")
         self.assertRegex(
             stdout_value,
             r"1\:11 \- 1\:13.*ModulePath - os - abs_path\:.*typeshed/stdlib/os/__init__.pyi",
@@ -231,6 +231,29 @@ class JacCliTests(TestCase):
         self.assertRegex(
             stdout_value,
             r"13\:12 \- 13\:18.*Name - append - .*SymbolPath: builtins_test.builtins.list.append",
+        )
+
+    def test_import_all(self) -> None:
+        """Testing for print AstTool."""
+        from jaclang.settings import settings
+
+        settings.ast_symbol_info_detailed = True
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        cli.tool("ir", ["ast", f"{self.fixture_abs_path('import_all.jac')}"])
+
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        settings.ast_symbol_info_detailed = False
+
+        self.assertRegex(
+            stdout_value,
+            r"6\:25 - 6\:30.*Name - floor -.*SymbolPath: import_all.import_all_py.floor",
+        )
+        self.assertRegex(
+            stdout_value,
+            r"5\:25 - 5\:27.*Name - pi -.*SymbolPath: import_all.import_all_py.pi",
         )
 
     def test_sub_class_symbol_table_fix_1(self) -> None:
