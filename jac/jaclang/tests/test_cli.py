@@ -310,17 +310,17 @@ class JacCliTests(TestCase):
 
         self.assertRegex(
             stdout_value,
-            r"19:11 - 19:14.*SymbolPath: .*.jac_features.JacFeature",
+            r"19:11 - 19:14.*SymbolPath:.*jac_builtins_test.jac_feature.JacFeature",
         )
 
         self.assertRegex(
             stdout_value,
-            r"19:15 - 19:23.*SymbolPath: .*.jac_features.JacNode.node_dot",
+            r"19:15 - 19:23.*SymbolPath: .*.jac_feature.JacNode.node_dot",
         )
 
         self.assertRegex(
             stdout_value,
-            r"15:11 - 15:17.*SymbolPath: .*.jac_builtins.dotgen",
+            r"15:11 - 15:17.*SymbolPath: .*.jac_builtin.dotgen",
         )
 
     def test_expr_types(self) -> None:

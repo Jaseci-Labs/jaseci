@@ -527,10 +527,10 @@ class PyImportPass(JacImportPass):
 
         for file_to_raise in [
             os.path.join(
-                os.path.dirname(__file__), "../../../../jaclang/plugin/jac_builtins.pyi"
+                os.path.dirname(__file__), "../../../../jaclang/plugin/builtin.py"
             ),
             os.path.join(
-                os.path.dirname(__file__), "../../../../jaclang/plugin/jac_features.pyi"
+                os.path.dirname(__file__), "../../../../jaclang/plugin/feature.py"
             ),
         ]:
             with open(file_to_raise, "r", encoding="utf-8") as f:
@@ -542,6 +542,7 @@ class PyImportPass(JacImportPass):
                     ),
                 ).ir
                 mod.parent = self.ir
+                mod.name = "jac_" + mod.name
                 SubNodeTabPass(input_ir=mod, prior=self)
                 SymTabBuildPass(input_ir=mod, prior=self)
                 DefUsePass(input_ir=mod, prior=self)

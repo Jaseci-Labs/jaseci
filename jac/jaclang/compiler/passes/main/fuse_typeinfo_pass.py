@@ -218,9 +218,9 @@ class FuseTypeInfoPass(Pass):
             node.name_spec._sym = builtins_sym
 
     def __check_jac_builltin_symbol(self, node: ast.NameAtom) -> None:
-        jac_builtins_symtable = self.ir.sym_tab.find_scope("jac_builtins")
+        jac_builtins_symtable = self.ir.sym_tab.find_scope("jac_builtin")
         assert jac_builtins_symtable is not None
-        jac_features_symtable = self.ir.sym_tab.find_scope("jac_features")
+        jac_features_symtable = self.ir.sym_tab.find_scope("jac_feature")
         assert jac_features_symtable is not None
 
         if node._sym_type == "jaclang.plugin.feature.JacFeature":

@@ -379,7 +379,7 @@ class TestJacLangServer(TestCase):
                     "r",
                     "Jac",
                 ],
-                9,
+                16,
                 None,
             ),
         ]
