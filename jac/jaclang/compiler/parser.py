@@ -1263,15 +1263,19 @@ class JacParser(Pass):
 
             if_stmt: KW_IF expression code_block (elif_stmt | else_stmt)?
             """
-            self.consume_token(Tok.KW_IF)
+            tok_if = self.consume_token(Tok.KW_IF)
             condition = self.consume(ast.Expr)
             body = self.consume(ast.SubNodeList)
             else_body = self.match(ast.ElseStmt) or self.match(ast.ElseIf)
             return ast.IfStmt(
                 condition=condition,
-                body=body,
+                body=cast(list[ast.CodeBlockStmt], body.items),
                 else_body=else_body,
-                kid=self.cur_nodes,
+                kid=[
+                    tok_if,
+                    condition,
+                    *body.items,
+                ],
             )
 
         def elif_stmt(self, _: None) -> ast.ElseIf:
@@ -1279,15 +1283,19 @@ class JacParser(Pass):
 
             elif_stmt: KW_ELIF expression code_block (elif_stmt | else_stmt)?
             """
-            self.consume_token(Tok.KW_ELIF)
+            tok_elif = self.consume_token(Tok.KW_ELIF)
             condition = self.consume(ast.Expr)
             body = self.consume(ast.SubNodeList)
             else_body = self.match(ast.ElseStmt) or self.match(ast.ElseIf)
             return ast.ElseIf(
                 condition=condition,
-                body=body,
+                body=cast(list[ast.CodeBlockStmt], body.items),
                 else_body=else_body,
-                kid=self.cur_nodes,
+                kid=[
+                    tok_elif,
+                    condition,
+                    *body.items,
+                ],
             )
 
         def else_stmt(self, _: None) -> ast.ElseStmt:
