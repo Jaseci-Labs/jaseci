@@ -2433,23 +2433,6 @@ class JacParser(Pass):
 
             kw_expr_list: (kw_expr_list COMMA)? kw_expr
             """
-            # consume = None
-            # expr = None
-            # comma = None
-            # if isinstance(kid[0], ast.SubNodeList):
-            #     consume = kid[0]
-            #     comma = kid[1]
-            #     expr = kid[2]
-            #     new_kid = [*consume.kid, comma, expr]
-            # else:
-            #     expr = kid[0]
-            #     new_kid = [expr]
-            # valid_kid = [i for i in new_kid if isinstance(i, ast.KWPair)]
-            # return ast.SubNodeList[ast.KWPair](
-            #     items=valid_kid,
-            #     delim=Tok.COMMA,
-            #     kid=new_kid,
-            # )
             if consume := self.match(ast.SubNodeList):
                 comma = self.consume_token(Tok.COMMA)
                 expr = self.consume(ast.KWPair)
