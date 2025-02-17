@@ -748,7 +748,7 @@ class TestJaseciPlugin(TestCase):
     def test_savable_object(self) -> None:
         """Test ObjectAnchor save."""
         global session
-        session = self.fixture_abs_path("other_root_access.session")
+        session = self.fixture_abs_path("savable_object.session")
 
         self._output2buffer()
 

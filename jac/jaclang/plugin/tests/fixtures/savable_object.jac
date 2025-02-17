@@ -1,3 +1,5 @@
+import:py from jaclang.plugin.feature {JacFeature as Jac}
+
 enum Enum {
     A = "a",
     B = "b",

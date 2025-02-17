@@ -6,7 +6,6 @@ from os.path import split
 from pickle import load
 from typing import Any
 
-from jaclang import jac_import
 from jaclang.cli.cmdreg import cmd_registry
 from jaclang.plugin.default import hookimpl
 from jaclang.runtimelib.context import ExecutionContext
@@ -31,6 +30,7 @@ class JacCmd:
 
         @cmd_registry.register
         def serve(filename: str, host: str = "0.0.0.0", port: int = 8000) -> None:
+            from jaclang import jac_import
             from jac_cloud import FastAPI
 
             """Serve the jac application."""
@@ -73,6 +73,8 @@ class JacCmd:
         def create_system_admin(
             filename: str, email: str = "", password: str = ""
         ) -> str:
+            from jaclang import jac_import
+
             if not getenv("DATABASE_HOST"):
                 raise NotImplementedError(
                     "DATABASE_HOST env-var is required for this API!"

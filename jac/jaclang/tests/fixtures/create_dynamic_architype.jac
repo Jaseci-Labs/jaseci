@@ -13,7 +13,7 @@ print("Dynamic Node Value:", f'{self.value}');
 glob walker_code = """
 walker dynamic_walker {
 can visit_nodes with entry {
-visit [-->](`?dynamic_node);
+visit [-->];
 }
 }
 """;

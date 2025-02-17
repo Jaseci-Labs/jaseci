@@ -32,7 +32,6 @@ from jaclang.runtimelib.architype import (
     Access as _Access,
     AccessLevel,
     Anchor,
-    DSFunc,
     EdgeAnchor as _EdgeAnchor,
     EdgeArchitype as _EdgeArchitype,
     NodeAnchor as _NodeAnchor,
@@ -692,7 +691,7 @@ class NodeAnchor(BaseAnchor, _NodeAnchor):  # type: ignore[misc]
             doc = cast(dict, doc)
 
             architype = architype_to_dataclass(
-                NodeArchitype.__get_class__(doc.get("name") or "Root"),
+                NodeArchitype.__get_class__(doc.get("name") or ""),
                 doc.pop("architype"),
             )
             anchor = NodeAnchor(
@@ -769,7 +768,7 @@ class EdgeAnchor(BaseAnchor, _EdgeAnchor):  # type: ignore[misc]
             """Parse document to EdgeAnchor."""
             doc = cast(dict, doc)
             architype = architype_to_dataclass(
-                EdgeArchitype.__get_class__(doc.get("name") or "GenericEdge"),
+                EdgeArchitype.__get_class__(doc.get("name") or ""),
                 doc.pop("architype"),
             )
             anchor = EdgeAnchor(
@@ -969,9 +968,16 @@ class BaseArchitype:
     def __set_classes__(cls) -> dict[str, Any]:
         """Initialize Jac Classes."""
         jac_classes = {}
-        for sub in cls.__subclasses__():
+        sub_cls = cls.__subclasses__()
+        for sub in sub_cls[-1].__subclasses__():
             sub.__jac_hintings__ = get_type_hints(sub)
             jac_classes[sub.__name__] = sub
+
+        if len(sub_cls) > 1:
+            sub = sub_cls[0].__subclasses__()[0]
+            sub.__jac_hintings__ = get_type_hints(sub)
+            jac_classes[""] = sub
+
         cls.__jac_classes__ = jac_classes
 
         return jac_classes
@@ -1058,20 +1064,12 @@ class ObjectArchitype(BaseArchitype, _ObjectArchitype):
         )
 
 
-@dataclass(eq=False)
 class GenericEdge(EdgeArchitype):
     """Generic Root Node."""
 
-    _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
-    _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
 
-
-@dataclass(eq=False)
 class Root(NodeArchitype):
     """Generic Root Node."""
-
-    _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
-    _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
 
     def __init__(self) -> None:
         """Create node architype."""
