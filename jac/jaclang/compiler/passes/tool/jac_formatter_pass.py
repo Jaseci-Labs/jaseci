@@ -8,7 +8,7 @@ from typing import Optional
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.absyntree import AstNode
-from jaclang.compiler.constant import Tokens as Tok
+from jaclang.compiler.constant import Constants, Tokens as Tok
 from jaclang.compiler.passes import Pass
 from jaclang.settings import settings
 
@@ -2064,7 +2064,9 @@ class JacFormatPass(Pass):
         body: CodeBlock,
         """
         self.emit_ln(node, node.doc.gen.jac) if node.doc else None
-        name = "" if node.name.value.startswith("_jac_gen_") else node.name.value
+        name = (
+            "" if node.name.value.startswith(Constants.JAC_TEST_NAME_PREFIX.value) else node.name.value
+        )
         self.emit(node, f"test {name} {{\n")
         self.indent_level += 1
         for stmt in node.body:

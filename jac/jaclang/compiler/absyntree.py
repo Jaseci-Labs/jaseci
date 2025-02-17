@@ -768,7 +768,7 @@ class Test(AstSymbolNode, ElementStmt):
             else Name(
                 orig_src=name.orig_src,
                 name=Tok.NAME.value,
-                value=f"_jac_gen_{Test.TEST_COUNT}",
+                value=f"{Con.JAC_TEST_NAME_PREFIX}{Test.TEST_COUNT}",
                 col_start=name.loc.col_start,
                 col_end=name.loc.col_end,
                 line=name.loc.first_line,

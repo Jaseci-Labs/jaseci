@@ -483,7 +483,7 @@ class PyastGenPass(Pass):
                                 ast3.keyword(
                                     arg="file_loc",
                                     value=self.sync(
-                                        ast3.Constant(value=node.body[0].loc.mod_path)
+                                        ast3.Constant(value=node.loc.mod_path)
                                     ),
                                 )
                             ),
