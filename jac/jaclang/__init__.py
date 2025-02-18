@@ -416,13 +416,6 @@ def field(
 jac_test = Jac.create_test
 static = ClassVar
 
-root = cast(Root, Jac.get_root())
 
-
-# Listen to context change and update the above global root here.
-def _update_root() -> None:
-    global root
-    root = cast(Root, ExecutionContext.get_root())
-
-
-ExecutionContext.on_ctx_change.append(lambda ctx: _update_root())
+def root() -> Root:
+    return cast(Root, ExecutionContext.get_root())
