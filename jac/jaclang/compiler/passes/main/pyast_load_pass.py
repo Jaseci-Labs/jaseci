@@ -630,11 +630,16 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 collection=iter,
                 body=val_body,
                 else_body=fin_orelse,
-                kid=(
-                    [target, iter, *val_body, fin_orelse]
-                    if fin_orelse
-                    else [target, iter, *val_body]
-                ),
+                kid=[
+                    self.operator(Tok.KW_FOR, "for"),
+                    target,
+                    self.operator(Tok.KW_IN, "in"),
+                    iter,
+                    self.operator(Tok.LBRACE, "{"),
+                    *val_body,
+                    self.operator(Tok.RBRACE, "}"),
+                    *([fin_orelse] if fin_orelse else []),
+                ],
             )
         else:
             raise self.ice()
@@ -681,11 +686,17 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 collection=iter,
                 body=val_body,
                 else_body=fin_orelse,
-                kid=(
-                    [target, iter, *val_body, fin_orelse]
-                    if fin_orelse
-                    else [target, iter, *val_body]
-                ),
+                kid=[
+                    self.operator(Tok.KW_FOR, "async"),
+                    self.operator(Tok.KW_FOR, "for"),
+                    target,
+                    self.operator(Tok.KW_IN, "in"),
+                    iter,
+                    self.operator(Tok.LBRACE, "{"),
+                    *val_body,
+                    self.operator(Tok.RBRACE, "}"),
+                    *([fin_orelse] if fin_orelse else []),
+                ],
             )
         else:
             raise self.ice()
