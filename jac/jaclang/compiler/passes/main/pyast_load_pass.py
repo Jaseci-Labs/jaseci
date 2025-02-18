@@ -195,7 +195,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         if not all(isinstance(decr, ast.Expr) for decr in decorators):
             raise self.ice("Invalid decorator in function.")
         valid_decorators = (
-            [dec for dec in valid_dec if isinstance(dec, ast.Expr)] if valid_dec else []
+            [dec for dec in decorators if isinstance(dec, ast.Expr)]
+            if decorators
+            else []
         )
         res = self.convert(node.args)
         sig: Optional[ast.FuncSignature] = (

@@ -660,50 +660,33 @@ class JacFormatPass(Pass):
         doc: Optional[Constant] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
         """
-        start = True
-        prev_token = None
-
-        for i in node.kid:
-            if i.gen.jac == "can" and node.is_static:
-                i.gen.jac = "static can"
-            if not i.gen.jac or i.gen.jac == "static":
-                continue
-            if isinstance(i, ast.String):
-                if prev_token and prev_token.gen.jac.strip() == "can":
-                    self.emit(node, " ")
-                self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, ast.CommentToken):
-                if i.is_inline:
-                    self.emit(node, i.gen.jac)
-                    if isinstance(prev_token, ast.Semi):
-                        self.indent_level -= 1
-                        self.emit_ln(node, "")
-                        self.indent_level += 1
-                elif not node.gen.jac.endswith("\n"):
-                    self.indent_level -= 1
-                    self.emit_ln(node, "")
-                    self.indent_level += 1
-                    self.emit_ln(node, i.gen.jac)
-                else:
-                    self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, ast.Semi):
-                self.emit(node, i.gen.jac)
-            elif isinstance(i, ast.SubNodeList) and i.gen.jac.startswith("@"):
-                self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, ast.SubTag):
-                self.emit(node, i.gen.jac)
+        self.emit_ln(node, node.doc.gen.jac) if node.doc else None
+        for dec in node.decorators:
+            self.emit_ln(node, f"@{dec.gen.jac}")
+        if node.is_async:
+            self.emit(node, "async ")
+        if node.is_override:
+            self.emit(node, "override ", strip_mode=False)
+        if node.is_static:
+            self.emit(node, "static ", strip_mode=False)
+        self.emit(node, "can ", strip_mode=False)
+        if node.access:
+            self.emit(node, f"{node.access.gen.jac} ")
+        if node.semstr:
+            self.emit(node, f"{node.semstr.gen.jac}\n")
+        self.emit(node, f"{node.name_ref.gen.jac}")
+        if isinstance(node.signature, ast.FuncSignature):
+            self.emit(node, f"{node.signature.gen.jac}")
+        else:
+            self.emit(node, f" {node.signature.gen.jac}")
+        if node.body:
+            if node.is_genai_ability:
+                self.emit(node, f" by {node.body.gen.jac};\n")
             else:
-                if start:
-                    self.emit(node, i.gen.jac)
-                    start = False
-                elif i.gen.jac[0] in [" ", "("]:
-                    self.emit(node, i.gen.jac)
-                else:
-                    if prev_token and isinstance(prev_token, ast.String):
-                        self.emit(node, i.gen.jac)
-                    else:
-                        self.emit(node, f" {i.gen.jac}")
-            prev_token = i
+                self.emit(node, node.body.gen.jac)
+        else:
+            self.emit(node, " abs") if node.is_abstract else None
+            self.emit(node, ";")
 
     def exit_func_signature(self, node: ast.FuncSignature) -> None:
         """
@@ -826,37 +809,21 @@ class JacFormatPass(Pass):
         base_classes: BaseClasses,
         body: Optional[EnumBlock],
         """
-        start = True
-        prev_token = None
-        for i in node.kid:
-            if isinstance(i, ast.String):
-                if prev_token and prev_token.gen.jac.strip() == "enum":
-                    self.emit(node, " ")
-                self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, ast.CommentToken):
-                if i.is_inline:
-                    self.emit(node, f" {i.gen.jac}")
-                else:
-                    self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, ast.Semi):
-                self.emit(node, i.gen.jac)
-            elif isinstance(i, ast.SubNodeList) and i.gen.jac.startswith("@"):
-                self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, ast.Token) and i.gen.jac == ":":
-                self.emit(node, f"{i.gen.jac} ")
-            else:
-                if start or (
-                    prev_token and isinstance(prev_token, (ast.String, ast.Name))
-                ):
-                    self.emit(node, i.gen.jac)
-                    start = False
-                else:
-                    self.emit(node, f" {i.gen.jac}")
-            prev_token = i
-        if isinstance(
-            node.kid[-1], (ast.Semi, ast.CommentToken)
-        ) and not node.gen.jac.endswith("\n"):
-            self.emit_ln(node, "")
+        self.emit_ln(node, node.doc.gen.jac) if node.doc else None
+        for dec in node.decorators:
+            self.emit_ln(node, f"@{dec.gen.jac}")
+        self.emit(node, "enum ", strip_mode=False)
+        if node.access:
+            self.emit(node, f"{node.access.gen.jac} ")
+        if node.semstr:
+            self.emit(node, f"{node.semstr.gen.jac}\n")
+        self.emit(node, f"{node.name.gen.jac}")
+        if node.base_classes:
+            self.emit(node, f" {node.base_classes.gen.jac}")
+        if node.body:
+            self.emit(node, node.body.gen.jac)
+        else:
+            self.emit(node, ";")
 
     def exit_enum_def(self, node: ast.EnumDef) -> None:
         """Sub objects.
@@ -1415,39 +1382,21 @@ class JacFormatPass(Pass):
         doc: Optional[Constant] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
         """
-        start = True
-        prev_token = None
-        for i in node.kid:
-            if isinstance(i, ast.String):
-                if prev_token and prev_token.gen.jac.strip() == "obj":
-                    self.emit(node, " ")
-                self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, ast.CommentToken):
-                if i.is_inline:
-                    self.emit(node, i.gen.jac)
-                    if isinstance(prev_token, ast.Semi):
-                        self.emit_ln(node, "")
-                elif (tok := self.token_before(i)) and (i.line_no - tok.line_no > 1):
-                    self.emit_ln(node, "")
-                    self.emit_ln(node, i.gen.jac)
-                else:
-                    self.emit_ln(node, i.gen.jac)
-                    self.emit_ln(node, "")
-            elif isinstance(i, ast.Semi):
-                self.emit(node, f"{i.gen.jac} ")
-            elif isinstance(i, ast.SubNodeList) and i.gen.jac.startswith("@"):
-                self.emit_ln(node, i.gen.jac)
-            else:
-                if start or (prev_token and isinstance(prev_token, ast.String)):
-                    self.emit(node, i.gen.jac)
-                    start = False
-                elif i.gen.jac.startswith(" "):
-                    self.emit(node, i.gen.jac)
-                else:
-                    self.emit(node, f" {i.gen.jac}")
-            prev_token = i
-        if isinstance(node.kid[-1], ast.Semi) and not node.gen.jac.endswith("\n"):
-            self.emit_ln(node, "")
+        self.emit_ln(node, node.doc.gen.jac) if node.doc else None
+        for dec in node.decorators:
+            self.emit_ln(node, f"@{dec.gen.jac}")
+        self.emit(node, f"{node.arch_type.value} ", strip_mode=False)
+        if node.access:
+            self.emit(node, f"{node.access.gen.jac} ")
+        if node.semstr:
+            self.emit(node, f"{node.semstr.gen.jac}\n")
+        self.emit(node, f"{node.name.gen.jac}")
+        if node.base_classes:
+            self.emit(node, f" {node.base_classes.gen.jac}")
+        if node.body:
+            self.emit(node, node.body.gen.jac)
+        else:
+            self.emit(node, ";")
 
     def exit_f_string(self, node: ast.FString) -> None:
         """Sub objects.
