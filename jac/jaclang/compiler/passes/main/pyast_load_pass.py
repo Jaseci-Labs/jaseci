@@ -2127,6 +2127,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         else:
             else_body = None
 
+        finally_stmt = None
+
         if len(node.finalbody) != 0:
             finalbody = [self.convert(i) for i in node.finalbody]
             valid_finalbody = [
@@ -2146,13 +2148,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             )
 
             kid.append(finally_stmt)
-        else:
-            finally_body = None
         ret = ast.TryStmt(
             body=valid_body,
             excepts=excepts,
             else_body=elsestmt if else_body else None,
-            finally_body=finally_stmt if finally_body else None,
+            finally_body=finally_stmt,
             kid=kid,
         )
         return ret
