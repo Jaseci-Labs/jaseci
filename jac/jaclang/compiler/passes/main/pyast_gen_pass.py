@@ -1728,7 +1728,7 @@ class PyastGenPass(Pass):
 
         body: SubNodeList[CodeBlockStmt],
         """
-        node.gen.py_ast = self.resolve_stmt_block(node.body)
+        node.gen.py_ast = self.resolve_body_stmts(node.body)
 
     def exit_iter_for_stmt(self, node: ast.IterForStmt) -> None:
         """Sub objects.

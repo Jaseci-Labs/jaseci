@@ -2044,7 +2044,7 @@ class FinallyStmt(CodeBlockStmt):
 
     def __init__(
         self,
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize finally statement node."""
@@ -2055,11 +2055,12 @@ class FinallyStmt(CodeBlockStmt):
         """Normalize finally statement node."""
         res = True
         if deep:
-            res = self.body.normalize(deep)
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
         new_kid: list[AstNode] = [
             self.gen_token(Tok.KW_FINALLY),
         ]
-        new_kid.append(self.body)
+        new_kid.extend(self.body)
         self.set_kids(nodes=new_kid)
         return res
 
