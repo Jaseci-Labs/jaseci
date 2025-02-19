@@ -1134,7 +1134,10 @@ class JacFormatPass(Pass):
         count_by: ExprType,
         body: CodeBlock,
         """
-        self.emit(node, f"for {node.iter.gen.jac} to {node.condition.gen.jac} by {node.count_by.gen.jac} {{\n")
+        self.emit(
+            node,
+            f"for {node.iter.gen.jac} to {node.condition.gen.jac} by {node.count_by.gen.jac} {{\n",
+        )
         self.indent_level += 1
         for stmt in node.body:
             for line in stmt.gen.jac.splitlines():
