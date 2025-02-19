@@ -1266,6 +1266,7 @@ class JacParser(Pass):
             tok_if = self.consume_token(Tok.KW_IF)
             condition = self.consume(ast.Expr)
             body = self.consume(ast.SubNodeList)
+            assert body.left_enc and body.right_enc
             else_body = self.match(ast.ElseStmt) or self.match(ast.ElseIf)
             return ast.IfStmt(
                 condition=condition,
@@ -1274,7 +1275,10 @@ class JacParser(Pass):
                 kid=[
                     tok_if,
                     condition,
+                    body.left_enc,
                     *body.items,
+                    body.right_enc,
+                    *([else_body] if else_body else []),
                 ],
             )
 
@@ -1286,6 +1290,7 @@ class JacParser(Pass):
             tok_elif = self.consume_token(Tok.KW_ELIF)
             condition = self.consume(ast.Expr)
             body = self.consume(ast.SubNodeList)
+            assert body.left_enc and body.right_enc
             else_body = self.match(ast.ElseStmt) or self.match(ast.ElseIf)
             return ast.ElseIf(
                 condition=condition,
@@ -1294,7 +1299,10 @@ class JacParser(Pass):
                 kid=[
                     tok_elif,
                     condition,
+                    body.left_enc,
                     *body.items,
+                    body.right_enc,
+                    *([else_body] if else_body else []),
                 ],
             )
 

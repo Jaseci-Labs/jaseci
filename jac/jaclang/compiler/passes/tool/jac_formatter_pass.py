@@ -1026,31 +1026,32 @@ class JacFormatPass(Pass):
         elseifs: Optional[ElseIfs],
         else_body: Optional[ElseStmt],
         """
-        self.emit_ln(node, f"if {node.condition.gen.jac} {{")
+        self.emit(node, f"if {node.condition.gen.jac} {{\n")
 
         self.indent_level += 1
         for stmt in node.body:
-            self.emit_ln(node, self.indent_str() + stmt.gen.jac.strip())
+            for line in stmt.gen.jac.splitlines():
+                node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
         self.indent_level -= 1
-
-        self.emit_ln(node, "}")
+        self.emit(node, "}")
+        if node.else_body:
+            self.emit(node, node.else_body.gen.jac)
 
     def exit_else_if(self, node: ast.ElseIf) -> None:
         """Sub objects.
-
         elseifs: list[IfStmt],
         """
         self.emit(node, f"elif {node.condition.gen.jac} {{\n")
 
         self.indent_level += 1
         for stmt in node.body:
-            # The emit(), emit_ln are messed up.
-            # Imma do it this way and come back to fix the format pass.
             for line in stmt.gen.jac.splitlines():
                 node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
         self.indent_level -= 1
 
-        self.emit(node, "}\n")
+        self.emit(node, "}")
+        if node.else_body:
+            self.emit(node, node.else_body.gen.jac)
 
     def exit_disengage_stmt(self, node: ast.DisengageStmt) -> None:
         """Sub objects."""
