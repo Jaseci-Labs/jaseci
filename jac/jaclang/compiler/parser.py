@@ -1379,20 +1379,33 @@ class JacParser(Pass):
             async_tok = self.match_token(Tok.KW_ASYNC)
             for_tok = self.consume_token(Tok.KW_FOR)
             if iter := self.match(ast.Assignment):
-                self.consume_token(Tok.KW_TO)
+                tok_to = self.consume_token(Tok.KW_TO)
                 condition = self.consume(ast.Expr)
-                self.consume_token(Tok.KW_BY)
+                tok_by = self.consume_token(Tok.KW_BY)
                 count_by = self.consume(ast.Assignment)
                 body = self.consume(ast.SubNodeList)
                 else_body = self.match(ast.ElseStmt)
+                assert body.left_enc and body.right_enc
                 return ast.IterForStmt(
                     is_async=bool(async_tok),
                     iter=iter,
                     condition=condition,
                     count_by=count_by,
-                    body=body,
+                    body=cast(list[ast.CodeBlockStmt], body.items),
                     else_body=else_body,
-                    kid=self.cur_nodes,
+                    kid=[
+                        *([async_tok] if async_tok else []),
+                        for_tok,
+                        iter,
+                        tok_to,
+                        condition,
+                        tok_by,
+                        count_by,
+                        body.left_enc,
+                        *body.items,
+                        body.right_enc,
+                        *([else_body] if else_body else []),
+                    ],
                 )
             target = self.consume(ast.Expr)
             in_tok = self.consume_token(Tok.KW_IN)

@@ -2073,7 +2073,7 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         is_async: bool,
         condition: Expr,
         count_by: Assignment,
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         else_body: Optional[ElseStmt],
         kid: Sequence[AstNode],
     ) -> None:
@@ -2093,7 +2093,8 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
             res = self.iter.normalize(deep)
             res = self.condition.normalize(deep)
             res = self.count_by.normalize(deep)
-            res = self.body.normalize(deep)
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
             res = self.else_body.normalize(deep) if self.else_body else res
         new_kid: list[AstNode] = []
         if self.is_async:
@@ -2104,7 +2105,9 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         new_kid.append(self.condition)
         new_kid.append(self.gen_token(Tok.KW_BY))
         new_kid.append(self.count_by)
-        new_kid.append(self.body)
+        new_kid.append(self.gen_token(Tok.LBRACE))
+        new_kid.extend(self.body)
+        new_kid.append(self.gen_token(Tok.RBRACE))
         if self.else_body:
             new_kid.append(self.else_body)
         self.set_kids(nodes=new_kid)
