@@ -3205,7 +3205,7 @@ class JacParser(Pass):
             """
             if isinstance(kid[2], ast.SubNodeList):
                 return ast.AssignCompr(
-                    assigns=[i for i in kid[2].items if isinstance(i, ast.KWPair) ],
+                    assigns=[i for i in kid[2].items if isinstance(i, ast.KWPair)],
                     kid=kid,
                 )
             else:
