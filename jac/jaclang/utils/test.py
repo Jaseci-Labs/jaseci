@@ -115,9 +115,9 @@ class AstSyncTestMixin:
     def test_pass_ast_complete(self) -> None:
         """Test for enter/exit name diffs with parser."""
         ast_func_names = [
-            x
-            for x in ast_snakes()
-            if x
+            node_name
+            for node_name in ast_snakes()
+            if node_name
             not in [
                 "ast_node",
                 "walker_stmt_only_node",
@@ -136,9 +136,10 @@ class AstSyncTestMixin:
                 "ast_else_body_node",
                 "ast_typed_var_node",
                 "ast_impl_only_node",
+                "statement",
                 "expr",
                 "atom_expr",
-                "element_stmt",
+                "module_block_stmt",
                 "arch_block_stmt",
                 "enum_block_stmt",
                 "code_block_stmt",

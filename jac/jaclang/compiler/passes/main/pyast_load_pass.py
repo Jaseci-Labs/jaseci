@@ -104,30 +104,32 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             body: list[stmt]
             type_ignores: list[TypeIgnore]
         """
-        elements: list[ast.AstNode] = [self.convert(i) for i in node.body]
-        elements[0] = (
-            elements[0].expr
-            if isinstance(elements[0], ast.ExprStmt)
-            and isinstance(elements[0].expr, ast.String)
-            else elements[0]
+        stmts: list[ast.AstNode] = [self.convert(i) for i in node.body]
+        module_doc: ast.String | None = None
+        if (
+            stmts
+            and isinstance(stmts[0], ast.ExprStmt)
+            and isinstance(stmts[0].expr, ast.String)
+        ):
+            module_doc = stmts[0].expr
+            self.convert_to_doc(module_doc)
+            stmts.pop(0)
+
+        valid: list[ast.ModuleBlockStmt] = self.extract_with_entry(
+            stmts, (ast.ModuleBlockStmt, ast.EmptyToken)
         )
-        doc_str_list = [elements[0]] if isinstance(elements[0], ast.String) else []
-        valid = (
-            (doc_str_list)
-            + self.extract_with_entry(elements[1:], (ast.ElementStmt, ast.EmptyToken))
-            if doc_str_list
-            else self.extract_with_entry(elements[:], (ast.ElementStmt, ast.EmptyToken))
-        )
-        doc_str = elements[0] if isinstance(elements[0], ast.String) else None
-        self.convert_to_doc(doc_str) if doc_str else None
+        kid: list[ast.AstNode] = []
+        if module_doc:
+            kid.append(module_doc)
+        kid.extend(valid)
         ret = ast.Module(
             name=self.mod_path.split(os.path.sep)[-1].split(".")[0],
             source=ast.JacSource("", mod_path=self.mod_path),
-            doc=doc_str,
-            body=valid[1:] if valid and isinstance(valid[0], ast.String) else valid,
+            doc=module_doc,
+            body=valid,
             terminals=[],
             is_imported=False,
-            kid=valid,
+            kid=kid,
         )
         ret.py_info.is_raised_from_py = True
         return self.nu(ret)
@@ -539,7 +541,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             return ast.Assignment(
                 target=targ,
                 type_tag=None,
-                mutable=True,
                 aug_op=op,
                 value=value,
                 kid=[target, op, value],

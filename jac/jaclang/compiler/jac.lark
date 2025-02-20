@@ -2,26 +2,41 @@
 start: module
 
 // TODO:AST: We should allow the very first top level statement to have
-// docstring but not the module to have one. After allowing that
-// the rule for the module would be:
-//
-// module: STRING? toplevel_stmt*
-//
-module: (toplevel_stmt (tl_stmt_with_doc | toplevel_stmt)*)?
-       | STRING        (tl_stmt_with_doc | toplevel_stmt)*
+// docstring but not the module to have one.
+module: ((STRING | statement) (STRING? statement)*)?
 
-// AST:TODO: Docstring should be part of the definition of the statement
-// and not all toplevel statement have docstring, example: ImportStmt.
-//
-// Statements that are only valid at the toplevel.
-tl_stmt_with_doc: STRING toplevel_stmt
-toplevel_stmt: import_stmt
-       | architype
-       | ability
+// ************************************************************************* //
+// Statements                                                                //
+// ************************************************************************* //
+
+statement: import_stmt
        | global_var
        | free_code
-       | py_code_block
        | test
+       | ability
+       | architype
+       | if_stmt
+       | while_stmt
+       | for_stmt
+       | try_stmt
+       | match_stmt
+       | with_stmt
+       | global_ref SEMI
+       | nonlocal_ref SEMI
+       | typed_ctx_block
+       | return_stmt SEMI
+       | (yield_expr | KW_YIELD) SEMI
+       | raise_stmt SEMI
+       | assert_stmt SEMI
+       | check_stmt SEMI
+       | assignment SEMI
+       | delete_stmt SEMI
+       | report_stmt SEMI
+       | expression SEMI
+       | ctrl_stmt SEMI
+       | py_code_block
+       | walker_stmt
+       | SEMI
 
 // [Heading]: Import/Include Statements.
 import_stmt: KW_IMPORT sub_name? KW_FROM from_path LBRACE import_items RBRACE
@@ -95,7 +110,7 @@ func_decl_params: (param_var COMMA)* param_var COMMA?
 param_var: (STAR_POW | STAR_MUL)? NAME (COLON STRING)? type_tag (EQ expression)?
 
 // [Heading]: Global variables.
-global_var: (KW_LET | KW_GLOBAL) access_tag? assignment_list SEMI
+global_var: KW_GLOBAL access_tag? assignment_list SEMI
 assignment_list: (assignment_list COMMA)? assignment
 
 // [Heading]: Free code.
@@ -129,33 +144,6 @@ ability_ref: ABILITY_OP named_ref
 
 // [Heading]: Codeblocks and Statements.
 code_block: LBRACE statement* RBRACE
-
-statement: import_stmt
-       | ability
-       | architype
-       | if_stmt
-       | while_stmt
-       | for_stmt
-       | try_stmt
-       | match_stmt
-       | with_stmt
-       | global_ref SEMI
-       | nonlocal_ref SEMI
-       | typed_ctx_block
-       | return_stmt SEMI
-       | (yield_expr | KW_YIELD) SEMI
-       | raise_stmt SEMI
-       | assert_stmt SEMI
-       | check_stmt SEMI
-       | assignment SEMI
-       | delete_stmt SEMI
-       | report_stmt SEMI
-       | expression SEMI
-       | ctrl_stmt SEMI
-       | py_code_block
-       | walker_stmt
-       | SEMI
-
 
 // [Heading]: If statements.
 if_stmt: KW_IF expression code_block (elif_stmt | else_stmt)?
@@ -273,7 +261,7 @@ disengage_stmt: KW_DISENGAGE SEMI
 ignore_stmt: KW_IGNORE expression SEMI
 
 // [Heading]: Assignments.
-assignment: KW_LET? (atomic_chain EQ)+ (yield_expr | expression)
+assignment: (atomic_chain EQ)+ (yield_expr | expression)
           | atomic_chain (COLON STRING)? type_tag (EQ (yield_expr | expression))?
           | atomic_chain aug_op (yield_expr | expression)
 
@@ -291,6 +279,10 @@ aug_op: RSHIFT_EQ
        | ADD_EQ
        | MATMUL_EQ
        | STAR_POW_EQ
+
+// ************************************************************************* //
+// Expressions                                                               //
+// ************************************************************************* //
 
 // [Heading]: Expressions.
 expression: walrus_assign (KW_IF expression KW_ELSE expression)?

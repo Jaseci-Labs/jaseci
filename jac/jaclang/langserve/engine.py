@@ -434,7 +434,7 @@ class JacLangServer(LanguageServer):
                             ),
                         ),
                     )
-            elif isinstance(node_selected, ast.ElementStmt):
+            elif isinstance(node_selected, ast.ModuleBlockStmt):
                 return None
             decl_node = (
                 node_selected.parent.body.target
