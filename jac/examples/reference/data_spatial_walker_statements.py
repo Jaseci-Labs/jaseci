@@ -1,6 +1,7 @@
 from __future__ import annotations
 from jaclang import *
 
+
 class Visitor(Walker):
 
     @with_entry
