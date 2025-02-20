@@ -3728,7 +3728,7 @@ class AssignCompr(AtomExpr):
 
     def __init__(
         self,
-        assigns: SubNodeList[KWPair],
+        assigns: list[KWPair],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize assign compr expression node."""
@@ -3740,15 +3740,21 @@ class AssignCompr(AtomExpr):
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ast node."""
         res = True
-        if deep:
-            res = self.assigns.normalize(deep)
+        for assign in self.assigns:
+            res = res and assign.normalize(deep)
         new_kid: list[AstNode] = []
         if isinstance(self.parent, ConnectOp):
-            new_kid.append(self.assigns)
+            for i, assign in enumerate(self.assigns):
+                if i > 0:
+                    new_kid.append(self.gen_token(Tok.COMMA))
+                new_kid.append(assign)
         else:
             new_kid.append(self.gen_token(Tok.LPAREN))
             new_kid.append(self.gen_token(Tok.EQ))
-            new_kid.append(self.assigns)
+            for i, assign in enumerate(self.assigns):
+                if i > 0:
+                    new_kid.append(self.gen_token(Tok.COMMA))
+                new_kid.append(assign)
             new_kid.append(self.gen_token(Tok.RPAREN))
         self.set_kids(nodes=new_kid)
         return res

@@ -3021,7 +3021,7 @@ class JacParser(Pass):
                 isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
             ):
                 conn_assign = (
-                    ast.AssignCompr(assigns=conn_assign, kid=[conn_assign])
+                    ast.AssignCompr(assigns=conn_assign.items, kid=conn_assign.kid)
                     if conn_assign
                     else None
                 )
@@ -3048,7 +3048,7 @@ class JacParser(Pass):
                 isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
             ):
                 conn_assign = (
-                    ast.AssignCompr(assigns=conn_assign, kid=[conn_assign])
+                    ast.AssignCompr(assigns=conn_assign.items, kid=conn_assign.kid)
                     if conn_assign
                     else None
                 )
@@ -3074,7 +3074,7 @@ class JacParser(Pass):
                 isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
             ):
                 conn_assign = (
-                    ast.AssignCompr(assigns=conn_assign, kid=[conn_assign])
+                    ast.AssignCompr(assigns=conn_assign.items, kid=conn_assign.kid)
                     if conn_assign
                     else None
                 )
@@ -3169,7 +3169,7 @@ class JacParser(Pass):
             """
             self.consume_token(Tok.LPAREN)
             self.consume_token(Tok.EQ)
-            assigns = self.consume(ast.SubNodeList)
+            assigns = self.consume(ast.SubNodeList).items
             self.consume_token(Tok.RPAREN)
             return ast.AssignCompr(assigns=assigns, kid=self.cur_nodes)
 
