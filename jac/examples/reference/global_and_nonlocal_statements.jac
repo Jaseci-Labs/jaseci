@@ -1,20 +1,20 @@
 glob x = "Jaclang ";
 
-can foo() -> None {
-    :g: x ;
+can outer_func() -> None {
+    :g: x;
 
     x = 'Jaclang is ';
     y = 'Awesome';
-    can foo2() -> tuple[str, str] {
-        :nl: y ;
+    can inner_func() -> tuple[str, str] {
+        :nl: y;
 
         y = "Fantastic";
         return (x, y);
     }
     print(x, y);
-    print(foo2());
+    print(inner_func());
 }
 
 with entry {
-    foo();
+    outer_func();
 }

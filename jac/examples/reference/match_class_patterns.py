@@ -1,27 +1,14 @@
-from __future__ import annotations
-from jaclang.plugin.feature import JacFeature as Jac
-from dataclasses import dataclass as dataclass
+from jaclang import Obj
 
+class Point(Obj):
+    def __init__(self, x: float, y: float):
+        self.x = x
+        self.y = y
 
-# Since the Animal class cannot be inherit from object, (cause the base class will be changed at run time)
-# we need a base class.
-#
-# reference: https://stackoverflow.com/a/9639512/10846399
-#
-class Base:
-    pass
+data = Point(x = 9, y = 0)
 
-
-@Jac.make_obj(on_entry=[], on_exit=[])
-@dataclass(eq=False)
-class Point(Base):
-    x: float
-    y: float
-
-
-data = Point(x=9, y=0)
 match data:
-    case Point(int(a), y=0):
-        print(f"Point with x={a} and y=0")
+    case Point(x = int(a), y = 0):
+        print(f'Point with x={a} and y=0')
     case _:
-        print("Not on the x-axis")
+        print('Not on the x-axis')

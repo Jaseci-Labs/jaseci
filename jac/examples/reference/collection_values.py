@@ -5,8 +5,8 @@ squares_list = [num**2 for num in squares_generator]
 
 print("\n".join([str(squares), str(even_squares_set), str(squares_list)]))
 print(
-    {"a": "b", "c": "d"},  # Dictionary value
-    {"a"},  # Set value
-    ("a",),  # Tuple value
-    ["a"],  # List value
+    {"a": "b", "c": "d"},  # Dictionary
+    {"a"},  # Set
+    ("a",),  # Tuple
+    ["a"],  # List
 )

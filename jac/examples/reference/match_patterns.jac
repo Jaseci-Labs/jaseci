@@ -5,40 +5,46 @@ obj Point {
 
 can match_example(data: any) {
     match data {
-
-        # MatchValue
+        # MatchValue    
         case 42:
             print("Matched the value 42.");
 
-            # MatchSingleton
+        # MatchSingleton
         case True:
             print("Matched the singleton True.");
         case None:
             print("Matched the singleton None.");
 
-            # MatchSequence
+        # MatchSequence
         case [1, 2, 3]:
             print("Matched a specific sequence [1, 2, 3].");
 
-            # MatchStar
+        # MatchStar
         case [1, *rest, 3]:
-            print(f"Matched a sequence starting with 1 and ending with 3. Middle: {rest}");
+            print(
+                f"Matched a sequence starting with 1 and ending with 3. Middle: {rest}"
+            );
 
-            # MatchMapping
+        # MatchMapping
         case {"key1" : 1, "key2" : 2, **rest}:
-            print(f"Matched a mapping with key1 and key2. Rest: {rest}");
+            print(
+                f"Matched a mapping with key1 and key2. Rest: {rest}"
+            );
 
-            # MatchClass
+        # MatchClass
         case Point(int(a), y = 0):
             print(f"Point with x={a} and y=0");
 
-            # MatchAs
+        # MatchAs
         case [1, 2, rest_val as value]:
-            print(f"Matched a sequence and captured the last value: {value}");
+            print(
+                f"Matched a sequence and captured the last value: {value}"
+            );
 
-            # MatchOr
+        # MatchOr
         case [1, 2] | [3, 4]:
             print("Matched either the sequence [1, 2] or [3, 4].");
+
         case _:
             print("No match found.");
     }
