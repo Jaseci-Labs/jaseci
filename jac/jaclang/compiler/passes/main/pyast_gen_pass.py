@@ -1777,8 +1777,8 @@ class PyastGenPass(Pass):
                 for_node(
                     target=node.target.gen.py_ast[0],
                     iter=node.collection.gen.py_ast[0],
-                    body=self.resolve_stmt_block(node.body),
-                    orelse=node.else_body.gen.py_ast if node.else_body else [],
+                    body=self.resolve_body_stmts(node.body),
+                    orelse=self.resolve_body_stmts(node.else_body),
                 )
             )
         ]

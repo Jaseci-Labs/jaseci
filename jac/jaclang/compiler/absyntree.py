@@ -2111,7 +2111,7 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         return res
 
 
-class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
+class InForStmt(AstAsyncNode, CodeBlockStmt):
     """InFor node type for Jac Ast."""
 
     def __init__(
@@ -2119,17 +2119,17 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         target: Expr,
         is_async: bool,
         collection: Expr,
-        body: SubNodeList[CodeBlockStmt],
-        else_body: Optional[ElseStmt],
+        body: list[CodeBlockStmt],
+        else_body: list[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize in for node."""
         self.target = target
         self.collection = collection
         self.body = body
+        self.else_body = else_body
         AstNode.__init__(self, kid=kid)
         AstAsyncNode.__init__(self, is_async=is_async)
-        AstElseBodyNode.__init__(self, else_body=else_body)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize in for node."""
@@ -2137,8 +2137,10 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         if deep:
             res = self.target.normalize(deep)
             res = res and self.collection.normalize(deep)
-            res = res and self.body.normalize(deep)
-            res = res and self.else_body.normalize(deep) if self.else_body else res
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
+            for stmt in self.else_body:
+                res = res and stmt.normalize(deep)
         new_kid: list[AstNode] = []
         if self.is_async:
             new_kid.append(self.gen_token(Tok.KW_ASYNC))
@@ -2148,9 +2150,9 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         new_kid.append(self.collection)
 
         if self.body:
-            new_kid.append(self.body)
+            new_kid.extend(self.body)
         if self.else_body:
-            new_kid.append(self.else_body)
+            new_kid.extend(self.else_body)
         self.set_kids(nodes=new_kid)
         return res
 

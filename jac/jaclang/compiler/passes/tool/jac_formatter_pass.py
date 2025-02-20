@@ -2024,37 +2024,27 @@ class JacFormatPass(Pass):
         collection: ExprType,
         body: SubNodeList[CodeBlockStmt],
         """
-        if (
-            node.parent
-            and node.parent.parent
-            and isinstance(node.parent.parent, (ast.Ability))
-            and (
-                isinstance(node.parent.kid[1], ast.Assignment)
-                and node.parent.kid[1].kid[-1].gen.jac
-                != "# Update any new user level buddy schedule"
-            )
-        ):
-            self.indent_level -= 1
-            self.emit_ln(node, "")
-            self.indent_level += 1
+        self.emit(node, f"for {node.target.gen.jac} in {node.collection.gen.jac} {{\n")
 
-        start = True
-        for i in node.kid:
-            if isinstance(i, ast.CommentToken):
-                if i.is_inline:
-                    self.emit(node, f" {i.gen.jac}")
-                else:
-                    self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, (ast.Semi, ast.SubNodeList)):
-                self.emit(node, i.gen.jac)
-            else:
-                if start:
-                    self.emit(node, i.gen.jac)
-                    start = False
-                else:
-                    self.emit(node, f" {i.gen.jac}")
-        if isinstance(node.kid[-1], (ast.Semi, ast.CommentToken)):
-            self.emit_ln(node, "")
+        self.indent_level += 1
+        for stmt in node.body:
+            # The emit(), emit_ln are messed up.
+            # Imma do it this way and come back to fix the format pass.
+            for line in stmt.gen.jac.splitlines():
+                node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
+        self.indent_level -= 1
+
+        if node.else_body:
+            self.emit(node, "} else {\n")
+            self.indent_level += 1
+            for stmt in node.else_body:
+                # The emit(), emit_ln are messed up.
+                # Imma do it this way and come back to fix the format pass.
+                for line in stmt.gen.jac.splitlines():
+                    node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
+            self.indent_level -= 1
+
+        self.emit(node, "}\n")
 
     def exit_test(self, node: ast.Test) -> None:
         """Sub objects.

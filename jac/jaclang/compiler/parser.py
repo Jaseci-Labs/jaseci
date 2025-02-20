@@ -1384,28 +1384,39 @@ class JacParser(Pass):
                 self.consume_token(Tok.KW_BY)
                 count_by = self.consume(ast.Assignment)
                 body = self.consume(ast.SubNodeList)
-                else_body = self.match(ast.ElseStmt)
+                else_body_node = self.match(ast.ElseStmt)
                 return ast.IterForStmt(
                     is_async=is_async,
                     iter=iter,
                     condition=condition,
                     count_by=count_by,
                     body=body,
-                    else_body=else_body,
+                    else_body=else_body_node,
                     kid=self.cur_nodes,
                 )
             target = self.consume(ast.Expr)
             self.consume_token(Tok.KW_IN)
             collection = self.consume(ast.Expr)
             body = self.consume(ast.SubNodeList)
-            else_body = self.match(ast.ElseStmt)
+            else_body: list[ast.CodeBlockStmt] = []
+            if else_stmt_node := self.match(ast.ElseStmt):
+                else_body = else_stmt_node.body.items
+
+            assert body.left_enc and body.right_enc
             return ast.InForStmt(
                 is_async=is_async,
                 target=target,
                 collection=collection,
-                body=body,
+                body=cast(list[ast.CodeBlockStmt], body.items),
                 else_body=else_body,
-                kid=self.cur_nodes,
+                kid=[
+                    target,
+                    collection,
+                    body.left_enc,
+                    *body.items,
+                    body.right_enc,
+                    *else_body,
+                ],
             )
 
         def while_stmt(self, _: None) -> ast.WhileStmt:
