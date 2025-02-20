@@ -100,7 +100,7 @@ class JacAccessValidationSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def check_access_level(to: Anchor) -> AccessLevel:
+    def check_access_level(to: Anchor, no_custom: bool) -> AccessLevel:
         """Access validation."""
         raise NotImplementedError
 
