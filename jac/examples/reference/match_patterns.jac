@@ -5,7 +5,7 @@ obj Point {
 
 can match_example(data: any) {
     match data {
-        # MatchValue    
+        # MatchValue
         case 42:
             print("Matched the value 42.");
 

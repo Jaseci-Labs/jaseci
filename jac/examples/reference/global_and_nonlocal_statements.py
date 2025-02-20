@@ -1,5 +1,6 @@
 x = "Jaclang "
 
+
 def outer_func() -> None:
     global x
     x = "Jaclang is "
@@ -12,5 +13,6 @@ def outer_func() -> None:
 
     print(x, y)
     print(inner_func())
+
 
 outer_func()
