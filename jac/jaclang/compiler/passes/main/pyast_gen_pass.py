@@ -447,7 +447,7 @@ class PyastGenPass(Pass):
                         defaults=[],
                     )
                 ),
-                body=self.resolve_body_stmts(node.body, doc=node.doc),
+                body=self.resolve_body_stmts(node.body.statements, doc=node.doc),
                 decorator_list=[
                     self.sync(
                         ast3.Attribute(
