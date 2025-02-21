@@ -31,7 +31,7 @@ class InheritancePass(Pass):
         if node.base_classes is None:
             return
 
-        for item in node.base_classes.items:
+        for item in node.base_classes:
             # The assumption is that the base class can only be a name node
             # or an atom trailer only.
             assert isinstance(item, (ast.Name, ast.AtomTrailer))

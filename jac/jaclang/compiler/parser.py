@@ -516,10 +516,10 @@ class JacParser(Pass):
             archspec: ast.ArchSpec | ast.ArchDef | ast.Enum | ast.EnumDef | None = None
 
             decorators = self.match(ast.SubNodeList)
-            if decorators is not None:
+            if decorators:
                 archspec = self.consume(ast.ArchSpec)
-                archspec.decorators = decorators
-                archspec.add_kids_left([decorators])
+                archspec.decorators = decorators.items
+                archspec.add_kids_left(decorators.items)
             else:
                 archspec = (
                     self.match(ast.ArchSpec)
@@ -552,8 +552,9 @@ class JacParser(Pass):
                 name=name,
                 semstr=semstr,
                 access=access,
-                base_classes=inh,
+                base_classes=inh.items if inh else [],
                 body=body,
+                decorators=[],
                 kid=self.cur_nodes,
             )
 
@@ -662,8 +663,8 @@ class JacParser(Pass):
             """
             if decorator := self.match(ast.SubNodeList):
                 enum_decl = self.consume(ast.Enum)
-                enum_decl.decorators = decorator
-                enum_decl.add_kids_left([decorator])
+                enum_decl.decorators = decorator.items
+                enum_decl.add_kids_left(decorator.items)
                 return enum_decl
             return self.match(ast.Enum) or self.consume(ast.EnumDef)
 
@@ -687,8 +688,9 @@ class JacParser(Pass):
                 semstr=semstr,
                 name=name,
                 access=access,
-                base_classes=inh,
+                base_classes=inh.items if inh else [],
                 body=body,
+                decorators=[],
                 kid=self.cur_nodes,
             )
 
@@ -765,19 +767,20 @@ class JacParser(Pass):
                 ability.add_kids_left([is_async])
             if ability is None:
                 ability = self.consume(ast.AbilityDef)
-            if decorators:
-                for dec in decorators.items:
+            if decorators and isinstance(ability, ast.Ability):
+                decorator_items = decorators.items
+                for dec in decorator_items:
                     if (
                         isinstance(dec, ast.NameAtom)
                         and dec.sym_name == "staticmethod"
                         and isinstance(ability, (ast.Ability))
                     ):
                         ability.is_static = True
-                        decorators.items.remove(dec)  # noqa: B038
+                        decorator_items.remove(dec)  # noqa: B038
                         break
-                if decorators.items:
-                    ability.decorators = decorators
-                    ability.add_kids_left([decorators])
+                if decorator_items:
+                    ability.decorators = decorator_items
+                    ability.add_kids_left(decorator_items)
                 return ability
             return ability
 
@@ -810,6 +813,7 @@ class JacParser(Pass):
                 semstr=semstr,
                 signature=signature,
                 body=body,
+                decorators=[],
                 kid=self.cur_nodes,
             )
 
@@ -862,6 +866,7 @@ class JacParser(Pass):
                 semstr=semstr,
                 signature=signature,
                 body=None,
+                decorators=[],
                 kid=self.cur_nodes,
             )
 
@@ -893,6 +898,7 @@ class JacParser(Pass):
                 semstr=semstr,
                 signature=signature,
                 body=body,
+                decorators=[],
                 kid=self.cur_nodes,
             )
 

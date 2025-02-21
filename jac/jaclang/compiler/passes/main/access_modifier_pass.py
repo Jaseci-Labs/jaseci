@@ -23,7 +23,7 @@ class AccessCheckPass(Pass):
         """Return true if the dri_class inherited from base_class."""
         if dri_class.base_classes is None:
             return False
-        for expr in dri_class.base_classes.items:
+        for expr in dri_class.base_classes:
             if not isinstance(expr, ast.Name):
                 continue
             if not isinstance(expr.name_of, ast.Architype):
