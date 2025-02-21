@@ -1802,8 +1802,14 @@ class JacFormatPass(Pass):
 
         compares: list[BinaryExpr],
         """
-        for i in node.kid:
-            self.emit(node, i.gen.jac)
+        for idx, i in enumerate(node.kid):
+            if isinstance(i, ast.Token):
+                self.emit(node, f" {i.gen.jac}")
+            else:
+                if idx > 2:
+                    self.emit(node, ", ")
+                for j in i.kid:
+                    self.emit(node, j.gen.jac)
 
     def exit_await_expr(self, node: ast.AwaitExpr) -> None:
         """Sub objects.

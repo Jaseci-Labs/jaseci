@@ -3167,11 +3167,13 @@ class JacParser(Pass):
 
             filter_compr: LPAREN EQ kw_expr_list RPAREN
             """
-            self.consume_token(Tok.LPAREN)
-            self.consume_token(Tok.EQ)
+            tok_lp = self.consume_token(Tok.LPAREN)
+            tok_eq = self.consume_token(Tok.EQ)
             assigns = self.consume(ast.SubNodeList).items
-            self.consume_token(Tok.RPAREN)
-            return ast.AssignCompr(assigns=assigns, kid=self.cur_nodes)
+            tok_rp = self.consume_token(Tok.RPAREN)
+            return ast.AssignCompr(
+                assigns=assigns, kid=[tok_lp, tok_eq, *assigns, tok_rp]
+            )
 
         def match_stmt(self, _: None) -> ast.MatchStmt:
             """Grammar rule.
