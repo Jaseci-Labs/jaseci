@@ -831,19 +831,16 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid_items = [item for item in items if isinstance(item, ast.ExprAsItem)]
         if len(valid_items) != len(items):
             raise self.ice("Length mismatch in with items")
-        expr_list = []
-        for item in valid_items:
-            expr_list.append(item)
         body = [self.convert(stmt) for stmt in node.body]
         valid_body = [stmt for stmt in body if isinstance(stmt, ast.CodeBlockStmt)]
         if len(valid_body) != len(body):
             raise self.ice("Length mismatch in async for body")
         return ast.WithStmt(
             is_async=True,
-            exprs=expr_list,
+            exprs=valid_items,
             body=valid_body,
             kid=[
-                *expr_list,
+                *valid_items,
                 self.operator(Tok.LBRACE, "{"),
                 *valid_body,
                 self.operator(Tok.RBRACE, "}"),

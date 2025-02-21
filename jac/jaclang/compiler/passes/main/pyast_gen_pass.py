@@ -1807,9 +1807,7 @@ class PyastGenPass(Pass):
         body: list[CodeBlockStmt],
         """
         with_node = ast3.AsyncWith if node.is_async else ast3.With
-        expr_stmt = []
-        for expr in node.exprs:
-            expr_stmt.append(expr.gen.py_ast[0])
+        expr_stmt = [expr.gen.py_ast[0] for expr in node.exprs]
         node.gen.py_ast = [
             self.sync(
                 with_node(items=expr_stmt, body=self.resolve_body_stmts(node.body))
