@@ -1261,10 +1261,20 @@ class JacFormatPass(Pass):
         exprs: "ExprAsItemList",
         body: "CodeBlock",
         """
-        self.comma_sep_node_list(node.exprs)
-        self.emit(node, f"with {node.exprs.gen.jac}")
-        if node.body.gen.jac:
-            self.emit(node, node.body.gen.jac)
+        self.emit(node, "with ")
+        for s in ", ".join([i.gen.jac for i in node.exprs]):
+            self.emit(node, s)
+        self.emit_ln(node, "{\n")
+
+        self.indent_level += 1
+        for stmt in node.body:
+            # The emit(), emit_ln are messed up.
+            # Imma do it this way and come back to fix the format pass.
+            for line in stmt.gen.jac.splitlines():
+                node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
+        self.indent_level -= 1
+
+        self.emit(node, "}\n")
 
     def exit_module_item(self, node: ast.ModuleItem) -> None:
         """Sub objects.

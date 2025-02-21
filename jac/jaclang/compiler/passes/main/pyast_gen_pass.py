@@ -1803,15 +1803,14 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         is_async: bool,
-        exprs: SubNodeList[ExprAsItem],
-        body: SubNodeList[CodeBlockStmt],
+        exprs: list[ExprAsItem],
+        body: list[CodeBlockStmt],
         """
         with_node = ast3.AsyncWith if node.is_async else ast3.With
+        expr_stmt = [expr.gen.py_ast[0] for expr in node.exprs]
         node.gen.py_ast = [
             self.sync(
-                with_node(
-                    items=node.exprs.gen.py_ast, body=self.resolve_stmt_block(node.body)
-                )
+                with_node(items=expr_stmt, body=self.resolve_body_stmts(node.body))
             )
         ]
 
