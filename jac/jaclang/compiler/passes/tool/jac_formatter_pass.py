@@ -386,76 +386,17 @@ class JacFormatPass(Pass):
 
         target: AtomType,
         params: Optional[ParamList],
+        atomic_call: atomic_chain LPAREN param_list? (KW_BY atomic_call)? RPAREN
         """
-        prev_token: Optional[AstNode] = None
-        line_break_needed = False
-        indented = False
-        test_str = ""
-        for i in node.kid:
-            if isinstance(i, ast.SubNodeList):
-                if prev_token and prev_token.gen.jac.strip() == "(":
-                    for j in i.kid:
-                        test_str += f" {j.gen.jac}"
-                    test_str += ");"
-                    line_break_needed = self.is_line_break_needed(test_str, 60)
-                if line_break_needed:
-                    self.emit_ln(node, "")
-                    self.indent_level += 1
-                    indented = True
-                for count, j in enumerate(i.kid):
-                    if j.gen.jac == ",":
-                        if len(i.kid) > count + 1 and i.kid[
-                            count + 1
-                        ].gen.jac.startswith("#"):
-                            self.indent_level -= 1
-                            self.emit(node, f"{j.gen.jac} ")
-                            self.indent_level += 1
-                        else:
-                            if line_break_needed:
-                                self.indent_level -= 1
-                                self.emit_ln(node, f" {j.gen.jac}")
-                                self.indent_level += 1
-                            else:
-                                self.emit(node, f"{j.gen.jac} ")
-                    elif isinstance(j, ast.CommentToken):
-                        if line_break_needed:
-                            self.indent_level -= 1
-                            self.emit(node, " ")
-                            self.emit_ln(node, j.gen.jac)
-                            self.indent_level += 1
-                        else:
-                            self.emit(node, f"{j.gen.jac} ")
-                    else:
-                        self.emit(node, j.gen.jac)
-                if indented:
-                    self.indent_level -= 1
-                prev_token = i
-                continue
-            if isinstance(i, ast.CommentToken):
-                if i.is_inline:
-                    self.emit(node, f" {i.gen.jac}")
-                else:
-                    self.emit_ln(node, "")
-                    self.emit_ln(node, i.gen.jac)
-            if isinstance(i, ast.Token) and i.name == Tok.KW_BY:
-                if not node.params:
-                    self.emit(node, f"{i.gen.jac} ")
-                else:
-                    self.emit(node, f" {i.gen.jac} ")
-            else:
-                if (
-                    line_break_needed
-                    and prev_token
-                    and isinstance(prev_token, ast.SubNodeList)
-                ):
-                    self.indent_level -= 1
-                    self.emit_ln(node, "")
-                    self.indent_level += 1
-                self.emit(node, i.gen.jac)
-            prev_token = i
-            test_str += i.gen.jac
-        if isinstance(node.kid[-1], (ast.Semi, ast.CommentToken)):
-            self.emit_ln(node, "")
+        self.emit(node, node.target.gen.jac)
+        self.emit(node, "(")
+        for idx, param in enumerate(node.params):
+            if idx != 0:
+                self.emit(node, ", ")
+            self.emit(node, param.gen.jac)
+        if node.genai_call:
+            self.emit(node, f" by {node.genai_call.gen.jac}")
+        self.emit(node, ")")
 
     def exit_multi_string(self, node: ast.MultiString) -> None:
         """Sub objects.

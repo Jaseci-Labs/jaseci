@@ -165,7 +165,7 @@ def extract_params(
     include_info = []
     exclude_info = []
     if body.params:
-        for param in body.params.items:
+        for param in body.params:
             if isinstance(param, ast.KWPair) and isinstance(param.key, ast.Name):
                 key = param.key.value
                 value = param.value
