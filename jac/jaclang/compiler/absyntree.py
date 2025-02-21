@@ -395,6 +395,42 @@ class CodeBlockStmt(AstNode):
     """CodeBlockStmt node type for Jac Ast."""
 
 
+class Body(AstNode):
+    """Body is simpley a list of statements, this used in nodes that holds
+    a list of statements as it's body. For an example:
+        - If statement body
+        - For statement body
+        - While statement body
+        - Ability statement body
+        - Obj statement body
+        - Module statement body
+        - etc.
+    A body is also the node that defines a scope and hold symbol definitions Thus it'll
+    contains a symbol table (TODO).
+    """
+
+    # TODO: The body statements could also be EnumBlockStmt, ArchBlockStmt, etc.
+    # Once the Statement base class PR is merged, we can replace this with Statement.
+    def __init__(self, statements: list[CodeBlockStmt], kid: list[AstNode]) -> None:
+        self.statements = statements
+        AstNode.__init__(self, kid=kid)
+
+    # TODO: This normalize method only exists to support the format pass for now however
+    # it'll be removed and once the format pass is refactored.
+    def normalize(self, deep: bool = False) -> bool:
+        res = True
+        if deep:
+            for stmt in self.statements:
+                res = res and stmt.normalize()
+        new_kid: list[AstNode] = [
+            self.gen_token(Tok.LBRACE),
+            *self.statements,
+            self.gen_token(Tok.RBRACE),
+        ]
+        self.set_kids(nodes=new_kid)
+        return res
+
+
 class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
     """ImplOnly node type for Jac Ast."""
 
@@ -756,7 +792,7 @@ class Test(AstSymbolNode, ElementStmt):
     def __init__(
         self,
         name: Name | Token,
-        body: list[CodeBlockStmt],
+        body: Body,
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
     ) -> None:
@@ -800,7 +836,7 @@ class Test(AstSymbolNode, ElementStmt):
         res = True
         if deep:
             res = self.name.normalize(deep)
-            for stmt in self.body:
+            for stmt in self.body.statements:
                 res = res and stmt.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
@@ -809,7 +845,7 @@ class Test(AstSymbolNode, ElementStmt):
         new_kid.append(self.gen_token(Tok.KW_TEST))
         new_kid.append(self.name)
         new_kid.append(self.gen_token(Tok.LBRACE))
-        new_kid.extend(self.body)
+        new_kid.append(self.body)
         new_kid.append(self.gen_token(Tok.RBRACE))
         self.set_kids(nodes=new_kid)
         return res

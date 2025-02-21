@@ -187,6 +187,16 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
+        # TODO: This is a temproary function exists to fasilate the removal
+        # subnodelist[codeblock], will be removed once all are removed.
+        #
+        # Basically the code_block() should return a Body but that refactor
+        # will be massive, so this function will help us to do it piece by piece.
+        def _consume_body(self) -> ast.Body:
+            """Convert SubNodeList to Body."""
+            snl = self.consume(ast.SubNodeList)
+            return ast.Body(statements=snl.items, kid=snl.kid)
+
         # ******************************************************************* #
         # Parser Helper functions.                                            #
         # ******************************************************************* #
@@ -327,11 +337,11 @@ class JacParser(Pass):
             # Q(thakee): Why the name should be KW_TEST if no name present?
             test_tok = self.consume_token(Tok.KW_TEST)
             name = self.match(ast.Name) or test_tok
-            codeblock_stmts = self.consume(ast.SubNodeList).items
+            body = self._consume_body()
             return ast.Test(
                 name=name,
-                body=codeblock_stmts,
-                kid=[test_tok, name, *codeblock_stmts],
+                body=body,
+                kid=self.cur_nodes[:-1] + [body],
             )
 
         def free_code(self, _: None) -> ast.ModuleCode:
