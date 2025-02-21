@@ -2089,7 +2089,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid = [i for i in body if isinstance(i, (ast.CodeBlockStmt))]
         if len(valid) != len(body):
             raise self.ice("Length mismatch in try body")
-        kid: list = valid
+        kid: list = []
+        kid.extend(valid)
 
         if len(node.handlers) != 0:
             handlers = [self.convert(i) for i in node.handlers]

@@ -1176,13 +1176,13 @@ class JacFormatPass(Pass):
         ):
             self.emit_ln(node, "")
 
-        self.emit(node, "try {\n")
+        self.emit(node, "try  {\n")
         self.indent_level += 1
         for stmt in node.body:
             for line in stmt.gen.jac.splitlines():
                 node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
         self.indent_level -= 1
-        self.emit(node, "}")
+        self.emit(node, "} ")
 
         if node.excepts:
             for except_stmt in node.excepts:
