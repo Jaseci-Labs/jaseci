@@ -1223,7 +1223,7 @@ class JacFormatPass(Pass):
 
         body: CodeBlock,
         """
-        self.emit(node, "finally")
+        self.emit(node, " finally {\n")
 
         self.emit(node, node.body.gen.jac)
 
