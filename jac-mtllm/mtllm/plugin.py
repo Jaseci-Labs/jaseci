@@ -177,7 +177,7 @@ class JacFeature:
                             ctx=ast3.Load(),
                         )
                     )
-                    for param in node.signature.params.items
+                    for param in node.signature.params
                 ]
                 if isinstance(node.signature, ast.FuncSignature)
                 and node.signature.params

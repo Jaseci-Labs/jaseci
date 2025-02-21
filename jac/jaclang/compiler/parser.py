@@ -327,11 +327,11 @@ class JacParser(Pass):
             # Q(thakee): Why the name should be KW_TEST if no name present?
             test_tok = self.consume_token(Tok.KW_TEST)
             name = self.match(ast.Name) or test_tok
-            codeblock = self.consume(ast.SubNodeList)
+            codeblock_stmts = self.consume(ast.SubNodeList).items
             return ast.Test(
                 name=name,
-                body=codeblock,
-                kid=self.cur_nodes,
+                body=codeblock_stmts,
+                kid=[test_tok, name, *codeblock_stmts],
             )
 
         def free_code(self, _: None) -> ast.ModuleCode:
