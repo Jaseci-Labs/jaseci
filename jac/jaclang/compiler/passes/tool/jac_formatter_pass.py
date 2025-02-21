@@ -1227,9 +1227,15 @@ class JacFormatPass(Pass):
 
         body: CodeBlock,
         """
-        self.emit(node, " finally")
+        self.emit(node, " finally {\n")
 
-        self.emit(node, node.body.gen.jac)
+        self.indent_level += 1
+        for stmt in node.body:
+            for line in stmt.gen.jac.splitlines():
+                node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
+        self.indent_level -= 1
+
+        self.emit(node, "}\n")
 
     def exit_while_stmt(self, node: ast.WhileStmt) -> None:
         """Sub objects.

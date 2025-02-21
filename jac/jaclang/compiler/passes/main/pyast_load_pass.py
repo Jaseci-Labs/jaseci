@@ -2079,6 +2079,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         else:
             else_body = None
 
+        finally_stmt = None
+
         if len(node.finalbody) != 0:
             finalbody = [self.convert(i) for i in node.finalbody]
             valid_finalbody = [
@@ -2086,23 +2088,23 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             ]
             if len(finalbody) != len(valid_finalbody):
                 raise self.ice("Length mismatch in try finalbody")
-            finally_body = ast.SubNodeList[ast.CodeBlockStmt](
-                items=valid_finalbody,
-                delim=Tok.WS,
-                kid=valid_finalbody,
-                left_enc=self.operator(Tok.LBRACE, "{"),
-                right_enc=self.operator(Tok.RBRACE, "}"),
+
+            finally_stmt = ast.FinallyStmt(
+                body=valid_finalbody,
+                kid=[
+                    *finalbody,
+                    self.operator(Tok.LBRACE, "{"),
+                    *valid_finalbody,
+                    self.operator(Tok.RBRACE, "}"),
+                ],
             )
-            finally_stmt = ast.FinallyStmt(body=finally_body, kid=[finally_body])
 
             kid.append(finally_stmt)
-        else:
-            finally_body = None
         ret = ast.TryStmt(
             body=valid_body,
             excepts=excepts,
             else_body=elsestmt if else_body else None,
-            finally_body=finally_stmt if finally_body else None,
+            finally_body=finally_stmt,
             kid=kid,
         )
         return ret

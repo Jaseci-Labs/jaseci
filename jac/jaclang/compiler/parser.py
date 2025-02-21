@@ -1362,11 +1362,14 @@ class JacParser(Pass):
 
             finally_stmt: KW_FINALLY code_block
             """
-            self.consume_token(Tok.KW_FINALLY)
-            body = self.consume(ast.SubNodeList)
+            tok_finally = self.consume_token(Tok.KW_FINALLY)
+            body_stmt = self.consume(ast.SubNodeList).items
             return ast.FinallyStmt(
-                body=body,
-                kid=self.cur_nodes,
+                body=body_stmt,
+                kid=[
+                    tok_finally,
+                    *body_stmt,
+                ],
             )
 
         def for_stmt(self, _: None) -> ast.IterForStmt | ast.InForStmt:
