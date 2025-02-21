@@ -246,7 +246,7 @@ class JacLangServer(LanguageServer):
                     and temp_tab.owner.base_classes
                 ):
                     base = []
-                    for base_name in temp_tab.owner.base_classes.items:
+                    for base_name in temp_tab.owner.base_classes:
                         if isinstance(base_name, ast.Name) and base_name.sym:
                             base.append(base_name.sym)
                     for base_class_symbol in base:

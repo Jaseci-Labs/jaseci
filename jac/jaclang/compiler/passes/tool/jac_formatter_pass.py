@@ -682,6 +682,8 @@ class JacFormatPass(Pass):
         if node.body:
             if node.is_genai_ability:
                 self.emit(node, f" by {node.body.gen.jac};\n")
+            elif isinstance(node.body, ast.AbilityDef):
+                self.emit(node, ";")
             else:
                 self.emit(node, node.body.gen.jac)
         else:
@@ -819,9 +821,12 @@ class JacFormatPass(Pass):
             self.emit(node, f"{node.semstr.gen.jac}\n")
         self.emit(node, f"{node.name.gen.jac}")
         if node.base_classes:
-            self.emit(node, f" {node.base_classes.gen.jac}")
-        if node.body:
+            base_classes_str = ", ".join(base.gen.jac for base in node.base_classes)
+            self.emit(node, f" :{base_classes_str}:")
+        if node.body and not isinstance(node.body, ast.EnumDef):
+            self.emit(node, " {\n") if not node.body.gen.jac.startswith(" {") else None
             self.emit(node, node.body.gen.jac)
+            self.emit(node, "}\n") if not node.body.gen.jac.startswith(" {") else None
         else:
             self.emit(node, ";")
 
@@ -1392,9 +1397,12 @@ class JacFormatPass(Pass):
             self.emit(node, f"{node.semstr.gen.jac}\n")
         self.emit(node, f"{node.name.gen.jac}")
         if node.base_classes:
-            self.emit(node, f" {node.base_classes.gen.jac}")
-        if node.body:
+            base_classes_str = ", ".join(base.gen.jac for base in node.base_classes)
+            self.emit(node, f" :{base_classes_str}:")
+        if node.body and not isinstance(node.body, ast.ArchDef):
+            self.emit(node, " {\n") if not node.body.gen.jac.startswith(" {") else None
             self.emit(node, node.body.gen.jac)
+            self.emit(node, "}\n") if not node.body.gen.jac.startswith(" {") else None
         else:
             self.emit(node, ";")
 

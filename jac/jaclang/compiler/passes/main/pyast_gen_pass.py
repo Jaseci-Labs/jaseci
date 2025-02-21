@@ -940,6 +940,8 @@ class PyastGenPass(Pass):
         """
         if isinstance(node.body, ast.AstImplOnlyNode):
             self.traverse(node.body)
+        for dec in node.decorators:
+            self.traverse(dec)
 
     def exit_architype(self, node: ast.Architype) -> None:
         """Sub objects.
@@ -956,11 +958,7 @@ class PyastGenPass(Pass):
             node.body.body if isinstance(node.body, ast.ArchDef) else node.body,
             doc=node.doc,
         )
-        decorators = (
-            node.decorators.gen.py_ast
-            if isinstance(node.decorators, ast.SubNodeList)
-            else []
-        )
+        decorators = [dec.gen.py_ast[0] for dec in node.decorators]
 
         ds_on_entry, ds_on_exit = self.collect_events(node)
         if node.arch_type.name != Tok.KW_CLASS:
@@ -1020,7 +1018,11 @@ class PyastGenPass(Pass):
                     )
                 )
             )
-        base_classes = node.base_classes.gen.py_ast if node.base_classes else []
+        base_classes = [
+            base.gen.py_ast[0]
+            for base in node.base_classes
+            if isinstance(base.gen.py_ast[0], ast3.expr)
+        ]
         if node.arch_type.name != Tok.KW_CLASS:
             base_classes.append(
                 self.sync(
@@ -1135,7 +1137,11 @@ class PyastGenPass(Pass):
         decorators = [
             dec.gen.py_ast[0] for dec in node.decorators if isinstance(dec, ast.Expr)
         ]
-        base_classes = node.base_classes.gen.py_ast if node.base_classes else []
+        base_classes = [
+            base.gen.py_ast[0]
+            for base in node.base_classes
+            if isinstance(base, ast3.expr)
+        ]
         if isinstance(base_classes, list):
             base_classes.append(
                 self.sync(ast3.Name(id="__jac_Enum__", ctx=ast3.Load()))
