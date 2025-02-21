@@ -1376,6 +1376,7 @@ class JacParser(Pass):
                         expression code_block else_stmt?
                     | KW_ASYNC? KW_FOR expression KW_IN expression code_block else_stmt?
             """
+            else_body: list[ast.CodeBlockStmt] = []
             is_async = bool(self.match_token(Tok.KW_ASYNC))
             self.consume_token(Tok.KW_FOR)
             if iter := self.match(ast.Assignment):
@@ -1384,21 +1385,31 @@ class JacParser(Pass):
                 self.consume_token(Tok.KW_BY)
                 count_by = self.consume(ast.Assignment)
                 body = self.consume(ast.SubNodeList)
-                else_body_node = self.match(ast.ElseStmt)
+                if else_body_node := self.match(ast.ElseStmt):
+                    else_body = else_body_node.body.items
+
+                assert body.left_enc and body.right_enc
                 return ast.IterForStmt(
                     is_async=is_async,
                     iter=iter,
                     condition=condition,
                     count_by=count_by,
-                    body=body,
-                    else_body=else_body_node,
-                    kid=self.cur_nodes,
+                    body=cast(list[ast.CodeBlockStmt], body.items),
+                    else_body=else_body,
+                    kid=[
+                        iter,
+                        condition,
+                        count_by,
+                        body.left_enc,
+                        *body.items,
+                        body.right_enc,
+                        *else_body,
+                    ],
                 )
             target = self.consume(ast.Expr)
             self.consume_token(Tok.KW_IN)
             collection = self.consume(ast.Expr)
             body = self.consume(ast.SubNodeList)
-            else_body: list[ast.CodeBlockStmt] = []
             if else_stmt_node := self.match(ast.ElseStmt):
                 else_body = else_stmt_node.body.items
 

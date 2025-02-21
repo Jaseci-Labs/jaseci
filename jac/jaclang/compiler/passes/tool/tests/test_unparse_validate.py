@@ -38,14 +38,17 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
             target=PyastGenPass,
             schedule=without_format,
         )
+        # print(f"Testing 1 {code_gen_pure.ir.pp()}")
         before = ast3.dump(code_gen_pure.ir.gen.py_ast[0], indent=2)
         source = code_gen_pure.ir.unparse()
+        # print(f"source {source}")
         code_gen_jac = jac_str_to_pass(
             jac_str=source,
             file_path=filename,
             target=PyastGenPass,
             schedule=without_format,
         )
+        # print(f"Testing 2 {code_gen_jac.ir.pp()}")
         after = ast3.dump(code_gen_jac.ir.gen.py_ast[0], indent=2)
         if "circle_clean_tests.jac" in filename:
             self.assertEqual(
