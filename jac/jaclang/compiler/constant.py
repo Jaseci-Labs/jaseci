@@ -112,6 +112,7 @@ class Constants(StrEnum):
 
     PYNLINE = "::py::"
     JAC_GEN_DIR = "__jac_gen__"
+    JAC_TEST_NAME_PREFIX = "_jac_gen_"
     JAC_MYPY_CACHE = ".jac_mypy_cache"
 
     def __str__(self) -> str:

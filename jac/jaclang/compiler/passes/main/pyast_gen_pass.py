@@ -447,7 +447,7 @@ class PyastGenPass(Pass):
                         defaults=[],
                     )
                 ),
-                body=self.resolve_stmt_block(node.body, doc=node.doc),
+                body=self.resolve_body_stmts(node.body, doc=node.doc),
                 decorator_list=[
                     self.sync(
                         ast3.Attribute(
@@ -483,7 +483,7 @@ class PyastGenPass(Pass):
                                 ast3.keyword(
                                     arg="file_loc",
                                     value=self.sync(
-                                        ast3.Constant(value=node.body.loc.mod_path)
+                                        ast3.Constant(value=node.loc.mod_path)
                                     ),
                                 )
                             ),
@@ -1728,7 +1728,7 @@ class PyastGenPass(Pass):
 
         body: SubNodeList[CodeBlockStmt],
         """
-        node.gen.py_ast = self.resolve_stmt_block(node.body)
+        node.gen.py_ast = self.resolve_body_stmts(node.body)
 
     def exit_iter_for_stmt(self, node: ast.IterForStmt) -> None:
         """Sub objects.
@@ -1777,8 +1777,8 @@ class PyastGenPass(Pass):
                 for_node(
                     target=node.target.gen.py_ast[0],
                     iter=node.collection.gen.py_ast[0],
-                    body=self.resolve_stmt_block(node.body),
-                    orelse=node.else_body.gen.py_ast if node.else_body else [],
+                    body=self.resolve_body_stmts(node.body),
+                    orelse=self.resolve_body_stmts(node.else_body),
                 )
             )
         ]
@@ -1803,15 +1803,14 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         is_async: bool,
-        exprs: SubNodeList[ExprAsItem],
-        body: SubNodeList[CodeBlockStmt],
+        exprs: list[ExprAsItem],
+        body: list[CodeBlockStmt],
         """
         with_node = ast3.AsyncWith if node.is_async else ast3.With
+        expr_stmt = [expr.gen.py_ast[0] for expr in node.exprs]
         node.gen.py_ast = [
             self.sync(
-                with_node(
-                    items=node.exprs.gen.py_ast, body=self.resolve_stmt_block(node.body)
-                )
+                with_node(items=expr_stmt, body=self.resolve_body_stmts(node.body))
             )
         ]
 
