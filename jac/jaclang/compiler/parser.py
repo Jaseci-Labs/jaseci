@@ -5,6 +5,7 @@ from __future__ import annotations
 import keyword
 import logging
 import os
+from functools import wraps
 from typing import Callable, TypeAlias, TypeVar
 
 import jaclang.compiler.absyntree as ast
@@ -15,6 +16,28 @@ from jaclang.vendor.lark import Lark, Transformer, Tree, logger
 
 
 T = TypeVar("T", bound=ast.AstNode)
+
+
+def cache_node(cache_list: list):
+    """Cache the return type of a rule to be used later"""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            out = func(*args, **kwargs)
+            cache_list.append(out)
+            return out
+
+        return wrapper
+
+    return decorator
+
+
+class NodeCache:
+    cur_module_path: list[ast.ModulePath] = []
+
+    @staticmethod
+    def reset_cache():
+        NodeCache.cur_module_path = []
 
 
 class JacParser(Pass):
@@ -136,6 +159,7 @@ class JacParser(Pass):
             # node_idx and directly pop(0) kid as we process the nodes.
             self.node_idx = 0
             self.cur_nodes: list[ast.AstNode] = []
+            NodeCache.reset_cache()
 
         def ice(self) -> Exception:
             """Raise internal compiler error."""
