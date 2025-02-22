@@ -110,7 +110,7 @@ class ImportPassPassTests(TestCase):
                     )
                 )
             ),
-            11,  # TODO: Need to only link the modules one time
+            5,  # TODO: Need to only link the modules one time
         )
 
     def test_double_empty_anx(self) -> None:

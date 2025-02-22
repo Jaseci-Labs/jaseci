@@ -23,6 +23,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """Initialize parser."""
         self.mod_path = input_ir.loc.mod_path
         self.orig_src = input_ir.loc.orig_src
+        self.cur_import_path: list[ast.ModulePath] = []
         Pass.__init__(self, input_ir=input_ir, prior=None)
 
     def nu(self, node: T) -> T:
@@ -128,7 +129,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             terminals=[],
             is_imported=False,
             kid=valid,
+            import_path=self.cur_import_path,
         )
+        self.cur_import_path = []
         ret.py_info.is_raised_from_py = True
         return self.nu(ret)
 
@@ -1447,14 +1450,14 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             if isinstance(name.expr, ast.Name) and (
                 isinstance(name.alias, ast.Name) or name.alias is None
             ):
-                paths.append(
-                    ast.ModulePath(
-                        path=[name.expr],
-                        level=0,
-                        alias=name.alias,
-                        kid=[i for i in name.kid if i],
-                    )
+                mod_path = ast.ModulePath(
+                    path=[name.expr],
+                    level=0,
+                    alias=name.alias,
+                    kid=[i for i in name.kid if i],
                 )
+                self.cur_import_path.append(mod_path)
+                paths.append(mod_path)
             # Need to unravel atom trailers
             else:
                 raise self.ice()
@@ -1523,6 +1526,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             alias=None,
             kid=modparts,
         )
+        self.cur_import_path.append(path)
         names = [self.convert(name) for name in node.names]
         valid_names = []
         for name in names:

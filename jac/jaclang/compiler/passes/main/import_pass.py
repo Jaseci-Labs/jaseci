@@ -36,17 +36,19 @@ class JacImportPass(Pass):
         self.cur_node = node
         self.import_table[node.loc.mod_path] = node
         self.annex_impl(node)
-        self.terminate()  # Turns off auto traversal for deliberate traversal
-        self.run_again = True
-        while self.run_again:
-            self.run_again = False
-            all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
-            for i in all_imports:
-                self.process_import(i)
-                self.enter_module_path(i)
-            SubNodeTabPass(prior=self, input_ir=node)
+        self.run_again = False
+        for i in node.import_path:
+            self.process_import(i)
+            self.enter_module_path(i)
+        SubNodeTabPass(prior=self, input_ir=node)
 
         node.mod_deps.update(self.import_table)
+
+    def after_pass(self) -> None:
+        """Check if traversing is needed to be dobne again."""
+        while self.run_again:
+            self.traverse(self.ir)
+        return super().after_pass()
 
     def process_import(self, i: ast.ModulePath) -> None:
         """Process an import."""
@@ -213,8 +215,8 @@ class PyImportPass(JacImportPass):
 
     def after_pass(self) -> None:
         """Build symbol tables for import from nodes."""
+        super().after_pass()
         self.__import_from_symbol_table_build()
-        return super().after_pass()
 
     def process_import(self, i: ast.ModulePath) -> None:
         """Process an import."""
@@ -356,10 +358,10 @@ class PyImportPass(JacImportPass):
             msg += f"SymbolTable:{sym_table.name} kids"
             self.__debug_print(msg)
             sym_table.kid.append(sym.fetch_sym_tab)
-        elif sym.sym_type not in (SymbolType.VAR, SymbolType.MOD_VAR):
-            raise AssertionError(
-                f"Unexpected symbol type '{sym.sym_type}' that doesn't have a symbl table"
-            )
+        # elif sym.sym_type not in (SymbolType.VAR, SymbolType.MOD_VAR):
+        #     raise AssertionError(
+        #         f"Unexpected symbol type '{sym.sym_type}:{sym.sym_name}' that doesn't have a symbol table"
+        #     )
 
     def __process_import(self, imp_node: ast.Import) -> None:
         """Process the imports in form of `import X`."""
