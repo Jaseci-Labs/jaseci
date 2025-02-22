@@ -18,17 +18,15 @@ from jaclang.vendor.lark import Lark, Transformer, Tree, logger
 T = TypeVar("T", bound=ast.AstNode)
 
 
-def cache_node(cache_list: list):
+def cache_node(cache_getter):
     """Cache the return type of a rule to be used later"""
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             out = func(*args, **kwargs)
-            cache_list.append(out)
+            cache_getter().append(out)
             return out
-
         return wrapper
-
     return decorator
 
 
