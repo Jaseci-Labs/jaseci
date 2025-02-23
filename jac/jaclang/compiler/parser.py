@@ -31,9 +31,7 @@ def cache_node(
             out = func(*args, **kwargs)
             cache_getter().append(out)
             return out
-
         return wrapper
-
     return decorator
 
 
