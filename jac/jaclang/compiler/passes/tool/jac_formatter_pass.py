@@ -1176,7 +1176,7 @@ class JacFormatPass(Pass):
         ):
             self.emit_ln(node, "")
 
-        self.emit(node, "try  {\n")
+        self.emit(node, "try {\n")
         self.indent_level += 1
         for stmt in node.body:
             for line in stmt.gen.jac.splitlines():
@@ -1186,7 +1186,7 @@ class JacFormatPass(Pass):
 
         if node.excepts:
             for except_stmt in node.excepts:
-                self.emit_ln(node, except_stmt.gen.jac)
+                self.emit(node, except_stmt.gen.jac)
 
         if node.else_body:
             self.emit(node, node.else_body.gen.jac)
@@ -1205,7 +1205,7 @@ class JacFormatPass(Pass):
         ):
             self.emit_ln(node, "")
 
-        self.emit(node, f"except {node.ex_type.gen.jac} ")
+        self.emit(node, f" except {node.ex_type.gen.jac} ")
         if node.name:
             self.emit(node, f"as {node.name.gen.jac} ")
         self.emit(node, "{\n")

@@ -1699,7 +1699,7 @@ class PyastGenPass(Pass):
             self.sync(
                 ast3.Try(
                     body=self.resolve_body_stmts(node.body),
-                    handlers=[i.gen.py_ast[0] for i in node.excepts],
+                    handlers=[ex.gen.py_ast[0] for ex in node.excepts],
                     orelse=node.else_body.gen.py_ast if node.else_body else [],
                     finalbody=node.finally_body.gen.py_ast if node.finally_body else [],
                 )

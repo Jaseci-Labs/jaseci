@@ -5,7 +5,7 @@ walker cycle {
     can cycle with user_root entry {
         self.jaseci_sdk = {};
         res = f"> Processing for {here.name} {here.jid}";
-        try  {
+        try {
             user_jid = here.jid;
             day_graph = self.jaseci_sdk.fetch_graph(
                 user_jid=user_jid,
@@ -19,7 +19,7 @@ walker cycle {
                 user_level_buddy_schedule=self.user_level_buddy_schedule
             );
             here spawn push_to_mobile(user_jid=user_jid, date=self.today);
-        }except Exception as e {
+        } except Exception as e {
             print(f"Error processing for {here.name} {here.jid}: {e}");
         }
     }
