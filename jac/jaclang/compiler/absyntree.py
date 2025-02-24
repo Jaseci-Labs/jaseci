@@ -2681,6 +2681,10 @@ class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
         ):
             if self.parent.kid.index(self) == len(self.parent.kid) - 1:
                 new_kid.append(self.gen_token(Tok.SEMI))
+        elif isinstance(self.parent, IterForStmt):
+            assign_parent = self.parent
+            if self not in [assign_parent.iter, assign_parent.count_by]:
+                new_kid.append(self.gen_token(Tok.SEMI))
         elif (not self.is_enum_stmt) and not isinstance(self.parent, IterForStmt):
             new_kid.append(self.gen_token(Tok.SEMI))
         self.set_kids(nodes=new_kid)
