@@ -201,7 +201,7 @@ class PyJacAstLinkPass(Pass):
 
         target: SubNodeList[NameType],
         """
-        for x, y in enumerate(node.target.items):
+        for x, y in enumerate(node.target):
             self.link_jac_py_nodes(jac_node=y, py_nodes=[node.gen.py_ast[x]])
 
     def exit_non_local_stmt(self, node: ast.NonLocalStmt) -> None:
@@ -209,7 +209,7 @@ class PyJacAstLinkPass(Pass):
 
         target: SubNodeList[NameType],
         """
-        for x, y in enumerate(node.target.items):
+        for x, y in enumerate(node.target):
             self.link_jac_py_nodes(jac_node=y, py_nodes=[node.gen.py_ast[x]])
 
     def exit_k_w_pair(self, node: ast.KWPair) -> None:
