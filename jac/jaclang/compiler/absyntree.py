@@ -627,6 +627,7 @@ class Module(AstDocNode):
         kid: Sequence[AstNode],
         stub_only: bool = False,
         registry: Optional[SemRegistry] = None,
+        import_nodes: Optional[list[Import]] = None,
     ) -> None:
         """Initialize whole program node."""
         self.name = name
@@ -640,6 +641,7 @@ class Module(AstDocNode):
         self.registry = registry
         self.terminals: list[Token] = terminals
         self.py_info: PyInfo = PyInfo()
+        self.imports: list[Import] = import_nodes if import_nodes else []
 
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
