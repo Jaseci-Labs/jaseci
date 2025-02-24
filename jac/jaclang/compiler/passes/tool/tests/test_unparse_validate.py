@@ -40,6 +40,7 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
         )
         before = ast3.dump(code_gen_pure.ir.gen.py_ast[0], indent=2)
         source = code_gen_pure.ir.unparse()
+        print(source)
         code_gen_jac = jac_str_to_pass(
             jac_str=source,
             file_path=filename,
