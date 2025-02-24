@@ -153,32 +153,18 @@ class JacFormatPass(Pass):
         is_frozen: bool,
         doc: Optional[String] = None,
         """
-        start = True
-        prev_token = None
-        for i in node.kid:
-            if isinstance(i, ast.String):
-                self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, ast.CommentToken):
-                if i.is_inline:
-                    self.emit(node, f" {i.gen.jac}")
-                else:
-                    if isinstance(prev_token, ast.Semi):
-                        self.emit_ln(node, "")
-                        self.emit_ln(node, "")
-                    self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, ast.Semi):
-                self.emit(node, f"{i.gen.jac}")
-            else:
-                if start:
-                    self.emit(node, i.gen.jac)
-                    start = False
-                else:
-                    self.emit(node, f" {i.gen.jac}")
-            prev_token = i
-        if isinstance(
-            node.kid[-1], (ast.Semi, ast.CommentToken)
-        ) and not node.gen.jac.endswith("\n"):
-            self.emit_ln(node, "")
+        if node.doc:
+            self.emit_ln(node, f"{node.doc.gen.jac}")
+            self.emit(node, f"{node.kid[1].gen.jac} ", strip_mode=False)
+        else:
+            self.emit(node, f"{node.kid[0].gen.jac} ", strip_mode=False)
+
+        if node.access:
+            self.emit(node, node.access.gen.jac)
+        self.emit(
+            node, ", ".join(assignment.gen.jac for assignment in node.assignments)
+        )
+        self.emit(node, ";")
 
     def exit_module_code(self, node: ast.ModuleCode) -> None:
         """Sub objects.

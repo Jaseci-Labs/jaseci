@@ -307,7 +307,7 @@ class JacParser(Pass):
                 access=access_tag,
                 assignments=assignments,
                 is_frozen=is_frozen,
-                kid=self.cur_nodes,
+                kid=self.cur_nodes[:-2] + assignments,
             )
 
         def access_tag(self, _: None) -> ast.SubTag[ast.Token]:

@@ -744,7 +744,8 @@ class GlobalVars(ElementStmt, AstAccessNode):
             new_kid.append(self.gen_token(Tok.KW_GLOBAL))
         if self.access:
             new_kid.append(self.access)
-        new_kid.extend(self.assignments)
+        for assignment in self.assignments:
+            new_kid.append(assignment)
         self.set_kids(nodes=new_kid)
         return res
 
@@ -2674,11 +2675,10 @@ class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
             if not self.aug_op:
                 new_kid.append(self.gen_token(Tok.EQ))
             new_kid.append(self.value)
-        if isinstance(self.parent, SubNodeList) and isinstance(
-            self.parent.parent, GlobalVars
-        ):
+        if isinstance(self.parent, GlobalVars):
             if self.parent.kid.index(self) == len(self.parent.kid) - 1:
-                new_kid.append(self.gen_token(Tok.SEMI))
+                # new_kid.append(self.gen_token(Tok.SEMI))
+                pass
         elif (not self.is_enum_stmt) and not isinstance(self.parent, IterForStmt):
             new_kid.append(self.gen_token(Tok.SEMI))
         self.set_kids(nodes=new_kid)
