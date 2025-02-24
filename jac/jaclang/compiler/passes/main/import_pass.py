@@ -36,17 +36,21 @@ class JacImportPass(Pass):
         self.cur_node = node
         self.import_table[node.loc.mod_path] = node
         self.annex_impl(node)
-        self.terminate()  # Turns off auto traversal for deliberate traversal
-        self.run_again = True
-        while self.run_again:
-            self.run_again = False
-            all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
-            for i in all_imports:
-                self.process_import(i)
-                self.enter_module_path(i)
-            SubNodeTabPass(prior=self, input_ir=node)
+        self.run_again = False
+        for imp in node.imports:
+            for i in [*imp.items.items] + [imp.from_loc]:
+                if isinstance(i, ast.ModulePath):
+                    self.process_import(i)
+                    self.enter_module_path(i)
+        SubNodeTabPass(prior=self, input_ir=node)
 
         node.mod_deps.update(self.import_table)
+
+    def after_pass(self) -> None:
+        """Check if traversing is needed to be dobne again."""
+        while self.run_again:
+            self.traverse(self.ir)
+        return super().after_pass()
 
     def process_import(self, i: ast.ModulePath) -> None:
         """Process an import."""

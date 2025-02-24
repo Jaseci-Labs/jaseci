@@ -38,11 +38,11 @@ def cache_node(
 
 
 class NodeCache:
-    cur_module_path: list[ast.ModulePath] = []
+    cur_import_nodes: list[ast.Import] = []
 
     @staticmethod
-    def reset_cache():
-        NodeCache.cur_module_path = []
+    def reset_cache() -> None:
+        NodeCache.cur_import_nodes = []
 
 
 class JacParser(Pass):
@@ -297,6 +297,7 @@ class JacParser(Pass):
                     self.cur_nodes
                     or [ast.EmptyToken(ast.JacSource("", self.parse_ref.mod_path))]
                 ),
+                import_nodes=NodeCache.cur_import_nodes,
             )
             return mod
 
@@ -389,6 +390,7 @@ class JacParser(Pass):
                 kid=self.cur_nodes,
             )
 
+        @cache_node(lambda: NodeCache.cur_import_nodes)
         def import_stmt(self, _: None) -> ast.Import:
             """Grammar rule.
 
@@ -464,6 +466,7 @@ class JacParser(Pass):
                 kid=self.cur_nodes,
             )
 
+        @cache_node(lambda: NodeCache.cur_import_nodes)
         def include_stmt(self, _: None) -> ast.Import:
             """Grammar rule.
 

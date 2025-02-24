@@ -23,6 +23,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """Initialize parser."""
         self.mod_path = input_ir.loc.mod_path
         self.orig_src = input_ir.loc.orig_src
+        self.cur_import_nodes: list[ast.Import] = []
         Pass.__init__(self, input_ir=input_ir, prior=None)
 
     def nu(self, node: T) -> T:
@@ -128,7 +129,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             terminals=[],
             is_imported=False,
             kid=valid,
+            import_nodes=self.cur_import_nodes,
         )
+        self.cur_import_nodes = []
         ret.py_info.is_raised_from_py = True
         return self.nu(ret)
 
@@ -1478,6 +1481,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             is_absorb=False,
             kid=[pytag, items],
         )
+        self.cur_import_nodes.append(ret)
         return ret
 
     def proc_import_from(self, node: py_ast.ImportFrom) -> ast.Import:
@@ -1561,6 +1565,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 is_absorb=True,
                 kid=[pytag, path_in],
             )
+            self.cur_import_nodes.append(ret)
             return ret
         ret = ast.Import(
             hint=pytag,
@@ -1569,6 +1574,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             is_absorb=False,
             kid=[pytag, path, items],
         )
+        self.cur_import_nodes.append(ret)
         return ret
 
     def proc_joined_str(self, node: py_ast.JoinedStr) -> ast.FString:
