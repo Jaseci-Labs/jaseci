@@ -1392,10 +1392,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     pos_end=0,
                 )
             )
-        target = ast.SubNodeList[ast.NameAtom](
-            items=names, delim=Tok.COMMA, kid=names
-        ).items
-        return ast.GlobalStmt(target=target, kid=target)
+        return ast.GlobalStmt(target=names, kid=names)
 
     def proc_if_exp(self, node: py_ast.IfExp) -> ast.IfElseExpr:
         """Process python node.
