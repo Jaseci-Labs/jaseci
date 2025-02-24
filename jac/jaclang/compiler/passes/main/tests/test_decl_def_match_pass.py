@@ -16,7 +16,7 @@ class DeclImplMatchPassTests(TestCase):
     def test_parameter_count_mismatch(self) -> None:
         """Basic test for pass."""
         state = jac_file_to_pass(
-            self.fixture_abs_path("defn_decl_mismatch.jac"), DeclImplMatchPass
+            self.fixture_abs_path("err_defn_decl_mismatch.jac"), DeclImplMatchPass
         )
 
         expected_stdout_values = (

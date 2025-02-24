@@ -132,9 +132,13 @@ class DeclImplMatchPass(Pass):
                 else:
                     # Copy the parameter names from the declaration to the definition.
                     for idx in range(len(params_defn.items)):
-                        params_decl.items[idx] = params_defn.items[idx]
-                    for idx in range(len(params_defn.kid)):
-                        params_decl.kid[idx] = params_defn.kid[idx]
+                        # FIXME: This might not be the way to copy the names, need review.
+                        params_decl.items[idx].name.value = params_defn.items[
+                            idx
+                        ].name.value
+                        params_decl.items[idx].name._sym_name = params_defn.items[
+                            idx
+                        ].name.sym_name
 
     def exit_architype(self, node: ast.Architype) -> None:
         """Exit Architype."""
