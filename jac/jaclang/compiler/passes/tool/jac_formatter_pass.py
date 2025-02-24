@@ -1134,32 +1134,29 @@ class JacFormatPass(Pass):
         count_by: ExprType,
         body: CodeBlock,
         """
-        if (
-            node.parent
-            and node.parent.parent
-            and isinstance(node.parent.parent, (ast.Ability))
-        ):
-            self.emit_ln(node, "")
+        self.emit(
+            node,
+            f"for {node.iter.gen.jac} to {node.condition.gen.jac} by {node.count_by.gen.jac} {{\n",
+        )
+        self.indent_level += 1
+        for stmt in node.body:
+            # The emit(), emit_ln are messed up.
+            # Imma do it this way and come back to fix the format pass.
+            for line in stmt.gen.jac.splitlines():
+                node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
+        self.indent_level -= 1
 
-        start = True
-        for i in node.kid:
-            if i in [node.iter, node.condition, node.count_by]:
-                i.gen.jac = i.gen.jac.replace(" ", "")
-            if isinstance(i, ast.CommentToken):
-                if i.is_inline:
-                    self.emit(node, f" {i.gen.jac}")
-                else:
-                    self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, ast.Semi):
-                self.emit(node, i.gen.jac)
-            else:
-                if start:
-                    self.emit(node, i.gen.jac)
-                    start = False
-                else:
-                    self.emit(node, f" {i.gen.jac}")
-        if isinstance(node.kid[-1], (ast.Semi, ast.CommentToken)):
-            self.emit_ln(node, "")
+        if node.else_body:
+            self.emit(node, "} else {\n")
+            self.indent_level += 1
+            for stmt in node.else_body:
+                # The emit(), emit_ln are messed up.
+                # Imma do it this way and come back to fix the format pass.
+                for line in stmt.gen.jac.splitlines():
+                    node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
+            self.indent_level -= 1
+
+        self.emit(node, "}\n")
 
     def exit_try_stmt(self, node: ast.TryStmt) -> None:
         """Sub objects.
