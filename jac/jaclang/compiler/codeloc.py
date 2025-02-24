@@ -97,6 +97,14 @@ class CodeLocInfo:
         """Get last token."""
         return self.last_tok
 
+    def __lt__(self, other: CodeLocInfo) -> bool:
+        """Less than based on the start location."""
+        if self.first_line < other.first_line:
+            return True
+        elif self.first_line == other.first_line:
+            return self.col_start < other.col_start
+        return False
+
     def update_token_range(self, first_tok: Token, last_tok: Token) -> None:
         """Update token range."""
         self.first_tok = first_tok

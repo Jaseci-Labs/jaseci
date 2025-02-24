@@ -16,12 +16,56 @@ from jaclang.settings import settings
 class JacFormatPass(Pass):
     """JacFormat Pass format Jac code."""
 
+    def _inject_comments(self, mod: ast.Module) -> None:
+        """Inject comments into the module."""
+        mod.terminals = []
+        last_token: ast.Token | None = None
+        idx_cur_comment = 0  # Index of the current comment to process.
+
+        def traverse(node: ast.AstNode) -> None:
+            nonlocal mod, last_token, idx_cur_comment
+            if isinstance(node, ast.Token):
+                while idx_cur_comment < len(mod.comments) and (
+                    mod.comments[idx_cur_comment].loc < node.loc
+                ):
+                    comment = mod.comments[idx_cur_comment]
+                    idx_cur_comment += 1
+                    if last_token is None:
+                        mod.add_kids_left([comment])
+                    else:
+                        comment.is_inline = (
+                            comment.loc.first_line == last_token.loc.first_line
+                        )
+                        assert last_token.parent is not None
+                        idx_ins = last_token.parent.kid.index(last_token) + 1
+                        last_token.parent.insert_kids_at_pos([comment], idx_ins)
+                    last_token = comment
+                    mod.terminals.append(last_token)
+                last_token = node
+                mod.terminals.append(last_token)
+            else:
+                for kid in node.kid:
+                    traverse(kid)
+
+        if isinstance(mod.kid[0], ast.EmptyToken):
+            mod.add_kids_left(mod.comments)
+            return
+        traverse(mod)
+        if idx_cur_comment < len(mod.comments):
+            assert last_token is not None and last_token.parent is not None
+            idx_ins = last_token.parent.kid.index(last_token) + 1
+            last_token.parent.insert_kids_at_pos(mod.comments, idx_ins)
+            mod.terminals.extend(mod.comments)
+
     def before_pass(self) -> None:
         """Initialize pass."""
         self.comments: list[ast.CommentToken] = []
         self.indent_size = 4
         self.indent_level = 0
         self.MAX_LINE_LENGTH = int(float(settings.max_line_length) / 2)
+        if not isinstance(self.ir, ast.Module):
+            raise self.ice("IR must be module. Impossible")
+        self._inject_comments(self.ir)
 
     def enter_node(self, node: ast.AstNode) -> None:
         """Enter node."""
