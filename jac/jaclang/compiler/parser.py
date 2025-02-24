@@ -3114,7 +3114,7 @@ class JacParser(Pass):
                         | LPAREN TYPE_OP NULL_OK typed_filter_compare_list RPAREN
             """
             if isinstance(kid[2], ast.SubNodeList):
-                return ast.FilterCompr(compares=kid[2], f_type=None, kid=kid)
+                return ast.FilterCompr(compares=kid[2].items, f_type=None, kid=kid)
             elif isinstance(kid[3], ast.FilterCompr):
                 kid[3].add_kids_left(kid[:3])
                 kid[3].add_kids_right(kid[4:])
@@ -3165,7 +3165,9 @@ class JacParser(Pass):
             if isinstance(expr, ast.Expr) and (
                 (isinstance(compares, ast.SubNodeList)) or compares is None
             ):
-                return ast.FilterCompr(compares=compares, f_type=expr, kid=kid)
+                return ast.FilterCompr(
+                    compares=compares.items if compares else [], f_type=expr, kid=kid
+                )
             else:
                 raise self.ice()
 
