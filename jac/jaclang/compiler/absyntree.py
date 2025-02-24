@@ -1967,8 +1967,8 @@ class TryStmt(AstElseBodyNode, CodeBlockStmt):
 
     def __init__(
         self,
-        body: SubNodeList[CodeBlockStmt],
-        excepts: Optional[SubNodeList[Except]],
+        body: list[CodeBlockStmt],
+        excepts: list[Except],
         else_body: Optional[ElseStmt],
         finally_body: Optional[FinallyStmt],
         kid: Sequence[AstNode],
@@ -1984,8 +1984,10 @@ class TryStmt(AstElseBodyNode, CodeBlockStmt):
         """Normalize try statement node."""
         res = True
         if deep:
-            res = self.body.normalize(deep)
-            res = res and self.excepts.normalize(deep) if self.excepts else res
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
+            for stmt in self.excepts:
+                res = res and stmt.normalize(deep)
             res = res and self.else_body.normalize(deep) if self.else_body else res
             res = (
                 res and self.finally_body.normalize(deep) if self.finally_body else res
@@ -1993,9 +1995,13 @@ class TryStmt(AstElseBodyNode, CodeBlockStmt):
         new_kid: list[AstNode] = [
             self.gen_token(Tok.KW_TRY),
         ]
-        new_kid.append(self.body)
-        if self.excepts:
-            new_kid.append(self.excepts)
+        new_kid.append(self.gen_token(Tok.LBRACE))
+        new_kid.extend(self.body)
+        new_kid.append(self.gen_token(Tok.RBRACE))
+        new_kid.append(self.gen_token(Tok.LBRACE))
+        new_kid.extend(self.excepts)
+        new_kid.append(self.gen_token(Tok.LBRACE))
+
         if self.else_body:
             new_kid.append(self.else_body)
         if self.finally_body:
