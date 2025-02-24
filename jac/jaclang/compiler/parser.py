@@ -6,7 +6,7 @@ import keyword
 import logging
 import os
 from functools import wraps
-from typing import Callable, TypeAlias, TypeVar
+from typing import Callable, List, ParamSpec, TypeAlias, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler import jac_lark as jl  # type: ignore
@@ -16,17 +16,24 @@ from jaclang.vendor.lark import Lark, Transformer, Tree, logger
 
 
 T = TypeVar("T", bound=ast.AstNode)
+P = ParamSpec("P")
+R = TypeVar("R")
 
 
-def cache_node(cache_getter):
+def cache_node(
+    cache_getter: Callable[[], List[T]]
+) -> Callable[[Callable[..., T]], Callable[..., T]]:
     """Cache the return type of a rule to be used later"""
-    def decorator(func):
+
+    def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
             out = func(*args, **kwargs)
             cache_getter().append(out)
             return out
+
         return wrapper
+
     return decorator
 
 
