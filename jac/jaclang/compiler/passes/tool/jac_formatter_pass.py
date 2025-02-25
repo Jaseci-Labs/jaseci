@@ -726,49 +726,27 @@ class JacFormatPass(Pass):
 
     def exit_arch_has(self, node: ast.ArchHas) -> None:
         """Sub objects.
-
         doc: Optional[Token],
         is_static: bool,
         access: Optional[Token],
         vars: "HasVarList",
         is_frozen: bool,
         """
-        indented = False
-        indent_val = 1
-        for i in node.kid:
-            if isinstance(i, ast.CommentToken):
-                if i.is_inline:
-                    self.emit(node, f" {i.gen.jac}")
-                    self.emit_ln(node, "")
-                elif not node.gen.jac.endswith("\n"):
-                    self.emit(node, "\n")
-                    self.emit_ln(node, i.gen.jac)
-                else:
-                    self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, ast.Semi):
-                self.emit(node, i.gen.jac.strip())
-            elif isinstance(i, ast.SubNodeList):
-                for j in i.kid:
-                    if j.gen.jac == ",":
-                        if not indented:
-                            self.emit_ln(node, j.gen.jac.strip())
-                            self.indent_level += indent_val
-                            indented = True
-                        else:
-                            self.indent_level -= indent_val
-                            self.emit_ln(node, j.gen.jac.strip())
-                            self.indent_level += indent_val
-                            indented = True
-                    else:
-                        self.emit(node, j.gen.jac.lstrip())
-                if indented:
-                    self.indent_level -= indent_val
-            else:
-                self.emit(node, f"{i.gen.jac} ")
-                if i.gen.jac == "static":
-                    indent_val = indent_val * 3
-        if isinstance(node.kid[-1], ast.Semi) and not node.gen.jac.endswith("\n"):
-            self.emit_ln(node, "")
+        self.emit(node, f"{'static ' if node.is_static else ''}")
+        self.emit(node, f"{'let' if node.is_frozen else 'has'}")
+        self.emit(node, f"{node.access.gen.jac if node.access else ''}")
+        if len(node.vars) == 1:
+            self.emit(node, f"{node.vars[0].gen.jac};\n")
+        else:
+            self.emit(node, f"{node.vars[0].gen.jac},\n")
+            self.indent_level += 1
+            for i in node.vars[1:-1]:
+                self.emit(node, f"{i.gen.jac.strip()},"+"\n")
+
+            self.emit(node, f"{node.vars[-1].gen.jac.strip()};\n")
+            self.indent_level -= 1
+
+
 
     def exit_arch_ref(self, node: ast.ArchRef) -> None:
         """Sub objects.

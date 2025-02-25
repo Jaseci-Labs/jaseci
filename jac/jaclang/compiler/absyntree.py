@@ -1737,7 +1737,7 @@ class ArchHas(AstAccessNode, AstDocNode, ArchBlockStmt):
         self,
         is_static: bool,
         access: Optional[SubTag[Token]],
-        vars: SubNodeList[HasVar],
+        vars: list[HasVar],
         is_frozen: bool,
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
@@ -1755,8 +1755,9 @@ class ArchHas(AstAccessNode, AstDocNode, ArchBlockStmt):
         res = True
         if deep:
             res = self.access.normalize(deep) if self.access else res
-            res = res and self.vars.normalize(deep) if self.vars else res
             res = res and self.doc.normalize(deep) if self.doc else res
+            for var in self.vars:
+                res = res and var.normalize(deep)
         new_kid: list[AstNode] = []
         if self.doc:
             new_kid.append(self.doc)
@@ -1769,7 +1770,7 @@ class ArchHas(AstAccessNode, AstDocNode, ArchBlockStmt):
         )
         if self.access:
             new_kid.append(self.access)
-        new_kid.append(self.vars)
+        new_kid.extend(self.vars)
         new_kid.append(self.gen_token(Tok.SEMI))
         self.set_kids(nodes=new_kid)
         return res

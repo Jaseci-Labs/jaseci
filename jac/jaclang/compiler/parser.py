@@ -1058,31 +1058,23 @@ class JacParser(Pass):
                 ret.signature.is_method = True
             return ret
 
-        def has_stmt(self, kid: list[ast.AstNode]) -> ast.ArchHas:
+        def has_stmt(self, _:None) -> ast.ArchHas:
             """Grammar rule.
 
             has_stmt: KW_STATIC? (KW_LET | KW_HAS) access_tag? has_assign_list SEMI
             """
-            chomp = [*kid]
-            is_static = (
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_STATIC
+            tok_static = self.match_token(Tok.KW_STATIC)
+            tok_def = self.match_token(Tok.KW_LET) or self.consume_token(Tok.KW_HAS)
+            access = self.match(ast.SubTag)
+            assign = self.consume(ast.SubNodeList)
+            self.consume_token(Tok.SEMI)
+            return ast.ArchHas(
+                vars=assign.items,
+                is_static=bool(tok_static),
+                is_frozen=(tok_def.name == Tok.KW_LET),
+                access=access,
+                kid=[*([access] if access else []), *assign.items],
             )
-            chomp = chomp[1:] if is_static else chomp
-            is_freeze = isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_LET
-            chomp = chomp[1:]
-            access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
-            chomp = chomp[1:] if access else chomp
-            assign = chomp[0]
-            if isinstance(assign, ast.SubNodeList):
-                return ast.ArchHas(
-                    vars=assign,
-                    is_static=is_static,
-                    is_frozen=is_freeze,
-                    access=access,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
 
         def has_assign_list(
             self, kid: list[ast.AstNode]
