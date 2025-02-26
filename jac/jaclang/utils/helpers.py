@@ -264,8 +264,9 @@ def check_version() -> bool:
     """Check if the installed version of JacLang is outdated."""
     import tomllib
 
-    file_path = os.path.join(os.getcwd(), "..", "..", "Jaseci/jac/pyproject.toml")
-    file_path = os.path.normpath(file_path)
+    file_path = os.path.join(
+        os.path.split(os.path.dirname(__file__))[0], "../pyproject.toml"
+    )
     with open(file_path, "rb") as file:
         data = tomllib.load(file)
     latest_version = data["tool"]["poetry"]["version"]
