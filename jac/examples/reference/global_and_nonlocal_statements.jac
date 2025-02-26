@@ -1,11 +1,11 @@
 glob x = "Jaclang ";
 
-can outer_func() -> None {
+can outer_func -> None {
     :g: x;
 
     x = 'Jaclang is ';
     y = 'Awesome';
-    can inner_func() -> tuple[str, str] {
+    can inner_func -> tuple[str, str] {
         :nl: y;
 
         y = "Fantastic";
