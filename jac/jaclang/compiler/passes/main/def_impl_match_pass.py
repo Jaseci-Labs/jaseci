@@ -148,7 +148,7 @@ class DeclImplMatchPass(Pass):
             for stmnt in node.body.items:
                 if not isinstance(stmnt, ast.ArchHas):
                     continue
-                for var in stmnt.vars.items:
+                for var in stmnt.vars:
                     if (var.value is not None) or (var.defer):
                         found_default_init = True
                     else:
@@ -165,7 +165,7 @@ class DeclImplMatchPass(Pass):
             for item in node.body.items:
 
                 if isinstance(item, ast.ArchHas):
-                    for var in item.vars.items:
+                    for var in item.vars:
                         if var.defer:
                             post_init_vars.append(var)
 
