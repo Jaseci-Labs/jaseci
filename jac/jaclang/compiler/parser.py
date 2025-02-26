@@ -1058,7 +1058,7 @@ class JacParser(Pass):
                 ret.signature.is_method = True
             return ret
 
-        def has_stmt(self, _:None) -> ast.ArchHas:
+        def has_stmt(self, _: None) -> ast.ArchHas:
             """Grammar rule.
 
             has_stmt: KW_STATIC? (KW_LET | KW_HAS) access_tag? has_assign_list SEMI

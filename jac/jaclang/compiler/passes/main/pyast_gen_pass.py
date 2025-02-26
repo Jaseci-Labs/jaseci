@@ -1480,7 +1480,7 @@ class PyastGenPass(Pass):
         vars_list = [i.gen.py_ast[0] for i in node.vars if isinstance(i, ast.HasVar)]
         if node.doc:
             doc = self.sync(ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc)
-            if isinstance(doc, ast3.AST) and isinstance(node.vars.gen.py_ast, list):
+            if isinstance(doc, ast3.AST) and isinstance(vars_list, list):
                 node.gen.py_ast = [doc] + vars_list
             else:
                 raise self.ice()

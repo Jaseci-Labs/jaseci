@@ -741,12 +741,10 @@ class JacFormatPass(Pass):
             self.emit(node, f"{node.vars[0].gen.jac},\n")
             self.indent_level += 1
             for i in node.vars[1:-1]:
-                self.emit(node, f"{i.gen.jac.strip()},"+"\n")
+                self.emit(node, f"{i.gen.jac.strip()}," + "\n")
 
             self.emit(node, f"{node.vars[-1].gen.jac.strip()};\n")
             self.indent_level -= 1
-
-
 
     def exit_arch_ref(self, node: ast.ArchRef) -> None:
         """Sub objects.
