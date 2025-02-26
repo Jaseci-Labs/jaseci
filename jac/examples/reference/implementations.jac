@@ -1,10 +1,10 @@
-can foo();
+can foo -> str;
 
 obj vehicle;
 
 enum Size; #implementations
 
-:can:foo() {
+:can:foo -> str {
     return ("Hello");
 }
 

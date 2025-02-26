@@ -8,7 +8,7 @@ obj Car {
         print(f"Car Info: {self.year} {self.make} {self.model}");
     }
 
-    static can get_wheels {
+    static can get_wheels -> int {
         return Car.wheels;
     }
 }

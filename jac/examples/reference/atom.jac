@@ -13,8 +13,8 @@ with entry {
     print(list1, a, b, c, d);
 
     # pp=0x4e;
-
     # print(0b1100);
+
     enum x;
     print(x.y.value);
 }
