@@ -1076,24 +1076,17 @@ class JacParser(Pass):
                 kid=[*([access] if access else []), *assign.items],
             )
 
-        def has_assign_list(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.HasVar]:
+        def has_assign_list(self, _: None) -> ast.SubNodeList[ast.HasVar]:
             """Grammar rule.
 
             has_assign_list: (has_assign_list COMMA)? typed_has_clause
             """
-            consume = None
-            assign = None
-            comma = None
-            if isinstance(kid[0], ast.SubNodeList):
-                consume = kid[0]
-                comma = kid[1]
-                assign = kid[2]
-                new_kid = [*consume.kid, comma, assign]
-            else:
-                assign = kid[0]
-                new_kid = [assign]
+            new_kid: list = []
+            if consume := self.match(ast.SubNodeList):
+                comma = self.consume_token(Tok.COMMA)
+                new_kid = [*consume.kid, comma]
+            assign = self.consume(ast.HasVar)
+            new_kid.append(assign)
             valid_kid = [i for i in new_kid if isinstance(i, ast.HasVar)]
             return ast.SubNodeList[ast.HasVar](
                 items=valid_kid,
