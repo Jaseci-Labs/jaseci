@@ -135,10 +135,10 @@ class JacAccessValidationPlugin:
 
     @staticmethod
     @hookimpl
-    def check_access_level(to: Anchor) -> AccessLevel:
+    def check_access_level(to: Anchor, no_custom: bool) -> AccessLevel:
         """Access validation."""
         if not FastAPI.is_enabled():
-            return JacFeatureImpl.check_access_level(to=to)
+            return JacFeatureImpl.check_access_level(to=to, no_custom=no_custom)
 
         if not to.persistent:
             return AccessLevel.WRITE
@@ -154,6 +154,12 @@ class JacAccessValidationPlugin:
         # if current root is the target anchor
         if jroot == jctx.system_root or jroot.id == to.root or jroot == to:
             return AccessLevel.WRITE
+
+        if (
+            not no_custom
+            and (custom_level := to.architype.__jac_access__()) is not None
+        ):
+            return AccessLevel.cast(custom_level)
 
         access_level = AccessLevel.NO_ACCESS
 
