@@ -85,22 +85,26 @@ spec:
             echo "Installing dependencies..."
             apt-get update && apt-get install -y --no-install-recommends git && apt-get clean && rm -rf /var/lib/apt/lists/*
             echo "Cloning littleX repository..."
-            git clone --branch main --depth 1 https://github.com/Jaseci-Labs/littleX.git ~/littleX
+            git clone --branch main --depth 1 https://github.com/Jaseci-Labs/littleX.git /root/littleX
             echo "Installing Python dependencies..."
-            pip install --no-cache-dir -r ~/littleX/littleX_BE/requirements.txt openai jac-splice-orc
+            pip install --no-cache-dir -r /root/littleX/littleX_BE/requirements.txt openai
+
+            git clone --branch enhancements/pod-manager https://github.com/Jaseci-Labs/jaseci.git /root/jaseci
+            pip install /root/jaseci/jac-splice-orc/.
+
             echo "Starting initialization script..."
             /bin/bash /app/init.sh
 
         # Environment variables for dynamic configuration
         env:
-          - name: CONFIG_FILE_PATH
-            value: "/cfg/module_config.json"
+          - name: MODULE_CONFIG_PATH
+            value: "/cfg/config.json"
           - name: NAMESPACE
             value: "littlex"
           - name: CONFIGMAP_NAME
             value: "module-config"
           - name: FILE_NAME
-            value: "~/littleX/littleX_BE/_archive/littleX_full.jac"
+            value: "/root/littleX/littleX_BE/_archive/littleX_full.jac"
 
         # Mount ConfigMap for application configuration
         volumeMounts:

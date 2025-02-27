@@ -483,17 +483,7 @@ class SpliceOrcPlugin:
         )
         from jaclang.runtimelib.machine import JacMachine, JacProgram
 
-        module_config_path = os.getenv("MODULE_CONFIG_PATH", "/cfg/module_config.json")
-        try:
-            logging.info(f"Loading from {module_config_path} for module_config...")
-            with open(module_config_path, "r") as f:
-                module_config = json.load(f)
-        except Exception as e:
-            logging.warning(
-                f"No module_config found in config_map ({module_config_path}). "
-                f"Defaulting to fallback file. Error: {e}"
-            )
-            module_config = config_loader.get("module_config", default={})
+        module_config = config_loader.get("module_config", default={})
         if target in module_config and module_config[target]["load_type"] == "remote":
             pod_manager_url = config_loader.get("environment", "POD_MANAGER_URL")
             if not pod_manager_url:
