@@ -7,11 +7,11 @@ log() {
 
 if [ "$SERVICE_TYPE" = "pod_manager" ]; then
   log "Starting Pod Manager with FastAPI..."
-  
+
   # Set PYTHONPATH to include /app and /app/grpc_local
   export PYTHONPATH=/app:/app/grpc_local
   log "PYTHONPATH is set to $PYTHONPATH"
-  
+
   # Run FastAPI app
   uvicorn managers.pod_manager:app --host 0.0.0.0 --port 8000
 

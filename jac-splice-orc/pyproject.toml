@@ -1,0 +1,43 @@
+[tool.poetry]
+name = "jac-splice-orc"
+version = "0.1.0"
+description = "JAC Splice-Orchestrator: Kubernetes-based dynamic remote module management for JacLang"
+authors = ["Jason Mars"]
+readme = "README.md"
+packages = [{include = "jac_splice_orc"}]
+
+
+[tool.poetry.dependencies]
+python = "3.13.2"
+jaclang = "0.7.34"
+fastapi = "0.115.11"
+orjson = "3.10.15"
+uvicorn = {version = "0.34.0", extras = ["standard"]}
+gunicorn = "23.0.0"
+pydantic = "2.10.6"
+pydantic-settings = "2.8.1"
+python-multipart = "0.0.20"
+uuid6 = "2024.7.10"
+kubernetes = "32.0.1"
+
+[tool.poetry.group.dev.dependencies]
+python-dotenv = "1.0.1"
+black = "25.1.0"
+pre-commit = "4.1.0"
+pytest = "8.3.5"
+flake8 = "7.1.2"
+flake8-import-order = "0.18.2"
+flake8-docstrings = "1.7.0"
+flake8-comprehensions = "3.16.0"
+flake8-bugbear = "24.12.12"
+flake8-annotations = "3.1.1"
+flake8_simplify = "0.21.0"
+pep8-naming = "0.14.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+dev = "jac_splice_orc.runner:dev"
+prod = "jac_splice_orc.runner:prod"

@@ -1,0 +1,48 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: external-mongo-service-0
+  annotations:
+    kube-linter.io/ignore-all: "used for sample"
+spec:
+  type: NodePort
+  selector:
+    app: example-mongodb-svc
+    statefulset.kubernetes.io/pod-name: example-mongodb-0
+  ports:
+    - protocol: TCP
+      nodePort: 30001
+      port: 30001
+      targetPort: 27017
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: external-mongo-service-1
+  annotations:
+    kube-linter.io/ignore-all: "used for sample"
+spec:
+  type: NodePort
+  selector:
+    app: example-mongodb-svc
+    statefulset.kubernetes.io/pod-name: example-mongodb-1
+  ports:
+    - nodePort: 30002
+      port: 30002
+      targetPort: 27017
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: external-mongo-service-2
+  annotations:
+    kube-linter.io/ignore-all: "used for sample"
+spec:
+  type: NodePort
+  selector:
+    app: example-mongodb-svc
+    statefulset.kubernetes.io/pod-name: example-mongodb-2
+  ports:
+    - nodePort: 30003
+      port: 30003
+      targetPort: 27017
