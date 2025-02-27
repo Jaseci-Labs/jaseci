@@ -71,6 +71,6 @@
         }
     },
     "environment": {
-        "POD_MANAGER_URL": "http://localhost:8000"
+        "POD_MANAGER_URL": "http://jac-orc"
     }
 }
