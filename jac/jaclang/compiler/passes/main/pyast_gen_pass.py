@@ -2039,7 +2039,7 @@ class PyastGenPass(Pass):
             self.sync(
                 ast3.Delete(
                     targets=(
-                        node.target.values.gen.py_ast
+                        [i.gen.py_ast[0] for i in node.target.values]
                         if isinstance(node.target, ast.TupleVal) and node.target.values
                         else node.target.gen.py_ast
                     )
@@ -2451,7 +2451,9 @@ class PyastGenPass(Pass):
             func_node = ast.FuncCall(
                 target=node.right,
                 params=(
-                    node.left.values
+                    ast.SubNodeList(
+                        items=node.left.values, delim=Tok.COMMA, kid=node.left.values
+                    )
                     if isinstance(node.left, ast.TupleVal)
                     else ast.SubNodeList(
                         items=[node.left], delim=Tok.COMMA, kid=[node.left]
@@ -2488,7 +2490,9 @@ class PyastGenPass(Pass):
             func_node = ast.FuncCall(
                 target=node.left,
                 params=(
-                    node.right.values
+                    ast.SubNodeList(
+                        items=node.right.values, delim=Tok.COMMA, kid=node.right.values
+                    )
                     if isinstance(node.right, ast.TupleVal)
                     else ast.SubNodeList(
                         items=[node.right], delim=Tok.COMMA, kid=[node.right]
@@ -2772,12 +2776,13 @@ class PyastGenPass(Pass):
     def exit_tuple_val(self, node: ast.TupleVal) -> None:
         """Sub objects.
 
-        values: Optional[SubNodeList[ExprType | Assignment]],
+        values: list[ExprType | Assignment],
         """
+        tuple_val_list: list = [i.gen.py_ast[0] for i in node.values]
         node.gen.py_ast = [
             self.sync(
                 ast3.Tuple(
-                    elts=node.values.gen.py_ast if node.values else [],
+                    elts=tuple_val_list if node.values else [],
                     ctx=node.py_ctx_func(),
                 )
             )

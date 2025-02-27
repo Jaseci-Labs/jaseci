@@ -251,7 +251,7 @@ class SymbolTable:
                     if isinstance(item.operand, ast.AstSymbolNode):
                         item.operand.name_spec.py_ctx_func = ast3.Store
                 elif isinstance(item, ast.TupleVal):
-                    for i in item.values.items if item.values else []:
+                    for i in item.values if item.values else []:
                         if isinstance(i, ast.AstSymbolNode):
                             i.name_spec.py_ctx_func = ast3.Store
                         elif isinstance(i, ast.AtomTrailer):

@@ -2199,7 +2199,7 @@ class JacParser(Pass):
                         sublist = ast.SubNodeList[ast.Expr | ast.KWPair](
                             items=[*index.values], delim=Tok.COMMA, kid=index.kid[1:-1]
                         )
-                        expr = ast.TupleVal(values=sublist, kid=[sublist])
+                        expr = ast.TupleVal(values=sublist.items, kid=[sublist])
                     return ast.IndexSlice(
                         slices=[ast.IndexSlice.Slice(start=expr, stop=None, step=None)],
                         is_range=False,
@@ -2397,23 +2397,22 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def tuple_val(self, kid: list[ast.AstNode]) -> ast.TupleVal:
+        def tuple_val(self, _: None) -> ast.TupleVal:
             """Grammar rule.
 
             tuple_val: LPAREN tuple_list? RPAREN
             """
-            if len(kid) == 2:
-                return ast.TupleVal(
-                    values=None,
-                    kid=kid,
-                )
-            elif isinstance(kid[1], ast.SubNodeList):
-                return ast.TupleVal(
-                    values=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            tok_lparen = self.consume_token(Tok.LPAREN)
+            target = self.match(ast.SubNodeList)
+            tok_rparen = self.consume_token(Tok.RPAREN)
+            return ast.TupleVal(
+                values=target.items if target else [],
+                kid=[
+                    tok_lparen,
+                    *(target.items if target else []),
+                    tok_rparen,
+                ],
+            )
 
         def set_val(self, kid: list[ast.AstNode]) -> ast.SetVal:
             """Grammar rule.
