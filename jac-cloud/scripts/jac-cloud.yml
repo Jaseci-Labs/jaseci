@@ -3,14 +3,16 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: littlex
+
 ---
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: init-script
+  name: jac-cloud
   namespace: littlex
 data:
-  init_jac_cloud.sh: |
+  init.sh: |
     #!/bin/bash
     set -e
     echo "=== Starting jac-cloud Pod Initialization ==="
@@ -22,66 +24,36 @@ data:
     echo "Using Namespace: $NAMESPACE"
     echo "Running Jac File: $FILE_NAME"
 
-    jac orc_initialize "$NAMESPACE" || exit 1
     jac serve "$FILE_NAME" || exit 1
+  config.json: |-
+    {
+      "numpy": {
+        "lib_mem_size_req": "100Mi",
+        "dependency": [],
+        "lib_cpu_req": "500m",
+        "load_type": "remote"
+      },
+      "transformers": {
+        "lib_mem_size_req": "2000Mi",
+        "dependency": [
+          "torch",
+          "transformers"
+        ],
+        "lib_cpu_req": "1.0",
+        "load_type": "remote"
+      },
+      "sentence_transformers": {
+        "lib_mem_size_req": "2000Mi",
+        "dependency": [
+          "sentence-transformers"
+        ],
+        "lib_cpu_req": "1.0",
+        "load_type": "remote"
+      }
+    }
+
 ---
 
-# 2. ServiceAccount: jac-cloud-sa (in the littlex namespace)
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: jac-cloud-sa
-  namespace: littlex
----
-# 3. ClusterRole: Define permissions for the jac-cloud system
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: jac-cloud-cluster-role
-rules:
-  # Core Kubernetes resources permissions
-  - apiGroups: [""]
-    resources:
-      - "namespaces"
-      - "pods"
-      - "services"
-      - "configmaps"
-    verbs: ["get", "list", "create", "delete", "watch", "patch", "update"]
-
-  # ServiceAccount permissions
-  - apiGroups: [""]
-    resources: ["serviceaccounts"]
-    verbs: ["get", "list", "create", "delete", "watch", "patch", "update"]
-
-  # RBAC permissions
-  - apiGroups: ["rbac.authorization.k8s.io"]
-    resources: ["roles", "rolebindings"]
-    verbs: ["get", "list", "create", "delete", "watch", "patch", "update"]
-
-  # Apps API group for managing deployments
-  - apiGroups: ["apps"]
-    resources: ["deployments"]
-    verbs: ["get", "list", "create", "delete", "watch", "patch", "update"]
-
-  # Allow access to secrets (e.g., for OpenAI API key)
-  - apiGroups: [""]
-    resources: ["secrets"]
-    verbs: ["get", "list", "watch"]
----
-# 4. ClusterRoleBinding: Bind ClusterRole to the ServiceAccount
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: jac-cloud-cluster-role-binding
-subjects:
-  - kind: ServiceAccount
-    name: jac-cloud-sa
-    namespace: littlex
-roleRef:
-  kind: ClusterRole
-  name: jac-cloud-cluster-role
-  apiGroup: rbac.authorization.k8s.io
----
 # 5. Deployment: jac-cloud application deployment
 apiVersion: apps/v1
 kind: Deployment
@@ -98,69 +70,73 @@ spec:
       labels:
         app: jac-cloud
     spec:
-      # Attach the ServiceAccount for RBAC
-      serviceAccountName: jac-cloud-sa
       containers:
       - name: jac-cloud
         image: python:3.12-slim  # Use the Python base image
         imagePullPolicy: IfNotPresent
 
         command: ["/bin/sh", "-c"]
+        envFrom:
+        - secretRef:
+            name: jac-cloud-envs
+            optional: true
         args:
           - |
             echo "Installing dependencies..."
             apt-get update && apt-get install -y --no-install-recommends git && apt-get clean && rm -rf /var/lib/apt/lists/*
             echo "Cloning littleX repository..."
-            git clone --branch main --depth 1 https://github.com/Jaseci-Labs/littleX.git /app/littleX
+            git clone --branch main --depth 1 https://github.com/Jaseci-Labs/littleX.git /root/littleX
             echo "Installing Python dependencies..."
-            pip install --no-cache-dir -r /app/littleX/littleX_BE/requirements.txt openai jac-splice-orc
+            pip install --no-cache-dir -r /root/littleX/littleX_BE/requirements.txt openai
+
+            git clone --branch enhancements/pod-manager https://github.com/Jaseci-Labs/jaseci.git /root/jaseci
+            pip install /root/jaseci/jac-splice-orc/.
+
             echo "Starting initialization script..."
-            /bin/bash /app/init_jac_cloud.sh
+            /bin/bash /app/init.sh
 
         # Environment variables for dynamic configuration
         env:
-          - name: CONFIG_FILE_PATH
-            value: "/cfg/module_config.json"
+          - name: MODULE_CONFIG_PATH
+            value: "/cfg/config.json"
           - name: NAMESPACE
             value: "littlex"
           - name: CONFIGMAP_NAME
             value: "module-config"
           - name: FILE_NAME
-            value: "/app/littleX/littleX_BE/_archive/littleX_full.jac"
-          - name: OPENAI_API_KEY
-            valueFrom:
-              secretKeyRef:
-                name: openai-secret
-                key: openai-key
+            value: "/root/littleX/littleX_BE/_archive/littleX_full.jac"
 
         # Mount ConfigMap for application configuration
         volumeMounts:
-          - name: config-vol
+          - name: jac-cloud-config
             mountPath: /cfg
-          - name: init-script-vol
-            mountPath: /app/init_jac_cloud.sh
-            subPath: init_jac_cloud.sh
+          - name: jac-cloud-init
+            mountPath: /app
 
       volumes:
-        - name: config-vol
+        - name: jac-cloud-config
           configMap:
-            name: module-config
+            name: jac-cloud
             items:
-              - key: module_config.json
-                path: module_config.json
-        - name: init-script-vol
+              - key: config.json
+                path: config.json
+        - name: jac-cloud-init
           configMap:
-            name: init-script
+            name: jac-cloud
+            items:
+              - key: init.sh
+                path: init.sh
 
       # Restart policy
       restartPolicy: Always
+
 ---
-# 6. Secret: OpenAI API key
+
 apiVersion: v1
 kind: Secret
 metadata:
-  name: openai-secret
+  name: jac-cloud-envs
   namespace: littlex
 type: Opaque
 data:
-  openai-key: "<your_openai_key>"
+  OPENAI_API_KEY: ""

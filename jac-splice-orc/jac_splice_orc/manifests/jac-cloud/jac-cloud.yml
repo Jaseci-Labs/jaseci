@@ -1,0 +1,112 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: $g{name:"jac-cloud"}
+  namespace: $g{namespace:"default"}
+spec:
+  selector:
+    pod: $g{name:"jac-cloud"}
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: $g{name:"jac-cloud"}-envs
+  namespace: $g{namespace:"default"}
+type: Opaque
+stringData:
+  - $d{env-vars:{}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: $g{name:"jac-cloud"}
+  namespace: $g{namespace:"default"}
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: $g{replicas:1}
+  selector:
+    matchLabels:
+      app: $g{name:"jac-cloud"}
+  template:
+    metadata:
+      labels:
+        app: $g{name:"jac-cloud"}
+    spec:
+      initContainers:
+        - name: mongodb-check
+          image: rtsp/mongosh:2.4.2
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              if [ ! -z "$DATABASE_HOST" ]; then
+                until mongosh "${DATABASE_HOST}" --eval "db.runCommand({ ping: 1 })"; do
+                  echo "Waiting for MongoDB to be ready..."
+                  sleep 2
+                done
+              fi
+              echo "Done!"
+          envFrom:
+            - secretRef:
+                name: $g{name:"jac-cloud"}-envs
+        - name: redis-check
+          image: redis
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              if [ ! -z "$REDIS_HOST" ]; then
+                until redis-cli -u ${REDIS_HOST} ping; do
+                  echo "Waiting for Redis to be ready..."
+                  sleep 2
+                done
+              fi
+              echo "Done!"
+          envFrom:
+            - secretRef:
+                name: $g{name:"jac-cloud"}-envs
+      containers:
+        - name: $g{name:"jac-cloud"}
+          image: $g{image:"python:3.13-slim"}
+          ports:
+            - containerPort: 8000
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              $a{
+                args:[
+                  "mkdir app && cd app",
+                  "apt-get update && apt-get install -y --no-install-recommends git",
+                  "git clone --depth 1 https://github.com/Jaseci-Labs/littleX.git .",
+                  "pip install -r ./littleX_BE/requirements.txt openai",
+                  "jac serve ./littleX_BE/littleX.jac"
+                ]
+              }
+          envFrom:
+            - secretRef:
+                name: $g{name:"jac-cloud"}-envs
+          resources:
+            limits:
+              cpu: $g{cpu-limit:1}
+              memory: $g{memory-limit:"2000Mi"}
+            requests:
+              cpu: $g{cpu-request:0.5}
+              memory: $g{memory-request:"1500Mi"}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600

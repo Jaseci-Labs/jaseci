@@ -1,0 +1,121 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jac-orc
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jac-orc-mongodb-operator
+  namespace: jac-orc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: jac-orc-mongodb-operator
+rules:
+  - apiGroups: [""]
+    resources: ["services", "configmaps", "secrets"]
+    verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["statefulsets"]
+    verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["delete", "get", "list", "patch", "update", "watch"]
+  - apiGroups: ["mongodbcommunity.mongodb.com"]
+    resources:
+      [
+        "mongodbcommunity",
+        "mongodbcommunity/status",
+        "mongodbcommunity/spec",
+        "mongodbcommunity/finalizers",
+      ]
+    verbs: ["get", "list", "patch", "update", "watch"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: jac-orc-mongodb-operator
+subjects:
+  - kind: ServiceAccount
+    namespace: jac-orc
+    name: jac-orc-mongodb-operator
+roleRef:
+  kind: ClusterRole
+  name: jac-orc-mongodb-operator
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    email: support@mongodb.com
+  labels:
+    owner: mongodb
+  name: jac-orc-mongodb-operator
+  namespace: jac-orc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: jac-orc-mongodb-operator
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: jac-orc-mongodb-operator
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: name
+                    operator: In
+                    values:
+                      - jac-orc-mongodb-operator
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - command:
+            - /usr/local/bin/entrypoint
+          env:
+            - name: WATCH_NAMESPACE
+              value: "*"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: jac-orc-mongodb-operator
+            - name: AGENT_IMAGE
+              value: quay.io/mongodb/mongodb-agent-ubi:108.0.2.8729-1
+            - name: VERSION_UPGRADE_HOOK_IMAGE
+              value: quay.io/mongodb/mongodb-kubernetes-operator-version-upgrade-post-start-hook:1.0.9
+            - name: READINESS_PROBE_IMAGE
+              value: quay.io/mongodb/mongodb-kubernetes-readinessprobe:1.0.22
+            - name: MONGODB_IMAGE
+              value: mongodb-community-server
+            - name: MONGODB_REPO_URL
+              value: quay.io/mongodb
+          image: quay.io/mongodb/mongodb-kubernetes-operator:0.12.0
+          imagePullPolicy: Always
+          name: jac-orc-mongodb-operator
+          resources:
+            limits:
+              cpu: 1100m
+              memory: 1Gi
+            requests:
+              cpu: 500m
+              memory: 200Mi
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsUser: 2000
+            allowPrivilegeEscalation: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: jac-orc-mongodb-operator

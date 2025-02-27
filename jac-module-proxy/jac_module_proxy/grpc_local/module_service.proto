@@ -1,0 +1,20 @@
+// module_service.proto
+
+syntax = "proto3";
+
+service ModuleService {
+    rpc execute(MethodRequest) returns (MethodResponse) {}
+}
+
+message MethodRequest {
+    string obj_id = 1; // ID of the object instance (empty for module-level)
+    string method_name = 2;
+    repeated string args = 3; // Serialized arguments
+    map<string, string> kwargs = 4; // Serialized keyword arguments
+}
+
+message MethodResponse {
+    string result = 1; // Serialized result
+    string obj_id = 2; // Object ID if result is an object
+    bool is_callable = 3; // Indicates if the result is callable
+}
