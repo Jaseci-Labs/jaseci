@@ -42,8 +42,8 @@ FILE_TYPES = {
     list[UploadFile] | None,
 }
 
-walker_router = APIRouter(prefix="/walker", tags=["walker"])
-webhook_walker_router = APIRouter(prefix="/webhook/walker", tags=["webhook-walker"])
+walker_router = APIRouter(prefix="/walker")
+webhook_walker_router = APIRouter(prefix="/webhook/walker")
 
 
 class DefaultSpecs:
@@ -56,6 +56,8 @@ class DefaultSpecs:
     auth: bool = True
     private: bool = False
     webhook: dict | None = None
+    tags: list[str] | None = None
+    allow_entry: bool | None = None
 
 
 def get_specs(cls: type) -> Type["DefaultSpecs"] | None:
@@ -93,6 +95,8 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
         excluded: str | list[str] = specs.excluded or []
         auth: bool = specs.auth or False
         webhook: dict | None = specs.webhook
+        tags: list[str] | None = specs.tags
+        allow_entry: bool | None = specs.allow_entry
 
         query: dict[str, Any] = {}
         body: dict[str, Any] = {}
@@ -220,9 +224,11 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
         if webhook is None:
             target_authenticator = authenticator
             target_router = walker_router
+            default_tags = ["Walker"]
         else:
             target_authenticator = generate_webhook_auth(webhook)
             target_router = webhook_walker_router
+            default_tags = ["Webhook Walker"]
 
         for method in methods:
             method = method.lower()
@@ -254,18 +260,21 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
 
                     settings: dict[str, Any] = {
                         "response_model": ContextResponse[ret_types] | Any,
+                        "tags": default_tags if tags is None else tags,
                     }
                     if auth:
                         settings["dependencies"] = cast(list, target_authenticator)
 
-                    walker_method(
-                        url := f"/{cls.__name__}{path}", summary=url, **settings
-                    )(api_root)
-                    walker_method(
-                        url := f"/{cls.__name__}/{{node}}{path}",
-                        summary=url,
-                        **settings,
-                    )(api_entry)
+                    if not allow_entry:
+                        walker_method(
+                            url := f"/{cls.__name__}{path}", summary=url, **settings
+                        )(api_root)
+                    if allow_entry or allow_entry is None:
+                        walker_method(
+                            url := f"/{cls.__name__}/{{node}}{path}",
+                            summary=url,
+                            **settings,
+                        )(api_entry)
 
 
 def specs(
@@ -278,27 +287,33 @@ def specs(
     auth: bool = True,
     private: bool = False,
     webhook: dict | None = None,
+    tags: list[str] | None = None,
+    allow_entry: bool | None = None,
 ) -> Callable:
     """Walker Decorator."""
 
     def wrapper(cls: Type[WalkerArchitype]) -> Type[WalkerArchitype]:
         if get_specs(cls) is None:
-            p = path
-            m = methods
-            aq = as_query
-            ex = excluded
-            a = auth
-            pv = private
-            w = webhook
+            _path = path
+            _methods = methods
+            _as_query = as_query
+            _excluded = excluded
+            _auth = auth
+            _private = private
+            _webhook = webhook
+            _tags = tags
+            _allow_entry = allow_entry
 
             class __specs__(DefaultSpecs):  # noqa: N801
-                path: str = p
-                methods: list[str] = m
-                as_query: str | list[str] = aq
-                excluded: str | list[str] = ex
-                auth: bool = a
-                private: bool = pv
-                webhook: dict | None = w
+                path: str = _path
+                methods: list[str] = _methods
+                as_query: str | list[str] = _as_query
+                excluded: str | list[str] = _excluded
+                auth: bool = _auth
+                private: bool = _private
+                webhook: dict | None = _webhook
+                tags: list[str] | None = _tags
+                allow_entry: bool | None = _allow_entry
 
             cls.__specs__ = __specs__  # type: ignore[attr-defined]
 

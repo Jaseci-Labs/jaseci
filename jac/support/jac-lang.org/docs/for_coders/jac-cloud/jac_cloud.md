@@ -24,9 +24,12 @@ Once starts, navigate to `/docs` to access the built-in API docs.
 |-----------|-----------|-------------------|---------------|
 | path      | str       | additional path after default auto generated path **[root]:**`walker/{walker's name}`**/{your path}** or **[node]:**`walker/{walker's name}/{node id}`**/{your path}** | N/A |
 | methods   | list[str] | list of allowed http methods lowercase | ["post"] |
-| as_query  | str \| list[str] | list of declared fields that's intended to be query params. Setting it to `"*"` will set all fields to be query params | [] |
+| as_query  | str or list[str] | list of declared fields that's intended to be query params. Setting it to `"*"` will set all fields to be query params | [] |
 | auth      | bool      | if endpoint requires authentication or not | true
 | private   | bool      | only applicable if auto endpoint is enabled. This will skip the walker in auto generation. | false
+| webhook   | dict or None | [Webhook Configuration](./jac_cloud_webhook.md) | None
+| tags      | list[str] or None | Additional tags to segragate openapi docs | None
+| allow_entry | bool or None | True for generating api with node entry input. False for generating api without node entry input (always current root entry). None will support both. | None
 
 ## **Examples**
 ```python
