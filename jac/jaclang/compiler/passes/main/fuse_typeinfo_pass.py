@@ -217,6 +217,23 @@ class FuseTypeInfoPass(Pass):
         if builtins_sym:
             node.name_spec._sym = builtins_sym
 
+    def __check_jac_builltin_symbol(self, node: ast.NameAtom) -> None:
+        jac_builtins_symtable = self.ir.sym_tab.find_scope("jac_builtin")
+        assert jac_builtins_symtable is not None
+        jac_features_symtable = self.ir.sym_tab.find_scope("jac_feature")
+        assert jac_features_symtable is not None
+
+        if node._sym_type == "jaclang.plugin.feature.JacFeature":
+            jac_features_symbol = jac_features_symtable.lookup("JacFeature")
+            assert jac_features_symbol is not None
+            node.name_spec.sym = jac_features_symbol
+            node.name_spec.type_sym_tab = jac_features_symbol.fetch_sym_tab
+            return
+
+        if node.name_spec.sym is None:
+            node.name_spec.sym = jac_builtins_symtable.lookup(node.sym_name)
+            return
+
     collection_types_map = {
         ast.ListVal: "builtins.list",
         ast.SetVal: "builtins.set",
@@ -299,6 +316,8 @@ class FuseTypeInfoPass(Pass):
         self.__collect_type_from_symbol(node)
         if node.sym is None:
             self.__check_builltin_symbol(node)
+        if node.sym is None:
+            self.__check_jac_builltin_symbol(node)
 
     @__handle_node
     def enter_module_path(self, node: ast.ModulePath) -> None:

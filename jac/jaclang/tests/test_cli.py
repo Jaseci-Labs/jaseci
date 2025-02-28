@@ -294,6 +294,35 @@ class JacCliTests(TestCase):
             r"10:7 - 10:12.*Name - start - Type.*SymbolPath: base_class2.B.start",
         )
 
+    def test_jac_builtins_loading(self) -> None:
+        """Testing for print AstTool."""
+        from jaclang.settings import settings
+
+        settings.ast_symbol_info_detailed = True
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        cli.tool("ir", ["ast", f"{self.fixture_abs_path('jac_builtins_test.jac')}"])
+
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        settings.ast_symbol_info_detailed = False
+
+        self.assertRegex(
+            stdout_value,
+            r"19:11 - 19:14.*SymbolPath:.*jac_builtins_test.jac_feature.JacFeature",
+        )
+
+        self.assertRegex(
+            stdout_value,
+            r"19:15 - 19:23.*SymbolPath: .*.jac_feature.JacNode.node_dot",
+        )
+
+        self.assertRegex(
+            stdout_value,
+            r"15:11 - 15:17.*SymbolPath: .*.jac_builtin.dotgen",
+        )
+
     def test_expr_types(self) -> None:
         """Testing for print AstTool."""
         captured_output = io.StringIO()

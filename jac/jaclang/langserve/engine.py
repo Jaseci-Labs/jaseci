@@ -178,8 +178,9 @@ class JacLangServer(LanguageServer):
         current_line = document.lines[position.line]
         current_pos = position.character
         current_symbol_path = parse_symbol_path(current_line, current_pos)
-        builtin_tab = mod_ir.sym_tab.kid[-1]
-        completion_items = []
+
+        # ['jac_features', 'jac_builtins', 'builtins']
+        builtin_tabs = [mod_ir.sym_tab.kid[-i] for i in range(1, 4)]
 
         node_selected = find_deepest_symbol_node_at_pos(
             mod_ir,
@@ -190,6 +191,7 @@ class JacLangServer(LanguageServer):
         current_symbol_table = mod_tab
 
         if completion_trigger == ".":
+            completion_items = []
             if current_symbol_path:
                 temp_tab = mod_tab
                 for symbol in current_symbol_path:
@@ -257,6 +259,9 @@ class JacLangServer(LanguageServer):
                             )
 
         else:
+            completion_items = []
+            for builtin_tab in builtin_tabs:
+                completion_items.extend(collect_child_tabs(builtin_tab))
             if node_selected and (
                 node_selected.find_parent_of_type(ast.Architype)
                 or node_selected.find_parent_of_type(ast.AbilityDef)
@@ -270,9 +275,7 @@ class JacLangServer(LanguageServer):
                 self_symbol = []
 
             completion_items += (
-                collect_all_symbols_in_scope(current_symbol_table)
-                + self_symbol
-                + collect_child_tabs(builtin_tab)
+                collect_all_symbols_in_scope(current_symbol_table) + self_symbol
             )
         return lspt.CompletionList(is_incomplete=False, items=completion_items)
 
