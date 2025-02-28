@@ -346,7 +346,34 @@ class WalkerStmtOnlyNode(AstNode):
 
 
 class Expr(AstNode):
-    """Expr node type for Jac Ast."""
+    """Expression is a combination of values, variables operators and functions
+    that are evaluated to produce a value.
+
+    1. Literal Expressions.
+    2. Binary Operations.
+    3. Unary Operations.
+    4. Ternary Operations.
+    5. Attribute Access.
+    6. Subscript.
+    7. Call Expression.
+    8. List Value.
+    9. Dictionary Value.
+    10. Set Value.
+    11. Generator Expression.
+    12. Lambda Expression.
+    13. Conditional Expression.
+    etc.
+
+    An expression can be assigned to a variable, passed to a function, or
+    retuurend from a function.
+
+    Examples:
+        "hello world"         # literal.
+        <expr>(<expr>, ...);  # call.
+        <expr>.NAME           # attribute.
+        <expr>[<expr>]        # subscript.
+        <expr> if <expr> else <expr>  # ternary.
+    """
 
     def __init__(self, type_src: Optional[Expr] = None) -> None:
         """Initialize expression node."""
@@ -379,23 +406,52 @@ class AtomExpr(Expr, AstSymbolStubNode):
     """AtomExpr node type for Jac Ast."""
 
 
-class ElementStmt(AstDocNode):
+class Statement(AstNode):
+    """A statement is a unit of execution that performs an action, controls flow,
+    or defines behavior. Unlike expressions, statements do not evaluate to a value.
+
+    1. Assignment Statements.
+    2. Expression Statements.
+    3. Block Statements.
+    4. If Statements.
+    5. Loop Statements (For, While).
+    6. Function Definitions.
+    7. Return Statements.
+    8. Break and Continue Statements.
+    9. Import Statements.
+    10. Variable Declarations.
+    11. Exception Handling (Try-Except).
+    12. Assert Statements.
+    etc.
+
+    Statements are executed for their side effects and do not produce a value.
+
+    Examples:
+        x = 42;                           # assignment.
+        print("hello world");             # expression statement.
+        if x > 0 { print("x > 0"); }      # if statement.
+        for i in range(10) { print(i); }  # for loop.
+        can foo() -> None { return 42; }  # function definition.
+    """
+
+
+class ModuleBlockStmt(Statement, AstDocNode):
     """ElementStmt node type for Jac Ast."""
 
 
-class ArchBlockStmt(AstNode):
+class ArchBlockStmt(Statement):
     """ArchBlockStmt node type for Jac Ast."""
 
 
-class EnumBlockStmt(AstNode):
+class EnumBlockStmt(Statement):
     """EnumBlockStmt node type for Jac Ast."""
 
 
-class CodeBlockStmt(AstNode):
+class CodeBlockStmt(Statement):
     """CodeBlockStmt node type for Jac Ast."""
 
 
-class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
+class AstImplOnlyNode(CodeBlockStmt, ModuleBlockStmt, AstSymbolNode):
     """ImplOnly node type for Jac Ast."""
 
     def __init__(
@@ -537,7 +593,9 @@ class NameAtom(AtomExpr, EnumBlockStmt):
         return None
 
 
-class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode, AstSemStrNode):
+class ArchSpec(
+    ModuleBlockStmt, CodeBlockStmt, AstSymbolNode, AstDocNode, AstSemStrNode
+):
     """ArchSpec node type for Jac Ast."""
 
     def __init__(self, decorators: Optional[SubNodeList[Expr]] = None) -> None:
@@ -621,7 +679,7 @@ class Module(AstDocNode):
         name: str,
         source: JacSource,
         doc: Optional[String],
-        body: Sequence[ElementStmt | String | EmptyToken],
+        body: list[ModuleBlockStmt],
         is_imported: bool,
         terminals: list[Token],
         kid: Sequence[AstNode],
@@ -709,20 +767,18 @@ class Module(AstDocNode):
         )
 
 
-class GlobalVars(ElementStmt, AstAccessNode):
+class GlobalVars(ModuleBlockStmt, AstAccessNode):
     """GlobalVars node type for Jac Ast."""
 
     def __init__(
         self,
         access: Optional[SubTag[Token]],
         assignments: SubNodeList[Assignment],
-        is_frozen: bool,
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
     ) -> None:
         """Initialize global var node."""
         self.assignments = assignments
-        self.is_frozen = is_frozen
         AstNode.__init__(self, kid=kid)
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
@@ -737,10 +793,7 @@ class GlobalVars(ElementStmt, AstAccessNode):
         new_kid: list[AstNode] = []
         if self.doc:
             new_kid.append(self.doc)
-        if self.is_frozen:
-            new_kid.append(self.gen_token(Tok.KW_LET))
-        else:
-            new_kid.append(self.gen_token(Tok.KW_GLOBAL))
+        new_kid.append(self.gen_token(Tok.KW_GLOBAL))
         if self.access:
             new_kid.append(self.access)
         new_kid.append(self.assignments)
@@ -748,7 +801,7 @@ class GlobalVars(ElementStmt, AstAccessNode):
         return res
 
 
-class Test(AstSymbolNode, ElementStmt):
+class Test(AstSymbolNode, ModuleBlockStmt):
     """Test node type for Jac Ast."""
 
     TEST_COUNT = 0
@@ -812,7 +865,7 @@ class Test(AstSymbolNode, ElementStmt):
         return res
 
 
-class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
+class ModuleCode(ModuleBlockStmt, ArchBlockStmt, EnumBlockStmt):
     """Free mod code for Jac Ast."""
 
     def __init__(
@@ -847,7 +900,7 @@ class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
         return res
 
 
-class PyInlineCode(ElementStmt, ArchBlockStmt, EnumBlockStmt, CodeBlockStmt):
+class PyInlineCode(ModuleBlockStmt, ArchBlockStmt, EnumBlockStmt, CodeBlockStmt):
     """Inline Python code node type for Jac Ast."""
 
     def __init__(
@@ -877,7 +930,7 @@ class PyInlineCode(ElementStmt, ArchBlockStmt, EnumBlockStmt, CodeBlockStmt):
         return res
 
 
-class Import(ElementStmt, CodeBlockStmt):
+class Import(ModuleBlockStmt, CodeBlockStmt):
     """Import node type for Jac Ast."""
 
     def __init__(
@@ -1357,7 +1410,7 @@ class EnumDef(AstImplOnlyNode):
 
 class Ability(
     AstAccessNode,
-    ElementStmt,
+    ModuleBlockStmt,
     AstAsyncNode,
     ArchBlockStmt,
     EnumBlockStmt,
@@ -2628,7 +2681,6 @@ class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
         value: Optional[Expr | YieldExpr],
         type_tag: Optional[SubTag[Expr]],
         kid: Sequence[AstNode],
-        mutable: bool = True,
         aug_op: Optional[Token] = None,
         semstr: Optional[String] = None,
         is_enum_stmt: bool = False,
@@ -2636,7 +2688,6 @@ class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
         """Initialize assignment node."""
         self.target = target
         self.value = value
-        self.mutable = mutable
         self.aug_op = aug_op
         self.is_enum_stmt = is_enum_stmt
         AstNode.__init__(self, kid=kid)
