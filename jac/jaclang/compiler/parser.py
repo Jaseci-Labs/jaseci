@@ -3438,8 +3438,8 @@ class JacParser(Pass):
 
                 return ast.MatchArch(
                     name=name,
-                    arg_patterns=arg,
-                    kw_patterns=kw,
+                    arg_patterns=arg.items if arg else [],
+                    kw_patterns=kw.items if kw else [],
                     kid=kid_nodes,
                 )
 

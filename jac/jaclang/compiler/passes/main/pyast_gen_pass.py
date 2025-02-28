@@ -3629,29 +3629,25 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         name: NameType,
-        arg_patterns: Optional[SubNodeList[MatchPattern]],
-        kw_patterns: Optional[SubNodeList[MatchKVPair]],
+        arg_patterns: list[MatchPattern],
+        kw_patterns: list[MatchKVPair],
         """
         node.gen.py_ast = [
             self.sync(
                 ast3.MatchClass(
                     cls=node.name.gen.py_ast[0],
-                    patterns=(
-                        [x.gen.py_ast[0] for x in node.arg_patterns.items]
-                        if node.arg_patterns
-                        else []
-                    ),
+                    patterns=([x.gen.py_ast[0] for x in node.arg_patterns]),
                     kwd_attrs=(
                         [
                             x.key.sym_name
-                            for x in node.kw_patterns.items
+                            for x in node.kw_patterns
                             if isinstance(x.key, ast.NameAtom)
                         ]
                         if node.kw_patterns
                         else []
                     ),
                     kwd_patterns=(
-                        [x.value.gen.py_ast[0] for x in node.kw_patterns.items]
+                        [x.value.gen.py_ast[0] for x in node.kw_patterns]
                         if node.kw_patterns
                         else []
                     ),
