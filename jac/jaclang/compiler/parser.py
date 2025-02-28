@@ -515,11 +515,13 @@ class JacParser(Pass):
             """
             archspec: ast.ArchSpec | ast.ArchDef | ast.Enum | ast.EnumDef | None = None
 
-            decorators = self.match(ast.SubNodeList)
+            decorators = []
+            while self.match_token(Tok.DECOR_OP):
+                decorators.append(self.consume(ast.Expr))
             if decorators:
                 archspec = self.consume(ast.ArchSpec)
-                archspec.decorators = decorators.items
-                archspec.add_kids_left(decorators.items)
+                archspec.decorators = decorators
+                archspec.add_kids_left(decorators)
             else:
                 archspec = (
                     self.match(ast.ArchSpec)
@@ -587,21 +589,6 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def decorators(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Expr]:
-            """Grammar rule.
-
-            decorators: (DECOR_OP atomic_chain)+
-            """
-            valid_decors = [i for i in kid if isinstance(i, ast.Expr)]
-            if len(valid_decors) == len(kid) / 2:
-                return ast.SubNodeList[ast.Expr](
-                    items=valid_decors,
-                    delim=Tok.DECOR_OP,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
-
         def inherited_archs(self, kid: list[ast.AstNode]) -> ast.SubNodeList[ast.Expr]:
             """Grammar rule.
 
@@ -661,10 +648,13 @@ class JacParser(Pass):
             enum: decorators? enum_decl
                 | enum_def
             """
-            if decorator := self.match(ast.SubNodeList):
+            decorator = []
+            while self.match_token(Tok.DECOR_OP):
+                decorator.append(self.consume(ast.Expr))
+            if decorator:
                 enum_decl = self.consume(ast.Enum)
-                enum_decl.decorators = decorator.items
-                enum_decl.add_kids_left(decorator.items)
+                enum_decl.decorators = decorator
+                enum_decl.add_kids_left(decorator)
                 return enum_decl
             return self.match(ast.Enum) or self.consume(ast.EnumDef)
 
@@ -754,12 +744,14 @@ class JacParser(Pass):
         def ability(self, _: None) -> ast.Ability | ast.AbilityDef | ast.FuncCall:
             """Grammer rule.
 
-            ability: decorators? KW_ASYNC? ability_decl
-                    | decorators? genai_ability
+            ability: (DECOR_OP atomic_chain)* KW_ASYNC? ability_decl
+                    | (DECOR_OP atomic_chain)* genai_ability
                     | ability_def
             """
             ability: ast.Ability | ast.AbilityDef | None = None
-            decorators = self.match(ast.SubNodeList)
+            decorators = []
+            while self.match_token(Tok.DECOR_OP):
+                decorators.append(self.consume(ast.Expr))
             is_async = self.match_token(Tok.KW_ASYNC)
             ability = self.match(ast.Ability)
             if is_async and ability:
@@ -768,7 +760,7 @@ class JacParser(Pass):
             if ability is None:
                 ability = self.consume(ast.AbilityDef)
             if decorators and isinstance(ability, ast.Ability):
-                decorator_items = decorators.items
+                decorator_items = decorators
                 for dec in decorator_items:
                     if (
                         isinstance(dec, ast.NameAtom)

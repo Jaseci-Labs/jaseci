@@ -669,7 +669,10 @@ class JacFormatPass(Pass):
             self.emit(node, "override ", strip_mode=False)
         if node.is_static:
             self.emit(node, "static ", strip_mode=False)
-        self.emit(node, "can ", strip_mode=False)
+        if node.access:
+            self.emit(node, "can", strip_mode=False)
+        else:
+            self.emit(node, "can ", strip_mode=False)
         if node.access:
             self.emit(node, f"{node.access.gen.jac} ")
         if node.semstr:
@@ -681,7 +684,7 @@ class JacFormatPass(Pass):
             self.emit(node, f" {node.signature.gen.jac}")
         if node.body:
             if node.is_genai_ability:
-                self.emit(node, f" by {node.body.gen.jac};\n")
+                self.emit(node, f" by {node.body.gen.jac};")
             elif isinstance(node.body, ast.AbilityDef):
                 self.emit(node, ";")
             else:

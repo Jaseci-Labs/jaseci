@@ -39,13 +39,12 @@ sub_name: COLON NAME
 include_stmt: KW_INCLUDE sub_name? import_path SEMI
 
 // [Heading]: Architypes.
-architype: decorators? architype_decl
+architype: (DECOR_OP atomic_chain)* architype_decl
          | architype_def
          | enum
 
 architype_decl: arch_type access_tag? STRING? NAME inherited_archs? (member_block | SEMI)
 architype_def: abil_to_arch_chain member_block
-decorators: (DECOR_OP atomic_chain)+
 access_tag: COLON ( KW_PROT | KW_PUB | KW_PRIV )
 
 inherited_archs: LT (atomic_chain COMMA)* atomic_chain GT
@@ -66,7 +65,7 @@ typed_has_clause: named_ref (COLON STRING)? type_tag (EQ expression | KW_BY KW_P
 type_tag: COLON expression
 
 // [Heading]: Enumerations.
-enum: decorators? enum_decl
+enum: (DECOR_OP atomic_chain)* enum_decl
      | enum_def
 
 enum_decl: KW_ENUM access_tag? STRING? NAME inherited_archs? (enum_block | SEMI)
@@ -81,8 +80,8 @@ enum_stmt: NAME (COLON STRING)? EQ expression
          | ability
 
 // [Heading]: Abilities.
-ability: decorators? KW_ASYNC? ability_decl
-        | decorators? genai_ability
+ability: (DECOR_OP atomic_chain)* KW_ASYNC? ability_decl
+        | (DECOR_OP atomic_chain)* genai_ability
         | ability_def
 
 ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref (func_decl | event_clause) (code_block | SEMI)
