@@ -8,7 +8,7 @@ from typing import Optional
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.absyntree import AstNode
-from jaclang.compiler.constant import Tokens as Tok
+from jaclang.compiler.constant import Constants, Tokens as Tok
 from jaclang.compiler.passes import Pass
 from jaclang.settings import settings
 
@@ -1202,9 +1202,15 @@ class JacFormatPass(Pass):
 
         body: CodeBlock,
         """
-        self.emit(node, " finally")
+        self.emit(node, " finally {\n")
 
-        self.emit(node, node.body.gen.jac)
+        self.indent_level += 1
+        for stmt in node.body:
+            for line in stmt.gen.jac.splitlines():
+                node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
+        self.indent_level -= 1
+
+        self.emit(node, "}\n")
 
     def exit_while_stmt(self, node: ast.WhileStmt) -> None:
         """Sub objects.
@@ -1230,10 +1236,20 @@ class JacFormatPass(Pass):
         exprs: "ExprAsItemList",
         body: "CodeBlock",
         """
-        self.comma_sep_node_list(node.exprs)
-        self.emit(node, f"with {node.exprs.gen.jac}")
-        if node.body.gen.jac:
-            self.emit(node, node.body.gen.jac)
+        self.emit(node, "with ")
+        for s in ", ".join([i.gen.jac for i in node.exprs]):
+            self.emit(node, s)
+        self.emit_ln(node, "{\n")
+
+        self.indent_level += 1
+        for stmt in node.body:
+            # The emit(), emit_ln are messed up.
+            # Imma do it this way and come back to fix the format pass.
+            for line in stmt.gen.jac.splitlines():
+                node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
+        self.indent_level -= 1
+
+        self.emit(node, "}\n")
 
     def exit_module_item(self, node: ast.ModuleItem) -> None:
         """Sub objects.
@@ -1984,37 +2000,27 @@ class JacFormatPass(Pass):
         collection: ExprType,
         body: SubNodeList[CodeBlockStmt],
         """
-        if (
-            node.parent
-            and node.parent.parent
-            and isinstance(node.parent.parent, (ast.Ability))
-            and (
-                isinstance(node.parent.kid[1], ast.Assignment)
-                and node.parent.kid[1].kid[-1].gen.jac
-                != "# Update any new user level buddy schedule"
-            )
-        ):
-            self.indent_level -= 1
-            self.emit_ln(node, "")
-            self.indent_level += 1
+        self.emit(node, f"for {node.target.gen.jac} in {node.collection.gen.jac} {{\n")
 
-        start = True
-        for i in node.kid:
-            if isinstance(i, ast.CommentToken):
-                if i.is_inline:
-                    self.emit(node, f" {i.gen.jac}")
-                else:
-                    self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, (ast.Semi, ast.SubNodeList)):
-                self.emit(node, i.gen.jac)
-            else:
-                if start:
-                    self.emit(node, i.gen.jac)
-                    start = False
-                else:
-                    self.emit(node, f" {i.gen.jac}")
-        if isinstance(node.kid[-1], (ast.Semi, ast.CommentToken)):
-            self.emit_ln(node, "")
+        self.indent_level += 1
+        for stmt in node.body:
+            # The emit(), emit_ln are messed up.
+            # Imma do it this way and come back to fix the format pass.
+            for line in stmt.gen.jac.splitlines():
+                node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
+        self.indent_level -= 1
+
+        if node.else_body:
+            self.emit(node, "} else {\n")
+            self.indent_level += 1
+            for stmt in node.else_body:
+                # The emit(), emit_ln are messed up.
+                # Imma do it this way and come back to fix the format pass.
+                for line in stmt.gen.jac.splitlines():
+                    node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
+            self.indent_level -= 1
+
+        self.emit(node, "}\n")
 
     def exit_test(self, node: ast.Test) -> None:
         """Sub objects.
@@ -2023,22 +2029,20 @@ class JacFormatPass(Pass):
         doc: Optional[Token],
         body: CodeBlock,
         """
-        for i in node.kid:
-            if isinstance(i, ast.CommentToken):
-                if i.is_inline:
-                    self.emit(node, f" {i.gen.jac}")
-                else:
-                    self.emit_ln(node, "")
-                    self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, ast.Semi):
-                self.emit(node, i.gen.jac)
-            elif isinstance(i, ast.Name):
-                if not i.value.startswith("_jac_gen_"):
-                    self.emit(node, f" {i.value}")
-            else:
-                self.emit(node, i.gen.jac)
-        if isinstance(node.kid[-1], (ast.Semi, ast.CommentToken)):
-            self.emit_ln(node, "")
+        self.emit_ln(node, node.doc.gen.jac) if node.doc else None
+        name = (
+            ""
+            if node.name.value.startswith(Constants.JAC_TEST_NAME_PREFIX.value)
+            else node.name.value
+        )
+        self.emit(node, f"test {name} {{\n")
+        self.indent_level += 1
+        for stmt in node.body:
+            for line in stmt.gen.jac.splitlines():
+                node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
+        self.indent_level -= 1
+
+        self.emit(node, "}\n")
 
     def exit_py_inline_code(self, node: ast.PyInlineCode) -> None:
         """Sub objects.

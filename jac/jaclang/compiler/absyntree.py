@@ -756,7 +756,7 @@ class Test(AstSymbolNode, ElementStmt):
     def __init__(
         self,
         name: Name | Token,
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
     ) -> None:
@@ -768,7 +768,7 @@ class Test(AstSymbolNode, ElementStmt):
             else Name(
                 orig_src=name.orig_src,
                 name=Tok.NAME.value,
-                value=f"_jac_gen_{Test.TEST_COUNT}",
+                value=f"{Con.JAC_TEST_NAME_PREFIX}{Test.TEST_COUNT}",
                 col_start=name.loc.col_start,
                 col_end=name.loc.col_end,
                 line=name.loc.first_line,
@@ -800,14 +800,17 @@ class Test(AstSymbolNode, ElementStmt):
         res = True
         if deep:
             res = self.name.normalize(deep)
-            res = res and self.body.normalize(deep)
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
         if self.doc:
             new_kid.append(self.doc)
         new_kid.append(self.gen_token(Tok.KW_TEST))
         new_kid.append(self.name)
-        new_kid.append(self.body)
+        new_kid.append(self.gen_token(Tok.LBRACE))
+        new_kid.extend(self.body)
+        new_kid.append(self.gen_token(Tok.RBRACE))
         self.set_kids(nodes=new_kid)
         return res
 
@@ -2041,7 +2044,7 @@ class FinallyStmt(CodeBlockStmt):
 
     def __init__(
         self,
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize finally statement node."""
@@ -2052,11 +2055,12 @@ class FinallyStmt(CodeBlockStmt):
         """Normalize finally statement node."""
         res = True
         if deep:
-            res = self.body.normalize(deep)
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
         new_kid: list[AstNode] = [
             self.gen_token(Tok.KW_FINALLY),
         ]
-        new_kid.append(self.body)
+        new_kid.extend(self.body)
         self.set_kids(nodes=new_kid)
         return res
 
@@ -2108,7 +2112,7 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         return res
 
 
-class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
+class InForStmt(AstAsyncNode, CodeBlockStmt):
     """InFor node type for Jac Ast."""
 
     def __init__(
@@ -2116,17 +2120,17 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         target: Expr,
         is_async: bool,
         collection: Expr,
-        body: SubNodeList[CodeBlockStmt],
-        else_body: Optional[ElseStmt],
+        body: list[CodeBlockStmt],
+        else_body: list[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize in for node."""
         self.target = target
         self.collection = collection
         self.body = body
+        self.else_body = else_body
         AstNode.__init__(self, kid=kid)
         AstAsyncNode.__init__(self, is_async=is_async)
-        AstElseBodyNode.__init__(self, else_body=else_body)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize in for node."""
@@ -2134,8 +2138,10 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         if deep:
             res = self.target.normalize(deep)
             res = res and self.collection.normalize(deep)
-            res = res and self.body.normalize(deep)
-            res = res and self.else_body.normalize(deep) if self.else_body else res
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
+            for stmt in self.else_body:
+                res = res and stmt.normalize(deep)
         new_kid: list[AstNode] = []
         if self.is_async:
             new_kid.append(self.gen_token(Tok.KW_ASYNC))
@@ -2145,9 +2151,9 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         new_kid.append(self.collection)
 
         if self.body:
-            new_kid.append(self.body)
+            new_kid.extend(self.body)
         if self.else_body:
-            new_kid.append(self.else_body)
+            new_kid.extend(self.else_body)
         self.set_kids(nodes=new_kid)
         return res
 
@@ -2191,8 +2197,8 @@ class WithStmt(AstAsyncNode, CodeBlockStmt):
     def __init__(
         self,
         is_async: bool,
-        exprs: SubNodeList[ExprAsItem],
-        body: SubNodeList[CodeBlockStmt],
+        exprs: list[ExprAsItem],
+        body: list[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize with statement node."""
@@ -2205,15 +2211,17 @@ class WithStmt(AstAsyncNode, CodeBlockStmt):
         """Normalize with statement node."""
         res = True
         if deep:
-            res = self.exprs.normalize(deep)
-            res = res and self.body.normalize(deep)
+            for expr in self.exprs:
+                res = res and expr.normalize(deep)
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
         new_kid: list[AstNode] = []
         if self.is_async:
             new_kid.append(self.gen_token(Tok.KW_ASYNC))
         new_kid.append(self.gen_token(Tok.KW_WITH))
-        new_kid.append(self.exprs)
+        new_kid.extend(self.exprs)
         new_kid.append(self.gen_token(Tok.LBRACE))
-        new_kid.append(self.body)
+        new_kid.extend(self.body)
         new_kid.append(self.gen_token(Tok.RBRACE))
 
         self.set_kids(nodes=new_kid)

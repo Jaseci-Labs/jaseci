@@ -587,49 +587,25 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """
         target = self.convert(node.target)
         iter = self.convert(node.iter)
+
         body = [self.convert(i) for i in node.body]
-        val_body = [i for i in body if isinstance(i, ast.CodeBlockStmt)]
-        if len(val_body) != len(body):
+        valid_body = [i for i in body if isinstance(i, ast.CodeBlockStmt)]
+        if len(valid_body) != len(body):
             raise self.ice("Length mismatch in for body")
 
-        valid_body = ast.SubNodeList[ast.CodeBlockStmt](
-            items=val_body,
-            delim=Tok.WS,
-            kid=val_body,
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
-        )
         orelse = [self.convert(i) for i in node.orelse]
-        val_orelse = [i for i in orelse if isinstance(i, ast.CodeBlockStmt)]
-        if len(val_orelse) != len(orelse):
+        valid_orelse = [i for i in orelse if isinstance(i, ast.CodeBlockStmt)]
+        if len(valid_orelse) != len(orelse):
             raise self.ice("Length mismatch in for orelse")
-        if orelse:
-            valid_orelse = ast.SubNodeList[ast.CodeBlockStmt](
-                items=val_orelse,
-                delim=Tok.WS,
-                kid=orelse,
-                left_enc=self.operator(Tok.LBRACE, "{"),
-                right_enc=self.operator(Tok.RBRACE, "}"),
-            )
-        else:
-            valid_orelse = None
-        fin_orelse = (
-            ast.ElseStmt(body=valid_orelse, kid=[valid_orelse])
-            if valid_orelse
-            else None
-        )
+
         if isinstance(target, ast.Expr) and isinstance(iter, ast.Expr):
             return ast.InForStmt(
                 target=target,
                 is_async=False,
                 collection=iter,
                 body=valid_body,
-                else_body=fin_orelse,
-                kid=(
-                    [target, iter, valid_body, fin_orelse]
-                    if fin_orelse
-                    else [target, iter, valid_body]
-                ),
+                else_body=valid_orelse,
+                kid=[target, iter, *valid_body, *valid_orelse],
             )
         else:
             raise self.ice()
@@ -646,49 +622,25 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """
         target = self.convert(node.target)
         iter = self.convert(node.iter)
+
         body = [self.convert(i) for i in node.body]
-        val_body = [i for i in body if isinstance(i, ast.CodeBlockStmt)]
-        if len(val_body) != len(body):
+        valid_body = [i for i in body if isinstance(i, ast.CodeBlockStmt)]
+        if len(valid_body) != len(body):
             raise self.ice("Length mismatch in for body")
 
-        valid_body = ast.SubNodeList[ast.CodeBlockStmt](
-            items=val_body,
-            delim=Tok.WS,
-            kid=val_body,
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
-        )
         orelse = [self.convert(i) for i in node.orelse]
-        val_orelse = [i for i in orelse if isinstance(i, ast.CodeBlockStmt)]
-        if len(val_orelse) != len(orelse):
+        valid_orelse = [i for i in orelse if isinstance(i, ast.CodeBlockStmt)]
+        if len(valid_orelse) != len(orelse):
             raise self.ice("Length mismatch in for orelse")
-        if orelse:
-            valid_orelse = ast.SubNodeList[ast.CodeBlockStmt](
-                items=val_orelse,
-                delim=Tok.WS,
-                kid=orelse,
-                left_enc=self.operator(Tok.LBRACE, "{"),
-                right_enc=self.operator(Tok.RBRACE, "}"),
-            )
-        else:
-            valid_orelse = None
-        fin_orelse = (
-            ast.ElseStmt(body=valid_orelse, kid=[valid_orelse])
-            if valid_orelse
-            else None
-        )
+
         if isinstance(target, ast.Expr) and isinstance(iter, ast.Expr):
             return ast.InForStmt(
                 target=target,
                 is_async=True,
                 collection=iter,
                 body=valid_body,
-                else_body=fin_orelse,
-                kid=(
-                    [target, iter, valid_body, fin_orelse]
-                    if fin_orelse
-                    else [target, iter, valid_body]
-                ),
+                else_body=valid_orelse,
+                kid=[target, iter, *valid_body, *valid_orelse],
             )
         else:
             raise self.ice()
@@ -790,22 +742,20 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid_items = [item for item in items if isinstance(item, ast.ExprAsItem)]
         if len(valid_items) != len(items):
             raise self.ice("Length mismatch in with items")
-        items_sub = ast.SubNodeList[ast.ExprAsItem](
-            items=valid_items, delim=Tok.COMMA, kid=items
-        )
         body = [self.convert(stmt) for stmt in node.body]
         valid_body = [stmt for stmt in body if isinstance(stmt, ast.CodeBlockStmt)]
         if len(valid_body) != len(body):
             raise self.ice("Length mismatch in async for body")
-        body_sub = ast.SubNodeList[ast.CodeBlockStmt](
-            items=valid_body,
-            delim=Tok.WS,
-            kid=body,
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
-        )
         return ast.WithStmt(
-            is_async=False, exprs=items_sub, body=body_sub, kid=[items_sub, body_sub]
+            is_async=False,
+            exprs=valid_items,
+            body=valid_body,
+            kid=[
+                *valid_items,
+                self.operator(Tok.LBRACE, "{"),
+                *valid_body,
+                self.operator(Tok.RBRACE, "}"),
+            ],
         )
 
     def proc_async_with(self, node: py_ast.AsyncWith) -> ast.WithStmt:
@@ -820,22 +770,20 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid_items = [item for item in items if isinstance(item, ast.ExprAsItem)]
         if len(valid_items) != len(items):
             raise self.ice("Length mismatch in with items")
-        items_sub = ast.SubNodeList[ast.ExprAsItem](
-            items=valid_items, delim=Tok.COMMA, kid=items
-        )
         body = [self.convert(stmt) for stmt in node.body]
         valid_body = [stmt for stmt in body if isinstance(stmt, ast.CodeBlockStmt)]
         if len(valid_body) != len(body):
             raise self.ice("Length mismatch in async for body")
-        body_sub = ast.SubNodeList[ast.CodeBlockStmt](
-            items=valid_body,
-            delim=Tok.WS,
-            kid=body,
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
-        )
         return ast.WithStmt(
-            is_async=True, exprs=items_sub, body=body_sub, kid=[items_sub, body_sub]
+            is_async=True,
+            exprs=valid_items,
+            body=valid_body,
+            kid=[
+                *valid_items,
+                self.operator(Tok.LBRACE, "{"),
+                *valid_body,
+                self.operator(Tok.RBRACE, "}"),
+            ],
         )
 
     def proc_raise(self, node: py_ast.Raise) -> ast.RaiseStmt:
@@ -2114,6 +2062,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         else:
             else_body = None
 
+        finally_stmt = None
+
         if len(node.finalbody) != 0:
             finalbody = [self.convert(i) for i in node.finalbody]
             valid_finalbody = [
@@ -2121,23 +2071,23 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             ]
             if len(finalbody) != len(valid_finalbody):
                 raise self.ice("Length mismatch in try finalbody")
-            finally_body = ast.SubNodeList[ast.CodeBlockStmt](
-                items=valid_finalbody,
-                delim=Tok.WS,
-                kid=valid_finalbody,
-                left_enc=self.operator(Tok.LBRACE, "{"),
-                right_enc=self.operator(Tok.RBRACE, "}"),
+
+            finally_stmt = ast.FinallyStmt(
+                body=valid_finalbody,
+                kid=[
+                    *finalbody,
+                    self.operator(Tok.LBRACE, "{"),
+                    *valid_finalbody,
+                    self.operator(Tok.RBRACE, "}"),
+                ],
             )
-            finally_stmt = ast.FinallyStmt(body=finally_body, kid=[finally_body])
 
             kid.append(finally_stmt)
-        else:
-            finally_body = None
         ret = ast.TryStmt(
             body=valid_body,
             excepts=excepts,
             else_body=elsestmt if else_body else None,
-            finally_body=finally_stmt if finally_body else None,
+            finally_body=finally_stmt,
             kid=kid,
         )
         return ret

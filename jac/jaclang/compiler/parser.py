@@ -327,11 +327,11 @@ class JacParser(Pass):
             # Q(thakee): Why the name should be KW_TEST if no name present?
             test_tok = self.consume_token(Tok.KW_TEST)
             name = self.match(ast.Name) or test_tok
-            codeblock = self.consume(ast.SubNodeList)
+            codeblock_stmts = self.consume(ast.SubNodeList).items
             return ast.Test(
                 name=name,
-                body=codeblock,
-                kid=self.cur_nodes,
+                body=codeblock_stmts,
+                kid=[test_tok, name, *codeblock_stmts],
             )
 
         def free_code(self, _: None) -> ast.ModuleCode:
@@ -1360,11 +1360,14 @@ class JacParser(Pass):
 
             finally_stmt: KW_FINALLY code_block
             """
-            self.consume_token(Tok.KW_FINALLY)
-            body = self.consume(ast.SubNodeList)
+            tok_finally = self.consume_token(Tok.KW_FINALLY)
+            body_stmt = self.consume(ast.SubNodeList).items
             return ast.FinallyStmt(
-                body=body,
-                kid=self.cur_nodes,
+                body=body_stmt,
+                kid=[
+                    tok_finally,
+                    *body_stmt,
+                ],
             )
 
         def for_stmt(self, _: None) -> ast.IterForStmt | ast.InForStmt:
@@ -1382,28 +1385,39 @@ class JacParser(Pass):
                 self.consume_token(Tok.KW_BY)
                 count_by = self.consume(ast.Assignment)
                 body = self.consume(ast.SubNodeList)
-                else_body = self.match(ast.ElseStmt)
+                else_body_node = self.match(ast.ElseStmt)
                 return ast.IterForStmt(
                     is_async=is_async,
                     iter=iter,
                     condition=condition,
                     count_by=count_by,
                     body=body,
-                    else_body=else_body,
+                    else_body=else_body_node,
                     kid=self.cur_nodes,
                 )
             target = self.consume(ast.Expr)
             self.consume_token(Tok.KW_IN)
             collection = self.consume(ast.Expr)
             body = self.consume(ast.SubNodeList)
-            else_body = self.match(ast.ElseStmt)
+            else_body: list[ast.CodeBlockStmt] = []
+            if else_stmt_node := self.match(ast.ElseStmt):
+                else_body = else_stmt_node.body.items
+
+            assert body.left_enc and body.right_enc
             return ast.InForStmt(
                 is_async=is_async,
                 target=target,
                 collection=collection,
-                body=body,
+                body=cast(list[ast.CodeBlockStmt], body.items),
                 else_body=else_body,
-                kid=self.cur_nodes,
+                kid=[
+                    target,
+                    collection,
+                    body.left_enc,
+                    *body.items,
+                    body.right_enc,
+                    *else_body,
+                ],
             )
 
         def while_stmt(self, _: None) -> ast.WhileStmt:
@@ -1432,15 +1446,19 @@ class JacParser(Pass):
 
             with_stmt: KW_ASYNC? KW_WITH expr_as_list code_block
             """
-            is_async = bool(self.match_token(Tok.KW_ASYNC))
-            self.consume_token(Tok.KW_WITH)
-            exprs = self.consume(ast.SubNodeList)
-            body = self.consume(ast.SubNodeList)
+            async_tok = self.match_token(Tok.KW_ASYNC)
+            tok_with = self.consume_token(Tok.KW_WITH)
+            expr_stmt = self.consume(ast.SubNodeList).items
+            body_stmts = self.consume(ast.SubNodeList).items
             return ast.WithStmt(
-                is_async=is_async,
-                exprs=exprs,
-                body=body,
-                kid=self.cur_nodes,
+                is_async=bool(async_tok),
+                exprs=expr_stmt,
+                body=body_stmts,
+                kid=(
+                    [async_tok, tok_with, *expr_stmt, *body_stmts]
+                    if async_tok
+                    else [tok_with, *expr_stmt, *body_stmts]
+                ),
             )
 
         def expr_as_list(self, _: None) -> ast.SubNodeList[ast.ExprAsItem]:
