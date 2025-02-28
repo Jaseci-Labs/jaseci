@@ -184,24 +184,34 @@ class JacFormatPass(Pass):
         """Sub objects.
 
         name: Optional[SubTag[Name]],
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         doc: Optional[Constant] = None,
         """
-        start = True
-        for i in node.kid:
-            if isinstance(i, ast.String):
-                self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, ast.Token):
-                if start:
-                    self.emit(node, i.gen.jac)
-                    start = False
-                else:
-                    self.emit(node, f" {i.gen.jac}")
-            elif isinstance(i, ast.SubTag):
-                for j in i.kid:
-                    self.emit(node, j.gen.jac)
-        if node.body:
-            self.emit(node, node.body.gen.jac)
+        self.emit(node, "with entry")
+        if node.name:
+            self.emit(node, f"{node.name.gen.jac}")
+        self.emit(node, " {\n")
+        self.indent_level += 1
+        for i in node.body:
+            self.emit(node, i.gen.jac)
+        self.indent_level -= 1
+        self.emit(node, "}")
+
+        # start = True
+        # for i in node.kid:
+        #     if isinstance(i, ast.String):
+        #         self.emit_ln(node, i.gen.jac)
+        #     elif isinstance(i, ast.Token):
+        #         if start:
+        #             self.emit(node, i.gen.jac)
+        #             start = False
+        #         else:
+        #             self.emit(node, f" {i.gen.jac}")
+        #     elif isinstance(i, ast.SubTag):
+        #         for j in i.kid:
+        #             self.emit(node, j.gen.jac)
+        # if node.body:
+        #     self.emit(node, node.body.gen.jac)
 
     def exit_sub_node_list(self, node: ast.SubNodeList) -> None:
         """Sub objects.

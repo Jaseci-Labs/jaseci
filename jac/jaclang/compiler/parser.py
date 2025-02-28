@@ -345,8 +345,11 @@ class JacParser(Pass):
             codeblock = self.consume(ast.SubNodeList)
             return ast.ModuleCode(
                 name=name,
-                body=codeblock,
-                kid=self.cur_nodes,
+                body=codeblock.items,
+                kid=[
+                    *([name] if name else []),
+                    *codeblock.items,
+                ],
             )
 
         def py_code_block(self, _: None) -> ast.PyInlineCode:
