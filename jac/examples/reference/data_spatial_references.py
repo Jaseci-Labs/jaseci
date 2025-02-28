@@ -5,7 +5,6 @@ from jaclang import *
 class Creator(Walker):
 
     @with_entry
-    @Jac.impl_patch_filename("data_spatial_references.jac")
     def create(self, here: Root) -> None:
         end = here
         i = 0
@@ -25,7 +24,6 @@ class node_a(Node):
     val: int
 
     @with_entry
-    @Jac.impl_patch_filename("data_spatial_references.jac")
     def make_something(self, here: Creator) -> None:
         i = 0
         while i < 5:

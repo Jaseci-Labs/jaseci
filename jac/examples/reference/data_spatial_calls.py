@@ -5,7 +5,6 @@ from jaclang import *
 class Creator(Walker):
 
     @with_entry
-    @Jac.impl_patch_filename("data_spatial_calls.jac")
     def func2(self, here: Root) -> None:
         end = here
         i = 0
@@ -19,7 +18,6 @@ class node_1(Node):
     val: int
 
     @with_entry
-    @Jac.impl_patch_filename("data_spatial_calls.jac")
     def func_1(self, here: Creator) -> None:
         print("visiting ", self)
         here.visit(self.refs())

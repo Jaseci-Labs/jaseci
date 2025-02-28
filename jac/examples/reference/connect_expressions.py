@@ -8,7 +8,6 @@ class node_a(Node):
 
 class Creator(Walker):
     @with_entry
-    @Jac.impl_patch_filename("connect_expressions.jac")
     def create(self, here: Root) -> None:
         end = here
         i = 0
@@ -24,7 +23,6 @@ class Creator(Walker):
             i += 1
 
     @with_entry
-    @Jac.impl_patch_filename("connect_expressions.jac")
     def travel(self, here: Root | node_a) -> None:
         for i in here.refs(MyEdge, lambda edge: edge.val <= 6):
             print(i.value)
