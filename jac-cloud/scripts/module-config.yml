@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: littlex
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: module-config
+  namespace: littlex
+data:
+  module_config.json: |-
+    {
+      "numpy": {
+        "lib_mem_size_req": "100Mi",
+        "dependency": [],
+        "lib_cpu_req": "500m",
+        "load_type": "remote"
+      },
+      "transformers": {
+        "lib_mem_size_req": "2000Mi",
+        "dependency": [
+          "torch",
+          "transformers"
+        ],
+        "lib_cpu_req": "1.0",
+        "load_type": "remote"
+      },
+      "sentence_transformers": {
+        "lib_mem_size_req": "2000Mi",
+        "dependency": [
+          "sentence-transformers"
+        ],
+        "lib_cpu_req": "1.0",
+        "load_type": "remote"
+      }
+    }

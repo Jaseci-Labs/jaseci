@@ -12,7 +12,7 @@ from enum import Enum
 from os import getenv
 from pickle import dumps as pdumps
 from re import IGNORECASE, compile
-from types import UnionType
+from types import GenericAlias, UnionType
 from typing import (
     Any,
     ClassVar,
@@ -153,6 +153,7 @@ def _to_dataclass(cls: type[T], data: dict[str, Any]) -> None:
                             target[key] = to_dataclass(inner_cls, value)
                     elif (
                         origin != UnionType
+                        and not isinstance(hint, GenericAlias)
                         and issubclass(hint, Enum)
                         and isinstance(target, str)
                         and (enum := hint.__members__.get(target))
