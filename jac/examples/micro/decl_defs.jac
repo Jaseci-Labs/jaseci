@@ -25,7 +25,7 @@ obj MyPrinter {
 }
 
 # Decl/Def Combined
-can your_print(messag: str) -> str {
+can your_print(message: str) -> str {
     output = f"from me: {message}";
     print("from me: {message}");
     return output;
@@ -33,7 +33,7 @@ can your_print(messag: str) -> str {
 
 # Decl/Def Combined
 obj YourPrinter {
-    can your_print(messag: str) -> str {
+    can your_print(message: str) -> str {
         output = f"from me: {message}";
         print("from me: {message}");
         return output;

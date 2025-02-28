@@ -13,7 +13,7 @@ from jaclang.compiler.compile import jac_str_to_pass
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
-from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
+from jaclang.compiler.passes.tool import JacFormatPass
 from jaclang.langserve.sem_manager import SemTokManager
 from jaclang.langserve.utils import (
     add_unique_text_edit,
@@ -295,7 +295,7 @@ class JacLangServer(LanguageServer):
                 jac_str=document.source,
                 file_path=document.path,
                 target=JacFormatPass,
-                schedule=[FuseCommentsPass, JacFormatPass],
+                schedule=[JacFormatPass],
             )
             formatted_text = (
                 format.ir.gen.jac
