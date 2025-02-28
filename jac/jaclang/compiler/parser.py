@@ -592,9 +592,11 @@ class JacParser(Pass):
 
             decorators: (DECOR_OP atomic_chain)+
             """
-            self.consume_token(Tok.DECOR_OP)
+            decorators = []
+            while self.match_token(Tok.DECOR_OP):
+                decorators.append(self.consume(ast.Expr))
             return ast.SubNodeList[ast.Expr](
-                items=self.consume_many(ast.Expr),
+                items=decorators,
                 delim=Tok.DECOR_OP,
                 kid=self.cur_nodes,
             )
