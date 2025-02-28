@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib
 import importlib.util
 import os
+import site
 import sys
 import types
 from os import getcwd, path
@@ -325,7 +326,15 @@ class JacImporter(Importer):
                 if p and p not in search_paths:
                     search_paths.append(p)
 
-            # Attempt to locate the module file or directory
+            for site_dir in site.getsitepackages():
+                if site_dir and site_dir not in search_paths:
+                    search_paths.append(site_dir)
+            user_site = getattr(site, "getusersitepackages", None)
+            if user_site:
+                user_dir = site.getusersitepackages()
+                if user_dir and user_dir not in search_paths:
+                    search_paths.append(user_dir)
+
             found_path = None
             target_path_components = spec.target.split(".")
             for search_path in search_paths:
