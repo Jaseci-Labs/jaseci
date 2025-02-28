@@ -194,7 +194,11 @@ class JacFormatPass(Pass):
             self.emit(node, f"{node.name.gen.jac}")
         self.emit(node, " {\n")
         self.indent_level += 1
+        is_comment_added = False
         for i in node.body:
+            if not is_comment_added and isinstance(node.kid[1], ast.CommentToken):
+                self.emit(node, f"{node.kid[1].gen.jac}\n")
+                is_comment_added = True
             self.emit(node, f"{i.gen.jac}")
         self.indent_level -= 1
 
