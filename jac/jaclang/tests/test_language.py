@@ -694,6 +694,19 @@ class JacLanguageTests(TestCase):
         self.assertIn(" case Point(x = int(_), y = 0):\n", output)
         self.assertIn("class Sample {\n    can init", output)
 
+    def test_refs_target(self) -> None:
+        """
+        This test added after a bug in jaclib Node.refs() wasn't code gen as expected and it
+        wasn't captured with the tests.
+        """
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("refs_target", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("[c(val=0), c(val=1), c(val=2)]", stdout_value)
+        self.assertIn("[c(val=0)]", stdout_value)
+
     def test_py_kw_as_name_disallowed(self) -> None:
         """Basic precedence test."""
         prog = jac_str_to_pass("with entry {print.is.not.True(4-5-4);}", "test.jac")
