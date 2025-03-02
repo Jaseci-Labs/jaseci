@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import ast as py_ast
 import os
-from typing import Optional, Sequence, TypeAlias, TypeVar, cast
+from typing import Optional, TypeAlias, TypeVar, cast
 
 # from icecream import ic
 
@@ -162,10 +162,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             pos_start=0,
             pos_end=0,
         )
-        body = [self.convert(stmt) for stmt in node.body]
-        if not all(isinstance(stmt, ast.CodeBlockStmt) for stmt in body):
-            raise self.ice("Invalid statement in function body.")
-
+        body = [
+            stmt
+            for stmt in (self.convert(stmt) for stmt in node.body)
+            if isinstance(stmt, ast.CodeBlockStmt)
+        ]
         if (
             len(body)
             and isinstance(body[0], ast.ExprStmt)
@@ -173,24 +174,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         ):
             self.convert_to_doc(body[0].expr)
             doc = body[0]
-            valid_body = ast.SubNodeList[ast.CodeBlockStmt](
-                # NOTE: Ignoring type cause the subnodelist will be removed thus the type ignore will be gone too.
-                # also we're asserting the all are codeblockstmt with the above if not all(...) check.
-                items=[doc] + body[1:],  # type: ignore
-                delim=Tok.WS,
-                kid=body[1:] + [doc],
-                left_enc=self.operator(Tok.LBRACE, "{"),
-                right_enc=self.operator(Tok.RBRACE, "}"),
-            )
+            valid_body: list[ast.CodeBlockStmt] = body[1:] + [doc]
         else:
             doc = None
-            valid_body = ast.SubNodeList[ast.CodeBlockStmt](
-                items=body,  # type: ignore
-                delim=Tok.WS,
-                kid=body,
-                left_enc=self.operator(Tok.LBRACE, "{"),
-                right_enc=self.operator(Tok.RBRACE, "}"),
-            )
+            valid_body = body
         decorators = [self.convert(decr) for decr in node.decorator_list]
         if not all(isinstance(decr, ast.Expr) for decr in decorators):
             raise self.ice("Invalid decorator in function.")
@@ -211,7 +198,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 sig.return_type = ret_sig
                 sig.add_kids_right([sig.return_type])
         kid = ([doc] if doc else []) + (
-            [name, sig, valid_body] if sig else [name, valid_body]
+            [name, sig, *valid_body] if sig else [name, *valid_body]
         )
         if not sig:
             raise self.ice("Function signature not found")
@@ -323,21 +310,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         )
         self.convert_to_doc(doc) if doc else None
         body = body[1:] if doc else body
-        valid: list[ast.ArchBlockStmt] = (
+        valid_body: list[ast.ArchBlockStmt] = (
             self.extract_with_entry(body, ast.ArchBlockStmt)
             if body and not (isinstance(body[0], ast.Semi) and len(body) == 1)
             else []
-        )
-        empty_block: Sequence[ast.AstNode] = [
-            self.operator(Tok.LBRACE, "{"),
-            self.operator(Tok.RBRACE, "}"),
-        ]
-        valid_body = ast.SubNodeList[ast.ArchBlockStmt](
-            items=valid,
-            delim=Tok.WS,
-            kid=(valid if valid else empty_block),
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
         )
         converted_base_classes = [self.convert(base) for base in node.bases]
         base_classes: list[ast.Expr] = [
@@ -345,7 +321,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         ]
         converted_decorators_list = [self.convert(i) for i in node.decorator_list]
         decorators = [i for i in converted_decorators_list if isinstance(i, ast.Expr)]
-        valid_decorators = (
+        valid_decorators: list[ast.Expr] = (
             [dec for dec in decorators if isinstance(dec, ast.Expr)]
             if decorators
             else []
@@ -386,16 +362,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     )
                     valid_enum_body.append(ast.PyInlineCode(code=pintok, kid=[pintok]))
 
-            valid_enum_body2: list[ast.EnumBlockStmt] = [
+            enum_body: list[ast.EnumBlockStmt] = [
                 i for i in valid_enum_body if isinstance(i, ast.EnumBlockStmt)
             ]
-            enum_body = (
-                ast.SubNodeList[ast.EnumBlockStmt](
-                    items=valid_enum_body2, delim=Tok.COMMA, kid=valid_enum_body2
-                )
-                if valid_enum_body2
-                else None
-            )
             if doc:
                 doc.line_no = name.line_no
             return ast.Enum(
@@ -404,24 +373,24 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 base_classes=[],
                 body=enum_body,
                 kid=(
-                    [doc, name, enum_body]
+                    [doc, name, *enum_body]
                     if doc and enum_body
                     else (
                         [doc, name]
                         if doc
-                        else [name, enum_body] if enum_body else [name]
+                        else [name, *enum_body] if enum_body else [name]
                     )
                 ),
                 doc=doc,
                 decorators=valid_decorators,
             )
         kid = (
-            [name, *base_classes, valid_body, doc]
+            [name, *base_classes, *valid_body, doc]
             if doc and base_classes
             else (
-                [name, *base_classes, valid_body]
+                [name, *base_classes, *valid_body]
                 if base_classes
-                else [name, valid_body, doc] if doc else [name, valid_body]
+                else [name, *valid_body, doc] if doc else [name, *valid_body]
             )
         )
         return ast.Architype(

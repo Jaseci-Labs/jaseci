@@ -399,7 +399,7 @@ class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
     """ImplOnly node type for Jac Ast."""
 
     def __init__(
-        self, target: ArchRefChain, body: SubNodeList, decl_link: Optional[AstNode]
+        self, target: ArchRefChain, body: list, decl_link: Optional[AstNode]
     ) -> None:
         """Initialize impl only node."""
         self.target = target
@@ -1129,7 +1129,7 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
         arch_type: Token,
         access: Optional[SubTag[Token]],
         base_classes: list[Expr],
-        body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
+        body: list[ArchBlockStmt] | ArchDef,
         decorators: list[Expr],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
@@ -1172,9 +1172,9 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
     def is_abstract(self) -> bool:
         """Check if has an abstract method."""
         body = (
-            self.body.items
-            if isinstance(self.body, SubNodeList)
-            else self.body.body.items if isinstance(self.body, ArchDef) else []
+            self.body
+            if isinstance(self.body, list)
+            else self.body.body if isinstance(self.body, ArchDef) else []
         )
         return any(isinstance(i, Ability) and i.is_abstract for i in body)
 
@@ -1187,7 +1187,11 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
             res = res and self.access.normalize(deep) if self.access else res
             for base in self.base_classes:
                 res = res and base.normalize(deep)
-            res = res and self.body.normalize(deep) if self.body else res
+            if isinstance(self.body, list):
+                for stmt in self.body:
+                    res = res and stmt.normalize(deep)
+            elif isinstance(self.body, ArchDef):
+                res = res and self.body.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
             res = res and self.semstr.normalize(deep) if self.semstr else res
             for dec in self.decorators:
@@ -1213,7 +1217,7 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
             if isinstance(self.body, AstImplOnlyNode):
                 new_kid.append(self.gen_token(Tok.SEMI))
             else:
-                new_kid.append(self.body)
+                new_kid.extend(self.body)
         else:
             new_kid.append(self.gen_token(Tok.SEMI))
         self.set_kids(nodes=new_kid)
@@ -1226,7 +1230,7 @@ class ArchDef(AstImplOnlyNode):
     def __init__(
         self,
         target: ArchRefChain,
-        body: SubNodeList[ArchBlockStmt],
+        body: list[ArchBlockStmt],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
         decl_link: Optional[Architype] = None,
@@ -1241,13 +1245,14 @@ class ArchDef(AstImplOnlyNode):
         res = True
         if deep:
             res = self.target.normalize(deep)
-            res = res and self.body.normalize(deep)
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
         if self.doc:
             new_kid.append(self.doc)
         new_kid.append(self.target)
-        new_kid.append(self.body)
+        new_kid.extend(self.body)
         self.set_kids(nodes=new_kid)
         return res
 
@@ -1260,7 +1265,7 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
         name: Name,
         access: Optional[SubTag[Token]],
         base_classes: list[Expr],
-        body: Optional[SubNodeList[EnumBlockStmt] | EnumDef],
+        body: list[EnumBlockStmt] | EnumDef,
         kid: Sequence[AstNode],
         decorators: list[Expr],
         doc: Optional[String] = None,
@@ -1290,7 +1295,11 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
             res = res and self.access.normalize(deep) if self.access else res
             for base in self.base_classes:
                 res = res and base.normalize(deep)
-            res = res and self.body.normalize(deep) if self.body else res
+            if isinstance(self.body, list):
+                for stmt in self.body:
+                    res = res and stmt.normalize(deep)
+            elif isinstance(self.body, EnumDef):
+                res = res and self.body.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
             res = res and self.semstr.normalize(deep) if self.semstr else res
             for dec in self.decorators:
@@ -1317,7 +1326,7 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
                 new_kid.append(self.gen_token(Tok.SEMI))
             else:
                 new_kid.append(self.gen_token(Tok.LBRACE))
-                new_kid.append(self.body)
+                new_kid.extend(self.body)
                 new_kid.append(self.gen_token(Tok.RBRACE))
         else:
             new_kid.append(self.gen_token(Tok.SEMI))
@@ -1331,7 +1340,7 @@ class EnumDef(AstImplOnlyNode):
     def __init__(
         self,
         target: ArchRefChain,
-        body: SubNodeList[EnumBlockStmt],
+        body: list[EnumBlockStmt],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
         decl_link: Optional[Enum] = None,
@@ -1346,14 +1355,15 @@ class EnumDef(AstImplOnlyNode):
         res = True
         if deep:
             res = self.target.normalize(deep)
-            res = res and self.body.normalize(deep)
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
         if self.doc:
             new_kid.append(self.doc)
         new_kid.append(self.target)
         new_kid.append(self.gen_token(Tok.LBRACE))
-        new_kid.append(self.body)
+        new_kid.extend(self.body)
         new_kid.append(self.gen_token(Tok.RBRACE))
         self.set_kids(nodes=new_kid)
         return res
@@ -1380,7 +1390,7 @@ class Ability(
         is_abstract: bool,
         access: Optional[SubTag[Token]],
         signature: FuncSignature | EventSignature,
-        body: Optional[SubNodeList[CodeBlockStmt] | AbilityDef | FuncCall],
+        body: list[CodeBlockStmt] | AbilityDef | FuncCall,
         decorators: list[Expr],
         kid: Sequence[AstNode],
         semstr: Optional[String] = None,
@@ -1443,7 +1453,11 @@ class Ability(
             res = self.name_ref.normalize(deep)
             res = res and self.access.normalize(deep) if self.access else res
             res = res and self.signature.normalize(deep) if self.signature else res
-            res = res and self.body.normalize(deep) if self.body else res
+            if isinstance(self.body, (AbilityDef, FuncCall)):
+                res = res and self.body.normalize(deep)
+            elif isinstance(self.body, list):
+                for stmt in self.body:
+                    res = res and stmt.normalize(deep)
             res = res and self.semstr.normalize(deep) if self.semstr else res
             for dec in self.decorators:
                 res = res and dec.normalize(deep)
@@ -1477,9 +1491,11 @@ class Ability(
             if isinstance(self.body, AstImplOnlyNode):
                 new_kid.append(self.gen_token(Tok.SEMI))
             else:
-                new_kid.append(self.body)
                 if self.is_genai_ability:
+                    new_kid.append(self.body)
                     new_kid.append(self.gen_token(Tok.SEMI))
+                else:
+                    new_kid.extend(self.body)
         else:
             new_kid.append(self.gen_token(Tok.SEMI))
         self.set_kids(nodes=new_kid)
@@ -1493,7 +1509,7 @@ class AbilityDef(AstImplOnlyNode):
         self,
         target: ArchRefChain,
         signature: FuncSignature | EventSignature,
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
         decl_link: Optional[Ability] = None,
@@ -1510,14 +1526,15 @@ class AbilityDef(AstImplOnlyNode):
         if deep:
             res = self.target.normalize(deep)
             res = res and self.signature.normalize(deep)
-            res = res and self.body.normalize(deep)
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
         if self.doc:
             new_kid.append(self.doc)
         new_kid.append(self.target)
         new_kid.append(self.signature)
-        new_kid.append(self.body)
+        new_kid.extend(self.body)
         self.set_kids(nodes=new_kid)
         return res
 

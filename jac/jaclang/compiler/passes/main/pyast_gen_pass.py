@@ -954,8 +954,8 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
-        body = self.resolve_stmt_block(
-            node.body.body if isinstance(node.body, ast.ArchDef) else node.body,
+        body = self.resolve_body_stmts(
+            node.body.body if isinstance(node.body, ast.ArchDef) else [],
             doc=node.doc,
         )
         decorators = [dec.gen.py_ast[0] for dec in node.decorators]
@@ -1066,7 +1066,7 @@ class PyastGenPass(Pass):
         ds_on_entry: list[ast3.AST] = []
         ds_on_exit: list[ast3.AST] = []
         for i in (
-            node.body.body.items
+            node.body.body
             if isinstance(node.body, ast.ArchDef)
             else node.body.items if node.body else []
         ):
@@ -1130,8 +1130,8 @@ class PyastGenPass(Pass):
         decorators: list[Expr],
         """
         self.needs_enum()
-        body = self.resolve_stmt_block(
-            node.body.body if isinstance(node.body, ast.EnumDef) else node.body,
+        body = self.resolve_body_stmts(
+            node.body.body if isinstance(node.body, ast.EnumDef) else [],
             doc=node.doc,
         )
         decorators = [
@@ -1224,11 +1224,11 @@ class PyastGenPass(Pass):
                 else (
                     [self.sync(ast3.Pass(), node.body)]
                     if node.is_abstract
-                    else self.resolve_stmt_block(
+                    else self.resolve_body_stmts(
                         (
                             node.body.body
                             if isinstance(node.body, ast.AbilityDef)
-                            else node.body
+                            else []
                         ),
                         doc=node.doc,
                     )

@@ -542,23 +542,53 @@ class JacParser(Pass):
             name = self.consume(ast.Name)
             sub_list1 = self.match(ast.SubNodeList)
             sub_list2 = self.match(ast.SubNodeList)
-            if self.match_token(Tok.SEMI):
-                inh, body = sub_list1, None
-            else:
-                body = (
-                    sub_list2 or sub_list1
-                )  # if sub_list2 is None then body is sub_list1
-                inh = sub_list2 and sub_list1  # if sub_list2 is None then inh is None.
-            return ast.Architype(
-                arch_type=arch_type,
-                name=name,
+            print((sub_list1, sub_list2))
+            if sub_list1 and sub_list2:
+                inh, body = sub_list1.items, sub_list2.items
+            x = ast.Architype(
                 semstr=semstr,
+                name=name,
                 access=access,
-                base_classes=inh.items if inh else [],
+                arch_type=arch_type,
+                base_classes=inh,
                 body=body,
                 decorators=[],
-                kid=self.cur_nodes,
+                kid=(
+                    [
+                        arch_type,
+                        access,
+                        semstr,
+                        name,
+                        *inh,
+                        *body,
+                    ]
+                    if access and semstr
+                    else (
+                        [
+                            arch_type,
+                            semstr,
+                            name,
+                            *inh,
+                            *body,
+                        ]
+                        if semstr
+                        else (
+                            [
+                                arch_type,
+                                name,
+                                *inh,
+                                *body,
+                            ]
+                            if inh
+                            else [
+                                arch_type,
+                                name,
+                            ]
+                        )
+                    )
+                ),
             )
+            return x
 
         def architype_def(self, kid: list[ast.AstNode]) -> ast.ArchDef:
             """Grammar rule.
@@ -568,10 +598,14 @@ class JacParser(Pass):
             if isinstance(kid[0], ast.ArchRefChain) and isinstance(
                 kid[1], ast.SubNodeList
             ):
+                body = kid[1].items
                 return ast.ArchDef(
                     target=kid[0],
-                    body=kid[1],
-                    kid=kid,
+                    body=body,
+                    kid=[
+                        kid[0],
+                        *body,
+                    ],
                 )
             else:
                 raise self.ice()
@@ -663,7 +697,7 @@ class JacParser(Pass):
 
             enum_decl: KW_ENUM access_tag? STRING? NAME inherited_archs? (enum_block | SEMI)
             """
-            self.consume_token(Tok.KW_ENUM)
+            tok_enum = self.consume_token(Tok.KW_ENUM)
             access = self.match(ast.SubTag)
             semstr = self.match(ast.String)
             name = self.consume(ast.Name)
@@ -679,9 +713,11 @@ class JacParser(Pass):
                 name=name,
                 access=access,
                 base_classes=inh.items if inh else [],
-                body=body,
+                body=body.items if body else [],
                 decorators=[],
-                kid=self.cur_nodes,
+                kid=[tok_enum, name, *inh, *body]
+                + ([access] if access else [])
+                + ([semstr] if semstr else []),
             )
 
         def enum_def(self, kid: list[ast.AstNode]) -> ast.EnumDef:
@@ -692,10 +728,14 @@ class JacParser(Pass):
             if isinstance(kid[0], ast.ArchRefChain) and isinstance(
                 kid[1], ast.SubNodeList
             ):
+                body = kid[1].items
                 return ast.EnumDef(
                     target=kid[0],
-                    body=kid[1],
-                    kid=kid,
+                    body=body,
+                    kid=[
+                        kid[0],
+                        *body,
+                    ],
                 )
             else:
                 raise self.ice()
@@ -786,7 +826,7 @@ class JacParser(Pass):
             body: ast.SubNodeList | None = None
             is_override = self.match_token(Tok.KW_OVERRIDE) is not None
             is_static = self.match_token(Tok.KW_STATIC) is not None
-            self.consume_token(Tok.KW_CAN)
+            tok_can = self.consume_token(Tok.KW_CAN)
             access = self.match(ast.SubTag)
             semstr = self.match(ast.String)
             name = self.consume(ast.NameAtom)
@@ -794,7 +834,15 @@ class JacParser(Pass):
                 ast.EventSignature
             )
             if (body := self.match(ast.SubNodeList)) is None:
+                body = None
                 self.consume_token(Tok.SEMI)
+            body = (body.items if body else [],)
+            kid1 = (
+                [tok_can, name, signature, *body]
+                + ([access] if access else [])
+                + ([semstr] if semstr else [])
+            )
+
             return ast.Ability(
                 name_ref=name,
                 is_async=False,
@@ -806,7 +854,7 @@ class JacParser(Pass):
                 signature=signature,
                 body=body,
                 decorators=[],
-                kid=self.cur_nodes,
+                kid=kid1,
             )
 
         def ability_def(self, kid: list[ast.AstNode]) -> ast.AbilityDef:
@@ -819,11 +867,16 @@ class JacParser(Pass):
                 and isinstance(kid[1], (ast.FuncSignature, ast.EventSignature))
                 and isinstance(kid[2], ast.SubNodeList)
             ):
+                body = kid[2].items
                 return ast.AbilityDef(
                     target=kid[0],
                     signature=kid[1],
-                    body=kid[2],
-                    kid=kid,
+                    body=body,
+                    kid=[
+                        kid[0],
+                        kid[1],
+                        *body,
+                    ],
                 )
             else:
                 raise self.ice()
@@ -857,7 +910,7 @@ class JacParser(Pass):
                 access=access,
                 semstr=semstr,
                 signature=signature,
-                body=None,
+                body=[],
                 decorators=[],
                 kid=self.cur_nodes,
             )
