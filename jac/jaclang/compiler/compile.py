@@ -5,7 +5,12 @@ from typing import Optional, Type
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes import Pass
-from jaclang.compiler.passes.main import PyOutPass, pass_schedule
+from jaclang.compiler.passes.main import (
+    JacImportPass,
+    PyOutPass,
+    SubNodeTabPass,
+    pass_schedule,
+)
 from jaclang.compiler.passes.tool import JacFormatPass
 from jaclang.compiler.passes.tool.schedules import format_pass
 
@@ -47,10 +52,25 @@ def jac_str_to_pass(
     schedule: list[Type[Pass]] = pass_schedule,
 ) -> Pass:
     """Convert a Jac file to an AST."""
+    from jaclang.runtimelib.machine import JacMachine
+
     if not target:
         target = schedule[-1] if schedule else None
     source = ast.JacSource(jac_str, mod_path=file_path)
     ast_ret: Pass = JacParser(input_ir=source)
+    SubNodeTabPass(ast_ret.ir, ast_ret)
+
+    # Only return the parsed module when the schedules are empty
+    if len(schedule) == 0:
+        return ast_ret
+
+    machine = JacMachine.get()
+    machine.jac_program.last_imported.append(ast_ret.ir)
+    machine.jac_program.modules[ast_ret.ir.loc.mod_path] = ast_ret.ir
+
+    while len(machine.jac_program.last_imported) > 0:
+        mod = machine.jac_program.last_imported.pop()
+        jac_ir_to_pass(ir=mod, schedule=[JacImportPass])
 
     # If there is syntax error, no point in processing in further passes.
     if len(ast_ret.errors_had) != 0:
