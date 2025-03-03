@@ -497,10 +497,10 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         name: Optional[SubTag[Name]],
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         doc: Optional[String],
         """
-        node.gen.py_ast = self.resolve_stmt_block(node.body, doc=node.doc)
+        node.gen.py_ast = self.resolve_body_stmts(node.body, doc=node.doc)
         if node.name:
             node.gen.py_ast = [
                 self.sync(
@@ -1737,11 +1737,11 @@ class PyastGenPass(Pass):
         is_async: bool,
         condition: ExprType,
         count_by: ExprType,
-        body: SubNodeList[CodeBlockStmt],
-        else_body: Optional[ElseStmt],
+        body: list[CodeBlockStmt],
+        else_body: list[CodeBlockStmt],
         """
         py_nodes: list[ast3.AST] = []
-        body = node.body.gen.py_ast
+        body = self.resolve_body_stmts(node.body)
         if (
             isinstance(body, list)
             and isinstance(node.count_by.gen.py_ast[0], ast3.AST)
@@ -1756,7 +1756,7 @@ class PyastGenPass(Pass):
                 ast3.While(
                     test=node.condition.gen.py_ast[0],
                     body=body,
-                    orelse=node.else_body.gen.py_ast if node.else_body else [],
+                    orelse=self.resolve_body_stmts(node.else_body),
                 )
             )
         )
@@ -2039,7 +2039,7 @@ class PyastGenPass(Pass):
             self.sync(
                 ast3.Delete(
                     targets=(
-                        node.target.values.gen.py_ast
+                        [i.gen.py_ast[0] for i in node.target.values]
                         if isinstance(node.target, ast.TupleVal) and node.target.values
                         else node.target.gen.py_ast
                     )
@@ -2143,7 +2143,7 @@ class PyastGenPass(Pass):
     def exit_visit_stmt(self, node: ast.VisitStmt) -> None:
         """Sub objects.
 
-        vis_type: Optional[SubNodeList[AtomType]],
+        vis_type: list[AtomType],
         target: ExprType,
         else_body: Optional[ElseStmt],
         """
@@ -2451,7 +2451,9 @@ class PyastGenPass(Pass):
             func_node = ast.FuncCall(
                 target=node.right,
                 params=(
-                    node.left.values
+                    ast.SubNodeList(
+                        items=node.left.values, delim=Tok.COMMA, kid=node.left.values
+                    )
                     if isinstance(node.left, ast.TupleVal)
                     else ast.SubNodeList(
                         items=[node.left], delim=Tok.COMMA, kid=[node.left]
@@ -2488,7 +2490,9 @@ class PyastGenPass(Pass):
             func_node = ast.FuncCall(
                 target=node.left,
                 params=(
-                    node.right.values
+                    ast.SubNodeList(
+                        items=node.right.values, delim=Tok.COMMA, kid=node.right.values
+                    )
                     if isinstance(node.right, ast.TupleVal)
                     else ast.SubNodeList(
                         items=[node.right], delim=Tok.COMMA, kid=[node.right]
@@ -2772,12 +2776,13 @@ class PyastGenPass(Pass):
     def exit_tuple_val(self, node: ast.TupleVal) -> None:
         """Sub objects.
 
-        values: Optional[SubNodeList[ExprType | Assignment]],
+        values: list[ExprType | Assignment],
         """
+        tuple_val_list: list = [i.gen.py_ast[0] for i in node.values]
         node.gen.py_ast = [
             self.sync(
                 ast3.Tuple(
-                    elts=node.values.gen.py_ast if node.values else [],
+                    elts=tuple_val_list if node.values else [],
                     ctx=node.py_ctx_func(),
                 )
             )
@@ -3370,7 +3375,7 @@ class PyastGenPass(Pass):
     def exit_filter_compr(self, node: ast.FilterCompr) -> None:
         """Sub objects.
 
-        compares: SubNodeList[BinaryExpr],
+        compares: list[BinaryExpr],
         """
         node.gen.py_ast = [
             self.sync(
@@ -3453,11 +3458,7 @@ class PyastGenPass(Pass):
                                                     ),
                                                     jac_node=x,
                                                 )
-                                                for x in (
-                                                    node.compares.items
-                                                    if node.compares
-                                                    else []
-                                                )
+                                                for x in (node.compares)
                                                 if isinstance(
                                                     x.gen.py_ast[0], ast3.Compare
                                                 )
@@ -3629,29 +3630,25 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         name: NameType,
-        arg_patterns: Optional[SubNodeList[MatchPattern]],
-        kw_patterns: Optional[SubNodeList[MatchKVPair]],
+        arg_patterns: list[MatchPattern],
+        kw_patterns: list[MatchKVPair],
         """
         node.gen.py_ast = [
             self.sync(
                 ast3.MatchClass(
                     cls=node.name.gen.py_ast[0],
-                    patterns=(
-                        [x.gen.py_ast[0] for x in node.arg_patterns.items]
-                        if node.arg_patterns
-                        else []
-                    ),
+                    patterns=([x.gen.py_ast[0] for x in node.arg_patterns]),
                     kwd_attrs=(
                         [
                             x.key.sym_name
-                            for x in node.kw_patterns.items
+                            for x in node.kw_patterns
                             if isinstance(x.key, ast.NameAtom)
                         ]
                         if node.kw_patterns
                         else []
                     ),
                     kwd_patterns=(
-                        [x.value.gen.py_ast[0] for x in node.kw_patterns.items]
+                        [x.value.gen.py_ast[0] for x in node.kw_patterns]
                         if node.kw_patterns
                         else []
                     ),

@@ -185,7 +185,7 @@ def extract_params(
                         )
                         include_info.append((var_name, value.gen.py_ast[0]))
                     elif isinstance(value, ast.TupleVal) and value.values:
-                        for i in value.values.items:
+                        for i in value.values:
                             var_name = (
                                 i.right.value
                                 if isinstance(i, ast.AtomTrailer)
@@ -207,7 +207,7 @@ def extract_params(
                         )
                         exclude_info.append((var_name, value.gen.py_ast[0]))
                     elif isinstance(value, ast.TupleVal) and value.values:
-                        for i in value.values.items:
+                        for i in value.values:
                             var_name = (
                                 i.right.value
                                 if isinstance(i, ast.AtomTrailer)

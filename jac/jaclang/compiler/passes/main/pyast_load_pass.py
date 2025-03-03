@@ -63,17 +63,14 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         """Extract with entry from a body."""
 
         def gen_mod_code(with_entry_body: list[ast.CodeBlockStmt]) -> ast.ModuleCode:
-            with_entry_subnodelist = ast.SubNodeList[ast.CodeBlockStmt](
-                items=with_entry_body,
-                delim=Tok.WS,
-                kid=with_entry_body,
-                left_enc=self.operator(Tok.LBRACE, "{"),
-                right_enc=self.operator(Tok.RBRACE, "}"),
-            )
             return ast.ModuleCode(
                 name=None,
-                body=with_entry_subnodelist,
-                kid=[with_entry_subnodelist],
+                body=with_entry_body,
+                kid=[
+                    self.operator(Tok.LBRACE, "{"),
+                    *with_entry_body,
+                    self.operator(Tok.RBRACE, "}"),
+                ],
                 doc=None,
             )
 
@@ -482,7 +479,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         target_1 = (
             valid_exprs[0]
             if len(valid_exprs) > 1
-            else ast.TupleVal(values=target, kid=[target])
+            else ast.TupleVal(values=target.items, kid=[target])
         )
         return ast.DeleteStmt(
             target=target_1,
@@ -1639,14 +1636,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             patterns = [self.convert(i) for i in node.patterns]
             valid_patterns = [i for i in patterns if isinstance(i, ast.MatchPattern)]
             if len(patterns) == len(valid_patterns):
-                patterns_sub = ast.SubNodeList[ast.MatchPattern](
-                    items=valid_patterns, delim=Tok.COMMA, kid=valid_patterns
-                )
-                kid.append(patterns_sub)
+                patterns_sub = valid_patterns
+                kid.extend(patterns_sub)
             else:
                 raise self.ice()
         else:
-            patterns_sub = None
+            patterns_sub = []
 
         if len(node.kwd_patterns):
             names: list[ast.Name] = []
@@ -1677,12 +1672,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                         kid=[names[i], valid_kwd_patterns[i]],
                     )
                 )
-            kw_patterns = ast.SubNodeList[ast.MatchKVPair](
-                items=kv_pairs, delim=Tok.COMMA, kid=kv_pairs
-            )
-            kid.append(kw_patterns)
+            kw_patterns = kv_pairs
+            kid.extend(kw_patterns)
         else:
-            kw_patterns = None
+            kw_patterns = []
         if isinstance(cls, (ast.NameAtom, ast.AtomTrailer)):
             return ast.MatchArch(
                 name=cls, arg_patterns=patterns_sub, kw_patterns=kw_patterns, kid=kid
@@ -2002,7 +1995,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         ):
 
             slices: list[ast.IndexSlice.Slice] = []
-            for index_slice in slice.values.items:
+            for index_slice in slice.values:
                 if not isinstance(index_slice, ast.IndexSlice):
                     raise self.ice()
                 slices.append(index_slice.slices[0])
@@ -2128,7 +2121,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             r_paren = self.operator(Tok.RPAREN, ")")
             valid_elts = None
             kid = [l_paren, r_paren]
-        return ast.TupleVal(values=valid_elts, kid=kid)
+        values = valid_elts.items if valid_elts else []
+        return ast.TupleVal(values=values, kid=kid)
 
     def proc_yield(self, node: py_ast.Yield) -> ast.YieldExpr:
         """Process python node.

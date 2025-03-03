@@ -343,10 +343,16 @@ class JacParser(Pass):
             self.consume_token(Tok.KW_ENTRY)
             name = self.match(ast.SubTag)
             codeblock = self.consume(ast.SubNodeList)
+            assert codeblock.left_enc and codeblock.right_enc
             return ast.ModuleCode(
                 name=name,
-                body=codeblock,
-                kid=self.cur_nodes,
+                body=codeblock.items,
+                kid=[
+                    *([name] if name else []),
+                    codeblock.left_enc,
+                    *codeblock.items,
+                    codeblock.right_enc,
+                ],
             )
 
         def py_code_block(self, _: None) -> ast.PyInlineCode:
@@ -1390,6 +1396,7 @@ class JacParser(Pass):
                         expression code_block else_stmt?
                     | KW_ASYNC? KW_FOR expression KW_IN expression code_block else_stmt?
             """
+            else_body: list[ast.CodeBlockStmt] = []
             is_async = bool(self.match_token(Tok.KW_ASYNC))
             self.consume_token(Tok.KW_FOR)
             if iter := self.match(ast.Assignment):
@@ -1398,21 +1405,31 @@ class JacParser(Pass):
                 self.consume_token(Tok.KW_BY)
                 count_by = self.consume(ast.Assignment)
                 body = self.consume(ast.SubNodeList)
-                else_body_node = self.match(ast.ElseStmt)
+                if else_body_node := self.match(ast.ElseStmt):
+                    else_body = else_body_node.body.items
+
+                assert body.left_enc and body.right_enc
                 return ast.IterForStmt(
                     is_async=is_async,
                     iter=iter,
                     condition=condition,
                     count_by=count_by,
-                    body=body,
-                    else_body=else_body_node,
-                    kid=self.cur_nodes,
+                    body=cast(list[ast.CodeBlockStmt], body.items),
+                    else_body=else_body,
+                    kid=[
+                        iter,
+                        condition,
+                        count_by,
+                        body.left_enc,
+                        *body.items,
+                        body.right_enc,
+                        *else_body,
+                    ],
                 )
             target = self.consume(ast.Expr)
             self.consume_token(Tok.KW_IN)
             collection = self.consume(ast.Expr)
             body = self.consume(ast.SubNodeList)
-            else_body: list[ast.CodeBlockStmt] = []
             if else_stmt_node := self.match(ast.ElseStmt):
                 else_body = else_stmt_node.body.items
 
@@ -1625,17 +1642,18 @@ class JacParser(Pass):
 
             visit_stmt: KW_VISIT (inherited_archs)? expression (else_stmt | SEMI)
             """
-            self.consume_token(Tok.KW_VISIT)
-            sub_name = self.match(ast.SubNodeList)
+            tok_vis = self.consume_token(Tok.KW_VISIT)
+            sub_name_list = self.match(ast.SubNodeList)
+            sub_name = sub_name_list.items if sub_name_list else []
             target = self.consume(ast.Expr)
             else_body = self.match(ast.ElseStmt)
             if else_body is None:
-                self.consume_token(Tok.SEMI)
+                tok_semi = self.consume_token(Tok.SEMI)
             return ast.VisitStmt(
                 vis_type=sub_name,
                 target=target,
                 else_body=else_body,
-                kid=self.cur_nodes,
+                kid=[tok_vis, *sub_name, target, else_body if else_body else tok_semi],
             )
 
         def revisit_stmt(self, _: None) -> ast.RevisitStmt:
@@ -2210,7 +2228,7 @@ class JacParser(Pass):
                         sublist = ast.SubNodeList[ast.Expr | ast.KWPair](
                             items=[*index.values], delim=Tok.COMMA, kid=index.kid[1:-1]
                         )
-                        expr = ast.TupleVal(values=sublist, kid=[sublist])
+                        expr = ast.TupleVal(values=sublist.items, kid=[sublist])
                     return ast.IndexSlice(
                         slices=[ast.IndexSlice.Slice(start=expr, stop=None, step=None)],
                         is_range=False,
@@ -2408,23 +2426,22 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def tuple_val(self, kid: list[ast.AstNode]) -> ast.TupleVal:
+        def tuple_val(self, _: None) -> ast.TupleVal:
             """Grammar rule.
 
             tuple_val: LPAREN tuple_list? RPAREN
             """
-            if len(kid) == 2:
-                return ast.TupleVal(
-                    values=None,
-                    kid=kid,
-                )
-            elif isinstance(kid[1], ast.SubNodeList):
-                return ast.TupleVal(
-                    values=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            tok_lparen = self.consume_token(Tok.LPAREN)
+            target = self.match(ast.SubNodeList)
+            tok_rparen = self.consume_token(Tok.RPAREN)
+            return ast.TupleVal(
+                values=target.items if target else [],
+                kid=[
+                    tok_lparen,
+                    *(target.items if target else []),
+                    tok_rparen,
+                ],
+            )
 
         def set_val(self, kid: list[ast.AstNode]) -> ast.SetVal:
             """Grammar rule.
@@ -3118,20 +3135,32 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def filter_compr(self, kid: list[ast.AstNode]) -> ast.FilterCompr:
+        def filter_compr(self, _: None) -> ast.FilterCompr:
             """Grammar rule.
 
             filter_compr: LPAREN NULL_OK filter_compare_list RPAREN
                         | LPAREN TYPE_OP NULL_OK typed_filter_compare_list RPAREN
             """
-            if isinstance(kid[2], ast.SubNodeList):
-                return ast.FilterCompr(compares=kid[2], f_type=None, kid=kid)
-            elif isinstance(kid[3], ast.FilterCompr):
-                kid[3].add_kids_left(kid[:3])
-                kid[3].add_kids_right(kid[4:])
-                return kid[3]
+            tok_lp = self.consume_token(Tok.LPAREN)
+            tok_type = self.match_token(Tok.TYPE_OP)
+            tok_null = self.consume_token(Tok.NULL_OK)
+            if tok_type:
+                typed_filter = self.consume(ast.FilterCompr)
+                tok_rp = self.consume_token(Tok.RPAREN)
+                typed_filter.add_kids_left([tok_lp, tok_type, tok_null])
+                typed_filter.add_kids_right([tok_rp])
+                return typed_filter
             else:
-                raise self.ice()
+                filter_list = self.consume(ast.SubNodeList)
+                tok_rp = self.consume_token(Tok.RPAREN)
+                kids: list[ast.AstNode] = [tok_lp, tok_null]
+                kids.extend(filter_list.items)
+                kids.append(tok_rp)
+                return ast.FilterCompr(
+                    compares=filter_list.items,
+                    f_type=None,
+                    kid=kids,  # [tok_lp, tok_null, filter_list, tok_rp],
+                )
 
         def filter_compare_list(
             self, kid: list[ast.AstNode]
@@ -3163,22 +3192,17 @@ class JacParser(Pass):
 
             typed_filter_compare_list: expression (COLON filter_compare_list)?
             """
-            chomp = [*kid]
-            expr = chomp[0]
-            chomp = chomp[1:]
-            compares = (
-                chomp[1]
-                if len(chomp)
-                and isinstance(chomp[0], ast.Token)
-                and chomp[0].name == Tok.COLON
-                else None
+
+            compares: ast.SubNodeList | None = None
+            expr = self.consume(ast.Expr)
+            kids: list[ast.AstNode] = [expr]
+            if tok_colon := self.match_token(Tok.COLON):
+                compares = self.consume(ast.SubNodeList)
+                kids.append(tok_colon)
+                kids.extend(compares.items)
+            return ast.FilterCompr(
+                compares=compares.items if compares else [], f_type=expr, kid=kids
             )
-            if isinstance(expr, ast.Expr) and (
-                (isinstance(compares, ast.SubNodeList)) or compares is None
-            ):
-                return ast.FilterCompr(compares=compares, f_type=expr, kid=kid)
-            else:
-                raise self.ice()
 
         def filter_compare_item(self, kid: list[ast.AstNode]) -> ast.CompareExpr:
             """Grammar rule.
@@ -3396,66 +3420,56 @@ class JacParser(Pass):
             class_pattern: NAME (DOT NAME)* LPAREN kw_pattern_list? RPAREN
                         | NAME (DOT NAME)* LPAREN pattern_list (COMMA kw_pattern_list)? RPAREN
             """
-            chomp = [*kid]
-            cur_element = chomp[0]
-            chomp = chomp[1:]
-            while not (isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.LPAREN):
-                if isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.DOT:
-                    target_ = cur_element
-                    right_ = chomp[1]
-                    if isinstance(right_, (ast.Expr, ast.AtomExpr)) and isinstance(
-                        target_, ast.Expr
-                    ):
-                        cur_element = ast.AtomTrailer(
-                            target=target_,
-                            right=right_,
-                            is_attr=True,
-                            is_null_ok=False,
-                            kid=[target_, chomp[0], right_],
-                        )
-                        chomp = chomp[2:]
-                    else:
-                        raise self.ice()
-                elif isinstance(cur_element, ast.NameAtom):
-                    chomp = chomp[1:]
-                else:
-                    break
+            cur_element: ast.Name | ast.AtomTrailer = self.consume(ast.Name)
+            while tok_dot := self.match_token(Tok.DOT):
+                target_ = cur_element
+                right_ = self.consume(ast.Name)
+                if isinstance(right_, (ast.Expr, ast.AtomExpr)) and isinstance(
+                    target_, ast.Expr
+                ):
+                    cur_element = ast.AtomTrailer(
+                        target=target_,
+                        right=right_,
+                        is_attr=True,
+                        is_null_ok=False,
+                        kid=[target_, tok_dot, right_],
+                    )
             name = cur_element
-            lparen = chomp[0]
-            rapren = chomp[-1]
-            first = chomp[1]
-            if len(chomp) > 4:
-                second = chomp[3]
-                comma = chomp[2]
-            else:
-                second = None
-                comma = None
+            tok_lp = self.consume_token(Tok.LPAREN)
+            first = self.match(ast.SubNodeList)
             arg = (
-                first
-                if isinstance(first, ast.SubNodeList)
-                and isinstance(first.items[0], ast.MatchPattern)
-                else None
+                first.items
+                if (first and isinstance(first.items[0], ast.MatchPattern))
+                else []
             )
-            kw = (
-                second
-                if isinstance(second, ast.SubNodeList)
-                and isinstance(second.items[0], ast.MatchKVPair)
-                else (
-                    first
-                    if isinstance(first, ast.SubNodeList)
-                    and isinstance(first.items[0], ast.MatchKVPair)
-                    else None
+            if arg:
+                tok_comma = self.match_token(Tok.COMMA)
+                second = self.match(ast.SubNodeList)
+                kw = (
+                    second.items
+                    if (second and isinstance(second.items[0], ast.MatchKVPair))
+                    else []
                 )
-            )
+            else:
+                kw = (
+                    first.items
+                    if (first and isinstance(first.items[0], ast.MatchKVPair))
+                    else []
+                )
+            tok_rp = self.consume_token(Tok.RPAREN)
             if isinstance(name, (ast.NameAtom, ast.AtomTrailer)):
-                kid_nodes = [name, lparen]
+                kid_nodes: list = [name, tok_lp]
                 if arg:
-                    kid_nodes.append(arg)
+                    kid_nodes.extend(arg)
                     if kw:
-                        kid_nodes.extend([comma, kw]) if comma else kid_nodes.append(kw)
+                        if tok_comma:
+                            kid_nodes.append(tok_comma)
+                            kid_nodes.extend(kw)
+                        else:
+                            kid_nodes.extend(kw)
                 elif kw:
-                    kid_nodes.append(kw)
-                kid_nodes.append(rapren)
+                    kid_nodes.extend(kw)
+                kid_nodes.append(tok_rp)
 
                 return ast.MatchArch(
                     name=name,
@@ -3463,8 +3477,6 @@ class JacParser(Pass):
                     kw_patterns=kw,
                     kid=kid_nodes,
                 )
-            else:
-                raise self.ice()
 
         def pattern_list(
             self, kid: list[ast.AstNode]
