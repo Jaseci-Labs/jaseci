@@ -715,7 +715,7 @@ class GlobalVars(ElementStmt, AstAccessNode):
     def __init__(
         self,
         access: Optional[SubTag[Token]],
-        assignments: SubNodeList[Assignment],
+        assignments: list[Assignment],
         is_frozen: bool,
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
@@ -730,9 +730,10 @@ class GlobalVars(ElementStmt, AstAccessNode):
     def normalize(self, deep: bool = False) -> bool:
         """Normalize global var node."""
         res = True
+        for i in self.assignments:
+            res = res and i.normalize(deep)
         if deep:
             res = self.access.normalize(deep) if self.access else True
-            res = res and self.assignments.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
         if self.doc:
@@ -743,7 +744,9 @@ class GlobalVars(ElementStmt, AstAccessNode):
             new_kid.append(self.gen_token(Tok.KW_GLOBAL))
         if self.access:
             new_kid.append(self.access)
-        new_kid.append(self.assignments)
+        new_kid.append(
+            SubNodeList(items=self.assignments, delim=Tok.COMMA, kid=self.assignments)
+        )
         self.set_kids(nodes=new_kid)
         return res
 
