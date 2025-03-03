@@ -1022,17 +1022,15 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             if isinstance(i, ast.KWPair):
                 params_in.append(i)
         if len(params_in) != 0:
-            params_in2 = ast.SubNodeList[ast.Expr | ast.KWPair](
-                items=params_in, delim=Tok.COMMA, kid=params_in
-            )
+            params_in2 = params_in
         else:
-            params_in2 = None
+            params_in2 = []
         if isinstance(func, ast.Expr):
             return ast.FuncCall(
                 target=func,
                 params=params_in2,
                 genai_call=None,
-                kid=[func, params_in2] if params_in2 else [func],
+                kid=[func, *params_in2] if params_in2 else [func],
             )
         else:
             raise self.ice()

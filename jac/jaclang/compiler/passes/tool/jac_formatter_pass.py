@@ -1347,20 +1347,23 @@ class JacFormatPass(Pass):
 
     def handle_long_expression(self, node: ast.AstNode, kid: ast.AstNode) -> None:
         """Handle long expressions with multiple operators."""
-        parts = re.split(r"(\+|\-|\*|\/)", kid.gen.jac)
-        self.emit_ln(node, f"{parts.pop(0).strip()}")
-        for j in range(0, len(parts) - 1, 2):
-            op = parts[j]
-            var = parts[j + 1].strip() if j + 1 < len(parts) else ""
-            if j < len(parts) - 2:
-                self.indent_level += 1
-                self.emit(node, f"{op} {var}")
-                self.indent_level -= 1
-                self.emit_ln(node, "")
-            else:
-                self.indent_level += 1
-                self.emit(node, f"{op} {var}")
-                self.indent_level -= 1
+        if "\{([A-Za-z0-9_]+)\}" not in kid.gen.jac:  # noqa
+            parts = re.split(r"(\+|\-|\*|\/)", kid.gen.jac)
+            self.emit_ln(node, f"{parts.pop(0).strip()}")
+            for j in range(0, len(parts) - 1, 2):
+                op = parts[j]
+                var = parts[j + 1].strip() if j + 1 < len(parts) else ""
+                if j < len(parts) - 2:
+                    self.indent_level += 1
+                    self.emit(node, f"{op} {var}")
+                    self.indent_level -= 1
+                    self.emit_ln(node, "")
+                else:
+                    self.indent_level += 1
+                    self.emit(node, f"{op} {var}")
+                    self.indent_level -= 1
+        else:
+            self.emit_ln(node, kid.gen.jac)
 
     def exit_assignment(self, node: ast.Assignment) -> None:
         """Sub objects.
