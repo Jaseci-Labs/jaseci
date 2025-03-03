@@ -497,10 +497,10 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         name: Optional[SubTag[Name]],
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         doc: Optional[String],
         """
-        node.gen.py_ast = self.resolve_stmt_block(node.body, doc=node.doc)
+        node.gen.py_ast = self.resolve_body_stmts(node.body, doc=node.doc)
         if node.name:
             node.gen.py_ast = [
                 self.sync(

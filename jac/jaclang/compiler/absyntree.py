@@ -821,7 +821,7 @@ class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
     def __init__(
         self,
         name: Optional[SubTag[Name]],
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
     ) -> None:
@@ -836,7 +836,8 @@ class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
         res = True
         if deep:
             res = self.name.normalize(deep) if self.name else res
-            res = res and self.body.normalize(deep)
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
         if self.doc:
@@ -845,7 +846,7 @@ class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
         new_kid.append(self.gen_token(Tok.KW_ENTRY))
         if self.name:
             new_kid.append(self.name)
-        new_kid.append(self.body)
+        new_kid.extend(self.body)
         self.set_kids(nodes=new_kid)
         return res
 

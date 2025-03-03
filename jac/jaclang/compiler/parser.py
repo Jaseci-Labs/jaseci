@@ -343,10 +343,16 @@ class JacParser(Pass):
             self.consume_token(Tok.KW_ENTRY)
             name = self.match(ast.SubTag)
             codeblock = self.consume(ast.SubNodeList)
+            assert codeblock.left_enc and codeblock.right_enc
             return ast.ModuleCode(
                 name=name,
-                body=codeblock,
-                kid=self.cur_nodes,
+                body=codeblock.items,
+                kid=[
+                    *([name] if name else []),
+                    codeblock.left_enc,
+                    *codeblock.items,
+                    codeblock.right_enc,
+                ],
             )
 
         def py_code_block(self, _: None) -> ast.PyInlineCode:
