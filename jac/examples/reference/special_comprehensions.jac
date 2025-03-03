@@ -13,10 +13,10 @@ with entry {
     for i=0 to i<10 by i+=1  {
         apple.append(TestObj());
     }
+
     #To get the instances with the y value less than 7
     print(apple(?y <= 7));
 }
-#assign comprehension
 
 obj MyObj {
     has apple: int = 0,
