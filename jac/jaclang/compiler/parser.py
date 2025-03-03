@@ -674,7 +674,7 @@ class JacParser(Pass):
             else:
                 body = sub_list2 or sub_list1
                 inh = sub_list2 and sub_list1
-            x = ast.Enum(
+            return ast.Enum(
                 semstr=semstr,
                 name=name,
                 access=access,
@@ -687,8 +687,6 @@ class JacParser(Pass):
                 + ([access] if access else [])
                 + ([semstr] if semstr else []),
             )
-            # print(x)
-            return x
 
         def enum_def(self, kid: list[ast.AstNode]) -> ast.EnumDef:
             """Grammar rule.
