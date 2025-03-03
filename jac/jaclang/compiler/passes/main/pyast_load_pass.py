@@ -1636,14 +1636,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             patterns = [self.convert(i) for i in node.patterns]
             valid_patterns = [i for i in patterns if isinstance(i, ast.MatchPattern)]
             if len(patterns) == len(valid_patterns):
-                patterns_sub = ast.SubNodeList[ast.MatchPattern](
-                    items=valid_patterns, delim=Tok.COMMA, kid=valid_patterns
-                )
-                kid.append(patterns_sub)
+                patterns_sub = valid_patterns
+                kid.extend(patterns_sub)
             else:
                 raise self.ice()
         else:
-            patterns_sub = None
+            patterns_sub = []
 
         if len(node.kwd_patterns):
             names: list[ast.Name] = []
@@ -1674,12 +1672,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                         kid=[names[i], valid_kwd_patterns[i]],
                     )
                 )
-            kw_patterns = ast.SubNodeList[ast.MatchKVPair](
-                items=kv_pairs, delim=Tok.COMMA, kid=kv_pairs
-            )
-            kid.append(kw_patterns)
+            kw_patterns = kv_pairs
+            kid.extend(kw_patterns)
         else:
-            kw_patterns = None
+            kw_patterns = []
         if isinstance(cls, (ast.NameAtom, ast.AtomTrailer)):
             return ast.MatchArch(
                 name=cls, arg_patterns=patterns_sub, kw_patterns=kw_patterns, kid=kid

@@ -2383,6 +2383,10 @@ class JacFormatPass(Pass):
         arg_patterns: Optional[SubNodeList[MatchPattern]],
         kw_patterns: Optional[SubNodeList[MatchKVPair]],
         """
+        match_pattern_list = [i for i in node.kid if isinstance(i, ast.MatchPattern)]
+        match_kv_pair_list = [i for i in node.kid if isinstance(i, ast.MatchKVPair)]
+        pattern = True
+        pair = True
         for i in node.kid:
             if isinstance(i, ast.CommentToken):
                 if i.is_inline:
@@ -2392,11 +2396,18 @@ class JacFormatPass(Pass):
                     self.emit_ln(node, i.gen.jac)
             elif isinstance(i, ast.Semi):
                 self.emit(node, i.gen.jac)
+            elif i.gen.jac == ",":
+                continue
+            elif isinstance(i, ast.MatchPattern):
+                if pattern:
+                    self.emit(node, ", ".join([i.gen.jac for i in match_pattern_list]))
+                    pattern = False
+            elif isinstance(i, ast.MatchKVPair):
+                if pair:
+                    self.emit(node, ", ".join([i.gen.jac for i in match_kv_pair_list]))
+                    pair = False
             else:
-                if i.gen.jac == ",":
-                    self.emit(node, f"{i.gen.jac} ")
-                else:
-                    self.emit(node, i.gen.jac)
+                self.emit(node, i.gen.jac)
         if isinstance(node.kid[-1], (ast.Semi, ast.CommentToken)):
             self.emit_ln(node, "")
 

@@ -3391,66 +3391,56 @@ class JacParser(Pass):
             class_pattern: NAME (DOT NAME)* LPAREN kw_pattern_list? RPAREN
                         | NAME (DOT NAME)* LPAREN pattern_list (COMMA kw_pattern_list)? RPAREN
             """
-            chomp = [*kid]
-            cur_element = chomp[0]
-            chomp = chomp[1:]
-            while not (isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.LPAREN):
-                if isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.DOT:
-                    target_ = cur_element
-                    right_ = chomp[1]
-                    if isinstance(right_, (ast.Expr, ast.AtomExpr)) and isinstance(
-                        target_, ast.Expr
-                    ):
-                        cur_element = ast.AtomTrailer(
-                            target=target_,
-                            right=right_,
-                            is_attr=True,
-                            is_null_ok=False,
-                            kid=[target_, chomp[0], right_],
-                        )
-                        chomp = chomp[2:]
-                    else:
-                        raise self.ice()
-                elif isinstance(cur_element, ast.NameAtom):
-                    chomp = chomp[1:]
-                else:
-                    break
+            cur_element: ast.Name | ast.AtomTrailer = self.consume(ast.Name)
+            while tok_dot := self.match_token(Tok.DOT):
+                target_ = cur_element
+                right_ = self.consume(ast.Name)
+                if isinstance(right_, (ast.Expr, ast.AtomExpr)) and isinstance(
+                    target_, ast.Expr
+                ):
+                    cur_element = ast.AtomTrailer(
+                        target=target_,
+                        right=right_,
+                        is_attr=True,
+                        is_null_ok=False,
+                        kid=[target_, tok_dot, right_],
+                    )
             name = cur_element
-            lparen = chomp[0]
-            rapren = chomp[-1]
-            first = chomp[1]
-            if len(chomp) > 4:
-                second = chomp[3]
-                comma = chomp[2]
-            else:
-                second = None
-                comma = None
+            tok_lp = self.consume_token(Tok.LPAREN)
+            first = self.match(ast.SubNodeList)
             arg = (
-                first
-                if isinstance(first, ast.SubNodeList)
-                and isinstance(first.items[0], ast.MatchPattern)
-                else None
+                first.items
+                if (first and isinstance(first.items[0], ast.MatchPattern))
+                else []
             )
-            kw = (
-                second
-                if isinstance(second, ast.SubNodeList)
-                and isinstance(second.items[0], ast.MatchKVPair)
-                else (
-                    first
-                    if isinstance(first, ast.SubNodeList)
-                    and isinstance(first.items[0], ast.MatchKVPair)
-                    else None
+            if arg:
+                tok_comma = self.match_token(Tok.COMMA)
+                second = self.match(ast.SubNodeList)
+                kw = (
+                    second.items
+                    if (second and isinstance(second.items[0], ast.MatchKVPair))
+                    else []
                 )
-            )
+            else:
+                kw = (
+                    first.items
+                    if (first and isinstance(first.items[0], ast.MatchKVPair))
+                    else []
+                )
+            tok_rp = self.consume_token(Tok.RPAREN)
             if isinstance(name, (ast.NameAtom, ast.AtomTrailer)):
-                kid_nodes = [name, lparen]
+                kid_nodes: list = [name, tok_lp]
                 if arg:
-                    kid_nodes.append(arg)
+                    kid_nodes.extend(arg)
                     if kw:
-                        kid_nodes.extend([comma, kw]) if comma else kid_nodes.append(kw)
+                        if tok_comma:
+                            kid_nodes.append(tok_comma)
+                            kid_nodes.extend(kw)
+                        else:
+                            kid_nodes.extend(kw)
                 elif kw:
-                    kid_nodes.append(kw)
-                kid_nodes.append(rapren)
+                    kid_nodes.extend(kw)
+                kid_nodes.append(tok_rp)
 
                 return ast.MatchArch(
                     name=name,
@@ -3458,8 +3448,6 @@ class JacParser(Pass):
                     kw_patterns=kw,
                     kid=kid_nodes,
                 )
-            else:
-                raise self.ice()
 
         def pattern_list(
             self, kid: list[ast.AstNode]

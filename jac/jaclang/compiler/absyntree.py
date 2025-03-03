@@ -4073,8 +4073,8 @@ class MatchArch(MatchPattern):
     def __init__(
         self,
         name: AtomTrailer | NameAtom,
-        arg_patterns: Optional[SubNodeList[MatchPattern]],
-        kw_patterns: Optional[SubNodeList[MatchKVPair]],
+        arg_patterns: list[MatchPattern],
+        kw_patterns: list[MatchKVPair],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize match class node."""
@@ -4086,17 +4086,25 @@ class MatchArch(MatchPattern):
     def normalize(self, deep: bool = False) -> bool:
         """Normalize match class node."""
         res = True
+        for arg in self.arg_patterns:
+            res = res and arg.normalize(deep)
+        for kw in self.kw_patterns:
+            res = res and kw.normalize(deep)
         if deep:
             res = self.name.normalize(deep)
-            res = res and (not self.arg_patterns or self.arg_patterns.normalize(deep))
-            res = res and (not self.kw_patterns or self.kw_patterns.normalize(deep))
         new_kid: list[AstNode] = [self.name]
         new_kid.append(self.gen_token(Tok.LPAREN))
         if self.arg_patterns:
-            new_kid.append(self.arg_patterns)
+            for idx, arg in enumerate(self.arg_patterns):
+                if idx > 0:
+                    new_kid.append(self.gen_token(Tok.COMMA))
+                new_kid.append(arg)
             new_kid.append(self.gen_token(Tok.COMMA))
         if self.kw_patterns:
-            new_kid.append(self.kw_patterns)
+            for idx, kw in enumerate(self.kw_patterns):
+                if idx > 0:
+                    new_kid.append(self.gen_token(Tok.COMMA))
+                new_kid.append(kw)
         else:
             new_kid.pop()
         new_kid.append(self.gen_token(Tok.RPAREN))
