@@ -2069,7 +2069,7 @@ class FinallyStmt(CodeBlockStmt):
         return res
 
 
-class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
+class IterForStmt(AstAsyncNode, CodeBlockStmt):
     """IterFor node type for Jac Ast."""
 
     def __init__(
@@ -2078,8 +2078,8 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         is_async: bool,
         condition: Expr,
         count_by: Assignment,
-        body: SubNodeList[CodeBlockStmt],
-        else_body: Optional[ElseStmt],
+        body: list[CodeBlockStmt],
+        else_body: list[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize iter for node."""
@@ -2087,9 +2087,9 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         self.condition = condition
         self.count_by = count_by
         self.body = body
+        self.else_body = else_body
         AstNode.__init__(self, kid=kid)
         AstAsyncNode.__init__(self, is_async=is_async)
-        AstElseBodyNode.__init__(self, else_body=else_body)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize iter for node."""
@@ -2098,8 +2098,10 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
             res = self.iter.normalize(deep)
             res = self.condition.normalize(deep)
             res = self.count_by.normalize(deep)
-            res = self.body.normalize(deep)
-            res = self.else_body.normalize(deep) if self.else_body else res
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
+            for stmt in self.else_body:
+                res = res and stmt.normalize(deep)
         new_kid: list[AstNode] = []
         if self.is_async:
             new_kid.append(self.gen_token(Tok.KW_ASYNC))
@@ -2109,9 +2111,8 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         new_kid.append(self.condition)
         new_kid.append(self.gen_token(Tok.KW_BY))
         new_kid.append(self.count_by)
-        new_kid.append(self.body)
-        if self.else_body:
-            new_kid.append(self.else_body)
+        new_kid.extend(self.body)
+        new_kid.extend(self.else_body)
         self.set_kids(nodes=new_kid)
         return res
 
@@ -2687,6 +2688,10 @@ class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
             self.parent.parent, GlobalVars
         ):
             if self.parent.kid.index(self) == len(self.parent.kid) - 1:
+                new_kid.append(self.gen_token(Tok.SEMI))
+        elif isinstance(self.parent, IterForStmt):
+            assign_parent = self.parent
+            if self not in [assign_parent.iter, assign_parent.count_by]:
                 new_kid.append(self.gen_token(Tok.SEMI))
         elif (not self.is_enum_stmt) and not isinstance(self.parent, IterForStmt):
             new_kid.append(self.gen_token(Tok.SEMI))

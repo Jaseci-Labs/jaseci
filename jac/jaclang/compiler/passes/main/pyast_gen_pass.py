@@ -1737,11 +1737,11 @@ class PyastGenPass(Pass):
         is_async: bool,
         condition: ExprType,
         count_by: ExprType,
-        body: SubNodeList[CodeBlockStmt],
-        else_body: Optional[ElseStmt],
+        body: list[CodeBlockStmt],
+        else_body: list[CodeBlockStmt],
         """
         py_nodes: list[ast3.AST] = []
-        body = node.body.gen.py_ast
+        body = self.resolve_body_stmts(node.body)
         if (
             isinstance(body, list)
             and isinstance(node.count_by.gen.py_ast[0], ast3.AST)
@@ -1756,7 +1756,7 @@ class PyastGenPass(Pass):
                 ast3.While(
                     test=node.condition.gen.py_ast[0],
                     body=body,
-                    orelse=node.else_body.gen.py_ast if node.else_body else [],
+                    orelse=self.resolve_body_stmts(node.else_body),
                 )
             )
         )
