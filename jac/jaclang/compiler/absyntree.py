@@ -3725,10 +3725,7 @@ class FilterCompr(AtomExpr):
         if self.compares:
             if self.f_type:
                 new_kid.append(self.gen_token(Tok.COLON))
-            for idx, compare in enumerate(self.compares):
-                if idx != 0:
-                    new_kid.append(self.gen_token(Tok.COMMA))
-                new_kid.append(compare)
+            new_kid.extend(self.compares)
         if not isinstance(self.parent, EdgeOpRef):
             new_kid.append(self.gen_token(Tok.RPAREN))
         self.set_kids(nodes=new_kid)
