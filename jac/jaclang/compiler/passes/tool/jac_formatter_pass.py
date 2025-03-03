@@ -655,12 +655,11 @@ class JacFormatPass(Pass):
         is_abstract: bool,
         access: Optional[SubTag[Token]],
         signature: Optional[FuncSignature | SubNodeList[TypeSpec] | EventSignature],
-        body: Optional[SubNodeList[CodeBlockStmt]],
+        body: list[CodeBlockStmt],
         arch_attached: Optional[Architype] = None,
         doc: Optional[Constant] = None,
-        decorators: Optional[SubNodeList[ExprType]] = None,
+        decorators: list[ExprType] = None,
         """
-        print("ability \n formatter", node.kid)
         self.emit_ln(node, node.doc.gen.jac) if node.doc else None
         for dec in node.decorators:
             self.emit_ln(node, f"@{dec.gen.jac}")
@@ -686,6 +685,9 @@ class JacFormatPass(Pass):
         if node.body:
             if node.is_genai_ability:
                 self.emit(node, f" by {node.body.gen.jac};")
+            elif isinstance(node.body, list):
+                for stmt in node.body:
+                    self.emit(node, stmt.gen.jac)
             elif isinstance(node.body, ast.AbilityDef):
                 self.emit(node, ";")
             else:
@@ -1428,7 +1430,6 @@ class JacFormatPass(Pass):
         doc: Optional[Constant] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
         """
-        print("architype \n formatter", node.kid)
         self.emit_ln(node, node.doc.gen.jac) if node.doc else None
         for dec in node.decorators:
             self.emit_ln(node, f"@{dec.gen.jac}")
@@ -1446,7 +1447,7 @@ class JacFormatPass(Pass):
             self.emit(node, node.body.gen.jac)
             self.emit(node, "}\n") if not node.body.gen.jac.startswith(" {") else None
         else:
-            self.emit(node, ";")
+            self.emit(node, " {}")
 
     def exit_f_string(self, node: ast.FString) -> None:
         """Sub objects.

@@ -542,10 +542,16 @@ class JacParser(Pass):
             name = self.consume(ast.Name)
             sub_list1 = self.match(ast.SubNodeList)
             sub_list2 = self.match(ast.SubNodeList)
-            print((sub_list1, sub_list2))
+            inh = []
+            body = []
+
             if sub_list1 and sub_list2:
                 inh, body = sub_list1.items, sub_list2.items
-            x = ast.Architype(
+            elif sub_list1:
+                inh = sub_list1.items
+            elif sub_list2:
+                body = sub_list2.items
+            return ast.Architype(
                 semstr=semstr,
                 name=name,
                 access=access,
@@ -553,42 +559,12 @@ class JacParser(Pass):
                 base_classes=inh,
                 body=body,
                 decorators=[],
-                kid=(
-                    [
-                        arch_type,
-                        access,
-                        semstr,
-                        name,
-                        *inh,
-                        *body,
-                    ]
-                    if access and semstr
-                    else (
-                        [
-                            arch_type,
-                            semstr,
-                            name,
-                            *inh,
-                            *body,
-                        ]
-                        if semstr
-                        else (
-                            [
-                                arch_type,
-                                name,
-                                *inh,
-                                *body,
-                            ]
-                            if inh
-                            else [
-                                arch_type,
-                                name,
-                            ]
-                        )
-                    )
-                ),
+                kid=[arch_type, name]
+                + ([access] if access else [])
+                + ([semstr] if semstr else [])
+                + inh
+                + body,
             )
-            return x
 
         def architype_def(self, kid: list[ast.AstNode]) -> ast.ArchDef:
             """Grammar rule.
@@ -715,7 +691,9 @@ class JacParser(Pass):
                 base_classes=inh.items if inh else [],
                 body=body.items if body else [],
                 decorators=[],
-                kid=[tok_enum, name, *inh, *body]
+                kid=[tok_enum, name]
+                + (inh.items if inh else [])
+                + (body.items if body else [])
                 + ([access] if access else [])
                 + ([semstr] if semstr else []),
             )
@@ -823,7 +801,7 @@ class JacParser(Pass):
                 named_ref (func_decl | event_clause) (code_block | SEMI)
             """
             signature: ast.FuncSignature | ast.EventSignature | None = None
-            body: ast.SubNodeList | None = None
+            body: list[ast.CodeBlockStmt] | ast.AbilityDef | ast.FuncCall | None = None
             is_override = self.match_token(Tok.KW_OVERRIDE) is not None
             is_static = self.match_token(Tok.KW_STATIC) is not None
             tok_can = self.consume_token(Tok.KW_CAN)
@@ -833,15 +811,11 @@ class JacParser(Pass):
             signature = self.match(ast.FuncSignature) or self.consume(
                 ast.EventSignature
             )
-            if (body := self.match(ast.SubNodeList)) is None:
-                body = None
+            sub_node_body = self.match(ast.SubNodeList)
+            body = sub_node_body.items if sub_node_body else []
+
+            if not sub_node_body:
                 self.consume_token(Tok.SEMI)
-            body = (body.items if body else [],)
-            kid1 = (
-                [tok_can, name, signature, *body]
-                + ([access] if access else [])
-                + ([semstr] if semstr else [])
-            )
 
             return ast.Ability(
                 name_ref=name,
@@ -854,7 +828,18 @@ class JacParser(Pass):
                 signature=signature,
                 body=body,
                 decorators=[],
-                kid=kid1,
+                kid=[
+                    x
+                    for x in [
+                        tok_can,
+                        access.tag if access else None,
+                        name,
+                        semstr,
+                        signature,
+                        *body,
+                    ]
+                    if x
+                ],
             )
 
         def ability_def(self, kid: list[ast.AstNode]) -> ast.AbilityDef:
