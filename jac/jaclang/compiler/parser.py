@@ -2154,7 +2154,8 @@ class JacParser(Pass):
             """
             target = self.consume(ast.Expr)
             self.consume_token(Tok.LPAREN)
-            params = self.match(ast.SubNodeList)
+            params_list = self.match(ast.SubNodeList)
+            params = params_list.items if params_list else []
             tok_by = self.match_token(Tok.KW_BY)
             call = self.consume(ast.FuncCall) if tok_by else None
             self.consume_token(Tok.RPAREN)
