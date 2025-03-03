@@ -479,7 +479,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         target_1 = (
             valid_exprs[0]
             if len(valid_exprs) > 1
-            else ast.TupleVal(values=target, kid=[target])
+            else ast.TupleVal(values=target.items, kid=[target])
         )
         return ast.DeleteStmt(
             target=target_1,
@@ -1995,7 +1995,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         ):
 
             slices: list[ast.IndexSlice.Slice] = []
-            for index_slice in slice.values.items:
+            for index_slice in slice.values:
                 if not isinstance(index_slice, ast.IndexSlice):
                     raise self.ice()
                 slices.append(index_slice.slices[0])
@@ -2130,7 +2130,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             r_paren = self.operator(Tok.RPAREN, ")")
             valid_elts = None
             kid = [l_paren, r_paren]
-        return ast.TupleVal(values=valid_elts, kid=kid)
+        values = valid_elts.items if valid_elts else []
+        return ast.TupleVal(values=values, kid=kid)
 
     def proc_yield(self, node: py_ast.Yield) -> ast.YieldExpr:
         """Process python node.

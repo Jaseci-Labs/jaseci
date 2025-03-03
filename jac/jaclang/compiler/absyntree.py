@@ -3021,7 +3021,7 @@ class TupleVal(AtomExpr):
 
     def __init__(
         self,
-        values: Optional[SubNodeList[Expr | KWPair]],
+        values: list[Expr | KWPair],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize tuple value node."""
@@ -3034,7 +3034,8 @@ class TupleVal(AtomExpr):
         """Normalize ast node."""
         res = True
         if deep:
-            res = self.values.normalize(deep) if self.values else res
+            for value in self.values:
+                res = value.normalize(deep) and res
         in_ret_type = (
             self.parent
             and isinstance(self.parent, IndexSlice)
@@ -3050,10 +3051,9 @@ class TupleVal(AtomExpr):
             if not in_ret_type
             else []
         )
-        if self.values:
-            new_kid.append(self.values)
-            if len(self.values.items) < 2:
-                new_kid.append(self.gen_token(Tok.COMMA))
+        new_kid.extend(self.values)
+        if len(self.values) < 2:
+            new_kid.append(self.gen_token(Tok.COMMA))
         if not in_ret_type:
             new_kid.append(self.gen_token(Tok.RPAREN))
         self.set_kids(nodes=new_kid)

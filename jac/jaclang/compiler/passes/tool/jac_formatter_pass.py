@@ -498,12 +498,16 @@ class JacFormatPass(Pass):
         exprs: Optional[ExprList],
         assigns: Optional[AssignmentList],
         """
-        for i in node.kid:
-            if (i.gen.jac).endswith(","):
-                self.indent_level -= 1
-                self.emit_ln(node, "")
-                self.indent_level += 1
-            self.emit(node, i.gen.jac)
+        if isinstance(node.kid[0], ast.Token) and node.kid[0].name == Tok.LPAREN:
+            self.emit(node, "(")
+        if len(node.values) == 1:
+            self.emit(node, f"{node.values[0].gen.jac}, ")
+        elif len(node.values) > 1:
+            for i in node.values[:-1]:
+                self.emit(node, f"{i.gen.jac}, ")
+            self.emit(node, f"{node.values[-1].gen.jac}")
+        if isinstance(node.kid[-1], ast.Token) and node.kid[-1].name == Tok.RPAREN:
+            self.emit(node, ")")
 
     def exit_special_var_ref(self, node: ast.SpecialVarRef) -> None:
         """Sub objects.
