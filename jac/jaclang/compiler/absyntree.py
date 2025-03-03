@@ -1998,9 +1998,7 @@ class TryStmt(AstElseBodyNode, CodeBlockStmt):
         new_kid.append(self.gen_token(Tok.LBRACE))
         new_kid.extend(self.body)
         new_kid.append(self.gen_token(Tok.RBRACE))
-        new_kid.append(self.gen_token(Tok.LBRACE))
         new_kid.extend(self.excepts)
-        new_kid.append(self.gen_token(Tok.LBRACE))
 
         if self.else_body:
             new_kid.append(self.else_body)
