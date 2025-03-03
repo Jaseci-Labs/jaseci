@@ -3403,43 +3403,43 @@ class JacParser(Pass):
             tok_lp = self.consume_token(Tok.LPAREN)
             first = self.match(ast.SubNodeList)
             arg = (
-                first
+                first.items
                 if (first and isinstance(first.items[0], ast.MatchPattern))
-                else None
+                else []
             )
             if arg:
                 tok_comma = self.match_token(Tok.COMMA)
                 second = self.match(ast.SubNodeList)
                 kw = (
-                    second
+                    second.items
                     if (second and isinstance(second.items[0], ast.MatchKVPair))
-                    else None
+                    else []
                 )
             else:
                 kw = (
-                    first
+                    first.items
                     if (first and isinstance(first.items[0], ast.MatchKVPair))
-                    else None
+                    else []
                 )
             tok_rp = self.consume_token(Tok.RPAREN)
             if isinstance(name, (ast.NameAtom, ast.AtomTrailer)):
                 kid_nodes: list = [name, tok_lp]
                 if arg:
-                    kid_nodes.append(arg)
+                    kid_nodes.extend(arg)
                     if kw:
-                        (
-                            kid_nodes.extend([tok_comma, kw])
-                            if tok_comma
-                            else kid_nodes.append(kw)
-                        )
+                        if tok_comma:
+                            kid_nodes.append(tok_comma)
+                            kid_nodes.extend(kw)
+                        else:
+                            kid_nodes.extend(kw)
                 elif kw:
-                    kid_nodes.append(kw)
+                    kid_nodes.extend(kw)
                 kid_nodes.append(tok_rp)
 
                 return ast.MatchArch(
                     name=name,
-                    arg_patterns=arg.items if arg else [],
-                    kw_patterns=kw.items if kw else [],
+                    arg_patterns=arg,
+                    kw_patterns=kw,
                     kid=kid_nodes,
                 )
 
