@@ -663,7 +663,7 @@ class JacParser(Pass):
 
             enum_decl: KW_ENUM access_tag? STRING? NAME inherited_archs? (enum_block | SEMI)
             """
-            self.consume_token(Tok.KW_ENUM)
+            tok_enum = self.consume_token(Tok.KW_ENUM)
             access = self.match(ast.SubTag)
             semstr = self.match(ast.String)
             name = self.consume(ast.Name)
@@ -674,15 +674,21 @@ class JacParser(Pass):
             else:
                 body = sub_list2 or sub_list1
                 inh = sub_list2 and sub_list1
-            return ast.Enum(
+            x = ast.Enum(
                 semstr=semstr,
                 name=name,
                 access=access,
                 base_classes=inh.items if inh else [],
-                body=body,
+                body=body.items if body else [],
                 decorators=[],
-                kid=self.cur_nodes,
+                kid=[tok_enum, name]
+                + (inh.items if inh else [])
+                + (body.items if body else [])
+                + ([access] if access else [])
+                + ([semstr] if semstr else []),
             )
+            # print(x)
+            return x
 
         def enum_def(self, kid: list[ast.AstNode]) -> ast.EnumDef:
             """Grammar rule.
@@ -692,10 +698,14 @@ class JacParser(Pass):
             if isinstance(kid[0], ast.ArchRefChain) and isinstance(
                 kid[1], ast.SubNodeList
             ):
+                body = kid[1].items
                 return ast.EnumDef(
                     target=kid[0],
-                    body=kid[1],
-                    kid=kid,
+                    body=body,
+                    kid=[
+                        kid[0],
+                        *body,
+                    ],
                 )
             else:
                 raise self.ice()
