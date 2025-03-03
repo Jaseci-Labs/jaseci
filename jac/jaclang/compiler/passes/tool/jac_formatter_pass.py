@@ -1854,7 +1854,7 @@ class JacFormatPass(Pass):
     def exit_visit_stmt(self, node: ast.VisitStmt) -> None:
         """Sub objects.
 
-        vis_type: Optional[SubTag[SubNodeList[Name]]],
+        vis_type: list[Name],
         target: ExprType,
         else_body: Optional[ElseStmt],
         from_walker: bool = False,

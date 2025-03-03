@@ -1620,17 +1620,18 @@ class JacParser(Pass):
 
             visit_stmt: KW_VISIT (inherited_archs)? expression (else_stmt | SEMI)
             """
-            self.consume_token(Tok.KW_VISIT)
-            sub_name = self.match(ast.SubNodeList)
+            tok_vis = self.consume_token(Tok.KW_VISIT)
+            sub_name_list = self.match(ast.SubNodeList)
+            sub_name = sub_name_list.items if sub_name_list else []
             target = self.consume(ast.Expr)
             else_body = self.match(ast.ElseStmt)
             if else_body is None:
-                self.consume_token(Tok.SEMI)
+                tok_semi = self.consume_token(Tok.SEMI)
             return ast.VisitStmt(
                 vis_type=sub_name,
                 target=target,
                 else_body=else_body,
-                kid=self.cur_nodes,
+                kid=[tok_vis, *sub_name, target, else_body if else_body else tok_semi],
             )
 
         def revisit_stmt(self, _: None) -> ast.RevisitStmt:
