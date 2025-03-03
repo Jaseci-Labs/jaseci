@@ -60,10 +60,10 @@ class JacImportPass(Pass):
         if mod:
             JacMachine.get().jac_program.modules[mod.loc.mod_path] = mod
             JacMachine.get().jac_program.last_imported.append(mod)
-            node.sub_module = mod
+            # node.sub_module = mod
             self.annex_impl(mod)
-            node.add_kids_right([mod], pos_update=False)
-            mod.parent = node
+            # node.add_kids_right([mod], pos_update=False)
+            # mod.parent = node
 
     def annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""
