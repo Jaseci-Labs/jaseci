@@ -66,7 +66,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             return ast.ModuleCode(
                 name=None,
                 body=with_entry_body,
-                kid=[*with_entry_body],
+                kid=[
+                    self.operator(Tok.LBRACE, "{"),
+                    *with_entry_body,
+                    self.operator(Tok.RBRACE, "}"),
+                ],
                 doc=None,
             )
 

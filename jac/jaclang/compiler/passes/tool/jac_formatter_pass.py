@@ -195,19 +195,22 @@ class JacFormatPass(Pass):
         self.emit(node, " {\n")
         self.indent_level += 1
         is_comment_added = False
-        for i in node.body:
+        for stmt in node.body:
             if not is_comment_added and isinstance(node.kid[1], ast.CommentToken):
                 self.emit(node, f"{node.kid[1].gen.jac}\n")
                 is_comment_added = True
-            self.emit(node, f"{i.gen.jac}")
+            # self.emit(node, f"{i.gen.jac}")
+            for line in stmt.gen.jac.splitlines():
+                node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
         self.indent_level -= 1
+        self.emit(node, "}")
 
-        if node.body and isinstance(
-            node.body[-1], (ast.IfStmt, ast.IterForStmt, ast.InForStmt, ast.WhileStmt)
-        ):
-            self.emit(node, "\n}")
-        else:
-            self.emit(node, "}")
+        # if node.body and isinstance(
+        #     node.body[-1], (ast.IfStmt, ast.IterForStmt, ast.InForStmt, ast.WhileStmt)
+        # ):
+        #     self.emit(node, "\n}")
+        # else:
+        #     self.emit(node, "}")
 
     def exit_sub_node_list(self, node: ast.SubNodeList) -> None:
         """Sub objects.
