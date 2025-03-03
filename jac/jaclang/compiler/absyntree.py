@@ -3699,7 +3699,7 @@ class FilterCompr(AtomExpr):
     def __init__(
         self,
         f_type: Optional[Expr],
-        compares: Optional[SubNodeList[CompareExpr]],
+        compares: list[CompareExpr],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize filter_cond context expression node."""
@@ -3712,9 +3712,10 @@ class FilterCompr(AtomExpr):
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ast node."""
         res = True
+        for compare in self.compares:
+            res = compare.normalize(deep) and res
         if deep:
             res = self.f_type.normalize(deep) if self.f_type else res
-            res = res and self.compares.normalize(deep) if self.compares else res
         new_kid: list[AstNode] = []
         if not isinstance(self.parent, EdgeOpRef):
             new_kid.append(self.gen_token(Tok.LPAREN))
@@ -3726,7 +3727,7 @@ class FilterCompr(AtomExpr):
         if self.compares:
             if self.f_type:
                 new_kid.append(self.gen_token(Tok.COLON))
-            new_kid.append(self.compares)
+            new_kid.extend(self.compares)
         if not isinstance(self.parent, EdgeOpRef):
             new_kid.append(self.gen_token(Tok.RPAREN))
         self.set_kids(nodes=new_kid)

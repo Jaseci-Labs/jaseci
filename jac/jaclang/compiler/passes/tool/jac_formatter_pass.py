@@ -1823,8 +1823,15 @@ class JacFormatPass(Pass):
 
         compares: list[BinaryExpr],
         """
+        filter_list = [i for i in node.kid if isinstance(i, ast.CompareExpr)]
+        fil_bool = True
         for i in node.kid:
-            self.emit(node, i.gen.jac)
+            if isinstance(i, ast.CompareExpr):
+                if fil_bool:
+                    self.emit(node, ", ".join([j.gen.jac for j in filter_list]))
+                    fil_bool = False
+            else:
+                self.emit(node, i.gen.jac)
 
     def exit_assign_compr(self, node: ast.AssignCompr) -> None:
         """Sub objects.

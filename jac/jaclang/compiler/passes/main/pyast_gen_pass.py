@@ -3375,7 +3375,7 @@ class PyastGenPass(Pass):
     def exit_filter_compr(self, node: ast.FilterCompr) -> None:
         """Sub objects.
 
-        compares: SubNodeList[BinaryExpr],
+        compares: list[BinaryExpr],
         """
         node.gen.py_ast = [
             self.sync(
@@ -3458,11 +3458,7 @@ class PyastGenPass(Pass):
                                                     ),
                                                     jac_node=x,
                                                 )
-                                                for x in (
-                                                    node.compares.items
-                                                    if node.compares
-                                                    else []
-                                                )
+                                                for x in (node.compares)
                                                 if isinstance(
                                                     x.gen.py_ast[0], ast3.Compare
                                                 )
