@@ -211,6 +211,7 @@ class AstNode:
     def unparse(self) -> str:
         """Unparse ast node."""
         valid = self.normalize()
+        print(self.kid)
         res = " ".join([i.unparse() for i in self.kid])
         if not valid:
             raise NotImplementedError(f"Node {type(self).__name__} is not valid.")
@@ -744,9 +745,11 @@ class GlobalVars(ElementStmt, AstAccessNode):
             new_kid.append(self.gen_token(Tok.KW_GLOBAL))
         if self.access:
             new_kid.append(self.access)
-        new_kid.append(
-            SubNodeList(items=self.assignments, delim=Tok.COMMA, kid=self.assignments)
-        )
+        for idx, i in enumerate(self.assignments):
+            if idx > 0:
+                new_kid.append(self.gen_token(Tok.COMMA))
+            new_kid.append(i)
+        new_kid.append(self.gen_token(Tok.SEMI))
         self.set_kids(nodes=new_kid)
         return res
 
@@ -2696,7 +2699,9 @@ class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
             assign_parent = self.parent
             if self not in [assign_parent.iter, assign_parent.count_by]:
                 new_kid.append(self.gen_token(Tok.SEMI))
-        elif (not self.is_enum_stmt) and not isinstance(self.parent, IterForStmt):
+        elif (not self.is_enum_stmt) and not isinstance(
+            self.parent, (IterForStmt, GlobalVars)
+        ):
             new_kid.append(self.gen_token(Tok.SEMI))
         self.set_kids(nodes=new_kid)
         return res
