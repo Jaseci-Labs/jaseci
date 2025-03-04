@@ -660,7 +660,6 @@ class JacFormatPass(Pass):
         doc: Optional[Constant] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
         """
-        print("ability \n formatter", node.kid)
         self.emit_ln(node, node.doc.gen.jac) if node.doc else None
         for dec in node.decorators:
             self.emit_ln(node, f"@{dec.gen.jac}")
@@ -836,7 +835,8 @@ class JacFormatPass(Pass):
         base_classes: BaseClasses,
         body: Optional[EnumBlock],
         """
-        self.emit_ln(node, node.doc.gen.jac) if node.doc else None
+        if node.doc:
+            self.emit(node, f"{node.doc.gen.jac}\n")
         for dec in node.decorators:
             self.emit_ln(node, f"@{dec.gen.jac}")
         self.emit(node, "enum ", strip_mode=False)
@@ -849,9 +849,21 @@ class JacFormatPass(Pass):
             base_classes_str = ", ".join(base.gen.jac for base in node.base_classes)
             self.emit(node, f" :{base_classes_str}:")
         if node.body and not isinstance(node.body, ast.EnumDef):
-            self.emit(node, " {\n") if not node.body.gen.jac.startswith(" {") else None
-            self.emit(node, node.body.gen.jac)
-            self.emit(node, "}\n") if not node.body.gen.jac.startswith(" {") else None
+            self.emit(node, " {\n")
+            self.indent_level += 1
+
+            for i, stmt in enumerate(node.body):
+                lines = stmt.gen.jac.splitlines()
+                for line in lines[:-1]:
+                    node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
+                node.gen.jac += (
+                    (self.indent_str() + lines[-1]).rstrip()
+                    + ("," if i < len(node.body) - 1 else "")
+                    + "\n"
+                )
+
+            self.indent_level -= 1
+            self.emit(node, "}")
         else:
             self.emit(node, ";")
 
@@ -862,29 +874,25 @@ class JacFormatPass(Pass):
         mod: Optional[DottedNameList],
         body: EnumBlock,
         """
-        start = True
-        for i in node.kid:
-            if isinstance(i, ast.String):
-                self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, ast.CommentToken):
-                if i.is_inline:
-                    self.emit(node, f" {i.gen.jac}")
-                else:
-                    self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, (ast.Semi, ast.ArchRefChain)):
-                self.emit(node, i.gen.jac)
-            elif isinstance(i, ast.SubNodeList) and i.gen.jac.startswith("@"):
-                self.emit_ln(node, i.gen.jac)
-            else:
-                if start:
-                    self.emit(node, i.gen.jac)
-                    start = False
-                else:
-                    self.emit(node, f" {i.gen.jac}")
-        if isinstance(
-            node.kid[-1], (ast.Semi, ast.CommentToken)
-        ) and not node.gen.jac.endswith("\n"):
-            self.emit_ln(node, "")
+        if node.doc:
+            self.emit(node, f"{node.doc.gen.jac}\n")
+        if node.target:
+            self.emit(node, f"{node.target.gen.jac}")
+        self.emit(node, " {\n")
+        self.indent_level += 1
+
+        for i, stmt in enumerate(node.body):
+            lines = stmt.gen.jac.splitlines()
+            for line in lines[:-1]:
+                node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
+            node.gen.jac += (
+                (self.indent_str() + lines[-1]).rstrip()
+                + ("," if i < len(node.body) - 1 else "")
+                + "\n"
+            )
+
+        self.indent_level -= 1
+        self.emit(node, "}")
 
     def exit_atom_trailer(self, node: ast.AtomTrailer) -> None:
         """Sub objects.
@@ -1428,7 +1436,6 @@ class JacFormatPass(Pass):
         doc: Optional[Constant] = None,
         decorators: Optional[SubNodeList[ExprType]] = None,
         """
-        print("architype \n formatter", node.kid)
         self.emit_ln(node, node.doc.gen.jac) if node.doc else None
         for dec in node.decorators:
             self.emit_ln(node, f"@{dec.gen.jac}")

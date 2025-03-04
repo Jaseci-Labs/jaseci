@@ -571,14 +571,16 @@ class JacLanguageTests(TestCase):
                     orig_src=ast.JacSource(file_source, py_out_path),
                 ),
             ).ir.unparse()
-        # print(output)
+        print(output)
         self.assertIn("can greet2(**kwargs: Any)", output)
         self.assertEqual(output.count("with entry {"), 13)
         self.assertIn(
-            '"""Enum for shape types"""\nenum ShapeType {\nCIRCLE = \'Circle\',\nUNK',
+            '"""Enum for shape types"""\nenum ShapeType {\n    CIRCLE = \'Circle\',\n    UNK',
             output,
         )
-        self.assertIn("\nUNKNOWN = 'Unknown',\n::py::\nprint('hello')\n::", output)
+        self.assertIn(
+            "\n    UNKNOWN = 'Unknown',\n    ::py::\n    print('hello')\n    ::", output
+        )
         self.assertIn("assert x == 5 , 'x should be equal to 5' ;", output)
         self.assertIn("if not x == y {", output)
         self.assertIn("can greet2(**kwargs: Any) {", output)
@@ -873,7 +875,7 @@ class JacLanguageTests(TestCase):
         ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
         jac_ast = ir.pp()
         self.assertIn(" |   +-- String - 'Loop completed normally{}'", jac_ast)
-        self.assertEqual(len(ir.get_all_sub_nodes(ast.SubNodeList)), 476)
+        self.assertEqual(len(ir.get_all_sub_nodes(ast.SubNodeList)), 473)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("deep_convert", base_path=self.fixture_abs_path("./"))

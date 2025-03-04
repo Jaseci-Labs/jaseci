@@ -270,7 +270,7 @@ class PyastGenPass(Pass):
     # This is temproary  and will be gone in the future.
     def resolve_body_stmts(
         self,
-        body: list[ast.CodeBlockStmt],
+        body: list[ast.CodeBlockStmt] | list[ast.EnumBlockStmt],
         doc: Optional[ast.String] = None,
     ) -> list[ast3.AST]:
 
@@ -955,7 +955,7 @@ class PyastGenPass(Pass):
         decorators: Optional[SubNodeList[ExprType]],
         """
         body = self.resolve_stmt_block(
-            node.body.body if isinstance(node.body, ast.ArchDef) else node.body,
+            node.body.body if isinstance(node.body, ast.ArchDef) else node.body,  # type: ignore
             doc=node.doc,
         )
         decorators = [dec.gen.py_ast[0] for dec in node.decorators]
@@ -1066,7 +1066,7 @@ class PyastGenPass(Pass):
         ds_on_entry: list[ast3.AST] = []
         ds_on_exit: list[ast3.AST] = []
         for i in (
-            node.body.body.items
+            node.body.body.items  # type: ignore
             if isinstance(node.body, ast.ArchDef)
             else node.body.items if node.body else []
         ):
@@ -1124,16 +1124,19 @@ class PyastGenPass(Pass):
 
         name: Name,
         access: Optional[SubTag[Token]],
-        base_classes: Optional[Optional[SubNodeList[AtomType]]],
-        body: Optional[SubNodeList[EnumBlockStmt] | EnumDef],
+        base_classes: list[Expr],
+        body: list[EnumBlockStmt] | EnumDef],
         doc: Optional[String],
         decorators: list[Expr],
         """
         self.needs_enum()
-        body = self.resolve_stmt_block(
-            node.body.body if isinstance(node.body, ast.EnumDef) else node.body,
-            doc=node.doc,
+        body_content = (
+            node.body.body if isinstance(node.body, ast.EnumDef) else node.body
         )
+        if not isinstance(body_content, list):
+            body_content = []
+
+        body = self.resolve_body_stmts(body_content, doc=node.doc)
         decorators = [
             dec.gen.py_ast[0] for dec in node.decorators if isinstance(dec, ast.Expr)
         ]
@@ -1227,7 +1230,7 @@ class PyastGenPass(Pass):
                     else self.resolve_stmt_block(
                         (
                             node.body.body
-                            if isinstance(node.body, ast.AbilityDef)
+                            if isinstance(node.body, ast.AbilityDef)  # type: ignore
                             else node.body
                         ),
                         doc=node.doc,
