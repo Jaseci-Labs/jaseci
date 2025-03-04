@@ -450,7 +450,7 @@ class AstImplNeedingNode(AstSymbolNode, Generic[T]):
     @property
     def needs_impl(self) -> bool:
         """Need impl."""
-        return self.body is None
+        return not self.body
 
 
 class NameAtom(AtomExpr, EnumBlockStmt):
