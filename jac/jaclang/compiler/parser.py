@@ -1313,17 +1313,28 @@ class JacParser(Pass):
 
             try_stmt: KW_TRY code_block except_list? else_stmt? finally_stmt?
             """
-            self.consume_token(Tok.KW_TRY)
-            block = self.consume(ast.SubNodeList)
+            tok_try = self.consume_token(Tok.KW_TRY)
+            block_stmt = self.consume(ast.SubNodeList).items
             except_list = self.match(ast.SubNodeList)
             else_stmt = self.match(ast.ElseStmt)
             finally_stmt = self.match(ast.FinallyStmt)
+            except_list_stmt = except_list.items if except_list else []
+            else_stmt_list = [else_stmt] if else_stmt else []
+            finally_stmt_list = [finally_stmt] if finally_stmt else []
             return ast.TryStmt(
-                body=block,
-                excepts=except_list,
+                body=block_stmt,
+                excepts=except_list_stmt,
                 else_body=else_stmt,
                 finally_body=finally_stmt,
-                kid=self.cur_nodes,
+                kid=(
+                    [
+                        tok_try,
+                        *block_stmt,
+                        *except_list_stmt,
+                        *else_stmt_list,
+                        *finally_stmt_list,
+                    ]
+                ),
             )
 
         def except_list(self, _: None) -> ast.SubNodeList[ast.Except]:

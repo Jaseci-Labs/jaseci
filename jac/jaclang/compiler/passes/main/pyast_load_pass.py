@@ -2030,26 +2030,17 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         valid = [i for i in body if isinstance(i, (ast.CodeBlockStmt))]
         if len(valid) != len(body):
             raise self.ice("Length mismatch in try body")
-        valid_body = ast.SubNodeList[ast.CodeBlockStmt](
-            items=valid,
-            delim=Tok.WS,
-            kid=valid,
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
-        )
-        kid: list[ast.AstNode] = [valid_body]
+        kid: list = []
+        kid.extend(valid)
 
         if len(node.handlers) != 0:
             handlers = [self.convert(i) for i in node.handlers]
             valid_handlers = [i for i in handlers if isinstance(i, (ast.Except))]
             if len(handlers) != len(valid_handlers):
                 raise self.ice("Length mismatch in try handlers")
-            excepts = ast.SubNodeList[ast.Except](
-                items=valid_handlers, delim=Tok.WS, kid=valid_handlers
-            )
-            kid.append(excepts)
+            kid.extend(valid_handlers)
         else:
-            excepts = None
+            valid_handlers = []
 
         if len(node.orelse) != 0:
             orelse = [self.convert(i) for i in node.orelse]
@@ -2090,8 +2081,8 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
 
             kid.append(finally_stmt)
         ret = ast.TryStmt(
-            body=valid_body,
-            excepts=excepts,
+            body=valid,
+            excepts=valid_handlers,
             else_body=elsestmt if else_body else None,
             finally_body=finally_stmt,
             kid=kid,

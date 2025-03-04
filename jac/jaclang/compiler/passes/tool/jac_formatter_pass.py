@@ -1185,28 +1185,24 @@ class JacFormatPass(Pass):
             and node.parent.kid[1].gen.jac != "self.jaseci_sdk = {};\n"
         ):
             self.emit_ln(node, "")
-        start = True
-        for i in node.kid:
-            if isinstance(i, ast.CommentToken):
-                if i.is_inline:
-                    self.emit(node, f" {i.gen.jac}")
-                else:
-                    if not node.gen.jac.endswith("\n"):
-                        self.emit_ln(node, "")
-                    self.emit_ln(node, "")
-                    self.emit(node, i.gen.jac)
-            elif isinstance(i, ast.Semi):
-                self.emit(node, i.gen.jac)
-            else:
-                if isinstance(i, (ast.ElseStmt, ast.FinallyStmt)) or start:
-                    self.emit(node, i.gen.jac)
-                    start = False
-                else:
-                    self.emit(node, f" {i.gen.jac}")
-        if isinstance(
-            node.kid[-1], (ast.Semi, ast.CommentToken)
-        ) and not node.gen.jac.endswith("\n"):
-            self.emit_ln(node, "")
+
+        self.emit(node, "try {\n")
+        self.indent_level += 1
+        for stmt in node.body:
+            for line in stmt.gen.jac.splitlines():
+                node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
+        self.indent_level -= 1
+        self.emit(node, "} ")
+
+        if node.excepts:
+            for except_stmt in node.excepts:
+                self.emit(node, except_stmt.gen.jac)
+
+        if node.else_body:
+            self.emit(node, node.else_body.gen.jac)
+
+        if node.finally_body:
+            self.emit(node, node.finally_body.gen.jac)
 
     def exit_except(self, node: ast.Except) -> None:
         """Grammar:
@@ -1219,7 +1215,7 @@ class JacFormatPass(Pass):
         ):
             self.emit_ln(node, "")
 
-        self.emit(node, f"except {node.ex_type.gen.jac} ")
+        self.emit(node, f" except {node.ex_type.gen.jac} ")
         if node.name:
             self.emit(node, f"as {node.name.gen.jac} ")
         self.emit(node, "{\n")
