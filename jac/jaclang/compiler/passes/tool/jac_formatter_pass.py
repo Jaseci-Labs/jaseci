@@ -515,22 +515,14 @@ class JacFormatPass(Pass):
         """
         self.emit_ln(node, node.doc.gen.jac) if node.doc else None
         self.emit(node, f"{node.target.gen.jac}")
-        self.emit(node, f"{node.signature.gen.jac}")
+        self.emit(node, f"\n{node.signature.gen.jac}")
         self.emit(node, " {\n")
         self.indent_level += 1
-
-        for i, stmt in enumerate(node.body):
-            lines = stmt.gen.jac.splitlines()
-            for line in lines[:-1]:
-                node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
-            node.gen.jac += (
-                (self.indent_str() + lines[-1]).rstrip()
-                + ("," if i < len(node.body) - 1 else "")
-                + "\n"
-            )
-
+        for stmt in node.body:
+            for line in stmt.gen.jac.splitlines():
+                    node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
         self.indent_level -= 1
-        self.emit(node, "}")
+        self.emit(node, "}\n")
 
     def exit_event_signature(self, node: ast.EventSignature) -> None:
         """Sub objects.
@@ -645,11 +637,9 @@ class JacFormatPass(Pass):
         if node.is_override:
             self.emit(node, "override ", strip_mode=False)
         if node.is_static:
-            print(node.pp())
             self.emit(node, "static ", strip_mode=False)
         self.emit(node, "can ", strip_mode=False)
-        if node.access: #fix this
-            print('---',node.access.tag,'---') 
+        if node.access:
             self.emit(node, f"{node.access.gen.jac} ")
         if node.semstr:
             self.emit(node, f"{node.semstr.gen.jac}\n")
@@ -662,21 +652,13 @@ class JacFormatPass(Pass):
             if node.is_genai_ability:
                 self.emit(node, f" by {node.body.gen.jac};")
             elif isinstance(node.body, list):
-                self.emit(node, " {\n")
+                self.emit(node, " {")
                 self.indent_level += 1
-
-                for i, stmt in enumerate(node.body):
-                    lines = stmt.gen.jac.splitlines()
-                    for line in lines[:-1]:
-                        node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
-                    node.gen.jac += (
-                        (self.indent_str() + lines[-1]).rstrip()
-                        + ("," if i < len(node.body) - 1 else "")
-                        + "\n"
-                    )
-
+                for stmt in node.body:
+                    for line in stmt.gen.jac.splitlines():
+                            node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
                 self.indent_level -= 1
-                self.emit(node, "}")
+                self.emit(node, "\n}")
             else:
                 self.emit(node, node.body.gen.jac)
         else:

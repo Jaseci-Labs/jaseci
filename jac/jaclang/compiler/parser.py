@@ -813,7 +813,7 @@ class JacParser(Pass):
                     x
                     for x in [
                         tok_can,
-                        access.tag if access else None,
+                        access if access else None,
                         name,
                         semstr,
                         signature,
