@@ -2603,14 +2603,12 @@ class GlobalStmt(CodeBlockStmt):
         if deep:
             for stmt in self.target:
                 res = res and stmt.normalize(deep)
-        target_list: list[AstNode] = []
-        for name in self.target:
-            target_list.append(name)
-            target_list.append(self.gen_token(Tok.COMMA))
-
-        new_kid: list[AstNode] = [
+        target_list = [
+            item for name in self.target for item in (name, self.gen_token(Tok.COMMA))
+        ]
+        new_kid = [
             self.gen_token(Tok.GLOBAL_OP),
-            *target_list[:-1],
+            *target_list[:-1],  # Remove the last comma
             self.gen_token(Tok.SEMI),
         ]
         self.set_kids(nodes=new_kid)

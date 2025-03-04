@@ -1932,10 +1932,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     pos_end=0,
                 )
             )
-        target = ast.SubNodeList[ast.NameAtom](
-            items=names, delim=Tok.COMMA, kid=names
-        ).items
-        return ast.NonLocalStmt(target=target, kid=names)
+        return ast.NonLocalStmt(target=names, kid=names)
 
     def proc_pass(self, node: py_ast.Pass) -> ast.Semi:
         """Process python node."""
