@@ -1689,7 +1689,7 @@ class JacParser(Pass):
             global_ref: GLOBAL_OP name_list
             """
             self.consume_token(Tok.GLOBAL_OP)
-            target = self.consume(ast.SubNodeList)
+            target = self.consume(ast.SubNodeList).items
             return ast.GlobalStmt(
                 target=target,
                 kid=self.cur_nodes,
@@ -1701,7 +1701,7 @@ class JacParser(Pass):
             nonlocal_ref: NONLOCAL_OP name_list
             """
             self.consume_token(Tok.NONLOCAL_OP)
-            target = self.consume(ast.SubNodeList)
+            target = self.consume(ast.SubNodeList).items
             return ast.NonLocalStmt(
                 target=target,
                 kid=self.cur_nodes,
