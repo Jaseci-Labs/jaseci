@@ -162,9 +162,11 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             pos_start=0,
             pos_end=0,
         )
-        body = [self.convert(stmt) for stmt in node.body]
-        if not all(isinstance(stmt, ast.CodeBlockStmt) for stmt in body):
-            raise self.ice("Invalid statement in function body.")
+        body = [
+            stmt
+            for stmt in (self.convert(stmt) for stmt in node.body)
+            if isinstance(stmt, ast.CodeBlockStmt)
+        ]
 
         if (
             len(body)
@@ -173,24 +175,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         ):
             self.convert_to_doc(body[0].expr)
             doc = body[0]
-            valid_body = ast.SubNodeList[ast.CodeBlockStmt](
-                # NOTE: Ignoring type cause the subnodelist will be removed thus the type ignore will be gone too.
-                # also we're asserting the all are codeblockstmt with the above if not all(...) check.
-                items=[doc] + body[1:],  # type: ignore
-                delim=Tok.WS,
-                kid=body[1:] + [doc],
-                left_enc=self.operator(Tok.LBRACE, "{"),
-                right_enc=self.operator(Tok.RBRACE, "}"),
-            )
+            valid_body: list[ast.CodeBlockStmt] = body[1:] + [doc]
         else:
             doc = None
-            valid_body = ast.SubNodeList[ast.CodeBlockStmt](
-                items=body,  # type: ignore
-                delim=Tok.WS,
-                kid=body,
-                left_enc=self.operator(Tok.LBRACE, "{"),
-                right_enc=self.operator(Tok.RBRACE, "}"),
-            )
+            valid_body = body
         decorators = [self.convert(decr) for decr in node.decorator_list]
         if not all(isinstance(decr, ast.Expr) for decr in decorators):
             raise self.ice("Invalid decorator in function.")
@@ -211,7 +199,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 sig.return_type = ret_sig
                 sig.add_kids_right([sig.return_type])
         kid = ([doc] if doc else []) + (
-            [name, sig, valid_body] if sig else [name, valid_body]
+            [name, sig, *valid_body] if sig else [name, *valid_body]
         )
         if not sig:
             raise self.ice("Function signature not found")

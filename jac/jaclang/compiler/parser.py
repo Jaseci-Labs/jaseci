@@ -783,17 +783,20 @@ class JacParser(Pass):
                 named_ref (func_decl | event_clause) (code_block | SEMI)
             """
             signature: ast.FuncSignature | ast.EventSignature | None = None
-            body: ast.SubNodeList | None = None
+            body: list[ast.CodeBlockStmt] | ast.AbilityDef | ast.FuncCall | None = None
             is_override = self.match_token(Tok.KW_OVERRIDE) is not None
             is_static = self.match_token(Tok.KW_STATIC) is not None
-            self.consume_token(Tok.KW_CAN)
+            tok_can = self.consume_token(Tok.KW_CAN)
             access = self.match(ast.SubTag)
             semstr = self.match(ast.String)
             name = self.consume(ast.NameAtom)
             signature = self.match(ast.FuncSignature) or self.consume(
                 ast.EventSignature
             )
-            if (body := self.match(ast.SubNodeList)) is None:
+            sub_node_body = self.match(ast.SubNodeList)
+            body = sub_node_body.items if sub_node_body else []
+
+            if not sub_node_body:
                 self.consume_token(Tok.SEMI)
             return ast.Ability(
                 name_ref=name,
@@ -806,7 +809,18 @@ class JacParser(Pass):
                 signature=signature,
                 body=body,
                 decorators=[],
-                kid=self.cur_nodes,
+                kid=[
+                    x
+                    for x in [
+                        tok_can,
+                        access.tag if access else None,
+                        name,
+                        semstr,
+                        signature,
+                        *body,
+                    ]
+                    if x
+                ],
             )
 
         def ability_def(self, kid: list[ast.AstNode]) -> ast.AbilityDef:
@@ -819,11 +833,16 @@ class JacParser(Pass):
                 and isinstance(kid[1], (ast.FuncSignature, ast.EventSignature))
                 and isinstance(kid[2], ast.SubNodeList)
             ):
+                body = kid[2].items
                 return ast.AbilityDef(
                     target=kid[0],
                     signature=kid[1],
-                    body=kid[2],
-                    kid=kid,
+                    body=body,
+                    kid=[
+                        kid[0],
+                        kid[1],
+                        *body,
+                    ],
                 )
             else:
                 raise self.ice()
@@ -857,7 +876,7 @@ class JacParser(Pass):
                 access=access,
                 semstr=semstr,
                 signature=signature,
-                body=None,
+                body=[],
                 decorators=[],
                 kid=self.cur_nodes,
             )

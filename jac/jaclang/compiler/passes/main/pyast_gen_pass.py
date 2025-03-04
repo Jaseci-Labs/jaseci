@@ -1224,7 +1224,7 @@ class PyastGenPass(Pass):
                 else (
                     [self.sync(ast3.Pass(), node.body)]
                     if node.is_abstract
-                    else self.resolve_stmt_block(
+                    else self.resolve_body_stmts(
                         (
                             node.body.body
                             if isinstance(node.body, ast.AbilityDef)
