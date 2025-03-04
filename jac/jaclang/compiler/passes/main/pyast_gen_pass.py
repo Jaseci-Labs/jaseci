@@ -1134,13 +1134,11 @@ class PyastGenPass(Pass):
             node.body.body if isinstance(node.body, ast.EnumDef) else node.body,
             doc=node.doc,
         )
-        decorators = [
-            dec.gen.py_ast[0] for dec in node.decorators if isinstance(dec, ast.Expr)
-        ]
+        decorators = [dec.gen.py_ast[0] for dec in node.decorators]
         base_classes = [
             base.gen.py_ast[0]
             for base in node.base_classes
-            if isinstance(base, ast3.expr)
+            if isinstance(base.gen.py_ast[0], ast3.expr)
         ]
         if isinstance(base_classes, list):
             base_classes.append(
@@ -1240,9 +1238,7 @@ class PyastGenPass(Pass):
                 f"Abstract ability {node.sym_name} should not have a body.",
                 node,
             )
-        decorators = [
-            dec.gen.py_ast[0] for dec in node.decorators if isinstance(dec, ast.Expr)
-        ]
+        decorators = [dec.gen.py_ast[0] for dec in node.decorators]
         if isinstance(node.body, ast.AstImplOnlyNode):
             self.needs_jac_feature()
             decorators.append(
