@@ -1400,7 +1400,7 @@ class JacFormatPass(Pass):
             ):
                 self.emit(node, f"{kid.gen.jac} ")
             elif isinstance(kid, ast.Token) and "=" in kid.gen.jac:
-                self.emit(node, f"{kid.gen.jac}")
+                self.emit(node, f" {kid.gen.jac} ")
             elif (
                 "=" in kid.gen.jac
                 and self.is_line_break_needed(

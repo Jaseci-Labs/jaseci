@@ -2677,7 +2677,10 @@ class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
             res = res and self.type_tag.normalize(deep) if self.type_tag else res
             res = res and self.aug_op.normalize(deep) if self.aug_op else res
         new_kid: list[AstNode] = []
-        new_kid.extend(self.target)
+        for i, target in enumerate(self.target):
+            if i > 0:
+                new_kid.append(self.gen_token(Tok.EQ))
+            new_kid.append(target)
         if self.semstr:
             new_kid.append(self.gen_token(Tok.COLON))
             new_kid.append(self.semstr)
