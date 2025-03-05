@@ -107,8 +107,6 @@ class JacFormatPass(Pass):
         """
         prev_token = None
         for i in node.kid:
-            if not isinstance(i, ast.HasVar):
-                continue
             if isinstance(i, ast.String):
                 self.emit_ln(node, f" {i.gen.jac}")
                 self.emit_ln(node, "")
