@@ -57,13 +57,12 @@ class JacImportPass(Pass):
         """Attach a module to a node."""
         from jaclang.runtimelib.machine import JacMachine
 
-        if mod:
-            JacMachine.get().jac_program.modules[mod.loc.mod_path] = mod
-            JacMachine.get().jac_program.last_imported.append(mod)
-            # node.sub_module = mod
+        machine = JacMachine.get().jac_program
+        if mod and mod.loc.mod_path not in machine.modules:
+            machine.modules[mod.loc.mod_path] = mod
+            machine.last_imported.add(mod)
+            # print(f"Adding {mod.name} to the queue {id(mod)}", [k.name for k in JacMachine.get().jac_program.last_imported])
             self.annex_impl(mod)
-            # node.add_kids_right([mod], pos_update=False)
-            # mod.parent = node
 
     def annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""
@@ -196,6 +195,14 @@ class JacImportPass(Pass):
             self.error(f"Module {target} is not a valid Jac module.")
             return None
 
+    # def after_pass(self):
+    #     import traceback
+    #     print(self.ir.loc.mod_path)
+    #     traceback.print_stack()
+    #     print(self.ir.pp())
+    #     print("-----------------------------------")
+    #     print("-----------------------------------")
+    #     print("-----------------------------------")
 
 class PyImportPass(JacImportPass):
     """Jac statically imports Python modules."""

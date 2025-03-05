@@ -30,7 +30,8 @@ def compile_jac(file_path: str, cache_result: bool = False) -> Pass:
     if cache_result and (not had_syntax_error) and isinstance(code.ir, ast.Module):
         for path, module in JacMachine.get().jac_program.modules.items():
             print_pass = PyOutPass(input_ir=module, prior=code)
-        return print_pass
+        # return print_pass
+    
     return code
 
 
@@ -69,12 +70,15 @@ def jac_str_to_pass(
         return ast_ret
 
     machine = JacMachine.get()
-    machine.jac_program.last_imported.append(ast_ret.ir)
+    top_mod = ast_ret.ir
+    machine.jac_program.last_imported.add(ast_ret.ir)
+    # print(f"Adding {ast_ret.ir.name} to the queue {id(ast_ret.ir)}", [k.name for k in JacMachine.get().jac_program.last_imported])
     machine.jac_program.modules[ast_ret.ir.loc.mod_path] = ast_ret.ir
 
     while len(machine.jac_program.last_imported) > 0:
         mod = machine.jac_program.last_imported.pop()
-        jac_ir_to_pass(ir=mod, schedule=[JacImportPass])
+        # print(f"Removing {mod.name} from the queue", [k.name for k in JacMachine.get().jac_program.last_imported])
+        JacImportPass(input_ir=mod, prior=ast_ret)
 
     # If there is syntax error, no point in processing in further passes.
     if len(ast_ret.errors_had) != 0:
@@ -95,6 +99,8 @@ def jac_str_to_pass(
             for mod in machine.jac_program.modules.values()
         ]
         concurrent.futures.wait(futures)
+
+    ast_ret.ir = top_mod
     return ast_ret
 
 

@@ -288,7 +288,7 @@ class JacProgram:
         self.bytecode = bytecode or {}
         self.sem_ir = sem_ir if sem_ir else SemRegistry()
         self.modules: dict[str, Module] = {}
-        self.last_imported: list[Module] = []
+        self.last_imported: set[Module] = set()
 
     def get_bytecode(
         self,
