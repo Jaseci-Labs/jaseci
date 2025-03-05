@@ -391,20 +391,26 @@ class JacFormatPass(Pass):
         line_break_needed = False
         indented = False
         test_str = ""
+        params: list[ast.AstNode] = []
+        param_bool = True
+        if node.kid[1].gen.jac == "(":
+            idx: int = 2
+            while not node.kid[idx].gen.jac.startswith((")", "by")):
+                params.append(node.kid[idx])
+                idx += 1
         for i in node.kid:
-            if isinstance(i, ast.SubNodeList):
-                if prev_token and prev_token.gen.jac.strip() == "(":
-                    for j in i.kid:
-                        test_str += f" {j.gen.jac}"
-                    test_str += ");"
-                    line_break_needed = self.is_line_break_needed(test_str, 60)
+            if prev_token and prev_token.gen.jac.strip() == "(" and param_bool:
+                for j in params:
+                    test_str += f" {j.gen.jac}"
+                test_str += ");"
+                line_break_needed = self.is_line_break_needed(test_str, 60)
                 if line_break_needed:
                     self.emit_ln(node, "")
                     self.indent_level += 1
                     indented = True
-                for count, j in enumerate(i.kid):
+                for count, j in enumerate(params):
                     if j.gen.jac == ",":
-                        if len(i.kid) > count + 1 and i.kid[
+                        if len(params) > count + 1 and params[
                             count + 1
                         ].gen.jac.startswith("#"):
                             self.indent_level -= 1
@@ -429,7 +435,12 @@ class JacFormatPass(Pass):
                         self.emit(node, j.gen.jac)
                 if indented:
                     self.indent_level -= 1
-                prev_token = i
+                param_bool = False
+            if (
+                prev_token
+                and prev_token.gen.jac == "("
+                and (not i.gen.jac.startswith((")", "by")))
+            ):
                 continue
             if isinstance(i, ast.CommentToken):
                 if i.is_inline:
@@ -443,11 +454,7 @@ class JacFormatPass(Pass):
                 else:
                     self.emit(node, f" {i.gen.jac} ")
             else:
-                if (
-                    line_break_needed
-                    and prev_token
-                    and isinstance(prev_token, ast.SubNodeList)
-                ):
+                if line_break_needed and i.gen.jac.startswith((")", "by")):
                     self.indent_level -= 1
                     self.emit_ln(node, "")
                     self.indent_level += 1
@@ -1347,23 +1354,20 @@ class JacFormatPass(Pass):
 
     def handle_long_expression(self, node: ast.AstNode, kid: ast.AstNode) -> None:
         """Handle long expressions with multiple operators."""
-        if "\{([A-Za-z0-9_]+)\}" not in kid.gen.jac:  # noqa
-            parts = re.split(r"(\+|\-|\*|\/)", kid.gen.jac)
-            self.emit_ln(node, f"{parts.pop(0).strip()}")
-            for j in range(0, len(parts) - 1, 2):
-                op = parts[j]
-                var = parts[j + 1].strip() if j + 1 < len(parts) else ""
-                if j < len(parts) - 2:
-                    self.indent_level += 1
-                    self.emit(node, f"{op} {var}")
-                    self.indent_level -= 1
-                    self.emit_ln(node, "")
-                else:
-                    self.indent_level += 1
-                    self.emit(node, f"{op} {var}")
-                    self.indent_level -= 1
-        else:
-            self.emit_ln(node, kid.gen.jac)
+        parts = re.split(r"(\+|\-|\*|\/)", kid.gen.jac)
+        self.emit_ln(node, f"{parts.pop(0).strip()}")
+        for j in range(0, len(parts) - 1, 2):
+            op = parts[j]
+            var = parts[j + 1].strip() if j + 1 < len(parts) else ""
+            if j < len(parts) - 2:
+                self.indent_level += 1
+                self.emit(node, f"{op} {var}")
+                self.indent_level -= 1
+                self.emit_ln(node, "")
+            else:
+                self.indent_level += 1
+                self.emit(node, f"{op} {var}")
+                self.indent_level -= 1
 
     def exit_assignment(self, node: ast.Assignment) -> None:
         """Sub objects.

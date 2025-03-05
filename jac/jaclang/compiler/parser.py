@@ -2153,17 +2153,24 @@ class JacParser(Pass):
             atomic_call: atomic_chain LPAREN param_list? (KW_BY atomic_call)? RPAREN
             """
             target = self.consume(ast.Expr)
-            self.consume_token(Tok.LPAREN)
+            tok_lp = self.consume_token(Tok.LPAREN)
             params_list = self.match(ast.SubNodeList)
-            params = params_list.items if params_list else []
+            kids: list[ast.AstNode] = [target, tok_lp]
+            params = []
+            if params_list:
+                params = params_list.items
+                kids.extend(params_list.kid)
+            call: ast.FuncCall | None = None
             tok_by = self.match_token(Tok.KW_BY)
-            call = self.consume(ast.FuncCall) if tok_by else None
-            self.consume_token(Tok.RPAREN)
+            if tok_by:
+                call = self.consume(ast.FuncCall)
+                kids.extend([tok_by, call])
+            kids.append(self.consume_token(Tok.RPAREN))
             return ast.FuncCall(
                 target=target,
                 params=params,
                 genai_call=call,
-                kid=kid,
+                kid=kids,
             )
 
         def index_slice(self, kid: list[ast.AstNode]) -> ast.IndexSlice:

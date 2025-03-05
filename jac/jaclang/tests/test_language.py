@@ -119,18 +119,18 @@ class JacLanguageTests(TestCase):
 
         expected_outputs = [
             "+-- AtomTrailer - Type: builtins.list[builtins.int]",
-            "    +-- Name - arr - Type: builtins.list[builtins.list[builtins.int]],  SymbolTable: list",
-            "    +-- IndexSlice - [IndexSlice] - Type: builtins.list[builtins.list[builtins.int]],  SymbolTable: None",
-            "        +-- Token - [,",
-            "        +-- Int - 1 - Type: Literal[1]?,  SymbolTable: None",
-            "        +-- Token - :,",
-            "        +-- Int - 3 - Type: Literal[3]?,  SymbolTable: None",
-            "        +-- Token - ,,",
-            "        +-- Int - 1 - Type: Literal[1]?,  SymbolTable: None",
-            "        +-- Token - :,",
-            "        +-- Token - :,",
-            "        +-- Int - 2 - Type: Literal[2]?,  SymbolTable: None",
-            "        +-- Token - ],",
+            "|   +-- Name - arr - Type: builtins.list[builtins.list[builtins.int]],  SymbolTable: list",
+            "|   +-- IndexSlice - [IndexSlice] - Type: builtins.list[builtins.list[builtins.int]],  SymbolTable: None",
+            "|       +-- Token - [,",
+            "|       +-- Int - 1 - Type: Literal[1]?,  SymbolTable: None",
+            "|       +-- Token - :,",
+            "|       +-- Int - 3 - Type: Literal[3]?,  SymbolTable: None",
+            "|       +-- Token - ,,",
+            "|       +-- Int - 1 - Type: Literal[1]?,  SymbolTable: None",
+            "|       +-- Token - :,",
+            "|       +-- Token - :,",
+            "|       +-- Int - 2 - Type: Literal[2]?,  SymbolTable: None",
+            "|       +-- Token - ],",
         ]
 
         for expected in expected_outputs:
@@ -157,7 +157,7 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertEqual(
             stdout_value,
-            "{'apple': None, 'pine': None}\n"
+            "{'apple': None, 'pineapple': None}\n"
             "This is a long\n"
             "    line of code.\n"
             "{'a': 'apple', 'b': 'ball', 'c': 'cat', 'd': 'dog', 'e': 'elephant'}\n",

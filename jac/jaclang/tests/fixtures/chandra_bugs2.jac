@@ -3,7 +3,9 @@ import:py re;
 glob a: int = 5;
 
 with entry {
-    arguments = {x: None  for x in re.findall(r'\{([A-Za-z0-9_]+)\}',"Apple {apple} pine {pine}")};
+    patterns = r'\{([A-Za-z0-9_]+)\}';
+    text = "Apple {apple} pineapple {pineapple}";
+    arguments = {x: None  for x in re.findall(patterns,text)};
     a: int = 5;
     if False {
         with open(f"Apple{apple}.txt") as f { # Fix syntax highlighting
