@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import ast as py_ast
 import os
-from typing import Optional, Sequence, TypeAlias, TypeVar, cast
+from typing import Optional, TypeAlias, TypeVar, cast
 
 # from icecream import ic
 
@@ -323,21 +323,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         )
         self.convert_to_doc(doc) if doc else None
         body = body[1:] if doc else body
-        valid: list[ast.ArchBlockStmt] = (
+        valid_body: list[ast.ArchBlockStmt] = (
             self.extract_with_entry(body, ast.ArchBlockStmt)
             if body and not (isinstance(body[0], ast.Semi) and len(body) == 1)
             else []
-        )
-        empty_block: Sequence[ast.AstNode] = [
-            self.operator(Tok.LBRACE, "{"),
-            self.operator(Tok.RBRACE, "}"),
-        ]
-        valid_body = ast.SubNodeList[ast.ArchBlockStmt](
-            items=valid,
-            delim=Tok.WS,
-            kid=(valid if valid else empty_block),
-            left_enc=self.operator(Tok.LBRACE, "{"),
-            right_enc=self.operator(Tok.RBRACE, "}"),
         )
         converted_base_classes = [self.convert(base) for base in node.bases]
         base_classes: list[ast.Expr] = [
@@ -345,7 +334,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         ]
         converted_decorators_list = [self.convert(i) for i in node.decorator_list]
         decorators = [i for i in converted_decorators_list if isinstance(i, ast.Expr)]
-        valid_decorators = (
+        valid_decorators: list[ast.Expr] = (
             [dec for dec in decorators if isinstance(dec, ast.Expr)]
             if decorators
             else []
@@ -416,12 +405,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 decorators=valid_decorators,
             )
         kid = (
-            [name, *base_classes, valid_body, doc]
+            [name, *base_classes, *valid_body, doc]
             if doc and base_classes
             else (
-                [name, *base_classes, valid_body]
+                [name, *base_classes, *valid_body]
                 if base_classes
-                else [name, valid_body, doc] if doc else [name, valid_body]
+                else [name, *valid_body, doc] if doc else [name, *valid_body]
             )
         )
         return ast.Architype(

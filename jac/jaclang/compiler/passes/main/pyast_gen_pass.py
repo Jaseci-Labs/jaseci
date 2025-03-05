@@ -954,7 +954,7 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
-        body = self.resolve_stmt_block(
+        body = self.resolve_body_stmts(
             node.body.body if isinstance(node.body, ast.ArchDef) else node.body,
             doc=node.doc,
         )
@@ -1066,9 +1066,9 @@ class PyastGenPass(Pass):
         ds_on_entry: list[ast3.AST] = []
         ds_on_exit: list[ast3.AST] = []
         for i in (
-            node.body.body.items
+            node.body.body
             if isinstance(node.body, ast.ArchDef)
-            else node.body.items if node.body else []
+            else node.body if node.body else []
         ):
             if isinstance(i, ast.Ability) and isinstance(
                 i.signature, ast.EventSignature
@@ -1226,7 +1226,7 @@ class PyastGenPass(Pass):
                     if node.is_abstract
                     else self.resolve_stmt_block(
                         (
-                            node.body.body
+                            node.body.body  # type: ignore
                             if isinstance(node.body, ast.AbilityDef)
                             else node.body
                         ),

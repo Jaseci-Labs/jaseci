@@ -542,22 +542,27 @@ class JacParser(Pass):
             name = self.consume(ast.Name)
             sub_list1 = self.match(ast.SubNodeList)
             sub_list2 = self.match(ast.SubNodeList)
-            if self.match_token(Tok.SEMI):
-                inh, body = sub_list1, None
-            else:
-                body = (
-                    sub_list2 or sub_list1
-                )  # if sub_list2 is None then body is sub_list1
-                inh = sub_list2 and sub_list1  # if sub_list2 is None then inh is None.
+            inh: list[ast.Expr] = []
+            body: list[ast.ArchBlockStmt] = []
+
+            if sub_list1 and sub_list2:
+                inh = sub_list1.items
+                body = sub_list2.items
+            elif sub_list1:
+                body = sub_list1.items
             return ast.Architype(
                 arch_type=arch_type,
                 name=name,
                 semstr=semstr,
                 access=access,
-                base_classes=inh.items if inh else [],
+                base_classes=inh,
                 body=body,
                 decorators=[],
-                kid=self.cur_nodes,
+                kid=[arch_type, name]
+                + ([access] if access else [])
+                + ([semstr] if semstr else [])
+                + inh
+                + body,
             )
 
         def architype_def(self, kid: list[ast.AstNode]) -> ast.ArchDef:
@@ -568,10 +573,14 @@ class JacParser(Pass):
             if isinstance(kid[0], ast.ArchRefChain) and isinstance(
                 kid[1], ast.SubNodeList
             ):
+                body = kid[1].items
                 return ast.ArchDef(
                     target=kid[0],
-                    body=kid[1],
-                    kid=kid,
+                    body=body,
+                    kid=[
+                        kid[0],
+                        *body,
+                    ],
                 )
             else:
                 raise self.ice()
