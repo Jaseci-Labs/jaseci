@@ -46,7 +46,6 @@ class JacMachine:
             else os.path.abspath(base_path)
         )
         self.jac_program: JacProgram = JacProgram(None, None, None)
-
         JACMACHINE_CONTEXT.set(self)
 
     def attach_program(self, jac_program: "JacProgram") -> None:
