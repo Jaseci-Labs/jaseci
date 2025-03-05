@@ -1371,7 +1371,7 @@ class JacFormatPass(Pass):
     def exit_assignment(self, node: ast.Assignment) -> None:
         """Sub objects.
 
-        target: SubNodeList[Expr],
+        target: list[Expr],
         value: Optional[Expr | YieldExpr],
         type_tag: Optional[SubTag[Expr]],
         mutable: bool = True,
@@ -1400,7 +1400,7 @@ class JacFormatPass(Pass):
             ):
                 self.emit(node, f"{kid.gen.jac} ")
             elif isinstance(kid, ast.Token) and "=" in kid.gen.jac:
-                self.emit(node, f" {kid.gen.jac} ")
+                self.emit(node, f"{kid.gen.jac}")
             elif (
                 "=" in kid.gen.jac
                 and self.is_line_break_needed(

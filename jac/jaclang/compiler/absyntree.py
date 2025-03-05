@@ -2648,7 +2648,7 @@ class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
 
     def __init__(
         self,
-        target: SubNodeList[Expr],
+        target: list[Expr],
         value: Optional[Expr | YieldExpr],
         type_tag: Optional[SubTag[Expr]],
         kid: Sequence[AstNode],
@@ -2670,13 +2670,14 @@ class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
     def normalize(self, deep: bool = True) -> bool:
         """Normalize ast node."""
         res = True
+        for target in self.target:
+            res = res and target.normalize(deep)
         if deep:
-            res = self.target.normalize(deep)
             res = res and self.value.normalize(deep) if self.value else res
             res = res and self.type_tag.normalize(deep) if self.type_tag else res
             res = res and self.aug_op.normalize(deep) if self.aug_op else res
         new_kid: list[AstNode] = []
-        new_kid.append(self.target)
+        new_kid.extend(self.target)
         if self.semstr:
             new_kid.append(self.gen_token(Tok.COLON))
             new_kid.append(self.semstr)

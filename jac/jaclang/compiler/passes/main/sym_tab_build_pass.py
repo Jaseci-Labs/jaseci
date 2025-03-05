@@ -85,7 +85,7 @@ class SymTabBuildPass(Pass):
         doc: Optional[Constant] = None,
         """
         for i in self.get_all_sub_nodes(node, ast.Assignment):
-            for j in i.target.items:
+            for j in i.target:
                 if isinstance(j, ast.AstSymbolNode):
                     j.sym_tab.def_insert(j, access_spec=node, single_decl="global var")
                 else:
