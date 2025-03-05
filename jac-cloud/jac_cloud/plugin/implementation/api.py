@@ -1,6 +1,7 @@
 """Jaseci API Implementations."""
 
 from dataclasses import Field, MISSING, fields, is_dataclass
+from enum import StrEnum
 from os import getenv
 from re import compile
 from types import NoneType
@@ -46,6 +47,18 @@ walker_router = APIRouter(prefix="/walker")
 webhook_walker_router = APIRouter(prefix="/webhook/walker")
 
 
+class EntryType(StrEnum):
+    """Entry Type."""
+
+    ROOT = "ROOT"
+    NODE = "NODE"
+    BOTH = "BOTH"
+
+
+ROOT_ENTRIES = [EntryType.ROOT, EntryType.BOTH]
+NODE_ENTRIES = [EntryType.NODE, EntryType.BOTH]
+
+
 class DefaultSpecs:
     """Default API specs."""
 
@@ -56,8 +69,16 @@ class DefaultSpecs:
     auth: bool = True
     private: bool = False
     webhook: dict | None = None
+    entry_type: EntryType = EntryType.BOTH
     tags: list[str] | None = None
-    allow_entry: bool | None = None
+    status_code: int | None = None
+    summary: str | None = None
+    description: str | None = None
+    response_description: str = "Successful Response"
+    responses: dict[int | str, dict[str, Any]] | None = None
+    deprecated: bool | None = None
+    name: str | None = None
+    openapi_extra: dict[str, Any] | None = None
 
 
 def get_specs(cls: type) -> Type["DefaultSpecs"] | None:
@@ -95,8 +116,16 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
         excluded: str | list[str] = specs.excluded or []
         auth: bool = specs.auth or False
         webhook: dict | None = specs.webhook
+        entry_type: EntryType = specs.entry_type
         tags: list[str] | None = specs.tags
-        allow_entry: bool | None = specs.allow_entry
+        status_code: int | None = specs.status_code
+        summary: str | None = specs.summary
+        description: str | None = specs.description
+        response_description: str = specs.response_description
+        responses: dict[int | str, dict[str, Any]] | None = specs.responses
+        deprecated: bool | None = specs.deprecated
+        name: str | None = specs.name
+        openapi_extra: dict[str, Any] | None = specs.openapi_extra
 
         query: dict[str, Any] = {}
         body: dict[str, Any] = {}
@@ -224,11 +253,11 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
         if webhook is None:
             target_authenticator = authenticator
             target_router = walker_router
-            default_tags = ["Walker"]
+            default_tags = ["Walker APIs"]
         else:
             target_authenticator = generate_webhook_auth(webhook)
             target_router = webhook_walker_router
-            default_tags = ["Webhook Walker"]
+            default_tags = ["Webhook Walker APIs"]
 
         for method in methods:
             method = method.lower()
@@ -261,20 +290,24 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
                     settings: dict[str, Any] = {
                         "response_model": ContextResponse[ret_types] | Any,
                         "tags": default_tags if tags is None else tags,
+                        "status_code": status_code,
+                        "summary": summary,
+                        "description": description,
+                        "response_description": response_description,
+                        "responses": responses,
+                        "deprecated": deprecated,
+                        "name": name,
+                        "openapi_extra": openapi_extra,
                     }
                     if auth:
                         settings["dependencies"] = cast(list, target_authenticator)
 
-                    if not allow_entry:
-                        walker_method(
-                            url := f"/{cls.__name__}{path}", summary=url, **settings
-                        )(api_root)
-                    if allow_entry or allow_entry is None:
-                        walker_method(
-                            url := f"/{cls.__name__}/{{node}}{path}",
-                            summary=url,
-                            **settings,
-                        )(api_entry)
+                    if entry_type.upper() in ROOT_ENTRIES:
+                        walker_method(f"/{cls.__name__}{path}", **settings)(api_root)
+                    if entry_type.upper() in NODE_ENTRIES:
+                        walker_method(f"/{cls.__name__}/{{node}}{path}", **settings)(
+                            api_entry
+                        )
 
 
 def specs(
@@ -287,8 +320,16 @@ def specs(
     auth: bool = True,
     private: bool = False,
     webhook: dict | None = None,
+    entry_type: EntryType = EntryType.BOTH,
     tags: list[str] | None = None,
-    allow_entry: bool | None = None,
+    status_code: int | None = None,
+    summary: str | None = None,
+    description: str | None = None,
+    response_description: str = "Successful Response",
+    responses: dict[int | str, dict[str, Any]] | None = None,
+    deprecated: bool | None = None,
+    name: str | None = None,
+    openapi_extra: dict[str, Any] | None = None,
 ) -> Callable:
     """Walker Decorator."""
 
@@ -301,8 +342,16 @@ def specs(
             _auth = auth
             _private = private
             _webhook = webhook
+            _entry_type = entry_type
             _tags = tags
-            _allow_entry = allow_entry
+            _status_code = status_code
+            _summary = summary
+            _description = description
+            _response_description = response_description
+            _responses = responses
+            _deprecated = deprecated
+            _name = name
+            _openapi_extra = openapi_extra
 
             class __specs__(DefaultSpecs):  # noqa: N801
                 path: str = _path
@@ -312,8 +361,16 @@ def specs(
                 auth: bool = _auth
                 private: bool = _private
                 webhook: dict | None = _webhook
+                entry_type: EntryType = _entry_type
                 tags: list[str] | None = _tags
-                allow_entry: bool | None = _allow_entry
+                status_code: int | None = _status_code
+                summary: str | None = _summary
+                description: str | None = _description
+                response_description: str = _response_description
+                responses: dict[int | str, dict[str, Any]] | None = _responses
+                deprecated: bool | None = _deprecated
+                name: str | None = _name
+                openapi_extra: dict[str, Any] | None = _openapi_extra
 
             cls.__specs__ = __specs__  # type: ignore[attr-defined]
 

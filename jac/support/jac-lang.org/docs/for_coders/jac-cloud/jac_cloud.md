@@ -28,8 +28,19 @@ Once starts, navigate to `/docs` to access the built-in API docs.
 | auth      | bool      | if endpoint requires authentication or not | true
 | private   | bool      | only applicable if auto endpoint is enabled. This will skip the walker in auto generation. | false
 | webhook   | dict or None | [Webhook Configuration](./jac_cloud_webhook.md) | None
-| tags      | list[str] or None | Additional tags to segragate openapi docs | None
-| allow_entry | bool or None | True for generating api with node entry input. False for generating api without node entry input (always current root entry). None will support both. | None
+| entry_type | str or StrEnum (jac_cloud.plugin.EntryType) | "NODE" for generating api with node entry input. "ROOT" for generating api without node entry input (always current root entry). "BOTH" will support both. | `"BOTH"`|
+|||||
+|||**`Following fields is for configuring FastAPI's OpenAPI Specs / Swagger`**||
+|||||
+| tags          | list[str] or None |A list of tags to be applied to the *path operation*. It will be added to the generated OpenAPI (e.g. visible at `/docs`). Read more about it in the [FastAPI docs for Path Operation Configuration](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#tags).| None
+| status_code   | int or None |The default status code to be used for the response. You could override the status code by returning a response directly. Read more about it in the [FastAPI docs for Response Status Code](https://fastapi.tiangolo.com/tutorial/response-status-code/). | None
+| summary       | str or None |A summary for the *path operation*. It will be added to the generated OpenAPI (e.g. visible at `/docs`). Read more about it in the [FastAPI docs for Path Operation Configuration](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/). | None
+| description   | str or None |A description for the *path operation*. If not provided, it will be extracted automatically from the docstring of the *path operation function*. It can contain Markdown. It will be added to the generated OpenAPI (e.g. visible at `/docs`). Read more about it in the [FastAPI docs for Path Operation Configuration](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/). | None
+| response_description  | str | The description for the default response. It will be added to the generated OpenAPI (e.g. visible at `/docs`).| "Successful Response"
+| responses     | dict[int or str, dict[str, Any]] or None |Additional responses that could be returned by this *path operation*. It will be added to the generated OpenAPI (e.g. visible at `/docs`). | None
+| deprecated    | bool or None |Mark this *path operation* as deprecated. It will be added to the generated OpenAPI (e.g. visible at `/docs`).| None
+| name          | str or None | Name for this *path operation*. Only used internally. | None
+| openapi_extra | dict[str, Any] or None |Extra metadata to be included in the OpenAPI schema for this *path operation*. Read more about it in the [FastAPI docs for Path Operation Advanced Configuration](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#custom-openapi-path-operation-schema).| None
 
 ## **Examples**
 ```python

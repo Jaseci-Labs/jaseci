@@ -926,3 +926,25 @@ walker websocket {
         has methods: list = ["websocket"];
     }
 }
+
+walker documentation {
+
+    class __specs__ {
+        has tags: list[str] | None = ["Documented"];
+        has entry_type: EntryType = "root";
+        has status_code: int | None = "201";
+        has summary: str | None = "Enter summary here!!!";
+        has description: str | None = "Enter description here!!!";
+        has response_description: str = "Enter response description here!!! Defaults to 'Successful Response'";
+        has responses: dict[int | str, dict[str, Any]] | None = {
+            200: {
+                "description": "Enter response description for http status 200!!!",
+                "content": {"application/json": {}},
+                "links": {"sample_link": {"description": "Enter link description here!!!"}}
+            }
+        };
+        has deprecated: bool | None = True;
+        has name: str | None = "Enter name here!!!";
+        has openapi_extra: dict[str, Any] | None = {"addons": True};
+    }
+}
