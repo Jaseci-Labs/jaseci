@@ -1255,10 +1255,10 @@ class JacParser(Pass):
 
             typed_ctx_block: RETURN_HINT expression code_block
             """
-            rt_ht = self.consume_token(Tok.RETURN_HINT)
+            tok_return_hint = self.consume_token(Tok.RETURN_HINT)
             expr = self.consume(ast.Expr)
             body = self.consume(ast.SubNodeList)
-            kids = [rt_ht, expr, *body.kid]
+            kids = [tok_return_hint, expr, *body.kid]
             return ast.TypedCtxBlock(
                 type_ctx=expr,
                 body=body.items,

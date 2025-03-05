@@ -1848,10 +1848,7 @@ class TypedCtxBlock(CodeBlockStmt):
         if deep:
             res = self.type_ctx.normalize(deep)
         new_kid: list[AstNode] = [self.gen_token(Tok.RETURN_HINT), self.type_ctx]
-        for idx, stmt in enumerate(self.body):
-            if idx > 0:
-                new_kid.append(self.gen_token(Tok.SEMI))
-            new_kid.append(stmt)
+        new_kid.extend(self.body)
         self.set_kids(nodes=new_kid)
         return res
 
