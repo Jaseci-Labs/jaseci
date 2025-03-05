@@ -1067,13 +1067,13 @@ class JacParser(Pass):
             tok_def = self.match_token(Tok.KW_LET) or self.consume_token(Tok.KW_HAS)
             access = self.match(ast.SubTag)
             assign = self.consume(ast.SubNodeList)
-            self.consume_token(Tok.SEMI)
+            tok_semi = self.consume_token(Tok.SEMI)
             return ast.ArchHas(
                 vars=assign.items,
                 is_static=bool(tok_static),
                 is_frozen=(tok_def.name == Tok.KW_LET),
                 access=access,
-                kid=[*([access] if access else []), *assign.items],
+                kid=[*([access] if access else []), *assign.items, tok_semi],
             )
 
         def has_assign_list(self, _: None) -> ast.SubNodeList[ast.HasVar]:

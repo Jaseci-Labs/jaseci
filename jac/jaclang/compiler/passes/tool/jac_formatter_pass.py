@@ -107,6 +107,8 @@ class JacFormatPass(Pass):
         """
         prev_token = None
         for i in node.kid:
+            if not isinstance(i, ast.HasVar):
+                continue
             if isinstance(i, ast.String):
                 self.emit_ln(node, f" {i.gen.jac}")
                 self.emit_ln(node, "")
@@ -736,15 +738,19 @@ class JacFormatPass(Pass):
         self.emit(node, f"{'let' if node.is_frozen else 'has'}")
         self.emit(node, f"{node.access.gen.jac if node.access else ''}")
         if len(node.vars) == 1:
-            self.emit(node, f"{node.vars[0].gen.jac};\n")
+            self.emit(node, f"{node.vars[0].gen.jac[:-1]};\n")
         else:
-            self.emit(node, f"{node.vars[0].gen.jac},\n")
+            self.emit(node, f"{node.vars[0].gen.jac}\n")
             self.indent_level += 1
             for i in node.vars[1:-1]:
-                self.emit(node, f"{i.gen.jac.strip()}," + "\n")
+                self.emit(node, f"{i.gen.jac.strip()}" + "\n")
 
-            self.emit(node, f"{node.vars[-1].gen.jac.strip()};\n")
+            self.emit(node, f"{node.vars[-1].gen.jac[:-1].strip()};\n")
             self.indent_level -= 1
+
+        for kid_item in node.kid:
+            if isinstance(kid_item, ast.CommentToken):
+                self.emit(node, f"{kid_item.gen.jac}\n")
 
     def exit_arch_ref(self, node: ast.ArchRef) -> None:
         """Sub objects.
@@ -977,22 +983,25 @@ class JacFormatPass(Pass):
         type_tag: TypeSpec,
         value: Optional["ExprType"],
         """
-        for i in node.kid:
-            if isinstance(i, ast.SubTag):
-                for j in i.kid:
-                    (
-                        self.emit(node, j.gen.jac)
-                        if not j.gen.jac.startswith(":")
-                        else self.emit(node, f"{j.gen.jac} ")
-                    )
-            elif isinstance(i, ast.Token) and i.gen.jac == ":":
-                self.emit(node, i.gen.jac)
-            else:
-                self.emit(node, f" {i.gen.jac}")
-        if isinstance(node.kid[-1], ast.CommentToken) and not node.gen.jac.endswith(
-            "\n"
-        ):
-            self.emit_ln(node, "")
+        self.emit(node, f" {node.name.gen.jac}")
+        if node.semstr:
+            self.emit(node, f": {node.semstr.gen.jac}")
+        if node.type_tag:
+            self.emit(node, f": {node.type_tag.gen.jac[1:].strip()}")
+        if node.value:
+            self.emit(node, f" = {node.value.gen.jac}")
+        if node.defer:
+            self.emit(node, " by postinit")
+        self.emit(node, ",".strip())
+        for i in range(len(node.kid)):
+            if isinstance(node.kid[i], ast.CommentToken):
+                if isinstance(node.kid[i - 1], ast.MultiString):
+                    self.emit(node, "\n")
+                    self.indent_level += 1
+                    self.emit(node, f"{node.kid[i].gen.jac}")
+                    self.indent_level -= 1
+                else:
+                    self.emit(node, f"\n{node.kid[i].gen.jac}")
 
     def exit_if_stmt(self, node: ast.IfStmt) -> None:
         """Sub objects.
