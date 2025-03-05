@@ -16,7 +16,7 @@ from ..security import authenticator
 from ..utils import logger, random_string, utc_datetime, utc_timestamp
 from ...core.architype import BulkWrite
 
-router = APIRouter(prefix="/webhook", tags=["webhook"])
+router = APIRouter(prefix="/webhook", tags=["Webhook APIs"])
 
 
 @router.get("", status_code=status.HTTP_200_OK, dependencies=authenticator)
