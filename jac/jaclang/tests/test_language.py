@@ -571,7 +571,6 @@ class JacLanguageTests(TestCase):
                     orig_src=ast.JacSource(file_source, py_out_path),
                 ),
             ).ir.unparse()
-        # print(output)
         self.assertIn("can greet2(**kwargs: Any)", output)
         self.assertEqual(output.count("with entry {"), 13)
         self.assertIn(

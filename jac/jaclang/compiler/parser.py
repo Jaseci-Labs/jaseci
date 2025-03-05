@@ -747,7 +747,7 @@ class JacParser(Pass):
             targ = ast.SubNodeList[ast.Expr](items=[name], delim=Tok.COMMA, kid=[name])
             self.cur_nodes[0] = targ
             return ast.Assignment(
-                target=targ,
+                target=targ.items,
                 value=expr,
                 type_tag=None,
                 kid=self.cur_nodes,
@@ -1769,7 +1769,7 @@ class JacParser(Pass):
             kid.insert(1, new_targ) if is_frozen else kid.insert(0, new_targ)
             if is_aug:
                 return ast.Assignment(
-                    target=new_targ,
+                    target=new_targ.items,
                     type_tag=type_tag if isinstance(type_tag, ast.SubTag) else None,
                     value=value,
                     mutable=is_frozen,
@@ -1777,7 +1777,7 @@ class JacParser(Pass):
                     kid=kid,
                 )
             return ast.Assignment(
-                target=new_targ,
+                target=new_targ.items,
                 type_tag=type_tag if isinstance(type_tag, ast.SubTag) else None,
                 value=value,
                 mutable=is_frozen,

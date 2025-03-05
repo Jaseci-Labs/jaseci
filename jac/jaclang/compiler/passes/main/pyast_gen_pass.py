@@ -2284,14 +2284,15 @@ class PyastGenPass(Pass):
                 else None if node.type_tag else self.ice()
             )
         )
+        new_target: list[ast3.AST] = self.flatten([i.gen.py_ast for i in node.target])
         if node.type_tag:
             node.gen.py_ast = [
                 self.sync(
                     ast3.AnnAssign(
-                        target=node.target.items[0].gen.py_ast[0],
+                        target=node.target[0].gen.py_ast[0],
                         annotation=node.type_tag.gen.py_ast[0],
                         value=node.value.gen.py_ast[0] if node.value else None,
-                        simple=int(isinstance(node.target.gen.py_ast[0], ast3.Name)),
+                        simple=int(isinstance(new_target[0], ast3.Name)),
                     )
                 )
             ]
@@ -2299,16 +2300,14 @@ class PyastGenPass(Pass):
             node.gen.py_ast = [
                 self.sync(
                     ast3.AugAssign(
-                        target=node.target.items[0].gen.py_ast[0],
+                        target=node.target[0].gen.py_ast[0],
                         op=node.aug_op.gen.py_ast[0],
                         value=value,
                     )
                 )
             ]
         else:
-            node.gen.py_ast = [
-                self.sync(ast3.Assign(targets=node.target.gen.py_ast, value=value))
-            ]
+            node.gen.py_ast = [self.sync(ast3.Assign(targets=new_target, value=value))]
 
     def exit_binary_expr(self, node: ast.BinaryExpr) -> None:
         """Sub objects.

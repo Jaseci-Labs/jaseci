@@ -533,7 +533,7 @@ class FuseTypeInfoPass(Pass):
         """Add new symbols in the symbol table in case of self."""
         # This will fix adding new items to the class through self
         # self.x = 5  # will add x to self datatype symbol table
-        for target in node.target.items:
+        for target in node.target:
             if (
                 isinstance(target, ast.AtomTrailer)
                 and isinstance(target.target, ast.SpecialVarRef)
@@ -551,7 +551,7 @@ class FuseTypeInfoPass(Pass):
         #   - target1, target2 = Val1, Val2  <-- tuples need more attention
         #   - target = a.b.c                 <-- will be fixed after thakee's PR
         #   - a.b.c = val                    <-- will be fixed after thakee's PR
-        for target in node.target.items:
+        for target in node.target:
             if (
                 isinstance(target, ast.Name)
                 and target.expr_type == "types.ModuleType"
