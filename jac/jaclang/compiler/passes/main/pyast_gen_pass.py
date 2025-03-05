@@ -2450,11 +2450,7 @@ class PyastGenPass(Pass):
             func_node = ast.FuncCall(
                 target=node.right,
                 params=(
-                    (
-                        node.left.values.items
-                        if isinstance(node.left.values, ast.SubNodeList)
-                        else []
-                    )
+                    (node.left.values)
                     if isinstance(node.left, ast.TupleVal)
                     else [node.left]
                 ),
@@ -2489,11 +2485,7 @@ class PyastGenPass(Pass):
             func_node = ast.FuncCall(
                 target=node.left,
                 params=(
-                    (
-                        node.right.values.items
-                        if isinstance(node.right.values, ast.SubNodeList)
-                        else []
-                    )
+                    (node.right.values)
                     if isinstance(node.right, ast.TupleVal)
                     else [node.right]
                 ),
