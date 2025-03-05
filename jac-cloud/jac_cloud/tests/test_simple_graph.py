@@ -181,6 +181,7 @@ class SimpleGraphTest(JacCloudTest):
                     "enum_field": "B",
                 },
                 "enum_field": "A",
+                "access": None,
             },
             res["returns"][0]["context"],
         )
@@ -213,6 +214,7 @@ class SimpleGraphTest(JacCloudTest):
                         "enum_field": "C",
                     },
                     "enum_field": "B",
+                    "access": None,
                 },
                 res["returns"][0]["context"],
             )
@@ -278,6 +280,7 @@ class SimpleGraphTest(JacCloudTest):
                     "enum_field": "B",
                 },
                 "enum_field": "A",
+                "access": None,
             },
             nested_node["context"],
         )
@@ -325,6 +328,7 @@ class SimpleGraphTest(JacCloudTest):
                     "enum_field": "C",
                 },
                 "enum_field": "B",
+                "access": None,
             },
             res["returns"][0]["context"],
         )
@@ -351,6 +355,7 @@ class SimpleGraphTest(JacCloudTest):
                     "enum_field": "B",
                 },
                 "enum_field": "A",
+                "access": None,
             },
             res["returns"][0]["context"],
         )
@@ -390,6 +395,7 @@ class SimpleGraphTest(JacCloudTest):
                     "enum_field": "C",
                 },
                 "enum_field": "B",
+                "access": None,
             },
             res["returns"][0]["context"],
         )
@@ -416,6 +422,7 @@ class SimpleGraphTest(JacCloudTest):
                     "enum_field": "C",
                 },
                 "enum_field": "B",
+                "access": None,
             },
             res["returns"][0]["context"],
         )
@@ -885,6 +892,237 @@ class SimpleGraphTest(JacCloudTest):
             res,
         )
 
+    def trigger_custom_access_validation_test(self) -> None:
+        """Test custom access validation."""
+        res = self.post_api("create_nested_node", user=1)
+
+        nested_node = res["returns"][0]
+
+        self.assertEqual(200, res["status"])
+        self.assertEqual(
+            {
+                "val": 0,
+                "arr": [],
+                "data": {},
+                "parent": {
+                    "val": 1,
+                    "arr": [1],
+                    "data": {"a": 1},
+                    "child": {
+                        "val": 2,
+                        "arr": [1, 2],
+                        "data": {"a": 1, "b": 2},
+                        "enum_field": "C",
+                    },
+                    "enum_field": "B",
+                },
+                "enum_field": "A",
+                "access": None,
+            },
+            nested_node["context"],
+        )
+
+        ##########################################################
+        #                        NO ACCESS                       #
+        ##########################################################
+
+        self.assertEqual(
+            403,
+            self.post_api(f"visit_nested_node/{nested_node['id']}", expect_error=True),
+        )
+
+        ##########################################################
+        #           UPDATE NODE (WILL ALLOW READ ACESS)          #
+        ##########################################################
+
+        # BY OWNER
+        res = self.post_api(
+            f"update_nested_node_access/{nested_node['id']}",
+            json={"access": "READ"},
+            user=1,
+        )
+        self.assertEqual(200, res["status"])
+        self.assertEqual(
+            {
+                "val": 0,
+                "arr": [],
+                "data": {},
+                "parent": {
+                    "val": 1,
+                    "arr": [1],
+                    "data": {"a": 1},
+                    "child": {
+                        "val": 2,
+                        "arr": [1, 2],
+                        "data": {"a": 1, "b": 2},
+                        "enum_field": "C",
+                    },
+                    "enum_field": "B",
+                },
+                "enum_field": "A",
+                "access": "READ",
+            },
+            res["returns"][0]["context"],
+        )
+
+        # BY OTHER
+        res = self.post_api(f"update_nested_node/{nested_node['id']}")
+        self.assertEqual(200, res["status"])
+        self.assertEqual(
+            {
+                "val": 1,
+                "arr": [1],
+                "data": {"a": 1},
+                "parent": {
+                    "val": 2,
+                    "arr": [1, 2],
+                    "data": {"a": 1, "b": 2},
+                    "child": {
+                        "val": 3,
+                        "arr": [1, 2, 3],
+                        "data": {"a": 1, "b": 2, "c": 3},
+                        "enum_field": "A",
+                    },
+                    "enum_field": "C",
+                },
+                "enum_field": "B",
+                "access": "READ",
+            },
+            res["returns"][0]["context"],
+        )
+
+        # ---- NO UPDATE SHOULD HAPPEN BUT STILL ACCESSIBLE ---- #
+
+        res = self.post_api(f"visit_nested_node/{nested_node['id']}")
+        self.assertEqual(200, res["status"])
+        self.assertEqual(
+            {
+                "val": 0,
+                "arr": [],
+                "data": {},
+                "parent": {
+                    "val": 1,
+                    "arr": [1],
+                    "data": {"a": 1},
+                    "child": {
+                        "val": 2,
+                        "arr": [1, 2],
+                        "data": {"a": 1, "b": 2},
+                        "enum_field": "C",
+                    },
+                    "enum_field": "B",
+                },
+                "enum_field": "A",
+                "access": "READ",
+            },
+            res["returns"][0]["context"],
+        )
+
+        ##########################################################
+        #          UPDATE NODE (WILL ALLOW WRITE ACESS)          #
+        ##########################################################
+
+        # BY OWNER
+        res = self.post_api(
+            f"update_nested_node_access/{nested_node['id']}",
+            json={"access": "WRITE"},
+            user=1,
+        )
+        self.assertEqual(200, res["status"])
+        self.assertEqual(
+            {
+                "val": 0,
+                "arr": [],
+                "data": {},
+                "parent": {
+                    "val": 1,
+                    "arr": [1],
+                    "data": {"a": 1},
+                    "child": {
+                        "val": 2,
+                        "arr": [1, 2],
+                        "data": {"a": 1, "b": 2},
+                        "enum_field": "C",
+                    },
+                    "enum_field": "B",
+                },
+                "enum_field": "A",
+                "access": "WRITE",
+            },
+            res["returns"][0]["context"],
+        )
+
+        # BY OTHER
+        res = self.post_api(f"update_nested_node/{nested_node['id']}")
+        self.assertEqual(200, res["status"])
+        self.assertEqual(
+            {
+                "val": 1,
+                "arr": [1],
+                "data": {"a": 1},
+                "parent": {
+                    "val": 2,
+                    "arr": [1, 2],
+                    "data": {"a": 1, "b": 2},
+                    "child": {
+                        "val": 3,
+                        "arr": [1, 2, 3],
+                        "data": {"a": 1, "b": 2, "c": 3},
+                        "enum_field": "A",
+                    },
+                    "enum_field": "C",
+                },
+                "enum_field": "B",
+                "access": "WRITE",
+            },
+            res["returns"][0]["context"],
+        )
+
+        # ---------------- UPDATE SHOULD HAPPEN ---------------- #
+
+        res = self.post_api(f"visit_nested_node/{nested_node['id']}")
+        self.assertEqual(200, res["status"])
+        self.assertEqual(
+            {
+                "val": 1,
+                "arr": [1],
+                "data": {"a": 1},
+                "parent": {
+                    "val": 2,
+                    "arr": [1, 2],
+                    "data": {"a": 1, "b": 2},
+                    "child": {
+                        "val": 3,
+                        "arr": [1, 2, 3],
+                        "data": {"a": 1, "b": 2, "c": 3},
+                        "enum_field": "A",
+                    },
+                    "enum_field": "C",
+                },
+                "enum_field": "B",
+                "access": "WRITE",
+            },
+            res["returns"][0]["context"],
+        )
+
+        ###################################################
+        #                REMOVE ROOT ACCESS               #
+        ###################################################
+
+        # UPDATE BY OWNER
+        res = self.post_api(
+            f"update_nested_node_access/{nested_node['id']}",
+            json={"access": None},
+            user=1,
+        )
+        self.assertEqual(200, res["status"])
+
+        # VISIT BY OTHER
+        self.assertEqual(
+            403,
+            self.post_api(f"visit_nested_node/{nested_node['id']}", expect_error=True),
+        )
+
     def test_all_features(self) -> None:
         """Test Full Features."""
         self.trigger_openapi_specs_test()
@@ -1013,3 +1251,9 @@ class SimpleGraphTest(JacCloudTest):
         ###################################################
 
         self.trigger_nested_request_payload_test()
+
+        ###################################################
+        #             CUSTOM ACCESS VALIDATION            #
+        ###################################################
+
+        self.trigger_custom_access_validation_test()
