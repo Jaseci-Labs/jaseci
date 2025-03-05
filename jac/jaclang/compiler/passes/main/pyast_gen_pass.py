@@ -1498,9 +1498,9 @@ class PyastGenPass(Pass):
         annotation = node.type_tag.gen.py_ast[0] if node.type_tag else None
         is_static_var = (
             node.parent
-            and node.parent.parent
-            and isinstance(node.parent.parent, ast.ArchHas)
-            and node.parent.parent.is_static
+            and node.parent
+            and isinstance(node.parent, ast.ArchHas)
+            and node.parent.is_static
         )
         is_in_class = (
             node.parent

@@ -1081,12 +1081,13 @@ class JacParser(Pass):
 
             has_assign_list: (has_assign_list COMMA)? typed_has_clause
             """
-            new_kid: list = []
             if consume := self.match(ast.SubNodeList):
                 comma = self.consume_token(Tok.COMMA)
-                new_kid = [*consume.kid, comma]
-            assign = self.consume(ast.HasVar)
-            new_kid.append(assign)
+                assign = self.consume(ast.HasVar)
+                new_kid = [*consume.kid, comma, assign]
+            else:
+                assign = self.consume(ast.HasVar)
+                new_kid = [assign]
             valid_kid = [i for i in new_kid if isinstance(i, ast.HasVar)]
             return ast.SubNodeList[ast.HasVar](
                 items=valid_kid,
