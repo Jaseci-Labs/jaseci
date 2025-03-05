@@ -1255,14 +1255,15 @@ class JacParser(Pass):
 
             typed_ctx_block: RETURN_HINT expression code_block
             """
-            if isinstance(kid[1], ast.Expr) and isinstance(kid[2], ast.SubNodeList):
-                return ast.TypedCtxBlock(
-                    type_ctx=kid[1],
-                    body=kid[2],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            rt_ht = self.consume_token(Tok.RETURN_HINT)
+            expr = self.consume(ast.Expr)
+            body = self.consume(ast.SubNodeList)
+            kids = [rt_ht, expr, *body.kid]
+            return ast.TypedCtxBlock(
+                type_ctx=expr,
+                body=body.items,
+                kid=kids,
+            )
 
         def if_stmt(self, _: None) -> ast.IfStmt:
             """Grammar rule.
