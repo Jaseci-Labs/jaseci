@@ -308,7 +308,7 @@ class DefUsePass(Pass):
         target: expression,
         """
         items = (
-            node.target.values.items
+            node.target.values
             if isinstance(node.target, ast.TupleVal) and node.target.values
             else [node.target]
         )
