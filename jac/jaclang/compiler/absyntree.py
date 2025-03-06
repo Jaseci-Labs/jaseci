@@ -211,7 +211,6 @@ class AstNode:
     def unparse(self) -> str:
         """Unparse ast node."""
         valid = self.normalize()
-        print(self.kid)
         res = " ".join([i.unparse() for i in self.kid])
         if not valid:
             raise NotImplementedError(f"Node {type(self).__name__} is not valid.")
