@@ -1861,7 +1861,7 @@ class IfStmt(CodeBlockStmt, AstElseBodyNode):
     def __init__(
         self,
         condition: Expr,
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         else_body: Optional[ElseStmt | ElseIf],
         kid: Sequence[AstNode],
     ) -> None:
@@ -1876,12 +1876,15 @@ class IfStmt(CodeBlockStmt, AstElseBodyNode):
         res = True
         if deep:
             res = self.condition.normalize(deep)
-            res = res and self.body.normalize(deep)
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
             res = res and self.else_body.normalize(deep) if self.else_body else res
         new_kid: list[AstNode] = [
             self.gen_token(Tok.KW_IF),
             self.condition,
-            self.body,
+            self.gen_token(Tok.LBRACE),
+            *self.body,
+            self.gen_token(Tok.RBRACE),
         ]
         if self.else_body:
             new_kid.append(self.else_body)
@@ -1897,12 +1900,15 @@ class ElseIf(IfStmt):
         res = True
         if deep:
             res = self.condition.normalize(deep)
-            res = res and self.body.normalize(deep)
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
             res = res and self.else_body.normalize(deep) if self.else_body else res
         new_kid: list[AstNode] = [
             self.gen_token(Tok.KW_ELIF),
             self.condition,
-            self.body,
+            self.gen_token(Tok.LBRACE),
+            *self.body,
+            self.gen_token(Tok.RBRACE),
         ]
         if self.else_body:
             new_kid.append(self.else_body)
@@ -1915,7 +1921,7 @@ class ElseStmt(AstNode):
 
     def __init__(
         self,
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize else node."""
@@ -1926,10 +1932,13 @@ class ElseStmt(AstNode):
         """Normalize else statement node."""
         res = True
         if deep:
-            res = self.body.normalize(deep)
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
         new_kid: list[AstNode] = [
             self.gen_token(Tok.KW_ELSE),
-            self.body,
+            self.gen_token(Tok.LBRACE),
+            *self.body,
+            self.gen_token(Tok.RBRACE),
         ]
         self.set_kids(nodes=new_kid)
         return res
