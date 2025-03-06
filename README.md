@@ -1,5 +1,5 @@
 <div align="center">
-  <picture>
+  <picture> 
     <source media="(prefers-color-scheme: dark)" srcset="https://www.jac-lang.org//assets/logo.png">
     <source media="(prefers-color-scheme: light)" srcset="https://www.jac-lang.org//assets/logo.png">
     <img alt="Jaclang Programming Language: Unique and Powerful programming language that runs on top of Python"
