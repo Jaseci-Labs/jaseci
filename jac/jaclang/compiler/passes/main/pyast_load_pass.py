@@ -2049,18 +2049,14 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         else:
             valid_handlers = []
 
+        else_body = None
+        elsestmt = None
+
         if len(node.orelse) != 0:
             orelse = [self.convert(i) for i in node.orelse]
             valid_orelse = [i for i in orelse if isinstance(i, (ast.CodeBlockStmt))]
             if len(orelse) != len(valid_orelse):
                 raise self.ice("Length mismatch in try orelse")
-            # else_body = ast.SubNodeList[ast.CodeBlockStmt](
-            #     items=valid_orelse,
-            #     delim=Tok.WS,
-            #     kid=valid_orelse,
-            #     left_enc=self.operator(Tok.LBRACE, "{"),
-            #     right_enc=self.operator(Tok.RBRACE, "}"),
-            # )
             elsestmt = ast.ElseStmt(
                 body=valid_orelse,
                 kid=[
@@ -2069,9 +2065,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     self.operator(Tok.RBRACE, "}"),
                 ],
             )
-            kid.extend(valid_orelse)
-        else:
-            else_body = None
+            kid.append(elsestmt)
 
         finally_stmt = None
 
