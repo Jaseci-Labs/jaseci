@@ -821,7 +821,7 @@ class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
     def __init__(
         self,
         name: Optional[SubTag[Name]],
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
     ) -> None:
@@ -836,7 +836,8 @@ class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
         res = True
         if deep:
             res = self.name.normalize(deep) if self.name else res
-            res = res and self.body.normalize(deep)
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
         if self.doc:
@@ -845,7 +846,7 @@ class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
         new_kid.append(self.gen_token(Tok.KW_ENTRY))
         if self.name:
             new_kid.append(self.name)
-        new_kid.append(self.body)
+        new_kid.extend(self.body)
         self.set_kids(nodes=new_kid)
         return res
 
@@ -1969,8 +1970,8 @@ class TryStmt(AstElseBodyNode, CodeBlockStmt):
 
     def __init__(
         self,
-        body: SubNodeList[CodeBlockStmt],
-        excepts: Optional[SubNodeList[Except]],
+        body: list[CodeBlockStmt],
+        excepts: list[Except],
         else_body: Optional[ElseStmt],
         finally_body: Optional[FinallyStmt],
         kid: Sequence[AstNode],
@@ -1986,8 +1987,10 @@ class TryStmt(AstElseBodyNode, CodeBlockStmt):
         """Normalize try statement node."""
         res = True
         if deep:
-            res = self.body.normalize(deep)
-            res = res and self.excepts.normalize(deep) if self.excepts else res
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
+            for stmt in self.excepts:
+                res = res and stmt.normalize(deep)
             res = res and self.else_body.normalize(deep) if self.else_body else res
             res = (
                 res and self.finally_body.normalize(deep) if self.finally_body else res
@@ -1995,9 +1998,11 @@ class TryStmt(AstElseBodyNode, CodeBlockStmt):
         new_kid: list[AstNode] = [
             self.gen_token(Tok.KW_TRY),
         ]
-        new_kid.append(self.body)
-        if self.excepts:
-            new_kid.append(self.excepts)
+        new_kid.append(self.gen_token(Tok.LBRACE))
+        new_kid.extend(self.body)
+        new_kid.append(self.gen_token(Tok.RBRACE))
+        new_kid.extend(self.excepts)
+
         if self.else_body:
             new_kid.append(self.else_body)
         if self.finally_body:
@@ -2070,7 +2075,7 @@ class FinallyStmt(CodeBlockStmt):
         return res
 
 
-class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
+class IterForStmt(AstAsyncNode, CodeBlockStmt):
     """IterFor node type for Jac Ast."""
 
     def __init__(
@@ -2079,8 +2084,8 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         is_async: bool,
         condition: Expr,
         count_by: Assignment,
-        body: SubNodeList[CodeBlockStmt],
-        else_body: Optional[ElseStmt],
+        body: list[CodeBlockStmt],
+        else_body: list[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize iter for node."""
@@ -2088,9 +2093,9 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         self.condition = condition
         self.count_by = count_by
         self.body = body
+        self.else_body = else_body
         AstNode.__init__(self, kid=kid)
         AstAsyncNode.__init__(self, is_async=is_async)
-        AstElseBodyNode.__init__(self, else_body=else_body)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize iter for node."""
@@ -2099,8 +2104,10 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
             res = self.iter.normalize(deep)
             res = self.condition.normalize(deep)
             res = self.count_by.normalize(deep)
-            res = self.body.normalize(deep)
-            res = self.else_body.normalize(deep) if self.else_body else res
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
+            for stmt in self.else_body:
+                res = res and stmt.normalize(deep)
         new_kid: list[AstNode] = []
         if self.is_async:
             new_kid.append(self.gen_token(Tok.KW_ASYNC))
@@ -2110,9 +2117,8 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         new_kid.append(self.condition)
         new_kid.append(self.gen_token(Tok.KW_BY))
         new_kid.append(self.count_by)
-        new_kid.append(self.body)
-        if self.else_body:
-            new_kid.append(self.else_body)
+        new_kid.extend(self.body)
+        new_kid.extend(self.else_body)
         self.set_kids(nodes=new_kid)
         return res
 
@@ -2483,7 +2489,7 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
 
     def __init__(
         self,
-        vis_type: Optional[SubNodeList[Expr]],
+        vis_type: list[Expr],
         target: Expr,
         else_body: Optional[ElseStmt],
         kid: Sequence[AstNode],
@@ -2498,15 +2504,16 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
     def normalize(self, deep: bool = False) -> bool:
         """Normalize visit statement node."""
         res = True
+        for v in self.vis_type:
+            res = res and v.normalize(deep)
         if deep:
-            res = self.vis_type.normalize(deep) if self.vis_type else res
             res = self.target.normalize(deep)
             res = res and self.else_body.normalize(deep) if self.else_body else res
         new_kid: list[AstNode] = []
         new_kid.append(self.gen_token(Tok.KW_VISIT))
         if self.vis_type:
             new_kid.append(self.gen_token(Tok.COLON))
-            new_kid.append(self.vis_type)
+            new_kid.extend(self.vis_type)
             new_kid.append(self.gen_token(Tok.COLON))
         new_kid.append(self.target)
         if self.else_body:
@@ -2687,6 +2694,10 @@ class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
             self.parent.parent, GlobalVars
         ):
             if self.parent.kid.index(self) == len(self.parent.kid) - 1:
+                new_kid.append(self.gen_token(Tok.SEMI))
+        elif isinstance(self.parent, IterForStmt):
+            assign_parent = self.parent
+            if self not in [assign_parent.iter, assign_parent.count_by]:
                 new_kid.append(self.gen_token(Tok.SEMI))
         elif (not self.is_enum_stmt) and not isinstance(self.parent, IterForStmt):
             new_kid.append(self.gen_token(Tok.SEMI))
@@ -3022,7 +3033,7 @@ class TupleVal(AtomExpr):
 
     def __init__(
         self,
-        values: Optional[SubNodeList[Expr | KWPair]],
+        values: list[Expr | KWPair],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize tuple value node."""
@@ -3035,7 +3046,8 @@ class TupleVal(AtomExpr):
         """Normalize ast node."""
         res = True
         if deep:
-            res = self.values.normalize(deep) if self.values else res
+            for value in self.values:
+                res = value.normalize(deep) and res
         in_ret_type = (
             self.parent
             and isinstance(self.parent, IndexSlice)
@@ -3051,10 +3063,9 @@ class TupleVal(AtomExpr):
             if not in_ret_type
             else []
         )
-        if self.values:
-            new_kid.append(self.values)
-            if len(self.values.items) < 2:
-                new_kid.append(self.gen_token(Tok.COMMA))
+        new_kid.extend(self.values)
+        if len(self.values) < 2:
+            new_kid.append(self.gen_token(Tok.COMMA))
         if not in_ret_type:
             new_kid.append(self.gen_token(Tok.RPAREN))
         self.set_kids(nodes=new_kid)
@@ -3699,7 +3710,7 @@ class FilterCompr(AtomExpr):
     def __init__(
         self,
         f_type: Optional[Expr],
-        compares: Optional[SubNodeList[CompareExpr]],
+        compares: list[CompareExpr],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize filter_cond context expression node."""
@@ -3712,9 +3723,10 @@ class FilterCompr(AtomExpr):
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ast node."""
         res = True
+        for compare in self.compares:
+            res = compare.normalize(deep) and res
         if deep:
             res = self.f_type.normalize(deep) if self.f_type else res
-            res = res and self.compares.normalize(deep) if self.compares else res
         new_kid: list[AstNode] = []
         if not isinstance(self.parent, EdgeOpRef):
             new_kid.append(self.gen_token(Tok.LPAREN))
@@ -3726,7 +3738,7 @@ class FilterCompr(AtomExpr):
         if self.compares:
             if self.f_type:
                 new_kid.append(self.gen_token(Tok.COLON))
-            new_kid.append(self.compares)
+            new_kid.extend(self.compares)
         if not isinstance(self.parent, EdgeOpRef):
             new_kid.append(self.gen_token(Tok.RPAREN))
         self.set_kids(nodes=new_kid)
@@ -4074,8 +4086,8 @@ class MatchArch(MatchPattern):
     def __init__(
         self,
         name: AtomTrailer | NameAtom,
-        arg_patterns: Optional[SubNodeList[MatchPattern]],
-        kw_patterns: Optional[SubNodeList[MatchKVPair]],
+        arg_patterns: list[MatchPattern],
+        kw_patterns: list[MatchKVPair],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize match class node."""
@@ -4087,17 +4099,25 @@ class MatchArch(MatchPattern):
     def normalize(self, deep: bool = False) -> bool:
         """Normalize match class node."""
         res = True
+        for arg in self.arg_patterns:
+            res = res and arg.normalize(deep)
+        for kw in self.kw_patterns:
+            res = res and kw.normalize(deep)
         if deep:
             res = self.name.normalize(deep)
-            res = res and (not self.arg_patterns or self.arg_patterns.normalize(deep))
-            res = res and (not self.kw_patterns or self.kw_patterns.normalize(deep))
         new_kid: list[AstNode] = [self.name]
         new_kid.append(self.gen_token(Tok.LPAREN))
         if self.arg_patterns:
-            new_kid.append(self.arg_patterns)
+            for idx, arg in enumerate(self.arg_patterns):
+                if idx > 0:
+                    new_kid.append(self.gen_token(Tok.COMMA))
+                new_kid.append(arg)
             new_kid.append(self.gen_token(Tok.COMMA))
         if self.kw_patterns:
-            new_kid.append(self.kw_patterns)
+            for idx, kw in enumerate(self.kw_patterns):
+                if idx > 0:
+                    new_kid.append(self.gen_token(Tok.COMMA))
+                new_kid.append(kw)
         else:
             new_kid.pop()
         new_kid.append(self.gen_token(Tok.RPAREN))

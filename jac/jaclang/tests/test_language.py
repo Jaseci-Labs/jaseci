@@ -636,10 +636,10 @@ class JacLanguageTests(TestCase):
                     orig_src=ast.JacSource(file_source, py_out_path),
                 ),
             ).ir.unparse()
-        self.assertIn("class X {\n    with entry {\n\n        a_b = 67;", output)
+        self.assertIn("class X {\n    with entry {\n        a_b = 67;", output)
         self.assertIn("br = b'Hello\\\\\\\\nWorld'", output)
         self.assertIn("class Circle {\n    can init(radius: float", output)
-        self.assertIn("<>node = 90;    \n    print(<>node) ;\n}\n", output)
+        self.assertIn("<>node = 90;\n    print(<>node) ;\n}\n", output)
 
     def test_needs_import_3(self) -> None:
         """Test py ast to Jac ast conversion output."""
@@ -873,7 +873,7 @@ class JacLanguageTests(TestCase):
         ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
         jac_ast = ir.pp()
         self.assertIn(" |   +-- String - 'Loop completed normally{}'", jac_ast)
-        self.assertEqual(len(ir.get_all_sub_nodes(ast.SubNodeList)), 455)
+        self.assertEqual(len(ir.get_all_sub_nodes(ast.SubNodeList)), 439)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("deep_convert", base_path=self.fixture_abs_path("./"))
