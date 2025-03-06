@@ -19,7 +19,7 @@ from typing import (
     override,
 )
 
-from jaclang.plugin.builtin import dotgen, jid, jobj  # noqa: F401
+from jaclang.plugin.builtin import dotgen, jid, jobj, jac_graph_json  # noqa: F401
 from jaclang.plugin.default import JacFeatureImpl
 from jaclang.plugin.feature import JacFeature as Jac, plugin_manager
 from jaclang.plugin.spec import EdgeDir
@@ -50,6 +50,7 @@ __all__ = [
     "dotgen",
     "jid",
     "jobj",
+    "jac_graph_json",
 ]
 
 
