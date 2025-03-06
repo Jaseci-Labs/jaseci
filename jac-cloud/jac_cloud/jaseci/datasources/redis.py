@@ -170,13 +170,23 @@ class TokenRedis(Redis):
 
 
 class WebhookRedis(Redis):
-    """Token Memory Interface.
+    """Webhook Memory Interface.
 
-    This interface is for Token Management.
+    This interface is for Webhook Management.
     You may override this if you wish to implement different structure
     """
 
     __table__ = "webhook"
+
+
+class WebSocketRedis(Redis):
+    """Websocket Memory Interface.
+
+    This interface is for Websocket Management.
+    You may override this if you wish to implement different structure
+    """
+
+    __table__ = "websocket"
 
 
 class AsyncRedis:

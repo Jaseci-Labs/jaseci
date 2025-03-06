@@ -1,4 +1,4 @@
-"""Webhook APIs."""
+"""WebSocket APIs."""
 
 from datetime import timedelta
 
@@ -9,14 +9,14 @@ from fastapi.responses import ORJSONResponse
 
 from pymongo.errors import ConnectionFailure, OperationFailure
 
-from ..datasources.redis import WebhookRedis
+from ..datasources.redis import WebSocketRedis
 from ..dtos import Expiration, GenerateKey, KeyIDs
-from ..models import Webhook
+from ..models import WebSocket
 from ..security import authenticator
 from ..utils import logger, random_string, utc_datetime, utc_timestamp
 from ...core.architype import BulkWrite
 
-router = APIRouter(prefix="/webhook", tags=["Webhook APIs"])
+router = APIRouter(prefix="/websocket", tags=["WebSocket APIs"])
 
 
 @router.get("", status_code=status.HTTP_200_OK, dependencies=authenticator)
@@ -36,7 +36,7 @@ def get(req: Request) -> ORJSONResponse:
                     "expiration": key.expiration,
                     "key": key.key,
                 }
-                for key in Webhook.Collection.find({"root_id": root_id})
+                for key in WebSocket.Collection.find({"root_id": root_id})
             ]
         }
     )
@@ -52,7 +52,7 @@ def generate_key(req: Request, gen_key: GenerateKey) -> ORJSONResponse:
     _exp: dict[str, int] = {gen_key.expiration.interval: gen_key.expiration.count}
     exp = utc_datetime(**_exp)
 
-    webhook = Webhook(
+    websocket = WebSocket(
         name=gen_key.name,
         root_id=root_id,
         walkers=gen_key.walkers,
@@ -62,17 +62,17 @@ def generate_key(req: Request, gen_key: GenerateKey) -> ORJSONResponse:
     )
 
     if (
-        id := Webhook.Collection.insert_one(webhook.__serialize__()).inserted_id
-    ) and WebhookRedis.hset(
-        webhook.key,
+        id := WebSocket.Collection.insert_one(websocket.__serialize__()).inserted_id
+    ) and WebSocketRedis.hset(
+        websocket.key,
         {
-            "walkers": webhook.walkers,
-            "nodes": webhook.nodes,
-            "expiration": webhook.expiration.timestamp(),
+            "walkers": websocket.walkers,
+            "nodes": websocket.nodes,
+            "expiration": websocket.expiration.timestamp(),
         },
     ):
         return ORJSONResponse(
-            content={"id": str(id), "name": webhook.name, "key": webhook.key},
+            content={"id": str(id), "name": websocket.name, "key": websocket.key},
             status_code=201,
         )
 
@@ -86,25 +86,25 @@ def generate_key(req: Request, gen_key: GenerateKey) -> ORJSONResponse:
 )
 def extend(id: str, expiration: Expiration) -> ORJSONResponse:
     """Generate key API."""
-    with Webhook.Collection.get_session() as session, session.start_transaction():
+    with WebSocket.Collection.get_session() as session, session.start_transaction():
         retry = 0
         max_retry = BulkWrite.SESSION_MAX_TRANSACTION_RETRY
         while retry <= max_retry:
             try:
                 _id = ObjectId(id)
-                if webhook := Webhook.Collection.find_by_id(_id, session=session):
+                if websocket := WebSocket.Collection.find_by_id(_id, session=session):
                     _exp: dict[str, int] = {expiration.interval: expiration.count}
-                    webhook.expiration += timedelta(**_exp)
+                    websocket.expiration += timedelta(**_exp)
 
-                    if Webhook.Collection.update_by_id(
-                        _id, {"$set": {"expiration": webhook.expiration}}, session
+                    if WebSocket.Collection.update_by_id(
+                        _id, {"$set": {"expiration": websocket.expiration}}, session
                     ).modified_count:
-                        WebhookRedis.hset(
-                            webhook.key,
+                        WebSocketRedis.hset(
+                            websocket.key,
                             {
-                                "walkers": webhook.walkers,
-                                "nodes": webhook.nodes,
-                                "expiration": webhook.expiration.timestamp(),
+                                "walkers": websocket.walkers,
+                                "nodes": websocket.nodes,
+                                "expiration": websocket.expiration.timestamp(),
                             },
                         )
                         BulkWrite.commit(session)
@@ -135,18 +135,18 @@ def extend(id: str, expiration: Expiration) -> ORJSONResponse:
 @router.delete("/delete", status_code=status.HTTP_200_OK, dependencies=authenticator)
 def delete(key_ids: KeyIDs) -> ORJSONResponse:
     """Delete keys API."""
-    with Webhook.Collection.get_session() as session, session.start_transaction():
+    with WebSocket.Collection.get_session() as session, session.start_transaction():
         retry = 0
         max_retry = BulkWrite.SESSION_MAX_TRANSACTION_RETRY
         while retry <= max_retry:
             try:
                 ids = [ObjectId(id) for id in key_ids.ids]
-                whs = Webhook.Collection.find({"_id": {"$in": ids}})
-                if Webhook.Collection.delete(
+                wss = WebSocket.Collection.find({"_id": {"$in": ids}})
+                if WebSocket.Collection.delete(
                     {"_id": {"$in": ids}}, session
                 ).deleted_count == len(key_ids.ids):
-                    for wh in whs:
-                        WebhookRedis.hdelete(wh.key)
+                    for ws in wss:
+                        WebSocketRedis.hdelete(ws.key)
                     BulkWrite.commit(session)
                     return ORJSONResponse({"message": "Successfully Deleted!"}, 200)
                 break

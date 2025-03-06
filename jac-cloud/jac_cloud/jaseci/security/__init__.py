@@ -13,8 +13,8 @@ from fastapi.security import APIKeyHeader, APIKeyQuery, HTTPBearer
 
 from jwt import decode, encode
 
-from ..datasources.redis import CodeRedis, TokenRedis, WebhookRedis
-from ..models import User as BaseUser, Webhook
+from ..datasources.redis import CodeRedis, TokenRedis, WebSocketRedis, WebhookRedis
+from ..models import User as BaseUser, WebSocket as WebSocketModel, Webhook
 from ..utils import logger, random_string, utc_timestamp
 from ...core.architype import NodeAnchor
 
@@ -182,21 +182,44 @@ def authenticate_websocket(
     websocket: WebSocket, authorization: str | None = None
 ) -> bool:
     """Authenticate websocket connection."""
-    if (
-        authorization or (authorization := websocket.headers.get("Authorization"))
-    ) and authorization.lower().startswith("bearer"):
-        token = authorization[7:]
-        decrypted = decrypt(token)
-        if (
-            decrypted
-            and decrypted["expiration"] > utc_timestamp()
-            and TokenRedis.hget(f"{decrypted['id']}:{token}")
-            and (user := User.Collection.find_by_id(decrypted["id"]))
-            and (root := NodeAnchor.Collection.find_by_id(user.root_id))
-        ):
-            websocket._user = user  # type: ignore[attr-defined]
-            websocket._root = root  # type: ignore[attr-defined]
-            return True
+    if authorization or (authorization := websocket.headers.get("Authorization")):
+        if authorization.lower().startswith("bearer"):
+            token = authorization[7:]
+            decrypted = decrypt(token)
+            if (
+                decrypted
+                and decrypted["expiration"] > utc_timestamp()
+                and TokenRedis.hget(f"{decrypted['id']}:{token}")
+                and (user := User.Collection.find_by_id(decrypted["id"]))
+                and (root := NodeAnchor.Collection.find_by_id(user.root_id))
+            ):
+                websocket._user = user  # type: ignore[attr-defined]
+                websocket._root = root  # type: ignore[attr-defined]
+                return True
+        else:
+            if (raw := authorization.split(":")) and (
+                root := NodeAnchor.Collection.find_by_id(ObjectId(raw[0]))
+            ):
+                websocket._root = root  # type: ignore[attr-defined]
+                if (cache := WebSocketRedis.hget(authorization)) and cache[
+                    "expiration"
+                ] > utc_timestamp():
+                    websocket._walkers = cache["walkers"]  # type: ignore[attr-defined]
+                    websocket._nodes = cache["nodes"]  # type: ignore[attr-defined]
+                    return True
+                elif (
+                    _websocket := WebSocketModel.Collection.find_by_key(authorization)
+                ) and WebSocketRedis.hset(
+                    authorization,
+                    {
+                        "walkers": _websocket.walkers,
+                        "nodes": _websocket.nodes,
+                        "expiration": _websocket.expiration.timestamp(),
+                    },
+                ):
+                    websocket._walkers = _websocket.walkers  # type: ignore[attr-defined]
+                    websocket._nodes = _websocket.nodes  # type: ignore[attr-defined]
+                    return True
     return False
 
 
