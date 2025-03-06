@@ -300,14 +300,21 @@ class JacParser(Pass):
 
             global_var: (KW_LET | KW_GLOBAL) access_tag? assignment_list SEMI
             """
-            is_frozen = self.consume(ast.Token).name == Tok.KW_LET
+            var_tok = self.consume(ast.Token)
+            is_frozen = var_tok.name == Tok.KW_LET
             access_tag = self.match(ast.SubTag)
             assignments = self.consume(ast.SubNodeList)
+            tok_semi = self.consume_token(Tok.SEMI)
+            kids = (
+                [var_tok, access_tag, *assignments.kid, tok_semi]
+                if access_tag
+                else [var_tok, *assignments.kid, tok_semi]
+            )
             return ast.GlobalVars(
                 access=access_tag,
-                assignments=assignments,
+                assignments=assignments.items,
                 is_frozen=is_frozen,
-                kid=self.cur_nodes,
+                kid=kids,  # self.cur_nodes,
             )
 
         def access_tag(self, _: None) -> ast.SubTag[ast.Token]:
