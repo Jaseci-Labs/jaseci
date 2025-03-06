@@ -605,6 +605,7 @@ class JacFormatPass(Pass):
         sub_module: Optional[Module] = None,
         """
         start = True
+        idx = 0
         for i in node.kid:
             if isinstance(i, ast.CommentToken):
                 if i.is_inline:
@@ -622,6 +623,11 @@ class JacFormatPass(Pass):
                 if start or i.gen.jac == ",":
                     self.emit(node, i.gen.jac)
                     start = False
+                elif isinstance(i, (ast.ModulePath, ast.ModuleItem)):
+                    if idx > 0:
+                        self.emit(node, ",")
+                    self.emit(node, f" {i.gen.jac}")
+                    idx += 1
                 else:
                     self.emit(node, f" {i.gen.jac}")
         if isinstance(node.kid[-1], ast.Semi) and not node.gen.jac.endswith("\n"):
