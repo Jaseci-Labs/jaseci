@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Optional
 
 from jaclang.plugin.feature import JacFeature as Jac
@@ -11,6 +12,7 @@ __all__ = [
     "dotgen",
     "jid",
     "jobj",
+    "jac_graph_json",
 ]
 
 
@@ -55,3 +57,36 @@ def jid(obj: Architype) -> str:
 def jobj(id: str) -> Architype | None:
     """Get the object from the id."""
     return Jac.get_object(id)
+
+
+def jac_graph_json() -> str:
+    """Get the graph in json string."""
+    import jaclang as jl
+    from jaclang import Root, Node
+
+    processed: list[Root | Node] = []
+    nodes: list[dict] = []
+    edges: list[dict] = []
+    working_set: list[tuple] = []
+
+    root: Root = jl.root
+    nodes.append({"id": id(root), "label": "root"})
+
+    processed.append(root)
+    working_set = [(root, ref) for ref in root.refs()]
+
+    while working_set:
+        start, end = working_set.pop(0)
+        edges.append({"from": id(start), "to": id(end)})
+        nodes.append({"id": id(end), "label": repr(end)})
+        processed.append(end)
+        for ref in end.refs():
+            if ref not in processed:
+                working_set.append((end, ref))
+    return json.dumps(
+        {
+            "version": "1.0",
+            "nodes": nodes,
+            "edges": edges,
+        }
+    )
