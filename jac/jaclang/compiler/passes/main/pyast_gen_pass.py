@@ -955,7 +955,7 @@ class PyastGenPass(Pass):
         decorators: Optional[SubNodeList[ExprType]],
         """
         body = self.resolve_stmt_block(
-            node.body.body if isinstance(node.body, ast.ArchDef) else node.body,
+            node.body.body if isinstance(node.body, ast.ArchDef) else node.body,  # type: ignore
             doc=node.doc,
         )
         decorators = [dec.gen.py_ast[0] for dec in node.decorators]
@@ -1066,7 +1066,7 @@ class PyastGenPass(Pass):
         ds_on_entry: list[ast3.AST] = []
         ds_on_exit: list[ast3.AST] = []
         for i in (
-            node.body.body.items
+            node.body.body.items  # type: ignore
             if isinstance(node.body, ast.ArchDef)
             else node.body.items if node.body else []
         ):
@@ -1131,7 +1131,7 @@ class PyastGenPass(Pass):
         """
         self.needs_enum()
         body = self.resolve_stmt_block(
-            node.body.body if isinstance(node.body, ast.EnumDef) else node.body,
+            node.body.body if isinstance(node.body, ast.EnumDef) else node.body,  # type: ignore
             doc=node.doc,
         )
         decorators = [
@@ -1229,7 +1229,8 @@ class PyastGenPass(Pass):
                             node.body.body
                             if isinstance(node.body, ast.AbilityDef)
                             else node.body
-                        ),
+                        )
+                        or [],
                         doc=node.doc,
                     )
                 )
