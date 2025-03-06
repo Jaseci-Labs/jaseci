@@ -1400,13 +1400,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             pos_end=0,
         )
         pytag = ast.SubTag[ast.Name](tag=lang, kid=[lang])
-        items = ast.SubNodeList[ast.ModulePath](items=paths, delim=Tok.COMMA, kid=paths)
         ret = ast.Import(
             hint=pytag,
             from_loc=None,
-            items=items,
+            items=paths,
             is_absorb=False,
-            kid=[pytag, items],
+            kid=[pytag, *paths],
         )
         return ret
 
@@ -1470,26 +1469,18 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 )
             else:
                 raise self.ice()
-        items = (
-            ast.SubNodeList[ast.ModuleItem](
-                items=valid_names, delim=Tok.COMMA, kid=valid_names
-            )
-            if valid_names
-            else None
-        )
+        items = valid_names
         if not items:
             raise self.ice("No valid names in import from")
         pytag = ast.SubTag[ast.Name](tag=lang, kid=[lang])
         if len(node.names) == 1 and node.names[0].name == "*":
-            path_in = ast.SubNodeList[ast.ModulePath](
-                items=[path], delim=Tok.COMMA, kid=[path]
-            )
+            path_in = [path]
             ret = ast.Import(
                 hint=pytag,
                 from_loc=None,
                 items=path_in,
                 is_absorb=True,
-                kid=[pytag, path_in],
+                kid=[pytag, *path_in],
             )
             return ret
         ret = ast.Import(
@@ -1497,7 +1488,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             from_loc=path,
             items=items,
             is_absorb=False,
-            kid=[pytag, path, items],
+            kid=[pytag, path, *items],
         )
         return ret
 
