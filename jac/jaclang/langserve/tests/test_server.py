@@ -286,7 +286,7 @@ class TestJacLangServer(TestCase):
             ),
             ("<JacSemTokenType.METHOD: 13>, <JacSemTokenModifier.DECLARATION: 1>", 6),
             ("<JacSemTokenType.ENUM: 3>, <JacSemTokenModifier.DECLARATION: 1>,", 4),
-            ("<JacSemTokenType.CLASS: 2>, <JacSemTokenModifier.DECLARATION: ", 12),
+            ("<JacSemTokenType.CLASS: 2>, <JacSemTokenModifier.DECLARATION: ", 11),
             (
                 "<JacSemTokenType.NAMESPACE: 0>, <JacSemTokenModifier.DEFINITION: 2>,",
                 3,
