@@ -1,6 +1,7 @@
 """Jaseci DTOs."""
 
 from .sso import AttachSSO, DetachSSO
+from .token import Expiration, GenerateKey, KeyIDs
 from .user import (
     UserChangePassword,
     UserForgotPassword,
@@ -8,7 +9,6 @@ from .user import (
     UserResetPassword,
     UserVerification,
 )
-from .webhook import Expiration, GenerateKey, KeyIDs
 from .websocket import (
     ChangeUserEvent,
     ChannelEvent,
