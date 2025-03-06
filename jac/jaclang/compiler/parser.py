@@ -1269,15 +1269,23 @@ class JacParser(Pass):
 
             if_stmt: KW_IF expression code_block (elif_stmt | else_stmt)?
             """
-            self.consume_token(Tok.KW_IF)
+            tok_if = self.consume_token(Tok.KW_IF)
             condition = self.consume(ast.Expr)
             body = self.consume(ast.SubNodeList)
+            assert body.left_enc and body.right_enc
             else_body = self.match(ast.ElseStmt) or self.match(ast.ElseIf)
             return ast.IfStmt(
                 condition=condition,
-                body=body,
+                body=cast(list[ast.CodeBlockStmt], body.items),
                 else_body=else_body,
-                kid=self.cur_nodes,
+                kid=[
+                    tok_if,
+                    condition,
+                    body.left_enc,
+                    *body.items,
+                    body.right_enc,
+                    *([else_body] if else_body else []),
+                ],
             )
 
         def elif_stmt(self, _: None) -> ast.ElseIf:
@@ -1285,15 +1293,23 @@ class JacParser(Pass):
 
             elif_stmt: KW_ELIF expression code_block (elif_stmt | else_stmt)?
             """
-            self.consume_token(Tok.KW_ELIF)
+            tok_elif = self.consume_token(Tok.KW_ELIF)
             condition = self.consume(ast.Expr)
             body = self.consume(ast.SubNodeList)
+            assert body.left_enc and body.right_enc
             else_body = self.match(ast.ElseStmt) or self.match(ast.ElseIf)
             return ast.ElseIf(
                 condition=condition,
-                body=body,
+                body=cast(list[ast.CodeBlockStmt], body.items),
                 else_body=else_body,
-                kid=self.cur_nodes,
+                kid=[
+                    tok_elif,
+                    condition,
+                    body.left_enc,
+                    *body.items,
+                    body.right_enc,
+                    *([else_body] if else_body else []),
+                ],
             )
 
         def else_stmt(self, _: None) -> ast.ElseStmt:
@@ -1301,11 +1317,17 @@ class JacParser(Pass):
 
             else_stmt: KW_ELSE code_block
             """
-            self.consume_token(Tok.KW_ELSE)
+            tok_else = self.consume_token(Tok.KW_ELSE)
             body = self.consume(ast.SubNodeList)
+            assert body.left_enc and body.right_enc
             return ast.ElseStmt(
-                body=body,
-                kid=self.cur_nodes,
+                body=cast(list[ast.CodeBlockStmt], body.items),
+                kid=[
+                    tok_else,
+                    body.left_enc,
+                    *body.items,
+                    body.right_enc,
+                ],
             )
 
         def try_stmt(self, _: None) -> ast.TryStmt:
@@ -1406,7 +1428,7 @@ class JacParser(Pass):
                 count_by = self.consume(ast.Assignment)
                 body = self.consume(ast.SubNodeList)
                 if else_body_node := self.match(ast.ElseStmt):
-                    else_body = else_body_node.body.items
+                    else_body = else_body_node.body
 
                 assert body.left_enc and body.right_enc
                 return ast.IterForStmt(
@@ -1431,7 +1453,7 @@ class JacParser(Pass):
             collection = self.consume(ast.Expr)
             body = self.consume(ast.SubNodeList)
             if else_stmt_node := self.match(ast.ElseStmt):
-                else_body = else_stmt_node.body.items
+                else_body = else_stmt_node.body
 
             assert body.left_enc and body.right_enc
             return ast.InForStmt(

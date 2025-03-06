@@ -1637,7 +1637,7 @@ class PyastGenPass(Pass):
             self.sync(
                 ast3.If(
                     test=node.condition.gen.py_ast[0],
-                    body=self.resolve_stmt_block(node.body),
+                    body=self.resolve_body_stmts(node.body),
                     orelse=node.else_body.gen.py_ast if node.else_body else [],
                 )
             )
@@ -1654,7 +1654,7 @@ class PyastGenPass(Pass):
             self.sync(
                 ast3.If(
                     test=node.condition.gen.py_ast[0],
-                    body=self.resolve_stmt_block(node.body),
+                    body=self.resolve_body_stmts(node.body),
                     orelse=node.else_body.gen.py_ast if node.else_body else [],
                 )
             )
@@ -1665,7 +1665,7 @@ class PyastGenPass(Pass):
 
         body: SubNodeList[CodeBlockStmt],
         """
-        node.gen.py_ast = self.resolve_stmt_block(node.body)
+        node.gen.py_ast = self.resolve_body_stmts(node.body)
 
     def exit_expr_stmt(self, node: ast.ExprStmt) -> None:
         """Sub objects.
