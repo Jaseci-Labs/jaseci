@@ -583,9 +583,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("if not x == y {", output)
         self.assertIn("can greet2(**kwargs: Any) {", output)
         self.assertIn("squares_dict = {x: (x ** 2)  for x in numbers};", output)
-        self.assertIn(
-            '\n\n@my_decorator\ncan say_hello {\n\n    """Say hello""', output
-        )
+        self.assertIn('\n@my_decorator\ncan say_hello {\n    """Say hello""', output)
 
     def test_needs_import_2(self) -> None:
         """Test py ast to Jac ast conversion output."""
@@ -638,7 +636,7 @@ class JacLanguageTests(TestCase):
             ).ir.unparse()
         self.assertIn("class X {\n    with entry {\n        a_b = 67;", output)
         self.assertIn("br = b'Hello\\\\\\\\nWorld'", output)
-        self.assertIn("class Circle {\n    can init(radius: float", output)
+        self.assertIn("class Circle {\n\n    can init(radius: float", output)
         self.assertIn("<>node = 90;\n    print(<>node) ;\n}\n", output)
 
     def test_needs_import_3(self) -> None:
@@ -692,7 +690,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("if 0 <= x<= 5 {", output)
         self.assertIn("  case _:\n", output)
         self.assertIn(" case Point(x = int(_), y = 0):\n", output)
-        self.assertIn("class Sample {\n    can init", output)
+        self.assertIn("class Sample {\n\n    can init", output)
 
     def test_py_kw_as_name_disallowed(self) -> None:
         """Basic precedence test."""

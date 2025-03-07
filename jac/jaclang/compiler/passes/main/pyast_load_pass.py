@@ -172,7 +172,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         ):
             self.convert_to_doc(body[0].expr)
             doc = body[0]
-            valid_body: list[ast.CodeBlockStmt] = body[1:] + [doc]
+            valid_body: list[ast.CodeBlockStmt] = [doc] + body[1:]
         else:
             doc = None
             valid_body = body

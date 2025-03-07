@@ -693,7 +693,17 @@ class JacFormatPass(Pass):
                 self.indent_level += 1
                 for stmt in node.body:
                     for line in stmt.gen.jac.splitlines():
-                        node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
+                        if line.startswith("try"):
+                            node.gen.jac = node.gen.jac.rstrip("\n") + "\n"
+                        elif line.startswith(" except"):
+                            node.gen.jac = node.gen.jac.rstrip()
+
+                        if line.startswith(" except"):
+                            node.gen.jac += (
+                                " " + (self.indent_str() + line).strip() + "\n"
+                            )
+                        else:
+                            node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
                 self.indent_level -= 1
                 self.emit(node, "}")
             else:
@@ -1212,8 +1222,8 @@ class JacFormatPass(Pass):
 
         self.emit(node, f" except {node.ex_type.gen.jac} ")
         if node.name:
-            self.emit(node, f"as {node.name.gen.jac} ")
-        self.emit(node, "{\n")
+            self.emit(node, f" as {node.name.gen.jac} ")
+        self.emit(node, " {\n")
         self.indent_level += 1
         for stmt in node.body:
             # The emit(), emit_ln are messed up.
