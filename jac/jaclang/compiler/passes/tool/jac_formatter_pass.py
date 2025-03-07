@@ -707,7 +707,7 @@ class JacFormatPass(Pass):
                 self.indent_level -= 1
                 self.emit(node, "}")
             else:
-                self.emit(node, node.body.gen.jac)
+                self.emit(node, ";")
         else:
             self.emit(node, " abs") if node.is_abstract else None
             self.emit(node, ";")

@@ -160,9 +160,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             pos_end=0,
         )
         body = [
-            stmt
-            for stmt in (self.convert(stmt) for stmt in node.body)
-            if isinstance(stmt, ast.CodeBlockStmt)
+            stmt_item
+            for stmt_item in (self.convert(stmt) for stmt in node.body)
+            if isinstance(stmt_item, ast.CodeBlockStmt)
         ]
 
         if (
