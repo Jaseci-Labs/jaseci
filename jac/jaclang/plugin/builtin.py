@@ -7,6 +7,12 @@ from typing import Optional
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.runtimelib.constructs import Architype, NodeArchitype
 
+__all__ = [
+    "dotgen",
+    "jid",
+    "jobj",
+]
+
 
 def dotgen(
     node: Optional[NodeArchitype] = None,
@@ -44,3 +50,8 @@ def dotgen(
 def jid(obj: Architype) -> str:
     """Get the id of the object."""
     return Jac.object_ref(obj)
+
+
+def jobj(id: str) -> Architype | None:
+    """Get the object from the id."""
+    return Jac.get_object(id)

@@ -64,7 +64,7 @@ node C {
 }
 
 obj Child {
-    has val: int, arr: list[int], json: dict[str, int], enum_field: Enum;
+    has val: int, arr: list[int], data: dict[str, int], enum_field: Enum;
 }
 
 obj Parent:Child: {
@@ -72,7 +72,15 @@ obj Parent:Child: {
 }
 
 node Nested {
-    has val: int, arr: list[int], json: dict[str, int], parent: Parent, enum_field: Enum;
+    has val: int, arr: list[int], data: dict[str, int], parent: Parent, enum_field: Enum;
+}
+
+obj Kid {
+    has enum_field: Enum;
+}
+
+obj Adult:Kid: {
+    has kid: Kid, arr: list[Kid], data: dict[str, Kid];
 }
 
 walker create_graph {
@@ -150,15 +158,15 @@ walker create_nested_node {
         n = Nested(
             val=0,
             arr=[],
-            json={},
+            data={},
             parent=Parent(
                 val=1,
                 arr=[1],
-                json={"a": 1},
+                data={"a": 1},
                 child=Child(
                     val=2,
                     arr=[1, 2],
-                    json={"a": 1, "b": 2},
+                    data={"a": 1, "b": 2},
                     enum_field = Enum.C
                 ),
                 enum_field = Enum.B
@@ -173,15 +181,15 @@ walker create_nested_node {
 walker update_nested_node {
     can enter_root with `root entry {
         nested = [-->(`?Nested)][0];
-        nested.parent.child.json["c"] = 3;
+        nested.parent.child.data["c"] = 3;
         nested.parent.child.arr.append(3);
         nested.parent.child.val = 3;
         nested.parent.child.enum_field = Enum.A;
-        nested.parent.json["b"] = 2;
+        nested.parent.data["b"] = 2;
         nested.parent.arr.append(2);
         nested.parent.val = 2;
         nested.parent.enum_field = Enum.C;
-        nested.json["a"] = 1;
+        nested.data["a"] = 1;
         nested.arr.append(1);
         nested.val = 1;
         nested.enum_field = Enum.B;
@@ -189,15 +197,15 @@ walker update_nested_node {
     }
 
     can enter_nested with Nested entry {
-        here.parent.child.json["c"] = 3;
+        here.parent.child.data["c"] = 3;
         here.parent.child.arr.append(3);
         here.parent.child.val = 3;
         here.parent.child.enum_field = Enum.A;
-        here.parent.json["b"] = 2;
+        here.parent.data["b"] = 2;
         here.parent.arr.append(2);
         here.parent.val = 2;
         here.parent.enum_field = Enum.C;
-        here.json["a"] = 1;
+        here.data["a"] = 1;
         here.arr.append(1);
         here.val = 1;
         here.enum_field = Enum.B;
@@ -486,15 +494,15 @@ walker manual_create_nested_node {
         n = Nested(
             val=0,
             arr=[],
-            json={},
+            data={},
             parent=Parent(
                 val=1,
                 arr=[1],
-                json={"a": 1},
+                data={"a": 1},
                 child=Child(
                     val=2,
                     arr=[1, 2],
-                    json={"a": 1, "b": 2},
+                    data={"a": 1, "b": 2},
                     enum_field = Enum.C
                 ),
                 enum_field = Enum.B
@@ -516,15 +524,15 @@ walker manual_create_nested_node {
 walker manual_update_nested_node {
     can enter_root with `root entry {
         nested = [-->(`?Nested)][0];
-        nested.parent.child.json["c"] = 3;
+        nested.parent.child.data["c"] = 3;
         nested.parent.child.arr.append(3);
         nested.parent.child.val = 3;
         nested.parent.child.enum_field = Enum.A;
-        nested.parent.json["b"] = 2;
+        nested.parent.data["b"] = 2;
         nested.parent.arr.append(2);
         nested.parent.val = 2;
         nested.parent.enum_field = Enum.C;
-        nested.json["a"] = 1;
+        nested.data["a"] = 1;
         nested.arr.append(1);
         nested.val = 1;
         nested.enum_field = Enum.B;
@@ -729,7 +737,7 @@ walker check_memory_sync {
 #################################################################
 
 obj SavableObject {
-    has val: int, arr: list[int], json: dict[str, int], parent: Parent, enum_field: Enum;
+    has val: int, arr: list[int], data: dict[str, int], parent: Parent, enum_field: Enum;
 }
 
 walker create_custom_object {
@@ -737,15 +745,15 @@ walker create_custom_object {
         o = SavableObject(
             val=0,
             arr=[],
-            json={},
+            data={},
             parent=Parent(
                 val=1,
                 arr=[1],
-                json={"a": 1},
+                data={"a": 1},
                 child=Child(
                     val=2,
                     arr=[1, 2],
-                    json={"a": 1, "b": 2},
+                    data={"a": 1, "b": 2},
                     enum_field = Enum.C
                 ),
                 enum_field = Enum.B
@@ -774,15 +782,15 @@ walker update_custom_object {
 
     can enter1 with `root entry {
         savable_object = &(self.object_id);
-        savable_object.parent.child.json["c"] = 3;
+        savable_object.parent.child.data["c"] = 3;
         savable_object.parent.child.arr.append(3);
         savable_object.parent.child.val = 3;
         savable_object.parent.child.enum_field = Enum.A;
-        savable_object.parent.json["b"] = 2;
+        savable_object.parent.data["b"] = 2;
         savable_object.parent.arr.append(2);
         savable_object.parent.val = 2;
         savable_object.parent.enum_field = Enum.C;
-        savable_object.json["a"] = 1;
+        savable_object.data["a"] = 1;
         savable_object.arr.append(1);
         savable_object.val = 1;
         savable_object.enum_field = Enum.B;
@@ -803,6 +811,33 @@ walker delete_custom_object {
         #
         # The only difference is BaseAnchor.ref doesn't
         # load the actual object and just use it as reference
+    }
+}
+
+walker nested_request_payload {
+    has adult: Adult, arr: list[Adult], data: dict[str, Adult], enum_field: Enum;
+
+    can enter1 with `root entry {
+        report type(self.adult).__name__;
+        report type(self.adult.kid).__name__;
+        report type(self.adult.arr[0]).__name__;
+        report type(self.adult.data["kid1"]).__name__;
+        report type(self.adult.enum_field).__name__;
+
+
+        report type(self.arr[0]).__name__;
+        report type(self.arr[0].kid).__name__;
+        report type(self.arr[0].arr[0]).__name__;
+        report type(self.arr[0].data["kid1"]).__name__;
+        report type(self.arr[0].enum_field).__name__;
+
+        report type(self.data["kid1"]).__name__;
+        report type(self.data["kid1"].kid).__name__;
+        report type(self.data["kid1"].arr[0]).__name__;
+        report type(self.data["kid1"].data["kid1"]).__name__;
+        report type(self.data["kid1"].enum_field).__name__;
+
+        report type(self.enum_field).__name__;
     }
 }
 
@@ -924,5 +959,27 @@ walker websocket {
 
     class __specs__ {
         has methods: list = ["websocket"];
+    }
+}
+
+walker documentation {
+
+    class __specs__ {
+        has tags: list[str] | None = ["Documented"];
+        has entry_type: EntryType = "root";
+        has status_code: int | None = "201";
+        has summary: str | None = "Enter summary here!!!";
+        has description: str | None = "Enter description here!!!";
+        has response_description: str = "Enter response description here!!! Defaults to 'Successful Response'";
+        has responses: dict[int | str, dict[str, Any]] | None = {
+            200: {
+                "description": "Enter response description for http status 200!!!",
+                "content": {"application/json": {}},
+                "links": {"sample_link": {"description": "Enter link description here!!!"}}
+            }
+        };
+        has deprecated: bool | None = True;
+        has name: str | None = "Enter name here!!!";
+        has openapi_extra: dict[str, Any] | None = {"addons": True};
     }
 }

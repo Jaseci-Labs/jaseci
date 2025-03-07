@@ -134,7 +134,6 @@ class JacFeature:
     @hookimpl
     def gen_llm_body(_pass: PyastGenPass, node: ast.Ability) -> list[ast3.AST]:
         """Generate the by LLM body."""
-        _pass.needs_jac_feature()
         if isinstance(node.body, ast.FuncCall):
             model = node.body.target.gen.py_ast[0]
             extracted_type = (
