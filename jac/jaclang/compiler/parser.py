@@ -788,19 +788,27 @@ class JacParser(Pass):
             ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?
                 named_ref (func_decl | event_clause) (code_block | SEMI)
             """
+            left_enc: list[ast.Token] = []
+            right_enc: list[ast.Token] = []
+            tok_semi: ast.Token | None = None
             signature: ast.FuncSignature | ast.EventSignature | None = None
-            body: ast.SubNodeList | None = None
+            body: list[ast.CodeBlockStmt] | ast.AbilityDef | ast.FuncCall | None = None
             is_override = self.match_token(Tok.KW_OVERRIDE) is not None
             is_static = self.match_token(Tok.KW_STATIC) is not None
-            self.consume_token(Tok.KW_CAN)
+            tok_can = self.consume_token(Tok.KW_CAN)
             access = self.match(ast.SubTag)
             semstr = self.match(ast.String)
             name = self.consume(ast.NameAtom)
             signature = self.match(ast.FuncSignature) or self.consume(
                 ast.EventSignature
             )
-            if (body := self.match(ast.SubNodeList)) is None:
-                self.consume_token(Tok.SEMI)
+            sub_node_body = self.match(ast.SubNodeList)
+            body = sub_node_body.items if sub_node_body else []
+            if not sub_node_body:
+                tok_semi = self.consume_token(Tok.SEMI)
+            if sub_node_body and sub_node_body.left_enc and sub_node_body.right_enc:
+                left_enc = [sub_node_body.left_enc]
+                right_enc = [sub_node_body.right_enc]
             return ast.Ability(
                 name_ref=name,
                 is_async=False,
@@ -812,7 +820,17 @@ class JacParser(Pass):
                 signature=signature,
                 body=body,
                 decorators=[],
-                kid=self.cur_nodes,
+                kid=[
+                    tok_can,
+                    *([access] if access else []),
+                    name,
+                    *([semstr] if semstr else []),
+                    signature,
+                    *left_enc,
+                    *body,
+                    *right_enc,
+                    *([tok_semi] if tok_semi else []),
+                ],
             )
 
         def ability_def(self, kid: list[ast.AstNode]) -> ast.AbilityDef:
@@ -820,16 +838,22 @@ class JacParser(Pass):
 
             ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
             """
+            left_enc: list[ast.Token] = []
+            right_enc: list[ast.Token] = []
             if (
                 isinstance(kid[0], ast.ArchRefChain)
                 and isinstance(kid[1], (ast.FuncSignature, ast.EventSignature))
                 and isinstance(kid[2], ast.SubNodeList)
             ):
+                body = kid[2]
+                if body.left_enc and body.right_enc:
+                    left_enc = [body.left_enc]
+                    right_enc = [body.right_enc]
                 return ast.AbilityDef(
                     target=kid[0],
                     signature=kid[1],
-                    body=kid[2],
-                    kid=kid,
+                    body=body.items,
+                    kid=[kid[0], kid[1], *left_enc, *body.items, *right_enc],
                 )
             else:
                 raise self.ice()
@@ -863,7 +887,7 @@ class JacParser(Pass):
                 access=access,
                 semstr=semstr,
                 signature=signature,
-                body=None,
+                body=[],
                 decorators=[],
                 kid=self.cur_nodes,
             )
