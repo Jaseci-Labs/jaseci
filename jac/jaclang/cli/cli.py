@@ -13,10 +13,13 @@ from typing import Optional
 import jaclang.compiler.absyntree as ast
 from jaclang import jac_import
 from jaclang.cli.cmdreg import CommandShell, cmd_registry
-from jaclang.compiler.compile import jac_file_to_pass
+from jaclang.compiler.compile import jac_file_to_pass, jac_str_to_pass
 from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
-from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+from jaclang.compiler.passes.main.schedules import (
+    py_code_gen as without_format,
+    py_code_gen_typed,
+)
 from jaclang.compiler.passes.tool.schedules import format_pass
 from jaclang.plugin.builtin import dotgen
 from jaclang.plugin.feature import JacCmd as Cmd
@@ -124,6 +127,17 @@ def run(
 
     jctx.close()
     JacMachine.detach()
+
+
+@cmd_registry.register
+def run_str(sourcecode: str) -> None:
+    """Run the specified jac string."""
+    jacast = jac_str_to_pass(
+        jac_str=sourcecode, file_path="test.jac", schedule=without_format
+    )
+    py_ast = jacast.ir.gen.py_ast[0]
+    code_object = compile(py_ast, filename="test.py", mode="exec")
+    exec(code_object)
 
 
 @cmd_registry.register
