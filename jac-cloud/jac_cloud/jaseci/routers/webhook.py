@@ -140,9 +140,13 @@ def delete(key_ids: KeyIDs) -> ORJSONResponse:
         max_retry = BulkWrite.SESSION_MAX_TRANSACTION_RETRY
         while retry <= max_retry:
             try:
-                if Webhook.Collection.delete(
-                    {"_id": {"$in": [ObjectId(id) for id in key_ids.ids]}}, session
-                ).deleted_count == len(key_ids.ids):
+                filter = {"_id": {"$in": [ObjectId(id) for id in key_ids.ids]}}
+                whs = Webhook.Collection.find(filter)
+                if Webhook.Collection.delete(filter, session).deleted_count == len(
+                    key_ids.ids
+                ):
+                    for wh in whs:
+                        WebhookRedis.hdelete(wh.key)
                     BulkWrite.commit(session)
                     return ORJSONResponse({"message": "Successfully Deleted!"}, 200)
                 break
