@@ -2696,7 +2696,7 @@ class PyastGenPass(Pass):
                 if isinstance(i, ast.String):
                     pieces.append(i.lit_value)
                 elif isinstance(i, ast.FString):
-                    pieces.extend(get_pieces(i.parts.items)) if i.parts else None
+                    pieces.extend(get_pieces(i.parts)) if i.parts else None
                 elif isinstance(i, ast.ExprStmt):
                     pieces.append(i.gen.py_ast[0])
                 else:
@@ -2737,13 +2737,11 @@ class PyastGenPass(Pass):
     def exit_f_string(self, node: ast.FString) -> None:
         """Sub objects.
 
-        parts: Optional[SubNodeList[String | ExprType]],
+        parts: list[String | ExprType],
         """
-        node.gen.py_ast = (
-            node.parts.gen.py_ast
-            if node.parts
-            else [self.sync(ast3.Constant(value=""))]
-        )
+        parts = [i.gen.py_ast[0] for i in node.parts]
+
+        node.gen.py_ast = parts if node.parts else [self.sync(ast3.Constant(value=""))]
 
     def exit_list_val(self, node: ast.ListVal) -> None:
         """Sub objects.
