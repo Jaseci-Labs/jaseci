@@ -1294,7 +1294,9 @@ class PyastGenPass(Pass):
             decorators.insert(
                 0, self.sync(ast3.Name(id="staticmethod", ctx=ast3.Load()))
             )
-        if not body and not isinstance(node.body, ast.FuncCall):
+        if not isinstance(node.body, ast.FuncCall) and (
+            not body or not getattr(body[0], "_fields", True)
+        ):
             self.error("Ability has no body. Perhaps an impl must be imported.", node)
             body = [self.sync(ast3.Pass(), node)]
 
