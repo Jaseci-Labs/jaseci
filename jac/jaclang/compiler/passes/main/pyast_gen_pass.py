@@ -2739,6 +2739,9 @@ class PyastGenPass(Pass):
 
         parts: list[String | ExprType],
         """
+        for i in node.parts:
+            if isinstance(i, ast.String):
+                i.value = i.value.replace("{{", "{").replace("}}", "}")
         parts = [i.gen.py_ast[0] for i in node.parts]
 
         node.gen.py_ast = parts if node.parts else [self.sync(ast3.Constant(value=""))]

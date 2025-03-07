@@ -2358,13 +2358,15 @@ class JacParser(Pass):
             fstring_end_tok = self.match_token(Tok.FSTR_END) or self.consume_token(
                 Tok.FSTR_SQ_END
             )
+            parts = target.items if target else []
+            for i in parts:
+                if isinstance(i, ast.String):
+                    i.value = (
+                        "{{" if i.value == "{" else "}}" if i.value == "}" else i.value
+                    )
             return ast.FString(
                 parts=target.items if target else [],
-                kid=(
-                    [fstring_start_tok, *target.items, fstring_end_tok]
-                    if target
-                    else []
-                ),
+                kid=([fstring_start_tok, *parts, fstring_end_tok]),
             )
 
         def fstr_parts(
