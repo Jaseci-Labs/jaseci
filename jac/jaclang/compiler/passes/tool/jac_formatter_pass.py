@@ -1480,7 +1480,7 @@ class JacFormatPass(Pass):
             node, node.kid[0].value if isinstance(node.kid[0], ast.Token) else 'f"'
         )
         if node.parts:
-            for part in node.parts.items:
+            for part in node.parts:
                 if isinstance(part, ast.String) and part.name in [
                     Tok.FSTR_PIECE,
                     Tok.FSTR_SQ_PIECE,

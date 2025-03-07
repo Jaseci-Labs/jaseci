@@ -2929,7 +2929,7 @@ class FString(AtomExpr):
 
     def __init__(
         self,
-        parts: Optional[SubNodeList[String | ExprStmt]],
+        parts: list[String | ExprStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize fstring expression node."""
@@ -2942,7 +2942,8 @@ class FString(AtomExpr):
         """Normalize ast node."""
         res = True
         if deep:
-            res = self.parts.normalize(deep) if self.parts else res
+            for part in self.parts:
+                res = res and part.normalize(deep)
         new_kid: list[AstNode] = []
         is_single_quote = (
             isinstance(self.kid[0], Token) and self.kid[0].name == Tok.FSTR_SQ_START
@@ -2952,12 +2953,12 @@ class FString(AtomExpr):
                 new_kid.append(self.gen_token(Tok.FSTR_SQ_START))
             else:
                 new_kid.append(self.gen_token(Tok.FSTR_START))
-            for i in self.parts.items:
+            for i in self.parts:
                 if isinstance(i, String):
                     i.value = (
                         "{{" if i.value == "{" else "}}" if i.value == "}" else i.value
                     )
-            new_kid.append(self.parts)
+            new_kid.extend(self.parts)
             if is_single_quote:
                 new_kid.append(self.gen_token(Tok.FSTR_SQ_END))
             else:
@@ -4383,7 +4384,7 @@ class String(Literal):
         ):
             return eval(self.value)
 
-        elif self.value.startswith(("'", '"')):
+        elif self.value.startswith(("'", '"')) and self.value.endswith(("'", '"')):
             repr_str = self.value.encode().decode("unicode_escape")
             if (
                 (self.value.startswith('"""') and self.value.endswith('"""'))
