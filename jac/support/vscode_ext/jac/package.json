@@ -25,7 +25,7 @@
     "Machine Learning"
   ],
   "engines": {
-    "vscode": "^1.89.0"
+    "vscode": "^1.97.0"
   },
   "contributes": {
 
@@ -44,6 +44,13 @@
           }
         ]
 
+      }
+    ],
+
+    "commands": [
+      {
+        "command": "jac.visualize",
+        "title": "jacvis: Visualize Jaclang Graph"
       }
     ],
 
@@ -89,7 +96,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.14.1",
-    "@types/vscode": "^1.89.0",
+    "@types/vscode": "^1.97.0",
     "@vscode/vsce": "^2.27.0",
     "typescript": "^5.4.5"
   }

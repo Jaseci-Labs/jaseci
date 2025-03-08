@@ -12,6 +12,9 @@ from jaclang.runtimelib.constructs import Architype, NodeArchitype
 from jaclang.runtimelib.machine import JacMachine as Jac
 
 
+# FIXME: Retname this to something common, doing this way so this doesn't break
+# the existing code. Currently it can return the jac graph in both dot and json format.
+# So the name shuouldn't be dotgen but something more generic.
 def dotgen(
     node: Optional[NodeArchitype] = None,
     depth: int = -1,
@@ -26,15 +29,12 @@ def dotgen(
     """Print the dot graph."""
     from jaclang.runtimelib.machine import JacMachine as Jac
 
-    root = Jac.root()
-    node = node or root
-
     if as_json:
         return(_jac_graph_json())
 
     return Jac.dotgen(
         edge_type=edge_type,
-        node=node,
+        node=node or Jac.root(),
         depth=depth,
         traverse=traverse,
         bfs=bfs,
