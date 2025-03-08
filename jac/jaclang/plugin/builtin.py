@@ -12,34 +12,32 @@ __all__ = [
     "dotgen",
     "jid",
     "jobj",
-    "jac_graph_json",
 ]
 
 
+# FIXME: Retname this to something common, doing this way so this doesn't break
+# the existing code. Currently it can return the jac graph in both dot and json format.
+# So the name shuouldn't be dotgen but something more generic.
 def dotgen(
     node: Optional[NodeArchitype] = None,
-    depth: Optional[int] = None,
-    traverse: Optional[bool] = None,
+    depth: int = -1,
+    traverse: bool = False,
     edge_type: Optional[list[str]] = None,
-    bfs: Optional[bool] = None,
-    edge_limit: Optional[int] = None,
-    node_limit: Optional[int] = None,
+    bfs: bool = True,
+    edge_limit: int = 512,
+    node_limit: int = 512,
     dot_file: Optional[str] = None,
+    as_json: bool = False,
 ) -> str:
     """Print the dot graph."""
     from jaclang.plugin.feature import JacFeature as Jac
 
-    root = Jac.get_root()
-    node = node if node is not None else root
-    depth = depth if depth is not None else -1
-    traverse = traverse if traverse is not None else False
-    bfs = bfs if bfs is not None else True
-    edge_limit = edge_limit if edge_limit is not None else 512
-    node_limit = node_limit if node_limit is not None else 512
+    if as_json:
+        return _jac_graph_json()
 
     return Jac.dotgen(
         edge_type=edge_type,
-        node=node,
+        node=node or Jac.get_root(),
         depth=depth,
         traverse=traverse,
         bfs=bfs,
@@ -59,7 +57,9 @@ def jobj(id: str) -> Architype | None:
     return Jac.get_object(id)
 
 
-def jac_graph_json() -> str:
+# TODO: Make this accept a node and return the graph of that node.
+# instead of using root always.
+def _jac_graph_json() -> str:
     """Get the graph in json string."""
     import jaclang as jl
     from jaclang import Root, Node
@@ -69,7 +69,7 @@ def jac_graph_json() -> str:
     edges: list[dict] = []
     working_set: list[tuple] = []
 
-    root: Root = jl.root
+    root: Root = jl.root()
     nodes.append({"id": id(root), "label": "root"})
 
     processed.append(root)
