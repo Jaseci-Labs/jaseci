@@ -15,9 +15,9 @@ from jaclang import jac_import
 from jaclang.cli.cmdreg import CommandShell, cmd_registry
 from jaclang.compiler.compile import jac_file_to_pass, jac_str_to_pass
 from jaclang.compiler.constant import Constants
+from jaclang.compiler.passes.main import pass_schedule
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 from jaclang.compiler.passes.main.schedules import (
-    py_code_gen as without_format,
     py_code_gen_typed,
 )
 from jaclang.compiler.passes.tool.schedules import format_pass
@@ -132,8 +132,9 @@ def run(
 @cmd_registry.register
 def run_str(sourcecode: str) -> None:
     """Run the specified jac string."""
+
     jacast = jac_str_to_pass(
-        jac_str=sourcecode, file_path="test.jac", schedule=without_format
+        jac_str=sourcecode, file_path="test.jac", schedule=pass_schedule
     )
     py_ast = jacast.ir.gen.py_ast[0]
     code_object = compile(py_ast, filename="test.py", mode="exec")
