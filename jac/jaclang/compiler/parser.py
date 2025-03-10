@@ -3075,7 +3075,7 @@ class JacParser(Pass):
                 isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
             ):
                 conn_assign = (
-                    ast.AssignCompr(assigns=conn_assign, kid=[conn_assign])
+                    ast.AssignCompr(assigns=conn_assign.items, kid=conn_assign.kid)
                     if conn_assign
                     else None
                 )
@@ -3102,7 +3102,7 @@ class JacParser(Pass):
                 isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
             ):
                 conn_assign = (
-                    ast.AssignCompr(assigns=conn_assign, kid=[conn_assign])
+                    ast.AssignCompr(assigns=conn_assign.items, kid=conn_assign.kid)
                     if conn_assign
                     else None
                 )
@@ -3128,7 +3128,7 @@ class JacParser(Pass):
                 isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
             ):
                 conn_assign = (
-                    ast.AssignCompr(assigns=conn_assign, kid=[conn_assign])
+                    ast.AssignCompr(assigns=conn_assign.items, kid=conn_assign.kid)
                     if conn_assign
                     else None
                 )
@@ -3228,11 +3228,12 @@ class JacParser(Pass):
 
             filter_compr: LPAREN EQ kw_expr_list RPAREN
             """
-            self.consume_token(Tok.LPAREN)
-            self.consume_token(Tok.EQ)
+            tok_lp = self.consume_token(Tok.LPAREN)
+            tok_eq = self.consume_token(Tok.EQ)
             assigns = self.consume(ast.SubNodeList)
-            self.consume_token(Tok.RPAREN)
-            return ast.AssignCompr(assigns=assigns, kid=self.cur_nodes)
+            tok_rp = self.consume_token(Tok.RPAREN)
+            kids = [tok_lp, tok_eq, *assigns.kid, tok_rp]
+            return ast.AssignCompr(assigns=assigns.items, kid=kids)
 
         def match_stmt(self, _: None) -> ast.MatchStmt:
             """Grammar rule.
