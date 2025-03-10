@@ -2241,11 +2241,11 @@ class PyastGenPass(Pass):
         target: SubNodeList[NameType],
         """
         py_nodes = []
-        for x in node.target.items:
+        for target_node in node.target:
             py_nodes.append(
                 self.sync(
-                    ast3.Global(names=[x.sym_name]),
-                    jac_node=x,
+                    ast3.Global(names=[target_node.sym_name]),
+                    jac_node=target_node,
                 )
             )
         node.gen.py_ast = [*py_nodes]
@@ -2256,11 +2256,11 @@ class PyastGenPass(Pass):
         target: SubNodeList[NameType],
         """
         py_nodes = []
-        for x in node.target.items:
+        for target_node in node.target:
             py_nodes.append(
                 self.sync(
-                    ast3.Nonlocal(names=[x.sym_name]),
-                    jac_node=x,
+                    ast3.Nonlocal(names=[target_node.sym_name]),
+                    jac_node=target_node,
                 )
             )
         node.gen.py_ast = [*py_nodes]
