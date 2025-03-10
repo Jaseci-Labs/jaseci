@@ -496,18 +496,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         value = self.convert(node.value)
         targets = [self.convert(target) for target in node.targets]
         valid = [target for target in targets if isinstance(target, ast.Expr)]
-        if len(valid) == len(targets):
-            valid_targets = ast.SubNodeList[ast.Expr](
-                items=valid, delim=Tok.EQ, kid=valid
-            )
-        else:
-            raise self.ice("Length mismatch in assignment targets")
         if isinstance(value, ast.Expr):
             return ast.Assignment(
-                target=valid_targets,
+                target=valid,
                 value=value,
                 type_tag=None,
-                kid=[valid_targets, value],
+                kid=[*valid, value],
             )
         else:
             raise self.ice()
@@ -537,7 +531,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 items=[target], delim=Tok.COMMA, kid=[target]
             )
             return ast.Assignment(
-                target=targ,
+                target=targ.items,
                 type_tag=None,
                 mutable=True,
                 aug_op=op,
@@ -573,7 +567,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 items=[target], delim=Tok.EQ, kid=[target]
             )
             return ast.Assignment(
-                target=target,
+                target=target.items,
                 value=value if isinstance(value, (ast.Expr, ast.YieldExpr)) else None,
                 type_tag=annotation_subtag,
                 kid=(
@@ -1344,8 +1338,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     pos_end=0,
                 )
             )
-        target = ast.SubNodeList[ast.NameAtom](items=names, delim=Tok.COMMA, kid=names)
-        return ast.GlobalStmt(target=target, kid=[target])
+        return ast.GlobalStmt(target=names, kid=names)
 
     def proc_if_exp(self, node: py_ast.IfExp) -> ast.IfElseExpr:
         """Process python node.
@@ -1407,13 +1400,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             pos_end=0,
         )
         pytag = ast.SubTag[ast.Name](tag=lang, kid=[lang])
-        items = ast.SubNodeList[ast.ModulePath](items=paths, delim=Tok.COMMA, kid=paths)
         ret = ast.Import(
             hint=pytag,
             from_loc=None,
-            items=items,
+            items=paths,
             is_absorb=False,
-            kid=[pytag, items],
+            kid=[pytag, *paths],
         )
         return ret
 
@@ -1477,26 +1469,18 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 )
             else:
                 raise self.ice()
-        items = (
-            ast.SubNodeList[ast.ModuleItem](
-                items=valid_names, delim=Tok.COMMA, kid=valid_names
-            )
-            if valid_names
-            else None
-        )
+        items = valid_names
         if not items:
             raise self.ice("No valid names in import from")
         pytag = ast.SubTag[ast.Name](tag=lang, kid=[lang])
         if len(node.names) == 1 and node.names[0].name == "*":
-            path_in = ast.SubNodeList[ast.ModulePath](
-                items=[path], delim=Tok.COMMA, kid=[path]
-            )
+            path_in = [path]
             ret = ast.Import(
                 hint=pytag,
                 from_loc=None,
                 items=path_in,
                 is_absorb=True,
-                kid=[pytag, path_in],
+                kid=[pytag, *path_in],
             )
             return ret
         ret = ast.Import(
@@ -1504,7 +1488,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             from_loc=path,
             items=items,
             is_absorb=False,
-            kid=[pytag, path, items],
+            kid=[pytag, path, *items],
         )
         return ret
 
@@ -1881,8 +1865,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                     pos_end=0,
                 )
             )
-        target = ast.SubNodeList[ast.NameAtom](items=names, delim=Tok.COMMA, kid=names)
-        return ast.NonLocalStmt(target=target, kid=names)
+        return ast.NonLocalStmt(target=names, kid=names)
 
     def proc_pass(self, node: py_ast.Pass) -> ast.Semi:
         """Process python node."""

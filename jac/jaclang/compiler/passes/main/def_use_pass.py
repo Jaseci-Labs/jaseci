@@ -113,7 +113,7 @@ class DefUsePass(Pass):
         is_static: bool = False,
         mutable: bool = True,
         """
-        for i in node.target.items:
+        for i in node.target:
             if isinstance(i, ast.AtomTrailer):
                 i.sym_tab.chain_def_insert(i.as_attr_list)
             elif isinstance(i, ast.AstSymbolNode):

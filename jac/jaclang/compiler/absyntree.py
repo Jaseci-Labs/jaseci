@@ -715,7 +715,7 @@ class GlobalVars(ElementStmt, AstAccessNode):
     def __init__(
         self,
         access: Optional[SubTag[Token]],
-        assignments: SubNodeList[Assignment],
+        assignments: list[Assignment],
         is_frozen: bool,
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
@@ -730,9 +730,10 @@ class GlobalVars(ElementStmt, AstAccessNode):
     def normalize(self, deep: bool = False) -> bool:
         """Normalize global var node."""
         res = True
+        for i in self.assignments:
+            res = res and i.normalize(deep)
         if deep:
             res = self.access.normalize(deep) if self.access else True
-            res = res and self.assignments.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
         if self.doc:
@@ -743,7 +744,11 @@ class GlobalVars(ElementStmt, AstAccessNode):
             new_kid.append(self.gen_token(Tok.KW_GLOBAL))
         if self.access:
             new_kid.append(self.access)
-        new_kid.append(self.assignments)
+        for idx, i in enumerate(self.assignments):
+            if idx > 0:
+                new_kid.append(self.gen_token(Tok.COMMA))
+            new_kid.append(i)
+        new_kid.append(self.gen_token(Tok.SEMI))
         self.set_kids(nodes=new_kid)
         return res
 
@@ -888,7 +893,7 @@ class Import(ElementStmt, CodeBlockStmt):
         self,
         hint: Optional[SubTag[Name]],
         from_loc: Optional[ModulePath],
-        items: SubNodeList[ModuleItem] | SubNodeList[ModulePath],
+        items: list[ModuleItem] | list[ModulePath],
         is_absorb: bool,  # For includes
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
@@ -930,7 +935,7 @@ class Import(ElementStmt, CodeBlockStmt):
                     os.path.join(self.from_loc.resolve_relative_path(), "__init__.jac")
                 ):
                     return True
-                for i in self.items.items:
+                for i in self.items:
                     if isinstance(
                         i, ModuleItem
                     ) and self.from_loc.resolve_relative_path(i.name.value).endswith(
@@ -939,16 +944,17 @@ class Import(ElementStmt, CodeBlockStmt):
                         return True
         return any(
             isinstance(i, ModulePath) and i.resolve_relative_path().endswith(".jac")
-            for i in self.items.items
+            for i in self.items
         )
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize import node."""
         res = True
+        for i in self.items:
+            res = res and i.normalize(deep)
         if deep:
             res = self.hint.normalize(deep) if self.hint else res
             res = res and self.from_loc.normalize(deep) if self.from_loc else res
-            res = res and self.items.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
         if self.doc:
@@ -962,8 +968,7 @@ class Import(ElementStmt, CodeBlockStmt):
         if self.from_loc:
             new_kid.append(self.gen_token(Tok.KW_FROM))
             new_kid.append(self.from_loc)
-            new_kid.append(self.gen_token(Tok.COMMA))
-        new_kid.append(self.items)
+        new_kid.extend(self.items)
         new_kid.append(self.gen_token(Tok.SEMI))
         self.set_kids(nodes=new_kid)
         return res
@@ -1832,7 +1837,7 @@ class TypedCtxBlock(CodeBlockStmt):
     def __init__(
         self,
         type_ctx: Expr,
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize typed context block node."""
@@ -1843,14 +1848,12 @@ class TypedCtxBlock(CodeBlockStmt):
     def normalize(self, deep: bool = False) -> bool:
         """Normalize typed context block node."""
         res = True
+        for stmt in self.body:
+            res = res and stmt.normalize(deep)
         if deep:
             res = self.type_ctx.normalize(deep)
-            res = res and self.body.normalize(deep)
-        new_kid: list[AstNode] = [
-            self.gen_token(Tok.RETURN_HINT),
-            self.type_ctx,
-            self.body,
-        ]
+        new_kid: list[AstNode] = [self.gen_token(Tok.RETURN_HINT), self.type_ctx]
+        new_kid.extend(self.body)
         self.set_kids(nodes=new_kid)
         return res
 
@@ -2614,7 +2617,7 @@ class GlobalStmt(CodeBlockStmt):
 
     def __init__(
         self,
-        target: SubNodeList[NameAtom],
+        target: list[NameAtom],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize global statement node."""
@@ -2625,10 +2628,14 @@ class GlobalStmt(CodeBlockStmt):
         """Normalize global statement node."""
         res = True
         if deep:
-            res = self.target.normalize(deep)
-        new_kid: list[AstNode] = [
+            for stmt in self.target:
+                res = res and stmt.normalize(deep)
+        target_list = [
+            item for name in self.target for item in (name, self.gen_token(Tok.COMMA))
+        ]
+        new_kid = [
             self.gen_token(Tok.GLOBAL_OP),
-            self.target,
+            *target_list[:-1],  # Remove the last comma
             self.gen_token(Tok.SEMI),
         ]
         self.set_kids(nodes=new_kid)
@@ -2642,10 +2649,11 @@ class NonLocalStmt(GlobalStmt):
         """Normalize nonlocal statement node."""
         res = True
         if deep:
-            res = self.target.normalize(deep)
+            for target_node in self.target:
+                res = res and target_node.normalize(deep)
         new_kid: list[AstNode] = [
             self.gen_token(Tok.NONLOCAL_OP),
-            self.target,
+            *self.target,
             self.gen_token(Tok.SEMI),
         ]
         self.set_kids(nodes=new_kid)
@@ -2657,7 +2665,7 @@ class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
 
     def __init__(
         self,
-        target: SubNodeList[Expr],
+        target: list[Expr],
         value: Optional[Expr | YieldExpr],
         type_tag: Optional[SubTag[Expr]],
         kid: Sequence[AstNode],
@@ -2679,13 +2687,17 @@ class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
     def normalize(self, deep: bool = True) -> bool:
         """Normalize ast node."""
         res = True
+        for target in self.target:
+            res = res and target.normalize(deep)
         if deep:
-            res = self.target.normalize(deep)
             res = res and self.value.normalize(deep) if self.value else res
             res = res and self.type_tag.normalize(deep) if self.type_tag else res
             res = res and self.aug_op.normalize(deep) if self.aug_op else res
         new_kid: list[AstNode] = []
-        new_kid.append(self.target)
+        for i, target in enumerate(self.target):
+            if i > 0:
+                new_kid.append(self.gen_token(Tok.EQ))
+            new_kid.append(target)
         if self.semstr:
             new_kid.append(self.gen_token(Tok.COLON))
             new_kid.append(self.semstr)
@@ -2697,16 +2709,13 @@ class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
             if not self.aug_op:
                 new_kid.append(self.gen_token(Tok.EQ))
             new_kid.append(self.value)
-        if isinstance(self.parent, SubNodeList) and isinstance(
-            self.parent.parent, GlobalVars
-        ):
-            if self.parent.kid.index(self) == len(self.parent.kid) - 1:
-                new_kid.append(self.gen_token(Tok.SEMI))
-        elif isinstance(self.parent, IterForStmt):
+        if isinstance(self.parent, IterForStmt):
             assign_parent = self.parent
             if self not in [assign_parent.iter, assign_parent.count_by]:
                 new_kid.append(self.gen_token(Tok.SEMI))
-        elif (not self.is_enum_stmt) and not isinstance(self.parent, IterForStmt):
+        elif (not self.is_enum_stmt) and not isinstance(
+            self.parent, (IterForStmt, GlobalVars)
+        ):
             new_kid.append(self.gen_token(Tok.SEMI))
         self.set_kids(nodes=new_kid)
         return res
