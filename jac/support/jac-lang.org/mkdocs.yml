@@ -67,6 +67,9 @@ nav:
   - Language Reference:
     - "lang_ref/jac_ref.md"
 
+  - Playground:
+    - "jac_playground/jac Playground.md"
+
 theme:
   logo: "assets/logo.png"
   name: "material"
@@ -137,6 +140,7 @@ markdown_extensions:
 
 extra_css:
   - extra.css
+  - jac_playground/playground.css
 
 extra:
   generator: false
