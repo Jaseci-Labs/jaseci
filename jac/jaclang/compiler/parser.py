@@ -2346,24 +2346,29 @@ class JacParser(Pass):
             else:
                 raise self.ice()
 
-        def fstring(self, kid: list[ast.AstNode]) -> ast.FString:
+        def fstring(self, _: None) -> ast.FString:
             """Grammar rule.
 
             fstring: FSTR_START fstr_parts FSTR_END
                 | FSTR_SQ_START fstr_sq_parts FSTR_SQ_END
             """
-            if len(kid) == 2:
-                return ast.FString(
-                    parts=None,
-                    kid=kid,
-                )
-            elif isinstance(kid[1], ast.SubNodeList):
-                return ast.FString(
-                    parts=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            fstring_start_tok = self.match_token(Tok.FSTR_START) or self.consume_token(
+                Tok.FSTR_SQ_START
+            )
+            target = self.match(ast.SubNodeList)
+            fstring_end_tok = self.match_token(Tok.FSTR_END) or self.consume_token(
+                Tok.FSTR_SQ_END
+            )
+            parts = target.items if target else []
+            for i in parts:
+                if isinstance(i, ast.String):
+                    i.value = (
+                        "{{" if i.value == "{" else "}}" if i.value == "}" else i.value
+                    )
+            return ast.FString(
+                parts=target.items if target else [],
+                kid=([fstring_start_tok, *parts, fstring_end_tok]),
+            )
 
         def fstr_parts(
             self, kid: list[ast.AstNode]
