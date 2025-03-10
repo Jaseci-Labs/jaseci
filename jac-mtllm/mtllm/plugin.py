@@ -53,7 +53,7 @@ class JacFeature:
         """Jac's with_llm feature."""
         from jaclang.runtimelib.machine import JacMachine
 
-        mod_registry = JacMachine.get().jac_program.sem_ir
+        mod_registry = JacMachine.get().jac_program.sem_ir  # type: ignore[union-attr]
 
         _scope = SemScope.get_scope_from_str(scope)
         assert _scope is not None, f"Invalid scope: {scope}"
@@ -485,7 +485,7 @@ class JacFeature:
                 keywords=[],
             )
         )
-        if node.params and node.params.items:
+        if node.params:
             inputs = [
                 _pass.sync(
                     ast3.Tuple(
@@ -570,7 +570,7 @@ class JacFeature:
                         ctx=ast3.Load(),
                     )
                 )
-                for kw_pair in node.params.items
+                for kw_pair in node.params
                 if isinstance(kw_pair, ast.KWPair)
             ]
         else:
