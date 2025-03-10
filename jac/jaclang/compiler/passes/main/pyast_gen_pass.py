@@ -409,20 +409,21 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         access: Optional[SubTag[Token]],
-        assignments: SubNodeList[Assignment],
+        assignments: list[Assignment],
         is_frozen: bool,
         doc: Optional[String],
         """
         if node.doc:
             doc = self.sync(ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc)
-            if isinstance(doc, ast3.AST) and isinstance(
-                node.assignments.gen.py_ast, list
-            ):
-                node.gen.py_ast = [doc] + node.assignments.gen.py_ast
+            if isinstance(doc, ast3.AST):
+                node.gen.py_ast = [doc]
+                for i in node.assignments:
+                    node.gen.py_ast += i.gen.py_ast
             else:
                 raise self.ice()
         else:
-            node.gen.py_ast = node.assignments.gen.py_ast
+            for i in node.assignments:
+                node.gen.py_ast += i.gen.py_ast
 
     def exit_test(self, node: ast.Test) -> None:
         """Sub objects.
@@ -559,16 +560,15 @@ class PyastGenPass(Pass):
             {node.from_loc.dot_path_str: None} if node.from_loc else {}
         )
         imp_from = {}
-        if node.items:
-            for item in node.items.items:
-                if isinstance(item, ast.ModuleItem):
-                    imp_from[item.name.sym_name] = (
-                        item.alias.sym_name if item.alias else None
-                    )
-                elif isinstance(item, ast.ModulePath):
-                    path_alias[item.dot_path_str] = (
-                        item.alias.sym_name if item.alias else None
-                    )
+        for item in node.items:
+            if isinstance(item, ast.ModuleItem):
+                imp_from[item.name.sym_name] = (
+                    item.alias.sym_name if item.alias else None
+                )
+            elif isinstance(item, ast.ModulePath):
+                path_alias[item.dot_path_str] = (
+                    item.alias.sym_name if item.alias else None
+                )
 
         item_keys = []
         item_values = []
@@ -849,7 +849,7 @@ class PyastGenPass(Pass):
                 )
             )
         if node.is_absorb:
-            source = node.items.items[0]
+            source = node.items[0]
             if not isinstance(source, ast.ModulePath):
                 raise self.ice()
             typecheck_nodes.append(
@@ -863,7 +863,11 @@ class PyastGenPass(Pass):
                 )
             )
         elif not node.from_loc:
-            typecheck_nodes.append(self.sync(ast3.Import(names=node.items.gen.py_ast)))
+            typecheck_nodes.append(
+                self.sync(
+                    ast3.Import(names=[item.gen.py_ast[0] for item in node.items])
+                )
+            )
         else:
             typecheck_nodes.append(
                 self.sync(
@@ -873,7 +877,7 @@ class PyastGenPass(Pass):
                             if node.from_loc
                             else None
                         ),
-                        names=node.items.gen.py_ast,
+                        names=[item.gen.py_ast[0] for item in node.items],
                         level=0,
                     )
                 )
@@ -1622,7 +1626,7 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         type_ctx: ExprType,
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         """
         # TODO: Come back
 
@@ -2236,11 +2240,11 @@ class PyastGenPass(Pass):
         target: SubNodeList[NameType],
         """
         py_nodes = []
-        for x in node.target.items:
+        for target_node in node.target:
             py_nodes.append(
                 self.sync(
-                    ast3.Global(names=[x.sym_name]),
-                    jac_node=x,
+                    ast3.Global(names=[target_node.sym_name]),
+                    jac_node=target_node,
                 )
             )
         node.gen.py_ast = [*py_nodes]
@@ -2251,11 +2255,11 @@ class PyastGenPass(Pass):
         target: SubNodeList[NameType],
         """
         py_nodes = []
-        for x in node.target.items:
+        for target_node in node.target:
             py_nodes.append(
                 self.sync(
-                    ast3.Nonlocal(names=[x.sym_name]),
-                    jac_node=x,
+                    ast3.Nonlocal(names=[target_node.sym_name]),
+                    jac_node=target_node,
                 )
             )
         node.gen.py_ast = [*py_nodes]
@@ -2283,14 +2287,15 @@ class PyastGenPass(Pass):
                 else None if node.type_tag else self.ice()
             )
         )
+        new_target: list[ast3.AST] = self.flatten([i.gen.py_ast for i in node.target])
         if node.type_tag:
             node.gen.py_ast = [
                 self.sync(
                     ast3.AnnAssign(
-                        target=node.target.items[0].gen.py_ast[0],
+                        target=node.target[0].gen.py_ast[0],
                         annotation=node.type_tag.gen.py_ast[0],
                         value=node.value.gen.py_ast[0] if node.value else None,
-                        simple=int(isinstance(node.target.gen.py_ast[0], ast3.Name)),
+                        simple=int(isinstance(new_target[0], ast3.Name)),
                     )
                 )
             ]
@@ -2298,16 +2303,14 @@ class PyastGenPass(Pass):
             node.gen.py_ast = [
                 self.sync(
                     ast3.AugAssign(
-                        target=node.target.items[0].gen.py_ast[0],
+                        target=node.target[0].gen.py_ast[0],
                         op=node.aug_op.gen.py_ast[0],
                         value=value,
                     )
                 )
             ]
         else:
-            node.gen.py_ast = [
-                self.sync(ast3.Assign(targets=node.target.gen.py_ast, value=value))
-            ]
+            node.gen.py_ast = [self.sync(ast3.Assign(targets=new_target, value=value))]
 
     def exit_binary_expr(self, node: ast.BinaryExpr) -> None:
         """Sub objects.

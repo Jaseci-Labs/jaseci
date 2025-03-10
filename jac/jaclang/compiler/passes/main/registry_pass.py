@@ -123,11 +123,7 @@ class RegistryPass(Pass):
         scope = get_sem_scope(node)
         seminfo = SemInfo(
             node,
-            (
-                node.target.items[0].value
-                if isinstance(node.target.items[0], ast.Name)
-                else ""
-            ),
+            (node.target[0].value if isinstance(node.target[0], ast.Name) else ""),
             extracted_type,
             node.semstr.lit_value if node.semstr else "",
         )
