@@ -715,7 +715,7 @@ class GlobalVars(ElementStmt, AstAccessNode):
     def __init__(
         self,
         access: Optional[SubTag[Token]],
-        assignments: SubNodeList[Assignment],
+        assignments: list[Assignment],
         is_frozen: bool,
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
@@ -730,9 +730,10 @@ class GlobalVars(ElementStmt, AstAccessNode):
     def normalize(self, deep: bool = False) -> bool:
         """Normalize global var node."""
         res = True
+        for i in self.assignments:
+            res = res and i.normalize(deep)
         if deep:
             res = self.access.normalize(deep) if self.access else True
-            res = res and self.assignments.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
         if self.doc:
@@ -743,7 +744,11 @@ class GlobalVars(ElementStmt, AstAccessNode):
             new_kid.append(self.gen_token(Tok.KW_GLOBAL))
         if self.access:
             new_kid.append(self.access)
-        new_kid.append(self.assignments)
+        for idx, i in enumerate(self.assignments):
+            if idx > 0:
+                new_kid.append(self.gen_token(Tok.COMMA))
+            new_kid.append(i)
+        new_kid.append(self.gen_token(Tok.SEMI))
         self.set_kids(nodes=new_kid)
         return res
 
@@ -2690,16 +2695,13 @@ class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
             if not self.aug_op:
                 new_kid.append(self.gen_token(Tok.EQ))
             new_kid.append(self.value)
-        if isinstance(self.parent, SubNodeList) and isinstance(
-            self.parent.parent, GlobalVars
-        ):
-            if self.parent.kid.index(self) == len(self.parent.kid) - 1:
-                new_kid.append(self.gen_token(Tok.SEMI))
-        elif isinstance(self.parent, IterForStmt):
+        if isinstance(self.parent, IterForStmt):
             assign_parent = self.parent
             if self not in [assign_parent.iter, assign_parent.count_by]:
                 new_kid.append(self.gen_token(Tok.SEMI))
-        elif (not self.is_enum_stmt) and not isinstance(self.parent, IterForStmt):
+        elif (not self.is_enum_stmt) and not isinstance(
+            self.parent, (IterForStmt, GlobalVars)
+        ):
             new_kid.append(self.gen_token(Tok.SEMI))
         self.set_kids(nodes=new_kid)
         return res
