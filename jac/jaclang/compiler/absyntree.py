@@ -2689,12 +2689,7 @@ class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
             if not self.aug_op:
                 new_kid.append(self.gen_token(Tok.EQ))
             new_kid.append(self.value)
-        if isinstance(self.parent, SubNodeList) and isinstance(
-            self.parent.parent, GlobalVars
-        ):
-            if self.parent.kid.index(self) == len(self.parent.kid) - 1:
-                new_kid.append(self.gen_token(Tok.SEMI))
-        elif isinstance(self.parent, IterForStmt):
+        if isinstance(self.parent, IterForStmt):
             assign_parent = self.parent
             if self not in [assign_parent.iter, assign_parent.count_by]:
                 new_kid.append(self.gen_token(Tok.SEMI))
