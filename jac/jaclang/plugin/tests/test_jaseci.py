@@ -816,3 +816,36 @@ class TestJaseciPlugin(TestCase):
             session=session,
         )
         self.assertEqual("None", self.capturedOutput.getvalue().strip())
+
+    def test_traversing_save(self) -> None:
+        """Test traversing save."""
+        global session
+        session = self.fixture_abs_path("traversing_save.session")
+
+        self._output2buffer()
+        cli.enter(
+            filename=self.fixture_abs_path("traversing_save.jac"),
+            entrypoint="build",
+            args=[],
+            session=session,
+        )
+
+        cli.enter(
+            filename=self.fixture_abs_path("traversing_save.jac"),
+            entrypoint="view",
+            args=[],
+            session=session,
+        )
+
+        self.assertEqual(
+            "digraph {\n"
+            'node [style="filled", shape="ellipse", fillcolor="invis", fontcolor="black"];\n'
+            '0 -> 1  [label=""];\n'
+            '1 -> 2  [label=""];\n'
+            '0 [label="Root()"fillcolor="#FFE9E9"];\n'
+            '1 [label="A()"fillcolor="#F0FFF0"];\n'
+            '2 [label="B()"fillcolor="#F5E5FF"];\n}',
+            self.capturedOutput.getvalue().strip(),
+        )
+
+        self._del_session(session)

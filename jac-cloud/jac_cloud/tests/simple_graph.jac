@@ -88,9 +88,9 @@ walker create_graph {
         a = A(val=0);
         b = B(val=1);
         c = C(val=2);
-        here ++> a;
         a ++> b;
         b ++> c;
+        here ++> a;
 
         report here;
         report a;
