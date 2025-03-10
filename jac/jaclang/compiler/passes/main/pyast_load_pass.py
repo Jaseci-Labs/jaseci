@@ -496,18 +496,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         value = self.convert(node.value)
         targets = [self.convert(target) for target in node.targets]
         valid = [target for target in targets if isinstance(target, ast.Expr)]
-        if len(valid) == len(targets):
-            valid_targets = ast.SubNodeList[ast.Expr](
-                items=valid, delim=Tok.EQ, kid=valid
-            )
-        else:
-            raise self.ice("Length mismatch in assignment targets")
         if isinstance(value, ast.Expr):
             return ast.Assignment(
-                target=valid_targets,
+                target=valid,
                 value=value,
                 type_tag=None,
-                kid=[valid_targets, value],
+                kid=[*valid, value],
             )
         else:
             raise self.ice()
@@ -537,7 +531,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 items=[target], delim=Tok.COMMA, kid=[target]
             )
             return ast.Assignment(
-                target=targ,
+                target=targ.items,
                 type_tag=None,
                 mutable=True,
                 aug_op=op,
@@ -573,7 +567,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 items=[target], delim=Tok.EQ, kid=[target]
             )
             return ast.Assignment(
-                target=target,
+                target=target.items,
                 value=value if isinstance(value, (ast.Expr, ast.YieldExpr)) else None,
                 type_tag=annotation_subtag,
                 kid=(

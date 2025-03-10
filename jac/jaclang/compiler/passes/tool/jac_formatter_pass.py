@@ -1377,7 +1377,7 @@ class JacFormatPass(Pass):
     def exit_assignment(self, node: ast.Assignment) -> None:
         """Sub objects.
 
-        target: SubNodeList[Expr],
+        target: list[Expr],
         value: Optional[Expr | YieldExpr],
         type_tag: Optional[SubTag[Expr]],
         mutable: bool = True,
