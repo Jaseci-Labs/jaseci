@@ -137,7 +137,7 @@ class JacImportPass(Pass):
             # And the import is a from import and I am the from module
             if node == import_node.from_loc:
                 # Import all from items as modules or packages
-                for i in import_node.items.items:
+                for i in import_node.items:
                     if isinstance(i, ast.ModuleItem):
                         from_mod_target = node.resolve_relative_path(i.name.value)
                         # If package
@@ -325,7 +325,7 @@ class PyImportPass(JacImportPass):
                         continue
                     self.__import_from_sym_table_add_symbols(symbol, parent_sym_tab)
             else:
-                for i in imp_node.items.items:
+                for i in imp_node.items:
                     assert isinstance(i, ast.ModuleItem)
                     needed_sym = sym_tab.lookup(i.name.sym_name)
 
@@ -365,8 +365,8 @@ class PyImportPass(JacImportPass):
         """Process the imports in form of `import X`."""
         # Expected that each ImportStatement will import one item
         # In case of this assertion fired then we need to revisit this item
-        assert len(imp_node.items.items) == 1
-        imported_item = imp_node.items.items[0]
+        assert len(imp_node.items) == 1
+        imported_item = imp_node.items[0]
         assert isinstance(imported_item, ast.ModulePath)
 
         self.__debug_print(f"\tTrying to import {imported_item.dot_path_str}")

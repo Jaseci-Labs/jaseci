@@ -180,10 +180,10 @@ class SymTabBuildPass(Pass):
         sub_module: Optional[Module],
         """
         if not node.is_absorb:
-            for i in node.items.items:
+            for i in node.items:
                 i.sym_tab.def_insert(i, single_decl="import item")
         elif node.is_absorb and node.is_jac:
-            source = node.items.items[0]
+            source = node.items[0]
             if not isinstance(source, ast.ModulePath) or not source.sub_module:
                 self.error(
                     f"Module {node.from_loc.dot_path_str if node.from_loc else 'from location'}"

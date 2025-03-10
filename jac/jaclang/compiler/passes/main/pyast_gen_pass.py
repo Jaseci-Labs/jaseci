@@ -559,16 +559,15 @@ class PyastGenPass(Pass):
             {node.from_loc.dot_path_str: None} if node.from_loc else {}
         )
         imp_from = {}
-        if node.items:
-            for item in node.items.items:
-                if isinstance(item, ast.ModuleItem):
-                    imp_from[item.name.sym_name] = (
-                        item.alias.sym_name if item.alias else None
-                    )
-                elif isinstance(item, ast.ModulePath):
-                    path_alias[item.dot_path_str] = (
-                        item.alias.sym_name if item.alias else None
-                    )
+        for item in node.items:
+            if isinstance(item, ast.ModuleItem):
+                imp_from[item.name.sym_name] = (
+                    item.alias.sym_name if item.alias else None
+                )
+            elif isinstance(item, ast.ModulePath):
+                path_alias[item.dot_path_str] = (
+                    item.alias.sym_name if item.alias else None
+                )
 
         item_keys = []
         item_values = []
@@ -849,7 +848,7 @@ class PyastGenPass(Pass):
                 )
             )
         if node.is_absorb:
-            source = node.items.items[0]
+            source = node.items[0]
             if not isinstance(source, ast.ModulePath):
                 raise self.ice()
             typecheck_nodes.append(
@@ -863,7 +862,11 @@ class PyastGenPass(Pass):
                 )
             )
         elif not node.from_loc:
-            typecheck_nodes.append(self.sync(ast3.Import(names=node.items.gen.py_ast)))
+            typecheck_nodes.append(
+                self.sync(
+                    ast3.Import(names=[item.gen.py_ast[0] for item in node.items])
+                )
+            )
         else:
             typecheck_nodes.append(
                 self.sync(
@@ -873,7 +876,7 @@ class PyastGenPass(Pass):
                             if node.from_loc
                             else None
                         ),
-                        names=node.items.gen.py_ast,
+                        names=[item.gen.py_ast[0] for item in node.items],
                         level=0,
                     )
                 )
@@ -1622,7 +1625,7 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         type_ctx: ExprType,
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         """
         # TODO: Come back
 

@@ -387,7 +387,7 @@ class JacParser(Pass):
             if self.match_token(Tok.KW_FROM):
                 from_path = self.consume(ast.ModulePath)
                 self.consume(ast.Token)  # LBRACE or COMMA
-                items = self.consume(ast.SubNodeList)
+                item_list = self.consume(ast.SubNodeList).items
                 if self.consume(ast.Token).name == Tok.SEMI:  # RBRACE or SEMI
                     self.parse_ref.warning(
                         "Deprecated syntax, use braces for multiple imports (e.g, import from mymod {a, b, c})",
@@ -397,19 +397,13 @@ class JacParser(Pass):
                 while self.match_token(Tok.COMMA):
                     paths.append(self.consume(ast.ModulePath))
                 self.consume_token(Tok.SEMI)
-                items = ast.SubNodeList[ast.ModulePath](
-                    items=paths,
-                    delim=Tok.COMMA,
-                    # TODO: kid will be removed so let's keep as it is for now.
-                    kid=self.cur_nodes[2 if lang else 1 : -1],
-                )
-                kid = (kid[:2] if lang else kid[:1]) + [items] + kid[-1:]
-
+                kid = (kid[:2] if lang else kid[:1]) + paths + kid[-1:]
+                item_list = paths
             is_absorb = False
             return ast.Import(
                 hint=lang,
                 from_loc=from_path,
-                items=items,
+                items=item_list,
                 is_absorb=is_absorb,
                 kid=kid,
             )
@@ -450,11 +444,9 @@ class JacParser(Pass):
             self.consume_token(Tok.KW_INCLUDE)
             lang = self.match(ast.SubTag)
             from_path = self.consume(ast.ModulePath)
-            items = ast.SubNodeList[ast.ModulePath](
-                items=[from_path], delim=Tok.COMMA, kid=[from_path]
-            )
+            items = [from_path]
             kid = (
-                (kid[:2] if lang else kid[:1]) + [items] + kid[-1:]
+                (kid[:2] if lang else kid[:1]) + items + kid[-1:]
             )  # TODO: Will be removed.
             is_absorb = True
             return ast.Import(
@@ -1255,14 +1247,15 @@ class JacParser(Pass):
 
             typed_ctx_block: RETURN_HINT expression code_block
             """
-            if isinstance(kid[1], ast.Expr) and isinstance(kid[2], ast.SubNodeList):
-                return ast.TypedCtxBlock(
-                    type_ctx=kid[1],
-                    body=kid[2],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            tok_return_hint = self.consume_token(Tok.RETURN_HINT)
+            expr = self.consume(ast.Expr)
+            body = self.consume(ast.SubNodeList)
+            kids = [tok_return_hint, expr, *body.kid]
+            return ast.TypedCtxBlock(
+                type_ctx=expr,
+                body=body.items,
+                kid=kids,
+            )
 
         def if_stmt(self, _: None) -> ast.IfStmt:
             """Grammar rule.

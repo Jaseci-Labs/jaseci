@@ -888,7 +888,7 @@ class Import(ElementStmt, CodeBlockStmt):
         self,
         hint: Optional[SubTag[Name]],
         from_loc: Optional[ModulePath],
-        items: SubNodeList[ModuleItem] | SubNodeList[ModulePath],
+        items: list[ModuleItem] | list[ModulePath],
         is_absorb: bool,  # For includes
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
@@ -930,7 +930,7 @@ class Import(ElementStmt, CodeBlockStmt):
                     os.path.join(self.from_loc.resolve_relative_path(), "__init__.jac")
                 ):
                     return True
-                for i in self.items.items:
+                for i in self.items:
                     if isinstance(
                         i, ModuleItem
                     ) and self.from_loc.resolve_relative_path(i.name.value).endswith(
@@ -939,16 +939,17 @@ class Import(ElementStmt, CodeBlockStmt):
                         return True
         return any(
             isinstance(i, ModulePath) and i.resolve_relative_path().endswith(".jac")
-            for i in self.items.items
+            for i in self.items
         )
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize import node."""
         res = True
+        for i in self.items:
+            res = res and i.normalize(deep)
         if deep:
             res = self.hint.normalize(deep) if self.hint else res
             res = res and self.from_loc.normalize(deep) if self.from_loc else res
-            res = res and self.items.normalize(deep)
             res = res and self.doc.normalize(deep) if self.doc else res
         new_kid: list[AstNode] = []
         if self.doc:
@@ -962,8 +963,7 @@ class Import(ElementStmt, CodeBlockStmt):
         if self.from_loc:
             new_kid.append(self.gen_token(Tok.KW_FROM))
             new_kid.append(self.from_loc)
-            new_kid.append(self.gen_token(Tok.COMMA))
-        new_kid.append(self.items)
+        new_kid.extend(self.items)
         new_kid.append(self.gen_token(Tok.SEMI))
         self.set_kids(nodes=new_kid)
         return res
@@ -1832,7 +1832,7 @@ class TypedCtxBlock(CodeBlockStmt):
     def __init__(
         self,
         type_ctx: Expr,
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize typed context block node."""
@@ -1843,14 +1843,12 @@ class TypedCtxBlock(CodeBlockStmt):
     def normalize(self, deep: bool = False) -> bool:
         """Normalize typed context block node."""
         res = True
+        for stmt in self.body:
+            res = res and stmt.normalize(deep)
         if deep:
             res = self.type_ctx.normalize(deep)
-            res = res and self.body.normalize(deep)
-        new_kid: list[AstNode] = [
-            self.gen_token(Tok.RETURN_HINT),
-            self.type_ctx,
-            self.body,
-        ]
+        new_kid: list[AstNode] = [self.gen_token(Tok.RETURN_HINT), self.type_ctx]
+        new_kid.extend(self.body)
         self.set_kids(nodes=new_kid)
         return res
 
