@@ -360,7 +360,10 @@ class JacCliTests(TestCase):
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertIn('[label="MultiString"]', stdout_value)
+        self.assertIn(
+            '[label="MultiString" shape="box" style="filled" fillcolor="#f4a261"]',
+            stdout_value,
+        )
 
     def test_type_check(self) -> None:
         """Testing for print AstTool."""
