@@ -1622,7 +1622,7 @@ class PyastGenPass(Pass):
         """Sub objects.
 
         type_ctx: ExprType,
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         """
         # TODO: Come back
 

@@ -1832,7 +1832,7 @@ class TypedCtxBlock(CodeBlockStmt):
     def __init__(
         self,
         type_ctx: Expr,
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize typed context block node."""
@@ -1843,14 +1843,12 @@ class TypedCtxBlock(CodeBlockStmt):
     def normalize(self, deep: bool = False) -> bool:
         """Normalize typed context block node."""
         res = True
+        for stmt in self.body:
+            res = res and stmt.normalize(deep)
         if deep:
             res = self.type_ctx.normalize(deep)
-            res = res and self.body.normalize(deep)
-        new_kid: list[AstNode] = [
-            self.gen_token(Tok.RETURN_HINT),
-            self.type_ctx,
-            self.body,
-        ]
+        new_kid: list[AstNode] = [self.gen_token(Tok.RETURN_HINT), self.type_ctx]
+        new_kid.extend(self.body)
         self.set_kids(nodes=new_kid)
         return res
 
