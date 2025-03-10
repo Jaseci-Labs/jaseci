@@ -93,13 +93,11 @@ class DefUsePass(Pass):
         type_tag: SubTag[SubNodeList[TypeSpec]],
         value: Optional[ExprType],
         """
-        if isinstance(node.parent, ast.SubNodeList) and isinstance(
-            node.parent.parent, ast.ArchHas
-        ):
+        if isinstance(node.parent, ast.ArchHas):
             node.sym_tab.def_insert(
                 node,
                 single_decl="has var",
-                access_spec=node.parent.parent,
+                access_spec=node.parent,
             )
         else:
             self.ice("Inconsistency in AST, has var should be under arch has")

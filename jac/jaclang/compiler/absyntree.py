@@ -1743,7 +1743,7 @@ class ArchHas(AstAccessNode, AstDocNode, ArchBlockStmt):
         self,
         is_static: bool,
         access: Optional[SubTag[Token]],
-        vars: SubNodeList[HasVar],
+        vars: list[HasVar],
         is_frozen: bool,
         kid: Sequence[AstNode],
         doc: Optional[String] = None,
@@ -1761,8 +1761,9 @@ class ArchHas(AstAccessNode, AstDocNode, ArchBlockStmt):
         res = True
         if deep:
             res = self.access.normalize(deep) if self.access else res
-            res = res and self.vars.normalize(deep) if self.vars else res
             res = res and self.doc.normalize(deep) if self.doc else res
+            for var in self.vars:
+                res = res and var.normalize(deep)
         new_kid: list[AstNode] = []
         if self.doc:
             new_kid.append(self.doc)
@@ -1775,7 +1776,7 @@ class ArchHas(AstAccessNode, AstDocNode, ArchBlockStmt):
         )
         if self.access:
             new_kid.append(self.access)
-        new_kid.append(self.vars)
+        new_kid.extend(self.vars)
         new_kid.append(self.gen_token(Tok.SEMI))
         self.set_kids(nodes=new_kid)
         return res
@@ -1864,7 +1865,7 @@ class IfStmt(CodeBlockStmt, AstElseBodyNode):
     def __init__(
         self,
         condition: Expr,
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         else_body: Optional[ElseStmt | ElseIf],
         kid: Sequence[AstNode],
     ) -> None:
@@ -1879,12 +1880,15 @@ class IfStmt(CodeBlockStmt, AstElseBodyNode):
         res = True
         if deep:
             res = self.condition.normalize(deep)
-            res = res and self.body.normalize(deep)
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
             res = res and self.else_body.normalize(deep) if self.else_body else res
         new_kid: list[AstNode] = [
             self.gen_token(Tok.KW_IF),
             self.condition,
-            self.body,
+            self.gen_token(Tok.LBRACE),
+            *self.body,
+            self.gen_token(Tok.RBRACE),
         ]
         if self.else_body:
             new_kid.append(self.else_body)
@@ -1900,12 +1904,15 @@ class ElseIf(IfStmt):
         res = True
         if deep:
             res = self.condition.normalize(deep)
-            res = res and self.body.normalize(deep)
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
             res = res and self.else_body.normalize(deep) if self.else_body else res
         new_kid: list[AstNode] = [
             self.gen_token(Tok.KW_ELIF),
             self.condition,
-            self.body,
+            self.gen_token(Tok.LBRACE),
+            *self.body,
+            self.gen_token(Tok.RBRACE),
         ]
         if self.else_body:
             new_kid.append(self.else_body)
@@ -1918,7 +1925,7 @@ class ElseStmt(AstNode):
 
     def __init__(
         self,
-        body: SubNodeList[CodeBlockStmt],
+        body: list[CodeBlockStmt],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize else node."""
@@ -1929,10 +1936,13 @@ class ElseStmt(AstNode):
         """Normalize else statement node."""
         res = True
         if deep:
-            res = self.body.normalize(deep)
+            for stmt in self.body:
+                res = res and stmt.normalize(deep)
         new_kid: list[AstNode] = [
             self.gen_token(Tok.KW_ELSE),
-            self.body,
+            self.gen_token(Tok.LBRACE),
+            *self.body,
+            self.gen_token(Tok.RBRACE),
         ]
         self.set_kids(nodes=new_kid)
         return res
@@ -3760,7 +3770,7 @@ class AssignCompr(AtomExpr):
 
     def __init__(
         self,
-        assigns: SubNodeList[KWPair],
+        assigns: list[KWPair],
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize assign compr expression node."""
@@ -3772,15 +3782,21 @@ class AssignCompr(AtomExpr):
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ast node."""
         res = True
-        if deep:
-            res = self.assigns.normalize(deep)
+        for assign in self.assigns:
+            res = assign.normalize(deep) and res
         new_kid: list[AstNode] = []
         if isinstance(self.parent, ConnectOp):
-            new_kid.append(self.assigns)
+            for idx, assign in enumerate(self.assigns):
+                if idx > 0:
+                    new_kid.append(self.gen_token(Tok.COMMA))
+                new_kid.append(assign)
         else:
             new_kid.append(self.gen_token(Tok.LPAREN))
             new_kid.append(self.gen_token(Tok.EQ))
-            new_kid.append(self.assigns)
+            for idx, assign in enumerate(self.assigns):
+                if idx > 0:
+                    new_kid.append(self.gen_token(Tok.COMMA))
+                new_kid.append(assign)
             new_kid.append(self.gen_token(Tok.RPAREN))
         self.set_kids(nodes=new_kid)
         return res

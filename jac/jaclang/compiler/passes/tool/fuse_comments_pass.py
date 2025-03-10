@@ -25,10 +25,10 @@ class FuseCommentsPass(Pass):
 
     def after_pass(self) -> None:
         """Insert comment tokens into all_tokens."""
+
         comment_stream = iter(self.comments)  # Iterator for comments
         code_stream = iter(self.all_tokens)  # Iterator for code tokens
         new_stream: list[ast.Token] = []  # New stream to hold ordered tokens
-
         if not isinstance(self.ir, ast.Module):
             raise self.ice(
                 f"FuseCommentsPass can only be run on a Module, not a {type(self.ir)}"
@@ -43,7 +43,6 @@ class FuseCommentsPass(Pass):
             next_code = next(code_stream)  # Get the first code token
         except StopIteration:
             next_code = None
-
         if next_comment and (not next_code or is_comment_next(next_comment, next_code)):
             self.ir.terminals.insert(0, next_comment)
 
@@ -78,10 +77,17 @@ class FuseCommentsPass(Pass):
                 else:
                     prev_token = new_stream[i - 1]
                     if prev_token.parent is not None:
-                        parent_kids = prev_token.parent.kid
-                        insert_index = parent_kids.index(prev_token) + 1
-                        parent_kids.insert(insert_index, token)
-                        prev_token.parent.set_kids(parent_kids)
+                        if prev_token.parent.parent and isinstance(
+                            prev_token.parent.parent, ast.HasVar
+                        ):
+                            parent_kids = prev_token.parent.parent.kid
+                            parent_kids.append(token)
+                            prev_token.parent.parent.set_kids(parent_kids)
+                        else:
+                            parent_kids = prev_token.parent.kid
+                            insert_index = parent_kids.index(prev_token) + 1
+                            parent_kids.insert(insert_index, token)
+                            prev_token.parent.set_kids(parent_kids)
                     else:
                         raise self.ice(
                             "Token without parent in AST should be impossible"

@@ -1063,49 +1063,35 @@ class JacParser(Pass):
                 ret.signature.is_method = True
             return ret
 
-        def has_stmt(self, kid: list[ast.AstNode]) -> ast.ArchHas:
+        def has_stmt(self, _: None) -> ast.ArchHas:
             """Grammar rule.
 
             has_stmt: KW_STATIC? (KW_LET | KW_HAS) access_tag? has_assign_list SEMI
             """
-            chomp = [*kid]
-            is_static = (
-                isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_STATIC
+            tok_static = self.match_token(Tok.KW_STATIC)
+            tok_def = self.match_token(Tok.KW_LET) or self.consume_token(Tok.KW_HAS)
+            access = self.match(ast.SubTag)
+            assign = self.consume(ast.SubNodeList)
+            tok_semi = self.consume_token(Tok.SEMI)
+            return ast.ArchHas(
+                vars=assign.items,
+                is_static=bool(tok_static),
+                is_frozen=(tok_def.name == Tok.KW_LET),
+                access=access,
+                kid=[*([access] if access else []), *assign.items, tok_semi],
             )
-            chomp = chomp[1:] if is_static else chomp
-            is_freeze = isinstance(chomp[0], ast.Token) and chomp[0].name == Tok.KW_LET
-            chomp = chomp[1:]
-            access = chomp[0] if isinstance(chomp[0], ast.SubTag) else None
-            chomp = chomp[1:] if access else chomp
-            assign = chomp[0]
-            if isinstance(assign, ast.SubNodeList):
-                return ast.ArchHas(
-                    vars=assign,
-                    is_static=is_static,
-                    is_frozen=is_freeze,
-                    access=access,
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
 
-        def has_assign_list(
-            self, kid: list[ast.AstNode]
-        ) -> ast.SubNodeList[ast.HasVar]:
+        def has_assign_list(self, _: None) -> ast.SubNodeList[ast.HasVar]:
             """Grammar rule.
 
             has_assign_list: (has_assign_list COMMA)? typed_has_clause
             """
-            consume = None
-            assign = None
-            comma = None
-            if isinstance(kid[0], ast.SubNodeList):
-                consume = kid[0]
-                comma = kid[1]
-                assign = kid[2]
+            if consume := self.match(ast.SubNodeList):
+                comma = self.consume_token(Tok.COMMA)
+                assign = self.consume(ast.HasVar)
                 new_kid = [*consume.kid, comma, assign]
             else:
-                assign = kid[0]
+                assign = self.consume(ast.HasVar)
                 new_kid = [assign]
             valid_kid = [i for i in new_kid if isinstance(i, ast.HasVar)]
             return ast.SubNodeList[ast.HasVar](
@@ -1269,15 +1255,23 @@ class JacParser(Pass):
 
             if_stmt: KW_IF expression code_block (elif_stmt | else_stmt)?
             """
-            self.consume_token(Tok.KW_IF)
+            tok_if = self.consume_token(Tok.KW_IF)
             condition = self.consume(ast.Expr)
             body = self.consume(ast.SubNodeList)
+            assert body.left_enc and body.right_enc
             else_body = self.match(ast.ElseStmt) or self.match(ast.ElseIf)
             return ast.IfStmt(
                 condition=condition,
-                body=body,
+                body=cast(list[ast.CodeBlockStmt], body.items),
                 else_body=else_body,
-                kid=self.cur_nodes,
+                kid=[
+                    tok_if,
+                    condition,
+                    body.left_enc,
+                    *body.items,
+                    body.right_enc,
+                    *([else_body] if else_body else []),
+                ],
             )
 
         def elif_stmt(self, _: None) -> ast.ElseIf:
@@ -1285,15 +1279,23 @@ class JacParser(Pass):
 
             elif_stmt: KW_ELIF expression code_block (elif_stmt | else_stmt)?
             """
-            self.consume_token(Tok.KW_ELIF)
+            tok_elif = self.consume_token(Tok.KW_ELIF)
             condition = self.consume(ast.Expr)
             body = self.consume(ast.SubNodeList)
+            assert body.left_enc and body.right_enc
             else_body = self.match(ast.ElseStmt) or self.match(ast.ElseIf)
             return ast.ElseIf(
                 condition=condition,
-                body=body,
+                body=cast(list[ast.CodeBlockStmt], body.items),
                 else_body=else_body,
-                kid=self.cur_nodes,
+                kid=[
+                    tok_elif,
+                    condition,
+                    body.left_enc,
+                    *body.items,
+                    body.right_enc,
+                    *([else_body] if else_body else []),
+                ],
             )
 
         def else_stmt(self, _: None) -> ast.ElseStmt:
@@ -1301,11 +1303,17 @@ class JacParser(Pass):
 
             else_stmt: KW_ELSE code_block
             """
-            self.consume_token(Tok.KW_ELSE)
+            tok_else = self.consume_token(Tok.KW_ELSE)
             body = self.consume(ast.SubNodeList)
+            assert body.left_enc and body.right_enc
             return ast.ElseStmt(
-                body=body,
-                kid=self.cur_nodes,
+                body=cast(list[ast.CodeBlockStmt], body.items),
+                kid=[
+                    tok_else,
+                    body.left_enc,
+                    *body.items,
+                    body.right_enc,
+                ],
             )
 
         def try_stmt(self, _: None) -> ast.TryStmt:
@@ -1406,7 +1414,7 @@ class JacParser(Pass):
                 count_by = self.consume(ast.Assignment)
                 body = self.consume(ast.SubNodeList)
                 if else_body_node := self.match(ast.ElseStmt):
-                    else_body = else_body_node.body.items
+                    else_body = else_body_node.body
 
                 assert body.left_enc and body.right_enc
                 return ast.IterForStmt(
@@ -1431,7 +1439,7 @@ class JacParser(Pass):
             collection = self.consume(ast.Expr)
             body = self.consume(ast.SubNodeList)
             if else_stmt_node := self.match(ast.ElseStmt):
-                else_body = else_stmt_node.body.items
+                else_body = else_stmt_node.body
 
             assert body.left_enc and body.right_enc
             return ast.InForStmt(
@@ -3061,7 +3069,7 @@ class JacParser(Pass):
                 isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
             ):
                 conn_assign = (
-                    ast.AssignCompr(assigns=conn_assign, kid=[conn_assign])
+                    ast.AssignCompr(assigns=conn_assign.items, kid=conn_assign.kid)
                     if conn_assign
                     else None
                 )
@@ -3088,7 +3096,7 @@ class JacParser(Pass):
                 isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
             ):
                 conn_assign = (
-                    ast.AssignCompr(assigns=conn_assign, kid=[conn_assign])
+                    ast.AssignCompr(assigns=conn_assign.items, kid=conn_assign.kid)
                     if conn_assign
                     else None
                 )
@@ -3114,7 +3122,7 @@ class JacParser(Pass):
                 isinstance(conn_assign, ast.SubNodeList) or conn_assign is None
             ):
                 conn_assign = (
-                    ast.AssignCompr(assigns=conn_assign, kid=[conn_assign])
+                    ast.AssignCompr(assigns=conn_assign.items, kid=conn_assign.kid)
                     if conn_assign
                     else None
                 )
@@ -3214,11 +3222,12 @@ class JacParser(Pass):
 
             filter_compr: LPAREN EQ kw_expr_list RPAREN
             """
-            self.consume_token(Tok.LPAREN)
-            self.consume_token(Tok.EQ)
+            tok_lp = self.consume_token(Tok.LPAREN)
+            tok_eq = self.consume_token(Tok.EQ)
             assigns = self.consume(ast.SubNodeList)
-            self.consume_token(Tok.RPAREN)
-            return ast.AssignCompr(assigns=assigns, kid=self.cur_nodes)
+            tok_rp = self.consume_token(Tok.RPAREN)
+            kids = [tok_lp, tok_eq, *assigns.kid, tok_rp]
+            return ast.AssignCompr(assigns=assigns.items, kid=kids)
 
         def match_stmt(self, _: None) -> ast.MatchStmt:
             """Grammar rule.
