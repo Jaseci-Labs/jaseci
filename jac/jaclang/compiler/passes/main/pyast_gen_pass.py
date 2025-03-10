@@ -1477,18 +1477,19 @@ class PyastGenPass(Pass):
 
         is_static: bool,
         access: Optional[SubTag[Token]],
-        vars: SubNodeList[HasVar],
+        vars: list[HasVar],
         is_frozen: bool,
         doc: Optional[String],
         """
+        vars_list = [i.gen.py_ast[0] for i in node.vars if isinstance(i, ast.HasVar)]
         if node.doc:
             doc = self.sync(ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc)
-            if isinstance(doc, ast3.AST) and isinstance(node.vars.gen.py_ast, list):
-                node.gen.py_ast = [doc] + node.vars.gen.py_ast
+            if isinstance(doc, ast3.AST) and isinstance(vars_list, list):
+                node.gen.py_ast = [doc] + vars_list
             else:
                 raise self.ice()
         else:
-            node.gen.py_ast = node.vars.gen.py_ast  # TODO: This is a list
+            node.gen.py_ast = vars_list
 
     def exit_has_var(self, node: ast.HasVar) -> None:
         """Sub objects.
@@ -1501,9 +1502,9 @@ class PyastGenPass(Pass):
         annotation = node.type_tag.gen.py_ast[0] if node.type_tag else None
         is_static_var = (
             node.parent
-            and node.parent.parent
-            and isinstance(node.parent.parent, ast.ArchHas)
-            and node.parent.parent.is_static
+            and node.parent
+            and isinstance(node.parent, ast.ArchHas)
+            and node.parent.is_static
         )
         is_in_class = (
             node.parent
