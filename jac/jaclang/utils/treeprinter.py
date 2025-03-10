@@ -16,15 +16,6 @@ if TYPE_CHECKING:
 id_bag: dict = {}
 id_used: int = 0
 CLASS_COLOR_MAP: dict[str, str] = {
-    # "AstSymbolNode": "#a8dadc",
-    # "AstSymbolStubNode": "#a8dadc",
-    # "AstAccessNode": "#f4a261",
-    # "AstDocNode": "#d8f3dc",
-    # "AstSemStrNode": "#ffd700",
-    # "AstAsyncNode": "#86c232",
-    # "AstElseBodyNode": "#d8f3dc",
-    # "AstTypedVarNode": "#f4a261",
-    # "WalkerStmtOnlyNode": "#d8f3dc",
     "Expr": "#ffd700",
     "AtomExpr": "#ffd700",
     "ElementStmt": "#d8f3dc",
@@ -37,7 +28,7 @@ CLASS_COLOR_MAP: dict[str, str] = {
     "ArchSpec": "#457b9d",
     "MatchPattern": "#a0d8b3",
     "SubTag": "#d3d3d3",
-    "SubNodeList": "#d3d3d3",
+    "SubNodeList": "#d8b3e6",
     "Module": "#b19cd9",
     "GlobalVars": "#b19cd9",
     "Test": "#b19cd9",
@@ -142,9 +133,6 @@ CLASS_COLOR_MAP: dict[str, str] = {
     "Ellipsis": "#e07a5f",
     "EmptyToken": "#e07a5f",
     "Semi": "#e07a5f",
-    # "CommentToken": "#e07a5f",
-    # "JacSource": "#d3d3d3",
-    # "PythonModuleAst": "#b19cd9",
 }
 
 
