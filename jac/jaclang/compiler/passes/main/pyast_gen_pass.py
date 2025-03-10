@@ -2937,7 +2937,15 @@ class PyastGenPass(Pass):
                 )
             ]
         elif node.name == Tok.KW_ROOT:
-            node.gen.py_ast = [self.jaclib_obj("root")]
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Call(
+                        func=self.jaclib_obj("root"),
+                        args=[],
+                        keywords=[],
+                    )
+                )
+            ]
 
         else:
             node.gen.py_ast = [
