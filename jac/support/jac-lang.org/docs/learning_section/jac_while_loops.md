@@ -25,10 +25,3 @@ With the continue statement we can stop the current iteration, and continue with
     ```jac linenums="1"
     --8<-- "examples/learning_section/jac_while_loop/jac_while_continue.jac"
     ```
-<!-- ## The else Statement
-With the else statement we can run a block of code once when the condition no longer is true:
-
-**Code Example**
-    ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_while_loop/jac_while_else.jac"
-    ``` -->

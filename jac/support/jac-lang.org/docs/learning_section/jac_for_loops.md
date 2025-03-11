@@ -33,14 +33,6 @@ With the continue statement we can stop the current iteration of the loop, and c
     --8<-- "examples/learning_section/jac_for_loop/jac_for_continue.jac"
     ```
 
-## Pass Statement
-for loops cannot be empty, but if you for some reason have a for loop with no content, put in the pass statement to avoid getting an error.
-
-**Code Example**
-    ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_for_loop/jac_for_pass.jac"
-    ```
-
 ## The range( ) Function
 To loop through a set of code a specified number of times, we can use the range() function,
 The range() function returns a sequence of numbers, starting from 0 by default, and increments by 1 (by default), and ends at a specified number:

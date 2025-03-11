@@ -1,5 +1,5 @@
-with entry{
-    for x in "apple"{
+with entry {
+    for x in "apple" {
         print(x);
     }
 }

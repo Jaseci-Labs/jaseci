@@ -1,7 +1,7 @@
-with entry{
-    for x in range(6){
+with entry {
+    for x in range(6) {
         print(x);
-    } else{
+    } else {
         print("Finally finished!");
     }
 }
