@@ -67,6 +67,9 @@ nav:
   - Language Reference:
     - "lang_ref/jac_ref.md"
 
+  - Learning Section:
+    - "learning_section/learn_sec_ref.md"
+
 theme:
   logo: "assets/logo.png"
   name: "material"
