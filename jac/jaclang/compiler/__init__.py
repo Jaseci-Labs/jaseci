@@ -37,7 +37,7 @@ def generate_static_parser(force: bool = False) -> None:
 
 try:
     generate_static_parser(force=check_version())
-    
+
     from jaclang.compiler.generated import jac_parser as jac_lark
 except ModuleNotFoundError:
     from jaclang.compiler.generated import jac_parser as jac_lark
