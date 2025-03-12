@@ -140,12 +140,10 @@ class DeclImplMatchPass(Pass):
 
     def exit_architype(self, node: ast.Architype) -> None:
         """Exit Architype."""
-        if node.arch_type.name == Tok.KW_OBJECT and isinstance(
-            node.body, ast.SubNodeList
-        ):
+        if node.arch_type.name == Tok.KW_OBJECT and isinstance(node.body, list):
 
             found_default_init = False
-            for stmnt in node.body.items:
+            for stmnt in node.body:
                 if not isinstance(stmnt, ast.ArchHas):
                     continue
                 for var in stmnt.vars:
@@ -162,7 +160,7 @@ class DeclImplMatchPass(Pass):
             post_init_vars: list[ast.HasVar] = []
             postinit_method: ast.Ability | None = None
 
-            for item in node.body.items:
+            for item in node.body:
 
                 if isinstance(item, ast.ArchHas):
                     for var in item.vars:

@@ -159,10 +159,13 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             pos_start=0,
             pos_end=0,
         )
-        body = [self.convert(stmt) for stmt in node.body]
+        body: list[ast.CodeBlockStmt] = [
+            cast(ast.CodeBlockStmt, self.convert(stmt)) for stmt in node.body
+        ]
         if not all(isinstance(stmt, ast.CodeBlockStmt) for stmt in body):
             raise self.ice("Invalid statement in function body.")
 
+        doc: ast.ExprStmt | None = None
         if (
             len(body)
             and isinstance(body[0], ast.ExprStmt)
@@ -170,24 +173,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         ):
             self.convert_to_doc(body[0].expr)
             doc = body[0]
-            valid_body = ast.SubNodeList[ast.CodeBlockStmt](
-                # NOTE: Ignoring type cause the subnodelist will be removed thus the type ignore will be gone too.
-                # also we're asserting the all are codeblockstmt with the above if not all(...) check.
-                items=[doc] + body[1:],  # type: ignore
-                delim=Tok.WS,
-                kid=body[1:] + [doc],
-                left_enc=self.operator(Tok.LBRACE, "{"),
-                right_enc=self.operator(Tok.RBRACE, "}"),
-            )
-        else:
-            doc = None
-            valid_body = ast.SubNodeList[ast.CodeBlockStmt](
-                items=body,  # type: ignore
-                delim=Tok.WS,
-                kid=body,
-                left_enc=self.operator(Tok.LBRACE, "{"),
-                right_enc=self.operator(Tok.RBRACE, "}"),
-            )
         decorators = [self.convert(decr) for decr in node.decorator_list]
         if not all(isinstance(decr, ast.Expr) for decr in decorators):
             raise self.ice("Invalid decorator in function.")
@@ -211,11 +196,22 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             else:
                 sig.return_type = ret_sig
                 sig.add_kids_right([sig.return_type])
-        kid = ([doc] if doc else []) + (
-            [name, sig, valid_body] if sig else [name, valid_body]
-        )
+
         if not sig:
             raise self.ice("Function signature not found")
+
+        kid: list[ast.AstNode] = []
+        if doc:
+            kid.append(doc)
+        kid.extend(
+            [
+                name,
+                sig,
+                self.operator(Tok.LBRACE, "{"),
+                *body,
+                self.operator(Tok.RBRACE, "}"),
+            ]
+        )
         ret = ast.Ability(
             name_ref=name,
             is_async=False,
@@ -224,7 +220,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             is_override=False,
             access=None,
             signature=sig,
-            body=valid_body,
+            body=body[1:] if doc else body,
             decorators=valid_decorators,
             doc=None,
             kid=kid,
@@ -399,47 +395,39 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             valid_enum_body2: list[ast.EnumBlockStmt] = [
                 i for i in valid_enum_body if isinstance(i, ast.EnumBlockStmt)
             ]
-            enum_body = (
-                ast.SubNodeList[ast.EnumBlockStmt](
-                    items=valid_enum_body2, delim=Tok.COMMA, kid=valid_enum_body2
-                )
-                if valid_enum_body2
-                else None
-            )
             if doc:
                 doc.line_no = name.line_no
+            kid: list[ast.AstNode] = [doc] if doc else []
+            kid.append(name)
+            kid.append(self.operator(Tok.LBRACE, "{"))
+            for idx, stmt in enumerate(valid_enum_body2):
+                if idx > 0:
+                    kid.append(self.operator(Tok.COMMA, ","))
+                kid.append(stmt)
+            kid.append(self.operator(Tok.RBRACE, "}"))
             return ast.Enum(
                 name=name,
                 access=None,
                 base_classes=None,
-                body=enum_body,
-                kid=(
-                    [doc, name, enum_body]
-                    if doc and enum_body
-                    else (
-                        [doc, name]
-                        if doc
-                        else [name, enum_body] if enum_body else [name]
-                    )
-                ),
+                body=valid_enum_body2 or None,
+                kid=kid,
                 doc=doc,
                 decorators=valid_decorators,
             )
-        kid = (
-            [name, valid_bases, valid_body, doc]
-            if doc and valid_bases
-            else (
-                [name, valid_bases, valid_body]
-                if valid_bases
-                else [name, valid_body, doc] if doc else [name, valid_body]
-            )
-        )
+
+        kid = [name]
+        if valid_bases:
+            kid.append(valid_bases)
+        if valid_body:
+            kid.extend(valid_body.kid)
+        if doc:
+            kid.append(doc)
         return ast.Architype(
             arch_type=arch_type,
             name=name,
             access=None,
             base_classes=valid_bases,
-            body=valid_body,
+            body=valid_body.items,
             kid=kid,
             doc=doc,
             decorators=valid_decorators,

@@ -548,9 +548,8 @@ class JacParser(Pass):
             if self.match_token(Tok.SEMI):
                 inh, body = sub_list1, None
             else:
-                body = (
-                    sub_list2 or sub_list1
-                )  # if sub_list2 is None then body is sub_list1
+                snl = sub_list2 or sub_list1
+                body = snl.items if snl else None
                 inh = sub_list2 and sub_list1  # if sub_list2 is None then inh is None.
             return ast.Architype(
                 arch_type=arch_type,
@@ -567,16 +566,13 @@ class JacParser(Pass):
 
             architype_def: abil_to_arch_chain member_block
             """
-            if isinstance(kid[0], ast.ArchRefChain) and isinstance(
-                kid[1], ast.SubNodeList
-            ):
-                return ast.ArchDef(
-                    target=kid[0],
-                    body=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            ref_chain = self.consume(ast.ArchRefChain)
+            body = self.consume(ast.SubNodeList)
+            return ast.ArchDef(
+                target=ref_chain,
+                body=body.items,
+                kid=[ref_chain, *body.kid],
+            )
 
         def arch_type(self, kid: list[ast.AstNode]) -> ast.Token:
             """Grammar rule.
@@ -686,7 +682,8 @@ class JacParser(Pass):
             if self.match_token(Tok.SEMI):
                 inh, body = sub_list1, None
             else:
-                body = sub_list2 or sub_list1
+                snl = sub_list2 or sub_list1
+                body = snl.items if snl else None
                 inh = sub_list2 and sub_list1
             return ast.Enum(
                 semstr=semstr,
@@ -702,16 +699,13 @@ class JacParser(Pass):
 
             enum_def: arch_to_enum_chain enum_block
             """
-            if isinstance(kid[0], ast.ArchRefChain) and isinstance(
-                kid[1], ast.SubNodeList
-            ):
-                return ast.EnumDef(
-                    target=kid[0],
-                    body=kid[1],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            ref_chain = self.consume(ast.ArchRefChain)
+            body = self.consume(ast.SubNodeList)
+            return ast.EnumDef(
+                target=ref_chain,
+                body=body.items,
+                kid=[ref_chain, *body.kid],
+            )
 
         def enum_block(
             self, kid: list[ast.AstNode]
@@ -805,6 +799,7 @@ class JacParser(Pass):
             )
             if (body := self.match(ast.SubNodeList)) is None:
                 self.consume_token(Tok.SEMI)
+
             return ast.Ability(
                 name_ref=name,
                 is_async=False,
@@ -814,7 +809,7 @@ class JacParser(Pass):
                 access=access,
                 semstr=semstr,
                 signature=signature,
-                body=body,
+                body=body.items if body else None,
                 kid=self.cur_nodes,
             )
 
@@ -823,19 +818,17 @@ class JacParser(Pass):
 
             ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
             """
-            if (
-                isinstance(kid[0], ast.ArchRefChain)
-                and isinstance(kid[1], (ast.FuncSignature, ast.EventSignature))
-                and isinstance(kid[2], ast.SubNodeList)
-            ):
-                return ast.AbilityDef(
-                    target=kid[0],
-                    signature=kid[1],
-                    body=kid[2],
-                    kid=kid,
-                )
-            else:
-                raise self.ice()
+            ref_chain = self.consume(ast.ArchRefChain)
+            signature = self.match(ast.FuncSignature) or self.consume(
+                ast.EventSignature
+            )
+            body = self.consume(ast.SubNodeList)
+            return ast.AbilityDef(
+                target=ref_chain,
+                signature=signature,
+                body=body.items,
+                kid=self.cur_nodes,
+            )
 
         # We need separate production rule for abstract_ability because we don't
         # want to allow regular abilities outside of classed to be abstract.

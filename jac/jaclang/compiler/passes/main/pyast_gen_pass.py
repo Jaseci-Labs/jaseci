@@ -956,10 +956,10 @@ class PyastGenPass(Pass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
-        body = self.resolve_stmt_block(
-            node.body.body if isinstance(node.body, ast.ArchDef) else node.body,
-            doc=node.doc,
-        )
+
+        stmts = node.body.body if isinstance(node.body, ast.ArchDef) else node.body
+        assert stmts is None or isinstance(stmts, list)
+        body = self.resolve_body_stmts(stmts or [], doc=node.doc)
         decorators = (
             node.decorators.gen.py_ast
             if isinstance(node.decorators, ast.SubNodeList)
@@ -1067,13 +1067,12 @@ class PyastGenPass(Pass):
         """Collect events."""
         ds_on_entry: list[ast3.AST] = []
         ds_on_exit: list[ast3.AST] = []
-        for i in (
-            node.body.body.items
-            if isinstance(node.body, ast.ArchDef)
-            else node.body.items if node.body else []
-        ):
-            if isinstance(i, ast.Ability) and isinstance(
-                i.signature, ast.EventSignature
+        stmts = (
+            node.body.body if isinstance(node.body, ast.ArchDef) else node.body or []
+        )
+        for stmt in stmts:
+            if isinstance(stmt, ast.Ability) and isinstance(
+                stmt.signature, ast.EventSignature
             ):
                 func_spec = self.sync(
                     ast3.Call(
@@ -1086,13 +1085,13 @@ class PyastGenPass(Pass):
                                 ctx=ast3.Load(),
                             )
                         ),
-                        args=[self.sync(ast3.Constant(value=i.sym_name))],
+                        args=[self.sync(ast3.Constant(value=stmt.sym_name))],
                         keywords=[],
                     )
                 )
                 (
                     ds_on_entry.append(func_spec)
-                    if i.signature.event.name == Tok.KW_ENTRY
+                    if stmt.signature.event.name == Tok.KW_ENTRY
                     else ds_on_exit.append(func_spec)
                 )
         return ds_on_entry, ds_on_exit
@@ -1130,10 +1129,9 @@ class PyastGenPass(Pass):
         decorators: Optional[SubNodeList[ExprType]],
         """
         self.needs_enum()
-        body = self.resolve_stmt_block(
-            node.body.body if isinstance(node.body, ast.EnumDef) else node.body,
-            doc=node.doc,
-        )
+        stmts = node.body.body if isinstance(node.body, ast.EnumDef) else node.body
+        assert stmts is None or isinstance(stmts, list), str(stmts)
+        body = self.resolve_body_stmts(stmts or [], doc=node.doc)
         decorators = (
             node.decorators.gen.py_ast
             if isinstance(node.decorators, ast.SubNodeList)
@@ -1207,31 +1205,19 @@ class PyastGenPass(Pass):
         decorators: Optional[SubNodeList[ExprType]],
         """
         func_type = ast3.AsyncFunctionDef if node.is_async else ast3.FunctionDef
-        body = (
-            self.gen_llm_body(node)
-            if isinstance(node.body, ast.FuncCall)
-            else (
-                [
-                    self.sync(
-                        ast3.Expr(value=node.doc.gen.py_ast[0]), jac_node=node.doc
-                    ),
-                    self.sync(ast3.Pass(), node.body),
-                ]
-                if node.doc and node.is_abstract
-                else (
-                    [self.sync(ast3.Pass(), node.body)]
-                    if node.is_abstract
-                    else self.resolve_stmt_block(
-                        (
-                            node.body.body
-                            if isinstance(node.body, ast.AbilityDef)
-                            else node.body
-                        ),
-                        doc=node.doc,
-                    )
-                )
+
+        body: list[ast3.AST] | None = None
+        if isinstance(node.body, ast.FuncCall):
+            body = self.gen_llm_body(node)
+        elif node.doc and node.is_abstract:
+            body = [self.sync(ast3.Pass(), node.body)]
+        else:
+            stmts = (
+                node.body.body if isinstance(node.body, ast.AbilityDef) else node.body
             )
-        )
+            if stmts:
+                body = self.resolve_body_stmts(stmts or [], doc=node.doc)
+
         if node.is_abstract and node.body:
             self.error(
                 f"Abstract ability {node.sym_name} should not have a body.",
