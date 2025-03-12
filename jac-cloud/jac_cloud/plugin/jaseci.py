@@ -486,8 +486,6 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                         raise ValueError(f"Invalid attribute: {fld}")
             if source.persistent or target.persistent:
                 Jac.save(eanch)
-                Jac.save(target)
-                Jac.save(source)
             return edge
 
         return builder

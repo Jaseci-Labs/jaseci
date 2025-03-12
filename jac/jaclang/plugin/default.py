@@ -1136,8 +1136,6 @@ class JacFeatureImpl(
                         raise ValueError(f"Invalid attribute: {fld}")
             if source.persistent or target.persistent:
                 Jac.save(eanch)
-                Jac.save(target)
-                Jac.save(source)
             return edge
 
         return builder
@@ -1154,6 +1152,19 @@ class JacFeatureImpl(
         anchor.root = jctx.root.id
 
         jctx.mem.set(anchor.id, anchor)
+
+        match anchor:
+            case NodeAnchor():
+                for ed in anchor.edges:
+                    if ed.is_populated() and not ed.persistent:
+                        Jac.save(ed)
+            case EdgeAnchor():
+                if (src := anchor.source) and src.is_populated() and not src.persistent:
+                    Jac.save(src)
+                if (trg := anchor.target) and trg.is_populated() and not trg.persistent:
+                    Jac.save(trg)
+            case _:
+                pass
 
     @staticmethod
     @hookimpl
