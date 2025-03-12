@@ -2,7 +2,7 @@
 
 from setuptools import find_packages, setup
 
-VERSION = "0.1.22"
+VERSION = "0.1.23"
 
 setup(
     name="jac-cloud",
