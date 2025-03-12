@@ -29,7 +29,7 @@ CLASS_COLOR_MAP: dict[str, str] = {
     "MatchPattern": "#a0d8b3",
     "SubTag": "#cafafa",
     "SubNodeList": "#dbbfe5",
-    "Module": "#e1d1ff",
+    "Module": "#D1FFE2  ",
     "GlobalVars": "#e1d1ff",
     "Test": "#e1d1ff",
     "ModuleCode": "#e1d1ff",
@@ -161,7 +161,7 @@ def dotgen_ast_tree(
         style = ""
         _class__ = str(node.__class__)[35:-2]
         if _class__ in CLASS_COLOR_MAP:
-            shape = 'shape="box"'
+            shape = 'shape="oval"'
             style = 'style="filled"'
             fillcolor = f'fillcolor="{CLASS_COLOR_MAP[_class__]}"'
         info1: list[tuple[str, str, str]] = []
@@ -187,7 +187,7 @@ def dotgen_ast_tree(
         dot_lines.append(f"{gen_node_id(root)}  -> {gen_node_id(i)};")
         dotgen_ast_tree(i, dot_lines)
     if starting_call:
-        return "\ndigraph graph1 {" + "\n".join(list(set(dot_lines))) + "}"
+        return "\ndigraph graph1 {\n" + "\n".join(list(set(dot_lines))) + "\n}"
     return " "
 
 

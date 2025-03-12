@@ -361,7 +361,7 @@ class JacCliTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn(
-            '[label="MultiString" shape="box" style="filled" fillcolor="#fccca4"]',
+            '[label="MultiString" shape="oval" style="filled" fillcolor="#fccca4"]',
             stdout_value,
         )
 
