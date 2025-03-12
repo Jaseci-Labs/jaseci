@@ -2189,32 +2189,26 @@ class JacParser(Pass):
 
             atomic_call: atomic_chain LPAREN param_list? (KW_BY atomic_call)? RPAREN
             """
-            if (
-                len(kid) > 4
-                and isinstance(kid[0], ast.Expr)
-                and kid[-2]
-                and isinstance(kid[-2], ast.FuncCall)
-            ):
-                return ast.FuncCall(
-                    target=kid[0],
-                    params=kid[2] if isinstance(kid[2], ast.SubNodeList) else None,
-                    genai_call=kid[-2],
-                    kid=kid,
-                )
-            if (
-                len(kid) == 4
-                and isinstance(kid[0], ast.Expr)
-                and isinstance(kid[2], ast.SubNodeList)
-            ):
-                return ast.FuncCall(
-                    target=kid[0], params=kid[2], genai_call=None, kid=kid
-                )
-            elif len(kid) == 3 and isinstance(kid[0], ast.Expr):
-                return ast.FuncCall(
-                    target=kid[0], params=None, genai_call=None, kid=kid
-                )
-            else:
-                raise self.ice()
+            target = self.consume(ast.Expr)
+            tok_lp = self.consume_token(Tok.LPAREN)
+            params_list = self.match(ast.SubNodeList)
+            kids: list[ast.AstNode] = [target, tok_lp]
+            params = []
+            if params_list:
+                params = params_list.items
+                kids.extend(params_list.kid)
+            call: ast.FuncCall | None = None
+            tok_by = self.match_token(Tok.KW_BY)
+            if tok_by:
+                call = self.consume(ast.FuncCall)
+                kids.extend([tok_by, call])
+            kids.append(self.consume_token(Tok.RPAREN))
+            return ast.FuncCall(
+                target=target,
+                params=params,
+                genai_call=call,
+                kid=kids,
+            )
 
         def index_slice(self, kid: list[ast.AstNode]) -> ast.IndexSlice:
             """Grammar rule.
