@@ -1194,7 +1194,7 @@ class JacFormatPass(Pass):
 
         self.emit(node, f" except {node.ex_type.gen.jac} ")
         if node.name:
-            self.emit(node, f"as {node.name.gen.jac} ")
+            self.emit(node, f" as {node.name.gen.jac} ")
         self.emit(node, "{\n")
         self.indent_level += 1
         for stmt in node.body:
