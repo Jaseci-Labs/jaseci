@@ -278,7 +278,6 @@ class JacImporter(Importer):
         if os.path.basename(rel) == "__init__":
             rel = os.path.dirname(rel)
         mod_name = rel.replace(os.sep, ".").strip(".")
-        print("Module name:", mod_name)
         return mod_name
 
 
