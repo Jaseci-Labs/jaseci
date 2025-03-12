@@ -53,7 +53,7 @@ class JacFeature:
         """Jac's with_llm feature."""
         from jaclang.runtimelib.machine import JacMachine
 
-        mod_registry = JacMachine.get().jac_program.sem_ir  # type: ignore[union-attr]
+        mod_registry = JacMachine.get().jac_program.sem_ir
 
         _scope = SemScope.get_scope_from_str(scope)
         assert _scope is not None, f"Invalid scope: {scope}"
