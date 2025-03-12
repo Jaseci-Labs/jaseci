@@ -270,7 +270,7 @@ class JacImporter(Importer):
         sp_index = full_target.find("site-packages")
         if sp_index != -1:
             # Remove the site-packages part and any leading separator.
-            rel = full_target[sp_index + len("site-packages"):]
+            rel = full_target[sp_index + len("site-packages") :]
             rel = rel.lstrip(os.sep)
         else:
             rel = path.relpath(full_target, start=self.jac_machine.base_path_dir)
@@ -279,7 +279,6 @@ class JacImporter(Importer):
             rel = os.path.dirname(rel)
         mod_name = rel.replace(os.sep, ".").strip(".")
         return mod_name
-
 
     def handle_directory(
         self, module_name: str, full_mod_path: str
@@ -356,7 +355,9 @@ class JacImporter(Importer):
         # If a suitable path was found, update spec.full_target; otherwise, raise an error
         if found_path:
             spec.full_target = os.path.abspath(found_path)
-        elif os.path.exists(spec.full_target) or os.path.exists(spec.full_target + ".jac"):
+        elif os.path.exists(spec.full_target) or os.path.exists(
+            spec.full_target + ".jac"
+        ):
             pass
         else:
             raise ImportError(

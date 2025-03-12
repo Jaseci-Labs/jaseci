@@ -1019,7 +1019,7 @@ class ModulePath(AstSymbolNode):
         parts = target.split(".")
         traversal_levels = max(self.level - 1, 0)
         actual_parts = parts[traversal_levels:]
-        
+
         def candidate_from(base: str) -> str:
             candidate = os.path.join(base, *actual_parts)
             candidate_jac = candidate + ".jac"
@@ -1031,7 +1031,9 @@ class ModulePath(AstSymbolNode):
             return candidate
 
         # 2. Adjust the base path by moving up for each traversal level.
-        base_path = os.getenv("JACPATH") or os.path.dirname(self.loc.mod_path) or os.getcwd()
+        base_path = (
+            os.getenv("JACPATH") or os.path.dirname(self.loc.mod_path) or os.getcwd()
+        )
         for _ in range(traversal_levels):
             base_path = os.path.dirname(base_path)
         candidate = candidate_from(base_path)
