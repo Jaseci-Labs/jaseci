@@ -1903,7 +1903,7 @@ class PyastGenPass(Pass):
             # Ensure the type of the FuncCall node is SubNodeList[Expr]
             # since the type can be: Optional[SubNodeList[Expr | KWPair]].
             if not (
-                node.params
+                node.params != []
                 and len(node.params) == 2
                 and isinstance(node.params[0], ast.Expr)
                 and isinstance(node.params[1], ast.Expr)
