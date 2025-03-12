@@ -57,9 +57,10 @@ class JacImportPass(Pass):
         """Attach a module to a node."""
         from jaclang.runtimelib.machine import JacMachine
 
-        if mod:
-            JacMachine.get().jac_program.modules[mod.loc.mod_path] = mod
-            JacMachine.get().jac_program.last_imported.append(mod)
+        current_machine = JacMachine.get()
+        if mod and mod.loc.mod_path not in current_machine.jac_program.modules:
+            current_machine.jac_program.modules[mod.loc.mod_path] = mod
+            current_machine.jac_program.last_imported.append(mod)
             node.sub_module = mod
             self.annex_impl(mod)
             node.add_kids_right([mod], pos_update=False)
