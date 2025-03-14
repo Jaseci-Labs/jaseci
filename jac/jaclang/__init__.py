@@ -23,7 +23,6 @@ from jaclang.plugin.builtin import dotgen, jid, jobj  # noqa: F401
 from jaclang.plugin.default import JacFeatureImpl
 from jaclang.plugin.feature import JacFeature as Jac, plugin_manager
 from jaclang.plugin.spec import EdgeDir
-from jaclang.runtimelib.context import ExecutionContext
 
 __all__ = [
     # Jac types.
@@ -173,7 +172,7 @@ class Node(_ArchiTypeBase, metaclass=JacMeta):
         self,
         node: "Node | Root | JacList[Node | Root]",
         edge: "type[Edge] | Edge | None" = None,
-        unidir: bool = False,
+        undir: bool = False,
         conn_assign: tuple[tuple, tuple] | None = None,
         edges_only: bool = False,
     ) -> "JacList[Node | Root| Edge]":
@@ -183,7 +182,7 @@ class Node(_ArchiTypeBase, metaclass=JacMeta):
             left=self,  # type: ignore [arg-type]
             right=node,  # type: ignore [arg-type]
             edge_spec=Jac.build_edge(
-                is_undirected=unidir, conn_type=edge, conn_assign=conn_assign  # type: ignore [arg-type]
+                is_undirected=undir, conn_type=edge, conn_assign=conn_assign  # type: ignore [arg-type]
             ),
             edges_only=edges_only,
         )
@@ -244,7 +243,7 @@ class Root(_ArchiTypeBase, metaclass=JacMeta):
         self,
         node: "Node | Root | JacList[Node | Root]",
         edge: "type[Edge] | Edge | None" = None,
-        unidir: bool = False,
+        undir: bool = False,
         conn_assign: tuple[tuple, tuple] | None = None,
         edges_only: bool = False,
     ) -> "JacList[Node | Root| Edge]":
@@ -254,7 +253,7 @@ class Root(_ArchiTypeBase, metaclass=JacMeta):
             left=self,  # type: ignore [arg-type]
             right=node,  # type: ignore [arg-type]
             edge_spec=Jac.build_edge(
-                is_undirected=unidir, conn_type=edge, conn_assign=conn_assign  # type: ignore [arg-type]
+                is_undirected=undir, conn_type=edge, conn_assign=conn_assign  # type: ignore [arg-type]
             ),
             edges_only=edges_only,
         )
@@ -418,4 +417,5 @@ static = ClassVar
 
 
 def root() -> Root:
-    return cast(Root, ExecutionContext.get_root())
+    """Get Root."""
+    return cast(Root, Jac.get_root())
