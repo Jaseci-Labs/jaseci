@@ -65,6 +65,7 @@ def jac_str_to_pass(
         return ast_ret
 
     machine = JacMachine.get()
+    assert isinstance(ast_ret.ir, ast.Module)
     machine.jac_program.last_imported.append(ast_ret.ir)
     machine.jac_program.modules[ast_ret.ir.loc.mod_path] = ast_ret.ir
 
