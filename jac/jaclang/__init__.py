@@ -23,7 +23,6 @@ from jaclang.plugin.builtin import dotgen, jid, jobj  # noqa: F401
 from jaclang.plugin.default import JacFeatureImpl
 from jaclang.plugin.feature import JacFeature as Jac, plugin_manager
 from jaclang.plugin.spec import EdgeDir
-from jaclang.runtimelib.context import ExecutionContext
 
 __all__ = [
     # Jac types.
@@ -419,4 +418,4 @@ static = ClassVar
 
 def root() -> Root:
     """Get Root."""
-    return cast(Root, ExecutionContext.get_root())
+    return cast(Root, Jac.get_root())
