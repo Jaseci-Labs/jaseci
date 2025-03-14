@@ -31,14 +31,6 @@ In Jac, you can work with lists using index ranges to extract specific portions 
     --8<-- "examples/learning_section/jac_list/Access_list_items/jac_list_access_range_index_3.jac"
     ```
 
-<!-- ## Range of Negative Indexes
-Specify negative indexes if you want to start the search from the end of the list:
-
-**Code Example**
-    ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_list/Access_list_items/jac_list_access_neg_index.jac" -->
-    ```
-
 ## Check if Item Exists
 To determine if a specified item is present in a list use the **in** keyword:
 
