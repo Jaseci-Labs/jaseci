@@ -1,4 +1,4 @@
-with entry{
+with entry {
     list1 = ["a", "b", "c"];
     list2 = [1, 2, 3];
 
