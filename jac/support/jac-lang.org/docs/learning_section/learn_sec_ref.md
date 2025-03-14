@@ -17,5 +17,7 @@
 
 - [**Jac For Loop**](jac_for_loops.md)
 - [**Jac While Loop**](jac_while_loops.md)
+- [**Jac If Statement**](jac_if_statement.md)
+- [**Jac List**](jac_list.md)
 
 **
