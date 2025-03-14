@@ -3126,7 +3126,7 @@ class PyastGenPass(Pass):
                 self.sync(
                     ast3.keyword(
                         arg="target",
-                        value=self.sync(ast3.Constant(value=None)),
+                        value=targ,
                     )
                 )
             )
