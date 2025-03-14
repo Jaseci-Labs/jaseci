@@ -2,14 +2,14 @@
 
 from setuptools import find_packages, setup
 
-VERSION = "0.1.23"
+VERSION = "0.1.24"
 
 setup(
     name="jac-cloud",
     version=VERSION,
     packages=find_packages(include=["jac_cloud", "jac_cloud.*"]),
     install_requires=[
-        "jaclang==0.7.33",
+        "jaclang==0.7.34",
         "fastapi~=0.111.0",
         "pydantic~=2.8.2",
         "pymongo~=4.8.0",
