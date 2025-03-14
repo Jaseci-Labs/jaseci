@@ -169,28 +169,29 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
-    def exit_import(self, node: ast.Import) -> None:
-        """Sub objects.
+    # TODO: This should be moved to SymTableLink
+    # def exit_import(self, node: ast.Import) -> None:
+    #     """Sub objects.
 
-        lang: Name,
-        path: ModulePath,
-        alias: Optional[Name],
-        items: Optional[ModuleItems],
-        is_absorb: bool,
-        sub_module: Optional[Module],
-        """
-        if not node.is_absorb:
-            for i in node.items.items:
-                i.sym_tab.def_insert(i, single_decl="import item")
-        elif node.is_absorb and node.is_jac:
-            source = node.items.items[0]
-            if not isinstance(source, ast.ModulePath) or not source.sub_module:
-                self.error(
-                    f"Module {node.from_loc.dot_path_str if node.from_loc else 'from location'}"
-                    f" not found to include *, or ICE occurred!"
-                )
-            else:
-                node.sym_tab.inherit_sym_tab(source.sub_module.sym_tab)
+    #     lang: Name,
+    #     path: ModulePath,
+    #     alias: Optional[Name],
+    #     items: Optional[ModuleItems],
+    #     is_absorb: bool,
+    #     sub_module: Optional[Module],
+    #     """
+    #     if not node.is_absorb:
+    #         for i in node.items.items:
+    #             i.sym_tab.def_insert(i, single_decl="import item")
+    #     elif node.is_absorb and node.is_jac:
+    #         source = node.items.items[0]
+    #         if not isinstance(source, ast.ModulePath) or not source.sub_module:
+    #             self.error(
+    #                 f"Module {node.from_loc.dot_path_str if node.from_loc else 'from location'}"
+    #                 f" not found to include *, or ICE occurred!"
+    #             )
+    #         else:
+    #             node.sym_tab.inherit_sym_tab(source.sub_module.sym_tab)
 
     def enter_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.
