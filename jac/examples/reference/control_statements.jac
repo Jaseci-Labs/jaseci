@@ -6,11 +6,10 @@ with entry {
         }
         print(i);
     }
-    for i in "WIN" {
-        if i == "W" {
+    for j in "WIN" {
+        if j == "W" {
             continue;
         }
-        print(i);
+        print(j);
     }
-    #skip is not working need to look at it
 }

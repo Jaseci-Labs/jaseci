@@ -1,25 +1,25 @@
 from __future__ import annotations
-from jaclang.plugin.feature import JacFeature as Jac
+from jaclang import *
 
 a = 5
 b = 2
 
 
-@Jac.create_test
-def test_test1(check) -> None:
-    check.assertAlmostEqual(a, 6)
+@jac_test
+def test_test1(_check) -> None:
+    _check.assertAlmostEqual(a, 6)
 
 
-@Jac.create_test
-def test_test2(check) -> None:
-    check.assertTrue(a != b)
+@jac_test
+def test_test2(_check) -> None:
+    _check.assertNotEqual(a, b)
 
 
-@Jac.create_test
-def test_test3(check) -> None:
-    check.assertIn("d", "abc")
+@jac_test
+def test_test3(_check) -> None:
+    _check.assertIn("d", "abc")
 
 
-@Jac.create_test
-def test_test4(check) -> None:
-    check.assertEqual(a - b, 3)
+@jac_test
+def test_test4(_check) -> None:
+    _check.assertEqual(a - b, 3)
