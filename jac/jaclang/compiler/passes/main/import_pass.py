@@ -65,55 +65,53 @@ class JacImportPass(Pass):
             node.add_kids_right([mod], pos_update=False)
             mod.parent = node
 
+    def get_annex_paths(self, module_path: str) -> list[str]:
+        """Return all the annexable file paths for the given module_path."""
+        search_paths: list[str] = []
+        suffixes = (".impl", ".test") if not settings.ignore_test_annex else (".impl",)
+
+        module_dir = os.path.abspath(os.path.dirname(module_path))
+        module_name = os.path.split(module_path)[-1].split(".")[0]
+
+        for suffix in suffixes:
+            # Search in the directory of the module.
+            for item in os.listdir(module_dir):
+                path = os.path.join(module_dir, item)
+                if not item.startswith(module_name + ".") or not os.path.isfile(path):
+                    continue
+                if item.endswith(suffix + ".jac"):
+                    search_paths.append(path)
+            # Search inside the annex folder.
+            annex_dir = os.path.join(module_dir, module_name + suffix)
+            if os.path.isdir(annex_dir):
+                search_paths.extend(
+                    os.path.join(annex_dir, item)
+                    for item in os.listdir(annex_dir)
+                    if item.endswith(suffix + ".jac")
+                )
+        if module_path in search_paths:
+            search_paths.remove(module_path)
+        return search_paths
+
     def annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""
-        if node.stub_only:
+        if (
+            node.stub_only
+            or not node.loc.mod_path
+            or not node.loc.mod_path.endswith(".jac")
+        ):
             return
-        if not node.loc.mod_path:
-            self.error("Module has no path")
-        if not node.loc.mod_path.endswith(".jac"):
-            return
-        base_path = node.loc.mod_path[:-4]
-        directory = os.path.dirname(node.loc.mod_path)
-        if not directory:
-            directory = os.getcwd()
-            base_path = os.path.join(directory, base_path)
-        impl_folder = base_path + ".impl"
-        test_folder = base_path + ".test"
-        search_files = [
-            os.path.join(directory, impl_file) for impl_file in os.listdir(directory)
-        ]
-        if os.path.exists(impl_folder):
-            search_files += [
-                os.path.join(impl_folder, impl_file)
-                for impl_file in os.listdir(impl_folder)
-            ]
-        if os.path.exists(test_folder):
-            search_files += [
-                os.path.join(test_folder, test_file)
-                for test_file in os.listdir(test_folder)
-            ]
-        for cur_file in search_files:
-            if node.loc.mod_path.endswith(cur_file):
-                continue
-            if (
-                cur_file.startswith(f"{base_path}.")
-                or impl_folder == os.path.dirname(cur_file)
-            ) and cur_file.endswith(".impl.jac"):
-                mod = self.import_jac_mod_from_file(cur_file)
-                if mod:
+
+        search_paths = self.get_annex_paths(node.loc.mod_path)
+        for file_path in search_paths:
+            mod = self.import_jac_mod_from_file(file_path)
+            if mod:
+                if file_path.endswith(".impl.jac"):
                     node.impl_mod.append(mod)
-                    node.add_kids_left([mod], pos_update=False)
-                    mod.parent = node
-            if (
-                cur_file.startswith(f"{base_path}.")
-                or test_folder == os.path.dirname(cur_file)
-            ) and cur_file.endswith(".test.jac"):
-                mod = self.import_jac_mod_from_file(cur_file)
-                if mod and not settings.ignore_test_annex:
+                else:
                     node.test_mod.append(mod)
-                    node.add_kids_right([mod], pos_update=False)
-                    mod.parent = node
+                node.add_kids_right([mod], pos_update=False)
+                mod.parent = node
 
     def enter_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.
