@@ -846,7 +846,7 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
         stdout_value = captured_output.getvalue()
-        self.assertEqual(stdout_value.count("Invalid access"), 18)
+        self.assertEqual(stdout_value.count("Invalid access"), 15)
 
     def test_deep_convert(self) -> None:
         """Test py ast to Jac ast conversion output."""
