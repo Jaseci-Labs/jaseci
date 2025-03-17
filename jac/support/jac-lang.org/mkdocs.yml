@@ -68,7 +68,26 @@ nav:
     - "lang_ref/jac_ref.md"
 
   - Learning Section:
-    - "learning_section/learn_sec_ref.md"
+    - "learning_section/introduction.md"
+    - Jac Tutorial:
+      - Jac Loops:
+        - For Loop: "learning_section/jac_for_loops.md"
+        - While Loop: "learning_section/jac_while_loops.md"
+      - Jac If-Else: "learning_section/jac_if_statement.md"
+      - Jac Lists:
+        - Introduction: "learning_section/jac_list_introduction.md"
+        - Access List Items: "learning_section/jac_access_list_items.md"
+        - Change List Items: "learning_section/jac_change_list_items.md"
+        - Add List Items: "learning_section/jac_add_list.md"
+        - Remove List Items: "learning_section/jac_remove_list_items.md"
+        - Loop Lists: "learning_section/jac_loop_list.md"
+        - Sort Lists: "learning_section/jac_sort_list.md"
+        - Copy Lists: "learning_section/jac_copy_list.md"
+        - Join Lists: "learning_section/jac_join_list.md"
+      - Jac Architypes and Abilities:
+        - Architypes: "learning_section/jac_arch_abil/jac_arch.md"
+        - Attributes in Architypes: "learning_section/jac_arch_abil/jac_attributes.md"
+        - Abilities: "learning_section/jac_arch_abil/jac_abilities.md"
 
 theme:
   logo: "assets/logo.png"
@@ -87,7 +106,7 @@ theme:
     - navigation.tabs
     - navigation.path
     - navigation.footer
-    - navigation.expand
+    # - navigation.expand
     - navigation.sections
     - navigation.top
   icon:
