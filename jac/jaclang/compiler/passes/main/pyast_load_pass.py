@@ -120,11 +120,12 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         )
         doc_str = elements[0] if isinstance(elements[0], ast.String) else None
         self.convert_to_doc(doc_str) if doc_str else None
+        body: list = valid[1:] if valid and isinstance(valid[0], ast.String) else valid
         ret = ast.Module(
             name=self.mod_path.split(os.path.sep)[-1].split(".")[0],
             source=ast.JacSource("", mod_path=self.mod_path),
             doc=doc_str,
-            body=valid[1:] if valid and isinstance(valid[0], ast.String) else valid,
+            body=body,
             terminals=[],
             is_imported=False,
             kid=valid,

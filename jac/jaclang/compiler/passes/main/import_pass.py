@@ -40,19 +40,54 @@ class JacImportPass(Pass):
         self.run_again = True
         while self.run_again:
             self.run_again = False
-            all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
-            for i in all_imports:
-                self.process_import(i)
-                self.enter_module_path(i)
+            import_paths: list[ast.ModulePath] = self.get_all_sub_nodes(
+                node, ast.ModulePath
+            )
+            for import_path in import_paths:
+                import_stmt = Pass.find_parent_of_type(import_path, ast.Import)
+                if not import_stmt:
+                    continue
+                if import_stmt.is_absorb:
+                    self.process_include(import_stmt, import_path)
+                else:
+                    self.process_import(import_stmt, import_path)
+                    self.enter_module_path(import_path)
             SubNodeTabPass(prior=self, input_ir=node)
 
         node.mod_deps.update(self.import_table)
 
-    def process_import(self, i: ast.ModulePath) -> None:
+    def process_include(
+        self, import_node: ast.Import, mod_path: ast.ModulePath
+    ) -> None:
+        """Compile the file at the given `mod_path` path and injects the nodes
+        inside the current ast.
+        """
+        # FIXME: Not sure what to do with python include so falling back to the older method.
+        # This needs to be discuessed.
+        if import_node.is_py:
+            return self.process_import(import_node, mod_path)
+        path = mod_path.resolve_relative_path()
+        if inc_mod := self.import_jac_mod_from_file(path):
+            cur_mod = import_node.parent
+            if cur_mod and isinstance(cur_mod, ast.Module):
+                index = cur_mod.kid.index(import_node)
+                cur_mod.kid.remove(import_node)
+                import_node.parent = None
+                cur_mod.insert_kids_at_pos(inc_mod.kid, index)
+
+                for idx, stmt in enumerate(inc_mod.body):
+                    cur_mod.body.insert(index + idx, stmt)
+                for idx, term in enumerate(inc_mod.terminals):
+                    cur_mod.terminals.insert(index + idx, term)
+                self.annex_impl(inc_mod)
+                self.attach_mod_to_node(mod_path, inc_mod)
+
+                self.run_again = True
+
+    def process_import(self, import_node: ast.Import, mod_path: ast.ModulePath) -> None:
         """Process an import."""
-        imp_node = i.parent_of_type(ast.Import)
-        if imp_node.is_jac and not i.sub_module:
-            self.import_jac_module(node=i)
+        if import_node.is_jac and not mod_path.sub_module:
+            self.import_jac_module(node=mod_path)
 
     def attach_mod_to_node(
         self, node: ast.ModulePath | ast.ModuleItem, mod: ast.Module | None
@@ -214,7 +249,7 @@ class PyImportPass(JacImportPass):
         self.__import_from_symbol_table_build()
         return super().after_pass()
 
-    def process_import(self, i: ast.ModulePath) -> None:
+    def process_import(self, import_node: ast.Import, mod_path: ast.ModulePath) -> None:
         """Process an import."""
         # Process import is orginally implemented to handle ModulePath in Jaclang
         # This won't work with py imports as this will fail to import stuff in form of
@@ -222,21 +257,20 @@ class PyImportPass(JacImportPass):
         #      from a import (c, d, e)
         # Solution to that is to get the import node and check the from loc `then`
         # handle it based on if there a from loc or not
-        imp_node = i.parent_of_type(ast.Import)
 
-        if imp_node.is_py and not i.sub_module:
-            if imp_node.from_loc:
+        if import_node.is_py and not mod_path.sub_module:
+            if import_node.from_loc:
                 msg = "Processing import from node at href="
-                msg += ast.Module.get_href_path(imp_node)
-                msg += f' path="{imp_node.loc.mod_path}, {imp_node.loc}"'
+                msg += ast.Module.get_href_path(import_node)
+                msg += f' path="{import_node.loc.mod_path}, {import_node.loc}"'
                 self.__debug_print(msg)
-                self.__process_import_from(imp_node)
+                self.__process_import_from(import_node)
             else:
                 msg = "Processing import node at href="
-                msg += ast.Module.get_href_path(imp_node)
-                msg += f' path="{imp_node.loc.mod_path}, {imp_node.loc}"'
+                msg += ast.Module.get_href_path(import_node)
+                msg += f' path="{import_node.loc.mod_path}, {import_node.loc}"'
                 self.__debug_print(msg)
-                self.__process_import(imp_node)
+                self.__process_import(import_node)
 
     def __process_import_from(self, imp_node: ast.Import) -> None:
         """Process imports in the form of `from X import I`."""

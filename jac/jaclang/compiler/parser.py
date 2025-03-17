@@ -256,7 +256,9 @@ class JacParser(Pass):
                 | STRING (tl_stmt_with_doc | toplevel_stmt)*
             """
             doc = self.match(ast.String)
-            body = self.match_many(ast.ElementStmt)
+            body: list[ast.ElementStmt | ast.String | ast.EmptyToken] = self.match_many(
+                ast.ElementStmt
+            )
             mod = ast.Module(
                 name=self.parse_ref.mod_path.split(os.path.sep)[-1].rstrip(".jac"),
                 source=self.parse_ref.source,
