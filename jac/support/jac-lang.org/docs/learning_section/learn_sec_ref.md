@@ -19,5 +19,8 @@
 - [**Jac While Loop**](jac_while_loops.md)
 - [**Jac If Statement**](jac_if_statement.md)
 - [**Jac List**](jac_list.md)
+- [**Jac Tuple**](jac_tuple.md)
+- [**Jac Sets**](jac_sets.md)
+- [**Jac Try...Except**](jac_try_except.md)
 
 **
