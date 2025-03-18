@@ -5,6 +5,7 @@ in each node. Module nodes contain the entire module code.
 """
 
 import ast as ast3
+import copy
 import textwrap
 from dataclasses import dataclass
 from typing import Optional, Sequence, TypeVar, cast
@@ -1786,20 +1787,47 @@ class PyastGenPass(Pass):
             node.gen.py_ast = [self.sync(ast3.Return(value=None))]
 
     def exit_delete_stmt(self, node: ast.DeleteStmt) -> None:
-        """Sub objects.
+        """Transforms DeleteStmt into Python AST with destroy call and deletion."""
 
-        target: SubNodeList[AtomType],
-        """
-        node.gen.py_ast = [
-            self.sync(
-                ast3.Delete(
-                    targets=(
-                        node.target.values.gen.py_ast
-                        if isinstance(node.target, ast.TupleVal) and node.target.values
-                        else node.target.gen.py_ast
-                    )
+        node_copy = copy.deepcopy(node)
+        targets = (
+            node_copy.target.values.gen.py_ast
+            if isinstance(node_copy.target, ast.TupleVal) and node_copy.target.values
+            else node_copy.target.gen.py_ast
+        )
+        for target in targets if isinstance(targets, list) else [targets[0]]:
+            if hasattr(target, "ctx"):
+                target.ctx = ast3.Load()
+
+        destroy_expr = ast3.Expr(
+            value=self.sync(
+                ast3.Call(
+                    func=self.sync(
+                        ast3.Attribute(
+                            value=self.jaclib_obj(Con.JAC_FEATURE.value),
+                            attr="destroy",
+                            ctx=ast3.Load(),
+                        )
+                    ),
+                    args=targets,
+                    keywords=[],
                 )
             )
+        )
+
+        delete_stmt = self.sync(
+            ast3.Delete(
+                targets=(
+                    node.target.values.gen.py_ast
+                    if isinstance(node.target, ast.TupleVal) and node.target.values
+                    else node.target.gen.py_ast
+                )
+            )
+        )
+
+        node.gen.py_ast = [
+            self.sync(destroy_expr),
+            self.sync(delete_stmt),
         ]
 
     def exit_report_stmt(self, node: ast.ReportStmt) -> None:
