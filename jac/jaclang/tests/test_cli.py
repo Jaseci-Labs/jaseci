@@ -564,4 +564,3 @@ class JacCliTests(TestCase):
             stdout_value = f.read()
         self.assertEqual(stdout_value.count("person"), 1)
         self.assertEqual(len(stdout_value.strip().split("\n")), 6)
-        
