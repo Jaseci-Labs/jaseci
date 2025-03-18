@@ -9,6 +9,8 @@ from jaclang.compiler.passes.main import (
     JacImportPass,
     PyOutPass,
     SubNodeTabPass,
+    SymTabBuildPass,
+    SymTabLinkPass,
     pass_schedule,
 )
 from jaclang.compiler.passes.tool import JacFormatPass
@@ -71,17 +73,33 @@ def jac_str_to_pass(
 
     while len(machine.jac_program.last_imported) > 0:
         mod = machine.jac_program.last_imported.pop()
-        jac_ir_to_pass(ir=mod, schedule=[JacImportPass])
+        jac_ir_to_pass(ir=mod, schedule=[JacImportPass, SymTabBuildPass])
 
     # If there is syntax error, no point in processing in further passes.
     if len(ast_ret.errors_had) != 0:
         return ast_ret
+
+    SymTabLinkPass(mod, machine.jac_program.modules, ast_ret)
 
     for i in schedule:
         if i == target:
             break
         ast_ret = i(input_ir=ast_ret.ir, prior=ast_ret)
     ast_ret = target(input_ir=ast_ret.ir, prior=ast_ret) if target else ast_ret
+    SymTabLinkPass(mod, machine.jac_program.modules, ast_ret)
+
+    def run_schedule(mod: ast.Module) -> None:
+        nonlocal ast_ret
+        for i in schedule:
+            if i == target:
+                break
+            ast_ret = i(mod, prior=ast_ret)
+        ast_ret = target(mod, prior=ast_ret) if target else ast_ret
+
+    for mod in machine.jac_program.modules.values():
+        run_schedule(mod)
+
+    ast_ret.ir = top_mod
     return ast_ret
 
 

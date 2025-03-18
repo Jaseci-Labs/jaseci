@@ -2,12 +2,12 @@
 
 glob common_value = 5;
 
-include second;
-include last;
+import second;
+import last;
 
 
 with entry{
     print('common.jac');
-    print(walk());
-    print(LAST);
+    print(second.walk());
+    print(last.LAST);
 }

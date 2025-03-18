@@ -22,7 +22,7 @@ from .py_collect_dep_pass import PyCollectDepsPass  # noqa: I100
 from .inheritance_pass import InheritancePass  # noqa: I100
 
 py_code_gen = [
-    SymTabBuildPass,
+    # SymTabBuildPass,
     DeclImplMatchPass,
     DefUsePass,
     RegistryPass,
