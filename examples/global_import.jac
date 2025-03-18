@@ -6,4 +6,4 @@ can display_x{
     return X;
 }
 
-include common;
+import common;
