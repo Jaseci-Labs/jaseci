@@ -23,5 +23,5 @@ class node_1(Node):
         here.visit(self.refs())
 
 
-root.spawn(Creator())
-root.spawn(Creator())
+root().spawn(Creator())
+root().spawn(Creator())

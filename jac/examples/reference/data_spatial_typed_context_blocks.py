@@ -23,4 +23,4 @@ class Product(Node):
         here.visit(self.refs())
 
 
-root.spawn(Producer())
+root().spawn(Producer())

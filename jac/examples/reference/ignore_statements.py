@@ -7,7 +7,7 @@ class Visitor(Walker):
     def travel(self, here: Root) -> None:
         self.ignore(here.refs()[0])
         if not self.visit(here.refs()):
-            self.visit(root)
+            self.visit(root())
 
 
 class item(Node):
@@ -18,7 +18,7 @@ class item(Node):
 
 i = 0
 while i < 5:
-    root.connect(item())
+    root().connect(item())
     i += 1
 
-root.spawn(Visitor())
+root().spawn(Visitor())
