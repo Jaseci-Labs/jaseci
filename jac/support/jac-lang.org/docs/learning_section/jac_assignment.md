@@ -1,0 +1,39 @@
+### 1. Assignment Operations
+
+In JacLang, you can assign values to variables using the **=** operator. You can assign a value to multiple variables at once:
+
+**Code Example**
+=== "Jac"
+    ```jac linenums="1"
+    --8<-- "examples/learning_section/jac_assignment/jac_assignment.jac"
+    ```
+
+### 2. Bitwise Shift Operators
+
+**Right Shift (>>): Shifts the bits of the number to the right.**
+
+JacLang supports bitwise shift operators that allow you to shift the bits of a number to the left or right.
+
+**Code Example**
+=== "Jac"
+    ```jac linenums="1"
+    --8<-- "examples/learning_section/jac_assignment/jac_bitwise_shift_op_1.jac"
+    ```
+
+**Left Shift (<<): Shifts the bits of the number to the left.**
+
+**Code Example**
+=== "Jac"
+    ```jac linenums="1"
+    --8<-- "examples/learning_section/jac_assignment/jac_bitwise_shift_op_2.jac"
+    ```
+
+### 3. Floor Division (//=)
+
+The floor division operator **//**performs division and returns the largest integer less than or equal to the result.
+
+**Code Example**
+=== "Jac"
+    ```jac linenums="1"
+    --8<-- "examples/learning_section/jac_assignment/jac_floor_div.jac"
+    ```
