@@ -553,3 +553,15 @@ class JacCliTests(TestCase):
                 self.assertNotIn("Passed successfully.", stdout)
                 self.assertIn("F", stderr)
         os.remove(test_file)
+
+    def test_node_del(self) -> None:
+        """Test for graph CLI cmd."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.dot(f"{self.fixture_abs_path('node_del.jac')}")
+        sys.stdout = sys.__stdout__
+        with open("node_del.dot") as f:
+            stdout_value = f.read()
+        self.assertEqual(stdout_value.count("person"), 1)
+        self.assertEqual(len(stdout_value.strip().split("\n")), 6)
+        
