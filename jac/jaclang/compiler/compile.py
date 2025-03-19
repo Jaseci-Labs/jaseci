@@ -7,11 +7,11 @@ from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import (
     JacImportPass,
-    PyOutPass,
     SubNodeTabPass,
-    SymTabBuildPass,
     SymTabLinkPass,
+    SymTabBuildPass,
     pass_schedule,
+    PyOutPass,
 )
 from jaclang.compiler.passes.tool import JacFormatPass
 from jaclang.compiler.passes.tool.schedules import format_pass
@@ -79,7 +79,10 @@ def jac_str_to_pass(
     if len(ast_ret.errors_had) != 0:
         return ast_ret
 
-    SymTabLinkPass(mod, machine.jac_program.modules, ast_ret)
+    for mod in machine.jac_program.modules.values():
+        SymTabLinkPass(
+            input_ir=mod, all_mods=machine.jac_program.modules, prior=ast_ret
+        )
 
     for i in schedule:
         if i == target:
