@@ -280,7 +280,8 @@ def _build_symbol_tree_common(
 
         if sym.decl and sym.decl.loc.first_line > 0:
             SymbolTree(
-                node_name=f"decl: line {sym.decl.loc.first_line}, col {sym.decl.loc.col_start} -- {sym.decl.loc.mod_path}",
+                node_name=f"decl: line {sym.decl.loc.first_line}, col'\
+                             {sym.decl.loc.col_start} -- {sym.decl.loc.mod_path}",
                 parent=symbol_node,
             )
             defn = SymbolTree(node_name="defn", parent=symbol_node)

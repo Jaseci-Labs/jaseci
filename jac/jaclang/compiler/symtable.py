@@ -87,6 +87,7 @@ class SymbolTable:
         self.kid: list[SymbolTable] = []
         self.tab: dict[str, Symbol] = {}
         self.inherit: list[SymbolTable] = []
+        # self.inherit: list[InheritedSymbolTable] = []
 
     def get_type(self) -> SymbolType:
         """Get type."""
@@ -295,3 +296,13 @@ __all__ = [
     "SymbolType",
     "SymbolAccess",
 ]
+
+
+class InheritedSymbolTable:
+
+    def __init__(self) -> None:
+        pass
+
+    def lookup(self, name: str, deep: bool = True) -> Optional[Symbol]:
+        """Lookup a variable in the symbol table."""
+        pass
