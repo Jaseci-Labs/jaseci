@@ -124,7 +124,7 @@ class TestJaseciPlugin(TestCase):
         """Test get an edge object."""
         session = self.fixture_abs_path("test_get_edge.session")
         cli.run(
-            filename=self.fixture_abs_path("simple_node_connection.jac"),
+            filepath=self.fixture_abs_path("simple_node_connection.jac"),
             session=session,
         )
         obj = cli.get_object(
@@ -160,7 +160,7 @@ class TestJaseciPlugin(TestCase):
         """Test filtering on edge."""
         session = self.fixture_abs_path("test_filter_on_edge_get_edge.session")
         cli.run(
-            filename=self.fixture_abs_path("simple_node_connection.jac"),
+            filepath=self.fixture_abs_path("simple_node_connection.jac"),
             session=session,
         )
         self._output2buffer()
@@ -179,7 +179,7 @@ class TestJaseciPlugin(TestCase):
         """Test filtering on edge, then get node."""
         session = self.fixture_abs_path("test_filter_on_edge_get_node.session")
         cli.run(
-            filename=self.fixture_abs_path("simple_node_connection.jac"),
+            filepath=self.fixture_abs_path("simple_node_connection.jac"),
             session=session,
         )
         self._output2buffer()
@@ -198,7 +198,7 @@ class TestJaseciPlugin(TestCase):
         """Test filtering on node, then get edge."""
         session = self.fixture_abs_path("test_filter_on_node_get_node.session")
         cli.run(
-            filename=self.fixture_abs_path("simple_node_connection.jac"),
+            filepath=self.fixture_abs_path("simple_node_connection.jac"),
             session=session,
         )
         self._output2buffer()
@@ -217,7 +217,7 @@ class TestJaseciPlugin(TestCase):
         """Test filtering on edge, then visit."""
         session = self.fixture_abs_path("test_filter_on_edge_visit.session")
         cli.run(
-            filename=self.fixture_abs_path("simple_node_connection.jac"),
+            filepath=self.fixture_abs_path("simple_node_connection.jac"),
             session=session,
         )
         self._output2buffer()
@@ -234,7 +234,7 @@ class TestJaseciPlugin(TestCase):
         """Test filtering on node, then visit."""
         session = self.fixture_abs_path("test_filter_on_node_visit.session")
         cli.run(
-            filename=self.fixture_abs_path("simple_node_connection.jac"),
+            filepath=self.fixture_abs_path("simple_node_connection.jac"),
             session=session,
         )
         self._output2buffer()

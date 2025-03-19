@@ -23,7 +23,7 @@ class JacLanguageTests(TestCase):
         """Set up test."""
         ExecutionContext.global_system_root().edges.clear()
         JacMachine(self.fixture_abs_path("./")).attach_program(
-            JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
+            JacProgram(mod_bundle=None, sem_ir=None)
         )
         return super().setUp()
 
@@ -1086,9 +1086,7 @@ class JacLanguageTests(TestCase):
         sys.stdout = captured_output
 
         try:
-            cli.run(
-                filename=update_file_path,
-            )
+            cli.run(filepath=update_file_path)
             sys.stdout = sys.__stdout__
             stdout_value = captured_output.getvalue()
             expected_output = "bar_walk has been updated with new behavior!"
