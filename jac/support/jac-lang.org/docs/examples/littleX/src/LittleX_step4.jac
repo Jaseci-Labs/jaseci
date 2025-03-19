@@ -11,7 +11,7 @@ glob sentence_transformer = SentenceTransformer('all-MiniLM-L6-v2');
 can search_tweets(query: str, tweets: list, tweet_embeddings: any, similarity_threshold: float=0.25) -> list {
     query_embedding = sentence_transformer.encode([query]);
     similarities = cosine_similarity(query_embedding, tweet_embeddings)[0];
-    results = [{**{"Tweet_Info": tweets[i]}, "similarity": similarities[i]} for i in range(len(similarities)) if similarities[i] >= similarity_threshold];
+    results = [{**{"Tweet_Info": tweets[i]}, "similarity": similarities[i]} for i in range(len(tweets)) if similarities[i] >= similarity_threshold];
     return results;
 }
 
@@ -37,6 +37,14 @@ edge Follow {}
 edge Like {}
 
 edge Post {}
+
+obj TweetInfo {
+    has id: str;
+    has content: str;
+    has embedding: list;
+    has likes: list;
+    has comments: list;
+}
 
 walker visit_profile {
     can visit_profile with `root entry {
