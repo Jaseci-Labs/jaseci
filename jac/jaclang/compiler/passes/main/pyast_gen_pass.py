@@ -1789,6 +1789,8 @@ class PyastGenPass(Pass):
     def exit_delete_stmt(self, node: ast.DeleteStmt) -> None:
         """Transforms DeleteStmt into Python AST with destroy call and deletion."""
 
+        # Creating a copy of the node to have separate ctx for each delete target
+        # since we are generating both Jac.destroy and Python del statements.
         node_copy = copy.deepcopy(node)
         targets = (
             node_copy.target.values.gen.py_ast
