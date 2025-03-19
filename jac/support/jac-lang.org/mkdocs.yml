@@ -87,7 +87,7 @@ nav:
       - Jac Architypes and Abilities:
         - Architypes: "learning_section/jac_arch_abil/jac_arch.md"
         - Attributes in Architypes: "learning_section/jac_arch_abil/jac_attributes.md"
-        - Abilities: "learning_section/jac_arch_abil/jac_abilities.md"
+        - Abilities in Architypes: "learning_section/jac_arch_abil/jac_abilities.md"
         - Implementations for Architypes and Abilities: "learning_section/jac_arch_abil/jac_arch_abil_impl.md"
 
 theme:

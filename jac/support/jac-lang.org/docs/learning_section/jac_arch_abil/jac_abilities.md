@@ -28,6 +28,19 @@ Abilities can take parameters, just like functions.
 
 * This ability takes a name as input and prints a greeting message.
 
+
+!!! note
+    If the ability does not expect parameters, avoid using parentheses. For example,
+
+    ```
+    can foo() {}
+    ```
+
+    is unnecessary and should be written as
+
+    ```
+    can foo {}
+    ```
 ---
 
 ### Returning Values from Abilities
