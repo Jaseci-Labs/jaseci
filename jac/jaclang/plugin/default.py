@@ -660,11 +660,15 @@ class JacFeatureImpl(
         if not hasattr(cls, "_jac_entry_funcs_") or not hasattr(
             cls, "_jac_exit_funcs_"
         ):
-            # Saving the module path and reassign it after creating cls
-            # So the jac modules are part of the correct module
-            cur_module = cls.__module__
-            cls = type(cls.__name__, (cls, arch_base), {})
-            cls.__module__ = cur_module
+            # If a class only inherit from object (ie. Doesn't inherit from a class), we cannot modify
+            # the __bases__ property of it, so it's necessary to make sure the class is not a direct child of object.
+            assert cls.__bases__ != (object,)
+            bases = (
+                (cls.__bases__ + (arch_base,))
+                if arch_base not in cls.__bases__
+                else cls.__bases__
+            )
+            cls.__bases__ = bases
             cls._jac_entry_funcs_ = on_entry  # type: ignore
             cls._jac_exit_funcs_ = on_exit  # type: ignore
         else:
@@ -726,6 +730,22 @@ class JacFeatureImpl(
 
     @staticmethod
     @hookimpl
+    def make_root(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a obj architype."""
+
+        def decorator(cls: Type[Architype]) -> Type[Architype]:
+            """Decorate class."""
+            cls = Jac.make_architype(
+                cls=cls, arch_base=Root, on_entry=on_entry, on_exit=on_exit
+            )
+            return cls
+
+        return decorator
+
+    @staticmethod
+    @hookimpl
     def make_edge(
         on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
@@ -735,6 +755,25 @@ class JacFeatureImpl(
             """Decorate class."""
             cls = Jac.make_architype(
                 cls=cls, arch_base=EdgeArchitype, on_entry=on_entry, on_exit=on_exit
+            )
+            return cls
+
+        return decorator
+
+    @staticmethod
+    @hookimpl
+    def make_generic_edge(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a edge architype."""
+
+        def decorator(cls: Type[Architype]) -> Type[Architype]:
+            """Decorate class."""
+            cls = Jac.make_architype(
+                cls=cls,
+                arch_base=GenericEdge,
+                on_entry=on_entry,
+                on_exit=on_exit,
             )
             return cls
 
@@ -1061,7 +1100,9 @@ class JacFeatureImpl(
     @hookimpl
     def get_root_type() -> Type[Root]:
         """Jac's root getter."""
-        return Root
+        from jaclang import Root as JRoot
+
+        return cast(Type[Root], JRoot)
 
     @staticmethod
     @hookimpl
@@ -1071,10 +1112,12 @@ class JacFeatureImpl(
         conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchitype]:
         """Jac's root getter."""
-        conn_type = conn_type if conn_type else GenericEdge
+        from jaclang import GenericEdge
+
+        ct = conn_type if conn_type else GenericEdge
 
         def builder(source: NodeAnchor, target: NodeAnchor) -> EdgeArchitype:
-            edge = conn_type() if isinstance(conn_type, type) else conn_type
+            edge = ct() if isinstance(ct, type) else ct
 
             eanch = edge.__jac__ = EdgeAnchor(
                 architype=edge,
@@ -1093,8 +1136,6 @@ class JacFeatureImpl(
                         raise ValueError(f"Invalid attribute: {fld}")
             if source.persistent or target.persistent:
                 Jac.save(eanch)
-                Jac.save(target)
-                Jac.save(source)
             return edge
 
         return builder
@@ -1111,6 +1152,19 @@ class JacFeatureImpl(
         anchor.root = jctx.root.id
 
         jctx.mem.set(anchor.id, anchor)
+
+        match anchor:
+            case NodeAnchor():
+                for ed in anchor.edges:
+                    if ed.is_populated() and not ed.persistent:
+                        Jac.save(ed)
+            case EdgeAnchor():
+                if (src := anchor.source) and src.is_populated() and not src.persistent:
+                    Jac.save(src)
+                if (trg := anchor.target) and trg.is_populated() and not trg.persistent:
+                    Jac.save(trg)
+            case _:
+                pass
 
     @staticmethod
     @hookimpl

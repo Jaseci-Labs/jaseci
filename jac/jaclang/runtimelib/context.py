@@ -13,13 +13,7 @@ from .memory import Memory, ShelfStorage
 
 
 EXECUTION_CONTEXT = ContextVar[Optional["ExecutionContext"]]("ExecutionContext")
-
 SUPER_ROOT_UUID = UUID("00000000-0000-0000-0000-000000000000")
-SUPER_ROOT_ARCHITYPE = object.__new__(Root)
-SUPER_ROOT_ANCHOR = NodeAnchor(
-    id=SUPER_ROOT_UUID, architype=SUPER_ROOT_ARCHITYPE, persistent=False, edges=[]
-)
-SUPER_ROOT_ARCHITYPE.__jac__ = SUPER_ROOT_ANCHOR
 
 
 class ExecutionContext:
@@ -60,6 +54,8 @@ class ExecutionContext:
         auto_close: bool = True,
     ) -> ExecutionContext:
         """Create ExecutionContext."""
+        from jaclang import Root
+
         ctx = ExecutionContext()
         ctx.mem = ShelfStorage(session)
         ctx.reports = []
@@ -67,7 +63,7 @@ class ExecutionContext:
         if not isinstance(
             system_root := ctx.mem.find_by_id(SUPER_ROOT_UUID), NodeAnchor
         ):
-            system_root = Root().__jac__
+            system_root = cast(NodeAnchor, Root().__jac__)  # type: ignore[attr-defined]
             system_root.id = SUPER_ROOT_UUID
             ctx.mem.set(system_root.id, system_root)
 
@@ -95,7 +91,20 @@ class ExecutionContext:
         if ctx := EXECUTION_CONTEXT.get(None):
             return cast(Root, ctx.root.architype)
 
-        return SUPER_ROOT_ARCHITYPE
+        return cast(Root, ExecutionContext.global_system_root().architype)
+
+    @staticmethod
+    def global_system_root() -> NodeAnchor:
+        """Get global system root."""
+        from jaclang import Root
+
+        if not (sr_anch := getattr(ExecutionContext, "system_root", None)):
+            sr_arch = Root()
+            sr_anch = sr_arch.__jac__  # type: ignore[attr-defined]
+            sr_anch.id = SUPER_ROOT_UUID
+            sr_anch.persistent = False
+            ExecutionContext.system_root = sr_anch
+        return sr_anch
 
 
 class JacTestResult(unittest.TextTestResult):

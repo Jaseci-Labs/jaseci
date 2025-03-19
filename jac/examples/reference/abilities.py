@@ -10,7 +10,7 @@ class Calculator(ABC):
     def substract(self, x: float, y: float) -> float:
         pass
 
-    def add(self, number: float, *a: tuple) -> str:
+    def add(self, number: float, *a: float) -> str:
         return str(number * sum(a))
 
 
