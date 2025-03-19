@@ -4,7 +4,7 @@ Tuples can be 'packed' by assigning values to them. In Python, we can also 'unpa
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple/jac_unpack_tuple/jac_unpack.jac"
+    --8<-- "examples/learning_section/jac_tuple/jac_unpack_tuple/jac_unpack.jac:1:8"
     ```
 
 ## Using Asterisk *
@@ -13,11 +13,11 @@ If the number of variables is less than the number of values, you can add an * t
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple/jac_unpack_tuple/jac_unpack_asterisk.jac"
+    --8<-- "examples/learning_section/jac_tuple/jac_unpack_tuple/jac_unpack.jac:10:17"
     ```
 
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple/jac_unpack_tuple/jac_unpack_asterisk_2.jac"
+    --8<-- "examples/learning_section/jac_tuple/jac_unpack_tuple/jac_unpack.jac:19:27"
     ```

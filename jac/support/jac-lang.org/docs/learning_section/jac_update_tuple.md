@@ -4,7 +4,7 @@ Once a tuple is created, you cannot change its values. Tuples are **unchangeable
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple/jac_update_tuple/jac_change_tuple.jac"
+    --8<-- "examples/learning_section/jac_tuple/jac_update_tuple/jac_update_tuple.jac:1:8"
     ```
 
 ## Add Items
@@ -15,7 +15,7 @@ Since tuples are immutable, they do not have a built-in **append()** method, but
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple/jac_update_tuple/jac_update_add_items.jac"
+    --8<-- "examples/learning_section/jac_tuple/jac_update_tuple/jac_update_tuple.jac:10:15"
     ```
 
 **2. Add tuple to a tuple:**
@@ -23,7 +23,7 @@ Since tuples are immutable, they do not have a built-in **append()** method, but
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple/jac_update_tuple/jac_update_tuple_2.jac"
+    --8<-- "examples/learning_section/jac_tuple/jac_update_tuple/jac_update_tuple.jac:17:22"
     ```
 
 ## Remove Items
@@ -32,11 +32,11 @@ Tuples are **unchangeable**, so you cannot remove items from it, but you can use
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple/jac_update_tuple/jac_update_remove_items.jac"
+    --8<-- "examples/learning_section/jac_tuple/jac_update_tuple/jac_update_tuple.jac:24:29"
     ```
 
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple/jac_update_tuple/jac_update_tuple_del.jac"
+    --8<-- "examples/learning_section/jac_tuple/jac_update_tuple/jac_update_tuple.jac:31:34"
     ```

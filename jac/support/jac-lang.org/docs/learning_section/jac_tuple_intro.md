@@ -3,7 +3,7 @@ Tuples store multiple items in one variable.They are ordered, unchangeable, and 
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple/jac_tuple_intro/jac_tuple_intro.jac"
+    --8<-- "examples/learning_section/jac_tuple/jac_tuple_intro/jac_tuple_intro.jac:1:4"
     ```
 
 ## Tuple Items
@@ -21,7 +21,7 @@ Since tuples are indexed, they can have items with the same value:
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple/jac_tuple_intro/jac_tuple_duplicates.jac"
+    --8<-- "examples/learning_section/jac_tuple/jac_tuple_intro/jac_tuple_intro.jac:6:9"
     ```
 
 ## Tuple Length
@@ -30,6 +30,6 @@ To determine how many items a tuple has, use the **len()** function:
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple/jac_tuple_intro/jac_tuple_length.jac"
+    --8<-- "examples/learning_section/jac_tuple/jac_tuple_intro/jac_tuple_intro.jac:11:14"
     ```
 

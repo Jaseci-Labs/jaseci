@@ -4,7 +4,7 @@ In **JacLang**, variables created outside of a function are known as **global va
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_variables/global_variables/jac_variables_1.jac"
+    --8<-- "examples/learning_section/jac_variables/global_variables/jac_variables_1.jac:1:7"
     ```
 
 If you create a variable with the same name inside a function, this variable will be local, and can only be used inside the function. The global variable with the same name will remain as it was, global and with the original value.
@@ -12,7 +12,7 @@ If you create a variable with the same name inside a function, this variable wil
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_variables/global_variables/jac_variables_2.jac"
+    --8<-- "examples/learning_section/jac_variables/global_variables/jac_variables_1.jac:9:18"
     ```
 
 ## The Global Keyword
@@ -21,7 +21,7 @@ Normally, when you create a variable inside a function, that variable is local, 
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_variables/global_variables/jac_variables_glob_1.jac"
+    --8<-- "examples/learning_section/jac_variables/global_variables/jac_variables_1.jac:20:27"
     ```
 
 Also, use the global keyword if you want to change a global variable inside a function.
@@ -29,5 +29,5 @@ Also, use the global keyword if you want to change a global variable inside a fu
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_variables/global_variables/jac_variables_glob_2.jac"
+    --8<-- "examples/learning_section/jac_variables/global_variables/jac_variables_1.jac:29:39"
     ```

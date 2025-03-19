@@ -3,7 +3,7 @@ You can loop through the list items by using a **for** loop:
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_list/Loop_list/jac_loop_list.jac"
+    --8<-- "examples/learning_section/jac_list/Loop_list/jac_loop_list.jac:1:6"
     ```
 
 ## Loop Through the Index Numbers
@@ -11,7 +11,7 @@ You can iterate through the list items by accessing them using their index.To ac
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_list/Loop_list/jac_loop_index.jac"
+    --8<-- "examples/learning_section/jac_list/Loop_list/jac_loop_list.jac:8:13"
     ```
 
 ## Using a While Loop
@@ -19,7 +19,7 @@ In Jac, you can iterate through list items using a **while** loop by leveraging 
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_list/Loop_list/jac_loop_while.jac"
+    --8<-- "examples/learning_section/jac_list/Loop_list/jac_loop_list.jac:15:22"
     ```
 
 ## Looping Using List Comprehension
@@ -27,5 +27,5 @@ List Comprehension offers the shortest syntax for looping through lists:
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_list/Loop_list/jac_loop_comprehension.jac"
+    --8<-- "examples/learning_section/jac_list/Loop_list/jac_loop_list.jac:24:27"
     ```

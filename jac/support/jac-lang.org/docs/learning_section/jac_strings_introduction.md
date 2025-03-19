@@ -4,7 +4,7 @@ Strings in Jaclang are surrounded by either single quotation marks, or double qu
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_strings/intro/jac_string_basic.jac"
+    --8<-- "examples/learning_section/jac_strings/intro/jac_strings_intro.jac:1:4"
     ```
 
 ## Quotes Inside Quotes
@@ -13,7 +13,7 @@ You can use quotes inside a string, as long as they don't match the quotes surro
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_strings/intro/jac_quote_inside_quotes.jac"
+    --8<-- "examples/learning_section/jac_strings/intro/jac_strings_intro.jac:6:10"
     ```
 
 ## Multiline Strings
@@ -22,7 +22,7 @@ You can assign a multiline string to a variable by using three quotes:
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_strings/intro/jac_multiline_strings.jac"
+    --8<-- "examples/learning_section/jac_strings/intro/jac_strings_intro.jac:12:16"
     ```
 
 ## Strings are Arrays
@@ -31,7 +31,7 @@ Like many other popular programming languages, strings in **JacLang** are sequen
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_strings/intro/jac_string_arrays.jac"
+    --8<-- "examples/learning_section/jac_strings/intro/jac_strings_intro.jac:18:21"
     ```
 
 ## Looping Through a String
@@ -40,7 +40,7 @@ Since strings are arrays, we can loop through the characters in a string, with a
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_strings/intro/jac_string_for_loop.jac"
+    --8<-- "examples/learning_section/jac_strings/intro/jac_strings_intro.jac:23:27"
     ```
 
 ## String Length
@@ -49,7 +49,7 @@ To get the length of a string, use the **len()** function.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_strings/intro/jac_string_len.jac"
+    --8<-- "examples/learning_section/jac_strings/intro/jac_strings_intro.jac:29:32"
     ```
 
 ## Check String
@@ -58,5 +58,5 @@ To check if a certain phrase or character is present in a string, we can use the
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_strings/intro/jac_string_check.jac"
+    --8<-- "examples/learning_section/jac_strings/intro/jac_strings_intro.jac:34:39"
     ```

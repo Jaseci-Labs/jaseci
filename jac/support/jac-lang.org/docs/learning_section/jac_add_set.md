@@ -6,7 +6,7 @@ To add one item to a set use the **add()** method.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_sets/jac_sets_add_item/jac_sets_add_items.jac"
+    --8<-- "examples/learning_section/jac_sets/jac_sets_add_item/jac_sets_add_items.jac:1:5"
     ```
 
 **2.Using update( ) method**
@@ -16,7 +16,7 @@ To add items from another set into the current set, use the **update()** method.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_sets/jac_sets_add_item/jac_sets_update.jac"
+    --8<-- "examples/learning_section/jac_sets/jac_sets_add_item/jac_sets_add_items.jac:7:14"
     ```
 
 ## Add Any Iterable
@@ -26,5 +26,5 @@ The object in the **update()** method does not have to be a set, it can be any i
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_sets/jac_sets_add_item/jac_add_iterable.jac"
+    --8<-- "examples/learning_section/jac_sets/jac_sets_add_item/jac_sets_add_items.jac:16:23"
     ```

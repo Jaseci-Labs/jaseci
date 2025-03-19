@@ -4,7 +4,7 @@ You can access tuple items by referring to the index number, inside square brack
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple/jac_tuple_access/jac_access_tuple_items.jac"
+    --8<-- "examples/learning_section/jac_tuple/jac_tuple_access/jac_access_tuple_items.jac:1:4"
     ```
 
 ## Negative Indexing
@@ -13,7 +13,7 @@ Negative indexing means start from the end.**-1** refers to the last item, **-2*
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple/jac_tuple_access/jac_access_range_index_1.jac"
+    --8<-- "examples/learning_section/jac_tuple/jac_tuple_access/jac_access_tuple_items.jac:6:9"
     ```
 
 ## Range of Indexes
@@ -22,7 +22,12 @@ You can specify a range of indexes by specifying where to start and where to end
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple/jac_tuple_access/jac_access_range_index_2.jac"
+    --8<-- "examples/learning_section/jac_tuple/jac_tuple_access/jac_access_tuple_items.jac:11:14"
+    ```
+**Code Example**
+=== "Jac"
+    ```jac linenums="1"
+    --8<-- "examples/learning_section/jac_tuple/jac_tuple_access/jac_access_tuple_items.jac:16:19"
     ```
 
 ## Check if Item Exists
@@ -31,5 +36,5 @@ To determine if a specified item is present in a tuple use the **in** keyword:
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple/jac_tuple_access/jac_access_check.jac"
+    --8<-- "examples/learning_section/jac_tuple/jac_tuple_access/jac_access_tuple_items.jac:21:25"
     ```
