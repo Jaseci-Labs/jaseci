@@ -15,7 +15,7 @@ class Creator(Walker):
             (end := node_a(val=i + 10)), edge=connector, conn_assign=(("value",), (i,))
         )
         (end := node_a(val=i + 10)).connect(
-            root, edge=connector, conn_assign=(("value",), (i,))
+            root(), edge=connector, conn_assign=(("value",), (i,))
         )
         self.visit(here.refs())
 
@@ -35,4 +35,4 @@ class connector(Edge):
     value: int = field(10)
 
 
-root.spawn(Creator())
+root().spawn(Creator())

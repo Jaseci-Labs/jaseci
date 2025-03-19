@@ -34,4 +34,4 @@ class MyEdge(Edge):
 
 
 if __name__ == "__main__":
-    root.spawn(Creator())
+    root().spawn(Creator())

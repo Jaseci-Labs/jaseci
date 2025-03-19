@@ -20,4 +20,4 @@ class node_a(Node):
         print(int(self.x) + int(self.y))
 
 
-Adder().spawn(root)
+Adder().spawn(root())

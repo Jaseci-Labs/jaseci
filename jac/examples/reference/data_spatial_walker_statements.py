@@ -11,4 +11,4 @@ class Visitor(Walker):
         print("but not here")
 
 
-root.spawn(Visitor())
+root().spawn(Visitor())
