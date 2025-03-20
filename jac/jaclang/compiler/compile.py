@@ -7,12 +7,12 @@ from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import (
     JacImportPass,
+    PyOutPass,
     SubNodeTabPass,
-    SymTabLinkPass,
     SymTabBuildPass,
     pass_schedule,
-    PyOutPass,
 )
+from jaclang.compiler.passes.main.sym_tab_link_pass import SymTabLinkPass
 from jaclang.compiler.passes.tool import JacFormatPass
 from jaclang.compiler.passes.tool.schedules import format_pass
 
@@ -31,6 +31,8 @@ def compile_jac(file_path: str, cache_result: bool = False) -> Pass:
     if cache_result and (not had_syntax_error) and isinstance(code.ir, ast.Module):
         for _, module in JacMachine.get().jac_program.modules.items():
             PyOutPass(input_ir=module, prior=code)
+    for mod in JacMachine.get().jac_program.modules.values():
+        print(mod.sym_tab.pp())
     return code
 
 

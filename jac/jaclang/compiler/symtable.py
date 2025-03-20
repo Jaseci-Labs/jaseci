@@ -271,7 +271,9 @@ class SymbolTable:
                     and found
                 ):
                     found_tab = found.decl.sym_tab
-                    inher_sym_tab = InheritedSymbolTable(found_tab, is_all=True, symbols=[])
+                    inher_sym_tab = InheritedSymbolTable(
+                        base_symbol_table=found_tab, load_all_symbols=True, symbols=[]
+                    )
                     self.inherit.append(inher_sym_tab)
                     base_cls.name_spec.name_of = found.decl.name_of
 
@@ -301,18 +303,23 @@ __all__ = [
 
 class InheritedSymbolTable:
 
-    def __init__(self, symtable: SymbolTable, is_all: bool = False, symbols: list[str] = []) -> None:
+    def __init__(
+        self,
+        base_symbol_table: SymbolTable,
+        load_all_symbols: bool = False,
+        symbols: Optional[list[str]] = None,
+    ) -> None:
         """Initialize."""
-        self.symtable: SymbolTable = symtable
-        self.is_all: bool = is_all
-        self.symbols :list[str] = symbols
+        self.base_symbol_table: SymbolTable = base_symbol_table
+        self.load_all_symbols: bool = load_all_symbols
+        self.symbols: list[str] = symbols if symbols else []
 
     def lookup(self, name: str, deep: bool = False) -> Optional[Symbol]:
         """Lookup a variable in the symbol table."""
-        if self.is_all:
-            return self.symtable.lookup(name, deep)
+        if self.load_all_symbols:
+            return self.base_symbol_table.lookup(name, deep)
         else:
             if name in self.symbols:
-                return self.symtable.lookup(name, deep)
+                return self.base_symbol_table.lookup(name, deep)
             else:
                 return None
