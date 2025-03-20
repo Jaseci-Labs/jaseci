@@ -3,7 +3,7 @@ List objects have a **sort()** method that will sort the list alphanumerically, 
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_list/Sort_list/jac_sort_list_alph.jac"
+    --8<-- "examples/learning_section/jac_list/Sort_list/jac_sort_list.jac:1:5"
     ```
 
 ## Sort Descending
@@ -11,7 +11,7 @@ To sort descending, use the keyword argument **reverse = True**:
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_list/Sort_list/jac_sort_decending.jac"
+    --8<-- "examples/learning_section/jac_list/Sort_list/jac_sort_list.jac:7:11"
     ```
 
 ## Customize Sort Function
@@ -19,7 +19,7 @@ You can define a custom function for sorting by using the keyword argument **key
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_list/Sort_list/jac_sort_custome_sort.jac"
+    --8<-- "examples/learning_section/jac_list/Sort_list/jac_sort_list.jac:13:21"
     ```
 
 ## Case Insensitive Sort
@@ -27,7 +27,7 @@ By default the **sort()** method is case sensitive, resulting in all capital let
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_list/Sort_list/jac_sort_case_insensitive.jac"
+    --8<-- "examples/learning_section/jac_list/Sort_list/jac_sort_list.jac:23:27"
     ```
 
 ## Reverse Order
@@ -35,5 +35,5 @@ The **reverse()** method reverses the current sorting order of the elements:
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_list/Sort_list/jac_sort_reverse.jac"
+    --8<-- "examples/learning_section/jac_list/Sort_list/jac_sort_list.jac:29:33"
     ```

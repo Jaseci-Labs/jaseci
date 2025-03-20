@@ -7,7 +7,7 @@ With the while loop we can execute a set of statements as long as a condition is
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_while_loop/jac_while_basic.jac"
+    --8<-- "examples/learning_section/jac_while_loop/jac_while_loop.jac:1:7"
     ```
 
 ## Break Statement
@@ -15,7 +15,7 @@ With the break statement we can stop the loop even if the while condition is tru
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_while_loop/jac_while_break.jac"
+    --8<-- "examples/learning_section/jac_while_loop/jac_while_loop.jac:9:18"
     ```
 
 ## Continue Statement
@@ -23,5 +23,5 @@ With the continue statement we can stop the current iteration, and continue with
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_while_loop/jac_while_continue.jac"
+    --8<-- "examples/learning_section/jac_while_loop/jac_while_loop.jac:20:29"
     ```
