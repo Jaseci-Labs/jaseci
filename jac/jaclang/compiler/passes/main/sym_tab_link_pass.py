@@ -29,27 +29,32 @@ class SymTabLinkPass(Pass):
     def enter_module_path(self, node: ast.ModulePath) -> None:
         """Link the symbol tables."""
         imported_mod_symtab = self.all_mods[node.resolve_relative_path()]
-        imp_node = (node.parent
-                    if isinstance(node.parent, ast.Import)
-                    else node.parent.parent)
+        assert node.parent and (
+            isinstance(node.parent, ast.Import)
+            or (node.parent.parent and isinstance(node.parent.parent, ast.Import))
+        ), "Parent of ModulePath is not Import"
+        imp_node = (
+            node.parent if isinstance(node.parent, ast.Import) else node.parent.parent
+        )
         all_import = False
-        symbols_str_list : list[str] = []
+        symbols_str_list: list[str] = []
         if isinstance(imp_node, ast.Import):
             if not imp_node.from_loc:
                 all_import = True
             else:
                 for mod_items in imp_node.items.items:
-                    symbols_str_list.append(mod_items.name.value)
+                    if isinstance(mod_items, ast.ModuleItem):
+                        symbols_str_list.append(mod_items.name.value)
         if all_import:
             inher_tab = InheritedSymbolTable(
-                symtable=imported_mod_symtab.sym_tab,
-                is_all=True,
-                symbols=[]
+                base_symbol_table=imported_mod_symtab.sym_tab,
+                load_all_symbols=True,
+                symbols=[],
             )
         else:
             inher_tab = InheritedSymbolTable(
-                symtable=imported_mod_symtab.sym_tab,
-                is_all=False,
-                symbols=symbols_str_list
+                base_symbol_table=imported_mod_symtab.sym_tab,
+                load_all_symbols=False,
+                symbols=symbols_str_list,
             )
         node.sym_tab.inherit.append(inher_tab)

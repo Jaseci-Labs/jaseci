@@ -7,12 +7,12 @@ from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import (
     JacImportPass,
+    PyOutPass,
     SubNodeTabPass,
-    SymTabLinkPass,
     SymTabBuildPass,
     pass_schedule,
-    PyOutPass,
 )
+from jaclang.compiler.passes.main.sym_tab_link_pass import SymTabLinkPass
 from jaclang.compiler.passes.tool import JacFormatPass
 from jaclang.compiler.passes.tool.schedules import format_pass
 
