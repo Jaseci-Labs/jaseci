@@ -3,7 +3,7 @@ To change the value of a specific item, refer to the index number:
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_list/Change_list_items/jac_list_change_1.jac"
+    --8<-- "examples/learning_section/jac_list/Change_list_items/jac_change_list.jac:1:5"
     ```
 
 ## Change a Range of Item Values
@@ -11,7 +11,7 @@ To change the value of items within a specific range, define a list with the new
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_list/Change_list_items/jac_list_change_range.jac"
+    --8<-- "examples/learning_section/jac_list/Change_list_items/jac_change_list.jac:7:11"
     ```
 
 ## Insert Items
@@ -19,5 +19,5 @@ To insert a new list item, without replacing any of the existing values, we can 
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_list/Change_list_items/jac_list_change_insert.jac"
+    --8<-- "examples/learning_section/jac_list/Change_list_items/jac_change_list.jac:13:17"
     ```
