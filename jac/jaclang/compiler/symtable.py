@@ -86,8 +86,7 @@ class SymbolTable:
         self.parent = parent
         self.kid: list[SymbolTable] = []
         self.tab: dict[str, Symbol] = {}
-        self.inherit: list[SymbolTable] = []
-        # self.inherit: list[InheritedSymbolTable] = []
+        self.inherit: list[InheritedSymbolTable] = []
 
     def get_type(self) -> SymbolType:
         """Get type."""
@@ -271,7 +270,9 @@ class SymbolTable:
                     and (found := self.use_lookup(base_cls))
                     and found
                 ):
-                    self.inherit.append(found.decl.sym_tab)
+                    found_tab = found.decl.sym_tab
+                    inher_sym_tab = InheritedSymbolTable(found_tab, is_all=True, symbols=[])
+                    self.inherit.append(inher_sym_tab)
                     base_cls.name_spec.name_of = found.decl.name_of
 
     def pp(self, depth: Optional[int] = None) -> str:
@@ -300,9 +301,18 @@ __all__ = [
 
 class InheritedSymbolTable:
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, symtable: SymbolTable, is_all: bool = False, symbols: list[str] = []) -> None:
+        """Initialize."""
+        self.symtable: SymbolTable = symtable
+        self.is_all: bool = is_all
+        self.symbols :list[str] = symbols
 
-    def lookup(self, name: str, deep: bool = True) -> Optional[Symbol]:
+    def lookup(self, name: str, deep: bool = False) -> Optional[Symbol]:
         """Lookup a variable in the symbol table."""
-        pass
+        if self.is_all:
+            return self.symtable.lookup(name, deep)
+        else:
+            if name in self.symbols:
+                return self.symtable.lookup(name, deep)
+            else:
+                return None

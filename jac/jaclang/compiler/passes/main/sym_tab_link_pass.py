@@ -5,6 +5,7 @@ from typing import Optional
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.transform import Transform
+from jaclang.compiler.symtable import InheritedSymbolTable
 
 
 class SymTabLinkPass(Pass):
@@ -28,4 +29,27 @@ class SymTabLinkPass(Pass):
     def enter_module_path(self, node: ast.ModulePath) -> None:
         """Link the symbol tables."""
         imported_mod_symtab = self.all_mods[node.resolve_relative_path()]
-        node.sym_tab.inherit.append(imported_mod_symtab.sym_tab)
+        imp_node = (node.parent
+                    if isinstance(node.parent, ast.Import)
+                    else node.parent.parent)
+        all_import = False
+        symbols_str_list : list[str] = []
+        if isinstance(imp_node, ast.Import):
+            if not imp_node.from_loc:
+                all_import = True
+            else:
+                for mod_items in imp_node.items.items:
+                    symbols_str_list.append(mod_items.name.value)
+        if all_import:
+            inher_tab = InheritedSymbolTable(
+                symtable=imported_mod_symtab.sym_tab,
+                is_all=True,
+                symbols=[]
+            )
+        else:
+            inher_tab = InheritedSymbolTable(
+                symtable=imported_mod_symtab.sym_tab,
+                is_all=False,
+                symbols=symbols_str_list
+            )
+        node.sym_tab.inherit.append(inher_tab)
