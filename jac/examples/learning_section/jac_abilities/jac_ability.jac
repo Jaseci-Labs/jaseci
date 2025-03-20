@@ -15,3 +15,14 @@ obj Maths {
         return n * n;
     }
 }
+
+can "subtract a and b" subtract(a: int, b: int) -> int {
+    return a - b;
+}
+
+# Impls for Abilities
+can say_hello(name: str);
+
+:can:say_hello(name: str) {
+    print("Hello, " + name + "!");
+}

@@ -84,11 +84,13 @@ nav:
         - Sort Lists: "learning_section/jac_sort_list.md"
         - Copy Lists: "learning_section/jac_copy_list.md"
         - Join Lists: "learning_section/jac_join_list.md"
+      - Jac Abilities: "learning_section/jac_abilities/jac_abilities.md"
       - Jac Architypes and Abilities:
-        - Architypes: "learning_section/jac_arch_abil/jac_arch.md"
-        - Attributes in Architypes: "learning_section/jac_arch_abil/jac_attributes.md"
-        - Abilities in Architypes: "learning_section/jac_arch_abil/jac_abilities.md"
-        - Implementations for Architypes and Abilities: "learning_section/jac_arch_abil/jac_arch_abil_impl.md"
+        - Architypes: "learning_section/jac_architypes/jac_architypes.md"
+        - Attributes in Architypes: "learning_section/jac_architypes/jac_arch_attributes.md"
+        - Abilities in Architypes: "learning_section/jac_architypes/jac_arch_abilities.md"
+        - Inheritance of Architypes: "learning_section/jac_architypes/jac_arch_inheritance_and_others.md"
+        - Implementations for Architypes and Abilities: "learning_section/jac_architypes/jac_arch_abil_impl.md"
 
 theme:
   logo: "assets/logo.png"
