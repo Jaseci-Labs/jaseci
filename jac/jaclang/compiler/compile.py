@@ -19,6 +19,8 @@ from jaclang.compiler.passes.tool.schedules import format_pass
 
 def compile_jac(file_path: str, cache_result: bool = False) -> Pass:
     """Start Compile for Jac file and return python code as string."""
+    from jaclang.runtimelib.machine import JacMachine
+
     code = jac_file_to_pass(
         file_path=file_path,
         schedule=pass_schedule,
@@ -27,8 +29,10 @@ def compile_jac(file_path: str, cache_result: bool = False) -> Pass:
     # no more passes were processed, in that case we can ignore it.
     had_syntax_error = isinstance(code, JacParser) and len(code.errors_had) != 0
     if cache_result and (not had_syntax_error) and isinstance(code.ir, ast.Module):
-        print_pass = PyOutPass(input_ir=code.ir, prior=code)
-        return print_pass
+        for _, module in JacMachine.get().jac_program.modules.items():
+            PyOutPass(input_ir=module, prior=code)
+    for mod in JacMachine.get().jac_program.modules.values():
+        print(mod.sym_tab.pp())
     return code
 
 
@@ -67,6 +71,7 @@ def jac_str_to_pass(
         return ast_ret
 
     machine = JacMachine.get()
+    top_mod = ast_ret.ir
     assert isinstance(ast_ret.ir, ast.Module)
     machine.jac_program.last_imported.append(ast_ret.ir)
     machine.jac_program.modules[ast_ret.ir.loc.mod_path] = ast_ret.ir
