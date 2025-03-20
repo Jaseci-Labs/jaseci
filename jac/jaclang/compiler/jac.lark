@@ -297,22 +297,22 @@ expression: walrus_assign (KW_IF expression KW_ELSE expression)?
           | lambda_expr
 
 // [Heading]: Walrus assignments.
-walrus_assign: (named_ref WALRUS_EQ)? pipe
+?walrus_assign: (named_ref WALRUS_EQ)? pipe
 
 // [Heading]: Lambda expressions.
 lambda_expr: KW_WITH func_decl_params? (RETURN_HINT expression)? KW_CAN expression
 
 // [Heading]: Pipe expressions.
-pipe: (pipe PIPE_FWD)? pipe_back
+?pipe: (pipe PIPE_FWD)? pipe_back
 
 // [Heading]: Pipe back expressions.
-pipe_back: (pipe_back PIPE_BKWD)? bitwise_or
+?pipe_back: (pipe_back PIPE_BKWD)? bitwise_or
 
 // [Heading]: Bitwise expressions.
-bitwise_or: (bitwise_or BW_OR)? bitwise_xor
-bitwise_xor: (bitwise_xor BW_XOR)? bitwise_and
-bitwise_and: (bitwise_and BW_AND)? shift
-shift: (shift (RSHIFT | LSHIFT))? logical_or
+?bitwise_or: (bitwise_or BW_OR)? bitwise_xor
+?bitwise_xor: (bitwise_xor BW_XOR)? bitwise_and
+?bitwise_and: (bitwise_and BW_AND)? shift
+?shift: (shift (RSHIFT | LSHIFT))? logical_or
 
 // [Heading]: Logical and compare expressions.
 logical_or: logical_and (KW_OR logical_and)*
@@ -332,31 +332,31 @@ cmp_op: KW_ISN
       | EE
 
 // [Heading]: Arithmetic expressions.
-arithmetic: (arithmetic (MINUS | PLUS))? term
-term: (term (MOD | DIV | FLOOR_DIV | STAR_MUL | DECOR_OP))? power
-power: (power STAR_POW)? factor
+?arithmetic: (arithmetic (MINUS | PLUS))? term
+?term: (term (MOD | DIV | FLOOR_DIV | STAR_MUL | DECOR_OP))? power
+?power: (power STAR_POW)? factor
 factor: (BW_NOT | MINUS | PLUS) factor | connect
 
 // [Heading]: Connect expressions.
-connect: (connect (connect_op | disconnect_op))? atomic_pipe
+?connect: (connect (connect_op | disconnect_op))? atomic_pipe
 
 // [Heading]: Atomic expressions.
-atomic_pipe: (atomic_pipe A_PIPE_FWD)? atomic_pipe_back
+?atomic_pipe: (atomic_pipe A_PIPE_FWD)? atomic_pipe_back
 
 // [Heading]: Atomic pipe back expressions.
-atomic_pipe_back: (atomic_pipe_back A_PIPE_BKWD)? ds_spawn
+?atomic_pipe_back: (atomic_pipe_back A_PIPE_BKWD)? ds_spawn
 
 // [Heading]: Data spatial spawn expressions.
-ds_spawn: (ds_spawn KW_SPAWN)? unpack
+?ds_spawn: (ds_spawn KW_SPAWN)? unpack
 
 // [Heading]: Unpack expressions.
-unpack: STAR_MUL? ref
+?unpack: STAR_MUL? ref
 
 // [Heading]: References (unused).
-ref: BW_AND? pipe_call
+?ref: BW_AND? pipe_call
 
 // [Heading]: Data spatial calls.
-pipe_call: (PIPE_FWD | A_PIPE_FWD | KW_SPAWN | KW_AWAIT)? atomic_chain
+?pipe_call: (PIPE_FWD | A_PIPE_FWD | KW_SPAWN | KW_AWAIT)? atomic_chain
 
 // [Heading]: Subscripted and dotted expressions.
 atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | index_slice)
