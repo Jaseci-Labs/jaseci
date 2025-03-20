@@ -50,22 +50,14 @@ class PyCollectDepsPass(Pass):
             if node.abs_path and os.path.isfile(node.abs_path.replace(".pyi", ".py")):
                 node.abs_path = node.abs_path.replace(".pyi", ".py")
 
-        if isinstance(node, ast.ModuleItem):
-            mode_path = self.find_module_path(path)
-            self.ir.py_info.py_raise_map[node.name.value] = mode_path
-        elif isinstance(node, ast.ModulePath) and node.path:
-            mode_path = self.find_module_path(path)
-            self.ir.py_info.py_raise_map[node.path[0].value] = mode_path
-        elif isinstance(node, ast.Name):
-            mode_path = self.find_module_path(path)
-            self.ir.py_info.py_raise_map[node.value] = mode_path
+        if isinstance(node, (ast.ModuleItem, ast.ModulePath)):
+            mode_path = self.find_module_path(path, os.path.dirname(node.loc.mod_path))
+            self.ir.py_info.py_raise_map[path] = mode_path
 
-    def find_module_path(self, file_loc: str) -> str:
+    def find_module_path(self, file_loc: str, base_path: str) -> str:
         """Find the path of the module."""
         # Search in directory of the current module
-        module_path = os.path.join(
-            os.path.dirname(self.ir.source.file_path), *file_loc.split(".")  # noqa E501
-        )
+        module_path = os.path.join(base_path, *file_loc.split("."))  # noqa E501
         if os.path.exists(module_path + ".pyi"):
             return module_path + ".pyi"
         elif os.path.exists(module_path + ".py"):
