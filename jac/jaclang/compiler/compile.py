@@ -29,7 +29,6 @@ def compile_jac(file_path: str, cache_result: bool = False) -> Pass:
     if cache_result and (not had_syntax_error) and isinstance(code.ir, ast.Module):
         print_pass = PyOutPass(input_ir=code.ir, prior=code)
         return print_pass
-
     return code
 
 
@@ -81,9 +80,7 @@ def jac_str_to_pass(
         return ast_ret
 
     for mod in machine.jac_program.modules.values():
-        SymTabLinkPass(
-            input_ir=mod, all_mods=machine.jac_program.modules, prior=ast_ret
-        )
+        SymTabLinkPass(input_ir=mod, prior=ast_ret)
 
     for i in schedule:
         if i == target:
