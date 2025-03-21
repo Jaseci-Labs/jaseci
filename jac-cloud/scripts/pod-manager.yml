@@ -1,0 +1,177 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: littlex
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jac-orc
+  namespace: littlex
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: jac-orc
+rules:
+  - apiGroups: [""]
+    resources:
+      [
+        "namespaces",
+        "pods",
+        "services",
+        "configmaps",
+        "serviceaccounts",
+        "secrets",
+      ]
+    verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles", "clusterrolebindings", "roles", "rolebindings"]
+    verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets"]
+    verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+  - apiGroups: ["mongodbcommunity.mongodb.com"]
+    resources:
+      [
+        "mongodbcommunity",
+        "mongodbcommunity/finalizers",
+        "mongodbcommunity/spec",
+        "mongodbcommunity/status",
+      ]
+    verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: jac-orc
+subjects:
+  - kind: ServiceAccount
+    name: jac-orc
+    namespace: littlex
+roleRef:
+  kind: ClusterRole
+  name: jac-orc
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jac-orc
+  namespace: littlex
+data:
+  jac-orc-module-config.json: |-
+    {
+      "numpy": {
+        "lib_mem_size_req": "100Mi",
+        "dependency": [],
+        "lib_cpu_req": "500m",
+        "load_type": "remote"
+      },
+      "transformers": {
+        "lib_mem_size_req": "2000Mi",
+        "dependency": [
+          "torch",
+          "transformers"
+        ],
+        "lib_cpu_req": "1.0",
+        "load_type": "remote"
+      },
+      "sentence_transformers": {
+        "lib_mem_size_req": "2000Mi",
+        "dependency": [
+          "sentence-transformers"
+        ],
+        "lib_cpu_req": "1.0",
+        "load_type": "remote"
+      }
+    }
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jac-orc
+  namespace: littlex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jac-orc
+  template:
+    metadata:
+      labels:
+        app: jac-orc
+    spec:
+      containers:
+        - name: jac-orc
+          image: python:3.12-slim
+          ports:
+            - containerPort: 8000
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              apt update
+              apt install -y apt-transport-https ca-certificates curl gnupg git
+              curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+              chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+              echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /' | tee /etc/apt/sources.list.d/kubernetes.list
+              chmod 644 /etc/apt/sources.list.d/kubernetes.list
+              apt update
+              apt install -y kubectl
+              git clone -b enhancements/pod-manager-2 https://github.com/Jaseci-Labs/jaseci.git
+              cd jaseci/jac-splice-orc
+              pip install -e .
+              python -m grpc_tools.protoc -I./jac_splice_orc/grpc_local --python_out=./jac_splice_orc/grpc_local --grpc_python_out=./jac_splice_orc/grpc_local ./jac_splice_orc/grpc_local/module_service.proto
+              uvicorn jac_splice_orc.main:app --host 0.0.0.0 --port 8000
+          env:
+            - name: SERVICE_TYPE
+              value: pod_manager
+            - name: NAMESPACE
+              value: littlex
+            - name: IMAGE_NAME
+              value: ashishmahendra/jac-splice-orc:0.0.8
+          resources:
+            limits:
+              cpu: "1"
+              memory: 2000Mi
+            requests:
+              cpu: 500m
+              memory: 1500Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      serviceAccountName: jac-orc
+      serviceAccount: jac-orc
+      securityContext: {}
+      schedulerName: default-scheduler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jac-orc
+  namespace: littlex
+spec:
+  selector:
+    app: jac-orc
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000

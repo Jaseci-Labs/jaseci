@@ -1,0 +1,36 @@
+apiVersion: mongodbcommunity.mongodb.com/v1
+kind: MongoDBCommunity
+metadata:
+  name: $g{name:"jac-mongodb"}
+  namespace: $g{namespace:"default"}
+spec:
+  members: $g{replicaset:1}
+  type: ReplicaSet
+  version: "6.0.5"
+  security:
+    authentication:
+      modes: ["SCRAM"]
+  users:
+    - name: $g{username:"my-user"}
+      db: admin
+      passwordSecretRef: # a reference to the secret that will be used to generate the user's password
+        name: $g{username:"my-user"}-password
+      roles:
+        - name: clusterAdmin
+          db: admin
+        - name: userAdminAnyDatabase
+          db: admin
+        - name: readWrite
+          db: $g{database:"jaseci"}
+      scramCredentialsSecretName: my-scram
+  additionalMongodConfig:
+    storage.wiredTiger.engineConfig.journalCompressor: zlib
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: $g{username:"my-user"}-password
+  namespace: $g{namespace:"default"}
+type: Opaque
+stringData:
+  password: '$g{password:"12345678"}'
