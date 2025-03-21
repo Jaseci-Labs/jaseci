@@ -1,6 +1,7 @@
 """Command line interface tool for the Jac language."""
 
 import ast as ast3
+import contextlib
 import importlib
 import marshal
 import os
@@ -72,58 +73,51 @@ def format(path: str, outfile: str = "", debug: bool = False) -> None:
 
 @cmd_registry.register
 def run(
-    filename: str, session: str = "", main: bool = True, cache: bool = True
+    filepath: str, session: str = "", main: bool = True, cache: bool = True
 ) -> None:
     """Run the specified .jac file."""
-    # if no session specified, check if it was defined when starting the command shell
-    # otherwise default to jaclang.session
-    if session == "":
-        session = (
-            cmd_registry.args.session
-            if hasattr(cmd_registry, "args")
-            and hasattr(cmd_registry.args, "session")
-            and cmd_registry.args.session
-            else ""
-        )
-
-    base, mod = os.path.split(filename)
-    base = base if base else "./"
-    mod = mod[:-4]
-
+    # If no session specified, check if it was defined when starting the command shell
+    # otherwise default to "jaclang.session".
+    with contextlib.suppress(AttributeError):
+        session = session or cmd_registry.args.session or ""
     jctx = ExecutionContext.create(session=session)
 
-    if filename.endswith(".jac"):
-        try:
+    # Resolve the absolute path of the file.
+    filepath = os.path.abspath(filepath)
+    basepath, filename = os.path.split(filepath)
+
+    try:
+        # Run a ".jac" file.
+        if filepath.endswith(".jac"):
+            modname = filename.removesuffix(".jac")
             jac_import(
-                target=mod,
-                base_path=base,
+                target=modname,
+                base_path=basepath,
                 cachable=cache,
                 override_name="__main__" if main else None,
             )
-        except Exception as e:
-            print(e, file=sys.stderr)
-    elif filename.endswith(".jir"):
-        try:
-            with open(filename, "rb") as f:
-                JacMachine(base).attach_program(
-                    JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None)
-                )
-                jac_import(
-                    target=mod,
-                    base_path=base,
-                    cachable=cache,
-                    override_name="__main__" if main else None,
-                )
-        except Exception as e:
-            print(e, file=sys.stderr)
+        # Run a ".jir" file (cached).
+        elif filepath.endswith(".jir"):
+            modname = filename.removesuffix(".jir")
+            jacmachine = JacMachine(basepath)
+            with open(filepath, "rb") as f:
+                mod_bundle = pickle.load(f)
+            program = JacProgram(mod_bundle=mod_bundle, sem_ir=None)
+            jacmachine.attach_program(program)
+            jac_import(
+                target=modname,
+                base_path=basepath,
+                cachable=cache,
+                override_name="__main__" if main else None,
+            )
+        else:
+            raise ValueError("Not a valid file!\n" "Only supports `.jac` and `.jir`")
+    except Exception as err:
+        print(err, file=sys.stderr)
 
-    else:
+    finally:
         jctx.close()
         JacMachine.detach()
-        raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
-
-    jctx.close()
-    JacMachine.detach()
 
 
 @cmd_registry.register
@@ -156,7 +150,7 @@ def get_object(
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
             JacMachine(base).attach_program(
-                JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None)
+                JacProgram(mod_bundle=pickle.load(f), sem_ir=None)
             )
             jac_import(
                 target=mod,
@@ -273,7 +267,7 @@ def enter(
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
             JacMachine(base).attach_program(
-                JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None)
+                JacProgram(mod_bundle=pickle.load(f), sem_ir=None)
             )
             ret_module = jac_import(
                 target=mod,
