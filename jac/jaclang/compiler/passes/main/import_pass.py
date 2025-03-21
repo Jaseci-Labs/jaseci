@@ -40,19 +40,54 @@ class JacImportPass(Pass):
         self.run_again = True
         while self.run_again:
             self.run_again = False
-            all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
-            for i in all_imports:
-                self.process_import(i)
-                self.enter_module_path(i)
+            import_paths: list[ast.ModulePath] = self.get_all_sub_nodes(
+                node, ast.ModulePath
+            )
+            for import_path in import_paths:
+                import_stmt = Pass.find_parent_of_type(import_path, ast.Import)
+                if not import_stmt:
+                    continue
+                if import_stmt.is_absorb:
+                    self.process_include(import_stmt, import_path)
+                else:
+                    self.process_import(import_stmt, import_path)
+                    self.enter_module_path(import_path)
             SubNodeTabPass(prior=self, input_ir=node)
 
         node.mod_deps.update(self.import_table)
 
-    def process_import(self, i: ast.ModulePath) -> None:
+    def process_include(
+        self, import_node: ast.Import, mod_path: ast.ModulePath
+    ) -> None:
+        """Compile the file at the given `mod_path` path and injects the nodes
+        inside the current ast.
+        """
+        # FIXME: Not sure what to do with python include so falling back to the older method.
+        # This needs to be discuessed.
+        if import_node.is_py:
+            return self.process_import(import_node, mod_path)
+        path = mod_path.resolve_relative_path()
+        if inc_mod := self.import_jac_mod_from_file(path):
+            cur_mod = import_node.parent
+            if cur_mod and isinstance(cur_mod, ast.Module):
+                index = cur_mod.kid.index(import_node)
+                cur_mod.kid.remove(import_node)
+                import_node.parent = None
+                cur_mod.insert_kids_at_pos(inc_mod.kid, index)
+
+                for idx, stmt in enumerate(inc_mod.body):
+                    cur_mod.body.insert(index + idx, stmt)
+                for idx, term in enumerate(inc_mod.terminals):
+                    cur_mod.terminals.insert(index + idx, term)
+                self.annex_impl(inc_mod)
+                self.attach_mod_to_node(mod_path, inc_mod)
+
+                self.run_again = True
+
+    def process_import(self, import_node: ast.Import, mod_path: ast.ModulePath) -> None:
         """Process an import."""
-        imp_node = i.parent_of_type(ast.Import)
-        if imp_node.is_jac and not i.sub_module:
-            self.import_jac_module(node=i)
+        if import_node.is_jac and not mod_path.sub_module:
+            self.import_jac_module(node=mod_path)
 
     def attach_mod_to_node(
         self, node: ast.ModulePath | ast.ModuleItem, mod: ast.Module | None
@@ -65,55 +100,53 @@ class JacImportPass(Pass):
             node.add_kids_right([mod], pos_update=False)
             mod.parent = node
 
+    def get_annex_paths(self, module_path: str) -> list[str]:
+        """Return all the annexable file paths for the given module_path."""
+        search_paths: list[str] = []
+        suffixes = (".impl", ".test") if not settings.ignore_test_annex else (".impl",)
+
+        module_dir = os.path.abspath(os.path.dirname(module_path))
+        module_name = os.path.split(module_path)[-1].split(".")[0]
+
+        for suffix in suffixes:
+            # Search in the directory of the module.
+            for item in os.listdir(module_dir):
+                path = os.path.join(module_dir, item)
+                if not item.startswith(module_name + ".") or not os.path.isfile(path):
+                    continue
+                if item.endswith(suffix + ".jac"):
+                    search_paths.append(path)
+            # Search inside the annex folder.
+            annex_dir = os.path.join(module_dir, module_name + suffix)
+            if os.path.isdir(annex_dir):
+                search_paths.extend(
+                    os.path.join(annex_dir, item)
+                    for item in os.listdir(annex_dir)
+                    if item.endswith(suffix + ".jac")
+                )
+        if module_path in search_paths:
+            search_paths.remove(module_path)
+        return search_paths
+
     def annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""
-        if node.stub_only:
+        if (
+            node.stub_only
+            or not node.loc.mod_path
+            or not node.loc.mod_path.endswith(".jac")
+        ):
             return
-        if not node.loc.mod_path:
-            self.error("Module has no path")
-        if not node.loc.mod_path.endswith(".jac"):
-            return
-        base_path = node.loc.mod_path[:-4]
-        directory = os.path.dirname(node.loc.mod_path)
-        if not directory:
-            directory = os.getcwd()
-            base_path = os.path.join(directory, base_path)
-        impl_folder = base_path + ".impl"
-        test_folder = base_path + ".test"
-        search_files = [
-            os.path.join(directory, impl_file) for impl_file in os.listdir(directory)
-        ]
-        if os.path.exists(impl_folder):
-            search_files += [
-                os.path.join(impl_folder, impl_file)
-                for impl_file in os.listdir(impl_folder)
-            ]
-        if os.path.exists(test_folder):
-            search_files += [
-                os.path.join(test_folder, test_file)
-                for test_file in os.listdir(test_folder)
-            ]
-        for cur_file in search_files:
-            if node.loc.mod_path.endswith(cur_file):
-                continue
-            if (
-                cur_file.startswith(f"{base_path}.")
-                or impl_folder == os.path.dirname(cur_file)
-            ) and cur_file.endswith(".impl.jac"):
-                mod = self.import_jac_mod_from_file(cur_file)
-                if mod:
+
+        search_paths = self.get_annex_paths(node.loc.mod_path)
+        for file_path in search_paths:
+            mod = self.import_jac_mod_from_file(file_path)
+            if mod:
+                if file_path.endswith(".impl.jac"):
                     node.impl_mod.append(mod)
-                    node.add_kids_left([mod], pos_update=False)
-                    mod.parent = node
-            if (
-                cur_file.startswith(f"{base_path}.")
-                or test_folder == os.path.dirname(cur_file)
-            ) and cur_file.endswith(".test.jac"):
-                mod = self.import_jac_mod_from_file(cur_file)
-                if mod and not settings.ignore_test_annex:
+                else:
                     node.test_mod.append(mod)
-                    node.add_kids_right([mod], pos_update=False)
-                    mod.parent = node
+                node.add_kids_right([mod], pos_update=False)
+                mod.parent = node
 
     def enter_module_path(self, node: ast.ModulePath) -> None:
         """Sub objects.
@@ -216,7 +249,7 @@ class PyImportPass(JacImportPass):
         self.__import_from_symbol_table_build()
         return super().after_pass()
 
-    def process_import(self, i: ast.ModulePath) -> None:
+    def process_import(self, import_node: ast.Import, mod_path: ast.ModulePath) -> None:
         """Process an import."""
         # Process import is orginally implemented to handle ModulePath in Jaclang
         # This won't work with py imports as this will fail to import stuff in form of
@@ -224,21 +257,20 @@ class PyImportPass(JacImportPass):
         #      from a import (c, d, e)
         # Solution to that is to get the import node and check the from loc `then`
         # handle it based on if there a from loc or not
-        imp_node = i.parent_of_type(ast.Import)
 
-        if imp_node.is_py and not i.sub_module:
-            if imp_node.from_loc:
+        if import_node.is_py and not mod_path.sub_module:
+            if import_node.from_loc:
                 msg = "Processing import from node at href="
-                msg += ast.Module.get_href_path(imp_node)
-                msg += f' path="{imp_node.loc.mod_path}, {imp_node.loc}"'
+                msg += ast.Module.get_href_path(import_node)
+                msg += f' path="{import_node.loc.mod_path}, {import_node.loc}"'
                 self.__debug_print(msg)
-                self.__process_import_from(imp_node)
+                self.__process_import_from(import_node)
             else:
                 msg = "Processing import node at href="
-                msg += ast.Module.get_href_path(imp_node)
-                msg += f' path="{imp_node.loc.mod_path}, {imp_node.loc}"'
+                msg += ast.Module.get_href_path(import_node)
+                msg += f' path="{import_node.loc.mod_path}, {import_node.loc}"'
                 self.__debug_print(msg)
-                self.__process_import(imp_node)
+                self.__process_import(import_node)
 
     def __process_import_from(self, imp_node: ast.Import) -> None:
         """Process imports in the form of `from X import I`."""

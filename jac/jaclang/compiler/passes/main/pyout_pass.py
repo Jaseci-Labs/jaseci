@@ -68,9 +68,9 @@ class PyOutPass(Pass):
 
     def get_output_targets(self, node: ast.Module) -> tuple[str, str, str]:
         """Get output targets."""
-        base_path, file_name = os.path.split(node.loc.mod_path)
+        base_path, file_name = os.path.split(node.source.file_path)
         gen_path = os.path.join(base_path, Con.JAC_GEN_DIR)
-        mod_dir, file_name = os.path.split(node.loc.mod_path)
+        mod_dir, file_name = os.path.split(node.source.file_path)
         mod_dir = mod_dir.replace(base_path, "").lstrip(os.sep)
         base_name, _ = os.path.splitext(file_name)
         out_dir = os.path.join(gen_path, mod_dir)
