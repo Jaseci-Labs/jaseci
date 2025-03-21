@@ -306,7 +306,7 @@ class InheritedSymbolTable:
     def __init__(
         self,
         base_symbol_table: SymbolTable,
-        load_all_symbols: bool = False,
+        load_all_symbols: bool = False,  # This is needed for python imports
         symbols: Optional[list[str]] = None,
     ) -> None:
         """Initialize."""
