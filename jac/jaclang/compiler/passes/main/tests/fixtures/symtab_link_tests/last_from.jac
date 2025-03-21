@@ -1,4 +1,0 @@
-
-
-glob LAST_FROM = 'LAST_FROM';
-glob LAST_FROM2= 'LAST_FROM2';

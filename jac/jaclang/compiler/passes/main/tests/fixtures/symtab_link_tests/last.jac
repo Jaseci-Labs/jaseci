@@ -1,3 +1,0 @@
-
-
-glob LAST = 'LAST';
