@@ -66,6 +66,7 @@ class JacImportPass(Pass):
             node.add_kids_right([mod], pos_update=False)
             mod.parent = node
 
+    # TODO: Refactor this to a function for impl and function for test
     def annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""
         if node.stub_only:
@@ -103,15 +104,15 @@ class JacImportPass(Pass):
             ) and cur_file.endswith(".impl.jac"):
                 mod = self.import_jac_mod_from_file(cur_file)
                 if mod:
-                    node.impl_mod.append(mod)
-                    node.add_kids_left([mod], pos_update=False)
-                    mod.parent = node
+                    node.add_kids_left(mod.kid, parent_update=False)
             if (
                 cur_file.startswith(f"{base_path}.")
                 or test_folder == os.path.dirname(cur_file)
             ) and cur_file.endswith(".test.jac"):
                 mod = self.import_jac_mod_from_file(cur_file)
                 if mod and not settings.ignore_test_annex:
+                    # TODO: Is it safe to merge test module with the base module
+                    # merging can be done by calling add_kids_right(mod.kid)
                     node.test_mod.append(mod)
                     node.add_kids_right([mod], pos_update=False)
                     mod.parent = node
