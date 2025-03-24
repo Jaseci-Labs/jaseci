@@ -70,7 +70,10 @@ class AstNode:
         self._sym_tab = sym_tab
 
     def add_kids_left(
-        self, nodes: Sequence[AstNode], pos_update: bool = True
+        self,
+        nodes: Sequence[AstNode],
+        pos_update: bool = True,
+        parent_update: bool = False,
     ) -> AstNode:
         """Add kid left."""
         self.kid = [*nodes, *self.kid]
@@ -78,10 +81,16 @@ class AstNode:
             for i in nodes:
                 i.parent = self
             self.loc.update_first_token(self.kid[0].loc.first_tok)
+        elif parent_update:
+            for i in nodes:
+                i.parent = self
         return self
 
     def add_kids_right(
-        self, nodes: Sequence[AstNode], pos_update: bool = True
+        self,
+        nodes: Sequence[AstNode],
+        pos_update: bool = True,
+        parent_update: bool = False,
     ) -> AstNode:
         """Add kid right."""
         self.kid = [*self.kid, *nodes]
@@ -89,6 +98,9 @@ class AstNode:
             for i in nodes:
                 i.parent = self
             self.loc.update_last_token(self.kid[-1].loc.last_tok)
+        elif parent_update:
+            for i in nodes:
+                i.parent = self
         return self
 
     def insert_kids_at_pos(
