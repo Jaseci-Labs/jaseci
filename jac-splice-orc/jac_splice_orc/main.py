@@ -20,28 +20,33 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, FastAPI]:
     """Process FastAPI life cycle."""
     if MODULES:
         try:
-            modules: dict[
-                str,  # Module
+            namespaces: dict[
+                str,  # Namespace
                 dict[
-                    str,  # Namespace
+                    str,  # Module
                     dict[str, dict],  # Service / Python Library - Deployment Config
                 ],
             ] = loads(MODULES.encode())
-            for module, namespaces in modules.items():
-                logger.info(f"Extracting {module} namespaces ...")
-                for namespace, names in namespaces.items():
-                    logger.info(f"Extracting {namespace} services/libraries ...")
-                    for service, config in names.items():
-                        config = {
-                            **config,
-                            "name": service,
-                            "namespace": namespace,
+            for namespace, modules in namespaces.items():
+                logger.info(f"Extracting modules from `{namespace}` namespace ...")
+                for module, deployments in modules.items():
+                    logger.info(
+                        f"Extracting deployments from `{module}` with `{namespace}` namespace ..."
+                    )
+                    for service, _deployment in deployments.items():
+                        _deployment = {
+                            "module": module,
+                            "version": _deployment.get("version", "latest"),
+                            "config": {
+                                **_deployment.get("config", {}),
+                                "name": service,
+                                "namespace": namespace,
+                            },
                         }
-
                         logger.info(
-                            f"Deploying {service} with {dumps(config).decode()} ..."
+                            f"Deploying {service} with {dumps(_deployment).decode()} ..."
                         )
-                        deployment(Deployment(module=module, config=config))
+                        deployment(Deployment(**_deployment))
 
         except Exception:
             logger.exception(

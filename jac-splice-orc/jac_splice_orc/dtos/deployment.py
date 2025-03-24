@@ -18,6 +18,7 @@ class Deployment(BaseModel):
     """Deployment DTO."""
 
     module: str
+    version: str = "latest"
     config: dict[str, Any] = Field(default_factory=dict)
 
 
