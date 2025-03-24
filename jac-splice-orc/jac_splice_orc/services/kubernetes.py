@@ -9,6 +9,8 @@ from shutil import rmtree
 from subprocess import CompletedProcess, run
 from typing import Any
 
+from fastapi import HTTPException
+
 from kubernetes import config
 from kubernetes.client import ApiClient, AppsV1Api, CoreV1Api
 from kubernetes.client.rest import ApiException
@@ -20,7 +22,7 @@ from ..utils import logger, utc_timestamp
 
 PLACEHOLDERS_GENERIC = compile(r"(\$g\s*{\s*([^:\s]+)\s*(?:\:\s*([\S\s]*?))?\s*})")
 PLACEHOLDERS_ARRAY = compile(
-    r"((\ *)\$a\s*{\s*([^:\s]+)\s*(?:\:\s*(\[[\S\s]*?\]))?\s*})"
+    r"((\ *(?:-\s)?)\s*\$a\s*{\s*([^:\s]+)\s*(?:\:\s*(\[[\S\s]*?\]))?\s*})"
 )
 PLACEHOLDERS_DICT = compile(
     r"((\ *)(?:-\s)?\$d\s*{\s*([^:\s]+)\s*(?:\:\s*(\{[\S\s]*?\}))?\s*})"
@@ -36,6 +38,11 @@ class KubernetesService:
         config.load_kube_config()
 
     namespace = getenv("NAMESPACE", "default")
+    cluster_wide = getenv("CLUSTER_WIDE") == "true"
+    manifests = Path(getenv("MANIFESTS_PATH", "/tmp/manifests"))
+
+    assert manifests.is_dir(), f"Not a valid path: {manifests}"
+
     app = ApiClient()
     core = CoreV1Api()
     api = AppsV1Api(app)
@@ -73,6 +80,28 @@ class KubernetesService:
             logger.error(f"Error creating namespace {namespace} skipping... {e}")
 
     @classmethod
+    def get_module_paths(cls, deployment: Deployment) -> tuple[Path, Path]:
+        """Get module paths."""
+        if cls.cluster_wide or not deployment.config.get("namespace"):
+            deployment.config["namespace"] = cls.namespace
+
+        module_path = Path(f"{cls.manifests}/{deployment.module}")
+        if not module_path.is_dir():
+            raise HTTPException(
+                400, f"Deployment for {deployment.module} is not yet supported!"
+            )
+
+        version_path = Path(f"{module_path}/{deployment.version}")
+        if not version_path.is_dir():
+            raise HTTPException(
+                400,
+                f"Deployment for {deployment.module} with version `{deployment.version}` is not yet supported!\n"
+                f"Valid versions: {', '.join(p.name for p in module_path.iterdir())}",
+            )
+
+        return version_path, Path(f"{version_path}/dependencies")
+
+    @classmethod
     def update_modules(cls, deployment: Deployment) -> None:
         """Update modules."""
         modules = cls.get_modules()
@@ -85,7 +114,7 @@ class KubernetesService:
         if not (target_module := target_namespace.get(module)):
             target_module = target_namespace[module] = {}
 
-        target_module[deployment.config["name"]] = deployment.config
+        target_module[deployment.config["name"]] = deployment.model_dump(mode="json")
 
         try:
             cls.core.patch_namespaced_secret(

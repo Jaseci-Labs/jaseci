@@ -72,9 +72,12 @@ subjects:
             # name of the service/library
             "testing-redis": {
 
-                # supported placeholders
-                # proceed to /deployment/dry_run for more info
-                ...
+                # deployment json
+                "module": "redis",
+                "version": "latest",
+                "config": {
+                  ...
+                }
             }
         }
     }
@@ -160,6 +163,7 @@ Make sure jac-orc service is accessible
 ```json
 {
     "module": "mongodb",
+    "version": "latest",
     "config": {
         "name": "testing-db",
         "namespace": "testing"
