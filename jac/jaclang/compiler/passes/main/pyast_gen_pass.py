@@ -284,6 +284,7 @@ class PyastGenPass(Pass):
         """
         node.gen.py_ast = self.flatten([i.gen.py_ast for i in node.items])
 
+    # TODO: remove impl_mod as it's not used anymore
     def exit_module(self, node: ast.Module) -> None:
         """Sub objects.
 
