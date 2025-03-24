@@ -28,75 +28,73 @@ class PyCollectDepsPass(Pass):
         """Collect python dependencies from all Jac Nodes."""
         assert isinstance(self.ir, ast.Module)
 
-        path: str = ""
-        if isinstance(node, ast.ModulePath):
-            if node.path:
-                path = ".".join([i.value for i in node.path])
-            node.abs_path = self.ir.py_info.py_mod_dep_map.get(path)
+    def enter_module_path(self, node: ast.ModulePath) -> None:
+        """Collect python dependencies from all Jac Nodes."""
+        assert isinstance(self.ir, ast.Module)
+        if node.path:
+            node_path = ".".join([i.value for i in node.path])
+            node.abs_path = self.ir.py_info.py_mod_dep_map.get(node_path)
             if node.abs_path and os.path.isfile(node.abs_path.replace(".pyi", ".py")):
                 node.abs_path = node.abs_path.replace(".pyi", ".py")
             if mode_path := self.find_module_path(
-                path, os.path.dirname(node.loc.mod_path)
+                node_path, os.path.dirname(node.loc.mod_path)
             ):
-                self.ir.py_info.py_raise_map[path] = mode_path
+                self.ir.py_info.py_raise_map[node_path] = mode_path
 
-        elif isinstance(node, ast.ModuleItem):
-            imp = node.parent_of_type(ast.Import)
-            mod_path_node = imp.get_all_sub_nodes(ast.ModulePath)[0]
-            if mod_path_node.path:
-                path = ".".join([i.value for i in mod_path_node.path])
-            path += f".{node.name.value}"
-            node.abs_path = self.ir.py_info.py_mod_dep_map.get(path)
-            if node.abs_path and os.path.isfile(node.abs_path.replace(".pyi", ".py")):
-                node.abs_path = node.abs_path.replace(".pyi", ".py")
-            if mode_path := self.find_module_path(
-                path, os.path.dirname(node.loc.mod_path)
-            ):
-                self.ir.py_info.py_raise_map[path] = mode_path
+    def enter_module_item(self, node: ast.ModuleItem) -> None:
+        """Collect python dependencies from all Jac Nodes."""
+        assert isinstance(self.ir, ast.Module)
+        imp = node.parent_of_type(ast.Import)
+        mod_path_node = imp.get_all_sub_nodes(ast.ModulePath)[0]
+        if mod_path_node.path:
+            path = ".".join([i.value for i in mod_path_node.path])
+        path += f".{node.name.value}"
+        node.abs_path = self.ir.py_info.py_mod_dep_map.get(path)
+        if node.abs_path and os.path.isfile(node.abs_path.replace(".pyi", ".py")):
+            node.abs_path = node.abs_path.replace(".pyi", ".py")
+        if mode_path := self.find_module_path(path, os.path.dirname(node.loc.mod_path)):
+            self.ir.py_info.py_raise_map[path] = mode_path
 
-        elif isinstance(node, ast.AtomTrailer):
-            full_list = [
-                i.value
-                for i in node.as_attr_list
-                if (isinstance(i, ast.Name) and not isinstance(i.parent, ast.SubTag))
-            ]
-            if full_list:
-                full = ".".join(full_list)
-                if "." in full:
-                    full = full[: full.rindex(".")]
-                if self.ir.py_info.py_raise_map.get(full):
-                    return
-                base_path = os.path.dirname(node.loc.mod_path)
-                outpath = self.find_module_path(full, base_path)
-                if outpath:
-                    self.ir.py_info.py_raise_map[full] = outpath
-        elif isinstance(node, ast.Name):
-            if not isinstance(node.parent, ast.AtomTrailer):
-                npath = self.find_module_path(
-                    node.value, os.path.dirname(node.loc.mod_path)
-                )
-                if npath:
-                    self.ir.py_info.py_raise_map[node.value] = npath
-                # else:
-                #     print(f"Error: {node.value} not found")
-            elif isinstance(node.parent, ast.ArchRef):
-                npath = self.find_module_path(
-                    "jaclang", os.path.dirname(node.loc.mod_path)
-                )
-                if npath:
-                    self.ir.py_info.py_raise_map["jaclang"] = npath
-            if node.value in dir(builtins):
-                npath = self.find_module_path(
-                    "builtins", os.path.dirname(node.loc.mod_path)
-                )
-                if npath:
-                    self.ir.py_info.py_raise_map["builtins"] = npath
-            elif node.value == "isfile":
-                npath = self.find_module_path(
-                    "genericpath", os.path.dirname(node.loc.mod_path)
-                )
-                if npath:
-                    self.ir.py_info.py_raise_map["genericpath"] = npath
+    def enter_sub_tag(self, node: ast.SubTag) -> None:
+        """Collect python dependencies from all Jac Nodes."""
+        assert isinstance(self.ir, ast.Module)
+        self.prune()
+
+    def enter_atom_trailer(self, node: ast.AtomTrailer) -> None:
+        """Collect python dependencies from all Jac Nodes."""
+        assert isinstance(self.ir, ast.Module)
+        full_list = [i.value for i in node.as_attr_list if isinstance(i, ast.Name)]
+        if full_list:
+            full = ".".join(full_list)
+            if "." in full:
+                full = full[: full.rindex(".")]
+            if self.ir.py_info.py_raise_map.get(full):
+                return
+            base_path = os.path.dirname(node.loc.mod_path)
+            outpath = self.find_module_path(full, base_path)
+            if outpath:
+                self.ir.py_info.py_raise_map[full] = outpath
+        self.prune()
+
+    def enter_arch_ref(self, node: ast.ArchRef) -> None:
+        """Collect python dependencies from all Jac Nodes."""
+        assert isinstance(self.ir, ast.Module)
+        node_path = self.find_module_path("jaclang", os.path.dirname(node.loc.mod_path))
+        if node_path:
+            self.ir.py_info.py_raise_map["jaclang"] = node_path
+
+    def enter_name(self, node: ast.Name) -> None:
+        """Collect python dependencies from all Jac Nodes."""
+        assert isinstance(self.ir, ast.Module)
+        if node.value in dir(builtins):
+            npath = self.find_module_path(
+                "builtins", os.path.dirname(node.loc.mod_path)
+            )
+            if npath:
+                self.ir.py_info.py_raise_map["builtins"] = npath
+        npath = self.find_module_path(node.value, os.path.dirname(node.loc.mod_path))
+        if npath:
+            self.ir.py_info.py_raise_map[node.value] = npath
 
     def find_module_path(self, file_loc: str, base_path: str) -> str:
         """Find the path of the module."""
