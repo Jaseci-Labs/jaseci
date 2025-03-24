@@ -59,10 +59,13 @@ with entry {
 
 with entry {
     size = ["small", "medium", "large"];
-    fruits = ["apple", "banana", "cherry"];
+    colour = ["red", "green", "blue"];
+    items = ["shirt", "pants", "jacket"];
     for x in size {
-        for y in fruits {
-            print(x, y);
+        for y in colour {
+            for z in items {
+                print(x, y, z);
+            }
         }
     }
 }

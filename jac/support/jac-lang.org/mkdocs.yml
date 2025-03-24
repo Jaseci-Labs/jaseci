@@ -136,6 +136,7 @@ nav:
           - Open Files: "learning_section/jac_file_handling/jac_open_files.md"
           - Read Files: "learning_section/jac_file_handling/jac_read_files.md"
           - Create/Write Files: "learning_section/jac_file_handling/jac_create_files.md"
+          - Delete Files: "learning_section/jac_file_handling/jac_delete_files.md"
 
 theme:
   logo: "assets/logo.png"

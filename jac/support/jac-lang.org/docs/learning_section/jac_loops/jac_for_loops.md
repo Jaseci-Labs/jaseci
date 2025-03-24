@@ -65,5 +65,5 @@ A nested loop is a loop inside a loop.The "inner loop" will be executed one time
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_for_loop/jac_for_loop.jac:60:68"
+    --8<-- "examples/learning_section/jac_for_loop/jac_for_loop.jac:60:72"
     ```
