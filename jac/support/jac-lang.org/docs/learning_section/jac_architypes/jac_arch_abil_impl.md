@@ -8,12 +8,12 @@ Architypes store data and define structures, like objects in OOP. Instead of def
 Declaration of the Architype
 
 ```jac linenums="1"
---8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architype/jac_arch_impl.jac:2:2"
+--8<-- "examples/learning_section/jac_architype/jac_arch_impl.jac:2:2"
 ```
 
 Implementation of the Architype
 ```jac linenums="2"
---8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architype/jac_arch_impl.jac:4:8"
+--8<-- "examples/learning_section/jac_architype/jac_arch_impl.jac:4:8"
 ```
 
 ## Impls for Abilities Inside Architypes
@@ -25,11 +25,11 @@ In Jac, abilities (`can`) inside architypes (like `walker`, `object`, `node`, et
 Abilities can be **declared inside an architype** without defining their behavior.
 
 ```jac linenums="1"
---8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architype/jac_arch_impl.jac:11:13"
+--8<-- "examples/learning_section/jac_architype/jac_arch_impl.jac:11:13"
 ```
 
 We can implement the ability **outside** the architype declaration.
 
 ```jac linenums="5"
---8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architype/jac_arch_impl.jac:15:17"
+--8<-- "examples/learning_section/jac_architype/jac_arch_impl.jac:15:17"
 ```
