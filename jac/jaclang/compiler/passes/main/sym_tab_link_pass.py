@@ -17,6 +17,9 @@ class SymTabLinkPass(Pass):
         """Link the symbol tables."""
         from jaclang.runtimelib.machine import JacMachine
 
+        imp_node = node.parent_of_type(ast.Import)
+        if imp_node.is_py:
+            return None
         machine = JacMachine.get()
         imported_mod_symtab = machine.jac_program.modules[
             node.resolve_relative_path()
