@@ -13,17 +13,17 @@ When an error occurs, or an exception as we call it, Jac will normally stop and 
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_try_except/jac_try_except.jac:1:7"
+    --8<-- "examples/learning_section/jac_try_except.jac:1:7"
     ```
 
 ## Else
 
-You can use the else keyword to define a block of code to be executed if no errors were raised:
+You can use the **else** keyword to define a block of code to be executed if no errors were raised:
 
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_try_except/jac_try_except.jac:9:17"
+    --8<-- "examples/learning_section/jac_try_except.jac:9:17"
     ```
 
 ## Finally
@@ -33,7 +33,7 @@ The **finally** block, if specified, will be executed regardless if the try bloc
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_try_except/jac_try_except.jac:19:27"
+    --8<-- "examples/learning_section/jac_try_except.jac:19:27"
     ```
 
 ## Raise an exception
@@ -43,5 +43,5 @@ You can choose to raise an exception when a condition occurs.To **raise** an exc
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_try_except/jac_try_except.jac:29:41"
+    --8<-- "examples/learning_section/jac_try_except.jac:29:41"
     ```

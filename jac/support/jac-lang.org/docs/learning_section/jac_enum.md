@@ -9,7 +9,7 @@ What is an Enumeration?
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_enum/jac_enum.jac:1:09"
+    --8<-- "examples/learning_section/jac_enum.jac:1:9"
     ```
 
 ## Enumeration with Values
@@ -19,7 +19,7 @@ Enums can be assigned **integer** or **string** values.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_enum/jac_enum.jac:11:18"
+    --8<-- "examples/learning_section/jac_enum.jac:11:18"
     ```
 
 ## Unique Enumeration Values (`@unique`)
@@ -29,7 +29,7 @@ Using `@unique` ensures that no two members of an enum have the same value.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_enum/jac_enum.jac:20:30"
+    --8<-- "examples/learning_section/jac_enum.jac:20:30"
     ```
 
 ## Protected Enumerations (`:protect`)
@@ -37,7 +37,7 @@ Using `@unique` ensures that no two members of an enum have the same value.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_enum/jac_enum.jac:32:39"
+    --8<-- "examples/learning_section/jac_enum.jac:32:39"
     ```
 
 ## Enum with Methods (`can foo`)
@@ -47,7 +47,7 @@ Enums can have methods for additional functionality.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_enum/jac_enum.jac:41:52"
+    --8<-- "examples/learning_section/jac_enum.jac:41:51"
     ```
 
 ## Enum with `with entry` Block
@@ -57,7 +57,7 @@ Enums can have an entry block `(with entry)` that runs when they are first acces
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_enum/jac_enum.jac:54:65"
+    --8<-- "examples/learning_section/jac_enum.jac:53:63"
     ```
 
 ## Nested Enumerations
@@ -67,7 +67,7 @@ Enums can be nested inside objects to define related constants.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_enum/jac_enum.jac:67:79"
+    --8<-- "examples/learning_section/jac_enum.jac:65:77"
     ```
 
 ## Enums Inside Nested Objects
@@ -75,7 +75,7 @@ Enums can be nested inside objects to define related constants.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_enum/jac_enum.jac:81:105"
+    --8<-- "examples/learning_section/jac_enum.jac:79:100"
     ```
 
 ## Enum Comparison and Iteration
@@ -85,7 +85,7 @@ Enums can be nested inside objects to define related constants.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_enum/jac_enum.jac:107:113"
+    --8<-- "examples/learning_section/jac_enum.jac:102:108"
     ```
 
 **2.Looping Through Enum Members**
@@ -93,5 +93,5 @@ Enums can be nested inside objects to define related constants.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_enum/jac_enum.jac:115:119"
+    --8<-- "examples/learning_section/jac_enum.jac:110:114"
     ```
