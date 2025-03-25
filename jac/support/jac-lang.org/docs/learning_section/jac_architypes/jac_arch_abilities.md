@@ -4,7 +4,7 @@ Abilities can be defined inside **architypes** (nodes, edges, objects, etc.).
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architype/jac_arch_abilities.jac:1:23"
+    --8<-- "examples/learning_section/jac_architype/jac_arch_abilities.jac:1:23"
     ```
 
 ---
@@ -15,7 +15,7 @@ Static abilities do not depend on instance data. They are defined using the `sta
 
 **Code Example**
     ```jac linenums="13"
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_abilities/jac_ability.jac:13:17"
+    --8<-- "examples/learning_section/jac_abilities/jac_ability.jac:13:17"
     ```
 
 * This `square` ability does not require an instance of `MathUtils` and can be called directly.
@@ -29,7 +29,7 @@ If an `architype` inherits another, it can override its abilities.
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architype/jac_arch_abilities.jac:27:31"
+    --8<-- "examples/learning_section/jac_architype/jac_arch_abilities.jac:27:31"
     ```
 
 * Here, `Dog` inherits `Animal` but overrides the `speak` ability with its own behavior.
@@ -46,7 +46,7 @@ In Jac, abilities define actions or behaviors within an architype. Some abilitie
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architype/jac_arch_abilities.jac:40:48"
+    --8<-- "examples/learning_section/jac_architype/jac_arch_abilities.jac:40:48"
     ```
 
 !!! warning

@@ -13,13 +13,13 @@ Architypes define different types of entities in Jac, used for both **object-ori
 - **`class`** - A **standard class** used for object-oriented programming. It defines reusable structures with attributes and methods.
 
     ```jac
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architype/jac_architypes.jac:2:2"
+    --8<-- "examples/learning_section/jac_architype/jac_architypes.jac:2:2"
     ```
 
 - **`obj`** - Similar to class, but represents **single-instance objects** rather than reusable templates.
 
     ```jac
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architype/jac_architypes.jac:4:4"
+    --8<-- "examples/learning_section/jac_architype/jac_architypes.jac:4:4"
     ```
 
 !!! note
@@ -29,19 +29,19 @@ Architypes define different types of entities in Jac, used for both **object-ori
 - **`node`** - Represents a **node** in a graph-based structure. Nodes store data and are connected using edge architypes.
 
     ```jac
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architype/jac_architypes.jac:6:6"
+    --8<-- "examples/learning_section/jac_architype/jac_architypes.jac:6:6"
     ```
 
 - **`edge`** - Defines the **connection** between two `node` architypes. Edges store relationships between nodes.
 
     ```jac
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architype/jac_architypes.jac:8:8"
+    --8<-- "examples/learning_section/jac_architype/jac_architypes.jac:8:8"
     ```
 
 - **`walker`** -  A special type of architype that **traverses** a graph, moving between `node` instances along `edge` connections. Walkers define behaviors for navigating structured data.
 
     ```jac
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architype/jac_architypes.jac:10:10"
+    --8<-- "examples/learning_section/jac_architype/jac_architypes.jac:10:10"
     ```
 
 
@@ -53,7 +53,7 @@ The following example, `obj MyObject` contains ability. So, we'll explore it in 
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architype/jac_architypes.jac:21:23"
+    --8<-- "examples/learning_section/jac_architype/jac_architypes.jac:21:23"
     ```
 
 
@@ -63,7 +63,7 @@ Now we can use the obj named MyClass to create the object.
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architype/jac_architypes.jac:25:28"
+    --8<-- "examples/learning_section/jac_architype/jac_architypes.jac:25:28"
     ```
 
 ??? tip "Output"
