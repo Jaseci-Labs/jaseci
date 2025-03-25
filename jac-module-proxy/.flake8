@@ -1,5 +1,0 @@
-[flake8]
-exclude = module_service_pb2.py, module_service_pb2_grpc.py
-plugins = flake8_import_order, flake8_docstrings, flake8_comprehensions, flake8_bugbear, flake8_annotations, pep8_naming, flake8_simplify
-max-line-length = 120
-ignore = E203, W503, ANN101, ANN102, ANN401, B008, ANN001
