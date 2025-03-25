@@ -131,6 +131,7 @@ nav:
         - Inheritance of Architypes: "learning_section/jac_architypes/jac_arch_inheritance_and_others.md"
         - Implementations for Architypes and Abilities: "learning_section/jac_architypes/jac_arch_abil_impl.md"
       - Jac Enum (Enumerations): "learning_section/jac_enum.md"
+      - Jac Access Tags: "learning_section/jac_access_tags.md"
       - Jac Try-Except: "learning_section/jac_try_except.md"
       - Jac File Handling:
           - Open Files: "learning_section/jac_file_handling/jac_open_files.md"
