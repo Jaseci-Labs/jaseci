@@ -87,6 +87,7 @@ nav:
       - Jac Abilities: "learning_section/jac_abilities.md"
       - Jac Architypes: "learning_section/jac_architypes.md"
       - Jac Enum (Enumerations): "learning_section/jac_enum.md"
+      - Jac Access Tags: "learning_section/jac_access_tags.md"
       - Jac Try-Except: "learning_section/jac_try_except.md"
       - Jac File Handling: "learning_section/jac_file_handling.md"
 
