@@ -108,7 +108,14 @@ def gen_model_field(cls: type, field: Field, is_file: bool = False) -> tuple[typ
     if field.default is not MISSING:
         consts = (cls, pyField(default=field.default))
     elif callable(field.default_factory):
-        consts = (cls, pyField(default_factory=field.default_factory))
+        consts = (
+            cls,
+            (
+                field.default_factory()
+                if is_file
+                else pyField(default_factory=field.default_factory)
+            ),
+        )
     else:
         consts = (cls, File(...) if is_file else ...)
 

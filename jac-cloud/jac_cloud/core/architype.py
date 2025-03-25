@@ -136,18 +136,21 @@ def _to_dataclass(cls: type[T], data: dict[str, Any]) -> None:
         for attr in fields(cls):
             if target := data.get(attr.name):
                 hint = hintings[attr.name]
-                if is_dataclass(hint):
+                if is_dataclass(hint) and isinstance(hint, type):
                     data[attr.name] = to_dataclass(hint, target)
                 else:
                     origin = get_origin(hint)
                     if origin == dict and isinstance(target, dict):
-                        if is_dataclass(inner_cls := get_args(hint)[-1]):
+                        if is_dataclass(inner_cls := get_args(hint)[-1]) and isinstance(
+                            inner_cls, type
+                        ):
                             for key, value in target.items():
                                 target[key] = to_dataclass(inner_cls, value)
                     elif (
                         origin == list
                         and isinstance(target, list)
                         and is_dataclass(inner_cls := get_args(hint)[-1])
+                        and isinstance(inner_cls, type)
                     ):
                         for key, value in enumerate(target):
                             target[key] = to_dataclass(inner_cls, value)
