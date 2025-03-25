@@ -8,7 +8,7 @@ Abilities are defined using the `can` keyword, followed by the ability name and 
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_ability.jac:1:3"
+    --8<-- "examples/learning_section/jac_ability.jac:1:3"
     ```
 
 ## Ability Parameters
@@ -17,7 +17,7 @@ Abilities can take parameters, just like functions.
 
 **Code Example**
     ```jac linenums="5"
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_ability.jac:5:7"
+    --8<-- "examples/learning_section/jac_ability.jac:5:7"
     ```
 
 * This `say_hello_to` ability takes a `name` as input and prints a greeting message.
@@ -48,7 +48,7 @@ Example
 
 **Code Example**
     ```jac linenums="9"
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_ability.jac:9:11"
+    --8<-- "examples/learning_section/jac_ability.jac:9:11"
     ```
 
 * This ability takes two numbers, adds them, and returns the result.
@@ -61,7 +61,7 @@ In Jac, Access Tags control the visibility and accessibility of abilities. These
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_access_tag.jac:1:3"
+    --8<-- "examples/learning_section/jac_access_tag.jac:1:3"
     ```
 
 The `pub` tag makes the ability accessible from anywhere. Similarly, Jac provides other access tags like `prot` and `priv`.
@@ -75,7 +75,7 @@ Abilities can have an optional **string identifier** that describes them.
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_ability.jac:19:21"
+    --8<-- "examples/learning_section/jac_ability.jac:19:21"
     ```
 
 
@@ -87,11 +87,11 @@ In Jac, abilities (can) can be declared separately from their implementations. T
 
 Declaration of the Ability
 ```jac linenums="1"
---8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_ability.jac:24:24"
+--8<-- "examples/learning_section/jac_ability.jac:24:24"
 ```
 
 Implementation of the Ability
 
 ```jac linenums="2"
---8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_ability.jac:26:28"
+--8<-- "examples/learning_section/jac_ability.jac:26:28"
 ```
