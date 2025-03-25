@@ -102,8 +102,3 @@ Let's say you define a global variable in one file:
 ```jac linenums="1"
 --8<-- "examples/learning_section/jac_access_tag/jac_access_tag.jac:29:34"
 ```
-
-
-# oihsfdlknc
-
-hsfndlc
