@@ -40,7 +40,7 @@ If a global variable is marked with the `pub` access tag, it can be accessed any
 Let's say we define a global variable in one file:
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag/jac_access_tag.jac:6:7"
+--8<-- "examples/learning_section/jac_access_tag.jac:6:7"
 ```
 
 - Since the global variable `num1` is marked with the `pub` access tag, it can be accessed from anywhere in the program, both within the same file or in other files that import `file1.jac`.
@@ -55,7 +55,7 @@ Now, let's see how we can access the `num1` variable in the **same module** and 
 - You can access the `num1` global variable directly in the same module, like so:
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag/jac_access_tag.jac:6:11"
+--8<-- "examples/learning_section/jac_access_tag.jac:6:11"
 ```
 
 
@@ -64,7 +64,7 @@ Now, let's see how we can access the `num1` variable in the **same module** and 
 - To access the global variable `num1` from another file, you simply need to **import** the module where num1 is defined.
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag/jac_access_tag.jac:13:18"
+--8<-- "examples/learning_section/jac_access_tag.jac:13:18"
 ```
 
 
@@ -79,7 +79,7 @@ When a global variable is marked with the `priv` tag, it becomes **private** to 
 Let's say you define a global variable in one file:
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag/jac_access_tag.jac:22:23"
+--8<-- "examples/learning_section/jac_access_tag.jac:22:23"
 ```
 
 - Since the global variable `num2` is marked with the `priv` access tag, it can **only be accessed** in `file1.jac` and **not** in any other files that import `file1.jac`.
@@ -91,7 +91,7 @@ Let's say you define a global variable in one file:
 - You can access the `num2` global variable directly in the same module, like so:
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag/jac_access_tag.jac:22:27"
+--8<-- "examples/learning_section/jac_access_tag.jac:22:27"
 ```
 
 
@@ -100,5 +100,5 @@ Let's say you define a global variable in one file:
 - If you try to access the `num2` global variable from a different file, it will not work because `num2` is private to `file1.jac`.
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag/jac_access_tag.jac:29:34"
+--8<-- "examples/learning_section/jac_access_tag.jac:29:34"
 ```
