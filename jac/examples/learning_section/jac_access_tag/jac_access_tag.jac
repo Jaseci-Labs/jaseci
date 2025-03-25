@@ -30,5 +30,5 @@ with entry {
 import:jac file1;
 
 with entry {
-    print(file1.num1); # Error: Cannot access 'num2', it is private to 'file1.jac'
+    print(file1.num1); # Cannot access 'num2', it is private to 'file1.jac'
 }
