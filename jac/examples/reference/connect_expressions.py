@@ -2,11 +2,13 @@ from __future__ import annotations
 from jaclang import *
 
 
-class node_a(Node):
+@node
+class node_a:
     value: int
 
 
-class Creator(Walker):
+@walker
+class Creator:
     @with_entry
     def create(self, here: Root) -> None:
         end = here
@@ -29,7 +31,8 @@ class Creator(Walker):
         self.visit(here.refs())
 
 
-class MyEdge(Edge):
+@edge
+class MyEdge:
     val: int = field(5)
 
 

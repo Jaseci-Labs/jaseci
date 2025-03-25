@@ -2,14 +2,16 @@ from __future__ import annotations
 from jaclang import *
 
 
-class Adder(Walker):
+@walker
+class Adder:
     @with_entry
     def do(self, here: Root) -> None:
         here.connect(node_a())
         self.visit(here.refs())
 
 
-class node_a(Node):
+@node
+class node_a:
     x: int = field(0)
     y: int = field(0)
 

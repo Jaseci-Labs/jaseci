@@ -2,7 +2,8 @@ from __future__ import annotations
 from jaclang import *
 
 
-class Creator(Walker):
+@walker
+class Creator:
 
     @with_entry
     def func2(self, here: Root) -> None:
@@ -14,7 +15,8 @@ class Creator(Walker):
         self.visit(here.refs())
 
 
-class node_1(Node):
+@node
+class node_1:
     val: int
 
     @with_entry

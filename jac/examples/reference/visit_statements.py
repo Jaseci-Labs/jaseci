@@ -2,7 +2,8 @@ from __future__ import annotations
 from jaclang import *
 
 
-class Visitor(Walker):
+@walker
+class Visitor:
     @with_entry
     def travel(self, here: Root) -> None:
         if not self.visit(here.refs()):
@@ -10,7 +11,8 @@ class Visitor(Walker):
             return self.disengage()
 
 
-class item(Node):
+@node
+class item:
     @with_entry
     def speak(self, here: Visitor) -> None:
         print("Hey There!!!")

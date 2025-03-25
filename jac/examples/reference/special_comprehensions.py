@@ -8,7 +8,8 @@ else:
     (random,) = jac_import("random", "py")
 
 
-class TestObj(Obj):
+@obj
+class TestObj:
     x: int = field(gen=lambda: random.randint(0, 15))
     y: int = field(gen=lambda: random.randint(0, 15))
     z: int = field(gen=lambda: random.randint(0, 15))
@@ -23,7 +24,8 @@ while i < 10:
 print(apple.filter(None, lambda item: item.y <= 7))
 
 
-class MyObj(Obj):
+@obj
+class MyObj:
     apple: int = field(0)
     banana: int = field(0)
 

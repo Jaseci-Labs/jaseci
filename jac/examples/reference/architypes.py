@@ -13,23 +13,28 @@ class Animal:
     pass
 
 
-class Domesticated(Obj):
+@obj
+class Domesticated:
     pass
 
 
+@node
 @print_base_classes
-class Pet(Animal, Domesticated, Node):
+class Pet(Animal, Domesticated):
     pass
 
 
-class Person(Animal, Walker):
+@walker
+class Person(Animal):
     pass
 
 
-class Feeder(Person, Walker):
+@walker
+class Feeder(Person):
     pass
 
 
+@walker
 @print_base_classes
-class Zoologist(Feeder, Walker):
+class Zoologist(Feeder):
     pass

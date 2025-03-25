@@ -2,7 +2,8 @@ from __future__ import annotations
 from jaclang import *
 
 
-class Visitor(Walker):
+@walker
+class Visitor:
 
     @with_entry
     def self_destruct(self, here) -> None:
