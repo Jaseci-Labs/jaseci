@@ -20,6 +20,14 @@ python-multipart = "0.0.20"
 uuid6 = "2024.7.10"
 kubernetes = "32.0.1"
 
+[tool.poetry.group.proxy]
+optional = true
+
+[tool.poetry.group.proxy.dependencies]
+grpcio = "1.71.0"
+grpcio-tools = "1.71.0"
+grpcio-health-checking = "1.71.0"
+
 [tool.poetry.group.dev.dependencies]
 python-dotenv = "1.0.1"
 black = "25.1.0"
@@ -41,3 +49,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.scripts]
 dev = "jac_splice_orc.runner:dev"
 prod = "jac_splice_orc.runner:prod"
+proxy = "jac_splice_orc.proxy.main:run"
+
+[tool.poetry.plugins."jac"]
+export = "jac_splice_orc.proxy.plugin.proxy:ProxyPlugin"

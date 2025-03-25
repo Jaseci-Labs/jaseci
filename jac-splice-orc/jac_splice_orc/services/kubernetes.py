@@ -22,7 +22,7 @@ from ..utils import logger, utc_timestamp
 
 PLACEHOLDERS_GENERIC = compile(r"(\$g\s*{\s*([^:\s]+)\s*(?:\:\s*([\S\s]*?))?\s*})")
 PLACEHOLDERS_ARRAY = compile(
-    r"((\ *(?:-\s)?)\s*\$a\s*{\s*([^:\s]+)\s*(?:\:\s*(\[[\S\s]*?\]))?\s*})"
+    r"((\ *(?:-\ *)?)\$a\s*{\s*([^:\s]+)\s*(?:\:\s*(\[[\S\s]*?\]))?\s*})"
 )
 PLACEHOLDERS_DICT = compile(
     r"((\ *)(?:-\s)?\$d\s*{\s*([^:\s]+)\s*(?:\:\s*(\{[\S\s]*?\}))?\s*})"
@@ -150,13 +150,15 @@ class KubernetesService:
                     parsed_config[prefix] = current
 
                 for placeholder in set(PLACEHOLDERS_ARRAY.findall(raw)):
-                    spaces = placeholder[1]
+                    line_start = placeholder[1].split("-")
+                    spaces = line_start[0]
+                    dash = "- " if len(line_start) > 1 else ""
                     prefix = placeholder[2]
                     default = loads((placeholder[3] or "[]").encode())
                     current = ""
                     _current = config.get(prefix, default)
                     for arg in _current:
-                        current += f"{spaces}{arg}\n"
+                        current += f"{spaces}{dash}{arg}\n"
 
                     raw = raw.replace(placeholder[0], current)
                     parsed_config[prefix] = _current
@@ -209,13 +211,15 @@ class KubernetesService:
                     placeholders[prefix] = {"current": current, "default": default}
 
                 for placeholder in set(PLACEHOLDERS_ARRAY.findall(raw)):
-                    spaces = placeholder[1]
+                    line_start = placeholder[1].split("-")
+                    spaces = line_start[0]
+                    dash = "- " if len(line_start) > 1 else ""
                     prefix = placeholder[2]
                     default = loads((placeholder[3] or "[]").encode())
                     current = ""
                     _current = config.get(prefix, default)
                     for arg in _current:
-                        current += f"{spaces}{arg}\n"
+                        current += f"{spaces}{dash}{arg}\n"
 
                     raw = raw.replace(placeholder[0], current)
                     placeholders[prefix] = {"current": _current, "default": default}
