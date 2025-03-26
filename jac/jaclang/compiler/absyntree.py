@@ -621,7 +621,7 @@ class Module(AstDocNode):
         name: str,
         source: JacSource,
         doc: Optional[String],
-        body: Sequence[ElementStmt | String | EmptyToken],
+        body: list[ElementStmt | String | EmptyToken],
         is_imported: bool,
         terminals: list[Token],
         kid: Sequence[AstNode],
