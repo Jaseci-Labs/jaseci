@@ -37,14 +37,11 @@ class JacImportPass(Pass):
         self.import_table[node.loc.mod_path] = node
         self.annex_impl(node)
         self.terminate()  # Turns off auto traversal for deliberate traversal
-        self.run_again = True
-        while self.run_again:
-            self.run_again = False
-            all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
-            for i in all_imports:
-                self.process_import(i)
-                self.enter_module_path(i)
-            SubNodeTabPass(prior=self, input_ir=node)
+        all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
+        for i in all_imports:
+            self.process_import(i)
+            self.enter_module_path(i)
+        SubNodeTabPass(prior=self, input_ir=node)
 
         node.mod_deps.update(self.import_table)
 
@@ -58,13 +55,15 @@ class JacImportPass(Pass):
         self, node: ast.ModulePath | ast.ModuleItem, mod: ast.Module | None
     ) -> None:
         """Attach a module to a node."""
-        if mod:
-            self.run_again = True
-            node.sub_module = mod
-            self.annex_impl(mod)
-            node.add_kids_right([mod], pos_update=False)
-            mod.parent = node
+        from jaclang.runtimelib.machine import JacMachine
 
+        current_machine = JacMachine.get()
+        if mod and mod.loc.mod_path not in current_machine.jac_program.modules:
+            current_machine.jac_program.modules[mod.loc.mod_path] = mod
+            current_machine.jac_program.last_imported.append(mod)
+            self.annex_impl(mod)
+
+    # TODO: Refactor this to a function for impl and function for test
     def annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""
         if node.stub_only:
@@ -102,15 +101,15 @@ class JacImportPass(Pass):
             ) and cur_file.endswith(".impl.jac"):
                 mod = self.import_jac_mod_from_file(cur_file)
                 if mod:
-                    node.impl_mod.append(mod)
-                    node.add_kids_left([mod], pos_update=False)
-                    mod.parent = node
+                    node.add_kids_left(mod.kid, parent_update=True)
             if (
                 cur_file.startswith(f"{base_path}.")
                 or test_folder == os.path.dirname(cur_file)
             ) and cur_file.endswith(".test.jac"):
                 mod = self.import_jac_mod_from_file(cur_file)
                 if mod and not settings.ignore_test_annex:
+                    # TODO: Is it safe to merge test module with the base module
+                    # merging can be done by calling add_kids_right(mod.kid)
                     node.test_mod.append(mod)
                     node.add_kids_right([mod], pos_update=False)
                     mod.parent = node
@@ -173,7 +172,6 @@ class JacImportPass(Pass):
     def import_jac_mod_from_file(self, target: str) -> ast.Module | None:
         """Import a module from a file."""
         from jaclang.compiler.compile import jac_file_to_pass
-        from jaclang.compiler.passes.main import SubNodeTabPass
 
         if not os.path.exists(target):
             self.error(f"Could not find module {target}")
@@ -181,7 +179,7 @@ class JacImportPass(Pass):
         if target in self.import_table:
             return self.import_table[target]
         try:
-            mod_pass = jac_file_to_pass(file_path=target, target=SubNodeTabPass)
+            mod_pass = jac_file_to_pass(file_path=target, schedule=[])
             self.errors_had += mod_pass.errors_had
             self.warnings_had += mod_pass.warnings_had
             mod = mod_pass.ir
@@ -200,6 +198,23 @@ class JacImportPass(Pass):
 
 class PyImportPass(JacImportPass):
     """Jac statically imports Python modules."""
+
+    def enter_module(self, node: ast.Module) -> None:
+        """Run Importer."""
+        self.cur_node = node
+        self.import_table[node.loc.mod_path] = node
+        self.annex_impl(node)
+        self.terminate()  # Turns off auto traversal for deliberate traversal
+        self.run_again = True
+        while self.run_again:
+            self.run_again = False
+            all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
+            for i in all_imports:
+                self.process_import(i)
+                self.enter_module_path(i)
+            SubNodeTabPass(prior=self, input_ir=node)
+
+        node.mod_deps.update(self.import_table)
 
     def __debug_print(self, msg: str) -> None:
         if settings.py_import_pass_debug:
