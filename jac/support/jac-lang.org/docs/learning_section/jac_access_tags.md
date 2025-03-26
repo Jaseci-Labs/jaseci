@@ -102,3 +102,102 @@ Let's say you define a global variable in one file:
 ```jac linenums="1"
 --8<-- "examples/learning_section/jac_access_tag.jac:29:34"
 ```
+
+
+## Access Tags for Architypes
+
+In Jac, architypes define with different access levels. The `:pub` (public), `:priv` (private), and `:protect` (protected) tags determine how these architypes can be accessed from different scopes.
+
+
+### Public Architypes
+
+An architype marked as `:pub` is accessible **from anywhere** in the program.
+
+Other objects, entry functions, and external modules can **freely** reference and instantiate.
+
+**Code Example**
+
+```jac linenums="1"
+--8<-- "examples/learning_section/jac_access_tag.jac:39:46"
+```
+
+
+### Private Architypes
+
+If an Architype is marked as `:priv`, it cannot be accessed from outside its relavant scope.
+
+**Code Example**
+
+```jac linenums="1"
+--8<-- "examples/learning_section/jac_access_tag.jac:50:57"
+```
+
+- In the above example `InnerPrivObj` Architype has been defined inside the Architype `SomeObj`. So, we can't create instances of `InnerPrivObj` outside the `SomeObj`'s scope.
+
+
+
+## Access Tags for Attributes
+
+In Jac, **attributes** can have different access levels to control how they are used and modified. These access levels help in **encapsulation** and **data security**.
+
+### Public Attributes
+
+A **public** attribute can be accessed and modified **from anywhere**.
+
+**Code Example**
+
+```jac linenums="1"
+--8<-- "examples/learning_section/jac_access_tag.jac:69:77"
+```
+
+### Private Attributes
+
+Let's say a **private** attribute is defined inside an Architype.
+
+```jac linenums="1"
+--8<-- "examples/learning_section/jac_access_tag.jac:80:82"
+```
+
+That **private** attribute **can be accessed or Modified** inside the Architype.
+
+```jac linenums="1"
+--8<-- "examples/learning_section/jac_access_tag.jac:84:94"
+```
+
+A **private** attribute **cannot be accessed or modified** outside the object. It is used to store internal data that should not be directly modified.
+
+```jac linenums="1"
+--8<-- "examples/learning_section/jac_access_tag.jac:96:104"
+```
+
+## Access Tags for Abilities
+
+In Jac, **abilities** can have different access levels. These access levels define where an ability can be **called from**.
+
+### Public Abilities
+
+A **public** ability can be called from **anywhere** outside the object.
+
+```jac linenums="1"
+--8<-- "examples/learning_section/jac_access_tag.jac:109:118"
+```
+
+### Private Abilities
+
+Let's say a **private** ability is defined inside an Architype.
+
+```jac linenums="1"
+--8<-- "examples/learning_section/jac_access_tag.jac:121:125"
+```
+
+That **private** ability **can be called** inside the Architype's scope.
+
+```jac linenums="1"
+--8<-- "examples/learning_section/jac_access_tag.jac:127:134"
+```
+
+A **private** ability **cannot be called** outside the Architype's scope.
+
+```jac linenums="1"
+--8<-- "examples/learning_section/jac_access_tag.jac:136:144"
+```
