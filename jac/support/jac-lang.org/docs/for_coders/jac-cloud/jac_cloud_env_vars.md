@@ -14,6 +14,7 @@
 | DISABLE_AUTO_CLEANUP | Disable auto deletion of nodes that doesn't connect to anything | false |
 | SINGLE_QUERY | Every edge_ref will trigger query per anchor if not already cached instead of consolidating non cached anchor before querying. | false |
 | SESSION_MAX_TRANSACTION_RETRY | MongoDB's transactional retry | 1 |
+| ORDERED_BULK_WRITE | Sequential bulk writing that also raise proper operation error if occurs. Unordered approach is faster but the operation error would be generic | false
 | DISABLE_AUTO_ENDPOINT | Disable auto convertion of walker to api. It will now require inner class __specs__ or @specs decorator. | false |
 | SHOW_ENDPOINT_RETURNS | Include per visit return on api response | false |
 | SESSION_MAX_COMMIT_RETRY | MongoDB's transaction commit retry | 1 |
