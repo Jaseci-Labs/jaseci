@@ -51,10 +51,11 @@ from pymongo import ASCENDING, DeleteMany, DeleteOne, InsertOne, UpdateMany, Upd
 from pymongo.client_session import ClientSession
 from pymongo.errors import ConnectionFailure, OperationFailure
 
-from ..jaseci.datasources import Collection as BaseCollection
+from ..jaseci.datasources import Collection as BaseCollection, Index
 from ..jaseci.utils import logger
 
 MANUAL_SAVE = getenv("MANUAL_SAVE")
+ORDERED_BULK_WRITE = getenv("ORDERED_BULK_WRITE") == "true"
 GENERIC_ID_REGEX = compile(r"^(n|e|w|o):([^:]*):([a-f\d]{24})$", IGNORECASE)
 NODE_ID_REGEX = compile(r"^n:([^:]*):([a-f\d]{24})$", IGNORECASE)
 EDGE_ID_REGEX = compile(r"^e:([^:]*):([a-f\d]{24})$", IGNORECASE)
@@ -263,13 +264,21 @@ class BulkWrite:
         while True:
             try:
                 if node_operation := self.operations[NodeAnchor]:
-                    NodeAnchor.Collection.bulk_write(node_operation, False, session)
+                    NodeAnchor.Collection.bulk_write(
+                        node_operation, ORDERED_BULK_WRITE, session
+                    )
                 if edge_operation := self.operations[EdgeAnchor]:
-                    EdgeAnchor.Collection.bulk_write(edge_operation, False, session)
+                    EdgeAnchor.Collection.bulk_write(
+                        edge_operation, ORDERED_BULK_WRITE, session
+                    )
                 if walker_operation := self.operations[WalkerAnchor]:
-                    WalkerAnchor.Collection.bulk_write(walker_operation, False, session)
+                    WalkerAnchor.Collection.bulk_write(
+                        walker_operation, ORDERED_BULK_WRITE, session
+                    )
                 if object_operation := self.operations[ObjectAnchor]:
-                    ObjectAnchor.Collection.bulk_write(object_operation, False, session)
+                    ObjectAnchor.Collection.bulk_write(
+                        object_operation, ORDERED_BULK_WRITE, session
+                    )
                 self.commit(session)
                 break
             except (ConnectionFailure, OperationFailure) as ex:
@@ -949,6 +958,7 @@ class BaseArchitype:
 
     __jac_classes__: dict[str, type["BaseArchitype"]]
     __jac_hintings__: dict[str, type]
+    __jac_indexes__: Iterable[Index] = []
 
     __jac__: Anchor
 

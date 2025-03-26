@@ -1,5 +1,7 @@
 """JacLang Jaseci Unit Test."""
 
+from bson.son import SON
+
 from httpx import get, post
 
 from yaml import safe_load
@@ -95,7 +97,7 @@ class SimpleGraphTest(JacCloudTest):
         for idx, report in enumerate(res["reports"]):
             self.assertEqual({"val": idx}, report["context"])
 
-            res = self.post_api(f"traverse_graph/{report["id"]}")
+            res = self.post_api(f'traverse_graph/{report["id"]}')
             self.assertEqual(200, res["status"])
             self.assertEqual([None for i in range(idx, 3)], res["returns"])
             for _idx, report in enumerate(res["reports"]):
@@ -120,7 +122,7 @@ class SimpleGraphTest(JacCloudTest):
         for idx, report in enumerate(res["reports"]):
             self.assertEqual({"val": idx}, report["context"])
 
-            res = self.post_api(f"traverse_graph/{report["id"]}")
+            res = self.post_api(f'traverse_graph/{report["id"]}')
             self.assertEqual(200, res["status"])
             self.assertEqual([None for i in range(idx, 2)], res["returns"])
             for _idx, report in enumerate(res["reports"]):
@@ -152,7 +154,7 @@ class SimpleGraphTest(JacCloudTest):
         for idx, report in enumerate(res["reports"]):
             self.assertEqual({"val": idx + 1}, report["context"])
 
-            res = self.post_api(f"traverse_graph/{report["id"]}")
+            res = self.post_api(f'traverse_graph/{report["id"]}')
             self.assertEqual(200, res["status"])
             self.assertEqual([None for i in range(idx, 2)], res["returns"])
             for _idx, report in enumerate(res["reports"]):
@@ -160,7 +162,7 @@ class SimpleGraphTest(JacCloudTest):
 
     def trigger_create_nested_node_test(self, manual: bool = False) -> None:
         """Test create nested node."""
-        res = self.post_api(f"{'manual_' if manual else ""}create_nested_node", user=1)
+        res = self.post_api(f'{"manual_" if manual else ""}create_nested_node', user=1)
 
         self.assertEqual(200, res["status"])
         self.assertEqual(
@@ -190,7 +192,7 @@ class SimpleGraphTest(JacCloudTest):
     ) -> None:
         """Test update nested node."""
         for walker in [
-            f"{'manual_' if manual else ""}update_nested_node",
+            f'{"manual_" if manual else ""}update_nested_node',
             "visit_nested_node",
         ]:
             res = self.post_api(walker, user=user)
@@ -219,7 +221,7 @@ class SimpleGraphTest(JacCloudTest):
 
     def trigger_detach_nested_node_test(self, manual: bool = False) -> None:
         """Test detach nested node."""
-        res = self.post_api(f"{'manual_' if manual else ""}detach_nested_node", user=1)
+        res = self.post_api(f'{"manual_" if manual else ""}detach_nested_node', user=1)
         self.assertEqual(200, res["status"])
         self.assertEqual([True], res["returns"])
 
@@ -229,7 +231,7 @@ class SimpleGraphTest(JacCloudTest):
 
     def trigger_delete_nested_node_test(self, manual: bool = False) -> None:
         """Test create nested node."""
-        res = self.post_api(f"{'manual_' if manual else ""}delete_nested_node", user=1)
+        res = self.post_api(f'{"manual_" if manual else ""}delete_nested_node', user=1)
         self.assertEqual(200, res["status"])
         self.assertEqual([[]], res["reports"])
 
@@ -239,7 +241,7 @@ class SimpleGraphTest(JacCloudTest):
 
     def trigger_delete_nested_edge_test(self, manual: bool = False) -> None:
         """Test create nested node."""
-        res = self.post_api(f"{'manual_' if manual else ""}delete_nested_edge", user=1)
+        res = self.post_api(f'{"manual_" if manual else ""}delete_nested_edge', user=1)
         self.assertEqual(200, res["status"])
         self.assertEqual([[]], res["reports"])
 
@@ -288,7 +290,9 @@ class SimpleGraphTest(JacCloudTest):
 
         self.assertEqual(
             403,
-            self.post_api(f"visit_nested_node/{nested_node['id']}", expect_error=True),
+            self.post_api(
+                f"visit_nested_node/{nested_node['id']}", expect_error=True
+            ).status_code,
         )
 
         ###################################################
@@ -436,7 +440,9 @@ class SimpleGraphTest(JacCloudTest):
 
         self.assertEqual(
             403,
-            self.post_api(f"visit_nested_node/{nested_node['id']}", expect_error=True),
+            self.post_api(
+                f"visit_nested_node/{nested_node['id']}", expect_error=True
+            ).status_code,
         )
 
     def nested_count_should_be(self, node: int, edge: int) -> None:
@@ -507,7 +513,7 @@ class SimpleGraphTest(JacCloudTest):
                 error_code,
                 self.post_api(
                     "custom_status_code", {"status": error_code}, expect_error=True
-                ),
+                ).status_code,
             )
 
         for invalid_code in [
@@ -885,6 +891,41 @@ class SimpleGraphTest(JacCloudTest):
             res,
         )
 
+    def trigger_unique_node_test(self) -> None:
+        """Test nested request payload."""
+        res = self.post_api("create_unique_node")
+        self.assertEqual({"status": 200, "returns": [None]}, res)
+
+        res = self.post_api("visit_unique_node")
+        self.assertEqual(200, res["status"])
+        self.assertEqual(1, len(res["reports"]))
+
+        self.assertEqual({"id": "testing"}, res["reports"][0]["context"])
+        self.assertEqual([None, None], res["returns"])
+
+        raw = self.post_api("create_unique_node", expect_error=True)
+        self.assertEqual(500, raw.status_code)
+        self.assertTrue(
+            raw.json()["errors"][-1].startswith("pymongo.errors.OperationFailure")
+        )
+        self.assertRaises(Exception, raw.raise_for_status)
+
+        res = self.post_api("visit_unique_node")
+        self.assertEqual(200, res["status"])
+        self.assertEqual(1, len(res["reports"]))
+
+        self.assertEqual({"id": "testing"}, res["reports"][0]["context"])
+        self.assertEqual([None, None], res["returns"])
+        self.assertEqual(
+            {
+                "v": 2,
+                "key": [("architype.id", 1)],
+                "unique": True,
+                "partialFilterExpression": SON([("name", "UniqueNode")]),
+            },
+            Collection.get_collection("node").index_information()["architype.id_1"],
+        )
+
     def test_all_features(self) -> None:
         """Test Full Features."""
         self.trigger_openapi_specs_test()
@@ -1013,3 +1054,10 @@ class SimpleGraphTest(JacCloudTest):
         ###################################################
 
         self.trigger_nested_request_payload_test()
+
+        ###################################################
+        #            TESTING UNIQUE CONSTRAINTS           #
+        ###################################################
+        if self.database_host:
+            # only test on mongodb since localdb doesn't support indexing
+            self.trigger_unique_node_test()

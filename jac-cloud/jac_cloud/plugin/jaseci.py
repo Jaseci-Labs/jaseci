@@ -26,6 +26,7 @@ from ..core.architype import (
     GenericEdge,
     NodeAnchor,
     NodeArchitype,
+    ObjectAnchor,
     ObjectArchitype,
     Permission,
     Root,
@@ -342,6 +343,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                 on_entry=on_entry,
                 on_exit=on_exit,
             )
+            ObjectAnchor.Collection.apply_partial_indexes(cls)
             return cls
 
         return decorator
@@ -358,6 +360,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
             cls = Jac.make_architype(
                 cls=cls, arch_base=NodeArchitype, on_entry=on_entry, on_exit=on_exit
             )
+            NodeAnchor.Collection.apply_partial_indexes(cls)
             return cls
 
         return decorator
@@ -390,6 +393,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
             cls = Jac.make_architype(
                 cls=cls, arch_base=EdgeArchitype, on_entry=on_entry, on_exit=on_exit
             )
+            EdgeAnchor.Collection.apply_partial_indexes(cls)
             return cls
 
         return decorator
@@ -428,6 +432,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                 on_entry=on_entry,
                 on_exit=on_exit,
             )
+            WalkerAnchor.Collection.apply_partial_indexes(cls)
             populate_apis(cls)  # type: ignore[arg-type]
             return cls
 
