@@ -871,7 +871,7 @@ class PyastGenPass(Pass):
 
         base_classes = node.base_classes.gen.py_ast if node.base_classes else []
         if node.arch_type.name != Tok.KW_CLASS:
-            base_classes.append(self.jaclib_obj(node.arch_type.value.capitalize()))
+            decorators.insert(0, self.jaclib_obj(node.arch_type.value.lower()))
         node.gen.py_ast = [
             self.sync(
                 ast3.ClassDef(

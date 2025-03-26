@@ -2,7 +2,8 @@ from __future__ import annotations
 from jaclang import *
 
 
-class Producer(Walker):
+@walker
+class Producer:
 
     @with_entry
     def produce(self, here: Root) -> None:
@@ -14,7 +15,8 @@ class Producer(Walker):
         self.visit(here.refs())
 
 
-class Product(Node):
+@node
+class Product:
     number: int
 
     @with_entry
