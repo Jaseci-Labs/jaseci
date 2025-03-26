@@ -8,7 +8,10 @@ from typing import (
     Generic,
     Iterable,
     Mapping,
+    NotRequired,
+    Type,
     TypeVar,
+    TypedDict,
     cast,
 )
 
@@ -37,6 +40,7 @@ from pymongo.collection import Collection as PyMongoCollection
 from pymongo.command_cursor import CommandCursor
 from pymongo.cursor import Cursor
 from pymongo.database import Database
+from pymongo.operations import _IndexKeyHint
 from pymongo.results import (
     BulkWriteResult,
     DeleteResult,
@@ -50,6 +54,30 @@ from .localdb import MontyClient, set_storage
 from ..utils import logger
 
 T = TypeVar("T")
+
+Index = TypedDict(
+    "Index", {"key": _IndexKeyHint, "constraints": NotRequired[dict[str, Any]]}
+)
+
+
+def apply_prefix(prefix: str, keys: _IndexKeyHint) -> _IndexKeyHint:
+    """Apply prefix for every key."""
+    match keys:
+        case str():
+            return f"{prefix}{keys}"
+        case list() | set() | tuple():
+            return [
+                (
+                    f"{prefix}{key}"
+                    if isinstance(key, str)
+                    else (f"{prefix}{key[0]}", key[1])
+                )
+                for key in keys
+            ]
+        case dict():
+            return {f"{prefix}{key}": value for key, value in keys.items()}
+        case _:
+            return keys
 
 
 class Collection(Generic[T]):
@@ -188,6 +216,27 @@ class Collection(Generic[T]):
             )
 
         return cls.__collection_obj__
+
+    @classmethod
+    def apply_partial_indexes(cls, type: Type) -> None:
+        """Apply Partial Indexes."""
+        indexes: list[Index] = getattr(type, "__jac_indexes__", [])
+        if indexes:
+            cls.collection().create_indexes(
+                [
+                    IndexModel(
+                        apply_prefix("architype.", index["key"]),
+                        **{
+                            **(constraints := index.get("constraints", {})),
+                            "partialFilterExpression": {
+                                **constraints.get("partialFilterExpression", {}),
+                                "name": type.__name__,
+                            },
+                        },
+                    )
+                    for index in indexes
+                ]
+            )
 
     @classmethod
     def insert_one(

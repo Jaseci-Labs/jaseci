@@ -9,7 +9,7 @@ from unittest import TestCase
 
 from fakeredis import FakeRedis
 
-from httpx import get, post
+from httpx import Response, get, post
 
 from pymongo import MongoClient
 
@@ -46,6 +46,8 @@ class JacCloudTest(TestCase):
         run(["sleep", f"{wait}"])
 
         self.host = f"http://0.0.0.0:{port}"
+        self.database_host = getenv("DATABASE_HOST")
+        self.redis_host = getenv("REDIS_HOST")
         self.database = database
         self.users: list[dict] = []
 
@@ -73,12 +75,12 @@ class JacCloudTest(TestCase):
         res.raise_for_status()
         self.assertEqual(200, res.status_code)
 
-        if getenv("DATABASE_HOST"):
+        if self.database_host:
             self.assertIsInstance(Collection.get_client(), MongoClient)
         else:
             self.assertIsInstance(Collection.get_client(), MontyClient)
 
-        if getenv("REDIS_HOST"):
+        if self.redis_host:
             self.assertIsInstance(Redis.get_rd(), RedisClient)
         else:
             self.assertIsInstance(Redis.get_rd(), FakeRedis)
@@ -94,7 +96,7 @@ class JacCloudTest(TestCase):
         json: dict | None = None,
         user: int = 0,
         expect_error: Literal[True] = True,
-    ) -> int:
+    ) -> Response:
         pass
 
     def post_api(
@@ -103,7 +105,7 @@ class JacCloudTest(TestCase):
         json: dict | None = None,
         user: int = 0,
         expect_error: bool = False,
-    ) -> dict | int:
+    ) -> dict | Response:
         """Call walker post API."""
         res = post(
             f"{self.host}/walker/{api}", json=json, headers=self.users[user]["headers"]
@@ -113,7 +115,7 @@ class JacCloudTest(TestCase):
             res.raise_for_status()
             return res.json()
         else:
-            return res.status_code
+            return res
 
     def post_webhook(
         self, api: str, json: dict | None = None, headers: dict | None = None
