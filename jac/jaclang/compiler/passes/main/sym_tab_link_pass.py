@@ -52,6 +52,41 @@ class SymTabLinkPass(Pass):
                     symbols_str_list
                 )
 
+    def exit_import(self, node: ast.Import) -> None:
+        """Sub objects.
+
+        lang: Name,
+        path: ModulePath,
+        alias: Optional[Name],
+        items: Optional[ModuleItems],
+        is_absorb: bool,
+        sub_module: Optional[Module],
+        """
+        from jaclang.runtimelib.machine import JacMachine
+
+        module_registry = JacMachine.get().jac_program.modules
+
+        if not node.is_absorb:
+            for i in node.items.items:
+                i.sym_tab.def_insert(i, single_decl="import item")
+        elif node.is_absorb and node.is_jac:
+            source = node.items.items[0]
+            if not isinstance(source, ast.ModulePath):
+                self.error(
+                    f"Module {node.from_loc.dot_path_str if node.from_loc else 'from location'}"
+                    f" not found to include *, or ICE occurred!"
+                )
+            else:
+                # Get the module from the JacMachine
+                import_path = source.resolve_relative_path()
+                if import_path in module_registry:
+                    mod = module_registry[import_path]
+                    node.sym_tab.inherit_sym_tab(mod.sym_tab)
+                else:
+                    self.error(
+                        f"Module {import_path} not exists in the jac program module registry."
+                    )
+
     def after_pass(self) -> None:
         for k in self.__inherited_symbols:
             self.ir.sym_tab.inherit.append(self.__inherited_symbols[k])
