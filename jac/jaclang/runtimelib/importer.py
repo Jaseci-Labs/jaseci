@@ -338,7 +338,7 @@ class JacImporter(Importer):
             if user_dir and user_dir not in search_paths:
                 search_paths.append(user_dir)
         if jacpaths:
-            for p in jacpaths.split(os.pathsep):
+            for p in jacpaths.split(":"):
                 p = p.strip()
                 if p and p not in search_paths:
                     search_paths.append(p)
@@ -347,9 +347,9 @@ class JacImporter(Importer):
         target_path_components = spec.target.split(".")
         for search_path in search_paths:
             candidate = os.path.join(search_path, "/".join(target_path_components))
+            # Check if the candidate is a directory or a .jac file
             if (os.path.isdir(candidate)) or (os.path.isfile(candidate + ".jac")):
                 found_path = candidate
-                # print(f"Found path: {found_path}")
                 break
 
         # If a suitable path was found, update spec.full_target; otherwise, raise an error
@@ -396,8 +396,6 @@ class JacImporter(Importer):
                 try:
                     with sys_path_context(spec.caller_dir):
                         exec(codeobj, module.__dict__)
-                        # if module.__package__:
-                        #     sys.modules[module.__package__] = module
                 except Exception as e:
                     logger.error(e)
                     logger.error(dump_traceback(e))
