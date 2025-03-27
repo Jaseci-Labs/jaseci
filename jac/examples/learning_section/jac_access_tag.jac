@@ -23,14 +23,14 @@ with entry {
 glob: priv num2:int = 20;
 
 with entry {
-    print(num1);
+    print(num2);
 }
 
 # file2.jac
 import:jac file1;
 
 with entry {
-    print(file1.num1); # Cannot access 'num2', it is private to 'file1.jac'
+    print(file1.num2); # Cannot access 'num2', it is private to 'file1.jac'
 }
 
 
@@ -120,7 +120,7 @@ with entry {
 # Access Tags for Abilities (private)
 obj SomeObj {
     can: priv do_something -> str {
-        return "I am public!";
+        return "I am private!";
     }
 }
 
@@ -141,4 +141,44 @@ obj SomeObj {
 with entry {
     some_obj = SomeObj();
     some_obj.secret_ability(); # <-- Not Allowed
+}
+
+# -------------------------------------------------#
+# Access Tags for Enum (Public)
+# file1.jac
+enum:pub Color {
+    RED = 1,
+    GREEN = 2,
+    BLUE = 3
+}
+
+with entry {
+    print(Color.RED.value);
+}
+
+#file2.jac
+import:jac file1;
+
+with entry{
+    print(file1.Color.BLUE.value);
+}
+
+# -------------------------------------------------#
+# Access Tags for Enum (Private)
+# file1.jac
+enum:priv Color {
+    RED = 1,
+    GREEN = 2,
+    BLUE = 3
+}
+
+with entry {
+    print(Color.RED.value);
+}
+
+#file2.jac
+import:jac file1;
+
+with entry{
+    print(file1.Color.BLUE.value);
 }
