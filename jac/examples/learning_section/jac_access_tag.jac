@@ -33,6 +33,21 @@ with entry {
     print(file1.num2); # Cannot access 'num2', it is private to 'file1.jac'
 }
 
+# -------------------------------------------------#
+# Access Tags for Global Vars (protect)
+# file1.jac
+glob: protect num2:int = 20;
+
+with entry {
+    print(num2);
+}
+
+# file2.jac
+import:jac file1;
+
+with entry {
+    print(file1.num2); # Cannot access 'num2', it is private to 'file1.jac'
+}
 
 # -------------------------------------------------#
 # Access Tags for Architypes (public)
@@ -167,6 +182,26 @@ with entry{
 # Access Tags for Enum (Private)
 # file1.jac
 enum:priv Color {
+    RED = 1,
+    GREEN = 2,
+    BLUE = 3
+}
+
+with entry {
+    print(Color.RED.value);
+}
+
+#file2.jac
+import:jac file1;
+
+with entry{
+    print(file1.Color.BLUE.value);
+}
+
+# -------------------------------------------------#
+# Access Tags for Enum (Protect)
+# file1.jac
+enum:protect Color {
     RED = 1,
     GREEN = 2,
     BLUE = 3
