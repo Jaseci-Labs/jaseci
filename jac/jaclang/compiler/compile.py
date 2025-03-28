@@ -93,7 +93,7 @@ def jac_str_to_pass(
             ast_ret = i(mod, prior=ast_ret)
         ast_ret = target(mod, prior=ast_ret) if target else ast_ret
 
-    for _, mod in list(machine.jac_program.modules.items()):
+    for mod in machine.jac_program.modules.values():
         run_schedule(mod)
 
     ast_ret.ir = top_mod
