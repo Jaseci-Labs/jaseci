@@ -81,7 +81,7 @@ class ImportReturn:
     def process_items(
         self,
         module: types.ModuleType,
-        items: dict[str, Union[str, Optional[str]]],
+        items: dict[str, str | None],
         caller_dir: str,
         lang: Optional[str],
         cachable: bool = True,

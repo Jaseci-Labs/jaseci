@@ -56,10 +56,10 @@ def jac_str_to_pass(
     if len(ast_ret.errors_had) != 0:
         return ast_ret
 
-    for i in schedule:
-        if i == target:
+    for _pass in schedule:
+        if _pass == target:
             break
-        ast_ret = i(input_ir=ast_ret.ir, prior=ast_ret)
+        ast_ret = _pass(input_ir=ast_ret.ir, prior=ast_ret)
     ast_ret = target(input_ir=ast_ret.ir, prior=ast_ret) if target else ast_ret
     return ast_ret
 
