@@ -254,6 +254,17 @@ class PyImportPass(JacImportPass):
                 self.__debug_print(msg)
                 self.__process_import(imp_node)
 
+    def attach_mod_to_node(
+        self, node: ast.ModulePath | ast.ModuleItem, mod: ast.Module | None
+    ) -> None:
+        """Attach a module to a node."""
+        if mod:
+            self.run_again = True
+            node.sub_module = mod
+            self.annex_impl(mod)
+            node.add_kids_right([mod], pos_update=False)
+            mod.parent = node
+
     def __process_import_from(self, imp_node: ast.Import) -> None:
         """Process imports in the form of `from X import I`."""
         assert isinstance(self.ir, ast.Module)
