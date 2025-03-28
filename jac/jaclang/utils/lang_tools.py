@@ -244,11 +244,14 @@ class AstTool:
 
             match output:
                 case "sym":
-                    return (
-                        ir.sym_tab.pp()
-                        if isinstance(ir.sym_tab, SymbolTable)
-                        else "Sym_tab is None."
-                    )
+                    from jaclang.runtimelib.machine import JacMachine
+
+                    out = ""
+                    for module_ in JacMachine.get().jac_program.modules.values():
+                        mod_name = module_.name
+                        t = "#" * len(mod_name)
+                        out += f"##{t}##\n# {mod_name} #\n##{t}##\n{module_.sym_tab.pp()}\n"
+                    return out
                 case "sym.":
                     return (
                         ir.sym_tab.dotgen()
@@ -256,7 +259,14 @@ class AstTool:
                         else "Sym_tab is None."
                     )
                 case "ast":
-                    return ir.pp()
+                    from jaclang.runtimelib.machine import JacMachine
+
+                    out = ""
+                    for module_ in JacMachine.get().jac_program.modules.values():
+                        mod_name = module_.name
+                        t = "#" * len(mod_name)
+                        out += f"##{t}##\n# {mod_name} #\n##{t}##\n{module_.pp()}\n"
+                    return out
                 case "ast.":
                     return ir.dotgen()
                 case "unparse":

@@ -274,7 +274,23 @@ def _build_symbol_tree_common(
     symbols = SymbolTree(node_name="Symbols", parent=root)
     children = SymbolTree(node_name="Sub Tables", parent=root)
 
-    for sym in node.tab.values():
+    syms_to_iterate = list(node.tab.values())
+    for inhrited_symtab in node.inherit:
+        for inhrited_sym in inhrited_symtab.symbols:
+            sym = inhrited_symtab.lookup(inhrited_sym)
+            assert sym is not None
+            syms_to_iterate.append(sym)
+
+    for stab in node.inherit:
+        if stab.load_all_symbols:
+            syms_to_iterate.extend(list(stab.base_symbol_table.tab.values()))
+        else:
+            for sname in stab.symbols:
+                sym = stab.base_symbol_table.lookup(sname)
+                assert sym is not None
+                syms_to_iterate.append(sym)
+
+    for sym in syms_to_iterate:
         symbol_node = SymbolTree(node_name=f"{sym.sym_name}", parent=symbols)
         SymbolTree(node_name=f"{sym.access} {sym.sym_type}", parent=symbol_node)
 
