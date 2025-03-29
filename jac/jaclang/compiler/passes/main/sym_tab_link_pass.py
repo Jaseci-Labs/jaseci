@@ -1,5 +1,7 @@
 """'Link the symbol tables across the modules."""
 
+import os
+
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.symtable import InheritedSymbolTable, SymbolTable
@@ -23,6 +25,8 @@ class SymTabLinkPass(Pass):
 
         machine = JacMachine.get()
         rel_path = node.resolve_relative_path()
+        if os.path.isdir(rel_path):
+            rel_path = f"{rel_path}/__init__.jac"
         if rel_path not in machine.jac_program.modules:
             self.ice()
 
