@@ -1,9 +1,9 @@
-- Comments can be used to explain Jac code.
-- Comments can be used to make the code more readable.
-- Comments can be used to prevent execution when testing code.
+- to explain Jac code.
+- to make the code more readable.
+- to prevent execution when testing code.
 
 ## Creating a Comment
-Comments starts with a **#**, and Jac will ignore them:
+Comments starts with a `#`, and Jac will ignore them:
 
 **Code Example**
 === "Jac"
@@ -11,6 +11,8 @@ Comments starts with a **#**, and Jac will ignore them:
     --8<-- "examples/learning_section/jac_comments.jac:1:4"
     ```
 **Code Example**
+In JacLang, an inline comment starts with `#` and is used to add brief explanations within the code.
+
 === "Jac"
     ```jac linenums="1"
     --8<-- "examples/learning_section/jac_comments.jac:6:8"
@@ -22,7 +24,7 @@ Comments starts with a **#**, and Jac will ignore them:
     ```
 
 ## Multiline Comments
-Jac does not really have a syntax for multiline comments.To add a multiline comment you could insert a # for each line:
+Jac does not really have a syntax for multiline comments.To add a multiline comment you could insert a `#` for each line:
 
 **Code Example**
 === "Jac"
@@ -30,6 +32,8 @@ Jac does not really have a syntax for multiline comments.To add a multiline comm
     --8<-- "examples/learning_section/jac_comments.jac:15:20"
     ```
 **Code Example**
+A multiline string in JacLang is enclosed within triple quotes (`"""` or `'''`) and allows storing text across multiple lines while preserving formatting.
+
 === "Jac"
     ```jac linenums="1"
     --8<-- "examples/learning_section/jac_comments.jac:22:29"

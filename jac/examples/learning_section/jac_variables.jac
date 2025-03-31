@@ -1,8 +1,8 @@
 """Jac variable Introduction"""
 
 with entry {
-    x = 5;
-    y = "Tom";
+    x:int = 5;
+    y:str = "Tom";
     print(x);
     print(y);
 }
@@ -17,8 +17,8 @@ with entry {
 }
 
 with entry {
-    x = 5;
-    y = "Tom";
+    x:int = 5;
+    y:str = "Tom";
     print(type(x));
     print(type(y));
 }

@@ -7,7 +7,7 @@ Jaclang has no command for declaring a variable.A variable is created the moment
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_variables.jac:2:7"
+    --8<-- "examples/learning_section/jac_variables.jac:2:8"
     ```
 
 ### Casting
