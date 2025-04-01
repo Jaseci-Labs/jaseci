@@ -11,6 +11,7 @@ Abilities are defined using the `can` keyword, followed by the ability name and 
     --8<-- "examples/learning_section/jac_ability.jac:1:3"
     ```
 
+
 ## Ability Parameters
 
 Abilities can take parameters, just like functions.
@@ -36,6 +37,35 @@ Abilities can take parameters, just like functions.
     can foo {}
     ```
 
+
+## Calling Abilities in Jac
+
+Once an ability is defined, it can be **called** just like functions in other languages. The way you call an ability depends on whether it has **parameters** or not.
+
+### Calling Without Parameters
+
+If an ability does not require parameters, you can simply call it by using its name followed by ().
+
+**Code Example**
+    ```jac linenums="5"
+    --8<-- "examples/learning_section/jac_ability.jac:31:33"
+    ```
+
+- Since `say_hello` does not expect any input, it is called with empty parentheses `()`.
+
+
+### Calling With Parameters
+
+If an ability requires parameters, you must pass the appropriate values when calling it.
+
+**Code Example**
+    ```jac linenums="5"
+    --8<-- "examples/learning_section/jac_ability.jac:35:37"
+    ```
+
+- The `say_hello_to` ability takes a `name` parameter, so we must pass a value when calling it.
+
+
 ## Returning Values from Abilities
 
 Abilities can return values using the `return` keyword. The retrun type should be specified before the body of the ability.
@@ -54,6 +84,35 @@ Example
 * This ability takes two numbers, adds them, and returns the result.
 
 
+## `*args` and `**kwargs` in Jac
+
+In Jac, `*args` and `**kwargs` allow abilities to accept a **variable number of arguments**.
+
+
+### Using `*args` (Positional Arguments)
+
+- `*args` allows an ability to take multiple positional arguments.
+- These arguments are received as a **list**.
+
+**Code Example**
+    ```jac linenums="9"
+    --8<-- "examples/learning_section/jac_ability.jac:40:46"
+    ```
+
+- The `sum_all` ability accepts multiple numbers and adds them.
+
+
+### Using `**kwargs` (Keyword Arguments)
+
+- `**kwargs` allows an ability to accept multiple named arguments.
+- These arguments are received as a **dictionary**.
+
+**Code Example**
+    ```jac linenums="9"
+    --8<-- "examples/learning_section/jac_ability.jac:48:54"
+    ```
+
+- The `print_details` ability takes multiple named parameters and prints them.
 
 ## Access Tags for Abilities
 
@@ -95,3 +154,17 @@ Implementation of the Ability
 ```jac linenums="2"
 --8<-- "examples/learning_section/jac_ability.jac:26:28"
 ```
+
+## Recursion using Abilities
+
+Recursion is a technique where a **function calls itself** to solve smaller subproblems. In Jac, abilities (`can`) can be recursive.
+
+**Code Example 1: Factorial Calculation**
+    ```jac linenums="9"
+    --8<-- "examples/learning_section/jac_ability.jac:59:68"
+    ```
+
+**Code Example 2: Recursive Sum of a List**
+    ```jac linenums="9"
+    --8<-- "examples/learning_section/jac_ability.jac:71:80"
+    ```
