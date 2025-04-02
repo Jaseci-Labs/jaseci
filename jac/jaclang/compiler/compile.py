@@ -56,7 +56,7 @@ def jac_str_to_pass(
     schedule: list[Type[Pass]] = pass_schedule,
 ) -> Pass:
     """Convert a Jac file to an AST."""
-    from jaclang.runtimelib.machine import JacMachine
+    from jaclang.runtimelib.machine import JacProgram
 
     if not target:
         target = schedule[-1] if schedule else None
@@ -68,21 +68,23 @@ def jac_str_to_pass(
     if len(schedule) == 0:
         return ast_ret
 
-    machine = JacMachine.get()
-    top_mod = ast_ret.ir
     assert isinstance(ast_ret.ir, ast.Module)
-    machine.jac_program.last_imported.append(ast_ret.ir)
-    machine.jac_program.modules[ast_ret.ir.loc.mod_path] = ast_ret.ir
 
-    while len(machine.jac_program.last_imported) > 0:
-        mod = machine.jac_program.last_imported.pop()
+    top_mod: ast.Module = ast_ret.ir
+    top_mod.jac_prog = JacProgram(None, None, None)
+    assert isinstance(ast_ret.ir, ast.Module)
+    top_mod.jac_prog.last_imported.append(ast_ret.ir)
+    top_mod.jac_prog.modules[ast_ret.ir.loc.mod_path] = ast_ret.ir
+
+    while len(top_mod.jac_prog.last_imported) > 0:
+        mod = top_mod.jac_prog.last_imported.pop()
         jac_ir_to_pass(ir=mod, schedule=[JacImportPass, SymTabBuildPass])
 
     # If there is syntax error, no point in processing in further passes.
     if len(ast_ret.errors_had) != 0:
         return ast_ret
 
-    for mod in machine.jac_program.modules.values():
+    for mod in top_mod.jac_prog.modules.values():
         SymTabLinkPass(input_ir=mod, prior=ast_ret)
 
     def run_schedule(mod: ast.Module) -> None:
@@ -93,7 +95,7 @@ def jac_str_to_pass(
             ast_ret = i(mod, prior=ast_ret)
         ast_ret = target(mod, prior=ast_ret) if target else ast_ret
 
-    for mod in machine.jac_program.modules.values():
+    for mod in top_mod.jac_prog.modules.values():
         run_schedule(mod)
 
     ast_ret.ir = top_mod

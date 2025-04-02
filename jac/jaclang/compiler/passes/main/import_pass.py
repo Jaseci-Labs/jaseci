@@ -55,12 +55,13 @@ class JacImportPass(Pass):
         self, node: ast.ModulePath | ast.ModuleItem, mod: ast.Module | None
     ) -> None:
         """Attach a module to a node."""
-        from jaclang.runtimelib.machine import JacMachine
+        assert isinstance(self.ir, ast.Module)
+        assert self.ir.jac_prog is not None
 
-        current_machine = JacMachine.get()
-        if mod and mod.loc.mod_path not in current_machine.jac_program.modules:
-            current_machine.jac_program.modules[mod.loc.mod_path] = mod
-            current_machine.jac_program.last_imported.append(mod)
+        if mod and mod.loc.mod_path not in self.ir.jac_prog.modules:
+            self.ir.jac_prog.modules[mod.loc.mod_path] = mod
+            self.ir.jac_prog.last_imported.append(mod)
+            mod.jac_prog = self.ir.jac_prog
             self.annex_impl(mod)
 
     # TODO: Refactor this to a function for impl and function for test

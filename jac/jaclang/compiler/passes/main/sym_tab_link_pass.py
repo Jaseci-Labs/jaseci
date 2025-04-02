@@ -17,20 +17,21 @@ class SymTabLinkPass(Pass):
 
     def enter_module_path(self, node: ast.ModulePath) -> None:
         """Link the symbol tables."""
-        from jaclang.runtimelib.machine import JacMachine
+
+        assert isinstance(self.ir, ast.Module)
+        assert self.ir.jac_prog is not None
 
         imp_node = node.parent_of_type(ast.Import)
         if imp_node.is_py or imp_node.is_absorb:
             return None
 
-        machine = JacMachine.get()
         rel_path = node.resolve_relative_path()
         if os.path.isdir(rel_path):
             rel_path = f"{rel_path}/__init__.jac"
-        if rel_path not in machine.jac_program.modules:
+        if rel_path not in self.ir.jac_prog.modules:
             self.ice()
 
-        imported_mod_symtab = machine.jac_program.modules[rel_path].sym_tab
+        imported_mod_symtab = self.ir.jac_prog.modules[rel_path].sym_tab
 
         all_import = False
         symbols_str_list: list[str] = []
