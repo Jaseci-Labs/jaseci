@@ -641,6 +641,8 @@ class Module(AstDocNode):
         registry: Optional[SemRegistry] = None,
     ) -> None:
         """Initialize whole program node."""
+        from jaclang.runtimelib.machine import JacProgram
+
         self.name = name
         self.source = source
         self.body = body
@@ -652,6 +654,7 @@ class Module(AstDocNode):
         self.registry = registry
         self.terminals: list[Token] = terminals
         self.py_info: PyInfo = PyInfo()
+        self.jac_prog: Optional[JacProgram] = None
 
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
