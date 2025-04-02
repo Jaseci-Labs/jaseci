@@ -39,7 +39,7 @@ You can access tuple items by referring to the index number, inside square brack
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple.jac:18:21"
+    --8<-- "examples/learning_section/jac_tuple.jac:18:22"
     ```
 
 ### Negative Indexing
@@ -48,7 +48,7 @@ Negative indexing means start from the end.**-1** refers to the last item, **-2*
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple.jac:23:26"
+    --8<-- "examples/learning_section/jac_tuple.jac:23:27"
     ```
 
 ### Range of Indexes
@@ -57,12 +57,12 @@ You can specify a range of indexes by specifying where to start and where to end
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple.jac:28:31"
+    --8<-- "examples/learning_section/jac_tuple.jac:28:32"
     ```
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple.jac:33:36"
+    --8<-- "examples/learning_section/jac_tuple.jac:33:37"
     ```
 
 ### Check if Item Exists
@@ -71,7 +71,7 @@ To determine if a specified item is present in a tuple use the **in** keyword:
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple.jac:38:43"
+    --8<-- "examples/learning_section/jac_tuple.jac:39:44"
     ```
 
 ## Update Tuple Items
@@ -82,7 +82,7 @@ Once a tuple is created, you cannot change its values. Tuples are **unchangeable
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple.jac:46:53"
+    --8<-- "examples/learning_section/jac_tuple.jac:48:55"
     ```
 
 ### Add Items
@@ -93,7 +93,7 @@ Since tuples are immutable, they do not have a built-in **append()** method, but
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple.jac:55:60"
+    --8<-- "examples/learning_section/jac_tuple.jac:57:62"
     ```
 
 **2. Add tuple to a tuple:**
@@ -101,7 +101,7 @@ Since tuples are immutable, they do not have a built-in **append()** method, but
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple.jac:62:67"
+    --8<-- "examples/learning_section/jac_tuple.jac:64:69"
     ```
 
 ### Remove Items
@@ -110,13 +110,13 @@ Tuples are **unchangeable**, so you cannot remove items from it, but you can use
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple.jac:69:74"
+    --8<-- "examples/learning_section/jac_tuple.jac:71:76"
     ```
 
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple.jac:76:79"
+    --8<-- "examples/learning_section/jac_tuple.jac:78:81"
     ```
 
 ## Unpack Tuple Items
@@ -125,7 +125,7 @@ Tuples can be 'packed' by assigning values to them. In Python, we can also 'unpa
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple.jac:82:89"
+    --8<-- "examples/learning_section/jac_tuple.jac:85:92"
     ```
 
 ### Using Asterisk *
@@ -134,13 +134,13 @@ If the number of variables is less than the number of values, you can add an * t
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple.jac:91:98"
+    --8<-- "examples/learning_section/jac_tuple.jac:94:101"
     ```
 
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple.jac:100:108"
+    --8<-- "examples/learning_section/jac_tuple.jac:103:111"
     ```
 
 ## Loop Tuple
@@ -151,7 +151,7 @@ You can loop through the tuple items by using a **for** loop.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple.jac:111:116"
+    --8<-- "examples/learning_section/jac_tuple.jac:115:120"
     ```
 
 ### Loop Through the Index Numbers
@@ -162,7 +162,7 @@ You can also loop through the tuple items by referring to their index number.Use
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple.jac:118:123"
+    --8<-- "examples/learning_section/jac_tuple.jac:122:127"
     ```
 
 **1.Using a while Loop**
@@ -170,7 +170,7 @@ You can also loop through the tuple items by referring to their index number.Use
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple.jac:125:132"
+    --8<-- "examples/learning_section/jac_tuple.jac:129:136"
     ```
 
 ## Join Tuples
@@ -181,7 +181,7 @@ To join two or more tuples you can use the **+** operator:
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple.jac:135:141"
+    --8<-- "examples/learning_section/jac_tuple.jac:140:146"
     ```
 
 ### Multiply Tuples
@@ -190,5 +190,5 @@ If you want to multiply the content of a tuple a given number of times, you can 
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_tuple.jac:143:148"
+    --8<-- "examples/learning_section/jac_tuple.jac:148:153"
     ```

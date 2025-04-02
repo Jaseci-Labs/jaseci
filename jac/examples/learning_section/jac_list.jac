@@ -94,6 +94,12 @@ with entry {
 
 with entry {
     fruits = ["apple", "banana", "cherry"];
+    fruits.insert(1, "orange");
+    print(fruits);
+}
+
+with entry {
+    fruits = ["apple", "banana", "cherry"];
     tropical = ["mango", "pineapple", "papaya"];
     fruits.extend(tropical);
     print(fruits);
@@ -106,11 +112,6 @@ with entry {
     print(fruits_list);
 }
 
-with entry {
-    fruits = ["apple", "banana", "cherry"];
-    fruits.insert(1, "orange");
-    print(fruits);
-}
 
 #Remove List Items
 

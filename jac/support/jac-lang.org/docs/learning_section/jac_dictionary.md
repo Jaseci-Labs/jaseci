@@ -46,14 +46,14 @@ You can access the items of a dictionary by referring to its key name, inside sq
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:23:26"
+    --8<-- "examples/learning_section/jac_dictionary.jac:24:27"
     ```
 
 There is also a method called get() that will give you the same result:
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:28:31"
+    --8<-- "examples/learning_section/jac_dictionary.jac:29:32"
     ```
 
 ### Get Keys
@@ -62,7 +62,7 @@ The `keys()` method will return a list of all the keys in the dictionary.
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:33:37"
+    --8<-- "examples/learning_section/jac_dictionary.jac:34:38"
     ```
 
 ### Get Values
@@ -71,7 +71,7 @@ The `values()` method will return a list of all the values in the dictionary.
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:39:43"
+    --8<-- "examples/learning_section/jac_dictionary.jac:40:44"
     ```
 
 ### Get Items
@@ -79,7 +79,7 @@ The `items()` method will return each item in a dictionary, as tuples in a list.
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:45:49"
+    --8<-- "examples/learning_section/jac_dictionary.jac:46:50"
     ```
 
 ### Check if Key Exists
@@ -88,7 +88,7 @@ To determine if a specified key is present in a dictionary use the in keyword:
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:51:58"
+    --8<-- "examples/learning_section/jac_dictionary.jac:52:59"
     ```
 
 ## Change Items
@@ -98,7 +98,7 @@ You can change the value of a specific item by referring to its key name:
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:61:65"
+    --8<-- "examples/learning_section/jac_dictionary.jac:63:67"
     ```
 
 ### Update Dictionary
@@ -107,7 +107,7 @@ The **update()** method will update the dictionary with the items from the given
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:67:71"
+    --8<-- "examples/learning_section/jac_dictionary.jac:69:73"
     ```
 
 ## Add Items
@@ -117,7 +117,7 @@ Adding an item to the dictionary is done by using a new index key and assigning 
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:74:78"
+    --8<-- "examples/learning_section/jac_dictionary.jac:77:81"
     ```
 
 ### Update Dictionary
@@ -126,7 +126,7 @@ The **update()** method will update the dictionary with the items from a given a
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:80:84"
+    --8<-- "examples/learning_section/jac_dictionary.jac:83:87"
     ```
 
 ## Remove Items
@@ -137,28 +137,28 @@ The **pop()** method removes the item with the specified key name:
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:87:91"
+    --8<-- "examples/learning_section/jac_dictionary.jac:91:95"
     ```
 
 The **popitem()** method removes the last inserted item:
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:93:97"
+    --8<-- "examples/learning_section/jac_dictionary.jac:97:101"
     ```
 
 The **del** keyword removes the item with the specified key name:
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:99:103"
+    --8<-- "examples/learning_section/jac_dictionary.jac:103:107"
     ```
 
 The **clear()** method empties the dictionary:
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:105:109"
+    --8<-- "examples/learning_section/jac_dictionary.jac:109:113"
     ```
 
 ## Loop Dictionaries
@@ -169,35 +169,35 @@ Print all key names in the dictionary, one by one:
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:112:117"
+    --8<-- "examples/learning_section/jac_dictionary.jac:117:122"
     ```
 
 Print all values in the dictionary, one by one:
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:119:124"
+    --8<-- "examples/learning_section/jac_dictionary.jac:124:129"
     ```
 
 You can also use the **values()** method to return values of a dictionary:
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:126:131"
+    --8<-- "examples/learning_section/jac_dictionary.jac:131:136"
     ```
 
 You can use the **keys()** method to return the keys of a dictionary:
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:133:138"
+    --8<-- "examples/learning_section/jac_dictionary.jac:138:143"
     ```
 
 Loop through both keys and values, by using the **items()** method:
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:140:145"
+    --8<-- "examples/learning_section/jac_dictionary.jac:145:150"
     ```
 
 ## Copy Dictionaries
@@ -208,14 +208,14 @@ There are ways to make a copy, one way is to use the built-in Dictionary method 
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:148:152"
+    --8<-- "examples/learning_section/jac_dictionary.jac:154:158"
     ```
 
 Another way to make a copy is to use the built-in function `dict()`.
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:154:158"
+    --8<-- "examples/learning_section/jac_dictionary.jac:160:164"
     ```
 
 ## Nested Dictionaries
@@ -224,14 +224,14 @@ A dictionary can contain dictionaries, this is called nested dictionaries.
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:161:168"
+    --8<-- "examples/learning_section/jac_dictionary.jac:168:175"
     ```
 
 Create three dictionaries, then create one dictionary that will contain the other three dictionaries:
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:170:177"
+    --8<-- "examples/learning_section/jac_dictionary.jac:177:184"
     ```
 
 ### Access Items in Nested Dictionaries
@@ -240,5 +240,5 @@ To access items from a nested dictionary, you use the name of the dictionaries, 
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_dictionary.jac:179:186"
+    --8<-- "examples/learning_section/jac_dictionary.jac:186:193"
     ```
