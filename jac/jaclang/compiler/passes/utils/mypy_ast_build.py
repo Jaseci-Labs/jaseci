@@ -599,7 +599,7 @@ class State(myb.State):
                     raise myb.CompileError(
                         [
                             "mypy: can't read file '{}': {}".format(
-                                self.path, myb.os.strerror(ioerr.errno)
+                                self.path, myb.os.strerror(ioerr.errno or 0)
                             )
                         ],
                         module_with_blocker=self.id,
