@@ -11,13 +11,13 @@ Architypes define different types of entities in Jac, used for both **object-ori
 - **`class`** - A **standard class** used for object-oriented programming. It defines reusable structures with attributes and methods.
 
     ```jac
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architypes.jac:2:2"
+    --8<-- "examples/learning_section/jac_architypes.jac:2:2"
     ```
 
 - **`obj`** - Similar to class, but represents **single-instance objects** rather than reusable templates.
 
     ```jac
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architypes.jac:4:4"
+    --8<-- "examples/learning_section/jac_architypes.jac:4:4"
     ```
 
 !!! note
@@ -27,19 +27,19 @@ Architypes define different types of entities in Jac, used for both **object-ori
 - **`node`** - Represents a **node** in a graph-based structure. Nodes store data and are connected using edge architypes.
 
     ```jac
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architypes.jac:6:6"
+    --8<-- "examples/learning_section/jac_architypes.jac:6:6"
     ```
 
 - **`edge`** - Defines the **connection** between two `node` architypes. Edges store relationships between nodes.
 
     ```jac
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architypes.jac:8:8"
+    --8<-- "examples/learning_section/jac_architypes.jac:8:8"
     ```
 
 - **`walker`** -  A special type of architype that **traverses** a graph, moving between `node` instances along `edge` connections. Walkers define behaviors for navigating structured data.
 
     ```jac
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architypes.jac:10:10"
+    --8<-- "examples/learning_section/jac_architypes.jac:10:10"
     ```
 
 
@@ -51,7 +51,7 @@ The following example, `obj MyObject` contains ability. So, we'll explore it in 
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architypes.jac:21:23"
+    --8<-- "examples/learning_section/jac_architypes.jac:21:23"
     ```
 
 
@@ -61,7 +61,7 @@ Now we can use the obj named MyClass to create the object.
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architypes.jac:25:28"
+    --8<-- "examples/learning_section/jac_architypes.jac:25:28"
     ```
 
 ??? tip "Output"
@@ -83,14 +83,14 @@ We can define an attributes,
 
 **Code Example**
 ```jac linenums="5"
---8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architypes.jac:37:39"
+--8<-- "examples/learning_section/jac_architypes.jac:37:39"
 ```
 
 - with a default value.
 
 **Code Example**
 ```jac linenums="9"
---8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architypes.jac:41:43"
+--8<-- "examples/learning_section/jac_architypes.jac:41:43"
 ```
 
 !!! note
@@ -101,7 +101,7 @@ We can define attributes inside any type of Architype.
 
 **Code Example**
 ```jac linenums="1"
---8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architypes.jac:33:51"
+--8<-- "examples/learning_section/jac_architypes.jac:33:51"
 ```
 
 ### Ways of Defining Attributes
@@ -110,14 +110,14 @@ We can define attributes inside any type of Architype.
 
 **Code Example**
 ```jac linenums="1"
---8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architypes.jac:55:58"
+--8<-- "examples/learning_section/jac_architypes.jac:55:58"
 ```
 
 - In a single line `has`, seperated by commas `(,)`
 
 **Code Example**
 ```jac linenums="1"
---8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architypes.jac:60:62"
+--8<-- "examples/learning_section/jac_architypes.jac:60:62"
 ```
 
 ### Static Attributes
@@ -126,7 +126,7 @@ Static attributes belong to the **architype itself** rather than individual inst
 
 **Code Example**
 ```jac linenums="6"
---8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architypes.jac:65:71"
+--8<-- "examples/learning_section/jac_architypes.jac:65:71"
 ```
 
 * Here, `wheels` is a **static attribute**, meaning all `Car` objects share the same value (`4` wheels).
@@ -140,7 +140,7 @@ Abilities can be defined inside **architypes** (nodes, edges, objects, etc.).
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architypes.jac:75:97"
+    --8<-- "examples/learning_section/jac_architypes.jac:75:97"
     ```
 
 ### Static Abilities
@@ -149,7 +149,7 @@ Static abilities do not depend on instance data. They are defined using the `sta
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_ability.jac:13:17"
+    --8<-- "examples/learning_section/jac_ability.jac:13:17"
     ```
 
 * This `square` ability does not require an instance of `MathUtils` and can be called directly.
@@ -161,7 +161,7 @@ If an `architype` inherits another, it can override its abilities.
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architypes.jac:101:111"
+    --8<-- "examples/learning_section/jac_architypes.jac:101:111"
     ```
 
 * Here, `Dog` inherits `Animal` but overrides the `speak` ability with its own behavior.
@@ -177,7 +177,7 @@ In Jac, abilities define actions or behaviors within an architype. Some abilitie
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architypes.jac:114:122"
+    --8<-- "examples/learning_section/jac_architypes.jac:114:122"
     ```
 
 !!! warning
@@ -198,14 +198,14 @@ Architypes can **inherit** properties and abilities from other architypes.
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architypes.jac:127:134"
+    --8<-- "examples/learning_section/jac_architypes.jac:127:134"
     ```
 
 So, now the properties of `Animal` can be accessed through `Pet`.
 
 **Code Example**
     ```jac linenums="9"
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architypes.jac:136:140"
+    --8<-- "examples/learning_section/jac_architypes.jac:136:140"
     ```
 
 
@@ -215,7 +215,7 @@ Architypes can have an optional **string identifier** that describes them.
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architypes.jac:14:17"
+    --8<-- "examples/learning_section/jac_architypes.jac:14:17"
     ```
 
 ---
@@ -232,12 +232,12 @@ Architypes store data and define structures, like objects in OOP. Instead of def
 Declaration of the Architype
 
 ```jac linenums="1"
---8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architypes.jac:146:146"
+--8<-- "examples/learning_section/jac_architypes.jac:146:146"
 ```
 
 Implementation of the Architype
 ```jac linenums="2"
---8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architypes.jac:148:152"
+--8<-- "examples/learning_section/jac_architypes.jac:148:152"
 ```
 
 ### Impls for Abilities Inside Architypes
@@ -249,11 +249,11 @@ In Jac, abilities (`can`) inside architypes (like `walker`, `object`, `node`, et
 Abilities can be **declared inside an architype** without defining their behavior.
 
 ```jac linenums="1"
---8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architypes.jac:155:157"
+--8<-- "examples/learning_section/jac_architypes.jac:155:157"
 ```
 
 We can implement the ability **outside** the architype declaration.
 
 ```jac linenums="5"
---8<-- "/home/malithaprabhashana/programming/intern/jaseci/jac/examples/learning_section/jac_architypes.jac:159:161"
+--8<-- "examples/learning_section/jac_architypes.jac:159:161"
 ```
