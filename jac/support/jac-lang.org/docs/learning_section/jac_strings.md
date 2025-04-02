@@ -51,7 +51,7 @@ To get the length of a string, use the **len()** function.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_strings.jac:30:33"
+    --8<-- "examples/learning_section/jac_strings.jac:30:34"
     ```
 
 ### Check String
@@ -115,7 +115,7 @@ Whitespace is the space before and/or after the actual text, and very often you 
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_strings.jac.jac:71:74"
+    --8<-- "examples/learning_section/jac_strings.jac:71:74"
     ```
 
 ### Replace String
@@ -124,7 +124,7 @@ The **replace( )** method replaces a string with another string:
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_strings.jac.jac:76:79"
+    --8<-- "examples/learning_section/jac_strings.jac:76:79"
     ```
 
 ### Split String
@@ -133,7 +133,7 @@ The **split( )** method returns a list where the text between the specified sepa
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_strings.jac.jac:81:84"
+    --8<-- "examples/learning_section/jac_strings.jac:81:84"
     ```
 
 ## String Concatenation

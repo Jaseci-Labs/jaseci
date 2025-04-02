@@ -56,7 +56,7 @@ with entry {
 """Jac Global variable"""
 with entry {
     x = "awesome";
-    can myfunc() {
+    can myfunc {
         print("Jaclang is " + x);
     }
     myfunc();
@@ -64,7 +64,7 @@ with entry {
 
 with entry {
     x = "awesome";
-    can myfunc() {
+    can myfunc {
         x = "fantastic";
         print("Jaclang is " + x);
     }
@@ -76,7 +76,7 @@ with entry {
 glob x = "awesome";
 
 with entry {
-    can myfunc() {
+    can myfunc {
         print("Jaclang is " + x);
     }
     myfunc();
@@ -85,7 +85,7 @@ with entry {
 glob x = "awesome";
 
 with entry {
-    can myfunc() {
+    can myfunc {
         x = "fantastic";
         print("Jaclang is " + x);
     }

@@ -16,7 +16,7 @@ If you want to specify the data type of a variable, this can be done with castin
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_variables.jac:9:16"
+    --8<-- "examples/learning_section/jac_variables.jac:9:17"
     ```
 
 ### Get the Type
@@ -25,7 +25,7 @@ You can get the data type of a variable with the **type()** function.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_variables.jac:18:23"
+    --8<-- "examples/learning_section/jac_variables.jac:18:24"
     ```
 
 ### Case-Sensitive
@@ -34,11 +34,10 @@ Variable names are case-sensitive.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_variables.jac:25:30"
+    --8<-- "examples/learning_section/jac_variables.jac:25:31"
     ```
 
 ## Variable Names
-
 - A variable name must start with a letter or the underscore character (_).
 - A variable name cannot start with a number.
 - A variable name can only contain alphanumeric characters (A-Z, 0-9) and underscores (_).
@@ -48,7 +47,7 @@ Variable names are case-sensitive.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_variables.jac:33:40"
+    --8<-- "examples/learning_section/jac_variables.jac:33:41"
     ```
 
 ### Multi Words Variable Names
@@ -68,19 +67,19 @@ Each word is separated by an underscore character:
 `my_variable_name = "John"`
 
 ## Output Variables
-The Jaclang **print()** function is often used to output variables.
+The Jaclang `print()` function is often used to output variables.
 
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_variables.jac:43:46"
+    --8<-- "examples/learning_section/jac_variables.jac:43:47"
     ```
-In the **print()** function, you output multiple variables, separated by a comma:
+In the `print()` function, you output multiple variables, separated by a comma:
 
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_variables.jac:48:53"
+    --8<-- "examples/learning_section/jac_variables.jac:48:54"
     ```
 ## Global Variables
 In **JacLang**, variables created outside of a function are known as **global variables**.Global variables are accessible from anywhere in the code, both inside functions and outside of them.
@@ -88,7 +87,7 @@ In **JacLang**, variables created outside of a function are known as **global va
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_variables.jac:56:62"
+    --8<-- "examples/learning_section/jac_variables.jac:56:63"
     ```
 
 If you create a variable with the same name inside a function, this variable will be local, and can only be used inside the function. The global variable with the same name will remain as it was, global and with the original value.
@@ -96,16 +95,16 @@ If you create a variable with the same name inside a function, this variable wil
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_variables.jac:64:73"
+    --8<-- "examples/learning_section/jac_variables.jac:64:74"
     ```
 
 ### The Global Keyword
-Normally, when you create a variable inside a function, that variable is local, and can only be used inside that function.To create a global variable inside a function, you can use the **global** keyword.
+Normally, when you create a variable inside a function, that variable is local, and can only be used inside that function.To create a global variable inside a function, you can use the `global` keyword.
 
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_variables.jac:75:82"
+    --8<-- "examples/learning_section/jac_variables.jac:75:83"
     ```
 
 Also, use the global keyword if you want to change a global variable inside a function.
@@ -113,5 +112,5 @@ Also, use the global keyword if you want to change a global variable inside a fu
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_variables.jac:84:94"
+    --8<-- "examples/learning_section/jac_variables.jac:84:95"
     ```

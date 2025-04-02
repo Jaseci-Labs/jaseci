@@ -70,7 +70,7 @@ Match objects using class patterns.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_match_case.jac:60:71"
+    --8<-- "examples/learning_section/jac_match_case.jac:60:72"
     ```
 
 ## Using as to Capture Values (`MatchAs`)
@@ -80,7 +80,7 @@ Extract matched values into variables.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_match_case.jac:73:80"
+    --8<-- "examples/learning_section/jac_match_case.jac:73:81"
     ```
 
 ## Match Multiple Patterns (`MatchOr`)
@@ -90,7 +90,7 @@ Use **|** to match multiple patterns.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_match_case.jac:82:89"
+    --8<-- "examples/learning_section/jac_match_case.jac:82:90"
     ```
 
 ## Default Case (_)
@@ -100,5 +100,5 @@ Use **_** to handle unmatched cases.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_match_case.jac:91:98"
+    --8<-- "examples/learning_section/jac_match_case.jac:91:99"
     ```

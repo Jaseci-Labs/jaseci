@@ -28,14 +28,14 @@ Items in a set cannot be accessed via an index or key. However, you can iterate 
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_sets.jac:8:13"
+    --8<-- "examples/learning_section/jac_sets.jac:9:14"
     ```
 
 ### Check Items
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_sets.jac:15:18"
+    --8<-- "examples/learning_section/jac_sets.jac:16:19"
     ```
 
 ## Add Set Items
@@ -48,7 +48,7 @@ To add one item to a set use the **add()** method.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_sets.jac:21:25"
+    --8<-- "examples/learning_section/jac_sets.jac:23:27"
     ```
 
 **2.Using update( ) method**
@@ -58,7 +58,7 @@ To add items from another set into the current set, use the **update()** method.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_sets.jac:27:34"
+    --8<-- "examples/learning_section/jac_sets.jac:29:36"
     ```
 
 ### Add Any Iterable
@@ -68,7 +68,7 @@ The object in the **update()** method does not have to be a set, it can be any i
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_sets.jac:36:43"
+    --8<-- "examples/learning_section/jac_sets.jac:38:45"
     ```
 
 ## Remove Set Items
@@ -79,13 +79,13 @@ To remove an item in a set, use the **remove()**, or the **discard()** method.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_sets.jac:47:51"
+    --8<-- "examples/learning_section/jac_sets.jac:49:53"
     ```
 
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_sets.jac:53:57"
+    --8<-- "examples/learning_section/jac_sets.jac:55:59"
     ```
 
 You can also use the **pop()** method to remove an item, but this method will remove a random item, so you cannot be sure what item that gets removed.The return value of the **pop()** method is the removed item.
@@ -93,7 +93,7 @@ You can also use the **pop()** method to remove an item, but this method will re
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_sets.jac:59:64"
+    --8<-- "examples/learning_section/jac_sets.jac:61:66"
     ```
 
 The **clear()** method removes all items from a set, leaving it empty.
@@ -101,14 +101,14 @@ The **clear()** method removes all items from a set, leaving it empty.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_sets.jac:66:70"
+    --8<-- "examples/learning_section/jac_sets.jac:68:72"
     ```
 The **del** keyword deletes a set entirely. After using **del**, the set no longer exists.
 
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_sets.jac:72:75"
+    --8<-- "examples/learning_section/jac_sets.jac:74:77"
     ```
 
 ## Loop Sets
@@ -120,7 +120,7 @@ You can loop through the set items by using a for loop:
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_sets.jac:79:84"
+    --8<-- "examples/learning_section/jac_sets.jac:81:86"
     ```
 
 ## Join Sets
@@ -138,7 +138,7 @@ The **union()** method returns a new set with all items from both sets.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_sets.jac:87:93"
+    --8<-- "examples/learning_section/jac_sets.jac:90:96"
     ```
 
 You can use the **|** operator instead of the **union()** method, and you will get the same result.
@@ -146,7 +146,7 @@ You can use the **|** operator instead of the **union()** method, and you will g
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_sets.jac:95:101"
+    --8<-- "examples/learning_section/jac_sets.jac:98:104"
     ```
 
 ### Join Multiple Sets
@@ -156,7 +156,7 @@ All the joining methods and operators can be used to join multiple sets.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_sets.jac:103:111"
+    --8<-- "examples/learning_section/jac_sets.jac:106:114"
     ```
 
 When using the | operator, separate the sets with more | operators:
@@ -164,7 +164,7 @@ When using the | operator, separate the sets with more | operators:
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_sets.jac:113:121"
+    --8<-- "examples/learning_section/jac_sets.jac:116:124"
     ```
 
 ### Update
@@ -174,7 +174,7 @@ The update() method inserts all items from one set into another.The update() cha
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_sets.jac:123:129"
+    --8<-- "examples/learning_section/jac_sets.jac:126:132"
     ```
 
 ### Intersection
@@ -184,14 +184,14 @@ The intersection() method will return a new set, that only contains the items th
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_sets.jac:131:137"
+    --8<-- "examples/learning_section/jac_sets.jac:134:140"
     ```
 You can use the **&** operator instead of the **intersection()** method, and you will get the same result.
 
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_sets.jac:139:145"
+    --8<-- "examples/learning_section/jac_sets.jac:142:148"
     ```
 
 ### Difference
@@ -201,7 +201,7 @@ The **difference()** method will return a new set that will contain only the ite
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_sets.jac:147:154"
+    --8<-- "examples/learning_section/jac_sets.jac:150:157"
     ```
 
 You can use the **-** operator instead of the **difference()** method, and you will get the same result.
@@ -209,5 +209,5 @@ You can use the **-** operator instead of the **difference()** method, and you w
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_sets.jac:156:163"
+    --8<-- "examples/learning_section/jac_sets.jac:159:166"
     ```
