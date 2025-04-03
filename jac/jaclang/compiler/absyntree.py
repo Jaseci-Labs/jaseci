@@ -3531,9 +3531,9 @@ class EdgeRefTrailer(Expr):
         for expr in self.chain:
             res = res and expr.normalize(deep)
         new_kid: list[AstNode] = []
-        if self.edges_only:
-            new_kid.append(self.gen_token(Tok.EDGE_OP))
         new_kid.append(self.gen_token(Tok.LSQUARE))
+        if self.edges_only:
+            new_kid.append(self.gen_token(Tok.KW_EDGE))
         new_kid.extend(self.chain)
         new_kid.append(self.gen_token(Tok.RSQUARE))
         self.set_kids(nodes=new_kid)

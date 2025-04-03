@@ -1630,7 +1630,6 @@ class JacFormatPass(Pass):
             else:
                 self.emit(node, i.gen.jac)
 
-
     def exit_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
         """Sub objects.
 
