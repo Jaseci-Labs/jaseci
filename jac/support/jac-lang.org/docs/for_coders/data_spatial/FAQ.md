@@ -67,16 +67,16 @@
 ??? question "How to get all edges that is connected with a node?"
     - You can retrieve all the edges connected to a node by using edge filtering expressions.
     ```jac
-        print(:e:[node_a-->]);
-        print(:e:[node_a<--]);
-        print(:e:[node_list[0]-->]);
+        print([edge node_a-->]);
+        print([edge node_a<--]);
+        print([edge node_list[0]-->]);
     ```
 
 ??? question "How to get all edges that is connected between two nodes?"
     - To get all edges between two nodes:
     ```jac
-        print(:e:[node_1-->node_2]);
-        print(:e:[node_list[0]-->node_list[1]]);
+        print([edge node_1-->node_2]);
+        print([edge node_list[0]-->node_list[1]]);
 
     ```
 
