@@ -7,14 +7,12 @@ start: module
 //
 // module: STRING? toplevel_stmt*
 //
-module: (toplevel_stmt (tl_stmt_with_doc | toplevel_stmt)*)?
-       | STRING        (tl_stmt_with_doc | toplevel_stmt)*
+module: ((STRING | toplevel_stmt) (STRING? toplevel_stmt)*)?
 
 // AST:TODO: Docstring should be part of the definition of the statement
 // and not all toplevel statement have docstring, example: ImportStmt.
 //
 // Statements that are only valid at the toplevel.
-tl_stmt_with_doc: STRING toplevel_stmt
 toplevel_stmt: import_stmt
        | architype
        | ability
