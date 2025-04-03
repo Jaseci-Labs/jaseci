@@ -1,4 +1,4 @@
-can myFunc() {
+can myFunc {
     yield "Hello";
     yield 91;
     yield "Good Bye";

@@ -21,6 +21,6 @@ node node_a {
 }
 
 with entry {
-# spawn will iniiate the walker Adder from root node
-Adder() spawn root;
+    # spawn will iniiate the walker Adder from root node
+    Adder() spawn root;
 }

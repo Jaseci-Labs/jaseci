@@ -650,7 +650,7 @@ class JacFeatureImpl(
     @hookimpl
     def make_architype(
         cls: type,
-        arch_base: Type[Architype],
+        arch_base: Type,
         on_entry: list[DSFunc],
         on_exit: list[DSFunc],
     ) -> Type[Architype]:
@@ -726,6 +726,22 @@ class JacFeatureImpl(
 
     @staticmethod
     @hookimpl
+    def make_root(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a obj architype."""
+
+        def decorator(cls: Type[Architype]) -> Type[Architype]:
+            """Decorate class."""
+            cls = Jac.make_architype(
+                cls=cls, arch_base=Root, on_entry=on_entry, on_exit=on_exit
+            )
+            return cls
+
+        return decorator
+
+    @staticmethod
+    @hookimpl
     def make_edge(
         on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
@@ -735,6 +751,25 @@ class JacFeatureImpl(
             """Decorate class."""
             cls = Jac.make_architype(
                 cls=cls, arch_base=EdgeArchitype, on_entry=on_entry, on_exit=on_exit
+            )
+            return cls
+
+        return decorator
+
+    @staticmethod
+    @hookimpl
+    def make_generic_edge(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a edge architype."""
+
+        def decorator(cls: Type[Architype]) -> Type[Architype]:
+            """Decorate class."""
+            cls = Jac.make_architype(
+                cls=cls,
+                arch_base=GenericEdge,
+                on_entry=on_entry,
+                on_exit=on_exit,
             )
             return cls
 
@@ -1061,7 +1096,9 @@ class JacFeatureImpl(
     @hookimpl
     def get_root_type() -> Type[Root]:
         """Jac's root getter."""
-        return Root
+        from jaclang import Root as JRoot
+
+        return cast(Type[Root], JRoot)
 
     @staticmethod
     @hookimpl
@@ -1071,10 +1108,12 @@ class JacFeatureImpl(
         conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchitype]:
         """Jac's root getter."""
-        conn_type = conn_type if conn_type else GenericEdge
+        from jaclang import GenericEdge
+
+        ct = conn_type if conn_type else GenericEdge
 
         def builder(source: NodeAnchor, target: NodeAnchor) -> EdgeArchitype:
-            edge = conn_type() if isinstance(conn_type, type) else conn_type
+            edge = ct() if isinstance(ct, type) else ct
 
             eanch = edge.__jac__ = EdgeAnchor(
                 architype=edge,
@@ -1093,8 +1132,6 @@ class JacFeatureImpl(
                         raise ValueError(f"Invalid attribute: {fld}")
             if source.persistent or target.persistent:
                 Jac.save(eanch)
-                Jac.save(target)
-                Jac.save(source)
             return edge
 
         return builder
@@ -1111,6 +1148,19 @@ class JacFeatureImpl(
         anchor.root = jctx.root.id
 
         jctx.mem.set(anchor.id, anchor)
+
+        match anchor:
+            case NodeAnchor():
+                for ed in anchor.edges:
+                    if ed.is_populated() and not ed.persistent:
+                        Jac.save(ed)
+            case EdgeAnchor():
+                if (src := anchor.source) and src.is_populated() and not src.persistent:
+                    Jac.save(src)
+                if (trg := anchor.target) and trg.is_populated() and not trg.persistent:
+                    Jac.save(trg)
+            case _:
+                pass
 
     @staticmethod
     @hookimpl

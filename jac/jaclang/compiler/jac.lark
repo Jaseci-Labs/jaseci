@@ -2,7 +2,16 @@
 start: module
 
 module: ((STRING | toplevel_stmt) (STRING? toplevel_stmt)*)?
-
+// TODO:AST: We should allow the very first top level statement to have
+// docstring but not the module to have one. After allowing that
+// the rule for the module would be:
+//
+// module: STRING? toplevel_stmt*
+//
+// AST:TODO: Docstring should be part of the definition of the statement
+// and not all toplevel statement have docstring, example: ImportStmt.
+//
+// Statements that are only valid at the toplevel.
 toplevel_stmt: import_stmt
        | architype
        | ability
@@ -600,10 +609,11 @@ NOT: "not" // TODO:AST: Rename to KW_NOT
 
 // Literals ---------------------------------------------------------------- //
 
-NULL.1: "None"
-BOOL.1: /True|False/
 STRING: /(r?b?|b?r?)("[^"\r\n]*"|'[^'\r\n]*')/
        | /(r?b?|b?r?)("""(.|\r|\n)*?"""|'''(.|\r|\n)*?''')/
+
+NULL.1: "None"
+BOOL.1: /True|False/
 FLOAT: /(\d+(\.\d*)|\.\d+)([eE][+-]?\d+)?|\d+([eE][-+]?\d+)/
 HEX.1: /0[xX][0-9a-fA-F_]+/
 BIN.1: /0[bB][01_]+/

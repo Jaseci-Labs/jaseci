@@ -272,7 +272,7 @@ class JacFeatureSpec(
     @hookspec(firstresult=True)
     def make_architype(
         cls: type,
-        arch_base: Type[Architype],
+        arch_base: Type,
         on_entry: list[DSFunc],
         on_exit: list[DSFunc],
     ) -> Type[Architype]:
@@ -297,10 +297,26 @@ class JacFeatureSpec(
 
     @staticmethod
     @hookspec(firstresult=True)
+    def make_root(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a root node architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
     def make_edge(
         on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
         """Create a edge architype."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def make_generic_edge(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a generic edge architype."""
         raise NotImplementedError
 
     @staticmethod

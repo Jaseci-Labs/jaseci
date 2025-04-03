@@ -3,6 +3,7 @@
 from contextlib import suppress
 from os import environ, getenv
 from subprocess import Popen, run
+from time import sleep
 from typing import Literal, overload
 from unittest import TestCase
 
@@ -59,6 +60,7 @@ class JacCloudTest(TestCase):
                 with suppress(Exception):
                     self.check_server()
                     break
+                sleep(1)
             count += 1
 
     def stop_server(self) -> None:

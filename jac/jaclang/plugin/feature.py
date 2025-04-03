@@ -282,7 +282,7 @@ class JacFeature(
     @staticmethod
     def make_architype(
         cls: type,
-        arch_base: Type[Architype],
+        arch_base: Type,
         on_entry: list[DSFunc],
         on_exit: list[DSFunc],
     ) -> Type[Architype]:
@@ -306,11 +306,25 @@ class JacFeature(
         return plugin_manager.hook.make_node(on_entry=on_entry, on_exit=on_exit)
 
     @staticmethod
+    def make_root(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a root node architype."""
+        return plugin_manager.hook.make_root(on_entry=on_entry, on_exit=on_exit)
+
+    @staticmethod
     def make_edge(
         on_entry: list[DSFunc], on_exit: list[DSFunc]
     ) -> Callable[[type], type]:
         """Create a edge architype."""
         return plugin_manager.hook.make_edge(on_entry=on_entry, on_exit=on_exit)
+
+    @staticmethod
+    def make_generic_edge(
+        on_entry: list[DSFunc], on_exit: list[DSFunc]
+    ) -> Callable[[type], type]:
+        """Create a edge architype."""
+        return plugin_manager.hook.make_generic_edge(on_entry=on_entry, on_exit=on_exit)
 
     @staticmethod
     def make_walker(

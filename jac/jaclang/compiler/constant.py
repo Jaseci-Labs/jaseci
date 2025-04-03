@@ -91,8 +91,9 @@ class Constants(StrEnum):
     """Token constants for Jac."""
 
     JAC_LANG_IMP = "jac"
-    HERE = "_jac_here_"
-    JAC_FEATURE = "_Jac"
+    HERE = "here"  # "_jac_here_"
+    JAC_CHECK = "_check"
+    JAC_FEATURE = "Jac"  # "_Jac"
     ROOT = f"{JAC_FEATURE}.get_root()"
     EDGES_TO_NODE = "__jac__.edges_to_nodes"
     EDGE_REF = "__jac__.edge_ref"
@@ -354,7 +355,7 @@ colors = [
     "#F0FFF0",
     "#F5E5FF",
     "#FFFFE0",
-    "#D2FEFF ",
+    "#D2FEFF",
     "#E8FFD7",
     "#FFDEAD",
     "#FFF0F5",

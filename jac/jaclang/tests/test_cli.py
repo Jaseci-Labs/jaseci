@@ -294,6 +294,27 @@ class JacCliTests(TestCase):
             r"10:7 - 10:12.*Name - start - Type.*SymbolPath: base_class2.B.start",
         )
 
+    def test_base_class_complex_expr(self) -> None:
+        """Testing for print AstTool."""
+        from jaclang.settings import settings
+
+        # settings.ast_symbol_info_detailed = True
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        cli.tool(
+            "ir", ["ast", f"{self.fixture_abs_path('base_class_complex_expr.jac')}"]
+        )
+
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        settings.ast_symbol_info_detailed = False
+
+        self.assertRegex(
+            stdout_value,
+            r"36\:9 \- 36\:13.*Name \- Kiwi \- Type\: base_class_complex_expr.Kiwi,  SymbolTable\: Kiwi",
+        )
+
     def test_expr_types(self) -> None:
         """Testing for print AstTool."""
         captured_output = io.StringIO()
@@ -339,7 +360,10 @@ class JacCliTests(TestCase):
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertIn('[label="MultiString"]', stdout_value)
+        self.assertIn(
+            '[label="MultiString" shape="oval" style="filled" fillcolor="#fccca4"]',
+            stdout_value,
+        )
 
     def test_type_check(self) -> None:
         """Testing for print AstTool."""
