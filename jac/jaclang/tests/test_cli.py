@@ -397,9 +397,10 @@ class JacCliTests(TestCase):
         cli.run(f"{self.fixture_abs_path('needs_import.jir')}")
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        print(stdout_value)
         self.assertIn("Errors: 0, Warnings: 0", stdout_value)
         self.assertIn("<module 'pyfunc' from", stdout_value)
+        if os.path.exists(f"{self.fixture_abs_path('needs_import.jir')}"):
+            os.remove(f"{self.fixture_abs_path('needs_import.jir')}")
 
     def test_cache_no_cache_on_run(self) -> None:
         """Basic test for pass."""
