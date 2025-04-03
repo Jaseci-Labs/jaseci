@@ -439,7 +439,7 @@ kw_expr_list: (kw_expr_list COMMA)? kw_expr
 kw_expr: named_ref EQ expression | STAR_POW expression
 
 // [Heading]: Data Spatial References.
-edge_ref_chain: (EDGE_OP|NODE_OP)? LSQUARE expression? (edge_op_ref (filter_compr | expression)?)+ RSQUARE
+edge_ref_chain: LSQUARE (KW_NODE| KW_EDGE)? expression? (edge_op_ref (filter_compr | expression)?)+ RSQUARE
 edge_op_ref: edge_any | edge_from | edge_to
 edge_to: ARROW_R | ARROW_R_P1 typed_filter_compare_list ARROW_R_P2
 edge_from: ARROW_L | ARROW_L_P1 typed_filter_compare_list ARROW_L_P2

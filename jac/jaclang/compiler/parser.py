@@ -2701,11 +2701,11 @@ class JacParser(Pass):
         def edge_ref_chain(self, _: None) -> ast.EdgeRefTrailer:
             """Grammar rule.
 
-            (EDGE_OP|NODE_OP)? LSQUARE expression? (edge_op_ref (filter_compr | expression)?)+ RSQUARE
+            LSQUARE (KW_NODE| KW_EDGE)? expression? (edge_op_ref (filter_compr | expression)?)+ RSQUARE
             """
-            edges_only = bool(self.match_token(Tok.EDGE_OP))
-            self.match_token(Tok.NODE_OP)
             self.consume_token(Tok.LSQUARE)
+            edges_only = bool(self.match_token(Tok.KW_EDGE))
+            self.match_token(Tok.KW_NODE)
             valid_chain = []
             if expr := self.match(ast.Expr):
                 valid_chain.append(expr)

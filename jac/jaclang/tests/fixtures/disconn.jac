@@ -25,5 +25,5 @@ with entry{
     print(x del--> y);
     print([x -->]);
     print([i.__class__.__name__ for i in (x ++> y)]);
-    print([i.__class__.__name__ for i in (:e:[x[0] --> y])]);
+    print([i.__class__.__name__ for i in ([edge x[0] --> y])]);
 }
