@@ -15,8 +15,8 @@ from jaclang.vendor.pygls import uris
 
 import lsprotocol.types as lspt
 
-T = TypeVar("T", bound=Callable[..., Coroutine[Any, Any, Any]])
 P = ParamSpec("P")
+T = TypeVar("T", bound=Callable[P, Coroutine[Any, Any, Any]])
 
 
 def gen_diagnostics(
@@ -45,7 +45,7 @@ def gen_diagnostics(
 def debounce(wait: float) -> Callable[[T], Callable[..., Awaitable[None]]]:
     """Debounce decorator for async functions."""
 
-    def decorator(fn: T) -> Callable[..., Awaitable[None]]:
+    def decorator(fn: T) -> Callable[P, Awaitable[None]]:
         @wraps(fn)
         async def debounced(*args: P.args, **kwargs: P.kwargs) -> None:
             async def call_it() -> None:

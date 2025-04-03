@@ -9,7 +9,7 @@ from functools import cached_property
 from logging import getLogger
 from pickle import dumps
 from types import UnionType
-from typing import Any, Callable, ClassVar, Optional, TypeVar
+from typing import Any, Callable, ClassVar, Optional, TypeVar, cast
 from uuid import UUID, uuid4
 
 
@@ -154,14 +154,14 @@ class Anchor:
 
     def report(self) -> AnchorReport:
         """Report Anchor."""
-        return AnchorReport(
-            id=self.id.hex,
-            context=(
-                asdict(self.architype)
-                if is_dataclass(self.architype) and not isinstance(self.architype, type)
-                else {}
-            ),
-        )
+        context: dict[str, Any] = {}  # Explicitly annotate `context`
+
+        if is_dataclass(self.architype):
+            context = asdict(
+                cast(Architype, self.architype)
+            )  # Ensure mypy recognizes the type
+
+        return AnchorReport(id=self.id.hex, context=context)
 
     def __hash__(self) -> int:
         """Override hash for anchor."""
