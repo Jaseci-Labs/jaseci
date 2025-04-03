@@ -13,7 +13,7 @@ with entry {
 
 walker filter_on_edge_get_edge {
     can filter with `root entry {
-        print(:e:[-:simple_edge:index==1:->]);
+        print([edge -:simple_edge:index==1:->]);
     }
 }
 
@@ -31,7 +31,7 @@ walker filter_on_node_get_node {
 
 walker filter_on_node_get_edge {
     can filter with `root entry {
-        print(:e:[-->](?tag=="second"));
+        print([edge -->](?tag=="second"));
     }
 }
 
