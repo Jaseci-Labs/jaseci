@@ -201,3 +201,65 @@ A **private** ability **cannot be called** outside the Architype's scope.
 ```jac linenums="1"
 --8<-- "examples/learning_section/jac_access_tag.jac:152:160"
 ```
+
+## Access Tags for Enums
+
+In Jac, **enumerations (enum)** can have access tags to control their visibility across different modules. These access tags help ensure that enums are only accessible where needed, improving encapsulation and modularity.
+
+
+### Public Enums
+
+An enumeration marked as `pub` can be accessed **from anywhere**, including other modules that import it.
+
+**Code Example: Defining a Public Enum**
+
+```jac linenums="1"
+--8<-- "examples/learning_section/jac_access_tag.jac:165:174"
+```
+
+**Code Example: Accessing from Another File**
+
+```jac linenums="1"
+--8<-- "examples/learning_section/jac_access_tag.jac:176:181"
+```
+
+- Since `Color` is public, it can be accessed in `file2.jac` after importing `file1.jac`.
+
+
+### Private Enums
+
+An enumeration marked as `priv` **cannot be accessed outside** the module it is defined in.
+
+**Code Example: Defining a Private Enum**
+
+```jac linenums="1"
+--8<-- "examples/learning_section/jac_access_tag.jac:185:194"
+```
+
+**Code Example: Attempting to Access from Another File**
+
+```jac linenums="1"
+--8<-- "examples/learning_section/jac_access_tag.jac:196:201"
+```
+
+- Since `Color` is private, it **cannot be accessed in** `file2.jac`, even if `file1.jac` is imported.
+
+
+### Protected Enum
+
+An enumeration marked as `protect` is accessible within the same module and derived elements, but not from external files.
+
+
+**Code Example: Defining a Protected Enum**
+
+```jac linenums="1"
+--8<-- "examples/learning_section/jac_access_tag.jac:205:214"
+```
+
+**Code Example: Attempting to Access from Another File**
+
+```jac linenums="1"
+--8<-- "examples/learning_section/jac_access_tag.jac:216:221"
+```
+
+- Since `Color` is protected, it **cannot be accessed** in `file2.jac`, even if `file1.ja`c is imported.
