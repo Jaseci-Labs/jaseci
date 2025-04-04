@@ -24,7 +24,7 @@ class ImportPassPassTests(TestCase):
         """Basic test for pass."""
         state = jac_file_to_pass(self.fixture_abs_path("base.jac"), JacImportPass)
         self.assertFalse(state.errors_had)
-        self.assertIn("56", str(state.ir.to_dict()))
+        self.assertIn("56", str(list(state.ir.jac_prog.modules.values())[1].to_dict()))
 
     def test_import_auto_impl(self) -> None:
         """Basic test for pass."""
