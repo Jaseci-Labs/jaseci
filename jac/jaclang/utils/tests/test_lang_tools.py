@@ -118,7 +118,9 @@ class JacFormatPassTests(TestCase):
             out,
         )
         self.assertTrue(
-            out.startswith("SymTable::Module(atom)\n+-- Symbols\n|   +-- (e)x\n|")
+            out.startswith(
+                "########\n# atom #\n########\nSymTable::Module(atom)\n+-- Symbols\n|   +-- (e)x\n|"
+            )
         )
         out = AstTool().ir(["sym.", jac_file])
         self.assertEqual('2 [label="(e)x"];', out.split("\n")[4])
