@@ -152,6 +152,6 @@ def jac_file_formatter(
     for i in schedule:
         if i == target:
             break
-        prse = target(input_ir=prse.ir, prior=prse)
+        prse = i(input_ir=prse.ir, prior=prse)
     prse = target(input_ir=prse.ir, prior=prse)
     return prse
