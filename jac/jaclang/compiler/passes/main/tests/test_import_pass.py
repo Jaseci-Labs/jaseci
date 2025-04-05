@@ -66,10 +66,13 @@ class ImportPassPassTests(TestCase):
             self.fixture_abs_path("incautoimpl.jac"), JacImportPass
         )
         count = 0
-        for i in state.ir.jac_prog.modules.values():
-            if i.name != "autoimpl":
-                count += 1
-                self.assertEqual(i.annexable_by, self.fixture_abs_path("autoimpl.jac"))
+        all_mods =state.ir.jac_prog.modules.values()
+        self.assertEqual(len(all_mods), 2)
+        for main_mod in all_mods:
+            for i in main_mod.impl_mod:
+                if i.name not in ["autoimpl", "incautoimpl"]:
+                    count += 1
+                    self.assertEqual(i.annexable_by, self.fixture_abs_path("autoimpl.jac"))
         self.assertEqual(count, 4)
 
     def test_py_raise_map(self) -> None:
