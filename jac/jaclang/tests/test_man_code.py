@@ -116,7 +116,7 @@ class JacCliTests(TestCase):
 
         # Execute the function
         with suppress(SystemExit):
-            cli.test(self.examples_abs_path("manual_code/circle_clean_tests.jac"))
+            cli.test(self.examples_abs_path("manual_code/circle_clean.test.jac"))
 
         sys.stderr = sys.__stderr__
         sys.stdout = sys.__stdout__
