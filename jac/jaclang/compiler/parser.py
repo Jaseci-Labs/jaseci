@@ -20,6 +20,7 @@ T = TypeVar("T", bound=ast.AstNode)
 class JacParser(Pass):
     """Jac Parser."""
 
+    # Q: Should this move to settings?
     dev_mode = False
 
     def __init__(self, input_ir: ast.JacSource) -> None:
@@ -27,22 +28,21 @@ class JacParser(Pass):
         self.source = input_ir
         self.mod_path = input_ir.loc.mod_path
         self.node_list: list[ast.AstNode] = []
+        self.comment_cache: list[ast.CommentToken] = []
+        self.parser = jl.Lark_StandAlone(lexer_callbacks={"COMMENT": self._comment_callback})  # type: ignore
         if JacParser.dev_mode:
-            JacParser.make_dev()
+            self.make_dev()
         Pass.__init__(self, input_ir=input_ir, prior=None)
 
     def transform(self, ir: ast.AstNode) -> ast.Module:
         """Transform input IR."""
         try:
-            tree, comments = JacParser.parse(
-                self.source.value, on_error=self.error_callback
-            )
+            tree = self.parse(on_error=self._error_callback)
             mod = JacParser.TreeToAST(parser=self).transform(tree)
-            self.source.comments = [self.proc_comment(i, mod) for i in comments]
-            if isinstance(mod, ast.Module):
-                return mod
-            else:
+            if not isinstance(mod, ast.Module):
                 raise self.ice()
+            mod.comments = self.comment_cache
+            return mod
         except jl.UnexpectedInput as e:
             catch_error = ast.EmptyToken()
             catch_error.orig_src = self.source
@@ -71,57 +71,49 @@ class JacParser(Pass):
             kid=[ast.EmptyToken()],
         )
 
-    @staticmethod
-    def proc_comment(token: jl.Token, mod: ast.AstNode) -> ast.CommentToken:
-        """Process comment."""
-        return ast.CommentToken(
-            orig_src=mod.loc.orig_src,
-            name=token.type,
-            value=token.value,
-            line=token.line or 0,
-            end_line=token.end_line or 0,
-            col_start=token.column or 0,
-            col_end=token.end_column or 0,
-            pos_start=token.start_pos or 0,
-            pos_end=token.end_pos or 0,
-            kid=[],
-        )
-
-    def error_callback(self, e: jl.UnexpectedInput) -> bool:
+    def _error_callback(self, e: jl.UnexpectedInput) -> bool:
         """Handle error."""
         return False
 
-    @staticmethod
-    def _comment_callback(comment: jl.Token) -> None:
-        JacParser.comment_cache.append(comment)
-
-    @staticmethod
-    def parse(
-        ir: str, on_error: Callable[[jl.UnexpectedInput], bool]
-    ) -> tuple[jl.Tree[jl.Tree[str]], list[jl.Token]]:
-        """Parse input IR."""
-        JacParser.comment_cache = []
-        return (
-            JacParser.parser.parse(ir, on_error=on_error),
-            JacParser.comment_cache,
+    def _comment_callback(self, comment: jl.Token) -> None:
+        """Process comment."""
+        self.comment_cache.append(
+            ast.CommentToken(
+                orig_src=self.source,
+                name=comment.type,
+                value=comment.value,
+                line=comment.line or 0,
+                end_line=comment.end_line or 0,
+                col_start=comment.column or 0,
+                col_end=comment.end_column or 0,
+                pos_start=comment.start_pos or 0,
+                pos_end=comment.end_pos or 0,
+                kid=[],
+            )
         )
 
-    @staticmethod
-    def make_dev() -> None:
+    def parse(
+        self, on_error: Callable[[jl.UnexpectedInput], bool]
+    ) -> jl.Tree[jl.Tree[str]]:
+        """Parse input IR."""
+        return self.parser.parse(self.source.value, on_error=on_error)
+
+    def make_dev(self) -> None:
         """Make parser in dev mode."""
-        JacParser.parser = Lark.open(
+        self.parser = Lark.open(
             "jac.lark",
             parser="lalr",
             rel_to=__file__,
             debug=True,
-            lexer_callbacks={"COMMENT": JacParser._comment_callback},
+            lexer_callbacks={"COMMENT": self._comment_callback},
         )
         JacParser.JacTransformer = Transformer[Tree[str], ast.AstNode]  # type: ignore
         logger.setLevel(logging.DEBUG)
 
-    comment_cache: list[jl.Token] = []
+    # *********************************************************************** #
+    # Lark to Jac AST Transformer                                             #
+    # *********************************************************************** #
 
-    parser = jl.Lark_StandAlone(lexer_callbacks={"COMMENT": _comment_callback})  # type: ignore
     JacTransformer: TypeAlias = jl.Transformer[jl.Tree[str], ast.AstNode]
 
     class TreeToAST(JacTransformer):
@@ -131,7 +123,6 @@ class JacParser(Pass):
             """Initialize transformer."""
             super().__init__(*args, **kwargs)
             self.parse_ref = parser
-            self.terminals: list[ast.Token] = []
             # TODO: Once the kid is removed from the ast, we can get rid of this
             # node_idx and directly pop(0) kid as we process the nodes.
             self.node_idx = 0
@@ -263,7 +254,7 @@ class JacParser(Pass):
                 doc=doc,
                 body=body,
                 is_imported=False,
-                terminals=self.terminals,
+                terminals=[],
                 kid=(
                     self.cur_nodes
                     or [ast.EmptyToken(ast.JacSource("", self.parse_ref.mod_path))]
@@ -3308,5 +3299,4 @@ class JacParser(Pass):
                     err.line = ret.loc.first_line
                     err.column = ret.loc.col_start
                     raise err
-            self.terminals.append(ret)
             return ret
