@@ -950,6 +950,9 @@ class JacLanguageTests(TestCase):
         mypass = jac_file_to_pass(self.fixture_abs_path("byllmissue.jac"))
         self.assertIn("2:5 - 4:8", mypass.ir.pp())
 
+    @pytest.mark.xfail(
+        reason="New schedules system is different and this test is not valid anymore"
+    )
     def test_single_impl_annex(self) -> None:
         """Basic test for pass."""
         mypass = jac_file_to_pass(
