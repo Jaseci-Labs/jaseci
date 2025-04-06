@@ -8,11 +8,11 @@ symbols are available for matching.
 import ast as py_ast
 import os
 import pathlib
+import pickle
 from typing import Optional
 
-
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.constant import SymbolType
+from jaclang.compiler.constant import Constants, SymbolType
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import DefUsePass, SubNodeTabPass, SymTabBuildPass
 from jaclang.compiler.passes.main.sym_tab_build_pass import PyInspectSymTabBuildPass
@@ -170,6 +170,34 @@ class JacImportPass(Pass):
                 kid=[ast.EmptyToken()],
             )
 
+    def load_cached_module(
+        self, cache_path: str, source_mtime: float
+    ) -> ast.Module | None:
+        """Load cached module if up-to-date."""
+        if not os.path.exists(cache_path):
+            return None
+
+        try:
+            with open(cache_path, "rb") as cache_file:
+                cached_file = pickle.load(cache_file)
+                if cached_file.get("mtime") != source_mtime:
+                    return None
+                cached_module = cached_file.get("ast")
+                if not isinstance(cached_module, ast.Module):
+                    raise TypeError(f"Cached module for {cache_path} is invalid.")
+                return cached_module
+        except Exception as e:
+            logger.error(f"Failed to load cached module {cache_path}: {e}")
+            return None
+
+    def cache_ast(self, mod: ast.Module, cache_path: str, source_mtime: float) -> None:
+        """Cache the module."""
+        try:
+            with open(cache_path, "wb") as cache_file:
+                pickle.dump({"ast": mod, "mtime": source_mtime}, cache_file, protocol=5)
+        except Exception as e:
+            logger.error(f"Failed to cache module {mod.name}: {e}")
+
     def import_jac_mod_from_file(self, target: str) -> ast.Module | None:
         """Import a module from a file."""
         from jaclang.compiler.compile import jac_file_to_pass
@@ -181,10 +209,24 @@ class JacImportPass(Pass):
         if target in self.import_table:
             return self.import_table[target]
         try:
-            mod_pass = jac_file_to_pass(file_path=target, target=SubNodeTabPass)
-            self.errors_had += mod_pass.errors_had
-            self.warnings_had += mod_pass.warnings_had
-            mod = mod_pass.ir
+            if settings.cache:
+                cache_dir = os.path.join(
+                    os.path.dirname(self.ir.loc.mod_path), Constants.JAC_GEN_DIR
+                )
+                os.makedirs(cache_dir, exist_ok=True)
+                module_name = os.path.splitext(os.path.basename(target))[0]
+                cache_path = os.path.join(cache_dir, f"{module_name}.pkl")
+                mod = self.load_cached_module(cache_path, os.path.getmtime(target))
+            else:
+                mod = None
+            if not mod:
+                mod_pass = jac_file_to_pass(file_path=target, target=SubNodeTabPass)
+                self.errors_had += mod_pass.errors_had
+                self.warnings_had += mod_pass.warnings_had
+                if isinstance(mod_pass.ir, ast.Module):
+                    mod = mod_pass.ir
+                    if settings.cache:
+                        self.cache_ast(mod, cache_path, os.path.getmtime(target))
         except Exception as e:
             logger.error(e)
             mod = None
@@ -458,16 +500,29 @@ class PyImportPass(JacImportPass):
                     f"\t{file_to_raise} was raised before, getting it from cache"
                 )
                 return self.import_table[file_to_raise]
-
-            with open(file_to_raise, "r", encoding="utf-8") as f:
-                file_source = f.read()
-                mod = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(
-                        py_ast.parse(file_source),
-                        orig_src=ast.JacSource(file_source, file_to_raise),
-                    ),
-                ).ir
-                SubNodeTabPass(input_ir=mod, prior=self)
+            if settings.cache:
+                cache_dir = os.path.join(
+                    os.path.dirname(self.ir.loc.mod_path), Constants.JAC_GEN_DIR
+                )
+                os.makedirs(cache_dir, exist_ok=True)
+                cache_path = os.path.join(cache_dir, f"{mod_path}.pkl")
+                mod = self.load_cached_module(
+                    cache_path, os.path.getmtime(file_to_raise)
+                )
+            else:
+                mod = None
+            if not mod:
+                with open(file_to_raise, "r", encoding="utf-8") as f:
+                    file_source = f.read()
+                    mod = PyastBuildPass(
+                        input_ir=ast.PythonModuleAst(
+                            py_ast.parse(file_source),
+                            orig_src=ast.JacSource(file_source, file_to_raise),
+                        ),
+                    ).ir
+                    SubNodeTabPass(input_ir=mod, prior=self)
+                if settings.cache:
+                    self.cache_ast(mod, cache_path, os.path.getmtime(file_to_raise))
 
             if mod:
                 mod.name = imported_mod_name if imported_mod_name else mod.name

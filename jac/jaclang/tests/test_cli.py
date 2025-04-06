@@ -9,7 +9,9 @@ import sys
 import traceback
 
 from jaclang.cli import cli
+from jaclang.compiler.constant import Constants
 from jaclang.plugin.builtin import dotgen
+from jaclang.settings import settings
 from jaclang.utils.test import TestCase
 
 
@@ -556,3 +558,32 @@ class JacCliTests(TestCase):
                 self.assertNotIn("Passed successfully.", stdout)
                 self.assertIn("F", stderr)
         os.remove(test_file)
+
+    def test_cache_ast(self) -> None:
+        """Test for Caching Issue."""
+        jac_file = self.fixture_abs_path("cache_jacast.jac")
+        py_file = self.fixture_abs_path("cache_pyast.py")
+        os.environ["JACLANG_CACHE"] = "True"
+        settings.load_env_vars()
+        cli.check(f"{self.fixture_abs_path('cache_ast.jac')}")
+        self.assertTrue(
+            os.path.exists(
+                f"{(os.path.join(os.path.dirname(py_file), Constants.JAC_GEN_DIR, 'cache_pyast.pkl'))}"
+            )
+        )
+        self.assertTrue(
+            os.path.exists(
+                f"{os.path.join(os.path.dirname(py_file), Constants.JAC_GEN_DIR, 'cache_jacast.pkl')}"
+            )
+        )
+        with open(py_file, "w") as f:
+            f.write("""def add(a: int, b: int) -> int:\n\treturn a + b +23""")
+        with open(jac_file, "w") as f:
+            f.write("""can add(a:int,b:int)->int{return a + b + 12 ;}""")
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.run(f"{self.fixture_abs_path('cache_ast.jac')}")
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("15", stdout_value[0])
+        self.assertIn("26", stdout_value[1])
