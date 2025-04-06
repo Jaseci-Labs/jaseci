@@ -96,9 +96,9 @@ with entry {
     chain3.chain2.chain1;          # <-- okey.
     chain3.chain2.chain1.priv_val; # <-- not okey.
 
-    access_checker.ModulePublObj(); # <-- okey.
-    access_checker.ModulePrivObj(); # <-- not okey.
+    ModulePublObj(); # <-- okey.
+    ModulePrivObj(); # <-- okey (included).
 
-    access_checker.module_priv_glob; # <-- okey.
-    access_checker.module_priv_glob; # <-- not okey.
+    module_publ_glob; # <-- okey.
+    module_priv_glob; # <-- okey (included).
 }

@@ -1,6 +1,6 @@
 import:py from math, sin as s, cos, sqrt as sq;
 include:py random;
-import:py from ..test_cli, JacCliTests as Jac;
+import:py from ..test_cli, JacCliTests as jct;
 
 import:jac from deep.mycode, code as c;
 import:jac hashcheck as h, assign_compr as a;
