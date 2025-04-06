@@ -1,20 +1,17 @@
 // [Heading]: Base Module structure.
 start: module
 
+module: ((STRING | toplevel_stmt) (STRING? toplevel_stmt)*)?
 // TODO:AST: We should allow the very first top level statement to have
 // docstring but not the module to have one. After allowing that
 // the rule for the module would be:
 //
 // module: STRING? toplevel_stmt*
 //
-module: (toplevel_stmt (tl_stmt_with_doc | toplevel_stmt)*)?
-       | STRING        (tl_stmt_with_doc | toplevel_stmt)*
-
 // AST:TODO: Docstring should be part of the definition of the statement
 // and not all toplevel statement have docstring, example: ImportStmt.
 //
 // Statements that are only valid at the toplevel.
-tl_stmt_with_doc: STRING toplevel_stmt
 toplevel_stmt: import_stmt
        | architype
        | ability
