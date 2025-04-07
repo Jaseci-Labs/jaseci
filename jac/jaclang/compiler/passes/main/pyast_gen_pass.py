@@ -1109,7 +1109,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(
                 func_type(
-                    name=str(node.name_ref.sym_name[0]),
+                    name=node.name_ref.sym_name[0],
                     args=(
                         cast(ast3.arguments, node.signature.gen.py_ast[0])
                         if node.signature
@@ -1334,6 +1334,23 @@ class PyastGenPass(Pass):
             and node.parent.parent.is_static
         )
 
+        is_in_class = (
+            node.parent
+            and node.parent.parent
+            and node.parent.parent.parent
+            and (
+                (
+                    isinstance(node.parent.parent.parent, ast.Architype)
+                    and node.parent.parent.parent.arch_type.name == Tok.KW_CLASS
+                )
+                or (
+                    node.parent.parent.parent.parent
+                    and isinstance(node.parent.parent.parent.parent, ast.Architype)
+                    and node.parent.parent.parent.parent.arch_type.name == Tok.KW_CLASS
+                )
+            )
+        )
+
         if is_static_var:
             annotation = self.sync(
                 ast3.Subscript(
@@ -1342,7 +1359,7 @@ class PyastGenPass(Pass):
                     ctx=ast3.Load(),
                 )
             )
-
+        default_field_fn_name = "field"
         node.gen.py_ast = [
             (
                 self.sync(
@@ -1357,11 +1374,80 @@ class PyastGenPass(Pass):
                             else ast3.Constant(value=None)
                         ),
                         value=(
-                            cast(ast3.expr, node.value.gen.py_ast[0])
+                            self.sync(
+                                ast3.Call(
+                                    func=self.jaclib_obj(default_field_fn_name),
+                                    args=(
+                                        [node.value.gen.py_ast[0]]
+                                        if isinstance(
+                                            node.value.gen.py_ast[0], ast3.Constant
+                                        )
+                                        else []
+                                    ),
+                                    keywords=(
+                                        [
+                                            self.sync(
+                                                ast3.keyword(
+                                                    arg="gen",
+                                                    value=self.sync(
+                                                        ast3.Lambda(
+                                                            args=self.sync(
+                                                                ast3.arguments(
+                                                                    posonlyargs=[],
+                                                                    args=[],
+                                                                    kwonlyargs=[],
+                                                                    vararg=None,
+                                                                    kwarg=None,
+                                                                    kw_defaults=[],
+                                                                    defaults=[],
+                                                                )
+                                                            ),
+                                                            body=cast(
+                                                                ast3.expr,
+                                                                node.value.gen.py_ast[
+                                                                    0
+                                                                ],
+                                                            ),
+                                                        )
+                                                    ),
+                                                )
+                                            )
+                                        ]
+                                        if not isinstance(
+                                            node.value.gen.py_ast[0], ast3.Constant
+                                        )
+                                        else []
+                                    ),
+                                )
+                            )
                             if node.value
-                            else None
+                            and not (is_static_var or is_in_class or node.defer)
+                            else (
+                                self.sync(
+                                    ast3.Call(
+                                        func=self.jaclib_obj(default_field_fn_name),
+                                        args=[],
+                                        keywords=[
+                                            self.sync(
+                                                ast3.keyword(
+                                                    arg="postinit",
+                                                    value=self.sync(
+                                                        ast3.Constant(value=True)
+                                                    ),
+                                                )
+                                            )
+                                        ],
+                                    )
+                                )
+                                if node.defer and not (is_static_var or is_in_class)
+                                else (
+                                    cast(ast3.expr, node.value.gen.py_ast[0])
+                                    if node.value
+                                    else None
+                                )
+                            )
                         ),
-                        simple=int(isinstance(node.name, ast3.Name)),
+                        simple=int(isinstance(node.name, ast.Name)),
                     )
                 )
             )
