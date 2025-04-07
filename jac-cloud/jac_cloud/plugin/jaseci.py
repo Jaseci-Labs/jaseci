@@ -293,13 +293,9 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
         ):
             # Saving the module path and reassign it after creating cls
             # So the jac modules are part of the correct module
-            assert cls.__bases__ != (object,)
-            bases = (
-                (cls.__bases__ + (arch_base,))
-                if arch_base not in cls.__bases__
-                else cls.__bases__
-            )
-            cls.__bases__ = bases
+            cur_module = cls.__module__
+            cls = type(cls.__name__, (cls, arch_base), {})
+            cls.__module__ = cur_module
             cls._jac_entry_funcs_ = on_entry  # type: ignore
             cls._jac_exit_funcs_ = on_exit  # type: ignore
         else:
@@ -450,8 +446,6 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
         conn_assign: tuple[tuple, tuple] | None,
     ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchitype]:
         """Jac's root getter."""
-        from jaclang import GenericEdge
-
         if not FastAPI.is_enabled():
             return JacFeatureImpl.build_edge(  # type:ignore[return-value]
                 is_undirected=is_undirected,
