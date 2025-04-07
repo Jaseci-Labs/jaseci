@@ -10,7 +10,7 @@ Strings in Jaclang are surrounded by either single quotation marks, or double qu
     ```
 
 ### Quotes Inside Quotes
-You can use quotes inside a string, as long as they don't match the quotes surrounding the string:
+You can use quotes inside a string, as long as they don't match the quotes surrounding the string.
 
 **Code Example**
 === "Jac"
@@ -19,7 +19,7 @@ You can use quotes inside a string, as long as they don't match the quotes surro
     ```
 
 ### Multiline Strings
-You can assign a multiline string to a variable by using three quotes:
+You can assign a multiline string to a variable by using three quotes.
 
 **Code Example**
 === "Jac"
@@ -28,7 +28,7 @@ You can assign a multiline string to a variable by using three quotes:
     ```
 
 ### Strings are Arrays
-Like many other popular programming languages, strings in **JacLang** are sequences of characters used to represent text.  However, **JacLang** does not have a separate character data type; a single character is simply a string of length 1.Square brackets `[ ]` can be used to access individual characters within a string.
+Like many other popular programming languages, strings in **JacLang** are sequences of characters used to represent text. However, **JacLang** does not have a separate character data type; a single character is simply a string of length one. Square brackets [ ] can be used to access individual characters within a string.
 
 **Code Example**
 === "Jac"
@@ -73,7 +73,7 @@ You can return a range of characters by using the slice syntax.Specify the start
     ```
 
 ### Slice From the Start
-By leaving out the start index, the range will start at the first character:
+By leaving out the start index, the range will start at the first character.
 
 **Code Example**
 === "Jac"
@@ -82,7 +82,7 @@ By leaving out the start index, the range will start at the first character:
     ```
 
 ### Slice To the End
-By leaving out the end index, the range will go to the end:
+By leaving out the end index, the range will go to the end.
 
 **Code Example**
 === "Jac"
@@ -92,7 +92,7 @@ By leaving out the end index, the range will go to the end:
 ## Modify Strings
 
 ### Upper Case
-The **upper( )** method returns the string in upper case:
+The **upper( )** method returns the string in upper case.
 
 **Code Example**
 === "Jac"
@@ -101,7 +101,7 @@ The **upper( )** method returns the string in upper case:
     ```
 
 ### Lower Case
-The **lower( )** method returns the string in lower case:
+The **lower( )** method returns the string in lower case.
 
 **Code Example**
 === "Jac"
@@ -110,7 +110,7 @@ The **lower( )** method returns the string in lower case:
     ```
 
 ### Remove Whitespace
-Whitespace is the space before and/or after the actual text, and very often you want to remove this space.The **strip( )** method removes any whitespace from the beginning or the end:
+Whitespace is the space before and/or after the actual text, and very often you want to remove this space.The **strip( )** method removes any whitespace from the beginning or the end.
 
 **Code Example**
 === "Jac"
@@ -119,7 +119,7 @@ Whitespace is the space before and/or after the actual text, and very often you 
     ```
 
 ### Replace String
-The **replace( )** method replaces a string with another string:
+The **replace( )** method replaces a string with another string.
 
 **Code Example**
 === "Jac"
@@ -171,7 +171,7 @@ A placeholder can contain variables, operations, functions, and modifiers to for
     --8<-- "examples/learning_section/jac_strings.jac:110:114"
     ```
 
-A placeholder can contain Jaclang code, like math operations:
+A placeholder can contain Jaclang code, like math operations.
 
 **Code Example**
 === "Jac"

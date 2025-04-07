@@ -3,7 +3,7 @@ A lambda function is a small anonymous function.A lambda function can take any n
 ## Syntax
 `with arguments : expression`
 
-The expression is executed and the result is returned:
+The expression is executed and the result is returned.
 
 **Code Example**
 === "Jac"

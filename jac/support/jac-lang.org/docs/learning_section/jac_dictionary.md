@@ -16,16 +16,14 @@ Dictionary items are ordered, changeable, and do not allow duplicates.Dictionary
     --8<-- "examples/learning_section/jac_dictionary.jac:7:10"
     ```
 
-### Ordered
+- **Ordered :**
 In JacLang, dictionaries are ordered, meaning key-value pairs retain their insertion order. This ensures predictable access and iteration over elements. Unlike lists, dictionary items cannot be accessed by index but must be referenced using their unique keys.
 
-### Changeable
-
+- **Changeable :**
 Dictionaries are changeable, meaning that we can change, add or remove items after the dictionary has been created.
 
-### Duplicates Not Allowed
-
-Dictionaries cannot have two items with the same key:
+- **Duplicates Not Allowed**
+Dictionaries cannot have two items with the same key.
 
 **Code Example**
     ```jac linenums="1"
@@ -34,7 +32,7 @@ Dictionaries cannot have two items with the same key:
 
 ### Dictionary Length
 
-To determine how many items a dictionary has, use the `len()` function:
+To determine how many items a dictionary has, use the `len()` function.
 
 **Code Example**
     ```jac linenums="1"
@@ -42,14 +40,14 @@ To determine how many items a dictionary has, use the `len()` function:
     ```
 
 ## Access Items
-You can access the items of a dictionary by referring to its key name, inside square brackets:
+You can access the items of a dictionary by referring to its key name, inside square brackets.
 
 **Code Example**
     ```jac linenums="1"
     --8<-- "examples/learning_section/jac_dictionary.jac:24:27"
     ```
 
-There is also a method called get() that will give you the same result:
+There is also a method called get() that will give you the same result.
 
 **Code Example**
     ```jac linenums="1"
@@ -82,9 +80,9 @@ The `items()` method will return each item in a dictionary, as tuples in a list.
     --8<-- "examples/learning_section/jac_dictionary.jac:46:50"
     ```
 
-### Check if Key Exists
+### Identity Operation
 
-To determine if a specified key is present in a dictionary use the in keyword:
+To determine if a specified key is present in a dictionary use the in keyword.
 
 **Code Example**
     ```jac linenums="1"
@@ -94,7 +92,7 @@ To determine if a specified key is present in a dictionary use the in keyword:
 ## Change Items
 
 ### Change Values
-You can change the value of a specific item by referring to its key name:
+You can change the value of a specific item by referring to its key name.
 
 **Code Example**
     ```jac linenums="1"
@@ -113,7 +111,7 @@ The **update()** method will update the dictionary with the items from the given
 ## Add Items
 
 ### Add Items
-Adding an item to the dictionary is done by using a new index key and assigning a value to it:
+Adding an item to the dictionary is done by using a new index key and assigning a value to it.
 
 **Code Example**
     ```jac linenums="1"
@@ -131,30 +129,30 @@ The **update()** method will update the dictionary with the items from a given a
 
 ## Remove Items
 
-There are several methods to remove items from a dictionary:
+There are several methods to remove items from a dictionary.
 
-The **pop()** method removes the item with the specified key name:
+The **pop()** method removes the item with the specified key name.
 
 **Code Example**
     ```jac linenums="1"
     --8<-- "examples/learning_section/jac_dictionary.jac:91:95"
     ```
 
-The **popitem()** method removes the last inserted item:
+The **popitem()** method removes the last inserted item.
 
 **Code Example**
     ```jac linenums="1"
     --8<-- "examples/learning_section/jac_dictionary.jac:97:101"
     ```
 
-The **del** keyword removes the item with the specified key name:
+The **del** keyword removes the item with the specified key name.
 
 **Code Example**
     ```jac linenums="1"
     --8<-- "examples/learning_section/jac_dictionary.jac:103:107"
     ```
 
-The **clear()** method empties the dictionary:
+The **clear()** method empties the dictionary.
 
 **Code Example**
     ```jac linenums="1"
@@ -165,35 +163,35 @@ The **clear()** method empties the dictionary:
 
 You can loop through a dictionary by using a for loop.When looping through a dictionary, the return value are the keys of the dictionary, but there are methods to return the values as well.
 
-Print all key names in the dictionary, one by one:
+Print all key names in the dictionary, one by one.
 
 **Code Example**
     ```jac linenums="1"
     --8<-- "examples/learning_section/jac_dictionary.jac:117:122"
     ```
 
-Print all values in the dictionary, one by one:
+Print all values in the dictionary, one by one.
 
 **Code Example**
     ```jac linenums="1"
     --8<-- "examples/learning_section/jac_dictionary.jac:124:129"
     ```
 
-You can also use the **values()** method to return values of a dictionary:
+You can also use the **values()** method to return values of a dictionary.
 
 **Code Example**
     ```jac linenums="1"
     --8<-- "examples/learning_section/jac_dictionary.jac:131:136"
     ```
 
-You can use the **keys()** method to return the keys of a dictionary:
+You can use the **keys()** method to return the keys of a dictionary.
 
 **Code Example**
     ```jac linenums="1"
     --8<-- "examples/learning_section/jac_dictionary.jac:138:143"
     ```
 
-Loop through both keys and values, by using the **items()** method:
+Loop through both keys and values, by using the **items()** method.
 
 **Code Example**
     ```jac linenums="1"
@@ -227,7 +225,7 @@ A dictionary can contain dictionaries, this is called nested dictionaries.
     --8<-- "examples/learning_section/jac_dictionary.jac:168:175"
     ```
 
-Create three dictionaries, then create one dictionary that will contain the other three dictionaries:
+Create three dictionaries, then create one dictionary that will contain the other three dictionaries.
 
 **Code Example**
     ```jac linenums="1"
@@ -236,7 +234,7 @@ Create three dictionaries, then create one dictionary that will contain the othe
 
 ### Access Items in Nested Dictionaries
 
-To access items from a nested dictionary, you use the name of the dictionaries, starting with the outer dictionary:
+To access items from a nested dictionary, you use the name of the dictionaries, starting with the outer dictionary.
 
 **Code Example**
     ```jac linenums="1"

@@ -18,7 +18,7 @@ When an error occurs, or an exception as we call it, Jac will normally stop and 
 
 ## Else
 
-You can use the **else** keyword to define a block of code to be executed if no errors were raised:
+You can use the **else** keyword to define a block of code to be executed if no errors were raised.
 
 **Code Example**
 === "Jac"

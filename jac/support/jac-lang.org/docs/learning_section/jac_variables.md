@@ -2,7 +2,7 @@
 Variables are containers for storing data values.
 
 ### Basic structure
-Jaclang has no command for declaring a variable.A variable is created the moment you first assign a value to it.
+Jaclang has no command for declaring a variable. A variable is created the moment you first assign a value to it.
 
 **Code Example**
 === "Jac"
@@ -42,7 +42,7 @@ Variable names are case-sensitive.
 - A variable name cannot start with a number.
 - A variable name can only contain alphanumeric characters (A-Z, 0-9) and underscores (_).
 - Variable names are case-sensitive (e.g., age, Age, and AGE are considered different variables).
-- A variable name cannot be a reserved keyword in LacLang.
+- A variable name cannot be a reserved keyword in JacLang.
 
 **Code Example**
 === "Jac"
@@ -51,20 +51,16 @@ Variable names are case-sensitive.
     ```
 
 ### Multi Words Variable Names
-Variable names with more than one word can be difficult to read.There are several techniques you can use to make them more readable:
+Variable names with more than one word can be difficult to read.There are several techniques you can use to make them more readable.
 
-### Camel Case
-Each word, except the first, starts with a capital letter:
+- **Camel Case :**
+Each word, except the first, starts with a capital letter. `myVariableName = "John"`
 
-`myVariableName = "John"`
-### Pascal Case
-Each word starts with a capital letter:
+- **Pascal Case :**
+Each word starts with a capital letter. `MyVariableName = "John"`
 
-`MyVariableName = "John"`
-### Snake Case
-Each word is separated by an underscore character:
-
-`my_variable_name = "John"`
+- **Snake Case :**
+Each word is separated by an underscore character. `my_variable_name = "John"`
 
 ## Output Variables
 The Jaclang `print()` function is often used to output variables.
@@ -72,9 +68,9 @@ The Jaclang `print()` function is often used to output variables.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_variables.jac:43:47"
+    --8<-- "examples/learning_section/jac_variables.jac:43:48"
     ```
-In the `print()` function, you output multiple variables, separated by a comma:
+In the `print()` function, you output multiple variables, separated by a comma.
 
 **Code Example**
 === "Jac"
@@ -99,7 +95,7 @@ If you create a variable with the same name inside a function, this variable wil
     ```
 
 ### The Global Keyword
-Normally, when you create a variable inside a function, that variable is local, and can only be used inside that function.To create a global variable inside a function, you can use the `global` keyword.
+In JacLang, a variable created inside a function is local by default, but can be made global using the `global` keyword.
 
 **Code Example**
 === "Jac"

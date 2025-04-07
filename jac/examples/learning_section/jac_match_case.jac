@@ -11,16 +11,8 @@ with entry {
 }
 
 with entry {
-    match 42 {
-        case 42:
-            print("Matched the value 42.");
-        case _:
-            print("No match found.");
-    }
-}
-
-with entry {
-    match None {
+    a=None;
+    match a {
         case True:
             print("Matched True");
         case None:
@@ -31,7 +23,8 @@ with entry {
 }
 
 with entry {
-    match [1, 2, 3]{
+    List = [1, 2, 3];
+    match List{
         case [1, 2, 3]:
             print("Matched [1, 2, 3]");
         case _:
@@ -40,7 +33,8 @@ with entry {
 }
 
 with entry {
-    match [1, 5, 3]{
+    List = [1,5,3];
+    match List{
         case [1, *middle, 3]:
             print(f"Middle values: {middle}");
         case _:
@@ -49,7 +43,8 @@ with entry {
 }
 
 with entry {
-    match {"key1": 1, "key2": 2, "extra": 3}{
+    Dict = {"key1": 1, "key2": 2, "extra": 3};
+    match Dict{
         case {"key1" : 1, "key2" : 2, **rest}:
             print(f"Matched key1 and key2, extra: {rest}");
         case _:
@@ -72,7 +67,8 @@ with entry {
 }
 
 with entry {
-    match [1, 2, 99]{
+    List = [1, 2, 99];
+    match List{
         case [1, 2, rest_val as value]:
             print(f"Captured value: {value}");
         case _:
@@ -81,7 +77,8 @@ with entry {
 }
 
 with entry {
-    match [3, 4]{
+    List = [3,4];
+    match List{
         case [1, 2] | [3, 4]:
             print("Matched either [1, 2] or [3, 4]");
         case _:
@@ -90,7 +87,8 @@ with entry {
 }
 
 with entry {
-    match "Hello"{
+    Hello = "Hello";
+    match Hello{
         case "Hi":
             print("Matched Hi");
         case _:

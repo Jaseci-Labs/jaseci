@@ -1,7 +1,7 @@
 ## Introduction
 Lists are used to store multiple items in a single variable.
 ### Basic List
-Since lists are indexed, lists can have items with the same value:
+Since lists are indexed, lists can have items with the same value.
 
 **Code Example**
     ```jac linenums="1"
@@ -9,18 +9,18 @@ Since lists are indexed, lists can have items with the same value:
     ```
 
 ### List Items
-List items are ordered, changeable, and allow duplicate values.
-List items are indexed, the first item has index **[0]**, the second item has index **[1]** etc.
+- List items are ordered, changeable, and allow duplicate values.
+- List items are indexed, the first item has index **[0]**, the second item has index **[1]** and the last item has index **[-1]** etc.
 
-### Ordered
+- **Ordered :**
 Lists maintain a specific sequence, meaning each item has a fixed position that remains unchanged.
 When new elements are added to a list, they are automatically appended to the end, preserving the original order of existing items.
 
-### Changeable
+- **Changeable :**
 The list is changeable, meaning that we can change, add, and remove items in a list after it has been created.
 
-### Allow Duplicates
-Since lists are indexed, lists can have items with the same value:
+- **Allow Duplicates :**
+Since lists are indexed, lists can have items with the same value.
 
 **Code Example**
     ```jac linenums="1"
@@ -28,7 +28,7 @@ Since lists are indexed, lists can have items with the same value:
     ```
 
 ### List Length
-To determine how many items a list has, use the len() function:
+To determine how many items a list has, use the len() function.
 
 **Code Example**
     ```jac linenums="1"
@@ -36,14 +36,14 @@ To determine how many items a list has, use the len() function:
     ```
 
 ### List Items - Data Types
-List items can be of any data type:
+List items can be of any data type.
 
 **Code Example**
     ```jac linenums="1"
     --8<-- "examples/learning_section/jac_list.jac:17:21"
     ```
 
-A list can contain different data types:
+A list can contain different data types.
 
 **Code Example**
     ```jac linenums="1"
@@ -60,7 +60,7 @@ It is also possible to use the **list()** constructor when creating a new list.
 
 ## Access List Items
 ### Access Items
-List items are indexed and you can access them by referring to the index number:
+List items are indexed and you can access them by referring to the index number.
 
 **Code Example**
     ```jac linenums="1"
@@ -93,7 +93,7 @@ In Jac, you can work with lists using index ranges to extract specific portions 
     ```
 
 ### Check if Item Exists
-To determine if a specified item is present in a list use the **in** keyword:
+To determine if a specified item is present in a list use the **in** keyword.
 
 **Code Example**
     ```jac linenums="1"
@@ -102,7 +102,7 @@ To determine if a specified item is present in a list use the **in** keyword:
 
 ## Change List Items
 ### Change Item Value
-To change the value of a specific item, refer to the index number:
+To change the value of a specific item, refer to the index number.
 
 **Code Example**
     ```jac linenums="1"
@@ -110,7 +110,7 @@ To change the value of a specific item, refer to the index number:
     ```
 
 ### Change a Range of Item Values
-To change the value of items within a specific range, define a list with the new values, and refer to the range of index numbers where you want to insert the new values:
+To change the value of items within a specific range, define a list with the new values, and refer to the range of index numbers where you want to insert the new values.
 
 **Code Example**
     ```jac linenums="1"
@@ -118,7 +118,7 @@ To change the value of items within a specific range, define a list with the new
     ```
 
 ### Insert Items
-To insert a new list item, without replacing any of the existing values, we can use the **insert()** method.The **insert()** method inserts an item at the specified index:
+To insert a new list item, without replacing any of the existing values, we can use the **insert()** method.The **insert()** method inserts an item at the specified index.
 
 **Code Example**
     ```jac linenums="1"
@@ -127,14 +127,14 @@ To insert a new list item, without replacing any of the existing values, we can 
 
 ## Add List Items
 ### Append Items
-To add an item to the end of the list, use the **append()** method:
+To add an item to the end of the list, use the **append()** method.
 
 **Code Example**
     ```jac linenums="1"
     --8<-- "examples/learning_section/jac_list.jac:89:93"
     ```
 ### Insert Items
-To insert a list item at a specified index, use the **insert()** method.The **insert()** method inserts an item at the specified index:
+To insert a list item at a specified index, use the **insert()** method.The **insert()** method inserts an item at the specified index.
 
 **Code Example**
     ```jac linenums="1"
@@ -162,7 +162,7 @@ The **remove()** method removes the specified item.
     --8<-- "examples/learning_section/jac_list.jac:117:122"
     ```
 
-If there are more than one item with the specified value, the **remove()** method removes the first occurrence:
+If there are more than one item with the specified value, the **remove()** method removes the first occurrence.
 
 **Code Example**
     ```jac linenums="1"
@@ -184,7 +184,7 @@ If you do not specify the index, the **pop()** method removes the last item.
     --8<-- "examples/learning_section/jac_list.jac:135:140"
     ```
 
-The **del** keyword also removes the specified index:
+The **del** keyword also removes the specified index.
 
 **Code Example**
     ```jac linenums="1"
@@ -208,7 +208,7 @@ The **clear()** method empties the list.
 
 ## Loop Lists
 ### Loop Through a List
-You can loop through the list items by using a **for** loop:
+You can loop through the list items by using a **for** loop.
 
 **Code Example**
     ```jac linenums="1"
@@ -232,7 +232,7 @@ In Jac, you can iterate through list items using a **while** loop by leveraging 
     ```
 
 ### Looping Using List Comprehension
-List Comprehension offers the shortest syntax for looping through lists:
+List Comprehension offers the shortest syntax for looping through lists.
 
 **Code Example**
     ```jac linenums="1"
@@ -240,7 +240,7 @@ List Comprehension offers the shortest syntax for looping through lists:
     ```
 ## Sort Lists
 ### Sort List Alphanumerically
-List objects have a **sort()** method that will sort the list alphanumerically, ascending, by default:
+List objects have a **sort()** method that will sort the list alphanumerically, ascending, by default.
 
 **Code Example**
     ```jac linenums="1"
@@ -248,7 +248,7 @@ List objects have a **sort()** method that will sort the list alphanumerically, 
     ```
 
 ### Sort Descending
-To sort descending, use the keyword argument **reverse = True**:
+To sort descending, use the keyword argument **reverse = True**.
 
 **Code Example**
     ```jac linenums="1"
@@ -264,7 +264,7 @@ You can define a custom function for sorting by using the keyword argument **key
     ```
 
 ### Case Insensitive Sort
-By default the **sort()** method is case sensitive, resulting in all capital letters being sorted before lower case letters:
+By default the **sort()** method is case sensitive, resulting in all capital letters being sorted before lower case letters.
 
 **Code Example**
     ```jac linenums="1"
@@ -272,14 +272,14 @@ By default the **sort()** method is case sensitive, resulting in all capital let
     ```
 
 ### Reverse Order
-The **reverse()** method reverses the current sorting order of the elements:
+The **reverse()** method reverses the current sorting order of the elements.
 
 **Code Example**
     ```jac linenums="1"
     --8<-- "examples/learning_section/jac_list.jac:213:217"
     ```
 ## Copy Lists
-You cannot copy a list simply by typing **list2 = list1**, because: **list2** will only be a reference to **list1**, and changes made in **list1** will automatically also be made in **list2**.
+You cannot copy a list simply by typing **list2 = list1**, because **list2** will only be a reference to **list1**, and changes made in **list1** will automatically also be made in **list2**.
 
 ### Use the copy( ) method
 You can use the built-in List method **copy()** to copy a list.
@@ -305,7 +305,7 @@ In Jac, you can merge multiple lists in various ways, with the **+** operator be
     --8<-- "examples/learning_section/jac_list.jac:241:247"
     ```
 
-Or you can use the **extend()** method, where the purpose is to add elements from one list to another list:
+Or you can use the **extend()** method, where the purpose is to add elements from one list to another list.
 
 **Code Example**
     ```jac linenums="1"

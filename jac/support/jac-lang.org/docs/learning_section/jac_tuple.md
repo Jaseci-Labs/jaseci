@@ -9,14 +9,14 @@ Tuples store multiple items in one variable.They are ordered, unchangeable, and 
 ### Tuple Items
 Tuple items are ordered, unchangeable, and allow duplicate values.Tuple items are indexed, the first item has index [0], the second item has index [1] etc.
 
-### Ordered
+- **Ordered :**
 When we say that tuples are ordered, it means that the items have a defined order, and that order will not change.
 
-### Unchangeable
+- **Unchangeable :**
 Tuples are unchangeable, meaning that we cannot change, add or remove items after the tuple has been created.
 
-### Allow Duplicates
-Since tuples are indexed, they can have items with the same value:
+- **Allow Duplicates :**
+Since tuples are indexed, they can have items with the same value.
 
 **Code Example**
 === "Jac"
@@ -25,7 +25,7 @@ Since tuples are indexed, they can have items with the same value:
     ```
 
 ### Tuple Length
-To determine how many items a tuple has, use the **len()** function:
+To determine how many items a tuple has, use the **len()** function.
 
 **Code Example**
 === "Jac"
@@ -34,7 +34,7 @@ To determine how many items a tuple has, use the **len()** function:
     ```
 
 ## Access Tuple Items
-You can access tuple items by referring to the index number, inside square brackets:
+You can access tuple items by referring to the index number, inside square brackets.
 
 **Code Example**
 === "Jac"
@@ -66,7 +66,7 @@ You can specify a range of indexes by specifying where to start and where to end
     ```
 
 ### Check if Item Exists
-To determine if a specified item is present in a tuple use the **in** keyword:
+To determine if a specified item is present in a tuple use the **in** keyword.
 
 **Code Example**
 === "Jac"
@@ -129,7 +129,7 @@ Tuples can be 'packed' by assigning values to them. In Python, we can also 'unpa
     ```
 
 ### Using Asterisk *
-If the number of variables is less than the number of values, you can add an * to the variable name and the values will be assigned to the variable as a list:
+If the number of variables is less than the number of values, you can add an * to the variable name and the values will be assigned to the variable as a list.
 
 **Code Example**
 === "Jac"
@@ -176,7 +176,7 @@ You can also loop through the tuple items by referring to their index number.Use
 ## Join Tuples
 
 ### Join Two Tuples
-To join two or more tuples you can use the **+** operator:
+To join two or more tuples you can use the **+** operator.
 
 **Code Example**
 === "Jac"
@@ -185,7 +185,7 @@ To join two or more tuples you can use the **+** operator:
     ```
 
 ### Multiply Tuples
-If you want to multiply the content of a tuple a given number of times, you can use the * operator:
+If you want to multiply the content of a tuple a given number of times, you can use the * operator.
 
 **Code Example**
 === "Jac"

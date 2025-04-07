@@ -1,6 +1,6 @@
 ### 1. Assignment Operations
 
-In JacLang, you can assign values to variables using the **=** operator. You can assign a value to multiple variables at once:
+In JacLang, you can assign values to variables using the **=** operator. You can assign a value to multiple variables at once.
 
 **Code Example**
 === "Jac"
@@ -10,7 +10,7 @@ In JacLang, you can assign values to variables using the **=** operator. You can
 
 ### 2. Bitwise Shift Operators
 
-**(a) Right Shift (>>): Shifts the bits of the number to the right.**
+**(a) Right Shift (>>) Shifts the bits of the number to the right.**
 
 JacLang supports bitwise shift operators that allow you to shift the bits of a number to the left or right.
 
@@ -20,7 +20,7 @@ JacLang supports bitwise shift operators that allow you to shift the bits of a n
     --8<-- "examples/learning_section/jac_assignment.jac:7:11"
     ```
 
-**(b) Left Shift (<<): Shifts the bits of the number to the left.**
+**(b) Left Shift (<<) Shifts the bits of the number to the left.**
 
 **Code Example**
 === "Jac"

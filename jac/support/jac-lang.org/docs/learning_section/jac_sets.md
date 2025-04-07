@@ -11,13 +11,13 @@ Sets are a type of data structure used to store multiple items in one variable. 
 ### Set Items
 Set items are unordered, unchangeable, and do not allow duplicate values.
 
-### Unordered
+- **Unordered :**
 Unordered means that the items in a set do not follow a specific order. Each time you use a set, its items may appear in a different order, and they cannot be accessed using an index or key.
 
-### Unchangeable
+- **Unchangeable :**
 Set items are unchangeable, meaning that we cannot change the items after the set has been created.
 
-### Duplicates Not Allowed
+- **Duplicates Not Allowed :**
 Sets cannot have two items with the same value.
 
 ## Access Set Items
@@ -115,7 +115,7 @@ The **del** keyword deletes a set entirely. After using **del**, the set no long
 
 ### Loop Items
 
-You can loop through the set items by using a for loop:
+You can loop through the set items by using a for loop.
 
 **Code Example**
 === "Jac"
@@ -159,7 +159,7 @@ All the joining methods and operators can be used to join multiple sets.
     --8<-- "examples/learning_section/jac_sets.jac:106:114"
     ```
 
-When using the | operator, separate the sets with more | operators:
+When using the | operator, separate the sets with more | operators.
 
 **Code Example**
 === "Jac"

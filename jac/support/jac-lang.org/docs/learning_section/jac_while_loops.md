@@ -3,7 +3,7 @@ A for loop is used for iterating over a sequence (that is either a list, a tuple
 This is less like the for keyword in other programming languages, and works more like an iterator method as found in other object-orientated programming languages.
 
 ## Basic While loop
-With the while loop we can execute a set of statements as long as a condition is true:
+With the while loop we can execute a set of statements as long as a condition is true.
 
 **Code Example**
     ```jac linenums="1"
@@ -11,7 +11,7 @@ With the while loop we can execute a set of statements as long as a condition is
     ```
 
 ## Break Statement
-With the **break** statement we can stop the loop even if the while condition is true:
+With the **break** statement we can stop the loop even if the while condition is true.
 
 **Code Example**
     ```jac linenums="1"
@@ -19,7 +19,7 @@ With the **break** statement we can stop the loop even if the while condition is
     ```
 
 ## Continue Statement
-With the **continue** statement we can stop the current iteration, and continue with the next:
+With the **continue** statement we can stop the current iteration, and continue with the next.
 
 **Code Example**
     ```jac linenums="1"

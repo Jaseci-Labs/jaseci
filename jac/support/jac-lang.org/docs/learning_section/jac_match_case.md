@@ -13,16 +13,6 @@ What is Match-Case?
     --8<-- "examples/learning_section/jac_match_case.jac:1:11"
     ```
 
-## Match by Value (`MatchValue`)
-
-Match an exact value.
-
-**Code Example**
-=== "Jac"
-    ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_match_case.jac:13:20"
-    ```
-
 ## Match Singleton (`MatchSingleton`)
 
 Match **True**, **None**, or other singleton values.
@@ -30,7 +20,7 @@ Match **True**, **None**, or other singleton values.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_match_case.jac:22:31"
+    --8<-- "examples/learning_section/jac_match_case.jac:13:23"
     ```
 
 ## Match Lists (`MatchSequence`)
@@ -40,7 +30,7 @@ Match a specific sequence of elements.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_match_case.jac:33:40"
+    --8<-- "examples/learning_section/jac_match_case.jac:25:33"
     ```
 
 ## Match with Wildcards (`MatchStar`)
@@ -50,7 +40,7 @@ Use * to match unknown values in sequences.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_match_case.jac:42:49"
+    --8<-- "examples/learning_section/jac_match_case.jac:35:43"
     ```
 
 ## Match Dictionaries (`MatchMapping`)
@@ -60,7 +50,7 @@ Match key-value pairs in dictionaries.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_match_case.jac:51:58"
+    --8<-- "examples/learning_section/jac_match_case.jac:45:53"
     ```
 
 ## Match Classes (`MatchClass`)
@@ -70,7 +60,7 @@ Match objects using class patterns.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_match_case.jac:60:72"
+    --8<-- "examples/learning_section/jac_match_case.jac:55:67"
     ```
 
 ## Using as to Capture Values (`MatchAs`)
@@ -80,7 +70,7 @@ Extract matched values into variables.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_match_case.jac:73:81"
+    --8<-- "examples/learning_section/jac_match_case.jac:69:77"
     ```
 
 ## Match Multiple Patterns (`MatchOr`)
@@ -90,7 +80,7 @@ Use **|** to match multiple patterns.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_match_case.jac:82:90"
+    --8<-- "examples/learning_section/jac_match_case.jac:79:87"
     ```
 
 ## Default Case (_)
@@ -100,5 +90,5 @@ Use **_** to handle unmatched cases.
 **Code Example**
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_match_case.jac:91:99"
+    --8<-- "examples/learning_section/jac_match_case.jac:89:97"
     ```

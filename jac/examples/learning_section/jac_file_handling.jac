@@ -44,14 +44,13 @@ with entry {
     with open("examples/learning_section/demofile.txt", "r") as file {
         print(file.readline());
     }
-    # File is automatically closed when the 'with' block ends
 
 }
 
 #Create a New File
 
 with entry {
-    with open("my_file.txt", "x") as file {
+    with open("my_file.txt", "a") as file {
         print("New file created successfully!");
     }
 }
