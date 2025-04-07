@@ -57,6 +57,8 @@ def jac_str_to_pass(
     """Convert a Jac file to an AST."""
     from jaclang.runtimelib.machine import JacProgram
 
+    from icecream import ic
+    ic('inside compile',file_path,'')
     if not target:
         target = schedule[-1] if schedule else None
     source = ast.JacSource(jac_str, mod_path=file_path)
@@ -97,7 +99,14 @@ def jac_str_to_pass(
     for mod in top_mod.jac_prog.modules.values():
         run_schedule(mod)
 
+    ic('before name',ast_ret.ir.name)
+    ic('before loc mod path ',ast_ret.ir.loc.mod_path)
     ast_ret.ir = top_mod
+    # ast_ret.ir.loc.mod_path = file_path   # this will make error - set is not possible
+    ic('after name',ast_ret.ir.name)
+    ic('after loc mod path',ast_ret.ir.loc.mod_path)
+    ic(ast_ret.ir.name)
+    ic(ast_ret.ir.loc.mod_path)
     return ast_ret
 
 

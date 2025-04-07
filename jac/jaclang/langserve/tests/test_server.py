@@ -1,13 +1,13 @@
-# from jaclang.utils.test import TestCase
-# from jaclang.vendor.pygls import uris
-# from jaclang.vendor.pygls.workspace import Workspace
-# from jaclang.langserve.engine import JacLangServer
-# from .session import LspSession
+from jaclang.utils.test import TestCase
+from jaclang.vendor.pygls import uris
+from jaclang.vendor.pygls.workspace import Workspace
+from jaclang.langserve.engine import JacLangServer
+from .session import LspSession
 
-# import lsprotocol.types as lspt
+import lsprotocol.types as lspt
 
 
-# class TestJacLangServer(TestCase):
+class TestJacLangServer(TestCase):
 
 #     def test_formatting(self) -> None:
 #         with LspSession() as s:
@@ -63,22 +63,22 @@
 #             lsp.get_hover_info(circle_impl_file, pos).contents.value,
 #         )
 
-#     def test_impl_auto_discover(self) -> None:
-#         """Test that the server doesn't run if there is a syntax error."""
-#         lsp = JacLangServer()
-#         # Set up the workspace path to "fixtures/"
-#         workspace_path = self.fixture_abs_path("")
-#         workspace = Workspace(workspace_path, lsp)
-#         lsp.lsp._workspace = workspace
-#         circle_impl_file = uris.from_fs_path(
-#             self.fixture_abs_path("circle_pure.impl.jac")
-#         )
-#         lsp.deep_check(circle_impl_file)
-#         pos = lspt.Position(8, 11)
-#         self.assertIn(
-#             "ability) calculate_area: float",
-#             lsp.get_hover_info(circle_impl_file, pos).contents.value,
-#         )
+    def test_impl_auto_discover(self) -> None:
+        """Test that the server doesn't run if there is a syntax error."""
+        lsp = JacLangServer()
+        # Set up the workspace path to "fixtures/"
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        circle_impl_file = uris.from_fs_path(
+            self.fixture_abs_path("circle_pure.impl.jac")
+        )
+        lsp.deep_check(circle_impl_file)
+        pos = lspt.Position(8, 11)
+        self.assertIn(
+            "ability) calculate_area: float",
+            lsp.get_hover_info(circle_impl_file, pos).contents.value,
+        )
 
 #     def test_show_type_impl(self) -> None:
 #         """Test that the server doesn't run if there is a syntax error."""
