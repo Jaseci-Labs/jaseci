@@ -1,6 +1,6 @@
 #test.impl.jac
 import:py from math, sqrt;
 
-:can:math {
+:can:_math {
     return sqrt(4);
 }

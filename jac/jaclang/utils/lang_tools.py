@@ -242,12 +242,13 @@ class AstTool:
                     file_name, schedule=[*(py_code_gen[:-1]), *type_checker_sched]
                 ).ir
 
+            assert isinstance(ir, ast.Module)
+            assert ir.jac_prog is not None
+
             match output:
                 case "sym":
-                    from jaclang.runtimelib.machine import JacMachine
-
                     out = ""
-                    for module_ in JacMachine.get().jac_program.modules.values():
+                    for module_ in ir.jac_prog.modules.values():
                         mod_name = module_.name
                         t = "#" * len(mod_name)
                         out += f"##{t}##\n# {mod_name} #\n##{t}##\n{module_.sym_tab.pp()}\n"
@@ -259,10 +260,8 @@ class AstTool:
                         else "Sym_tab is None."
                     )
                 case "ast":
-                    from jaclang.runtimelib.machine import JacMachine
-
                     out = ""
-                    for module_ in JacMachine.get().jac_program.modules.values():
+                    for module_ in ir.jac_prog.modules.values():
                         mod_name = module_.name
                         t = "#" * len(mod_name)
                         out += f"##{t}##\n# {mod_name} #\n##{t}##\n{module_.pp()}\n"

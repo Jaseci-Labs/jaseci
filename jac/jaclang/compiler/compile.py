@@ -19,8 +19,6 @@ from jaclang.compiler.passes.tool.schedules import format_pass
 
 def compile_jac(file_path: str, cache_result: bool = False) -> Pass:
     """Start Compile for Jac file and return python code as string."""
-    from jaclang.runtimelib.machine import JacMachine
-
     code = jac_file_to_pass(
         file_path=file_path,
         schedule=pass_schedule,
@@ -29,7 +27,8 @@ def compile_jac(file_path: str, cache_result: bool = False) -> Pass:
     # no more passes were processed, in that case we can ignore it.
     had_syntax_error = isinstance(code, JacParser) and len(code.errors_had) != 0
     if cache_result and (not had_syntax_error) and isinstance(code.ir, ast.Module):
-        for _, module in JacMachine.get().jac_program.modules.items():
+        assert code.ir.jac_prog is not None
+        for _, module in code.ir.jac_prog.modules.items():
             PyOutPass(input_ir=module, prior=code)
     return code
 
@@ -152,6 +151,6 @@ def jac_file_formatter(
     for i in schedule:
         if i == target:
             break
-        prse = target(input_ir=prse.ir, prior=prse)
+        prse = i(input_ir=prse.ir, prior=prse)
     prse = target(input_ir=prse.ir, prior=prse)
     return prse
