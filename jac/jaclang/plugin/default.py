@@ -1097,9 +1097,7 @@ class JacFeatureImpl(
     @hookimpl
     def get_root_type() -> Type[Root]:
         """Jac's root getter."""
-        from jaclang import Root as JRoot
-
-        return cast(Type[Root], JRoot)
+        return Jac.RootType
 
     @staticmethod
     @hookimpl
@@ -1109,7 +1107,6 @@ class JacFeatureImpl(
         conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchitype]:
         """Jac's root getter."""
-        from jaclang import GenericEdge
 
         ct = conn_type if conn_type else GenericEdge
 
