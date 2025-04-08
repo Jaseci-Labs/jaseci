@@ -197,7 +197,7 @@ with entry {
 import:jac file1;
 
 with entry{
-    print(file1.Color.BLUE.value);  # ❌ Not Allowed! Enum is private.
+    print(file1.Color.BLUE.value);  # Not Allowed! Enum is private.
 }
 
 # -------------------------------------------------#

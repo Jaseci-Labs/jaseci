@@ -37,16 +37,16 @@ with entry {
 }
 
 # *args and *kwargs
-can sum_all(*args: list) -> int {
-    return sum(args);
+can sum_all(*numbers: list) -> int {
+    return sum(numbers);
 }
 
 with entry {
     print(sum_all(1, 2, 3, 4, 5));
 }
 
-can print_details(**kwargs: dict) {
-    print(kwargs);
+can print_details(**details: str | int) {
+    print(details);
 }
 
 with entry {
