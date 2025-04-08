@@ -24,12 +24,11 @@ class JacTypeCheckPass(Pass):
             / "vendor"
             / "mypy"
         )
-        self.__modules: list[ast.Module] = []
+        assert isinstance(self.ir, ast.Module)
+        assert self.ir.jac_prog is not None
+        self.__modules = list(self.ir.jac_prog.modules.values())
+        self.terminate()
         return super().before_pass()
-
-    def enter_module(self, node: ast.Module) -> None:
-        """Call mypy checks on module level only."""
-        self.__modules.append(node)
 
     def after_pass(self) -> None:
         """Call mypy api after traversing all the modules."""

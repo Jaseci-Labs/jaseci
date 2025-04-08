@@ -239,7 +239,7 @@ class AstTool:
                     return f"Error While Jac to Py AST conversion: {e}"
             else:
                 ir = jac_file_to_pass(
-                    file_name, schedule=[*(py_code_gen[:-1]), *type_checker_sched]
+                    file_name, schedule=[*(py_code_gen), *type_checker_sched]
                 ).ir
 
             assert isinstance(ir, ast.Module)

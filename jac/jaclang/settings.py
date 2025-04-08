@@ -18,6 +18,7 @@ class Settings:
     print_py_raised_ast: bool = False
     py_import_pass_debug: bool = False
     inherit_pass_debug: bool = False
+    compile_debug: bool = False
 
     # Compiler configuration
     disable_mtllm: bool = False
