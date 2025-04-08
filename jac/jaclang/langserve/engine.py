@@ -6,7 +6,6 @@ import asyncio
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
-from icecream import ic
 from typing import Callable, Optional
 
 import jaclang.compiler.absyntree as ast
@@ -74,11 +73,8 @@ class JacLangServer(LanguageServer):
         keep_parent = (
             self.modules[file_path].impl_parent if file_path in self.modules else None
         )
-        ic(file_path, build.ir.loc.mod_path)
-        ic(keep_parent)
         self.modules[file_path] = ModuleInfo(ir=build.ir, impl_parent=keep_parent)
         for p in build.ir.mod_deps.keys():
-            ic(p)
             uri = uris.from_fs_path(p)
             if file_path != uri:
                 self.modules[uri] = ModuleInfo(
@@ -105,27 +101,21 @@ class JacLangServer(LanguageServer):
     def deep_check(self, file_path: str, annex_view: Optional[str] = None) -> bool:
         """Rebuild a file and its dependencies."""
         try:
-            ic(file_path)
             start_time = time.time()
             document = self.workspace.get_text_document(file_path)
             if file_path in self.modules and (
                 parent := self.modules[file_path].impl_parent
             ):
-                ic(parent, parent.ir.loc.mod_path, annex_view)
                 return self.deep_check(
                     uris.from_fs_path(parent.ir.loc.mod_path), annex_view=file_path
                 )
-            ic('going to jac to str',document.path)
             build = jac_str_to_pass(
                 jac_str=document.source,
                 file_path=document.path,
                 schedule=py_code_gen_typed,
             )
-            ic(build.ir.name)
-            ic(build.ir.loc.mod_path , 'fix me')
             self.update_modules(file_path, build)
             if discover := self.modules[file_path].ir.annexable_by:
-                ic(discover)
                 return self.deep_check(
                     uris.from_fs_path(discover), annex_view=file_path
                 )
@@ -139,7 +129,6 @@ class JacLangServer(LanguageServer):
                 ),
             )
             if annex_view:
-                ic('annex_view', annex_view)
                 self.publish_diagnostics(
                     file_path,
                     gen_diagnostics(

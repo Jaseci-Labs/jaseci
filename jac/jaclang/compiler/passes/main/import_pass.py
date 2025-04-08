@@ -62,7 +62,6 @@ class JacImportPass(Pass):
             self.ir.jac_prog.modules[mod.loc.mod_path] = mod
             self.ir.jac_prog.last_imported.append(mod)
             mod.jac_prog = self.ir.jac_prog
-            self.annex_impl(mod)
 
     # TODO: Refactor this to a function for impl and function for test
     def annex_impl(self, node: ast.Module) -> None:
@@ -102,7 +101,7 @@ class JacImportPass(Pass):
             ) and cur_file.endswith(".impl.jac"):
                 mod = self.import_jac_mod_from_file(cur_file)
                 if mod:
-                    node.add_kids_left(mod.kid, parent_update=True)
+                    node.add_kids_left(mod.kid, pos_update=False)
                     node.impl_mod.append(mod)
             if (
                 cur_file.startswith(f"{base_path}.")
