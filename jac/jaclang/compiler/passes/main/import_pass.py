@@ -101,7 +101,7 @@ class JacImportPass(Pass):
             ) and cur_file.endswith(".impl.jac"):
                 mod = self.import_jac_mod_from_file(cur_file)
                 if mod:
-                    node.add_kids_left(mod.kid, pos_update=False)
+                    node.add_kids_left(mod.kid, parent_update=True, pos_update=False)
                     node.impl_mod.append(mod)
             if (
                 cur_file.startswith(f"{base_path}.")

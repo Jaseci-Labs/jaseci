@@ -83,7 +83,9 @@ def jac_str_to_pass(
     if len(ast_ret.errors_had) != 0:
         return ast_ret
 
-    if target == JacImportPass:  # we need a elegant way of doing this
+    if (
+        target == JacImportPass
+    ):  # TODO: we need a elegant way of doing this [should be genaralized]
         ast_ret.ir = top_mod
 
         return ast_ret
