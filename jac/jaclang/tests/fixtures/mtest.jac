@@ -1,6 +1,6 @@
-can _math;
+can math;
 
 with entry {
-    notmath = _math();
+    notmath = math();
     print(notmath);
 }
