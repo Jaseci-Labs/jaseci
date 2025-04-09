@@ -1,0 +1,1 @@
+python -m lark.tools.standalone neojac.lark -o larkparse.py -c
