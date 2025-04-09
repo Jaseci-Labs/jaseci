@@ -553,9 +553,6 @@ class JacLanguageTests(TestCase):
             file_path=file_name[:-3] + ".jac",
             schedule=py_code_gen_typed,
         ).ir
-        from icecream import ic
-
-        ic(file_name[:-3] + "jac")
         self.assertEqual(len(ir.get_all_sub_nodes(ast.Architype)), 21)
         captured_output = io.StringIO()
         sys.stdout = captured_output
@@ -849,9 +846,7 @@ class JacLanguageTests(TestCase):
         from jaclang.compiler.passes.main.schedules import py_code_gen, PyImportPass
 
         imp = jac_file_to_pass(file_name, schedule=py_code_gen, target=PyImportPass)
-        self.assertEqual(
-            len(imp.import_table),
-        )
+        self.assertEqual(len(imp.import_table), 5)
 
     def test_access_modifier(self) -> None:
         """Test for access tags working."""
