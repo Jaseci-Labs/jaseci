@@ -527,9 +527,6 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertIn("2 Accessing privileged Data", stdout_value)
 
-    @pytest.mark.xfail(
-        reason="pyimport is not migrated yet to work with the new schedules system"
-    )
     def test_needs_import_1(self) -> None:
         """Test py ast to Jac ast conversion output."""
         file_name = self.fixture_abs_path("pyfunc_1.py")
@@ -551,7 +548,14 @@ class JacLanguageTests(TestCase):
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
 
-        ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
+        ir = jac_str_to_pass(
+            jac_str=py_ast_build_pass.ir.unparse(),
+            file_path=file_name[:-3] + ".jac",
+            schedule=py_code_gen_typed,
+        ).ir
+        from icecream import ic
+
+        ic(file_name[:-3] + "jac")
         self.assertEqual(len(ir.get_all_sub_nodes(ast.Architype)), 21)
         captured_output = io.StringIO()
         sys.stdout = captured_output
@@ -591,9 +595,6 @@ class JacLanguageTests(TestCase):
             '\n\n@ my_decorator \n can say_hello() {\n\n    """Say hello""" ;', output
         )
 
-    @pytest.mark.xfail(
-        reason="pyimport is not migrated yet to work with the new schedules system"
-    )
     def test_needs_import_2(self) -> None:
         """Test py ast to Jac ast conversion output."""
         file_name = self.fixture_abs_path("pyfunc_2.py")
@@ -616,7 +617,11 @@ class JacLanguageTests(TestCase):
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
 
-        ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
+        ir = jac_str_to_pass(
+            jac_str=py_ast_build_pass.ir.unparse(),
+            file_path=file_name[:-3] + ".jac",
+            schedule=py_code_gen_typed,
+        ).ir
         self.assertEqual(
             len(ir.get_all_sub_nodes(ast.Architype)), 27
         )  # Because of the Architype from math
@@ -648,13 +653,11 @@ class JacLanguageTests(TestCase):
         self.assertIn("class Circle {\n    can init(radius: float", output)
         self.assertIn("<>node = 90;    \n    print(<>node) ;\n}\n", output)
 
-    @pytest.mark.xfail(
-        reason="pyimport is not migrated yet to work with the new schedules system"
-    )
-    def test_needs_import_3(self) -> None:
+    def test_needs_import_3(
+        self,
+    ) -> None:  # TODO : Pyfunc_3 has a bug in conversion in matchmapping node
         """Test py ast to Jac ast conversion output."""
         file_name = self.fixture_abs_path("pyfunc_3.py")
-
         from jaclang.compiler.passes.main.schedules import py_code_gen_typed
         from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
         import ast as py_ast
@@ -674,8 +677,12 @@ class JacLanguageTests(TestCase):
                 return f"Error While Jac to Py AST conversion: {e}"
 
         ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
+        architype_count = sum(
+            len(mod.get_all_sub_nodes(ast.Architype))
+            for mod in ir.jac_prog.modules.values()
+        )
         self.assertEqual(
-            len(ir.get_all_sub_nodes(ast.Architype)), 75
+            architype_count, 75
         )  # Because of the Architype from other imports
         captured_output = io.StringIO()
         sys.stdout = captured_output
@@ -842,7 +849,9 @@ class JacLanguageTests(TestCase):
         from jaclang.compiler.passes.main.schedules import py_code_gen, PyImportPass
 
         imp = jac_file_to_pass(file_name, schedule=py_code_gen, target=PyImportPass)
-        self.assertEqual(len(imp.import_table), 1)
+        self.assertEqual(
+            len(imp.import_table),
+        )
 
     def test_access_modifier(self) -> None:
         """Test for access tags working."""
