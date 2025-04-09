@@ -79,7 +79,8 @@ def jac_str_to_pass(
     SubNodeTabPass(ast_ret.ir, ast_ret)  # TODO: Get rid of this one
 
     # Only return the parsed module when the schedules are empty
-    if len(schedule) == 0:
+    # or the target is SubNodeTabPass
+    if len(schedule) == 0 or target == SubNodeTabPass:
         return ast_ret
 
     assert isinstance(ast_ret.ir, ast.Module)
