@@ -55,7 +55,7 @@ class SymTabLinkPass(Pass):
                 self.__inherited_symbols[sym_tab_owner_path] = InheritedSymbolTable(
                     base_symbol_table=imported_mod_symtab,
                     load_all_symbols=all_import,
-                    symbols=[] if all_import else symbols_str_list,
+                    symbols=symbols_str_list,
                 )
 
             else:
