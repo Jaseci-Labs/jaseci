@@ -441,13 +441,13 @@ kw_expr: named_ref EQ expression | STAR_POW expression
 // [Heading]: Data Spatial References.
 edge_ref_chain: LSQUARE (KW_NODE| KW_EDGE)? expression? (edge_op_ref (filter_compr | expression)?)+ RSQUARE
 edge_op_ref: edge_any | edge_from | edge_to
-edge_to: ARROW_R | ARROW_R_P1 typed_filter_compare_list ARROW_R_P2
-edge_from: ARROW_L | ARROW_L_P1 typed_filter_compare_list ARROW_L_P2
+edge_to: ARROW_R | (ARROW_R_P1|DARROW_R_P1) typed_filter_compare_list ARROW_R_P2 // DCARROW_R_P1 is deprecated
+edge_from: ARROW_L | ARROW_L_P1 typed_filter_compare_list (ARROW_L_P2|DARROW_L_P2) // DCARROW_L_P2 is deprecated
 edge_any: ARROW_BI | ARROW_L_P1 typed_filter_compare_list ARROW_R_P2
 connect_op: connect_from | connect_to | connect_any
 disconnect_op: KW_DELETE edge_op_ref
-connect_to: CARROW_R | CARROW_R_P1 expression (COLON kw_expr_list)? CARROW_R_P2
-connect_from: CARROW_L | CARROW_L_P1 expression (COLON kw_expr_list)? CARROW_L_P2
+connect_to: CARROW_R | (CARROW_R_P1|DCARROW_R_P1) expression (COLON kw_expr_list)? CARROW_R_P2 // DCARROW_R_P1 is deprecated
+connect_from: CARROW_L | CARROW_L_P1 expression (COLON kw_expr_list)? (CARROW_L_P2 | DCARROW_L_P2) // DCARROW_L_P2 is deprecated
 connect_any: CARROW_BI | CARROW_L_P1 expression (COLON kw_expr_list)? CARROW_R_P2
 
 // [Heading]: Special Comprehensions.
@@ -646,6 +646,10 @@ CARROW_L_P1: "<+:"
 CARROW_R_P2: ":+>"
 CARROW_L_P2: ":<+"
 CARROW_R_P1: "+>:"
+DCARROW_L_P2: ":+"
+DCARROW_R_P1: "+:"
+DARROW_L_P2: ":-"
+DARROW_R_P1: "-:"
 
 
 // Assignment Operator ----------------------------------------------------- //

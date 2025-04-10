@@ -327,6 +327,10 @@ class Tokens(str, Enum):
     FSTR_BESC = "FSTR_BESC"
     COMMENT = "COMMENT"
     WS = "WS"
+    DCARROW_L_P2 = "DCARROW_L_P2"
+    DCARROW_R_P1 = "DCARROW_R_P1"
+    DARROW_L_P2 = "DARROW_L_P2"
+    DARROW_R_P1 = "DARROW_R_P1"
 
     def __str__(self) -> str:
         """Return the string representation of the token."""
