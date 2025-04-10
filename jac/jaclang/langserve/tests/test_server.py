@@ -154,7 +154,7 @@ class TestJacLangServer(TestCase):
         lsp.deep_check(decldef_main_file)
         lsp.deep_check(decldef_file)
         self.assertIn(
-            "decl_defs_main.jac:8:8-8:17",
+            "decl_defs_main.jac:7:8-7:17",
             str(lsp.get_definition(decldef_file, lspt.Position(2, 24))),
         )
 
