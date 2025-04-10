@@ -7,7 +7,7 @@ import sys
 from typing import List, Optional, Type
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.compile import jac_file_to_pass
+from jaclang.compiler.compile import jac_file_to_pass, jac_str_to_pass
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 from jaclang.compiler.passes.main.schedules import py_code_gen, type_checker_sched
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
@@ -227,19 +227,16 @@ class AstTool:
                         ),
                     ).ir
 
-                    schedule = py_code_gen_typed
-                    target = schedule[-1]
-                    for i in schedule:
-                        if i == target:
-                            break
-                        ast_ret = i(input_ir=rep, prior=None)
-                    ast_ret = target(input_ir=rep, prior=None)
-                    ir = ast_ret.ir
+                    ir = jac_str_to_pass(
+                        jac_str=rep.unparse(),
+                        file_path=file_name[:-3] + ".jac",
+                        schedule=py_code_gen_typed,
+                    ).ir
                 except Exception as e:
                     return f"Error While Jac to Py AST conversion: {e}"
             else:
                 ir = jac_file_to_pass(
-                    file_name, schedule=[*(py_code_gen[:-1]), *type_checker_sched]
+                    file_name, schedule=[*(py_code_gen), *type_checker_sched]
                 ).ir
 
             assert isinstance(ir, ast.Module)
