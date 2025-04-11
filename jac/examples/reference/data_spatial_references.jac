@@ -26,7 +26,7 @@ edge connector {
     i = 0;
     while i < 5 {
         print(f"wlecome to {self}");
-        i+=1;
+        i += 1;
     }
 }
 

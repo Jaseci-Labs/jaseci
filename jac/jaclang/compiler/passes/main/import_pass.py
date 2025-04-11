@@ -24,6 +24,8 @@ from jaclang.utils.log import logging
 logger = logging.getLogger(__name__)
 
 
+# TODO: This pass finds imports dependencies, parses them, and adds them to
+# JacProgram's table, then table calls again if needed, should rename
 class JacImportPass(Pass):
     """Jac statically imports Jac modules."""
 
@@ -109,8 +111,6 @@ class JacImportPass(Pass):
             ) and cur_file.endswith(".test.jac"):
                 mod = self.import_jac_mod_from_file(cur_file)
                 if mod and not settings.ignore_test_annex:
-                    # TODO: Is it safe to merge test module with the base module
-                    # merging can be done by calling add_kids_right(mod.kid)
                     node.test_mod.append(mod)
                     node.add_kids_right([mod], pos_update=False)
                     mod.parent = node

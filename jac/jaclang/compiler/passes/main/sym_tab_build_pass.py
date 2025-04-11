@@ -169,7 +169,7 @@ class SymTabBuildPass(Pass):
         """
         self.sync_node_to_scope(node)
 
-    # TODO: This should be moved to SymTableLink
+    # NOTE: This was moved to SymTableLink
     # def exit_import(self, node: ast.Import) -> None:
     #     """Sub objects.
 

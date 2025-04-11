@@ -1625,7 +1625,10 @@ class JacFormatPass(Pass):
         edge_ref: EdgeRef,
         """
         for i in node.kid:
-            self.emit(node, i.gen.jac)
+            if i.gen.jac == ("edge" or "node"):
+                self.emit(node, f"{i.gen.jac} ")
+            else:
+                self.emit(node, i.gen.jac)
 
     def exit_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
         """Sub objects.

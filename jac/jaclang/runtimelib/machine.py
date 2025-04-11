@@ -45,7 +45,9 @@ class JacMachine:
             if not os.path.isdir(base_path)
             else os.path.abspath(base_path)
         )
-        self.jac_program: JacProgram = JacProgram(None, None, None)
+        self.jac_program: JacProgram = JacProgram(
+            mod_bundle=None, bytecode=None, sem_ir=None
+        )
 
         JACMACHINE_CONTEXT.set(self)
 

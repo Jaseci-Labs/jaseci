@@ -37,4 +37,6 @@ type_checker_sched = [
     AccessCheckPass,
 ]
 py_code_gen_typed = [*py_code_gen, *type_checker_sched]
+# py_code_gen_build should be like py_code_gen_typed but without the PyImportPass
+py_code_gen_build = [i for i in py_code_gen if i != PyImportPass]
 py_compiler = [*py_code_gen, PyOutPass]
