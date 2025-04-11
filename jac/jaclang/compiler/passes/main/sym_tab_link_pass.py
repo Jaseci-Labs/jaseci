@@ -4,16 +4,11 @@ import os
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
-from jaclang.compiler.symtable import InheritedSymbolTable, SymbolTable
+from jaclang.compiler.symtable import InheritedSymbolTable
 
 
 class SymTabLinkPass(Pass):
     """Link the symbol table."""
-
-    def before_pass(self) -> None:
-        self.__inherited_symbols: dict[str, InheritedSymbolTable] = {}
-        self.__kid_symtabs: dict[str, SymbolTable] = {}
-        return super().before_pass()
 
     def enter_module_path(self, node: ast.ModulePath) -> None:
         """Link the symbol tables."""
@@ -22,7 +17,7 @@ class SymTabLinkPass(Pass):
         assert self.ir.jac_prog is not None
 
         imp_node = node.parent_of_type(ast.Import)
-        if imp_node.is_py or imp_node.is_absorb:
+        if imp_node.is_py:
             return None
 
         rel_path = node.resolve_relative_path()
@@ -43,29 +38,30 @@ class SymTabLinkPass(Pass):
                     if isinstance(mod_items, ast.ModuleItem):
                         symbols_str_list.append(mod_items.name.value)
 
-        sym_tab_owner_path: str = imported_mod_symtab.owner.loc.mod_path
-
         # all import is set, need to add the imported symtable as a kid
         # to the current sym table
         if all_import:
-            self.__kid_symtabs[sym_tab_owner_path] = imported_mod_symtab
-
+            node.sym_tab.kid.append(imported_mod_symtab)
         else:
-            if sym_tab_owner_path not in self.__inherited_symbols:
-                self.__inherited_symbols[sym_tab_owner_path] = InheritedSymbolTable(
-                    base_symbol_table=imported_mod_symtab,
-                    load_all_symbols=all_import,
-                    symbols=symbols_str_list,
+            if imported_mod_symtab not in [
+                stab.base_symbol_table for stab in node.sym_tab.inherit
+            ]:
+                node.sym_tab.inherit.append(
+                    InheritedSymbolTable(
+                        base_symbol_table=imported_mod_symtab,
+                        load_all_symbols=all_import,
+                        symbols=symbols_str_list,
+                    )
                 )
-
             else:
-                self.__inherited_symbols[sym_tab_owner_path].symbols.extend(
-                    symbols_str_list
-                )
-
-    def after_pass(self) -> None:
-        for k in self.__inherited_symbols:
-            self.ir.sym_tab.inherit.append(self.__inherited_symbols[k])
-        for k in self.__kid_symtabs:
-            self.ir.sym_tab.kid.append(self.__kid_symtabs[k])
-        return super().after_pass()
+                # if the imported symbol table is already in the kid list,
+                # just add the symbols to it
+                for sym_tab in node.sym_tab.kid:
+                    if sym_tab == imported_mod_symtab:
+                        for sym in symbols_str_list:
+                            if sym not in sym_tab.tab.values():
+                                sym_tab.tab[sym] = imported_mod_symtab.tab[sym]
+                for symtb in node.sym_tab.inherit:
+                    if symtb.base_symbol_table == imported_mod_symtab:
+                        symtb.symbols.extend(symbols_str_list)
+                        break
