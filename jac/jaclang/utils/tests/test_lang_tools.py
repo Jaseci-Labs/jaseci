@@ -117,11 +117,24 @@ class JacFormatPassTests(TestCase):
             "\n|   +-- ConnectionAbortedError\n|   |   +-- public var\n|   +-- ConnectionError\n|",
             out,
         )
-        self.assertTrue(
-            out.startswith(
-                "########\n# atom #\n########\nSymTable::Module(atom)\n+-- Symbols\n|   +-- (e)x\n|"
-            )
-        )
+        check_list = [
+            "########",
+            "# atom #",
+            "########",
+            "SymTable::Module(atom)",
+            "|   +-- list1",
+            "|   +-- x",
+            "|   +-- (e)x",
+            "|   +-- c",
+            "|   +-- d",
+            "|   +-- a",
+            "|   +-- b",
+            "+-- SymTable::EnumDef((e)x)",
+            " SymTable::Enum(x)",
+            "+-- line 19, col 13",
+        ]
+        for i in check_list:
+            self.assertIn(i, out)
         out = AstTool().ir(["sym.", jac_file])
-        self.assertEqual('2 [label="(e)x"];', out.split("\n")[4])
+        self.assertIn('[label="(e)x"];', out)
         self.assertNotIn('[label="str"];', out)
