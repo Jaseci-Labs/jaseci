@@ -272,7 +272,7 @@ class JacFeatureSpec(
     @hookspec(firstresult=True)
     def make_architype(
         cls: type,
-        arch_base: Type[Architype],
+        arch_base: Type,
         on_entry: list[DSFunc],
         on_exit: list[DSFunc],
     ) -> Type[Architype]:
