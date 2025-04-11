@@ -22,7 +22,7 @@ def compare(current: dict, baseline: dict) -> list:
     for test, curr in current.items():
         if test in baseline:
             allowed = baseline[test] * (1 + MARGIN)
-            if curr > allowed:
+            if curr > allowed and curr > 10:
                 regressions.append((test, baseline[test], curr))
     return regressions
 

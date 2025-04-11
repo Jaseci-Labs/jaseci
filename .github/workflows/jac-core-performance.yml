@@ -37,7 +37,7 @@ jobs:
           pytest --durations=0 -v -n auto | tee .performance/durations_current.txt
 
       - name: Compare durations with baseline
-        run: python scripts/parse_durations.py
+        run: python scripts/performance.py
 
       - name: Save current as baseline (main branch only)
         if: github.ref == 'refs/heads/main'
