@@ -1,0 +1,44 @@
+name: Performance checks for jaclang-core
+
+on:
+  pull_request:
+    paths:
+      - "jac/**"
+  push:
+    branches:
+      - main
+    paths:
+      - "jac/**"
+
+jobs:
+  performance-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: jac
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.12
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-xdist
+
+      - name: Run pytest with durations
+        run: |
+          mkdir -p .performance
+          pytest --durations=0 -v -n auto | tee .performance/durations_current.txt
+
+      - name: Compare durations with baseline
+        run: python scripts/parse_durations.py
+
+      - name: Save current as baseline (main branch only)
+        if: github.ref == 'refs/heads/main'
+        run: cp .performance/durations_current.txt .performance/durations_baseline.txt
