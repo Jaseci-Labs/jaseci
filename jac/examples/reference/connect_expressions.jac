@@ -17,13 +17,13 @@ edge MyEdge {
         if i % 2 == 0 {
             end ++> (end := node_a(value=i));
         } else {
-            end +:MyEdge:val=i:+> (end := node_a(value=i + 10));
+            end +>:MyEdge:val=i:+> (end := node_a(value=i + 10));
         }
     }
 }
 
 :walker:Creator:can:travel {
-    for i in [-:MyEdge:val <= 6:->] {
+    for i in [->:MyEdge:val <= 6:->] {
         print(i.value);
     }
     visit [-->];

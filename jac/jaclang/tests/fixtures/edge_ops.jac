@@ -20,18 +20,18 @@ edge MyEdge {
         end ++> (end := node_a(value=i + 1));
         if i == 2 {
             for j=0 to j<3 by j+=1  {
-                end +:MyEdge:val=random.randint(1, 15), val2=random.randint(1, 5):+> node_a(value=j + 10);
+                end +>:MyEdge:val=random.randint(1, 15), val2=random.randint(1, 5):+> node_a(value=j + 10);
             }
             print([(arch.val, arch.val2) for i in end.__jac__.edges if isinstance(arch := i.architype, MyEdge)]);
         }
     }
     for i=0 to i<3 by i+=1  {
-        end +:MyEdge:val=random.randint(1, 20):+> node_a(value=i + 5);
+        end +>:MyEdge:val=random.randint(1, 20):+> node_a(value=i + 5);
     }
 }
 
 :walker:Creator:can:travel {
-    for i in [-:MyEdge:val <= 5:->] {
+    for i in [->:MyEdge:val <= 5:->] {
         print(i.value);
     }
     visit [-->];

@@ -2733,7 +2733,11 @@ class JacParser(Pass):
             if self.match_token(Tok.ARROW_R):
                 fcond = None
             else:
-                self.consume_token(Tok.ARROW_R_P1)
+                if not self.match_token(Tok.ARROW_R_P1):
+                    self.consume_token(Tok.DARROW_R_P1)
+                    self.parse_ref.warning(
+                        "Deprecated syntax, use '->:' instead of '-:'",
+                    )
                 fcond = self.consume(ast.FilterCompr)
                 self.consume_token(Tok.ARROW_R_P2)
             return ast.EdgeOpRef(
@@ -2751,7 +2755,11 @@ class JacParser(Pass):
             else:
                 self.consume_token(Tok.ARROW_L_P1)
                 fcond = self.consume(ast.FilterCompr)
-                self.consume_token(Tok.ARROW_L_P2)
+                if not self.match_token(Tok.ARROW_L_P2):
+                    self.consume_token(Tok.DARROW_L_P2)
+                    self.parse_ref.warning(
+                        "Deprecated syntax, use ':<-' instead of ':-'",
+                    )
             return ast.EdgeOpRef(
                 filter_cond=fcond, edge_dir=EdgeDir.IN, kid=self.cur_nodes
             )
@@ -2800,7 +2808,9 @@ class JacParser(Pass):
             """
             conn_type: ast.Expr | None = None
             conn_assign_sub: ast.SubNodeList | None = None
-            if self.match_token(Tok.CARROW_R_P1):
+            if (tok_rp1 := self.match_token(Tok.CARROW_R_P1)) or self.match_token(
+                Tok.DCARROW_R_P1
+            ):
                 conn_type = self.consume(ast.Expr)
                 conn_assign_sub = (
                     self.consume(ast.SubNodeList)
@@ -2808,6 +2818,10 @@ class JacParser(Pass):
                     else None
                 )
                 self.consume_token(Tok.CARROW_R_P2)
+                if not tok_rp1:
+                    self.parse_ref.warning(
+                        "Deprecated syntax, use '+>:' instead of '+:'",
+                    )
             else:
                 self.consume_token(Tok.CARROW_R)
             conn_assign = (
@@ -2839,7 +2853,11 @@ class JacParser(Pass):
                     if self.match_token(Tok.COLON)
                     else None
                 )
-                self.consume_token(Tok.CARROW_L_P2)
+                if not self.match_token(Tok.CARROW_L_P2):
+                    self.consume_token(Tok.DCARROW_L_P2)
+                    self.parse_ref.warning(
+                        "Deprecated syntax, use ':<+' instead of ':+'",
+                    )
             else:
                 self.consume_token(Tok.CARROW_L)
             conn_assign = (
