@@ -307,10 +307,10 @@ def log_entry(
         "entry_node": node,
     }
     msg = str(
-        f"Incoming call from {log["caller_name"]}"
-        f" to {log["api_name"]}"
-        f" with payload: {log["payload"]}"
-        f" at entry node: {log["entry_node"]}"
+        f'Incoming call from {log["caller_name"]}'
+        f' to {log["api_name"]}'
+        f' with payload: {log["payload"]}'
+        f' at entry node: {log["entry_node"]}'
     )
     log["extra_fields"] = list(log.keys())
     logger.info(msg, extra=log)
@@ -324,11 +324,11 @@ def log_exit(response: dict[str, Any], log: dict[str, Any] | None = None) -> Non
     log["api_response"] = log_dumps(response)
     log["extra_fields"] = list(log.keys())
     log_msg = str(
-        f"Returning call from {log["caller_name"]}"
-        f" to {log["api_name"]}"
-        f" with payload: {log["payload"]}"
-        f" at entry node: {log["entry_node"]}"
-        f" with response: {log["api_response"]}"
+        f'Returning call from {log["caller_name"]}'
+        f' to {log["api_name"]}'
+        f' with payload: {log["payload"]}'
+        f' at entry node: {log["entry_node"]}'
+        f' with response: {log["api_response"]}'
     )
     logger.info(
         log_msg,
