@@ -54,7 +54,6 @@ class ExecutionContext:
         auto_close: bool = True,
     ) -> ExecutionContext:
         """Create ExecutionContext."""
-        from jaclang import Root
 
         ctx = ExecutionContext()
         ctx.mem = ShelfStorage(session)
@@ -96,7 +95,6 @@ class ExecutionContext:
     @staticmethod
     def global_system_root() -> NodeAnchor:
         """Get global system root."""
-        from jaclang import Root
 
         if not (sr_anch := getattr(ExecutionContext, "system_root", None)):
             sr_arch = Root()

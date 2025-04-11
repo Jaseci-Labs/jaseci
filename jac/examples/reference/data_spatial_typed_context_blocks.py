@@ -6,13 +6,13 @@ from jaclang import *
 class Producer:
 
     @with_entry
-    def produce(self, here: Root) -> None:
+    def produce(self, here: Jac.RootType) -> None:
         end = here
         i = 0
         while i < 3:
-            end.connect((end := Product(number=i + 1)))
+            Jac.conn(end, (end := Product(number=i + 1)))
             i += 1
-        self.visit(here.refs())
+        Jac.visit(self, Jac.refs(here))
 
 
 @node
@@ -22,7 +22,7 @@ class Product:
     @with_entry
     def make(self, here: Producer) -> None:
         print(f"Hi, I am {self} returning a String")
-        here.visit(self.refs())
+        Jac.visit(here, Jac.refs(self))
 
 
-root().spawn(Producer())
+Jac.spawn(root(), Producer())

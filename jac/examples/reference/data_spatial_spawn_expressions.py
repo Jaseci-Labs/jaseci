@@ -5,9 +5,9 @@ from jaclang import *
 @walker
 class Adder:
     @with_entry
-    def do(self, here: Root) -> None:
-        here.connect(node_a())
-        self.visit(here.refs())
+    def do(self, here: Jac.RootType) -> None:
+        Jac.conn(here, node_a())
+        Jac.visit(self, Jac.refs(here))
 
 
 @node
@@ -22,4 +22,4 @@ class node_a:
         print(int(self.x) + int(self.y))
 
 
-Adder().spawn(root())
+Jac.spawn(Adder(), root())

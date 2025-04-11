@@ -8,8 +8,8 @@ class Visitor:
     @with_entry
     def self_destruct(self, here) -> None:
         print("get's here")
-        return self.disengage()
+        return Jac.disengage(self)
         print("but not here")
 
 
-root().spawn(Visitor())
+Jac.spawn(root(), Visitor())

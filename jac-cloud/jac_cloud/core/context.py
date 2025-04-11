@@ -71,8 +71,6 @@ class JaseciContext(ExecutionContext):
         connection: Request | WebSocket, entry: NodeAnchor | None = None
     ) -> "JaseciContext":
         """Create JacContext."""
-        from jaclang import Root
-
         ctx = JaseciContext()
         ctx.base = EXECUTION_CONTEXT.get(None)
         ctx.connection = connection

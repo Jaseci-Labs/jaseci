@@ -32,6 +32,7 @@ from jaclang.runtimelib.architype import (
     Access as _Access,
     AccessLevel,
     Anchor,
+    DSFunc,
     EdgeAnchor as _EdgeAnchor,
     EdgeArchitype as _EdgeArchitype,
     NodeAnchor as _NodeAnchor,
@@ -970,17 +971,10 @@ class BaseArchitype:
         """Initialize Jac Classes."""
         jac_classes = {}
         sub_cls = cls.__subclasses__()
-        for sub in sub_cls[-1].__subclasses__():
+        for sub in sub_cls:
             sub.__jac_hintings__ = get_type_hints(sub)
             jac_classes[sub.__name__] = sub
-
-        if len(sub_cls) > 1:
-            sub = sub_cls[0].__subclasses__()[0]
-            sub.__jac_hintings__ = get_type_hints(sub)
-            jac_classes[""] = sub
-
         cls.__jac_classes__ = jac_classes
-
         return jac_classes
 
     @classmethod
@@ -1018,6 +1012,19 @@ class NodeArchitype(BaseArchitype, _NodeArchitype):
         """Get class naming."""
         return f"n:{cls.__name__}"
 
+    @classmethod
+    def __set_classes__(cls) -> dict[str, Any]:
+        """Initialize Jac Classes."""
+        jac_classes: dict[str, type[BaseArchitype]] = {}
+        sub_cls = cls.__subclasses__()
+        sub_cls[0].__jac_hintings__ = get_type_hints(sub_cls[0])
+        for sub in sub_cls[1:]:
+            sub.__jac_hintings__ = get_type_hints(sub)
+            jac_classes[sub.__name__] = sub
+        jac_classes[""] = sub_cls[0]
+        cls.__jac_classes__ = jac_classes
+        return jac_classes
+
 
 class EdgeArchitype(BaseArchitype, _EdgeArchitype):
     """Edge Architype Protocol."""
@@ -1028,6 +1035,19 @@ class EdgeArchitype(BaseArchitype, _EdgeArchitype):
     def __ref_cls__(cls) -> str:
         """Get class naming."""
         return f"e:{cls.__name__}"
+
+    @classmethod
+    def __set_classes__(cls) -> dict[str, Any]:
+        """Initialize Jac Classes."""
+        jac_classes: dict[str, type[BaseArchitype]] = {}
+        sub_cls = cls.__subclasses__()
+        sub_cls[0].__jac_hintings__ = get_type_hints(sub_cls[0])
+        for sub in sub_cls[1:]:
+            sub.__jac_hintings__ = get_type_hints(sub)
+            jac_classes[sub.__name__] = sub
+        jac_classes[""] = sub_cls[0]
+        cls.__jac_classes__ = jac_classes
+        return jac_classes
 
 
 class WalkerArchitype(BaseArchitype, _WalkerArchitype):
@@ -1068,9 +1088,15 @@ class ObjectArchitype(BaseArchitype, _ObjectArchitype):
 class GenericEdge(EdgeArchitype):
     """Generic Root Node."""
 
+    _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
+    _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
+
 
 class Root(NodeArchitype):
     """Generic Root Node."""
+
+    _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
+    _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
 
     def __init__(self) -> None:
         """Create node architype."""
