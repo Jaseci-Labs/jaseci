@@ -54,7 +54,9 @@ class DeclImplMatchPass(Pass):
                     lookup.decl.name_of, ast.AstImplNeedingNode
                 ):
                     lookup = (
-                        sym_tab.parent.lookup(arch_refs[0]) if sym_tab.parent else None
+                        sym_tab.parent.lookup(arch_refs[0])
+                        if sym_tab.parent
+                        else sym_tab.lookup(arch_refs[0])
                     )
                 decl_node = (
                     self.defn_lookup(lookup)

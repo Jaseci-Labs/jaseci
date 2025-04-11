@@ -70,7 +70,10 @@ class AstNode:
         self._sym_tab = sym_tab
 
     def add_kids_left(
-        self, nodes: Sequence[AstNode], pos_update: bool = True
+        self,
+        nodes: Sequence[AstNode],
+        pos_update: bool = True,
+        parent_update: bool = False,
     ) -> AstNode:
         """Add kid left."""
         self.kid = [*nodes, *self.kid]
@@ -78,10 +81,16 @@ class AstNode:
             for i in nodes:
                 i.parent = self
             self.loc.update_first_token(self.kid[0].loc.first_tok)
+        elif parent_update:
+            for i in nodes:
+                i.parent = self
         return self
 
     def add_kids_right(
-        self, nodes: Sequence[AstNode], pos_update: bool = True
+        self,
+        nodes: Sequence[AstNode],
+        pos_update: bool = True,
+        parent_update: bool = False,
     ) -> AstNode:
         """Add kid right."""
         self.kid = [*self.kid, *nodes]
@@ -89,6 +98,9 @@ class AstNode:
             for i in nodes:
                 i.parent = self
             self.loc.update_last_token(self.kid[-1].loc.last_tok)
+        elif parent_update:
+            for i in nodes:
+                i.parent = self
         return self
 
     def insert_kids_at_pos(
@@ -629,6 +641,8 @@ class Module(AstDocNode):
         registry: Optional[SemRegistry] = None,
     ) -> None:
         """Initialize whole program node."""
+        from jaclang.runtimelib.machine import JacProgram
+
         self.name = name
         self.source = source
         self.body = body
@@ -640,6 +654,7 @@ class Module(AstDocNode):
         self.registry = registry
         self.terminals: list[Token] = terminals
         self.py_info: PyInfo = PyInfo()
+        self.jac_prog: Optional[JacProgram] = None
 
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)

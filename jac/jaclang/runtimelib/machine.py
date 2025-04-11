@@ -45,7 +45,9 @@ class JacMachine:
             if not os.path.isdir(base_path)
             else os.path.abspath(base_path)
         )
-        self.jac_program: Optional[JacProgram] = None
+        self.jac_program: JacProgram = JacProgram(
+            mod_bundle=None, bytecode=None, sem_ir=None
+        )
 
         JACMACHINE_CONTEXT.set(self)
 
@@ -287,6 +289,8 @@ class JacProgram:
         self.mod_bundle = mod_bundle
         self.bytecode = bytecode or {}
         self.sem_ir = sem_ir if sem_ir else SemRegistry()
+        self.modules: dict[str, Module] = {}
+        self.last_imported: list[Module] = []
 
     def get_bytecode(
         self,

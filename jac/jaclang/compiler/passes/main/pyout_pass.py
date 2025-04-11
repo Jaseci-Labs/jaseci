@@ -35,8 +35,10 @@ class PyOutPass(Pass):
                 f"Unable to find module {node.loc.mod_path} or no code present.", node
             )
             return
+        assert isinstance(self.ir, ast.Module)
+        assert self.ir.jac_prog is not None
         mods = [node] + [
-            i for i in self.get_all_sub_nodes(node, ast.Module) if not i.stub_only
+            i for i in self.ir.jac_prog.modules.values() if not i.stub_only
         ]
         for mod in mods:
             mod_path, out_path_py, out_path_pyc = self.get_output_targets(mod)
