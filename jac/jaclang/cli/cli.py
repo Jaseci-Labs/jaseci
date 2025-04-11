@@ -16,7 +16,7 @@ from jaclang.cli.cmdreg import CommandShell, cmd_registry
 from jaclang.compiler.compile import jac_file_formatter, jac_file_to_pass
 from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
-from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+from jaclang.compiler.passes.main.schedules import py_code_gen_build, py_code_gen_typed
 from jaclang.plugin.builtin import dotgen
 from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
@@ -181,10 +181,13 @@ def get_object(
 
 
 @cmd_registry.register
-def build(filename: str) -> None:
+def build(filename: str, pybuild: bool = False) -> None:
     """Build the specified .jac file."""
     if filename.endswith(".jac"):
-        out = jac_file_to_pass(file_path=filename, schedule=py_code_gen_typed)
+        out = jac_file_to_pass(
+            file_path=filename,
+            schedule=py_code_gen_typed if pybuild else py_code_gen_build,
+        )
         errs = len(out.errors_had)
         warnings = len(out.warnings_had)
         print(f"Errors: {errs}, Warnings: {warnings}")

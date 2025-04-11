@@ -76,6 +76,8 @@ def jac_str_to_pass(
 
     source = ast.JacSource(jac_str, mod_path=file_path)
     ast_ret: Pass = JacParser(input_ir=source)
+    # TODO: This function below has tons of tech debt that should go away
+    # when these functions become methods of JacProgram.
     SubNodeTabPass(ast_ret.ir, ast_ret)  # TODO: Get rid of this one
 
     # Only return the parsed module when the schedules are empty
