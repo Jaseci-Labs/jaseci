@@ -212,9 +212,9 @@ class SymTabBuildPass(Pass):
         if node.alias:
             node.alias.sym_tab.def_insert(node.alias, single_decl="import")
         elif node.path and isinstance(node.path[0], ast.Name):
-            if (
-                node.parent_of_type(ast.Import)
-                and not node.parent_of_type(ast.Import).from_loc
+            if node.parent_of_type(ast.Import) and not (
+                node.parent_of_type(ast.Import).from_loc
+                and node.parent_of_type(ast.Import).is_jac
             ):
                 node.path[0].sym_tab.def_insert(node.path[0])
         else:
