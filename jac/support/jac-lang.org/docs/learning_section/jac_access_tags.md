@@ -40,7 +40,7 @@ If a global variable is marked with the `pub` access tag, it can be accessed any
 Let's say we define a global variable in one file:
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag.jac:6:7"
+--8<-- "examples/learning_section/jac_access_tag_file1.jac:6:7"
 ```
 
 - Since the global variable `num1` is marked with the `pub` access tag, it can be accessed from anywhere in the program, both within the same file or in other files that import `file1.jac`.
@@ -55,7 +55,7 @@ Now, let's see how we can access the `num1` variable in the **same module** and 
 - You can access the `num1` global variable directly in the same module, like so:
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag.jac:6:11"
+--8<-- "examples/learning_section/jac_access_tag_file1.jac:6:11"
 ```
 
 
@@ -64,7 +64,7 @@ Now, let's see how we can access the `num1` variable in the **same module** and 
 - To access the global variable `num1` from another file, you simply need to **import** the module where num1 is defined.
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag.jac:13:18"
+--8<-- "examples/learning_section/jac_access_tag_file2.jac:3:7"
 ```
 
 
@@ -79,7 +79,7 @@ When a global variable is marked with the `priv` tag, it becomes **private** to 
 Let's say you define a global variable in one file:
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag.jac:22:23"
+--8<-- "examples/learning_section/jac_access_tag_file1.jac:14:14"
 ```
 
 - Since the global variable `num2` is marked with the `priv` access tag, it can **only be accessed** in `file1.jac` and **not** in any other files that import `file1.jac`.
@@ -91,7 +91,7 @@ Let's say you define a global variable in one file:
 - You can access the `num2` global variable directly in the same module, like so:
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag.jac:22:27"
+--8<-- "examples/learning_section/jac_access_tag_file1.jac:14:18"
 ```
 
 
@@ -100,7 +100,7 @@ Let's say you define a global variable in one file:
 - If you try to access the `num2` global variable from a different file, it will not work because `num2` is private to `file1.jac`.
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag.jac:29:34"
+--8<-- "examples/learning_section/jac_access_tag_file2.jac:10:13"
 ```
 
 
@@ -118,7 +118,7 @@ Other objects, entry functions, and external modules can **freely** reference an
 **Code Example**
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag.jac:55:62"
+--8<-- "examples/learning_section/jac_access_tag_file1.jac:30:37"
 ```
 
 
@@ -129,7 +129,7 @@ If an Architype is marked as `:priv`, it cannot be accessed from outside its rel
 **Code Example**
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag.jac:66:73"
+--8<-- "examples/learning_section/jac_access_tag_file1.jac:41:48"
 ```
 
 - In the above example `InnerPrivObj` Architype has been defined inside the Architype `SomeObj`. So, we can't create instances of `InnerPrivObj` outside the `SomeObj`'s scope.
@@ -147,7 +147,7 @@ A **public** attribute can be accessed and modified **from anywhere**.
 **Code Example**
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag.jac:85:93"
+--8<-- "examples/learning_section/jac_access_tag_file1.jac:59:67"
 ```
 
 ### Private Attributes
@@ -155,19 +155,19 @@ A **public** attribute can be accessed and modified **from anywhere**.
 Let's say a **private** attribute is defined inside an Architype.
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag.jac:96:98"
+--8<-- "examples/learning_section/jac_access_tag_file1.jac:70:72"
 ```
 
 That **private** attribute **can be accessed or Modified** inside the Architype.
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag.jac:100:110"
+--8<-- "examples/learning_section/jac_access_tag_file1.jac:74:84"
 ```
 
 A **private** attribute **cannot be accessed or modified** outside the object. It is used to store internal data that should not be directly modified.
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag.jac:116:120"
+--8<-- "examples/learning_section/jac_access_tag_file1.jac:86:94"
 ```
 
 ## Access Tags for Abilities
@@ -179,7 +179,7 @@ In Jac, **abilities** can have different access levels. These access levels defi
 A **public** ability can be called from **anywhere** outside the object.
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag.jac:125:134"
+--8<-- "examples/learning_section/jac_access_tag_file1.jac:98:107"
 ```
 
 ### Private Abilities
@@ -187,19 +187,19 @@ A **public** ability can be called from **anywhere** outside the object.
 Let's say a **private** ability is defined inside an Architype.
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag.jac:137:141"
+--8<-- "examples/learning_section/jac_access_tag_file1.jac:110:114"
 ```
 
 That **private** ability **can be called** inside the Architype's scope.
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag.jac:143:150"
+--8<-- "examples/learning_section/jac_access_tag_file1.jac:116:123"
 ```
 
 A **private** ability **cannot be called** outside the Architype's scope.
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag.jac:152:160"
+--8<-- "examples/learning_section/jac_access_tag_file1.jac:125:133"
 ```
 
 ## Access Tags for Enums
@@ -214,16 +214,16 @@ An enumeration marked as `pub` can be accessed **from anywhere**, including othe
 **Code Example: Defining a Public Enum**
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag.jac:165:174"
+--8<-- "examples/learning_section/jac_access_tag_file1.jac:138:142"
 ```
 
 **Code Example: Accessing from Another File**
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag.jac:176:181"
+--8<-- "examples/learning_section/jac_access_tag_file2.jac:17:19"
 ```
 
-- Since `Color` is public, it can be accessed in `file2.jac` after importing `file1.jac`.
+- Since `Color` is public, it can be accessed in `jac_access_tag_file2.jac` after importing `jac_access_tag_file1.jac`.
 
 
 ### Private Enums
@@ -233,16 +233,16 @@ An enumeration marked as `priv` **cannot be accessed outside** the module it is 
 **Code Example: Defining a Private Enum**
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag.jac:185:194"
+--8<-- "examples/learning_section/jac_access_tag_file1.jac:150:158"
 ```
 
 **Code Example: Attempting to Access from Another File**
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag.jac:196:201"
+--8<-- "examples/learning_section/jac_access_tag_file2.jac:22:25"
 ```
 
-- Since `Color` is private, it **cannot be accessed in** `file2.jac`, even if `file1.jac` is imported.
+- Since `Color` is private, it **cannot be accessed in** `jac_access_tag_file2.jac`, even if `jac_access_tag_file1.jac` is imported.
 
 
 ### Protected Enum
@@ -253,13 +253,13 @@ An enumeration marked as `protect` is accessible within the same module and deri
 **Code Example: Defining a Protected Enum**
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag.jac:205:214"
+--8<-- "examples/learning_section/jac_access_tag_file1.jac:162:170"
 ```
 
 **Code Example: Attempting to Access from Another File**
 
 ```jac linenums="1"
---8<-- "examples/learning_section/jac_access_tag.jac:216:221"
+--8<-- "examples/learning_section/jac_access_tag_file2.jac:28:30"
 ```
 
-- Since `Color` is protected, it **cannot be accessed** in `file2.jac`, even if `file1.ja`c is imported.
+- Since `Color` is protected, it **cannot be accessed** in `jac_access_tag_file2.jac`, even if `jac_access_tag_file1.jac` is imported.
