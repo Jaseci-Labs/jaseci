@@ -79,8 +79,8 @@ def node_dot(
 def get_edges(
     node: NodeAnchor,
     dir: EdgeDir,
-    filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-    target_obj: Optional[list[NodeArchitype]],
+    filter: Callable[[EdgeArchitype], bool] | None,
+    target_obj: list[NodeArchitype] | None,
 ) -> list[EdgeArchitype]:
     """Get edges connected to this node."""
 ```
@@ -89,8 +89,8 @@ def get_edges(
 def edges_to_nodes(
     node: NodeAnchor,
     dir: EdgeDir,
-    filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-    target_obj: Optional[list[NodeArchitype]],
+    filter: Callable[[EdgeArchitype], bool] | None,
+    target_obj: list[NodeArchitype] | None,
 ) -> list[NodeArchitype]:
     """Get set of nodes connected to this node."""
 ```
@@ -117,7 +117,7 @@ def detach(
 ## Walker Related Methods
 ### **`visit_node`**
 ```python
-def visit_node(
+def visit(
     walker: WalkerArchitype,
     expr: (
     list[NodeArchitype | EdgeArchitype]
@@ -145,7 +145,7 @@ def ignore(
 ```
 ### **`spawn_call`**
 ```python
-def spawn_call(
+def spawn(
     op1: Architype,
     op2: Architype
 ) -> WalkerArchitype:
@@ -216,10 +216,7 @@ def object_ref(
 ### **`make_architype`**
 ```python
 def make_architype(
-    cls: type,
-    arch_base: Type[Architype],
-    on_entry: list[DSFunc],
-    on_exit: list[DSFunc],
+    cls: Type[Architype]
 ) -> Type[Architype]:
     """Create a obj architype."""
 ```
@@ -277,9 +274,9 @@ def jac_import(
 ) -> tuple[types.ModuleType, ...]:
     """Core Import Process."""
 ```
-### **`create_test`**
+### **`jac_test`**
 ```python
-def create_test(
+def jac_test(
     test_fun: Callable
 ) -> Callable:
     """Create a new test."""
@@ -304,12 +301,12 @@ def elvis(
 ) -> T:
     """Jac's elvis operator feature."""
 ```
-### **`has_instance_default`**
+### **`field`**
 ```python
-def has_instance_default(
-    gen_func: Callable[[], T]
+def field(
+    factory: Callable[[], T] | _MISSING_TYPE = MISSING, init: bool = True
 ) -> T:
-    """Jac's has container default feature."""
+    """Jac's field handler."""
 ```
 ### **`report`**
 ```python
@@ -318,16 +315,24 @@ def report(
 ) -> Any:
     """Jac's report stmt feature."""
 ```
-### **`edge_ref`**
+### **`refs`**
 ```python
-def edge_ref(
-    node_obj: NodeArchitype | list[NodeArchitype],
-    target_obj: Optional[NodeArchitype | list[NodeArchitype]],
+def refs(
+    sources: NodeArchitype | list[NodeArchitype],
+    targets: NodeArchitype | list[NodeArchitype] | None,
     dir: EdgeDir,
-    filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+    filter: Callable[[EdgeArchitype], bool] | None,
     edges_only: bool,
 ) -> list[NodeArchitype] | list[EdgeArchitype]:
-    """Jac's apply_dir stmt feature."""
+    """Jac's edge references stmt feature."""
+```
+### **`filter`**
+```python
+def filter(
+    items: list[Architype],
+    func: Callable[[Architype], bool],
+) -> list[NodeArchitype] | list[EdgeArchitype]:
+    """Jac's filter architype list."""
 ```
 ### **`connect`**
 ```python
@@ -348,13 +353,13 @@ def disconnect(
     left: NodeArchitype | list[NodeArchitype],
     right: NodeArchitype | list[NodeArchitype],
     dir: EdgeDir,
-    filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+    filter: Callable[[EdgeArchitype], bool] | None,
 ) -> bool:
     """Jac's disconnect operator feature."""
 ```
 ### **`assign_compr`**
 ```python
-def assign_compr(
+def assign(
     target: list[T],
     attr_val: tuple[tuple[str], tuple[Any]]
 ) -> list[T]:
@@ -362,15 +367,9 @@ def assign_compr(
 ```
 ### **`get_root`**
 ```python
-def get_root(
+def root(
 ) -> Root:
     """Get current root."""
-```
-### **`get_root_type`**
-```python
-def get_root_type(
-) -> Type[Root]:
-    """Get root type."""
 ```
 ### **`build_edge`**
 ```python
@@ -394,6 +393,20 @@ def destroy(
     obj: Architype | Anchor,
 ) -> None:
     """Destroy object."""
+```
+### **`entry`**
+```python
+def entry(
+    func: Callable
+) -> None:
+    """Mark a method as jac entry with this decorator."""
+```
+### **`exit`**
+```python
+def exit(
+    func: Callable
+) -> None:
+    """Mark a method as jac exit with this decorator."""
 ```
 ### **`get_semstr_type`**
 ```python

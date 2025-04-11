@@ -1,29 +1,28 @@
 from __future__ import annotations
-from jaclang import *
+from jaclang.plugin.builtin import *
+from jaclang import JacFeature as _
 
 
-@walker
-class Creator:
+class Creator(_.Walker):
 
-    @with_entry
-    def func2(self, here: Jac.RootType) -> None:
+    @_.entry
+    def func2(self, here: _.Root) -> None:
         end = here
         i = 0
         while i < 5:
-            Jac.conn(end, (end := node_1(val=i + 1)))
+            _.connect(end, (end := node_1(val=i + 1)))
             i += 1
-        Jac.visit(self, Jac.refs(here))
+        _.visit(self, _.refs(here))
 
 
-@node
-class node_1:
+class node_1(_.Node):
     val: int
 
-    @with_entry
+    @_.entry
     def func_1(self, here: Creator) -> None:
         print("visiting ", self)
-        Jac.visit(here, Jac.refs(self))
+        _.visit(here, _.refs(self))
 
 
-Jac.spawn(root(), Creator())
-Jac.spawn(root(), Creator())
+_.spawn(_.root(), Creator())
+_.spawn(_.root(), Creator())

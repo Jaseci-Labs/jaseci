@@ -5,12 +5,11 @@ from __future__ import annotations
 import ast as ast3
 import fnmatch
 import html
-import inspect
 import os
 import types
 from collections import OrderedDict
-from dataclasses import field
-from functools import wraps
+from dataclasses import dataclass, field
+from inspect import getfile
 from logging import getLogger
 from typing import Any, Callable, Mapping, Optional, Sequence, Type, Union, cast
 from uuid import UUID
@@ -22,7 +21,6 @@ from jaclang.plugin.feature import (
     AccessLevel,
     Anchor,
     Architype,
-    DSFunc,
     EdgeAnchor,
     EdgeArchitype,
     EdgeDir,
@@ -37,10 +35,7 @@ from jaclang.plugin.feature import (
     WalkerArchitype,
     ast,
 )
-from jaclang.runtimelib.constructs import (
-    GenericEdge,
-    JacTestCheck,
-)
+from jaclang.runtimelib.constructs import GenericEdge, JacTestCheck
 from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
 from jaclang.runtimelib.machine import JacMachine
 from jaclang.runtimelib.memory import Shelf, ShelfStorage
@@ -224,8 +219,8 @@ class JacNodeImpl:
     def get_edges(
         node: NodeAnchor,
         dir: EdgeDir,
-        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-        target_obj: Optional[list[NodeArchitype]],
+        filter: Callable[[EdgeArchitype], bool] | None,
+        target_obj: list[NodeArchitype] | None,
     ) -> list[EdgeArchitype]:
         """Get edges connected to this node."""
         ret_edges: list[EdgeArchitype] = []
@@ -233,7 +228,7 @@ class JacNodeImpl:
             if (
                 (source := anchor.source)
                 and (target := anchor.target)
-                and (not filter_func or filter_func([anchor.architype]))
+                and (not filter or filter(anchor.architype))
                 and source.architype
                 and target.architype
             ):
@@ -258,8 +253,8 @@ class JacNodeImpl:
     def edges_to_nodes(
         node: NodeAnchor,
         dir: EdgeDir,
-        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-        target_obj: Optional[list[NodeArchitype]],
+        filter: Callable[[EdgeArchitype], bool] | None,
+        target_obj: list[NodeArchitype] | None,
     ) -> list[NodeArchitype]:
         """Get set of nodes connected to this node."""
         ret_edges: list[NodeArchitype] = []
@@ -267,7 +262,7 @@ class JacNodeImpl:
             if (
                 (source := anchor.source)
                 and (target := anchor.target)
-                and (not filter_func or filter_func([anchor.architype]))
+                and (not filter or filter(anchor.architype))
                 and source.architype
                 and target.architype
             ):
@@ -313,7 +308,7 @@ class JacWalkerImpl:
 
     @staticmethod
     @hookimpl
-    def visit_node(
+    def visit(
         walker: WalkerArchitype,
         expr: (
             list[NodeArchitype | EdgeArchitype]
@@ -376,7 +371,7 @@ class JacWalkerImpl:
 
     @staticmethod
     @hookimpl
-    def spawn_call(op1: Architype, op2: Architype) -> WalkerArchitype:
+    def spawn(op1: Architype, op2: Architype) -> WalkerArchitype:
         """Invoke data spatial call."""
         if isinstance(op1, WalkerArchitype):
             warch = op1
@@ -405,7 +400,7 @@ class JacWalkerImpl:
 
         # walker entry
         for i in warch._jac_entry_funcs_:
-            if i.func and not i.trigger:
+            if not i.trigger:
                 i.func(warch, current_node)
             if walker.disengaged:
                 return warch
@@ -415,8 +410,7 @@ class JacWalkerImpl:
                 # walker entry with
                 for i in warch._jac_entry_funcs_:
                     if (
-                        i.func
-                        and i.trigger
+                        i.trigger
                         and all_issubclass(i.trigger, NodeArchitype)
                         and isinstance(current_node, i.trigger)
                     ):
@@ -426,7 +420,7 @@ class JacWalkerImpl:
 
                 # node entry
                 for i in current_node._jac_entry_funcs_:
-                    if i.func and not i.trigger:
+                    if not i.trigger:
                         i.func(current_node, warch)
                     if walker.disengaged:
                         return warch
@@ -434,8 +428,7 @@ class JacWalkerImpl:
                 # node entry with
                 for i in current_node._jac_entry_funcs_:
                     if (
-                        i.func
-                        and i.trigger
+                        i.trigger
                         and all_issubclass(i.trigger, WalkerArchitype)
                         and isinstance(warch, i.trigger)
                     ):
@@ -446,8 +439,7 @@ class JacWalkerImpl:
                 # node exit with
                 for i in current_node._jac_exit_funcs_:
                     if (
-                        i.func
-                        and i.trigger
+                        i.trigger
                         and all_issubclass(i.trigger, WalkerArchitype)
                         and isinstance(warch, i.trigger)
                     ):
@@ -457,7 +449,7 @@ class JacWalkerImpl:
 
                 # node exit
                 for i in current_node._jac_exit_funcs_:
-                    if i.func and not i.trigger:
+                    if not i.trigger:
                         i.func(current_node, warch)
                     if walker.disengaged:
                         return warch
@@ -465,8 +457,7 @@ class JacWalkerImpl:
                 # walker exit with
                 for i in warch._jac_exit_funcs_:
                     if (
-                        i.func
-                        and i.trigger
+                        i.trigger
                         and all_issubclass(i.trigger, NodeArchitype)
                         and isinstance(current_node, i.trigger)
                     ):
@@ -475,7 +466,7 @@ class JacWalkerImpl:
                         return warch
         # walker exit
         for i in warch._jac_exit_funcs_:
-            if i.func and not i.trigger:
+            if not i.trigger:
                 i.func(warch, current_node)
             if walker.disengaged:
                 return warch
@@ -649,148 +640,26 @@ class JacFeatureImpl(
 
     @staticmethod
     @hookimpl
-    def make_architype(
-        cls: type,
-        arch_base: Type,
-        on_entry: list[DSFunc],
-        on_exit: list[DSFunc],
-    ) -> Type[Architype]:
+    def make_architype(cls: Type[Architype]) -> Type[Architype]:
         """Create a new architype."""
-        for i in on_entry + on_exit:
-            i.resolve(cls)
-        if not hasattr(cls, "_jac_entry_funcs_") or not hasattr(
-            cls, "_jac_exit_funcs_"
-        ):
-            # Saving the module path and reassign it after creating cls
-            # So the jac modules are part of the correct module
-            cur_module = cls.__module__
-            cls = type(cls.__name__, (cls, arch_base), {})
-            cls.__module__ = cur_module
-            cls._jac_entry_funcs_ = on_entry  # type: ignore
-            cls._jac_exit_funcs_ = on_exit  # type: ignore
-        else:
-            new_entry_funcs = OrderedDict(zip([i.name for i in on_entry], on_entry))
-            entry_funcs = OrderedDict(
-                zip([i.name for i in cls._jac_entry_funcs_], cls._jac_entry_funcs_)
-            )
-            entry_funcs.update(new_entry_funcs)
-            cls._jac_entry_funcs_ = list(entry_funcs.values())
+        entries: OrderedDict[str, Jac.DSFunc] = OrderedDict(
+            (fn.name, fn) for fn in cls._jac_entry_funcs_
+        )
+        exits: OrderedDict[str, Jac.DSFunc] = OrderedDict(
+            (fn.name, fn) for fn in cls._jac_exit_funcs_
+        )
+        for func in cls.__dict__.values():
+            if callable(func):
+                if hasattr(func, "__jac_entry"):
+                    entries[func.__name__] = Jac.DSFunc(func.__name__, func)
+                if hasattr(func, "__jac_exit"):
+                    exits[func.__name__] = Jac.DSFunc(func.__name__, func)
 
-            new_exit_funcs = OrderedDict(zip([i.name for i in on_exit], on_exit))
-            exit_funcs = OrderedDict(
-                zip([i.name for i in cls._jac_exit_funcs_], cls._jac_exit_funcs_)
-            )
-            exit_funcs.update(new_exit_funcs)
-            cls._jac_exit_funcs_ = list(exit_funcs.values())
+        cls._jac_entry_funcs_ = [*entries.values()]
+        cls._jac_exit_funcs_ = [*exits.values()]
 
-        inner_init = cls.__init__  # type: ignore
-
-        @wraps(inner_init)
-        def new_init(self: Architype, *args: object, **kwargs: object) -> None:
-            arch_base.__init__(self)
-            inner_init(self, *args, **kwargs)
-
-        cls.__init__ = new_init  # type: ignore
+        dataclass(eq=False)(cls)
         return cls
-
-    @staticmethod
-    @hookimpl
-    def make_obj(
-        on_entry: list[DSFunc], on_exit: list[DSFunc]
-    ) -> Callable[[type], type]:
-        """Create a new architype."""
-
-        def decorator(cls: Type[Architype]) -> Type[Architype]:
-            """Decorate class."""
-            cls = Jac.make_architype(
-                cls=cls, arch_base=Architype, on_entry=on_entry, on_exit=on_exit
-            )
-            return cls
-
-        return decorator
-
-    @staticmethod
-    @hookimpl
-    def make_node(
-        on_entry: list[DSFunc], on_exit: list[DSFunc]
-    ) -> Callable[[type], type]:
-        """Create a obj architype."""
-
-        def decorator(cls: Type[Architype]) -> Type[Architype]:
-            """Decorate class."""
-            cls = Jac.make_architype(
-                cls=cls, arch_base=NodeArchitype, on_entry=on_entry, on_exit=on_exit
-            )
-            return cls
-
-        return decorator
-
-    @staticmethod
-    @hookimpl
-    def make_root(
-        on_entry: list[DSFunc], on_exit: list[DSFunc]
-    ) -> Callable[[type], type]:
-        """Create a obj architype."""
-
-        def decorator(cls: Type[Architype]) -> Type[Architype]:
-            """Decorate class."""
-            cls = Jac.make_architype(
-                cls=cls, arch_base=Root, on_entry=on_entry, on_exit=on_exit
-            )
-            return cls
-
-        return decorator
-
-    @staticmethod
-    @hookimpl
-    def make_edge(
-        on_entry: list[DSFunc], on_exit: list[DSFunc]
-    ) -> Callable[[type], type]:
-        """Create a edge architype."""
-
-        def decorator(cls: Type[Architype]) -> Type[Architype]:
-            """Decorate class."""
-            cls = Jac.make_architype(
-                cls=cls, arch_base=EdgeArchitype, on_entry=on_entry, on_exit=on_exit
-            )
-            return cls
-
-        return decorator
-
-    @staticmethod
-    @hookimpl
-    def make_generic_edge(
-        on_entry: list[DSFunc], on_exit: list[DSFunc]
-    ) -> Callable[[type], type]:
-        """Create a edge architype."""
-
-        def decorator(cls: Type[Architype]) -> Type[Architype]:
-            """Decorate class."""
-            cls = Jac.make_architype(
-                cls=cls,
-                arch_base=GenericEdge,
-                on_entry=on_entry,
-                on_exit=on_exit,
-            )
-            return cls
-
-        return decorator
-
-    @staticmethod
-    @hookimpl
-    def make_walker(
-        on_entry: list[DSFunc], on_exit: list[DSFunc]
-    ) -> Callable[[type], type]:
-        """Create a walker architype."""
-
-        def decorator(cls: Type[Architype]) -> Type[Architype]:
-            """Decorate class."""
-            cls = Jac.make_architype(
-                cls=cls, arch_base=WalkerArchitype, on_entry=on_entry, on_exit=on_exit
-            )
-            return cls
-
-        return decorator
 
     @staticmethod
     @hookimpl
@@ -875,9 +744,9 @@ class JacFeatureImpl(
 
     @staticmethod
     @hookimpl
-    def create_test(test_fun: Callable) -> Callable:
+    def jac_test(test_fun: Callable) -> Callable:
         """Create a new test."""
-        file_path = inspect.getfile(test_fun)
+        file_path = getfile(test_fun)
         func_name = test_fun.__name__
 
         def test_deco() -> None:
@@ -956,9 +825,11 @@ class JacFeatureImpl(
 
     @staticmethod
     @hookimpl
-    def has_instance_default(gen_func: Callable[[], T]) -> T:
-        """Jac's has container default feature."""
-        return field(default_factory=lambda: gen_func())
+    def field(factory: Callable[[], T] | None, init: bool) -> T:
+        """Jac's field handler."""
+        if factory:
+            return field(default_factory=factory, init=init)
+        return field(init=init)
 
     @staticmethod
     @hookimpl
@@ -972,26 +843,26 @@ class JacFeatureImpl(
 
     @staticmethod
     @hookimpl
-    def edge_ref(
-        node_obj: NodeArchitype | list[NodeArchitype],
-        target_obj: Optional[NodeArchitype | list[NodeArchitype]],
+    def refs(
+        sources: NodeArchitype | list[NodeArchitype],
+        targets: NodeArchitype | list[NodeArchitype] | None,
         dir: EdgeDir,
-        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+        filter: Callable[[EdgeArchitype], bool] | None,
         edges_only: bool,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's apply_dir stmt feature."""
-        if isinstance(node_obj, NodeArchitype):
-            node_obj = [node_obj]
+        if isinstance(sources, NodeArchitype):
+            sources = [sources]
         targ_obj_set: Optional[list[NodeArchitype]] = (
-            [target_obj]
-            if isinstance(target_obj, NodeArchitype)
-            else target_obj if target_obj else None
+            [targets]
+            if isinstance(targets, NodeArchitype)
+            else targets if targets else None
         )
         if edges_only:
             connected_edges: list[EdgeArchitype] = []
-            for node in node_obj:
+            for node in sources:
                 edges = Jac.get_edges(
-                    node.__jac__, dir, filter_func, target_obj=targ_obj_set
+                    node.__jac__, dir, filter, target_obj=targ_obj_set
                 )
                 connected_edges.extend(
                     edge for edge in edges if edge not in connected_edges
@@ -999,9 +870,9 @@ class JacFeatureImpl(
             return connected_edges
         else:
             connected_nodes: list[NodeArchitype] = []
-            for node in node_obj:
+            for node in sources:
                 nodes = Jac.edges_to_nodes(
-                    node.__jac__, dir, filter_func, target_obj=targ_obj_set
+                    node.__jac__, dir, filter, target_obj=targ_obj_set
                 )
                 connected_nodes.extend(
                     node for node in nodes if node not in connected_nodes
@@ -1010,10 +881,21 @@ class JacFeatureImpl(
 
     @staticmethod
     @hookimpl
+    def filter(
+        items: list[Architype],
+        func: Callable[[Architype], bool],
+    ) -> list[Architype]:
+        """Jac's filter architype list."""
+        return [item for item in items if func(item)]
+
+    @staticmethod
+    @hookimpl
     def connect(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
-        edge_spec: Callable[[NodeAnchor, NodeAnchor], EdgeArchitype],
+        edge: Type[EdgeArchitype] | EdgeArchitype | None,
+        undir: bool,
+        conn_assign: tuple[tuple, tuple] | None,
         edges_only: bool,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's connect operator feature.
@@ -1030,7 +912,13 @@ class JacFeatureImpl(
                 for j in right:
                     _right = j.__jac__
                     if Jac.check_connect_access(_right):
-                        edges.append(edge_spec(_left, _right))
+                        edges.append(
+                            Jac.build_edge(
+                                is_undirected=undir,
+                                conn_type=edge,
+                                conn_assign=conn_assign,
+                            )(_left, _right)
+                        )
         return right if not edges_only else edges
 
     @staticmethod
@@ -1039,7 +927,7 @@ class JacFeatureImpl(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
         dir: EdgeDir,
-        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+        filter: Callable[[EdgeArchitype], bool] | None,
     ) -> bool:  # noqa: ANN401
         """Jac's disconnect operator feature."""
         disconnect_occurred = False
@@ -1052,7 +940,7 @@ class JacFeatureImpl(
                 if (
                     (source := anchor.source)
                     and (target := anchor.target)
-                    and (not filter_func or filter_func([anchor.architype]))
+                    and (not filter or filter(anchor.architype))
                     and source.architype
                     and target.architype
                 ):
@@ -1077,9 +965,7 @@ class JacFeatureImpl(
 
     @staticmethod
     @hookimpl
-    def assign_compr(
-        target: list[T], attr_val: tuple[tuple[str], tuple[Any]]
-    ) -> list[T]:
+    def assign(target: list[T], attr_val: tuple[tuple[str], tuple[Any]]) -> list[T]:
         """Jac's assign comprehension feature."""
         for obj in target:
             attrs, values = attr_val
@@ -1089,15 +975,9 @@ class JacFeatureImpl(
 
     @staticmethod
     @hookimpl
-    def get_root() -> Root:
+    def root() -> Root:
         """Jac's assign comprehension feature."""
         return ExecutionContext.get_root()
-
-    @staticmethod
-    @hookimpl
-    def get_root_type() -> Type[Root]:
-        """Jac's root getter."""
-        return Jac.RootType
 
     @staticmethod
     @hookimpl
@@ -1107,7 +987,6 @@ class JacFeatureImpl(
         conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchitype]:
         """Jac's root getter."""
-
         ct = conn_type if conn_type else GenericEdge
 
         def builder(source: NodeAnchor, target: NodeAnchor) -> EdgeArchitype:
@@ -1177,6 +1056,20 @@ class JacFeatureImpl(
                     pass
 
             Jac.get_context().mem.remove(anchor.id)
+
+    @staticmethod
+    @hookimpl
+    def entry(func: Callable) -> Callable:
+        """Mark a method as jac entry with this decorator."""
+        setattr(func, "__jac_entry", None)  # noqa:B010
+        return func
+
+    @staticmethod
+    @hookimpl
+    def exit(func: Callable) -> Callable:
+        """Mark a method as jac exit with this decorator."""
+        setattr(func, "__jac_exit", None)  # noqa:B010
+        return func
 
     @staticmethod
     @hookimpl

@@ -3,7 +3,7 @@ node test_node {
 }
 
 walker test_walker {
-    has visited_nodes: list = [];
+    has visited_nodes: list = with can [];
     has entry_count: int = 0;
     has exit_count: int = 0;
 

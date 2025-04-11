@@ -1,5 +1,6 @@
 from __future__ import annotations
-from jaclang import *
+from jaclang.plugin.builtin import *
+from jaclang import JacFeature as _
 
 
 def print_base_classes(cls: type) -> type:
@@ -11,28 +12,23 @@ class Animal:
     pass
 
 
-@obj
-class Domesticated:
+class Domesticated(_.Obj):
     pass
 
 
-@node
 @print_base_classes
-class Pet(Animal, Domesticated):
+class Pet(Animal, Domesticated, _.Node):
     pass
 
 
-@walker
-class Person(Animal):
+class Person(Animal, _.Walker):
     pass
 
 
-@walker
-class Feeder(Person):
+class Feeder(Person, _.Walker):
     pass
 
 
-@walker
 @print_base_classes
-class Zoologist(Feeder):
+class Zoologist(Feeder, _.Walker):
     pass

@@ -1,38 +1,37 @@
 from __future__ import annotations
-from jaclang import *
+from jaclang.plugin.builtin import *
+from jaclang import JacFeature as _
 
 
-@walker
-class Creator:
+class Creator(_.Walker):
 
-    @with_entry
-    def create(self, here: Jac.RootType) -> None:
+    @_.entry
+    def create(self, here: _.Root) -> None:
         end = here
         i = 0
         while i < 3:
-            Jac.conn(end, (end := node_a(val=i)))
+            _.connect(end, (end := node_a(val=i)))
             i += 1
 
-        Jac.conn(
+        _.connect(
             end,
             (end := node_a(val=i + 10)),
             edge=connector,
             conn_assign=(("value",), (i,)),
         )
-        Jac.conn(
+        _.connect(
             (end := node_a(val=i + 10)),
-            root(),
+            _.root(),
             edge=connector,
             conn_assign=(("value",), (i,)),
         )
-        Jac.visit(self, Jac.refs(here))
+        _.visit(self, _.refs(here))
 
 
-@node
-class node_a:
+class node_a(_.Node):
     val: int
 
-    @with_entry
+    @_.entry
     def make_something(self, here: Creator) -> None:
         i = 0
         while i < 5:
@@ -40,9 +39,8 @@ class node_a:
             i += 1
 
 
-@edge
-class connector:
-    value: int = field(10)
+class connector(_.Edge):
+    value: int = 10
 
 
-Jac.spawn(root(), Creator())
+_.spawn(_.root(), Creator())

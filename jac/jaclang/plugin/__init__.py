@@ -2,6 +2,6 @@
 
 from __future__ import annotations
 
-from .default import Architype, DSFunc, hookimpl
+from .default import Architype, hookimpl
 
-__all__ = ["Architype", "DSFunc", "hookimpl"]
+__all__ = ["Architype", "hookimpl"]

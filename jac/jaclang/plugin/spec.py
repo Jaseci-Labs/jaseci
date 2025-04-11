@@ -24,7 +24,6 @@ from jaclang.runtimelib.constructs import (
     AccessLevel,
     Anchor,
     Architype,
-    DSFunc,
     EdgeAnchor,
     EdgeArchitype,
     NodeAnchor,
@@ -119,8 +118,8 @@ class JacNodeSpec:
     def get_edges(
         node: NodeAnchor,
         dir: EdgeDir,
-        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-        target_obj: Optional[list[NodeArchitype]],
+        filter: Callable[[EdgeArchitype], bool] | None,
+        target_obj: list[NodeArchitype] | None,
     ) -> list[EdgeArchitype]:
         """Get edges connected to this node."""
         raise NotImplementedError
@@ -130,8 +129,8 @@ class JacNodeSpec:
     def edges_to_nodes(
         node: NodeAnchor,
         dir: EdgeDir,
-        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
-        target_obj: Optional[list[NodeArchitype]],
+        filter: Callable[[EdgeArchitype], bool] | None,
+        target_obj: list[NodeArchitype] | None,
     ) -> list[NodeArchitype]:
         """Get set of nodes connected to this node."""
         raise NotImplementedError
@@ -158,7 +157,7 @@ class JacWalkerSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def visit_node(
+    def visit(
         walker: WalkerArchitype,
         expr: (
             list[NodeArchitype | EdgeArchitype]
@@ -188,7 +187,7 @@ class JacWalkerSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def spawn_call(op1: Architype, op2: Architype) -> WalkerArchitype:
+    def spawn(op1: Architype, op2: Architype) -> WalkerArchitype:
         """Invoke data spatial call."""
         raise NotImplementedError
 
@@ -270,61 +269,8 @@ class JacFeatureSpec(
 
     @staticmethod
     @hookspec(firstresult=True)
-    def make_architype(
-        cls: type,
-        arch_base: Type,
-        on_entry: list[DSFunc],
-        on_exit: list[DSFunc],
-    ) -> Type[Architype]:
+    def make_architype(cls: Type[Architype]) -> Type[Architype]:
         """Create a obj architype."""
-        raise NotImplementedError
-
-    @staticmethod
-    @hookspec(firstresult=True)
-    def make_obj(
-        on_entry: list[DSFunc], on_exit: list[DSFunc]
-    ) -> Callable[[type], type]:
-        """Create a obj architype."""
-        raise NotImplementedError
-
-    @staticmethod
-    @hookspec(firstresult=True)
-    def make_node(
-        on_entry: list[DSFunc], on_exit: list[DSFunc]
-    ) -> Callable[[type], type]:
-        """Create a node architype."""
-        raise NotImplementedError
-
-    @staticmethod
-    @hookspec(firstresult=True)
-    def make_root(
-        on_entry: list[DSFunc], on_exit: list[DSFunc]
-    ) -> Callable[[type], type]:
-        """Create a root node architype."""
-        raise NotImplementedError
-
-    @staticmethod
-    @hookspec(firstresult=True)
-    def make_edge(
-        on_entry: list[DSFunc], on_exit: list[DSFunc]
-    ) -> Callable[[type], type]:
-        """Create a edge architype."""
-        raise NotImplementedError
-
-    @staticmethod
-    @hookspec(firstresult=True)
-    def make_generic_edge(
-        on_entry: list[DSFunc], on_exit: list[DSFunc]
-    ) -> Callable[[type], type]:
-        """Create a generic edge architype."""
-        raise NotImplementedError
-
-    @staticmethod
-    @hookspec(firstresult=True)
-    def make_walker(
-        on_entry: list[DSFunc], on_exit: list[DSFunc]
-    ) -> Callable[[type], type]:
-        """Create a walker architype."""
         raise NotImplementedError
 
     @staticmethod
@@ -353,7 +299,7 @@ class JacFeatureSpec(
 
     @staticmethod
     @hookspec(firstresult=True)
-    def create_test(test_fun: Callable) -> Callable:
+    def jac_test(test_fun: Callable) -> Callable:
         """Create a new test."""
         raise NotImplementedError
 
@@ -373,8 +319,8 @@ class JacFeatureSpec(
 
     @staticmethod
     @hookspec(firstresult=True)
-    def has_instance_default(gen_func: Callable[[], T]) -> T:
-        """Jac's has container default feature."""
+    def field(factory: Callable[[], T] | None, init: bool) -> T:
+        """Jac's field handler."""
         raise NotImplementedError
 
     @staticmethod
@@ -385,11 +331,11 @@ class JacFeatureSpec(
 
     @staticmethod
     @hookspec(firstresult=True)
-    def edge_ref(
-        node_obj: NodeArchitype | list[NodeArchitype],
-        target_obj: Optional[NodeArchitype | list[NodeArchitype]],
+    def refs(
+        sources: NodeArchitype | list[NodeArchitype],
+        targets: NodeArchitype | list[NodeArchitype] | None,
         dir: EdgeDir,
-        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+        filter: Callable[[EdgeArchitype], bool] | None,
         edges_only: bool,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's apply_dir stmt feature."""
@@ -397,10 +343,21 @@ class JacFeatureSpec(
 
     @staticmethod
     @hookspec(firstresult=True)
+    def filter(
+        items: list[Architype],
+        func: Callable[[Architype], bool],
+    ) -> list[Architype]:
+        """Jac's filter architype list."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
     def connect(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
-        edge_spec: Callable[[NodeAnchor, NodeAnchor], EdgeArchitype],
+        edge: Type[EdgeArchitype] | EdgeArchitype | None,
+        undir: bool,
+        conn_assign: tuple[tuple, tuple] | None,
         edges_only: bool,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's connect operator feature.
@@ -415,28 +372,20 @@ class JacFeatureSpec(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
         dir: EdgeDir,
-        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+        filter: Callable[[EdgeArchitype], bool] | None,
     ) -> bool:  # noqa: ANN401
         """Jac's disconnect operator feature."""
         raise NotImplementedError
 
     @staticmethod
     @hookspec(firstresult=True)
-    def assign_compr(
-        target: list[T], attr_val: tuple[tuple[str], tuple[Any]]
-    ) -> list[T]:
+    def assign(target: list[T], attr_val: tuple[tuple[str], tuple[Any]]) -> list[T]:
         """Jac's assign comprehension feature."""
         raise NotImplementedError
 
     @staticmethod
     @hookspec(firstresult=True)
-    def get_root() -> Root:
-        """Jac's root getter."""
-        raise NotImplementedError
-
-    @staticmethod
-    @hookspec(firstresult=True)
-    def get_root_type() -> Type[Root]:
+    def root() -> Root:
         """Jac's root getter."""
         raise NotImplementedError
 
@@ -464,6 +413,18 @@ class JacFeatureSpec(
         obj: Architype | Anchor,
     ) -> None:
         """Destroy object."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def entry(func: Callable) -> Callable:
+        """Mark a method as jac entry with this decorator."""
+        raise NotImplementedError
+
+    @staticmethod
+    @hookspec(firstresult=True)
+    def exit(func: Callable) -> Callable:
+        """Mark a method as jac exit with this decorator."""
         raise NotImplementedError
 
     @staticmethod

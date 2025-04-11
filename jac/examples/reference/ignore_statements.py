@@ -1,26 +1,27 @@
 from __future__ import annotations
-from jaclang import *
+from jaclang.plugin.builtin import *
+from jaclang import JacFeature as _
 
 
-@walker
-class Visitor:
-    @with_entry
-    def travel(self, here: Jac.RootType) -> None:
-        Jac.ignore(self, Jac.refs(here)[0])
-        if not Jac.visit(self, Jac.refs(here)):
-            Jac.visit(self, root())
+class Visitor(_.Walker):
+
+    @_.entry
+    def travel(self, here: _.Root) -> None:
+        _.ignore(self, _.refs(here)[0])
+        if not _.visit(self, _.refs(here)):
+            _.visit(self, _.root())
 
 
-@node
-class item:
-    @with_entry
+class item(_.Node):
+
+    @_.entry
     def speak(self, here: Visitor) -> None:
         print("Hey There!!!")
 
 
 i = 0
 while i < 5:
-    Jac.conn(root(), item())
+    _.connect(_.root(), item())
     i += 1
 
-Jac.spawn(root(), Visitor())
+_.spawn(_.root(), Visitor())

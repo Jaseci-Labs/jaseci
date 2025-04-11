@@ -11,7 +11,6 @@ import types
 from typing import Optional
 
 import jaclang.compiler.absyntree as ast
-from jaclang import jac_import
 from jaclang.cli.cmdreg import CommandShell, cmd_registry
 from jaclang.compiler.compile import jac_file_formatter, jac_file_to_pass
 from jaclang.compiler.constant import Constants
@@ -94,7 +93,7 @@ def run(
 
     if filename.endswith(".jac"):
         try:
-            jac_import(
+            Jac.jac_import(
                 target=mod,
                 base_path=base,
                 cachable=cache,
@@ -108,7 +107,7 @@ def run(
                 JacMachine(base).attach_program(
                     JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None)
                 )
-                jac_import(
+                Jac.jac_import(
                     target=mod,
                     base_path=base,
                     cachable=cache,
@@ -147,7 +146,7 @@ def get_object(
     jctx = ExecutionContext.create(session=session)
 
     if filename.endswith(".jac"):
-        jac_import(
+        Jac.jac_import(
             target=mod,
             base_path=base,
             cachable=cache,
@@ -158,7 +157,7 @@ def get_object(
             JacMachine(base).attach_program(
                 JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None)
             )
-            jac_import(
+            Jac.jac_import(
                 target=mod,
                 base_path=base,
                 cachable=cache,
@@ -267,7 +266,7 @@ def enter(
     jctx = ExecutionContext.create(session=session, root=root)
 
     if filename.endswith(".jac"):
-        ret_module = jac_import(
+        ret_module = Jac.jac_import(
             target=mod,
             base_path=base,
             cachable=cache,
@@ -278,7 +277,7 @@ def enter(
             JacMachine(base).attach_program(
                 JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None)
             )
-            ret_module = jac_import(
+            ret_module = Jac.jac_import(
                 target=mod,
                 base_path=base,
                 cachable=cache,
@@ -301,7 +300,7 @@ def enter(
             if isinstance(architype, WalkerArchitype) and Jac.check_read_access(
                 jctx.entry_node
             ):
-                Jac.spawn_call(jctx.entry_node.architype, architype)
+                Jac.spawn(jctx.entry_node.architype, architype)
 
     jctx.close()
     JacMachine.detach()
@@ -451,7 +450,7 @@ def dot(
 
     if filename.endswith(".jac"):
         jac_machine = JacMachine(base)
-        jac_import(target=mod, base_path=base, override_name="__main__")
+        Jac.jac_import(target=mod, base_path=base, override_name="__main__")
         module = jac_machine.loaded_modules.get("__main__")
         globals().update(vars(module))
         try:

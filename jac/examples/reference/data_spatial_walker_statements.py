@@ -1,15 +1,15 @@
 from __future__ import annotations
-from jaclang import *
+from jaclang.plugin.builtin import *
+from jaclang import JacFeature as _
 
 
-@walker
-class Visitor:
+class Visitor(_.Walker):
 
-    @with_entry
-    def self_destruct(self, here) -> None:
+    @_.entry
+    def self_destruct(self, here: _.Root) -> None:
         print("get's here")
-        return Jac.disengage(self)
+        return _.disengage(self)
         print("but not here")
 
 
-Jac.spawn(root(), Visitor())
+_.spawn(_.root(), Visitor())

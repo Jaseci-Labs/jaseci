@@ -1,25 +1,25 @@
 from __future__ import annotations
-from jaclang import *
+from jaclang.plugin.builtin import *
+from jaclang import JacFeature as _
 
 
-@walker
-class Adder:
-    @with_entry
-    def do(self, here: Jac.RootType) -> None:
-        Jac.conn(here, node_a())
-        Jac.visit(self, Jac.refs(here))
+class Adder(_.Walker):
+
+    @_.entry
+    def do(self, here: _.Root) -> None:
+        _.connect(here, node_a())
+        _.visit(self, _.refs(here))
 
 
-@node
-class node_a:
-    x: int = field(0)
-    y: int = field(0)
+class node_a(_.Node):
+    x: int = 0
+    y: int = 0
 
-    @with_entry
+    @_.entry
     def add(self, here: Adder) -> None:
         self.x = 550
         self.y = 450
         print(int(self.x) + int(self.y))
 
 
-Jac.spawn(Adder(), root())
+_.spawn(Adder(), _.root())
