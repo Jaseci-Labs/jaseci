@@ -11,8 +11,8 @@ from contextvars import ContextVar
 from typing import Optional, Union
 
 from jaclang.compiler.absyntree import Module
-from jaclang.compiler.semtable import SemRegistry
 from jaclang.compiler.program import JacProgram
+from jaclang.compiler.semtable import SemRegistry
 from jaclang.runtimelib.architype import (
     Architype,
     EdgeArchitype,
