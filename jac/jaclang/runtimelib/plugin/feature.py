@@ -17,7 +17,7 @@ from typing import (
 )
 from uuid import UUID
 
-from jaclang.plugin.spec import (
+from jaclang.runtimelib.plugin.spec import (
     AccessLevel,
     Anchor,
     Architype,

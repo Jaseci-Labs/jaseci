@@ -9,7 +9,7 @@ import sys
 import traceback
 
 from jaclang.cli import cli
-from jaclang.plugin.builtin import dotgen
+from jaclang.runtimelib.plugin.builtin import dotgen
 from jaclang.utils.test import TestCase
 
 

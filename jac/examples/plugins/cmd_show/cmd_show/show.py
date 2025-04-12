@@ -1,7 +1,7 @@
 import os
 
 from jaclang.cli.cmdreg import cmd_registry
-from jaclang.plugin.default import hookimpl
+from jaclang.runtimelib.plugin.default import hookimpl
 
 import pygments
 from pygments.formatters import TerminalFormatter

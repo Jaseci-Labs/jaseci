@@ -17,10 +17,6 @@ from typing import (
     override,
 )
 
-from jaclang.plugin.builtin import dotgen, jid, jobj  # noqa: F401
-from jaclang.plugin.default import JacFeatureImpl
-from jaclang.plugin.feature import JacFeature as Jac, plugin_manager
-from jaclang.plugin.spec import EdgeDir
 from jaclang.runtimelib.architype import (
     Architype,
     EdgeArchitype,
@@ -29,6 +25,11 @@ from jaclang.runtimelib.architype import (
     Root as RootArchitype,
     WalkerArchitype,
 )
+from jaclang.runtimelib.plugin.builtin import dotgen, jid, jobj  # noqa: F401
+from jaclang.runtimelib.plugin.default import JacFeatureImpl
+from jaclang.runtimelib.plugin.feature import JacFeature as Jac, plugin_manager
+from jaclang.runtimelib.plugin.spec import EdgeDir
+
 
 __all__ = [
     # Jac types.
