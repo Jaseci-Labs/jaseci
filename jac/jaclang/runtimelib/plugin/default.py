@@ -645,9 +645,14 @@ class JacFeatureImpl(
 
     @staticmethod
     @hookimpl
-    def get_object_func() -> Callable[[str], Architype | None]:
-        """Get object by id func."""
-        return JacCallableImplementation.get_object
+    def get_object(id: str) -> Architype | None:
+        """Get object by id."""
+        if id == "root":
+            return JacFeatureImpl.get_context().root.architype
+        elif obj := JacFeatureImpl.get_context().mem.find_by_id(UUID(id)):
+            return obj.architype
+
+        return None
 
     @staticmethod
     @hookimpl

@@ -267,12 +267,7 @@ class JacFeature(
     @staticmethod
     def get_object(id: str) -> Architype | None:
         """Get object given id."""
-        return plugin_manager.hook.get_object_func()(id=id)
-
-    @staticmethod
-    def get_object_func() -> Callable[[str], Architype | None]:
-        """Get object given id."""
-        return plugin_manager.hook.get_object_func()
+        return plugin_manager.hook.get_object(id=id)
 
     @staticmethod
     def object_ref(obj: Architype) -> str:
