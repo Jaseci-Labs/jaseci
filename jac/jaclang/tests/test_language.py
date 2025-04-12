@@ -31,7 +31,7 @@ class JacLanguageTests(TestCase):
 
     def tearDown(self) -> None:
         """Tear down test."""
-        JacMachine.detach()
+        JacMachine.detach_machine()
         return super().tearDown()
 
     def test_sub_abilities(self) -> None:

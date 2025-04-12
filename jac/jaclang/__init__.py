@@ -26,7 +26,6 @@ from jaclang.runtimelib.architype import (
     WalkerArchitype,
 )
 from jaclang.runtimelib.plugin.builtin import dotgen, jid, jobj  # noqa: F401
-from jaclang.runtimelib.plugin.default import JacFeatureImpl
 from jaclang.runtimelib.plugin.feature import JacFeature as Jac, plugin_manager
 from jaclang.runtimelib.plugin.spec import EdgeDir
 
@@ -62,13 +61,6 @@ __all__ = [
     "jobj",
 ]
 
-
-# ----------------------------------------------------------------------------
-# Plugin Initialization.
-# ----------------------------------------------------------------------------
-
-plugin_manager.register(JacFeatureImpl)
-plugin_manager.load_setuptools_entrypoints("jac")
 
 T = TypeVar("T")
 S = TypeVar("S")  # S is a subtype of T.
