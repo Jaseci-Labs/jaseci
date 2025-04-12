@@ -69,7 +69,7 @@ def jac_str_to_pass(
     schedule: list[Type[Pass]] = pass_schedule,
 ) -> Pass:
     """Convert a Jac file to an AST."""
-    from jaclang.runtimelib.machine import JacProgram
+    from jaclang.compiler.program import JacProgram
 
     if not target:
         target = schedule[-1] if schedule else None
@@ -161,7 +161,7 @@ def jac_pass_to_pass(
     schedule: list[Type[Pass]] = pass_schedule,
 ) -> Pass:
     """Convert a Jac file to an AST."""
-    from jaclang.runtimelib.machine import JacProgram
+    from jaclang.compiler.program import JacProgram
 
     ast_ret = in_pass
 
