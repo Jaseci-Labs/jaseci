@@ -25,7 +25,7 @@ from jaclang.runtimelib.constructs import (
 from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
 from jaclang.runtimelib.machine import JacMachine
 from jaclang.runtimelib.memory import Shelf, ShelfStorage
-from jaclang.runtimelib.plugin.feature import (
+from jaclang.runtimelib.plugin.spec import (
     AccessLevel,
     Anchor,
     Architype,
@@ -34,7 +34,6 @@ from jaclang.runtimelib.plugin.feature import (
     EdgeArchitype,
     EdgeDir,
     ExecutionContext,
-    JacFeature as Jac,
     NodeAnchor,
     NodeArchitype,
     P,
@@ -63,8 +62,8 @@ class JacCallableImplementation:
     def get_object(id: str) -> Architype | None:
         """Get object by id."""
         if id == "root":
-            return Jac.get_context().root.architype
-        elif obj := Jac.get_context().mem.find_by_id(UUID(id)):
+            return JacFeatureImpl.get_context().root.architype
+        elif obj := JacFeatureImpl.get_context().mem.find_by_id(UUID(id)):
             return obj.architype
 
         return None
@@ -77,7 +76,7 @@ class JacAccessValidationImpl:
     @hookimpl
     def elevate_root() -> None:
         """Elevate context root to system_root."""
-        jctx = Jac.get_context()
+        jctx = JacFeatureImpl.get_context()
         jctx.root = jctx.system_root
 
     @staticmethod
@@ -125,7 +124,10 @@ class JacAccessValidationImpl:
     @hookimpl
     def check_read_access(to: Anchor) -> bool:
         """Read Access Validation."""
-        if not (access_level := Jac.check_access_level(to) > AccessLevel.NO_ACCESS):
+        if not (
+            access_level := JacAccessValidationImpl.check_access_level(to)
+            > AccessLevel.NO_ACCESS
+        ):
             logger.info(
                 f"Current root doesn't have read access to {to.__class__.__name__}[{to.id}]"
             )
@@ -135,7 +137,10 @@ class JacAccessValidationImpl:
     @hookimpl
     def check_connect_access(to: Anchor) -> bool:
         """Write Access Validation."""
-        if not (access_level := Jac.check_access_level(to) > AccessLevel.READ):
+        if not (
+            access_level := JacAccessValidationImpl.check_access_level(to)
+            > AccessLevel.READ
+        ):
             logger.info(
                 f"Current root doesn't have connect access to {to.__class__.__name__}[{to.id}]"
             )
@@ -145,7 +150,10 @@ class JacAccessValidationImpl:
     @hookimpl
     def check_write_access(to: Anchor) -> bool:
         """Write Access Validation."""
-        if not (access_level := Jac.check_access_level(to) > AccessLevel.CONNECT):
+        if not (
+            access_level := JacAccessValidationImpl.check_access_level(to)
+            > AccessLevel.CONNECT
+        ):
             logger.info(
                 f"Current root doesn't have write access to {to.__class__.__name__}[{to.id}]"
             )
@@ -158,7 +166,7 @@ class JacAccessValidationImpl:
         if not to.persistent:
             return AccessLevel.WRITE
 
-        jctx = Jac.get_context()
+        jctx = JacFeatureImpl.get_context()
 
         jroot = jctx.root
 
@@ -241,14 +249,14 @@ class JacNodeImpl:
                     dir in [EdgeDir.OUT, EdgeDir.ANY]
                     and node == source
                     and (not target_obj or target.architype in target_obj)
-                    and Jac.check_read_access(target)
+                    and JacAccessValidationImpl.check_read_access(target)
                 ):
                     ret_edges.append(anchor.architype)
                 if (
                     dir in [EdgeDir.IN, EdgeDir.ANY]
                     and node == target
                     and (not target_obj or source.architype in target_obj)
-                    and Jac.check_read_access(source)
+                    and JacAccessValidationImpl.check_read_access(source)
                 ):
                     ret_edges.append(anchor.architype)
         return ret_edges
@@ -275,14 +283,14 @@ class JacNodeImpl:
                     dir in [EdgeDir.OUT, EdgeDir.ANY]
                     and node == source
                     and (not target_obj or target.architype in target_obj)
-                    and Jac.check_read_access(target)
+                    and JacAccessValidationImpl.check_read_access(target)
                 ):
                     ret_edges.append(target.architype)
                 if (
                     dir in [EdgeDir.IN, EdgeDir.ANY]
                     and node == target
                     and (not target_obj or source.architype in target_obj)
-                    and Jac.check_read_access(source)
+                    and JacAccessValidationImpl.check_read_access(source)
                 ):
                     ret_edges.append(source.architype)
         return ret_edges
@@ -304,8 +312,8 @@ class JacEdgeImpl:
     @hookimpl
     def detach(edge: EdgeAnchor) -> None:
         """Detach edge from nodes."""
-        Jac.remove_edge(node=edge.source, edge=edge)
-        Jac.remove_edge(node=edge.target, edge=edge)
+        JacNodeImpl.remove_edge(node=edge.source, edge=edge)
+        JacNodeImpl.remove_edge(node=edge.target, edge=edge)
 
 
 class JacWalkerImpl:
@@ -616,7 +624,7 @@ class JacFeatureImpl(
     @hookimpl
     def reset_graph(root: Optional[Root] = None) -> int:
         """Purge current or target graph."""
-        ctx = Jac.get_context()
+        ctx = JacFeatureImpl.get_context()
         mem = cast(ShelfStorage, ctx.mem)
         ranchor = root.__jac__ if root else ctx.root
 
@@ -631,7 +639,7 @@ class JacFeatureImpl(
 
             if loaded_anchor := mem.find_by_id(anchor.id):
                 deleted_count += 1
-                Jac.destroy(loaded_anchor)
+                JacFeatureImpl.destroy(loaded_anchor)
 
         return deleted_count
 
@@ -702,7 +710,7 @@ class JacFeatureImpl(
 
         def decorator(cls: Type[Architype]) -> Type[Architype]:
             """Decorate class."""
-            cls = Jac.make_architype(
+            cls = JacFeatureImpl.make_architype(
                 cls=cls, arch_base=Architype, on_entry=on_entry, on_exit=on_exit
             )
             return cls
@@ -718,7 +726,7 @@ class JacFeatureImpl(
 
         def decorator(cls: Type[Architype]) -> Type[Architype]:
             """Decorate class."""
-            cls = Jac.make_architype(
+            cls = JacFeatureImpl.make_architype(
                 cls=cls, arch_base=NodeArchitype, on_entry=on_entry, on_exit=on_exit
             )
             return cls
@@ -734,7 +742,7 @@ class JacFeatureImpl(
 
         def decorator(cls: Type[Architype]) -> Type[Architype]:
             """Decorate class."""
-            cls = Jac.make_architype(
+            cls = JacFeatureImpl.make_architype(
                 cls=cls, arch_base=Root, on_entry=on_entry, on_exit=on_exit
             )
             return cls
@@ -750,7 +758,7 @@ class JacFeatureImpl(
 
         def decorator(cls: Type[Architype]) -> Type[Architype]:
             """Decorate class."""
-            cls = Jac.make_architype(
+            cls = JacFeatureImpl.make_architype(
                 cls=cls, arch_base=EdgeArchitype, on_entry=on_entry, on_exit=on_exit
             )
             return cls
@@ -766,7 +774,7 @@ class JacFeatureImpl(
 
         def decorator(cls: Type[Architype]) -> Type[Architype]:
             """Decorate class."""
-            cls = Jac.make_architype(
+            cls = JacFeatureImpl.make_architype(
                 cls=cls,
                 arch_base=GenericEdge,
                 on_entry=on_entry,
@@ -785,7 +793,7 @@ class JacFeatureImpl(
 
         def decorator(cls: Type[Architype]) -> Type[Architype]:
             """Decorate class."""
-            cls = Jac.make_architype(
+            cls = JacFeatureImpl.make_architype(
                 cls=cls, arch_base=WalkerArchitype, on_entry=on_entry, on_exit=on_exit
             )
             return cls
@@ -910,7 +918,17 @@ class JacFeatureImpl(
                 if mod_name.endswith(".test"):
                     mod_name = mod_name[:-5]
                 JacTestCheck.reset()
-                Jac.jac_import(target=mod_name, base_path=base, cachable=False)
+                JacFeatureImpl.jac_import(
+                    target=mod_name,
+                    base_path=base,
+                    cachable=False,
+                    absorb=False,
+                    mdl_alias=None,
+                    override_name=None,
+                    lng="jac",
+                    items=None,
+                    reload_module=False,
+                )
                 JacTestCheck.run_test(
                     xit, maxfail, verbose, os.path.abspath(filepath), func_name
                 )
@@ -938,7 +956,17 @@ class JacFeatureImpl(
                         test_file = True
                         print(f"\n\n\t\t* Inside {root_dir}" + "/" + f"{file} *")
                         JacTestCheck.reset()
-                        Jac.jac_import(target=file[:-4], base_path=root_dir)
+                        JacFeatureImpl.jac_import(
+                            target=file[:-4],
+                            base_path=root_dir,
+                            absorb=False,
+                            cachable=True,
+                            mdl_alias=None,
+                            override_name=None,
+                            lng="jac",
+                            items=None,
+                            reload_module=False,
+                        )
                         JacTestCheck.run_test(
                             xit, maxfail, verbose, os.path.abspath(file), func_name
                         )
@@ -964,7 +992,7 @@ class JacFeatureImpl(
     @hookimpl
     def report(expr: Any, custom: bool) -> None:  # noqa: ANN401
         """Jac's report stmt feature."""
-        ctx = Jac.get_context()
+        ctx = JacFeatureImpl.get_context()
         if custom:
             ctx.custom = expr
         else:
@@ -990,7 +1018,7 @@ class JacFeatureImpl(
         if edges_only:
             connected_edges: list[EdgeArchitype] = []
             for node in node_obj:
-                edges = Jac.get_edges(
+                edges = JacNodeImpl.get_edges(
                     node.__jac__, dir, filter_func, target_obj=targ_obj_set
                 )
                 connected_edges.extend(
@@ -1000,7 +1028,7 @@ class JacFeatureImpl(
         else:
             connected_nodes: list[NodeArchitype] = []
             for node in node_obj:
-                nodes = Jac.edges_to_nodes(
+                nodes = JacNodeImpl.edges_to_nodes(
                     node.__jac__, dir, filter_func, target_obj=targ_obj_set
                 )
                 connected_nodes.extend(
@@ -1026,10 +1054,10 @@ class JacFeatureImpl(
 
         for i in left:
             _left = i.__jac__
-            if Jac.check_connect_access(_left):
+            if JacAccessValidationImpl.check_connect_access(_left):
                 for j in right:
                     _right = j.__jac__
-                    if Jac.check_connect_access(_right):
+                    if JacAccessValidationImpl.check_connect_access(_right):
                         edges.append(edge_spec(_left, _right))
         return right if not edges_only else edges
 
@@ -1060,20 +1088,28 @@ class JacFeatureImpl(
                         dir in [EdgeDir.OUT, EdgeDir.ANY]
                         and node == source
                         and target.architype in right
-                        and Jac.check_connect_access(target)
+                        and JacAccessValidationImpl.check_connect_access(target)
                     ):
 
-                        Jac.destroy(anchor) if anchor.persistent else Jac.detach(anchor)
+                        (
+                            JacFeatureImpl.destroy(anchor)
+                            if anchor.persistent
+                            else JacEdgeImpl.detach(anchor)
+                        )
 
                         disconnect_occurred = True
                     if (
                         dir in [EdgeDir.IN, EdgeDir.ANY]
                         and node == target
                         and source.architype in right
-                        and Jac.check_connect_access(source)
+                        and JacAccessValidationImpl.check_connect_access(source)
                     ):
 
-                        Jac.destroy(anchor) if anchor.persistent else Jac.detach(anchor)
+                        (
+                            JacFeatureImpl.destroy(anchor)
+                            if anchor.persistent
+                            else JacEdgeImpl.detach(anchor)
+                        )
 
                         disconnect_occurred = True
 
@@ -1136,7 +1172,7 @@ class JacFeatureImpl(
                     else:
                         raise ValueError(f"Invalid attribute: {fld}")
             if source.persistent or target.persistent:
-                Jac.save(eanch)
+                JacFeatureImpl.save(eanch)
             return edge
 
         return builder
@@ -1147,7 +1183,7 @@ class JacFeatureImpl(
         """Destroy object."""
         anchor = obj.__jac__ if isinstance(obj, Architype) else obj
 
-        jctx = Jac.get_context()
+        jctx = JacFeatureImpl.get_context()
 
         anchor.persistent = True
         anchor.root = jctx.root.id
@@ -1158,12 +1194,12 @@ class JacFeatureImpl(
             case NodeAnchor():
                 for ed in anchor.edges:
                     if ed.is_populated() and not ed.persistent:
-                        Jac.save(ed)
+                        JacFeatureImpl.save(ed)
             case EdgeAnchor():
                 if (src := anchor.source) and src.is_populated() and not src.persistent:
-                    Jac.save(src)
+                    JacFeatureImpl.save(src)
                 if (trg := anchor.target) and trg.is_populated() and not trg.persistent:
-                    Jac.save(trg)
+                    JacFeatureImpl.save(trg)
             case _:
                 pass
 
@@ -1173,17 +1209,17 @@ class JacFeatureImpl(
         """Destroy object."""
         anchor = obj.__jac__ if isinstance(obj, Architype) else obj
 
-        if Jac.check_write_access(anchor):
+        if JacAccessValidationImpl.check_write_access(anchor):
             match anchor:
                 case NodeAnchor():
                     for edge in anchor.edges:
-                        Jac.destroy(edge)
+                        JacFeatureImpl.destroy(edge)
                 case EdgeAnchor():
-                    Jac.detach(anchor)
+                    JacEdgeImpl.detach(anchor)
                 case _:
                     pass
 
-            Jac.get_context().mem.remove(anchor.id)
+            JacFeatureImpl.get_context().mem.remove(anchor.id)
 
     @staticmethod
     @hookimpl
