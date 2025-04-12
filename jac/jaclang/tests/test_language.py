@@ -1294,3 +1294,19 @@ class JacLanguageTests(TestCase):
         self.assertIn("Hello, World!", stdout_value[3])
         self.assertIn("Last message:!", stdout_value[4])
         self.assertIn("Final message:!", stdout_value[5])
+
+    def test_connect_traverse_syntax(self) -> None:
+        """Test connect traverse syntax."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        jac_import("connect_traverse_syntax", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("A(val=5), A(val=10)", stdout_value[0])
+        self.assertIn("[Root(), A(val=20)]", stdout_value[1])
+        self.assertIn(
+            "A(val=5), A(val=10)", stdout_value[2]
+        )  # Remove after dropping deprecated syntax support
+        self.assertIn(
+            "[Root(), A(val=20)]", stdout_value[3]
+        )  # Remove after dropping deprecated syntax support

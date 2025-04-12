@@ -88,7 +88,7 @@ walker create_tweet :visit_profile: {
 
     can tweet with Profile entry {
         embedding = sentence_transformer.encode(self.content).tolist();
-        tweet_node = here +:Post:+> Tweet(content=self.content, embedding=embedding);
+        tweet_node = here +>:Post:+> Tweet(content=self.content, embedding=embedding);
         Jac.unrestrict(tweet_node[0], level="CONNECT");
         report tweet_node;
     }
@@ -132,7 +132,7 @@ walker load_feed :visit_profile: {
         user_tweets = here spawn load_tweets();
         feeds.extend(user_tweets.tweet_info);
 
-        for user_node in [-:Follow:->](`?Profile) {
+        for user_node in [->:Follow:->](`?Profile) {
             user_tweets = user_node spawn load_tweets();
             feeds.extend(user_tweets.tweet_info);
         }

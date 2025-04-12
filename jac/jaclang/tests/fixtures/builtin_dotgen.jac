@@ -17,7 +17,7 @@ with entry{
     }
     p=b[1];
     for k in range(0,10){
-        p+:Edge1:val=6:+>(p:=a(val=k));
+        p+>:Edge1:val=6:+>(p:=a(val=k));
     }
     # b++>c;
     # c++>b;

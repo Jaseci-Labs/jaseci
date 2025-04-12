@@ -4,15 +4,15 @@
         self.game_started = True;
         here.g.intro_screen();
         new_ID = str(1) + "_" + str(random.randint(1000, 9000));
-        self +:play:level_id=new_ID:+> level(game_level = 1, level_id = new_ID);
+        self +>:play:level_id=new_ID:+> level(game_level = 1, level_id = new_ID);
         here.fwd_dir = True;
-        visit [-:play:level_id==new_ID:->];
+        visit [->:play:level_id==new_ID:->];
     } else {
         new_ID = str(1) + "_" + str(random.randint(1000, 9000));
-        self +:play:level_id=new_ID:+> level(game_level = 1, level_id = new_ID);
+        self +>:play:level_id=new_ID:+> level(game_level = 1, level_id = new_ID);
         print(":-: Visiting Intro Screen | Created Level ID :", new_ID);
         here.fwd_dir = True;
-        visit [-:play:level_id==new_ID:->];
+        visit [->:play:level_id==new_ID:->];
 
     }
 }
