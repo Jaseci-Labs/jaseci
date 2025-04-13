@@ -78,7 +78,7 @@ class PyastGenPass(Pass):
             ),
         ]
 
-        from jaclang.runtimelib.plugin.builtin import __all__ as jac_builtin_funcs
+        from jaclang.runtimelib.builtin import __all__ as jac_builtin_funcs
 
         if not settings.pyout_jaclib_import_all:
             self.preamble += [

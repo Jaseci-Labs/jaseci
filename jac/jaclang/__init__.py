@@ -25,7 +25,7 @@ from jaclang.runtimelib.architype import (
     Root as RootArchitype,
     WalkerArchitype,
 )
-from jaclang.runtimelib.plugin.builtin import dotgen, jid, jobj  # noqa: F401
+from jaclang.runtimelib.builtin import dotgen, jid, jobj  # noqa: F401
 from jaclang.runtimelib.plugin.feature import EdgeDir, JacFeature as Jac, plugin_manager
 
 
