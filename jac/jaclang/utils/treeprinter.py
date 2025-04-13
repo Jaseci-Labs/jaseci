@@ -287,7 +287,12 @@ def print_ast_tree(
             return f"{node.__class__.__name__}"
 
     def get_location_info(node: ast3.AST) -> str:
-        if hasattr(node, "lineno"):
+        if (
+            hasattr(node, "lineno")
+            and hasattr(node, "col_offset")
+            and hasattr(node, "end_lineno")
+            and hasattr(node, "end_col_offset")
+        ):
             start_pos = f"{node.lineno}:{node.col_offset + 1}"
             end_pos = f"{node.end_lineno}:{node.end_col_offset + 1 if node.end_col_offset else node.col_offset}"
             prefix = f"{start_pos} - {end_pos}"
@@ -387,7 +392,23 @@ def _build_symbol_tree_common(
     symbols = SymbolTree(node_name="Symbols", parent=root)
     children = SymbolTree(node_name="Sub Tables", parent=root)
 
-    for sym in node.tab.values():
+    syms_to_iterate = set(node.tab.values())
+    for inhrited_symtab in node.inherit:
+        for inhrited_sym in inhrited_symtab.symbols:
+            sym = inhrited_symtab.lookup(inhrited_sym)
+            assert sym is not None
+            syms_to_iterate.add(sym)
+
+    for stab in node.inherit:
+        if stab.load_all_symbols:
+            syms_to_iterate.update(list(stab.base_symbol_table.tab.values()))
+        else:
+            for sname in stab.symbols:
+                sym = stab.base_symbol_table.lookup(sname)
+                assert sym is not None
+                syms_to_iterate.add(sym)
+
+    for sym in syms_to_iterate:
         symbol_node = SymbolTree(node_name=f"{sym.sym_name}", parent=symbols)
         SymbolTree(node_name=f"{sym.access} {sym.sym_type}", parent=symbol_node)
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import ast
 import os
-from typing import Callable, TYPE_CHECKING, TextIO
+from typing import Callable, TYPE_CHECKING, TextIO, cast
 
 from jaclang.compiler.absyntree import AstNode
 from jaclang.compiler.passes import Pass
@@ -599,7 +599,7 @@ class State(myb.State):
                     raise myb.CompileError(
                         [
                             "mypy: can't read file '{}': {}".format(
-                                self.path, myb.os.strerror(ioerr.errno)
+                                self.path, myb.os.strerror(cast(int, ioerr.errno))
                             )
                         ],
                         module_with_blocker=self.id,

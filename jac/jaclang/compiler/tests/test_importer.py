@@ -5,7 +5,8 @@ import sys
 
 from jaclang import jac_import
 from jaclang.cli import cli
-from jaclang.runtimelib.machine import JacMachine, JacProgram
+from jaclang.compiler.program import JacProgram
+from jaclang.runtimelib.machine import JacMachine
 from jaclang.utils.test import TestCase
 
 

@@ -16,6 +16,7 @@ from typing import Any, Callable, Mapping, Optional, Sequence, Type, Union, cast
 from uuid import UUID
 
 from jaclang.compiler.constant import colors
+from jaclang.compiler.program import JacProgram
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 from jaclang.plugin.feature import (
     AccessLevel,
@@ -41,7 +42,7 @@ from jaclang.runtimelib.constructs import (
     JacTestCheck,
 )
 from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
-from jaclang.runtimelib.machine import JacMachine, JacProgram
+from jaclang.runtimelib.machine import JacMachine
 from jaclang.runtimelib.memory import Shelf, ShelfStorage
 from jaclang.runtimelib.utils import (
     all_issubclass,

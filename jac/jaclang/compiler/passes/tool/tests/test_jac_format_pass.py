@@ -7,7 +7,11 @@ from contextlib import suppress
 from difflib import unified_diff
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.compile import jac_file_to_pass, jac_str_to_pass
+from jaclang.compiler.compile import (
+    jac_file_formatter,
+    jac_file_to_pass,
+    jac_str_to_pass,
+)
 from jaclang.compiler.passes.main import PyastGenPass
 from jaclang.compiler.passes.main.schedules import py_code_gen as without_format
 from jaclang.compiler.passes.tool import JacFormatPass
@@ -120,7 +124,7 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             target=PyastGenPass,
             schedule=without_format,
         )
-        code_gen_format = jac_file_to_pass(
+        code_gen_format = jac_file_formatter(
             self.fixture_abs_path(filename), schedule=format_pass
         )
         code_gen_jac = jac_str_to_pass(

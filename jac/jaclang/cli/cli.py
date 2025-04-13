@@ -13,17 +13,17 @@ from typing import Optional
 import jaclang.compiler.absyntree as ast
 from jaclang import jac_import
 from jaclang.cli.cmdreg import CommandShell, cmd_registry
-from jaclang.compiler.compile import jac_file_to_pass
+from jaclang.compiler.compile import jac_file_formatter, jac_file_to_pass
 from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
-from jaclang.compiler.passes.main.schedules import py_code_gen_typed
-from jaclang.compiler.passes.tool.schedules import format_pass
+from jaclang.compiler.passes.main.schedules import py_code_gen_build, py_code_gen_typed
+from jaclang.compiler.program import JacProgram
 from jaclang.plugin.builtin import dotgen
 from jaclang.plugin.feature import JacCmd as Cmd
 from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.runtimelib.constructs import WalkerArchitype
 from jaclang.runtimelib.context import ExecutionContext
-from jaclang.runtimelib.machine import JacMachine, JacProgram
+from jaclang.runtimelib.machine import JacMachine
 from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
 
@@ -37,7 +37,7 @@ def format(path: str, outfile: str = "", debug: bool = False) -> None:
     """Run the specified .jac file or format all .jac files in a given directory."""
 
     def format_file(filename: str) -> None:
-        code_gen_format = jac_file_to_pass(filename, schedule=format_pass)
+        code_gen_format = jac_file_formatter(filename)
         if code_gen_format.errors_had:
             print(
                 f"Errors occurred while formatting the file {filename}.",
@@ -182,10 +182,13 @@ def get_object(
 
 
 @cmd_registry.register
-def build(filename: str) -> None:
+def build(filename: str, pybuild: bool = False) -> None:
     """Build the specified .jac file."""
     if filename.endswith(".jac"):
-        out = jac_file_to_pass(file_path=filename, schedule=py_code_gen_typed)
+        out = jac_file_to_pass(
+            file_path=filename,
+            schedule=py_code_gen_typed if pybuild else py_code_gen_build,
+        )
         errs = len(out.errors_had)
         warnings = len(out.warnings_had)
         print(f"Errors: {errs}, Warnings: {warnings}")
@@ -527,6 +530,7 @@ def start_cli() -> None:
     if args.version:
         version = importlib.metadata.version("jaclang")
         print(f"Jac version {version}")
+        print("Jac path:", __file__)
         return
 
     command = cmd_registry.get(args.command)
