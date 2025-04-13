@@ -19,7 +19,6 @@ from jaclang.runtimelib.architype import (
     NodeArchitype,
     WalkerArchitype,
 )
-from jaclang.runtimelib.plugin.feature import JacFeature
 from jaclang.utils.log import logging
 
 
@@ -29,7 +28,7 @@ logger = logging.getLogger(__name__)
 JACMACHINE_CONTEXT = ContextVar["JacMachine | None"]("JacMachine")
 
 
-class JacMachine(JacFeature):
+class JacMachine:
     """JacMachine to handle the VM-related functionalities and loaded programs."""
 
     def __init__(self, base_path: str = "") -> None:
