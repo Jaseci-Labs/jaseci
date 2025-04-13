@@ -10,16 +10,16 @@ class Creator:
         end = here
         i = 0
         while i < 3:
-            Jac.conn(end, (end := node_a(val=i)))
+            Jac.connect(end, (end := node_a(val=i)))
             i += 1
 
-        Jac.conn(
+        Jac.connect(
             end,
             (end := node_a(val=i + 10)),
             edge=connector,
             conn_assign=(("value",), (i,)),
         )
-        Jac.conn(
+        Jac.connect(
             (end := node_a(val=i + 10)),
             root(),
             edge=connector,

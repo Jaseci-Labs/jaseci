@@ -10,7 +10,7 @@ class Creator:
         end = here
         i = 0
         while i < 5:
-            Jac.conn(end, (end := node_1(val=i + 1)))
+            Jac.connect(end, (end := node_1(val=i + 1)))
             i += 1
         Jac.visit(self, Jac.refs(here))
 

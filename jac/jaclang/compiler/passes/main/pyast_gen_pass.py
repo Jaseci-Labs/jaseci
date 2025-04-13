@@ -2316,7 +2316,7 @@ class PyastGenPass(Pass):
                         func=self.sync(
                             ast3.Attribute(
                                 value=self.jaclib_obj("Jac"),
-                                attr="conn",
+                                attr="connect",
                                 ctx=ast3.Load(),
                             )
                         ),
@@ -2366,7 +2366,7 @@ class PyastGenPass(Pass):
                         func=self.sync(
                             ast3.Attribute(
                                 value=self.jaclib_obj("Jac"),
-                                attr="disconn",
+                                attr="disconnect",
                                 ctx=ast3.Load(),
                             )
                         ),

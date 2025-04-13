@@ -15,9 +15,9 @@ class Creator:
         i = 0
         while i < 7:
             if i % 2 == 0:
-                Jac.conn(end, (end := node_a(value=i)))
+                Jac.connect(end, (end := node_a(value=i)))
             else:
-                Jac.conn(
+                Jac.connect(
                     end,
                     (end := node_a(value=i + 10)),
                     edge=MyEdge,

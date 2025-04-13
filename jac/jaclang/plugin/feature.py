@@ -18,22 +18,24 @@ from uuid import UUID
 
 from jaclang.plugin.spec import (
     AccessLevel,
+    EdgeDir,
+    ExecutionContext,
+    P,
+    PyastGenPass,
+    Root,
+    T,
+    ast,
+    plugin_manager,
+)
+from jaclang.runtimelib.architype import (
     Anchor,
     Architype,
     DSFunc,
     EdgeAnchor,
     EdgeArchitype,
-    EdgeDir,
-    ExecutionContext,
     NodeAnchor,
     NodeArchitype,
-    P,
-    PyastGenPass,
-    Root,
-    T,
     WalkerArchitype,
-    ast,
-    plugin_manager,
 )
 
 
@@ -151,7 +153,7 @@ class JacWalker:
     """Jac Edge Operations."""
 
     @staticmethod
-    def visit_node(
+    def visit(
         walker: WalkerArchitype,
         expr: (
             list[NodeArchitype | EdgeArchitype]
@@ -162,7 +164,7 @@ class JacWalker:
         ),
     ) -> bool:  # noqa: ANN401
         """Jac's visit stmt feature."""
-        return plugin_manager.hook.visit_node(walker=walker, expr=expr)
+        return plugin_manager.hook.visit(walker=walker, expr=expr)
 
     @staticmethod
     def ignore(
@@ -179,9 +181,9 @@ class JacWalker:
         return plugin_manager.hook.ignore(walker=walker, expr=expr)
 
     @staticmethod
-    def spawn_call(op1: Architype, op2: Architype) -> WalkerArchitype:
+    def spawn(op1: Architype, op2: Architype) -> WalkerArchitype:
         """Jac's spawn operator feature."""
-        return plugin_manager.hook.spawn_call(op1=op1, op2=op2)
+        return plugin_manager.hook.spawn(op1=op1, op2=op2)
 
     @staticmethod
     def disengage(walker: WalkerArchitype) -> bool:
@@ -194,7 +196,9 @@ class JacClassReferences:
 
     EdgeDir: TypeAlias = EdgeDir
     DSFunc: TypeAlias = DSFunc
+
     RootType: TypeAlias = Root  # TODO: Rename this to "Root" (for jaclib).
+
     Obj: TypeAlias = Architype
     Node: TypeAlias = NodeArchitype
     Edge: TypeAlias = EdgeArchitype
@@ -421,7 +425,9 @@ class JacFeature(
     def connect(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
-        edge_spec: Callable[[NodeAnchor, NodeAnchor], EdgeArchitype],
+        edge: Type[EdgeArchitype] | EdgeArchitype | None = None,
+        undir: bool = False,
+        conn_assign: tuple[tuple, tuple] | None = None,
         edges_only: bool = False,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's connect operator feature.
@@ -429,30 +435,33 @@ class JacFeature(
         Note: connect needs to call assign compr with tuple in op
         """
         return plugin_manager.hook.connect(
-            left=left, right=right, edge_spec=edge_spec, edges_only=edges_only
+            left=left,
+            right=right,
+            edge=edge,
+            undir=undir,
+            conn_assign=conn_assign,
+            edges_only=edges_only,
         )
 
     @staticmethod
     def disconnect(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
-        dir: EdgeDir,
-        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
+        edge: Type[EdgeArchitype] | None = None,
+        dir: EdgeDir = EdgeDir.OUT,
     ) -> bool:
         """Jac's disconnect operator feature."""
         return plugin_manager.hook.disconnect(
             left=left,
             right=right,
             dir=dir,
-            filter_func=filter_func,
+            edge=edge,
         )
 
     @staticmethod
-    def assign_compr(
-        target: list[T], attr_val: tuple[tuple[str], tuple[Any]]
-    ) -> list[T]:
+    def assign(target: list[T], attr_val: tuple[tuple[str], tuple[Any]]) -> list[T]:
         """Jac's assign comprehension feature."""
-        return plugin_manager.hook.assign_compr(target=target, attr_val=attr_val)
+        return plugin_manager.hook.assign(target=target, attr_val=attr_val)
 
     @staticmethod
     def get_root() -> Root:
@@ -472,7 +481,9 @@ class JacFeature(
     ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchitype]:
         """Jac's root getter."""
         return plugin_manager.hook.build_edge(
-            is_undirected=is_undirected, conn_type=conn_type, conn_assign=conn_assign
+            is_undirected=is_undirected,
+            conn_type=conn_type,
+            conn_assign=conn_assign,
         )
 
     @staticmethod
@@ -572,45 +583,7 @@ class JacFeature(
         """Get the by LLM call args."""
         return plugin_manager.hook.get_by_llm_call_args(_pass=_pass, node=node)
 
-    # FIXME: This is a convinience method to call JacFeature.connect, used by jaclib (not intended for overriden).
-    @staticmethod
-    def conn(
-        left: NodeArchitype | list[NodeArchitype],
-        right: NodeArchitype | list[NodeArchitype],
-        edge: Type[EdgeArchitype] | EdgeArchitype | None = None,
-        undir: bool = False,
-        conn_assign: tuple[tuple, tuple] | None = None,
-        edges_only: bool = False,
-    ) -> list[NodeArchitype] | list[EdgeArchitype]:
-        """Jac's connect operator feature."""
-        return JacFeature.connect(
-            left=left,
-            right=right,
-            edge_spec=JacFeature.build_edge(
-                is_undirected=undir, conn_type=edge, conn_assign=conn_assign
-            ),
-            edges_only=edges_only,
-        )
-
-    # FIXME: This is a convinience method to call JacFeature.connect, used by jaclib (not intended for overriden).
-    @staticmethod
-    def disconn(
-        left: NodeArchitype | list[NodeArchitype],
-        right: NodeArchitype | list[NodeArchitype],
-        edge: Type[EdgeArchitype] | None = None,
-        dir: EdgeDir = EdgeDir.OUT,
-    ) -> bool:
-        """Jac's disconnect operator feature."""
-        filter_func = None
-        if edge is not None:
-            filter_func = lambda edges: [  # noqa: E731
-                ed for ed in edges if isinstance(ed, edge)
-            ]
-        return JacFeature.disconnect(
-            left=left, right=right, dir=dir, filter_func=filter_func
-        )
-
-    # FIXME: This is a convinience method to call JacFeature.connect, used by jaclib (not intended for overriden).
+    # FIXME: This is not a plugin hook.
     @staticmethod
     def refs(
         node: NodeArchitype | list[NodeArchitype],
@@ -638,7 +611,7 @@ class JacFeature(
             edges_only=edges_only,
         )
 
-    # FIXME: This is a convinience method to call JacFeature.connect, used by jaclib (not intended for overriden).
+    # FIXME: This is not a plugin hook.
     @staticmethod
     def filter(
         items: list[NodeArchitype] | list[EdgeArchitype],
@@ -653,30 +626,3 @@ class JacFeature(
         if fn:
             return list(filter(fn, items))  # type: ignore[return-value]
         return items
-
-    # FIXME: This is basically an alias to the actual function used by jaclib.
-    @staticmethod
-    def spawn(op1: Architype, op2: Architype) -> WalkerArchitype:
-        """Jac's spawn operator feature."""
-        return JacFeature.spawn_call(op1=op1, op2=op2)
-
-    # FIXME: This is basically an alias to the actual function used by jaclib.
-    @staticmethod
-    def visit(
-        walker: WalkerArchitype,
-        expr: (
-            list[NodeArchitype | EdgeArchitype]
-            | list[NodeArchitype]
-            | list[EdgeArchitype]
-            | NodeArchitype
-            | EdgeArchitype
-        ),
-    ) -> bool:  # noqa: ANN401
-        """Jac's visit stmt feature."""
-        return JacFeature.visit_node(walker=walker, expr=expr)
-
-    # FIXME: This is basically an alias to the actual function used by jaclib.
-    @staticmethod
-    def assign(target: list[T], attr_val: tuple[tuple[str], tuple[Any]]) -> list[T]:
-        """Jac's assign comprehension feature."""
-        return plugin_manager.hook.assign_compr(target=target, attr_val=attr_val)

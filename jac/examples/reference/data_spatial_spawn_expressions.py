@@ -6,7 +6,7 @@ from jaclang import *
 class Adder:
     @with_entry
     def do(self, here: Jac.RootType) -> None:
-        Jac.conn(here, node_a())
+        Jac.connect(here, node_a())
         Jac.visit(self, Jac.refs(here))
 
 

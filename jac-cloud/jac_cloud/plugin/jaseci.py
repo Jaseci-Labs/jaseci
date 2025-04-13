@@ -501,12 +501,10 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
-    def spawn_call(op1: Architype, op2: Architype) -> WalkerArchitype:
+    def spawn(op1: Architype, op2: Architype) -> WalkerArchitype:
         """Invoke data spatial call."""
         if not FastAPI.is_enabled():
-            return JacFeatureImpl.spawn_call(
-                op1=op1, op2=op2
-            )  # type:ignore[return-value]
+            return JacFeatureImpl.spawn(op1=op1, op2=op2)  # type:ignore[return-value]
 
         if isinstance(op1, WalkerArchitype):
             warch = op1

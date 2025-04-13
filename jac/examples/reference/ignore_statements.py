@@ -20,7 +20,7 @@ class item:
 
 i = 0
 while i < 5:
-    Jac.conn(root(), item())
+    Jac.connect(root(), item())
     i += 1
 
 Jac.spawn(root(), Visitor())

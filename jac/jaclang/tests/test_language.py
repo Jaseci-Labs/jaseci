@@ -117,9 +117,6 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
 
-        with open("out", "w") as f:
-            f.write(stdout_value)
-
         expected_outputs = [
             "+-- AtomTrailer - Type: builtins.list[builtins.int]",
             "    +-- Name - arr - Type: builtins.list[builtins.list[builtins.int]],  SymbolTable: list",

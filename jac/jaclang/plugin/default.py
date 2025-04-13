@@ -312,7 +312,7 @@ class JacWalkerImpl:
 
     @staticmethod
     @hookimpl
-    def visit_node(
+    def visit(
         walker: WalkerArchitype,
         expr: (
             list[NodeArchitype | EdgeArchitype]
@@ -375,7 +375,7 @@ class JacWalkerImpl:
 
     @staticmethod
     @hookimpl
-    def spawn_call(op1: Architype, op2: Architype) -> WalkerArchitype:
+    def spawn(op1: Architype, op2: Architype) -> WalkerArchitype:
         """Invoke data spatial call."""
         if isinstance(op1, WalkerArchitype):
             warch = op1
@@ -1012,13 +1012,18 @@ class JacFeatureImpl(
     def connect(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
-        edge_spec: Callable[[NodeAnchor, NodeAnchor], EdgeArchitype],
+        edge: Type[EdgeArchitype] | EdgeArchitype | None,
+        undir: bool,
+        conn_assign: tuple[tuple, tuple] | None,
         edges_only: bool,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's connect operator feature.
 
         Note: connect needs to call assign compr with tuple in op
         """
+        edge_spec = Jac.build_edge(
+            is_undirected=undir, conn_type=edge, conn_assign=conn_assign
+        )
         left = [left] if isinstance(left, NodeArchitype) else left
         right = [right] if isinstance(right, NodeArchitype) else right
         edges = []
@@ -1037,10 +1042,15 @@ class JacFeatureImpl(
     def disconnect(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
+        edge: Type[EdgeArchitype] | None,
         dir: EdgeDir,
-        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
     ) -> bool:  # noqa: ANN401
         """Jac's disconnect operator feature."""
+        filter_func: Callable[[list[EdgeArchitype]], list[EdgeArchitype]] | None = None
+        if edge is not None:
+            filter_func = lambda edges: [  # noqa: E731
+                ed for ed in edges if isinstance(ed, edge)
+            ]
         disconnect_occurred = False
         left = [left] if isinstance(left, NodeArchitype) else left
         right = [right] if isinstance(right, NodeArchitype) else right
@@ -1076,9 +1086,7 @@ class JacFeatureImpl(
 
     @staticmethod
     @hookimpl
-    def assign_compr(
-        target: list[T], attr_val: tuple[tuple[str], tuple[Any]]
-    ) -> list[T]:
+    def assign(target: list[T], attr_val: tuple[tuple[str], tuple[Any]]) -> list[T]:
         """Jac's assign comprehension feature."""
         for obj in target:
             attrs, values = attr_val
@@ -1107,10 +1115,10 @@ class JacFeatureImpl(
     ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchitype]:
         """Jac's root getter."""
 
-        ct = conn_type if conn_type else GenericEdge
+        conn_type = conn_type or GenericEdge
 
         def builder(source: NodeAnchor, target: NodeAnchor) -> EdgeArchitype:
-            edge = ct() if isinstance(ct, type) else ct
+            edge = conn_type() if isinstance(conn_type, type) else conn_type
 
             eanch = edge.__jac__ = EdgeAnchor(
                 architype=edge,

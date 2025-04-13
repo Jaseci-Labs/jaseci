@@ -158,7 +158,7 @@ class JacWalkerSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def visit_node(
+    def visit(
         walker: WalkerArchitype,
         expr: (
             list[NodeArchitype | EdgeArchitype]
@@ -188,7 +188,7 @@ class JacWalkerSpec:
 
     @staticmethod
     @hookspec(firstresult=True)
-    def spawn_call(op1: Architype, op2: Architype) -> WalkerArchitype:
+    def spawn(op1: Architype, op2: Architype) -> WalkerArchitype:
         """Invoke data spatial call."""
         raise NotImplementedError
 
@@ -400,7 +400,9 @@ class JacFeatureSpec(
     def connect(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
-        edge_spec: Callable[[NodeAnchor, NodeAnchor], EdgeArchitype],
+        edge: Type[EdgeArchitype] | EdgeArchitype | None,
+        undir: bool,
+        conn_assign: tuple[tuple, tuple] | None,
         edges_only: bool,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's connect operator feature.
@@ -414,17 +416,15 @@ class JacFeatureSpec(
     def disconnect(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
+        edge: Type[EdgeArchitype] | None,
         dir: EdgeDir,
-        filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
     ) -> bool:  # noqa: ANN401
         """Jac's disconnect operator feature."""
         raise NotImplementedError
 
     @staticmethod
     @hookspec(firstresult=True)
-    def assign_compr(
-        target: list[T], attr_val: tuple[tuple[str], tuple[Any]]
-    ) -> list[T]:
+    def assign(target: list[T], attr_val: tuple[tuple[str], tuple[Any]]) -> list[T]:
         """Jac's assign comprehension feature."""
         raise NotImplementedError
 
