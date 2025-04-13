@@ -25,7 +25,7 @@ from jaclang.runtimelib.constructs import (
 from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
 from jaclang.runtimelib.machine import JacMachine
 from jaclang.runtimelib.memory import Shelf, ShelfStorage
-from jaclang.runtimelib.plugin.spec import (
+from jaclang.runtimelib.plugin.feature import (
     AccessLevel,
     Anchor,
     Architype,

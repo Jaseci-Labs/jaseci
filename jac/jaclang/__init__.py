@@ -26,8 +26,7 @@ from jaclang.runtimelib.architype import (
     WalkerArchitype,
 )
 from jaclang.runtimelib.plugin.builtin import dotgen, jid, jobj  # noqa: F401
-from jaclang.runtimelib.plugin.feature import JacFeature as Jac, plugin_manager
-from jaclang.runtimelib.plugin.spec import EdgeDir
+from jaclang.runtimelib.plugin.feature import EdgeDir, JacFeature as Jac, plugin_manager
 
 
 __all__ = [

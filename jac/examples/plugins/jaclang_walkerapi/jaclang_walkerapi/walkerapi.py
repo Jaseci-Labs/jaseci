@@ -1,5 +1,5 @@
 from jaclang.runtimelib.plugin.default import hookimpl
-from jaclang.runtimelib.plugin.spec import Architype, WalkerArchitype, DSFunc
+from jaclang.runtimelib.plugin.feature import Architype, WalkerArchitype, DSFunc
 
 from dataclasses import dataclass
 from functools import wraps
