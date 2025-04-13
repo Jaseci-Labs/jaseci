@@ -6,13 +6,13 @@ from jaclang import *
 class Creator:
 
     @with_entry
-    def func2(self, here: Root) -> None:
+    def func2(self, here: Jac.RootType) -> None:
         end = here
         i = 0
         while i < 5:
-            end.connect((end := node_1(val=i + 1)))
+            Jac.connect(end, (end := node_1(val=i + 1)))
             i += 1
-        self.visit(here.refs())
+        Jac.visit(self, Jac.refs(here))
 
 
 @node
@@ -22,8 +22,8 @@ class node_1:
     @with_entry
     def func_1(self, here: Creator) -> None:
         print("visiting ", self)
-        here.visit(self.refs())
+        Jac.visit(here, Jac.refs(self))
 
 
-root().spawn(Creator())
-root().spawn(Creator())
+Jac.spawn(root(), Creator())
+Jac.spawn(root(), Creator())

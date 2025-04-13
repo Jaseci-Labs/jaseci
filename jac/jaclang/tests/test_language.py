@@ -120,9 +120,9 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
 
         expected_outputs = [
-            "+-- AtomTrailer - Type: jaclang.JacList[builtins.int]",
-            "    +-- Name - arr - Type: jaclang.JacList[jaclang.JacList[builtins.int]],  SymbolTable: None",
-            "+-- IndexSlice - [IndexSlice] - Type: jaclang.JacList[jaclang.JacList[builtins.int]],  SymbolTable: None",
+            "+-- AtomTrailer - Type: builtins.list[builtins.int]",
+            "    +-- Name - arr - Type: builtins.list[builtins.list[builtins.int]],  SymbolTable: list",
+            "+-- IndexSlice - [IndexSlice] - Type: builtins.list[builtins.list[builtins.int]],  SymbolTable: None",
             "        +-- Token - [, ",
             "        +-- Int - 1 - Type: Literal[1]?,  SymbolTable: None",
             "        +-- Token - :, ",
@@ -1067,11 +1067,11 @@ class JacLanguageTests(TestCase):
             stdout_value,
         )
         self.assertIn(
-            "Walkers in bar:\n  - Walker: Walker\n  - Walker: bar_walk",
+            "Walkers in bar:\n  - Walker: bar_walk",
             stdout_value,
         )
         self.assertIn("Nodes in bar:\n  - Node: Item", stdout_value)
-        self.assertIn("Edges in bar:\n  - Edge: Edge\n  - Edge: Link", stdout_value)
+        self.assertIn("Edges in bar:\n  - Edge: Link", stdout_value)
         self.assertIn("Item value: 0", stdout_value)
         self.assertIn("Created 5 items.", stdout_value)
 

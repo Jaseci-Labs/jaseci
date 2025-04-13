@@ -10,14 +10,15 @@ class node_a:
 @walker
 class Creator:
     @with_entry
-    def create(self, here: Root) -> None:
+    def create(self, here: Jac.RootType) -> None:
         end = here
         i = 0
         while i < 7:
             if i % 2 == 0:
-                end.connect((end := node_a(value=i)))
+                Jac.connect(end, (end := node_a(value=i)))
             else:
-                end.connect(
+                Jac.connect(
+                    end,
                     (end := node_a(value=i + 10)),
                     edge=MyEdge,
                     conn_assign=(("val",), (i,)),
@@ -25,10 +26,10 @@ class Creator:
             i += 1
 
     @with_entry
-    def travel(self, here: Root | node_a) -> None:
-        for i in here.refs(MyEdge, lambda edge: edge.val <= 6):
+    def travel(self, here: Jac.RootType | node_a) -> None:
+        for i in Jac.refs(here, MyEdge, lambda edge: edge.val <= 6):
             print(i.value)
-        self.visit(here.refs())
+        Jac.visit(self, Jac.refs(here))
 
 
 @edge
@@ -37,4 +38,4 @@ class MyEdge:
 
 
 if __name__ == "__main__":
-    root().spawn(Creator())
+    Jac.spawn(root(), Creator())

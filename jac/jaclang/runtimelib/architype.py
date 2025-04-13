@@ -289,13 +289,27 @@ class ObjectArchitype(Architype):
 class GenericEdge(EdgeArchitype):
     """Generic Edge."""
 
+    _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
+    _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
+
+    def __repr__(self) -> str:
+        """Override repr for architype."""
+        return f"{self.__class__.__name__}()"
+
 
 class Root(NodeArchitype):
     """Generic Root Node."""
 
+    _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
+    _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
+
     def __init__(self) -> None:
         """Create root node."""
         self.__jac__ = NodeAnchor(architype=self, persistent=True, edges=[])
+
+    def __repr__(self) -> str:
+        """Override repr for architype."""
+        return f"{self.__class__.__name__}()"
 
 
 @dataclass(eq=False)

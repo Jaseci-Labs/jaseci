@@ -1232,7 +1232,15 @@ class PyastGenPass(Pass):
                 isinstance(node.arch_name, ast.SpecialVarRef)
                 and node.arch_name.orig.name == Tok.KW_ROOT
             ):
-                node.gen.py_ast = [self.jaclib_obj("Root")]
+                node.gen.py_ast = [
+                    self.sync(
+                        ast3.Attribute(
+                            value=self.jaclib_obj("Jac"),
+                            attr="RootType",
+                            ctx=ast3.Load(),
+                        )
+                    )
+                ]
             else:
                 self.needs_typing()
                 node.gen.py_ast = [
@@ -2029,12 +2037,14 @@ class PyastGenPass(Pass):
                         ast3.Call(
                             func=self.sync(
                                 ast3.Attribute(
-                                    value=walker,
+                                    value=self.jaclib_obj("Jac"),
                                     attr="ignore",
                                     ctx=ast3.Load(),
                                 )
                             ),
-                            args=[cast(ast3.expr, node.target.gen.py_ast[0])],
+                            args=cast(
+                                list[ast3.expr], [walker, node.target.gen.py_ast[0]]
+                            ),
                             keywords=[],
                         )
                     )
@@ -2059,12 +2069,12 @@ class PyastGenPass(Pass):
             ast3.Call(
                 func=self.sync(
                     ast3.Attribute(
-                        value=loc,
+                        value=self.jaclib_obj("Jac"),
                         attr="visit",
                         ctx=ast3.Load(),
                     )
                 ),
-                args=[cast(ast3.expr, node.target.gen.py_ast[0])],
+                args=cast(list[ast3.expr], [loc, node.target.gen.py_ast[0]]),
                 keywords=[],
             )
         )
@@ -2114,12 +2124,12 @@ class PyastGenPass(Pass):
                             ast3.Call(
                                 func=self.sync(
                                     ast3.Attribute(
-                                        value=loc,
+                                        value=self.jaclib_obj("Jac"),
                                         attr="disengage",
                                         ctx=ast3.Load(),
                                     )
                                 ),
-                                args=[],
+                                args=[loc],
                                 keywords=[],
                             )
                         )
@@ -2301,12 +2311,12 @@ class PyastGenPass(Pass):
                     ast3.Call(
                         func=self.sync(
                             ast3.Attribute(
-                                value=cast(ast3.expr, left),
+                                value=self.jaclib_obj("Jac"),
                                 attr="connect",
                                 ctx=ast3.Load(),
-                            ),
+                            )
                         ),
-                        args=[cast(ast3.expr, right)],
+                        args=cast(list[ast3.expr], [left, right]),
                         keywords=keywords,
                     )
                 )
@@ -2351,12 +2361,15 @@ class PyastGenPass(Pass):
                     ast3.Call(
                         func=self.sync(
                             ast3.Attribute(
-                                value=cast(ast3.expr, node.left.gen.py_ast[0]),
+                                value=self.jaclib_obj("Jac"),
                                 attr="disconnect",
                                 ctx=ast3.Load(),
                             )
                         ),
-                        args=[cast(ast3.expr, node.right.gen.py_ast[0])],
+                        args=cast(
+                            list[ast3.expr],
+                            [node.left.gen.py_ast[0], node.right.gen.py_ast[0]],
+                        ),
                         keywords=keywords,
                     )
                 )
@@ -2426,12 +2439,15 @@ class PyastGenPass(Pass):
                     ast3.Call(
                         func=self.sync(
                             ast3.Attribute(
-                                value=cast(ast3.expr, node.left.gen.py_ast[0]),
+                                value=self.jaclib_obj("Jac"),
                                 attr="spawn",
                                 ctx=ast3.Load(),
                             )
                         ),
-                        args=[cast(ast3.expr, node.right.gen.py_ast[0])],
+                        args=cast(
+                            list[ast3.expr],
+                            [node.left.gen.py_ast[0], node.right.gen.py_ast[0]],
+                        ),
                         keywords=[],
                     )
                 )
@@ -2696,20 +2712,13 @@ class PyastGenPass(Pass):
         if isinstance(node.py_ctx_func(), ast3.Load):
             node.gen.py_ast = [
                 self.sync(
-                    ast3.Call(
-                        func=self.jaclib_obj("JacList"),
-                        args=[
-                            self.sync(
-                                ast3.List(
-                                    elts=cast(
-                                        list[ast3.expr],
-                                        node.values.gen.py_ast if node.values else [],
-                                    ),
-                                    ctx=ast3.Load(),
-                                )
-                            )
-                        ],
-                        keywords=[],
+                    ast3.List(
+                        elts=(
+                            cast(list[ast3.expr], node.values.gen.py_ast)
+                            if node.values
+                            else []
+                        ),
+                        ctx=ast3.Load(),
                     )
                 )
             ]
@@ -2835,20 +2844,11 @@ class PyastGenPass(Pass):
         """
         node.gen.py_ast = [
             self.sync(
-                ast3.Call(
-                    func=self.jaclib_obj("JacList"),
-                    args=[
-                        self.sync(
-                            ast3.ListComp(
-                                elt=cast(ast3.expr, node.out_expr.gen.py_ast[0]),
-                                generators=[
-                                    cast(ast3.comprehension, i.gen.py_ast[0])
-                                    for i in node.compr
-                                ],
-                            )
-                        )
-                    ],
-                    keywords=[],
+                ast3.ListComp(
+                    elt=cast(ast3.expr, node.out_expr.gen.py_ast[0]),
+                    generators=cast(
+                        list[ast3.comprehension], [i.gen.py_ast[0] for i in node.compr]
+                    ),
                 )
             )
         ]
@@ -2941,12 +2941,13 @@ class PyastGenPass(Pass):
                     ast3.Call(
                         func=self.sync(
                             ast3.Attribute(
-                                value=cast(ast3.expr, node.target.gen.py_ast[0]),
+                                value=self.jaclib_obj("Jac"),
                                 attr="filter",
                                 ctx=ast3.Load(),
                             )
                         ),
-                        args=cast(ast3.Tuple, node.right.gen.py_ast[0]).elts,
+                        args=cast(list[ast3.expr], [node.target.gen.py_ast[0]])
+                        + cast(ast3.Tuple, node.right.gen.py_ast[0]).elts,
                         keywords=[],
                     )
                 )
@@ -2957,12 +2958,15 @@ class PyastGenPass(Pass):
                     ast3.Call(
                         func=self.sync(
                             ast3.Attribute(
-                                value=cast(ast3.expr, node.target.gen.py_ast[0]),
+                                value=self.jaclib_obj("Jac"),
                                 attr="assign",
                                 ctx=ast3.Load(),
                             )
                         ),
-                        args=cast(ast3.Tuple, node.right.gen.py_ast[0]).elts,
+                        args=cast(
+                            list[ast3.expr],
+                            [node.target.gen.py_ast[0], node.right.gen.py_ast[0]],
+                        ),
                         keywords=[],
                     )
                 )
@@ -3222,12 +3226,13 @@ class PyastGenPass(Pass):
                         ast3.Call(
                             func=self.sync(
                                 ast3.Attribute(
-                                    value=cast(ast3.expr, pynode),
+                                    value=self.jaclib_obj("Jac"),
                                     attr="filter",
                                     ctx=ast3.Load(),
                                 )
                             ),
-                            args=cast(ast3.Tuple, next_i.gen.py_ast[0]).elts,
+                            args=[cast(ast3.expr, pynode)]
+                            + cast(ast3.Tuple, next_i.gen.py_ast[0]).elts,
                             keywords=[],
                         )
                     )
@@ -3266,7 +3271,7 @@ class PyastGenPass(Pass):
         edges_only: bool,
     ) -> ast3.AST:
         """Generate ast for edge op ref call."""
-        args = []
+        args = [loc]
         keywords = []
 
         if node.filter_cond and node.filter_cond.f_type:
@@ -3394,7 +3399,7 @@ class PyastGenPass(Pass):
             ast3.Call(
                 func=self.sync(
                     ast3.Attribute(
-                        value=cast(ast3.expr, loc),
+                        value=self.jaclib_obj("Jac"),
                         attr="refs",
                         ctx=ast3.Load(),
                     )

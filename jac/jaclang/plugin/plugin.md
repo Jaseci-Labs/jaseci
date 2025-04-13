@@ -115,9 +115,9 @@ def detach(
 
 
 ## Walker Related Methods
-### **`visit_node`**
+### **`visit`**
 ```python
-def visit_node(
+def visit(
     walker: WalkerArchitype,
     expr: (
     list[NodeArchitype | EdgeArchitype]
@@ -143,9 +143,9 @@ def ignore(
 ) -> bool:
     """Include target node/edge to current walker's ignored architype."""
 ```
-### **`spawn_call`**
+### **`spawn`**
 ```python
-def spawn_call(
+def spawn(
     op1: Architype,
     op2: Architype
 ) -> WalkerArchitype:
@@ -334,7 +334,9 @@ def edge_ref(
 def connect(
     left: NodeArchitype | list[NodeArchitype],
     right: NodeArchitype | list[NodeArchitype],
-    edge_spec: Callable[[NodeAnchor, NodeAnchor], EdgeArchitype],
+    edge: Type[EdgeArchitype] | EdgeArchitype | None,
+    undir: bool,
+    conn_assign: tuple[tuple, tuple] | None,
     edges_only: bool,
 ) -> list[NodeArchitype] | list[EdgeArchitype]:
     """Jac's connect operator feature.
@@ -347,14 +349,14 @@ def connect(
 def disconnect(
     left: NodeArchitype | list[NodeArchitype],
     right: NodeArchitype | list[NodeArchitype],
+    edge: Type[EdgeArchitype] | None,
     dir: EdgeDir,
-    filter_func: Optional[Callable[[list[EdgeArchitype]], list[EdgeArchitype]]],
 ) -> bool:
     """Jac's disconnect operator feature."""
 ```
-### **`assign_compr`**
+### **`assign`**
 ```python
-def assign_compr(
+def assign(
     target: list[T],
     attr_val: tuple[tuple[str], tuple[Any]]
 ) -> list[T]:

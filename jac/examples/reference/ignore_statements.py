@@ -5,10 +5,10 @@ from jaclang import *
 @walker
 class Visitor:
     @with_entry
-    def travel(self, here: Root) -> None:
-        self.ignore(here.refs()[0])
-        if not self.visit(here.refs()):
-            self.visit(root())
+    def travel(self, here: Jac.RootType) -> None:
+        Jac.ignore(self, Jac.refs(here)[0])
+        if not Jac.visit(self, Jac.refs(here)):
+            Jac.visit(self, root())
 
 
 @node
@@ -20,7 +20,7 @@ class item:
 
 i = 0
 while i < 5:
-    root().connect(item())
+    Jac.connect(root(), item())
     i += 1
 
-root().spawn(Visitor())
+Jac.spawn(root(), Visitor())

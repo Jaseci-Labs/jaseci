@@ -6,19 +6,26 @@ from jaclang import *
 class Creator:
 
     @with_entry
-    def create(self, here: Root) -> None:
+    def create(self, here: Jac.RootType) -> None:
         end = here
         i = 0
         while i < 3:
-            end.connect((end := node_a(val=i)))
+            Jac.connect(end, (end := node_a(val=i)))
             i += 1
-        end.connect(
-            (end := node_a(val=i + 10)), edge=connector, conn_assign=(("value",), (i,))
+
+        Jac.connect(
+            end,
+            (end := node_a(val=i + 10)),
+            edge=connector,
+            conn_assign=(("value",), (i,)),
         )
-        (end := node_a(val=i + 10)).connect(
-            root(), edge=connector, conn_assign=(("value",), (i,))
+        Jac.connect(
+            (end := node_a(val=i + 10)),
+            root(),
+            edge=connector,
+            conn_assign=(("value",), (i,)),
         )
-        self.visit(here.refs())
+        Jac.visit(self, Jac.refs(here))
 
 
 @node
@@ -38,4 +45,4 @@ class connector:
     value: int = field(10)
 
 
-root().spawn(Creator())
+Jac.spawn(root(), Creator())

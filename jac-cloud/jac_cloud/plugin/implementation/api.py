@@ -238,7 +238,7 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
 
             if Jac.check_read_access(jctx.entry_node):
                 wlk: WalkerAnchor = cls(**body, **query, **files).__jac__
-                Jac.spawn_call(wlk.architype, jctx.entry_node.architype)
+                Jac.spawn(wlk.architype, jctx.entry_node.architype)
                 jctx.close()
 
                 if jctx.custom is not MISSING:
