@@ -1,4 +1,3 @@
-import:py from jaclang.runtimelib.machine { JacMachine }
 # Dynamically create a node architype
 glob source_code = """
 node dynamic_node {
@@ -19,15 +18,15 @@ visit [-->];
 """;
 
 with entry {
-    node_arch = JacMachine.get().create_architype_from_source(source_code);
-    walker_arch = JacMachine.get().create_architype_from_source(walker_code);
+    node_arch = __jac_mach__.create_architype_from_source(source_code);
+    walker_arch = __jac_mach__.create_architype_from_source(walker_code);
 
-    node_obj = JacMachine.get().spawn_node(
+    node_obj = __jac_mach__.spawn_node(
         'dynamic_node',
         {'value': 99},
         node_arch.__name__
     );
-    walker_obj = JacMachine.get().spawn_walker(
+    walker_obj = __jac_mach__.spawn_walker(
         'dynamic_walker',
         module_name=walker_arch.__name__
     );

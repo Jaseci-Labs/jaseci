@@ -15,24 +15,24 @@ class TestLoader(TestCase):
 
     def test_import_basic_python(self) -> None:
         """Test basic self loading."""
-        JacMachine(self.fixture_abs_path(__file__)).attach_program(JacProgram())
-        (h,) = jac_import("fixtures.hello_world", base_path=__file__)
+        mach = JacMachine(self.fixture_abs_path(__file__))
+        mach.attach_program(JacProgram())
+        (h,) = mach.jac_import("fixtures.hello_world", base_path=__file__)
         self.assertEqual(h.hello(), "Hello World!")  # type: ignore
-        JacMachine.detach_machine()
 
     def test_modules_correct(self) -> None:
         """Test basic self loading."""
-        JacMachine(self.fixture_abs_path(__file__)).attach_program(JacProgram())
-        jac_import("fixtures.hello_world", base_path=__file__)
+        mach = JacMachine(self.fixture_abs_path(__file__))
+        mach.attach_program(JacProgram())
+        mach.jac_import("fixtures.hello_world", base_path=__file__)
         self.assertIn(
             "module 'fixtures.hello_world'",
-            str(JacMachine.get().loaded_modules),
+            str(mach.loaded_modules),
         )
         self.assertIn(
             "/tests/fixtures/hello_world.jac",
-            str(JacMachine.get().loaded_modules).replace("\\\\", "/"),
+            str(mach.loaded_modules).replace("\\\\", "/"),
         )
-        JacMachine.detach_machine()
 
     def test_jac_py_import(self) -> None:
         """Basic test for pass."""
@@ -98,6 +98,5 @@ class TestLoader(TestCase):
 
         finally:
             captured_output.close()
-            JacMachine.detach_machine()
             os.environ.pop("JACPATH", None)
             jacpath_dir.cleanup()

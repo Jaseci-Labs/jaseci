@@ -11,7 +11,6 @@ import sys
 import tempfile
 import types
 from collections import OrderedDict
-from contextvars import ContextVar
 from dataclasses import field
 from functools import wraps
 from typing import (
@@ -66,9 +65,6 @@ P = ParamSpec("P")
 logger = logging.getLogger(__name__)
 
 
-JACMACHINE_CONTEXT = ContextVar["JacMachine | None"]("JacMachine")
-
-
 class JacMachine:
     """JacMachine to handle the VM-related functionalities and loaded programs."""
 
@@ -85,8 +81,6 @@ class JacMachine:
             else os.path.abspath(base_path)
         )
         self.jac_program: JacProgram = JacProgram()
-
-        JACMACHINE_CONTEXT.set(self)
 
     def attach_program(self, jac_program: "JacProgram") -> None:
         """Attach a JacProgram to the machine."""
@@ -112,14 +106,6 @@ class JacMachine:
                 module_name, full_target, caller_dir, cachable, reload=reload
             )
         return None
-
-    def get_sem_ir(self, mod_sem_ir: SemRegistry | None) -> None:
-        """Update semtable on the attached JacProgram."""
-        if self.jac_program and mod_sem_ir:
-            if self.jac_program.sem_ir:
-                self.jac_program.sem_ir.registry.update(mod_sem_ir.registry)
-            else:
-                self.jac_program.sem_ir = mod_sem_ir
 
     def load_module(self, module_name: str, module: types.ModuleType) -> None:
         """Load a module into the machine."""
@@ -299,18 +285,6 @@ class JacMachine:
         if module:
             return getattr(module, architype_name, None)
         return None
-
-    @staticmethod
-    def get(base_path: str = "") -> "JacMachine":
-        """Get current jac machine."""
-        if (jac_machine := JACMACHINE_CONTEXT.get(None)) is None:
-            jac_machine = JacMachine(base_path)
-        return jac_machine
-
-    @staticmethod
-    def detach_machine() -> None:
-        """Detach current jac machine."""
-        JACMACHINE_CONTEXT.set(None)
 
     @staticmethod
     def elevate_root() -> None:
@@ -1030,7 +1004,7 @@ class JacMachine:
     def jac_import(
         self,
         target: str,
-        base_path: str,
+        base_path: str,  # TODO: THis should go away
         absorb: bool = False,
         cachable: bool = True,
         mdl_alias: Optional[str] = None,
@@ -1391,16 +1365,14 @@ class JacMachine:
 
             JacMachine.get_context().mem.remove(anchor.id)
 
-    @staticmethod
     def get_semstr_type(
-        file_loc: str, scope: str, attr: str, return_semstr: bool
+        self, file_loc: str, scope: str, attr: str, return_semstr: bool
     ) -> Optional[str]:
         """Jac's get_semstr_type feature."""
         from jaclang.compiler.semtable import SemInfo, SemScope, SemRegistry
-        from jaclang.runtimelib.machine import JacMachine
 
         _scope = SemScope.get_scope_from_str(scope)
-        jac_program = JacMachine.get().jac_program
+        jac_program = self.jac_program
         mod_registry: SemRegistry = (
             jac_program.sem_ir if jac_program is not None else SemRegistry()
         )
@@ -1409,12 +1381,10 @@ class JacMachine:
             return attr_seminfo.semstr if return_semstr else attr_seminfo.type
         return None
 
-    @staticmethod
-    def obj_scope(file_loc: str, attr: str) -> str:
+    def obj_scope(self, file_loc: str, attr: str) -> str:
         """Jac's gather_scope feature."""
-        from jaclang.runtimelib.machine import JacMachine
 
-        jac_program = JacMachine.get().jac_program
+        jac_program = self.jac_program
         mod_registry: SemRegistry = (
             jac_program.sem_ir if jac_program is not None else SemRegistry()
         )
@@ -1446,13 +1416,11 @@ class JacMachine:
                     )
         return str(attr_scope)
 
-    @staticmethod
-    def get_sem_type(file_loc: str, attr: str) -> tuple[str | None, str | None]:
+    def get_sem_type(self, file_loc: str, attr: str) -> tuple[str | None, str | None]:
         """Jac's get_semstr_type implementation."""
-        from jaclang.runtimelib.machine import JacMachine
         from jaclang.compiler.semtable import SemInfo, SemScope
 
-        jac_program = JacMachine.get().jac_program
+        jac_program = self.jac_program
         mod_registry: SemRegistry = (
             jac_program.sem_ir if jac_program is not None else SemRegistry()
         )
