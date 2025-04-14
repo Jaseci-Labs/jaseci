@@ -44,6 +44,7 @@ class JacProgram:
         self, main_file: Optional[str] = None, mod_bundle: Optional[ast.Module] = None
     ) -> None:
         """Initialize the JacProgram object."""
+        self.main_file = main_file
         self.mod_bundle = mod_bundle
         self.sem_ir = SemRegistry()
         self.modules: dict[str, ast.Module] = {}
