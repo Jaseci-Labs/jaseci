@@ -1792,7 +1792,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 pos_start=0,
                 pos_end=0,
             )
-            values.append(ast.MatchStar(name=name, is_list=True, kid=[name]))
+            values.append(ast.MatchStar(name=name, is_list=False, kid=[name]))
         return ast.MatchMapping(values=values, kid=values)
 
     def proc_match_or(self, node: py_ast.MatchOr) -> ast.MatchOr:
