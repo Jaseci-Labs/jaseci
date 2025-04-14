@@ -6,7 +6,7 @@ from contextlib import redirect_stdout
 from typing import Callable, Optional
 
 import jaclang
-from jaclang.compiler.compile import jac_file_to_pass
+from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.context import ExecutionContext
 from jaclang.utils.test import TestCase
 
@@ -67,7 +67,7 @@ class JacReferenceTests(TestCase):
         try:
             if "tests.jac" in filename or "check_statements.jac" in filename:
                 return
-            jacast = jac_file_to_pass(filename).ir
+            jacast = JacProgram.jac_file_to_pass(filename).ir
             code_content = compile(
                 source=jacast.gen.py_ast[0],
                 filename=jacast.loc.mod_path,

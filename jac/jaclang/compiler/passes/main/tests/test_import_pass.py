@@ -6,10 +6,10 @@ import sys
 
 import jaclang.compiler.absyntree as ast
 from jaclang.cli import cli
-from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.passes.main import JacImportPass
 from jaclang.compiler.passes.main.fuse_typeinfo_pass import FuseTypeInfoPass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import TestCase
 
 
@@ -22,13 +22,17 @@ class ImportPassPassTests(TestCase):
 
     def test_pygen_jac_cli(self) -> None:
         """Basic test for pass."""
-        state = jac_file_to_pass(self.fixture_abs_path("base.jac"), JacImportPass)
+        state = JacProgram.jac_file_to_pass(
+            self.fixture_abs_path("base.jac"), JacImportPass
+        )
         self.assertFalse(state.errors_had)
         self.assertIn("56", str(list(state.ir.jac_prog.modules.values())[1].to_dict()))
 
     def test_import_auto_impl(self) -> None:
         """Basic test for pass."""
-        state = jac_file_to_pass(self.fixture_abs_path("autoimpl.jac"), JacImportPass)
+        state = JacProgram.jac_file_to_pass(
+            self.fixture_abs_path("autoimpl.jac"), JacImportPass
+        )
         num_modules = len(list(state.ir.jac_prog.modules.values())[0].impl_mod)
         mod_names = [
             i.name for i in list(state.ir.jac_prog.modules.values())[0].impl_mod
@@ -40,7 +44,7 @@ class ImportPassPassTests(TestCase):
 
     def test_import_include_auto_impl(self) -> None:
         """Basic test for pass."""
-        state = jac_file_to_pass(
+        state = JacProgram.jac_file_to_pass(
             self.fixture_abs_path("incautoimpl.jac"), JacImportPass
         )
         # Adding 1 because of the included module it self
@@ -62,7 +66,7 @@ class ImportPassPassTests(TestCase):
 
     def test_annexalbe_by_discovery(self) -> None:
         """Basic test for pass."""
-        state = jac_file_to_pass(
+        state = JacProgram.jac_file_to_pass(
             self.fixture_abs_path("incautoimpl.jac"), JacImportPass
         )
         count = 0
@@ -79,7 +83,7 @@ class ImportPassPassTests(TestCase):
 
     def test_py_raise_map(self) -> None:
         """Basic test for pass."""
-        build = jac_file_to_pass(
+        build = JacProgram.jac_file_to_pass(
             self.fixture_abs_path("py_imp_test.jac"),
             FuseTypeInfoPass,
             schedule=py_code_gen_typed,
@@ -107,7 +111,7 @@ class ImportPassPassTests(TestCase):
 
     def test_py_raised_mods(self) -> None:
         """Basic test for pass."""
-        state = jac_file_to_pass(
+        state = JacProgram.jac_file_to_pass(
             self.fixture_abs_path("py_imp_test.jac"), schedule=py_code_gen_typed
         )
         for i in list(

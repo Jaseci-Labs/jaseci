@@ -5,6 +5,9 @@ These are various pass schedules for the Jac compiler and static analysis.
 
 from __future__ import annotations
 
+from typing import Type
+
+from jaclang.compiler.passes import Pass
 
 from .import_pass import PyImportPass  # noqa: I100
 from .def_impl_match_pass import DeclImplMatchPass  # noqa: I100
@@ -19,7 +22,7 @@ from .access_modifier_pass import AccessCheckPass  # noqa: I100
 from .py_collect_dep_pass import PyCollectDepsPass  # noqa: I100
 from .inheritance_pass import InheritancePass  # noqa: I100
 
-py_code_gen = [
+py_code_gen: list[Type[Pass]] = [
     DeclImplMatchPass,
     DefUsePass,
     RegistryPass,
@@ -28,7 +31,7 @@ py_code_gen = [
     PyBytecodeGenPass,
 ]
 
-type_checker_sched = [
+type_checker_sched: list[Type[Pass]] = [
     PyCollectDepsPass,
     PyImportPass,
     DefUsePass,
