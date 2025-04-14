@@ -91,7 +91,7 @@ class Anchor:
 
     def populate(self) -> None:
         """Retrieve the Architype from db and return."""
-        from jaclang.runtimelib.plugin.feature import JacFeature as Jac
+        from jaclang.runtimelib.machine import JacMachine as Jac
 
         jsrc = Jac.get_context().mem
 

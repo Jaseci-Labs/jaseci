@@ -14,7 +14,7 @@ setup(
         "": ["*.ini"],
     },
     entry_points={
-        "jac": ["create_cmd = cmd_show.show:JacCmd"],
+        "jac": ["create_cmd = cmd_show.show:"],
     },
     author="Sivasuthan S",
     author_email="sivasuthan.sukumar@jaseci.org",

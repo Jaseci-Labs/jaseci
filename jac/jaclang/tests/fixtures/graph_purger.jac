@@ -1,4 +1,4 @@
-import:py from jaclang.runtimelib.plugin.feature {JacFeature as Jac}
+import:py from jaclang.runtimelib.machine {JacMachine as Jac}
 
 node A {
     has id: int;

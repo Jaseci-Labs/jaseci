@@ -21,14 +21,12 @@ from jaclang.runtimelib.builtin import dotgen
 from jaclang.runtimelib.constructs import WalkerArchitype
 from jaclang.runtimelib.context import ExecutionContext
 from jaclang.runtimelib.machine import JacMachine
-from jaclang.runtimelib.plugin.feature import JacCmd as Cmd
-from jaclang.runtimelib.plugin.feature import JacFeature as Jac
 from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
 
 
-Cmd.create_cmd()
-Jac.setup()
+# Cmd.create_cmd()
+JacMachine.setup()
 
 
 @cmd_registry.register
@@ -165,7 +163,7 @@ def get_object(
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
     data = {}
-    obj = Jac.get_object(id)
+    obj = JacMachine.get_object(id)
     if obj:
         data = obj.__jac__.__getstate__()
     else:
@@ -291,10 +289,10 @@ def enter(
 
             jctx.set_entry_node(node)
 
-            if isinstance(architype, WalkerArchitype) and Jac.check_read_access(
+            if isinstance(architype, WalkerArchitype) and JacMachine.check_read_access(
                 jctx.entry_node
             ):
-                Jac.spawn_call(jctx.entry_node.architype, architype)
+                JacMachine.spawn_call(jctx.entry_node.architype, architype)
 
     jctx.close()
     JacMachine.detach_machine()
@@ -324,7 +322,7 @@ def test(
     """
     jctx = ExecutionContext.create()
 
-    failcount = Jac.run_test(
+    failcount = JacMachine.run_test(
         filepath=filepath,
         func_name=("test_" + test_name) if test_name else None,
         filter=filter,

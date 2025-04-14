@@ -26,7 +26,7 @@ from jaclang.runtimelib.architype import (
     WalkerArchitype,
 )
 from jaclang.runtimelib.builtin import dotgen, jid, jobj  # noqa: F401
-from jaclang.runtimelib.plugin.feature import EdgeDir, JacFeature as Jac, plugin_manager
+from jaclang.runtimelib.machine import EdgeDir, JacMachine as Jac
 
 
 __all__ = [
@@ -170,14 +170,14 @@ class Node(NodeArchitype):
             if edge
             else None
         )
-        ret = plugin_manager.hook.edge_ref(
+        ret = Jac.edge_ref(
             node_obj=self,
-            target_obj=target,
+            target_obj=target,  # type: ignore [arg-type]
             dir=dir,
-            filter_func=filter_func,
+            filter_func=filter_func,  # type: ignore [arg-type]
             edges_only=edges_only,
         )
-        return JacList(ret)
+        return JacList(ret)  # type: ignore [arg-type]
 
 
 class Edge(EdgeArchitype):

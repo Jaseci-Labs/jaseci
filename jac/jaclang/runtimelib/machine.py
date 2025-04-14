@@ -17,11 +17,13 @@ from functools import wraps
 from typing import (
     Any,
     Callable,
+    ClassVar,
     Mapping,
     Optional,
     ParamSpec,
     Sequence,
     Type,
+    TypeAlias,
     TypeVar,
     Union,
     cast,
@@ -69,6 +71,14 @@ JACMACHINE_CONTEXT = ContextVar["JacMachine | None"]("JacMachine")
 
 class JacMachine:
     """JacMachine to handle the VM-related functionalities and loaded programs."""
+
+    EdgeDir: ClassVar[TypeAlias] = EdgeDir
+    DSFunc: ClassVar[TypeAlias] = DSFunc
+    RootType: ClassVar[TypeAlias] = Root
+    Obj: ClassVar[TypeAlias] = Architype
+    Node: ClassVar[TypeAlias] = NodeArchitype
+    Edge: ClassVar[TypeAlias] = EdgeArchitype
+    Walker: ClassVar[TypeAlias] = WalkerArchitype
 
     def __init__(self, base_path: str = "") -> None:
         """Initialize the JacMachine object."""
@@ -318,7 +328,9 @@ class JacMachine:
 
     @staticmethod
     def allow_root(
-        architype: Architype, root_id: UUID, level: AccessLevel | int | str
+        architype: Architype,
+        root_id: UUID,
+        level: AccessLevel | int | str = AccessLevel.READ,
     ) -> None:
         """Allow all access from target root graph to current Architype."""
         level = AccessLevel.cast(level)
@@ -330,7 +342,9 @@ class JacMachine:
 
     @staticmethod
     def disallow_root(
-        architype: Architype, root_id: UUID, level: AccessLevel | int | str
+        architype: Architype,
+        root_id: UUID,
+        level: AccessLevel | int | str = AccessLevel.READ,
     ) -> None:
         """Disallow all access from target root graph to current Architype."""
         level = AccessLevel.cast(level)
@@ -339,7 +353,9 @@ class JacMachine:
         access.anchors.pop(str(root_id), None)
 
     @staticmethod
-    def unrestrict(architype: Architype, level: AccessLevel | int | str) -> None:
+    def unrestrict(
+        architype: Architype, level: AccessLevel | int | str = AccessLevel.READ
+    ) -> None:
         """Allow everyone to access current Architype."""
         anchor = architype.__jac__
         level = AccessLevel.cast(level)
@@ -423,7 +439,7 @@ class JacMachine:
         return access_level
 
     @staticmethod
-    def node_dot(node: NodeArchitype, dot_file: Optional[str]) -> str:
+    def node_dot(node: NodeArchitype, dot_file: Optional[str] = None) -> str:
         """Generate Dot file for visualizing nodes and edges."""
         visited_nodes: set[NodeAnchor] = set()
         connections: set[tuple[NodeArchitype, NodeArchitype, str]] = set()
