@@ -331,10 +331,9 @@ def jac_import(
 ) -> tuple[ModuleType, ...]:
     """Import a module."""
     base_path = base_path or os.path.dirname(inspect.stack()[1].filename)
-    caller_frame = inspect.stack()[1].frame
-    machine = caller_frame.f_locals.get("__jac_mach__") or caller_frame.f_globals.get(
-        "__jac_mach__"
-    )
+    machine = inspect.stack()[1].frame.f_locals.get("__jac_mach__") or inspect.stack()[
+        1
+    ].frame.f_globals.get("__jac_mach__")
     if not machine:
         machine = Jac(base_path=base_path)
     return machine.jac_import(

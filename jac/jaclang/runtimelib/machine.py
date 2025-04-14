@@ -709,18 +709,26 @@ class JacMachine:
         walker.__jac__.disengaged = True
         return True
 
-    @staticmethod
     def dotgen(
-        node: NodeArchitype,
-        depth: int,
-        traverse: bool,
-        edge_type: Optional[list[str]],
-        bfs: bool,
-        edge_limit: int,
-        node_limit: int,
-        dot_file: Optional[str],
+        self,
+        node: Optional[NodeArchitype] = None,
+        depth: Optional[int] = None,
+        traverse: Optional[bool] = None,
+        edge_type: Optional[list[str]] = None,
+        bfs: Optional[bool] = None,
+        edge_limit: Optional[int] = None,
+        node_limit: Optional[int] = None,
+        dot_file: Optional[str] = None,
     ) -> str:
         """Generate Dot file for visualizing nodes and edges."""
+        root = JacMachine.get_root()
+        node = node if node is not None else root
+        depth = depth if depth is not None else -1
+        traverse = traverse if traverse is not None else False
+        bfs = bfs if bfs is not None else True
+        edge_limit = edge_limit if edge_limit is not None else 512
+        node_limit = node_limit if node_limit is not None else 512
+
         edge_type = edge_type if edge_type else []
         visited_nodes: list[NodeArchitype] = []
         node_depths: dict[NodeArchitype, int] = {node: 0}

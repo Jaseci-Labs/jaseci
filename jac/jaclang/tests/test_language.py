@@ -334,6 +334,17 @@ class JacLanguageTests(TestCase):
     #     stdout_value = captured_output.getvalue()
     #     self.assertIn("one level deeperslHello World!", stdout_value)
     #     self.assertIn("module 'pyfunc' from ", stdout_value)
+    def test_dot_ordering_bug_fix(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        os.chdir(self.fixture_abs_path("./deep/deeper/"))
+        cli.dot(f"{self.examples_abs_path('reference/connect_expressions.jac')}")
+        cli.run("deep_outer_import.jac")
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("one level deeperslHello World!", stdout_value)
+        self.assertIn("module 'pyfunc' from ", stdout_value)
 
     def test_has_lambda_goodness(self) -> None:
         """Test has lambda_goodness."""

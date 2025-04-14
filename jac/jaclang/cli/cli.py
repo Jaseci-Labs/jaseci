@@ -17,7 +17,6 @@ from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 from jaclang.compiler.passes.main.schedules import py_code_gen_build, py_code_gen_typed
 from jaclang.compiler.program import JacProgram
-from jaclang.runtimelib.builtin import dotgen
 from jaclang.runtimelib.constructs import WalkerArchitype
 from jaclang.runtimelib.context import ExecutionContext
 from jaclang.runtimelib.machine import JacMachine
@@ -443,11 +442,9 @@ def dot(
     if filename.endswith(".jac"):
         jac_machine = JacMachine(base)
         jac_machine.jac_import(target=mod, base_path=base, override_name="__main__")
-        module = jac_machine.loaded_modules.get("__main__")
-        globals().update(vars(module))
         try:
             node = globals().get(initial, eval(initial)) if initial else None
-            graph = dotgen(
+            graph = jac_machine.dotgen(
                 node=node,
                 depth=depth,
                 traverse=traverse,
