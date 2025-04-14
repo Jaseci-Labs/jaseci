@@ -52,12 +52,13 @@ class SemIR:
                 (curr_node.sym_tab.name, str(type(curr_node)).split(".")[-1][0:-2])
             )
             curr_node = curr_node.parent
-        symboltable_trace.reverse()[0:-2]
-        print(symboltable_trace)
+        symboltable_trace.reverse()
+        symboltable_trace = symboltable_trace[0:-2]
+        # print(symboltable_trace[0:-2])
 
         curr_sem_node = self.tree
         for name, node_type in symboltable_trace:
-            if node_type in ["SubNodeList"]:
+            if node_type in ["SubNodeList", "ArchHas"]:
                 continue
             node_found = False
             for child in curr_sem_node.children:
