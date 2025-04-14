@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Optional
 
 from jaclang.runtimelib.constructs import Architype, NodeArchitype
-from jaclang.runtimelib.machine import JacMachine as Jac
+from jaclang.runtimelib.machine import JacMachine as JacMachine
 
 __all__ = [
     "dotgen",
@@ -26,7 +26,7 @@ def dotgen(
 ) -> str:
     """Print the dot graph."""
 
-    root = Jac.get_root()
+    root = JacMachine.get_root()
     node = node if node is not None else root
     depth = depth if depth is not None else -1
     traverse = traverse if traverse is not None else False
@@ -34,7 +34,7 @@ def dotgen(
     edge_limit = edge_limit if edge_limit is not None else 512
     node_limit = node_limit if node_limit is not None else 512
 
-    return Jac.dotgen(
+    return JacMachine.dotgen(
         edge_type=edge_type,
         node=node,
         depth=depth,
@@ -48,9 +48,9 @@ def dotgen(
 
 def jid(obj: Architype) -> str:
     """Get the id of the object."""
-    return Jac.object_ref(obj)
+    return JacMachine.object_ref(obj)
 
 
 def jobj(id: str) -> Architype | None:
     """Get the object from the id."""
-    return Jac.get_object(id)
+    return JacMachine.get_object(id)

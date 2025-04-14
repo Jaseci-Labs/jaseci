@@ -91,9 +91,9 @@ class Anchor:
 
     def populate(self) -> None:
         """Retrieve the Architype from db and return."""
-        from jaclang.runtimelib.machine import JacMachine as Jac
+        from jaclang.runtimelib.machine import JacMachine as JacMachine
 
-        jsrc = Jac.get_context().mem
+        jsrc = JacMachine.get_context().mem
 
         if anchor := jsrc.find_by_id(self.id):
             self.__dict__.update(anchor.__dict__)

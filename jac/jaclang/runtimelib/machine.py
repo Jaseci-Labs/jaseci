@@ -72,14 +72,6 @@ JACMACHINE_CONTEXT = ContextVar["JacMachine | None"]("JacMachine")
 class JacMachine:
     """JacMachine to handle the VM-related functionalities and loaded programs."""
 
-    EdgeDir: ClassVar[TypeAlias] = EdgeDir
-    DSFunc: ClassVar[TypeAlias] = DSFunc
-    RootType: ClassVar[TypeAlias] = Root
-    Obj: ClassVar[TypeAlias] = Architype
-    Node: ClassVar[TypeAlias] = NodeArchitype
-    Edge: ClassVar[TypeAlias] = EdgeArchitype
-    Walker: ClassVar[TypeAlias] = WalkerArchitype
-
     def __init__(self, base_path: str = "") -> None:
         """Initialize the JacMachine object."""
         self.loaded_modules: dict[str, types.ModuleType] = {}
@@ -1027,17 +1019,17 @@ class JacMachine:
 
         return decorator
 
-    @staticmethod
     def jac_import(
+        self,
         target: str,
         base_path: str,
-        absorb: bool,
-        cachable: bool,
-        mdl_alias: Optional[str],
-        override_name: Optional[str],
-        lng: Optional[str],
-        items: Optional[dict[str, Union[str, Optional[str]]]],
-        reload_module: Optional[bool],
+        absorb: bool = False,
+        cachable: bool = True,
+        mdl_alias: Optional[str] = None,
+        override_name: Optional[str] = None,
+        lng: Optional[str] = "jac",
+        items: Optional[dict[str, Union[str, Optional[str]]]] = None,
+        reload_module: Optional[bool] = False,
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
         spec = ImportPathSpec(
@@ -1050,17 +1042,13 @@ class JacMachine:
             lng,
             items,
         )
-
-        jac_machine = JacMachine.get(base_path)
-        if not jac_machine.jac_program:
-            jac_machine.attach_program(JacProgram())
+        if not self.jac_program:
+            self.attach_program(JacProgram())
 
         if lng == "py":
-            import_result = PythonImporter(JacMachine.get()).run_import(spec)
+            import_result = PythonImporter(self).run_import(spec)
         else:
-            import_result = JacImporter(JacMachine.get()).run_import(
-                spec, reload_module
-            )
+            import_result = JacImporter(self).run_import(spec, reload_module)
 
         return (
             (import_result.ret_mod,)
@@ -1082,8 +1070,8 @@ class JacMachine:
 
         return test_deco
 
-    @staticmethod
     def run_test(
+        self,
         filepath: str,
         func_name: Optional[str],
         filter: Optional[str],
@@ -1103,7 +1091,7 @@ class JacMachine:
                 if mod_name.endswith(".test"):
                     mod_name = mod_name[:-5]
                 JacTestCheck.reset()
-                JacMachine.jac_import(
+                self.jac_import(
                     target=mod_name,
                     base_path=base,
                     cachable=False,
@@ -1141,7 +1129,7 @@ class JacMachine:
                         test_file = True
                         print(f"\n\n\t\t* Inside {root_dir}" + "/" + f"{file} *")
                         JacTestCheck.reset()
-                        JacMachine.jac_import(
+                        self.jac_import(
                             target=file[:-4],
                             base_path=root_dir,
                             absorb=False,
@@ -1645,3 +1633,11 @@ class JacMachine:
             "include_info": [],
             "exclude_info": [],
         }
+
+    EdgeDir: ClassVar[TypeAlias] = EdgeDir
+    DSFunc: ClassVar[TypeAlias] = DSFunc
+    RootType: ClassVar[TypeAlias] = Root
+    Obj: ClassVar[TypeAlias] = Architype
+    Node: ClassVar[TypeAlias] = NodeArchitype
+    Edge: ClassVar[TypeAlias] = EdgeArchitype
+    Walker: ClassVar[TypeAlias] = WalkerArchitype

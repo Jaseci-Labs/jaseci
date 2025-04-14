@@ -198,7 +198,12 @@ class Edge(EdgeArchitype):
 def _root_factory(cls: Type["Root"]) -> Type["Root"]:
     """Create a new root class."""
     cls = dataclass(eq=False)(cls)  # type: ignore [arg-type, assignment]
-    cls = Jac.make_architype(cls, RootArchitype, on_entry=[], on_exit=[])  # type: ignore [assignment, attr-defined]
+    cls = Jac.make_architype(
+        cls,
+        RootArchitype,
+        on_entry=[],
+        on_exit=[],
+    )  # type: ignore [assignment, attr-defined]
     return cls
 
 
@@ -326,7 +331,13 @@ def jac_import(
 ) -> tuple[ModuleType, ...]:
     """Import a module."""
     base_path = base_path or os.path.dirname(inspect.stack()[1].filename)
-    return Jac.jac_import(
+    caller_frame = inspect.stack()[1].frame
+    machine = caller_frame.f_locals.get("__jac_mach__") or caller_frame.f_globals.get(
+        "__jac_mach__"
+    )
+    if not machine:
+        machine = Jac(base_path=base_path)
+    return machine.jac_import(
         target=target,
         lng=lng,
         base_path=base_path,

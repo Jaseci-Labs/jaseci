@@ -322,7 +322,7 @@ def test(
     """
     jctx = ExecutionContext.create()
 
-    failcount = JacMachine.run_test(
+    failcount = JacMachine().run_test(
         filepath=filepath,
         func_name=("test_" + test_name) if test_name else None,
         filter=filter,
@@ -442,7 +442,7 @@ def dot(
 
     if filename.endswith(".jac"):
         jac_machine = JacMachine(base)
-        jac_import(target=mod, base_path=base, override_name="__main__")
+        jac_machine.jac_import(target=mod, base_path=base, override_name="__main__")
         module = jac_machine.loaded_modules.get("__main__")
         globals().update(vars(module))
         try:
