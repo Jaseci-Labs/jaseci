@@ -869,9 +869,7 @@ class JacFeatureImpl(
 
         jac_machine = JacMachine.get(base_path)
         if not jac_machine.jac_program:
-            jac_machine.attach_program(
-                JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
-            )
+            jac_machine.attach_program(JacProgram())
 
         if lng == "py":
             import_result = PythonImporter(JacMachine.get()).run_import(spec)

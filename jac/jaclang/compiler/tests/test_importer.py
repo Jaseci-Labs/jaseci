@@ -15,18 +15,14 @@ class TestLoader(TestCase):
 
     def test_import_basic_python(self) -> None:
         """Test basic self loading."""
-        JacMachine(self.fixture_abs_path(__file__)).attach_program(
-            JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
-        )
+        JacMachine(self.fixture_abs_path(__file__)).attach_program(JacProgram())
         (h,) = jac_import("fixtures.hello_world", base_path=__file__)
         self.assertEqual(h.hello(), "Hello World!")  # type: ignore
         JacMachine.detach_machine()
 
     def test_modules_correct(self) -> None:
         """Test basic self loading."""
-        JacMachine(self.fixture_abs_path(__file__)).attach_program(
-            JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
-        )
+        JacMachine(self.fixture_abs_path(__file__)).attach_program(JacProgram())
         jac_import("fixtures.hello_world", base_path=__file__)
         self.assertIn(
             "module 'fixtures.hello_world'",
@@ -90,9 +86,7 @@ class TestLoader(TestCase):
         sys.stdout = captured_output
 
         try:
-            JacMachine(self.fixture_abs_path(__file__)).attach_program(
-                JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
-            )
+            JacMachine(self.fixture_abs_path(__file__)).attach_program(JacProgram())
             jac_import(module_name, base_path=__file__)
             cli.run(jac_file_path)
 

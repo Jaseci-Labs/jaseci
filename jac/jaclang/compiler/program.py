@@ -32,18 +32,20 @@ logger = logging.getLogger(__name__)
 
 
 class JacProgram:
-    """Class to hold the mod_bundle bytecode and sem_ir for Jac modules."""
+    """Jac Program class.
+
+    This class is used to represent a Jac program and its associated
+    components, such as the abstract syntax tree (AST), bytecode, and
+    semantic registry. It provides methods for compiling Jac files,
+    generating bytecode, and managing the program's modules.
+    """
 
     def __init__(
-        self,
-        mod_bundle: Optional[ast.Module],
-        bytecode: Optional[dict[str, bytes]],
-        sem_ir: Optional[SemRegistry],
+        self, main_file: Optional[str] = None, mod_bundle: Optional[ast.Module] = None
     ) -> None:
         """Initialize the JacProgram object."""
         self.mod_bundle = mod_bundle
-        self.bytecode = bytecode or {}
-        self.sem_ir = sem_ir if sem_ir else SemRegistry()
+        self.sem_ir = SemRegistry()
         self.modules: dict[str, ast.Module] = {}
         self.last_imported: list[ast.Module] = []
 
@@ -135,7 +137,7 @@ class JacProgram:
 
         # Creating a new JacProgram and attaching it to top module
         top_mod: ast.Module = ast_ret.ir
-        top_mod.jac_prog = JacProgram(None, None, None)
+        top_mod.jac_prog = JacProgram()
         top_mod.jac_prog.last_imported.append(ast_ret.ir)
         top_mod.jac_prog.modules[ast_ret.ir.loc.mod_path] = ast_ret.ir
 
@@ -215,7 +217,7 @@ class JacProgram:
 
         # Creating a new JacProgram and attaching it to top module
         top_mod: ast.Module = ast_ret.ir
-        top_mod.jac_prog = JacProgram(None, None, None)
+        top_mod.jac_prog = JacProgram()
         top_mod.jac_prog.last_imported.append(ast_ret.ir)
         top_mod.jac_prog.modules[ast_ret.ir.loc.mod_path] = ast_ret.ir
 
