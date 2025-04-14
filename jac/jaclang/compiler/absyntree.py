@@ -31,7 +31,6 @@ from jaclang.compiler.constant import (
 )
 from jaclang.compiler.constant import DELIM_MAP, SymbolAccess, Tokens as Tok
 from jaclang.compiler.py_info import PyInfo
-from jaclang.compiler.semtable import SemRegistry
 from jaclang.utils.treeprinter import dotgen_ast_tree, print_ast_tree
 
 if TYPE_CHECKING:
@@ -638,7 +637,6 @@ class Module(AstDocNode):
         terminals: list[Token],
         kid: Sequence[AstNode],
         stub_only: bool = False,
-        registry: Optional[SemRegistry] = None,
     ) -> None:
         """Initialize whole program node."""
         from jaclang.runtimelib.machine import JacProgram
@@ -651,7 +649,6 @@ class Module(AstDocNode):
         self.impl_mod: list[Module] = []
         self.test_mod: list[Module] = []
         self.mod_deps: dict[str, Module] = {}
-        self.registry = registry
         self.terminals: list[Token] = terminals
         self.py_info: PyInfo = PyInfo()
         self.jac_prog: Optional[JacProgram] = None
