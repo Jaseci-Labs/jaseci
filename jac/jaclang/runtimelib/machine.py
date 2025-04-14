@@ -12,7 +12,7 @@ from typing import Optional, Union
 
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.program import JacProgram
-from jaclang.compiler.semtable import SemRegistry
+from jaclang.compiler.semir import SemIR
 from jaclang.runtimelib.architype import (
     Architype,
     EdgeArchitype,
@@ -74,13 +74,13 @@ class JacMachine:
             )
         return None
 
-    def get_sem_ir(self, mod_sem_ir: SemRegistry | None) -> None:
+    def get_sem_ir(self, mod_sem_ir: SemIR | None) -> None:
         """Update semtable on the attached JacProgram."""
         if self.jac_program and mod_sem_ir:
-            if self.jac_program.sem_ir:
-                self.jac_program.sem_ir.registry.update(mod_sem_ir.registry)
-            else:
-                self.jac_program.sem_ir = mod_sem_ir
+            # if self.jac_program.sem_ir:
+            #     self.jac_program.sem_ir.registry.update(mod_sem_ir.registry)
+            # else:
+            self.jac_program.sem_ir = mod_sem_ir
 
     def load_module(self, module_name: str, module: types.ModuleType) -> None:
         """Load a module into the machine."""

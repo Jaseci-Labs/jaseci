@@ -10,7 +10,7 @@ from typing import Optional
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.compile import compile_jac
 from jaclang.compiler.constant import Constants as Con
-from jaclang.compiler.semtable import SemRegistry
+from jaclang.compiler.semir import SemIR
 from jaclang.utils.log import logging
 
 
@@ -24,12 +24,12 @@ class JacProgram:
         self,
         mod_bundle: Optional[Module],
         bytecode: Optional[dict[str, bytes]],
-        sem_ir: Optional[SemRegistry],
+        sem_ir: Optional[SemIR],
     ) -> None:
         """Initialize the JacProgram object."""
         self.mod_bundle = mod_bundle
         self.bytecode = bytecode or {}
-        self.sem_ir = sem_ir if sem_ir else SemRegistry()
+        self.sem_ir = sem_ir if sem_ir else SemIR()
         self.modules: dict[str, Module] = {}
         self.last_imported: list[Module] = []
 
