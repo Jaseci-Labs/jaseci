@@ -9,6 +9,8 @@ from dataclasses import (
     is_dataclass,
 )
 from enum import Enum
+from functools import cached_property
+from itertools import islice
 from os import getenv
 from pickle import dumps as pdumps
 from re import IGNORECASE, compile
@@ -32,7 +34,6 @@ from jaclang.runtimelib.architype import (
     Access as _Access,
     AccessLevel,
     Anchor,
-    DSFunc,
     EdgeAnchor as _EdgeAnchor,
     EdgeArchitype as _EdgeArchitype,
     NodeAnchor as _NodeAnchor,
@@ -970,8 +971,7 @@ class BaseArchitype:
     def __set_classes__(cls) -> dict[str, Any]:
         """Initialize Jac Classes."""
         jac_classes = {}
-        sub_cls = cls.__subclasses__()
-        for sub in sub_cls:
+        for sub in cls.__subclasses__():
             sub.__jac_hintings__ = get_type_hints(sub)
             jac_classes[sub.__name__] = sub
         cls.__jac_classes__ = jac_classes
@@ -995,11 +995,12 @@ class BaseArchitype:
 class NodeArchitype(BaseArchitype, _NodeArchitype):
     """Node Architype Protocol."""
 
-    __jac__: NodeAnchor
+    __jac_base__: ClassVar[bool] = True
 
-    def __init__(self) -> None:
-        """Create node architype."""
-        self.__jac__ = NodeAnchor(
+    @cached_property
+    def __jac__(self) -> NodeAnchor:  # type: ignore[override]
+        """Create default anchor."""
+        return NodeAnchor(
             architype=self,
             name=self.__class__.__name__,
             edges=[],
@@ -1016,12 +1017,13 @@ class NodeArchitype(BaseArchitype, _NodeArchitype):
     def __set_classes__(cls) -> dict[str, Any]:
         """Initialize Jac Classes."""
         jac_classes: dict[str, type[BaseArchitype]] = {}
-        sub_cls = cls.__subclasses__()
-        sub_cls[0].__jac_hintings__ = get_type_hints(sub_cls[0])
-        for sub in sub_cls[1:]:
+
+        for sub in islice(cls.__subclasses__(), 1, None):
             sub.__jac_hintings__ = get_type_hints(sub)
             jac_classes[sub.__name__] = sub
-        jac_classes[""] = sub_cls[0]
+
+        Root.__jac_hintings__ = get_type_hints(Root)
+        jac_classes[""] = Root
         cls.__jac_classes__ = jac_classes
         return jac_classes
 
@@ -1029,6 +1031,7 @@ class NodeArchitype(BaseArchitype, _NodeArchitype):
 class EdgeArchitype(BaseArchitype, _EdgeArchitype):
     """Edge Architype Protocol."""
 
+    __jac_base__: ClassVar[bool] = True
     __jac__: EdgeAnchor
 
     @classmethod
@@ -1040,12 +1043,13 @@ class EdgeArchitype(BaseArchitype, _EdgeArchitype):
     def __set_classes__(cls) -> dict[str, Any]:
         """Initialize Jac Classes."""
         jac_classes: dict[str, type[BaseArchitype]] = {}
-        sub_cls = cls.__subclasses__()
-        sub_cls[0].__jac_hintings__ = get_type_hints(sub_cls[0])
-        for sub in sub_cls[1:]:
+
+        for sub in islice(cls.__subclasses__(), 1, None):
             sub.__jac_hintings__ = get_type_hints(sub)
             jac_classes[sub.__name__] = sub
-        jac_classes[""] = sub_cls[0]
+
+        GenericEdge.__jac_hintings__ = get_type_hints(GenericEdge)
+        jac_classes[""] = GenericEdge
         cls.__jac_classes__ = jac_classes
         return jac_classes
 
@@ -1053,11 +1057,12 @@ class EdgeArchitype(BaseArchitype, _EdgeArchitype):
 class WalkerArchitype(BaseArchitype, _WalkerArchitype):
     """Walker Architype Protocol."""
 
-    __jac__: WalkerAnchor
+    __jac_base__: ClassVar[bool] = True
 
-    def __init__(self) -> None:
-        """Create walker architype."""
-        self.__jac__ = WalkerAnchor(
+    @cached_property
+    def __jac__(self) -> WalkerAnchor:  # type: ignore[override]
+        """Create default anchor."""
+        return WalkerAnchor(
             architype=self,
             name=self.__class__.__name__,
             access=Permission(),
@@ -1069,15 +1074,24 @@ class WalkerArchitype(BaseArchitype, _WalkerArchitype):
         """Get class naming."""
         return f"w:{cls.__name__}"
 
+    def __init_subclass__(cls) -> None:
+        """Configure subclasses."""
+        if not cls.__dict__.get("__jac_base__", False):
+            from jac_cloud.plugin.implementation.api import populate_apis
+
+            Jac.make_architype(cls)
+            populate_apis(cls)
+
 
 class ObjectArchitype(BaseArchitype, _ObjectArchitype):
     """Object Architype Protocol."""
 
-    __jac__: ObjectAnchor
+    __jac_base__: ClassVar[bool] = True
 
-    def __init__(self) -> None:
-        """Create default architype."""
-        self.__jac__ = ObjectAnchor(
+    @cached_property
+    def __jac__(self) -> ObjectAnchor:  # type: ignore[override]
+        """Create default anchor."""
+        return ObjectAnchor(
             architype=self,
             name=self.__class__.__name__,
             access=Permission(),
@@ -1085,18 +1099,14 @@ class ObjectArchitype(BaseArchitype, _ObjectArchitype):
         )
 
 
+@dataclass(eq=False)
 class GenericEdge(EdgeArchitype):
     """Generic Root Node."""
 
-    _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
-    _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
 
-
+@dataclass(eq=False)
 class Root(NodeArchitype):
     """Generic Root Node."""
-
-    _jac_entry_funcs_: ClassVar[list[DSFunc]] = []
-    _jac_exit_funcs_: ClassVar[list[DSFunc]] = []
 
     def __init__(self) -> None:
         """Create node architype."""

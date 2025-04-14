@@ -351,11 +351,13 @@ components:
           anyOf:
           - type: integer
           - type: string
+          default: 0
           title: Level
         root_id:
           title: Root Id
           type: string
         via_all:
+          default: false
           title: Via All
           type: boolean
       required:
@@ -413,6 +415,7 @@ components:
           title: Root Id
           type: string
         via_all:
+          default: false
           title: Via All
           type: boolean
       required:

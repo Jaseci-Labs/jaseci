@@ -1,8 +1,6 @@
 """Jac Language Features."""
 
-from collections import OrderedDict
 from contextlib import suppress
-from functools import wraps
 from typing import Callable, Type
 
 from jaclang.compiler.constant import EdgeDir
@@ -12,10 +10,9 @@ from jaclang.plugin.default import (
     hookimpl,
 )
 from jaclang.plugin.feature import JacFeature as Jac
-from jaclang.runtimelib.architype import Architype, DSFunc
+from jaclang.runtimelib.architype import Architype
 from jaclang.runtimelib.utils import all_issubclass
 
-from .implementation.api import populate_apis
 from ..core.architype import (
     AccessLevel,
     Anchor,
@@ -188,7 +185,7 @@ class JacNodePlugin:
     def get_edges(
         node: NodeAnchor,
         dir: EdgeDir,
-        filter_func: Callable[[list[EdgeArchitype]], list[EdgeArchitype]] | None,
+        filter: Callable[[EdgeArchitype], bool] | None,
         target_obj: list[NodeArchitype] | None,
     ) -> list[EdgeArchitype]:
         """Get edges connected to this node."""
@@ -196,7 +193,7 @@ class JacNodePlugin:
             JaseciContext.get().mem.populate_data(node.edges)
 
         return JacFeatureImpl.get_edges(
-            node=node, dir=dir, filter_func=filter_func, target_obj=target_obj  # type: ignore[arg-type, return-value]
+            node=node, dir=dir, filter=filter, target_obj=target_obj  # type: ignore[arg-type, return-value]
         )
 
     @staticmethod
@@ -204,7 +201,7 @@ class JacNodePlugin:
     def edges_to_nodes(
         node: NodeAnchor,
         dir: EdgeDir,
-        filter_func: Callable[[list[EdgeArchitype]], list[EdgeArchitype]] | None,
+        filter: Callable[[EdgeArchitype], bool] | None,
         target_obj: list[NodeArchitype] | None,
     ) -> list[NodeArchitype]:
         """Get set of nodes connected to this node."""
@@ -212,7 +209,7 @@ class JacNodePlugin:
             JaseciContext.get().mem.populate_data(node.edges)
 
         return JacFeatureImpl.edges_to_nodes(
-            node=node, dir=dir, filter_func=filter_func, target_obj=target_obj  # type: ignore[arg-type, return-value]
+            node=node, dir=dir, filter=filter, target_obj=target_obj  # type: ignore[arg-type, return-value]
         )
 
 
@@ -236,6 +233,18 @@ class JacEdgePlugin:
 
 class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
     """Jaseci Implementations."""
+
+    @staticmethod
+    @hookimpl
+    def setup() -> None:
+        """Set Class References."""
+        Jac.Obj = ObjectArchitype
+        Jac.Node = NodeArchitype
+        Jac.Edge = EdgeArchitype
+        Jac.Walker = WalkerArchitype
+
+        Jac.Root = Root  # type: ignore[assignment]
+        Jac.GenericEdge = GenericEdge  # type: ignore[assignment]
 
     @staticmethod
     @hookimpl
@@ -279,162 +288,10 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
-    def make_architype(
-        cls: type,
-        arch_base: Type[Architype],
-        on_entry: list[DSFunc],
-        on_exit: list[DSFunc],
-    ) -> Type[Architype]:
-        """Create a new architype."""
-        for i in on_entry + on_exit:
-            i.resolve(cls)
-        if not hasattr(cls, "_jac_entry_funcs_") or not hasattr(
-            cls, "_jac_exit_funcs_"
-        ):
-            # Saving the module path and reassign it after creating cls
-            # So the jac modules are part of the correct module
-            cur_module = cls.__module__
-            cls = type(cls.__name__, (cls, arch_base), {})
-            cls.__module__ = cur_module
-            cls._jac_entry_funcs_ = on_entry  # type: ignore
-            cls._jac_exit_funcs_ = on_exit  # type: ignore
-        else:
-            new_entry_funcs = OrderedDict(zip([i.name for i in on_entry], on_entry))
-            entry_funcs = OrderedDict(
-                zip([i.name for i in cls._jac_entry_funcs_], cls._jac_entry_funcs_)
-            )
-            entry_funcs.update(new_entry_funcs)
-            cls._jac_entry_funcs_ = list(entry_funcs.values())
-
-            new_exit_funcs = OrderedDict(zip([i.name for i in on_exit], on_exit))
-            exit_funcs = OrderedDict(
-                zip([i.name for i in cls._jac_exit_funcs_], cls._jac_exit_funcs_)
-            )
-            exit_funcs.update(new_exit_funcs)
-            cls._jac_exit_funcs_ = list(exit_funcs.values())
-
-        inner_init = cls.__init__  # type: ignore
-
-        @wraps(inner_init)
-        def new_init(self: Architype, *args: object, **kwargs: object) -> None:
-            arch_base.__init__(self)
-            inner_init(self, *args, **kwargs)
-
-        cls.__init__ = new_init  # type: ignore
-        return cls
-
-    @staticmethod
-    @hookimpl
-    def make_obj(
-        on_entry: list[DSFunc], on_exit: list[DSFunc]
-    ) -> Callable[[type], type]:
-        """Create a new architype."""
-
-        def decorator(cls: Type[Architype]) -> Type[Architype]:
-            """Decorate class."""
-            cls = Jac.make_architype(
-                cls=cls,
-                arch_base=ObjectArchitype,
-                on_entry=on_entry,
-                on_exit=on_exit,
-            )
-            return cls
-
-        return decorator
-
-    @staticmethod
-    @hookimpl
-    def make_node(
-        on_entry: list[DSFunc], on_exit: list[DSFunc]
-    ) -> Callable[[type], type]:
-        """Create a obj architype."""
-
-        def decorator(cls: Type[Architype]) -> Type[Architype]:
-            """Decorate class."""
-            cls = Jac.make_architype(
-                cls=cls, arch_base=NodeArchitype, on_entry=on_entry, on_exit=on_exit
-            )
-            return cls
-
-        return decorator
-
-    @staticmethod
-    @hookimpl
-    def make_root(
-        on_entry: list[DSFunc], on_exit: list[DSFunc]
-    ) -> Callable[[type], type]:
-        """Create a obj architype."""
-
-        def decorator(cls: Type[Architype]) -> Type[Architype]:
-            """Decorate class."""
-            cls = Jac.make_architype(
-                cls=cls, arch_base=Root, on_entry=on_entry, on_exit=on_exit
-            )
-            return cls
-
-        return decorator
-
-    @staticmethod
-    @hookimpl
-    def make_edge(
-        on_entry: list[DSFunc], on_exit: list[DSFunc]
-    ) -> Callable[[type], type]:
-        """Create a edge architype."""
-
-        def decorator(cls: Type[Architype]) -> Type[Architype]:
-            """Decorate class."""
-            cls = Jac.make_architype(
-                cls=cls, arch_base=EdgeArchitype, on_entry=on_entry, on_exit=on_exit
-            )
-            return cls
-
-        return decorator
-
-    @staticmethod
-    @hookimpl
-    def make_generic_edge(
-        on_entry: list[DSFunc], on_exit: list[DSFunc]
-    ) -> Callable[[type], type]:
-        """Create a edge architype."""
-
-        def decorator(cls: Type[Architype]) -> Type[Architype]:
-            """Decorate class."""
-            cls = Jac.make_architype(
-                cls=cls,
-                arch_base=GenericEdge,
-                on_entry=on_entry,
-                on_exit=on_exit,
-            )
-            return cls
-
-        return decorator
-
-    @staticmethod
-    @hookimpl
-    def make_walker(
-        on_entry: list[DSFunc], on_exit: list[DSFunc]
-    ) -> Callable[[type], type]:
-        """Create a walker architype."""
-
-        def decorator(cls: Type[Architype]) -> Type[Architype]:
-            """Decorate class."""
-            cls = Jac.make_architype(
-                cls=cls,
-                arch_base=WalkerArchitype,
-                on_entry=on_entry,
-                on_exit=on_exit,
-            )
-            populate_apis(cls)  # type: ignore[arg-type]
-            return cls
-
-        return decorator
-
-    @staticmethod
-    @hookimpl
-    def get_root() -> Root:
+    def root() -> Root:
         """Jac's assign comprehension feature."""
         if not FastAPI.is_enabled():
-            return JacFeatureImpl.get_root()  # type:ignore[return-value]
+            return JacFeatureImpl.root()  # type:ignore[return-value]
 
         return JaseciContext.get_root()
 
@@ -501,12 +358,10 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
-    def spawn_call(op1: Architype, op2: Architype) -> WalkerArchitype:
+    def spawn(op1: Architype, op2: Architype) -> WalkerArchitype:
         """Invoke data spatial call."""
         if not FastAPI.is_enabled():
-            return JacFeatureImpl.spawn_call(
-                op1=op1, op2=op2
-            )  # type:ignore[return-value]
+            return JacFeatureImpl.spawn(op1=op1, op2=op2)  # type:ignore[return-value]
 
         if isinstance(op1, WalkerArchitype):
             warch = op1
@@ -536,7 +391,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
         # walker entry
         for i in warch._jac_entry_funcs_:
-            if i.func and not i.trigger:
+            if not i.trigger:
                 walker.returns.append(i.func(warch, current_node))
             if walker.disengaged:
                 return warch
@@ -546,8 +401,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                 # walker entry with
                 for i in warch._jac_entry_funcs_:
                     if (
-                        i.func
-                        and i.trigger
+                        i.trigger
                         and all_issubclass(i.trigger, NodeArchitype)
                         and isinstance(current_node, i.trigger)
                     ):
@@ -557,7 +411,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
                 # node entry
                 for i in current_node._jac_entry_funcs_:
-                    if i.func and not i.trigger:
+                    if not i.trigger:
                         walker.returns.append(i.func(current_node, warch))
                     if walker.disengaged:
                         return warch
@@ -565,8 +419,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                 # node entry with
                 for i in current_node._jac_entry_funcs_:
                     if (
-                        i.func
-                        and i.trigger
+                        i.trigger
                         and all_issubclass(i.trigger, WalkerArchitype)
                         and isinstance(warch, i.trigger)
                     ):
@@ -577,8 +430,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                 # node exit with
                 for i in current_node._jac_exit_funcs_:
                     if (
-                        i.func
-                        and i.trigger
+                        i.trigger
                         and all_issubclass(i.trigger, WalkerArchitype)
                         and isinstance(warch, i.trigger)
                     ):
@@ -588,7 +440,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
                 # node exit
                 for i in current_node._jac_exit_funcs_:
-                    if i.func and not i.trigger:
+                    if not i.trigger:
                         walker.returns.append(i.func(current_node, warch))
                     if walker.disengaged:
                         return warch
@@ -596,8 +448,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                 # walker exit with
                 for i in warch._jac_exit_funcs_:
                     if (
-                        i.func
-                        and i.trigger
+                        i.trigger
                         and all_issubclass(i.trigger, NodeArchitype)
                         and isinstance(current_node, i.trigger)
                     ):
@@ -606,7 +457,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                         return warch
         # walker exit
         for i in warch._jac_exit_funcs_:
-            if i.func and not i.trigger:
+            if not i.trigger:
                 walker.returns.append(i.func(warch, current_node))
             if walker.disengaged:
                 return warch

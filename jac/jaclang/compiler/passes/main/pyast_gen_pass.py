@@ -1878,13 +1878,7 @@ class PyastGenPass(Pass):
                     value=self.sync(
                         self.sync(
                             ast3.Call(
-                                func=self.sync(
-                                    ast3.Attribute(
-                                        value=self.jaclib_obj(Con.JAC_FEATURE.value),
-                                        attr="report",
-                                        ctx=ast3.Load(),
-                                    )
-                                ),
+                                func=self.jaclib_obj("report"),
                                 args=cast(list[ast3.expr], node.expr.gen.py_ast),
                                 keywords=[],
                             )
