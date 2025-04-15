@@ -1043,6 +1043,8 @@ class JacMachine:
                 if mod_name.endswith(".test"):
                     mod_name = mod_name[:-5]
                 JacTestCheck.reset()
+                if not self.jac_program:
+                    self.jac_program = JacProgram(main_file=filepath)
                 self.jac_import(
                     target=mod_name,
                     base_path=base,
@@ -1080,7 +1082,10 @@ class JacMachine:
                         test_file = True
                         print(f"\n\n\t\t* Inside {root_dir}" + "/" + f"{file} *")
                         JacTestCheck.reset()
-                        JacMachine(base_path=root_dir).jac_import(
+
+                        mach = JacMachine(base_path=root_dir)
+                        mach.attach_program(JacProgram(main_file=file))
+                        mach.jac_import(
                             target=file[:-4],
                             base_path=root_dir,
                             absorb=False,

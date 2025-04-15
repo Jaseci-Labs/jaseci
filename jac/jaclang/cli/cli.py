@@ -142,6 +142,7 @@ def get_object(
 
     jctx = ExecutionContext.create(session=session)
     mach = JacMachine(base)
+    mach.attach_program(JacProgram(main_file=filename))
 
     if filename.endswith(".jac"):
         mach.jac_import(

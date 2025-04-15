@@ -35,22 +35,17 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
         prog = JacProgram(main_file=self.fixture_abs_path(filename))
-        code_gen_pure = prog.jac_file_to_pass(
+        prog.jac_file_to_pass(
             target=PyastGenPass,
             schedule=without_format,
         )
-        before = ast3.dump(code_gen_pure.ir.gen.py_ast[0], indent=2)
-        x = code_gen_pure.ir.unparse()
-        # print(x)
-        # print(f"Testing {code_gen_pure.ir.name}")
-        # print(code_gen_pure.ir.pp())
-        code_gen_jac = JacProgram.jac_str_to_pass(
-            jac_str=x,
-            file_path=filename,
-            target=PyastGenPass,
-            schedule=without_format,
+        before = ast3.dump(
+            prog.modules[self.fixture_abs_path(filename)].gen.py_ast[0], indent=2
         )
-        after = ast3.dump(code_gen_jac.ir.gen.py_ast[0], indent=2)
+        x = prog.modules[self.fixture_abs_path(filename)].unparse()
+        prog2 = JacProgram(main_file=filename)
+        prog2.jac_str_to_pass(jac_str=x, target=PyastGenPass, schedule=without_format)
+        after = ast3.dump(prog2.modules[filename].gen.py_ast[0], indent=2)
         if "circle_clean_tests.jac" in filename:
             self.assertEqual(
                 len(

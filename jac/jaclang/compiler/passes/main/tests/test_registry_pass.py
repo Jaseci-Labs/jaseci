@@ -29,4 +29,6 @@ class RegistryPassTests(TestCase):
                 )
             )
         )
-        self.assertIn("109", str(state.ir.to_dict()))
+        self.assertIn(
+            "109", str(prog.modules[self.fixture_abs_path("registry.jac")].to_dict())
+        )
