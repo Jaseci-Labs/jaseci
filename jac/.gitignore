@@ -47,6 +47,7 @@ codegen_output*
 node_modules
 out.dot
 out.txt
+*connect_expressions.dot
 
 # Mypy files #
 .mypy_cache*

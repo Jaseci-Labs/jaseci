@@ -68,11 +68,10 @@ logger = logging.getLogger(__name__)
 class JacMachine:
     """JacMachine to handle the VM-related functionalities and loaded programs."""
 
-    def __init__(self, base_path: str = "") -> None:
+    def __init__(self, base_path: str = "", prog: Optional[JacProgram] = None) -> None:
         """Initialize the JacMachine object."""
         self.loaded_modules: dict[str, types.ModuleType] = {}
-        if not base_path:
-            base_path = os.getcwd()
+        base_path = base_path or os.getcwd()
         # Ensure the base_path is a list rather than a string
         self.base_path = base_path
         self.base_path_dir = (
@@ -80,17 +79,11 @@ class JacMachine:
             if not os.path.isdir(base_path)
             else os.path.abspath(base_path)
         )
-        self.jac_program: JacProgram = JacProgram()
+        self.jac_program: JacProgram = prog or JacProgram()
 
     def attach_program(self, jac_program: "JacProgram") -> None:
         """Attach a JacProgram to the machine."""
         self.jac_program = jac_program
-
-    def get_mod_bundle(self) -> Optional[ast.Module]:
-        """Retrieve the mod_bundle from the attached JacProgram."""
-        if self.jac_program:
-            return self.jac_program.mod_bundle
-        return None
 
     def get_bytecode(
         self,
