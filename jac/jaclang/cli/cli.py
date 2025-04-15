@@ -67,7 +67,9 @@ def format(path: str, outfile: str = "", debug: bool = False) -> None:
 
 @cmd_registry.register
 def run(
-    filename: str, session: str = "", main: bool = True, cache: bool = True
+    filename: str,
+    session: str = "",
+    main: bool = True,
 ) -> None:
     """Run the specified .jac file."""
     # if no session specified, check if it was defined when starting the command shell
@@ -92,7 +94,6 @@ def run(
         try:
             mach.jac_import(
                 target=mod,
-                cachable=cache,
                 override_name="__main__" if main else None,
             )
         except Exception as e:
@@ -103,7 +104,6 @@ def run(
                 mach.attach_program(pickle.load(f))
                 mach.jac_import(
                     target=mod,
-                    cachable=cache,
                     override_name="__main__" if main else None,
                 )
         except Exception as e:
@@ -118,7 +118,10 @@ def run(
 
 @cmd_registry.register
 def get_object(
-    filename: str, id: str, session: str = "", main: bool = True, cache: bool = True
+    filename: str,
+    id: str,
+    session: str = "",
+    main: bool = True,
 ) -> dict:
     """Get the object with the specified id."""
     if session == "":
@@ -140,7 +143,6 @@ def get_object(
     if filename.endswith(".jac"):
         mach.jac_import(
             target=mod,
-            cachable=cache,
             override_name="__main__" if main else None,
         )
     elif filename.endswith(".jir"):
@@ -148,7 +150,6 @@ def get_object(
             mach.attach_program(pickle.load(f))
             mach.jac_import(
                 target=mod,
-                cachable=cache,
                 override_name="__main__" if main else None,
             )
     else:
@@ -223,7 +224,6 @@ def enter(
     args: list,
     session: str = "",
     main: bool = True,
-    cache: bool = True,
     root: str = "",
     node: str = "",
 ) -> None:
@@ -256,7 +256,6 @@ def enter(
     if filename.endswith(".jac"):
         ret_module = mach.jac_import(
             target=mod,
-            cachable=cache,
             override_name="__main__" if main else None,
         )
     elif filename.endswith(".jir"):
@@ -264,7 +263,6 @@ def enter(
             mach.attach_program(pickle.load(f))
             ret_module = mach.jac_import(
                 target=mod,
-                cachable=cache,
                 override_name="__main__" if main else None,
             )
     else:
@@ -359,7 +357,7 @@ def clean() -> None:
     current_dir = os.getcwd()
     for root, dirs, _files in os.walk(current_dir, topdown=True):
         for folder_name in dirs[:]:
-            if folder_name in [Constants.JAC_GEN_DIR, Constants.JAC_MYPY_CACHE]:
+            if folder_name in [Constants.JAC_MYPY_CACHE]:
                 folder_to_remove = os.path.join(root, folder_name)
                 shutil.rmtree(folder_to_remove)
                 print(f"Removed folder: {folder_to_remove}")
@@ -367,7 +365,7 @@ def clean() -> None:
 
 
 @cmd_registry.register
-def debug(filename: str, main: bool = True, cache: bool = False) -> None:
+def debug(filename: str, main: bool = True) -> None:
     """Debug the specified .jac file using pdb."""
     base, mod = os.path.split(filename)
     base = base if base else "./"
@@ -377,7 +375,7 @@ def debug(filename: str, main: bool = True, cache: bool = False) -> None:
         if bytecode:
             code = marshal.loads(bytecode)
             if db.has_breakpoint(bytecode):
-                run(filename, main, cache)
+                run(filename, main)
             else:
                 func = types.FunctionType(code, globals())
 

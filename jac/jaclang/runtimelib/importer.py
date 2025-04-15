@@ -28,7 +28,6 @@ class ImportPathSpec:
         target: str,
         base_path: str,
         absorb: bool,
-        cachable: bool,
         mdl_alias: Optional[str],
         override_name: Optional[str],
         lng: Optional[str],
@@ -38,7 +37,6 @@ class ImportPathSpec:
         self.target = target
         self.base_path = base_path
         self.absorb = absorb
-        self.cachable = cachable
         self.mdl_alias = mdl_alias
         self.override_name = override_name
         self.language = lng
@@ -382,7 +380,6 @@ class JacImporter(Importer):
                 module=module,
                 items=spec.items,
                 caller_dir=spec.caller_dir,
-                cachable=spec.cachable,
                 lang=spec.language,
             )
         self.result = import_return
