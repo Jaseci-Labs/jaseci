@@ -1769,7 +1769,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         values: list[ast.MatchKVPair | ast.MatchStar] = []
         keys = [self.convert(i) for i in node.keys]
         valid_keys = [
-            i for i in keys if isinstance(i, (ast.MatchPattern, ast.NameAtom))
+            i
+            for i in keys
+            if isinstance(i, (ast.MatchPattern, ast.NameAtom, ast.AtomExpr))
         ]
         patterns = [self.convert(i) for i in node.patterns]
         valid_patterns = [i for i in patterns if isinstance(i, ast.MatchPattern)]
@@ -1792,7 +1794,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 pos_start=0,
                 pos_end=0,
             )
-            values.append(ast.MatchStar(name=name, is_list=True, kid=[name]))
+            values.append(ast.MatchStar(name=name, is_list=False, kid=[name]))
         return ast.MatchMapping(values=values, kid=values)
 
     def proc_match_or(self, node: py_ast.MatchOr) -> ast.MatchOr:
