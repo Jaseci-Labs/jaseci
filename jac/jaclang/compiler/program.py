@@ -38,9 +38,7 @@ class JacProgram:
     generating bytecode, and managing the program's modules.
     """
 
-    def __init__(
-        self, main_file: Optional[str] = None, mod_bundle: Optional[ast.Module] = None
-    ) -> None:
+    def __init__(self, main_file: str, mod_bundle: Optional[ast.Module] = None) -> None:
         """Initialize the JacProgram object."""
         self.main_file = main_file
         self.mod_bundle = mod_bundle
@@ -48,61 +46,68 @@ class JacProgram:
         self.modules: dict[str, ast.Module] = {}
         self.last_imported: list[ast.Module] = []
 
+    @property
+    def main_module(self) -> Optional[ast.Module]:
+        """Return the main module of the Jac program."""
+        return self.modules[self.main_file]
+
     def get_bytecode(self, full_target: str) -> Optional[types.CodeType]:
         """Get the bytecode for a specific module."""
         if self.mod_bundle and isinstance(self.mod_bundle, ast.Module):
             codeobj = self.modules[full_target].gen.py_bytecode
             return marshal.loads(codeobj) if isinstance(codeobj, bytes) else None
-        result = JacProgram.compile_jac(full_target)
+        result = self.compile_jac(full_target)
         if result.errors_had:
             for alrt in result.errors_had:
                 # We're not logging here, it already gets logged as the errors were added to the errors_had list.
                 # Regardless of the logging, this needs to be sent to the end user, so we'll printing it to stderr.
                 logger.error(alrt.pretty_print())
-        if result.ir.gen.py_bytecode is not None:
-            return marshal.loads(result.ir.gen.py_bytecode)
+        ret_code = self.modules[full_target]
+        if ret_code.gen.py_bytecode is not None:
+            return marshal.loads(ret_code.gen.py_bytecode)
         else:
             return None
 
-    @staticmethod
-    def compile_jac(file_path: str) -> Pass:
+    def compile_jac(self, file_path: str) -> Pass:  # TODO: Come back and nix file_path
         """Start Compile for Jac file and return python code as string."""
-        code = JacProgram.jac_file_to_pass(
+        code = self.jac_file_to_pass(
             file_path=file_path,
             schedule=pass_schedule,
         )
         return code
 
-    @staticmethod
     def jac_file_to_pass(
-        file_path: str,
+        self,
+        file_path: Optional[str] = None,
         target: Optional[Type[Pass]] = None,
         schedule: list[Type[Pass]] = pass_schedule,
     ) -> Pass:
         """Convert a Jac file to an AST."""
+        file_path = file_path or self.main_file
         with open(file_path, "r", encoding="utf-8") as file:
-            return JacProgram.jac_str_to_pass(
+            return self.jac_str_to_pass(
                 jac_str=file.read(),
                 file_path=file_path,
                 target=target,
                 schedule=schedule,
             )
 
-    @staticmethod
     def jac_str_to_pass(
+        self,
         jac_str: str,
-        file_path: str,
+        file_path: Optional[str] = None,
         target: Optional[Type[Pass]] = None,
         schedule: list[Type[Pass]] = pass_schedule,
     ) -> Pass:
         """Convert a Jac file to an AST."""
-        from jaclang.runtimelib.machine import JacProgram
-
+        if not file_path:
+            file_path = self.main_file
         if not target:
             target = schedule[-1] if schedule else None
-
         source = ast.JacSource(jac_str, mod_path=file_path)
         ast_ret: Pass = JacParser(input_ir=source)
+        assert isinstance(ast_ret.ir, ast.Module)
+        ast_ret.ir.jac_prog = self
         # TODO: This function below has tons of tech debt that should go away
         # when these functions become methods of JacProgram.
         SubNodeTabPass(ast_ret.ir, ast_ret)  # TODO: Get rid of this one
@@ -115,14 +120,12 @@ class JacProgram:
         assert isinstance(ast_ret.ir, ast.Module)
 
         # Creating a new JacProgram and attaching it to top module
-        top_mod: ast.Module = ast_ret.ir
-        top_mod.jac_prog = JacProgram()
-        top_mod.jac_prog.last_imported.append(ast_ret.ir)
-        top_mod.jac_prog.modules[ast_ret.ir.loc.mod_path] = ast_ret.ir
+        self.last_imported.append(ast_ret.ir)
+        self.modules[ast_ret.ir.loc.mod_path] = ast_ret.ir
 
         # Run JacImportPass & SymTabBuildPass on all imported Jac Programs
-        while len(top_mod.jac_prog.last_imported) > 0:
-            mod = top_mod.jac_prog.last_imported.pop()
+        while len(self.last_imported) > 0:
+            mod = self.last_imported.pop()
             JacProgram.jac_ir_to_pass(
                 ir=mod, schedule=[JacImportPass, SymTabBuildPass], target=target
             )
@@ -133,11 +136,10 @@ class JacProgram:
 
         # TODO: we need a elegant way of doing this [should be genaralized].
         if target in (JacImportPass, SymTabBuildPass):
-            ast_ret.ir = top_mod
             return ast_ret
 
         # Link all Jac symbol tables created
-        for mod in top_mod.jac_prog.modules.values():
+        for mod in self.modules.values():
             SymTabLinkPass(input_ir=mod, prior=ast_ret)
 
         # Run all passes till PyBytecodeGenPass
@@ -154,29 +156,26 @@ class JacProgram:
             if final_pass:
                 ast_ret = final_pass(mod, prior=ast_ret)
 
-        for mod in top_mod.jac_prog.modules.values():
+        for mod in self.modules.values():
             run_schedule(mod, schedule=schedule)
 
         # Check if we need to run without type checking then just return
         if "JAC_NO_TYPECHECK" in os.environ or target in py_code_gen:
-            ast_ret.ir = top_mod
             return ast_ret
 
         # Run TypeCheckingPass on the top module
-        JacTypeCheckPass(top_mod, prior=ast_ret)
+        JacTypeCheckPass(ast_ret.ir, prior=ast_ret)
 
         # if "JAC_VSCE" not in os.environ:
-        #     ast_ret.ir = top_mod
         #     return ast_ret
 
-        for mod in top_mod.jac_prog.modules.values():
+        for mod in self.modules.values():
             run_schedule(mod, schedule=type_checker_sched)
 
-        ast_ret.ir = top_mod
         return ast_ret
 
-    @staticmethod
     def jac_pass_to_pass(
+        self,
         in_pass: Pass,
         target: Optional[Type[Pass]] = None,
         schedule: list[Type[Pass]] = pass_schedule,
@@ -185,7 +184,8 @@ class JacProgram:
         from jaclang.runtimelib.machine import JacProgram
 
         ast_ret = in_pass
-
+        assert isinstance(ast_ret.ir, ast.Module)
+        ast_ret.ir.jac_prog = self
         SubNodeTabPass(ast_ret.ir, ast_ret)  # TODO: Get rid of this one
         # Only return the parsed module when the schedules are empty
         # or the target is SubNodeTabPass
@@ -195,14 +195,12 @@ class JacProgram:
         assert isinstance(ast_ret.ir, ast.Module)
 
         # Creating a new JacProgram and attaching it to top module
-        top_mod: ast.Module = ast_ret.ir
-        top_mod.jac_prog = JacProgram()
-        top_mod.jac_prog.last_imported.append(ast_ret.ir)
-        top_mod.jac_prog.modules[ast_ret.ir.loc.mod_path] = ast_ret.ir
+        self.last_imported.append(ast_ret.ir)
+        self.modules[ast_ret.ir.loc.mod_path] = ast_ret.ir
 
         # Run JacImportPass & SymTabBuildPass on all imported Jac Programs
-        while len(top_mod.jac_prog.last_imported) > 0:
-            mod = top_mod.jac_prog.last_imported.pop()
+        while len(self.last_imported) > 0:
+            mod = self.last_imported.pop()
             JacProgram.jac_ir_to_pass(
                 ir=mod, schedule=[JacImportPass, SymTabBuildPass], target=target
             )
@@ -213,10 +211,9 @@ class JacProgram:
 
         # TODO: we need a elegant way of doing this [should be genaralized].
         if target in (JacImportPass, SymTabBuildPass):
-            ast_ret.ir = top_mod
             return ast_ret
         # Link all Jac symbol tables created
-        for mod in top_mod.jac_prog.modules.values():
+        for mod in self.modules.values():
             SymTabLinkPass(input_ir=mod, prior=ast_ret)
 
         # Run all passes till PyBytecodeGenPass
@@ -233,24 +230,21 @@ class JacProgram:
             if final_pass:
                 ast_ret = final_pass(mod, prior=ast_ret)
 
-        for mod in top_mod.jac_prog.modules.values():
+        for mod in self.modules.values():
             run_schedule(mod, schedule=schedule)
 
         # Check if we need to run without type checking then just return
         if "JAC_NO_TYPECHECK" in os.environ or target in py_code_gen:
-            ast_ret.ir = top_mod
             return ast_ret
 
         # Run TypeCheckingPass on the top module
-        JacTypeCheckPass(top_mod, prior=ast_ret)
+        JacTypeCheckPass(ast_ret.ir, prior=ast_ret)
 
         # if "JAC_VSCE" not in os.environ:
-        #     ast_ret.ir = top_mod
         #     return ast_ret
 
-        for mod in top_mod.jac_prog.modules.values():
+        for mod in self.modules.values():
             run_schedule(mod, schedule=type_checker_sched)
-        ast_ret.ir = top_mod
         return ast_ret
 
     @staticmethod

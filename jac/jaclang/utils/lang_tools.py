@@ -227,17 +227,21 @@ class AstTool:
                         ),
                     ).ir
 
-                    ir = JacProgram.jac_str_to_pass(
-                        jac_str=rep.unparse(),
-                        file_path=file_name[:-3] + ".jac",
-                        schedule=py_code_gen_typed,
-                    ).ir
+                    ir = (
+                        JacProgram(file_name[:-3] + ".jac")
+                        .jac_str_to_pass(
+                            jac_str=rep.unparse(), schedule=py_code_gen_typed
+                        )
+                        .ir
+                    )
                 except Exception as e:
                     return f"Error While Jac to Py AST conversion: {e}"
             else:
-                ir = JacProgram.jac_file_to_pass(
-                    file_name, schedule=[*(py_code_gen), *type_checker_sched]
-                ).ir
+                ir = (
+                    JacProgram(main_file=file_name)
+                    .jac_file_to_pass(schedule=[*(py_code_gen), *type_checker_sched])
+                    .ir
+                )
 
             assert isinstance(ir, ast.Module)
             assert ir.jac_prog is not None

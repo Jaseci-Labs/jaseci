@@ -148,7 +148,13 @@ class ImportReturn:
                         jac_file_path,
                     ),
                 )
-            codeobj = self.importer.jac_machine.get_bytecode(full_target=jac_file_path)
+                codeobj = (
+                    self.importer.jac_machine.jac_program.get_bytecode(
+                        full_target=jac_file_path
+                    )
+                    if self.importer.jac_machine.jac_program
+                    else None
+                )
             if not codeobj:
                 raise ImportError(f"No bytecode found for {jac_file_path}")
 
@@ -360,7 +366,13 @@ class JacImporter(Importer):
                     spec.package_path,
                     spec.full_target,
                 )
-                codeobj = self.jac_machine.get_bytecode(full_target=spec.full_target)
+                codeobj = (
+                    self.jac_machine.jac_program.get_bytecode(
+                        full_target=spec.full_target
+                    )
+                    if self.jac_machine.jac_program
+                    else None
+                )
 
                 # Since this is a compile time error, we can safely raise an exception here.
                 if not codeobj:

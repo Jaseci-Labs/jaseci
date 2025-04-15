@@ -92,6 +92,9 @@ def run(
 
     if filename.endswith(".jac"):
         try:
+            prog = JacProgram(main_file=filename)
+            mach.attach_program(prog)
+            prog.jac_file_to_pass(schedule=py_code_gen_build)
             mach.jac_import(
                 target=mod,
                 override_name="__main__" if main else None,
@@ -171,8 +174,8 @@ def get_object(
 def build(filename: str, pybuild: bool = False) -> None:
     """Build the specified .jac file."""
     if filename.endswith(".jac"):
-        out = JacProgram.jac_file_to_pass(
-            file_path=filename,
+        prog = JacProgram(main_file=filename)
+        out = prog.jac_file_to_pass(
             schedule=py_code_gen_typed if pybuild else py_code_gen_build,
         )
         errs = len(out.errors_had)
@@ -194,10 +197,8 @@ def check(filename: str, print_errs: bool = True) -> None:
     :param filename: The path to the .jac file.
     """
     if filename.endswith(".jac"):
-        out = JacProgram.jac_file_to_pass(
-            file_path=filename,
-            schedule=py_code_gen_typed,
-        )
+        prog = JacProgram(main_file=filename)
+        out = prog.jac_file_to_pass(schedule=py_code_gen_typed)
 
         errs = len(out.errors_had)
         warnings = len(out.warnings_had)
@@ -252,6 +253,7 @@ def enter(
 
     jctx = ExecutionContext.create(session=session, root=root)
     mach = JacMachine(base)
+    mach.attach_program(JacProgram(main_file=filename))
 
     if filename.endswith(".jac"):
         ret_module = mach.jac_import(
@@ -371,7 +373,8 @@ def debug(filename: str, main: bool = True) -> None:
     base = base if base else "./"
     mod = mod[:-4]
     if filename.endswith(".jac"):
-        bytecode = JacProgram.jac_file_to_pass(filename).ir.gen.py_bytecode
+        prog = JacProgram(main_file=filename)
+        bytecode = prog.jac_file_to_pass().ir.gen.py_bytecode
         if bytecode:
             code = marshal.loads(bytecode)
             if db.has_breakpoint(bytecode):
@@ -430,6 +433,7 @@ def dot(
 
     if filename.endswith(".jac"):
         jac_machine = JacMachine(base)
+        jac_machine.attach_program(JacProgram(main_file=filename))
         jac_machine.jac_import(target=mod, override_name="__main__")
         try:
             node = globals().get(initial, eval(initial)) if initial else None
@@ -487,7 +491,8 @@ def jac2py(filename: str) -> None:
     """
     if filename.endswith(".jac"):
         with open(filename, "r"):
-            code = JacProgram.jac_file_to_pass(file_path=filename).ir.gen.py
+            prog = JacProgram(main_file=filename)
+            code = prog.jac_file_to_pass().ir.gen.py
         print(code)
     else:
         print("Not a .jac file.", file=sys.stderr)

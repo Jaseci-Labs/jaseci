@@ -13,7 +13,6 @@ class JacBugTests(TestCase):
 
     def test_impl_match_confusion_issue(self) -> None:
         """Basic test for symtable support for inheritance."""
-        mypass = JacProgram.jac_file_to_pass(
-            self.fixture_abs_path("impl_match_confused.jac"),
-        )
+        prog = JacProgram(main_file=self.fixture_abs_path("impl_match_confused.jac"))
+        mypass = prog.jac_file_to_pass()
         self.assertEqual(len(mypass.errors_had), 1)

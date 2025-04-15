@@ -180,7 +180,9 @@ class JacImportPass(Pass):
         if target in self.import_table:
             return self.import_table[target]
         try:
-            mod_pass = JacProgram.jac_file_to_pass(file_path=target, schedule=[])
+            mod_pass = JacProgram(main_file=target).jac_file_to_pass(
+                file_path=target, schedule=[]
+            )
             self.errors_had += mod_pass.errors_had
             self.warnings_had += mod_pass.warnings_had
             mod = mod_pass.ir

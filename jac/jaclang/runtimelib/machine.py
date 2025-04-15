@@ -78,17 +78,11 @@ class JacMachine:
             if not os.path.isdir(base_path)
             else os.path.abspath(base_path)
         )
-        self.jac_program: JacProgram = prog or JacProgram()
+        self.jac_program: Optional[JacProgram] = prog
 
     def attach_program(self, jac_program: "JacProgram") -> None:
         """Attach a JacProgram to the machine."""
         self.jac_program = jac_program
-
-    def get_bytecode(self, full_target: str) -> Optional[types.CodeType]:
-        """Retrieve bytecode from the attached JacProgram."""
-        if self.jac_program:
-            return self.jac_program.get_bytecode(full_target=full_target)
-        return None
 
     def load_module(self, module_name: str, module: types.ModuleType) -> None:
         """Load a module into the machine."""

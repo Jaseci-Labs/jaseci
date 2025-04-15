@@ -28,9 +28,8 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             with open(original_path, "r") as file:
                 original_file_content = file.read()
             if formatted_file is None:
-                code_gen_format = JacProgram.jac_file_to_pass(
-                    original_path, schedule=format_pass
-                )
+                prog = JacProgram(main_file=original_path)
+                code_gen_format = prog.jac_file_to_pass(schedule=format_pass)
                 formatted_content = code_gen_format.ir.gen.jac
             else:
                 with open(self.fixture_abs_path(formatted_file), "r") as file:
@@ -117,10 +116,9 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        code_gen_pure = JacProgram.jac_file_to_pass(
-            self.fixture_abs_path(filename),
-            target=PyastGenPass,
-            schedule=without_format,
+        prog = JacProgram(main_file=self.fixture_abs_path(filename))
+        code_gen_pure = prog.jac_file_to_pass(
+            target=PyastGenPass, schedule=without_format
         )
         code_gen_format = JacProgram.jac_file_formatter(
             self.fixture_abs_path(filename), schedule=format_pass

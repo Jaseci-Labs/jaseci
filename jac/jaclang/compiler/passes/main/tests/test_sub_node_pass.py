@@ -14,10 +14,8 @@ class SubNodePassTests(TestCase):
 
     def test_sub_node_pass(self) -> None:
         """Basic test for pass."""
-        code_gen = JacProgram.jac_file_to_pass(
-            file_path=self.examples_abs_path("manual_code/circle.jac"),
-            target=SubNodeTabPass,
-        )
+        prog = JacProgram(main_file=self.fixture_abs_path("sub_node.jac"))
+        code_gen = prog.jac_file_to_pass(target=SubNodeTabPass)
         for i in code_gen.ir.kid[1].kid:
             for k, v in i._sub_node_tab.items():
                 for n in v:
