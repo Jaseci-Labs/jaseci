@@ -8,14 +8,12 @@ import types
 from typing import Optional, Type
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import (
     JacImportPass,
     JacTypeCheckPass,
     PyBytecodeGenPass,
-    PyOutPass,
     SubNodeTabPass,
     SymTabBuildPass,
     pass_schedule,
@@ -50,25 +48,12 @@ class JacProgram:
         self.modules: dict[str, ast.Module] = {}
         self.last_imported: list[ast.Module] = []
 
-    def get_bytecode(
-        self,
-        module_name: str,
-        full_target: str,
-        caller_dir: str,
-        cachable: bool = True,
-        reload: bool = False,
-    ) -> Optional[types.CodeType]:
+    def get_bytecode(self, full_target: str) -> Optional[types.CodeType]:
         """Get the bytecode for a specific module."""
         if self.mod_bundle and isinstance(self.mod_bundle, ast.Module):
             codeobj = self.modules[full_target].gen.py_bytecode
             return marshal.loads(codeobj) if isinstance(codeobj, bytes) else None
-        gen_dir = os.path.join(caller_dir, Con.JAC_GEN_DIR)
-        pyc_file_path = os.path.join(gen_dir, module_name + ".jbc")
-        if cachable and os.path.exists(pyc_file_path) and not reload:
-            with open(pyc_file_path, "rb") as f:
-                return marshal.load(f)
-
-        result = JacProgram.compile_jac(full_target, cache_result=cachable)
+        result = JacProgram.compile_jac(full_target)
         if result.errors_had:
             for alrt in result.errors_had:
                 # We're not logging here, it already gets logged as the errors were added to the errors_had list.
@@ -80,19 +65,12 @@ class JacProgram:
             return None
 
     @staticmethod
-    def compile_jac(file_path: str, cache_result: bool = False) -> Pass:
+    def compile_jac(file_path: str) -> Pass:
         """Start Compile for Jac file and return python code as string."""
         code = JacProgram.jac_file_to_pass(
             file_path=file_path,
             schedule=pass_schedule,
         )
-        # If there is syntax error, the code will be an instance of JacParser as there is
-        # no more passes were processed, in that cae we can ignore it.
-        had_syntax_error = isinstance(code, JacParser) and len(code.errors_had) != 0
-        if cache_result and (not had_syntax_error) and isinstance(code.ir, ast.Module):
-            assert code.ir.jac_prog is not None
-            for _, module in code.ir.jac_prog.modules.items():
-                PyOutPass(input_ir=module, prior=code)
         return code
 
     @staticmethod

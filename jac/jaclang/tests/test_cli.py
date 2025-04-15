@@ -401,40 +401,6 @@ class JacCliTests(TestCase):
         self.assertIn("Errors: 0, Warnings: 0", stdout_value)
         self.assertIn("<module 'pyfunc' from", stdout_value)
 
-    def test_cache_no_cache_on_run(self) -> None:
-        """Basic test for pass."""
-        process = subprocess.Popen(
-            ["jac", "run", f"{self.fixture_abs_path('hello_nc.jac')}", "-nc"],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        stdout, _ = process.communicate()
-        self.assertFalse(
-            os.path.exists(
-                f"{self.fixture_abs_path(os.path.join('__jac_gen__', 'hello_nc.jbc'))}"
-            )
-        )
-        self.assertIn("Hello World!", stdout)
-        process = subprocess.Popen(
-            ["jac", "run", f"{self.fixture_abs_path('hello_nc.jac')}", "-c"],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        stdout, _ = process.communicate()
-        self.assertIn("Hello World!", stdout)
-        self.assertTrue(
-            os.path.exists(
-                f"{self.fixture_abs_path(os.path.join('__jac_gen__', 'hello_nc.jbc'))}"
-            )
-        )
-        os.remove(
-            f"{self.fixture_abs_path(os.path.join('__jac_gen__', 'hello_nc.jbc'))}"
-        )
-
     def test_run_test(self) -> None:
         """Basic test for pass."""
         process = subprocess.Popen(

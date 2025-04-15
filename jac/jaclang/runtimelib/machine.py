@@ -84,19 +84,10 @@ class JacMachine:
         """Attach a JacProgram to the machine."""
         self.jac_program = jac_program
 
-    def get_bytecode(
-        self,
-        module_name: str,
-        full_target: str,
-        caller_dir: str,
-        cachable: bool = True,
-        reload: bool = False,
-    ) -> Optional[types.CodeType]:
+    def get_bytecode(self, full_target: str) -> Optional[types.CodeType]:
         """Retrieve bytecode from the attached JacProgram."""
         if self.jac_program:
-            return self.jac_program.get_bytecode(
-                module_name, full_target, caller_dir, cachable, reload=reload
-            )
+            return self.jac_program.get_bytecode(full_target=full_target)
         return None
 
     def load_module(self, module_name: str, module: types.ModuleType) -> None:
