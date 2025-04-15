@@ -12,7 +12,6 @@ from jaclang.compiler.passes import Pass
 from .import_pass import PyImportPass  # noqa: I100
 from .def_impl_match_pass import DeclImplMatchPass  # noqa: I100
 from .def_use_pass import DefUsePass  # noqa: I100
-from .pyout_pass import PyOutPass  # noqa: I100
 from .pybc_gen_pass import PyBytecodeGenPass  # noqa: I100
 from .pyast_gen_pass import PyastGenPass  # noqa: I100
 from .pyjac_ast_link_pass import PyJacAstLinkPass  # noqa: I100
@@ -42,4 +41,3 @@ type_checker_sched: list[Type[Pass]] = [
 py_code_gen_typed = [*py_code_gen, *type_checker_sched]
 # py_code_gen_build should be like py_code_gen_typed but without the PyImportPass
 py_code_gen_build = [i for i in py_code_gen if i != PyImportPass]
-py_compiler = [*py_code_gen, PyOutPass]

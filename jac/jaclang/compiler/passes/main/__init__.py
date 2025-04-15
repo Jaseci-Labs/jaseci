@@ -11,7 +11,6 @@ from .sym_tab_build_pass import SymTabBuildPass  # noqa: I100
 from .def_use_pass import DefUsePass  # noqa: I100
 from .import_pass import JacImportPass, PyImportPass  # noqa: I100
 from .def_impl_match_pass import DeclImplMatchPass  # noqa: I100
-from .pyout_pass import PyOutPass  # noqa: I100
 from .pyast_load_pass import PyastBuildPass  # type: ignore # noqa: I100
 from .pyast_gen_pass import PyastGenPass  # noqa: I100
 from .schedules import py_code_gen  # noqa: I100
@@ -30,7 +29,6 @@ __all__ = [
     "SymTabBuildPass",
     "DeclImplMatchPass",
     "DefUsePass",
-    "PyOutPass",
     "PyastBuildPass",
     "PyastGenPass",
     "JacTypeCheckPass",
