@@ -100,7 +100,7 @@ def run(
     elif filename.endswith(".jir"):
         try:
             with open(filename, "rb") as f:
-                mach.attach_program(JacProgram(mod_bundle=pickle.load(f)))
+                mach.attach_program(pickle.load(f))
                 mach.jac_import(
                     target=mod,
                     cachable=cache,
@@ -145,7 +145,7 @@ def get_object(
         )
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
-            mach.attach_program(JacProgram(mod_bundle=pickle.load(f)))
+            mach.attach_program(pickle.load(f))
             mach.jac_import(
                 target=mod,
                 cachable=cache,
@@ -180,7 +180,8 @@ def build(filename: str, pybuild: bool = False) -> None:
         for i in out.ir.flatten():
             i.gen.clean()
         with open(filename[:-4] + ".jir", "wb") as f:
-            pickle.dump(out.ir, f)
+            assert isinstance(out.ir, ast.Module)
+            pickle.dump(out.ir.jac_prog, f)
     else:
         print("Not a .jac file.", file=sys.stderr)
 
@@ -260,7 +261,7 @@ def enter(
         )
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
-            mach.attach_program(JacProgram(mod_bundle=pickle.load(f)))
+            mach.attach_program(pickle.load(f))
             ret_module = mach.jac_import(
                 target=mod,
                 cachable=cache,

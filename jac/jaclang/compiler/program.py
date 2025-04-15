@@ -60,7 +60,7 @@ class JacProgram:
     ) -> Optional[types.CodeType]:
         """Get the bytecode for a specific module."""
         if self.mod_bundle and isinstance(self.mod_bundle, ast.Module):
-            codeobj = self.mod_bundle.mod_deps[full_target].gen.py_bytecode
+            codeobj = self.modules[full_target].gen.py_bytecode
             return marshal.loads(codeobj) if isinstance(codeobj, bytes) else None
         gen_dir = os.path.join(caller_dir, Con.JAC_GEN_DIR)
         pyc_file_path = os.path.join(gen_dir, module_name + ".jbc")
