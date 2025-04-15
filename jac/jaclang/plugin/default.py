@@ -828,7 +828,7 @@ class JacFeatureImpl(
     def field(factory: Callable[[], T] | None, init: bool) -> T:
         """Jac's field handler."""
         if factory:
-            return field(default_factory=factory, init=init)
+            return field(default_factory=factory)
         return field(init=init)
 
     @staticmethod
