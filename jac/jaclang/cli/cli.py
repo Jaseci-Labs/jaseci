@@ -260,7 +260,7 @@ def enter(
         )
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
-            JacMachine(base).attach_program(JacProgram(mod_bundle=pickle.load(f)))
+            mach.attach_program(JacProgram(mod_bundle=pickle.load(f)))
             ret_module = mach.jac_import(
                 target=mod,
                 cachable=cache,

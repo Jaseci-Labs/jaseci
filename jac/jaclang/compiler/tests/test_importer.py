@@ -4,7 +4,6 @@ import io
 import sys
 
 from jaclang.cli import cli
-from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.machine import JacMachine
 from jaclang.utils.test import TestCase
 
@@ -15,14 +14,12 @@ class TestLoader(TestCase):
     def test_import_basic_python(self) -> None:
         """Test basic self loading."""
         mach = JacMachine(self.fixture_abs_path(__file__))
-        mach.attach_program(JacProgram())
         (h,) = mach.jac_import("fixtures.hello_world")
         self.assertEqual(h.hello(), "Hello World!")  # type: ignore
 
     def test_modules_correct(self) -> None:
         """Test basic self loading."""
         mach = JacMachine(self.fixture_abs_path(__file__))
-        mach.attach_program(JacProgram())
         mach.jac_import("fixtures.hello_world")
         self.assertIn(
             "module 'fixtures.hello_world'",
@@ -86,7 +83,6 @@ class TestLoader(TestCase):
 
         try:
             mach = JacMachine(self.fixture_abs_path(__file__))
-            mach.attach_program(JacProgram())
             mach.jac_import(module_name)
             cli.run(jac_file_path)
 

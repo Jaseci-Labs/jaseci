@@ -1016,9 +1016,6 @@ class JacMachine:
             lng,
             items,
         )
-        if not self.jac_program:
-            self.attach_program(JacProgram())
-
         if lng == "py":
             import_result = PythonImporter(self).run_import(spec)
         else:

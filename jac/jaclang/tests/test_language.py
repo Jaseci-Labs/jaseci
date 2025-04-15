@@ -22,7 +22,7 @@ class JacLanguageTests(TestCase):
     def setUp(self) -> None:
         """Set up test."""
         ExecutionContext.global_system_root().edges.clear()
-        JacMachine(self.fixture_abs_path("./")).attach_program(JacProgram())
+        JacMachine(self.fixture_abs_path("./"))
         return super().setUp()
 
     def tearDown(self) -> None:
