@@ -11,7 +11,6 @@ import types
 from typing import Optional
 
 import jaclang.compiler.absyntree as ast
-from jaclang import jac_import
 from jaclang.cli.cmdreg import CommandShell, cmd_registry
 from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
@@ -87,12 +86,12 @@ def run(
     mod = mod[:-4]
 
     jctx = ExecutionContext.create(session=session)
+    mach = JacMachine(base)
 
     if filename.endswith(".jac"):
         try:
-            jac_import(
+            mach.jac_import(
                 target=mod,
-                base_path=base,
                 cachable=cache,
                 override_name="__main__" if main else None,
             )
@@ -101,10 +100,9 @@ def run(
     elif filename.endswith(".jir"):
         try:
             with open(filename, "rb") as f:
-                JacMachine(base).attach_program(JacProgram(mod_bundle=pickle.load(f)))
-                jac_import(
+                mach.attach_program(JacProgram(mod_bundle=pickle.load(f)))
+                mach.jac_import(
                     target=mod,
-                    base_path=base,
                     cachable=cache,
                     override_name="__main__" if main else None,
                 )
@@ -137,20 +135,19 @@ def get_object(
     mod = mod[:-4]
 
     jctx = ExecutionContext.create(session=session)
+    mach = JacMachine(base)
 
     if filename.endswith(".jac"):
-        jac_import(
+        mach.jac_import(
             target=mod,
-            base_path=base,
             cachable=cache,
             override_name="__main__" if main else None,
         )
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
-            JacMachine(base).attach_program(JacProgram(mod_bundle=pickle.load(f)))
-            jac_import(
+            mach.attach_program(JacProgram(mod_bundle=pickle.load(f)))
+            mach.jac_import(
                 target=mod,
-                base_path=base,
                 cachable=cache,
                 override_name="__main__" if main else None,
             )
@@ -253,20 +250,19 @@ def enter(
     mod = mod[:-4]
 
     jctx = ExecutionContext.create(session=session, root=root)
+    mach = JacMachine(base)
 
     if filename.endswith(".jac"):
-        ret_module = jac_import(
+        ret_module = mach.jac_import(
             target=mod,
-            base_path=base,
             cachable=cache,
             override_name="__main__" if main else None,
         )
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
             JacMachine(base).attach_program(JacProgram(mod_bundle=pickle.load(f)))
-            ret_module = jac_import(
+            ret_module = mach.jac_import(
                 target=mod,
-                base_path=base,
                 cachable=cache,
                 override_name="__main__" if main else None,
             )
@@ -435,7 +431,7 @@ def dot(
 
     if filename.endswith(".jac"):
         jac_machine = JacMachine(base)
-        jac_machine.jac_import(target=mod, base_path=base, override_name="__main__")
+        jac_machine.jac_import(target=mod, override_name="__main__")
         try:
             node = globals().get(initial, eval(initial)) if initial else None
             graph = jac_machine.dotgen(

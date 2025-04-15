@@ -3,7 +3,6 @@
 import io
 import sys
 
-from jaclang import jac_import
 from jaclang.cli import cli
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.machine import JacMachine
@@ -17,14 +16,14 @@ class TestLoader(TestCase):
         """Test basic self loading."""
         mach = JacMachine(self.fixture_abs_path(__file__))
         mach.attach_program(JacProgram())
-        (h,) = mach.jac_import("fixtures.hello_world", base_path=__file__)
+        (h,) = mach.jac_import("fixtures.hello_world")
         self.assertEqual(h.hello(), "Hello World!")  # type: ignore
 
     def test_modules_correct(self) -> None:
         """Test basic self loading."""
         mach = JacMachine(self.fixture_abs_path(__file__))
         mach.attach_program(JacProgram())
-        mach.jac_import("fixtures.hello_world", base_path=__file__)
+        mach.jac_import("fixtures.hello_world")
         self.assertIn(
             "module 'fixtures.hello_world'",
             str(mach.loaded_modules),
@@ -86,8 +85,9 @@ class TestLoader(TestCase):
         sys.stdout = captured_output
 
         try:
-            JacMachine(self.fixture_abs_path(__file__)).attach_program(JacProgram())
-            jac_import(module_name, base_path=__file__)
+            mach = JacMachine(self.fixture_abs_path(__file__))
+            mach.attach_program(JacProgram())
+            mach.jac_import(module_name)
             cli.run(jac_file_path)
 
             # Reset stdout and get the output

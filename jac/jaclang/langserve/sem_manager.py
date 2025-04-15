@@ -254,7 +254,7 @@ class SemTokManager:
         change_end_line: int,
     ) -> list[int]:
         """Handle single line deletion between tokens."""
-        if is_next_token_same_line:
+        if is_next_token_same_line and change.range_length:
             sem_tokens[next_token_index + 1] -= change.range_length
 
         else:
@@ -270,9 +270,10 @@ class SemTokManager:
         change: lspt.TextDocumentContentChangeEvent_Type1,
     ) -> list[int]:
         """Handle single line deletion."""
-        sem_tokens[prev_token_index + 2] -= change.range_length
-        if is_next_token_same_line:
-            sem_tokens[next_token_index + 1] -= change.range_length
+        if change.range_length:
+            sem_tokens[prev_token_index + 2] -= change.range_length
+            if is_next_token_same_line:
+                sem_tokens[next_token_index + 1] -= change.range_length
         return sem_tokens
 
     @staticmethod

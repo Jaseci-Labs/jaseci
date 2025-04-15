@@ -72,7 +72,6 @@ class JacMachine:
         """Initialize the JacMachine object."""
         self.loaded_modules: dict[str, types.ModuleType] = {}
         base_path = base_path or os.getcwd()
-        # Ensure the base_path is a list rather than a string
         self.base_path = base_path
         self.base_path_dir = (
             os.path.dirname(base_path)
@@ -997,7 +996,7 @@ class JacMachine:
     def jac_import(
         self,
         target: str,
-        base_path: str,  # TODO: THis should go away
+        base_path: Optional[str] = None,
         absorb: bool = False,
         cachable: bool = True,
         mdl_alias: Optional[str] = None,
@@ -1009,7 +1008,7 @@ class JacMachine:
         """Core Import Process."""
         spec = ImportPathSpec(
             target,
-            base_path,
+            base_path or self.base_path,
             absorb,
             cachable,
             mdl_alias,
@@ -1104,7 +1103,7 @@ class JacMachine:
                         test_file = True
                         print(f"\n\n\t\t* Inside {root_dir}" + "/" + f"{file} *")
                         JacTestCheck.reset()
-                        self.jac_import(
+                        JacMachine(base_path=root_dir).jac_import(
                             target=file[:-4],
                             base_path=root_dir,
                             absorb=False,
