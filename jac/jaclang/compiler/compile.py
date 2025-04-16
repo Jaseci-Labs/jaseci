@@ -188,6 +188,7 @@ def jac_pass_to_pass(
     ast_ret = in_pass
 
     SubNodeTabPass(ast_ret.ir, ast_ret)  # TODO: Get rid of this one
+
     # Only return the parsed module when the schedules are empty
     # or the target is SubNodeTabPass
     if len(schedule) == 0 or target == SubNodeTabPass:
@@ -208,13 +209,14 @@ def jac_pass_to_pass(
         jac_ir_to_pass(ir=mod, schedule=[JacImportPass, SymTabBuildPass], target=target)
 
     # If there is syntax error, no point in processing in further passes.
-    # if len(ast_ret.errors_had) != 0:
-    #     return ast_ret
+    if len(ast_ret.errors_had) != 0:
+        return ast_ret
 
     # TODO: we need a elegant way of doing this [should be genaralized].
     if target in (JacImportPass, SymTabBuildPass):
         ast_ret.ir = top_mod
         return ast_ret
+
     # Link all Jac symbol tables created
     for mod in top_mod.jac_prog.modules.values():
         SymTabLinkPass(input_ir=mod, prior=ast_ret)
@@ -246,7 +248,7 @@ def jac_pass_to_pass(
 
     # Run TypeCheckingPass on the top module
     __debug_print()
-    __debug_print(f"Running JacTypeCheckPass on {top_mod.name}")
+    __debug_print(f"### Running JacTypeCheckPass on {top_mod.name} ###")
     __debug_print()
     JacTypeCheckPass(top_mod, prior=ast_ret)
 
@@ -254,9 +256,30 @@ def jac_pass_to_pass(
     #     ast_ret.ir = top_mod
     #     return ast_ret
 
+    __debug_print()
+    __debug_print("### Running PyCollectDepsPass on all modules ###")
+    for mod in top_mod.jac_prog.modules.values():
+        PyCollectDepsPass(mod, prior=ast_ret)
+    __debug_print()
+
+    __debug_print()
+    __debug_print("### Running PyImportPass on all modules ###")
+    for mod in top_mod.jac_prog.modules.values():
+        top_mod.jac_prog.last_imported.append(mod)
+    # Run PyImportPass
+    while len(top_mod.jac_prog.last_imported) > 0:
+        mod = top_mod.jac_prog.last_imported.pop()
+        jac_ir_to_pass(ir=mod, schedule=[PyImportPass], target=target)
+    __debug_print()
+
+    # Link all Jac symbol tables created
+    for mod in top_mod.jac_prog.modules.values():
+        SymTabLinkPass(input_ir=mod, prior=ast_ret)
+
     for mod in top_mod.jac_prog.modules.values():
         __debug_print(f"### Running second layer of schdules on {mod.name} ####")
         run_schedule(mod, schedule=type_checker_sched)
+
     ast_ret.ir = top_mod
     return ast_ret
 

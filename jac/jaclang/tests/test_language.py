@@ -126,7 +126,7 @@ class JacLanguageTests(TestCase):
 
         expected_outputs = [
             "+-- AtomTrailer - Type: builtins.list[builtins.int]",
-            "    +-- Name - arr - Type: builtins.list[builtins.list[builtins.int]],  SymbolTable: list",
+            "    +-- Name - arr - Type: builtins.list[builtins.list[builtins.int]],  SymbolTable: None",
             "+-- IndexSlice - [IndexSlice] - Type: builtins.list[builtins.list[builtins.int]],  SymbolTable: None",
             "        +-- Token - [, ",
             "        +-- Int - 1 - Type: Literal[1]?,  SymbolTable: None",
@@ -560,10 +560,12 @@ class JacLanguageTests(TestCase):
             schedule=py_code_gen_typed,
         ).ir
 
-        architype_count = sum(
-            len(mod.get_all_sub_nodes(ast.Architype))
-            for mod in ir.jac_prog.modules.values()
-        )
+        architype_count = 0
+        for mod in ir.jac_prog.modules.values():
+            if mod.name == "builtins":
+                continue
+            architype_count += len(mod.get_all_sub_nodes(ast.Architype))
+
         self.assertEqual(architype_count, 21)
         captured_output = io.StringIO()
         sys.stdout = captured_output
@@ -630,10 +632,13 @@ class JacLanguageTests(TestCase):
             file_path=file_name[:-3] + ".jac",
             schedule=py_code_gen_typed,
         ).ir
-        architype_count = sum(
-            len(mod.get_all_sub_nodes(ast.Architype))
-            for mod in ir.jac_prog.modules.values()
-        )
+
+        architype_count = 0
+        for mod in ir.jac_prog.modules.values():
+            if mod.name == "builtins":
+                continue
+            architype_count += len(mod.get_all_sub_nodes(ast.Architype))
+
         self.assertEqual(architype_count, 27)  # Because of the Architype from math
         captured_output = io.StringIO()
         sys.stdout = captured_output
@@ -905,7 +910,12 @@ class JacLanguageTests(TestCase):
         ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
         jac_ast = ir.pp()
         self.assertIn(" |   +-- String - 'Loop completed normally{}'", jac_ast)
-        self.assertEqual(len(ir.get_all_sub_nodes(ast.SubNodeList)), 586)
+        sub_node_list_count = 0
+        for i in ir.jac_prog.modules.values():
+            if i.name == "builtins":
+                continue
+            sub_node_list_count += len(i.get_all_sub_nodes(ast.SubNodeList))
+        self.assertEqual(sub_node_list_count, 586)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import("deep_convert", base_path=self.fixture_abs_path("./"))

@@ -222,15 +222,15 @@ class JacCliTests(TestCase):
 
         self.assertRegex(
             stdout_value,
-            r"2\:8 \- 2\:12.*BuiltinType - list - .*SymbolPath: builtins_test.builtins.list",
+            r"2\:8 \- 2\:12.*BuiltinType - list - .*SymbolPath: builtins.list",
         )
         self.assertRegex(
             stdout_value,
-            r"15\:5 \- 15\:8.*Name - dir - .*SymbolPath: builtins_test.builtins.dir",
+            r"15\:5 \- 15\:8.*Name - dir - .*SymbolPath: builtins.dir",
         )
         self.assertRegex(
             stdout_value,
-            r"13\:12 \- 13\:18.*Name - append - .*SymbolPath: builtins_test.builtins.list.append",
+            r"13\:12 \- 13\:18.*Name - append - .*SymbolPath: builtins.list.append",
         )
 
     def test_import_all(self) -> None:

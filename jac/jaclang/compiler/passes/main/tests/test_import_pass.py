@@ -127,7 +127,7 @@ class ImportPassPassTests(TestCase):
             )
         )
 
-        self.assertEqual(module_count, 7)
+        self.assertEqual(module_count, 8)
 
     def test_double_empty_anx(self) -> None:
         """Test importing python."""

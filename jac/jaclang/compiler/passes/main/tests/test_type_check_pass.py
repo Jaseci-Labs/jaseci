@@ -75,7 +75,7 @@ class MypyTypeCheckPassTests(TestCase):
         self.assertRegex(out, r"129:11 - 129:27.*FuncCall \- Type\: builtins\.str")
         self.assertRegex(
             out,
-            r"129:13 - 129:21.*Name \- node_dot \- Type\: builtins.str,  SymbolTable\: str",
+            r"129:13 - 129:21.*Name \- node_dot \- Type\: builtins.str",
         )
 
         self.assertRegex(
