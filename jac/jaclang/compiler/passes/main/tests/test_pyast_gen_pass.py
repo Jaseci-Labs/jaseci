@@ -6,8 +6,8 @@ import sys
 import types
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.passes.main import PyastGenPass, SubNodeTabPass
+from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
 
 
@@ -35,19 +35,14 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
     def test_hodge_podge(self) -> None:
         """Basic test for pass."""
-        code_gen = jac_file_to_pass(
-            self.examples_abs_path("micro/hodge_podge.jac"),
-            target=PyastGenPass,
-        )
-
+        prog = JacProgram(main_file=self.examples_abs_path("micro/hodge_podge.jac"))
+        code_gen = prog.jac_file_to_pass(target=PyastGenPass)
         self.assertFalse(code_gen.errors_had)
 
     def test_circle_py_ast(self) -> None:
         """Basic test for pass."""
-        code_gen = jac_file_to_pass(
-            self.examples_abs_path("manual_code/circle.jac"),
-            target=PyastGenPass,
-        )
+        prog = JacProgram(main_file=self.examples_abs_path("manual_code/circle.jac"))
+        code_gen = prog.jac_file_to_pass(target=PyastGenPass)
         import ast as ast3
 
         if code_gen.ir.gen.py_ast and isinstance(
@@ -86,9 +81,8 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        code_gen = jac_file_to_pass(
-            self.fixture_abs_path(filename), target=PyastGenPass
-        )
+        prog = JacProgram(main_file=self.fixture_abs_path(filename))
+        code_gen = prog.jac_file_to_pass(target=PyastGenPass)
         from_jac_str = ast3.dump(code_gen.ir.gen.py_ast[0], indent=2)
         from_jac = code_gen.ir.gen.py_ast[0]
         try:
@@ -130,13 +124,11 @@ class ValidateTreeParentTest(TestCaseMicroSuite):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        code_gen = jac_file_to_pass(
-            self.fixture_abs_path(filename), target=SubNodeTabPass
-        )
+        prog = JacProgram(main_file=self.fixture_abs_path(filename))
+        code_gen = prog.jac_file_to_pass(target=SubNodeTabPass)
         self.assertTrue(self.parent_scrub(code_gen.ir))
-        code_gen = jac_file_to_pass(
-            self.fixture_abs_path(filename), target=PyastGenPass
-        )
+        prog = JacProgram(main_file=self.fixture_abs_path(filename))
+        code_gen = prog.jac_file_to_pass(target=PyastGenPass)
         self.assertTrue(self.parent_scrub(code_gen.ir))
 
 

@@ -113,8 +113,7 @@ class JacTypeCheckPass(Pass):
             k: v
             for k, v in mypy_graph.items()
             if (
-                k.startswith("jaclang.plugin")
-                or k.startswith("jaclang.runtimelib")
+                k.startswith("jaclang.runtimelib")
                 or not (k.startswith("jaclang.") or k.startswith("mypy."))
             )
         }

@@ -2,7 +2,7 @@
 
 import marshal
 
-from jaclang.compiler.compile import jac_file_to_pass
+from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import TestCase
 
 
@@ -15,9 +15,8 @@ class PyBytecodeGenPassTests(TestCase):
 
     def test_simple_bcgen(self) -> None:
         """Basic test for pass."""
-        jac_code = jac_file_to_pass(
-            file_path=self.fixture_abs_path("func.jac"),
-        )
+        prog = JacProgram(main_file=self.fixture_abs_path("func.jac"))
+        jac_code = prog.jac_file_to_pass()
         try:
             marshal.loads(jac_code.ir.gen.py_bytecode)
             self.assertTrue(True)

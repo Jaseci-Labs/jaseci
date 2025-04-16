@@ -17,10 +17,6 @@ from typing import (
     override,
 )
 
-from jaclang.plugin.builtin import dotgen, jid, jobj  # noqa: F401
-from jaclang.plugin.default import JacFeatureImpl
-from jaclang.plugin.feature import JacFeature as Jac, plugin_manager
-from jaclang.plugin.spec import EdgeDir
 from jaclang.runtimelib.architype import (
     Architype,
     EdgeArchitype,
@@ -29,6 +25,9 @@ from jaclang.runtimelib.architype import (
     Root as RootArchitype,
     WalkerArchitype,
 )
+from jaclang.runtimelib.builtin import dotgen, jid, jobj  # noqa: F401
+from jaclang.runtimelib.machine import EdgeDir, JacMachine as Jac
+
 
 __all__ = [
     # Jac types.
@@ -61,13 +60,6 @@ __all__ = [
     "jobj",
 ]
 
-
-# ----------------------------------------------------------------------------
-# Plugin Initialization.
-# ----------------------------------------------------------------------------
-
-plugin_manager.register(JacFeatureImpl)
-plugin_manager.load_setuptools_entrypoints("jac")
 
 T = TypeVar("T")
 S = TypeVar("S")  # S is a subtype of T.
@@ -178,14 +170,14 @@ class Node(NodeArchitype):
             if edge
             else None
         )
-        ret = plugin_manager.hook.edge_ref(
+        ret = Jac.edge_ref(
             node_obj=self,
-            target_obj=target,
+            target_obj=target,  # type: ignore [arg-type]
             dir=dir,
-            filter_func=filter_func,
+            filter_func=filter_func,  # type: ignore [arg-type]
             edges_only=edges_only,
         )
-        return JacList(ret)
+        return JacList(ret)  # type: ignore [arg-type]
 
 
 class Edge(EdgeArchitype):
@@ -206,7 +198,12 @@ class Edge(EdgeArchitype):
 def _root_factory(cls: Type["Root"]) -> Type["Root"]:
     """Create a new root class."""
     cls = dataclass(eq=False)(cls)  # type: ignore [arg-type, assignment]
-    cls = Jac.make_architype(cls, RootArchitype, on_entry=[], on_exit=[])  # type: ignore [assignment, attr-defined]
+    cls = Jac.make_architype(
+        cls,
+        RootArchitype,
+        on_entry=[],
+        on_exit=[],
+    )  # type: ignore [assignment, attr-defined]
     return cls
 
 
@@ -326,7 +323,6 @@ def jac_import(
     lng: str | None = "jac",
     base_path: str | None = None,
     absorb: bool = False,
-    cachable: bool = True,
     alias: str | None = None,
     override_name: str | None = None,
     items: dict[str, str | None] | None = None,
@@ -334,12 +330,16 @@ def jac_import(
 ) -> tuple[ModuleType, ...]:
     """Import a module."""
     base_path = base_path or os.path.dirname(inspect.stack()[1].filename)
-    return Jac.jac_import(
+    machine = inspect.stack()[1].frame.f_locals.get("__jac_mach__") or inspect.stack()[
+        1
+    ].frame.f_globals.get("__jac_mach__")
+    if not machine:
+        machine = Jac(base_path=base_path)
+    return machine.jac_import(
         target=target,
         lng=lng,
         base_path=base_path,
         absorb=absorb,
-        cachable=cachable,
         mdl_alias=alias,
         override_name=override_name,
         items=items,

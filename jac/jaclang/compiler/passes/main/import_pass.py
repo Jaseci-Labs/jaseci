@@ -172,7 +172,7 @@ class JacImportPass(Pass):
 
     def import_jac_mod_from_file(self, target: str) -> ast.Module | None:
         """Import a module from a file."""
-        from jaclang.compiler.compile import jac_file_to_pass
+        from jaclang.compiler.program import JacProgram
 
         if not os.path.exists(target):
             self.error(f"Could not find module {target}")
@@ -180,7 +180,9 @@ class JacImportPass(Pass):
         if target in self.import_table:
             return self.import_table[target]
         try:
-            mod_pass = jac_file_to_pass(file_path=target, schedule=[])
+            mod_pass = JacProgram(main_file=target).jac_file_to_pass(
+                file_path=target, schedule=[]
+            )
             self.errors_had += mod_pass.errors_had
             self.warnings_had += mod_pass.warnings_had
             mod = mod_pass.ir

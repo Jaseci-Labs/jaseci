@@ -654,7 +654,7 @@ class Module(AstDocNode):
         self.registry = registry
         self.terminals: list[Token] = terminals
         self.py_info: PyInfo = PyInfo()
-        self.jac_prog: Optional[JacProgram] = None
+        self.jac_prog: Optional[JacProgram] = None  # TODO: This should nver be none
 
         AstNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)

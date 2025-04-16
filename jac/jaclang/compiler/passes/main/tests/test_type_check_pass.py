@@ -2,8 +2,8 @@
 
 from typing import List
 
-from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+from jaclang.compiler.program import JacProgram
 from jaclang.utils.lang_tools import AstTool
 from jaclang.utils.test import TestCase
 
@@ -18,10 +18,8 @@ class MypyTypeCheckPassTests(TestCase):
 
     def test_type_errors(self) -> None:
         """Basic test for pass."""
-        type_checked = jac_file_to_pass(
-            file_path=self.fixture_abs_path("func.jac"),
-            schedule=py_code_gen_typed,
-        )
+        prog = JacProgram(main_file=self.fixture_abs_path("func.jac"))
+        type_checked = prog.jac_file_to_pass(target=py_code_gen_typed)
 
         errs = "\n".join([i.msg for i in type_checked.warnings_had])
         files = "\n".join([i.loc.mod_path for i in type_checked.warnings_had])
@@ -36,10 +34,8 @@ class MypyTypeCheckPassTests(TestCase):
 
     def test_imported_module_typecheck(self) -> None:
         """Basic test for pass."""
-        type_checked = jac_file_to_pass(
-            file_path=self.fixture_abs_path("game1.jac"),
-            schedule=py_code_gen_typed,
-        )
+        prog = JacProgram(main_file=self.fixture_abs_path("game1.jac"))
+        type_checked = prog.jac_file_to_pass(target=py_code_gen_typed)
 
         errs = "\n".join([i.msg for i in type_checked.warnings_had])
         files = "\n".join([i.loc.mod_path for i in type_checked.warnings_had])

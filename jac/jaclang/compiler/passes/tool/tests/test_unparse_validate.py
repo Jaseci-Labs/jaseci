@@ -4,10 +4,10 @@ import ast as ast3
 from difflib import unified_diff
 
 
-from jaclang.compiler.compile import jac_file_to_pass, jac_str_to_pass
 from jaclang.compiler.passes.main import PyastGenPass
 from jaclang.compiler.passes.main.schedules import py_code_gen as without_format
 from jaclang.compiler.passes.tool import JacFormatPass
+from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
 
 
@@ -19,10 +19,11 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
     def test_double_unparse(self) -> None:
         """Parse micro jac file."""
         try:
-            code_gen_pure = jac_file_to_pass(
-                self.examples_abs_path("manual_code/circle.jac"),
-                target=PyastGenPass,
-                schedule=without_format,
+            prog = JacProgram(
+                main_file=self.examples_abs_path("manual_code/circle.jac")
+            )
+            code_gen_pure = prog.jac_file_to_pass(
+                target=PyastGenPass, schedule=without_format
             )
             x = code_gen_pure.ir.unparse()
             y = code_gen_pure.ir.unparse()
@@ -33,23 +34,18 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        code_gen_pure = jac_file_to_pass(
-            self.fixture_abs_path(filename),
+        prog = JacProgram(main_file=self.fixture_abs_path(filename))
+        prog.jac_file_to_pass(
             target=PyastGenPass,
             schedule=without_format,
         )
-        before = ast3.dump(code_gen_pure.ir.gen.py_ast[0], indent=2)
-        x = code_gen_pure.ir.unparse()
-        # print(x)
-        # print(f"Testing {code_gen_pure.ir.name}")
-        # print(code_gen_pure.ir.pp())
-        code_gen_jac = jac_str_to_pass(
-            jac_str=x,
-            file_path=filename,
-            target=PyastGenPass,
-            schedule=without_format,
+        before = ast3.dump(
+            prog.modules[self.fixture_abs_path(filename)].gen.py_ast[0], indent=2
         )
-        after = ast3.dump(code_gen_jac.ir.gen.py_ast[0], indent=2)
+        x = prog.modules[self.fixture_abs_path(filename)].unparse()
+        prog2 = JacProgram(main_file=filename)
+        prog2.jac_str_to_pass(jac_str=x, target=PyastGenPass, schedule=without_format)
+        after = ast3.dump(prog2.modules[filename].gen.py_ast[0], indent=2)
         if "circle_clean_tests.jac" in filename:
             self.assertEqual(
                 len(

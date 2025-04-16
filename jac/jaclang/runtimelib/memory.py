@@ -101,7 +101,7 @@ class ShelfStorage(Memory[UUID, Anchor]):
 
     def sync_mem_to_db(self, keys: Iterable[UUID]) -> None:
         """Manually sync memory to db."""
-        from jaclang.plugin.feature import JacFeature as Jac
+        from jaclang.runtimelib.machine import JacMachine as JacMachine
 
         if isinstance(self.__shelf__, Shelf):
             for key in keys:
@@ -116,14 +116,14 @@ class ShelfStorage(Memory[UUID, Anchor]):
                             isinstance(p_d, NodeAnchor)
                             and isinstance(d, NodeAnchor)
                             and p_d.edges != d.edges
-                            and Jac.check_connect_access(d)
+                            and JacMachine.check_connect_access(d)
                         ):
                             if not d.edges and not isinstance(d.architype, Root):
                                 self.__shelf__.pop(_id, None)
                                 continue
                             p_d.edges = d.edges
 
-                        if Jac.check_write_access(d):
+                        if JacMachine.check_write_access(d):
                             if hash(dumps(p_d.access)) != hash(dumps(d.access)):
                                 p_d.access = d.access
                             if hash(dumps(p_d.architype)) != hash(dumps(d.architype)):

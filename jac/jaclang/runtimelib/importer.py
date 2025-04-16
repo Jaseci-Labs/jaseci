@@ -8,12 +8,14 @@ import os
 import sys
 import types
 from os import getcwd, path
-from typing import Optional, Union
+from typing import Optional, TYPE_CHECKING, Union
 
-from jaclang.runtimelib.machine import JacMachine
 from jaclang.runtimelib.utils import sys_path_context
 from jaclang.utils.helpers import dump_traceback
 from jaclang.utils.log import logging
+
+if TYPE_CHECKING:
+    from jaclang.runtimelib.machine import JacMachine
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +28,6 @@ class ImportPathSpec:
         target: str,
         base_path: str,
         absorb: bool,
-        cachable: bool,
         mdl_alias: Optional[str],
         override_name: Optional[str],
         lng: Optional[str],
@@ -36,7 +37,6 @@ class ImportPathSpec:
         self.target = target
         self.base_path = base_path
         self.absorb = absorb
-        self.cachable = cachable
         self.mdl_alias = mdl_alias
         self.override_name = override_name
         self.language = lng
@@ -148,9 +148,13 @@ class ImportReturn:
                         jac_file_path,
                     ),
                 )
-            codeobj = self.importer.jac_machine.get_bytecode(
-                name, jac_file_path, caller_dir=caller_dir, cachable=cachable
-            )
+                codeobj = (
+                    self.importer.jac_machine.jac_program.get_bytecode(
+                        full_target=jac_file_path
+                    )
+                    if self.importer.jac_machine.jac_program
+                    else None
+                )
             if not codeobj:
                 raise ImportError(f"No bytecode found for {jac_file_path}")
 
@@ -279,6 +283,7 @@ class JacImporter(Importer):
         module.__name__ = module_name
         module.__path__ = [full_mod_path]
         module.__file__ = None
+        module.__dict__["__jac_mach__"] = self.jac_machine
 
         if module_name not in self.jac_machine.loaded_modules:
             self.jac_machine.load_module(module_name, module)
@@ -294,6 +299,7 @@ class JacImporter(Importer):
         module = types.ModuleType(module_name)
         module.__file__ = full_target
         module.__name__ = module_name
+        module.__dict__["__jac_mach__"] = self.jac_machine
         if package_path:
             base_path = full_target.split(package_path.replace(".", path.sep))[0]
             parts = package_path.split(".")
@@ -360,12 +366,12 @@ class JacImporter(Importer):
                     spec.package_path,
                     spec.full_target,
                 )
-                codeobj = self.jac_machine.get_bytecode(
-                    module_name,
-                    spec.full_target,
-                    caller_dir=spec.caller_dir,
-                    cachable=spec.cachable,
-                    reload=reload if reload else False,
+                codeobj = (
+                    self.jac_machine.jac_program.get_bytecode(
+                        full_target=spec.full_target
+                    )
+                    if self.jac_machine.jac_program
+                    else None
                 )
 
                 # Since this is a compile time error, we can safely raise an exception here.
@@ -386,7 +392,6 @@ class JacImporter(Importer):
                 module=module,
                 items=spec.items,
                 caller_dir=spec.caller_dir,
-                cachable=spec.cachable,
                 lang=spec.language,
             )
         self.result = import_return

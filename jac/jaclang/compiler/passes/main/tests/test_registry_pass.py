@@ -2,8 +2,8 @@
 
 import os
 
-from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.passes.main import RegistryPass
+from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import TestCase
 
 
@@ -17,7 +17,8 @@ class RegistryPassTests(TestCase):
 
     def test_registry_pass(self) -> None:
         """Basic test for pass."""
-        state = jac_file_to_pass(self.fixture_abs_path("registry.jac"), RegistryPass)
+        prog = JacProgram(main_file=self.fixture_abs_path("registry.jac"))
+        state = prog.jac_file_to_pass(target=RegistryPass)
         self.assertFalse(state.errors_had)
         self.assertFalse(
             os.path.exists(
@@ -28,4 +29,6 @@ class RegistryPassTests(TestCase):
                 )
             )
         )
-        self.assertIn("109", str(state.ir.to_dict()))
+        self.assertIn(
+            "109", str(prog.modules[self.fixture_abs_path("registry.jac")].to_dict())
+        )

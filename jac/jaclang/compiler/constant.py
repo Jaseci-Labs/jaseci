@@ -112,7 +112,6 @@ class Constants(StrEnum):
     ON_EXIT = "_jac_ds_.on_exit"
 
     PYNLINE = "::py::"
-    JAC_GEN_DIR = "__jac_gen__"
     JAC_MYPY_CACHE = ".jac_mypy_cache"
 
     def __str__(self) -> str:

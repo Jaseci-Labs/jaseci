@@ -7,15 +7,11 @@ from contextlib import suppress
 from difflib import unified_diff
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.compile import (
-    jac_file_formatter,
-    jac_file_to_pass,
-    jac_str_to_pass,
-)
 from jaclang.compiler.passes.main import PyastGenPass
 from jaclang.compiler.passes.main.schedules import py_code_gen as without_format
 from jaclang.compiler.passes.tool import JacFormatPass
 from jaclang.compiler.passes.tool.schedules import format_pass
+from jaclang.compiler.program import JacProgram
 from jaclang.utils.helpers import add_line_numbers
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
 
@@ -32,7 +28,8 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             with open(original_path, "r") as file:
                 original_file_content = file.read()
             if formatted_file is None:
-                code_gen_format = jac_file_to_pass(original_path, schedule=format_pass)
+                prog = JacProgram(main_file=original_path)
+                code_gen_format = prog.jac_file_to_pass(schedule=format_pass)
                 formatted_content = code_gen_format.ir.gen.jac
             else:
                 with open(self.fixture_abs_path(formatted_file), "r") as file:
@@ -119,17 +116,15 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        code_gen_pure = jac_file_to_pass(
-            self.fixture_abs_path(filename),
-            target=PyastGenPass,
-            schedule=without_format,
+        prog = JacProgram(main_file=self.fixture_abs_path(filename))
+        code_gen_pure = prog.jac_file_to_pass(
+            target=PyastGenPass, schedule=without_format
         )
-        code_gen_format = jac_file_formatter(
+        code_gen_format = JacProgram.jac_file_formatter(
             self.fixture_abs_path(filename), schedule=format_pass
         )
-        code_gen_jac = jac_str_to_pass(
+        code_gen_jac = JacProgram(main_file=filename).jac_str_to_pass(
             jac_str=code_gen_format.ir.gen.jac,
-            file_path=filename,
             target=PyastGenPass,
             schedule=without_format,
         )

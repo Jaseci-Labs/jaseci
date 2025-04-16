@@ -6,8 +6,9 @@ from contextlib import redirect_stdout
 from typing import Callable, Optional
 
 import jaclang
-from jaclang.compiler.compile import jac_file_to_pass
+from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.context import ExecutionContext
+from jaclang.runtimelib.machine import JacMachine
 from jaclang.utils.test import TestCase
 
 
@@ -51,7 +52,9 @@ class JacReferenceTests(TestCase):
     def micro_suite_test(self, filename: str) -> None:
         """Test file."""
 
-        def execute_and_capture_output(code: str | bytes, filename: str = "") -> str:
+        def execute_and_capture_output(
+            code: str | bytes, filename: str = "", mach: JacMachine | None = None
+        ) -> str:
             ExecutionContext.global_system_root().edges.clear()
             f = io.StringIO()
             with redirect_stdout(f):
@@ -60,6 +63,7 @@ class JacReferenceTests(TestCase):
                     {
                         "__file__": filename,
                         "__name__": "__main__",
+                        "__jac_mach__": mach,
                     },
                 )
             return f.getvalue()
@@ -67,18 +71,26 @@ class JacReferenceTests(TestCase):
         try:
             if "tests.jac" in filename or "check_statements.jac" in filename:
                 return
-            jacast = jac_file_to_pass(filename).ir
+            prog = JacProgram(main_file=filename)
+            mach = JacMachine(filename)
+            mach.attach_program(prog)
+            prog.jac_file_to_pass()
+            jacast = prog.modules[filename]
             code_content = compile(
                 source=jacast.gen.py_ast[0],
                 filename=jacast.loc.mod_path,
                 mode="exec",
             )
-            output_jac = execute_and_capture_output(code_content, filename=filename)
+            output_jac = execute_and_capture_output(
+                code_content, filename=filename, mach=mach
+            )
 
             filename = filename.replace(".jac", ".py")
             with open(filename, "r") as file:
                 code_content = file.read()
-            output_py = execute_and_capture_output(code_content, filename=filename)
+            output_py = execute_and_capture_output(
+                code_content, filename=filename, mach=mach
+            )
 
             # print(f"\nJAC Output:\n{output_jac}")
             # print(f"\nPython Output:\n{output_py}")
