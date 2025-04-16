@@ -17,14 +17,18 @@ class SymTabLinkPass(Pass):
         assert self.ir.jac_prog is not None
 
         imp_node = node.parent_of_type(ast.Import)
-        if imp_node.is_py:
-            return None
 
-        rel_path = node.resolve_relative_path()
-        if os.path.isdir(rel_path):
-            rel_path = f"{rel_path}/__init__.jac"
-        if rel_path not in self.ir.jac_prog.modules:
-            self.ice()
+        if imp_node.is_jac:
+            rel_path = node.resolve_relative_path()
+            if os.path.isdir(rel_path):
+                rel_path = f"{rel_path}/__init__.jac"
+            if rel_path not in self.ir.jac_prog.modules:
+                self.ice()
+        else:
+            if node.sym_name in self.ir.py_info.py_raise_map:
+                rel_path = self.ir.py_info.py_raise_map[node.sym_name]
+            else:
+                return
 
         imported_mod_symtab = self.ir.jac_prog.modules[rel_path].sym_tab
 

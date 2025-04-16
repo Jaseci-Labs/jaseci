@@ -225,7 +225,7 @@ class PyImportPass(JacImportPass):
 
     def after_pass(self) -> None:
         """Build symbol tables for import from nodes."""
-        self.__import_from_symbol_table_build()
+        # self.__import_from_symbol_table_build()
         return super().after_pass()
 
     def process_import(self, i: ast.ModulePath) -> None:

@@ -165,6 +165,10 @@ def jac_str_to_pass(
         jac_ir_to_pass(ir=mod, schedule=[PyImportPass], target=target)
     __debug_print()
 
+    # Link all Jac symbol tables created
+    for mod in top_mod.jac_prog.modules.values():
+        SymTabLinkPass(input_ir=mod, prior=ast_ret)
+
     for mod in top_mod.jac_prog.modules.values():
         __debug_print(f"### Running second layer of schdules on {mod.name} ####")
         run_schedule(mod, schedule=type_checker_sched)
