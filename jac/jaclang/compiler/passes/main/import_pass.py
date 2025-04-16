@@ -64,6 +64,9 @@ class JacImportPass(Pass):
             self.ir.jac_prog.modules[mod.loc.mod_path] = mod
             self.ir.jac_prog.last_imported.append(mod)
             mod.jac_prog = self.ir.jac_prog
+            # We should have only one py_raise_map in the program
+            # TODO: Move py_raise_map to jac_program
+            mod.py_info.py_raise_map = self.ir.py_info.py_raise_map
 
     # TODO: Refactor this to a function for impl and function for test
     def annex_impl(self, node: ast.Module) -> None:
@@ -442,6 +445,7 @@ class PyImportPass(JacImportPass):
         from jaclang.compiler.passes.main import PyastBuildPass
 
         assert isinstance(self.ir, ast.Module)
+        assert self.ir.jac_prog is not None
 
         python_raise_map = self.ir.py_info.py_raise_map
         file_to_raise: Optional[str] = None
@@ -452,7 +456,9 @@ class PyImportPass(JacImportPass):
             # TODO: Is it fine to use imported_mod_name or get it from mod_path?
             resolved_mod_path = f"{parent_node_path}.{mod_path}"
             resolved_mod_path = resolved_mod_path.replace("..", ".")
-            resolved_mod_path = resolved_mod_path.replace(f"{self.ir.name}.", "")
+            resolved_mod_path = resolved_mod_path.replace(
+                f"{list(self.ir.jac_prog.modules.values())[0]}.", ""
+            )
             file_to_raise = python_raise_map.get(resolved_mod_path)
 
         if file_to_raise is None:
@@ -508,6 +514,7 @@ class PyImportPass(JacImportPass):
         from jaclang.compiler.passes.main import PyastBuildPass
 
         assert isinstance(self.ir, ast.Module)
+        assert self.ir.jac_prog is not None
 
         file_to_raise = str(
             pathlib.Path(os.path.dirname(__file__)).parent.parent.parent
@@ -525,10 +532,12 @@ class PyImportPass(JacImportPass):
                     orig_src=ast.JacSource(file_source, file_to_raise),
                 ),
             ).ir
-            mod.parent = self.ir
             SubNodeTabPass(input_ir=mod, prior=self)
             SymTabBuildPass(input_ir=mod, prior=self)
-            mod.parent = None
+            self.ir.jac_prog.modules[file_to_raise] = mod
+            mod.jac_prog = self.ir.jac_prog
+            mod.py_info.is_raised_from_py = True
+            mod.py_info.py_raise_map = self.ir.py_info.py_raise_map
 
     def annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""

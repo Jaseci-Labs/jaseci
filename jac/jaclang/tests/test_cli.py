@@ -249,11 +249,11 @@ class JacCliTests(TestCase):
 
         self.assertRegex(
             stdout_value,
-            r"6\:25 - 6\:30.*Name - floor -.*SymbolPath: import_all.import_all_py.floor",
+            r"6\:25 - 6\:30.*Name - floor -.*SymbolPath: math.floor",
         )
         self.assertRegex(
             stdout_value,
-            r"5\:25 - 5\:27.*Name - pi -.*SymbolPath: import_all.import_all_py.pi",
+            r"5\:25 - 5\:27.*Name - pi -.*SymbolPath: math.pi",
         )
 
     def test_sub_class_symbol_table_fix_1(self) -> None:

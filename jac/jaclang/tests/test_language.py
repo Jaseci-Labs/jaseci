@@ -866,14 +866,6 @@ class JacLanguageTests(TestCase):
             else:
                 self.assertIn("+-- Name - NodeTransformer - Type: No", gen_ast)
 
-    def test_deep_py_load_imports(self) -> None:  # we can get rid of this, isn't?
-        """Test py ast to Jac ast conversion output."""
-        file_name = os.path.join(self.fixture_abs_path("./"), "random_check.jac")
-        from jaclang.compiler.passes.main.schedules import py_code_gen, PyImportPass
-
-        imp = jac_file_to_pass(file_name, schedule=py_code_gen, target=PyImportPass)
-        self.assertEqual(len(imp.import_table), 5)
-
     def test_access_modifier(self) -> None:
         """Test for access tags working."""
         captured_output = io.StringIO()

@@ -211,7 +211,14 @@ class FuseTypeInfoPass(Pass):
     def __check_builltin_symbol(self, node: ast.NameAtom) -> None:
         if isinstance(node.parent, ast.AtomTrailer) and node is node.parent.right:
             return
-        builtins_sym_tab = self.ir.sym_tab.find_scope("builtins")
+        assert isinstance(self.ir, ast.Module)
+        assert self.ir.jac_prog is not None
+
+        builtins_sym_tab = None
+        for mod in self.ir.jac_prog.modules.values():
+            if mod.name == "builtins":
+                builtins_sym_tab = mod.sym_tab
+
         assert builtins_sym_tab is not None
         builtins_sym = builtins_sym_tab.lookup(node.sym_name)
         if builtins_sym:
