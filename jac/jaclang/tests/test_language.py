@@ -559,7 +559,12 @@ class JacLanguageTests(TestCase):
             file_path=file_name[:-3] + ".jac",
             schedule=py_code_gen_typed,
         ).ir
-        self.assertEqual(len(ir.get_all_sub_nodes(ast.Architype)), 21)
+
+        architype_count = sum(
+            len(mod.get_all_sub_nodes(ast.Architype))
+            for mod in ir.jac_prog.modules.values()
+        )
+        self.assertEqual(architype_count, 21)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import("needs_import_1", base_path=self.fixture_abs_path("./"))
@@ -625,9 +630,11 @@ class JacLanguageTests(TestCase):
             file_path=file_name[:-3] + ".jac",
             schedule=py_code_gen_typed,
         ).ir
-        self.assertEqual(
-            len(ir.get_all_sub_nodes(ast.Architype)), 27
-        )  # Because of the Architype from math
+        architype_count = sum(
+            len(mod.get_all_sub_nodes(ast.Architype))
+            for mod in ir.jac_prog.modules.values()
+        )
+        self.assertEqual(architype_count, 27)  # Because of the Architype from math
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import("needs_import_2", base_path=self.fixture_abs_path("./"))
