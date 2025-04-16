@@ -238,6 +238,9 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
     @hookimpl
     def setup() -> None:
         """Set Class References."""
+        if not FastAPI.is_enabled():
+            return JacFeatureImpl.setup()
+
         Jac.Obj = ObjectArchitype
         Jac.Node = NodeArchitype
         Jac.Edge = EdgeArchitype
