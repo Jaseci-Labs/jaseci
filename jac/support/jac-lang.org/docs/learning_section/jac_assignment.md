@@ -28,7 +28,7 @@ JacLang supports bitwise shift operators that allow you to shift the bits of a n
     --8<-- "examples/learning_section/jac_assignment.jac:13:17"
     ```
 
-### Floor Division (//=)
+### Floor Division (//)
 
 The floor division operator **//** performs division and returns the largest integer less than or equal to the result.
 

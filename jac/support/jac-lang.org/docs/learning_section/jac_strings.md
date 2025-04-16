@@ -64,7 +64,7 @@ To check if a certain phrase or character is present in a string, we can use the
     ```
 
 ## Slicing
-You can return a range of characters by using the slice syntax.Specify the start index and the end index, separated by a colon, to return a part of the string.
+You can return a range of characters by using the slice syntax. Specify the start index and the end index, separated by a colon, to return a part of the string.
 
 **Code Example**
 === "Jac"
@@ -110,7 +110,9 @@ The **lower( )** method returns the string in lower case.
     ```
 
 ### Remove Whitespace
-Whitespace is the space before and/or after the actual text, and very often you want to remove this space.The **strip( )** method removes any whitespace from the beginning or the end.
+Whitespace refers to the space before and/or after the actual text, and very often, you may want to remove this space. The **strip()** method removes any leading and trailing whitespace by default.
+
+If needed, you can also specify which characters to remove by passing them as an argument to **strip()**.
 
 **Code Example**
 === "Jac"

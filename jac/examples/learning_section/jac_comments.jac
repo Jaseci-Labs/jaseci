@@ -20,9 +20,8 @@ with entry {
 }
 
 """
-This is a comment
-written in
-more than just one line
+This is a docstring
+It can be used to describe the purpose of the code
 """
 with entry {
     print("Hello, World!");

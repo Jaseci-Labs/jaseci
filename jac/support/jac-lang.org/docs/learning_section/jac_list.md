@@ -134,7 +134,7 @@ To add an item to the end of the list, use the **append()** method.
     --8<-- "examples/learning_section/jac_list.jac:89:93"
     ```
 ### Insert Items
-To insert a list item at a specified index, use the **insert()** method.The **insert()** method inserts an item at the specified index.
+To insert a list item at a specified index, use the **insert()** method. The **insert()** method inserts an item at the specified index.
 
 **Code Example**
     ```jac linenums="1"
@@ -142,7 +142,7 @@ To insert a list item at a specified index, use the **insert()** method.The **in
     ```
 
 ### Extend Items
-To append elements from another list to the current list, use the **extend()** method.The elements will be added to the end of the list.
+To append elements from another list to the current list, use the **extend()** method. The elements will be added to the end of the list.
 
 **Code Example**
     ```jac linenums="1"
@@ -224,7 +224,7 @@ You can iterate through the list items by accessing them using their index.To ac
     ```
 
 ### Using a While Loop
-In Jac, you can iterate through list items using a **while** loop by leveraging the **len()** function.Start with an index of **0**, then loop through the list using its index until you reach the list's length. Ensure you increment the index in each iteration to avoid an infinite loop.
+In Jac, you can iterate through list items using a **while** loop by leveraging the **len()** function. Start with an index of **0**, then loop through the list using its index until you reach the list's length. Ensure you increment the index in each iteration to avoid an infinite loop.
 
 **Code Example**
     ```jac linenums="1"
@@ -256,7 +256,7 @@ To sort descending, use the keyword argument **reverse = True**.
     ```
 
 ### Customize Sort Function
-You can define a custom function for sorting by using the keyword argument **key=function**.This function should return a numeric value, which will be used to determine the sorting order, with the lowest values appearing first.
+You can define a custom function for sorting by using the keyword argument **key=function**. This function should return a numeric value, which will be used to determine the sorting order, with the lowest values appearing first.
 
 **Code Example**
     ```jac linenums="1"
