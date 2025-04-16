@@ -137,6 +137,28 @@ class JacLanguageTests(TestCase):
         for expected in expected_outputs:
             self.assertIn(expected, stdout_value)
 
+    def test_dotgen(self) -> None:
+        """Test the dot gen of builtin function."""
+        import json
+
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(
+            self.mach, "builtin_dotgen_json", base_path=self.fixture_abs_path("./")
+        )
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        data = json.loads(stdout_value)
+
+        nodes = data["nodes"]
+        self.assertEqual(len(nodes), 7)
+        for node in nodes:
+            label = node["label"]
+            self.assertIn(label, ["root", "N(val=0)", "N(val=1)"])
+
+        edges = data["edges"]
+        self.assertEqual(len(edges), 6)
+
     def test_chandra_bugs(self) -> None:
         """Parse micro jac file."""
         captured_output = io.StringIO()

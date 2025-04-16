@@ -6,9 +6,7 @@ import json
 from abc import abstractmethod
 from typing import ClassVar, Optional, override
 
-from sympy import false
-
-from jaclang.runtimelib.constructs import Architype, NodeArchitype
+from jaclang.runtimelib.constructs import Architype, NodeArchitype, Root
 from jaclang.runtimelib.machine import JacMachine as Jac
 
 
@@ -30,7 +28,7 @@ def dotgen(
     from jaclang.runtimelib.machine import JacMachine as Jac
 
     if as_json:
-        return(_jac_graph_json())
+        return _jac_graph_json()
 
     return Jac.dotgen(
         edge_type=edge_type,
@@ -42,6 +40,7 @@ def dotgen(
         node_limit=node_limit,
         dot_file=dot_file,
     )
+
 
 def jid(obj: Architype) -> str:
     """Get the id of the object."""
@@ -55,10 +54,7 @@ def jobj(id: str) -> Architype | None:
 
 def _jac_graph_json() -> str:
     """Get the graph in json string."""
-    import jaclang as jl
-    from jaclang import Root, Node
-
-    processed: list[Root | Node] = []
+    processed: list[Root | NodeArchitype] = []
     nodes: list[dict] = []
     edges: list[dict] = []
     working_set: list[tuple] = []
@@ -67,14 +63,14 @@ def _jac_graph_json() -> str:
     nodes.append({"id": id(root), "label": "root"})
 
     processed.append(root)
-    working_set = [(root, ref) for ref in root.refs()]
+    working_set = [(root, ref) for ref in Jac.refs(root)]
 
     while working_set:
         start, end = working_set.pop(0)
         edges.append({"from": id(start), "to": id(end)})
         nodes.append({"id": id(end), "label": repr(end)})
         processed.append(end)
-        for ref in end.refs():
+        for ref in Jac.refs(end):
             if ref not in processed:
                 working_set.append((end, ref))
     return json.dumps(
@@ -84,6 +80,7 @@ def _jac_graph_json() -> str:
             "edges": edges,
         }
     )
+
 
 __all__ = [
     "abstractmethod",
