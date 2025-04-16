@@ -342,7 +342,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                         raise ValueError(f"Invalid attribute: {fld}")
             if source.persistent or target.persistent:
                 Jac.save(eanch)
-            return edge
+            return edge  # type: ignore[return-value] # bug on mypy!!
 
         return builder
 
