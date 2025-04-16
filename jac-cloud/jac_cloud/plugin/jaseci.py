@@ -313,13 +313,15 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                 conn_assign=conn_assign,
             )
 
-        ct = conn_type if conn_type else GenericEdge  # type: ignore[assignment]
+        ct = conn_type if conn_type else GenericEdge
 
-        def builder(source: NodeAnchor, target: NodeAnchor) -> EdgeArchitype:
+        def builder(
+            source: NodeAnchor, target: NodeAnchor
+        ) -> EdgeArchitype | GenericEdge:
             edge = ct() if isinstance(ct, type) else ct
 
             eanch = edge.__jac__ = EdgeAnchor(
-                architype=edge,
+                architype=edge,  # type: ignore[arg-type] # bug on mypy!!
                 name=("" if isinstance(edge, GenericEdge) else edge.__class__.__name__),
                 source=source,
                 target=target,
