@@ -3,7 +3,7 @@
 import io
 import sys
 
-from jaclang import jac_import
+from jaclang import JacFeature as Jac
 from jaclang.cli import cli
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.machine import JacMachine
@@ -18,7 +18,7 @@ class TestLoader(TestCase):
         JacMachine(self.fixture_abs_path(__file__)).attach_program(
             JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
         )
-        (h,) = jac_import("fixtures.hello_world", base_path=__file__)
+        (h,) = Jac.jac_import("fixtures.hello_world", base_path=__file__)
         self.assertEqual(h.hello(), "Hello World!")  # type: ignore
         JacMachine.detach()
 
@@ -27,7 +27,7 @@ class TestLoader(TestCase):
         JacMachine(self.fixture_abs_path(__file__)).attach_program(
             JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
         )
-        jac_import("fixtures.hello_world", base_path=__file__)
+        Jac.jac_import("fixtures.hello_world", base_path=__file__)
         self.assertIn(
             "module 'fixtures.hello_world'",
             str(JacMachine.get().loaded_modules),
@@ -93,7 +93,7 @@ class TestLoader(TestCase):
             JacMachine(self.fixture_abs_path(__file__)).attach_program(
                 JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
             )
-            jac_import(module_name, base_path=__file__)
+            Jac.jac_import(module_name, base_path=__file__)
             cli.run(jac_file_path)
 
             # Reset stdout and get the output

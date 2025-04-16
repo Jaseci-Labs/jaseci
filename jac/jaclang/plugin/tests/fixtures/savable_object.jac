@@ -1,5 +1,3 @@
-import:py from jaclang.plugin.feature {JacFeature as Jac}
-
 enum Enum {
     A = "a",
     B = "b",
@@ -38,7 +36,7 @@ walker create_custom_object {
             ),
             enum_field = Enum.A
         );
-        Jac.save(o);
+        _.save(o);
         print(jid(o));
         print(o);
     }
@@ -81,6 +79,6 @@ walker delete_custom_object {
     has object_id: str;
 
     can enter1 with `root entry {
-        Jac.destroy(&(self.object_id));
+        _.destroy(&(self.object_id));
     }
 }

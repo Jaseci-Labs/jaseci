@@ -1,7 +1,7 @@
-from jaclang import Obj
+from jaclang import JacFeature as _
 
 
-class Point(Obj):
+class Point(_.Obj):
     def __init__(self, x: float, y: float):
         self.x = x
         self.y = y

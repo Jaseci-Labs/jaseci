@@ -6,11 +6,21 @@ relevant files.
 """
 
 import os
-
+from typing import Callable
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.passes import Pass
+from jaclang.settings import settings
+
+black_format: Callable | None = None
+try:
+    from black import FileMode, format_str
+
+    black_format = format_str
+    FILE_MODE = FileMode()
+except Exception:
+    pass
 
 
 class PyOutPass(Pass):
@@ -56,7 +66,10 @@ class PyOutPass(Pass):
     def gen_python(self, node: ast.Module, out_path: str) -> None:
         """Generate Python."""
         with open(out_path, "w") as f:
-            f.write(node.gen.py)
+            content = node.gen.py
+            if settings.pyout_jaclib_format and black_format:
+                content = black_format(content, mode=FILE_MODE)
+            f.write(content)
 
     def dump_bytecode(self, node: ast.Module, mod_path: str, out_path: str) -> None:
         """Generate Python."""

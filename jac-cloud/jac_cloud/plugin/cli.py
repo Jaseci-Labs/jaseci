@@ -30,7 +30,7 @@ class JacCmd:
 
         @cmd_registry.register
         def serve(filename: str, host: str = "0.0.0.0", port: int = 8000) -> None:
-            from jaclang import jac_import
+            from jaclang import JacFeature as Jac
             from jac_cloud import FastAPI
 
             """Serve the jac application."""
@@ -42,7 +42,7 @@ class JacCmd:
             jctx = ExecutionContext.create()
 
             if filename.endswith(".jac"):
-                jac_import(
+                Jac.jac_import(
                     target=mod,
                     base_path=base,
                     cachable=True,
@@ -53,7 +53,7 @@ class JacCmd:
                     JacMachine(base).attach_program(
                         JacProgram(mod_bundle=load(f), bytecode=None, sem_ir=None)
                     )
-                    jac_import(
+                    Jac.jac_import(
                         target=mod,
                         base_path=base,
                         cachable=True,
@@ -73,7 +73,7 @@ class JacCmd:
         def create_system_admin(
             filename: str, email: str = "", password: str = ""
         ) -> str:
-            from jaclang import jac_import
+            from jaclang import JacFeature as Jac
 
             if not getenv("DATABASE_HOST"):
                 raise NotImplementedError(
@@ -85,7 +85,7 @@ class JacCmd:
             mod = mod[:-4]
 
             if filename.endswith(".jac"):
-                jac_import(
+                Jac.jac_import(
                     target=mod,
                     base_path=base,
                     cachable=True,
@@ -96,7 +96,7 @@ class JacCmd:
                     JacMachine(base).attach_program(
                         JacProgram(mod_bundle=load(f), bytecode=None, sem_ir=None)
                     )
-                    jac_import(
+                    Jac.jac_import(
                         target=mod,
                         base_path=base,
                         cachable=True,
