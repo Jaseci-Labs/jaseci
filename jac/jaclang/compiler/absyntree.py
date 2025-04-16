@@ -4011,7 +4011,7 @@ class MatchKVPair(MatchPattern):
 
     def __init__(
         self,
-        key: MatchPattern | NameAtom,
+        key: MatchPattern | NameAtom | AtomExpr,
         value: MatchPattern,
         kid: Sequence[AstNode],
     ) -> None:

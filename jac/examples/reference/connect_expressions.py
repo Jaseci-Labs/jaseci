@@ -1,40 +1,48 @@
 from __future__ import annotations
-from jaclang import *
+from jaclang.plugin.builtin import *
+from jaclang import JacFeature as _
 
 
-@node
-class node_a:
+class node_a(_.Node):
     value: int
 
 
-@walker
-class Creator:
-    @with_entry
-    def create(self, here: Root) -> None:
+class Creator(_.Walker):
+
+    @_.entry
+    @_.impl_patch_filename(
+        "/home/boyong/jaseci/jac/examples/reference/connect_expressions.jac"
+    )
+    def create(self, here: _.Root) -> None:
         end = here
         i = 0
         while i < 7:
             if i % 2 == 0:
-                end.connect((end := node_a(value=i)))
+                _.connect(end, (end := node_a(value=i)))
             else:
-                end.connect(
+                _.connect(
+                    end,
                     (end := node_a(value=i + 10)),
                     edge=MyEdge,
                     conn_assign=(("val",), (i,)),
                 )
             i += 1
 
-    @with_entry
-    def travel(self, here: Root | node_a) -> None:
-        for i in here.refs(MyEdge, lambda edge: edge.val <= 6):
+    @_.entry
+    @_.impl_patch_filename(
+        "/home/boyong/jaseci/jac/examples/reference/connect_expressions.jac"
+    )
+    def travel(self, here: _.Root | node_a) -> None:
+        for i in _.refs(
+            here, filter=lambda item: isinstance(item, MyEdge) and item.val <= 6
+        ):
             print(i.value)
-        self.visit(here.refs())
+        _.visit(self, _.refs(here))
 
 
-@edge
-class MyEdge:
-    val: int = field(5)
+class MyEdge(_.Edge):
+    val: int = 5
 
 
 if __name__ == "__main__":
-    root().spawn(Creator())
+    _.spawn(_.root(), Creator())

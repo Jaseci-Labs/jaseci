@@ -2,17 +2,10 @@
 
 from __future__ import annotations
 
-import inspect
-from typing import Optional
+from abc import abstractmethod
+from typing import ClassVar, Optional, override
 
 from jaclang.runtimelib.constructs import Architype, NodeArchitype
-from jaclang.runtimelib.machine import JacMachine as JacMachine
-
-__all__ = [
-    "dotgen",
-    "jid",
-    "jobj",
-]
 
 
 def dotgen(
@@ -26,12 +19,9 @@ def dotgen(
     dot_file: Optional[str] = None,
 ) -> str:
     """Print the dot graph."""
-    machine = inspect.stack()[1].frame.f_locals.get("__jac_mach__") or inspect.stack()[
-        1
-    ].frame.f_globals.get("__jac_mach__")
-    if not machine:
-        machine = JacMachine()
-    root = machine.get_root()
+    from jaclang.plugin.feature import JacFeature as Jac
+
+    root = Jac.root()
     node = node if node is not None else root
     depth = depth if depth is not None else -1
     traverse = traverse if traverse is not None else False
@@ -58,4 +48,14 @@ def jid(obj: Architype) -> str:
 
 def jobj(id: str) -> Architype | None:
     """Get the object from the id."""
-    return JacMachine.get_object(id)
+    return Jac.get_object(id)
+
+
+__all__ = [
+    "abstractmethod",
+    "ClassVar",
+    "override",
+    "dotgen",
+    "jid",
+    "jobj",
+]

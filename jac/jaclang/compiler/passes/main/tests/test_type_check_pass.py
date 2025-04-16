@@ -66,22 +66,23 @@ class MypyTypeCheckPassTests(TestCase):
         )
         self.assertRegex(
             out,
-            r"129:24 - 129:28.*SpecialVarRef - Jac.get_root\(\) \- Type\: jaclang.Root",
+            r"129:22 - 129:26.*SpecialVarRef - Jac.root\(\) \- Type\: jaclang.runtimelib.architype.Root",
+        )
+        self.assertRegex(out, r"129:11 - 129:27.*FuncCall \- Type\: builtins\.str")
+        self.assertRegex(
+            out,
+            r"129:13 - 129:21.*Name \- node_dot \- Type\: builtins.str,  SymbolTable\: str",
         )
 
-        self.assertRegex(out, r"129:11 - 129:29.*FuncCall \- Type\: builtins\.str")
         self.assertRegex(
             out,
-            r"129:15 - 129:23.*Name \- node_dot \- Type\: builtins.str,  SymbolTable\: str",
+            r"128:5 - 128:25.*BinaryExpr \- Type\: jaclang.runtimelib.architype.WalkerArchitype",
         )
 
-        self.assertRegex(
-            out,
-            r"128:5 - 128:25.*BinaryExpr \- Type\: jaclang.Walker",
-        )
-        self.assertRegex(
-            out,
-            r"48:11 - 48:28.*EdgeRefTrailer \- Type\: jaclang.JacList\[data_spatial_types.A\]",
-        )
+        # NOTE: No more JacList.
+        # self.assertRegex(
+        #     out,
+        #     r"48:11 - 48:28.*EdgeRefTrailer \- Type\: jaclang.JacList\[data_spatial_types.A\]",
+        # )
 
         self.assertRegex(out, r"24:5 - 24:25.*BinaryExpr \- Type\: builtins.bool", out)

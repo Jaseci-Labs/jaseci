@@ -251,7 +251,7 @@ def walker_execution(websocket: WebSocket, event: WalkerEvent) -> dict:
 
         wlk: WalkerAnchor = walker(**payload).__jac__
         if Jac.check_read_access(jctx.entry_node):
-            Jac.spawn_call(wlk.architype, jctx.entry_node.architype)
+            Jac.spawn(wlk.architype, jctx.entry_node.architype)
             jctx.close()
 
             if jctx.custom is not MISSING:

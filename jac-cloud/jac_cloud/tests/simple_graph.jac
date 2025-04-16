@@ -237,7 +237,7 @@ walker visit_nested_node {
 walker delete_nested_node {
     can enter_root with `root entry {
         nested = [-->(`?Nested)][0];
-        Jac.destroy(nested);
+        _.destroy(nested);
         # nested.__jac__.apply();
 
         report [-->(`?Nested)];
@@ -246,8 +246,8 @@ walker delete_nested_node {
 
 walker delete_nested_edge {
     can enter_root with `root entry {
-        nested_edge = :e:[-->][0];
-        Jac.destroy(nested_edge);
+        nested_edge = [edge -->][0];
+        _.destroy(nested_edge);
 
         report [-->(`?Nested)];
     }
@@ -258,19 +258,19 @@ walker allow_other_root_access {
 
     can enter_root with `root entry {
         if self.via_all {
-            Jac.unrestrict(here, self.level);
+            _.unrestrict(here, self.level);
         } else {
             import:py from jac_cloud.core.architype {BaseAnchor}
-            Jac.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
+            _.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
         }
     }
 
     can enter_nested with Nested entry {
         if self.via_all {
-            Jac.unrestrict(here, self.level);
+            _.unrestrict(here, self.level);
         } else {
             import:py from jac_cloud.core.architype {BaseAnchor}
-            Jac.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
+            _.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
         }
     }
 }
@@ -280,19 +280,19 @@ walker disallow_other_root_access {
 
     can enter_root with `root entry {
         if self.via_all {
-            Jac.restrict(here);
+            _.restrict(here);
         } else {
             import:py from jac_cloud.core.architype {BaseAnchor}
-            Jac.disallow_root(here, BaseAnchor.ref(self.root_id));
+            _.disallow_root(here, BaseAnchor.ref(self.root_id));
         }
     }
 
     can enter_nested with Nested entry {
         if self.via_all {
-            Jac.restrict(here);
+            _.restrict(here);
         } else {
             import:py from jac_cloud.core.architype {BaseAnchor}
-            Jac.disallow_root(here, BaseAnchor.ref(self.root_id));
+            _.disallow_root(here, BaseAnchor.ref(self.root_id));
         }
     }
 }
@@ -443,7 +443,7 @@ walker custom_status_code {
     has status: int;
 
     can enter with `root entry {
-        Jac.get_context().status = self.status;
+        _.get_context().status = self.status;
     }
 }
 
@@ -513,7 +513,7 @@ walker manual_create_nested_node {
         here.__jac__.apply();
 
         # simulate no auto save
-        jsrc = Jac.get_context().mem;
+        jsrc = _.get_context().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -539,7 +539,7 @@ walker manual_update_nested_node {
         nested.__jac__.apply();
 
         # simulate no auto save
-        jsrc = Jac.get_context().mem;
+        jsrc = _.get_context().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -551,11 +551,11 @@ walker manual_detach_nested_node {
     can enter_root with `root entry {
         nested = [-->(`?Nested)][0];
         detached = here del--> [-->(`?Nested)];
-        Jac.destroy(nested);
+        _.destroy(nested);
         nested.__jac__.apply();
 
         # simulate no auto save
-        jsrc = Jac.get_context().mem;
+        jsrc = _.get_context().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -566,11 +566,11 @@ walker manual_detach_nested_node {
 walker manual_delete_nested_node {
     can enter_root with `root entry {
         nested = [-->(`?Nested)][0];
-        Jac.destroy(nested);
+        _.destroy(nested);
         nested.__jac__.apply();
 
         # simulate no auto save
-        jsrc = Jac.get_context().mem;
+        jsrc = _.get_context().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -580,12 +580,12 @@ walker manual_delete_nested_node {
 
 walker manual_delete_nested_edge {
     can enter_root with `root entry {
-        nested_edge = :e:[-->][0];
-        Jac.destroy(nested_edge);
+        nested_edge = [edge-->][0];
+        _.destroy(nested_edge);
         nested_edge.__jac__.apply();
 
         # simulate no auto save
-        jsrc = Jac.get_context().mem;
+        jsrc = _.get_context().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -599,7 +599,7 @@ walker custom_report {
         report 2;
         report 3;
 
-        Jac.report({
+        _.report({
             "testing": 1
         }, True);
     }
@@ -705,7 +705,7 @@ walker traverse_populated_graph {
 
 walker purge_populated_graph {
     can purge with `root entry {
-        report Jac.reset_graph();
+        report _.reset_graph();
     }
 }
 
@@ -760,7 +760,7 @@ walker create_custom_object {
             ),
             enum_field = Enum.A
         );
-        Jac.save(o);
+        _.save(o);
         report o;
     }
 }
@@ -803,11 +803,11 @@ walker delete_custom_object {
 
     can enter1 with `root entry {
         import:py from jac_cloud.core.architype {BaseAnchor}
-        Jac.destroy(&(self.object_id));
+        _.destroy(&(self.object_id));
 
         # This is similar to
         #
-        # Jac.destroy(BaseAnchor.ref(self.object_id));
+        # _.destroy(BaseAnchor.ref(self.object_id));
         #
         # The only difference is BaseAnchor.ref doesn't
         # load the actual object and just use it as reference

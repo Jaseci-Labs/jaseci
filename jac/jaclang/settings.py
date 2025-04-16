@@ -24,8 +24,9 @@ class Settings:
     disable_mtllm: bool = False
     ignore_test_annex: bool = False
     allow_import_from: bool = False
-    pyout_jaclib_import_all: bool = True
-    pyout_jaclib_alias = "jl"
+    pyout_jaclib_import_all: bool = False
+    pyout_jaclib_alias: str = "_"
+    pyout_jaclib_format: bool = True
 
     # Formatter configuration
     max_line_length: int = 88
