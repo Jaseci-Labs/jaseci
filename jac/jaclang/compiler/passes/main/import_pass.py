@@ -204,16 +204,12 @@ class PyImportPass(JacImportPass):
         """Run Importer."""
         self.cur_node = node
         self.import_table[node.loc.mod_path] = node
-        self.annex_impl(node)
         self.terminate()  # Turns off auto traversal for deliberate traversal
-        self.run_again = True
-        while self.run_again:
-            self.run_again = False
-            all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
-            for i in all_imports:
-                self.process_import(i)
-                self.enter_module_path(i)
-            SubNodeTabPass(prior=self, input_ir=node)
+        all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
+        for i in all_imports:
+            self.process_import(i)
+            self.enter_module_path(i)
+        SubNodeTabPass(prior=self, input_ir=node)
 
         node.mod_deps.update(self.import_table)
 
@@ -255,17 +251,6 @@ class PyImportPass(JacImportPass):
                 msg += f' path="{imp_node.loc.mod_path}, {imp_node.loc}"'
                 self.__debug_print(msg)
                 self.__process_import(imp_node)
-
-    def attach_mod_to_node(
-        self, node: ast.ModulePath | ast.ModuleItem, mod: ast.Module | None
-    ) -> None:
-        """Attach a module to a node."""
-        if mod:
-            self.run_again = True
-            node.sub_module = mod
-            self.annex_impl(mod)
-            node.add_kids_right([mod], pos_update=False)
-            mod.parent = node
 
     def __process_import_from(self, imp_node: ast.Import) -> None:
         """Process imports in the form of `from X import I`."""

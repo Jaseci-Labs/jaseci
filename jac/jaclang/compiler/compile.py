@@ -10,6 +10,8 @@ from jaclang.compiler.passes.main import (
     JacImportPass,
     JacTypeCheckPass,
     PyBytecodeGenPass,
+    PyCollectDepsPass,
+    PyImportPass,
     PyOutPass,
     SubNodeTabPass,
     SymTabBuildPass,
@@ -139,13 +141,29 @@ def jac_str_to_pass(
 
     # Run TypeCheckingPass on the top module
     __debug_print()
-    __debug_print(f"Running JacTypeCheckPass on {top_mod.name}")
+    __debug_print(f"### Running JacTypeCheckPass on {top_mod.name} ###")
     __debug_print()
     JacTypeCheckPass(top_mod, prior=ast_ret)
 
     # if "JAC_VSCE" not in os.environ:
     #     ast_ret.ir = top_mod
     #     return ast_ret
+
+    __debug_print()
+    __debug_print("### Running PyCollectDepsPass on all modules ###")
+    for mod in top_mod.jac_prog.modules.values():
+        PyCollectDepsPass(mod, prior=ast_ret)
+    __debug_print()
+
+    __debug_print()
+    __debug_print("### Running PyImportPass on all modules ###")
+    for mod in top_mod.jac_prog.modules.values():
+        top_mod.jac_prog.last_imported.append(mod)
+    # Run PyImportPass
+    while len(top_mod.jac_prog.last_imported) > 0:
+        mod = top_mod.jac_prog.last_imported.pop()
+        jac_ir_to_pass(ir=mod, schedule=[PyImportPass], target=target)
+    __debug_print()
 
     for mod in top_mod.jac_prog.modules.values():
         __debug_print(f"### Running second layer of schdules on {mod.name} ####")
