@@ -107,6 +107,7 @@ class JacProgram:
         source = ast.JacSource(jac_str, mod_path=file_path)
         ast_ret: Pass = JacParser(input_ir=source)
         assert isinstance(ast_ret.ir, ast.Module)
+        self.modules[ast_ret.ir.loc.mod_path] = ast_ret.ir
         ast_ret.ir.jac_prog = self
         # TODO: This function below has tons of tech debt that should go away
         # when these functions become methods of JacProgram.
@@ -121,7 +122,6 @@ class JacProgram:
 
         # Creating a new JacProgram and attaching it to top module
         self.last_imported.append(ast_ret.ir)
-        self.modules[ast_ret.ir.loc.mod_path] = ast_ret.ir
 
         # Run JacImportPass & SymTabBuildPass on all imported Jac Programs
         while len(self.last_imported) > 0:
