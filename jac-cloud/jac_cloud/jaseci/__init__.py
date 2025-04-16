@@ -93,7 +93,7 @@ class FastAPI:
                 log: dict[str, Any] = {"request_url": str(request.url)}
                 log["extra_fields"] = list(log.keys())
                 logger.error(
-                    f"Call from to {log["request_url"]} returns unexpected errors: {response["errors"]}",
+                    f'Call from to {log["request_url"]} returns unexpected errors: {response["errors"]}',
                     extra=log,
                 )
 

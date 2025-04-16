@@ -2062,6 +2062,57 @@ paths:
       summary: Api Entry
       tags:
       - Walker APIs
+  /walker/create_unique_node:
+    post:
+      operationId: api_root_walker_create_unique_node_post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Create Unique Node Post
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: Api Root
+      tags:
+      - Walker APIs
+  /walker/create_unique_node/{node}:
+    post:
+      operationId: api_entry_walker_create_unique_node__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Create Unique Node  Node  Post
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Api Entry
+      tags:
+      - Walker APIs
   /walker/custom_report:
     post:
       operationId: api_root_walker_custom_report_post
@@ -4166,6 +4217,57 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
+      summary: Api Entry
+      tags:
+      - Walker APIs
+  /walker/visit_unique_node:
+    post:
+      operationId: api_root_walker_visit_unique_node_post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Root Walker Visit Unique Node Post
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: Api Root
+      tags:
+      - Walker APIs
+  /walker/visit_unique_node/{node}:
+    post:
+      operationId: api_entry_walker_visit_unique_node__node__post
+      parameters:
+      - in: path
+        name: node
+        required: true
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Node
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - {}
+                title: Response Api Entry Walker Visit Unique Node  Node  Post
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
       summary: Api Entry
       tags:
       - Walker APIs

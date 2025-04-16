@@ -83,6 +83,15 @@ obj Adult:Kid: {
     has kid: Kid, arr: list[Kid], data: dict[str, Kid];
 }
 
+node UniqueNode {
+    has id: str;
+
+    static has  __jac_indexes__: list = [{
+        "key": {"id": 1},
+        "constraints": {"unique": True}
+    }];
+}
+
 walker create_graph {
     can enter_root with `root entry {
         a = A(val=0);
@@ -892,6 +901,22 @@ walker visit_sequence {
 
     class __specs__ {
         has auth: bool = False;
+    }
+}
+
+walker create_unique_node {
+    can enter with `root entry {
+        here ++> UniqueNode(id="testing");
+    }
+}
+
+walker visit_unique_node {
+    can enter1 with `root entry {
+        visit [-->(`?UniqueNode)];
+    }
+
+    can enter2 with UniqueNode entry {
+        report here;
     }
 }
 
