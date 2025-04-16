@@ -79,7 +79,7 @@ class FuseTypeInfoPass(Pass):
 
     @staticmethod
     def __handle_node(
-        func: Callable[[FuseTypeInfoPass, T], None]
+        func: Callable[[FuseTypeInfoPass, T], None],
     ) -> Callable[[FuseTypeInfoPass, T], None]:
         def node_handler(self: FuseTypeInfoPass, node: T) -> None:
             if not isinstance(node, ast.AstSymbolNode):

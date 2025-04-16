@@ -3,13 +3,11 @@
 from __future__ import annotations
 
 import marshal
-import os
 import types
 from typing import Optional
 
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.compile import compile_jac
-from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.semtable import SemRegistry
 from jaclang.utils.log import logging
 
@@ -45,11 +43,6 @@ class JacProgram:
         if self.mod_bundle and isinstance(self.mod_bundle, Module):
             codeobj = self.mod_bundle.mod_deps[full_target].gen.py_bytecode
             return marshal.loads(codeobj) if isinstance(codeobj, bytes) else None
-        gen_dir = os.path.join(caller_dir, Con.JAC_GEN_DIR)
-        pyc_file_path = os.path.join(gen_dir, module_name + ".jbc")
-        if cachable and os.path.exists(pyc_file_path) and not reload:
-            with open(pyc_file_path, "rb") as f:
-                return marshal.load(f)
 
         result = compile_jac(full_target, cache_result=cachable)
         if result.errors_had:

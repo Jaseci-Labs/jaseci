@@ -377,7 +377,7 @@ def clean() -> None:
     current_dir = os.getcwd()
     for root, dirs, _files in os.walk(current_dir, topdown=True):
         for folder_name in dirs[:]:
-            if folder_name in [Constants.JAC_GEN_DIR, Constants.JAC_MYPY_CACHE]:
+            if folder_name in [Constants.JAC_MYPY_CACHE]:
                 folder_to_remove = os.path.join(root, folder_name)
                 shutil.rmtree(folder_to_remove)
                 print(f"Removed folder: {folder_to_remove}")

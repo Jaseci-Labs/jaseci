@@ -426,14 +426,6 @@ class JacCliTests(TestCase):
         )
         stdout, _ = process.communicate()
         self.assertIn("Hello World!", stdout)
-        self.assertTrue(
-            os.path.exists(
-                f"{self.fixture_abs_path(os.path.join('__jac_gen__', 'hello_nc.jbc'))}"
-            )
-        )
-        os.remove(
-            f"{self.fixture_abs_path(os.path.join('__jac_gen__', 'hello_nc.jbc'))}"
-        )
 
     def test_run_test(self) -> None:
         """Basic test for pass."""

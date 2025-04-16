@@ -3239,13 +3239,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(
                 ast3.Call(
-                    func=self.sync(
-                        ast3.Attribute(
-                            value=self.jaclib_obj(Con.JAC_FEATURE.value),
-                            attr="build_edge",
-                            ctx=ast3.Load(),
-                        )
-                    ),
+                    func=self.jaclib_obj("build_edge"),
                     args=[],
                     keywords=[
                         self.sync(

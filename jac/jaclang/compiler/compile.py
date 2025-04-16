@@ -10,7 +10,6 @@ from jaclang.compiler.passes.main import (
     JacImportPass,
     JacTypeCheckPass,
     PyBytecodeGenPass,
-    PyOutPass,
     SubNodeTabPass,
     SymTabBuildPass,
     pass_schedule,
@@ -33,18 +32,10 @@ def __debug_print(args: str = "") -> None:
 
 def compile_jac(file_path: str, cache_result: bool = False) -> Pass:
     """Start Compile for Jac file and return python code as string."""
-    code = jac_file_to_pass(
+    return jac_file_to_pass(
         file_path=file_path,
         schedule=pass_schedule,
     )
-    # If there is syntax error, the code will be an instance of JacParser as there is
-    # no more passes were processed, in that case we can ignore it.
-    had_syntax_error = isinstance(code, JacParser) and len(code.errors_had) != 0
-    if cache_result and (not had_syntax_error) and isinstance(code.ir, ast.Module):
-        assert code.ir.jac_prog is not None
-        for _, module in code.ir.jac_prog.modules.items():
-            PyOutPass(input_ir=module, prior=code)
-    return code
 
 
 def jac_file_to_pass(
