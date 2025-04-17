@@ -695,10 +695,16 @@ class JacLanguageTests(TestCase):
         architype_count = sum(
             len(mod.get_all_sub_nodes(ast.Architype))
             for mod in ir.jac_prog.modules.values()
+            if mod.name != "builtins"
         )
         self.assertEqual(
-            architype_count, 75
-        )  # Because of the Architype from other imports
+            architype_count, 55
+        )  # Fixed duplication of 'case' module (previously included 3 times, added 20 extra Architypes; 75 → 55)
+        builtin_mod = next(
+            (mod for name, mod in ir.jac_prog.modules.items() if "builtins" in name),
+            None,
+        )
+        self.assertEqual(len(builtin_mod.get_all_sub_nodes(ast.Architype)), 108)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import("needs_import_3", base_path=self.fixture_abs_path("./"))
