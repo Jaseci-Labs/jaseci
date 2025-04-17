@@ -67,6 +67,30 @@ nav:
   - Language Reference:
     - "lang_ref/jac_ref.md"
 
+  - Learning Section:
+    - "learning_section/introduction.md"
+    - Jac Tutorial:
+      - Jac Comments: "learning_section/jac_comments.md"
+      - Jac Variables: "learning_section/jac_variables.md"
+      - Jac Strings: "learning_section/jac_strings.md"
+      - Jac Operators: "learning_section/jac_operators.md"
+      - Jac Assignments: "learning_section/jac_assignment.md"
+      - Jac Lists: "learning_section/jac_list.md"
+      - Jac Tuples: "learning_section/jac_tuple.md"
+      - Jac Sets: "learning_section/jac_sets.md"
+      - Jac Dictionary: "learning_section/jac_dictionary.md"
+      - Jac If-Else: "learning_section/jac_if_statement.md"
+      - Jac While Loop: "learning_section/jac_while_loops.md"
+      - Jac For Loop: "learning_section/jac_for_loops.md"
+      - Jac Match-Case: "learning_section/jac_match_case.md"
+      - Jac Lambda: "learning_section/jac_lambda.md"
+      - Jac Abilities: "learning_section/jac_abilities.md"
+      - Jac Architypes: "learning_section/jac_architypes.md"
+      - Jac Enum (Enumerations): "learning_section/jac_enum.md"
+      - Jac Access Tags: "learning_section/jac_access_tags.md"
+      - Jac Try-Except: "learning_section/jac_try_except.md"
+      - Jac File Handling: "learning_section/jac_file_handling.md"
+
 theme:
   logo: "assets/logo.png"
   name: "material"
@@ -84,7 +108,7 @@ theme:
     - navigation.tabs
     - navigation.path
     - navigation.footer
-    - navigation.expand
+    # - navigation.expand
     - navigation.sections
     - navigation.top
   icon:
