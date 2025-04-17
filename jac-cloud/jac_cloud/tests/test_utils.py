@@ -33,8 +33,8 @@ class JacCloudTest(TestCase):
         """Run server."""
         # FIXME: Uncomment this.
         # run(["fuser", "-k", f"{port}/tcp"])
-        run(["jac", "clean"])
-        run(["jac", "tool", "gen_parser"])
+        # run(["jac", "clean"])
+        # run(["jac", "tool", "gen_parser"])
 
         base_envs = environ.copy()
         base_envs["DATABASE_NAME"] = database

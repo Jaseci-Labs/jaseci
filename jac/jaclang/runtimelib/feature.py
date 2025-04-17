@@ -9,37 +9,46 @@ from typing import (
     Callable,
     Mapping,
     Optional,
+    ParamSpec,
     Sequence,
     TYPE_CHECKING,
     Type,
     TypeAlias,
+    TypeVar,
     Union,
 )
 from uuid import UUID
 
+
+from jaclang.compiler import absyntree as ast
+from jaclang.compiler.constant import EdgeDir
+from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.runtimelib.architype import (
     DataSpatialFunction,
     GenericEdge as _GenericEdge,
     Root as _Root,
 )
-from jaclang.runtimelib.spec import (
+from jaclang.runtimelib.constructs import (
     AccessLevel,
     Anchor,
     Architype,
     EdgeAnchor,
     EdgeArchitype,
-    EdgeDir,
-    ExecutionContext,
     NodeAnchor,
     NodeArchitype,
-    P,
-    PyastGenPass,
     Root,
-    T,
     WalkerArchitype,
-    ast,
-    plugin_manager,
 )
+from jaclang.runtimelib.context import ExecutionContext
+
+import pluggy
+
+
+plugin_manager = pluggy.PluginManager("jac")
+
+
+T = TypeVar("T")
+P = ParamSpec("P")
 
 
 class JacAccessValidation:
@@ -275,12 +284,7 @@ class JacFeature(
     @staticmethod
     def get_object(id: str) -> Architype | None:
         """Get object given id."""
-        return plugin_manager.hook.get_object_func()(id=id)
-
-    @staticmethod
-    def get_object_func() -> Callable[[str], Architype | None]:
-        """Get object given id."""
-        return plugin_manager.hook.get_object_func()
+        return plugin_manager.hook.get_object(id=id)
 
     @staticmethod
     def object_ref(obj: Architype) -> str:
@@ -546,3 +550,53 @@ class JacFeature(
     ) -> list[Architype]:
         """Jac's filter architype list."""
         return plugin_manager.hook.filter(items=items, func=func)
+
+
+hookspec = pluggy.HookspecMarker("jac")
+
+
+def generate_spec_from_class(plugin_class: Type[Any]) -> Type[Any]:
+    """
+    Automatically generate a hook specification class from a given plugin class.
+    This function inspects all public callable attributes of the provided plugin_class
+    and creates corresponding placeholder methods decorated with @hookspec.
+    """
+    import inspect
+    from functools import wraps
+
+    hookspec = pluggy.HookspecMarker("jac")
+    spec_methods = {}
+
+    # Inspect all public callables on the class
+    for name, method in inspect.getmembers(plugin_class, predicate=inspect.isfunction):
+        if not name.startswith("_"):
+            # Use the original method's docstring in the spec.
+            doc = method.__doc__ or ""
+            sig = inspect.signature(method)
+            params = [
+                param.replace(default=inspect.Parameter.empty)
+                for param in sig.parameters.values()
+            ]
+            sig = sig.replace(parameters=params)
+
+            # Create a placeholder function that does nothing.
+            # Using wraps() helps preserve some metadata from the original method.
+            @wraps(method)
+            def placeholder(*args: object, **kwargs: object) -> None:
+                pass
+
+            # Assign the original name and docstring.
+            placeholder.__name__ = name
+            placeholder.__doc__ = doc
+            placeholder.__signature__ = sig  # type: ignore
+
+            # Decorate with the hookspec marker.
+            spec_methods[name] = hookspec(firstresult=True)(placeholder)
+
+    # Create a new specification class with the generated hook methods.
+    spec_ret = type(f"{plugin_class.__name__}Spec", (object,), spec_methods)
+    return spec_ret
+
+
+JacFeatureSpec = generate_spec_from_class(JacFeature)
+plugin_manager.add_hookspecs(JacFeatureSpec)

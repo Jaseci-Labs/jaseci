@@ -93,7 +93,7 @@ class MongoDB(Memory[ObjectId, BaseAnchor | Anchor]):
         """Find one anchor from memory by ids with filter."""
         return next(self.find(anchors, filter, session), None)
 
-    def find_by_id(self, anchor: BA) -> BaseAnchor | Anchor | None:
+    def find_by_id(self, anchor: BA) -> BA | None:
         """Find one by id."""
         data = super().find_by_id(anchor.id)
 
