@@ -218,7 +218,7 @@ An escape character consists of a backslash `(\)` followed by a specific charact
 | \t   | Horizontal tab    |
 | \b   | Backspace         |
 
-## JacLang String **join()** Method
+## String **join()** Method
 
 In JacLang, you can use the `join()` method to concatenate elements of a list or tuple into a single string, with a specified separator.
 
