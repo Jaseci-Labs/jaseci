@@ -10,6 +10,26 @@ With the while loop we can execute a set of statements as long as a condition is
     --8<-- "examples/learning_section/jac_while_loop.jac:1:7"
     ```
 
+## While True
+
+Jac supports infinite loops using `while True`, which can be useful in scenarios where you want a loop to run continuously until a break condition is met from inside the loop.
+
+**Code Example**
+    ```jac linenums="1"
+    --8<-- "examples/learning_section/jac_while_loop.jac:31:40"
+    ```
+
+- In this example, the loop will keep running indefinitely unless the `break` statement is triggered when `i > 5`.
+
+## While is not
+
+Jac allows expressive comparison using `is not`, which can be used in `while` loops to check if a variable does **not** match a specific value.
+
+**Code Example**
+    ```jac linenums="1"
+    --8<-- "examples/learning_section/jac_while_loop.jac:42:48"
+    ```
+
 ## Break Statement
 With the **break** statement we can stop the loop even if the while condition is true.
 

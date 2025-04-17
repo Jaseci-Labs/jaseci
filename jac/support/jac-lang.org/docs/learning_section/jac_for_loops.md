@@ -53,6 +53,16 @@ The **range()** function defaults to increment the sequence by 1, however it is 
     ```jac linenums="1"
     --8<-- "examples/learning_section/jac_for_loop.jac:46:50"
     ```
+
+## IterFor Statment
+
+In addition to the standard `for` loops, Jac also supports a **C language style iterative** for loop, known as the `IterForStmt`. This type of loop is useful when you need more control over the loop variable, such as specifying an initializer, a condition, and an increment expression.
+
+**Code Example**
+    ```jac linenums="1"
+    --8<-- "examples/learning_section/jac_for_loop.jac:74:78"
+    ```
+
 ## Else in For Loop
 The **else** keyword in a for loop specifies a block of code to be executed when the loop is finished.
 

@@ -69,3 +69,10 @@ with entry {
         }
     }
 }
+
+# IterForStmt
+with entry {
+    for k=1 to k<4 by k+=1 {
+        print("k =", k);
+    }
+}

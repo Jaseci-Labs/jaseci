@@ -27,3 +27,22 @@ with entry {
         print(i);
     }
 }
+
+with entry {
+    i = 1;
+    while True {
+        print(i);
+        i += 1;
+        if i > 5 {
+            break;
+        }
+    }
+}
+
+with entry {
+    x = 0;
+    while x is not 3 {
+        print("x is", x);
+        x += 1;
+    }
+}
