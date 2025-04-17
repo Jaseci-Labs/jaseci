@@ -7,7 +7,7 @@ import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
-from jaclang.plugin.default import hookimpl
+from jaclang.runtimelib.default import hookimpl
 from jaclang.runtimelib.utils import extract_params, extract_type, get_sem_scope
 
 from mtllm.aott import (

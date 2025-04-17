@@ -3,9 +3,9 @@
 import inspect
 from typing import List, Type
 
-from jaclang.plugin.default import JacFeatureImpl
-from jaclang.plugin.feature import JacFeature
-from jaclang.plugin.spec import JacFeatureSpec
+from jaclang.runtimelib.default import JacFeatureImpl
+from jaclang.runtimelib.feature import JacFeature
+from jaclang.runtimelib.spec import JacFeatureSpec
 from jaclang.utils.test import TestCase
 
 

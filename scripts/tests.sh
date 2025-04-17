@@ -1,0 +1,1 @@
+pytest jac -s -n 30 & pytest jac-cloud

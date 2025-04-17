@@ -17,7 +17,8 @@ from uuid import UUID
 from jaclang.compiler.constant import colors
 from jaclang.compiler.program import JacProgram
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
-from jaclang.plugin.feature import (
+from jaclang.runtimelib.constructs import GenericEdge, JacTestCheck
+from jaclang.runtimelib.feature import (
     AccessLevel,
     Anchor,
     Architype,
@@ -35,7 +36,6 @@ from jaclang.plugin.feature import (
     WalkerArchitype,
     ast,
 )
-from jaclang.runtimelib.constructs import GenericEdge, JacTestCheck
 from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
 from jaclang.runtimelib.machine import JacMachine
 from jaclang.runtimelib.memory import Shelf, ShelfStorage

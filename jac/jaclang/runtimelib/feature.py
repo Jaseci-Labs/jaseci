@@ -17,7 +17,12 @@ from typing import (
 )
 from uuid import UUID
 
-from jaclang.plugin.spec import (
+from jaclang.runtimelib.architype import (
+    DataSpatialFunction,
+    GenericEdge as _GenericEdge,
+    Root as _Root,
+)
+from jaclang.runtimelib.spec import (
     AccessLevel,
     Anchor,
     Architype,
@@ -34,11 +39,6 @@ from jaclang.plugin.spec import (
     WalkerArchitype,
     ast,
     plugin_manager,
-)
-from jaclang.runtimelib.architype import (
-    DataSpatialFunction,
-    GenericEdge as _GenericEdge,
-    Root as _Root,
 )
 
 

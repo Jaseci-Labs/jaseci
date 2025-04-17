@@ -4,13 +4,13 @@ from contextlib import suppress
 from typing import Callable, Type
 
 from jaclang.compiler.constant import EdgeDir
-from jaclang.plugin.default import (
+from jaclang.runtimelib.architype import Architype
+from jaclang.runtimelib.default import (
     JacCallableImplementation as _JacCallableImplementation,
     JacFeatureImpl,
     hookimpl,
 )
-from jaclang.plugin.feature import JacFeature as Jac
-from jaclang.runtimelib.architype import Architype
+from jaclang.runtimelib.feature import JacFeature as Jac
 from jaclang.runtimelib.utils import all_issubclass
 
 from ..core.architype import (
