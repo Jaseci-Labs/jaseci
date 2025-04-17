@@ -50,6 +50,9 @@ A list can contain different data types.
     --8<-- "examples/learning_section/jac_list.jac:23:26"
     ```
 
+!!! warning
+    Jac allows mixed data types in lists, but it’s best practice to use lists for homogeneous data types for better clarity and to reduce errors.
+
 ### The List Constructor
 It is also possible to use the **list()** constructor when creating a new list.
 
@@ -212,7 +215,7 @@ You can loop through the list items by using a **for** loop.
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_list.jac:160:165"
+    --8<-- "examples/learning_section/jac_list.jac:160:166"
     ```
 
 ### Loop Through the Index Numbers
@@ -220,7 +223,7 @@ You can iterate through the list items by accessing them using their index.To ac
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_list.jac:167:172"
+    --8<-- "examples/learning_section/jac_list.jac:167:173"
     ```
 
 ### Using a While Loop
@@ -228,7 +231,7 @@ In Jac, you can iterate through list items using a **while** loop by leveraging 
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_list.jac:168:173"
+    --8<-- "examples/learning_section/jac_list.jac:174:182"
     ```
 
 ### Looping Using List Comprehension
@@ -236,7 +239,7 @@ List Comprehension offers the shortest syntax for looping through lists.
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_list.jac:174:181"
+    --8<-- "examples/learning_section/jac_list.jac:183:187"
     ```
 ## Sort Lists
 ### Sort List Alphanumerically
@@ -244,7 +247,7 @@ List objects have a **sort()** method that will sort the list alphanumerically, 
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_list.jac:183:187"
+    --8<-- "examples/learning_section/jac_list.jac:190:195"
     ```
 
 ### Sort Descending
@@ -252,7 +255,7 @@ To sort descending, use the keyword argument **reverse = True**.
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_list.jac:190:195"
+    --8<-- "examples/learning_section/jac_list.jac:196:201"
     ```
 
 ### Customize Sort Function
@@ -260,7 +263,7 @@ You can define a custom function for sorting by using the keyword argument **key
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_list.jac:196:201"
+    --8<-- "examples/learning_section/jac_list.jac:202:211"
     ```
 
 ### Case Insensitive Sort
@@ -268,7 +271,7 @@ By default the **sort()** method is case sensitive, resulting in all capital let
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_list.jac:202:211"
+    --8<-- "examples/learning_section/jac_list.jac:213:217"
     ```
 
 ### Reverse Order
@@ -276,7 +279,7 @@ The **reverse()** method reverses the current sorting order of the elements.
 
 **Code Example**
     ```jac linenums="1"
-    --8<-- "examples/learning_section/jac_list.jac:213:217"
+    --8<-- "examples/learning_section/jac_list.jac:219:223"
     ```
 ## Copy Lists
 You cannot copy a list simply by typing **list2 = list1**, because **list2** will only be a reference to **list1**, and changes made in **list1** will automatically also be made in **list2**.

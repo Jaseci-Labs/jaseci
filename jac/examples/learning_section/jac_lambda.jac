@@ -12,3 +12,8 @@ with entry {
     y = with a: int can a ** 2;
     print(y(6));
 }
+
+with entry {
+    greet = with can "Hello, Jac!";
+    print(greet());
+}

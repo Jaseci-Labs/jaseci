@@ -23,7 +23,15 @@ In JacLang, an inline comment starts with `#` and is used to add brief explanati
     ```jac linenums="1"
     --8<-- "examples/learning_section/jac_comments.jac:10:13"
     ```
+## Multiline Comments
 
+In Jaclang, to include comments across multiple lines in Jac, place the `#` symbol at the beginning of each line.
+
+**Code Example**
+=== "Jac"
+    ```jac linenums="1"
+    --8<-- "examples/learning_section/jac_comments.jac:15:20"
+    ```
 ## Docstrings
 
 **Code Example**

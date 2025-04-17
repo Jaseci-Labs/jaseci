@@ -22,3 +22,13 @@ Jac Lambda functions are concise, anonymous functions in JacLang, useful for inl
     ```jac linenums="1"
     --8<-- "examples/learning_section/jac_lambda.jac:11:14"
     ```
+
+## Lambda without argument
+
+Jac allows defining anonymous functions using `with can` When no parameters are needed, the parameter list can be omitted. These are ideal for simple, one-time-use operations.
+
+**Code Example**
+=== "Jac"
+    ```jac linenums="1"
+    --8<-- "examples/learning_section/jac_lambda.jac:16:19"
+    ```

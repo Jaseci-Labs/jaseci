@@ -62,6 +62,9 @@ Each word starts with a capital letter. `MyVariableName = "John"`
 - **Snake Case :**
 Each word is separated by an underscore character. `my_variable_name = "John"`
 
+!!! Note
+    In Jac, the **snake_case** naming convention is used for defining variable identifiers. This enhances readability and maintains consistency throughout the codebase.
+
 ## Output Variables
 The Jaclang `print()` function is often used to output variables.
 

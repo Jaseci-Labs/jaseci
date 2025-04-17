@@ -117,3 +117,23 @@ with entry {
     txt = f"The price is {20 * 59} dollars";
     print(txt);
 }
+
+with entry{
+    x:str = "Tom";
+    y:str = "Moody";
+    print(f"Hello {x} {y} {{This is an escaped curly brace}}");
+}
+
+with entry {
+    print("Good Morning, \n Tom!");
+}
+
+with entry {
+    print("Good Morning, \t Tom!");
+}
+
+with entry {
+    names = ["John", "Peter", "Vicky"];
+    result = "#".join(names);
+    print(result);
+}

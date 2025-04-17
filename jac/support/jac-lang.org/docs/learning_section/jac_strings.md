@@ -163,8 +163,16 @@ To specify a string as an f-string, simply put an **f** in front of the string l
     ```jac linenums="1"
     --8<-- "examples/learning_section/jac_strings.jac:104:108"
     ```
+In Jac, similar to Python, formatted string literals also known as f-strings allow you to embed expressions inside string constants using curly braces **{}**. This makes it easy to combine variables and text into a single string.
+
+**Code Example**
+=== "Jac"
+    ```jac linenums="1"
+    --8<-- "examples/learning_section/jac_strings.jac:121:125"
+    ```
 
 ### Placeholders and Modifiers
+
 A placeholder can contain variables, operations, functions, and modifiers to format the value.
 
 **Code Example**
@@ -179,5 +187,47 @@ A placeholder can contain Jaclang code, like math operations.
 === "Jac"
     ```jac linenums="1"
     --8<-- "examples/learning_section/jac_strings.jac:116:119"
+    ```
+
+## Escape Characters
+
+In JacLang, escape characters are used to represent special characters within string literals that would otherwise be difficult or illegal to include directly.
+
+An escape character consists of a backslash `(\)` followed by a specific character to indicate a special meaning.
+
+**Code Example**
+=== "Jac"
+    ```jac linenums="1"
+    --8<-- "examples/learning_section/jac_strings.jac:127:130"
+    ```
+
+**Code Example**
+=== "Jac"
+    ```jac linenums="1"
+    --8<-- "examples/learning_section/jac_strings.jac:131:133"
+    ```
+
+### Common Escape Characters in JacLang
+
+| Code | Description       |
+|------|-------------------|
+| \'   | Single quote      |
+| \\   | Backslash         |
+| \n   | New line          |
+| \r   | Carriage return   |
+| \t   | Horizontal tab    |
+| \b   | Backspace         |
+
+## JacLang String **join()** Method
+
+In JacLang, you can use the `join()` method to concatenate elements of a list or tuple into a single string, with a specified separator.
+
+Join all items in a list using a hash (`#`) character as the separator.
+
+**Code Example**
+
+=== "Jac"
+    ```jac linenums="1"
+    --8<-- "examples/learning_section/jac_strings.jac:135:139"
     ```
 
