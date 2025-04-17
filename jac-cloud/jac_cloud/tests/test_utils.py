@@ -31,8 +31,7 @@ class JacCloudTest(TestCase):
         mini: bool = False,
     ) -> None:
         """Run server."""
-        # FIXME: Uncomment this.
-        # run(["fuser", "-k", f"{port}/tcp"])
+        run(["fuser", "-k", f"{port}/tcp"])
         run(["jac", "clean"])
         run(["jac", "tool", "gen_parser"])
 

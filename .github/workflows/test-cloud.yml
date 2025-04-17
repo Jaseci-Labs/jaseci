@@ -37,10 +37,10 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v2
 
-      - name: Set up Python 3.13
+      - name: Set up Python 3.12.0
         uses: actions/setup-python@v2
         with:
-          python-version: 3.13
+          python-version: 3.12.0
 
       - name: Install dependencies
         run: |
