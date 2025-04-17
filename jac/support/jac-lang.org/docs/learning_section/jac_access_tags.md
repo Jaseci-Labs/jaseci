@@ -23,6 +23,16 @@ Jac provides three main access levels:
 
 We'll explore each access tag in the following examples.
 
+!!! note
+    Currently, type checking is not supported when using the `jac run` cli command.
+
+    To perform access-level type checking, use the CLI command:
+    ```
+    jac check filename.jac
+    ```
+
+    This feature is planned to be integrated into the `jac run` cli command in a future release.
+
 ---
 
 ## Access Tags for Global Variables
