@@ -14,6 +14,7 @@ from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
+from jaclang.compiler.symtable import SymbolTable
 from jaclang.langserve.sem_manager import SemTokManager
 from jaclang.langserve.utils import (
     add_unique_text_edit,
@@ -182,8 +183,8 @@ class JacLangServer(LanguageServer):
         builtin_mod = next(
             mod for name, mod in mod_ir.jac_prog.modules.items() if "builtins" in name
         )
-        builtin_tab = builtin_mod._sym_tab
-        assert isinstance(builtin_tab, ast.SymbolTable)
+        builtin_tab = builtin_mod.sym_tab
+        assert isinstance(builtin_tab, SymbolTable)
         completion_items = []
 
         node_selected = find_deepest_symbol_node_at_pos(

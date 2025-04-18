@@ -126,7 +126,7 @@ class JacLanguageTests(TestCase):
 
         expected_outputs = [
             "+-- AtomTrailer - Type: builtins.list[builtins.int]",
-            "    +-- Name - arr - Type: builtins.list[builtins.list[builtins.int]],  SymbolTable: None",
+            "    +-- Name - arr - Type: builtins.list[builtins.list[builtins.int]],  SymbolTable: list",
             "+-- IndexSlice - [IndexSlice] - Type: builtins.list[builtins.list[builtins.int]],  SymbolTable: None",
             "        +-- Token - [, ",
             "        +-- Int - 1 - Type: Literal[1]?,  SymbolTable: None",

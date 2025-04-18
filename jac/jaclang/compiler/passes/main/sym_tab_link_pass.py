@@ -27,6 +27,13 @@ class SymTabLinkPass(Pass):
         else:
             if node.sym_name in self.ir.py_info.py_raise_map:
                 rel_path = self.ir.py_info.py_raise_map[node.sym_name]
+            elif (
+                f"{self.ir.get_href_path(node)}.{node.sym_name}"
+                in self.ir.py_info.py_raise_map
+            ):
+                rel_path = self.ir.py_info.py_raise_map[
+                    f"{self.ir.get_href_path(node)}.{node.sym_name}"
+                ]
             else:
                 return
 
