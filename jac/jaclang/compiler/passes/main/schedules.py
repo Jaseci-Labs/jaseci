@@ -28,7 +28,6 @@ py_code_gen = [
 ]
 
 type_checker_sched = [
-    DefUsePass,
     InheritancePass,
     FuseTypeInfoPass,
     AccessCheckPass,

@@ -7,6 +7,7 @@ import jaclang.compiler.absyntree as ast
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import (
+    DefUsePass,
     JacImportPass,
     JacTypeCheckPass,
     PyBytecodeGenPass,
@@ -169,6 +170,12 @@ def jac_str_to_pass(
     for mod in top_mod.jac_prog.modules.values():
         SymTabLinkPass(input_ir=mod, prior=ast_ret)
 
+    __debug_print()
+    __debug_print("### Running DefUsePass on all modules ###")
+    for mod in top_mod.jac_prog.modules.values():
+        DefUsePass(mod, prior=ast_ret)
+    __debug_print()
+
     for mod in top_mod.jac_prog.modules.values():
         __debug_print(f"### Running second layer of schdules on {mod.name} ####")
         run_schedule(mod, schedule=type_checker_sched)
@@ -275,6 +282,12 @@ def jac_pass_to_pass(
     # Link all Jac symbol tables created
     for mod in top_mod.jac_prog.modules.values():
         SymTabLinkPass(input_ir=mod, prior=ast_ret)
+
+    __debug_print()
+    __debug_print("### Running DefUsePass on all modules ###")
+    for mod in top_mod.jac_prog.modules.values():
+        DefUsePass(mod, prior=ast_ret)
+    __debug_print()
 
     for mod in top_mod.jac_prog.modules.values():
         __debug_print(f"### Running second layer of schdules on {mod.name} ####")
