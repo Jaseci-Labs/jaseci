@@ -8,7 +8,7 @@ from typing import Any
 
 from jaclang.cli.cmdreg import cmd_registry
 from jaclang.runtimelib.context import ExecutionContext
-from jaclang.runtimelib.default import hookimpl
+from jaclang.runtimelib.feature import hookimpl
 from jaclang.runtimelib.machine import JacMachine, JacProgram
 
 from pymongo.errors import ConnectionFailure, OperationFailure

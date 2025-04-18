@@ -5,8 +5,7 @@ from typing import Callable, Type
 
 from jaclang.compiler.constant import EdgeDir
 from jaclang.runtimelib.architype import Architype
-from jaclang.runtimelib.default import JacFeatureImpl, hookimpl
-from jaclang.runtimelib.feature import JacFeature as Jac
+from jaclang.runtimelib.feature import JacFeature as Jac, JacFeatureImpl, hookimpl
 from jaclang.runtimelib.utils import all_issubclass
 
 from ..core.architype import (
