@@ -45,6 +45,7 @@ import pluggy
 
 
 plugin_manager = pluggy.PluginManager("jac")
+use_plugin = 1
 
 
 T = TypeVar("T")
@@ -57,7 +58,8 @@ class JacAccessValidation:
     @staticmethod
     def elevate_root() -> None:
         """Elevate context root to system_root."""
-        plugin_manager.hook.elevate_root()
+        if use_plugin:
+            return plugin_manager.hook.elevate_root()
 
     @staticmethod
     def allow_root(
@@ -66,9 +68,10 @@ class JacAccessValidation:
         level: AccessLevel | int | str = AccessLevel.READ,
     ) -> None:
         """Allow all access from target root graph to current Architype."""
-        plugin_manager.hook.allow_root(
-            architype=architype, root_id=root_id, level=level
-        )
+        if use_plugin:
+            return plugin_manager.hook.allow_root(
+                architype=architype, root_id=root_id, level=level
+            )
 
     @staticmethod
     def disallow_root(
@@ -77,41 +80,48 @@ class JacAccessValidation:
         level: AccessLevel | int | str = AccessLevel.READ,
     ) -> None:
         """Disallow all access from target root graph to current Architype."""
-        plugin_manager.hook.disallow_root(
-            architype=architype, root_id=root_id, level=level
-        )
+        if use_plugin:
+            return plugin_manager.hook.disallow_root(
+                architype=architype, root_id=root_id, level=level
+            )
 
     @staticmethod
     def unrestrict(
         architype: Architype, level: AccessLevel | int | str = AccessLevel.READ
     ) -> None:
         """Allow everyone to access current Architype."""
-        plugin_manager.hook.unrestrict(architype=architype, level=level)
+        if use_plugin:
+            return plugin_manager.hook.unrestrict(architype=architype, level=level)
 
     @staticmethod
     def restrict(architype: Architype) -> None:
         """Disallow others to access current Architype."""
-        plugin_manager.hook.restrict(architype=architype)
+        if use_plugin:
+            return plugin_manager.hook.restrict(architype=architype)
 
     @staticmethod
     def check_read_access(to: Anchor) -> bool:
         """Read Access Validation."""
-        return plugin_manager.hook.check_read_access(to=to)
+        if use_plugin:
+            return plugin_manager.hook.check_read_access(to=to)
 
     @staticmethod
     def check_connect_access(to: Anchor) -> bool:
         """Write Access Validation."""
-        return plugin_manager.hook.check_connect_access(to=to)
+        if use_plugin:
+            return plugin_manager.hook.check_connect_access(to=to)
 
     @staticmethod
     def check_write_access(to: Anchor) -> bool:
         """Write Access Validation."""
-        return plugin_manager.hook.check_write_access(to=to)
+        if use_plugin:
+            return plugin_manager.hook.check_write_access(to=to)
 
     @staticmethod
     def check_access_level(to: Anchor) -> AccessLevel:
         """Access validation."""
-        return plugin_manager.hook.check_access_level(to=to)
+        if use_plugin:
+            return plugin_manager.hook.check_access_level(to=to)
 
 
 class JacNode:
@@ -120,7 +130,8 @@ class JacNode:
     @staticmethod
     def node_dot(node: NodeArchitype, dot_file: Optional[str] = None) -> str:
         """Generate Dot file for visualizing nodes and edges."""
-        return plugin_manager.hook.node_dot(node=node, dot_file=dot_file)
+        if use_plugin:
+            return plugin_manager.hook.node_dot(node=node, dot_file=dot_file)
 
     @staticmethod
     def get_edges(
@@ -130,9 +141,10 @@ class JacNode:
         target_obj: list[NodeArchitype] | None,
     ) -> list[EdgeArchitype]:
         """Get edges connected to this node."""
-        return plugin_manager.hook.get_edges(
-            node=node, dir=dir, filter=filter, target_obj=target_obj
-        )
+        if use_plugin:
+            return plugin_manager.hook.get_edges(
+                node=node, dir=dir, filter=filter, target_obj=target_obj
+            )
 
     @staticmethod
     def edges_to_nodes(
@@ -142,14 +154,16 @@ class JacNode:
         target_obj: list[NodeArchitype] | None,
     ) -> list[NodeArchitype]:
         """Get set of nodes connected to this node."""
-        return plugin_manager.hook.edges_to_nodes(
-            node=node, dir=dir, filter=filter, target_obj=target_obj
-        )
+        if use_plugin:
+            return plugin_manager.hook.edges_to_nodes(
+                node=node, dir=dir, filter=filter, target_obj=target_obj
+            )
 
     @staticmethod
     def remove_edge(node: NodeAnchor, edge: EdgeAnchor) -> None:
         """Remove reference without checking sync status."""
-        return plugin_manager.hook.remove_edge(node=node, edge=edge)
+        if use_plugin:
+            return plugin_manager.hook.remove_edge(node=node, edge=edge)
 
 
 class JacEdge:
@@ -158,7 +172,8 @@ class JacEdge:
     @staticmethod
     def detach(edge: EdgeAnchor) -> None:
         """Detach edge from nodes."""
-        return plugin_manager.hook.detach(edge=edge)
+        if use_plugin:
+            return plugin_manager.hook.detach(edge=edge)
 
 
 class JacWalker:
@@ -176,7 +191,8 @@ class JacWalker:
         ),
     ) -> bool:  # noqa: ANN401
         """Jac's visit stmt feature."""
-        return plugin_manager.hook.visit(walker=walker, expr=expr)
+        if use_plugin:
+            return plugin_manager.hook.visit(walker=walker, expr=expr)
 
     @staticmethod
     def ignore(
@@ -190,17 +206,20 @@ class JacWalker:
         ),
     ) -> bool:  # noqa: ANN401
         """Jac's ignore stmt feature."""
-        return plugin_manager.hook.ignore(walker=walker, expr=expr)
+        if use_plugin:
+            return plugin_manager.hook.ignore(walker=walker, expr=expr)
 
     @staticmethod
     def spawn(op1: Architype, op2: Architype) -> WalkerArchitype:
         """Jac's spawn operator feature."""
-        return plugin_manager.hook.spawn(op1=op1, op2=op2)
+        if use_plugin:
+            return plugin_manager.hook.spawn(op1=op1, op2=op2)
 
     @staticmethod
     def disengage(walker: WalkerArchitype) -> bool:
         """Jac's disengage stmt feature."""
-        return plugin_manager.hook.disengage(walker=walker)
+        if use_plugin:
+            return plugin_manager.hook.disengage(walker=walker)
 
 
 class JacClassReferences:
@@ -234,16 +253,17 @@ class JacBuiltin:
         dot_file: Optional[str],
     ) -> str:
         """Generate Dot file for visualizing nodes and edges."""
-        return plugin_manager.hook.dotgen(
-            node=node,
-            depth=depth,
-            traverse=traverse,
-            edge_type=edge_type,
-            bfs=bfs,
-            edge_limit=edge_limit,
-            node_limit=node_limit,
-            dot_file=dot_file,
-        )
+        if use_plugin:
+            return plugin_manager.hook.dotgen(
+                node=node,
+                depth=depth,
+                traverse=traverse,
+                edge_type=edge_type,
+                bfs=bfs,
+                edge_limit=edge_limit,
+                node_limit=node_limit,
+                dot_file=dot_file,
+            )
 
 
 class JacCmd:
@@ -252,7 +272,8 @@ class JacCmd:
     @staticmethod
     def create_cmd() -> None:
         """Create Jac CLI cmds."""
-        return plugin_manager.hook.create_cmd()
+        if use_plugin:
+            return plugin_manager.hook.create_cmd()
 
 
 class JacFeature(
@@ -269,39 +290,46 @@ class JacFeature(
     @staticmethod
     def setup() -> None:
         """Set Class References."""
-        plugin_manager.hook.setup()
+        if use_plugin:
+            return plugin_manager.hook.setup()
 
     @staticmethod
     def get_context() -> ExecutionContext:
         """Get current execution context."""
-        return plugin_manager.hook.get_context()
+        if use_plugin:
+            return plugin_manager.hook.get_context()
 
     @staticmethod
     def reset_graph(root: Optional[Root] = None) -> int:
         """Purge current or target graph."""
-        return plugin_manager.hook.reset_graph(root=root)
+        if use_plugin:
+            return plugin_manager.hook.reset_graph(root=root)
 
     @staticmethod
     def get_object(id: str) -> Architype | None:
         """Get object given id."""
-        return plugin_manager.hook.get_object(id=id)
+        if use_plugin:
+            return plugin_manager.hook.get_object(id=id)
 
     @staticmethod
     def object_ref(obj: Architype) -> str:
         """Get object reference id."""
-        return plugin_manager.hook.object_ref(obj=obj)
+        if use_plugin:
+            return plugin_manager.hook.object_ref(obj=obj)
 
     @staticmethod
     def make_architype(cls: Type[Architype]) -> Type[Architype]:
         """Create a obj architype."""
-        return plugin_manager.hook.make_architype(cls=cls)
+        if use_plugin:
+            return plugin_manager.hook.make_architype(cls=cls)
 
     @staticmethod
     def impl_patch_filename(
         file_loc: str,
     ) -> Callable[[Callable[P, T]], Callable[P, T]]:
         """Update impl file location."""
-        return plugin_manager.hook.impl_patch_filename(file_loc=file_loc)
+        if use_plugin:
+            return plugin_manager.hook.impl_patch_filename(file_loc=file_loc)
 
     @staticmethod
     def jac_import(
@@ -316,22 +344,24 @@ class JacFeature(
         reload_module: Optional[bool] = False,
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
-        return plugin_manager.hook.jac_import(
-            target=target,
-            base_path=base_path,
-            absorb=absorb,
-            cachable=cachable,
-            mdl_alias=mdl_alias,
-            override_name=override_name,
-            lng=lng,
-            items=items,
-            reload_module=reload_module,
-        )
+        if use_plugin:
+            return plugin_manager.hook.jac_import(
+                target=target,
+                base_path=base_path,
+                absorb=absorb,
+                cachable=cachable,
+                mdl_alias=mdl_alias,
+                override_name=override_name,
+                lng=lng,
+                items=items,
+                reload_module=reload_module,
+            )
 
     @staticmethod
     def jac_test(test_fun: Callable) -> Callable:
         """Create a test."""
-        return plugin_manager.hook.jac_test(test_fun=test_fun)
+        if use_plugin:
+            return plugin_manager.hook.jac_test(test_fun=test_fun)
 
     @staticmethod
     def run_test(
@@ -344,25 +374,28 @@ class JacFeature(
         verbose: bool = False,
     ) -> int:
         """Run the test suite in the specified .jac file."""
-        return plugin_manager.hook.run_test(
-            filepath=filepath,
-            func_name=func_name,
-            filter=filter,
-            xit=xit,
-            maxfail=maxfail,
-            directory=directory,
-            verbose=verbose,
-        )
+        if use_plugin:
+            return plugin_manager.hook.run_test(
+                filepath=filepath,
+                func_name=func_name,
+                filter=filter,
+                xit=xit,
+                maxfail=maxfail,
+                directory=directory,
+                verbose=verbose,
+            )
 
     @staticmethod
     def field(factory: Callable[[], T] | None = None, init: bool = True) -> T:
         """Jac's field handler."""
-        return plugin_manager.hook.field(factory=factory, init=init)
+        if use_plugin:
+            return plugin_manager.hook.field(factory=factory, init=init)
 
     @staticmethod
     def report(expr: Any, custom: bool = False) -> None:  # noqa: ANN401
         """Jac's report stmt feature."""
-        plugin_manager.hook.report(expr=expr, custom=custom)
+        if use_plugin:
+            return plugin_manager.hook.report(expr=expr, custom=custom)
 
     @staticmethod
     def refs(
@@ -373,13 +406,14 @@ class JacFeature(
         edges_only: bool = False,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's apply_dir stmt feature."""
-        return plugin_manager.hook.refs(
-            sources=sources,
-            targets=targets,
-            dir=dir,
-            filter=filter,
-            edges_only=edges_only,
-        )
+        if use_plugin:
+            return plugin_manager.hook.refs(
+                sources=sources,
+                targets=targets,
+                dir=dir,
+                filter=filter,
+                edges_only=edges_only,
+            )
 
     @staticmethod
     def connect(
@@ -391,14 +425,15 @@ class JacFeature(
         edges_only: bool = False,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's connect operator feature."""
-        return plugin_manager.hook.connect(
-            left=left,
-            right=right,
-            edge=edge,
-            undir=undir,
-            conn_assign=conn_assign,
-            edges_only=edges_only,
-        )
+        if use_plugin:
+            return plugin_manager.hook.connect(
+                left=left,
+                right=right,
+                edge=edge,
+                undir=undir,
+                conn_assign=conn_assign,
+                edges_only=edges_only,
+            )
 
     @staticmethod
     def disconnect(
@@ -408,22 +443,25 @@ class JacFeature(
         filter: Callable[[EdgeArchitype], bool] | None = None,
     ) -> bool:
         """Jac's disconnect operator feature."""
-        return plugin_manager.hook.disconnect(
-            left=left,
-            right=right,
-            dir=dir,
-            filter=filter,
-        )
+        if use_plugin:
+            return plugin_manager.hook.disconnect(
+                left=left,
+                right=right,
+                dir=dir,
+                filter=filter,
+            )
 
     @staticmethod
     def assign(target: list[T], attr_val: tuple[tuple[str], tuple[Any]]) -> list[T]:
         """Jac's assign comprehension feature."""
-        return plugin_manager.hook.assign(target=target, attr_val=attr_val)
+        if use_plugin:
+            return plugin_manager.hook.assign(target=target, attr_val=attr_val)
 
     @staticmethod
     def root() -> Root:
         """Jac's root getter."""
-        return plugin_manager.hook.root()
+        if use_plugin:
+            return plugin_manager.hook.root()
 
     @staticmethod
     def build_edge(
@@ -432,52 +470,62 @@ class JacFeature(
         conn_assign: Optional[tuple[tuple, tuple]],
     ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchitype]:
         """Jac's root getter."""
-        return plugin_manager.hook.build_edge(
-            is_undirected=is_undirected, conn_type=conn_type, conn_assign=conn_assign
-        )
+        if use_plugin:
+            return plugin_manager.hook.build_edge(
+                is_undirected=is_undirected,
+                conn_type=conn_type,
+                conn_assign=conn_assign,
+            )
 
     @staticmethod
     def save(
         obj: Architype | Anchor,
     ) -> None:
         """Destroy object."""
-        plugin_manager.hook.save(obj=obj)
+        if use_plugin:
+            return plugin_manager.hook.save(obj=obj)
 
     @staticmethod
     def destroy(
         obj: Architype | Anchor,
     ) -> None:
         """Destroy object."""
-        plugin_manager.hook.destroy(obj=obj)
+        if use_plugin:
+            return plugin_manager.hook.destroy(obj=obj)
 
     @staticmethod
     def entry(func: Callable) -> Callable:
         """Mark a method as jac entry with this decorator."""
-        return plugin_manager.hook.entry(func=func)
+        if use_plugin:
+            return plugin_manager.hook.entry(func=func)
 
     @staticmethod
     def exit(func: Callable) -> Callable:
         """Mark a method as jac exit with this decorator."""
-        return plugin_manager.hook.exit(func=func)
+        if use_plugin:
+            return plugin_manager.hook.exit(func=func)
 
     @staticmethod
     def get_semstr_type(
         file_loc: str, scope: str, attr: str, return_semstr: bool
     ) -> Optional[str]:
         """Jac's get_semstr_type feature."""
-        return plugin_manager.hook.get_semstr_type(
-            file_loc=file_loc, scope=scope, attr=attr, return_semstr=return_semstr
-        )
+        if use_plugin:
+            return plugin_manager.hook.get_semstr_type(
+                file_loc=file_loc, scope=scope, attr=attr, return_semstr=return_semstr
+            )
 
     @staticmethod
     def obj_scope(file_loc: str, attr: str) -> str:
         """Jac's get_semstr_type feature."""
-        return plugin_manager.hook.obj_scope(file_loc=file_loc, attr=attr)
+        if use_plugin:
+            return plugin_manager.hook.obj_scope(file_loc=file_loc, attr=attr)
 
     @staticmethod
     def get_sem_type(file_loc: str, attr: str) -> tuple[str | None, str | None]:
         """Jac's get_semstr_type feature."""
-        return plugin_manager.hook.get_sem_type(file_loc=file_loc, attr=attr)
+        if use_plugin:
+            return plugin_manager.hook.get_sem_type(file_loc=file_loc, attr=attr)
 
     @staticmethod
     def with_llm(
@@ -494,24 +542,26 @@ class JacFeature(
         _locals: Mapping,
     ) -> Any:  # noqa: ANN401
         """Jac's with_llm feature."""
-        return plugin_manager.hook.with_llm(
-            file_loc=file_loc,
-            model=model,
-            model_params=model_params,
-            scope=scope,
-            incl_info=incl_info,
-            excl_info=excl_info,
-            inputs=inputs,
-            outputs=outputs,
-            action=action,
-            _globals=_globals,
-            _locals=_locals,
-        )
+        if use_plugin:
+            return plugin_manager.hook.with_llm(
+                file_loc=file_loc,
+                model=model,
+                model_params=model_params,
+                scope=scope,
+                incl_info=incl_info,
+                excl_info=excl_info,
+                inputs=inputs,
+                outputs=outputs,
+                action=action,
+                _globals=_globals,
+                _locals=_locals,
+            )
 
     @staticmethod
     def gen_llm_body(_pass: PyastGenPass, node: ast.Ability) -> list[ast3.AST]:
         """Generate the by LLM body."""
-        return plugin_manager.hook.gen_llm_body(_pass=_pass, node=node)
+        if use_plugin:
+            return plugin_manager.hook.gen_llm_body(_pass=_pass, node=node)
 
     @staticmethod
     def by_llm_call(
@@ -526,22 +576,24 @@ class JacFeature(
         exclude_info: list[tuple[str, ast3.AST]],
     ) -> ast3.Call:
         """Return the LLM Call, e.g. _Jac.with_llm()."""
-        return plugin_manager.hook.by_llm_call(
-            _pass=_pass,
-            model=model,
-            model_params=model_params,
-            scope=scope,
-            inputs=inputs,
-            outputs=outputs,
-            action=action,
-            include_info=include_info,
-            exclude_info=exclude_info,
-        )
+        if use_plugin:
+            return plugin_manager.hook.by_llm_call(
+                _pass=_pass,
+                model=model,
+                model_params=model_params,
+                scope=scope,
+                inputs=inputs,
+                outputs=outputs,
+                action=action,
+                include_info=include_info,
+                exclude_info=exclude_info,
+            )
 
     @staticmethod
     def get_by_llm_call_args(_pass: PyastGenPass, node: ast.FuncCall) -> dict:
         """Get the by LLM call args."""
-        return plugin_manager.hook.get_by_llm_call_args(_pass=_pass, node=node)
+        if use_plugin:
+            return plugin_manager.hook.get_by_llm_call_args(_pass=_pass, node=node)
 
     @staticmethod
     def filter(
@@ -549,7 +601,8 @@ class JacFeature(
         func: Callable[[Architype], bool],
     ) -> list[Architype]:
         """Jac's filter architype list."""
-        return plugin_manager.hook.filter(items=items, func=func)
+        if use_plugin:
+            return plugin_manager.hook.filter(items=items, func=func)
 
 
 hookspec = pluggy.HookspecMarker("jac")
