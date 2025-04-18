@@ -485,7 +485,7 @@ class JacFeature:
                 keywords=[],
             )
         )
-        if node.params and node.params.items:
+        if node.params:
             inputs = [
                 _pass.sync(
                     ast3.Tuple(
@@ -570,7 +570,7 @@ class JacFeature:
                         ctx=ast3.Load(),
                     )
                 )
-                for kw_pair in node.params.items
+                for kw_pair in node.params
                 if isinstance(kw_pair, ast.KWPair)
             ]
         else:

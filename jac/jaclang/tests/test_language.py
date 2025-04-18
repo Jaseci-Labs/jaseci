@@ -119,18 +119,18 @@ class JacLanguageTests(TestCase):
 
         expected_outputs = [
             "+-- AtomTrailer - Type: builtins.list[builtins.int]",
-            "    +-- Name - arr - Type: builtins.list[builtins.list[builtins.int]],  SymbolTable: list",
-            "    +-- IndexSlice - [IndexSlice] - Type: builtins.list[builtins.list[builtins.int]],  SymbolTable: None",
-            "        +-- Token - [,",
-            "        +-- Int - 1 - Type: Literal[1]?,  SymbolTable: None",
-            "        +-- Token - :,",
-            "        +-- Int - 3 - Type: Literal[3]?,  SymbolTable: None",
-            "        +-- Token - ,,",
-            "        +-- Int - 1 - Type: Literal[1]?,  SymbolTable: None",
-            "        +-- Token - :,",
-            "        +-- Token - :,",
-            "        +-- Int - 2 - Type: Literal[2]?,  SymbolTable: None",
-            "        +-- Token - ],",
+            "|   +-- Name - arr - Type: builtins.list[builtins.list[builtins.int]],  SymbolTable: list",
+            "|   +-- IndexSlice - [IndexSlice] - Type: builtins.list[builtins.list[builtins.int]],  SymbolTable: None",
+            "|       +-- Token - [,",
+            "|       +-- Int - 1 - Type: Literal[1]?,  SymbolTable: None",
+            "|       +-- Token - :,",
+            "|       +-- Int - 3 - Type: Literal[3]?,  SymbolTable: None",
+            "|       +-- Token - ,,",
+            "|       +-- Int - 1 - Type: Literal[1]?,  SymbolTable: None",
+            "|       +-- Token - :,",
+            "|       +-- Token - :,",
+            "|       +-- Int - 2 - Type: Literal[2]?,  SymbolTable: None",
+            "|       +-- Token - ],",
         ]
 
         for expected in expected_outputs:
@@ -872,7 +872,7 @@ class JacLanguageTests(TestCase):
         ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
         jac_ast = ir.pp()
         self.assertIn(" |   +-- String - 'Loop completed normally{}'", jac_ast)
-        self.assertEqual(len(ir.get_all_sub_nodes(ast.SubNodeList)), 322)
+        self.assertEqual(len(ir.get_all_sub_nodes(ast.SubNodeList)), 258)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         jac_import("deep_convert", base_path=self.fixture_abs_path("./"))
