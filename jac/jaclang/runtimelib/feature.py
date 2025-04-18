@@ -608,7 +608,15 @@ class JacCmd:
         """Create Jac CLI cmds."""
 
 
-class JacBasics:
+class JacFeature(
+    JacClassReferences,
+    JacAccessValidation,
+    JacNode,
+    JacEdge,
+    JacWalker,
+    JacBuiltin,
+    JacCmd,
+):
     """Jac Feature."""
 
     @staticmethod
@@ -1350,19 +1358,6 @@ class JacBasics:
         }
 
 
-class JacFeature(
-    JacClassReferences,
-    JacAccessValidation,
-    JacNode,
-    JacEdge,
-    JacWalker,
-    JacBuiltin,
-    JacCmd,
-    JacBasics,
-):
-    """Jac Feature Defaults."""
-
-
 def generate_spec_from_class(plugin_class: Type[Any]) -> Type[Any]:
     """
     Automatically generate a hook specification class from a given plugin class.
@@ -1430,6 +1425,12 @@ def generate_plugin_helpers(
             continue
 
         sig = inspect.signature(method)
+        sig_nodef = sig.replace(
+            parameters=[
+                p.replace(default=inspect.Parameter.empty)
+                for p in sig.parameters.values()
+            ]
+        )
         doc = method.__doc__ or ""
 
         # --- Spec placeholder ---
@@ -1440,13 +1441,15 @@ def generate_plugin_helpers(
 
             placeholder.__name__ = name
             placeholder.__doc__ = doc
-            placeholder.__signature__ = sig  # type: ignore
+            placeholder.__signature__ = sig_nodef  # type: ignore
             return placeholder
 
         spec_methods[name] = hookspec(firstresult=True)(make_spec(name, sig, doc))
 
         # --- Impl class: original methods with @hookimpl ---
-        impl_methods[name] = hookimpl(method)
+        wrapped_impl = wraps(method)(method)
+        wrapped_impl.__signature__ = sig_nodef  # type: ignore
+        impl_methods[name] = hookimpl(wrapped_impl)
 
         # --- Proxy class: call through plugin_manager.hook ---
         # Gather class variables and annotations from entire MRO (excluding built-ins)
@@ -1470,6 +1473,7 @@ def generate_plugin_helpers(
             def proxy(*args: Any, **kwargs: Any) -> Any:
                 # bind positionals to parameter names
                 bound = sig.bind_partial(*args, **kwargs)
+                bound.apply_defaults()
                 # grab the HookCaller
                 hookcaller = getattr(plugin_manager.hook, name)
                 # call with named args only
