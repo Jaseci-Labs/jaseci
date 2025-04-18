@@ -1392,9 +1392,13 @@ def generate_plugin_helpers(
         doc = method.__doc__ or ""
 
         # --- Spec placeholder ---
-        def make_spec(name: str, sig: inspect.Signature, doc: str):
+        def make_spec(
+            name: str, sig_nodef: inspect.Signature, doc: str, method: Callable
+        ) -> Callable:
+            """Create a placeholder method for the spec class."""
+
             @wraps(method)
-            def placeholder(*args: Any, **kwargs: Any) -> None:
+            def placeholder(*args: object, **kwargs: object) -> None:
                 pass
 
             placeholder.__name__ = name
@@ -1402,7 +1406,9 @@ def generate_plugin_helpers(
             placeholder.__signature__ = sig_nodef  # type: ignore
             return placeholder
 
-        spec_methods[name] = hookspec(firstresult=True)(make_spec(name, sig, doc))
+        spec_methods[name] = hookspec(firstresult=True)(
+            make_spec(name, sig_nodef, doc, method)
+        )
 
         # --- Impl class: original methods with @hookimpl ---
         wrapped_impl = wraps(method)(method)
@@ -1427,13 +1433,15 @@ def generate_plugin_helpers(
                     continue
                 class_vars[key] = value
 
-        def make_proxy(name: str, sig: inspect.Signature):
-            def proxy(*args: Any, **kwargs: Any) -> Any:
+        def make_proxy(name: str, sig: inspect.Signature) -> Callable:
+            """Create a proxy method for the proxy class."""
+
+            def proxy(*args: object, **kwargs: object) -> object:
                 # bind positionals to parameter names
-                bound = sig.bind_partial(*args, **kwargs)
+                bound = sig.bind_partial(*args, **kwargs)  # noqa
                 bound.apply_defaults()
                 # grab the HookCaller
-                hookcaller = getattr(plugin_manager.hook, name)
+                hookcaller = getattr(plugin_manager.hook, name)  # noqa
                 # call with named args only
                 return hookcaller(**bound.arguments)
 
@@ -1444,17 +1452,17 @@ def generate_plugin_helpers(
         proxy_methods[name] = make_proxy(name, sig)
 
     # Construct classes
-    SpecClass = type(f"{plugin_class.__name__}Spec", (object,), spec_methods)
-    ImplClass = type(f"{plugin_class.__name__}Impl", (object,), impl_methods)
+    spec_cls = type(f"{plugin_class.__name__}Spec", (object,), spec_methods)
+    impl_cls = type(f"{plugin_class.__name__}Impl", (object,), impl_methods)
     proxy_namespace = {}
     proxy_namespace.update(class_vars)
     if annotations:
         proxy_namespace["__annotations__"] = annotations
     proxy_namespace.update(proxy_methods)
-    ProxyClass = type(f"{plugin_class.__name__}", (object,), proxy_namespace)
+    proxy_cls = type(f"{plugin_class.__name__}", (object,), proxy_namespace)
 
-    return SpecClass, ImplClass, ProxyClass
+    return spec_cls, impl_cls, proxy_cls
 
 
-JacFeatureSpec, JacFeatureImpl, JacFeature = generate_plugin_helpers(JacFeature)
+JacFeatureSpec, JacFeatureImpl, JacFeature = generate_plugin_helpers(JacFeature)  # type: ignore[misc]
 plugin_manager.add_hookspecs(JacFeatureSpec)
