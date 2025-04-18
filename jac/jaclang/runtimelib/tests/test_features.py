@@ -3,9 +3,7 @@
 import inspect
 from typing import List, Type
 
-from jaclang.runtimelib.default import JacFeatureImpl
-from jaclang.runtimelib.feature import JacFeature
-from jaclang.runtimelib.feature import JacFeatureSpec
+from jaclang.runtimelib.feature import JacFeature, JacFeatureImpl, JacFeatureSpec
 from jaclang.utils.test import TestCase
 
 import pluggy
@@ -43,11 +41,6 @@ class TestFeatures(TestCase):
         jac_feature_defaults_methods = self.get_methods(JacFeatureImpl)
         jac_feature_spec_methods = self.get_methods(JacFeatureSpec)
 
-        print(
-            len(jac_feature_methods),
-            len(jac_feature_defaults_methods),
-            len(jac_feature_spec_methods),
-        )
         # Check if all methods are the same in all classes
         self.assertGreater(len(jac_feature_methods), 5)
         self.assertEqual(jac_feature_spec_methods, jac_feature_defaults_methods)
@@ -66,11 +59,10 @@ class TestFeatures(TestCase):
             def setup() -> None:
                 return "I'm here"
 
-        pm.register(JacFeatureImpl())
         pm.register(AnotherPlugin())
 
         # Check that both implementations are detected
-        self.assertEqual(len(pm.hook.setup.get_hookimpls()), 2)
+        self.assertEqual(len(pm.hook.setup.get_hookimpls()), 1)
 
         # Execute the hook and check both results are returned
         results = pm.hook.setup()

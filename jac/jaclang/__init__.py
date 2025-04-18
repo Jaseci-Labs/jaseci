@@ -1,7 +1,6 @@
 """The Jac Programming Language."""
 
-from jaclang.runtimelib.default import JacFeatureImpl
-from jaclang.runtimelib.feature import JacFeature, plugin_manager
+from jaclang.runtimelib.feature import JacFeature, JacFeatureImpl, plugin_manager
 
 
 plugin_manager.register(JacFeatureImpl)
