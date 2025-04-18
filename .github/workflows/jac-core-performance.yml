@@ -35,4 +35,4 @@ jobs:
       - name: Run pytest with durations
         run: |
           mkdir -p .performance
-          pytest
+          pytest --durations=0 -v 
