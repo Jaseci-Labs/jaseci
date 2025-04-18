@@ -27,6 +27,7 @@ class Symbol:
         defn.sym = self
         self.access: SymbolAccess = access
         self.parent_tab = parent_tab
+        self.jtype = None
 
     @property
     def decl(self) -> ast.NameAtom:

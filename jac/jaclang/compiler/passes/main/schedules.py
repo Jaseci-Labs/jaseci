@@ -18,10 +18,12 @@ from .registry_pass import RegistryPass  # noqa: I100
 from .access_modifier_pass import AccessCheckPass  # noqa: I100
 from .py_collect_dep_pass import PyCollectDepsPass  # noqa: I100
 from .inheritance_pass import InheritancePass  # noqa: I100
+from ..typecheck import SemanticAnalysisPass
 
 py_code_gen = [
     DeclImplMatchPass,
     DefUsePass,
+    SemanticAnalysisPass,
     RegistryPass,
     PyastGenPass,
     PyJacAstLinkPass,
