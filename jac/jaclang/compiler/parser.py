@@ -252,16 +252,24 @@ class JacParser(Pass):
         def module(self, _: None) -> ast.Module:
             """Grammar rule.
 
-            module: (toplevel_stmt (tl_stmt_with_doc | toplevel_stmt)*)?
-                | STRING (tl_stmt_with_doc | toplevel_stmt)*
+            module: ((STRING | toplevel_stmt) (STRING? toplevel_stmt)*)?
             """
-            doc = self.match(ast.String)
-            body = self.match_many(ast.ElementStmt)
+            module_doc = self.match(ast.String)
+            tl_stmts: list[ast.ElementStmt] = []
+            while True:
+                doc = self.match(ast.String)
+                if tl_stmt := self.match(ast.ElementStmt):
+                    tl_stmts.append(tl_stmt)
+                    if doc:
+                        tl_stmt.doc = doc
+                        tl_stmt.add_kids_left([doc])
+                else:
+                    break
             mod = ast.Module(
                 name=self.parse_ref.mod_path.split(os.path.sep)[-1].rstrip(".jac"),
                 source=self.parse_ref.source,
-                doc=doc,
-                body=body,
+                doc=module_doc,
+                body=tl_stmts,
                 is_imported=False,
                 terminals=self.terminals,
                 kid=(
@@ -270,17 +278,6 @@ class JacParser(Pass):
                 ),
             )
             return mod
-
-        def tl_stmt_with_doc(self, _: None) -> ast.ElementStmt:
-            """Grammar rule.
-
-            tl_stmt_with_doc: doc_tag toplevel_stmt
-            """
-            doc = self.consume(ast.String)
-            element = self.consume(ast.ElementStmt)
-            element.doc = doc
-            element.add_kids_left([doc])
-            return element
 
         def toplevel_stmt(self, _: None) -> ast.ElementStmt:
             """Grammar rule.
