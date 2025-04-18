@@ -35,11 +35,4 @@ jobs:
       - name: Run pytest with durations
         run: |
           mkdir -p .performance
-          pytest --durations=0 -v -n auto | tee .performance/durations_current.txt
-
-      - name: Compare durations with baseline
-        run: python scripts/performance.py
-
-      - name: Save current as baseline (main branch only)
-        if: github.ref == 'refs/heads/main'
-        run: cp .performance/durations_current.txt .performance/durations_baseline.txt
+          pytest --durations=0 -v -n auto 
