@@ -1358,48 +1358,6 @@ class JacFeature(
         }
 
 
-def generate_spec_from_class(plugin_class: Type[Any]) -> Type[Any]:
-    """
-    Automatically generate a hook specification class from a given plugin class.
-    This function inspects all public callable attributes of the provided plugin_class
-    and creates corresponding placeholder methods decorated with @hookspec.
-    """
-    import inspect
-    from functools import wraps
-
-    spec_methods = {}
-
-    # Inspect all public callables on the class
-    for name, method in inspect.getmembers(plugin_class, predicate=inspect.isfunction):
-        if not name.startswith("_"):
-            # Use the original method's docstring in the spec.
-            doc = method.__doc__ or ""
-            sig = inspect.signature(method)
-            params = [
-                param.replace(default=inspect.Parameter.empty)
-                for param in sig.parameters.values()
-            ]
-            sig = sig.replace(parameters=params)
-
-            # Create a placeholder function that does nothing.
-            # Using wraps() helps preserve some metadata from the original method.
-            @wraps(method)
-            def placeholder(*args: object, **kwargs: object) -> None:
-                pass
-
-            # Assign the original name and docstring.
-            placeholder.__name__ = name
-            placeholder.__doc__ = doc
-            placeholder.__signature__ = sig  # type: ignore
-
-            # Decorate with the hookspec marker.
-            spec_methods[name] = hookspec(firstresult=True)(placeholder)
-
-    # Create a new specification class with the generated hook methods.
-    spec_ret = type(f"{plugin_class.__name__}Spec", (object,), spec_methods)
-    return spec_ret
-
-
 def generate_plugin_helpers(
     plugin_class: Type[Any],
 ) -> tuple[Type[Any], Type[Any], Type[Any]]:
