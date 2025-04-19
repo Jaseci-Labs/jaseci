@@ -4,10 +4,10 @@ import ast as ast3
 from difflib import unified_diff
 
 
-from jaclang.compiler.compile import jac_file_to_pass, jac_str_to_pass
 from jaclang.compiler.passes.main import PyastGenPass
 from jaclang.compiler.passes.main.schedules import py_code_gen as without_format
 from jaclang.compiler.passes.tool import JacFormatPass
+from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
 
 
@@ -19,7 +19,7 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
     def test_double_unparse(self) -> None:
         """Parse micro jac file."""
         try:
-            code_gen_pure = jac_file_to_pass(
+            code_gen_pure = JacProgram.jac_file_to_pass(
                 self.examples_abs_path("manual_code/circle.jac"),
                 target=PyastGenPass,
                 schedule=without_format,
@@ -33,7 +33,7 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        code_gen_pure = jac_file_to_pass(
+        code_gen_pure = JacProgram.jac_file_to_pass(
             self.fixture_abs_path(filename),
             target=PyastGenPass,
             schedule=without_format,
@@ -43,7 +43,7 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
         # print(x)
         # print(f"Testing {code_gen_pure.ir.name}")
         # print(code_gen_pure.ir.pp())
-        code_gen_jac = jac_str_to_pass(
+        code_gen_jac = JacProgram.jac_str_to_pass(
             jac_str=x,
             file_path=filename,
             target=PyastGenPass,

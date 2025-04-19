@@ -12,7 +12,6 @@ from typing import Optional
 
 import jaclang.compiler.absyntree as ast
 from jaclang.cli.cmdreg import CommandShell, cmd_registry
-from jaclang.compiler.compile import jac_file_formatter, jac_file_to_pass
 from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 from jaclang.compiler.passes.main.schedules import py_code_gen_build, py_code_gen_typed
@@ -35,7 +34,7 @@ def format(path: str, outfile: str = "", debug: bool = False) -> None:
     """Run the specified .jac file or format all .jac files in a given directory."""
 
     def format_file(filename: str) -> None:
-        code_gen_format = jac_file_formatter(filename)
+        code_gen_format = JacProgram.jac_file_formatter(filename)
         if code_gen_format.errors_had:
             print(
                 f"Errors occurred while formatting the file {filename}.",
@@ -183,7 +182,7 @@ def get_object(
 def build(filename: str, pybuild: bool = False) -> None:
     """Build the specified .jac file."""
     if filename.endswith(".jac"):
-        out = jac_file_to_pass(
+        out = JacProgram.jac_file_to_pass(
             file_path=filename,
             schedule=py_code_gen_typed if pybuild else py_code_gen_build,
         )
@@ -205,7 +204,7 @@ def check(filename: str, print_errs: bool = True) -> None:
     :param filename: The path to the .jac file.
     """
     if filename.endswith(".jac"):
-        out = jac_file_to_pass(
+        out = JacProgram.jac_file_to_pass(
             file_path=filename,
             schedule=py_code_gen_typed,
         )
@@ -390,7 +389,7 @@ def debug(filename: str, main: bool = True, cache: bool = False) -> None:
     base = base if base else "./"
     mod = mod[:-4]
     if filename.endswith(".jac"):
-        bytecode = jac_file_to_pass(filename).ir.gen.py_bytecode
+        bytecode = JacProgram.jac_file_to_pass(filename).ir.gen.py_bytecode
         if bytecode:
             code = marshal.loads(bytecode)
             if db.has_breakpoint(bytecode):
@@ -508,7 +507,7 @@ def jac2py(filename: str) -> None:
     """
     if filename.endswith(".jac"):
         with open(filename, "r"):
-            code = jac_file_to_pass(file_path=filename).ir.gen.py
+            code = JacProgram.jac_file_to_pass(file_path=filename).ir.gen.py
         print(code)
     else:
         print("Not a .jac file.", file=sys.stderr)
