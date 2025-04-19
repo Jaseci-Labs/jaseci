@@ -30,9 +30,11 @@ class RegistryPass(Pass):
         """Save registry for each module."""
         module_name = node.name
         try:
-            from jaclang.runtimelib.feature import JacFeature, JacMachineState
-
-            JacFeature.get_sem_ir(JacMachineState.get(), node.registry)
+            if node.jac_prog and node.registry:
+                if node.jac_prog.sem_ir:
+                    node.jac_prog.sem_ir.registry.update(node.registry.registry)
+                else:
+                    node.jac_prog.sem_ir = node.registry
         except Exception as e:
             self.warning(f"Can't save registry for {module_name}: {e}")
         self.modules_visited.pop()

@@ -11,6 +11,8 @@ from jac_splice_orc.config.config_loader import ConfigLoader
 from jac_splice_orc.managers.proxy_manager import ModuleProxy
 
 from jaclang.cli.cmdreg import cmd_registry
+from jaclang.runtimelib.feature import JacFeature, JacMachineState, JacProgram
+
 
 from kubernetes import client, config
 
@@ -470,6 +472,7 @@ class SpliceOrcPlugin:
     @staticmethod
     @hookimpl
     def jac_import(
+        mach: JacMachineState,
         target: str,
         base_path: str,
         absorb: bool,
@@ -486,7 +489,6 @@ class SpliceOrcPlugin:
             JacImporter,
             PythonImporter,
         )
-        from jaclang.runtimelib.machine import JacMachineState, JacProgram
 
         module_config_path = os.getenv("MODULE_CONFIG_PATH", "/cfg/module_config.json")
         try:
@@ -531,18 +533,15 @@ class SpliceOrcPlugin:
             items,
         )
 
-        jac_machine = JacMachineState.get(base_path)
-        if not jac_machine.jac_program:
-            jac_machine.attach_program(
-                JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
+        if not mach.jac_program:
+            JacFeature.attach_program(
+                mach, JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
             )
 
         if lng == "py":
-            import_result = PythonImporter(JacMachineState.get()).run_import(spec)
+            import_result = PythonImporter(mach).run_import(spec)
         else:
-            import_result = JacImporter(JacMachineState.get()).run_import(
-                spec, reload_module
-            )
+            import_result = JacImporter(mach).run_import(spec, reload_module)
 
         return (
             (import_result.ret_mod,)

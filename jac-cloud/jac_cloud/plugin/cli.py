@@ -40,9 +40,11 @@ class JacCmd:
 
             FastAPI.enable()
             jctx = ExecutionContext.create()
+            mach = JacMachineState(base)
 
             if filename.endswith(".jac"):
                 Jac.jac_import(
+                    mach=mach,
                     target=mod,
                     base_path=base,
                     cachable=True,
@@ -50,10 +52,11 @@ class JacCmd:
                 )
             elif filename.endswith(".jir"):
                 with open(filename, "rb") as f:
-                    JacMachineState(base).attach_program(
-                        JacProgram(mod_bundle=load(f), bytecode=None, sem_ir=None)
+                    Jac.attach_program(
+                        mach, JacProgram(mod_bundle=load(f), bytecode=None, sem_ir=None)
                     )
                     Jac.jac_import(
+                        mach=mach,
                         target=mod,
                         base_path=base,
                         cachable=True,
@@ -61,13 +64,11 @@ class JacCmd:
                     )
             else:
                 jctx.close()
-                JacMachineState.detach_machine()
                 raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
             FastAPI.start(host=host, port=port)
 
             jctx.close()
-            JacMachineState.detach_machine()
 
         @cmd_registry.register
         def create_system_admin(
@@ -83,9 +84,11 @@ class JacCmd:
             base, mod = split(filename)
             base = base if base else "./"
             mod = mod[:-4]
+            mach = JacMachineState(base)
 
             if filename.endswith(".jac"):
                 Jac.jac_import(
+                    mach=mach,
                     target=mod,
                     base_path=base,
                     cachable=True,
@@ -93,10 +96,11 @@ class JacCmd:
                 )
             elif filename.endswith(".jir"):
                 with open(filename, "rb") as f:
-                    JacMachineState(base).attach_program(
-                        JacProgram(mod_bundle=load(f), bytecode=None, sem_ir=None)
+                    Jac.attach_program(
+                        mach, JacProgram(mod_bundle=load(f), bytecode=None, sem_ir=None)
                     )
                     Jac.jac_import(
+                        mach=mach,
                         target=mod,
                         base_path=base,
                         cachable=True,

@@ -86,12 +86,14 @@ def run(
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
+    mach = JacMachineState(base)
 
     jctx = ExecutionContext.create(session=session)
 
     if filename.endswith(".jac"):
         try:
             Jac.jac_import(
+                mach=mach,
                 target=mod,
                 base_path=base,
                 cachable=cache,
@@ -103,10 +105,11 @@ def run(
         try:
             with open(filename, "rb") as f:
                 Jac.attach_program(
-                    JacMachineState(base),
+                    mach,
                     JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None),
                 )
                 Jac.jac_import(
+                    mach=mach,
                     target=mod,
                     base_path=base,
                     cachable=cache,
@@ -117,11 +120,8 @@ def run(
 
     else:
         jctx.close()
-        JacMachineState.detach_machine()
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
-
     jctx.close()
-    JacMachineState.detach_machine()
 
 
 @cmd_registry.register
@@ -143,9 +143,11 @@ def get_object(
     mod = mod[:-4]
 
     jctx = ExecutionContext.create(session=session)
+    mach = JacMachineState(base)
 
     if filename.endswith(".jac"):
         Jac.jac_import(
+            mach=mach,
             target=mod,
             base_path=base,
             cachable=cache,
@@ -154,10 +156,11 @@ def get_object(
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
             Jac.attach_program(
-                JacMachineState(base),
+                mach,
                 JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None),
             )
             Jac.jac_import(
+                mach=mach,
                 target=mod,
                 base_path=base,
                 cachable=cache,
@@ -165,7 +168,6 @@ def get_object(
             )
     else:
         jctx.close()
-        JacMachineState.detach_machine()
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
     data = {}
@@ -176,7 +178,6 @@ def get_object(
         print(f"Object with id {id} not found.", file=sys.stderr)
 
     jctx.close()
-    JacMachineState.detach_machine()
     return data
 
 
@@ -264,9 +265,11 @@ def enter(
     mod = mod[:-4]
 
     jctx = ExecutionContext.create(session=session, root=root)
+    mach = JacMachineState(base)
 
     if filename.endswith(".jac"):
         ret_module = Jac.jac_import(
+            mach=mach,
             target=mod,
             base_path=base,
             cachable=cache,
@@ -275,10 +278,11 @@ def enter(
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
             Jac.attach_program(
-                JacMachineState(base),
+                mach,
                 JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None),
             )
             ret_module = Jac.jac_import(
+                mach=mach,
                 target=mod,
                 base_path=base,
                 cachable=cache,
@@ -286,7 +290,6 @@ def enter(
             )
     else:
         jctx.close()
-        JacMachineState.detach_machine()
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
     if ret_module:
@@ -304,7 +307,6 @@ def enter(
                 Jac.spawn(jctx.entry_node.architype, architype)
 
     jctx.close()
-    JacMachineState.detach_machine()
 
 
 @cmd_registry.register
@@ -330,8 +332,10 @@ def test(
     jac test => jac test -d .
     """
     jctx = ExecutionContext.create()
+    mach = JacMachineState()
 
     failcount = Jac.run_test(
+        mach=mach,
         filepath=filepath,
         func_name=("test_" + test_name) if test_name else None,
         filter=filter,
@@ -451,7 +455,9 @@ def dot(
 
     if filename.endswith(".jac"):
         jac_machine = JacMachineState(base)
-        Jac.jac_import(target=mod, base_path=base, override_name="__main__")
+        Jac.jac_import(
+            mach=jac_machine, target=mod, base_path=base, override_name="__main__"
+        )
         module = jac_machine.loaded_modules.get("__main__")
         globals().update(vars(module))
         try:

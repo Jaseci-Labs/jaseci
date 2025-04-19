@@ -17,11 +17,11 @@ here.display_data();
 """;
 
 with entry {
-    node_arch = JacFeature.create_architype_from_source(JacMachineState.get(),
+    node_arch = JacFeature.create_architype_from_source(JacFeature.py_get_jac_machine(),
         dynamic_module_source,
         module_name="dynamic_module"
     );
-    walker_obj = JacFeature.spawn_walker(JacMachineState.get(),
+    walker_obj = JacFeature.spawn_walker(JacFeature.py_get_jac_machine(),
         'DynamicWalker',
         module_name="dynamic_module",
 

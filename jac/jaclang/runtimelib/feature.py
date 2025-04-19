@@ -36,7 +36,6 @@ from jaclang.compiler import absyntree as ast
 from jaclang.compiler.constant import EdgeDir, colors
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.compiler.program import JacProgram
-from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
 from jaclang.runtimelib.architype import (
     DataSpatialFunction,
     GenericEdge as _GenericEdge,
@@ -724,7 +723,47 @@ class JacBasics:
         return decorator
 
     @staticmethod
+    def py_get_jac_machine() -> JacMachineState | None:
+        """Get jac machine from python context."""
+        machine = None
+        for i in inspect.stack():
+            machine = i.frame.f_globals.get("__jac_mach__")
+            if machine:
+                break
+        return machine
+
+    @staticmethod
+    def py_jac_import(
+        target: str,
+        base_path: str,
+        absorb: bool = False,
+        cachable: bool = True,
+        mdl_alias: Optional[str] = None,
+        override_name: Optional[str] = None,
+        lng: Optional[str] = "jac",
+        items: Optional[dict[str, Union[str, Optional[str]]]] = None,
+        reload_module: Optional[bool] = False,
+    ) -> tuple[types.ModuleType, ...]:
+        """Core Import Process."""
+        machine = JacFeature.py_get_jac_machine()
+        if not machine:
+            machine = JacMachineState(base_path=base_path)
+        return JacFeature.jac_import(
+            mach=machine,
+            target=target,
+            base_path=base_path,
+            absorb=absorb,
+            cachable=cachable,
+            mdl_alias=mdl_alias,
+            override_name=override_name,
+            lng=lng,
+            items=items,
+            reload_module=reload_module,
+        )
+
+    @staticmethod
     def jac_import(
+        mach: JacMachineState,
         target: str,
         base_path: str,
         absorb: bool = False,
@@ -753,18 +792,15 @@ class JacBasics:
             items,
         )
 
-        jac_machine = JacMachineState.get(base_path)
-        if not jac_machine.jac_program:
+        if not mach.jac_program:
             JacFeature.attach_program(
-                jac_machine, JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
+                mach, JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
             )
 
         if lng == "py":
-            import_result = PythonImporter(JacMachineState.get()).run_import(spec)
+            import_result = PythonImporter(mach).run_import(spec)
         else:
-            import_result = JacImporter(JacMachineState.get()).run_import(
-                spec, reload_module
-            )
+            import_result = JacImporter(mach).run_import(spec, reload_module)
 
         return (
             (import_result.ret_mod,)
@@ -789,6 +825,7 @@ class JacBasics:
 
     @staticmethod
     def run_test(
+        mach: JacMachineState,
         filepath: str,
         func_name: Optional[str] = None,
         filter: Optional[str] = None,
@@ -808,7 +845,9 @@ class JacBasics:
                 if mod_name.endswith(".test"):
                     mod_name = mod_name[:-5]
                 JacTestCheck.reset()
-                JacFeature.jac_import(target=mod_name, base_path=base, cachable=False)
+                JacFeature.jac_import(
+                    mach=mach, target=mod_name, base_path=base, cachable=False
+                )
                 JacTestCheck.run_test(
                     xit, maxfail, verbose, os.path.abspath(filepath), func_name
                 )
@@ -836,7 +875,9 @@ class JacBasics:
                         test_file = True
                         print(f"\n\n\t\t* Inside {root_dir}" + "/" + f"{file} *")
                         JacTestCheck.reset()
-                        JacFeature.jac_import(target=file[:-4], base_path=root_dir)
+                        JacFeature.jac_import(
+                            mach=mach, target=file[:-4], base_path=root_dir
+                        )
                         JacTestCheck.run_test(
                             xit, maxfail, verbose, os.path.abspath(file), func_name
                         )
@@ -1106,103 +1147,6 @@ class JacBasics:
         return func
 
     @staticmethod
-    def get_semstr_type(
-        file_loc: str, scope: str, attr: str, return_semstr: bool
-    ) -> Optional[str]:
-        """Jac's get_semstr_type feature."""
-        from jaclang.compiler.semtable import SemInfo, SemScope, SemRegistry
-        from jaclang.runtimelib.machine import JacMachineState
-
-        _scope = SemScope.get_scope_from_str(scope)
-        jac_program = JacMachineState.get().jac_program
-        mod_registry: SemRegistry = (
-            jac_program.sem_ir if jac_program is not None else SemRegistry()
-        )
-        _, attr_seminfo = mod_registry.lookup(_scope, attr)
-        if attr_seminfo and isinstance(attr_seminfo, SemInfo):
-            return attr_seminfo.semstr if return_semstr else attr_seminfo.type
-        return None
-
-    @staticmethod
-    def obj_scope(file_loc: str, attr: str) -> str:
-        """Jac's get_semstr_type feature."""
-
-        from jaclang.runtimelib.machine import JacMachineState
-
-        jac_program = JacMachineState.get().jac_program
-        mod_registry: SemRegistry = (
-            jac_program.sem_ir if jac_program is not None else SemRegistry()
-        )
-
-        attr_scope = None
-        for x in attr.split("."):
-            attr_scope, attr_sem_info = mod_registry.lookup(attr_scope, x)
-            if isinstance(attr_sem_info, SemInfo) and attr_sem_info.type not in [
-                "class",
-                "obj",
-                "node",
-                "edge",
-            ]:
-                attr_scope, attr_sem_info = mod_registry.lookup(
-                    None, attr_sem_info.type
-                )
-                if isinstance(attr_sem_info, SemInfo) and isinstance(
-                    attr_sem_info.type, str
-                ):
-                    attr_scope = SemScope(
-                        attr_sem_info.name, attr_sem_info.type, attr_scope
-                    )
-            else:
-                if isinstance(attr_sem_info, SemInfo) and isinstance(
-                    attr_sem_info.type, str
-                ):
-                    attr_scope = SemScope(
-                        attr_sem_info.name, attr_sem_info.type, attr_scope
-                    )
-        return str(attr_scope)
-
-    @staticmethod
-    def get_sem_type(file_loc: str, attr: str) -> tuple[str | None, str | None]:
-        """Jac's get_semstr_type feature."""
-
-        from jaclang.runtimelib.machine import JacMachineState
-        from jaclang.compiler.semtable import SemInfo, SemScope
-
-        jac_program = JacMachineState.get().jac_program
-        mod_registry: SemRegistry = (
-            jac_program.sem_ir if jac_program is not None else SemRegistry()
-        )
-
-        attr_scope = None
-        for x in attr.split("."):
-            attr_scope, attr_sem_info = mod_registry.lookup(attr_scope, x)
-            if isinstance(attr_sem_info, SemInfo) and attr_sem_info.type not in [
-                "class",
-                "obj",
-                "node",
-                "edge",
-            ]:
-                attr_scope, attr_sem_info = mod_registry.lookup(
-                    None, attr_sem_info.type
-                )
-                if isinstance(attr_sem_info, SemInfo) and isinstance(
-                    attr_sem_info.type, str
-                ):
-                    attr_scope = SemScope(
-                        attr_sem_info.name, attr_sem_info.type, attr_scope
-                    )
-            else:
-                if isinstance(attr_sem_info, SemInfo) and isinstance(
-                    attr_sem_info.type, str
-                ):
-                    attr_scope = SemScope(
-                        attr_sem_info.name, attr_sem_info.type, attr_scope
-                    )
-        if isinstance(attr_sem_info, SemInfo) and isinstance(attr_scope, SemScope):
-            return attr_sem_info.semstr, attr_scope.as_type_str
-        return "", ""
-
-    @staticmethod
     def with_llm(
         file_loc: str,
         model: Any,  # noqa: ANN401
@@ -1382,15 +1326,6 @@ class JacMachine:
         if mach.jac_program:
             return mach.jac_program.get_bytecode(full_target=full_target)
         return None
-
-    @staticmethod
-    def get_sem_ir(mach: JacMachineState, mod_sem_ir: SemRegistry | None) -> None:
-        """Update semtable on the attached JacProgram."""
-        if mach.jac_program and mod_sem_ir:
-            if mach.jac_program.sem_ir:
-                mach.jac_program.sem_ir.registry.update(mod_sem_ir.registry)
-            else:
-                mach.jac_program.sem_ir = mod_sem_ir
 
     @staticmethod
     def load_module(

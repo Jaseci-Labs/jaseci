@@ -4,7 +4,7 @@ import:py os;
 
 can update_bar_walker {
     "Updating bar.jac with new behavior." |> print;
-    (bar_walk_new, ) = JacFeature.update_walker(JacMachineState.get(),
+    (bar_walk_new, ) = JacFeature.update_walker(JacFeature.py_get_jac_machine(),
         "bar",
         items={'bar_walk': None}
     );

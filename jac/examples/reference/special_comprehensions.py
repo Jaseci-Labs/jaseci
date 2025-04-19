@@ -5,7 +5,7 @@ from jaclang import JacFeature as _
 if _.TYPE_CHECKING:
     import random
 else:
-    (random,) = _.jac_import("random", __file__, lng="py")
+    (random,) = _.py_jac_import("random", __file__, lng="py")
 
 
 class TestObj(_.Obj):

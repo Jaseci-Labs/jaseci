@@ -4,16 +4,12 @@ from __future__ import annotations
 
 import os
 import types
-from contextvars import ContextVar
 
 from jaclang.compiler.program import JacProgram
 from jaclang.utils.log import logging
 
 
 logger = logging.getLogger(__name__)
-
-
-JACMACHINE_CONTEXT = ContextVar["JacMachineState | None"]("JacMachineState")
 
 
 class JacMachineState:
@@ -34,17 +30,3 @@ class JacMachineState:
         self.jac_program: JacProgram = JacProgram(
             mod_bundle=None, bytecode=None, sem_ir=None
         )
-
-        JACMACHINE_CONTEXT.set(self)
-
-    @staticmethod
-    def get(base_path: str = "") -> "JacMachineState":
-        """Get current jac machine."""
-        if (jac_machine := JACMACHINE_CONTEXT.get(None)) is None:
-            jac_machine = JacMachineState(base_path)
-        return jac_machine
-
-    @staticmethod
-    def detach_machine() -> None:
-        """Detach current jac machine."""
-        JACMACHINE_CONTEXT.set(None)

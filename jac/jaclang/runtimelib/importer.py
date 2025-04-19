@@ -282,6 +282,7 @@ class JacImporter(Importer):
         module.__name__ = module_name
         module.__path__ = [full_mod_path]
         module.__file__ = None
+        module.__dict__["__jac_mach__"] = self.jac_machine
 
         if module_name not in self.jac_machine.loaded_modules:
             JacFeature.load_module(self.jac_machine, module_name, module)
@@ -297,6 +298,7 @@ class JacImporter(Importer):
         module = types.ModuleType(module_name)
         module.__file__ = full_target
         module.__name__ = module_name
+        module.__dict__["__jac_mach__"] = self.jac_machine
         if package_path:
             base_path = full_target.split(package_path.replace(".", path.sep))[0]
             parts = package_path.split(".")

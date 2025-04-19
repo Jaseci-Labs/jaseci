@@ -19,15 +19,15 @@ visit [-->];
 """;
 
 with entry {
-    node_arch = JacFeature.create_architype_from_source(JacMachineState.get(), source_code);
-    walker_arch = JacFeature.create_architype_from_source(JacMachineState.get(), walker_code);
+    node_arch = JacFeature.create_architype_from_source(JacFeature.py_get_jac_machine(), source_code);
+    walker_arch = JacFeature.create_architype_from_source(JacFeature.py_get_jac_machine(), walker_code);
 
-    node_obj = JacFeature.spawn_node(JacMachineState.get(),
+    node_obj = JacFeature.spawn_node(JacFeature.py_get_jac_machine(),
         'dynamic_node',
         {'value': 99},
         node_arch.__name__
     );
-    walker_obj = JacFeature.spawn_walker(JacMachineState.get(),
+    walker_obj = JacFeature.spawn_walker(JacFeature.py_get_jac_machine(),
         'dynamic_walker',
         module_name=walker_arch.__name__
     );

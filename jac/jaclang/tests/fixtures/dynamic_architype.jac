@@ -22,9 +22,9 @@ with entry {
         root ++> test_node(value=value);
         root ++> Item(value=value);
     }
-    node_obj = JacFeature.spawn_node(JacMachineState.get(), node_name='test_node', attributes={'value': 0}, module_name='__main__');
-    walker_obj = JacFeature.spawn_walker(JacMachineState.get(), walker_name='child_walker', module_name='__main__');
-    external_node = JacFeature.spawn_node(JacMachineState.get(), node_name='Item', attributes={'value': 0}, module_name='bar');
+    node_obj = JacFeature.spawn_node(JacFeature.py_get_jac_machine(), node_name='test_node', attributes={'value': 0}, module_name='__main__');
+    walker_obj = JacFeature.spawn_walker(JacFeature.py_get_jac_machine(), walker_name='child_walker', module_name='__main__');
+    external_node = JacFeature.spawn_node(JacFeature.py_get_jac_machine(), node_name='Item', attributes={'value': 0}, module_name='bar');
     root ++> external_node;
     root ++> node_obj;
     print("Spawned Node:", node_obj);
