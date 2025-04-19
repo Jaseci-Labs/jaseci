@@ -14,6 +14,7 @@ from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
+from jaclang.compiler.symtable import SymbolTable
 from jaclang.langserve.sem_manager import SemTokManager
 from jaclang.langserve.utils import (
     add_unique_text_edit,
@@ -171,14 +172,19 @@ class JacLangServer(LanguageServer):
 
     def get_completion(
         self, file_path: str, position: lspt.Position, completion_trigger: Optional[str]
-    ) -> lspt.CompletionList:
+    ) -> lspt.CompletionList:  # TODO : need to refactor this
         """Return completion for a file."""
         document = self.workspace.get_text_document(file_path)
         mod_ir = self.modules[file_path].ir
         current_line = document.lines[position.line]
         current_pos = position.character
         current_symbol_path = parse_symbol_path(current_line, current_pos)
-        builtin_tab = mod_ir.sym_tab.kid[-1]
+        assert mod_ir.jac_prog
+        builtin_mod = next(
+            mod for name, mod in mod_ir.jac_prog.modules.items() if "builtins" in name
+        )
+        builtin_tab = builtin_mod.sym_tab
+        assert isinstance(builtin_tab, SymbolTable)
         completion_items = []
 
         node_selected = find_deepest_symbol_node_at_pos(

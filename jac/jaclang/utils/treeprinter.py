@@ -438,6 +438,11 @@ def _build_symbol_tree_common(
         if k.name == "builtins":
             continue
         _build_symbol_tree_common(k, children)
+
+    for k2 in node.inherit:
+        if k2.base_symbol_table.name == "builtins":
+            continue
+        _build_symbol_tree_common(k2.base_symbol_table, children)
     return root
 
 

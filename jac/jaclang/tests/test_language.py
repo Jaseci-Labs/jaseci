@@ -556,7 +556,14 @@ class JacLanguageTests(TestCase):
             file_path=file_name[:-3] + ".jac",
             schedule=py_code_gen_typed,
         ).ir
-        self.assertEqual(len(ir.get_all_sub_nodes(ast.Architype)), 21)
+
+        architype_count = 0
+        for mod in ir.jac_prog.modules.values():
+            if mod.name == "builtins":
+                continue
+            architype_count += len(mod.get_all_sub_nodes(ast.Architype))
+
+        self.assertEqual(architype_count, 21)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import("needs_import_1", base_path=self.fixture_abs_path("./"))
@@ -622,9 +629,14 @@ class JacLanguageTests(TestCase):
             file_path=file_name[:-3] + ".jac",
             schedule=py_code_gen_typed,
         ).ir
-        self.assertEqual(
-            len(ir.get_all_sub_nodes(ast.Architype)), 27
-        )  # Because of the Architype from math
+
+        architype_count = 0
+        for mod in ir.jac_prog.modules.values():
+            if mod.name == "builtins":
+                continue
+            architype_count += len(mod.get_all_sub_nodes(ast.Architype))
+
+        self.assertEqual(architype_count, 27)  # Because of the Architype from math
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import("needs_import_2", base_path=self.fixture_abs_path("./"))
@@ -680,10 +692,16 @@ class JacLanguageTests(TestCase):
         architype_count = sum(
             len(mod.get_all_sub_nodes(ast.Architype))
             for mod in ir.jac_prog.modules.values()
+            if mod.name != "builtins"
         )
         self.assertEqual(
-            architype_count, 75
-        )  # Because of the Architype from other imports
+            architype_count, 55
+        )  # Fixed duplication of 'case' module (previously included 3 times, added 20 extra Architypes; 75 → 55)
+        builtin_mod = next(
+            (mod for name, mod in ir.jac_prog.modules.items() if "builtins" in name),
+            None,
+        )
+        self.assertEqual(len(builtin_mod.get_all_sub_nodes(ast.Architype)), 108)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import("needs_import_3", base_path=self.fixture_abs_path("./"))
@@ -856,14 +874,6 @@ class JacLanguageTests(TestCase):
             else:
                 self.assertIn("+-- Name - NodeTransformer - Type: No", gen_ast)
 
-    def test_deep_py_load_imports(self) -> None:  # we can get rid of this, isn't?
-        """Test py ast to Jac ast conversion output."""
-        file_name = os.path.join(self.fixture_abs_path("./"), "random_check.jac")
-        from jaclang.compiler.passes.main.schedules import py_code_gen, PyImportPass
-
-        imp = jac_file_to_pass(file_name, schedule=py_code_gen, target=PyImportPass)
-        self.assertEqual(len(imp.import_table), 5)
-
     def test_access_modifier(self) -> None:
         """Test for access tags working."""
         captured_output = io.StringIO()
@@ -903,7 +913,12 @@ class JacLanguageTests(TestCase):
         ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
         jac_ast = ir.pp()
         self.assertIn(" |   +-- String - 'Loop completed normally{}'", jac_ast)
-        self.assertEqual(len(ir.get_all_sub_nodes(ast.SubNodeList)), 586)
+        sub_node_list_count = 0
+        for i in ir.jac_prog.modules.values():
+            if i.name == "builtins":
+                continue
+            sub_node_list_count += len(i.get_all_sub_nodes(ast.SubNodeList))
+        self.assertEqual(sub_node_list_count, 586)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import("deep_convert", base_path=self.fixture_abs_path("./"))

@@ -113,21 +113,21 @@ class ImportPassPassTests(TestCase):
         for i in list(
             filter(
                 lambda x: x.py_info.is_raised_from_py,
-                state.ir.get_all_sub_nodes(ast.Module),
+                state.ir.jac_prog.modules.values(),
             )
         ):
             print(ast.Module.get_href_path(i))
-        self.assertEqual(
-            len(
-                list(
-                    filter(
-                        lambda x: x.py_info.is_raised_from_py,
-                        state.ir.get_all_sub_nodes(ast.Module),
-                    )
+
+        module_count = len(
+            list(
+                filter(
+                    lambda x: x.py_info.is_raised_from_py,
+                    state.ir.jac_prog.modules.values(),
                 )
-            ),
-            11,  # TODO: Need to only link the modules one time
+            )
         )
+
+        self.assertEqual(module_count, 8)
 
     def test_double_empty_anx(self) -> None:
         """Test importing python."""
