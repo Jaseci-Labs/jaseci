@@ -147,6 +147,9 @@ class SymbolTable:
         for k in self.kid:
             if k.name == name:
                 return k
+        for k2 in self.inherit:
+            if k2.base_symbol_table.name == name:
+                return k2.base_symbol_table
         return None
 
     def push_kid_scope(self, name: str, key_node: ast.AstNode) -> SymbolTable:

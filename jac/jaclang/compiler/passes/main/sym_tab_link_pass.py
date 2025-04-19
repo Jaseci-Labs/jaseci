@@ -17,20 +17,33 @@ class SymTabLinkPass(Pass):
         assert self.ir.jac_prog is not None
 
         imp_node = node.parent_of_type(ast.Import)
-        if imp_node.is_py:
-            return None
 
-        rel_path = node.resolve_relative_path()
-        if os.path.isdir(rel_path):
-            rel_path = f"{rel_path}/__init__.jac"
-        if rel_path not in self.ir.jac_prog.modules:
-            self.ice()
+        if imp_node.is_jac:
+            rel_path = node.resolve_relative_path()
+            if os.path.isdir(rel_path):
+                rel_path = f"{rel_path}/__init__.jac"
+            if rel_path not in self.ir.jac_prog.modules:
+                self.ice()
+        else:
+            if node.sym_name in self.ir.py_info.py_raise_map:
+                rel_path = self.ir.py_info.py_raise_map[node.sym_name]
+            elif (
+                f"{self.ir.get_href_path(node)}.{node.sym_name}"
+                in self.ir.py_info.py_raise_map
+            ):
+                rel_path = self.ir.py_info.py_raise_map[
+                    f"{self.ir.get_href_path(node)}.{node.sym_name}"
+                ]
+            else:
+                return
 
         imported_mod_symtab = self.ir.jac_prog.modules[rel_path].sym_tab
 
         all_import = False
         symbols_str_list: list[str] = []
-        if node.parent and isinstance(node.parent, ast.SubNodeList):
+        if (
+            imp_node.is_jac and node.parent and isinstance(node.parent, ast.SubNodeList)
+        ) or (imp_node.is_py and imp_node.from_loc is None and not imp_node.is_absorb):
             all_import = True
         else:
             if node.parent and isinstance(node.parent, ast.Import):
@@ -46,10 +59,18 @@ class SymTabLinkPass(Pass):
             if imported_mod_symtab not in [
                 stab.base_symbol_table for stab in node.sym_tab.inherit
             ]:
+                # Check if the needed symbol will be inherited from the current symbol table
+                # This will happen if you are doing `from . import X` check how path is imported in
+                # os
+                if node.sym_tab == imported_mod_symtab:
+                    return
+
                 node.sym_tab.inherit.append(
                     InheritedSymbolTable(
                         base_symbol_table=imported_mod_symtab,
-                        load_all_symbols=all_import,
+                        # load_all_symbols will only be needed when doing from x imoport * in py imports
+                        # is_absorb will set to true in case of jac include to py import *
+                        load_all_symbols=imp_node.is_py and imp_node.is_absorb,
                         symbols=symbols_str_list,
                     )
                 )

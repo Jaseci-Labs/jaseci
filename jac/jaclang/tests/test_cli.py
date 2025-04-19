@@ -222,15 +222,15 @@ class JacCliTests(TestCase):
 
         self.assertRegex(
             stdout_value,
-            r"2\:8 \- 2\:12.*BuiltinType - list - .*SymbolPath: builtins_test.builtins.list",
+            r"2\:8 \- 2\:12.*BuiltinType - list - .*SymbolPath: builtins.list",
         )
         self.assertRegex(
             stdout_value,
-            r"15\:5 \- 15\:8.*Name - dir - .*SymbolPath: builtins_test.builtins.dir",
+            r"15\:5 \- 15\:8.*Name - dir - .*SymbolPath: builtins.dir",
         )
         self.assertRegex(
             stdout_value,
-            r"13\:12 \- 13\:18.*Name - append - .*SymbolPath: builtins_test.builtins.list.append",
+            r"13\:12 \- 13\:18.*Name - append - .*SymbolPath: builtins.list.append",
         )
 
     def test_import_all(self) -> None:
@@ -249,11 +249,11 @@ class JacCliTests(TestCase):
 
         self.assertRegex(
             stdout_value,
-            r"6\:25 - 6\:30.*Name - floor -.*SymbolPath: import_all.import_all_py.floor",
+            r"6\:25 - 6\:30.*Name - floor -.*SymbolPath: math.floor",
         )
         self.assertRegex(
             stdout_value,
-            r"5\:25 - 5\:27.*Name - pi -.*SymbolPath: import_all.import_all_py.pi",
+            r"5\:25 - 5\:27.*Name - pi -.*SymbolPath: math.pi",
         )
 
     def test_sub_class_symbol_table_fix_1(self) -> None:

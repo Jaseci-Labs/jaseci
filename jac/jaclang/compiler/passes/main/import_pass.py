@@ -12,11 +12,9 @@ from typing import Optional
 
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.constant import SymbolType
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main import DefUsePass, SubNodeTabPass, SymTabBuildPass
 from jaclang.compiler.passes.main.sym_tab_build_pass import PyInspectSymTabBuildPass
-from jaclang.compiler.symtable import Symbol, SymbolTable
 from jaclang.settings import settings
 from jaclang.utils.log import logging
 
@@ -64,6 +62,9 @@ class JacImportPass(Pass):
             self.ir.jac_prog.modules[mod.loc.mod_path] = mod
             self.ir.jac_prog.last_imported.append(mod)
             mod.jac_prog = self.ir.jac_prog
+            # We should have only one py_raise_map in the program
+            # TODO: Move py_raise_map to jac_program
+            mod.py_info.py_raise_map = self.ir.py_info.py_raise_map
 
     # TODO: Refactor this to a function for impl and function for test
     def annex_impl(self, node: ast.Module) -> None:
@@ -204,16 +205,12 @@ class PyImportPass(JacImportPass):
         """Run Importer."""
         self.cur_node = node
         self.import_table[node.loc.mod_path] = node
-        self.annex_impl(node)
         self.terminate()  # Turns off auto traversal for deliberate traversal
-        self.run_again = True
-        while self.run_again:
-            self.run_again = False
-            all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
-            for i in all_imports:
-                self.process_import(i)
-                self.enter_module_path(i)
-            SubNodeTabPass(prior=self, input_ir=node)
+        all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
+        for i in all_imports:
+            self.process_import(i)
+            self.enter_module_path(i)
+        SubNodeTabPass(prior=self, input_ir=node)
 
         node.mod_deps.update(self.import_table)
 
@@ -229,7 +226,7 @@ class PyImportPass(JacImportPass):
 
     def after_pass(self) -> None:
         """Build symbol tables for import from nodes."""
-        self.__import_from_symbol_table_build()
+        # self.__import_from_symbol_table_build()
         return super().after_pass()
 
     def process_import(self, i: ast.ModulePath) -> None:
@@ -256,24 +253,12 @@ class PyImportPass(JacImportPass):
                 self.__debug_print(msg)
                 self.__process_import(imp_node)
 
-    def attach_mod_to_node(
-        self, node: ast.ModulePath | ast.ModuleItem, mod: ast.Module | None
-    ) -> None:
-        """Attach a module to a node."""
-        if mod:
-            self.run_again = True
-            node.sub_module = mod
-            self.annex_impl(mod)
-            node.add_kids_right([mod], pos_update=False)
-            mod.parent = node
-
     def __process_import_from(self, imp_node: ast.Import) -> None:
         """Process imports in the form of `from X import I`."""
         assert isinstance(self.ir, ast.Module)
         assert isinstance(imp_node.from_loc, ast.ModulePath)
 
         self.__debug_print(f"\tTrying to import {imp_node.from_loc.dot_path_str}")
-
         # Attempt to import the Python module X and process it
         imported_mod = self.__import_py_module(
             parent_node_path=ast.Module.get_href_path(imp_node),
@@ -317,76 +302,6 @@ class PyImportPass(JacImportPass):
                 )
             PyInspectSymTabBuildPass(input_ir=imported_mod, prior=self)
             DefUsePass(input_ir=imported_mod, prior=self)
-
-    def __import_from_symbol_table_build(self) -> None:
-        """Build symbol tables for the imported python modules."""
-        is_symbol_tabled_refreshed: list[str] = []
-        self.import_from_build_list.reverse()
-        for imp_node, imported_mod in self.import_from_build_list:
-            # Need to build the symbol tables again to make sure that the
-            # complete symbol table is built.
-            #
-            # Complete symbol tables won't be built in case of another
-            # import from statements in the imported modules.
-            #
-            # A solution was to only build the symbol table here after the
-            # full ast is raised but this will cause an issue with symboltable
-            # building with normal imports
-            #
-            # TODO: Change normal imports to call symbolTable here too
-
-            if imported_mod.loc.mod_path not in is_symbol_tabled_refreshed:
-                self.__debug_print(
-                    f"Refreshing symbol table for module:{ast.Module.get_href_path(imported_mod)}"
-                )
-                PyInspectSymTabBuildPass(input_ir=imported_mod, prior=self)
-                DefUsePass(input_ir=imported_mod, prior=self)
-                is_symbol_tabled_refreshed.append(imported_mod.loc.mod_path)
-
-            sym_tab = imported_mod.sym_tab
-            parent_sym_tab = imp_node.parent_of_type(ast.Module).sym_tab
-
-            if imp_node.is_absorb:
-                for symbol in sym_tab.tab.values():
-                    if symbol.sym_type == SymbolType.MODULE:
-                        continue
-                    self.__import_from_sym_table_add_symbols(symbol, parent_sym_tab)
-            else:
-                for i in imp_node.items.items:
-                    assert isinstance(i, ast.ModuleItem)
-                    needed_sym = sym_tab.lookup(i.name.sym_name)
-
-                    if needed_sym and needed_sym.defn[0].parent:
-                        self.__import_from_sym_table_add_symbols(
-                            needed_sym, parent_sym_tab
-                        )
-                    else:
-                        self.__debug_print(
-                            f"Can't find a symbol matching {i.name.sym_name} in {sym_tab.name}"
-                        )
-
-    def __import_from_sym_table_add_symbols(
-        self, sym: Symbol, sym_table: SymbolTable
-    ) -> None:
-        self.__debug_print(
-            f"\tAdding {sym.sym_type}:{sym.sym_name} into {sym_table.name}"
-        )
-        assert isinstance(sym.defn[0], ast.AstSymbolNode)
-        sym_table.def_insert(
-            node=sym.defn[0],
-            access_spec=sym.access,
-            force_overwrite=True,
-        )
-
-        if sym.fetch_sym_tab:
-            msg = f"\tAdding SymbolTable:{sym.fetch_sym_tab.name} into "
-            msg += f"SymbolTable:{sym_table.name} kids"
-            self.__debug_print(msg)
-            sym_table.kid.append(sym.fetch_sym_tab)
-        elif sym.sym_type not in (SymbolType.VAR, SymbolType.MOD_VAR):
-            raise AssertionError(
-                f"Unexpected symbol type '{sym.sym_type}' that doesn't have a symbl table"
-            )
 
     def __process_import(self, imp_node: ast.Import) -> None:
         """Process the imports in form of `import X`."""
@@ -457,6 +372,7 @@ class PyImportPass(JacImportPass):
         from jaclang.compiler.passes.main import PyastBuildPass
 
         assert isinstance(self.ir, ast.Module)
+        assert self.ir.jac_prog is not None
 
         python_raise_map = self.ir.py_info.py_raise_map
         file_to_raise: Optional[str] = None
@@ -467,7 +383,9 @@ class PyImportPass(JacImportPass):
             # TODO: Is it fine to use imported_mod_name or get it from mod_path?
             resolved_mod_path = f"{parent_node_path}.{mod_path}"
             resolved_mod_path = resolved_mod_path.replace("..", ".")
-            resolved_mod_path = resolved_mod_path.replace(f"{self.ir.name}.", "")
+            resolved_mod_path = resolved_mod_path.replace(
+                f"{list(self.ir.jac_prog.modules.values())[0]}.", ""
+            )
             file_to_raise = python_raise_map.get(resolved_mod_path)
 
         if file_to_raise is None:
@@ -523,6 +441,7 @@ class PyImportPass(JacImportPass):
         from jaclang.compiler.passes.main import PyastBuildPass
 
         assert isinstance(self.ir, ast.Module)
+        assert self.ir.jac_prog is not None
 
         file_to_raise = str(
             pathlib.Path(os.path.dirname(__file__)).parent.parent.parent
@@ -540,10 +459,12 @@ class PyImportPass(JacImportPass):
                     orig_src=ast.JacSource(file_source, file_to_raise),
                 ),
             ).ir
-            mod.parent = self.ir
             SubNodeTabPass(input_ir=mod, prior=self)
             SymTabBuildPass(input_ir=mod, prior=self)
-            mod.parent = None
+            self.ir.jac_prog.modules[file_to_raise] = mod
+            mod.jac_prog = self.ir.jac_prog
+            mod.py_info.is_raised_from_py = True
+            mod.py_info.py_raise_map = self.ir.py_info.py_raise_map
 
     def annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""

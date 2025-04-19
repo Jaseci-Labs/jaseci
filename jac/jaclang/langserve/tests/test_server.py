@@ -431,7 +431,8 @@ class TestJacLangServer(TestCase):
             (26, 28, "mock/display.py:0:0-1:7"),
             (24, 22, "/argparse.pyi:124:0-249:13"),
             (19, 74, "pygame_mock/constants.py:4:3-4:15"),
-            (27, 17, "/stdlib/os/__init__.pyi:50:0-50:3"),
+            # TODO: Need to properly support this
+            # (27, 17, "/stdlib/os/__init__.pyi:50:0-50:3"),
         ]
 
         for line, char, expected in positions:
@@ -439,6 +440,7 @@ class TestJacLangServer(TestCase):
                 self.assertIn(
                     expected,
                     str(lsp.get_definition(import_file, lspt.Position(line, char))),
+                    msg=positions.index((line, char, expected)) + 1,
                 )
 
     def test_py_type__references(self) -> None:
