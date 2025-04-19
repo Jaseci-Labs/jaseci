@@ -1359,6 +1359,7 @@ class JacFeature(
     JacBuiltin,
     JacCmd,
     JacBasics,
+    JacMachine,
 ):
     """Jac Feature."""
 

@@ -61,13 +61,13 @@ class JacCmd:
                     )
             else:
                 jctx.close()
-                JacMachine.detach()
+                JacMachine.detach_machine()
                 raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
             FastAPI.start(host=host, port=port)
 
             jctx.close()
-            JacMachine.detach()
+            JacMachine.detach_machine()
 
         @cmd_registry.register
         def create_system_admin(

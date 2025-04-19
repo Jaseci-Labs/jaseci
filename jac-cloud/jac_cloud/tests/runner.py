@@ -35,10 +35,10 @@ elif filename.endswith(".jir"):
         )
 else:
     jctx.close()
-    JacMachine.detach()
+    JacMachine.detach_machine()
     raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
 app = FastAPI.get()
 
 jctx.close()
-JacMachine.detach()
+JacMachine.detach_machine()

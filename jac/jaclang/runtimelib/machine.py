@@ -260,6 +260,6 @@ class JacMachine:
         return jac_machine
 
     @staticmethod
-    def detach() -> None:
+    def detach_machine() -> None:
         """Detach current jac machine."""
         JACMACHINE_CONTEXT.set(None)

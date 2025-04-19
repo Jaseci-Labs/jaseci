@@ -116,11 +116,11 @@ def run(
 
     else:
         jctx.close()
-        JacMachine.detach()
+        JacMachine.detach_machine()
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
     jctx.close()
-    JacMachine.detach()
+    JacMachine.detach_machine()
 
 
 @cmd_registry.register
@@ -163,7 +163,7 @@ def get_object(
             )
     else:
         jctx.close()
-        JacMachine.detach()
+        JacMachine.detach_machine()
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
     data = {}
@@ -174,7 +174,7 @@ def get_object(
         print(f"Object with id {id} not found.", file=sys.stderr)
 
     jctx.close()
-    JacMachine.detach()
+    JacMachine.detach_machine()
     return data
 
 
@@ -283,7 +283,7 @@ def enter(
             )
     else:
         jctx.close()
-        JacMachine.detach()
+        JacMachine.detach_machine()
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
     if ret_module:
@@ -301,7 +301,7 @@ def enter(
                 Jac.spawn(jctx.entry_node.architype, architype)
 
     jctx.close()
-    JacMachine.detach()
+    JacMachine.detach_machine()
 
 
 @cmd_registry.register
