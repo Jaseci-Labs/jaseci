@@ -76,7 +76,7 @@ class JacMachineState:
     def load_module(self, module_name: str, module: types.ModuleType) -> None:
         """Load a module into the machine."""
         self.loaded_modules[module_name] = module
-        sys.modules[module_name] = module
+        sys.modules[module_name] = module  # TODO: May want to nuke this one day
 
     def list_modules(self) -> list[str]:
         """List all loaded modules."""

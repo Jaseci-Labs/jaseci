@@ -5,10 +5,14 @@ from __future__ import annotations
 import ast as ast3
 import fnmatch
 import html
+import inspect
 import os
+import sys
+import tempfile
 import types
 from collections import OrderedDict
 from dataclasses import dataclass, field
+from functools import wraps
 from inspect import getfile
 from logging import getLogger
 from typing import (
@@ -1350,6 +1354,233 @@ class JacBasics:
         }
 
 
+class JacMachine:
+    """JacMachine to handle the VM-related functionalities and loaded programs."""
+
+    @staticmethod
+    def attach_program(mach: JacMachineState, jac_program: JacProgram) -> None:
+        """Attach a JacProgram to the machine."""
+        mach.jac_program = jac_program
+
+    @staticmethod
+    def get_mod_bundle(mach: JacMachineState) -> Optional[ast.Module]:
+        """Retrieve the mod_bundle from the attached JacProgram."""
+        if mach.jac_program:
+            return mach.jac_program.mod_bundle
+        return None
+
+    @staticmethod
+    def get_bytecode(
+        mach: JacMachineState, full_target: str
+    ) -> Optional[types.CodeType]:
+        """Retrieve bytecode from the attached JacProgram."""
+        if mach.jac_program:
+            return mach.jac_program.get_bytecode(full_target=full_target)
+        return None
+
+    @staticmethod
+    def get_sem_ir(mach: JacMachineState, mod_sem_ir: SemRegistry | None) -> None:
+        """Update semtable on the attached JacProgram."""
+        if mach.jac_program and mod_sem_ir:
+            if mach.jac_program.sem_ir:
+                mach.jac_program.sem_ir.registry.update(mod_sem_ir.registry)
+            else:
+                mach.jac_program.sem_ir = mod_sem_ir
+
+    @staticmethod
+    def load_module(
+        mach: JacMachineState, module_name: str, module: types.ModuleType
+    ) -> None:
+        """Load a module into the machine."""
+        mach.loaded_modules[module_name] = module
+        sys.modules[module_name] = module  # TODO: May want to nuke this one day
+
+    @staticmethod
+    def list_modules(mach: JacMachineState) -> list[str]:
+        """List all loaded modules."""
+        return list(mach.loaded_modules.keys())
+
+    @staticmethod
+    def list_walkers(mach: JacMachineState, module_name: str) -> list[str]:
+        """List all walkers in a specific module."""
+        module = mach.loaded_modules.get(module_name)
+        if module:
+            walkers = []
+            for name, obj in inspect.getmembers(module):
+                if isinstance(obj, type) and issubclass(obj, WalkerArchitype):
+                    walkers.append(name)
+            return walkers
+        return []
+
+    @staticmethod
+    def list_nodes(mach: JacMachineState, module_name: str) -> list[str]:
+        """List all nodes in a specific module."""
+        module = mach.loaded_modules.get(module_name)
+        if module:
+            nodes = []
+            for name, obj in inspect.getmembers(module):
+                if isinstance(obj, type) and issubclass(obj, NodeArchitype):
+                    nodes.append(name)
+            return nodes
+        return []
+
+    @staticmethod
+    def list_edges(mach: JacMachineState, module_name: str) -> list[str]:
+        """List all edges in a specific module."""
+        module = mach.loaded_modules.get(module_name)
+        if module:
+            nodes = []
+            for name, obj in inspect.getmembers(module):
+                if isinstance(obj, type) and issubclass(obj, EdgeArchitype):
+                    nodes.append(name)
+            return nodes
+        return []
+
+    @staticmethod
+    def create_architype_from_source(
+        mach: JacMachineState,
+        source_code: str,
+        module_name: Optional[str] = None,
+        base_path: Optional[str] = None,
+        cachable: bool = False,
+        keep_temporary_files: bool = False,
+    ) -> Optional[types.ModuleType]:
+        """Dynamically creates architypes (nodes, walkers, etc.) from Jac source code."""
+        from jaclang.runtimelib.importer import JacImporter, ImportPathSpec
+
+        if not base_path:
+            base_path = mach.base_path or os.getcwd()
+
+        if base_path and not os.path.exists(base_path):
+            os.makedirs(base_path)
+        if not module_name:
+            module_name = f"_dynamic_module_{len(mach.loaded_modules)}"
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            suffix=".jac",
+            prefix=module_name + "_",
+            dir=base_path,
+            delete=False,
+        ) as tmp_file:
+            tmp_file_path = tmp_file.name
+            tmp_file.write(source_code)
+
+        try:
+            importer = JacImporter(mach)
+            tmp_file_basename = os.path.basename(tmp_file_path)
+            tmp_module_name, _ = os.path.splitext(tmp_file_basename)
+
+            spec = ImportPathSpec(
+                target=tmp_module_name,
+                base_path=base_path,
+                absorb=False,
+                cachable=cachable,
+                mdl_alias=None,
+                override_name=module_name,
+                lng="jac",
+                items=None,
+            )
+
+            import_result = importer.run_import(spec, reload=False)
+            module = import_result.ret_mod
+
+            mach.loaded_modules[module_name] = module
+            return module
+        except Exception as e:
+            logger.error(f"Error importing dynamic module '{module_name}': {e}")
+            return None
+        finally:
+            if not keep_temporary_files and os.path.exists(tmp_file_path):
+                os.remove(tmp_file_path)
+
+    @staticmethod
+    def update_walker(
+        mach: JacMachineState,
+        module_name: str,
+        items: Optional[dict[str, Union[str, Optional[str]]]],
+    ) -> tuple[types.ModuleType, ...]:
+        """Reimport the module."""
+        from .importer import JacImporter, ImportPathSpec
+
+        if module_name in mach.loaded_modules:
+            try:
+                old_module = mach.loaded_modules[module_name]
+                importer = JacImporter(mach)
+                spec = ImportPathSpec(
+                    target=module_name,
+                    base_path=mach.base_path,
+                    absorb=False,
+                    cachable=True,
+                    mdl_alias=None,
+                    override_name=None,
+                    lng="jac",
+                    items=items,
+                )
+                import_result = importer.run_import(spec, reload=True)
+                ret_items = []
+                if items:
+                    for item_name in items:
+                        if hasattr(old_module, item_name):
+                            new_attr = getattr(import_result.ret_mod, item_name, None)
+                            if new_attr:
+                                ret_items.append(new_attr)
+                                setattr(
+                                    old_module,
+                                    item_name,
+                                    new_attr,
+                                )
+                return (old_module,) if not items else tuple(ret_items)
+            except Exception as e:
+                logger.error(f"Failed to update module {module_name}: {e}")
+        else:
+            logger.warning(f"Module {module_name} not found in loaded modules.")
+        return ()
+
+    @staticmethod
+    def spawn_node(
+        mach: JacMachineState,
+        node_name: str,
+        attributes: Optional[dict] = None,
+        module_name: str = "__main__",
+    ) -> NodeArchitype:
+        """Spawn a node instance of the given node_name with attributes."""
+        node_class = mach.get_architype(module_name, node_name)
+        if isinstance(node_class, type) and issubclass(node_class, NodeArchitype):
+            if attributes is None:
+                attributes = {}
+            node_instance = node_class(**attributes)
+            return node_instance
+        else:
+            raise ValueError(f"Node {node_name} not found.")
+
+    @staticmethod
+    def spawn_walker(
+        mach: JacMachineState,
+        walker_name: str,
+        attributes: Optional[dict] = None,
+        module_name: str = "__main__",
+    ) -> WalkerArchitype:
+        """Spawn a walker instance of the given walker_name."""
+        walker_class = mach.get_architype(module_name, walker_name)
+        if isinstance(walker_class, type) and issubclass(walker_class, WalkerArchitype):
+            if attributes is None:
+                attributes = {}
+            walker_instance = walker_class(**attributes)
+            return walker_instance
+        else:
+            raise ValueError(f"Walker {walker_name} not found.")
+
+    @staticmethod
+    def get_architype(
+        mach: JacMachineState, module_name: str, architype_name: str
+    ) -> Optional[Architype]:
+        """Retrieve an architype class from a module."""
+        module = mach.loaded_modules.get(module_name)
+        if module:
+            return getattr(module, architype_name, None)
+        return None
+
+
 class JacFeature(
     JacClassReferences,
     JacAccessValidation,
@@ -1359,6 +1590,7 @@ class JacFeature(
     JacBuiltin,
     JacCmd,
     JacBasics,
+    JacMachine,
 ):
     """Jac Feature."""
 
@@ -1376,9 +1608,6 @@ def generate_plugin_helpers(
         Tuple of (SpecClass, ImplClass, ProxyClass).
     """
     # Markers for spec and impl
-    import inspect
-    from functools import wraps
-
     spec_methods = {}
     impl_methods = {}
     proxy_methods = {}
