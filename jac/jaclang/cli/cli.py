@@ -20,14 +20,13 @@ from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.builtin import dotgen
 from jaclang.runtimelib.constructs import WalkerArchitype
 from jaclang.runtimelib.context import ExecutionContext
-from jaclang.runtimelib.feature import JacCmd as Cmd
 from jaclang.runtimelib.feature import JacFeature as Jac
 from jaclang.runtimelib.machine import JacMachine
 from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
 
 
-Cmd.create_cmd()
+Jac.create_cmd()
 Jac.setup()
 
 
