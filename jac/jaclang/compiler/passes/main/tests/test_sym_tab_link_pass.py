@@ -2,8 +2,8 @@
 
 import os
 
-from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import TestCase
 
 
@@ -23,7 +23,9 @@ class SymTabLinkPassTests(TestCase):
             "symtab_link_tests",
             "no_dupls.jac",
         )
-        mod = jac_file_to_pass(file_path, schedule=py_code_gen_typed).ir
+        mod = (
+            JacProgram().jac_file_to_pass(file_path, schedule=py_code_gen_typed).root_ir
+        )
         self.assertEqual(
             len(mod.sym_tab.tab.values()),
             3,

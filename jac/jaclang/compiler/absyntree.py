@@ -186,7 +186,7 @@ class AstNode:
         """Get all sub nodes of type."""
         from jaclang.compiler.passes.tool import JacFormatPass
 
-        return JacFormatPass(self, None).ir.gen.jac
+        return JacFormatPass(self, None).root_ir.gen.jac
 
     def to_dict(self) -> dict[str, str]:
         """Return dict representation of node."""
@@ -641,7 +641,7 @@ class Module(AstDocNode):
         registry: Optional[SemRegistry] = None,
     ) -> None:
         """Initialize whole program node."""
-        from jaclang.runtimelib.machine import JacProgram
+        from jaclang.runtimelib.feature import JacProgram
 
         self.name = name
         self.source = source

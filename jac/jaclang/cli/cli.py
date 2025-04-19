@@ -12,22 +12,20 @@ from typing import Optional
 
 import jaclang.compiler.absyntree as ast
 from jaclang.cli.cmdreg import CommandShell, cmd_registry
-from jaclang.compiler.compile import jac_file_formatter, jac_file_to_pass
 from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 from jaclang.compiler.passes.main.schedules import py_code_gen_build, py_code_gen_typed
 from jaclang.compiler.program import JacProgram
-from jaclang.plugin.builtin import dotgen
-from jaclang.plugin.feature import JacCmd as Cmd
-from jaclang.plugin.feature import JacFeature as Jac
+from jaclang.runtimelib.builtin import dotgen
 from jaclang.runtimelib.constructs import WalkerArchitype
 from jaclang.runtimelib.context import ExecutionContext
-from jaclang.runtimelib.machine import JacMachine
+from jaclang.runtimelib.feature import JacFeature as Jac
+from jaclang.runtimelib.machine import JacMachineState
 from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
 
 
-Cmd.create_cmd()
+Jac.create_cmd()
 Jac.setup()
 
 
@@ -36,20 +34,20 @@ def format(path: str, outfile: str = "", debug: bool = False) -> None:
     """Run the specified .jac file or format all .jac files in a given directory."""
 
     def format_file(filename: str) -> None:
-        code_gen_format = jac_file_formatter(filename)
+        code_gen_format = JacProgram().jac_file_formatter(filename)
         if code_gen_format.errors_had:
             print(
                 f"Errors occurred while formatting the file {filename}.",
                 file=sys.stderr,
             )
         elif debug:
-            print(code_gen_format.ir.gen.jac)
+            print(code_gen_format.root_ir.gen.jac)
         elif outfile:
             with open(outfile, "w") as f:
-                f.write(code_gen_format.ir.gen.jac)
+                f.write(code_gen_format.root_ir.gen.jac)
         else:
             with open(filename, "w") as f:
-                f.write(code_gen_format.ir.gen.jac)
+                f.write(code_gen_format.root_ir.gen.jac)
 
     if path.endswith(".jac"):
         if os.path.exists(path):
@@ -88,12 +86,14 @@ def run(
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
+    mach = JacMachineState(base)
 
     jctx = ExecutionContext.create(session=session)
 
     if filename.endswith(".jac"):
         try:
             Jac.jac_import(
+                mach=mach,
                 target=mod,
                 base_path=base,
                 cachable=cache,
@@ -104,10 +104,12 @@ def run(
     elif filename.endswith(".jir"):
         try:
             with open(filename, "rb") as f:
-                JacMachine(base).attach_program(
-                    JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None)
+                Jac.attach_program(
+                    mach,
+                    pickle.load(f),
                 )
                 Jac.jac_import(
+                    mach=mach,
                     target=mod,
                     base_path=base,
                     cachable=cache,
@@ -118,11 +120,8 @@ def run(
 
     else:
         jctx.close()
-        JacMachine.detach()
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
-
     jctx.close()
-    JacMachine.detach()
 
 
 @cmd_registry.register
@@ -144,9 +143,11 @@ def get_object(
     mod = mod[:-4]
 
     jctx = ExecutionContext.create(session=session)
+    mach = JacMachineState(base)
 
     if filename.endswith(".jac"):
         Jac.jac_import(
+            mach=mach,
             target=mod,
             base_path=base,
             cachable=cache,
@@ -154,10 +155,12 @@ def get_object(
         )
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
-            JacMachine(base).attach_program(
-                JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None)
+            Jac.attach_program(
+                mach,
+                pickle.load(f),
             )
             Jac.jac_import(
+                mach=mach,
                 target=mod,
                 base_path=base,
                 cachable=cache,
@@ -165,7 +168,6 @@ def get_object(
             )
     else:
         jctx.close()
-        JacMachine.detach()
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
     data = {}
@@ -176,7 +178,6 @@ def get_object(
         print(f"Object with id {id} not found.", file=sys.stderr)
 
     jctx.close()
-    JacMachine.detach()
     return data
 
 
@@ -184,17 +185,16 @@ def get_object(
 def build(filename: str, pybuild: bool = False) -> None:
     """Build the specified .jac file."""
     if filename.endswith(".jac"):
-        out = jac_file_to_pass(
+        out = JacProgram()
+        pass_ret = out.jac_file_to_pass(
             file_path=filename,
             schedule=py_code_gen_typed if pybuild else py_code_gen_build,
         )
-        errs = len(out.errors_had)
-        warnings = len(out.warnings_had)
+        errs = len(pass_ret.errors_had)
+        warnings = len(pass_ret.warnings_had)
         print(f"Errors: {errs}, Warnings: {warnings}")
-        for i in out.ir.flatten():
-            i.gen.clean()
         with open(filename[:-4] + ".jir", "wb") as f:
-            pickle.dump(out.ir, f)
+            pickle.dump(out, f)
     else:
         print("Not a .jac file.", file=sys.stderr)
 
@@ -206,7 +206,7 @@ def check(filename: str, print_errs: bool = True) -> None:
     :param filename: The path to the .jac file.
     """
     if filename.endswith(".jac"):
-        out = jac_file_to_pass(
+        out = JacProgram().jac_file_to_pass(
             file_path=filename,
             schedule=py_code_gen_typed,
         )
@@ -264,9 +264,11 @@ def enter(
     mod = mod[:-4]
 
     jctx = ExecutionContext.create(session=session, root=root)
+    mach = JacMachineState(base)
 
     if filename.endswith(".jac"):
         ret_module = Jac.jac_import(
+            mach=mach,
             target=mod,
             base_path=base,
             cachable=cache,
@@ -274,10 +276,12 @@ def enter(
         )
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
-            JacMachine(base).attach_program(
-                JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None)
+            Jac.attach_program(
+                mach,
+                pickle.load(f),
             )
             ret_module = Jac.jac_import(
+                mach=mach,
                 target=mod,
                 base_path=base,
                 cachable=cache,
@@ -285,7 +289,6 @@ def enter(
             )
     else:
         jctx.close()
-        JacMachine.detach()
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
     if ret_module:
@@ -303,7 +306,6 @@ def enter(
                 Jac.spawn(jctx.entry_node.architype, architype)
 
     jctx.close()
-    JacMachine.detach()
 
 
 @cmd_registry.register
@@ -329,8 +331,10 @@ def test(
     jac test => jac test -d .
     """
     jctx = ExecutionContext.create()
+    mach = JacMachineState()
 
     failcount = Jac.run_test(
+        mach=mach,
         filepath=filepath,
         func_name=("test_" + test_name) if test_name else None,
         filter=filter,
@@ -377,7 +381,7 @@ def clean() -> None:
     current_dir = os.getcwd()
     for root, dirs, _files in os.walk(current_dir, topdown=True):
         for folder_name in dirs[:]:
-            if folder_name in [Constants.JAC_GEN_DIR, Constants.JAC_MYPY_CACHE]:
+            if folder_name in [Constants.JAC_MYPY_CACHE]:
                 folder_to_remove = os.path.join(root, folder_name)
                 shutil.rmtree(folder_to_remove)
                 print(f"Removed folder: {folder_to_remove}")
@@ -391,7 +395,7 @@ def debug(filename: str, main: bool = True, cache: bool = False) -> None:
     base = base if base else "./"
     mod = mod[:-4]
     if filename.endswith(".jac"):
-        bytecode = jac_file_to_pass(filename).ir.gen.py_bytecode
+        bytecode = JacProgram().jac_file_to_pass(filename).root_ir.gen.py_bytecode
         if bytecode:
             code = marshal.loads(bytecode)
             if db.has_breakpoint(bytecode):
@@ -449,8 +453,10 @@ def dot(
     jctx = ExecutionContext.create(session=session)
 
     if filename.endswith(".jac"):
-        jac_machine = JacMachine(base)
-        Jac.jac_import(target=mod, base_path=base, override_name="__main__")
+        jac_machine = JacMachineState(base)
+        Jac.jac_import(
+            mach=jac_machine, target=mod, base_path=base, override_name="__main__"
+        )
         module = jac_machine.loaded_modules.get("__main__")
         globals().update(vars(module))
         try:
@@ -491,7 +497,7 @@ def py2jac(filename: str) -> None:
         with open(filename, "r") as f:
             file_source = f.read()
             code = PyastBuildPass(
-                input_ir=ast.PythonModuleAst(
+                root_ir=ast.PythonModuleAst(
                     ast3.parse(file_source),
                     orig_src=ast.JacSource(file_source, filename),
                 ),
@@ -509,7 +515,7 @@ def jac2py(filename: str) -> None:
     """
     if filename.endswith(".jac"):
         with open(filename, "r"):
-            code = jac_file_to_pass(file_path=filename).ir.gen.py
+            code = JacProgram().jac_file_to_pass(file_path=filename).root_ir.gen.py
         print(code)
     else:
         print("Not a .jac file.", file=sys.stderr)

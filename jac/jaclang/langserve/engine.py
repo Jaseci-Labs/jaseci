@@ -9,11 +9,11 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Optional
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.compile import jac_str_to_pass
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
+from jaclang.compiler.program import JacProgram
 from jaclang.compiler.symtable import SymbolTable
 from jaclang.langserve.sem_manager import SemTokManager
 from jaclang.langserve.utils import (
@@ -68,18 +68,18 @@ class JacLangServer(LanguageServer):
         self, file_path: str, build: Pass, refresh: bool = False
     ) -> None:
         """Update modules."""
-        if not isinstance(build.ir, ast.Module):
+        if not isinstance(build.root_ir, ast.Module):
             self.log_error("Error with module build.")
             return
         keep_parent = (
             self.modules[file_path].impl_parent if file_path in self.modules else None
         )
-        self.modules[file_path] = ModuleInfo(ir=build.ir, impl_parent=keep_parent)
-        for p in build.ir.mod_deps.keys():
+        self.modules[file_path] = ModuleInfo(ir=build.root_ir, impl_parent=keep_parent)
+        for p in build.root_ir.mod_deps.keys():
             uri = uris.from_fs_path(p)
             if file_path != uri:
                 self.modules[uri] = ModuleInfo(
-                    ir=build.ir.mod_deps[p],
+                    ir=build.root_ir.mod_deps[p],
                     impl_parent=self.modules[file_path],
                 )
 
@@ -87,7 +87,7 @@ class JacLangServer(LanguageServer):
         """Rebuild a file."""
         try:
             document = self.workspace.get_text_document(file_path)
-            build = jac_str_to_pass(
+            build = JacProgram().jac_str_to_pass(
                 jac_str=document.source, file_path=document.path, schedule=[]
             )
             self.publish_diagnostics(
@@ -110,7 +110,7 @@ class JacLangServer(LanguageServer):
                 return self.deep_check(
                     uris.from_fs_path(parent.ir.loc.mod_path), annex_view=file_path
                 )
-            build = jac_str_to_pass(
+            build = JacProgram().jac_str_to_pass(
                 jac_str=document.source,
                 file_path=document.path,
                 schedule=py_code_gen_typed,
@@ -297,14 +297,14 @@ class JacLangServer(LanguageServer):
         """Return formatted jac."""
         try:
             document = self.workspace.get_text_document(file_path)
-            format = jac_str_to_pass(
+            format = JacProgram().jac_str_to_pass(
                 jac_str=document.source,
                 file_path=document.path,
                 target=JacFormatPass,
                 schedule=[FuseCommentsPass, JacFormatPass],
             )
             formatted_text = (
-                format.ir.gen.jac
+                format.root_ir.gen.jac
                 if JacParser not in [e.from_pass for e in format.errors_had]
                 else document.source
             )

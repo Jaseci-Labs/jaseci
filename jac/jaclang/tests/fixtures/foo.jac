@@ -1,16 +1,16 @@
-import:py from jaclang.runtimelib.machine, JacMachine;
+import:py from jaclang.runtimelib.feature { JacFeature, JacMachineState }
 import:jac from bar, bar_walk;
 # Test runner to initialize the walker
 
 can test_run {
     # Print the loaded modules
-    modules = JacMachine.get().list_modules();
+    modules = JacFeature.list_modules(JacFeature.py_get_jac_machine());
     "Loaded Modules:" |> print;
     for mod_name in modules {
         f"Module: {mod_name}" |> print;
     }
     # Print walkers
-    walkers = JacMachine.get().list_walkers(mod_name);
+    walkers = JacFeature.list_walkers(JacFeature.py_get_jac_machine(), mod_name);
     if walkers {
         f"Walkers in {mod_name}:" |> print;
         for walker in walkers {
@@ -18,7 +18,7 @@ can test_run {
         }
     }
     # Print nodes
-    nodes = JacMachine.get().list_nodes(mod_name);
+    nodes = JacFeature.list_nodes(JacFeature.py_get_jac_machine(), mod_name);
     if nodes {
         f"Nodes in {mod_name}:" |> print;
         for node in nodes {
@@ -26,7 +26,7 @@ can test_run {
         }
     }
     # Print edges
-    edges = JacMachine.get().list_edges(mod_name);
+    edges = JacFeature.list_edges(JacFeature.py_get_jac_machine(), mod_name);
     if edges {
         f"Edges in {mod_name}:" |> print;
         for edge in edges {

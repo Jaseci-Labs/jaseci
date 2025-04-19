@@ -4,13 +4,8 @@ from contextlib import suppress
 from typing import Callable, Type
 
 from jaclang.compiler.constant import EdgeDir
-from jaclang.plugin.default import (
-    JacCallableImplementation as _JacCallableImplementation,
-    JacFeatureImpl,
-    hookimpl,
-)
-from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.runtimelib.architype import Architype
+from jaclang.runtimelib.feature import JacFeature as Jac, JacFeatureImpl, hookimpl
 from jaclang.runtimelib.utils import all_issubclass
 
 from ..core.architype import (
@@ -31,22 +26,6 @@ from ..core.architype import (
 )
 from ..core.context import ExecutionContext, JaseciContext
 from ..jaseci import FastAPI
-
-
-class JacCallableImplementation:
-    """Callable Implementations."""
-
-    @staticmethod
-    def get_object(id: str) -> Architype | None:
-        """Get object by id."""
-        if not FastAPI.is_enabled():
-            return _JacCallableImplementation.get_object(id=id)
-
-        with suppress(ValueError):
-            if isinstance(architype := BaseAnchor.ref(id).architype, Architype):
-                return architype
-
-        return None
 
 
 class JacAccessValidationPlugin:
@@ -348,9 +327,16 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
-    def get_object_func() -> Callable[[str], Architype | None]:
-        """Get object by id func."""
-        return JacCallableImplementation.get_object
+    def get_object(id: str) -> Architype | None:
+        """Get object by id."""
+        if not FastAPI.is_enabled():
+            return JacFeatureImpl.get_object(id=id)
+
+        with suppress(ValueError):
+            if isinstance(architype := BaseAnchor.ref(id).architype, Architype):
+                return architype
+
+        return None
 
     @staticmethod
     @hookimpl

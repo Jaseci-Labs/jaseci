@@ -13,8 +13,8 @@ class SymTabLinkPass(Pass):
     def enter_module_path(self, node: ast.ModulePath) -> None:
         """Link the symbol tables."""
 
-        assert isinstance(self.ir, ast.Module)
-        assert self.ir.jac_prog is not None
+        assert isinstance(self.root_ir, ast.Module)
+        assert self.root_ir.jac_prog is not None
 
         imp_node = node.parent_of_type(ast.Import)
 
@@ -22,22 +22,22 @@ class SymTabLinkPass(Pass):
             rel_path = node.resolve_relative_path()
             if os.path.isdir(rel_path):
                 rel_path = f"{rel_path}/__init__.jac"
-            if rel_path not in self.ir.jac_prog.modules:
+            if rel_path not in self.root_ir.jac_prog.modules:
                 self.ice()
         else:
-            if node.sym_name in self.ir.py_info.py_raise_map:
-                rel_path = self.ir.py_info.py_raise_map[node.sym_name]
+            if node.sym_name in self.root_ir.py_info.py_raise_map:
+                rel_path = self.root_ir.py_info.py_raise_map[node.sym_name]
             elif (
-                f"{self.ir.get_href_path(node)}.{node.sym_name}"
-                in self.ir.py_info.py_raise_map
+                f"{self.root_ir.get_href_path(node)}.{node.sym_name}"
+                in self.root_ir.py_info.py_raise_map
             ):
-                rel_path = self.ir.py_info.py_raise_map[
-                    f"{self.ir.get_href_path(node)}.{node.sym_name}"
+                rel_path = self.root_ir.py_info.py_raise_map[
+                    f"{self.root_ir.get_href_path(node)}.{node.sym_name}"
                 ]
             else:
                 return
 
-        imported_mod_symtab = self.ir.jac_prog.modules[rel_path].sym_tab
+        imported_mod_symtab = self.root_ir.jac_prog.modules[rel_path].sym_tab
 
         all_import = False
         symbols_str_list: list[str] = []

@@ -7,9 +7,9 @@ from pickle import load
 from typing import Any
 
 from jaclang.cli.cmdreg import cmd_registry
-from jaclang.plugin.default import hookimpl
 from jaclang.runtimelib.context import ExecutionContext
-from jaclang.runtimelib.machine import JacMachine, JacProgram
+from jaclang.runtimelib.feature import hookimpl
+from jaclang.runtimelib.machine import JacMachineState
 
 from pymongo.errors import ConnectionFailure, OperationFailure
 
@@ -40,9 +40,11 @@ class JacCmd:
 
             FastAPI.enable()
             jctx = ExecutionContext.create()
+            mach = JacMachineState(base)
 
             if filename.endswith(".jac"):
                 Jac.jac_import(
+                    mach=mach,
                     target=mod,
                     base_path=base,
                     cachable=True,
@@ -50,10 +52,9 @@ class JacCmd:
                 )
             elif filename.endswith(".jir"):
                 with open(filename, "rb") as f:
-                    JacMachine(base).attach_program(
-                        JacProgram(mod_bundle=load(f), bytecode=None, sem_ir=None)
-                    )
+                    Jac.attach_program(mach, load(f))
                     Jac.jac_import(
+                        mach=mach,
                         target=mod,
                         base_path=base,
                         cachable=True,
@@ -61,13 +62,11 @@ class JacCmd:
                     )
             else:
                 jctx.close()
-                JacMachine.detach()
                 raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
             FastAPI.start(host=host, port=port)
 
             jctx.close()
-            JacMachine.detach()
 
         @cmd_registry.register
         def create_system_admin(
@@ -83,9 +82,11 @@ class JacCmd:
             base, mod = split(filename)
             base = base if base else "./"
             mod = mod[:-4]
+            mach = JacMachineState(base)
 
             if filename.endswith(".jac"):
                 Jac.jac_import(
+                    mach=mach,
                     target=mod,
                     base_path=base,
                     cachable=True,
@@ -93,10 +94,9 @@ class JacCmd:
                 )
             elif filename.endswith(".jir"):
                 with open(filename, "rb") as f:
-                    JacMachine(base).attach_program(
-                        JacProgram(mod_bundle=load(f), bytecode=None, sem_ir=None)
-                    )
+                    Jac.attach_program(mach, load(f))
                     Jac.jac_import(
+                        mach=mach,
                         target=mod,
                         base_path=base,
                         cachable=True,

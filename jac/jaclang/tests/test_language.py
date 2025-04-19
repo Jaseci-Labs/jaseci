@@ -8,11 +8,10 @@ import sysconfig
 import jaclang.compiler.passes.main as passes
 from jaclang import JacFeature as Jac
 from jaclang.cli import cli
-from jaclang.compiler.compile import jac_file_to_pass, jac_pass_to_pass, jac_str_to_pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.context import ExecutionContext
-from jaclang.runtimelib.machine import JacMachine
+from jaclang.runtimelib.machine import JacMachineState
 from jaclang.utils.test import TestCase
 
 import pytest
@@ -24,14 +23,15 @@ class JacLanguageTests(TestCase):
     def setUp(self) -> None:
         """Set up test."""
         ExecutionContext.global_system_root().edges.clear()
-        JacMachine(self.fixture_abs_path("./")).attach_program(
-            JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
+        self.mach = JacMachineState(self.fixture_abs_path("./"))
+        Jac.attach_program(
+            self.mach,
+            JacProgram(),
         )
         return super().setUp()
 
     def tearDown(self) -> None:
         """Tear down test."""
-        JacMachine.detach()
         return super().tearDown()
 
     def test_sub_abilities(self) -> None:
@@ -72,7 +72,9 @@ class JacLanguageTests(TestCase):
         """Parse micro jac file."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("micro.simple_walk", base_path=self.examples_abs_path(""))
+        Jac.jac_import(
+            self.mach, "micro.simple_walk", base_path=self.examples_abs_path("")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(
@@ -86,7 +88,7 @@ class JacLanguageTests(TestCase):
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(
-            "micro.simple_walk_by_edge", base_path=self.examples_abs_path("")
+            self.mach, "micro.simple_walk_by_edge", base_path=self.examples_abs_path("")
         )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -99,7 +101,7 @@ class JacLanguageTests(TestCase):
         """Parse micro jac file."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("guess_game", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "guess_game", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(
@@ -120,9 +122,6 @@ class JacLanguageTests(TestCase):
         )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-
-        with open("out", "w") as f:
-            f.write(stdout_value)
 
         expected_outputs = [
             "+-- AtomTrailer - Type: builtins.list[builtins.int]",
@@ -147,7 +146,7 @@ class JacLanguageTests(TestCase):
         """Parse micro jac file."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("chandra_bugs", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "chandra_bugs", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(
@@ -159,7 +158,9 @@ class JacLanguageTests(TestCase):
         """Parse micro jac file."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("chandra_bugs2", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "chandra_bugs2", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(
@@ -174,7 +175,7 @@ class JacLanguageTests(TestCase):
         """Parse micro jac file."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("ignore_dup", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "ignore_dup", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.split("\n")[0].count("here"), 10)
@@ -184,17 +185,19 @@ class JacLanguageTests(TestCase):
         """Parse micro jac file."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("hashcheck_dup", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "hashcheck_dup", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.count("check"), 2)
 
     def test_arith_precedence(self) -> None:
         """Basic precedence test."""
-        prog = jac_str_to_pass("with entry {print(4-5-4);}", "test.jac")
+        prog = JacProgram().jac_str_to_pass("with entry {print(4-5-4);}", "test.jac")
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        exec(compile(prog.ir.gen.py_ast[0], "test.py", "exec"))
+        exec(compile(prog.root_ir.gen.py_ast[0], "test.py", "exec"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value, "-5\n")
@@ -203,7 +206,7 @@ class JacLanguageTests(TestCase):
         """Test importing python."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("needs_import", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "needs_import", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("<module 'pyfunc' from", stdout_value)
@@ -213,6 +216,7 @@ class JacLanguageTests(TestCase):
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(
+            self.mach,
             "reference.special_comprehensions",
             base_path=self.examples_abs_path(""),
         )
@@ -224,7 +228,9 @@ class JacLanguageTests(TestCase):
         """Test the dot gen of nodes and edges of bubblesort."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("gendot_bubble_sort", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "gendot_bubble_sort", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn(
@@ -236,7 +242,9 @@ class JacLanguageTests(TestCase):
         """Test assign_compr."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("assign_compr_dup", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "assign_compr_dup", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(
@@ -249,7 +257,7 @@ class JacLanguageTests(TestCase):
         captured_output = io.StringIO()
         sys.stdout = captured_output
         sys.stderr = captured_output
-        Jac.jac_import("semstr", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "semstr", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
         stdout_value = captured_output.getvalue()
@@ -259,7 +267,9 @@ class JacLanguageTests(TestCase):
         """Test raw string and byte string."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("raw_byte_string", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "raw_byte_string", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.count(r"\\\\"), 2)
@@ -270,6 +280,7 @@ class JacLanguageTests(TestCase):
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(
+            self.mach,
             "compiler/passes/main/tests/fixtures/fstrings",
             base_path=self.fixture_abs_path("../../"),
         )
@@ -285,7 +296,7 @@ class JacLanguageTests(TestCase):
         captured_output = io.StringIO()
         sys.stdout = captured_output
 
-        Jac.jac_import("deep_import", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "deep_import", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.split("\n")[0], "one level deeperslHello World!")
@@ -302,8 +313,10 @@ class JacLanguageTests(TestCase):
         for i in targets:
             if i in sys.modules:
                 del sys.modules[i]
-        Jac.jac_import("deep_import_mods", base_path=self.fixture_abs_path("./"))
-        mods = JacMachine.get().loaded_modules.keys()
+        Jac.jac_import(
+            self.mach, "deep_import_mods", base_path=self.fixture_abs_path("./")
+        )
+        mods = self.mach.loaded_modules.keys()
         for i in targets:
             self.assertIn(i, mods)
         self.assertEqual(len([i for i in mods if i.startswith("deep")]), 6)
@@ -313,7 +326,9 @@ class JacLanguageTests(TestCase):
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(
-            "deep.deeper.deep_outer_import", base_path=self.fixture_abs_path("./")
+            self.mach,
+            "deep.deeper.deep_outer_import",
+            base_path=self.fixture_abs_path("./"),
         )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -335,7 +350,7 @@ class JacLanguageTests(TestCase):
     #     """Parse micro jac file."""
     #     captured_output = io.StringIO()
     #     sys.stdout = captured_output
-    #     Jac.jac_import(
+    #     Jac.jac_import(self.mach,
     #         "deep.deeper.deep_outer_import2", base_path=self.fixture_abs_path("./")
     #     )
     #     sys.stdout = sys.__stdout__
@@ -347,7 +362,7 @@ class JacLanguageTests(TestCase):
         """Test has lambda_goodness."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("has_goodness", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "has_goodness", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.split("\n")[0], "mylist:  [1, 2, 3]")
@@ -357,7 +372,7 @@ class JacLanguageTests(TestCase):
         """Test conn assign on edges."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("edge_ops", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "edge_ops", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("[(3, 5), (14, 1), (5, 1)]", stdout_value)
@@ -368,7 +383,7 @@ class JacLanguageTests(TestCase):
         """Test conn assign on edges."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("disconn", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "disconn", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
         self.assertIn("c(cc=0)", stdout_value[0])
@@ -385,7 +400,7 @@ class JacLanguageTests(TestCase):
         """Test conn assign on edges."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("simple_archs", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "simple_archs", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.split("\n")[0], "1 2 0")
@@ -395,7 +410,7 @@ class JacLanguageTests(TestCase):
         """Test walking through edges."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("edges_walk", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "edges_walk", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("creator()\n", stdout_value)
@@ -408,7 +423,7 @@ class JacLanguageTests(TestCase):
         """Test walking through edges."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("impl_grab", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "impl_grab", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("1.414", stdout_value)
@@ -417,7 +432,7 @@ class JacLanguageTests(TestCase):
         """Test walking through edges."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("tuplytuples", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "tuplytuples", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn(
@@ -429,7 +444,9 @@ class JacLanguageTests(TestCase):
         """Test walking through edges."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("deferred_field", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "deferred_field", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn(
@@ -441,7 +458,9 @@ class JacLanguageTests(TestCase):
         """Test the dot gen of nodes and edges as a builtin."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("builtin_dotgen", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "builtin_dotgen", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.count("True"), 16)
@@ -450,7 +469,7 @@ class JacLanguageTests(TestCase):
         """Test walking through edges."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("with_context", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "with_context", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("im in", stdout_value)
@@ -465,7 +484,9 @@ class JacLanguageTests(TestCase):
         """Parse micro jac file."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("micro.typed_filter_compr", base_path=self.examples_abs_path(""))
+        Jac.jac_import(
+            self.mach, "micro.typed_filter_compr", base_path=self.examples_abs_path("")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn(
@@ -479,7 +500,9 @@ class JacLanguageTests(TestCase):
         """Test walking through edges and nodes."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("edge_node_walk", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "edge_node_walk", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("creator()\n", stdout_value)
@@ -490,15 +513,19 @@ class JacLanguageTests(TestCase):
 
     def test_annotation_tuple_issue(self) -> None:
         """Test conn assign on edges."""
-        mypass = jac_file_to_pass(self.fixture_abs_path("./slice_vals.jac"))
-        self.assertIn("Annotated[Str, INT, BLAH]", mypass.ir.gen.py)
-        self.assertIn("tuple[int, Optional[type], Optional[tuple]]", mypass.ir.gen.py)
+        mypass = JacProgram().jac_file_to_pass(
+            self.fixture_abs_path("./slice_vals.jac")
+        )
+        self.assertIn("Annotated[Str, INT, BLAH]", mypass.root_ir.gen.py)
+        self.assertIn(
+            "tuple[int, Optional[type], Optional[tuple]]", mypass.root_ir.gen.py
+        )
 
     def test_impl_decl_resolution_fix(self) -> None:
         """Test walking through edges and nodes."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("mtest", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "mtest", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("2.0\n", stdout_value)
@@ -508,7 +535,7 @@ class JacLanguageTests(TestCase):
         captured_output = io.StringIO()
         sys.stdout = captured_output
         sys.stderr = captured_output
-        Jac.jac_import("registry", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "registry", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
         stdout_value = captured_output.getvalue()
@@ -528,7 +555,9 @@ class JacLanguageTests(TestCase):
         """Test Enum as member stmt."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("enum_inside_archtype", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "enum_inside_archtype", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("2 Accessing privileged Data", stdout_value)
@@ -547,18 +576,22 @@ class JacLanguageTests(TestCase):
             parsed_ast = py_ast.parse(file_source)
             try:
                 py_ast_build_pass = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(
+                    root_ir=ast.PythonModuleAst(
                         parsed_ast, orig_src=ast.JacSource(file_source, file_name)
                     ),
                 )
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
 
-        ir = jac_str_to_pass(
-            jac_str=py_ast_build_pass.ir.unparse(),
-            file_path=file_name[:-3] + ".jac",
-            schedule=py_code_gen_typed,
-        ).ir
+        ir = (
+            JacProgram()
+            .jac_str_to_pass(
+                jac_str=py_ast_build_pass.ir.unparse(),
+                file_path=file_name[:-3] + ".jac",
+                schedule=py_code_gen_typed,
+            )
+            .root_ir
+        )
 
         architype_count = 0
         for mod in ir.jac_prog.modules.values():
@@ -569,7 +602,9 @@ class JacLanguageTests(TestCase):
         self.assertEqual(architype_count, 21)
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("needs_import_1", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "needs_import_1", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("pyfunc_1 imported", stdout_value)
@@ -584,7 +619,7 @@ class JacLanguageTests(TestCase):
         with open(py_out_path) as f:
             file_source = f.read()
             output = PyastBuildPass(
-                input_ir=ast.PythonModuleAst(
+                root_ir=ast.PythonModuleAst(
                     py_ast.parse(file_source),
                     orig_src=ast.JacSource(file_source, py_out_path),
                 ),
@@ -619,7 +654,7 @@ class JacLanguageTests(TestCase):
             parsed_ast = py_ast.parse(file_source)
             try:
                 py_ast_build_pass = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(
+                    root_ir=ast.PythonModuleAst(
                         parsed_ast,
                         orig_src=ast.JacSource(file_source, file_name),
                     ),
@@ -627,11 +662,15 @@ class JacLanguageTests(TestCase):
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
 
-        ir = jac_str_to_pass(
-            jac_str=py_ast_build_pass.ir.unparse(),
-            file_path=file_name[:-3] + ".jac",
-            schedule=py_code_gen_typed,
-        ).ir
+        ir = (
+            JacProgram()
+            .jac_str_to_pass(
+                jac_str=py_ast_build_pass.ir.unparse(),
+                file_path=file_name[:-3] + ".jac",
+                schedule=py_code_gen_typed,
+            )
+            .root_ir
+        )
 
         architype_count = 0
         for mod in ir.jac_prog.modules.values():
@@ -642,7 +681,9 @@ class JacLanguageTests(TestCase):
         self.assertEqual(architype_count, 27)  # Because of the Architype from math
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("needs_import_2", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "needs_import_2", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("pyfunc_2 imported", stdout_value)
@@ -658,7 +699,7 @@ class JacLanguageTests(TestCase):
         with open(py_out_path) as f:
             file_source = f.read()
             output = PyastBuildPass(
-                input_ir=ast.PythonModuleAst(
+                root_ir=ast.PythonModuleAst(
                     py_ast.parse(file_source),
                     orig_src=ast.JacSource(file_source, py_out_path),
                 ),
@@ -683,7 +724,7 @@ class JacLanguageTests(TestCase):
             parsed_ast = py_ast.parse(file_source)
             try:
                 py_ast_build_pass = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(
+                    root_ir=ast.PythonModuleAst(
                         parsed_ast,
                         orig_src=ast.JacSource(file_source, file_name),
                     ),
@@ -691,7 +732,11 @@ class JacLanguageTests(TestCase):
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
 
-        ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
+        ir = (
+            JacProgram()
+            .jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed)
+            .root_ir
+        )
         architype_count = sum(
             len(mod.get_all_sub_nodes(ast.Architype))
             for mod in ir.jac_prog.modules.values()
@@ -707,7 +752,9 @@ class JacLanguageTests(TestCase):
         self.assertEqual(len(builtin_mod.get_all_sub_nodes(ast.Architype)), 108)
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("needs_import_3", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "needs_import_3", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("pyfunc_3 imported", stdout_value)
@@ -722,7 +769,7 @@ class JacLanguageTests(TestCase):
         with open(py_out_path) as f:
             file_source = f.read()
             output = PyastBuildPass(
-                input_ir=ast.PythonModuleAst(
+                root_ir=ast.PythonModuleAst(
                     py_ast.parse(file_source),
                     orig_src=ast.JacSource(file_source, py_out_path),
                 ),
@@ -739,7 +786,7 @@ class JacLanguageTests(TestCase):
         """
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("refs_target", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "refs_target", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("[c(val=0), c(val=1), c(val=2)]", stdout_value)
@@ -747,17 +794,19 @@ class JacLanguageTests(TestCase):
 
     def test_py_kw_as_name_disallowed(self) -> None:
         """Basic precedence test."""
-        prog = jac_str_to_pass("with entry {print.is.not.True(4-5-4);}", "test.jac")
+        prog = JacProgram().jac_str_to_pass(
+            "with entry {print.is.not.True(4-5-4);}", "test.jac"
+        )
         self.assertIn("Python keyword is used as name", str(prog.errors_had[0].msg))
 
     def test_double_format_issue(self) -> None:
         """Basic precedence test."""
-        prog = jac_str_to_pass("with entry {print(hello);}", "test.jac")
-        prog.ir.unparse()
-        before = prog.ir.format()
-        prog.ir.format()
-        prog.ir.format()
-        after = prog.ir.format()
+        prog = JacProgram().jac_str_to_pass("with entry {print(hello);}", "test.jac")
+        prog.root_ir.unparse()
+        before = prog.root_ir.format()
+        prog.root_ir.format()
+        prog.root_ir.format()
+        after = prog.root_ir.format()
         self.assertEqual(before, after)
 
     def test_type_fuse_expr(self) -> None:
@@ -787,7 +836,9 @@ class JacLanguageTests(TestCase):
         """Test py ast to Jac ast conversion output."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("inherit_check", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "inherit_check", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual("I am in b\nI am in b\nwww is also in b\n", stdout_value)
@@ -796,7 +847,7 @@ class JacLanguageTests(TestCase):
         """Test tuple unpack."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("tupleunpack", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "tupleunpack", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
         self.assertIn("1", stdout_value[0])
@@ -806,7 +857,9 @@ class JacLanguageTests(TestCase):
         """Test trailing comma."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("trailing_comma", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "trailing_comma", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("Code compiled and ran successfully!", stdout_value)
@@ -815,7 +868,7 @@ class JacLanguageTests(TestCase):
         """Test try finally."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("try_finally", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "try_finally", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
         self.assertIn("try block", stdout_value[0])
@@ -828,7 +881,9 @@ class JacLanguageTests(TestCase):
         """Test arithmetic bug."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("arithmetic_bug", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "arithmetic_bug", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
         self.assertEqual("0.0625", stdout_value[0])
@@ -841,7 +896,7 @@ class JacLanguageTests(TestCase):
         """Test lambda expr."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("lambda", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "lambda", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
         self.assertEqual("9", stdout_value[0])
@@ -864,13 +919,13 @@ class JacLanguageTests(TestCase):
             with open(file_path) as f:
                 file_source = f.read()
                 jac_ast = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(
+                    root_ir=ast.PythonModuleAst(
                         py_ast.parse(file_source),
                         orig_src=ast.JacSource(file_source, file_path),
                     )
                 )
             settings.print_py_raised_ast = True
-            ir = jac_pass_to_pass(jac_ast).ir
+            ir = JacProgram().jac_pass_to_pass(jac_ast).root_ir
             gen_ast = ir.pp()
             if module_path == "random":
                 self.assertIn("ModulePath - statistics -", gen_ast)
@@ -905,7 +960,7 @@ class JacLanguageTests(TestCase):
             parsed_ast = py_ast.parse(f.read())
             try:
                 py_ast_build_pass = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(
+                    root_ir=ast.PythonModuleAst(
                         parsed_ast, orig_src=ast.JacSource(f.read(), file_name)
                     )
                 )
@@ -913,7 +968,11 @@ class JacLanguageTests(TestCase):
                 raise Exception(f"Error While Jac to Py AST conversion: {e}")
 
         settings.print_py_raised_ast = True
-        ir = jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed).ir
+        ir = (
+            JacProgram()
+            .jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed)
+            .root_ir
+        )
         jac_ast = ir.pp()
         self.assertIn(" |   +-- String - 'Loop completed normally{}'", jac_ast)
         sub_node_list_count = 0
@@ -924,7 +983,7 @@ class JacLanguageTests(TestCase):
         self.assertEqual(sub_node_list_count, 586)
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("deep_convert", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "deep_convert", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("Deep convo is imported", stdout_value)
@@ -933,14 +992,16 @@ class JacLanguageTests(TestCase):
         """Test py ast to Jac ast conversion output."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("walker_override", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "walker_override", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual("baz\nbar\n", stdout_value)
 
     def test_ds_type_check_pass(self) -> None:
         """Test conn assign on edges."""
-        mypass = jac_file_to_pass(
+        mypass = JacProgram().jac_file_to_pass(
             self.examples_abs_path("micro/simple_walk.jac"),
             schedule=py_code_gen_typed,
         )
@@ -950,7 +1011,7 @@ class JacLanguageTests(TestCase):
 
     def test_ds_type_check_pass2(self) -> None:
         """Test conn assign on edges."""
-        mypass = jac_file_to_pass(
+        mypass = JacProgram().jac_file_to_pass(
             self.examples_abs_path("guess_game/guess_game5.jac"),
             schedule=py_code_gen_typed,
         )
@@ -960,7 +1021,7 @@ class JacLanguageTests(TestCase):
 
     def test_circle_override1_type_check_pass(self) -> None:
         """Test conn assign on edges."""
-        mypass = jac_file_to_pass(
+        mypass = JacProgram().jac_file_to_pass(
             self.examples_abs_path("manual_code/circle.jac"),
             schedule=py_code_gen_typed,
         )
@@ -972,7 +1033,7 @@ class JacLanguageTests(TestCase):
         """Test py ast to Jac ast conversion output."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("nosigself", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "nosigself", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.count("5"), 2)
@@ -981,45 +1042,49 @@ class JacLanguageTests(TestCase):
         """Test py ast to Jac ast conversion output."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("hash_init_check", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "hash_init_check", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("Test Passed", stdout_value)
 
     def test_multiline_single_tok(self) -> None:
         """Test conn assign on edges."""
-        mypass = jac_file_to_pass(self.fixture_abs_path("byllmissue.jac"))
-        self.assertIn("2:5 - 4:8", mypass.ir.pp())
+        mypass = JacProgram().jac_file_to_pass(self.fixture_abs_path("byllmissue.jac"))
+        self.assertIn("2:5 - 4:8", mypass.root_ir.pp())
 
     @pytest.mark.xfail(
         reason="New schedules system is different and this test is not valid anymore"
     )
     def test_single_impl_annex(self) -> None:
         """Basic test for pass."""
-        mypass = jac_file_to_pass(
+        mypass = JacProgram().jac_file_to_pass(
             self.examples_abs_path("manual_code/circle_pure.jac"),
             target=passes.JacImportPass,
         )
 
-        self.assertEqual(mypass.ir.pp().count("AbilityDef - (o)Circle.(c)area"), 1)
-        self.assertIsNone(mypass.ir._sym_tab)
-        mypass = jac_file_to_pass(
+        self.assertEqual(mypass.root_ir.pp().count("AbilityDef - (o)Circle.(c)area"), 1)
+        self.assertIsNone(mypass.root_ir._sym_tab)
+        mypass = JacProgram().jac_file_to_pass(
             self.examples_abs_path("manual_code/circle_pure.jac"),
             target=passes.SymTabBuildPass,
         )
         self.assertEqual(
-            len([i for i in mypass.ir.sym_tab.kid if i.name == "circle_pure.impl"]),
+            len(
+                [i for i in mypass.root_ir.sym_tab.kid if i.name == "circle_pure.impl"]
+            ),
             1,
         )
 
     def test_inherit_baseclass_sym(self) -> None:
         """Basic test for symtable support for inheritance."""
-        mypass = jac_file_to_pass(
+        mypass = JacProgram().jac_file_to_pass(
             self.examples_abs_path("guess_game/guess_game4.jac"),
             target=passes.DefUsePass,
         )
         table = None
-        for i in mypass.ir.sym_tab.kid:
+        for i in mypass.root_ir.sym_tab.kid:
             if i.name == "GuessTheNumberGame":
                 for j in i.kid:
                     if j.name == "play":
@@ -1033,7 +1098,9 @@ class JacLanguageTests(TestCase):
         """Test importing python."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("edgetypeissue", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "edgetypeissue", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("[x()]", stdout_value)
@@ -1042,7 +1109,9 @@ class JacLanguageTests(TestCase):
         """Test importing python."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("blankwithentry", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "blankwithentry", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("i work", stdout_value)
@@ -1051,7 +1120,7 @@ class JacLanguageTests(TestCase):
         """Test importing python."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("dblhello", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "dblhello", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.count("Hello World!"), 1)
@@ -1061,7 +1130,7 @@ class JacLanguageTests(TestCase):
         """Test class method output."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("cls_method", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "cls_method", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
         self.assertEqual("MyClass", stdout_value[0])
@@ -1073,7 +1142,7 @@ class JacLanguageTests(TestCase):
         captured_output = io.StringIO()
         sys.stdout = captured_output
 
-        Jac.jac_import("foo", base_path=self.fixture_abs_path("."))
+        Jac.jac_import(self.mach, "foo", base_path=self.fixture_abs_path("."))
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -1239,7 +1308,9 @@ class JacLanguageTests(TestCase):
         """Test match case with multiple expressions."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("match_multi_ex", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "match_multi_ex", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
         self.assertEqual("Ten", stdout_value[0])
@@ -1249,7 +1320,7 @@ class JacLanguageTests(TestCase):
         """Test entry and exit behavior of walker."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("entry_exit", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "entry_exit", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
         self.assertIn("Entering at the beginning of walker:  Root()", stdout_value[0])
@@ -1262,7 +1333,7 @@ class JacLanguageTests(TestCase):
         """Test entry and exit behavior of walker."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("visit_order", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "visit_order", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual("[MyNode(Name='End'), MyNode(Name='Middle')]\n", stdout_value)
@@ -1271,7 +1342,9 @@ class JacLanguageTests(TestCase):
         """Test supporting multiple global variable in a statement."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("glob_multivar_statement", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "glob_multivar_statement", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
         self.assertIn("Hello World !", stdout_value[0])
@@ -1281,7 +1354,9 @@ class JacLanguageTests(TestCase):
         """Test architype definition bug."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("architype_def_bug", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "architype_def_bug", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
         self.assertIn("MyWalker", stdout_value[0])
@@ -1291,7 +1366,9 @@ class JacLanguageTests(TestCase):
         """Test conn assign on edges."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("visit_sequence", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "visit_sequence", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         self.assertEqual(
             "walker entry\nwalker enter to root\n"
@@ -1306,7 +1383,7 @@ class JacLanguageTests(TestCase):
         """Test complex nested impls."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("nested_impls", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(self.mach, "nested_impls", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
         self.assertIn("Hello,from bar in kk", stdout_value[0])
@@ -1320,7 +1397,9 @@ class JacLanguageTests(TestCase):
         """Test connect traverse syntax."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import("connect_traverse_syntax", base_path=self.fixture_abs_path("./"))
+        Jac.jac_import(
+            self.mach, "connect_traverse_syntax", base_path=self.fixture_abs_path("./")
+        )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
         self.assertIn("A(val=5), A(val=10)", stdout_value[0])

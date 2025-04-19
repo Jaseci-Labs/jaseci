@@ -51,12 +51,12 @@ class PyastGenPass(Pass):
                     names=[self.sync(ast3.alias(name="annotations", asname=None))],
                     level=0,
                 ),
-                jac_node=self.ir,
+                jac_node=self.root_ir,
             ),
             (
                 self.sync(
                     ast3.ImportFrom(
-                        module="jaclang.plugin.builtin",
+                        module="jaclang.runtimelib.builtin",
                         names=[
                             self.sync(
                                 ast3.alias(
@@ -67,7 +67,7 @@ class PyastGenPass(Pass):
                         ],
                         level=0,
                     ),
-                    jac_node=self.ir,
+                    jac_node=self.root_ir,
                 )
             ),
             (
@@ -84,7 +84,7 @@ class PyastGenPass(Pass):
                         ],
                         level=0,
                     ),
-                    jac_node=self.ir,
+                    jac_node=self.root_ir,
                 )
             ),
         ]
@@ -128,11 +128,11 @@ class PyastGenPass(Pass):
                     names=[
                         self.sync(
                             ast3.alias(name="typing"),
-                            jac_node=self.ir,
+                            jac_node=self.root_ir,
                         ),
                     ]
                 ),
-                jac_node=self.ir,
+                jac_node=self.root_ir,
             )
         )
         self.already_added.append(self.needs_typing.__name__)
@@ -151,7 +151,7 @@ class PyastGenPass(Pass):
                     ],
                     level=0,
                 ),
-                jac_node=self.ir,
+                jac_node=self.root_ir,
             )
         )
         self.already_added.append(self.needs_enum.__name__)
@@ -387,7 +387,7 @@ class PyastGenPass(Pass):
                 type_params=[],
             ),
         )
-        if node.loc.mod_path != self.ir.loc.mod_path:
+        if node.loc.mod_path != self.root_ir.loc.mod_path:
             func.decorator_list.append(
                 self.sync(
                     ast3.Call(
@@ -606,7 +606,7 @@ class PyastGenPass(Pass):
                         ),
                         value=self.sync(
                             ast3.Call(
-                                func=self.jaclib_obj("jac_import"),
+                                func=self.jaclib_obj("py_jac_import"),
                                 args=args,
                                 keywords=keywords,
                             )
@@ -979,7 +979,7 @@ class PyastGenPass(Pass):
     def gen_llm_body(self, node: ast.Ability) -> list[ast3.AST]:
         """Generate the by LLM body."""
         # to Avoid circular import
-        from jaclang.plugin.feature import JacFeature
+        from jaclang.runtimelib.feature import JacFeature
 
         return JacFeature.gen_llm_body(self, node)
 
@@ -2921,7 +2921,7 @@ class PyastGenPass(Pass):
     ) -> ast3.Call:
         """Return the LLM Call, e.g. _Jac.with_llm()."""
         # to avoid circular import
-        from jaclang.plugin.feature import JacFeature
+        from jaclang.runtimelib.feature import JacFeature
 
         return JacFeature.by_llm_call(
             self,
@@ -2938,7 +2938,7 @@ class PyastGenPass(Pass):
     def get_by_llm_call_args(self, node: ast.FuncCall) -> dict:
         """Get the arguments for the by_llm_call."""
         # to avoid circular import
-        from jaclang.plugin.feature import JacFeature
+        from jaclang.runtimelib.feature import JacFeature
 
         return JacFeature.get_by_llm_call_args(self, node)
 
@@ -3239,13 +3239,7 @@ class PyastGenPass(Pass):
         node.gen.py_ast = [
             self.sync(
                 ast3.Call(
-                    func=self.sync(
-                        ast3.Attribute(
-                            value=self.jaclib_obj(Con.JAC_FEATURE.value),
-                            attr="build_edge",
-                            ctx=ast3.Load(),
-                        )
-                    ),
+                    func=self.jaclib_obj("build_edge"),
                     args=[],
                     keywords=[
                         self.sync(

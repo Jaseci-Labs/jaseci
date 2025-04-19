@@ -54,8 +54,8 @@ class FuseTypeInfoPass(Pass):
         return None
 
     def __set_type_sym_table_link(self, node: ast.AstSymbolNode) -> None:
-        assert isinstance(self.ir, ast.Module)
-        assert self.ir.jac_prog is not None
+        assert isinstance(self.root_ir, ast.Module)
+        assert self.root_ir.jac_prog is not None
 
         sym_type = node.expr_type
         if re.match(r"builtins.(list|dict|tuple)", sym_type):
@@ -73,7 +73,7 @@ class FuseTypeInfoPass(Pass):
         typ_sym_table = partent_sym_table
 
         for i in typ:
-            if i == self.ir.name:
+            if i == self.root_ir.name:
                 continue
             f = typ_sym_table.find_scope(i)
             if f:
@@ -84,7 +84,7 @@ class FuseTypeInfoPass(Pass):
 
     @staticmethod
     def __handle_node(
-        func: Callable[[FuseTypeInfoPass, T], None]
+        func: Callable[[FuseTypeInfoPass, T], None],
     ) -> Callable[[FuseTypeInfoPass, T], None]:
         def node_handler(self: FuseTypeInfoPass, node: T) -> None:
             if not isinstance(node, ast.AstSymbolNode):
@@ -216,11 +216,11 @@ class FuseTypeInfoPass(Pass):
     def __check_builltin_symbol(self, node: ast.NameAtom) -> None:
         if isinstance(node.parent, ast.AtomTrailer) and node is node.parent.right:
             return
-        assert isinstance(self.ir, ast.Module)
-        assert self.ir.jac_prog is not None
+        assert isinstance(self.root_ir, ast.Module)
+        assert self.root_ir.jac_prog is not None
 
         builtins_sym_tab = None
-        for mod in self.ir.jac_prog.modules.values():
+        for mod in self.root_ir.jac_prog.modules.values():
             if mod.name == "builtins":
                 builtins_sym_tab = mod.sym_tab
 
@@ -655,7 +655,7 @@ class FuseTypeInfoPass(Pass):
                 # TODO: This will not work if an AtomTrailer was used as type annotations
                 if left.type_sym_tab is None and isinstance(node.parent, ast.SubTag):
                     assert isinstance(left, ast.AstSymbolNode)
-                    left.name_spec.type_sym_tab = self.ir.sym_tab.find_scope(
+                    left.name_spec.type_sym_tab = self.root_ir.sym_tab.find_scope(
                         left.sym_name
                     )
 
@@ -665,10 +665,10 @@ class FuseTypeInfoPass(Pass):
                         right.name_spec.sym.add_use(right.name_spec)
 
     def __get_parent_symtab(self, typ: str) -> Optional[SymbolTable]:
-        assert isinstance(self.ir, ast.Module)
-        assert self.ir.jac_prog is not None
+        assert isinstance(self.root_ir, ast.Module)
+        assert self.root_ir.jac_prog is not None
 
-        for mod_ast in self.ir.jac_prog.modules.values():
+        for mod_ast in self.root_ir.jac_prog.modules.values():
             mod_table = mod_ast.sym_tab
             if mod_table.name == typ.split(".")[0]:
                 return mod_table

@@ -22,14 +22,14 @@ class JacParser(Pass):
 
     dev_mode = False
 
-    def __init__(self, input_ir: ast.JacSource) -> None:
+    def __init__(self, root_ir: ast.JacSource) -> None:
         """Initialize parser."""
-        self.source = input_ir
-        self.mod_path = input_ir.loc.mod_path
+        self.source = root_ir
+        self.mod_path = root_ir.loc.mod_path
         self.node_list: list[ast.AstNode] = []
         if JacParser.dev_mode:
             JacParser.make_dev()
-        Pass.__init__(self, input_ir=input_ir, prior=None)
+        Pass.__init__(self, ir_root=root_ir, prior=None)
 
     def transform(self, ir: ast.AstNode) -> ast.Module:
         """Transform input IR."""

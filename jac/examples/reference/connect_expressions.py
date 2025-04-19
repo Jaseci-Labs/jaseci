@@ -1,5 +1,5 @@
 from __future__ import annotations
-from jaclang.plugin.builtin import *
+from jaclang.runtimelib.builtin import *
 from jaclang import JacFeature as _
 
 
