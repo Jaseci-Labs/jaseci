@@ -19,7 +19,7 @@ class TestFuseTypeInfo(TestCase):
             self.fixture_abs_path("mod_type_assign.jac"),
             FuseTypeInfoPass,
             schedule=py_code_gen_typed,
-        ).ir.pp()
+        ).root_ir.pp()
         type_info_list = [
             "kl - Type: types.ModuleType,  SymbolTable: blip",
             "l1 - Type: types.ModuleType,  SymbolTable: blip",

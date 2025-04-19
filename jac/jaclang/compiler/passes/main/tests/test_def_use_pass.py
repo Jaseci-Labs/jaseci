@@ -18,7 +18,7 @@ class DefUsePassTests(TestCase):
             file_path=self.fixture_abs_path("defs_and_uses.jac"),
             target=DefUsePass,
         )
-        uses = [i.uses for i in state.ir.sym_tab.kid[0].tab.values()]
+        uses = [i.uses for i in state.root_ir.sym_tab.kid[0].tab.values()]
         self.assertEqual(len(uses[0]), 1)
         self.assertEqual(len(uses[1]), 1)
         self.assertIn("output", [uses[0][0].sym_name, uses[1][0].sym_name])

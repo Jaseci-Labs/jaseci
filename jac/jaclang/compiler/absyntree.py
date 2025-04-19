@@ -186,7 +186,7 @@ class AstNode:
         """Get all sub nodes of type."""
         from jaclang.compiler.passes.tool import JacFormatPass
 
-        return JacFormatPass(self, None).ir.gen.jac
+        return JacFormatPass(self, None).root_ir.gen.jac
 
     def to_dict(self) -> dict[str, str]:
         """Return dict representation of node."""

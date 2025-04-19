@@ -68,18 +68,18 @@ class JacLangServer(LanguageServer):
         self, file_path: str, build: Pass, refresh: bool = False
     ) -> None:
         """Update modules."""
-        if not isinstance(build.ir, ast.Module):
+        if not isinstance(build.root_ir, ast.Module):
             self.log_error("Error with module build.")
             return
         keep_parent = (
             self.modules[file_path].impl_parent if file_path in self.modules else None
         )
-        self.modules[file_path] = ModuleInfo(ir=build.ir, impl_parent=keep_parent)
-        for p in build.ir.mod_deps.keys():
+        self.modules[file_path] = ModuleInfo(ir=build.root_ir, impl_parent=keep_parent)
+        for p in build.root_ir.mod_deps.keys():
             uri = uris.from_fs_path(p)
             if file_path != uri:
                 self.modules[uri] = ModuleInfo(
-                    ir=build.ir.mod_deps[p],
+                    ir=build.root_ir.mod_deps[p],
                     impl_parent=self.modules[file_path],
                 )
 
@@ -304,7 +304,7 @@ class JacLangServer(LanguageServer):
                 schedule=[FuseCommentsPass, JacFormatPass],
             )
             formatted_text = (
-                format.ir.gen.jac
+                format.root_ir.gen.jac
                 if JacParser not in [e.from_pass for e in format.errors_had]
                 else document.source
             )

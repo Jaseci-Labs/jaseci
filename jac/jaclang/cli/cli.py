@@ -41,13 +41,13 @@ def format(path: str, outfile: str = "", debug: bool = False) -> None:
                 file=sys.stderr,
             )
         elif debug:
-            print(code_gen_format.ir.gen.jac)
+            print(code_gen_format.root_ir.gen.jac)
         elif outfile:
             with open(outfile, "w") as f:
-                f.write(code_gen_format.ir.gen.jac)
+                f.write(code_gen_format.root_ir.gen.jac)
         else:
             with open(filename, "w") as f:
-                f.write(code_gen_format.ir.gen.jac)
+                f.write(code_gen_format.root_ir.gen.jac)
 
     if path.endswith(".jac"):
         if os.path.exists(path):
@@ -192,10 +192,10 @@ def build(filename: str, pybuild: bool = False) -> None:
         errs = len(out.errors_had)
         warnings = len(out.warnings_had)
         print(f"Errors: {errs}, Warnings: {warnings}")
-        for i in out.ir.flatten():
+        for i in out.root_ir.flatten():
             i.gen.clean()
         with open(filename[:-4] + ".jir", "wb") as f:
-            pickle.dump(out.ir, f)
+            pickle.dump(out.root_ir, f)
     else:
         print("Not a .jac file.", file=sys.stderr)
 
@@ -396,7 +396,7 @@ def debug(filename: str, main: bool = True, cache: bool = False) -> None:
     base = base if base else "./"
     mod = mod[:-4]
     if filename.endswith(".jac"):
-        bytecode = JacProgram.jac_file_to_pass(filename).ir.gen.py_bytecode
+        bytecode = JacProgram.jac_file_to_pass(filename).root_ir.gen.py_bytecode
         if bytecode:
             code = marshal.loads(bytecode)
             if db.has_breakpoint(bytecode):
@@ -516,7 +516,7 @@ def jac2py(filename: str) -> None:
     """
     if filename.endswith(".jac"):
         with open(filename, "r"):
-            code = JacProgram.jac_file_to_pass(file_path=filename).ir.gen.py
+            code = JacProgram.jac_file_to_pass(file_path=filename).root_ir.gen.py
         print(code)
     else:
         print("Not a .jac file.", file=sys.stderr)

@@ -62,8 +62,8 @@ class JacProgram:
                 # We're not logging here, it already gets logged as the errors were added to the errors_had list.
                 # Regardless of the logging, this needs to be sent to the end user, so we'll printing it to stderr.
                 logger.error(alrt.pretty_print())
-        if result.ir.gen.py_bytecode is not None:
-            return marshal.loads(result.ir.gen.py_bytecode)
+        if result.root_ir.gen.py_bytecode is not None:
+            return marshal.loads(result.root_ir.gen.py_bytecode)
         else:
             return None
 
@@ -107,20 +107,20 @@ class JacProgram:
         ast_ret: Pass = JacParser(root_ir=source)
         # TODO: This function below has tons of tech debt that should go away
         # when these functions become methods of JacProgram.
-        SubNodeTabPass(ast_ret.ir, ast_ret)  # TODO: Get rid of this one
+        SubNodeTabPass(ast_ret.root_ir, ast_ret)  # TODO: Get rid of this one
 
         # Only return the parsed module when the schedules are empty
         # or the target is SubNodeTabPass
         if len(schedule) == 0 or target == SubNodeTabPass:
             return ast_ret
 
-        assert isinstance(ast_ret.ir, ast.Module)
+        assert isinstance(ast_ret.root_ir, ast.Module)
 
         # Creating a new JacProgram and attaching it to top module
-        top_mod: ast.Module = ast_ret.ir
+        top_mod: ast.Module = ast_ret.root_ir
         top_mod.jac_prog = JacProgram(None, None, None)
-        top_mod.jac_prog.last_imported.append(ast_ret.ir)
-        top_mod.jac_prog.modules[ast_ret.ir.loc.mod_path] = ast_ret.ir
+        top_mod.jac_prog.last_imported.append(ast_ret.root_ir)
+        top_mod.jac_prog.modules[ast_ret.root_ir.loc.mod_path] = ast_ret.root_ir
 
         # Run JacImportPass & SymTabBuildPass on all imported Jac Programs
         while len(top_mod.jac_prog.last_imported) > 0:
@@ -135,7 +135,7 @@ class JacProgram:
 
         # TODO: we need a elegant way of doing this [should be genaralized].
         if target in (JacImportPass, SymTabBuildPass):
-            ast_ret.ir = top_mod
+            ast_ret.root_ir = top_mod
             return ast_ret
 
         # Link all Jac symbol tables created
@@ -161,7 +161,7 @@ class JacProgram:
 
         # Check if we need to run without type checking then just return
         if "JAC_NO_TYPECHECK" in os.environ or target in py_code_gen:
-            ast_ret.ir = top_mod
+            ast_ret.root_ir = top_mod
             return ast_ret
 
         # Run TypeCheckingPass on the top module
@@ -191,7 +191,7 @@ class JacProgram:
         for mod in top_mod.jac_prog.modules.values():
             run_schedule(mod, schedule=type_checker_sched)
 
-        ast_ret.ir = top_mod
+        ast_ret.root_ir = top_mod
         return ast_ret
 
     @staticmethod
@@ -205,20 +205,20 @@ class JacProgram:
 
         ast_ret = in_pass
 
-        SubNodeTabPass(ast_ret.ir, ast_ret)  # TODO: Get rid of this one
+        SubNodeTabPass(ast_ret.root_ir, ast_ret)  # TODO: Get rid of this one
 
         # Only return the parsed module when the schedules are empty
         # or the target is SubNodeTabPass
         if len(schedule) == 0 or target == SubNodeTabPass:
             return ast_ret
 
-        assert isinstance(ast_ret.ir, ast.Module)
+        assert isinstance(ast_ret.root_ir, ast.Module)
 
         # Creating a new JacProgram and attaching it to top module
-        top_mod: ast.Module = ast_ret.ir
+        top_mod: ast.Module = ast_ret.root_ir
         top_mod.jac_prog = JacProgram(None, None, None)
-        top_mod.jac_prog.last_imported.append(ast_ret.ir)
-        top_mod.jac_prog.modules[ast_ret.ir.loc.mod_path] = ast_ret.ir
+        top_mod.jac_prog.last_imported.append(ast_ret.root_ir)
+        top_mod.jac_prog.modules[ast_ret.root_ir.loc.mod_path] = ast_ret.root_ir
 
         # Run JacImportPass & SymTabBuildPass on all imported Jac Programs
         while len(top_mod.jac_prog.last_imported) > 0:
@@ -233,7 +233,7 @@ class JacProgram:
 
         # TODO: we need a elegant way of doing this [should be genaralized].
         if target in (JacImportPass, SymTabBuildPass):
-            ast_ret.ir = top_mod
+            ast_ret.root_ir = top_mod
             return ast_ret
 
         # Link all Jac symbol tables created
@@ -259,7 +259,7 @@ class JacProgram:
 
         # Check if we need to run without type checking then just return
         if "JAC_NO_TYPECHECK" in os.environ or target in py_code_gen:
-            ast_ret.ir = top_mod
+            ast_ret.root_ir = top_mod
             return ast_ret
 
         # Run TypeCheckingPass on the top module
@@ -289,7 +289,7 @@ class JacProgram:
         for mod in top_mod.jac_prog.modules.values():
             run_schedule(mod, schedule=type_checker_sched)
 
-        ast_ret.ir = top_mod
+        ast_ret.root_ir = top_mod
         return ast_ret
 
     @staticmethod
@@ -312,9 +312,11 @@ class JacProgram:
         for i in schedule[1:]:
             if i == target:
                 break
-            ast_ret = i(ir_root=ast_ret.ir, prior=ast_ret)
+            ast_ret = i(ir_root=ast_ret.root_ir, prior=ast_ret)
         if target and target in schedule:
-            ast_ret = target(ir_root=ast_ret.ir, prior=ast_ret) if target else ast_ret
+            ast_ret = (
+                target(ir_root=ast_ret.root_ir, prior=ast_ret) if target else ast_ret
+            )
         return ast_ret
 
     @staticmethod
@@ -330,8 +332,8 @@ class JacProgram:
         for i in schedule:
             if i == target:
                 break
-            prse = i(ir_root=prse.ir, prior=prse)
-        prse = target(ir_root=prse.ir, prior=prse)
+            prse = i(ir_root=prse.root_ir, prior=prse)
+        prse = target(ir_root=prse.root_ir, prior=prse)
         return prse
 
     def get_semstr_type(

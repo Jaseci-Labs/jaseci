@@ -18,7 +18,7 @@ class Pass(Transform[T]):
         """Initialize parser."""
         self.term_signal = False
         self.prune_signal = False
-        self.ir: ast.AstNode = ir_root
+        self.root_ir: ast.AstNode = ir_root
         self.time_taken = 0.0
         Transform.__init__(self, ir_root, prior)
 
@@ -118,7 +118,7 @@ class Pass(Transform[T]):
             self.log_info(
                 f"Time taken in {self.__class__.__name__}: {self.time_taken:.4f} seconds"
             )
-        return self.ir
+        return self.root_ir
 
     def traverse(self, node: ast.AstNode) -> ast.AstNode:
         """Traverse tree."""

@@ -18,7 +18,7 @@ class SubNodePassTests(TestCase):
             file_path=self.examples_abs_path("manual_code/circle.jac"),
             target=SubNodeTabPass,
         )
-        for i in code_gen.ir.kid[1].kid:
+        for i in code_gen.root_ir.kid[1].kid:
             for k, v in i._sub_node_tab.items():
                 for n in v:
                     self.assertIn(n, code_gen.get_all_sub_nodes(i, k, brute_force=True))

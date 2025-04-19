@@ -68,7 +68,7 @@ class Transform(ABC, Generic[T]):
         self.errors_had: list[Alert] = [] if not prior else prior.errors_had
         self.warnings_had: list[Alert] = [] if not prior else prior.warnings_had
         self.cur_node: AstNode = root_ir  # tracks current node during traversal
-        self.ir = self.transform(ir=root_ir)
+        self.root_ir = self.transform(ir=root_ir)
 
     @abstractmethod
     def transform(self, ir: T) -> AstNode:
