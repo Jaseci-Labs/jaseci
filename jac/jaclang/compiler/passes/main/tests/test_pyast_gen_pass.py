@@ -35,7 +35,7 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
     def test_hodge_podge(self) -> None:
         """Basic test for pass."""
-        code_gen = JacProgram.jac_file_to_pass(
+        code_gen = JacProgram().jac_file_to_pass(
             self.examples_abs_path("micro/hodge_podge.jac"),
             target=PyastGenPass,
         )
@@ -44,7 +44,7 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
     def test_circle_py_ast(self) -> None:
         """Basic test for pass."""
-        code_gen = JacProgram.jac_file_to_pass(
+        code_gen = JacProgram().jac_file_to_pass(
             self.examples_abs_path("manual_code/circle.jac"),
             target=PyastGenPass,
         )
@@ -87,7 +87,7 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        code_gen = JacProgram.jac_file_to_pass(
+        code_gen = JacProgram().jac_file_to_pass(
             self.fixture_abs_path(filename), target=PyastGenPass
         )
         from_jac_str = ast3.dump(code_gen.root_ir.gen.py_ast[0], indent=2)
@@ -131,11 +131,11 @@ class ValidateTreeParentTest(TestCaseMicroSuite):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        code_gen = JacProgram.jac_file_to_pass(
+        code_gen = JacProgram().jac_file_to_pass(
             self.fixture_abs_path(filename), target=SubNodeTabPass
         )
         self.assertTrue(self.parent_scrub(code_gen.root_ir))
-        code_gen = JacProgram.jac_file_to_pass(
+        code_gen = JacProgram().jac_file_to_pass(
             self.fixture_abs_path(filename), target=PyastGenPass
         )
         self.assertTrue(self.parent_scrub(code_gen.root_ir))

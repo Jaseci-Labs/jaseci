@@ -22,7 +22,7 @@ class ImportPassPassTests(TestCase):
 
     def test_pygen_jac_cli(self) -> None:
         """Basic test for pass."""
-        state = JacProgram.jac_file_to_pass(
+        state = JacProgram().jac_file_to_pass(
             self.fixture_abs_path("base.jac"), JacImportPass
         )
         self.assertFalse(state.errors_had)
@@ -32,7 +32,7 @@ class ImportPassPassTests(TestCase):
 
     def test_import_auto_impl(self) -> None:
         """Basic test for pass."""
-        state = JacProgram.jac_file_to_pass(
+        state = JacProgram().jac_file_to_pass(
             self.fixture_abs_path("autoimpl.jac"), JacImportPass
         )
         num_modules = len(list(state.root_ir.jac_prog.modules.values())[0].impl_mod)
@@ -46,7 +46,7 @@ class ImportPassPassTests(TestCase):
 
     def test_import_include_auto_impl(self) -> None:
         """Basic test for pass."""
-        state = JacProgram.jac_file_to_pass(
+        state = JacProgram().jac_file_to_pass(
             self.fixture_abs_path("incautoimpl.jac"), JacImportPass
         )
         # Adding 1 because of the included module it self
@@ -70,7 +70,7 @@ class ImportPassPassTests(TestCase):
 
     def test_annexalbe_by_discovery(self) -> None:
         """Basic test for pass."""
-        state = JacProgram.jac_file_to_pass(
+        state = JacProgram().jac_file_to_pass(
             self.fixture_abs_path("incautoimpl.jac"), JacImportPass
         )
         count = 0
@@ -87,7 +87,7 @@ class ImportPassPassTests(TestCase):
 
     def test_py_raise_map(self) -> None:
         """Basic test for pass."""
-        build = JacProgram.jac_file_to_pass(
+        build = JacProgram().jac_file_to_pass(
             self.fixture_abs_path("py_imp_test.jac"),
             FuseTypeInfoPass,
             schedule=py_code_gen_typed,
@@ -115,7 +115,7 @@ class ImportPassPassTests(TestCase):
 
     def test_py_raised_mods(self) -> None:
         """Basic test for pass."""
-        state = JacProgram.jac_file_to_pass(
+        state = JacProgram().jac_file_to_pass(
             self.fixture_abs_path("py_imp_test.jac"), schedule=py_code_gen_typed
         )
         for i in list(

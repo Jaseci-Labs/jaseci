@@ -87,7 +87,7 @@ class JacLangServer(LanguageServer):
         """Rebuild a file."""
         try:
             document = self.workspace.get_text_document(file_path)
-            build = JacProgram.jac_str_to_pass(
+            build = JacProgram().jac_str_to_pass(
                 jac_str=document.source, file_path=document.path, schedule=[]
             )
             self.publish_diagnostics(
@@ -110,7 +110,7 @@ class JacLangServer(LanguageServer):
                 return self.deep_check(
                     uris.from_fs_path(parent.ir.loc.mod_path), annex_view=file_path
                 )
-            build = JacProgram.jac_str_to_pass(
+            build = JacProgram().jac_str_to_pass(
                 jac_str=document.source,
                 file_path=document.path,
                 schedule=py_code_gen_typed,
@@ -297,7 +297,7 @@ class JacLangServer(LanguageServer):
         """Return formatted jac."""
         try:
             document = self.workspace.get_text_document(file_path)
-            format = JacProgram.jac_str_to_pass(
+            format = JacProgram().jac_str_to_pass(
                 jac_str=document.source,
                 file_path=document.path,
                 target=JacFormatPass,

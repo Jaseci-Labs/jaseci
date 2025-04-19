@@ -49,7 +49,7 @@ class JacProgram:
             codeobj = self.modules[full_target].gen.py_bytecode
             return marshal.loads(codeobj) if isinstance(codeobj, bytes) else None
 
-        result = JacProgram.compile_jac(full_target)
+        result = self.compile_jac(full_target)
         if result.errors_had:
             for alrt in result.errors_had:
                 logger.error(alrt.pretty_print())
@@ -58,31 +58,30 @@ class JacProgram:
         else:
             return None
 
-    @staticmethod
-    def compile_jac(file_path: str) -> Pass:
+    def compile_jac(self, file_path: str) -> Pass:
         """Start Compile for Jac file and return python code as string."""
-        return JacProgram.jac_file_to_pass(
+        return self.jac_file_to_pass(
             file_path=file_path,
             schedule=pass_schedule,
         )
 
-    @staticmethod
     def jac_file_to_pass(
+        self,
         file_path: str,
         target: Optional[Type[Pass]] = None,
         schedule: list[Type[Pass]] = pass_schedule,
     ) -> Pass:
         """Convert a Jac file to an AST."""
         with open(file_path, "r", encoding="utf-8") as file:
-            return JacProgram.jac_str_to_pass(
+            return self.jac_str_to_pass(
                 jac_str=file.read(),
                 file_path=file_path,
                 target=target,
                 schedule=schedule,
             )
 
-    @staticmethod
     def jac_str_to_pass(
+        self,
         jac_str: str,
         file_path: str,
         target: Optional[Type[Pass]] = None,
@@ -116,7 +115,7 @@ class JacProgram:
         # Run JacImportPass & SymTabBuildPass on all imported Jac Programs
         while len(top_mod.jac_prog.last_imported) > 0:
             mod = top_mod.jac_prog.last_imported.pop()
-            JacProgram.jac_ir_to_pass(
+            self.jac_ir_to_pass(
                 ir=mod, schedule=[JacImportPass, SymTabBuildPass], target=target
             )
 
@@ -170,7 +169,7 @@ class JacProgram:
         # Run PyImportPass
         while len(top_mod.jac_prog.last_imported) > 0:
             mod = top_mod.jac_prog.last_imported.pop()
-            JacProgram.jac_ir_to_pass(ir=mod, schedule=[PyImportPass], target=target)
+            self.jac_ir_to_pass(ir=mod, schedule=[PyImportPass], target=target)
 
         # Link all Jac symbol tables created
         for mod in top_mod.jac_prog.modules.values():
@@ -185,8 +184,8 @@ class JacProgram:
         ast_ret.root_ir = top_mod
         return ast_ret
 
-    @staticmethod
     def jac_pass_to_pass(
+        self,
         in_pass: Pass,
         target: Optional[Type[Pass]] = None,
         schedule: list[Type[Pass]] = pass_schedule,
@@ -214,7 +213,7 @@ class JacProgram:
         # Run JacImportPass & SymTabBuildPass on all imported Jac Programs
         while len(top_mod.jac_prog.last_imported) > 0:
             mod = top_mod.jac_prog.last_imported.pop()
-            JacProgram.jac_ir_to_pass(
+            self.jac_ir_to_pass(
                 ir=mod, schedule=[JacImportPass, SymTabBuildPass], target=target
             )
 
@@ -268,7 +267,7 @@ class JacProgram:
         # Run PyImportPass
         while len(top_mod.jac_prog.last_imported) > 0:
             mod = top_mod.jac_prog.last_imported.pop()
-            JacProgram.jac_ir_to_pass(ir=mod, schedule=[PyImportPass], target=target)
+            self.jac_ir_to_pass(ir=mod, schedule=[PyImportPass], target=target)
 
         # Link all Jac symbol tables created
         for mod in top_mod.jac_prog.modules.values():
@@ -283,8 +282,8 @@ class JacProgram:
         ast_ret.root_ir = top_mod
         return ast_ret
 
-    @staticmethod
     def jac_ir_to_pass(
+        self,
         ir: ast.AstNode,
         target: Optional[Type[Pass]] = None,
         schedule: list[Type[Pass]] = pass_schedule,
@@ -310,8 +309,8 @@ class JacProgram:
             )
         return ast_ret
 
-    @staticmethod
     def jac_file_formatter(
+        self,
         file_path: str,
         schedule: list[Type[Pass]] = format_pass,
     ) -> JacFormatPass:

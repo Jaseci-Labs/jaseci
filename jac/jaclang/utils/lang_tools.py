@@ -205,7 +205,7 @@ class AstTool:
             return error
 
         output, file_name = args
-
+        prog = JacProgram()
         if not os.path.isfile(file_name):
             return f"Error: {file_name} not found"
 
@@ -227,7 +227,7 @@ class AstTool:
                         ),
                     ).ir
 
-                    ir = JacProgram.jac_str_to_pass(
+                    ir = prog.jac_str_to_pass(
                         jac_str=rep.unparse(),
                         file_path=file_name[:-3] + ".jac",
                         schedule=py_code_gen_typed,
@@ -235,7 +235,7 @@ class AstTool:
                 except Exception as e:
                     return f"Error While Jac to Py AST conversion: {e}"
             else:
-                ir = JacProgram.jac_file_to_pass(
+                ir = prog.jac_file_to_pass(
                     file_name, schedule=[*(py_code_gen), *type_checker_sched]
                 ).root_ir
 

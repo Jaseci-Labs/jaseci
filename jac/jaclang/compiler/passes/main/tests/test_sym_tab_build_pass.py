@@ -16,7 +16,7 @@ class SymTabBuildPassTests(TestCase, AstSyncTestMixin):
 
     # def test_name_collision(self) -> None:
     #     """Basic test for pass."""
-    #     state = JacProgram.jac_file_to_pass(
+    #     state = JacProgram().jac_file_to_pass(
     #         self.fixture_abs_path("multi_def_err.jac"), SymTabBuildPass
     #     )
     #     self.assertGreater(len(state.warnings_had), 0)

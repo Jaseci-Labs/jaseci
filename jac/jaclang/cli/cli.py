@@ -34,7 +34,7 @@ def format(path: str, outfile: str = "", debug: bool = False) -> None:
     """Run the specified .jac file or format all .jac files in a given directory."""
 
     def format_file(filename: str) -> None:
-        code_gen_format = JacProgram.jac_file_formatter(filename)
+        code_gen_format = JacProgram().jac_file_formatter(filename)
         if code_gen_format.errors_had:
             print(
                 f"Errors occurred while formatting the file {filename}.",
@@ -206,7 +206,7 @@ def check(filename: str, print_errs: bool = True) -> None:
     :param filename: The path to the .jac file.
     """
     if filename.endswith(".jac"):
-        out = JacProgram.jac_file_to_pass(
+        out = JacProgram().jac_file_to_pass(
             file_path=filename,
             schedule=py_code_gen_typed,
         )
@@ -395,7 +395,7 @@ def debug(filename: str, main: bool = True, cache: bool = False) -> None:
     base = base if base else "./"
     mod = mod[:-4]
     if filename.endswith(".jac"):
-        bytecode = JacProgram.jac_file_to_pass(filename).root_ir.gen.py_bytecode
+        bytecode = JacProgram().jac_file_to_pass(filename).root_ir.gen.py_bytecode
         if bytecode:
             code = marshal.loads(bytecode)
             if db.has_breakpoint(bytecode):
@@ -515,7 +515,7 @@ def jac2py(filename: str) -> None:
     """
     if filename.endswith(".jac"):
         with open(filename, "r"):
-            code = JacProgram.jac_file_to_pass(file_path=filename).root_ir.gen.py
+            code = JacProgram().jac_file_to_pass(file_path=filename).root_ir.gen.py
         print(code)
     else:
         print("Not a .jac file.", file=sys.stderr)
