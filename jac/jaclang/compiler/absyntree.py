@@ -641,7 +641,7 @@ class Module(AstDocNode):
         registry: Optional[SemRegistry] = None,
     ) -> None:
         """Initialize whole program node."""
-        from jaclang.runtimelib.machine import JacProgram
+        from jaclang.runtimelib.feature import JacProgram
 
         self.name = name
         self.source = source
