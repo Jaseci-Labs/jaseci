@@ -56,7 +56,6 @@ from jaclang.runtimelib.constructs import (
     WalkerArchitype,
 )
 from jaclang.runtimelib.context import ExecutionContext
-from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
 from jaclang.runtimelib.machine import JacMachineState
 from jaclang.runtimelib.memory import Shelf, ShelfStorage
 from jaclang.runtimelib.utils import (
@@ -737,6 +736,12 @@ class JacBasics:
         reload_module: Optional[bool] = False,
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
+        from jaclang.runtimelib.importer import (
+            ImportPathSpec,
+            JacImporter,
+            PythonImporter,
+        )
+
         spec = ImportPathSpec(
             target,
             base_path,
@@ -750,8 +755,8 @@ class JacBasics:
 
         jac_machine = JacMachineState.get(base_path)
         if not jac_machine.jac_program:
-            jac_machine.attach_program(
-                JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
+            JacFeature.attach_program(
+                jac_machine, JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
             )
 
         if lng == "py":
@@ -1544,7 +1549,7 @@ class JacMachine:
         module_name: str = "__main__",
     ) -> NodeArchitype:
         """Spawn a node instance of the given node_name with attributes."""
-        node_class = mach.get_architype(module_name, node_name)
+        node_class = JacFeature.get_architype(mach, module_name, node_name)
         if isinstance(node_class, type) and issubclass(node_class, NodeArchitype):
             if attributes is None:
                 attributes = {}
@@ -1561,7 +1566,7 @@ class JacMachine:
         module_name: str = "__main__",
     ) -> WalkerArchitype:
         """Spawn a walker instance of the given walker_name."""
-        walker_class = mach.get_architype(module_name, walker_name)
+        walker_class = JacFeature.get_architype(mach, module_name, walker_name)
         if isinstance(walker_class, type) and issubclass(walker_class, WalkerArchitype):
             if attributes is None:
                 attributes = {}

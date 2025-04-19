@@ -6,7 +6,7 @@ import sys
 from jaclang import JacFeature as Jac
 from jaclang.cli import cli
 from jaclang.compiler.program import JacProgram
-from jaclang.runtimelib.machine import JacMachineState
+from jaclang.runtimelib.feature import JacFeature, JacMachineState
 from jaclang.utils.test import TestCase
 
 
@@ -15,8 +15,9 @@ class TestLoader(TestCase):
 
     def test_import_basic_python(self) -> None:
         """Test basic self loading."""
-        JacMachineState(self.fixture_abs_path(__file__)).attach_program(
-            JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
+        JacFeature.attach_program(
+            JacMachineState(self.fixture_abs_path(__file__)),
+            JacProgram(mod_bundle=None, bytecode=None, sem_ir=None),
         )
         (h,) = Jac.jac_import("fixtures.hello_world", base_path=__file__)
         self.assertEqual(h.hello(), "Hello World!")  # type: ignore
@@ -24,8 +25,9 @@ class TestLoader(TestCase):
 
     def test_modules_correct(self) -> None:
         """Test basic self loading."""
-        JacMachineState(self.fixture_abs_path(__file__)).attach_program(
-            JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
+        JacFeature.attach_program(
+            JacMachineState(self.fixture_abs_path(__file__)),
+            JacProgram(mod_bundle=None, bytecode=None, sem_ir=None),
         )
         Jac.jac_import("fixtures.hello_world", base_path=__file__)
         self.assertIn(
@@ -90,8 +92,9 @@ class TestLoader(TestCase):
         sys.stdout = captured_output
 
         try:
-            JacMachineState(self.fixture_abs_path(__file__)).attach_program(
-                JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
+            JacFeature.attach_program(
+                JacMachineState(self.fixture_abs_path(__file__)),
+                JacProgram(mod_bundle=None, bytecode=None, sem_ir=None),
             )
             Jac.jac_import(module_name, base_path=__file__)
             cli.run(jac_file_path)

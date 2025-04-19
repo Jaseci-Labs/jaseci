@@ -102,8 +102,9 @@ def run(
     elif filename.endswith(".jir"):
         try:
             with open(filename, "rb") as f:
-                JacMachineState(base).attach_program(
-                    JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None)
+                Jac.attach_program(
+                    JacMachineState(base),
+                    JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None),
                 )
                 Jac.jac_import(
                     target=mod,
@@ -152,8 +153,9 @@ def get_object(
         )
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
-            JacMachineState(base).attach_program(
-                JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None)
+            Jac.attach_program(
+                JacMachineState(base),
+                JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None),
             )
             Jac.jac_import(
                 target=mod,
@@ -272,8 +274,9 @@ def enter(
         )
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
-            JacMachineState(base).attach_program(
-                JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None)
+            Jac.attach_program(
+                JacMachineState(base),
+                JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None),
             )
             ret_module = Jac.jac_import(
                 target=mod,

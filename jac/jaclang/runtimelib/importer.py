@@ -10,6 +10,7 @@ import types
 from os import getcwd, path
 from typing import Optional, TYPE_CHECKING, Union
 
+from jaclang.runtimelib.feature import JacFeature
 from jaclang.runtimelib.utils import sys_path_context
 from jaclang.utils.helpers import dump_traceback
 from jaclang.utils.log import logging
@@ -150,7 +151,9 @@ class ImportReturn:
                         jac_file_path,
                     ),
                 )
-            codeobj = self.importer.jac_machine.get_bytecode(full_target=jac_file_path)
+            codeobj = JacFeature.get_bytecode(
+                mach=self.importer.jac_machine, full_target=jac_file_path
+            )
             if not codeobj:
                 raise ImportError(f"No bytecode found for {jac_file_path}")
 
@@ -176,7 +179,7 @@ class Importer:
     def update_sys(self, module: types.ModuleType, spec: ImportPathSpec) -> None:
         """Update sys.modules with the newly imported module."""
         if spec.module_name not in self.jac_machine.loaded_modules:
-            self.jac_machine.load_module(spec.module_name, module)
+            JacFeature.load_module(self.jac_machine, spec.module_name, module)
 
 
 class PythonImporter(Importer):
@@ -281,7 +284,7 @@ class JacImporter(Importer):
         module.__file__ = None
 
         if module_name not in self.jac_machine.loaded_modules:
-            self.jac_machine.load_module(module_name, module)
+            JacFeature.load_module(self.jac_machine, module_name, module)
         return module
 
     def create_jac_py_module(
@@ -307,7 +310,7 @@ class JacImporter(Importer):
                         module_name=package_name,
                         full_mod_path=full_mod_path,
                     )
-        self.jac_machine.load_module(module_name, module)
+        JacFeature.load_module(self.jac_machine, module_name, module)
         return module
 
     def run_import(
@@ -360,7 +363,9 @@ class JacImporter(Importer):
                     spec.package_path,
                     spec.full_target,
                 )
-                codeobj = self.jac_machine.get_bytecode(full_target=spec.full_target)
+                codeobj = JacFeature.get_bytecode(
+                    self.jac_machine, full_target=spec.full_target
+                )
 
                 # Since this is a compile time error, we can safely raise an exception here.
                 if not codeobj:
