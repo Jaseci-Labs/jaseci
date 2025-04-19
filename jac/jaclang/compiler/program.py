@@ -88,8 +88,6 @@ class JacProgram:
         schedule: list[Type[Pass]] = pass_schedule,
     ) -> Pass:
         """Convert a Jac file to an AST."""
-        from jaclang.compiler.program import JacProgram
-
         if not target:
             target = schedule[-1] if schedule else None
 
@@ -108,7 +106,7 @@ class JacProgram:
 
         # Creating a new JacProgram and attaching it to top module
         top_mod: ast.Module = ast_ret.root_ir
-        top_mod.jac_prog = JacProgram()
+        top_mod.jac_prog = self
         top_mod.jac_prog.last_imported.append(ast_ret.root_ir)
         top_mod.jac_prog.modules[ast_ret.root_ir.loc.mod_path] = ast_ret.root_ir
 
@@ -191,8 +189,6 @@ class JacProgram:
         schedule: list[Type[Pass]] = pass_schedule,
     ) -> Pass:
         """Convert a Jac file to an AST."""
-        from jaclang.compiler.program import JacProgram
-
         ast_ret = in_pass
 
         SubNodeTabPass(ast_ret.root_ir, ast_ret)  # TODO: Get rid of this one
@@ -206,7 +202,7 @@ class JacProgram:
 
         # Creating a new JacProgram and attaching it to top module
         top_mod: ast.Module = ast_ret.root_ir
-        top_mod.jac_prog = JacProgram()
+        top_mod.jac_prog = self
         top_mod.jac_prog.last_imported.append(ast_ret.root_ir)
         top_mod.jac_prog.modules[ast_ret.root_ir.loc.mod_path] = ast_ret.root_ir
 
