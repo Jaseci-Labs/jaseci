@@ -9,7 +9,7 @@ from typing import Any
 from jaclang.cli.cmdreg import cmd_registry
 from jaclang.runtimelib.context import ExecutionContext
 from jaclang.runtimelib.feature import hookimpl
-from jaclang.runtimelib.machine import JacMachine, JacProgram
+from jaclang.runtimelib.machine import JacMachineState, JacProgram
 
 from pymongo.errors import ConnectionFailure, OperationFailure
 
@@ -50,7 +50,7 @@ class JacCmd:
                 )
             elif filename.endswith(".jir"):
                 with open(filename, "rb") as f:
-                    JacMachine(base).attach_program(
+                    JacMachineState(base).attach_program(
                         JacProgram(mod_bundle=load(f), bytecode=None, sem_ir=None)
                     )
                     Jac.jac_import(
@@ -61,13 +61,13 @@ class JacCmd:
                     )
             else:
                 jctx.close()
-                JacMachine.detach_machine()
+                JacMachineState.detach_machine()
                 raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
             FastAPI.start(host=host, port=port)
 
             jctx.close()
-            JacMachine.detach_machine()
+            JacMachineState.detach_machine()
 
         @cmd_registry.register
         def create_system_admin(
@@ -93,7 +93,7 @@ class JacCmd:
                 )
             elif filename.endswith(".jir"):
                 with open(filename, "rb") as f:
-                    JacMachine(base).attach_program(
+                    JacMachineState(base).attach_program(
                         JacProgram(mod_bundle=load(f), bytecode=None, sem_ir=None)
                     )
                     Jac.jac_import(

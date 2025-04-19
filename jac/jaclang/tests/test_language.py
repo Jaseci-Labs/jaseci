@@ -11,7 +11,7 @@ from jaclang.cli import cli
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.context import ExecutionContext
-from jaclang.runtimelib.machine import JacMachine
+from jaclang.runtimelib.machine import JacMachineState
 from jaclang.utils.test import TestCase
 
 import pytest
@@ -23,14 +23,14 @@ class JacLanguageTests(TestCase):
     def setUp(self) -> None:
         """Set up test."""
         ExecutionContext.global_system_root().edges.clear()
-        JacMachine(self.fixture_abs_path("./")).attach_program(
+        JacMachineState(self.fixture_abs_path("./")).attach_program(
             JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
         )
         return super().setUp()
 
     def tearDown(self) -> None:
         """Tear down test."""
-        JacMachine.detach_machine()
+        JacMachineState.detach_machine()
         return super().tearDown()
 
     def test_sub_abilities(self) -> None:
@@ -299,7 +299,7 @@ class JacLanguageTests(TestCase):
             if i in sys.modules:
                 del sys.modules[i]
         Jac.jac_import("deep_import_mods", base_path=self.fixture_abs_path("./"))
-        mods = JacMachine.get().loaded_modules.keys()
+        mods = JacMachineState.get().loaded_modules.keys()
         for i in targets:
             self.assertIn(i, mods)
         self.assertEqual(len([i for i in mods if i.startswith("deep")]), 6)

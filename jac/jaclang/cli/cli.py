@@ -20,7 +20,7 @@ from jaclang.runtimelib.builtin import dotgen
 from jaclang.runtimelib.constructs import WalkerArchitype
 from jaclang.runtimelib.context import ExecutionContext
 from jaclang.runtimelib.feature import JacFeature as Jac
-from jaclang.runtimelib.machine import JacMachine
+from jaclang.runtimelib.machine import JacMachineState
 from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
 
@@ -102,7 +102,7 @@ def run(
     elif filename.endswith(".jir"):
         try:
             with open(filename, "rb") as f:
-                JacMachine(base).attach_program(
+                JacMachineState(base).attach_program(
                     JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None)
                 )
                 Jac.jac_import(
@@ -116,11 +116,11 @@ def run(
 
     else:
         jctx.close()
-        JacMachine.detach_machine()
+        JacMachineState.detach_machine()
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
     jctx.close()
-    JacMachine.detach_machine()
+    JacMachineState.detach_machine()
 
 
 @cmd_registry.register
@@ -152,7 +152,7 @@ def get_object(
         )
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
-            JacMachine(base).attach_program(
+            JacMachineState(base).attach_program(
                 JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None)
             )
             Jac.jac_import(
@@ -163,7 +163,7 @@ def get_object(
             )
     else:
         jctx.close()
-        JacMachine.detach_machine()
+        JacMachineState.detach_machine()
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
     data = {}
@@ -174,7 +174,7 @@ def get_object(
         print(f"Object with id {id} not found.", file=sys.stderr)
 
     jctx.close()
-    JacMachine.detach_machine()
+    JacMachineState.detach_machine()
     return data
 
 
@@ -272,7 +272,7 @@ def enter(
         )
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
-            JacMachine(base).attach_program(
+            JacMachineState(base).attach_program(
                 JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None)
             )
             ret_module = Jac.jac_import(
@@ -283,7 +283,7 @@ def enter(
             )
     else:
         jctx.close()
-        JacMachine.detach_machine()
+        JacMachineState.detach_machine()
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
     if ret_module:
@@ -301,7 +301,7 @@ def enter(
                 Jac.spawn(jctx.entry_node.architype, architype)
 
     jctx.close()
-    JacMachine.detach_machine()
+    JacMachineState.detach_machine()
 
 
 @cmd_registry.register
@@ -447,7 +447,7 @@ def dot(
     jctx = ExecutionContext.create(session=session)
 
     if filename.endswith(".jac"):
-        jac_machine = JacMachine(base)
+        jac_machine = JacMachineState(base)
         Jac.jac_import(target=mod, base_path=base, override_name="__main__")
         module = jac_machine.loaded_modules.get("__main__")
         globals().update(vars(module))

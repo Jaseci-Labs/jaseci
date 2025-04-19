@@ -15,7 +15,7 @@ from jaclang.utils.helpers import dump_traceback
 from jaclang.utils.log import logging
 
 if TYPE_CHECKING:
-    from jaclang.runtimelib.machine import JacMachine
+    from jaclang.runtimelib.machine import JacMachineState
 
 logger = logging.getLogger(__name__)
 
@@ -164,7 +164,7 @@ class ImportReturn:
 class Importer:
     """Abstract base class for all importers."""
 
-    def __init__(self, jac_machine: JacMachine) -> None:
+    def __init__(self, jac_machine: JacMachineState) -> None:
         """Initialize the Importer object."""
         self.jac_machine = jac_machine
         self.result: Optional[ImportReturn] = None
@@ -182,7 +182,7 @@ class Importer:
 class PythonImporter(Importer):
     """Importer for Python modules."""
 
-    def __init__(self, jac_machine: JacMachine) -> None:
+    def __init__(self, jac_machine: JacMachineState) -> None:
         """Initialize the PythonImporter object."""
         self.jac_machine = jac_machine
 
@@ -257,7 +257,7 @@ class PythonImporter(Importer):
 class JacImporter(Importer):
     """Importer for Jac modules."""
 
-    def __init__(self, jac_machine: JacMachine) -> None:
+    def __init__(self, jac_machine: JacMachineState) -> None:
         """Initialize the JacImporter object."""
         self.jac_machine = jac_machine
 

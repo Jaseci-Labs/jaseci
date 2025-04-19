@@ -6,7 +6,7 @@ import sys
 from jaclang import JacFeature as Jac
 from jaclang.cli import cli
 from jaclang.compiler.program import JacProgram
-from jaclang.runtimelib.machine import JacMachine
+from jaclang.runtimelib.machine import JacMachineState
 from jaclang.utils.test import TestCase
 
 
@@ -15,28 +15,28 @@ class TestLoader(TestCase):
 
     def test_import_basic_python(self) -> None:
         """Test basic self loading."""
-        JacMachine(self.fixture_abs_path(__file__)).attach_program(
+        JacMachineState(self.fixture_abs_path(__file__)).attach_program(
             JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
         )
         (h,) = Jac.jac_import("fixtures.hello_world", base_path=__file__)
         self.assertEqual(h.hello(), "Hello World!")  # type: ignore
-        JacMachine.detach_machine()
+        JacMachineState.detach_machine()
 
     def test_modules_correct(self) -> None:
         """Test basic self loading."""
-        JacMachine(self.fixture_abs_path(__file__)).attach_program(
+        JacMachineState(self.fixture_abs_path(__file__)).attach_program(
             JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
         )
         Jac.jac_import("fixtures.hello_world", base_path=__file__)
         self.assertIn(
             "module 'fixtures.hello_world'",
-            str(JacMachine.get().loaded_modules),
+            str(JacMachineState.get().loaded_modules),
         )
         self.assertIn(
             "/tests/fixtures/hello_world.jac",
-            str(JacMachine.get().loaded_modules).replace("\\\\", "/"),
+            str(JacMachineState.get().loaded_modules).replace("\\\\", "/"),
         )
-        JacMachine.detach_machine()
+        JacMachineState.detach_machine()
 
     def test_jac_py_import(self) -> None:
         """Basic test for pass."""
@@ -90,7 +90,7 @@ class TestLoader(TestCase):
         sys.stdout = captured_output
 
         try:
-            JacMachine(self.fixture_abs_path(__file__)).attach_program(
+            JacMachineState(self.fixture_abs_path(__file__)).attach_program(
                 JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
             )
             Jac.jac_import(module_name, base_path=__file__)
@@ -104,6 +104,6 @@ class TestLoader(TestCase):
 
         finally:
             captured_output.close()
-            JacMachine.detach_machine()
+            JacMachineState.detach_machine()
             os.environ.pop("JACPATH", None)
             jacpath_dir.cleanup()

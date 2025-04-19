@@ -7,7 +7,7 @@ from jac_cloud import FastAPI
 
 from jaclang import jac_import
 from jaclang.runtimelib.context import ExecutionContext
-from jaclang.runtimelib.machine import JacMachine, JacProgram
+from jaclang.runtimelib.machine import JacMachineState, JacProgram
 
 filename = "./jac_cloud/tests/websocket.jac"
 base, mod = split(filename)
@@ -26,7 +26,9 @@ if filename.endswith(".jac"):
     )
 elif filename.endswith(".jir"):
     with open(filename, "rb") as f:
-        JacMachine(base).attach_program(JacProgram(mod_bundle=load(f), bytecode=None))
+        JacMachineState(base).attach_program(
+            JacProgram(mod_bundle=load(f), bytecode=None)
+        )
         jac_import(
             target=mod,
             base_path=base,
@@ -35,10 +37,10 @@ elif filename.endswith(".jir"):
         )
 else:
     jctx.close()
-    JacMachine.detach_machine()
+    JacMachineState.detach_machine()
     raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
 app = FastAPI.get()
 
 jctx.close()
-JacMachine.detach_machine()
+JacMachineState.detach_machine()

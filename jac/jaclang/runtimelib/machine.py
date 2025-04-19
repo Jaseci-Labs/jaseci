@@ -25,10 +25,10 @@ from jaclang.utils.log import logging
 logger = logging.getLogger(__name__)
 
 
-JACMACHINE_CONTEXT = ContextVar["JacMachine | None"]("JacMachine")
+JACMACHINE_CONTEXT = ContextVar["JacMachineState | None"]("JacMachineState")
 
 
-class JacMachine:
+class JacMachineState:
     """JacMachine to handle the VM-related functionalities and loaded programs."""
 
     def __init__(self, base_path: str = "") -> None:
@@ -253,10 +253,10 @@ class JacMachine:
         return None
 
     @staticmethod
-    def get(base_path: str = "") -> "JacMachine":
+    def get(base_path: str = "") -> "JacMachineState":
         """Get current jac machine."""
         if (jac_machine := JACMACHINE_CONTEXT.get(None)) is None:
-            jac_machine = JacMachine(base_path)
+            jac_machine = JacMachineState(base_path)
         return jac_machine
 
     @staticmethod

@@ -53,7 +53,7 @@ from jaclang.runtimelib.constructs import (
 )
 from jaclang.runtimelib.context import ExecutionContext
 from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
-from jaclang.runtimelib.machine import JacMachine
+from jaclang.runtimelib.machine import JacMachineState
 from jaclang.runtimelib.memory import Shelf, ShelfStorage
 from jaclang.runtimelib.utils import (
     all_issubclass,
@@ -744,16 +744,16 @@ class JacBasics:
             items,
         )
 
-        jac_machine = JacMachine.get(base_path)
+        jac_machine = JacMachineState.get(base_path)
         if not jac_machine.jac_program:
             jac_machine.attach_program(
                 JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
             )
 
         if lng == "py":
-            import_result = PythonImporter(JacMachine.get()).run_import(spec)
+            import_result = PythonImporter(JacMachineState.get()).run_import(spec)
         else:
-            import_result = JacImporter(JacMachine.get()).run_import(
+            import_result = JacImporter(JacMachineState.get()).run_import(
                 spec, reload_module
             )
 
@@ -1102,10 +1102,10 @@ class JacBasics:
     ) -> Optional[str]:
         """Jac's get_semstr_type feature."""
         from jaclang.compiler.semtable import SemInfo, SemScope, SemRegistry
-        from jaclang.runtimelib.machine import JacMachine
+        from jaclang.runtimelib.machine import JacMachineState
 
         _scope = SemScope.get_scope_from_str(scope)
-        jac_program = JacMachine.get().jac_program
+        jac_program = JacMachineState.get().jac_program
         mod_registry: SemRegistry = (
             jac_program.sem_ir if jac_program is not None else SemRegistry()
         )
@@ -1118,9 +1118,9 @@ class JacBasics:
     def obj_scope(file_loc: str, attr: str) -> str:
         """Jac's get_semstr_type feature."""
 
-        from jaclang.runtimelib.machine import JacMachine
+        from jaclang.runtimelib.machine import JacMachineState
 
-        jac_program = JacMachine.get().jac_program
+        jac_program = JacMachineState.get().jac_program
         mod_registry: SemRegistry = (
             jac_program.sem_ir if jac_program is not None else SemRegistry()
         )
@@ -1156,10 +1156,10 @@ class JacBasics:
     def get_sem_type(file_loc: str, attr: str) -> tuple[str | None, str | None]:
         """Jac's get_semstr_type feature."""
 
-        from jaclang.runtimelib.machine import JacMachine
+        from jaclang.runtimelib.machine import JacMachineState
         from jaclang.compiler.semtable import SemInfo, SemScope
 
-        jac_program = JacMachine.get().jac_program
+        jac_program = JacMachineState.get().jac_program
         mod_registry: SemRegistry = (
             jac_program.sem_ir if jac_program is not None else SemRegistry()
         )
@@ -1359,7 +1359,6 @@ class JacFeature(
     JacBuiltin,
     JacCmd,
     JacBasics,
-    JacMachine,
 ):
     """Jac Feature."""
 
