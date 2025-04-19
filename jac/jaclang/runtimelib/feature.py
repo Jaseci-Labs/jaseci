@@ -1465,6 +1465,7 @@ def generate_plugin_helpers(
     if annotations:
         proxy_namespace["__annotations__"] = annotations
     proxy_namespace.update(proxy_methods)
+    proxy_namespace["__init__"] = plugin_class.__init__
     proxy_cls = type(f"{plugin_class.__name__}", (object,), proxy_namespace)
 
     return spec_cls, impl_cls, proxy_cls
