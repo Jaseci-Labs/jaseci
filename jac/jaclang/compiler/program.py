@@ -50,20 +50,13 @@ class JacProgram:
         self.modules: dict[str, Module] = {}
         self.last_imported: list[Module] = []
 
-    def get_bytecode(
-        self,
-        module_name: str,
-        full_target: str,
-        caller_dir: str,
-        cachable: bool = True,
-        reload: bool = False,
-    ) -> Optional[types.CodeType]:
+    def get_bytecode(self, full_target: str) -> Optional[types.CodeType]:
         """Get the bytecode for a specific module."""
         if self.mod_bundle and isinstance(self.mod_bundle, Module):
             codeobj = self.mod_bundle.mod_deps[full_target].gen.py_bytecode
             return marshal.loads(codeobj) if isinstance(codeobj, bytes) else None
 
-        result = JacProgram.compile_jac(full_target, cache_result=cachable)
+        result = JacProgram.compile_jac(full_target)
         if result.errors_had:
             for alrt in result.errors_had:
                 # We're not logging here, it already gets logged as the errors were added to the errors_had list.
@@ -75,7 +68,7 @@ class JacProgram:
             return None
 
     @staticmethod
-    def compile_jac(file_path: str, cache_result: bool = False) -> Pass:
+    def compile_jac(file_path: str) -> Pass:
         """Start Compile for Jac file and return python code as string."""
         return JacProgram.jac_file_to_pass(
             file_path=file_path,
