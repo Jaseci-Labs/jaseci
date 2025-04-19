@@ -35,32 +35,23 @@ logger = logging.getLogger(__name__)
 
 
 class JacProgram:
-    """Class to hold the mod_bundle bytecode and sem_ir for Jac modules."""
+    """JacProgram to handle the Jac program-related functionalities."""
 
-    def __init__(
-        self,
-        mod_bundle: Optional[Module],
-        bytecode: Optional[dict[str, bytes]],
-        sem_ir: Optional[SemRegistry],
-    ) -> None:
+    def __init__(self) -> None:
         """Initialize the JacProgram object."""
-        self.mod_bundle = mod_bundle
-        self.bytecode = bytecode or {}
-        self.sem_ir = sem_ir if sem_ir else SemRegistry()
+        self.sem_ir = SemRegistry()
         self.modules: dict[str, Module] = {}
         self.last_imported: list[Module] = []
 
     def get_bytecode(self, full_target: str) -> Optional[types.CodeType]:
         """Get the bytecode for a specific module."""
-        if self.mod_bundle and isinstance(self.mod_bundle, Module):
-            codeobj = self.mod_bundle.mod_deps[full_target].gen.py_bytecode
+        if full_target in self.modules:
+            codeobj = self.modules[full_target].gen.py_bytecode
             return marshal.loads(codeobj) if isinstance(codeobj, bytes) else None
 
         result = JacProgram.compile_jac(full_target)
         if result.errors_had:
             for alrt in result.errors_had:
-                # We're not logging here, it already gets logged as the errors were added to the errors_had list.
-                # Regardless of the logging, this needs to be sent to the end user, so we'll printing it to stderr.
                 logger.error(alrt.pretty_print())
         if result.root_ir.gen.py_bytecode is not None:
             return marshal.loads(result.root_ir.gen.py_bytecode)
@@ -118,7 +109,7 @@ class JacProgram:
 
         # Creating a new JacProgram and attaching it to top module
         top_mod: ast.Module = ast_ret.root_ir
-        top_mod.jac_prog = JacProgram(None, None, None)
+        top_mod.jac_prog = JacProgram()
         top_mod.jac_prog.last_imported.append(ast_ret.root_ir)
         top_mod.jac_prog.modules[ast_ret.root_ir.loc.mod_path] = ast_ret.root_ir
 
@@ -216,7 +207,7 @@ class JacProgram:
 
         # Creating a new JacProgram and attaching it to top module
         top_mod: ast.Module = ast_ret.root_ir
-        top_mod.jac_prog = JacProgram(None, None, None)
+        top_mod.jac_prog = JacProgram()
         top_mod.jac_prog.last_imported.append(ast_ret.root_ir)
         top_mod.jac_prog.modules[ast_ret.root_ir.loc.mod_path] = ast_ret.root_ir
 

@@ -27,6 +27,4 @@ class JacMachineState:
             if not os.path.isdir(base_path)
             else os.path.abspath(base_path)
         )
-        self.jac_program: JacProgram = JacProgram(
-            mod_bundle=None, bytecode=None, sem_ir=None
-        )
+        self.jac_program: JacProgram = JacProgram()

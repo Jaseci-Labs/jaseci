@@ -793,9 +793,7 @@ class JacBasics:
         )
 
         if not mach.jac_program:
-            JacFeature.attach_program(
-                mach, JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
-            )
+            JacFeature.attach_program(mach, JacProgram())
 
         if lng == "py":
             import_result = PythonImporter(mach).run_import(spec)
@@ -1310,22 +1308,6 @@ class JacMachine:
     def attach_program(mach: JacMachineState, jac_program: JacProgram) -> None:
         """Attach a JacProgram to the machine."""
         mach.jac_program = jac_program
-
-    @staticmethod
-    def get_mod_bundle(mach: JacMachineState) -> Optional[ast.Module]:
-        """Retrieve the mod_bundle from the attached JacProgram."""
-        if mach.jac_program:
-            return mach.jac_program.mod_bundle
-        return None
-
-    @staticmethod
-    def get_bytecode(
-        mach: JacMachineState, full_target: str
-    ) -> Optional[types.CodeType]:
-        """Retrieve bytecode from the attached JacProgram."""
-        if mach.jac_program:
-            return mach.jac_program.get_bytecode(full_target=full_target)
-        return None
 
     @staticmethod
     def load_module(

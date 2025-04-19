@@ -9,7 +9,7 @@ from typing import Any
 from jaclang.cli.cmdreg import cmd_registry
 from jaclang.runtimelib.context import ExecutionContext
 from jaclang.runtimelib.feature import hookimpl
-from jaclang.runtimelib.machine import JacMachineState, JacProgram
+from jaclang.runtimelib.machine import JacMachineState
 
 from pymongo.errors import ConnectionFailure, OperationFailure
 
@@ -52,9 +52,7 @@ class JacCmd:
                 )
             elif filename.endswith(".jir"):
                 with open(filename, "rb") as f:
-                    Jac.attach_program(
-                        mach, JacProgram(mod_bundle=load(f), bytecode=None, sem_ir=None)
-                    )
+                    Jac.attach_program(mach, load(f))
                     Jac.jac_import(
                         mach=mach,
                         target=mod,
@@ -96,9 +94,7 @@ class JacCmd:
                 )
             elif filename.endswith(".jir"):
                 with open(filename, "rb") as f:
-                    Jac.attach_program(
-                        mach, JacProgram(mod_bundle=load(f), bytecode=None, sem_ir=None)
-                    )
+                    Jac.attach_program(mach, load(f))
                     Jac.jac_import(
                         mach=mach,
                         target=mod,

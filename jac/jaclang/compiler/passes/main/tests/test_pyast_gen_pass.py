@@ -60,7 +60,6 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             sys.stdout = captured_output
             module = types.ModuleType("__main__")
             module.__dict__["__file__"] = code_gen.root_ir.loc.mod_path
-            module.__dict__["__jac_mod_bundle__"] = None
             exec(prog, module.__dict__)
             sys.stdout = sys.__stdout__
             stdout_value = captured_output.getvalue()

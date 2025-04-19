@@ -18,7 +18,7 @@ class TestLoader(TestCase):
         mach = JacMachineState(self.fixture_abs_path(__file__))
         JacFeature.attach_program(
             mach,
-            JacProgram(mod_bundle=None, bytecode=None, sem_ir=None),
+            JacProgram(),
         )
         (h,) = Jac.jac_import(mach, "fixtures.hello_world", base_path=__file__)
         self.assertEqual(h.hello(), "Hello World!")  # type: ignore
@@ -28,7 +28,7 @@ class TestLoader(TestCase):
         mach = JacMachineState(self.fixture_abs_path(__file__))
         JacFeature.attach_program(
             mach,
-            JacProgram(mod_bundle=None, bytecode=None, sem_ir=None),
+            JacProgram(),
         )
         Jac.jac_import(mach, "fixtures.hello_world", base_path=__file__)
         self.assertIn(
@@ -95,7 +95,7 @@ class TestLoader(TestCase):
             mach = JacMachineState(self.fixture_abs_path(__file__))
             JacFeature.attach_program(
                 mach,
-                JacProgram(mod_bundle=None, bytecode=None, sem_ir=None),
+                JacProgram(),
             )
             Jac.jac_import(mach, module_name, base_path=__file__)
             cli.run(jac_file_path)

@@ -106,7 +106,7 @@ def run(
             with open(filename, "rb") as f:
                 Jac.attach_program(
                     mach,
-                    JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None),
+                    pickle.load(f),
                 )
                 Jac.jac_import(
                     mach=mach,
@@ -157,7 +157,7 @@ def get_object(
         with open(filename, "rb") as f:
             Jac.attach_program(
                 mach,
-                JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None),
+                pickle.load(f),
             )
             Jac.jac_import(
                 mach=mach,
@@ -185,17 +185,16 @@ def get_object(
 def build(filename: str, pybuild: bool = False) -> None:
     """Build the specified .jac file."""
     if filename.endswith(".jac"):
-        out = JacProgram.jac_file_to_pass(
+        out = JacProgram()
+        pass_ret = out.jac_file_to_pass(
             file_path=filename,
             schedule=py_code_gen_typed if pybuild else py_code_gen_build,
         )
-        errs = len(out.errors_had)
-        warnings = len(out.warnings_had)
+        errs = len(pass_ret.errors_had)
+        warnings = len(pass_ret.warnings_had)
         print(f"Errors: {errs}, Warnings: {warnings}")
-        for i in out.root_ir.flatten():
-            i.gen.clean()
         with open(filename[:-4] + ".jir", "wb") as f:
-            pickle.dump(out.root_ir, f)
+            pickle.dump(out, f)
     else:
         print("Not a .jac file.", file=sys.stderr)
 
@@ -279,7 +278,7 @@ def enter(
         with open(filename, "rb") as f:
             Jac.attach_program(
                 mach,
-                JacProgram(mod_bundle=pickle.load(f), bytecode=None, sem_ir=None),
+                pickle.load(f),
             )
             ret_module = Jac.jac_import(
                 mach=mach,

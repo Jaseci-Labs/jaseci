@@ -26,7 +26,7 @@ class JacLanguageTests(TestCase):
         self.mach = JacMachineState(self.fixture_abs_path("./"))
         Jac.attach_program(
             self.mach,
-            JacProgram(mod_bundle=None, bytecode=None, sem_ir=None),
+            JacProgram(),
         )
         return super().setUp()
 

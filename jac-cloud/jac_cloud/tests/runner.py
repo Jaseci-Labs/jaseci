@@ -7,7 +7,7 @@ from jac_cloud import FastAPI
 
 from jaclang import jac_import
 from jaclang.runtimelib.context import ExecutionContext
-from jaclang.runtimelib.machine import JacMachineState, JacProgram
+from jaclang.runtimelib.machine import JacMachineState
 
 filename = "./jac_cloud/tests/websocket.jac"
 base, mod = split(filename)
@@ -26,9 +26,7 @@ if filename.endswith(".jac"):
     )
 elif filename.endswith(".jir"):
     with open(filename, "rb") as f:
-        JacMachineState(base).attach_program(
-            JacProgram(mod_bundle=load(f), bytecode=None)
-        )
+        JacMachineState(base).attach_program(load(f))
         jac_import(
             target=mod,
             base_path=base,

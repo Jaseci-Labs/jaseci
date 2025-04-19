@@ -534,9 +534,7 @@ class SpliceOrcPlugin:
         )
 
         if not mach.jac_program:
-            JacFeature.attach_program(
-                mach, JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
-            )
+            JacFeature.attach_program(mach, JacProgram())
 
         if lng == "py":
             import_result = PythonImporter(mach).run_import(spec)
