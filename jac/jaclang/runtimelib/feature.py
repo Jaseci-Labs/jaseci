@@ -608,15 +608,7 @@ class JacCmd:
         """Create Jac CLI cmds."""
 
 
-class JacFeature(
-    JacClassReferences,
-    JacAccessValidation,
-    JacNode,
-    JacEdge,
-    JacWalker,
-    JacBuiltin,
-    JacCmd,
-):
+class JacBasics:
     """Jac Feature."""
 
     @staticmethod
@@ -1356,6 +1348,19 @@ class JacFeature(
             "include_info": [],
             "exclude_info": [],
         }
+
+
+class JacFeature(
+    JacClassReferences,
+    JacAccessValidation,
+    JacNode,
+    JacEdge,
+    JacWalker,
+    JacBuiltin,
+    JacCmd,
+    JacBasics,
+):
+    """Jac Feature."""
 
 
 def generate_plugin_helpers(
