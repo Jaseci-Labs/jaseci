@@ -60,15 +60,15 @@ class Transform(ABC, Generic[T]):
 
     def __init__(
         self,
-        input_ir: T,
+        root_ir: T,
         prior: Optional[Transform] = None,
     ) -> None:
         """Initialize pass."""
         self.logger = logging.getLogger(self.__class__.__name__)
         self.errors_had: list[Alert] = [] if not prior else prior.errors_had
         self.warnings_had: list[Alert] = [] if not prior else prior.warnings_had
-        self.cur_node: AstNode = input_ir  # tracks current node during traversal
-        self.ir = self.transform(ir=input_ir)
+        self.cur_node: AstNode = root_ir  # tracks current node during traversal
+        self.ir = self.transform(ir=root_ir)
 
     @abstractmethod
     def transform(self, ir: T) -> AstNode:

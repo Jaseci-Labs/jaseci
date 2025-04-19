@@ -40,8 +40,7 @@ class JacImportPass(Pass):
         all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
         for i in all_imports:
             self.process_import(i)
-            self.enter_module_path(i)
-        SubNodeTabPass(prior=self, input_ir=node)
+        SubNodeTabPass(prior=self, ir_root=node)
 
         node.mod_deps.update(self.import_table)
 
@@ -115,17 +114,6 @@ class JacImportPass(Pass):
                     node.test_mod.append(mod)
                     node.add_kids_right([mod], pos_update=False)
                     mod.parent = node
-
-    def enter_module_path(self, node: ast.ModulePath) -> None:
-        """Sub objects.
-
-        path: Sequence[Token],
-        alias: Optional[Name],
-        sub_module: Optional[Module] = None,
-        """
-        if node.alias and node.sub_module:
-            node.sub_module.name = node.alias.value
-        # Items matched during def/decl pass
 
     def import_jac_module(self, node: ast.ModulePath) -> None:
         """Import a module."""
@@ -209,8 +197,7 @@ class PyImportPass(JacImportPass):
         all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
         for i in all_imports:
             self.process_import(i)
-            self.enter_module_path(i)
-        SubNodeTabPass(prior=self, input_ir=node)
+        SubNodeTabPass(prior=self, ir_root=node)
 
         node.mod_deps.update(self.import_table)
 
@@ -300,8 +287,8 @@ class PyImportPass(JacImportPass):
                 self.__debug_print(
                     f"\tRefreshing symbol table for module:{ast.Module.get_href_path(imported_mod)}"
                 )
-            PyInspectSymTabBuildPass(input_ir=imported_mod, prior=self)
-            DefUsePass(input_ir=imported_mod, prior=self)
+            PyInspectSymTabBuildPass(ir_root=imported_mod, prior=self)
+            DefUsePass(ir_root=imported_mod, prior=self)
 
     def __process_import(self, imp_node: ast.Import) -> None:
         """Process the imports in form of `import X`."""
@@ -353,14 +340,14 @@ class PyImportPass(JacImportPass):
                     self.__debug_print(
                         f"\tRefreshing symbol table for module:{ast.Module.get_href_path(imported_mod)}"
                     )
-                PyInspectSymTabBuildPass(input_ir=imported_mod, prior=self)
-                DefUsePass(input_ir=imported_mod, prior=self)
+                PyInspectSymTabBuildPass(ir_root=imported_mod, prior=self)
+                DefUsePass(ir_root=imported_mod, prior=self)
 
             else:
                 self.__debug_print(
                     f"\tBuilding symbol table for module:{ast.Module.get_href_path(imported_mod)}"
                 )
-                SymTabBuildPass(input_ir=imported_mod, prior=self)
+                SymTabBuildPass(ir_root=imported_mod, prior=self)
 
     def __import_py_module(
         self,
@@ -407,12 +394,12 @@ class PyImportPass(JacImportPass):
             with open(file_to_raise, "r", encoding="utf-8") as f:
                 file_source = f.read()
                 mod = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(
+                    root_ir=ast.PythonModuleAst(
                         py_ast.parse(file_source),
                         orig_src=ast.JacSource(file_source, file_to_raise),
                     ),
                 ).ir
-                SubNodeTabPass(input_ir=mod, prior=self)
+                SubNodeTabPass(ir_root=mod, prior=self)
 
             if mod:
                 mod.name = imported_mod_name if imported_mod_name else mod.name
@@ -454,13 +441,13 @@ class PyImportPass(JacImportPass):
         with open(file_to_raise, "r", encoding="utf-8") as f:
             file_source = f.read()
             mod = PyastBuildPass(
-                input_ir=ast.PythonModuleAst(
+                root_ir=ast.PythonModuleAst(
                     py_ast.parse(file_source),
                     orig_src=ast.JacSource(file_source, file_to_raise),
                 ),
             ).ir
-            SubNodeTabPass(input_ir=mod, prior=self)
-            SymTabBuildPass(input_ir=mod, prior=self)
+            SubNodeTabPass(ir_root=mod, prior=self)
+            SymTabBuildPass(ir_root=mod, prior=self)
             self.ir.jac_prog.modules[file_to_raise] = mod
             mod.jac_prog = self.ir.jac_prog
             mod.py_info.is_raised_from_py = True

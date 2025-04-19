@@ -221,7 +221,7 @@ class AstTool:
                     return f"\n{py_ast.dump(parsed_ast, indent=2)}"
                 try:
                     rep = PyastBuildPass(
-                        input_ir=ast.PythonModuleAst(
+                        root_ir=ast.PythonModuleAst(
                             parsed_ast,
                             orig_src=ast.JacSource(file_source, file_name),
                         ),

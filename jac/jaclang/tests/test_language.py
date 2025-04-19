@@ -572,7 +572,7 @@ class JacLanguageTests(TestCase):
             parsed_ast = py_ast.parse(file_source)
             try:
                 py_ast_build_pass = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(
+                    root_ir=ast.PythonModuleAst(
                         parsed_ast, orig_src=ast.JacSource(file_source, file_name)
                     ),
                 )
@@ -611,7 +611,7 @@ class JacLanguageTests(TestCase):
         with open(py_out_path) as f:
             file_source = f.read()
             output = PyastBuildPass(
-                input_ir=ast.PythonModuleAst(
+                root_ir=ast.PythonModuleAst(
                     py_ast.parse(file_source),
                     orig_src=ast.JacSource(file_source, py_out_path),
                 ),
@@ -646,7 +646,7 @@ class JacLanguageTests(TestCase):
             parsed_ast = py_ast.parse(file_source)
             try:
                 py_ast_build_pass = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(
+                    root_ir=ast.PythonModuleAst(
                         parsed_ast,
                         orig_src=ast.JacSource(file_source, file_name),
                     ),
@@ -687,7 +687,7 @@ class JacLanguageTests(TestCase):
         with open(py_out_path) as f:
             file_source = f.read()
             output = PyastBuildPass(
-                input_ir=ast.PythonModuleAst(
+                root_ir=ast.PythonModuleAst(
                     py_ast.parse(file_source),
                     orig_src=ast.JacSource(file_source, py_out_path),
                 ),
@@ -712,7 +712,7 @@ class JacLanguageTests(TestCase):
             parsed_ast = py_ast.parse(file_source)
             try:
                 py_ast_build_pass = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(
+                    root_ir=ast.PythonModuleAst(
                         parsed_ast,
                         orig_src=ast.JacSource(file_source, file_name),
                     ),
@@ -755,7 +755,7 @@ class JacLanguageTests(TestCase):
         with open(py_out_path) as f:
             file_source = f.read()
             output = PyastBuildPass(
-                input_ir=ast.PythonModuleAst(
+                root_ir=ast.PythonModuleAst(
                     py_ast.parse(file_source),
                     orig_src=ast.JacSource(file_source, py_out_path),
                 ),
@@ -905,7 +905,7 @@ class JacLanguageTests(TestCase):
             with open(file_path) as f:
                 file_source = f.read()
                 jac_ast = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(
+                    root_ir=ast.PythonModuleAst(
                         py_ast.parse(file_source),
                         orig_src=ast.JacSource(file_source, file_path),
                     )
@@ -946,7 +946,7 @@ class JacLanguageTests(TestCase):
             parsed_ast = py_ast.parse(f.read())
             try:
                 py_ast_build_pass = PyastBuildPass(
-                    input_ir=ast.PythonModuleAst(
+                    root_ir=ast.PythonModuleAst(
                         parsed_ast, orig_src=ast.JacSource(f.read(), file_name)
                     )
                 )

@@ -19,11 +19,11 @@ T = TypeVar("T", bound=ast.AstNode)
 class PyastBuildPass(Pass[ast.PythonModuleAst]):
     """Jac Parser."""
 
-    def __init__(self, input_ir: ast.PythonModuleAst) -> None:
+    def __init__(self, root_ir: ast.PythonModuleAst) -> None:
         """Initialize parser."""
-        self.mod_path = input_ir.loc.mod_path
-        self.orig_src = input_ir.loc.orig_src
-        Pass.__init__(self, input_ir=input_ir, prior=None)
+        self.mod_path = root_ir.loc.mod_path
+        self.orig_src = root_ir.loc.orig_src
+        Pass.__init__(self, ir_root=root_ir, prior=None)
 
     def nu(self, node: T) -> T:
         """Update node."""

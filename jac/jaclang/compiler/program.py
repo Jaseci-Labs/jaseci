@@ -104,7 +104,7 @@ class JacProgram:
             target = schedule[-1] if schedule else None
 
         source = ast.JacSource(jac_str, mod_path=file_path)
-        ast_ret: Pass = JacParser(input_ir=source)
+        ast_ret: Pass = JacParser(root_ir=source)
         # TODO: This function below has tons of tech debt that should go away
         # when these functions become methods of JacProgram.
         SubNodeTabPass(ast_ret.ir, ast_ret)  # TODO: Get rid of this one
@@ -140,7 +140,7 @@ class JacProgram:
 
         # Link all Jac symbol tables created
         for mod in top_mod.jac_prog.modules.values():
-            SymTabLinkPass(input_ir=mod, prior=ast_ret)
+            SymTabLinkPass(ir_root=mod, prior=ast_ret)
 
         # Run all passes till PyBytecodeGenPass
         # Here the passes will run one by one on the imported modules instead
@@ -183,7 +183,7 @@ class JacProgram:
 
         # Link all Jac symbol tables created
         for mod in top_mod.jac_prog.modules.values():
-            SymTabLinkPass(input_ir=mod, prior=ast_ret)
+            SymTabLinkPass(ir_root=mod, prior=ast_ret)
 
         for mod in top_mod.jac_prog.modules.values():
             DefUsePass(mod, prior=ast_ret)
@@ -238,7 +238,7 @@ class JacProgram:
 
         # Link all Jac symbol tables created
         for mod in top_mod.jac_prog.modules.values():
-            SymTabLinkPass(input_ir=mod, prior=ast_ret)
+            SymTabLinkPass(ir_root=mod, prior=ast_ret)
 
         # Run all passes till PyBytecodeGenPass
         # Here the passes will run one by one on the imported modules instead
@@ -281,7 +281,7 @@ class JacProgram:
 
         # Link all Jac symbol tables created
         for mod in top_mod.jac_prog.modules.values():
-            SymTabLinkPass(input_ir=mod, prior=ast_ret)
+            SymTabLinkPass(ir_root=mod, prior=ast_ret)
 
         for mod in top_mod.jac_prog.modules.values():
             DefUsePass(mod, prior=ast_ret)
@@ -302,9 +302,9 @@ class JacProgram:
         if not target:
             target = schedule[-1] if schedule else None
         ast_ret = (
-            Pass(input_ir=ir, prior=None)
+            Pass(ir_root=ir, prior=None)
             if not len(schedule)
-            else schedule[0](input_ir=ir, prior=None)
+            else schedule[0](ir_root=ir, prior=None)
         )
         if schedule[0] == target:
             return ast_ret
@@ -312,9 +312,9 @@ class JacProgram:
         for i in schedule[1:]:
             if i == target:
                 break
-            ast_ret = i(input_ir=ast_ret.ir, prior=ast_ret)
+            ast_ret = i(ir_root=ast_ret.ir, prior=ast_ret)
         if target and target in schedule:
-            ast_ret = target(input_ir=ast_ret.ir, prior=ast_ret) if target else ast_ret
+            ast_ret = target(ir_root=ast_ret.ir, prior=ast_ret) if target else ast_ret
         return ast_ret
 
     @staticmethod
@@ -326,12 +326,12 @@ class JacProgram:
         target = JacFormatPass
         with open(file_path) as file:
             source = ast.JacSource(file.read(), mod_path=file_path)
-            prse: Pass = JacParser(input_ir=source)
+            prse: Pass = JacParser(root_ir=source)
         for i in schedule:
             if i == target:
                 break
-            prse = i(input_ir=prse.ir, prior=prse)
-        prse = target(input_ir=prse.ir, prior=prse)
+            prse = i(ir_root=prse.ir, prior=prse)
+        prse = target(ir_root=prse.ir, prior=prse)
         return prse
 
     def get_semstr_type(

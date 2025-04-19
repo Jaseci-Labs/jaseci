@@ -498,7 +498,7 @@ def py2jac(filename: str) -> None:
         with open(filename, "r") as f:
             file_source = f.read()
             code = PyastBuildPass(
-                input_ir=ast.PythonModuleAst(
+                root_ir=ast.PythonModuleAst(
                     ast3.parse(file_source),
                     orig_src=ast.JacSource(file_source, filename),
                 ),
