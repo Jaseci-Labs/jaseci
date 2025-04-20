@@ -125,9 +125,8 @@ class JacProgram:
         # Run JacImportPass & SymTabBuildPass on all imported Jac Programs
         while len(self.last_imported) > 0:
             mod = self.last_imported.pop()
-            self.jac_ir_to_pass(
-                ir=mod, schedule=[JacImportPass, SymTabBuildPass], target=target
-            )
+            JacImportPass(ir_root=mod, prior=ast_ret, prog=self)
+            SymTabBuildPass(ir_root=mod, prior=ast_ret, prog=self)
 
         # If there is syntax error, no point in processing in further passes.
         if len(ast_ret.errors_had) != 0:
@@ -179,7 +178,7 @@ class JacProgram:
         # Run PyImportPass
         while len(self.last_imported) > 0:
             mod = self.last_imported.pop()
-            self.jac_ir_to_pass(ir=mod, schedule=[PyImportPass], target=target)
+            PyImportPass(mod, prior=ast_ret, prog=self)
 
         # Link all Jac symbol tables created
         for mod in self.modules.values():
@@ -192,35 +191,6 @@ class JacProgram:
             run_schedule(mod, schedule=type_checker_sched)
 
         ast_ret.root_ir = top_mod
-        return ast_ret
-
-    def jac_ir_to_pass(
-        self,
-        ir: ast.AstNode,
-        target: Optional[Type[Pass]] = None,
-        schedule: list[Type[Pass]] = pass_schedule,
-    ) -> Pass:
-        """Convert a Jac file to an AST."""
-        if not target:
-            target = schedule[-1] if schedule else None
-        ast_ret = (
-            Pass(ir_root=ir, prior=None, prog=self)
-            if not len(schedule)
-            else schedule[0](ir_root=ir, prior=None, prog=self)
-        )
-        if schedule[0] == target:
-            return ast_ret
-
-        for i in schedule[1:]:
-            if i == target:
-                break
-            ast_ret = i(ir_root=ast_ret.root_ir, prior=ast_ret, prog=self)
-        if target and target in schedule:
-            ast_ret = (
-                target(ir_root=ast_ret.root_ir, prior=ast_ret, prog=self)
-                if target
-                else ast_ret
-            )
         return ast_ret
 
     def jac_file_formatter(
