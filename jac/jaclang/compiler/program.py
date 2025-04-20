@@ -25,9 +25,8 @@ from jaclang.compiler.passes.main import (
     type_checker_sched,
 )
 from jaclang.compiler.passes.main.sym_tab_link_pass import SymTabLinkPass
-from jaclang.compiler.passes.tool import JacFormatPass
-from jaclang.compiler.passes.tool.schedules import format_pass
-from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
+from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
+from jaclang.compiler.semtable import SemRegistry
 from jaclang.utils.log import logging
 
 
@@ -193,95 +192,18 @@ class JacProgram:
         ast_ret.root_ir = top_mod
         return ast_ret
 
+    @staticmethod
     def jac_file_formatter(
-        self,
         file_path: str,
-        schedule: list[Type[Pass]] = format_pass,
     ) -> JacFormatPass:
         """Convert a Jac file to an AST."""
         target = JacFormatPass
         with open(file_path) as file:
             source = ast.JacSource(file.read(), mod_path=file_path)
-            prse: Pass = JacParser(root_ir=source, prog=self)
-        for i in schedule:
+            prse: Pass = JacParser(root_ir=source, prog=None)
+        for i in [FuseCommentsPass, JacFormatPass]:
             if i == target:
                 break
-            prse = i(ir_root=prse.root_ir, prior=prse, prog=self)
-        prse = target(ir_root=prse.root_ir, prior=prse, prog=self)
+            prse = i(ir_root=prse.root_ir, prior=prse, prog=None)
+        prse = target(ir_root=prse.root_ir, prior=prse, prog=None)
         return prse
-
-    def get_semstr_type(
-        self, scope: str, attr: str, return_semstr: bool
-    ) -> Optional[str]:
-        """Jac's get_semstr_type feature."""
-
-        _scope = SemScope.get_scope_from_str(scope)
-        mod_registry: SemRegistry = self.sem_ir if self is not None else SemRegistry()
-        _, attr_seminfo = mod_registry.lookup(_scope, attr)
-        if attr_seminfo and isinstance(attr_seminfo, SemInfo):
-            return attr_seminfo.semstr if return_semstr else attr_seminfo.type
-        return None
-
-    def obj_scope(self, attr: str) -> str:
-        """Jac's get_semstr_type feature."""
-        mod_registry: SemRegistry = self.sem_ir if self is not None else SemRegistry()
-
-        attr_scope = None
-        for x in attr.split("."):
-            attr_scope, attr_sem_info = mod_registry.lookup(attr_scope, x)
-            if isinstance(attr_sem_info, SemInfo) and attr_sem_info.type not in [
-                "class",
-                "obj",
-                "node",
-                "edge",
-            ]:
-                attr_scope, attr_sem_info = mod_registry.lookup(
-                    None, attr_sem_info.type
-                )
-                if isinstance(attr_sem_info, SemInfo) and isinstance(
-                    attr_sem_info.type, str
-                ):
-                    attr_scope = SemScope(
-                        attr_sem_info.name, attr_sem_info.type, attr_scope
-                    )
-            else:
-                if isinstance(attr_sem_info, SemInfo) and isinstance(
-                    attr_sem_info.type, str
-                ):
-                    attr_scope = SemScope(
-                        attr_sem_info.name, attr_sem_info.type, attr_scope
-                    )
-        return str(attr_scope)
-
-    def get_sem_type(self, attr: str) -> tuple[str | None, str | None]:
-        """Jac's get_semstr_type feature."""
-        mod_registry: SemRegistry = self.sem_ir if self is not None else SemRegistry()
-
-        attr_scope = None
-        for x in attr.split("."):
-            attr_scope, attr_sem_info = mod_registry.lookup(attr_scope, x)
-            if isinstance(attr_sem_info, SemInfo) and attr_sem_info.type not in [
-                "class",
-                "obj",
-                "node",
-                "edge",
-            ]:
-                attr_scope, attr_sem_info = mod_registry.lookup(
-                    None, attr_sem_info.type
-                )
-                if isinstance(attr_sem_info, SemInfo) and isinstance(
-                    attr_sem_info.type, str
-                ):
-                    attr_scope = SemScope(
-                        attr_sem_info.name, attr_sem_info.type, attr_scope
-                    )
-            else:
-                if isinstance(attr_sem_info, SemInfo) and isinstance(
-                    attr_sem_info.type, str
-                ):
-                    attr_scope = SemScope(
-                        attr_sem_info.name, attr_sem_info.type, attr_scope
-                    )
-        if isinstance(attr_sem_info, SemInfo) and isinstance(attr_scope, SemScope):
-            return attr_sem_info.semstr, attr_scope.as_type_str
-        return "", ""

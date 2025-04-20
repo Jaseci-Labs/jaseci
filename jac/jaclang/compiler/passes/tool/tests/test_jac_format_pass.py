@@ -9,8 +9,7 @@ from difflib import unified_diff
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes.main import PyastGenPass
 from jaclang.compiler.passes.main.schedules import py_code_gen as without_format
-from jaclang.compiler.passes.tool import JacFormatPass
-from jaclang.compiler.passes.tool.schedules import format_pass
+from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.program import JacProgram
 from jaclang.utils.helpers import add_line_numbers
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
@@ -29,7 +28,7 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
                 original_file_content = file.read()
             if formatted_file is None:
                 code_gen_format = JacProgram().jac_file_to_pass(
-                    original_path, schedule=format_pass
+                    original_path, schedule=[FuseCommentsPass, JacFormatPass]
                 )
                 formatted_content = code_gen_format.root_ir.gen.jac
             else:
@@ -122,9 +121,7 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             target=PyastGenPass,
             schedule=without_format,
         )
-        code_gen_format = JacProgram().jac_file_formatter(
-            self.fixture_abs_path(filename), schedule=format_pass
-        )
+        code_gen_format = JacProgram.jac_file_formatter(self.fixture_abs_path(filename))
         code_gen_jac = JacProgram().jac_str_to_pass(
             jac_str=code_gen_format.root_ir.gen.jac,
             file_path=filename,

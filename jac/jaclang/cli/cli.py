@@ -34,7 +34,7 @@ def format(path: str, outfile: str = "", debug: bool = False) -> None:
     """Run the specified .jac file or format all .jac files in a given directory."""
 
     def format_file(filename: str) -> None:
-        code_gen_format = JacProgram().jac_file_formatter(filename)
+        code_gen_format = JacProgram.jac_file_formatter(filename)
         if code_gen_format.errors_had:
             print(
                 f"Errors occurred while formatting the file {filename}.",
