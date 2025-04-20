@@ -18,9 +18,8 @@ from jaclang.compiler.passes.main.schedules import py_code_gen_build, py_code_ge
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.builtin import dotgen
 from jaclang.runtimelib.constructs import WalkerArchitype
-from jaclang.runtimelib.context import ExecutionContext
 from jaclang.runtimelib.feature import JacFeature as Jac
-from jaclang.runtimelib.machine import JacMachineState
+from jaclang.runtimelib.machine import ExecutionContext, JacMachineState
 from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
 

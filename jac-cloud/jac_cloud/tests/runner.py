@@ -6,8 +6,7 @@ from pickle import load
 from jac_cloud import FastAPI
 
 from jaclang import jac_import
-from jaclang.runtimelib.context import ExecutionContext
-from jaclang.runtimelib.machine import JacMachineState
+from jaclang.runtimelib.machine import ExecutionContext, JacMachineState
 
 filename = "./jac_cloud/tests/websocket.jac"
 base, mod = split(filename)

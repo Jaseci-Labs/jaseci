@@ -54,8 +54,7 @@ from jaclang.runtimelib.constructs import (
     Root,
     WalkerArchitype,
 )
-from jaclang.runtimelib.context import ExecutionContext
-from jaclang.runtimelib.machine import JacMachineState
+from jaclang.runtimelib.machine import ExecutionContext, JacMachineState
 from jaclang.runtimelib.memory import Shelf, ShelfStorage
 from jaclang.runtimelib.utils import (
     all_issubclass,

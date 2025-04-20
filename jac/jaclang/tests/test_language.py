@@ -10,8 +10,7 @@ from jaclang import JacFeature as Jac
 from jaclang.cli import cli
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.program import JacProgram
-from jaclang.runtimelib.context import ExecutionContext
-from jaclang.runtimelib.machine import JacMachineState
+from jaclang.runtimelib.machine import ExecutionContext, JacMachineState
 from jaclang.utils.test import TestCase
 
 import pytest

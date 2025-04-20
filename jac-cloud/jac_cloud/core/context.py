@@ -9,7 +9,7 @@ from bson import ObjectId
 
 from fastapi import Request, WebSocket
 
-from jaclang.runtimelib.context import EXECUTION_CONTEXT, ExecutionContext
+from jaclang.runtimelib.machine import EXECUTION_CONTEXT, ExecutionContext
 
 from .architype import (
     AccessLevel,

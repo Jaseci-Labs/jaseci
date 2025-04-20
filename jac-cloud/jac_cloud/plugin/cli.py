@@ -7,9 +7,8 @@ from pickle import load
 from typing import Any
 
 from jaclang.cli.cmdreg import cmd_registry
-from jaclang.runtimelib.context import ExecutionContext
 from jaclang.runtimelib.feature import hookimpl
-from jaclang.runtimelib.machine import JacMachineState
+from jaclang.runtimelib.machine import ExecutionContext, JacMachineState
 
 from pymongo.errors import ConnectionFailure, OperationFailure
 
