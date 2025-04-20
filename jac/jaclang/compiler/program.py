@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast as py_ast
 import marshal
 import os
 import types
@@ -18,6 +19,7 @@ from jaclang.compiler.passes.main import (
     PyBytecodeGenPass,
     PyCollectDepsPass,
     PyImportPass,
+    PyastBuildPass,
     SubNodeTabPass,
     SymTabBuildPass,
     pass_schedule,
@@ -92,13 +94,37 @@ class JacProgram:
 
         source = ast.JacSource(jac_str, mod_path=file_path)
         ast_ret: Pass = JacParser(root_ir=source, prog=self)
-        return self.jac_pass_to_pass(
+        return self.run_pass_schedule(
             in_pass=ast_ret,
             target=target,
             schedule=schedule,
         )
 
-    def jac_pass_to_pass(
+    def py_str_to_pass(
+        self,
+        py_str: str,
+        file_path: str,
+        target: Optional[Type[Pass]] = None,
+        schedule: list[Type[Pass]] = pass_schedule,
+    ) -> Pass:
+        """Convert a Jac file to an AST."""
+        if not target:
+            target = schedule[-1] if schedule else None
+        parsed_ast = py_ast.parse(py_str)
+        py_ast_build_pass = PyastBuildPass(
+            root_ir=ast.PythonModuleAst(
+                parsed_ast,
+                orig_src=ast.JacSource(py_str, mod_path=file_path),
+            ),
+            prog=None,
+        )
+        return self.run_pass_schedule(
+            in_pass=py_ast_build_pass,
+            target=target,
+            schedule=schedule,
+        )
+
+    def run_pass_schedule(
         self,
         in_pass: Pass,
         target: Optional[Type[Pass]] = None,

@@ -711,27 +711,13 @@ class JacLanguageTests(TestCase):
         """Test py ast to Jac ast conversion output."""
         file_name = self.fixture_abs_path("pyfunc_3.py")
         from jaclang.compiler.passes.main.schedules import py_code_gen_typed
-        from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
-        import ast as py_ast
         import jaclang.compiler.absyntree as ast
 
         with open(file_name, "r") as f:
             file_source = f.read()
-            parsed_ast = py_ast.parse(file_source)
-            try:
-                py_ast_build_pass = PyastBuildPass(
-                    root_ir=ast.PythonModuleAst(
-                        parsed_ast,
-                        orig_src=ast.JacSource(file_source, file_name),
-                    ),
-                    prog=None,
-                )
-            except Exception as e:
-                return f"Error While Jac to Py AST conversion: {e}"
-
-            (prog := JacProgram()).jac_pass_to_pass(
-                py_ast_build_pass, schedule=py_code_gen_typed
-            ).root_ir
+        (prog := JacProgram()).py_str_to_pass(
+            py_str=file_source, file_path=file_name, schedule=py_code_gen_typed
+        ).root_ir
 
         architype_count = sum(
             len(mod.get_all_sub_nodes(ast.Architype))
@@ -901,9 +887,6 @@ class JacLanguageTests(TestCase):
 
     def test_random_check(self) -> None:
         """Test py ast to Jac ast conversion output."""
-        from jaclang.compiler.passes.main import PyastBuildPass
-        import jaclang.compiler.absyntree as ast
-        import ast as py_ast
         from jaclang.settings import settings
 
         module_paths = ["random", "ast"]
@@ -913,17 +896,16 @@ class JacLanguageTests(TestCase):
                 stdlib_dir,
                 module_path + ".py",
             )
+            settings.print_py_raised_ast = True
             with open(file_path) as f:
                 file_source = f.read()
-                jac_ast = PyastBuildPass(
-                    root_ir=ast.PythonModuleAst(
-                        py_ast.parse(file_source),
-                        orig_src=ast.JacSource(file_source, file_path),
-                    ),
-                    prog=None,
+            ir = (
+                JacProgram()
+                .py_str_to_pass(
+                    py_str=file_source, file_path=file_path, schedule=py_code_gen_typed
                 )
-            settings.print_py_raised_ast = True
-            ir = JacProgram().jac_pass_to_pass(jac_ast).root_ir
+                .root_ir
+            )
             gen_ast = ir.pp()
             if module_path == "random":
                 self.assertIn("ModulePath - statistics -", gen_ast)
@@ -949,27 +931,17 @@ class JacLanguageTests(TestCase):
         file_name = self.fixture_abs_path("pyfunc_1.py")
 
         from jaclang.compiler.passes.main.schedules import py_code_gen_typed
-        from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
-        import ast as py_ast
         import jaclang.compiler.absyntree as ast
         from jaclang.settings import settings
 
-        with open(file_name, "r") as f:
-            parsed_ast = py_ast.parse(f.read())
-            try:
-                py_ast_build_pass = PyastBuildPass(
-                    root_ir=ast.PythonModuleAst(
-                        parsed_ast, orig_src=ast.JacSource(f.read(), file_name)
-                    ),
-                    prog=None,
-                )
-            except Exception as e:
-                raise Exception(f"Error While Jac to Py AST conversion: {e}")
-
         settings.print_py_raised_ast = True
+        with open(file_name, "r") as f:
+            file_source = f.read()
         ir = (
             (prog := JacProgram())
-            .jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed)
+            .py_str_to_pass(
+                py_str=file_source, file_path=file_name, schedule=py_code_gen_typed
+            )
             .root_ir
         )
         jac_ast = ir.pp()
