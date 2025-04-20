@@ -501,6 +501,7 @@ def py2jac(filename: str) -> None:
                     ast3.parse(file_source),
                     orig_src=ast.JacSource(file_source, filename),
                 ),
+                prog=JacProgram(),
             ).ir.unparse()
         print(code)
     else:

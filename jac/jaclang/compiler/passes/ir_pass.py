@@ -1,12 +1,17 @@
 """Abstract class for IR Passes for Jac."""
 
+from __future__ import annotations
+
 import time
-from typing import Optional, Type, TypeVar
+from typing import Optional, TYPE_CHECKING, Type, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes.transform import Transform
 from jaclang.settings import settings
 from jaclang.utils.helpers import pascal_to_snake
+
+if TYPE_CHECKING:
+    from jaclang.compiler.program import JacProgram
 
 T = TypeVar("T", bound=ast.AstNode)
 
@@ -14,12 +19,17 @@ T = TypeVar("T", bound=ast.AstNode)
 class Pass(Transform[T]):
     """Abstract class for IR passes."""
 
-    def __init__(self, ir_root: T, prior: Optional[Transform]) -> None:
+    def __init__(
+        self, ir_root: T, prior: Optional[Transform], prog: Optional[JacProgram]
+    ) -> None:
         """Initialize parser."""
+        from jaclang.compiler.program import JacProgram
+
         self.term_signal = False
         self.prune_signal = False
         self.root_ir: ast.AstNode = ir_root
         self.time_taken = 0.0
+        self.prog = prog or JacProgram()
         Transform.__init__(self, ir_root, prior)
 
     def before_pass(self) -> None:

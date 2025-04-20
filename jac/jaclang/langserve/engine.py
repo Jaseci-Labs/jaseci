@@ -63,6 +63,7 @@ class JacLangServer(LanguageServer):
         self.modules: dict[str, ModuleInfo] = {}
         self.executor = ThreadPoolExecutor()
         self.tasks: dict[str, asyncio.Task] = {}
+        self.program = JacProgram()
 
     def update_modules(
         self, file_path: str, build: Pass, refresh: bool = False
@@ -87,7 +88,8 @@ class JacLangServer(LanguageServer):
         """Rebuild a file."""
         try:
             document = self.workspace.get_text_document(file_path)
-            build = JacProgram().jac_str_to_pass(
+            self.program = JacProgram()  # TODO: Remove this Hack
+            build = self.program.jac_str_to_pass(
                 jac_str=document.source, file_path=document.path, schedule=[]
             )
             self.publish_diagnostics(
@@ -110,7 +112,8 @@ class JacLangServer(LanguageServer):
                 return self.deep_check(
                     uris.from_fs_path(parent.ir.loc.mod_path), annex_view=file_path
                 )
-            build = JacProgram().jac_str_to_pass(
+            self.program = JacProgram()  # TODO: Remove this Hack
+            build = self.program.jac_str_to_pass(
                 jac_str=document.source,
                 file_path=document.path,
                 schedule=py_code_gen_typed,
@@ -179,9 +182,8 @@ class JacLangServer(LanguageServer):
         current_line = document.lines[position.line]
         current_pos = position.character
         current_symbol_path = parse_symbol_path(current_line, current_pos)
-        assert mod_ir.jac_prog
         builtin_mod = next(
-            mod for name, mod in mod_ir.jac_prog.modules.items() if "builtins" in name
+            mod for name, mod in self.program.modules.items() if "builtins" in name
         )
         builtin_tab = builtin_mod.sym_tab
         assert isinstance(builtin_tab, SymbolTable)
@@ -297,7 +299,7 @@ class JacLangServer(LanguageServer):
         """Return formatted jac."""
         try:
             document = self.workspace.get_text_document(file_path)
-            format = JacProgram().jac_str_to_pass(
+            format = self.program.jac_str_to_pass(
                 jac_str=document.source,
                 file_path=document.path,
                 target=JacFormatPass,

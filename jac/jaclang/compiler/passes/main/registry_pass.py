@@ -23,18 +23,18 @@ class RegistryPass(Pass):
         if settings.disable_mtllm:
             self.terminate()
             return None
-        node.registry = SemRegistry()
+        node.registry = SemRegistry()  # TODO: Remove from ast and make pass only var
         self.modules_visited.append(node)
 
     def exit_module(self, node: ast.Module) -> None:
         """Save registry for each module."""
         module_name = node.name
         try:
-            if node.jac_prog and node.registry:
-                if node.jac_prog.sem_ir:
-                    node.jac_prog.sem_ir.registry.update(node.registry.registry)
+            if node.registry:
+                if self.prog.sem_ir:
+                    self.prog.sem_ir.registry.update(node.registry.registry)
                 else:
-                    node.jac_prog.sem_ir = node.registry
+                    self.prog.sem_ir = node.registry
         except Exception as e:
             self.warning(f"Can't save registry for {module_name}: {e}")
         self.modules_visited.pop()

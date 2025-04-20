@@ -579,22 +579,19 @@ class JacLanguageTests(TestCase):
                     root_ir=ast.PythonModuleAst(
                         parsed_ast, orig_src=ast.JacSource(file_source, file_name)
                     ),
+                    prog=None,
                 )
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
 
-        ir = (
-            JacProgram()
-            .jac_str_to_pass(
-                jac_str=py_ast_build_pass.ir.unparse(),
-                file_path=file_name[:-3] + ".jac",
-                schedule=py_code_gen_typed,
-            )
-            .root_ir
-        )
+        (prog := JacProgram()).jac_str_to_pass(
+            jac_str=py_ast_build_pass.ir.unparse(),
+            file_path=file_name[:-3] + ".jac",
+            schedule=py_code_gen_typed,
+        ).root_ir
 
         architype_count = 0
-        for mod in ir.jac_prog.modules.values():
+        for mod in prog.modules.values():
             if mod.name == "builtins":
                 continue
             architype_count += len(mod.get_all_sub_nodes(ast.Architype))
@@ -623,6 +620,7 @@ class JacLanguageTests(TestCase):
                     py_ast.parse(file_source),
                     orig_src=ast.JacSource(file_source, py_out_path),
                 ),
+                prog=None,
             ).ir.unparse()
         # print(output)
         self.assertIn("can greet2(**kwargs: Any)", output)
@@ -658,22 +656,19 @@ class JacLanguageTests(TestCase):
                         parsed_ast,
                         orig_src=ast.JacSource(file_source, file_name),
                     ),
+                    prog=None,
                 )
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
 
-        ir = (
-            JacProgram()
-            .jac_str_to_pass(
+            (prog := JacProgram()).jac_str_to_pass(
                 jac_str=py_ast_build_pass.ir.unparse(),
                 file_path=file_name[:-3] + ".jac",
                 schedule=py_code_gen_typed,
-            )
-            .root_ir
-        )
+            ).root_ir
 
         architype_count = 0
-        for mod in ir.jac_prog.modules.values():
+        for mod in prog.modules.values():
             if mod.name == "builtins":
                 continue
             architype_count += len(mod.get_all_sub_nodes(ast.Architype))
@@ -703,6 +698,7 @@ class JacLanguageTests(TestCase):
                     py_ast.parse(file_source),
                     orig_src=ast.JacSource(file_source, py_out_path),
                 ),
+                prog=None,
             ).ir.unparse()
         self.assertIn("class X {\n    with entry {\n\n        a_b = 67;", output)
         self.assertIn("br = b'Hello\\\\\\\\nWorld'", output)
@@ -728,25 +724,25 @@ class JacLanguageTests(TestCase):
                         parsed_ast,
                         orig_src=ast.JacSource(file_source, file_name),
                     ),
+                    prog=None,
                 )
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
 
-        ir = (
-            JacProgram()
-            .jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed)
-            .root_ir
-        )
+            (prog := JacProgram()).jac_pass_to_pass(
+                py_ast_build_pass, schedule=py_code_gen_typed
+            ).root_ir
+
         architype_count = sum(
             len(mod.get_all_sub_nodes(ast.Architype))
-            for mod in ir.jac_prog.modules.values()
+            for mod in prog.modules.values()
             if mod.name != "builtins"
         )
         self.assertEqual(
             architype_count, 55
         )  # Fixed duplication of 'case' module (previously included 3 times, added 20 extra Architypes; 75 → 55)
         builtin_mod = next(
-            (mod for name, mod in ir.jac_prog.modules.items() if "builtins" in name),
+            (mod for name, mod in prog.modules.items() if "builtins" in name),
             None,
         )
         self.assertEqual(len(builtin_mod.get_all_sub_nodes(ast.Architype)), 108)
@@ -773,6 +769,7 @@ class JacLanguageTests(TestCase):
                     py_ast.parse(file_source),
                     orig_src=ast.JacSource(file_source, py_out_path),
                 ),
+                prog=None,
             ).ir.unparse()
         self.assertIn("if 0 <= x<= 5 {", output)
         self.assertIn("  case _:\n", output)
@@ -922,7 +919,8 @@ class JacLanguageTests(TestCase):
                     root_ir=ast.PythonModuleAst(
                         py_ast.parse(file_source),
                         orig_src=ast.JacSource(file_source, file_path),
-                    )
+                    ),
+                    prog=None,
                 )
             settings.print_py_raised_ast = True
             ir = JacProgram().jac_pass_to_pass(jac_ast).root_ir
@@ -962,21 +960,22 @@ class JacLanguageTests(TestCase):
                 py_ast_build_pass = PyastBuildPass(
                     root_ir=ast.PythonModuleAst(
                         parsed_ast, orig_src=ast.JacSource(f.read(), file_name)
-                    )
+                    ),
+                    prog=None,
                 )
             except Exception as e:
                 raise Exception(f"Error While Jac to Py AST conversion: {e}")
 
         settings.print_py_raised_ast = True
         ir = (
-            JacProgram()
+            (prog := JacProgram())
             .jac_pass_to_pass(py_ast_build_pass, schedule=py_code_gen_typed)
             .root_ir
         )
         jac_ast = ir.pp()
         self.assertIn(" |   +-- String - 'Loop completed normally{}'", jac_ast)
         sub_node_list_count = 0
-        for i in ir.jac_prog.modules.values():
+        for i in prog.modules.values():
             if i.name == "builtins":
                 continue
             sub_node_list_count += len(i.get_all_sub_nodes(ast.SubNodeList))

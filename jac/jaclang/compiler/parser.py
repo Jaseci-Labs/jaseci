@@ -5,7 +5,7 @@ from __future__ import annotations
 import keyword
 import logging
 import os
-from typing import Callable, TypeAlias, TypeVar
+from typing import Callable, Optional, TYPE_CHECKING, TypeAlias, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler import jac_lark as jl  # type: ignore
@@ -13,6 +13,8 @@ from jaclang.compiler.constant import EdgeDir, Tokens as Tok
 from jaclang.compiler.passes.ir_pass import Pass
 from jaclang.vendor.lark import Lark, Transformer, Tree, logger
 
+if TYPE_CHECKING:
+    from jaclang.compiler.program import JacProgram
 
 T = TypeVar("T", bound=ast.AstNode)
 
@@ -22,14 +24,14 @@ class JacParser(Pass):
 
     dev_mode = False
 
-    def __init__(self, root_ir: ast.JacSource) -> None:
+    def __init__(self, root_ir: ast.JacSource, prog: Optional[JacProgram]) -> None:
         """Initialize parser."""
         self.source = root_ir
         self.mod_path = root_ir.loc.mod_path
         self.node_list: list[ast.AstNode] = []
         if JacParser.dev_mode:
             JacParser.make_dev()
-        Pass.__init__(self, ir_root=root_ir, prior=None)
+        Pass.__init__(self, ir_root=root_ir, prior=None, prog=prog)
 
     def transform(self, ir: ast.AstNode) -> ast.Module:
         """Transform input IR."""

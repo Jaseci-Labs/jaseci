@@ -14,7 +14,6 @@ class SymTabLinkPass(Pass):
         """Link the symbol tables."""
 
         assert isinstance(self.root_ir, ast.Module)
-        assert self.root_ir.jac_prog is not None
 
         imp_node = node.parent_of_type(ast.Import)
 
@@ -22,7 +21,7 @@ class SymTabLinkPass(Pass):
             rel_path = node.resolve_relative_path()
             if os.path.isdir(rel_path):
                 rel_path = f"{rel_path}/__init__.jac"
-            if rel_path not in self.root_ir.jac_prog.modules:
+            if rel_path not in self.prog.modules:
                 self.ice()
         else:
             if node.sym_name in self.root_ir.py_info.py_raise_map:
@@ -37,7 +36,7 @@ class SymTabLinkPass(Pass):
             else:
                 return
 
-        imported_mod_symtab = self.root_ir.jac_prog.modules[rel_path].sym_tab
+        imported_mod_symtab = self.prog.modules[rel_path].sym_tab
 
         all_import = False
         symbols_str_list: list[str] = []

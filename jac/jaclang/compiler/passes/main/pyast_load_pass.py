@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import ast as py_ast
 import os
-from typing import Optional, Sequence, TypeAlias, TypeVar
+from typing import Optional, Sequence, TYPE_CHECKING, TypeAlias, TypeVar
 
 # from icecream import ic
 
@@ -13,17 +13,22 @@ from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes.ir_pass import Pass
 from jaclang.utils.helpers import pascal_to_snake
 
+if TYPE_CHECKING:
+    from jaclang.compiler.program import JacProgram
+
 T = TypeVar("T", bound=ast.AstNode)
 
 
 class PyastBuildPass(Pass[ast.PythonModuleAst]):
     """Jac Parser."""
 
-    def __init__(self, root_ir: ast.PythonModuleAst) -> None:
+    def __init__(
+        self, root_ir: ast.PythonModuleAst, prog: Optional[JacProgram]
+    ) -> None:
         """Initialize parser."""
         self.mod_path = root_ir.loc.mod_path
         self.orig_src = root_ir.loc.orig_src
-        Pass.__init__(self, ir_root=root_ir, prior=None)
+        Pass.__init__(self, ir_root=root_ir, prior=None, prog=prog)
 
     def nu(self, node: T) -> T:
         """Update node."""

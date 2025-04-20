@@ -40,7 +40,7 @@ class JacImportPass(Pass):
         all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
         for i in all_imports:
             self.process_import(i)
-        SubNodeTabPass(prior=self, ir_root=node)
+        SubNodeTabPass(prior=self, ir_root=node, prog=self.prog)
 
         node.mod_deps.update(self.import_table)
 
@@ -55,12 +55,10 @@ class JacImportPass(Pass):
     ) -> None:
         """Attach a module to a node."""
         assert isinstance(self.root_ir, ast.Module)
-        assert self.root_ir.jac_prog is not None
 
-        if mod and mod.loc.mod_path not in self.root_ir.jac_prog.modules:
-            self.root_ir.jac_prog.modules[mod.loc.mod_path] = mod
-            self.root_ir.jac_prog.last_imported.append(mod)
-            mod.jac_prog = self.root_ir.jac_prog
+        if mod and mod.loc.mod_path not in self.prog.modules:
+            self.prog.modules[mod.loc.mod_path] = mod
+            self.prog.last_imported.append(mod)
             # We should have only one py_raise_map in the program
             # TODO: Move py_raise_map to jac_program
             mod.py_info.py_raise_map = self.root_ir.py_info.py_raise_map
@@ -164,7 +162,7 @@ class JacImportPass(Pass):
         from jaclang.compiler.program import JacProgram
 
         assert isinstance(self.root_ir, ast.Module)
-        assert isinstance(self.root_ir.jac_prog, JacProgram)
+        assert isinstance(self.prog, JacProgram)
 
         if not os.path.exists(target):
             self.error(f"Could not find module {target}")
@@ -172,9 +170,7 @@ class JacImportPass(Pass):
         if target in self.import_table:
             return self.import_table[target]
         try:
-            mod_pass = self.root_ir.jac_prog.jac_file_to_pass(
-                file_path=target, schedule=[]
-            )
+            mod_pass = self.prog.jac_file_to_pass(file_path=target, schedule=[])
             self.errors_had += mod_pass.errors_had
             self.warnings_had += mod_pass.warnings_had
             mod = mod_pass.root_ir
@@ -202,7 +198,7 @@ class PyImportPass(JacImportPass):
         all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
         for i in all_imports:
             self.process_import(i)
-        SubNodeTabPass(prior=self, ir_root=node)
+        SubNodeTabPass(prior=self, ir_root=node, prog=self.prog)
 
         node.mod_deps.update(self.import_table)
 
@@ -267,8 +263,8 @@ class PyImportPass(JacImportPass):
 
             self.attach_mod_to_node(imp_node.from_loc, imported_mod)
             self.import_from_build_list.append((imp_node, imported_mod))
-            PyInspectSymTabBuildPass(ir_root=imported_mod, prior=self)
-            DefUsePass(ir_root=imported_mod, prior=self)
+            PyInspectSymTabBuildPass(ir_root=imported_mod, prior=self, prog=self.prog)
+            DefUsePass(ir_root=imported_mod, prior=self, prog=self.prog)
 
     def __process_import(self, imp_node: ast.Import) -> None:
         """Process the imports in form of `import X`."""
@@ -301,11 +297,13 @@ class PyImportPass(JacImportPass):
                 msg += f"import_from (import all) handling with {imp_node.loc.mod_path}:{imp_node.loc}"
 
                 self.import_from_build_list.append((imp_node, imported_mod))
-                PyInspectSymTabBuildPass(ir_root=imported_mod, prior=self)
-                DefUsePass(ir_root=imported_mod, prior=self)
+                PyInspectSymTabBuildPass(
+                    ir_root=imported_mod, prior=self, prog=self.prog
+                )
+                DefUsePass(ir_root=imported_mod, prior=self, prog=self.prog)
 
             else:
-                SymTabBuildPass(ir_root=imported_mod, prior=self)
+                SymTabBuildPass(ir_root=imported_mod, prior=self, prog=self.prog)
 
     def __import_py_module(
         self,
@@ -317,7 +315,6 @@ class PyImportPass(JacImportPass):
         from jaclang.compiler.passes.main import PyastBuildPass
 
         assert isinstance(self.root_ir, ast.Module)
-        assert self.root_ir.jac_prog is not None
 
         python_raise_map = self.root_ir.py_info.py_raise_map
         file_to_raise: Optional[str] = None
@@ -329,7 +326,7 @@ class PyImportPass(JacImportPass):
             resolved_mod_path = f"{parent_node_path}.{mod_path}"
             resolved_mod_path = resolved_mod_path.replace("..", ".")
             resolved_mod_path = resolved_mod_path.replace(
-                f"{list(self.root_ir.jac_prog.modules.values())[0]}.", ""
+                f"{list(self.prog.modules.values())[0]}.", ""
             )
             file_to_raise = python_raise_map.get(resolved_mod_path)
 
@@ -350,8 +347,9 @@ class PyImportPass(JacImportPass):
                         py_ast.parse(file_source),
                         orig_src=ast.JacSource(file_source, file_to_raise),
                     ),
+                    prog=self.prog,
                 ).ir
-                SubNodeTabPass(ir_root=mod, prior=self)
+                SubNodeTabPass(ir_root=mod, prior=self, prog=self.prog)
 
             if mod:
                 mod.name = imported_mod_name if imported_mod_name else mod.name
@@ -374,7 +372,6 @@ class PyImportPass(JacImportPass):
         from jaclang.compiler.passes.main import PyastBuildPass
 
         assert isinstance(self.root_ir, ast.Module)
-        assert self.root_ir.jac_prog is not None
 
         file_to_raise = str(
             pathlib.Path(os.path.dirname(__file__)).parent.parent.parent
@@ -391,11 +388,11 @@ class PyImportPass(JacImportPass):
                     py_ast.parse(file_source),
                     orig_src=ast.JacSource(file_source, file_to_raise),
                 ),
+                prog=self.prog,
             ).ir
-            SubNodeTabPass(ir_root=mod, prior=self)
-            SymTabBuildPass(ir_root=mod, prior=self)
-            self.root_ir.jac_prog.modules[file_to_raise] = mod
-            mod.jac_prog = self.root_ir.jac_prog
+            SubNodeTabPass(ir_root=mod, prior=self, prog=self.prog)
+            SymTabBuildPass(ir_root=mod, prior=self, prog=self.prog)
+            self.prog.modules[file_to_raise] = mod
             mod.py_info.is_raised_from_py = True
             mod.py_info.py_raise_map = self.root_ir.py_info.py_raise_map
 

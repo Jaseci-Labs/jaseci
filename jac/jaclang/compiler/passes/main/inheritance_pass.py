@@ -20,11 +20,10 @@ class InheritancePass(Pass):
     def __lookup(self, name: str, sym_table: SymbolTable) -> Optional[Symbol]:
         symbol = sym_table.lookup(name)
         assert isinstance(self.root_ir, ast.Module)
-        assert self.root_ir.jac_prog is not None
         if symbol is None:
             # Check if the needed symbol in builtins
             builtins_symtable = None
-            for mod in self.root_ir.jac_prog.modules.values():
+            for mod in self.prog.modules.values():
                 if mod.name == "builtins":
                     builtins_symtable = mod.sym_tab
 

@@ -225,6 +225,7 @@ class AstTool:
                             parsed_ast,
                             orig_src=ast.JacSource(file_source, file_name),
                         ),
+                        prog=prog,
                     ).ir
 
                     ir = prog.jac_str_to_pass(
@@ -240,12 +241,11 @@ class AstTool:
                 ).root_ir
 
             assert isinstance(ir, ast.Module)
-            assert ir.jac_prog is not None
 
             match output:
                 case "sym":
                     out = ""
-                    for module_ in ir.jac_prog.modules.values():
+                    for module_ in prog.modules.values():
                         mod_name = module_.name
                         t = "#" * len(mod_name)
                         out += f"##{t}##\n# {mod_name} #\n##{t}##\n{module_.sym_tab.pp()}\n"
@@ -258,7 +258,7 @@ class AstTool:
                     )
                 case "ast":
                     out = ""
-                    for module_ in ir.jac_prog.modules.values():
+                    for module_ in prog.modules.values():
                         mod_name = module_.name
                         t = "#" * len(mod_name)
                         out += f"##{t}##\n# {mod_name} #\n##{t}##\n{module_.pp()}\n"

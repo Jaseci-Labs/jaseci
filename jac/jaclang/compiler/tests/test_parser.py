@@ -20,13 +20,13 @@ class TestLarkParser(TestCaseMicroSuite):
     def test_fstring_escape_brace(self) -> None:
         """Test fstring escape brace."""
         source = JacSource('glob a=f"{{}}", not_b=4;', mod_path="")
-        prse = JacParser(root_ir=source)
+        prse = JacParser(root_ir=source, prog=None)
         self.assertFalse(prse.errors_had)
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
         prse = JacParser(
-            root_ir=JacSource(self.file_to_str(filename), mod_path=filename),
+            root_ir=JacSource(self.file_to_str(filename), mod_path=filename), prog=None
         )
         # A list of files where the errors are expected.
         files_expected_errors = [
@@ -37,7 +37,9 @@ class TestLarkParser(TestCaseMicroSuite):
 
     def test_parser_fam(self) -> None:
         """Parse micro jac file."""
-        prse = JacParser(root_ir=JacSource(self.load_fixture("fam.jac"), mod_path=""))
+        prse = JacParser(
+            root_ir=JacSource(self.load_fixture("fam.jac"), mod_path=""), prog=None
+        )
         self.assertFalse(prse.errors_had)
 
     def test_staticmethod_checks_out(self) -> None:
@@ -46,7 +48,8 @@ class TestLarkParser(TestCaseMicroSuite):
             root_ir=JacSource(
                 self.load_fixture("staticcheck.jac"),
                 mod_path="",
-            )
+            ),
+            prog=None,
         )
         out = prse.root_ir.pp()
         self.assertFalse(prse.errors_had)
@@ -54,13 +57,16 @@ class TestLarkParser(TestCaseMicroSuite):
 
     def test_parser_kwesc(self) -> None:
         """Parse micro jac file."""
-        prse = JacParser(root_ir=JacSource(self.load_fixture("kwesc.jac"), mod_path=""))
+        prse = JacParser(
+            root_ir=JacSource(self.load_fixture("kwesc.jac"), mod_path=""), prog=None
+        )
         self.assertFalse(prse.errors_had)
 
     def test_parser_mod_doc_test(self) -> None:
         """Parse micro jac file."""
         prse = JacParser(
-            root_ir=JacSource(self.load_fixture("mod_doc_test.jac"), mod_path="")
+            root_ir=JacSource(self.load_fixture("mod_doc_test.jac"), mod_path=""),
+            prog=None,
         )
         self.assertFalse(prse.errors_had)
 

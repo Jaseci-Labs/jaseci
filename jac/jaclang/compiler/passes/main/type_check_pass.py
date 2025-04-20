@@ -25,8 +25,7 @@ class JacTypeCheckPass(Pass):
             / "mypy"
         )
         assert isinstance(self.root_ir, ast.Module)
-        assert self.root_ir.jac_prog is not None
-        self.__modules = list(self.root_ir.jac_prog.modules.values())
+        self.__modules = list(self.prog.modules.values())
         self.terminate()
         return super().before_pass()
 

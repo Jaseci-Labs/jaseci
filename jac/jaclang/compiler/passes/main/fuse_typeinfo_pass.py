@@ -55,7 +55,6 @@ class FuseTypeInfoPass(Pass):
 
     def __set_type_sym_table_link(self, node: ast.AstSymbolNode) -> None:
         assert isinstance(self.root_ir, ast.Module)
-        assert self.root_ir.jac_prog is not None
 
         sym_type = node.expr_type
         if re.match(r"builtins.(list|dict|tuple)", sym_type):
@@ -217,10 +216,9 @@ class FuseTypeInfoPass(Pass):
         if isinstance(node.parent, ast.AtomTrailer) and node is node.parent.right:
             return
         assert isinstance(self.root_ir, ast.Module)
-        assert self.root_ir.jac_prog is not None
 
         builtins_sym_tab = None
-        for mod in self.root_ir.jac_prog.modules.values():
+        for mod in self.prog.modules.values():
             if mod.name == "builtins":
                 builtins_sym_tab = mod.sym_tab
 
@@ -666,9 +664,9 @@ class FuseTypeInfoPass(Pass):
 
     def __get_parent_symtab(self, typ: str) -> Optional[SymbolTable]:
         assert isinstance(self.root_ir, ast.Module)
-        assert self.root_ir.jac_prog is not None
+        assert self.prog is not None
 
-        for mod_ast in self.root_ir.jac_prog.modules.values():
+        for mod_ast in self.prog.modules.values():
             mod_table = mod_ast.sym_tab
             if mod_table.name == typ.split(".")[0]:
                 return mod_table
