@@ -139,11 +139,11 @@ def get_object(
     base = base if base else "./"
     mod = mod[:-4]
 
-    mach = JacMachineState(base, session=session)
+    __jac_mach__ = JacMachineState(base, session=session)
 
     if filename.endswith(".jac"):
         Jac.jac_import(
-            mach=mach,
+            mach=__jac_mach__,
             target=mod,
             base_path=base,
             cachable=cache,
@@ -152,11 +152,11 @@ def get_object(
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
             Jac.attach_program(
-                mach,
+                __jac_mach__,
                 pickle.load(f),
             )
             Jac.jac_import(
-                mach=mach,
+                mach=__jac_mach__,
                 target=mod,
                 base_path=base,
                 cachable=cache,
@@ -166,12 +166,12 @@ def get_object(
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
     data = {}
-    obj = Jac.get_object(mach, id)
+    obj = Jac.get_object(__jac_mach__, id)
     if obj:
         data = obj.__jac__.__getstate__()
     else:
         print(f"Object with id {id} not found.", file=sys.stderr)
-    mach.close_exec_ctx()
+    __jac_mach__.close_exec_ctx()
     return data
 
 
