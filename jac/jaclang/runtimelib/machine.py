@@ -6,6 +6,7 @@ import os
 import types
 
 from jaclang.compiler.program import JacProgram
+from jaclang.runtimelib.context import ExecutionContext
 from jaclang.utils.log import logging
 
 
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 class JacMachineState:
     """JacMachine to handle the VM-related functionalities and loaded programs."""
 
-    def __init__(self, base_path: str = "") -> None:
+    def __init__(self, base_path: str = "", session: str = "", root: str = "") -> None:
         """Initialize the JacMachine object."""
         self.loaded_modules: dict[str, types.ModuleType] = {}
         if not base_path:
@@ -27,4 +28,5 @@ class JacMachineState:
             if not os.path.isdir(base_path)
             else os.path.abspath(base_path)
         )
+        self.exec_ctx = ExecutionContext(mach=self, session=session, root=root)
         self.jac_program: JacProgram = JacProgram()

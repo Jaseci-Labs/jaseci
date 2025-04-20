@@ -5,10 +5,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pickle import dumps
 from shelve import Shelf, open
-from typing import Callable, Generator, Generic, Iterable, TypeVar
+from typing import Callable, Generator, Generic, Iterable, TYPE_CHECKING, TypeVar
 from uuid import UUID
 
 from .architype import Anchor, NodeAnchor, Root, TANCH
+
+if TYPE_CHECKING:
+    from jaclang.runtimelib.machine import JacMachineState
 
 ID = TypeVar("ID")
 
@@ -17,6 +20,7 @@ ID = TypeVar("ID")
 class Memory(Generic[ID, TANCH]):
     """Generic Memory Handler."""
 
+    mach: JacMachineState
     __mem__: dict[ID, TANCH] = field(default_factory=dict)
     __gc__: set[TANCH] = field(default_factory=set)
 
@@ -76,9 +80,9 @@ class ShelfStorage(Memory[UUID, Anchor]):
 
     __shelf__: Shelf[Anchor] | None = None
 
-    def __init__(self, session: str | None = None) -> None:
+    def __init__(self, mach: JacMachineState, session: str | None = None) -> None:
         """Initialize memory handler."""
-        super().__init__()
+        super().__init__(mach=mach)
         self.__shelf__ = open(session) if session else None  # noqa: SIM115
 
     def close(self) -> None:
@@ -116,14 +120,14 @@ class ShelfStorage(Memory[UUID, Anchor]):
                             isinstance(p_d, NodeAnchor)
                             and isinstance(d, NodeAnchor)
                             and p_d.edges != d.edges
-                            and Jac.check_connect_access(d)
+                            and Jac.check_connect_access(self.mach, d)
                         ):
                             if not d.edges and not isinstance(d.architype, Root):
                                 self.__shelf__.pop(_id, None)
                                 continue
                             p_d.edges = d.edges
 
-                        if Jac.check_write_access(d):
+                        if Jac.check_write_access(self.mach, d):
                             if hash(dumps(p_d.access)) != hash(dumps(d.access)):
                                 p_d.access = d.access
                             if hash(dumps(p_d.architype)) != hash(dumps(d.architype)):

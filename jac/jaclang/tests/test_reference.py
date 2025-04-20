@@ -52,7 +52,6 @@ class JacReferenceTests(TestCase):
         """Test file."""
 
         def execute_and_capture_output(code: str | bytes, filename: str = "") -> str:
-            ExecutionContext.global_system_root().edges.clear()
             f = io.StringIO()
             with redirect_stdout(f):
                 exec(
