@@ -22,7 +22,6 @@ class JacLanguageTests(TestCase):
 
     def setUp(self) -> None:
         """Set up test."""
-        ExecutionContext.global_system_root().edges.clear()
         self.mach = JacMachineState(self.fixture_abs_path("./"))
         Jac.attach_program(
             self.mach,

@@ -86,9 +86,7 @@ def run(
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
-    mach = JacMachineState(base)
-
-    jctx = ExecutionContext.create(session=session)
+    mach = JacMachineState(base, session=session)
 
     if filename.endswith(".jac"):
         try:
@@ -119,9 +117,8 @@ def run(
             print(e, file=sys.stderr)
 
     else:
-        jctx.close()
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
-    jctx.close()
+    mach.close_exec_ctx()
 
 
 @cmd_registry.register
@@ -142,12 +139,11 @@ def get_object(
     base = base if base else "./"
     mod = mod[:-4]
 
-    jctx = ExecutionContext.create(session=session)
-    mach = JacMachineState(base)
+    __jac_mach__ = JacMachineState(base, session=session)
 
     if filename.endswith(".jac"):
         Jac.jac_import(
-            mach=mach,
+            mach=__jac_mach__,
             target=mod,
             base_path=base,
             cachable=cache,
@@ -156,28 +152,26 @@ def get_object(
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
             Jac.attach_program(
-                mach,
+                __jac_mach__,
                 pickle.load(f),
             )
             Jac.jac_import(
-                mach=mach,
+                mach=__jac_mach__,
                 target=mod,
                 base_path=base,
                 cachable=cache,
                 override_name="__main__" if main else None,
             )
     else:
-        jctx.close()
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
     data = {}
-    obj = Jac.get_object(id)
+    obj = Jac.get_object(__jac_mach__, id)
     if obj:
         data = obj.__jac__.__getstate__()
     else:
         print(f"Object with id {id} not found.", file=sys.stderr)
-
-    jctx.close()
+    __jac_mach__.close_exec_ctx()
     return data
 
 
@@ -263,12 +257,11 @@ def enter(
     base = base if base else "./"
     mod = mod[:-4]
 
-    jctx = ExecutionContext.create(session=session, root=root)
-    mach = JacMachineState(base)
+    __jac_mach__ = JacMachineState(base, session=session, root=root)
 
     if filename.endswith(".jac"):
         ret_module = Jac.jac_import(
-            mach=mach,
+            mach=__jac_mach__,
             target=mod,
             base_path=base,
             cachable=cache,
@@ -277,18 +270,17 @@ def enter(
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
             Jac.attach_program(
-                mach,
+                __jac_mach__,
                 pickle.load(f),
             )
             ret_module = Jac.jac_import(
-                mach=mach,
+                mach=__jac_mach__,
                 target=mod,
                 base_path=base,
                 cachable=cache,
                 override_name="__main__" if main else None,
             )
     else:
-        jctx.close()
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
     if ret_module:
@@ -298,14 +290,13 @@ def enter(
         else:
             architype = getattr(loaded_mod, entrypoint)(*args)
 
-            jctx.set_entry_node(node)
+            __jac_mach__.exec_ctx.set_entry_node(node)
 
             if isinstance(architype, WalkerArchitype) and Jac.check_read_access(
-                jctx.entry_node
+                __jac_mach__.exec_ctx.entry_node
             ):
-                Jac.spawn(jctx.entry_node.architype, architype)
-
-    jctx.close()
+                Jac.spawn(__jac_mach__.exec_ctx.entry_node.architype, architype)
+    __jac_mach__.close_exec_ctx()
 
 
 @cmd_registry.register
@@ -330,7 +321,6 @@ def test(
 
     jac test => jac test -d .
     """
-    jctx = ExecutionContext.create()
     mach = JacMachineState()
 
     failcount = Jac.run_test(
@@ -343,8 +333,6 @@ def test(
         directory=directory,
         verbose=verbose,
     )
-
-    jctx.close()
 
     if failcount:
         raise SystemExit(f"Tests failed: {failcount}")
@@ -450,10 +438,8 @@ def dot(
     base = base if base else "./"
     mod = mod[:-4]
 
-    jctx = ExecutionContext.create(session=session)
-
     if filename.endswith(".jac"):
-        jac_machine = JacMachineState(base)
+        jac_machine = JacMachineState(base, session=session)
         Jac.jac_import(
             mach=jac_machine, target=mod, base_path=base, override_name="__main__"
         )
@@ -475,7 +461,6 @@ def dot(
             import traceback
 
             traceback.print_exc()
-            jctx.close()
             return
         file_name = saveto if saveto else f"{mod}.dot"
         with open(file_name, "w") as file:
@@ -483,8 +468,6 @@ def dot(
         print(f">>> Graph content saved to {os.path.join(os.getcwd(), file_name)}")
     else:
         print("Not a .jac file.", file=sys.stderr)
-
-    jctx.close()
 
 
 @cmd_registry.register

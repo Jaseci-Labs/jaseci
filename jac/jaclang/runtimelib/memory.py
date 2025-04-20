@@ -5,10 +5,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pickle import dumps
 from shelve import Shelf, open
-from typing import Callable, Generator, Generic, Iterable, TypeVar
+from typing import Callable, Generator, Generic, Iterable, TYPE_CHECKING, TypeVar
 from uuid import UUID
 
 from .architype import Anchor, NodeAnchor, Root, TANCH
+
+if TYPE_CHECKING:
+    from jaclang.runtimelib.machine import JacMachineState
 
 ID = TypeVar("ID")
 
@@ -17,6 +20,7 @@ ID = TypeVar("ID")
 class Memory(Generic[ID, TANCH]):
     """Generic Memory Handler."""
 
+    mach: JacMachineState
     __mem__: dict[ID, TANCH] = field(default_factory=dict)
     __gc__: set[TANCH] = field(default_factory=set)
 
@@ -76,9 +80,9 @@ class ShelfStorage(Memory[UUID, Anchor]):
 
     __shelf__: Shelf[Anchor] | None = None
 
-    def __init__(self, session: str | None = None) -> None:
+    def __init__(self, mach: JacMachineState, session: str | None = None) -> None:
         """Initialize memory handler."""
-        super().__init__()
+        super().__init__(mach=mach)
         self.__shelf__ = open(session) if session else None  # noqa: SIM115
 
     def close(self) -> None:

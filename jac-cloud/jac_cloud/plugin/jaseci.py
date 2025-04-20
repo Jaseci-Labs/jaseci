@@ -5,7 +5,12 @@ from typing import Callable, Type
 
 from jaclang.compiler.constant import EdgeDir
 from jaclang.runtimelib.architype import Architype
-from jaclang.runtimelib.feature import JacFeature as Jac, JacFeatureImpl, hookimpl
+from jaclang.runtimelib.feature import (
+    JacFeature as Jac,
+    JacFeatureImpl,
+    JacMachineState,
+    hookimpl,
+)
 from jaclang.runtimelib.utils import all_issubclass
 
 from ..core.architype import (
@@ -162,6 +167,7 @@ class JacNodePlugin:
     @staticmethod
     @hookimpl
     def get_edges(
+        mach: JacMachineState,
         node: NodeAnchor,
         dir: EdgeDir,
         filter: Callable[[EdgeArchitype], bool] | None,
@@ -172,12 +178,17 @@ class JacNodePlugin:
             JaseciContext.get().mem.populate_data(node.edges)
 
         return JacFeatureImpl.get_edges(
-            node=node, dir=dir, filter=filter, target_obj=target_obj  # type: ignore[arg-type, return-value]
+            mach=mach,
+            node=node,
+            dir=dir,
+            filter=filter,
+            target_obj=target_obj,  # type: ignore[arg-type, return-value]
         )
 
     @staticmethod
     @hookimpl
     def edges_to_nodes(
+        mach: JacMachineState,
         node: NodeAnchor,
         dir: EdgeDir,
         filter: Callable[[EdgeArchitype], bool] | None,
@@ -188,7 +199,11 @@ class JacNodePlugin:
             JaseciContext.get().mem.populate_data(node.edges)
 
         return JacFeatureImpl.edges_to_nodes(
-            node=node, dir=dir, filter=filter, target_obj=target_obj  # type: ignore[arg-type, return-value]
+            mach=mach,
+            node=node,
+            dir=dir,
+            filter=filter,
+            target_obj=target_obj,  # type: ignore[arg-type, return-value]
         )
 
 
@@ -239,10 +254,10 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
-    def reset_graph(root: Root | None = None) -> int:
+    def reset_graph(mach: JacMachineState, root: Root | None = None) -> int:
         """Purge current or target graph."""
         if not FastAPI.is_enabled():
-            return JacFeatureImpl.reset_graph(root=root)  # type: ignore[arg-type]
+            return JacFeatureImpl.reset_graph(mach=mach, root=root)  # type: ignore[arg-type]
 
         ctx = JaseciContext.get()
         ranchor = root.__jac__ if root else ctx.root
@@ -327,10 +342,10 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
-    def get_object(id: str) -> Architype | None:
+    def get_object(mach: JacMachineState, id: str) -> Architype | None:
         """Get object by id."""
         if not FastAPI.is_enabled():
-            return JacFeatureImpl.get_object(id=id)
+            return JacFeatureImpl.get_object(mach, id=id)
 
         with suppress(ValueError):
             if isinstance(architype := BaseAnchor.ref(id).architype, Architype):
@@ -462,7 +477,6 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
         """Destroy object."""
         if not FastAPI.is_enabled():
             return JacFeatureImpl.destroy(obj=obj)  # type:ignore[arg-type]
-
         anchor = obj.__jac__ if isinstance(obj, Architype) else obj
 
         if (

@@ -22,7 +22,8 @@ def dotgen(
     """Print the dot graph."""
     from jaclang.runtimelib.feature import JacFeature as Jac
 
-    root = Jac.root()
+    mach = Jac.py_get_jac_machine()
+    root = mach.exec_ctx.get_root()
     node = node if node is not None else root
     depth = depth if depth is not None else -1
     traverse = traverse if traverse is not None else False
@@ -49,7 +50,7 @@ def jid(obj: Architype) -> str:
 
 def jobj(id: str) -> Architype | None:
     """Get the object from the id."""
-    return Jac.get_object(id)
+    return Jac.get_object(Jac.py_get_jac_machine(), id)
 
 
 __all__ = [

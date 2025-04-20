@@ -9,8 +9,11 @@ from functools import cached_property
 from logging import getLogger
 from pickle import dumps
 from types import UnionType
-from typing import Any, Callable, ClassVar, Optional, TypeVar
+from typing import Any, Callable, ClassVar, Optional, TYPE_CHECKING, TypeVar
 from uuid import UUID, uuid4
+
+if TYPE_CHECKING:
+    from jaclang.runtimelib.machine import JacMachineState
 
 
 logger = getLogger(__name__)
@@ -77,6 +80,11 @@ class Anchor:
     persistent: bool = False
     hash: int = 0
 
+    def __post_init__(self) -> None:
+        from jaclang.runtimelib.feature import JacFeature as Jac
+
+        self.mach = Jac.py_get_jac_machine()
+
     def is_populated(self) -> bool:
         """Check if state."""
         return "architype" in self.__dict__
@@ -93,7 +101,8 @@ class Anchor:
         """Retrieve the Architype from db and return."""
         from jaclang.runtimelib.feature import JacFeature as Jac
 
-        jsrc = Jac.get_context().mem
+        self.mach = Jac.py_get_jac_machine()
+        jsrc = self.mach.exec_ctx.mem
 
         if anchor := jsrc.find_by_id(self.id):
             self.__dict__.update(anchor.__dict__)

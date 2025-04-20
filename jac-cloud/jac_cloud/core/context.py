@@ -9,7 +9,7 @@ from bson import ObjectId
 
 from fastapi import Request, WebSocket
 
-from jaclang.runtimelib.context import EXECUTION_CONTEXT, ExecutionContext
+from jaclang.runtimelib.context import ExecutionContext
 
 from .architype import (
     AccessLevel,
@@ -72,7 +72,7 @@ class JaseciContext(ExecutionContext):
     ) -> "JaseciContext":
         """Create JacContext."""
         ctx = JaseciContext()
-        ctx.base = EXECUTION_CONTEXT.get(None)
+        ctx.base = ExecutionContext()
         ctx.connection = connection
         ctx.mem = MongoDB()
         ctx.reports = []
