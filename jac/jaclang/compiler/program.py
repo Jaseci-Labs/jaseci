@@ -107,12 +107,12 @@ class JacProgram:
         # Creating a new JacProgram and attaching it to top module
         top_mod: ast.Module = ast_ret.root_ir
         top_mod.jac_prog = self
-        top_mod.jac_prog.last_imported.append(ast_ret.root_ir)
-        top_mod.jac_prog.modules[ast_ret.root_ir.loc.mod_path] = ast_ret.root_ir
+        self.last_imported.append(ast_ret.root_ir)
+        self.modules[ast_ret.root_ir.loc.mod_path] = ast_ret.root_ir
 
         # Run JacImportPass & SymTabBuildPass on all imported Jac Programs
-        while len(top_mod.jac_prog.last_imported) > 0:
-            mod = top_mod.jac_prog.last_imported.pop()
+        while len(self.last_imported) > 0:
+            mod = self.last_imported.pop()
             self.jac_ir_to_pass(
                 ir=mod, schedule=[JacImportPass, SymTabBuildPass], target=target
             )
@@ -127,7 +127,7 @@ class JacProgram:
             return ast_ret
 
         # Link all Jac symbol tables created
-        for mod in top_mod.jac_prog.modules.values():
+        for mod in self.modules.values():
             SymTabLinkPass(ir_root=mod, prior=ast_ret)
 
         # Run all passes till PyBytecodeGenPass
@@ -144,7 +144,7 @@ class JacProgram:
             if final_pass:
                 ast_ret = final_pass(mod, prior=ast_ret)
 
-        for mod in top_mod.jac_prog.modules.values():
+        for mod in self.modules.values():
             run_schedule(mod, schedule=schedule)
 
         # Check if we need to run without type checking then just return
@@ -159,24 +159,24 @@ class JacProgram:
         #     ast_ret.ir = top_mod
         #     return ast_ret
 
-        for mod in top_mod.jac_prog.modules.values():
+        for mod in self.modules.values():
             PyCollectDepsPass(mod, prior=ast_ret)
 
-        for mod in top_mod.jac_prog.modules.values():
-            top_mod.jac_prog.last_imported.append(mod)
+        for mod in self.modules.values():
+            self.last_imported.append(mod)
         # Run PyImportPass
-        while len(top_mod.jac_prog.last_imported) > 0:
-            mod = top_mod.jac_prog.last_imported.pop()
+        while len(self.last_imported) > 0:
+            mod = self.last_imported.pop()
             self.jac_ir_to_pass(ir=mod, schedule=[PyImportPass], target=target)
 
         # Link all Jac symbol tables created
-        for mod in top_mod.jac_prog.modules.values():
+        for mod in self.modules.values():
             SymTabLinkPass(ir_root=mod, prior=ast_ret)
 
-        for mod in top_mod.jac_prog.modules.values():
+        for mod in self.modules.values():
             DefUsePass(mod, prior=ast_ret)
 
-        for mod in top_mod.jac_prog.modules.values():
+        for mod in self.modules.values():
             run_schedule(mod, schedule=type_checker_sched)
 
         ast_ret.root_ir = top_mod
@@ -203,12 +203,12 @@ class JacProgram:
         # Creating a new JacProgram and attaching it to top module
         top_mod: ast.Module = ast_ret.root_ir
         top_mod.jac_prog = self
-        top_mod.jac_prog.last_imported.append(ast_ret.root_ir)
-        top_mod.jac_prog.modules[ast_ret.root_ir.loc.mod_path] = ast_ret.root_ir
+        self.last_imported.append(ast_ret.root_ir)
+        self.modules[ast_ret.root_ir.loc.mod_path] = ast_ret.root_ir
 
         # Run JacImportPass & SymTabBuildPass on all imported Jac Programs
-        while len(top_mod.jac_prog.last_imported) > 0:
-            mod = top_mod.jac_prog.last_imported.pop()
+        while len(self.last_imported) > 0:
+            mod = self.last_imported.pop()
             self.jac_ir_to_pass(
                 ir=mod, schedule=[JacImportPass, SymTabBuildPass], target=target
             )
@@ -223,7 +223,7 @@ class JacProgram:
             return ast_ret
 
         # Link all Jac symbol tables created
-        for mod in top_mod.jac_prog.modules.values():
+        for mod in self.modules.values():
             SymTabLinkPass(ir_root=mod, prior=ast_ret)
 
         # Run all passes till PyBytecodeGenPass
@@ -240,7 +240,7 @@ class JacProgram:
             if final_pass:
                 ast_ret = final_pass(mod, prior=ast_ret)
 
-        for mod in top_mod.jac_prog.modules.values():
+        for mod in self.modules.values():
             run_schedule(mod, schedule=schedule)
 
         # Check if we need to run without type checking then just return
@@ -255,24 +255,24 @@ class JacProgram:
         #     ast_ret.ir = top_mod
         #     return ast_ret
 
-        for mod in top_mod.jac_prog.modules.values():
+        for mod in self.modules.values():
             PyCollectDepsPass(mod, prior=ast_ret)
 
-        for mod in top_mod.jac_prog.modules.values():
-            top_mod.jac_prog.last_imported.append(mod)
+        for mod in self.modules.values():
+            self.last_imported.append(mod)
         # Run PyImportPass
-        while len(top_mod.jac_prog.last_imported) > 0:
-            mod = top_mod.jac_prog.last_imported.pop()
+        while len(self.last_imported) > 0:
+            mod = self.last_imported.pop()
             self.jac_ir_to_pass(ir=mod, schedule=[PyImportPass], target=target)
 
         # Link all Jac symbol tables created
-        for mod in top_mod.jac_prog.modules.values():
+        for mod in self.modules.values():
             SymTabLinkPass(ir_root=mod, prior=ast_ret)
 
-        for mod in top_mod.jac_prog.modules.values():
+        for mod in self.modules.values():
             DefUsePass(mod, prior=ast_ret)
 
-        for mod in top_mod.jac_prog.modules.values():
+        for mod in self.modules.values():
             run_schedule(mod, schedule=type_checker_sched)
 
         ast_ret.root_ir = top_mod
