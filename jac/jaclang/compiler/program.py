@@ -93,93 +93,11 @@ class JacProgram:
 
         source = ast.JacSource(jac_str, mod_path=file_path)
         ast_ret: Pass = JacParser(root_ir=source, prog=self)
-        # TODO: This function below has tons of tech debt that should go away
-        # when these functions become methods of JacProgram.
-        SubNodeTabPass(ast_ret.root_ir, ast_ret, prog=self)  # TODO: Get rid of this one
-
-        # Only return the parsed module when the schedules are empty
-        # or the target is SubNodeTabPass
-        if len(schedule) == 0 or target == SubNodeTabPass:
-            return ast_ret
-
-        assert isinstance(ast_ret.root_ir, ast.Module)
-
-        # Creating a new JacProgram and attaching it to top module
-        top_mod: ast.Module = ast_ret.root_ir
-        self.last_imported.append(ast_ret.root_ir)
-        self.modules[ast_ret.root_ir.loc.mod_path] = ast_ret.root_ir
-
-        # Run JacImportPass & SymTabBuildPass on all imported Jac Programs
-        while len(self.last_imported) > 0:
-            mod = self.last_imported.pop()
-            self.jac_ir_to_pass(
-                ir=mod, schedule=[JacImportPass, SymTabBuildPass], target=target
-            )
-
-        # If there is syntax error, no point in processing in further passes.
-        if len(ast_ret.errors_had) != 0:
-            return ast_ret
-
-        # TODO: we need a elegant way of doing this [should be genaralized].
-        if target in (JacImportPass, SymTabBuildPass):
-            ast_ret.root_ir = top_mod
-            return ast_ret
-
-        # Link all Jac symbol tables created
-        for mod in self.modules.values():
-            SymTabLinkPass(ir_root=mod, prior=ast_ret, prog=self)
-
-        # Run all passes till PyBytecodeGenPass
-        # Here the passes will run one by one on the imported modules instead
-        # of running on  a huge AST
-        def run_schedule(mod: ast.Module, schedule: list[type[Pass]]) -> None:
-            nonlocal ast_ret
-            final_pass: Optional[type[Pass]] = None
-            for current_pass in schedule:
-                if current_pass in (target, PyBytecodeGenPass):
-                    final_pass = current_pass
-                    break
-                ast_ret = current_pass(mod, prior=ast_ret, prog=self)
-            if final_pass:
-                ast_ret = final_pass(mod, prior=ast_ret, prog=self)
-
-        for mod in self.modules.values():
-            run_schedule(mod, schedule=schedule)
-
-        # Check if we need to run without type checking then just return
-        if "JAC_NO_TYPECHECK" in os.environ or target in py_code_gen:
-            ast_ret.root_ir = top_mod
-            return ast_ret
-
-        # Run TypeCheckingPass on the top module
-        JacTypeCheckPass(top_mod, prior=ast_ret, prog=self)
-
-        # if "JAC_VSCE" not in os.environ:
-        #     ast_ret.ir = top_mod
-        #     return ast_ret
-
-        for mod in self.modules.values():
-            PyCollectDepsPass(mod, prior=ast_ret, prog=self)
-
-        for mod in self.modules.values():
-            self.last_imported.append(mod)
-        # Run PyImportPass
-        while len(self.last_imported) > 0:
-            mod = self.last_imported.pop()
-            self.jac_ir_to_pass(ir=mod, schedule=[PyImportPass], target=target)
-
-        # Link all Jac symbol tables created
-        for mod in self.modules.values():
-            SymTabLinkPass(ir_root=mod, prior=ast_ret, prog=self)
-
-        for mod in self.modules.values():
-            DefUsePass(mod, prior=ast_ret, prog=self)
-
-        for mod in self.modules.values():
-            run_schedule(mod, schedule=type_checker_sched)
-
-        ast_ret.root_ir = top_mod
-        return ast_ret
+        return self.jac_pass_to_pass(
+            in_pass=ast_ret,
+            target=target,
+            schedule=schedule,
+        )
 
     def jac_pass_to_pass(
         self,
