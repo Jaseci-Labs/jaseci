@@ -30,3 +30,9 @@ class JacMachineState:
         )
         self.exec_ctx = ExecutionContext(mach=self, session=session, root=root)
         self.jac_program: JacProgram = JacProgram()
+
+    def close_exec_ctx(self) -> None:
+        """Close the execution context."""
+        self.exec_ctx.close()
+        self.loaded_modules.clear()
+        self.exec_ctx = ExecutionContext(mach=self)

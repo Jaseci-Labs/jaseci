@@ -92,12 +92,12 @@ walker traverse {
 
 walker purge {
     can purge with `root entry {
-        print(Jac.reset_graph());
+        print(Jac.reset_graph(Jac.py_get_jac_machine()));
     }
 }
 
 walker check {
     can enter with `root entry {
-        print(len(Jac.get_context().mem.__shelf__.values()));
+        print(len(Jac.py_get_jac_machine().exec_ctx.mem.__shelf__.values()));
     }
 }

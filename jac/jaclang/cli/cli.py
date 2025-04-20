@@ -118,6 +118,7 @@ def run(
 
     else:
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
+    mach.close_exec_ctx()
 
 
 @cmd_registry.register
@@ -170,7 +171,7 @@ def get_object(
         data = obj.__jac__.__getstate__()
     else:
         print(f"Object with id {id} not found.", file=sys.stderr)
-
+    mach.close_exec_ctx()
     return data
 
 
@@ -256,11 +257,11 @@ def enter(
     base = base if base else "./"
     mod = mod[:-4]
 
-    mach = JacMachineState(base, session=session, root=root)
+    __jac_mach__ = JacMachineState(base, session=session, root=root)
 
     if filename.endswith(".jac"):
         ret_module = Jac.jac_import(
-            mach=mach,
+            mach=__jac_mach__,
             target=mod,
             base_path=base,
             cachable=cache,
@@ -269,11 +270,11 @@ def enter(
     elif filename.endswith(".jir"):
         with open(filename, "rb") as f:
             Jac.attach_program(
-                mach,
+                __jac_mach__,
                 pickle.load(f),
             )
             ret_module = Jac.jac_import(
-                mach=mach,
+                mach=__jac_mach__,
                 target=mod,
                 base_path=base,
                 cachable=cache,
@@ -289,13 +290,13 @@ def enter(
         else:
             architype = getattr(loaded_mod, entrypoint)(*args)
 
-            mach.exec_ctx.set_entry_node(node)
+            __jac_mach__.exec_ctx.set_entry_node(node)
 
             if isinstance(architype, WalkerArchitype) and Jac.check_read_access(
-                mach, mach.exec_ctx.entry_node
+                __jac_mach__.exec_ctx.entry_node
             ):
-                __jac_mach__ = mach
                 Jac.spawn(__jac_mach__.exec_ctx.entry_node.architype, architype)
+    __jac_mach__.close_exec_ctx()
 
 
 @cmd_registry.register

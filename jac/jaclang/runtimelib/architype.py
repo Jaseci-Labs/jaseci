@@ -99,6 +99,9 @@ class Anchor:
 
     def populate(self) -> None:
         """Retrieve the Architype from db and return."""
+        from jaclang.runtimelib.feature import JacFeature as Jac
+
+        self.mach = Jac.py_get_jac_machine()
         jsrc = self.mach.exec_ctx.mem
 
         if anchor := jsrc.find_by_id(self.id):
@@ -319,7 +322,6 @@ class GenericEdge(EdgeArchitype):
 class Root(NodeArchitype):
     """Generic Root Node."""
 
-    mach: JacMachineState
     __jac_base__: ClassVar[bool] = True
 
     @cached_property

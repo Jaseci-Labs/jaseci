@@ -20,13 +20,6 @@ SUPER_ROOT_UUID = UUID("00000000-0000-0000-0000-000000000000")
 class ExecutionContext:
     """Execution Context."""
 
-    # mem: Memory
-    # reports: list[Any]
-    # custom: Any = MISSING
-    # system_root: NodeAnchor
-    # root: NodeAnchor
-    # entry_node: NodeAnchor
-
     def __init__(
         self,
         mach: JacMachineState,
@@ -41,14 +34,14 @@ class ExecutionContext:
         if not isinstance(
             system_root := self.mem.find_by_id(SUPER_ROOT_UUID), NodeAnchor
         ):
-            system_root = cast(NodeAnchor, Root(mach=__jac_mach__).__jac__)
+            system_root = cast(NodeAnchor, Root().__jac__)
             system_root.id = SUPER_ROOT_UUID
             self.mem.set(system_root.id, system_root)
 
         self.system_root = system_root
 
         self.entry_node = self.root = self.init_anchor(root, self.system_root)
-        sr_arch = Root(mach=mach)
+        sr_arch = Root()
         self.system_root = sr_arch.__jac__
         self.custom: Any = MISSING
         self.system_root.id = SUPER_ROOT_UUID
@@ -77,6 +70,10 @@ class ExecutionContext:
     def global_system_root(self) -> NodeAnchor:
         """Get global system root."""
         return self.system_root
+
+    def close(self) -> None:
+        """Close the context."""
+        self.mem.close()
 
 
 class JacTestResult(unittest.TextTestResult):

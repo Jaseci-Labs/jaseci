@@ -120,14 +120,14 @@ class ShelfStorage(Memory[UUID, Anchor]):
                             isinstance(p_d, NodeAnchor)
                             and isinstance(d, NodeAnchor)
                             and p_d.edges != d.edges
-                            and Jac.check_connect_access(self.mach, d)
+                            and Jac.check_connect_access(d)
                         ):
                             if not d.edges and not isinstance(d.architype, Root):
                                 self.__shelf__.pop(_id, None)
                                 continue
                             p_d.edges = d.edges
 
-                        if Jac.check_write_access(self.mach, d):
+                        if Jac.check_write_access(d):
                             if hash(dumps(p_d.access)) != hash(dumps(d.access)):
                                 p_d.access = d.access
                             if hash(dumps(p_d.architype)) != hash(dumps(d.architype)):

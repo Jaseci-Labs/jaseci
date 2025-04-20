@@ -116,10 +116,10 @@ class JacAccessValidationPlugin:
 
     @staticmethod
     @hookimpl
-    def check_access_level(mach: JacMachineState, to: Anchor) -> AccessLevel:
+    def check_access_level(to: Anchor) -> AccessLevel:
         """Access validation."""
         if not FastAPI.is_enabled():
-            return JacFeatureImpl.check_access_level(mach=mach, to=to)
+            return JacFeatureImpl.check_access_level(to=to)
 
         if not to.persistent:
             return AccessLevel.WRITE
@@ -245,10 +245,10 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
-    def get_context(mach: JacMachineState) -> ExecutionContext:
+    def get_context() -> ExecutionContext:
         """Get current execution context."""
         if not FastAPI.is_enabled():
-            return JacFeatureImpl.get_context(mach)
+            return JacFeatureImpl.get_context()
 
         return JaseciContext.get()
 
@@ -257,7 +257,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
     def reset_graph(mach: JacMachineState, root: Root | None = None) -> int:
         """Purge current or target graph."""
         if not FastAPI.is_enabled():
-            return JacFeatureImpl.reset_graph(mach, root=root)  # type: ignore[arg-type]
+            return JacFeatureImpl.reset_graph(mach=mach, root=root)  # type: ignore[arg-type]
 
         ctx = JaseciContext.get()
         ranchor = root.__jac__ if root else ctx.root
@@ -268,17 +268,17 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
             {"_id": {"$ne": ranchor.id}, "root": ranchor.id}
         ):
             ctx.mem.__mem__[node.id] = node
-            Jac.destroy(mach, node)
+            Jac.destroy(node)
             deleted_count += 1
 
         for edge in EdgeAnchor.Collection.find({"root": ranchor.id}):
             ctx.mem.__mem__[edge.id] = edge
-            Jac.destroy(mach, edge)
+            Jac.destroy(edge)
             deleted_count += 1
 
         for walker in WalkerAnchor.Collection.find({"root": ranchor.id}):
             ctx.mem.__mem__[walker.id] = walker
-            Jac.destroy(mach, walker)
+            Jac.destroy(walker)
             deleted_count += 1
 
         return deleted_count
@@ -295,7 +295,6 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
     @staticmethod
     @hookimpl
     def build_edge(
-        mach: JacMachineState,
         is_undirected: bool,
         conn_type: Type[EdgeArchitype] | EdgeArchitype | None,
         conn_assign: tuple[tuple, tuple] | None,
@@ -303,7 +302,6 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
         """Jac's root getter."""
         if not FastAPI.is_enabled():
             return JacFeatureImpl.build_edge(  # type:ignore[return-value]
-                mach=mach,
                 is_undirected=is_undirected,
                 conn_type=conn_type,
                 conn_assign=conn_assign,
@@ -337,7 +335,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                     else:
                         raise ValueError(f"Invalid attribute: {fld}")
             if source.persistent or target.persistent:
-                Jac.save(mach, eanch)
+                Jac.save(eanch)
             return edge  # type: ignore[return-value] # bug on mypy!!
 
         return builder
@@ -475,26 +473,25 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
-    def destroy(mach: JacMachineState, obj: Architype | Anchor | BaseAnchor) -> None:
+    def destroy(obj: Architype | Anchor | BaseAnchor) -> None:
         """Destroy object."""
         if not FastAPI.is_enabled():
-            return JacFeatureImpl.destroy(mach=mach, obj=obj)  # type:ignore[arg-type]
-
+            return JacFeatureImpl.destroy(obj=obj)  # type:ignore[arg-type]
         anchor = obj.__jac__ if isinstance(obj, Architype) else obj
 
         if (
             isinstance(anchor, BaseAnchor)
             and anchor.state.deleted is None
-            and Jac.check_write_access(mach, anchor)  # type: ignore[arg-type]
+            and Jac.check_write_access(anchor)  # type: ignore[arg-type]
         ):
             anchor.state.deleted = False
             match anchor:
                 case NodeAnchor():
                     for edge in anchor.edges:
-                        Jac.destroy(mach, edge)
+                        Jac.destroy(edge)
                 case EdgeAnchor():
                     Jac.detach(anchor)
                 case _:
                     pass
 
-            Jac.get_context(mach).mem.remove(anchor.id)
+            Jac.get_context().mem.remove(anchor.id)

@@ -79,9 +79,9 @@ class JacAccessValidation:
     """Jac Access Validation Specs."""
 
     @staticmethod
-    def elevate_root(mach: JacMachineState) -> None:
+    def elevate_root() -> None:
         """Elevate context root to system_root."""
-
+        mach = JacFeature.py_get_jac_machine()
         jctx = mach.exec_ctx
         jctx.root = jctx.system_root
 
@@ -131,12 +131,10 @@ class JacAccessValidation:
             anchor.access.all = AccessLevel.NO_ACCESS
 
     @staticmethod
-    def check_read_access(mach: JacMachineState, to: Anchor) -> bool:
+    def check_read_access(to: Anchor) -> bool:
         """Read Access Validation."""
-
         if not (
-            access_level := JacFeature.check_access_level(mach, to)
-            > AccessLevel.NO_ACCESS
+            access_level := JacFeature.check_access_level(to) > AccessLevel.NO_ACCESS
         ):
             logger.info(
                 f"Current root doesn't have read access to {to.__class__.__name__}[{to.id}]"
@@ -144,24 +142,21 @@ class JacAccessValidation:
         return access_level
 
     @staticmethod
-    def check_connect_access(mach: JacMachineState, to: Anchor) -> bool:
+    def check_connect_access(to: Anchor) -> bool:
         """Write Access Validation."""
 
-        if not (
-            access_level := JacFeature.check_access_level(mach, to) > AccessLevel.READ
-        ):
+        if not (access_level := JacFeature.check_access_level(to) > AccessLevel.READ):
             logger.info(
                 f"Current root doesn't have connect access to {to.__class__.__name__}[{to.id}]"
             )
         return access_level
 
     @staticmethod
-    def check_write_access(mach: JacMachineState, to: Anchor) -> bool:
+    def check_write_access(to: Anchor) -> bool:
         """Write Access Validation."""
 
         if not (
-            access_level := JacFeature.check_access_level(mach, to)
-            > AccessLevel.CONNECT
+            access_level := JacFeature.check_access_level(to) > AccessLevel.CONNECT
         ):
             logger.info(
                 f"Current root doesn't have write access to {to.__class__.__name__}[{to.id}]"
@@ -169,9 +164,9 @@ class JacAccessValidation:
         return access_level
 
     @staticmethod
-    def check_access_level(mach: JacMachineState, to: Anchor) -> AccessLevel:
+    def check_access_level(to: Anchor) -> AccessLevel:
         """Access validation."""
-
+        mach = JacFeature.py_get_jac_machine()
         if not to.persistent:
             return AccessLevel.WRITE
 
@@ -258,14 +253,14 @@ class JacNode:
                     dir in [EdgeDir.OUT, EdgeDir.ANY]
                     and node == source
                     and (not target_obj or target.architype in target_obj)
-                    and JacFeature.check_read_access(mach, target)
+                    and JacFeature.check_read_access(target)
                 ):
                     ret_edges.append(anchor.architype)
                 if (
                     dir in [EdgeDir.IN, EdgeDir.ANY]
                     and node == target
                     and (not target_obj or source.architype in target_obj)
-                    and JacFeature.check_read_access(mach, source)
+                    and JacFeature.check_read_access(source)
                 ):
                     ret_edges.append(anchor.architype)
         return ret_edges
@@ -292,14 +287,14 @@ class JacNode:
                     dir in [EdgeDir.OUT, EdgeDir.ANY]
                     and node == source
                     and (not target_obj or target.architype in target_obj)
-                    and JacFeature.check_read_access(mach, target)
+                    and JacFeature.check_read_access(target)
                 ):
                     ret_edges.append(target.architype)
                 if (
                     dir in [EdgeDir.IN, EdgeDir.ANY]
                     and node == target
                     and (not target_obj or source.architype in target_obj)
-                    and JacFeature.check_read_access(mach, source)
+                    and JacFeature.check_read_access(source)
                 ):
                     ret_edges.append(source.architype)
         return ret_edges
@@ -624,9 +619,9 @@ class JacBasics:
         """Set Class References."""
 
     @staticmethod
-    def get_context(mach: JacMachineState) -> ExecutionContext:
+    def get_context() -> ExecutionContext:
         """Get current execution context."""
-
+        mach = JacFeature.py_get_jac_machine()
         return mach.exec_ctx
 
     @staticmethod
@@ -648,7 +643,7 @@ class JacBasics:
 
             if loaded_anchor := mem.find_by_id(anchor.id):
                 deleted_count += 1
-                JacFeature.destroy(mach, loaded_anchor)
+                JacFeature.destroy(loaded_anchor)
 
         return deleted_count
 
@@ -986,13 +981,12 @@ class JacBasics:
         mach = JacFeature.py_get_jac_machine()
         for i in left:
             _left = i.__jac__
-            if JacFeature.check_connect_access(mach, _left):
+            if JacFeature.check_connect_access(_left):
                 for j in right:
                     _right = j.__jac__
-                    if JacFeature.check_connect_access(mach, _right):
+                    if JacFeature.check_connect_access(_right):
                         edges.append(
                             JacFeature.build_edge(
-                                mach,
                                 is_undirected=undir,
                                 conn_type=edge,
                                 conn_assign=conn_assign,
@@ -1027,10 +1021,10 @@ class JacBasics:
                         dir in [EdgeDir.OUT, EdgeDir.ANY]
                         and node == source
                         and target.architype in right
-                        and JacFeature.check_connect_access(mach, target)
+                        and JacFeature.check_connect_access(target)
                     ):
                         (
-                            JacFeature.destroy(mach, anchor)
+                            JacFeature.destroy(anchor)
                             if anchor.persistent
                             else JacFeature.detach(anchor)
                         )
@@ -1039,10 +1033,10 @@ class JacBasics:
                         dir in [EdgeDir.IN, EdgeDir.ANY]
                         and node == target
                         and source.architype in right
-                        and JacFeature.check_connect_access(mach, source)
+                        and JacFeature.check_connect_access(source)
                     ):
                         (
-                            JacFeature.destroy(mach, anchor)
+                            JacFeature.destroy(anchor)
                             if anchor.persistent
                             else JacFeature.detach(anchor)
                         )
@@ -1067,7 +1061,6 @@ class JacBasics:
 
     @staticmethod
     def build_edge(
-        mach: JacMachineState,
         is_undirected: bool,
         conn_type: Optional[Type[EdgeArchitype] | EdgeArchitype],
         conn_assign: Optional[tuple[tuple, tuple]],
@@ -1094,18 +1087,17 @@ class JacBasics:
                     else:
                         raise ValueError(f"Invalid attribute: {fld}")
             if source.persistent or target.persistent:
-                JacFeature.save(mach, eanch)
+                JacFeature.save(eanch)
             return edge
 
         return builder
 
     @staticmethod
     def save(
-        mach: JacMachineState,
         obj: Architype | Anchor,
     ) -> None:
         """Destroy object."""
-
+        mach = JacFeature.py_get_jac_machine()
         anchor = obj.__jac__ if isinstance(obj, Architype) else obj
 
         jctx = mach.exec_ctx
@@ -1119,29 +1111,26 @@ class JacBasics:
             case NodeAnchor():
                 for ed in anchor.edges:
                     if ed.is_populated() and not ed.persistent:
-                        JacFeature.save(mach, ed)
+                        JacFeature.save(ed)
             case EdgeAnchor():
                 if (src := anchor.source) and src.is_populated() and not src.persistent:
-                    JacFeature.save(mach, src)
+                    JacFeature.save(src)
                 if (trg := anchor.target) and trg.is_populated() and not trg.persistent:
-                    JacFeature.save(mach, trg)
+                    JacFeature.save(trg)
             case _:
                 pass
 
     @staticmethod
-    def destroy(
-        mach: JacMachineState,
-        obj: Architype | Anchor,
-    ) -> None:
+    def destroy(obj: Architype | Anchor) -> None:
         """Destroy object."""
-
+        mach = JacFeature.py_get_jac_machine()
         anchor = obj.__jac__ if isinstance(obj, Architype) else obj
 
-        if JacFeature.check_write_access(mach, anchor):
+        if JacFeature.check_write_access(anchor):
             match anchor:
                 case NodeAnchor():
                     for edge in anchor.edges:
-                        JacFeature.destroy(mach, edge)
+                        JacFeature.destroy(edge)
                 case EdgeAnchor():
                     JacFeature.detach(anchor)
                 case _:
