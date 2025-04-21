@@ -8,14 +8,13 @@ from dataclasses import MISSING
 from typing import Any, Callable, Optional, cast
 from uuid import UUID
 
+from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.architype import NodeAnchor, Root
 from jaclang.runtimelib.memory import Memory, ShelfStorage
 from jaclang.utils.log import logging
 
 logger = logging.getLogger(__name__)
-
-SUPER_ROOT_UUID = UUID("00000000-0000-0000-0000-000000000000")
 
 
 def call_jac_func_with_machine(
@@ -50,14 +49,14 @@ class ExecutionContext:
         self.reports = []
         sr_arch = Root()
         sr_anch = sr_arch.__jac__
-        sr_anch.id = SUPER_ROOT_UUID
+        sr_anch.id = UUID(Con.SUPER_ROOT_UUID)
         sr_anch.persistent = False
         self.system_root = sr_anch
         if not isinstance(
-            system_root := self.mem.find_by_id(SUPER_ROOT_UUID), NodeAnchor
+            system_root := self.mem.find_by_id(UUID(Con.SUPER_ROOT_UUID)), NodeAnchor
         ):
             system_root = cast(NodeAnchor, Root().__jac__)  # type: ignore[attr-defined]
-            system_root.id = SUPER_ROOT_UUID
+            system_root.id = UUID(Con.SUPER_ROOT_UUID)
             self.mem.set(system_root.id, system_root)
 
         self.system_root = system_root

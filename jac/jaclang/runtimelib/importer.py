@@ -29,7 +29,6 @@ class ImportPathSpec:
         target: str,
         base_path: str,
         absorb: bool,
-        cachable: bool,
         mdl_alias: Optional[str],
         override_name: Optional[str],
         lng: Optional[str],
@@ -39,7 +38,6 @@ class ImportPathSpec:
         self.target = target
         self.base_path = base_path
         self.absorb = absorb
-        self.cachable = cachable
         self.mdl_alias = mdl_alias
         self.override_name = override_name
         self.language = lng
@@ -85,9 +83,7 @@ class ImportReturn:
         self,
         module: types.ModuleType,
         items: dict[str, Union[str, Optional[str]]],
-        caller_dir: str,
         lang: Optional[str],
-        cachable: bool = True,
     ) -> None:
         """Process items within a module by handling renaming and potentially loading missing attributes."""
 
@@ -117,8 +113,6 @@ class ImportReturn:
                             module=module,
                             name=name,
                             jac_file_path=jac_file_path,
-                            cachable=cachable,
-                            caller_dir=caller_dir,
                         )
                         handle_item_loading(item, alias)
                 else:
@@ -132,8 +126,6 @@ class ImportReturn:
         module: types.ModuleType,
         name: str,
         jac_file_path: str,
-        cachable: bool,
-        caller_dir: str,
     ) -> Optional[types.ModuleType]:
         """Load a single .jac file into the specified module component."""
         try:
@@ -384,11 +376,7 @@ class JacImporter(Importer):
         import_return = ImportReturn(module, unique_loaded_items, self)
         if spec.items:
             import_return.process_items(
-                module=module,
-                items=spec.items,
-                caller_dir=spec.caller_dir,
-                cachable=spec.cachable,
-                lang=spec.language,
+                module=module, items=spec.items, lang=spec.language
             )
         self.result = import_return
         return self.result

@@ -29,7 +29,7 @@ Jac.setup()
 
 
 @cmd_registry.register
-def format(path: str, outfile: str = "", debug: bool = False) -> None:
+def format(path: str, outfile: str = "", to_screen: bool = False) -> None:
     """Run the specified .jac file or format all .jac files in a given directory."""
 
     def format_file(filename: str) -> None:
@@ -39,7 +39,7 @@ def format(path: str, outfile: str = "", debug: bool = False) -> None:
                 f"Errors occurred while formatting the file {filename}.",
                 file=sys.stderr,
             )
-        elif debug:
+        elif to_screen:
             print(code_gen_format.root_ir.gen.jac)
         elif outfile:
             with open(outfile, "w") as f:
@@ -66,13 +66,9 @@ def format(path: str, outfile: str = "", debug: bool = False) -> None:
         print("Not a .jac file or directory.", file=sys.stderr)
 
 
-@cmd_registry.register
-def run(
-    filename: str, session: str = "", main: bool = True, cache: bool = True
-) -> None:
-    """Run the specified .jac file."""
-    # if no session specified, check if it was defined when starting the command shell
-    # otherwise default to jaclang.session
+def proc_file_sess(
+    filename: str, session: str, root: Optional[str] = None
+) -> tuple[str, str, JacMachineState]:
     if session == "":
         session = (
             cmd_registry.args.session
@@ -81,11 +77,21 @@ def run(
             and cmd_registry.args.session
             else ""
         )
-
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
-    mach = JacMachineState(base, session=session)
+    mach = JacMachineState(base, session=session, root=root)
+    return base, mod, mach
+
+
+@cmd_registry.register
+def run(
+    filename: str, session: str = "", main: bool = True, cache: bool = True
+) -> None:
+    """Run the specified .jac file."""
+    # if no session specified, check if it was defined when starting the command shell
+    # otherwise default to jaclang.session
+    base, mod, mach = proc_file_sess(filename, session)
 
     if filename.endswith(".jac"):
         try:
@@ -93,7 +99,6 @@ def run(
                 mach=mach,
                 target=mod,
                 base_path=base,
-                cachable=cache,
                 override_name="__main__" if main else None,
             )
         except Exception as e:
@@ -101,23 +106,18 @@ def run(
     elif filename.endswith(".jir"):
         try:
             with open(filename, "rb") as f:
-                Jac.attach_program(
-                    mach,
-                    pickle.load(f),
-                )
+                Jac.attach_program(mach, pickle.load(f))
                 Jac.jac_import(
                     mach=mach,
                     target=mod,
                     base_path=base,
-                    cachable=cache,
                     override_name="__main__" if main else None,
                 )
         except Exception as e:
             print(e, file=sys.stderr)
 
     else:
-        mach.exec_ctx.close()
-        raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
+        print("Not a valid file!\nOnly supports `.jac` and `.jir`")
     mach.exec_ctx.close()
 
 
@@ -126,27 +126,13 @@ def get_object(
     filename: str, id: str, session: str = "", main: bool = True, cache: bool = True
 ) -> dict:
     """Get the object with the specified id."""
-    if session == "":
-        session = (
-            cmd_registry.args.session
-            if hasattr(cmd_registry, "args")
-            and hasattr(cmd_registry.args, "session")
-            and cmd_registry.args.session
-            else ""
-        )
-
-    base, mod = os.path.split(filename)
-    base = base if base else "./"
-    mod = mod[:-4]
-
-    mach = JacMachineState(base, session=session)
+    base, mod, mach = proc_file_sess(filename, session)
 
     if filename.endswith(".jac"):
         Jac.jac_import(
             mach=mach,
             target=mod,
             base_path=base,
-            cachable=cache,
             override_name="__main__" if main else None,
         )
     elif filename.endswith(".jir"):
@@ -159,7 +145,6 @@ def get_object(
                 mach=mach,
                 target=mod,
                 base_path=base,
-                cachable=cache,
                 override_name="__main__" if main else None,
             )
     else:
@@ -232,7 +217,6 @@ def enter(
     args: list,
     session: str = "",
     main: bool = True,
-    cache: bool = True,
     root: str = "",
     node: str = "",
 ) -> None:
@@ -246,27 +230,13 @@ def enter(
     :param root: root executor.
     :param node: starting node.
     """
-    if session == "":
-        session = (
-            cmd_registry.args.session
-            if hasattr(cmd_registry, "args")
-            and hasattr(cmd_registry.args, "session")
-            and cmd_registry.args.session
-            else ""
-        )
-
-    base, mod = os.path.split(filename)
-    base = base if base else "./"
-    mod = mod[:-4]
-
-    mach = JacMachineState(base, session=session, root=root)
+    base, mod, mach = proc_file_sess(filename, session, root)
 
     if filename.endswith(".jac"):
         ret_module = Jac.jac_import(
             mach=mach,
             target=mod,
             base_path=base,
-            cachable=cache,
             override_name="__main__" if main else None,
         )
     elif filename.endswith(".jir"):
@@ -279,7 +249,6 @@ def enter(
                 mach=mach,
                 target=mod,
                 base_path=base,
-                cachable=cache,
                 override_name="__main__" if main else None,
             )
     else:
@@ -430,21 +399,9 @@ def dot(
     :param node_limit: The maximum number of nodes allowed in the graph.
     :param saveto: Path to save the generated graph.
     """
-    if session == "":
-        session = (
-            cmd_registry.args.session
-            if hasattr(cmd_registry, "args")
-            and hasattr(cmd_registry.args, "session")
-            and cmd_registry.args.session
-            else ""
-        )
-
-    base, mod = os.path.split(filename)
-    base = base if base else "./"
-    mod = mod[:-4]
+    base, mod, jac_machine = proc_file_sess(filename, session)
 
     if filename.endswith(".jac"):
-        jac_machine = JacMachineState(base, session=session)
         Jac.jac_import(
             mach=jac_machine, target=mod, base_path=base, override_name="__main__"
         )

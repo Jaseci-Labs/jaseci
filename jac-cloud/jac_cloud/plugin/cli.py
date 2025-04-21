@@ -45,7 +45,6 @@ class JacCmd:
                     mach=mach,
                     target=mod,
                     base_path=base,
-                    cachable=True,
                     override_name="__main__",
                 )
             elif filename.endswith(".jir"):
@@ -55,7 +54,6 @@ class JacCmd:
                         mach=mach,
                         target=mod,
                         base_path=base,
-                        cachable=True,
                         override_name="__main__",
                     )
             else:
@@ -86,7 +84,6 @@ class JacCmd:
                     mach=mach,
                     target=mod,
                     base_path=base,
-                    cachable=True,
                     override_name="__main__",
                 )
             elif filename.endswith(".jir"):
@@ -96,7 +93,6 @@ class JacCmd:
                         mach=mach,
                         target=mod,
                         base_path=base,
-                        cachable=True,
                         override_name="__main__",
                     )
 

@@ -755,7 +755,6 @@ class JacBasics:
             target=target,
             base_path=base_path,
             absorb=absorb,
-            cachable=cachable,
             mdl_alias=mdl_alias,
             override_name=override_name,
             lng=lng,
@@ -769,7 +768,6 @@ class JacBasics:
         target: str,
         base_path: str,
         absorb: bool = False,
-        cachable: bool = True,
         mdl_alias: Optional[str] = None,
         override_name: Optional[str] = None,
         lng: Optional[str] = "jac",
@@ -787,7 +785,6 @@ class JacBasics:
             target,
             base_path,
             absorb,
-            cachable,
             mdl_alias,
             override_name,
             lng,
@@ -845,9 +842,7 @@ class JacBasics:
                 if mod_name.endswith(".test"):
                     mod_name = mod_name[:-5]
                 JacTestCheck.reset()
-                JacFeature.jac_import(
-                    mach=mach, target=mod_name, base_path=base, cachable=False
-                )
+                JacFeature.jac_import(mach=mach, target=mod_name, base_path=base)
                 JacTestCheck.run_test(
                     xit, maxfail, verbose, os.path.abspath(filepath), func_name
                 )
@@ -1398,7 +1393,6 @@ class JacMachine:
                 target=tmp_module_name,
                 base_path=base_path,
                 absorb=False,
-                cachable=cachable,
                 mdl_alias=None,
                 override_name=module_name,
                 lng="jac",
@@ -1434,7 +1428,6 @@ class JacMachine:
                     target=module_name,
                     base_path=mach.base_path,
                     absorb=False,
-                    cachable=True,
                     mdl_alias=None,
                     override_name=None,
                     lng="jac",
