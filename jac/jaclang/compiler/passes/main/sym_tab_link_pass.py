@@ -21,13 +21,13 @@ class SymTabLinkPass(AstPass):
             if rel_path not in self.prog.modules:
                 self.ice()
         else:
-            if node.sym_name in self.ir_out.py_info.py_raise_map:
-                rel_path = self.ir_out.py_info.py_raise_map[node.sym_name]
+            if node.sym_name in self.prog.py_raise_map:
+                rel_path = self.prog.py_raise_map[node.sym_name]
             elif (
                 f"{self.ir_out.get_href_path(node)}.{node.sym_name}"
-                in self.ir_out.py_info.py_raise_map
+                in self.prog.py_raise_map
             ):
-                rel_path = self.ir_out.py_info.py_raise_map[
+                rel_path = self.prog.py_raise_map[
                     f"{self.ir_out.get_href_path(node)}.{node.sym_name}"
                 ]
             else:

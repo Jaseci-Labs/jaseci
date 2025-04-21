@@ -69,7 +69,7 @@ class PyCollectDepsPass(AstPass):
             if mode_path.endswith(".jac"):
                 return
 
-            self.ir_out.py_info.py_raise_map[mod_name] = mode_path
+            self.prog.py_raise_map[mod_name] = mode_path
         else:
             self.__debug_print(
                 f"Collect python dependencies is not supported in {type(node)}::{node.loc}"

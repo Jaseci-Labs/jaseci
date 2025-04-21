@@ -49,9 +49,6 @@ class JacImportPass(AstPass):
         if mod and mod.loc.mod_path not in self.prog.modules:
             self.prog.modules[mod.loc.mod_path] = mod
             self.prog.last_imported.append(mod)
-            # We should have only one py_raise_map in the program
-            # TODO: Move py_raise_map to jac_program
-            mod.py_info.py_raise_map = self.ir_out.py_info.py_raise_map
 
     # TODO: Refactor this to a function for impl and function for test
     def annex_impl(self, node: ast.Module) -> None:
@@ -280,7 +277,7 @@ class PyImportPass(JacImportPass):
 
         assert isinstance(self.ir_out, ast.Module)
 
-        python_raise_map = self.ir_out.py_info.py_raise_map
+        python_raise_map = self.prog.py_raise_map
         file_to_raise: Optional[str] = None
 
         if mod_path in python_raise_map:
@@ -352,7 +349,6 @@ class PyImportPass(JacImportPass):
             SymTabBuildPass(ir_in=mod, prior=self, prog=self.prog)
             self.prog.modules[file_to_raise] = mod
             mod.py_info.is_raised_from_py = True
-            mod.py_info.py_raise_map = self.ir_out.py_info.py_raise_map
 
     def annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""

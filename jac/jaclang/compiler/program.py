@@ -43,6 +43,7 @@ class JacProgram:
         self.sem_ir = SemRegistry()
         self.modules: dict[str, Module] = {}
         self.last_imported: list[Module] = []
+        self.py_raise_map: dict[str, str] = {}
 
     def get_bytecode(self, full_target: str) -> Optional[types.CodeType]:
         """Get the bytecode for a specific module."""

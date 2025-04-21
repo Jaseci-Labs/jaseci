@@ -78,7 +78,7 @@ class ImportPassPassTests(TestCase):
 
     def test_py_raise_map(self) -> None:
         """Basic test for pass."""
-        build = JacProgram().jac_file_to_pass(
+        (build := JacProgram()).jac_file_to_pass(
             self.fixture_abs_path("py_imp_test.jac"),
             FuseTypeInfoPass,
             schedule=py_code_gen_typed,
@@ -95,11 +95,9 @@ class ImportPassPassTests(TestCase):
             "genericpath": r"jaclang/vendor/mypy/typeshed/stdlib/genericpath.pyi$",
         }
         for i in p:
-            self.assertIn(i, build.ir_out.py_info.py_raise_map)
+            self.assertIn(i, build.py_raise_map)
             self.assertRegex(
-                re.sub(
-                    r".*fixtures/", "", build.ir_out.py_info.py_raise_map[i]
-                ).replace("\\", "/"),
+                re.sub(r".*fixtures/", "", build.py_raise_map[i]).replace("\\", "/"),
                 p[i],
             )
 
