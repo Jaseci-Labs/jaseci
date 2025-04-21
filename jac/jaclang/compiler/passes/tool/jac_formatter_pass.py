@@ -985,7 +985,7 @@ class JacFormatPass(Pass):
                     f"{node.left.gen.jac} {node.op.value} {node.right.gen.jac}",
                 )
             else:
-                self.error(
+                self.log_error(
                     f"Binary operator {node.op.value} not supported in bootstrap Jac"
                 )
         if isinstance(
@@ -1530,7 +1530,7 @@ class JacFormatPass(Pass):
 
     def decl_def_missing(self, decl: str = "this") -> None:
         """Warn about declaration."""
-        self.error(
+        self.log_error(
             f"Unable to find definition for {decl} declaration. Perhaps there's an `include` missing?"  # noqa
         )
 
@@ -1594,7 +1594,9 @@ class JacFormatPass(Pass):
         elif node.op.name in [Tok.BW_AND]:
             self.emit(node, f"{node.op.value}{node.operand.gen.jac}")
         else:
-            self.error(f"Unary operator {node.op.value} not supported in bootstrap Jac")
+            self.log_error(
+                f"Unary operator {node.op.value} not supported in bootstrap Jac"
+            )
 
     def exit_raise_stmt(self, node: ast.RaiseStmt) -> None:
         """Sub objects.

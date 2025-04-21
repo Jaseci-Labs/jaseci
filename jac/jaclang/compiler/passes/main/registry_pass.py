@@ -36,7 +36,7 @@ class RegistryPass(Pass):
                 else:
                     self.prog.sem_ir = node.registry
         except Exception as e:
-            self.warning(f"Can't save registry for {module_name}: {e}")
+            self.log_warning(f"Can't save registry for {module_name}: {e}")
         self.modules_visited.pop()
 
     def exit_architype(self, node: ast.Architype) -> None:

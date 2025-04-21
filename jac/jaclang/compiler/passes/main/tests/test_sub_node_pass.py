@@ -1,5 +1,6 @@
 """Test sub node pass module."""
 
+from jaclang.compiler.passes import Pass
 from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import TestCase
 
@@ -20,5 +21,5 @@ class SubNodePassTests(TestCase):
         for i in code_gen.root_ir.kid[1].kid:
             for k, v in i._sub_node_tab.items():
                 for n in v:
-                    self.assertIn(n, code_gen.get_all_sub_nodes(i, k, brute_force=True))
+                    self.assertIn(n, Pass.get_all_sub_nodes(i, k, brute_force=True))
         self.assertFalse(code_gen.errors_had)

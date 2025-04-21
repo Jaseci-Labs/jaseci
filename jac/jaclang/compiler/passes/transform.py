@@ -2,13 +2,21 @@
 
 from __future__ import annotations
 
+import time
 from abc import ABC, abstractmethod
-from typing import Generic, Optional, Type
+from typing import Generic, Optional, TYPE_CHECKING, Type, TypeVar
 
-from jaclang.compiler.absyntree import AstNode, T
+from jaclang.compiler.absyntree import AstNode
 from jaclang.compiler.codeloc import CodeLocInfo
+from jaclang.settings import settings
 from jaclang.utils.helpers import pretty_print_source_location
 from jaclang.utils.log import logging
+
+if TYPE_CHECKING:
+    from jaclang.compiler.program import JacProgram
+
+T = TypeVar("T", bound=AstNode)
+R = TypeVar("R", bound=AstNode)
 
 
 class Alert:
@@ -55,23 +63,43 @@ class Alert:
         return self.as_log() + pretty_dump
 
 
-class Transform(ABC, Generic[T]):
+class Transform(ABC, Generic[T, R]):
     """Abstract class for IR passes."""
 
     def __init__(
         self,
         root_ir: T,
-        prior: Optional[Transform] = None,
+        prior: Optional[Transform],
+        prog: Optional[JacProgram],
     ) -> None:
         """Initialize pass."""
+        from jaclang.compiler.program import JacProgram
+
         self.logger = logging.getLogger(self.__class__.__name__)
         self.errors_had: list[Alert] = [] if not prior else prior.errors_had
         self.warnings_had: list[Alert] = [] if not prior else prior.warnings_had
         self.cur_node: AstNode = root_ir  # tracks current node during traversal
-        self.root_ir = self.transform(ir=root_ir)
+        self.prog = prog or JacProgram()
+        self.time_taken = 0.0
+        self.orig_ir: T = root_ir
+        self.root_ir: R = self.timed_transform(ir=root_ir)
+
+    def timed_transform(
+        self,
+        ir: T,
+    ) -> R:
+        """Transform with time tracking."""
+        start_time = time.time()
+        ret = self.transform(ir=ir)
+        self.time_taken = time.time() - start_time
+        if settings.pass_timer:
+            self.log_info(
+                f"Time taken in {self.__class__.__name__}: {self.time_taken:.4f} seconds"
+            )
+        return ret
 
     @abstractmethod
-    def transform(self, ir: T) -> AstNode:
+    def transform(self, ir: T) -> R:
         """Transform interface."""
         pass
 
@@ -98,3 +126,10 @@ class Transform(ABC, Generic[T]):
     def log_info(self, msg: str) -> None:
         """Log info."""
         self.logger.info(msg)
+
+    def ice(self, msg: str = "Something went horribly wrong!") -> RuntimeError:
+        """Pass Error."""
+        self.log_error(f"ICE: Pass {self.__class__.__name__} - {msg}")
+        return RuntimeError(
+            f"Internal Compiler Error: Pass {self.__class__.__name__} - {msg}"
+        )

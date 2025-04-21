@@ -61,7 +61,7 @@ class JacImportPass(Pass):
         if node.stub_only:
             return
         if not node.loc.mod_path:
-            self.error("Module has no path")
+            self.log_error("Module has no path")
         if not node.loc.mod_path.endswith(".jac"):
             return
         base_path = node.loc.mod_path[:-4]
@@ -143,7 +143,6 @@ class JacImportPass(Pass):
                 doc=None,
                 body=[],
                 terminals=[],
-                is_imported=False,
                 stub_only=True,
                 kid=[ast.EmptyToken()],
             )
@@ -153,7 +152,7 @@ class JacImportPass(Pass):
         assert isinstance(self.root_ir, ast.Module)
 
         if not os.path.exists(target):
-            self.error(f"Could not find module {target}")
+            self.log_error(f"Could not find module {target}")
             return None
         mod_pass = self.prog.jac_file_to_pass(file_path=target, schedule=[])
         self.errors_had += mod_pass.errors_had
@@ -331,7 +330,7 @@ class PyImportPass(JacImportPass):
                 raise self.ice(f"\tFailed to import python module {mod_path}")
 
         except Exception as e:
-            self.error(f"\tFailed to import python module {mod_path}")
+            self.log_error(f"\tFailed to import python module {mod_path}")
             raise e
 
     def __load_builtins(self) -> None:

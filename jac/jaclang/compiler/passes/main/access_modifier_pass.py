@@ -36,7 +36,7 @@ class AccessCheckPass(Pass):
 
     def report_error(self, message: str, node: Optional[ast.AstNode] = None) -> None:
         """Report error message related to illegal access of attributes and objects."""
-        self.error(message, node)
+        self.log_error(message, node)
 
     def exit_node(self, node: ast.AstNode) -> None:  # TODO: Move to debug pass
         """Exit node."""
@@ -52,7 +52,7 @@ class AccessCheckPass(Pass):
                 and isinstance(node.parent.parent, ast.Import)
             )
         ):
-            self.warning(f"Name {node.sym_name} not present in symbol table")
+            self.log_warning(f"Name {node.sym_name} not present in symbol table")
 
     def enter_name(self, node: ast.Name) -> None:
         """Sub objects.
