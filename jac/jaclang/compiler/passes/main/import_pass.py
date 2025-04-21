@@ -110,8 +110,7 @@ class JacImportPass(Pass):
                 mod = self.import_jac_mod_from_file(cur_file)
                 if mod and not settings.ignore_test_annex:
                     node.test_mod.append(mod)
-                    node.add_kids_right([mod], pos_update=False)
-                    mod.parent = node
+                    node.add_kids_right(mod.kid, parent_update=True, pos_update=False)
 
     def import_jac_module(self, node: ast.ModulePath) -> None:
         """Import a module."""
