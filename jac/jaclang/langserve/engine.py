@@ -40,11 +40,9 @@ class ModuleInfo:
     def __init__(
         self,
         ir: ast.Module,
-        impl_parent: Optional[ModuleInfo] = None,
     ) -> None:
         """Initialize module info."""
         self.ir = ir
-        self.impl_parent: Optional[ModuleInfo] = impl_parent
         self.sem_manager = SemTokManager(ir=ir)
         self.is_modified: bool = False
 
@@ -72,17 +70,11 @@ class JacLangServer(LanguageServer):
         if not isinstance(build.root_ir, ast.Module):
             self.log_error("Error with module build.")
             return
-        keep_parent = (
-            self.modules[file_path].impl_parent if file_path in self.modules else None
-        )
-        self.modules[file_path] = ModuleInfo(ir=build.root_ir, impl_parent=keep_parent)
+        self.modules[file_path] = ModuleInfo(ir=build.root_ir)
         for p in self.program.modules.keys():
             uri = uris.from_fs_path(p)
             if file_path != uri:
-                self.modules[uri] = ModuleInfo(
-                    ir=self.program.modules[p],
-                    impl_parent=self.modules[file_path],
-                )
+                self.modules[uri] = ModuleInfo(ir=self.program.modules[p])
 
     def quick_check(self, file_path: str) -> bool:
         """Rebuild a file."""
@@ -105,11 +97,9 @@ class JacLangServer(LanguageServer):
         try:
             start_time = time.time()
             document = self.workspace.get_text_document(file_path)
-            if file_path in self.modules and (
-                parent := self.modules[file_path].impl_parent
-            ):
+            if file_path in self.modules:
                 return self.deep_check(
-                    uris.from_fs_path(parent.ir.loc.mod_path), annex_view=file_path
+                    uris.from_fs_path(file_path), annex_view=file_path
                 )
             self.program = JacProgram()  # TODO: Remove this Hack
             build = self.program.jac_str_to_pass(
