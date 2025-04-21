@@ -3,18 +3,15 @@
 import os
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes import AstPass
 from jaclang.compiler.symtable import InheritedSymbolTable
 
 
-class SymTabLinkPass(Pass):
+class SymTabLinkPass(AstPass):
     """Link the symbol table."""
 
     def enter_module_path(self, node: ast.ModulePath) -> None:
         """Link the symbol tables."""
-
-        assert isinstance(self.ir_out, ast.Module)
-
         imp_node = node.parent_of_type(ast.Import)
 
         if imp_node.is_jac:

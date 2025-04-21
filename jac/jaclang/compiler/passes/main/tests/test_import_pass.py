@@ -83,7 +83,6 @@ class ImportPassPassTests(TestCase):
             FuseTypeInfoPass,
             schedule=py_code_gen_typed,
         )
-        assert isinstance(build.ir_out, ast.Module)
         p = {
             "math": r"jaclang/vendor/mypy/typeshed/stdlib/math.pyi$",
             "pygame_mock": r"pygame_mock/__init__.pyi$",

@@ -11,10 +11,10 @@ import sys
 import jaclang.compiler.absyntree as ast
 import jaclang.compiler.passes.utils.mypy_ast_build as myab
 from jaclang.compiler.constant import Constants as Con
-from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes import AstPass
 
 
-class JacTypeCheckPass(Pass):
+class JacTypeCheckPass(AstPass):
     """Python and bytecode file printing pass."""
 
     def before_pass(self) -> None:
@@ -24,7 +24,6 @@ class JacTypeCheckPass(Pass):
             / "vendor"
             / "mypy"
         )
-        assert isinstance(self.ir_out, ast.Module)
         self.__modules = list(self.prog.modules.values())
         self.terminate()
         return super().before_pass()

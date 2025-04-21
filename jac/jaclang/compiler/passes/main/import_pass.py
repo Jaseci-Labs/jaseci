@@ -12,7 +12,7 @@ from typing import Optional
 
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes import AstPass
 from jaclang.compiler.passes.main import DefUsePass, SymTabBuildPass
 from jaclang.compiler.passes.main.sym_tab_build_pass import PyInspectSymTabBuildPass
 from jaclang.settings import settings
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 # TODO: This pass finds imports dependencies, parses them, and adds them to
 # JacProgram's table, then table calls again if needed, should rename
-class JacImportPass(Pass):
+class JacImportPass(AstPass):
     """Jac statically imports Jac modules."""
 
     def enter_module(self, node: ast.Module) -> None:
@@ -42,9 +42,7 @@ class JacImportPass(Pass):
         if imp_node.is_jac and not i.sub_module:
             self.import_jac_module(node=i)
 
-    def attach_mod_to_node(
-        self, node: ast.ModulePath | ast.ModuleItem, mod: ast.Module | None
-    ) -> None:
+    def attach_mod_to_node(self, mod: ast.Module | None) -> None:
         """Attach a module to a node."""
         assert isinstance(self.ir_out, ast.Module)
 
@@ -110,7 +108,7 @@ class JacImportPass(Pass):
         target = node.resolve_relative_path()
         # If the module is a package (dir)
         if os.path.isdir(target):
-            self.attach_mod_to_node(node, self.import_jac_mod_from_dir(target))
+            self.attach_mod_to_node(self.import_jac_mod_from_dir(target))
             import_node = node.parent_of_type(ast.Import)
             # And the import is a from import and I am the from module
             if node == import_node.from_loc:
@@ -121,15 +119,15 @@ class JacImportPass(Pass):
                         # If package
                         if os.path.isdir(from_mod_target):
                             self.attach_mod_to_node(
-                                i, self.import_jac_mod_from_dir(from_mod_target)
+                                self.import_jac_mod_from_dir(from_mod_target)
                             )
                         # Else module
                         else:
                             self.attach_mod_to_node(
-                                i, self.import_jac_mod_from_file(from_mod_target)
+                                self.import_jac_mod_from_file(from_mod_target)
                             )
         else:
-            self.attach_mod_to_node(node, self.import_jac_mod_from_file(target))
+            self.attach_mod_to_node(self.import_jac_mod_from_file(target))
 
     def import_jac_mod_from_dir(self, target: str) -> ast.Module | None:
         """Import a module from a directory."""
@@ -149,8 +147,6 @@ class JacImportPass(Pass):
 
     def import_jac_mod_from_file(self, target: str) -> ast.Module | None:
         """Import a module from a file."""
-        assert isinstance(self.ir_out, ast.Module)
-
         if not os.path.exists(target):
             self.log_error(f"Could not find module {target}")
             return None
@@ -158,7 +154,6 @@ class JacImportPass(Pass):
         self.errors_had += mod_pass.errors_had
         self.warnings_had += mod_pass.warnings_had
         mod = mod_pass.ir_out
-        assert isinstance(mod, ast.Module)
         return mod
 
 
@@ -232,7 +227,7 @@ class PyImportPass(JacImportPass):
             msg = f"\tRegistering module:{imported_mod.name} to "
             msg += f"import_from handling with {imp_node.loc.mod_path}:{imp_node.loc}"
 
-            self.attach_mod_to_node(imp_node.from_loc, imported_mod)
+            self.attach_mod_to_node(imported_mod)
             self.import_from_build_list.append((imp_node, imported_mod))
             PyInspectSymTabBuildPass(ir_in=imported_mod, prior=self, prog=self.prog)
             DefUsePass(ir_in=imported_mod, prior=self, prog=self.prog)
@@ -261,7 +256,7 @@ class PyImportPass(JacImportPass):
                 or imported_mod.name == "builtins"
             ):
                 return
-            self.attach_mod_to_node(imported_item, imported_mod)
+            self.attach_mod_to_node(imported_mod)
 
             if imp_node.is_absorb:
                 msg = f"\tRegistering module:{imported_mod.name} to "

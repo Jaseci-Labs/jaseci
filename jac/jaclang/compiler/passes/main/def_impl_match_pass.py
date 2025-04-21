@@ -8,11 +8,11 @@ body field.
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Tokens as Tok
-from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes import AstPass
 from jaclang.compiler.symtable import Symbol, SymbolTable
 
 
-class DeclImplMatchPass(Pass):
+class DeclImplMatchPass(AstPass):
     """Decls and Def matching pass."""
 
     def enter_module(self, node: ast.Module) -> None:

@@ -10,13 +10,13 @@ from __future__ import annotations
 import os
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes import AstPass
 from jaclang.settings import settings
 
 import mypy.nodes as MypyNodes  # noqa N812
 
 
-class PyCollectDepsPass(Pass):
+class PyCollectDepsPass(AstPass):
     """Python and bytecode file self.__debug_printing pass."""
 
     def __debug_print(self, msg: str) -> None:
@@ -25,8 +25,6 @@ class PyCollectDepsPass(Pass):
 
     def enter_node(self, node: ast.AstNode) -> None:
         """Collect python dependencies from all Jac Nodes."""
-        assert isinstance(self.ir_out, ast.Module)
-
         if not isinstance(node, ast.AstSymbolNode):
             return
 

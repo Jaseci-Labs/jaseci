@@ -7,13 +7,13 @@ each module
 """
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes import AstPass
 from jaclang.compiler.semtable import SemInfo, SemRegistry
 from jaclang.runtimelib.utils import get_sem_scope
 from jaclang.settings import settings
 
 
-class RegistryPass(Pass):
+class RegistryPass(AstPass):
     """Creates a registry for each module."""
 
     modules_visited: list[ast.Module] = []

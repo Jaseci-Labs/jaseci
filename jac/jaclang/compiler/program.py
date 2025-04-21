@@ -11,7 +11,7 @@ from typing import Optional, Type
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.absyntree import Module
 from jaclang.compiler.parser import JacParser
-from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes import AstPass
 from jaclang.compiler.passes.main import (
     DefUsePass,
     JacImportPass,
@@ -69,8 +69,8 @@ class JacProgram:
     def jac_file_to_pass(
         self,
         file_path: str,
-        target: Optional[Type[Pass]] = None,
-        schedule: list[Type[Pass]] = pass_schedule,
+        target: Optional[Type[AstPass]] = None,
+        schedule: list[Type[AstPass]] = pass_schedule,
     ) -> Transform:
         """Convert a Jac file to an AST."""
         with open(file_path, "r", encoding="utf-8") as file:
@@ -85,8 +85,8 @@ class JacProgram:
         self,
         jac_str: str,
         file_path: str,
-        target: Optional[Type[Pass]] = None,
-        schedule: list[Type[Pass]] = pass_schedule,
+        target: Optional[Type[AstPass]] = None,
+        schedule: list[Type[AstPass]] = pass_schedule,
     ) -> Transform:
         """Convert a Jac file to an AST."""
         if not target:
@@ -104,8 +104,8 @@ class JacProgram:
         self,
         py_str: str,
         file_path: str,
-        target: Optional[Type[Pass]] = None,
-        schedule: list[Type[Pass]] = pass_schedule,
+        target: Optional[Type[AstPass]] = None,
+        schedule: list[Type[AstPass]] = pass_schedule,
     ) -> Transform:
         """Convert a Jac file to an AST."""
         if not target:
@@ -127,12 +127,11 @@ class JacProgram:
     def run_pass_schedule(
         self,
         in_pass: Transform,
-        target: Optional[Type[Pass]] = None,
-        schedule: list[Type[Pass]] = pass_schedule,
+        target: Optional[Type[AstPass]] = None,
+        schedule: list[Type[AstPass]] = pass_schedule,
     ) -> Transform:
         """Convert a Jac file to an AST."""
         ast_ret = in_pass
-        assert isinstance(ast_ret.ir_out, ast.Module)
         # Creating a new JacProgram and attaching it to top module
         top_mod: ast.Module = ast_ret.ir_out
         self.last_imported.append(ast_ret.ir_out)
@@ -164,9 +163,9 @@ class JacProgram:
         # Run all passes till PyBytecodeGenPass
         # Here the passes will run one by one on the imported modules instead
         # of running on  a huge AST
-        def run_schedule(mod: ast.Module, schedule: list[type[Pass]]) -> None:
+        def run_schedule(mod: ast.Module, schedule: list[type[AstPass]]) -> None:
             nonlocal ast_ret
-            final_pass: Optional[type[Pass]] = None
+            final_pass: Optional[type[AstPass]] = None
             for current_pass in schedule:
                 if current_pass in (target, PyBytecodeGenPass):
                     final_pass = current_pass

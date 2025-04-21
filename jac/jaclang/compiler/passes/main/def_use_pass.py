@@ -10,10 +10,10 @@ import ast as ast3
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Tokens as Tok
-from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes import AstPass
 
 
-class DefUsePass(Pass):
+class DefUsePass(AstPass):
     """Jac Ast build pass."""
 
     def after_pass(self) -> None:

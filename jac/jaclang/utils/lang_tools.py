@@ -240,8 +240,6 @@ class AstTool:
                     file_name, schedule=[*(py_code_gen), *type_checker_sched]
                 ).ir_out
 
-            assert isinstance(ir, ast.Module)
-
             match output:
                 case "sym":
                     out = ""

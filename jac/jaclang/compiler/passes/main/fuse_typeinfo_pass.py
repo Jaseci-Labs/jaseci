@@ -11,7 +11,7 @@ from typing import Callable, Optional, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Constants, Tokens
-from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes import AstPass
 from jaclang.compiler.symtable import SymbolTable
 from jaclang.settings import settings
 from jaclang.utils.helpers import pascal_to_snake
@@ -26,7 +26,7 @@ from mypy.checkexpr import Type as MyType
 T = TypeVar("T", bound=ast.AstSymbolNode)
 
 
-class FuseTypeInfoPass(Pass):
+class FuseTypeInfoPass(AstPass):
     """Python and bytecode file self.__debug_printing pass."""
 
     node_type_hash: dict[MypyNodes.Node | VNode, MyType] = {}
@@ -54,8 +54,6 @@ class FuseTypeInfoPass(Pass):
         return None
 
     def __set_type_sym_table_link(self, node: ast.AstSymbolNode) -> None:
-        assert isinstance(self.ir_out, ast.Module)
-
         sym_type = node.expr_type
         if re.match(r"builtins.(list|dict|tuple)", sym_type):
             sym_type = re.sub(r"\[.*\]", "", sym_type)
@@ -215,8 +213,6 @@ class FuseTypeInfoPass(Pass):
     def __check_builltin_symbol(self, node: ast.NameAtom) -> None:
         if isinstance(node.parent, ast.AtomTrailer) and node is node.parent.right:
             return
-        assert isinstance(self.ir_out, ast.Module)
-
         builtins_sym_tab = None
         for mod in self.prog.modules.values():
             if mod.name == "builtins":
@@ -663,9 +659,6 @@ class FuseTypeInfoPass(Pass):
                         right.name_spec.sym.add_use(right.name_spec)
 
     def __get_parent_symtab(self, typ: str) -> Optional[SymbolTable]:
-        assert isinstance(self.ir_out, ast.Module)
-        assert self.prog is not None
-
         for mod_ast in self.prog.modules.values():
             mod_table = mod_ast.sym_tab
             if mod_table.name == typ.split(".")[0]:

@@ -10,7 +10,7 @@ from typing import Callable, Optional, TYPE_CHECKING, TypeAlias, TypeVar
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler import jac_lark as jl  # type: ignore
 from jaclang.compiler.constant import EdgeDir, Tokens as Tok
-from jaclang.compiler.passes.ir_pass import Transform
+from jaclang.compiler.passes.ast_pass import Transform
 from jaclang.vendor.lark import Lark, Transformer, Tree, logger
 
 if TYPE_CHECKING:

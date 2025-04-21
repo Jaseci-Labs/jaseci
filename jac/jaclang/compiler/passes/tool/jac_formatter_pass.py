@@ -9,11 +9,11 @@ from typing import Optional
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.absyntree import AstNode
 from jaclang.compiler.constant import Tokens as Tok
-from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes import AstPass
 from jaclang.settings import settings
 
 
-class JacFormatPass(Pass):
+class JacFormatPass(AstPass):
     """JacFormat Pass format Jac code."""
 
     def before_pass(self) -> None:

@@ -4,10 +4,10 @@ This is a pass for formatting Jac code.
 """
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes import AstPass
 
 
-class FuseCommentsPass(Pass):
+class FuseCommentsPass(AstPass):
     """JacFormat Pass format Jac code."""
 
     def before_pass(self) -> None:

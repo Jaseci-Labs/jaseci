@@ -7,11 +7,11 @@ for globals, imports, architypes, and abilities declarations and definitions.
 from typing import TypeVar
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes import AstPass
 from jaclang.compiler.symtable import SymbolTable
 
 
-class SymTabBuildPass(Pass):
+class SymTabBuildPass(AstPass):
     """Jac Symbol table build pass."""
 
     def before_pass(self) -> None:

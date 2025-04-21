@@ -10,10 +10,10 @@ import marshal
 
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes import AstPass
 
 
-class PyBytecodeGenPass(Pass):
+class PyBytecodeGenPass(AstPass):
     """Python and bytecode file printing pass."""
 
     def before_pass(self) -> None:

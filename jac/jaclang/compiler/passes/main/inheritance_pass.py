@@ -5,12 +5,12 @@ from __future__ import annotations
 from typing import Optional
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes import AstPass
 from jaclang.compiler.symtable import Symbol, SymbolTable
 from jaclang.settings import settings
 
 
-class InheritancePass(Pass):
+class InheritancePass(AstPass):
     """Add inherited abilities in the target symbol tables."""
 
     def __debug_print(self, msg: str) -> None:
@@ -19,7 +19,6 @@ class InheritancePass(Pass):
 
     def __lookup(self, name: str, sym_table: SymbolTable) -> Optional[Symbol]:
         symbol = sym_table.lookup(name)
-        assert isinstance(self.ir_out, ast.Module)
         if symbol is None:
             # Check if the needed symbol in builtins
             builtins_symtable = None

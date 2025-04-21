@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 T = TypeVar("T", bound=ast.AstNode)
 
 
-class Pass(Transform[ast.Module, ast.Module]):
+class AstPass(Transform[ast.Module, ast.Module]):
     """Abstract class for IR passes."""
 
     def __init__(
@@ -76,7 +76,7 @@ class Pass(Transform[ast.Module, ast.Module]):
                 for i in node.kid:
                     if isinstance(i, typ):
                         result.append(i)
-                    result.extend(Pass.get_all_sub_nodes(i, typ, brute_force))
+                    result.extend(AstPass.get_all_sub_nodes(i, typ, brute_force))
         return result
 
     @staticmethod
@@ -140,7 +140,7 @@ class Pass(Transform[ast.Module, ast.Module]):
         return node
 
 
-class PrinterPass(Pass):
+class PrinterPass(AstPass):
     """Printer Pass for Jac AST."""
 
     def enter_node(self, node: ast.AstNode) -> None:
