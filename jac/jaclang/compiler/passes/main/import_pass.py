@@ -150,29 +150,17 @@ class JacImportPass(Pass):
 
     def import_jac_mod_from_file(self, target: str) -> ast.Module | None:
         """Import a module from a file."""
-        from jaclang.compiler.program import JacProgram
-
         assert isinstance(self.root_ir, ast.Module)
-        assert isinstance(self.prog, JacProgram)
 
         if not os.path.exists(target):
             self.error(f"Could not find module {target}")
             return None
-        try:
-            mod_pass = self.prog.jac_file_to_pass(file_path=target, schedule=[])
-            self.errors_had += mod_pass.errors_had
-            self.warnings_had += mod_pass.warnings_had
-            mod = mod_pass.root_ir
-        except Exception as e:
-            logger.error(e)
-            mod = None
-        if isinstance(mod, ast.Module):
-            mod.is_imported = True
-            mod.body = [x for x in mod.body if not isinstance(x, ast.AstImplOnlyNode)]
-            return mod
-        else:
-            self.error(f"Module {target} is not a valid Jac module.")
-            return None
+        mod_pass = self.prog.jac_file_to_pass(file_path=target, schedule=[])
+        self.errors_had += mod_pass.errors_had
+        self.warnings_had += mod_pass.warnings_had
+        mod = mod_pass.root_ir
+        assert isinstance(mod, ast.Module)
+        return mod
 
 
 class PyImportPass(JacImportPass):

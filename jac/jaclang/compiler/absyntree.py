@@ -661,7 +661,6 @@ class Module(AstDocNode):
         self.name = name
         self.source = source
         self.body = body
-        self.is_imported = is_imported
         self.stub_only = stub_only
         self.impl_mod: list[Module] = []
         self.test_mod: list[Module] = []
