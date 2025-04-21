@@ -10,7 +10,7 @@ from jaclang import JacFeature as Jac
 from jaclang.cli import cli
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.program import JacProgram
-from jaclang.runtimelib.machine import ExecutionContext, JacMachineState
+from jaclang.runtimelib.machine import JacMachineState
 from jaclang.utils.test import TestCase
 
 import pytest
@@ -21,7 +21,6 @@ class JacLanguageTests(TestCase):
 
     def setUp(self) -> None:
         """Set up test."""
-        ExecutionContext.global_system_root().edges.clear()
         self.mach = JacMachineState(self.fixture_abs_path("./"))
         Jac.attach_program(
             self.mach,

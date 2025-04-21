@@ -7,7 +7,7 @@ from typing import Callable, Optional
 
 import jaclang
 from jaclang.compiler.program import JacProgram
-from jaclang.runtimelib.machine import ExecutionContext
+from jaclang.runtimelib.machine import JacMachineState
 from jaclang.utils.test import TestCase
 
 
@@ -52,7 +52,6 @@ class JacReferenceTests(TestCase):
         """Test file."""
 
         def execute_and_capture_output(code: str | bytes, filename: str = "") -> str:
-            ExecutionContext.global_system_root().edges.clear()
             f = io.StringIO()
             with redirect_stdout(f):
                 exec(
@@ -60,6 +59,7 @@ class JacReferenceTests(TestCase):
                     {
                         "__file__": filename,
                         "__name__": "__main__",
+                        "__jac_mach__": JacMachineState(),
                     },
                 )
             return f.getvalue()

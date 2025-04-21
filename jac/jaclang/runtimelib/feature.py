@@ -619,8 +619,7 @@ class JacBasics:
     @staticmethod
     def get_context() -> ExecutionContext:
         """Get current execution context."""
-
-        return ExecutionContext.get()
+        return JacFeature.py_get_jac_machine().exec_ctx
 
     @staticmethod
     def reset_graph(root: Optional[Root] = None) -> int:
@@ -722,13 +721,17 @@ class JacBasics:
         return decorator
 
     @staticmethod
-    def py_get_jac_machine() -> JacMachineState | None:
+    def py_get_jac_machine() -> JacMachineState:
         """Get jac machine from python context."""
         machine = None
         for i in inspect.stack():
-            machine = i.frame.f_globals.get("__jac_mach__")
+            machine = i.frame.f_globals.get("__jac_mach__") or i.frame.f_locals.get(
+                "__jac_mach__"
+            )
             if machine:
                 break
+        if not machine:
+            raise RuntimeError("Jac machine not found in python context. ")
         return machine
 
     @staticmethod
@@ -1046,7 +1049,7 @@ class JacBasics:
     def root() -> Root:
         """Jac's root getter."""
 
-        return ExecutionContext.get_root()
+        return JacFeature.py_get_jac_machine().exec_ctx.get_root()
 
     @staticmethod
     def build_edge(

@@ -8,7 +8,7 @@ from typing import Any
 
 from jaclang.cli.cmdreg import cmd_registry
 from jaclang.runtimelib.feature import hookimpl
-from jaclang.runtimelib.machine import ExecutionContext, JacMachineState
+from jaclang.runtimelib.machine import JacMachineState
 
 from pymongo.errors import ConnectionFailure, OperationFailure
 
@@ -38,7 +38,6 @@ class JacCmd:
             mod = mod[:-4]
 
             FastAPI.enable()
-            jctx = ExecutionContext.create()
             mach = JacMachineState(base)
 
             if filename.endswith(".jac"):
@@ -60,12 +59,11 @@ class JacCmd:
                         override_name="__main__",
                     )
             else:
-                jctx.close()
+                mach.exec_ctx.close()
                 raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
             FastAPI.start(host=host, port=port)
-
-            jctx.close()
+            mach.exec_ctx.close()
 
         @cmd_registry.register
         def create_system_admin(

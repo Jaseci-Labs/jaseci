@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import os
 import types
-from contextvars import ContextVar
 from dataclasses import MISSING
-from typing import Any, Optional, cast
+from typing import Any, Callable, Optional, cast
 from uuid import UUID
 
 from jaclang.compiler.program import JacProgram
@@ -16,19 +15,54 @@ from jaclang.utils.log import logging
 
 logger = logging.getLogger(__name__)
 
-EXECUTION_CONTEXT = ContextVar[Optional["ExecutionContext"]]("ExecutionContext")
 SUPER_ROOT_UUID = UUID("00000000-0000-0000-0000-000000000000")
+
+
+def call_jac_func_with_machine(
+    mach: JacMachineState, func: Callable, *args: Any  # noqa: ANN401
+) -> Any:  # noqa: ANN401
+    """Call Jac function with machine context in local."""
+    __jac_mach__ = mach  # noqa: F841
+    return func(*args)
 
 
 class ExecutionContext:
     """Execution Context."""
 
+    mach: JacMachineState
     mem: Memory
     reports: list[Any]
     custom: Any = MISSING
     system_root: NodeAnchor
     root: NodeAnchor
     entry_node: NodeAnchor
+
+    def __init__(
+        self,
+        mach: JacMachineState,
+        session: Optional[str] = None,
+        root: Optional[str] = None,
+    ) -> None:
+        """Create ExecutionContext."""
+
+        self.mach = mach
+        self.mem = ShelfStorage(session)
+        self.reports = []
+        sr_arch = Root()
+        sr_anch = sr_arch.__jac__
+        sr_anch.id = SUPER_ROOT_UUID
+        sr_anch.persistent = False
+        self.system_root = sr_anch
+        if not isinstance(
+            system_root := self.mem.find_by_id(SUPER_ROOT_UUID), NodeAnchor
+        ):
+            system_root = cast(NodeAnchor, Root().__jac__)  # type: ignore[attr-defined]
+            system_root.id = SUPER_ROOT_UUID
+            self.mem.set(system_root.id, system_root)
+
+        self.system_root = system_root
+
+        self.entry_node = self.root = self.init_anchor(root, self.system_root)
 
     def init_anchor(
         self,
@@ -48,71 +82,26 @@ class ExecutionContext:
 
     def close(self) -> None:
         """Close current ExecutionContext."""
-        self.mem.close()
-        EXECUTION_CONTEXT.set(None)
+        call_jac_func_with_machine(mach=self.mach, func=self.mem.close)
 
-    @staticmethod
-    def create(
-        session: Optional[str] = None,
-        root: Optional[str] = None,
-        auto_close: bool = True,
-    ) -> ExecutionContext:
-        """Create ExecutionContext."""
-
-        ctx = ExecutionContext()
-        ctx.mem = ShelfStorage(session)
-        ctx.reports = []
-
-        if not isinstance(
-            system_root := ctx.mem.find_by_id(SUPER_ROOT_UUID), NodeAnchor
-        ):
-            system_root = cast(NodeAnchor, Root().__jac__)  # type: ignore[attr-defined]
-            system_root.id = SUPER_ROOT_UUID
-            ctx.mem.set(system_root.id, system_root)
-
-        ctx.system_root = system_root
-
-        ctx.entry_node = ctx.root = ctx.init_anchor(root, ctx.system_root)
-
-        if auto_close and (old_ctx := EXECUTION_CONTEXT.get(None)):
-            old_ctx.close()
-
-        EXECUTION_CONTEXT.set(ctx)
-
-        return ctx
-
-    @staticmethod
-    def get() -> ExecutionContext:
-        """Get current ExecutionContext."""
-        if ctx := EXECUTION_CONTEXT.get(None):
-            return ctx
-        raise Exception("ExecutionContext is not yet available!")
-
-    @staticmethod
-    def get_root() -> Root:
+    def get_root(self) -> Root:
         """Get current root."""
-        if ctx := EXECUTION_CONTEXT.get(None):
-            return cast(Root, ctx.root.architype)
+        return cast(Root, self.root.architype)
 
-        return cast(Root, ExecutionContext.global_system_root().architype)
-
-    @staticmethod
-    def global_system_root() -> NodeAnchor:
+    def global_system_root(self) -> NodeAnchor:
         """Get global system root."""
-
-        if not (sr_anch := getattr(ExecutionContext, "system_root", None)):
-            sr_arch = Root()
-            sr_anch = sr_arch.__jac__  # type: ignore[attr-defined]
-            sr_anch.id = SUPER_ROOT_UUID
-            sr_anch.persistent = False
-            ExecutionContext.system_root = sr_anch
-        return sr_anch
+        return self.system_root
 
 
 class JacMachineState:
     """JacMachine to handle the VM-related functionalities and loaded programs."""
 
-    def __init__(self, base_path: str = "") -> None:
+    def __init__(
+        self,
+        base_path: str = "",
+        session: Optional[str] = None,
+        root: Optional[str] = None,
+    ) -> None:
         """Initialize the JacMachine object."""
         self.loaded_modules: dict[str, types.ModuleType] = {}
         if not base_path:
@@ -125,3 +114,4 @@ class JacMachineState:
             else os.path.abspath(base_path)
         )
         self.jac_program: JacProgram = JacProgram()
+        self.exec_ctx = ExecutionContext(session=session, root=root, mach=self)
