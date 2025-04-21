@@ -131,16 +131,15 @@ class JacProgram:
     ) -> Pass:
         """Convert a Jac file to an AST."""
         ast_ret = in_pass
-        # Only return the parsed module when the schedules are empty
-        if len(schedule) == 0:
-            return ast_ret
-
         assert isinstance(ast_ret.root_ir, ast.Module)
-
         # Creating a new JacProgram and attaching it to top module
         top_mod: ast.Module = ast_ret.root_ir
         self.last_imported.append(ast_ret.root_ir)
         self.modules[ast_ret.root_ir.loc.mod_path] = ast_ret.root_ir
+
+        # Only return the parsed module when the schedules are empty
+        if len(schedule) == 0:
+            return ast_ret
 
         # Run JacImportPass & SymTabBuildPass on all imported Jac Programs
         while len(self.last_imported) > 0:

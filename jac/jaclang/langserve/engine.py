@@ -76,11 +76,11 @@ class JacLangServer(LanguageServer):
             self.modules[file_path].impl_parent if file_path in self.modules else None
         )
         self.modules[file_path] = ModuleInfo(ir=build.root_ir, impl_parent=keep_parent)
-        for p in build.root_ir.mod_deps.keys():
+        for p in self.program.modules.keys():
             uri = uris.from_fs_path(p)
             if file_path != uri:
                 self.modules[uri] = ModuleInfo(
-                    ir=build.root_ir.mod_deps[p],
+                    ir=self.program.modules[p],
                     impl_parent=self.modules[file_path],
                 )
 
@@ -88,7 +88,6 @@ class JacLangServer(LanguageServer):
         """Rebuild a file."""
         try:
             document = self.workspace.get_text_document(file_path)
-            self.program = JacProgram()  # TODO: Remove this Hack
             build = self.program.jac_str_to_pass(
                 jac_str=document.source, file_path=document.path, schedule=[]
             )

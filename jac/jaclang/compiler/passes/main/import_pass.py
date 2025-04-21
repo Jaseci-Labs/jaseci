@@ -27,21 +27,14 @@ logger = logging.getLogger(__name__)
 class JacImportPass(Pass):
     """Jac statically imports Jac modules."""
 
-    def before_pass(self) -> None:
-        """Run once before pass."""
-        self.import_table: dict[str, ast.Module] = {}
-
     def enter_module(self, node: ast.Module) -> None:
         """Run Importer."""
         self.cur_node = node
-        self.import_table[node.loc.mod_path] = node
         self.annex_impl(node)
         self.terminate()  # Turns off auto traversal for deliberate traversal
         all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
         for i in all_imports:
             self.process_import(i)
-
-        node.mod_deps.update(self.import_table)
 
     def process_import(self, i: ast.ModulePath) -> None:
         """Process an import."""
@@ -165,8 +158,6 @@ class JacImportPass(Pass):
         if not os.path.exists(target):
             self.error(f"Could not find module {target}")
             return None
-        if target in self.import_table:
-            return self.import_table[target]
         try:
             mod_pass = self.prog.jac_file_to_pass(file_path=target, schedule=[])
             self.errors_had += mod_pass.errors_had
@@ -176,7 +167,6 @@ class JacImportPass(Pass):
             logger.error(e)
             mod = None
         if isinstance(mod, ast.Module):
-            self.import_table[target] = mod
             mod.is_imported = True
             mod.body = [x for x in mod.body if not isinstance(x, ast.AstImplOnlyNode)]
             return mod
@@ -191,13 +181,10 @@ class PyImportPass(JacImportPass):
     def enter_module(self, node: ast.Module) -> None:
         """Run Importer."""
         self.cur_node = node
-        self.import_table[node.loc.mod_path] = node
         self.terminate()  # Turns off auto traversal for deliberate traversal
         all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
         for i in all_imports:
             self.process_import(i)
-
-        node.mod_deps.update(self.import_table)
 
     def before_pass(self) -> None:
         """Only run pass if settings are set to raise python."""
@@ -334,9 +321,6 @@ class PyImportPass(JacImportPass):
             if file_to_raise in {None, "built-in", "frozen"}:
                 return None
 
-            if file_to_raise in self.import_table:
-                return self.import_table[file_to_raise]
-
             with open(file_to_raise, "r", encoding="utf-8") as f:
                 file_source = f.read()
                 mod = PyastBuildPass(
@@ -353,7 +337,6 @@ class PyImportPass(JacImportPass):
                     # (thakee): This needs to be re-done after implementing path handling properly.
                     mod_name = mod.loc.mod_path.split(os.path.sep)[-2]
                     mod.name = mod_name
-                self.import_table[file_to_raise] = mod
                 mod.py_info.is_raised_from_py = True
                 return mod
             else:

@@ -26,7 +26,8 @@ class ImportPassPassTests(TestCase):
             self.fixture_abs_path("base.jac"), JacImportPass
         )
         self.assertFalse(state.errors_had)
-        self.assertIn("56", str(list(state.prog.modules.values())[1].to_dict()))
+        mod = state.prog.modules[self.fixture_abs_path("impl/imps.jac")]
+        self.assertIn("56", str(mod.to_dict()))
 
     def test_import_auto_impl(self) -> None:
         """Basic test for pass."""
@@ -65,7 +66,7 @@ class ImportPassPassTests(TestCase):
         )
         count = 0
         all_mods = state.prog.modules.values()
-        self.assertEqual(len(all_mods), 2)
+        self.assertEqual(len(all_mods), 6)
         for main_mod in all_mods:
             for i in main_mod.impl_mod:
                 if i.name not in ["autoimpl", "incautoimpl"]:

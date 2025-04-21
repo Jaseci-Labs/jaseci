@@ -665,7 +665,6 @@ class Module(AstDocNode):
         self.stub_only = stub_only
         self.impl_mod: list[Module] = []
         self.test_mod: list[Module] = []
-        self.mod_deps: dict[str, Module] = {}
         self.registry = registry
         self.terminals: list[Token] = terminals
         self.py_info: PyInfo = PyInfo()
