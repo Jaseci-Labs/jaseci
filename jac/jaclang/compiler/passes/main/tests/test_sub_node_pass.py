@@ -1,6 +1,5 @@
 """Test sub node pass module."""
 
-from jaclang.compiler.passes.main import SubNodeTabPass
 from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import TestCase
 
@@ -16,7 +15,7 @@ class SubNodePassTests(TestCase):
         """Basic test for pass."""
         code_gen = JacProgram().jac_file_to_pass(
             file_path=self.examples_abs_path("manual_code/circle.jac"),
-            target=SubNodeTabPass,
+            schedule=[],
         )
         for i in code_gen.root_ir.kid[1].kid:
             for k, v in i._sub_node_tab.items():

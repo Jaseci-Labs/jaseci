@@ -20,7 +20,6 @@ from jaclang.compiler.passes.main import (
     PyCollectDepsPass,
     PyImportPass,
     PyastBuildPass,
-    SubNodeTabPass,
     SymTabBuildPass,
     pass_schedule,
     py_code_gen,
@@ -132,12 +131,8 @@ class JacProgram:
     ) -> Pass:
         """Convert a Jac file to an AST."""
         ast_ret = in_pass
-
-        SubNodeTabPass(ast_ret.root_ir, ast_ret, prog=self)  # TODO: Get rid of this one
-
         # Only return the parsed module when the schedules are empty
-        # or the target is SubNodeTabPass
-        if len(schedule) == 0 or target == SubNodeTabPass:
+        if len(schedule) == 0:
             return ast_ret
 
         assert isinstance(ast_ret.root_ir, ast.Module)

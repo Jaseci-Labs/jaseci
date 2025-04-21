@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast as ast3
 import builtins
 import os
+from copy import copy
 from dataclasses import dataclass
 from hashlib import md5
 from types import EllipsisType
@@ -47,10 +48,26 @@ class AstNode:
         self.kid: list[AstNode] = [x.set_parent(self) for x in kid]
         self._sym_tab: Optional[SymbolTable] = None
         self._sub_node_tab: dict[type, list[AstNode]] = {}
+        self.construct_sub_node_tab()
         self._in_mod_nodes: list[AstNode] = []
         self.gen: CodeGenTarget = CodeGenTarget()
         self.meta: dict[str, str] = {}
         self.loc: CodeLocInfo = CodeLocInfo(*self.resolve_tok_range())
+
+    def construct_sub_node_tab(self) -> None:
+        """Construct sub node table."""
+        for i in self.kid:
+            if not i:
+                continue
+            for k, v in i._sub_node_tab.items():
+                if k in self._sub_node_tab:
+                    self._sub_node_tab[k].extend(v)
+                else:
+                    self._sub_node_tab[k] = copy(v)
+            if type(i) in self._sub_node_tab:
+                self._sub_node_tab[type(i)].append(i)
+            else:
+                self._sub_node_tab[type(i)] = [i]
 
     @property
     def sym_tab(self) -> SymbolTable:

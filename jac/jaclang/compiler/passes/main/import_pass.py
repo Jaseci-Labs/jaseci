@@ -13,7 +13,7 @@ from typing import Optional
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes import Pass
-from jaclang.compiler.passes.main import DefUsePass, SubNodeTabPass, SymTabBuildPass
+from jaclang.compiler.passes.main import DefUsePass, SymTabBuildPass
 from jaclang.compiler.passes.main.sym_tab_build_pass import PyInspectSymTabBuildPass
 from jaclang.settings import settings
 from jaclang.utils.log import logging
@@ -40,7 +40,6 @@ class JacImportPass(Pass):
         all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
         for i in all_imports:
             self.process_import(i)
-        SubNodeTabPass(prior=self, ir_root=node, prog=self.prog)
 
         node.mod_deps.update(self.import_table)
 
@@ -197,7 +196,6 @@ class PyImportPass(JacImportPass):
         all_imports = self.get_all_sub_nodes(node, ast.ModulePath)
         for i in all_imports:
             self.process_import(i)
-        SubNodeTabPass(prior=self, ir_root=node, prog=self.prog)
 
         node.mod_deps.update(self.import_table)
 
@@ -348,7 +346,6 @@ class PyImportPass(JacImportPass):
                     ),
                     prog=self.prog,
                 ).ir
-                SubNodeTabPass(ir_root=mod, prior=self, prog=self.prog)
 
             if mod:
                 mod.name = imported_mod_name if imported_mod_name else mod.name
@@ -389,7 +386,6 @@ class PyImportPass(JacImportPass):
                 ),
                 prog=self.prog,
             ).ir
-            SubNodeTabPass(ir_root=mod, prior=self, prog=self.prog)
             SymTabBuildPass(ir_root=mod, prior=self, prog=self.prog)
             self.prog.modules[file_to_raise] = mod
             mod.py_info.is_raised_from_py = True

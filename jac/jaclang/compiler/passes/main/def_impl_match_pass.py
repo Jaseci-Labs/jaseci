@@ -9,7 +9,6 @@ body field.
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes import Pass
-from jaclang.compiler.passes.main import SubNodeTabPass
 from jaclang.compiler.symtable import Symbol, SymbolTable
 
 
@@ -24,12 +23,6 @@ class DeclImplMatchPass(Pass):
             )
         else:
             self.connect_def_impl(node.sym_tab)
-
-    def after_pass(self) -> None:
-        """Rebuild sub node table."""
-        self.root_ir = SubNodeTabPass(
-            ir_root=self.root_ir, prior=self, prog=self.prog
-        ).root_ir
 
     def defn_lookup(self, lookup: Symbol) -> ast.NameAtom | None:
         """Lookup a definition in a symbol table."""

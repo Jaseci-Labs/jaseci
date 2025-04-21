@@ -2,8 +2,7 @@
 
 from typing import Type
 
-from .sub_node_tab_pass import Pass, SubNodeTabPass
-from .sym_tab_build_pass import SymTabBuildPass  # noqa: I100
+from .sym_tab_build_pass import Pass, SymTabBuildPass  # noqa: I100
 from .def_use_pass import DefUsePass  # noqa: I100
 from .import_pass import JacImportPass, PyImportPass  # noqa: I100
 from .def_impl_match_pass import DeclImplMatchPass  # noqa: I100
@@ -20,7 +19,6 @@ from .schedules import type_checker_sched  # noqa: I100
 pass_schedule: list[Type[Pass]] = py_code_gen  # type: ignore[has-type]
 
 __all__ = [
-    "SubNodeTabPass",
     "JacImportPass",
     "PyImportPass",
     "SymTabBuildPass",

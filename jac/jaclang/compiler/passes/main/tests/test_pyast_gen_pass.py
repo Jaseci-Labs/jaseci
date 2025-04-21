@@ -6,7 +6,7 @@ import sys
 import types
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.passes.main import PyastGenPass, SubNodeTabPass
+from jaclang.compiler.passes.main import PyastGenPass
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.machine import JacMachineState
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
@@ -134,7 +134,7 @@ class ValidateTreeParentTest(TestCaseMicroSuite):
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
         code_gen = JacProgram().jac_file_to_pass(
-            self.fixture_abs_path(filename), target=SubNodeTabPass
+            self.fixture_abs_path(filename), schedule=[]
         )
         self.assertTrue(self.parent_scrub(code_gen.root_ir))
         code_gen = JacProgram().jac_file_to_pass(
