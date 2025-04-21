@@ -199,12 +199,6 @@ class AstNode:
         else:
             raise ValueError(f"Parent of type {typ} not found.")
 
-    def format(self) -> str:
-        """Get all sub nodes of type."""
-        from jaclang.compiler.passes.tool import JacFormatPass
-
-        return JacFormatPass(ir_root=self, prior=None, prog=None).root_ir.gen.jac
-
     def to_dict(self) -> dict[str, str]:
         """Return dict representation of node."""
         ret = {
@@ -651,7 +645,6 @@ class Module(AstDocNode):
         source: JacSource,
         doc: Optional[String],
         body: Sequence[ElementStmt | String | EmptyToken],
-        is_imported: bool,
         terminals: list[Token],
         kid: Sequence[AstNode],
         stub_only: bool = False,
@@ -714,6 +707,12 @@ class Module(AstDocNode):
         new_kid.extend(self.body)
         self.set_kids(nodes=new_kid if len(new_kid) else [EmptyToken()])
         return res
+
+    def format(self) -> str:
+        """Get all sub nodes of type."""
+        from jaclang.compiler.passes.tool import JacFormatPass
+
+        return JacFormatPass(ir_root=self, prior=None, prog=None).root_ir.gen.jac
 
     def unparse(self) -> str:
         """Unparse module node."""

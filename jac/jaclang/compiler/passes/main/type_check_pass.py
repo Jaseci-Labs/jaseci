@@ -34,7 +34,7 @@ class JacTypeCheckPass(Pass):
         try:
             self.api(os.path.dirname(self.root_ir.loc.mod_path))
         except Exception as e:
-            self.error(f"Unable to run type checking: {e}")
+            self.log_error(f"Unable to run type checking: {e}")
         return super().after_pass()
 
     def default_message_cb(

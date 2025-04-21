@@ -10,9 +10,9 @@ from typing import Callable, Optional
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.parser import JacParser
-from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
+from jaclang.compiler.passes.transform import Transform
 from jaclang.compiler.program import JacProgram
 from jaclang.compiler.symtable import SymbolTable
 from jaclang.langserve.sem_manager import SemTokManager
@@ -64,7 +64,7 @@ class JacLangServer(LanguageServer):
         self.program = JacProgram()
 
     def update_modules(
-        self, file_path: str, build: Pass, refresh: bool = False
+        self, file_path: str, build: Transform, refresh: bool = False
     ) -> None:
         """Update modules."""
         if not isinstance(build.root_ir, ast.Module):

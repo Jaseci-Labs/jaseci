@@ -742,7 +742,7 @@ class Errors(mye.Errors):
             end_column=end_column,
         )
         if (line, column, end_line, end_column) in mypy_to_jac_node_map:
-            self.cur_pass.warning(
+            self.cur_pass.log_warning(
                 msg=message,
                 node_override=mypy_to_jac_node_map[
                     (line, column, end_line, end_column)

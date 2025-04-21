@@ -1025,7 +1025,7 @@ class PyastGenPass(Pass):
             )
         )
         if node.is_abstract and node.body:
-            self.error(
+            self.log_error(
                 f"Abstract ability {node.sym_name} should not have a body.",
                 node,
             )
@@ -1058,7 +1058,9 @@ class PyastGenPass(Pass):
                 0, self.sync(ast3.Name(id="staticmethod", ctx=ast3.Load()))
             )
         if not body and not isinstance(node.body, ast.FuncCall):
-            self.error("Ability has no body. Perhaps an impl must be imported.", node)
+            self.log_error(
+                "Ability has no body. Perhaps an impl must be imported.", node
+            )
             body = [self.sync(ast3.Pass(), node)]
 
         node.gen.py_ast = [
@@ -2024,7 +2026,7 @@ class PyastGenPass(Pass):
         hops: Optional[ExprType],
         else_body: Optional[ElseStmt],
         """
-        self.warning("Revisit not used in Jac", node)
+        self.log_warning("Revisit not used in Jac", node)
         node.gen.py_ast = [
             self.sync(ast3.Expr(value=self.sync(ast3.Constant(value=None))))
         ]
@@ -2363,9 +2365,9 @@ class PyastGenPass(Pass):
             self.exit_func_call(func_node)
             return func_node.gen.py_ast
         elif node.op.name == Tok.PIPE_FWD and isinstance(node.right, ast.TupleVal):
-            self.error("Invalid pipe target.")
+            self.log_error("Invalid pipe target.")
         else:
-            self.error(
+            self.log_error(
                 f"Binary operator {node.op.value} not supported in bootstrap Jac"
             )
         return []
@@ -2826,7 +2828,7 @@ class PyastGenPass(Pass):
                     )
                 ]
             else:
-                self.error("Invalid attribute access")
+                self.log_error("Invalid attribute access")
         elif isinstance(node.right, ast.FilterCompr):
             node.gen.py_ast = [
                 self.sync(

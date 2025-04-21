@@ -18,7 +18,7 @@ class DeclImplMatchPass(Pass):
     def enter_module(self, node: ast.Module) -> None:
         """Enter module."""
         if not node.sym_tab:
-            self.error(
+            self.log_error(
                 f"Expected symbol table on node {node.__class__.__name__}. Perhaps an earlier pass failed."
             )
         else:
@@ -77,7 +77,7 @@ class DeclImplMatchPass(Pass):
                 if not decl_node:
                     continue
                 elif isinstance(decl_node, ast.Ability) and decl_node.is_abstract:
-                    self.warning(
+                    self.log_warning(
                         f"Abstract ability {decl_node.py_resolve_name()} should not have a definition.",
                         decl_node,
                     )
@@ -118,11 +118,11 @@ class DeclImplMatchPass(Pass):
             if params_decl and params_defn:
                 # Check if the parameter count is matched.
                 if len(params_defn.items) != len(params_decl.items):
-                    self.error(
+                    self.log_error(
                         f"Parameter count mismatch for ability {sym.sym_name}.",
                         sym.decl.name_of.name_spec,
                     )
-                    self.error(
+                    self.log_error(
                         f"From the declaration of {valid_decl.name_spec.sym_name}.",
                         valid_decl.name_spec,
                     )
@@ -148,7 +148,7 @@ class DeclImplMatchPass(Pass):
                         found_default_init = True
                     else:
                         if found_default_init:
-                            self.error(
+                            self.log_error(
                                 f"Non default attribute '{var.name.value}' follows default attribute",
                                 node_override=var.name,
                             )
@@ -175,7 +175,7 @@ class DeclImplMatchPass(Pass):
 
             # Check if postinit needed and not provided.
             if len(post_init_vars) != 0 and (postinit_method is None):
-                self.error(
+                self.log_error(
                     'Missing "postinit" method required by un initialized attribute(s).',
                     node_override=post_init_vars[0].name_spec,
                 )  # We show the error on the first uninitialized var.

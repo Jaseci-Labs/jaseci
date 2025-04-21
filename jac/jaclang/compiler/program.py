@@ -27,6 +27,7 @@ from jaclang.compiler.passes.main import (
 )
 from jaclang.compiler.passes.main.sym_tab_link_pass import SymTabLinkPass
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
+from jaclang.compiler.passes.transform import Transform
 from jaclang.compiler.semtable import SemRegistry
 from jaclang.utils.log import logging
 
@@ -58,7 +59,7 @@ class JacProgram:
         else:
             return None
 
-    def compile_jac(self, file_path: str) -> Pass:
+    def compile_jac(self, file_path: str) -> Transform:
         """Start Compile for Jac file and return python code as string."""
         return self.jac_file_to_pass(
             file_path=file_path,
@@ -70,7 +71,7 @@ class JacProgram:
         file_path: str,
         target: Optional[Type[Pass]] = None,
         schedule: list[Type[Pass]] = pass_schedule,
-    ) -> Pass:
+    ) -> Transform:
         """Convert a Jac file to an AST."""
         with open(file_path, "r", encoding="utf-8") as file:
             return self.jac_str_to_pass(
@@ -86,13 +87,13 @@ class JacProgram:
         file_path: str,
         target: Optional[Type[Pass]] = None,
         schedule: list[Type[Pass]] = pass_schedule,
-    ) -> Pass:
+    ) -> Transform:
         """Convert a Jac file to an AST."""
         if not target:
             target = schedule[-1] if schedule else None
 
         source = ast.JacSource(jac_str, mod_path=file_path)
-        ast_ret: Pass = JacParser(root_ir=source, prog=self)
+        ast_ret: Transform = JacParser(root_ir=source, prog=self)
         return self.run_pass_schedule(
             in_pass=ast_ret,
             target=target,
@@ -105,7 +106,7 @@ class JacProgram:
         file_path: str,
         target: Optional[Type[Pass]] = None,
         schedule: list[Type[Pass]] = pass_schedule,
-    ) -> Pass:
+    ) -> Transform:
         """Convert a Jac file to an AST."""
         if not target:
             target = schedule[-1] if schedule else None
@@ -125,10 +126,10 @@ class JacProgram:
 
     def run_pass_schedule(
         self,
-        in_pass: Pass,
+        in_pass: Transform,
         target: Optional[Type[Pass]] = None,
         schedule: list[Type[Pass]] = pass_schedule,
-    ) -> Pass:
+    ) -> Transform:
         """Convert a Jac file to an AST."""
         ast_ret = in_pass
         assert isinstance(ast_ret.root_ir, ast.Module)
@@ -220,10 +221,8 @@ class JacProgram:
         target = JacFormatPass
         with open(file_path) as file:
             source = ast.JacSource(file.read(), mod_path=file_path)
-            prse: Pass = JacParser(root_ir=source, prog=None)
+            prse: Transform = JacParser(root_ir=source, prog=None)
         for i in [FuseCommentsPass, JacFormatPass]:
-            if i == target:
-                break
             prse = i(ir_root=prse.root_ir, prior=prse, prog=None)
         prse = target(ir_root=prse.root_ir, prior=prse, prog=None)
         return prse
