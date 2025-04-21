@@ -42,10 +42,39 @@ class JacImportPass(AstPass):
         if imp_node.is_jac and not i.sub_module:
             self.import_jac_module(node=i)
 
+    def import_jac_module(self, node: ast.ModulePath) -> None:
+        """Import a module."""
+        self.cur_node = node  # impacts error reporting
+        target = node.resolve_relative_path()
+        # If the module is a package (dir)
+        if os.path.isdir(target):
+            self.attach_mod_to_node(self.import_jac_mod_from_dir(target))
+            import_node = node.parent_of_type(ast.Import)
+            # And the import is a from import and I am the from module
+            if node == import_node.from_loc:
+                # Import all from items as modules or packages
+                for i in import_node.items.items:
+                    if isinstance(i, ast.ModuleItem):
+                        from_mod_target = node.resolve_relative_path(i.name.value)
+                        # If package
+                        if os.path.isdir(from_mod_target):
+                            self.attach_mod_to_node(
+                                self.import_jac_mod_from_dir(from_mod_target)
+                            )
+                        # Else module
+                        else:
+                            self.attach_mod_to_node(
+                                self.prog.jac_file_to_pass(
+                                    file_path=from_mod_target, schedule=[]
+                                ).ir_out
+                            )
+        else:
+            self.attach_mod_to_node(
+                self.prog.jac_file_to_pass(file_path=target, schedule=[]).ir_out
+            )
+
     def attach_mod_to_node(self, mod: ast.Module | None) -> None:
         """Attach a module to a node."""
-        assert isinstance(self.ir_out, ast.Module)
-
         if mod and mod.loc.mod_path not in self.prog.modules:
             self.prog.modules[mod.loc.mod_path] = mod
             self.prog.last_imported.append(mod)
@@ -86,7 +115,7 @@ class JacImportPass(AstPass):
                 cur_file.startswith(f"{base_path}.")
                 or impl_folder == os.path.dirname(cur_file)
             ) and cur_file.endswith(".impl.jac"):
-                mod = self.import_jac_mod_from_file(cur_file)
+                mod = self.prog.jac_file_to_pass(file_path=cur_file, schedule=[]).ir_out
                 if mod:
                     node.add_kids_left(mod.kid, parent_update=True, pos_update=False)
                     node.impl_mod.append(mod)
@@ -94,43 +123,16 @@ class JacImportPass(AstPass):
                 cur_file.startswith(f"{base_path}.")
                 or test_folder == os.path.dirname(cur_file)
             ) and cur_file.endswith(".test.jac"):
-                mod = self.import_jac_mod_from_file(cur_file)
+                mod = self.prog.jac_file_to_pass(file_path=cur_file, schedule=[]).ir_out
                 if mod and not settings.ignore_test_annex:
                     node.test_mod.append(mod)
                     node.add_kids_right(mod.kid, parent_update=True, pos_update=False)
-
-    def import_jac_module(self, node: ast.ModulePath) -> None:
-        """Import a module."""
-        self.cur_node = node  # impacts error reporting
-        target = node.resolve_relative_path()
-        # If the module is a package (dir)
-        if os.path.isdir(target):
-            self.attach_mod_to_node(self.import_jac_mod_from_dir(target))
-            import_node = node.parent_of_type(ast.Import)
-            # And the import is a from import and I am the from module
-            if node == import_node.from_loc:
-                # Import all from items as modules or packages
-                for i in import_node.items.items:
-                    if isinstance(i, ast.ModuleItem):
-                        from_mod_target = node.resolve_relative_path(i.name.value)
-                        # If package
-                        if os.path.isdir(from_mod_target):
-                            self.attach_mod_to_node(
-                                self.import_jac_mod_from_dir(from_mod_target)
-                            )
-                        # Else module
-                        else:
-                            self.attach_mod_to_node(
-                                self.import_jac_mod_from_file(from_mod_target)
-                            )
-        else:
-            self.attach_mod_to_node(self.import_jac_mod_from_file(target))
 
     def import_jac_mod_from_dir(self, target: str) -> ast.Module | None:
         """Import a module from a directory."""
         with_init = os.path.join(target, "__init__.jac")
         if os.path.exists(with_init):
-            return self.import_jac_mod_from_file(with_init)
+            return self.prog.jac_file_to_pass(file_path=with_init, schedule=[]).ir_out
         else:
             return ast.Module(
                 name=target.split(os.path.sep)[-1],
@@ -141,17 +143,6 @@ class JacImportPass(AstPass):
                 stub_only=True,
                 kid=[ast.EmptyToken()],
             )
-
-    def import_jac_mod_from_file(self, target: str) -> ast.Module | None:
-        """Import a module from a file."""
-        if not os.path.exists(target):
-            self.log_error(f"Could not find module {target}")
-            return None
-        mod_pass = self.prog.jac_file_to_pass(file_path=target, schedule=[])
-        self.errors_had += mod_pass.errors_had
-        self.warnings_had += mod_pass.warnings_had
-        mod = mod_pass.ir_out
-        return mod
 
 
 class PyImportPass(JacImportPass):
@@ -200,7 +191,6 @@ class PyImportPass(JacImportPass):
 
     def __process_import_from(self, imp_node: ast.Import) -> None:
         """Process imports in the form of `from X import I`."""
-        assert isinstance(self.ir_out, ast.Module)
         assert isinstance(imp_node.from_loc, ast.ModulePath)
 
         # Attempt to import the Python module X and process it
@@ -275,8 +265,6 @@ class PyImportPass(JacImportPass):
         """Import a python module."""
         from jaclang.compiler.passes.main import PyastBuildPass
 
-        assert isinstance(self.ir_out, ast.Module)
-
         python_raise_map = self.prog.py_raise_map
         file_to_raise: Optional[str] = None
 
@@ -326,8 +314,6 @@ class PyImportPass(JacImportPass):
     def __load_builtins(self) -> None:
         """Pyraise builtins to help with builtins auto complete."""
         from jaclang.compiler.passes.main import PyastBuildPass
-
-        assert isinstance(self.ir_out, ast.Module)
 
         file_to_raise = str(
             pathlib.Path(os.path.dirname(__file__)).parent.parent.parent
