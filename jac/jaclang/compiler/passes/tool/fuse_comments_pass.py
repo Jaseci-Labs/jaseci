@@ -14,7 +14,7 @@ class FuseCommentsPass(Pass):
         """Before pass."""
         self.all_tokens: list[ast.Token] = []
         self.comments: list[ast.CommentToken] = (
-            self.root_ir.source.comments if isinstance(self.root_ir, ast.Module) else []
+            self.ir_out.source.comments if isinstance(self.ir_out, ast.Module) else []
         )
         return super().before_pass()
 
@@ -29,9 +29,9 @@ class FuseCommentsPass(Pass):
         code_stream = iter(self.all_tokens)  # Iterator for code tokens
         new_stream: list[ast.Token] = []  # New stream to hold ordered tokens
 
-        if not isinstance(self.root_ir, ast.Module):
+        if not isinstance(self.ir_out, ast.Module):
             raise self.ice(
-                f"FuseCommentsPass can only be run on a Module, not a {type(self.root_ir)}"
+                f"FuseCommentsPass can only be run on a Module, not a {type(self.ir_out)}"
             )
 
         try:
@@ -45,7 +45,7 @@ class FuseCommentsPass(Pass):
             next_code = None
 
         if next_comment and (not next_code or is_comment_next(next_comment, next_code)):
-            self.root_ir.terminals.insert(0, next_comment)
+            self.ir_out.terminals.insert(0, next_comment)
 
         while next_comment or next_code:
             if next_comment and (
@@ -55,8 +55,8 @@ class FuseCommentsPass(Pass):
                 last_tok = new_stream[-1] if len(new_stream) else None
                 new_stream.append(next_comment)
                 if last_tok:
-                    self.root_ir.terminals.insert(
-                        self.root_ir.terminals.index(last_tok) + 1, next_comment
+                    self.ir_out.terminals.insert(
+                        self.ir_out.terminals.index(last_tok) + 1, next_comment
                     )
                 try:
                     next_comment = next(comment_stream)
@@ -74,7 +74,7 @@ class FuseCommentsPass(Pass):
         for i, token in enumerate(new_stream):
             if isinstance(token, ast.CommentToken):
                 if i == 0:
-                    self.root_ir.add_kids_left([token])
+                    self.ir_out.add_kids_left([token])
                 else:
                     prev_token = new_stream[i - 1]
                     if prev_token.parent is not None:

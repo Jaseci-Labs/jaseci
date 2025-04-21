@@ -40,13 +40,13 @@ def format(path: str, outfile: str = "", to_screen: bool = False) -> None:
                 file=sys.stderr,
             )
         elif to_screen:
-            print(code_gen_format.root_ir.gen.jac)
+            print(code_gen_format.ir_out.gen.jac)
         elif outfile:
             with open(outfile, "w") as f:
-                f.write(code_gen_format.root_ir.gen.jac)
+                f.write(code_gen_format.ir_out.gen.jac)
         else:
             with open(filename, "w") as f:
-                f.write(code_gen_format.root_ir.gen.jac)
+                f.write(code_gen_format.ir_out.gen.jac)
 
     if path.endswith(".jac"):
         if os.path.exists(path):
@@ -357,7 +357,7 @@ def debug(filename: str, main: bool = True, cache: bool = False) -> None:
     base = base if base else "./"
     mod = mod[:-4]
     if filename.endswith(".jac"):
-        bytecode = JacProgram().jac_file_to_pass(filename).root_ir.gen.py_bytecode
+        bytecode = JacProgram().jac_file_to_pass(filename).ir_out.gen.py_bytecode
         if bytecode:
             code = marshal.loads(bytecode)
             if db.has_breakpoint(bytecode):
@@ -463,7 +463,7 @@ def jac2py(filename: str) -> None:
     """
     if filename.endswith(".jac"):
         with open(filename, "r"):
-            code = JacProgram().jac_file_to_pass(file_path=filename).root_ir.gen.py
+            code = JacProgram().jac_file_to_pass(file_path=filename).ir_out.gen.py
         print(code)
     else:
         print("Not a .jac file.", file=sys.stderr)

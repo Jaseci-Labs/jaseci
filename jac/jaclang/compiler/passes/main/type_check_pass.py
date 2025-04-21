@@ -24,7 +24,7 @@ class JacTypeCheckPass(Pass):
             / "vendor"
             / "mypy"
         )
-        assert isinstance(self.root_ir, ast.Module)
+        assert isinstance(self.ir_out, ast.Module)
         self.__modules = list(self.prog.modules.values())
         self.terminate()
         return super().before_pass()
@@ -32,7 +32,7 @@ class JacTypeCheckPass(Pass):
     def after_pass(self) -> None:
         """Call mypy api after traversing all the modules."""
         try:
-            self.api(os.path.dirname(self.root_ir.loc.mod_path))
+            self.api(os.path.dirname(self.ir_out.loc.mod_path))
         except Exception as e:
             self.log_error(f"Unable to run type checking: {e}")
         return super().after_pass()
@@ -95,7 +95,7 @@ class JacTypeCheckPass(Pass):
             mypy_graph[module.name] = st
             new_modules.append(st)
 
-        if not isinstance(self.root_ir, ast.Module):
+        if not isinstance(self.ir_out, ast.Module):
             raise self.ice("Expected module node. Impossible")
         mypy_graph = myab.load_graph(
             [
@@ -118,9 +118,9 @@ class JacTypeCheckPass(Pass):
             )
         }
         for i in mypy_graph:
-            self.root_ir.py_info.py_mod_dep_map[i] = mypy_graph[i].xpath
+            self.ir_out.py_info.py_mod_dep_map[i] = mypy_graph[i].xpath
             for j in mypy_graph[i].dependencies:
-                self.root_ir.py_info.py_mod_dep_map[j] = str(
+                self.ir_out.py_info.py_mod_dep_map[j] = str(
                     myab.find_module_with_reason(j, manager)
                 )
         myab.process_graph(mypy_graph, manager)

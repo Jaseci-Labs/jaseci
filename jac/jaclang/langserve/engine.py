@@ -67,10 +67,10 @@ class JacLangServer(LanguageServer):
         self, file_path: str, build: Transform, refresh: bool = False
     ) -> None:
         """Update modules."""
-        if not isinstance(build.root_ir, ast.Module):
+        if not isinstance(build.ir_out, ast.Module):
             self.log_error("Error with module build.")
             return
-        self.modules[file_path] = ModuleInfo(ir=build.root_ir)
+        self.modules[file_path] = ModuleInfo(ir=build.ir_out)
         for p in self.program.modules.keys():
             uri = uris.from_fs_path(p)
             if file_path != uri:
@@ -295,7 +295,7 @@ class JacLangServer(LanguageServer):
                 schedule=[FuseCommentsPass, JacFormatPass],
             )
             formatted_text = (
-                format.root_ir.gen.jac
+                format.ir_out.gen.jac
                 if JacParser not in [e.from_pass for e in format.errors_had]
                 else document.source
             )

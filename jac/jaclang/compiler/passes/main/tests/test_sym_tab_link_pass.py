@@ -24,7 +24,7 @@ class SymTabLinkPassTests(TestCase):
             "no_dupls.jac",
         )
         mod = (
-            JacProgram().jac_file_to_pass(file_path, schedule=py_code_gen_typed).root_ir
+            JacProgram().jac_file_to_pass(file_path, schedule=py_code_gen_typed).ir_out
         )
         self.assertEqual(
             len(mod.sym_tab.tab.values()),

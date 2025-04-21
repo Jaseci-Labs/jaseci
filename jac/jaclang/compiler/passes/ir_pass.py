@@ -19,14 +19,14 @@ class Pass(Transform[ast.Module, ast.Module]):
 
     def __init__(
         self,
-        ir_root: ast.Module,
+        ir_in: ast.Module,
         prior: Optional[Transform],
         prog: Optional[JacProgram],
     ) -> None:
         """Initialize parser."""
         self.term_signal = False
         self.prune_signal = False
-        Transform.__init__(self, ir_root, prior, prog)
+        Transform.__init__(self, ir_in, prior, prog)
 
     def before_pass(self) -> None:
         """Run once before pass."""
@@ -111,7 +111,7 @@ class Pass(Transform[ast.Module, ast.Module]):
     def transform(self, ir: ast.Module) -> ast.Module:
         """Run pass."""
         # Only performs passes on proper ASTs
-        self.root_ir = ir  # TODO: this should go away and just be orig
+        self.ir_out = ir  # TODO: this should go away and just be orig
         if not isinstance(ir, ast.AstNode):
             return ir
         self.before_pass()
@@ -119,7 +119,7 @@ class Pass(Transform[ast.Module, ast.Module]):
             raise ValueError("Current node is not an AstNode.")
         self.traverse(ir)
         self.after_pass()
-        return self.orig_ir
+        return self.ir_in
 
     def traverse(self, node: ast.AstNode) -> ast.AstNode:
         """Traverse tree."""

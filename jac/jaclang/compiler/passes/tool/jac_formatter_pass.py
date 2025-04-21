@@ -30,19 +30,19 @@ class JacFormatPass(Pass):
 
     def token_before(self, node: ast.Token) -> Optional[ast.Token]:
         """Token before."""
-        if not isinstance(self.root_ir, ast.Module):
+        if not isinstance(self.ir_out, ast.Module):
             raise self.ice("IR must be module. Impossible")
-        if self.root_ir.terminals.index(node) == 0:
+        if self.ir_out.terminals.index(node) == 0:
             return None
-        return self.root_ir.terminals[self.root_ir.terminals.index(node) - 1]
+        return self.ir_out.terminals[self.ir_out.terminals.index(node) - 1]
 
     def token_after(self, node: ast.Token) -> Optional[ast.Token]:
         """Token after."""
-        if not isinstance(self.root_ir, ast.Module):
+        if not isinstance(self.ir_out, ast.Module):
             raise self.ice("IR must be module. Impossible")
-        if self.root_ir.terminals.index(node) == len(self.root_ir.terminals) - 1:
+        if self.ir_out.terminals.index(node) == len(self.ir_out.terminals) - 1:
             return None
-        return self.root_ir.terminals[self.root_ir.terminals.index(node) + 1]
+        return self.ir_out.terminals[self.ir_out.terminals.index(node) + 1]
 
     def indent_str(self) -> str:
         """Return string for indent."""

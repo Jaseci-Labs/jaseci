@@ -51,7 +51,7 @@ class TestLarkParser(TestCaseMicroSuite):
             ),
             prog=None,
         )
-        out = prse.root_ir.pp()
+        out = prse.ir_out.pp()
         self.assertFalse(prse.errors_had)
         self.assertNotIn("staticmethod", out)
 

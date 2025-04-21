@@ -54,8 +54,8 @@ class JacProgram:
         if result.errors_had:
             for alrt in result.errors_had:
                 logger.error(alrt.pretty_print())
-        if result.root_ir.gen.py_bytecode is not None:
-            return marshal.loads(result.root_ir.gen.py_bytecode)
+        if result.ir_out.gen.py_bytecode is not None:
+            return marshal.loads(result.ir_out.gen.py_bytecode)
         else:
             return None
 
@@ -132,11 +132,11 @@ class JacProgram:
     ) -> Transform:
         """Convert a Jac file to an AST."""
         ast_ret = in_pass
-        assert isinstance(ast_ret.root_ir, ast.Module)
+        assert isinstance(ast_ret.ir_out, ast.Module)
         # Creating a new JacProgram and attaching it to top module
-        top_mod: ast.Module = ast_ret.root_ir
-        self.last_imported.append(ast_ret.root_ir)
-        self.modules[ast_ret.root_ir.loc.mod_path] = ast_ret.root_ir
+        top_mod: ast.Module = ast_ret.ir_out
+        self.last_imported.append(ast_ret.ir_out)
+        self.modules[ast_ret.ir_out.loc.mod_path] = ast_ret.ir_out
 
         # Only return the parsed module when the schedules are empty
         if len(schedule) == 0:
@@ -145,8 +145,8 @@ class JacProgram:
         # Run JacImportPass & SymTabBuildPass on all imported Jac Programs
         while len(self.last_imported) > 0:
             mod = self.last_imported.pop()
-            JacImportPass(ir_root=mod, prior=ast_ret, prog=self)
-            SymTabBuildPass(ir_root=mod, prior=ast_ret, prog=self)
+            JacImportPass(ir_in=mod, prior=ast_ret, prog=self)
+            SymTabBuildPass(ir_in=mod, prior=ast_ret, prog=self)
 
         # If there is syntax error, no point in processing in further passes.
         if len(ast_ret.errors_had) != 0:
@@ -154,12 +154,12 @@ class JacProgram:
 
         # TODO: we need a elegant way of doing this [should be genaralized].
         if target in (JacImportPass, SymTabBuildPass):
-            ast_ret.root_ir = top_mod
+            ast_ret.ir_out = top_mod
             return ast_ret
 
         # Link all Jac symbol tables created
         for mod in self.modules.values():
-            SymTabLinkPass(ir_root=mod, prior=ast_ret, prog=self)
+            SymTabLinkPass(ir_in=mod, prior=ast_ret, prog=self)
 
         # Run all passes till PyBytecodeGenPass
         # Here the passes will run one by one on the imported modules instead
@@ -180,7 +180,7 @@ class JacProgram:
 
         # Check if we need to run without type checking then just return
         if "JAC_NO_TYPECHECK" in os.environ or target in py_code_gen:
-            ast_ret.root_ir = top_mod
+            ast_ret.ir_out = top_mod
             return ast_ret
 
         # Run TypeCheckingPass on the top module
@@ -202,7 +202,7 @@ class JacProgram:
 
         # Link all Jac symbol tables created
         for mod in self.modules.values():
-            SymTabLinkPass(ir_root=mod, prior=ast_ret, prog=self)
+            SymTabLinkPass(ir_in=mod, prior=ast_ret, prog=self)
 
         for mod in self.modules.values():
             DefUsePass(mod, prior=ast_ret, prog=self)
@@ -210,7 +210,7 @@ class JacProgram:
         for mod in self.modules.values():
             run_schedule(mod, schedule=type_checker_sched)
 
-        ast_ret.root_ir = top_mod
+        ast_ret.ir_out = top_mod
         return ast_ret
 
     @staticmethod
@@ -223,6 +223,6 @@ class JacProgram:
             source = ast.JacSource(file.read(), mod_path=file_path)
             prse: Transform = JacParser(root_ir=source, prog=None)
         for i in [FuseCommentsPass, JacFormatPass]:
-            prse = i(ir_root=prse.root_ir, prior=prse, prog=None)
-        prse = target(ir_root=prse.root_ir, prior=prse, prog=None)
+            prse = i(ir_in=prse.ir_out, prior=prse, prog=None)
+        prse = target(ir_in=prse.ir_out, prior=prse, prog=None)
         return prse

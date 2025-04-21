@@ -68,7 +68,7 @@ class Transform(ABC, Generic[T, R]):
 
     def __init__(
         self,
-        root_ir: T,
+        ir_in: T,
         prior: Optional[Transform],
         prog: Optional[JacProgram],
     ) -> None:
@@ -78,11 +78,11 @@ class Transform(ABC, Generic[T, R]):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.errors_had: list[Alert] = [] if not prior else prior.errors_had
         self.warnings_had: list[Alert] = [] if not prior else prior.warnings_had
-        self.cur_node: AstNode = root_ir  # tracks current node during traversal
+        self.cur_node: AstNode = ir_in  # tracks current node during traversal
         self.prog = prog or JacProgram()
         self.time_taken = 0.0
-        self.orig_ir: T = root_ir
-        self.root_ir: R = self.timed_transform(ir=root_ir)
+        self.ir_in: T = ir_in
+        self.ir_out: R = self.timed_transform(ir=ir_in)
 
     def timed_transform(
         self,

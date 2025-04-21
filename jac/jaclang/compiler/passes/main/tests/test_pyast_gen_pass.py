@@ -51,16 +51,14 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         )
         import ast as ast3
 
-        if code_gen.root_ir.gen.py_ast and isinstance(
-            code_gen.root_ir.gen.py_ast[0], ast3.Module
+        if code_gen.ir_out.gen.py_ast and isinstance(
+            code_gen.ir_out.gen.py_ast[0], ast3.Module
         ):
-            prog = compile(
-                code_gen.root_ir.gen.py_ast[0], filename="<ast>", mode="exec"
-            )
+            prog = compile(code_gen.ir_out.gen.py_ast[0], filename="<ast>", mode="exec")
             captured_output = io.StringIO()
             sys.stdout = captured_output
             module = types.ModuleType("__main__")
-            module.__dict__["__file__"] = code_gen.root_ir.loc.mod_path
+            module.__dict__["__file__"] = code_gen.ir_out.loc.mod_path
             module.__dict__["__jac_mach__"] = JacMachineState()
             exec(prog, module.__dict__)
             sys.stdout = sys.__stdout__
@@ -92,8 +90,8 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         code_gen = JacProgram().jac_file_to_pass(
             self.fixture_abs_path(filename), target=PyastGenPass
         )
-        from_jac_str = ast3.dump(code_gen.root_ir.gen.py_ast[0], indent=2)
-        from_jac = code_gen.root_ir.gen.py_ast[0]
+        from_jac_str = ast3.dump(code_gen.ir_out.gen.py_ast[0], indent=2)
+        from_jac = code_gen.ir_out.gen.py_ast[0]
         try:
             compile(from_jac, filename="<ast>", mode="exec")
         except Exception as e:
@@ -106,7 +104,7 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             except Exception as e:
                 print(filename, ast3.dump(i, indent=2))
                 raise e
-        self.assertTrue(self.parent_scrub(code_gen.root_ir))
+        self.assertTrue(self.parent_scrub(code_gen.ir_out))
         self.assertGreater(len(from_jac_str), 10)
 
 
@@ -136,11 +134,11 @@ class ValidateTreeParentTest(TestCaseMicroSuite):
         code_gen = JacProgram().jac_file_to_pass(
             self.fixture_abs_path(filename), schedule=[]
         )
-        self.assertTrue(self.parent_scrub(code_gen.root_ir))
+        self.assertTrue(self.parent_scrub(code_gen.ir_out))
         code_gen = JacProgram().jac_file_to_pass(
             self.fixture_abs_path(filename), target=PyastGenPass
         )
-        self.assertTrue(self.parent_scrub(code_gen.root_ir))
+        self.assertTrue(self.parent_scrub(code_gen.ir_out))
 
 
 ValidateTreeParentTest.self_attach_micro_tests()

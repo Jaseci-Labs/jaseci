@@ -712,7 +712,7 @@ class Module(AstDocNode):
         """Get all sub nodes of type."""
         from jaclang.compiler.passes.tool import JacFormatPass
 
-        return JacFormatPass(ir_root=self, prior=None, prog=None).root_ir.gen.jac
+        return JacFormatPass(ir_in=self, prior=None, prog=None).ir_out.gen.jac
 
     def unparse(self) -> str:
         """Unparse module node."""

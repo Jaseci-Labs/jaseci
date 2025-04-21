@@ -13,7 +13,7 @@ class SymTabLinkPass(Pass):
     def enter_module_path(self, node: ast.ModulePath) -> None:
         """Link the symbol tables."""
 
-        assert isinstance(self.root_ir, ast.Module)
+        assert isinstance(self.ir_out, ast.Module)
 
         imp_node = node.parent_of_type(ast.Import)
 
@@ -24,14 +24,14 @@ class SymTabLinkPass(Pass):
             if rel_path not in self.prog.modules:
                 self.ice()
         else:
-            if node.sym_name in self.root_ir.py_info.py_raise_map:
-                rel_path = self.root_ir.py_info.py_raise_map[node.sym_name]
+            if node.sym_name in self.ir_out.py_info.py_raise_map:
+                rel_path = self.ir_out.py_info.py_raise_map[node.sym_name]
             elif (
-                f"{self.root_ir.get_href_path(node)}.{node.sym_name}"
-                in self.root_ir.py_info.py_raise_map
+                f"{self.ir_out.get_href_path(node)}.{node.sym_name}"
+                in self.ir_out.py_info.py_raise_map
             ):
-                rel_path = self.root_ir.py_info.py_raise_map[
-                    f"{self.root_ir.get_href_path(node)}.{node.sym_name}"
+                rel_path = self.ir_out.py_info.py_raise_map[
+                    f"{self.ir_out.get_href_path(node)}.{node.sym_name}"
                 ]
             else:
                 return

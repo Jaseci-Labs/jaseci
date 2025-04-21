@@ -19,7 +19,7 @@ class PyBytecodeGenPassTests(TestCase):
             file_path=self.fixture_abs_path("func.jac"),
         )
         try:
-            marshal.loads(jac_code.root_ir.gen.py_bytecode)
+            marshal.loads(jac_code.ir_out.gen.py_bytecode)
             self.assertTrue(True)
         except ValueError:
             self.fail("Invalid bytecode generated")

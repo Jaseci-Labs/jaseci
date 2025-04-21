@@ -195,7 +195,7 @@ class JacLanguageTests(TestCase):
         prog = JacProgram().jac_str_to_pass("with entry {print(4-5-4);}", "test.jac")
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        exec(compile(prog.root_ir.gen.py_ast[0], "test.py", "exec"))
+        exec(compile(prog.ir_out.gen.py_ast[0], "test.py", "exec"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value, "-5\n")
@@ -514,9 +514,9 @@ class JacLanguageTests(TestCase):
         mypass = JacProgram().jac_file_to_pass(
             self.fixture_abs_path("./slice_vals.jac")
         )
-        self.assertIn("Annotated[Str, INT, BLAH]", mypass.root_ir.gen.py)
+        self.assertIn("Annotated[Str, INT, BLAH]", mypass.ir_out.gen.py)
         self.assertIn(
-            "tuple[int, Optional[type], Optional[tuple]]", mypass.root_ir.gen.py
+            "tuple[int, Optional[type], Optional[tuple]]", mypass.ir_out.gen.py
         )
 
     def test_impl_decl_resolution_fix(self) -> None:
@@ -586,7 +586,7 @@ class JacLanguageTests(TestCase):
             jac_str=py_ast_build_pass.ir.unparse(),
             file_path=file_name[:-3] + ".jac",
             schedule=py_code_gen_typed,
-        ).root_ir
+        ).ir_out
 
         architype_count = 0
         for mod in prog.modules.values():
@@ -663,7 +663,7 @@ class JacLanguageTests(TestCase):
                 jac_str=py_ast_build_pass.ir.unparse(),
                 file_path=file_name[:-3] + ".jac",
                 schedule=py_code_gen_typed,
-            ).root_ir
+            ).ir_out
 
         architype_count = 0
         for mod in prog.modules.values():
@@ -715,7 +715,7 @@ class JacLanguageTests(TestCase):
             file_source = f.read()
         (prog := JacProgram()).py_str_to_pass(
             py_str=file_source, file_path=file_name, schedule=py_code_gen_typed
-        ).root_ir
+        ).ir_out
 
         architype_count = sum(
             len(mod.get_all_sub_nodes(ast.Architype))
@@ -783,11 +783,11 @@ class JacLanguageTests(TestCase):
     def test_double_format_issue(self) -> None:
         """Basic precedence test."""
         prog = JacProgram().jac_str_to_pass("with entry {print(hello);}", "test.jac")
-        prog.root_ir.unparse()
-        before = prog.root_ir.format()
-        prog.root_ir.format()
-        prog.root_ir.format()
-        after = prog.root_ir.format()
+        prog.ir_out.unparse()
+        before = prog.ir_out.format()
+        prog.ir_out.format()
+        prog.ir_out.format()
+        after = prog.ir_out.format()
         self.assertEqual(before, after)
 
     def test_type_fuse_expr(self) -> None:
@@ -902,7 +902,7 @@ class JacLanguageTests(TestCase):
                 .py_str_to_pass(
                     py_str=file_source, file_path=file_path, schedule=py_code_gen_typed
                 )
-                .root_ir
+                .ir_out
             )
             gen_ast = ir.pp()
             if module_path == "random":
@@ -940,7 +940,7 @@ class JacLanguageTests(TestCase):
             .py_str_to_pass(
                 py_str=file_source, file_path=file_name, schedule=py_code_gen_typed
             )
-            .root_ir
+            .ir_out
         )
         jac_ast = ir.pp()
         self.assertIn(" |   +-- String - 'Loop completed normally{}'", jac_ast)
@@ -1021,7 +1021,7 @@ class JacLanguageTests(TestCase):
     def test_multiline_single_tok(self) -> None:
         """Test conn assign on edges."""
         mypass = JacProgram().jac_file_to_pass(self.fixture_abs_path("byllmissue.jac"))
-        self.assertIn("2:5 - 4:8", mypass.root_ir.pp())
+        self.assertIn("2:5 - 4:8", mypass.ir_out.pp())
 
     @pytest.mark.xfail(
         reason="New schedules system is different and this test is not valid anymore"
@@ -1033,16 +1033,14 @@ class JacLanguageTests(TestCase):
             target=passes.JacImportPass,
         )
 
-        self.assertEqual(mypass.root_ir.pp().count("AbilityDef - (o)Circle.(c)area"), 1)
-        self.assertIsNone(mypass.root_ir._sym_tab)
+        self.assertEqual(mypass.ir_out.pp().count("AbilityDef - (o)Circle.(c)area"), 1)
+        self.assertIsNone(mypass.ir_out._sym_tab)
         mypass = JacProgram().jac_file_to_pass(
             self.examples_abs_path("manual_code/circle_pure.jac"),
             target=passes.SymTabBuildPass,
         )
         self.assertEqual(
-            len(
-                [i for i in mypass.root_ir.sym_tab.kid if i.name == "circle_pure.impl"]
-            ),
+            len([i for i in mypass.ir_out.sym_tab.kid if i.name == "circle_pure.impl"]),
             1,
         )
 
@@ -1053,7 +1051,7 @@ class JacLanguageTests(TestCase):
             target=passes.DefUsePass,
         )
         table = None
-        for i in mypass.root_ir.sym_tab.kid:
+        for i in mypass.ir_out.sym_tab.kid:
             if i.name == "GuessTheNumberGame":
                 for j in i.kid:
                     if j.name == "play":

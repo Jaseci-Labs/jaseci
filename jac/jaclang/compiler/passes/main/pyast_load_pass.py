@@ -28,7 +28,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """Initialize parser."""
         self.mod_path = root_ir.loc.mod_path
         self.orig_src = root_ir.loc.orig_src
-        Transform.__init__(self, root_ir=root_ir, prior=None, prog=prog)
+        Transform.__init__(self, ir_in=root_ir, prior=None, prog=prog)
 
     def nu(self, node: T) -> T:
         """Update node."""

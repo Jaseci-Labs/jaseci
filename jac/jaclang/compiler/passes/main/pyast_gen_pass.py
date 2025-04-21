@@ -51,7 +51,7 @@ class PyastGenPass(Pass):
                     names=[self.sync(ast3.alias(name="annotations", asname=None))],
                     level=0,
                 ),
-                jac_node=self.root_ir,
+                jac_node=self.ir_out,
             ),
             (
                 self.sync(
@@ -67,7 +67,7 @@ class PyastGenPass(Pass):
                         ],
                         level=0,
                     ),
-                    jac_node=self.root_ir,
+                    jac_node=self.ir_out,
                 )
             ),
             (
@@ -84,7 +84,7 @@ class PyastGenPass(Pass):
                         ],
                         level=0,
                     ),
-                    jac_node=self.root_ir,
+                    jac_node=self.ir_out,
                 )
             ),
         ]
@@ -128,11 +128,11 @@ class PyastGenPass(Pass):
                     names=[
                         self.sync(
                             ast3.alias(name="typing"),
-                            jac_node=self.root_ir,
+                            jac_node=self.ir_out,
                         ),
                     ]
                 ),
-                jac_node=self.root_ir,
+                jac_node=self.ir_out,
             )
         )
         self.already_added.append(self.needs_typing.__name__)
@@ -151,7 +151,7 @@ class PyastGenPass(Pass):
                     ],
                     level=0,
                 ),
-                jac_node=self.root_ir,
+                jac_node=self.ir_out,
             )
         )
         self.already_added.append(self.needs_enum.__name__)
@@ -387,7 +387,7 @@ class PyastGenPass(Pass):
                 type_params=[],
             ),
         )
-        if node.loc.mod_path != self.root_ir.loc.mod_path:
+        if node.loc.mod_path != self.ir_out.loc.mod_path:
             func.decorator_list.append(
                 self.sync(
                     ast3.Call(

@@ -22,7 +22,7 @@ class TestFuseTypeInfo(TestCase):
                 FuseTypeInfoPass,
                 schedule=py_code_gen_typed,
             )
-            .root_ir.pp()
+            .ir_out.pp()
         )
         type_info_list = [
             "kl - Type: types.ModuleType,  SymbolTable: blip",

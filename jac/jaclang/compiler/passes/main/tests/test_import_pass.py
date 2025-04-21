@@ -83,7 +83,7 @@ class ImportPassPassTests(TestCase):
             FuseTypeInfoPass,
             schedule=py_code_gen_typed,
         )
-        assert isinstance(build.root_ir, ast.Module)
+        assert isinstance(build.ir_out, ast.Module)
         p = {
             "math": r"jaclang/vendor/mypy/typeshed/stdlib/math.pyi$",
             "pygame_mock": r"pygame_mock/__init__.pyi$",
@@ -96,10 +96,10 @@ class ImportPassPassTests(TestCase):
             "genericpath": r"jaclang/vendor/mypy/typeshed/stdlib/genericpath.pyi$",
         }
         for i in p:
-            self.assertIn(i, build.root_ir.py_info.py_raise_map)
+            self.assertIn(i, build.ir_out.py_info.py_raise_map)
             self.assertRegex(
                 re.sub(
-                    r".*fixtures/", "", build.root_ir.py_info.py_raise_map[i]
+                    r".*fixtures/", "", build.ir_out.py_info.py_raise_map[i]
                 ).replace("\\", "/"),
                 p[i],
             )

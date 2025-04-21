@@ -54,7 +54,7 @@ class FuseTypeInfoPass(Pass):
         return None
 
     def __set_type_sym_table_link(self, node: ast.AstSymbolNode) -> None:
-        assert isinstance(self.root_ir, ast.Module)
+        assert isinstance(self.ir_out, ast.Module)
 
         sym_type = node.expr_type
         if re.match(r"builtins.(list|dict|tuple)", sym_type):
@@ -72,7 +72,7 @@ class FuseTypeInfoPass(Pass):
         typ_sym_table = partent_sym_table
 
         for i in typ:
-            if i == self.root_ir.name:
+            if i == self.ir_out.name:
                 continue
             f = typ_sym_table.find_scope(i)
             if f:
@@ -215,7 +215,7 @@ class FuseTypeInfoPass(Pass):
     def __check_builltin_symbol(self, node: ast.NameAtom) -> None:
         if isinstance(node.parent, ast.AtomTrailer) and node is node.parent.right:
             return
-        assert isinstance(self.root_ir, ast.Module)
+        assert isinstance(self.ir_out, ast.Module)
 
         builtins_sym_tab = None
         for mod in self.prog.modules.values():
@@ -653,7 +653,7 @@ class FuseTypeInfoPass(Pass):
                 # TODO: This will not work if an AtomTrailer was used as type annotations
                 if left.type_sym_tab is None and isinstance(node.parent, ast.SubTag):
                     assert isinstance(left, ast.AstSymbolNode)
-                    left.name_spec.type_sym_tab = self.root_ir.sym_tab.find_scope(
+                    left.name_spec.type_sym_tab = self.ir_out.sym_tab.find_scope(
                         left.sym_name
                     )
 
@@ -663,7 +663,7 @@ class FuseTypeInfoPass(Pass):
                         right.name_spec.sym.add_use(right.name_spec)
 
     def __get_parent_symtab(self, typ: str) -> Optional[SymbolTable]:
-        assert isinstance(self.root_ir, ast.Module)
+        assert isinstance(self.ir_out, ast.Module)
         assert self.prog is not None
 
         for mod_ast in self.prog.modules.values():

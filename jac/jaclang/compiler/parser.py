@@ -30,7 +30,7 @@ class JacParser(Transform[ast.JacSource, ast.Module]):
         self.node_list: list[ast.AstNode] = []
         if JacParser.dev_mode:
             JacParser.make_dev()
-        Transform.__init__(self, root_ir=root_ir, prior=None, prog=prog)
+        Transform.__init__(self, ir_in=root_ir, prior=None, prog=prog)
 
     def transform(self, ir: ast.JacSource) -> ast.Module:
         """Transform input IR."""
@@ -257,7 +257,7 @@ class JacParser(Transform[ast.JacSource, ast.Module]):
             body = self.match_many(ast.ElementStmt)
             mod = ast.Module(
                 name=self.parse_ref.mod_path.split(os.path.sep)[-1].rstrip(".jac"),
-                source=self.parse_ref.orig_ir,
+                source=self.parse_ref.ir_in,
                 doc=doc,
                 body=body,
                 terminals=self.terminals,
@@ -1093,7 +1093,7 @@ class JacParser(Transform[ast.JacSource, ast.Module]):
             token = self.consume(ast.Token)
             return ast.BuiltinType(
                 name=token.name,
-                orig_src=self.parse_ref.orig_ir,
+                orig_src=self.parse_ref.ir_in,
                 value=token.value,
                 line=token.loc.first_line,
                 end_line=token.loc.last_line,
@@ -3305,7 +3305,7 @@ class JacParser(Transform[ast.JacSource, ast.Module]):
             elif token.type == Tok.PYNLINE and isinstance(token.value, str):
                 token.value = token.value.replace("::py::", "")
             ret = ret_type(
-                orig_src=self.parse_ref.orig_ir,
+                orig_src=self.parse_ref.ir_in,
                 name=token.type,
                 value=token.value[2:] if token.type == Tok.KWESC_NAME else token.value,
                 line=token.line if token.line is not None else 0,

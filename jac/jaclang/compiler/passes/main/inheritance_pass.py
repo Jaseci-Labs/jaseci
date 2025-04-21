@@ -19,7 +19,7 @@ class InheritancePass(Pass):
 
     def __lookup(self, name: str, sym_table: SymbolTable) -> Optional[Symbol]:
         symbol = sym_table.lookup(name)
-        assert isinstance(self.root_ir, ast.Module)
+        assert isinstance(self.ir_out, ast.Module)
         if symbol is None:
             # Check if the needed symbol in builtins
             builtins_symtable = None

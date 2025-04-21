@@ -24,8 +24,8 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
                 target=PyastGenPass,
                 schedule=without_format,
             )
-            x = code_gen_pure.root_ir.unparse()
-            y = code_gen_pure.root_ir.unparse()
+            x = code_gen_pure.ir_out.unparse()
+            y = code_gen_pure.ir_out.unparse()
             self.assertEqual(x, y)
         except Exception as e:
             print("\n".join(unified_diff(x.splitlines(), y.splitlines())))
@@ -38,8 +38,8 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
             target=PyastGenPass,
             schedule=without_format,
         )
-        before = ast3.dump(code_gen_pure.root_ir.gen.py_ast[0], indent=2)
-        x = code_gen_pure.root_ir.unparse()
+        before = ast3.dump(code_gen_pure.ir_out.gen.py_ast[0], indent=2)
+        x = code_gen_pure.ir_out.unparse()
         # print(x)
         # print(f"Testing {code_gen_pure.ir.name}")
         # print(code_gen_pure.ir.pp())
@@ -49,7 +49,7 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
             target=PyastGenPass,
             schedule=without_format,
         )
-        after = ast3.dump(code_gen_jac.root_ir.gen.py_ast[0], indent=2)
+        after = ast3.dump(code_gen_jac.ir_out.gen.py_ast[0], indent=2)
         if "circle_clean_tests.jac" in filename:
             self.assertEqual(
                 len(

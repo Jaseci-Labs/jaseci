@@ -46,14 +46,14 @@ class JacImportPass(Pass):
         self, node: ast.ModulePath | ast.ModuleItem, mod: ast.Module | None
     ) -> None:
         """Attach a module to a node."""
-        assert isinstance(self.root_ir, ast.Module)
+        assert isinstance(self.ir_out, ast.Module)
 
         if mod and mod.loc.mod_path not in self.prog.modules:
             self.prog.modules[mod.loc.mod_path] = mod
             self.prog.last_imported.append(mod)
             # We should have only one py_raise_map in the program
             # TODO: Move py_raise_map to jac_program
-            mod.py_info.py_raise_map = self.root_ir.py_info.py_raise_map
+            mod.py_info.py_raise_map = self.ir_out.py_info.py_raise_map
 
     # TODO: Refactor this to a function for impl and function for test
     def annex_impl(self, node: ast.Module) -> None:
@@ -149,7 +149,7 @@ class JacImportPass(Pass):
 
     def import_jac_mod_from_file(self, target: str) -> ast.Module | None:
         """Import a module from a file."""
-        assert isinstance(self.root_ir, ast.Module)
+        assert isinstance(self.ir_out, ast.Module)
 
         if not os.path.exists(target):
             self.log_error(f"Could not find module {target}")
@@ -157,7 +157,7 @@ class JacImportPass(Pass):
         mod_pass = self.prog.jac_file_to_pass(file_path=target, schedule=[])
         self.errors_had += mod_pass.errors_had
         self.warnings_had += mod_pass.warnings_had
-        mod = mod_pass.root_ir
+        mod = mod_pass.ir_out
         assert isinstance(mod, ast.Module)
         return mod
 
@@ -208,7 +208,7 @@ class PyImportPass(JacImportPass):
 
     def __process_import_from(self, imp_node: ast.Import) -> None:
         """Process imports in the form of `from X import I`."""
-        assert isinstance(self.root_ir, ast.Module)
+        assert isinstance(self.ir_out, ast.Module)
         assert isinstance(imp_node.from_loc, ast.ModulePath)
 
         # Attempt to import the Python module X and process it
@@ -234,8 +234,8 @@ class PyImportPass(JacImportPass):
 
             self.attach_mod_to_node(imp_node.from_loc, imported_mod)
             self.import_from_build_list.append((imp_node, imported_mod))
-            PyInspectSymTabBuildPass(ir_root=imported_mod, prior=self, prog=self.prog)
-            DefUsePass(ir_root=imported_mod, prior=self, prog=self.prog)
+            PyInspectSymTabBuildPass(ir_in=imported_mod, prior=self, prog=self.prog)
+            DefUsePass(ir_in=imported_mod, prior=self, prog=self.prog)
 
     def __process_import(self, imp_node: ast.Import) -> None:
         """Process the imports in form of `import X`."""
@@ -268,13 +268,11 @@ class PyImportPass(JacImportPass):
                 msg += f"import_from (import all) handling with {imp_node.loc.mod_path}:{imp_node.loc}"
 
                 self.import_from_build_list.append((imp_node, imported_mod))
-                PyInspectSymTabBuildPass(
-                    ir_root=imported_mod, prior=self, prog=self.prog
-                )
-                DefUsePass(ir_root=imported_mod, prior=self, prog=self.prog)
+                PyInspectSymTabBuildPass(ir_in=imported_mod, prior=self, prog=self.prog)
+                DefUsePass(ir_in=imported_mod, prior=self, prog=self.prog)
 
             else:
-                SymTabBuildPass(ir_root=imported_mod, prior=self, prog=self.prog)
+                SymTabBuildPass(ir_in=imported_mod, prior=self, prog=self.prog)
 
     def __import_py_module(
         self,
@@ -285,9 +283,9 @@ class PyImportPass(JacImportPass):
         """Import a python module."""
         from jaclang.compiler.passes.main import PyastBuildPass
 
-        assert isinstance(self.root_ir, ast.Module)
+        assert isinstance(self.ir_out, ast.Module)
 
-        python_raise_map = self.root_ir.py_info.py_raise_map
+        python_raise_map = self.ir_out.py_info.py_raise_map
         file_to_raise: Optional[str] = None
 
         if mod_path in python_raise_map:
@@ -337,7 +335,7 @@ class PyImportPass(JacImportPass):
         """Pyraise builtins to help with builtins auto complete."""
         from jaclang.compiler.passes.main import PyastBuildPass
 
-        assert isinstance(self.root_ir, ast.Module)
+        assert isinstance(self.ir_out, ast.Module)
 
         file_to_raise = str(
             pathlib.Path(os.path.dirname(__file__)).parent.parent.parent
@@ -356,10 +354,10 @@ class PyImportPass(JacImportPass):
                 ),
                 prog=self.prog,
             ).ir
-            SymTabBuildPass(ir_root=mod, prior=self, prog=self.prog)
+            SymTabBuildPass(ir_in=mod, prior=self, prog=self.prog)
             self.prog.modules[file_to_raise] = mod
             mod.py_info.is_raised_from_py = True
-            mod.py_info.py_raise_map = self.root_ir.py_info.py_raise_map
+            mod.py_info.py_raise_map = self.ir_out.py_info.py_raise_map
 
     def annex_impl(self, node: ast.Module) -> None:
         """Annex impl and test modules."""
