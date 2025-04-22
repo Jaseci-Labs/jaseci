@@ -136,3 +136,15 @@ class ImportPassPassTests(TestCase):
         self.assertIn("foo", stdout_value)
         self.assertIn("bar", stdout_value)
         self.assertIn("baz", stdout_value)
+
+    def test_raise_syntax_error(self) -> None:
+        """Test raise error on the parser , dont go to the next pass."""
+        state = JacProgram().jac_file_to_pass(
+            self.fixture_abs_path("main.jac"), JacImportPass
+        )
+        self.assertTrue(state.errors_had)
+        # self.assertEqual(len(state.errors), 1)
+        # self.assertEqual(
+        #     state.errors[0].message,
+        #     "SyntaxError: invalid syntax ",
+        # )
