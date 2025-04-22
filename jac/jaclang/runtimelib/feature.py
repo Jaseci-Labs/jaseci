@@ -61,6 +61,7 @@ from jaclang.runtimelib.utils import (
     collect_node_connections,
     traverse_graph,
 )
+from jaclang.settings import settings
 
 import pluggy
 
@@ -725,9 +726,9 @@ class JacBasics:
         """Get jac machine from python context."""
         machine = None
         for i in inspect.stack():
-            machine = i.frame.f_globals.get("__jac_mach__") or i.frame.f_locals.get(
-                "__jac_mach__"
-            )
+            machine = i.frame.f_globals.get(
+                settings.jac_machine_varname
+            ) or i.frame.f_locals.get(settings.jac_machine_varname)
             if machine:
                 break
         if not machine:

@@ -20,6 +20,10 @@ class CodeGenTarget:
     jac: str = ""
     py_ast: list[ast3.AST] = field(default_factory=lambda: [])
     mypy_ast: list[MypyNode] = field(default_factory=lambda: [])
+
+    # NOTE: py_botecode is the dumped bytes of CodeType, however we
+    # Should use the actual CodeType as long as we can and only dump
+    # when we write to a file to retain importan information.
     py_bytecode: Optional[bytes] = None
 
     def clean(self) -> None:

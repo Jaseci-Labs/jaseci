@@ -78,7 +78,7 @@ class PyastGenPass(AstPass):
                             self.sync(
                                 ast3.alias(
                                     name="JacFeature",
-                                    asname=settings.pyout_jaclib_alias,
+                                    asname=settings.pyout_jacfeature_alias,
                                 )
                             ),
                         ],
@@ -111,7 +111,7 @@ class PyastGenPass(AstPass):
         return self.sync(
             ast3.Attribute(
                 value=self.sync(
-                    ast3.Name(id=settings.pyout_jaclib_alias, ctx=ast3.Load())
+                    ast3.Name(id=settings.pyout_jacfeature_alias, ctx=ast3.Load())
                 ),
                 attr=obj_name,
                 ctx=ast3.Load(),

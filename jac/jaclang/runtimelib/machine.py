@@ -13,6 +13,7 @@ from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.architype import NodeAnchor, Root
 from jaclang.runtimelib.memory import Memory, ShelfStorage
 from jaclang.utils.log import logging
+from jaclang.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ def call_jac_func_with_machine(
     mach: JacMachineState, func: Callable, *args: Any  # noqa: ANN401
 ) -> Any:  # noqa: ANN401
     """Call Jac function with machine context in local."""
-    __jac_mach__ = mach  # noqa: F841
+    locals()[settings.jac_machine_varname] = mach
     return func(*args)
 
 

@@ -9,6 +9,7 @@ import jaclang
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.machine import JacMachineState
 from jaclang.utils.test import TestCase
+from jaclang.settings import settings
 
 
 class JacReferenceTests(TestCase):
@@ -59,7 +60,7 @@ class JacReferenceTests(TestCase):
                     {
                         "__file__": filename,
                         "__name__": "__main__",
-                        "__jac_mach__": JacMachineState(),
+                        settings.jac_machine_varname: JacMachineState(),
                     },
                 )
             return f.getvalue()
