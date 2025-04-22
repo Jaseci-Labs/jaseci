@@ -66,20 +66,13 @@ class Alert:
 class Transform(ABC, Generic[T, R]):
     """Abstract class for IR passes."""
 
-    def __init__(
-        self,
-        ir_in: T,
-        prior: Optional[Transform],
-        prog: Optional[JacProgram],
-    ) -> None:
+    def __init__(self, ir_in: T, prog: JacProgram) -> None:
         """Initialize pass."""
-        from jaclang.compiler.program import JacProgram
-
         self.logger = logging.getLogger(self.__class__.__name__)
         self.errors_had: list[Alert] = []
         self.warnings_had: list[Alert] = []
         self.cur_node: AstNode = ir_in  # tracks current node during traversal
-        self.prog = prog or JacProgram()
+        self.prog = prog
         self.time_taken = 0.0
         self.ir_in: T = ir_in
         self.ir_out: R = self.timed_transform(ir=ir_in)

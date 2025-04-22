@@ -165,8 +165,8 @@ class PyImportPass(JacImportPass):
 
             self.load_mod(imported_mod)
             self.import_from_build_list.append((imp_node, imported_mod))
-            PyInspectSymTabBuildPass(ir_in=imported_mod, prior=self, prog=self.prog)
-            DefUsePass(ir_in=imported_mod, prior=self, prog=self.prog)
+            PyInspectSymTabBuildPass(ir_in=imported_mod, prog=self.prog)
+            DefUsePass(ir_in=imported_mod, prog=self.prog)
 
     def __process_import(self, imp_node: ast.Import) -> None:
         """Process the imports in form of `import X`."""
@@ -199,11 +199,11 @@ class PyImportPass(JacImportPass):
                 msg += f"import_from (import all) handling with {imp_node.loc.mod_path}:{imp_node.loc}"
 
                 self.import_from_build_list.append((imp_node, imported_mod))
-                PyInspectSymTabBuildPass(ir_in=imported_mod, prior=self, prog=self.prog)
-                DefUsePass(ir_in=imported_mod, prior=self, prog=self.prog)
+                PyInspectSymTabBuildPass(ir_in=imported_mod, prog=self.prog)
+                DefUsePass(ir_in=imported_mod, prog=self.prog)
 
             else:
-                SymTabBuildPass(ir_in=imported_mod, prior=self, prog=self.prog)
+                SymTabBuildPass(ir_in=imported_mod, prog=self.prog)
 
     def __import_py_module(
         self,
@@ -281,7 +281,7 @@ class PyImportPass(JacImportPass):
                 ),
                 prog=self.prog,
             ).ir
-            SymTabBuildPass(ir_in=mod, prior=self, prog=self.prog)
+            SymTabBuildPass(ir_in=mod, prog=self.prog)
             self.prog.modules[file_to_raise] = mod
             mod.py_info.is_raised_from_py = True
 
