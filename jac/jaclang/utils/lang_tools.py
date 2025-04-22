@@ -7,10 +7,10 @@ import sys
 from typing import List, Optional, Type
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.compile import jac_file_to_pass, jac_str_to_pass
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 from jaclang.compiler.passes.main.schedules import py_code_gen, type_checker_sched
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+from jaclang.compiler.program import JacProgram
 from jaclang.compiler.symtable import SymbolTable
 from jaclang.utils.helpers import auto_generate_refs, pascal_to_snake
 
@@ -205,7 +205,7 @@ class AstTool:
             return error
 
         output, file_name = args
-
+        prog = JacProgram()
         if not os.path.isfile(file_name):
             return f"Error: {file_name} not found"
 
@@ -221,31 +221,29 @@ class AstTool:
                     return f"\n{py_ast.dump(parsed_ast, indent=2)}"
                 try:
                     rep = PyastBuildPass(
-                        input_ir=ast.PythonModuleAst(
+                        root_ir=ast.PythonModuleAst(
                             parsed_ast,
                             orig_src=ast.JacSource(file_source, file_name),
                         ),
+                        prog=prog,
                     ).ir
 
-                    ir = jac_str_to_pass(
+                    ir = prog.jac_str_to_pass(
                         jac_str=rep.unparse(),
                         file_path=file_name[:-3] + ".jac",
                         schedule=py_code_gen_typed,
-                    ).ir
+                    ).ir_out
                 except Exception as e:
                     return f"Error While Jac to Py AST conversion: {e}"
             else:
-                ir = jac_file_to_pass(
+                ir = prog.jac_file_to_pass(
                     file_name, schedule=[*(py_code_gen), *type_checker_sched]
-                ).ir
-
-            assert isinstance(ir, ast.Module)
-            assert ir.jac_prog is not None
+                ).ir_out
 
             match output:
                 case "sym":
                     out = ""
-                    for module_ in ir.jac_prog.modules.values():
+                    for module_ in prog.modules.values():
                         mod_name = module_.name
                         t = "#" * len(mod_name)
                         out += f"##{t}##\n# {mod_name} #\n##{t}##\n{module_.sym_tab.pp()}\n"
@@ -258,7 +256,7 @@ class AstTool:
                     )
                 case "ast":
                     out = ""
-                    for module_ in ir.jac_prog.modules.values():
+                    for module_ in prog.modules.values():
                         mod_name = module_.name
                         t = "#" * len(mod_name)
                         out += f"##{t}##\n# {mod_name} #\n##{t}##\n{module_.pp()}\n"

@@ -11,7 +11,7 @@ from typing import Callable, Optional, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Constants, Tokens
-from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes import AstPass
 from jaclang.compiler.symtable import SymbolTable
 from jaclang.settings import settings
 from jaclang.utils.helpers import pascal_to_snake
@@ -26,7 +26,7 @@ from mypy.checkexpr import Type as MyType
 T = TypeVar("T", bound=ast.AstSymbolNode)
 
 
-class FuseTypeInfoPass(Pass):
+class FuseTypeInfoPass(AstPass):
     """Python and bytecode file self.__debug_printing pass."""
 
     node_type_hash: dict[MypyNodes.Node | VNode, MyType] = {}
@@ -54,32 +54,34 @@ class FuseTypeInfoPass(Pass):
         return None
 
     def __set_type_sym_table_link(self, node: ast.AstSymbolNode) -> None:
-        typ = node.expr_type.split(".")
-        typ_sym_table = self.ir.sym_tab
-        assert isinstance(self.ir, ast.Module)
-
         sym_type = node.expr_type
         if re.match(r"builtins.(list|dict|tuple)", sym_type):
             sym_type = re.sub(r"\[.*\]", "", sym_type)
-
-        typ = sym_type.split(".")
+        elif sym_type == "None" or sym_type == "NoType":
+            return
 
         if node.expr_type == "types.ModuleType" and node.sym:
-            node.name_spec.type_sym_tab = node.sym.parent_tab.find_scope(node.sym_name)
+            node.name_spec.type_sym_tab = self.__get_parent_symtab(node.sym_name)
+
+        partent_sym_table: Optional[SymbolTable] = self.__get_parent_symtab(sym_type)
+        if partent_sym_table is None:
+            return
+        typ = sym_type.split(".")
+        typ_sym_table = partent_sym_table
 
         for i in typ:
-            if i == self.ir.name:
+            if i == self.ir_out.name:
                 continue
             f = typ_sym_table.find_scope(i)
             if f:
                 typ_sym_table = f
 
-        if typ_sym_table != self.ir.sym_tab:
+        if typ_sym_table != partent_sym_table:
             node.name_spec.type_sym_tab = typ_sym_table
 
     @staticmethod
     def __handle_node(
-        func: Callable[[FuseTypeInfoPass, T], None]
+        func: Callable[[FuseTypeInfoPass, T], None],
     ) -> Callable[[FuseTypeInfoPass, T], None]:
         def node_handler(self: FuseTypeInfoPass, node: T) -> None:
             if not isinstance(node, ast.AstSymbolNode):
@@ -211,7 +213,11 @@ class FuseTypeInfoPass(Pass):
     def __check_builltin_symbol(self, node: ast.NameAtom) -> None:
         if isinstance(node.parent, ast.AtomTrailer) and node is node.parent.right:
             return
-        builtins_sym_tab = self.ir.sym_tab.find_scope("builtins")
+        builtins_sym_tab = None
+        for mod in self.prog.modules.values():
+            if mod.name == "builtins":
+                builtins_sym_tab = mod.sym_tab
+
         assert builtins_sym_tab is not None
         builtins_sym = builtins_sym_tab.lookup(node.sym_name)
         if builtins_sym:
@@ -406,11 +412,6 @@ class FuseTypeInfoPass(Pass):
     @__handle_node
     def enter_f_string(self, node: ast.FString) -> None:
         """Pass handler for FString nodes."""
-        self.__debug_print(f"Getting type not supported in {type(node)}")
-
-    @__handle_node
-    def enter_index_slice(self, node: ast.IndexSlice) -> None:
-        """Pass handler for IndexSlice nodes."""
         self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
@@ -626,16 +627,17 @@ class FuseTypeInfoPass(Pass):
                 right.expr_type = node_type
                 right.parent_of_type(ast.AtomTrailer).expr_type = node_type
 
-                # Getting the correct symbol table and link it
-                type_symtab: Optional[SymbolTable] = self.ir.sym_tab
-                assert isinstance(self.ir, ast.Module)
-                assert isinstance(type_symtab, SymbolTable)
-
                 if re.match(r"builtins.(list|dict|tuple)", node_type):
                     node_type = re.sub(r"\[.*\]", "", node_type)
 
+                # Getting the correct symbol table and link it
+                type_symtab: Optional[SymbolTable] = self.__get_parent_symtab(node_type)
+
+                if type_symtab is None:
+                    return
+
                 for j in node_type.split("."):
-                    if j == self.ir.name:
+                    if j == type_symtab.name:
                         continue
                     type_symtab = type_symtab.find_scope(j)
                     if type_symtab is None:
@@ -644,9 +646,10 @@ class FuseTypeInfoPass(Pass):
 
             else:
                 # Fix the symbolTable linking in case of type annotations
+                # TODO: This will not work if an AtomTrailer was used as type annotations
                 if left.type_sym_tab is None and isinstance(node.parent, ast.SubTag):
                     assert isinstance(left, ast.AstSymbolNode)
-                    left.name_spec.type_sym_tab = self.ir.sym_tab.find_scope(
+                    left.name_spec.type_sym_tab = self.ir_out.sym_tab.find_scope(
                         left.sym_name
                     )
 
@@ -654,3 +657,12 @@ class FuseTypeInfoPass(Pass):
                     right.name_spec.sym = left.type_sym_tab.lookup(right.sym_name)
                     if right.name_spec.sym:
                         right.name_spec.sym.add_use(right.name_spec)
+
+    def __get_parent_symtab(self, typ: str) -> Optional[SymbolTable]:
+        for mod_ast in self.prog.modules.values():
+            mod_table = mod_ast.sym_tab
+            if mod_table.name == typ.split(".")[0]:
+                return mod_table
+
+        self.__debug_print(f"Couldn't get a symbol for {typ}")
+        return None

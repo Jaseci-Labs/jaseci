@@ -4,26 +4,31 @@ from __future__ import annotations
 
 import ast as py_ast
 import os
-from typing import Optional, Sequence, TypeAlias, TypeVar
+from typing import Optional, Sequence, TYPE_CHECKING, TypeAlias, TypeVar
 
 # from icecream import ic
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Tokens as Tok
-from jaclang.compiler.passes.ir_pass import Pass
+from jaclang.compiler.passes.ast_pass import Transform
 from jaclang.utils.helpers import pascal_to_snake
+
+if TYPE_CHECKING:
+    from jaclang.compiler.program import JacProgram
 
 T = TypeVar("T", bound=ast.AstNode)
 
 
-class PyastBuildPass(Pass[ast.PythonModuleAst]):
+class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
     """Jac Parser."""
 
-    def __init__(self, input_ir: ast.PythonModuleAst) -> None:
+    def __init__(
+        self, root_ir: ast.PythonModuleAst, prog: Optional[JacProgram]
+    ) -> None:
         """Initialize parser."""
-        self.mod_path = input_ir.loc.mod_path
-        self.orig_src = input_ir.loc.orig_src
-        Pass.__init__(self, input_ir=input_ir, prior=None)
+        self.mod_path = root_ir.loc.mod_path
+        self.orig_src = root_ir.loc.orig_src
+        Transform.__init__(self, ir_in=root_ir, prior=None, prog=prog)
 
     def nu(self, node: T) -> T:
         """Update node."""
@@ -126,7 +131,6 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             doc=doc_str,
             body=valid[1:] if valid and isinstance(valid[0], ast.String) else valid,
             terminals=[],
-            is_imported=False,
             kid=valid,
         )
         ret.py_info.is_raised_from_py = True
@@ -746,7 +750,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         body = [self.convert(stmt) for stmt in node.body]
         valid_body = [stmt for stmt in body if isinstance(stmt, ast.CodeBlockStmt)]
         if len(valid_body) != len(body):
-            self.error("Length mismatch in async for body")
+            self.log_error("Length mismatch in async for body")
         body2 = ast.SubNodeList[ast.CodeBlockStmt](
             items=valid_body,
             delim=Tok.WS,
@@ -1441,7 +1445,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         names = [self.convert(name) for name in node.names]
         valid_names = [name for name in names if isinstance(name, ast.ExprAsItem)]
         if len(valid_names) != len(names):
-            self.error("Length mismatch in import names")
+            self.log_error("Length mismatch in import names")
         paths = []
         for name in valid_names:
             if isinstance(name.expr, ast.Name) and (

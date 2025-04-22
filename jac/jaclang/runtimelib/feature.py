@@ -5,39 +5,56 @@ from __future__ import annotations
 import ast as ast3
 import fnmatch
 import html
+import inspect
 import os
+import sys
+import tempfile
 import types
 from collections import OrderedDict
 from dataclasses import dataclass, field
+from functools import wraps
 from inspect import getfile
 from logging import getLogger
-from typing import Any, Callable, Mapping, Optional, Sequence, Type, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Mapping,
+    Optional,
+    ParamSpec,
+    Sequence,
+    TYPE_CHECKING,
+    Type,
+    TypeAlias,
+    TypeVar,
+    Union,
+    cast,
+)
 from uuid import UUID
 
-from jaclang.compiler.constant import colors
+
+from jaclang.compiler import absyntree as ast
+from jaclang.compiler.constant import EdgeDir, colors
+from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.compiler.program import JacProgram
-from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
-from jaclang.plugin.feature import (
+from jaclang.runtimelib.architype import (
+    DataSpatialFunction,
+    GenericEdge as _GenericEdge,
+    Root as _Root,
+)
+from jaclang.runtimelib.constructs import (
     AccessLevel,
     Anchor,
     Architype,
     EdgeAnchor,
     EdgeArchitype,
-    EdgeDir,
-    ExecutionContext,
-    JacFeature as Jac,
+    GenericEdge,
+    JacTestCheck,
     NodeAnchor,
     NodeArchitype,
-    P,
-    PyastGenPass,
     Root,
-    T,
     WalkerArchitype,
-    ast,
 )
-from jaclang.runtimelib.constructs import GenericEdge, JacTestCheck
-from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
-from jaclang.runtimelib.machine import JacMachine
+from jaclang.runtimelib.machine import ExecutionContext, JacMachineState
 from jaclang.runtimelib.memory import Shelf, ShelfStorage
 from jaclang.runtimelib.utils import (
     all_issubclass,
@@ -47,38 +64,31 @@ from jaclang.runtimelib.utils import (
 
 import pluggy
 
+
+plugin_manager = pluggy.PluginManager("jac")
+hookspec = pluggy.HookspecMarker("jac")
 hookimpl = pluggy.HookimplMarker("jac")
 logger = getLogger(__name__)
 
-
-class JacCallableImplementation:
-    """Callable Implementations."""
-
-    @staticmethod
-    def get_object(id: str) -> Architype | None:
-        """Get object by id."""
-        if id == "root":
-            return Jac.get_context().root.architype
-        elif obj := Jac.get_context().mem.find_by_id(UUID(id)):
-            return obj.architype
-
-        return None
+T = TypeVar("T")
+P = ParamSpec("P")
 
 
-class JacAccessValidationImpl:
-    """Jac Access Validation Implementations."""
+class JacAccessValidation:
+    """Jac Access Validation Specs."""
 
     @staticmethod
-    @hookimpl
     def elevate_root() -> None:
         """Elevate context root to system_root."""
-        jctx = Jac.get_context()
+
+        jctx = JacFeature.get_context()
         jctx.root = jctx.system_root
 
     @staticmethod
-    @hookimpl
     def allow_root(
-        architype: Architype, root_id: UUID, level: AccessLevel | int | str
+        architype: Architype,
+        root_id: UUID,
+        level: AccessLevel | int | str = AccessLevel.READ,
     ) -> None:
         """Allow all access from target root graph to current Architype."""
         level = AccessLevel.cast(level)
@@ -89,9 +99,10 @@ class JacAccessValidationImpl:
             access.anchors[_root_id] = level
 
     @staticmethod
-    @hookimpl
     def disallow_root(
-        architype: Architype, root_id: UUID, level: AccessLevel | int | str
+        architype: Architype,
+        root_id: UUID,
+        level: AccessLevel | int | str = AccessLevel.READ,
     ) -> None:
         """Disallow all access from target root graph to current Architype."""
         level = AccessLevel.cast(level)
@@ -100,60 +111,66 @@ class JacAccessValidationImpl:
         access.anchors.pop(str(root_id), None)
 
     @staticmethod
-    @hookimpl
-    def unrestrict(architype: Architype, level: AccessLevel | int | str) -> None:
+    def unrestrict(
+        architype: Architype, level: AccessLevel | int | str = AccessLevel.READ
+    ) -> None:
         """Allow everyone to access current Architype."""
+
         anchor = architype.__jac__
         level = AccessLevel.cast(level)
         if level != anchor.access.all:
             anchor.access.all = level
 
     @staticmethod
-    @hookimpl
     def restrict(architype: Architype) -> None:
         """Disallow others to access current Architype."""
+
         anchor = architype.__jac__
         if anchor.access.all > AccessLevel.NO_ACCESS:
             anchor.access.all = AccessLevel.NO_ACCESS
 
     @staticmethod
-    @hookimpl
     def check_read_access(to: Anchor) -> bool:
         """Read Access Validation."""
-        if not (access_level := Jac.check_access_level(to) > AccessLevel.NO_ACCESS):
+
+        if not (
+            access_level := JacFeature.check_access_level(to) > AccessLevel.NO_ACCESS
+        ):
             logger.info(
                 f"Current root doesn't have read access to {to.__class__.__name__}[{to.id}]"
             )
         return access_level
 
     @staticmethod
-    @hookimpl
     def check_connect_access(to: Anchor) -> bool:
         """Write Access Validation."""
-        if not (access_level := Jac.check_access_level(to) > AccessLevel.READ):
+
+        if not (access_level := JacFeature.check_access_level(to) > AccessLevel.READ):
             logger.info(
                 f"Current root doesn't have connect access to {to.__class__.__name__}[{to.id}]"
             )
         return access_level
 
     @staticmethod
-    @hookimpl
     def check_write_access(to: Anchor) -> bool:
         """Write Access Validation."""
-        if not (access_level := Jac.check_access_level(to) > AccessLevel.CONNECT):
+
+        if not (
+            access_level := JacFeature.check_access_level(to) > AccessLevel.CONNECT
+        ):
             logger.info(
                 f"Current root doesn't have write access to {to.__class__.__name__}[{to.id}]"
             )
         return access_level
 
     @staticmethod
-    @hookimpl
     def check_access_level(to: Anchor) -> AccessLevel:
         """Access validation."""
+
         if not to.persistent:
             return AccessLevel.WRITE
 
-        jctx = Jac.get_context()
+        jctx = JacFeature.get_context()
 
         jroot = jctx.root
 
@@ -186,13 +203,13 @@ class JacAccessValidationImpl:
         return access_level
 
 
-class JacNodeImpl:
+class JacNode:
     """Jac Node Operations."""
 
     @staticmethod
-    @hookimpl
-    def node_dot(node: NodeArchitype, dot_file: Optional[str]) -> str:
+    def node_dot(node: NodeArchitype, dot_file: Optional[str] = None) -> str:
         """Generate Dot file for visualizing nodes and edges."""
+
         visited_nodes: set[NodeAnchor] = set()
         connections: set[tuple[NodeArchitype, NodeArchitype, str]] = set()
         unique_node_id_dict = {}
@@ -215,7 +232,6 @@ class JacNodeImpl:
         return dot_content + "}"
 
     @staticmethod
-    @hookimpl
     def get_edges(
         node: NodeAnchor,
         dir: EdgeDir,
@@ -236,20 +252,19 @@ class JacNodeImpl:
                     dir in [EdgeDir.OUT, EdgeDir.ANY]
                     and node == source
                     and (not target_obj or target.architype in target_obj)
-                    and Jac.check_read_access(target)
+                    and JacFeature.check_read_access(target)
                 ):
                     ret_edges.append(anchor.architype)
                 if (
                     dir in [EdgeDir.IN, EdgeDir.ANY]
                     and node == target
                     and (not target_obj or source.architype in target_obj)
-                    and Jac.check_read_access(source)
+                    and JacFeature.check_read_access(source)
                 ):
                     ret_edges.append(anchor.architype)
         return ret_edges
 
     @staticmethod
-    @hookimpl
     def edges_to_nodes(
         node: NodeAnchor,
         dir: EdgeDir,
@@ -270,44 +285,43 @@ class JacNodeImpl:
                     dir in [EdgeDir.OUT, EdgeDir.ANY]
                     and node == source
                     and (not target_obj or target.architype in target_obj)
-                    and Jac.check_read_access(target)
+                    and JacFeature.check_read_access(target)
                 ):
                     ret_edges.append(target.architype)
                 if (
                     dir in [EdgeDir.IN, EdgeDir.ANY]
                     and node == target
                     and (not target_obj or source.architype in target_obj)
-                    and Jac.check_read_access(source)
+                    and JacFeature.check_read_access(source)
                 ):
                     ret_edges.append(source.architype)
         return ret_edges
 
     @staticmethod
-    @hookimpl
     def remove_edge(node: NodeAnchor, edge: EdgeAnchor) -> None:
         """Remove reference without checking sync status."""
+
         for idx, ed in enumerate(node.edges):
             if ed.id == edge.id:
                 node.edges.pop(idx)
                 break
 
 
-class JacEdgeImpl:
+class JacEdge:
     """Jac Edge Operations."""
 
     @staticmethod
-    @hookimpl
     def detach(edge: EdgeAnchor) -> None:
         """Detach edge from nodes."""
-        Jac.remove_edge(node=edge.source, edge=edge)
-        Jac.remove_edge(node=edge.target, edge=edge)
+
+        JacFeature.remove_edge(node=edge.source, edge=edge)
+        JacFeature.remove_edge(node=edge.target, edge=edge)
 
 
-class JacWalkerImpl:
+class JacWalker:
     """Jac Edge Operations."""
 
     @staticmethod
-    @hookimpl
     def visit(
         walker: WalkerArchitype,
         expr: (
@@ -317,8 +331,9 @@ class JacWalkerImpl:
             | NodeArchitype
             | EdgeArchitype
         ),
-    ) -> bool:
+    ) -> bool:  # noqa: ANN401
         """Jac's visit stmt feature."""
+
         if isinstance(walker, WalkerArchitype):
             """Walker visits node."""
             wanch = walker.__jac__
@@ -339,7 +354,6 @@ class JacWalkerImpl:
             raise TypeError("Invalid walker object")
 
     @staticmethod
-    @hookimpl
     def ignore(
         walker: WalkerArchitype,
         expr: (
@@ -349,8 +363,9 @@ class JacWalkerImpl:
             | NodeArchitype
             | EdgeArchitype
         ),
-    ) -> bool:
+    ) -> bool:  # noqa: ANN401
         """Jac's ignore stmt feature."""
+
         if isinstance(walker, WalkerArchitype):
             wanch = walker.__jac__
             before_len = len(wanch.ignores)
@@ -370,9 +385,9 @@ class JacWalkerImpl:
             raise TypeError("Invalid walker object")
 
     @staticmethod
-    @hookimpl
     def spawn(op1: Architype, op2: Architype) -> WalkerArchitype:
-        """Invoke data spatial call."""
+        """Jac's spawn operator feature."""
+
         if isinstance(op1, WalkerArchitype):
             warch = op1
             walker = op1.__jac__
@@ -475,18 +490,33 @@ class JacWalkerImpl:
         return warch
 
     @staticmethod
-    @hookimpl
-    def disengage(walker: WalkerArchitype) -> bool:  # noqa: ANN401
+    def disengage(walker: WalkerArchitype) -> bool:
         """Jac's disengage stmt feature."""
+
         walker.__jac__.disengaged = True
         return True
 
 
-class JacBuiltinImpl:
+class JacClassReferences:
+    """Default Classes References."""
+
+    TYPE_CHECKING: bool = TYPE_CHECKING
+    EdgeDir: TypeAlias = EdgeDir
+    DSFunc: TypeAlias = DataSpatialFunction
+
+    Obj: TypeAlias = Architype
+    Node: TypeAlias = NodeArchitype
+    Edge: TypeAlias = EdgeArchitype
+    Walker: TypeAlias = WalkerArchitype
+
+    Root: TypeAlias = _Root
+    GenericEdge: TypeAlias = _GenericEdge
+
+
+class JacBuiltin:
     """Jac Builtins."""
 
     @staticmethod
-    @hookimpl
     def dotgen(
         node: NodeArchitype,
         depth: int,
@@ -571,43 +601,31 @@ class JacBuiltinImpl:
         return dot_content + "}"
 
 
-class JacCmdImpl:
+class JacCmd:
     """Jac CLI command."""
 
     @staticmethod
-    @hookimpl
     def create_cmd() -> None:
         """Create Jac CLI cmds."""
-        pass
 
 
-class JacFeatureImpl(
-    JacAccessValidationImpl,
-    JacNodeImpl,
-    JacEdgeImpl,
-    JacWalkerImpl,
-    JacBuiltinImpl,
-    JacCmdImpl,
-):
+class JacBasics:
     """Jac Feature."""
 
     @staticmethod
-    @hookimpl
     def setup() -> None:
         """Set Class References."""
-        pass
 
     @staticmethod
-    @hookimpl
     def get_context() -> ExecutionContext:
         """Get current execution context."""
-        return ExecutionContext.get()
+        return JacFeature.py_get_jac_machine().exec_ctx
 
     @staticmethod
-    @hookimpl
     def reset_graph(root: Optional[Root] = None) -> int:
         """Purge current or target graph."""
-        ctx = Jac.get_context()
+
+        ctx = JacFeature.get_context()
         mem = cast(ShelfStorage, ctx.mem)
         ranchor = root.__jac__ if root else ctx.root
 
@@ -622,38 +640,43 @@ class JacFeatureImpl(
 
             if loaded_anchor := mem.find_by_id(anchor.id):
                 deleted_count += 1
-                Jac.destroy(loaded_anchor)
+                JacFeature.destroy(loaded_anchor)
 
         return deleted_count
 
     @staticmethod
-    @hookimpl
-    def get_object_func() -> Callable[[str], Architype | None]:
-        """Get object by id func."""
-        return JacCallableImplementation.get_object
+    def get_object(id: str) -> Architype | None:
+        """Get object given id."""
+
+        if id == "root":
+            return JacFeature.get_context().root.architype
+        elif obj := JacFeature.get_context().mem.find_by_id(UUID(id)):
+            return obj.architype
+
+        return None
 
     @staticmethod
-    @hookimpl
     def object_ref(obj: Architype) -> str:
-        """Get object's id."""
+        """Get object reference id."""
+
         return obj.__jac__.id.hex
 
     @staticmethod
-    @hookimpl
     def make_architype(cls: Type[Architype]) -> Type[Architype]:
-        """Create a new architype."""
-        entries: OrderedDict[str, Jac.DSFunc] = OrderedDict(
+        """Create a obj architype."""
+
+        entries: OrderedDict[str, JacFeature.DSFunc] = OrderedDict(
             (fn.name, fn) for fn in cls._jac_entry_funcs_
         )
-        exits: OrderedDict[str, Jac.DSFunc] = OrderedDict(
+        exits: OrderedDict[str, JacFeature.DSFunc] = OrderedDict(
             (fn.name, fn) for fn in cls._jac_exit_funcs_
         )
         for func in cls.__dict__.values():
             if callable(func):
                 if hasattr(func, "__jac_entry"):
-                    entries[func.__name__] = Jac.DSFunc(func.__name__, func)
+                    entries[func.__name__] = JacFeature.DSFunc(func.__name__, func)
                 if hasattr(func, "__jac_exit"):
-                    exits[func.__name__] = Jac.DSFunc(func.__name__, func)
+                    exits[func.__name__] = JacFeature.DSFunc(func.__name__, func)
 
         cls._jac_entry_funcs_ = [*entries.values()]
         cls._jac_exit_funcs_ = [*exits.values()]
@@ -662,7 +685,6 @@ class JacFeatureImpl(
         return cls
 
     @staticmethod
-    @hookimpl
     def impl_patch_filename(
         file_loc: str,
     ) -> Callable[[Callable[P, T]], Callable[P, T]]:
@@ -699,42 +721,83 @@ class JacFeatureImpl(
         return decorator
 
     @staticmethod
-    @hookimpl
-    def jac_import(
+    def py_get_jac_machine() -> JacMachineState:
+        """Get jac machine from python context."""
+        machine = None
+        for i in inspect.stack():
+            machine = i.frame.f_globals.get("__jac_mach__") or i.frame.f_locals.get(
+                "__jac_mach__"
+            )
+            if machine:
+                break
+        if not machine:
+            raise RuntimeError("Jac machine not found in python context. ")
+        return machine
+
+    @staticmethod
+    def py_jac_import(
         target: str,
         base_path: str,
-        absorb: bool,
-        cachable: bool,
-        mdl_alias: Optional[str],
-        override_name: Optional[str],
-        lng: Optional[str],
-        items: Optional[dict[str, Union[str, Optional[str]]]],
-        reload_module: Optional[bool],
+        absorb: bool = False,
+        cachable: bool = True,
+        mdl_alias: Optional[str] = None,
+        override_name: Optional[str] = None,
+        lng: Optional[str] = "jac",
+        items: Optional[dict[str, Union[str, Optional[str]]]] = None,
+        reload_module: Optional[bool] = False,
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
+        machine = JacFeature.py_get_jac_machine()
+        if not machine:
+            machine = JacMachineState(base_path=base_path)
+        return JacFeature.jac_import(
+            mach=machine,
+            target=target,
+            base_path=base_path,
+            absorb=absorb,
+            mdl_alias=mdl_alias,
+            override_name=override_name,
+            lng=lng,
+            items=items,
+            reload_module=reload_module,
+        )
+
+    @staticmethod
+    def jac_import(
+        mach: JacMachineState,
+        target: str,
+        base_path: str,
+        absorb: bool = False,
+        mdl_alias: Optional[str] = None,
+        override_name: Optional[str] = None,
+        lng: Optional[str] = "jac",
+        items: Optional[dict[str, Union[str, Optional[str]]]] = None,
+        reload_module: Optional[bool] = False,
+    ) -> tuple[types.ModuleType, ...]:
+        """Core Import Process."""
+        from jaclang.runtimelib.importer import (
+            ImportPathSpec,
+            JacImporter,
+            PythonImporter,
+        )
+
         spec = ImportPathSpec(
             target,
             base_path,
             absorb,
-            cachable,
             mdl_alias,
             override_name,
             lng,
             items,
         )
 
-        jac_machine = JacMachine.get(base_path)
-        if not jac_machine.jac_program:
-            jac_machine.attach_program(
-                JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
-            )
+        if not mach.jac_program:
+            JacFeature.attach_program(mach, JacProgram())
 
         if lng == "py":
-            import_result = PythonImporter(JacMachine.get()).run_import(spec)
+            import_result = PythonImporter(mach).run_import(spec)
         else:
-            import_result = JacImporter(JacMachine.get()).run_import(
-                spec, reload_module
-            )
+            import_result = JacImporter(mach).run_import(spec, reload_module)
 
         return (
             (import_result.ret_mod,)
@@ -743,9 +806,9 @@ class JacFeatureImpl(
         )
 
     @staticmethod
-    @hookimpl
     def jac_test(test_fun: Callable) -> Callable:
-        """Create a new test."""
+        """Create a test."""
+
         file_path = getfile(test_fun)
         func_name = test_fun.__name__
 
@@ -758,15 +821,15 @@ class JacFeatureImpl(
         return test_deco
 
     @staticmethod
-    @hookimpl
     def run_test(
+        mach: JacMachineState,
         filepath: str,
-        func_name: Optional[str],
-        filter: Optional[str],
-        xit: bool,
-        maxfail: Optional[int],
-        directory: Optional[str],
-        verbose: bool,
+        func_name: Optional[str] = None,
+        filter: Optional[str] = None,
+        xit: bool = False,
+        maxfail: Optional[int] = None,
+        directory: Optional[str] = None,
+        verbose: bool = False,
     ) -> int:
         """Run the test suite in the specified .jac file."""
         test_file = False
@@ -779,7 +842,7 @@ class JacFeatureImpl(
                 if mod_name.endswith(".test"):
                     mod_name = mod_name[:-5]
                 JacTestCheck.reset()
-                Jac.jac_import(target=mod_name, base_path=base, cachable=False)
+                JacFeature.jac_import(mach=mach, target=mod_name, base_path=base)
                 JacTestCheck.run_test(
                     xit, maxfail, verbose, os.path.abspath(filepath), func_name
                 )
@@ -807,7 +870,9 @@ class JacFeatureImpl(
                         test_file = True
                         print(f"\n\n\t\t* Inside {root_dir}" + "/" + f"{file} *")
                         JacTestCheck.reset()
-                        Jac.jac_import(target=file[:-4], base_path=root_dir)
+                        JacFeature.jac_import(
+                            mach=mach, target=file[:-4], base_path=root_dir
+                        )
                         JacTestCheck.run_test(
                             xit, maxfail, verbose, os.path.abspath(file), func_name
                         )
@@ -824,31 +889,30 @@ class JacFeatureImpl(
         return ret_count
 
     @staticmethod
-    @hookimpl
-    def field(factory: Callable[[], T] | None, init: bool) -> T:
+    def field(factory: Callable[[], T] | None = None, init: bool = True) -> T:
         """Jac's field handler."""
+
         if factory:
             return field(default_factory=factory)
         return field(init=init)
 
     @staticmethod
-    @hookimpl
-    def report(expr: Any, custom: bool) -> None:  # noqa: ANN401
+    def report(expr: Any, custom: bool = False) -> None:  # noqa: ANN401
         """Jac's report stmt feature."""
-        ctx = Jac.get_context()
+
+        ctx = JacFeature.get_context()
         if custom:
             ctx.custom = expr
         else:
             ctx.reports.append(expr)
 
     @staticmethod
-    @hookimpl
     def refs(
         sources: NodeArchitype | list[NodeArchitype],
-        targets: NodeArchitype | list[NodeArchitype] | None,
-        dir: EdgeDir,
-        filter: Callable[[EdgeArchitype], bool] | None,
-        edges_only: bool,
+        targets: NodeArchitype | list[NodeArchitype] | None = None,
+        dir: EdgeDir = EdgeDir.OUT,
+        filter: Callable[[EdgeArchitype], bool] | None = None,
+        edges_only: bool = False,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's apply_dir stmt feature."""
         if isinstance(sources, NodeArchitype):
@@ -861,7 +925,7 @@ class JacFeatureImpl(
         if edges_only:
             connected_edges: list[EdgeArchitype] = []
             for node in sources:
-                edges = Jac.get_edges(
+                edges = JacFeature.get_edges(
                     node.__jac__, dir, filter, target_obj=targ_obj_set
                 )
                 connected_edges.extend(
@@ -871,7 +935,7 @@ class JacFeatureImpl(
         else:
             connected_nodes: list[NodeArchitype] = []
             for node in sources:
-                nodes = Jac.edges_to_nodes(
+                nodes = JacFeature.edges_to_nodes(
                     node.__jac__, dir, filter, target_obj=targ_obj_set
                 )
                 connected_nodes.extend(
@@ -880,40 +944,36 @@ class JacFeatureImpl(
             return connected_nodes
 
     @staticmethod
-    @hookimpl
     def filter(
         items: list[Architype],
         func: Callable[[Architype], bool],
     ) -> list[Architype]:
         """Jac's filter architype list."""
+
         return [item for item in items if func(item)]
 
     @staticmethod
-    @hookimpl
     def connect(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
-        edge: Type[EdgeArchitype] | EdgeArchitype | None,
-        undir: bool,
-        conn_assign: tuple[tuple, tuple] | None,
-        edges_only: bool,
+        edge: Type[EdgeArchitype] | EdgeArchitype | None = None,
+        undir: bool = False,
+        conn_assign: tuple[tuple, tuple] | None = None,
+        edges_only: bool = False,
     ) -> list[NodeArchitype] | list[EdgeArchitype]:
-        """Jac's connect operator feature.
-
-        Note: connect needs to call assign compr with tuple in op
-        """
+        """Jac's connect operator feature."""
         left = [left] if isinstance(left, NodeArchitype) else left
         right = [right] if isinstance(right, NodeArchitype) else right
         edges = []
 
         for i in left:
             _left = i.__jac__
-            if Jac.check_connect_access(_left):
+            if JacFeature.check_connect_access(_left):
                 for j in right:
                     _right = j.__jac__
-                    if Jac.check_connect_access(_right):
+                    if JacFeature.check_connect_access(_right):
                         edges.append(
-                            Jac.build_edge(
+                            JacFeature.build_edge(
                                 is_undirected=undir,
                                 conn_type=edge,
                                 conn_assign=conn_assign,
@@ -922,13 +982,12 @@ class JacFeatureImpl(
         return right if not edges_only else edges
 
     @staticmethod
-    @hookimpl
     def disconnect(
         left: NodeArchitype | list[NodeArchitype],
         right: NodeArchitype | list[NodeArchitype],
-        dir: EdgeDir,
-        filter: Callable[[EdgeArchitype], bool] | None,
-    ) -> bool:  # noqa: ANN401
+        dir: EdgeDir = EdgeDir.OUT,
+        filter: Callable[[EdgeArchitype], bool] | None = None,
+    ) -> bool:
         """Jac's disconnect operator feature."""
         disconnect_occurred = False
         left = [left] if isinstance(left, NodeArchitype) else left
@@ -948,25 +1007,33 @@ class JacFeatureImpl(
                         dir in [EdgeDir.OUT, EdgeDir.ANY]
                         and node == source
                         and target.architype in right
-                        and Jac.check_connect_access(target)
+                        and JacFeature.check_connect_access(target)
                     ):
-                        Jac.destroy(anchor) if anchor.persistent else Jac.detach(anchor)
+                        (
+                            JacFeature.destroy(anchor)
+                            if anchor.persistent
+                            else JacFeature.detach(anchor)
+                        )
                         disconnect_occurred = True
                     if (
                         dir in [EdgeDir.IN, EdgeDir.ANY]
                         and node == target
                         and source.architype in right
-                        and Jac.check_connect_access(source)
+                        and JacFeature.check_connect_access(source)
                     ):
-                        Jac.destroy(anchor) if anchor.persistent else Jac.detach(anchor)
+                        (
+                            JacFeature.destroy(anchor)
+                            if anchor.persistent
+                            else JacFeature.detach(anchor)
+                        )
                         disconnect_occurred = True
 
         return disconnect_occurred
 
     @staticmethod
-    @hookimpl
     def assign(target: list[T], attr_val: tuple[tuple[str], tuple[Any]]) -> list[T]:
         """Jac's assign comprehension feature."""
+
         for obj in target:
             attrs, values = attr_val
             for attr, value in zip(attrs, values):
@@ -974,13 +1041,12 @@ class JacFeatureImpl(
         return target
 
     @staticmethod
-    @hookimpl
     def root() -> Root:
-        """Jac's assign comprehension feature."""
-        return ExecutionContext.get_root()
+        """Jac's root getter."""
+
+        return JacFeature.py_get_jac_machine().exec_ctx.get_root()
 
     @staticmethod
-    @hookimpl
     def build_edge(
         is_undirected: bool,
         conn_type: Optional[Type[EdgeArchitype] | EdgeArchitype],
@@ -1008,18 +1074,20 @@ class JacFeatureImpl(
                     else:
                         raise ValueError(f"Invalid attribute: {fld}")
             if source.persistent or target.persistent:
-                Jac.save(eanch)
+                JacFeature.save(eanch)
             return edge
 
         return builder
 
     @staticmethod
-    @hookimpl
-    def save(obj: Architype | Anchor) -> None:
+    def save(
+        obj: Architype | Anchor,
+    ) -> None:
         """Destroy object."""
+
         anchor = obj.__jac__ if isinstance(obj, Architype) else obj
 
-        jctx = Jac.get_context()
+        jctx = JacFeature.get_context()
 
         anchor.persistent = True
         anchor.root = jctx.root.id
@@ -1030,147 +1098,50 @@ class JacFeatureImpl(
             case NodeAnchor():
                 for ed in anchor.edges:
                     if ed.is_populated() and not ed.persistent:
-                        Jac.save(ed)
+                        JacFeature.save(ed)
             case EdgeAnchor():
                 if (src := anchor.source) and src.is_populated() and not src.persistent:
-                    Jac.save(src)
+                    JacFeature.save(src)
                 if (trg := anchor.target) and trg.is_populated() and not trg.persistent:
-                    Jac.save(trg)
+                    JacFeature.save(trg)
             case _:
                 pass
 
     @staticmethod
-    @hookimpl
-    def destroy(obj: Architype | Anchor) -> None:
+    def destroy(
+        obj: Architype | Anchor,
+    ) -> None:
         """Destroy object."""
+
         anchor = obj.__jac__ if isinstance(obj, Architype) else obj
 
-        if Jac.check_write_access(anchor):
+        if JacFeature.check_write_access(anchor):
             match anchor:
                 case NodeAnchor():
                     for edge in anchor.edges:
-                        Jac.destroy(edge)
+                        JacFeature.destroy(edge)
                 case EdgeAnchor():
-                    Jac.detach(anchor)
+                    JacFeature.detach(anchor)
                 case _:
                     pass
 
-            Jac.get_context().mem.remove(anchor.id)
+            JacFeature.get_context().mem.remove(anchor.id)
 
     @staticmethod
-    @hookimpl
     def entry(func: Callable) -> Callable:
         """Mark a method as jac entry with this decorator."""
+
         setattr(func, "__jac_entry", None)  # noqa:B010
         return func
 
     @staticmethod
-    @hookimpl
     def exit(func: Callable) -> Callable:
         """Mark a method as jac exit with this decorator."""
+
         setattr(func, "__jac_exit", None)  # noqa:B010
         return func
 
     @staticmethod
-    @hookimpl
-    def get_semstr_type(
-        file_loc: str, scope: str, attr: str, return_semstr: bool
-    ) -> Optional[str]:
-        """Jac's get_semstr_type feature."""
-        from jaclang.compiler.semtable import SemInfo, SemScope, SemRegistry
-        from jaclang.runtimelib.machine import JacMachine
-
-        _scope = SemScope.get_scope_from_str(scope)
-        jac_program = JacMachine.get().jac_program
-        mod_registry: SemRegistry = (
-            jac_program.sem_ir if jac_program is not None else SemRegistry()
-        )
-        _, attr_seminfo = mod_registry.lookup(_scope, attr)
-        if attr_seminfo and isinstance(attr_seminfo, SemInfo):
-            return attr_seminfo.semstr if return_semstr else attr_seminfo.type
-        return None
-
-    @staticmethod
-    @hookimpl
-    def obj_scope(file_loc: str, attr: str) -> str:
-        """Jac's gather_scope feature."""
-        from jaclang.runtimelib.machine import JacMachine
-
-        jac_program = JacMachine.get().jac_program
-        mod_registry: SemRegistry = (
-            jac_program.sem_ir if jac_program is not None else SemRegistry()
-        )
-
-        attr_scope = None
-        for x in attr.split("."):
-            attr_scope, attr_sem_info = mod_registry.lookup(attr_scope, x)
-            if isinstance(attr_sem_info, SemInfo) and attr_sem_info.type not in [
-                "class",
-                "obj",
-                "node",
-                "edge",
-            ]:
-                attr_scope, attr_sem_info = mod_registry.lookup(
-                    None, attr_sem_info.type
-                )
-                if isinstance(attr_sem_info, SemInfo) and isinstance(
-                    attr_sem_info.type, str
-                ):
-                    attr_scope = SemScope(
-                        attr_sem_info.name, attr_sem_info.type, attr_scope
-                    )
-            else:
-                if isinstance(attr_sem_info, SemInfo) and isinstance(
-                    attr_sem_info.type, str
-                ):
-                    attr_scope = SemScope(
-                        attr_sem_info.name, attr_sem_info.type, attr_scope
-                    )
-        return str(attr_scope)
-
-    @staticmethod
-    @hookimpl
-    def get_sem_type(file_loc: str, attr: str) -> tuple[str | None, str | None]:
-        """Jac's get_semstr_type implementation."""
-        from jaclang.runtimelib.machine import JacMachine
-        from jaclang.compiler.semtable import SemInfo, SemScope
-
-        jac_program = JacMachine.get().jac_program
-        mod_registry: SemRegistry = (
-            jac_program.sem_ir if jac_program is not None else SemRegistry()
-        )
-
-        attr_scope = None
-        for x in attr.split("."):
-            attr_scope, attr_sem_info = mod_registry.lookup(attr_scope, x)
-            if isinstance(attr_sem_info, SemInfo) and attr_sem_info.type not in [
-                "class",
-                "obj",
-                "node",
-                "edge",
-            ]:
-                attr_scope, attr_sem_info = mod_registry.lookup(
-                    None, attr_sem_info.type
-                )
-                if isinstance(attr_sem_info, SemInfo) and isinstance(
-                    attr_sem_info.type, str
-                ):
-                    attr_scope = SemScope(
-                        attr_sem_info.name, attr_sem_info.type, attr_scope
-                    )
-            else:
-                if isinstance(attr_sem_info, SemInfo) and isinstance(
-                    attr_sem_info.type, str
-                ):
-                    attr_scope = SemScope(
-                        attr_sem_info.name, attr_sem_info.type, attr_scope
-                    )
-        if isinstance(attr_sem_info, SemInfo) and isinstance(attr_scope, SemScope):
-            return attr_sem_info.semstr, attr_scope.as_type_str
-        return "", ""
-
-    @staticmethod
-    @hookimpl
     def with_llm(
         file_loc: str,
         model: Any,  # noqa: ANN401
@@ -1190,7 +1161,6 @@ class JacFeatureImpl(
         )
 
     @staticmethod
-    @hookimpl
     def gen_llm_body(_pass: PyastGenPass, node: ast.Ability) -> list[ast3.AST]:
         """Generate the by LLM body."""
         _pass.log_warning(
@@ -1219,7 +1189,6 @@ class JacFeatureImpl(
         ]
 
     @staticmethod
-    @hookimpl
     def by_llm_call(
         _pass: PyastGenPass,
         model: ast3.AST,
@@ -1231,7 +1200,7 @@ class JacFeatureImpl(
         include_info: list[tuple[str, ast3.AST]],
         exclude_info: list[tuple[str, ast3.AST]],
     ) -> ast3.Call:
-        """Return the LLM Call, e.g. _Jac.with_llm()."""
+        """Return the LLM Call, e.g. _JacFeature.with_llm()."""
         _pass.log_warning(
             "MT-LLM is not installed. Please install it with `pip install mtllm`."
         )
@@ -1315,7 +1284,6 @@ class JacFeatureImpl(
         )
 
     @staticmethod
-    @hookimpl
     def get_by_llm_call_args(_pass: PyastGenPass, node: ast.FuncCall) -> dict:
         """Get the by LLM call args."""
         return {
@@ -1328,3 +1296,324 @@ class JacFeatureImpl(
             "include_info": [],
             "exclude_info": [],
         }
+
+
+class JacMachine:
+    """JacMachine to handle the VM-related functionalities and loaded programs."""
+
+    @staticmethod
+    def attach_program(mach: JacMachineState, jac_program: JacProgram) -> None:
+        """Attach a JacProgram to the machine."""
+        mach.jac_program = jac_program
+
+    @staticmethod
+    def load_module(
+        mach: JacMachineState, module_name: str, module: types.ModuleType
+    ) -> None:
+        """Load a module into the machine."""
+        mach.loaded_modules[module_name] = module
+        sys.modules[module_name] = module  # TODO: May want to nuke this one day
+
+    @staticmethod
+    def list_modules(mach: JacMachineState) -> list[str]:
+        """List all loaded modules."""
+        return list(mach.loaded_modules.keys())
+
+    @staticmethod
+    def list_walkers(mach: JacMachineState, module_name: str) -> list[str]:
+        """List all walkers in a specific module."""
+        module = mach.loaded_modules.get(module_name)
+        if module:
+            walkers = []
+            for name, obj in inspect.getmembers(module):
+                if isinstance(obj, type) and issubclass(obj, WalkerArchitype):
+                    walkers.append(name)
+            return walkers
+        return []
+
+    @staticmethod
+    def list_nodes(mach: JacMachineState, module_name: str) -> list[str]:
+        """List all nodes in a specific module."""
+        module = mach.loaded_modules.get(module_name)
+        if module:
+            nodes = []
+            for name, obj in inspect.getmembers(module):
+                if isinstance(obj, type) and issubclass(obj, NodeArchitype):
+                    nodes.append(name)
+            return nodes
+        return []
+
+    @staticmethod
+    def list_edges(mach: JacMachineState, module_name: str) -> list[str]:
+        """List all edges in a specific module."""
+        module = mach.loaded_modules.get(module_name)
+        if module:
+            nodes = []
+            for name, obj in inspect.getmembers(module):
+                if isinstance(obj, type) and issubclass(obj, EdgeArchitype):
+                    nodes.append(name)
+            return nodes
+        return []
+
+    @staticmethod
+    def create_architype_from_source(
+        mach: JacMachineState,
+        source_code: str,
+        module_name: Optional[str] = None,
+        base_path: Optional[str] = None,
+        cachable: bool = False,
+        keep_temporary_files: bool = False,
+    ) -> Optional[types.ModuleType]:
+        """Dynamically creates architypes (nodes, walkers, etc.) from Jac source code."""
+        from jaclang.runtimelib.importer import JacImporter, ImportPathSpec
+
+        if not base_path:
+            base_path = mach.base_path or os.getcwd()
+
+        if base_path and not os.path.exists(base_path):
+            os.makedirs(base_path)
+        if not module_name:
+            module_name = f"_dynamic_module_{len(mach.loaded_modules)}"
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            suffix=".jac",
+            prefix=module_name + "_",
+            dir=base_path,
+            delete=False,
+        ) as tmp_file:
+            tmp_file_path = tmp_file.name
+            tmp_file.write(source_code)
+
+        try:
+            importer = JacImporter(mach)
+            tmp_file_basename = os.path.basename(tmp_file_path)
+            tmp_module_name, _ = os.path.splitext(tmp_file_basename)
+
+            spec = ImportPathSpec(
+                target=tmp_module_name,
+                base_path=base_path,
+                absorb=False,
+                mdl_alias=None,
+                override_name=module_name,
+                lng="jac",
+                items=None,
+            )
+
+            import_result = importer.run_import(spec, reload=False)
+            module = import_result.ret_mod
+
+            mach.loaded_modules[module_name] = module
+            return module
+        except Exception as e:
+            logger.error(f"Error importing dynamic module '{module_name}': {e}")
+            return None
+        finally:
+            if not keep_temporary_files and os.path.exists(tmp_file_path):
+                os.remove(tmp_file_path)
+
+    @staticmethod
+    def update_walker(
+        mach: JacMachineState,
+        module_name: str,
+        items: Optional[dict[str, Union[str, Optional[str]]]],
+    ) -> tuple[types.ModuleType, ...]:
+        """Reimport the module."""
+        from .importer import JacImporter, ImportPathSpec
+
+        if module_name in mach.loaded_modules:
+            try:
+                old_module = mach.loaded_modules[module_name]
+                importer = JacImporter(mach)
+                spec = ImportPathSpec(
+                    target=module_name,
+                    base_path=mach.base_path,
+                    absorb=False,
+                    mdl_alias=None,
+                    override_name=None,
+                    lng="jac",
+                    items=items,
+                )
+                import_result = importer.run_import(spec, reload=True)
+                ret_items = []
+                if items:
+                    for item_name in items:
+                        if hasattr(old_module, item_name):
+                            new_attr = getattr(import_result.ret_mod, item_name, None)
+                            if new_attr:
+                                ret_items.append(new_attr)
+                                setattr(
+                                    old_module,
+                                    item_name,
+                                    new_attr,
+                                )
+                return (old_module,) if not items else tuple(ret_items)
+            except Exception as e:
+                logger.error(f"Failed to update module {module_name}: {e}")
+        else:
+            logger.warning(f"Module {module_name} not found in loaded modules.")
+        return ()
+
+    @staticmethod
+    def spawn_node(
+        mach: JacMachineState,
+        node_name: str,
+        attributes: Optional[dict] = None,
+        module_name: str = "__main__",
+    ) -> NodeArchitype:
+        """Spawn a node instance of the given node_name with attributes."""
+        node_class = JacFeature.get_architype(mach, module_name, node_name)
+        if isinstance(node_class, type) and issubclass(node_class, NodeArchitype):
+            if attributes is None:
+                attributes = {}
+            node_instance = node_class(**attributes)
+            return node_instance
+        else:
+            raise ValueError(f"Node {node_name} not found.")
+
+    @staticmethod
+    def spawn_walker(
+        mach: JacMachineState,
+        walker_name: str,
+        attributes: Optional[dict] = None,
+        module_name: str = "__main__",
+    ) -> WalkerArchitype:
+        """Spawn a walker instance of the given walker_name."""
+        walker_class = JacFeature.get_architype(mach, module_name, walker_name)
+        if isinstance(walker_class, type) and issubclass(walker_class, WalkerArchitype):
+            if attributes is None:
+                attributes = {}
+            walker_instance = walker_class(**attributes)
+            return walker_instance
+        else:
+            raise ValueError(f"Walker {walker_name} not found.")
+
+    @staticmethod
+    def get_architype(
+        mach: JacMachineState, module_name: str, architype_name: str
+    ) -> Optional[Architype]:
+        """Retrieve an architype class from a module."""
+        module = mach.loaded_modules.get(module_name)
+        if module:
+            return getattr(module, architype_name, None)
+        return None
+
+
+class JacFeature(
+    JacClassReferences,
+    JacAccessValidation,
+    JacNode,
+    JacEdge,
+    JacWalker,
+    JacBuiltin,
+    JacCmd,
+    JacBasics,
+    JacMachine,
+):
+    """Jac Feature."""
+
+
+def generate_plugin_helpers(
+    plugin_class: Type[Any],
+) -> tuple[Type[Any], Type[Any], Type[Any]]:
+    """
+    Generate three helper classes based on a plugin class:
+    - Spec class: contains @hookspec placeholder methods.
+    - Impl class: contains original plugin methods decorated with @hookimpl.
+    - Proxy class: contains methods that call plugin_manager.hook.<method>.
+
+    Returns:
+        Tuple of (SpecClass, ImplClass, ProxyClass).
+    """
+    # Markers for spec and impl
+    spec_methods = {}
+    impl_methods = {}
+    proxy_methods = {}
+
+    for name, method in inspect.getmembers(plugin_class, predicate=inspect.isfunction):
+        if name.startswith("_"):
+            continue
+
+        sig = inspect.signature(method)
+        sig_nodef = sig.replace(
+            parameters=[
+                p.replace(default=inspect.Parameter.empty)
+                for p in sig.parameters.values()
+            ]
+        )
+        doc = method.__doc__ or ""
+
+        # --- Spec placeholder ---
+        def make_spec(
+            name: str, sig_nodef: inspect.Signature, doc: str, method: Callable
+        ) -> Callable:
+            """Create a placeholder method for the spec class."""
+
+            @wraps(method)
+            def placeholder(*args: object, **kwargs: object) -> None:
+                pass
+
+            placeholder.__name__ = name
+            placeholder.__doc__ = doc
+            placeholder.__signature__ = sig_nodef  # type: ignore
+            return placeholder
+
+        spec_methods[name] = hookspec(firstresult=True)(
+            make_spec(name, sig_nodef, doc, method)
+        )
+
+        # --- Impl class: original methods with @hookimpl ---
+        wrapped_impl = wraps(method)(method)
+        wrapped_impl.__signature__ = sig_nodef  # type: ignore
+        impl_methods[name] = hookimpl(wrapped_impl)
+
+        # --- Proxy class: call through plugin_manager.hook ---
+        # Gather class variables and annotations from entire MRO (excluding built-ins)
+        class_vars: dict[str, Any] = {}
+        annotations: dict[str, Any] = {}
+        for base in reversed(plugin_class.__mro__):
+            if base is object:
+                continue
+            # collect annotations first so bases are overridden by subclasses
+            base_ann = getattr(base, "__annotations__", {})
+            annotations.update(base_ann)
+            for key, value in base.__dict__.items():
+                # skip private/special, methods, and descriptors
+                if key.startswith("__"):
+                    continue
+                if callable(value) and not isinstance(value, type):
+                    continue
+                class_vars[key] = value
+
+        def make_proxy(name: str, sig: inspect.Signature) -> Callable:
+            """Create a proxy method for the proxy class."""
+
+            def proxy(*args: object, **kwargs: object) -> object:
+                # bind positionals to parameter names
+                bound = sig.bind_partial(*args, **kwargs)  # noqa
+                bound.apply_defaults()
+                # grab the HookCaller
+                hookcaller = getattr(plugin_manager.hook, name)  # noqa
+                # call with named args only
+                return hookcaller(**bound.arguments)
+
+            proxy.__name__ = name
+            proxy.__signature__ = sig  # type: ignore
+            return proxy
+
+        proxy_methods[name] = make_proxy(name, sig)
+
+    # Construct classes
+    spec_cls = type(f"{plugin_class.__name__}Spec", (object,), spec_methods)
+    impl_cls = type(f"{plugin_class.__name__}Impl", (object,), impl_methods)
+    proxy_namespace = {}
+    proxy_namespace.update(class_vars)
+    if annotations:
+        proxy_namespace["__annotations__"] = annotations
+    proxy_namespace.update(proxy_methods)
+    proxy_cls = type(f"{plugin_class.__name__}", (object,), proxy_namespace)
+
+    return spec_cls, impl_cls, proxy_cls
+
+
+JacFeatureSpec, JacFeatureImpl, JacFeature = generate_plugin_helpers(JacFeature)  # type: ignore[misc]
+plugin_manager.add_hookspecs(JacFeatureSpec)

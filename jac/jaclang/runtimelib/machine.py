@@ -2,36 +2,105 @@
 
 from __future__ import annotations
 
-import inspect
 import os
-import sys
-import tempfile
 import types
-from contextvars import ContextVar
-from typing import Optional, Union
+from dataclasses import MISSING
+from typing import Any, Callable, Optional, cast
+from uuid import UUID
 
-from jaclang.compiler.absyntree import Module
+from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.program import JacProgram
-from jaclang.compiler.semtable import SemRegistry
-from jaclang.runtimelib.architype import (
-    Architype,
-    EdgeArchitype,
-    NodeArchitype,
-    WalkerArchitype,
-)
+from jaclang.runtimelib.architype import NodeAnchor, Root
+from jaclang.runtimelib.memory import Memory, ShelfStorage
 from jaclang.utils.log import logging
-
 
 logger = logging.getLogger(__name__)
 
 
-JACMACHINE_CONTEXT = ContextVar["JacMachine | None"]("JacMachine")
+def call_jac_func_with_machine(
+    mach: JacMachineState, func: Callable, *args: Any  # noqa: ANN401
+) -> Any:  # noqa: ANN401
+    """Call Jac function with machine context in local."""
+    __jac_mach__ = mach  # noqa: F841
+    return func(*args)
 
 
-class JacMachine:
+class ExecutionContext:
+    """Execution Context."""
+
+    mach: JacMachineState
+    mem: Memory
+    reports: list[Any]
+    custom: Any = MISSING
+    system_root: NodeAnchor
+    root: NodeAnchor
+    entry_node: NodeAnchor
+
+    def __init__(
+        self,
+        mach: JacMachineState,
+        session: Optional[str] = None,
+        root: Optional[str] = None,
+    ) -> None:
+        """Create ExecutionContext."""
+
+        self.mach = mach
+        self.mem = ShelfStorage(session)
+        self.reports = []
+        sr_arch = Root()
+        sr_anch = sr_arch.__jac__
+        sr_anch.id = UUID(Con.SUPER_ROOT_UUID)
+        sr_anch.persistent = False
+        self.system_root = sr_anch
+        if not isinstance(
+            system_root := self.mem.find_by_id(UUID(Con.SUPER_ROOT_UUID)), NodeAnchor
+        ):
+            system_root = cast(NodeAnchor, Root().__jac__)  # type: ignore[attr-defined]
+            system_root.id = UUID(Con.SUPER_ROOT_UUID)
+            self.mem.set(system_root.id, system_root)
+
+        self.system_root = system_root
+
+        self.entry_node = self.root = self.init_anchor(root, self.system_root)
+
+    def init_anchor(
+        self,
+        anchor_id: str | None,
+        default: NodeAnchor,
+    ) -> NodeAnchor:
+        """Load initial anchors."""
+        if anchor_id:
+            if isinstance(anchor := self.mem.find_by_id(UUID(anchor_id)), NodeAnchor):
+                return anchor
+            raise ValueError(f"Invalid anchor id {anchor_id} !")
+        return default
+
+    def set_entry_node(self, entry_node: str | None) -> None:
+        """Override entry."""
+        self.entry_node = self.init_anchor(entry_node, self.root)
+
+    def close(self) -> None:
+        """Close current ExecutionContext."""
+        call_jac_func_with_machine(mach=self.mach, func=self.mem.close)
+
+    def get_root(self) -> Root:
+        """Get current root."""
+        return cast(Root, self.root.architype)
+
+    def global_system_root(self) -> NodeAnchor:
+        """Get global system root."""
+        return self.system_root
+
+
+class JacMachineState:
     """JacMachine to handle the VM-related functionalities and loaded programs."""
 
-    def __init__(self, base_path: str = "") -> None:
+    def __init__(
+        self,
+        base_path: str = "",
+        session: Optional[str] = None,
+        root: Optional[str] = None,
+    ) -> None:
         """Initialize the JacMachine object."""
         self.loaded_modules: dict[str, types.ModuleType] = {}
         if not base_path:
@@ -43,232 +112,5 @@ class JacMachine:
             if not os.path.isdir(base_path)
             else os.path.abspath(base_path)
         )
-        self.jac_program: JacProgram = JacProgram(
-            mod_bundle=None, bytecode=None, sem_ir=None
-        )
-
-        JACMACHINE_CONTEXT.set(self)
-
-    def attach_program(self, jac_program: "JacProgram") -> None:
-        """Attach a JacProgram to the machine."""
-        self.jac_program = jac_program
-
-    def get_mod_bundle(self) -> Optional[Module]:
-        """Retrieve the mod_bundle from the attached JacProgram."""
-        if self.jac_program:
-            return self.jac_program.mod_bundle
-        return None
-
-    def get_bytecode(
-        self,
-        module_name: str,
-        full_target: str,
-        caller_dir: str,
-        cachable: bool = True,
-        reload: bool = False,
-    ) -> Optional[types.CodeType]:
-        """Retrieve bytecode from the attached JacProgram."""
-        if self.jac_program:
-            return self.jac_program.get_bytecode(
-                module_name, full_target, caller_dir, cachable, reload=reload
-            )
-        return None
-
-    def get_sem_ir(self, mod_sem_ir: SemRegistry | None) -> None:
-        """Update semtable on the attached JacProgram."""
-        if self.jac_program and mod_sem_ir:
-            if self.jac_program.sem_ir:
-                self.jac_program.sem_ir.registry.update(mod_sem_ir.registry)
-            else:
-                self.jac_program.sem_ir = mod_sem_ir
-
-    def load_module(self, module_name: str, module: types.ModuleType) -> None:
-        """Load a module into the machine."""
-        self.loaded_modules[module_name] = module
-        sys.modules[module_name] = module
-
-    def list_modules(self) -> list[str]:
-        """List all loaded modules."""
-        return list(self.loaded_modules.keys())
-
-    def list_walkers(self, module_name: str) -> list[str]:
-        """List all walkers in a specific module."""
-        module = self.loaded_modules.get(module_name)
-        if module:
-            walkers = []
-            for name, obj in inspect.getmembers(module):
-                if isinstance(obj, type) and issubclass(obj, WalkerArchitype):
-                    walkers.append(name)
-            return walkers
-        return []
-
-    def list_nodes(self, module_name: str) -> list[str]:
-        """List all nodes in a specific module."""
-        module = self.loaded_modules.get(module_name)
-        if module:
-            nodes = []
-            for name, obj in inspect.getmembers(module):
-                if isinstance(obj, type) and issubclass(obj, NodeArchitype):
-                    nodes.append(name)
-            return nodes
-        return []
-
-    def list_edges(self, module_name: str) -> list[str]:
-        """List all edges in a specific module."""
-        module = self.loaded_modules.get(module_name)
-        if module:
-            nodes = []
-            for name, obj in inspect.getmembers(module):
-                if isinstance(obj, type) and issubclass(obj, EdgeArchitype):
-                    nodes.append(name)
-            return nodes
-        return []
-
-    def create_architype_from_source(
-        self,
-        source_code: str,
-        module_name: Optional[str] = None,
-        base_path: Optional[str] = None,
-        cachable: bool = False,
-        keep_temporary_files: bool = False,
-    ) -> Optional[types.ModuleType]:
-        """Dynamically creates architypes (nodes, walkers, etc.) from Jac source code."""
-        from jaclang.runtimelib.importer import JacImporter, ImportPathSpec
-
-        if not base_path:
-            base_path = self.base_path or os.getcwd()
-
-        if base_path and not os.path.exists(base_path):
-            os.makedirs(base_path)
-        if not module_name:
-            module_name = f"_dynamic_module_{len(self.loaded_modules)}"
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            suffix=".jac",
-            prefix=module_name + "_",
-            dir=base_path,
-            delete=False,
-        ) as tmp_file:
-            tmp_file_path = tmp_file.name
-            tmp_file.write(source_code)
-
-        try:
-            importer = JacImporter(self)
-            tmp_file_basename = os.path.basename(tmp_file_path)
-            tmp_module_name, _ = os.path.splitext(tmp_file_basename)
-
-            spec = ImportPathSpec(
-                target=tmp_module_name,
-                base_path=base_path,
-                absorb=False,
-                cachable=cachable,
-                mdl_alias=None,
-                override_name=module_name,
-                lng="jac",
-                items=None,
-            )
-
-            import_result = importer.run_import(spec, reload=False)
-            module = import_result.ret_mod
-
-            self.loaded_modules[module_name] = module
-            return module
-        except Exception as e:
-            logger.error(f"Error importing dynamic module '{module_name}': {e}")
-            return None
-        finally:
-            if not keep_temporary_files and os.path.exists(tmp_file_path):
-                os.remove(tmp_file_path)
-
-    def update_walker(
-        self, module_name: str, items: Optional[dict[str, Union[str, Optional[str]]]]
-    ) -> tuple[types.ModuleType, ...]:
-        """Reimport the module."""
-        from .importer import JacImporter, ImportPathSpec
-
-        if module_name in self.loaded_modules:
-            try:
-                old_module = self.loaded_modules[module_name]
-                importer = JacImporter(self)
-                spec = ImportPathSpec(
-                    target=module_name,
-                    base_path=self.base_path,
-                    absorb=False,
-                    cachable=True,
-                    mdl_alias=None,
-                    override_name=None,
-                    lng="jac",
-                    items=items,
-                )
-                import_result = importer.run_import(spec, reload=True)
-                ret_items = []
-                if items:
-                    for item_name in items:
-                        if hasattr(old_module, item_name):
-                            new_attr = getattr(import_result.ret_mod, item_name, None)
-                            if new_attr:
-                                ret_items.append(new_attr)
-                                setattr(
-                                    old_module,
-                                    item_name,
-                                    new_attr,
-                                )
-                return (old_module,) if not items else tuple(ret_items)
-            except Exception as e:
-                logger.error(f"Failed to update module {module_name}: {e}")
-        else:
-            logger.warning(f"Module {module_name} not found in loaded modules.")
-        return ()
-
-    def spawn_node(
-        self,
-        node_name: str,
-        attributes: Optional[dict] = None,
-        module_name: str = "__main__",
-    ) -> NodeArchitype:
-        """Spawn a node instance of the given node_name with attributes."""
-        node_class = self.get_architype(module_name, node_name)
-        if isinstance(node_class, type) and issubclass(node_class, NodeArchitype):
-            if attributes is None:
-                attributes = {}
-            node_instance = node_class(**attributes)
-            return node_instance
-        else:
-            raise ValueError(f"Node {node_name} not found.")
-
-    def spawn_walker(
-        self,
-        walker_name: str,
-        attributes: Optional[dict] = None,
-        module_name: str = "__main__",
-    ) -> WalkerArchitype:
-        """Spawn a walker instance of the given walker_name."""
-        walker_class = self.get_architype(module_name, walker_name)
-        if isinstance(walker_class, type) and issubclass(walker_class, WalkerArchitype):
-            if attributes is None:
-                attributes = {}
-            walker_instance = walker_class(**attributes)
-            return walker_instance
-        else:
-            raise ValueError(f"Walker {walker_name} not found.")
-
-    def get_architype(
-        self, module_name: str, architype_name: str
-    ) -> Optional[Architype]:
-        """Retrieve an architype class from a module."""
-        module = self.loaded_modules.get(module_name)
-        if module:
-            return getattr(module, architype_name, None)
-        return None
-
-    @staticmethod
-    def get(base_path: str = "") -> "JacMachine":
-        """Get current jac machine."""
-        if (jac_machine := JACMACHINE_CONTEXT.get(None)) is None:
-            jac_machine = JacMachine(base_path)
-        return jac_machine
-
-    @staticmethod
-    def detach() -> None:
-        """Detach current jac machine."""
-        JACMACHINE_CONTEXT.set(None)
+        self.jac_program: JacProgram = JacProgram()
+        self.exec_ctx = ExecutionContext(session=session, root=root, mach=self)
