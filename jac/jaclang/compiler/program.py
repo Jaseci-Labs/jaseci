@@ -143,6 +143,10 @@ class JacProgram:
         if len(schedule) == 0:
             return ast_ret
 
+        if len(ast_ret.errors_had) != 0:
+            pass
+            # need to make an error here
+
         # Run JacImportPass & SymTabBuildPass on all imported Jac Programs
         while len(self.last_imported) > 0:
             mod = self.last_imported.pop()
