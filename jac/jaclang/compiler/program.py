@@ -60,7 +60,7 @@ class JacProgram:
         else:
             return None
 
-    def compile_jac(self, file_path: str) -> Transform:
+    def compile_jac(self, file_path: str) -> Transform[ast.Module, ast.Module]:
         """Start Compile for Jac file and return python code as string."""
         return self.jac_file_to_pass(
             file_path=file_path,
@@ -146,6 +146,8 @@ class JacProgram:
         while len(self.last_imported) > 0:
             mod = self.last_imported.pop()
             JacImportPass(ir_in=mod, prior=ast_ret, prog=self)
+
+        for mod in self.modules.values():
             SymTabBuildPass(ir_in=mod, prior=ast_ret, prog=self)
 
         # If there is syntax error, no point in processing in further passes.
