@@ -227,7 +227,6 @@ class SpliceOrcPlugin:
             node_port = 30080
         else:
             node_port = None
-
         # Create the Deployment object
         apps_v1 = client.AppsV1Api()
 
@@ -441,11 +440,20 @@ class SpliceOrcPlugin:
         """Creating Jac CLI commands."""
 
         @cmd_registry.register
-        def orc_initialize(namespace: str) -> None:
+        def orc_initialize(namespace: str, config_path: str = None) -> None:
             """Initialize the Pod Manager and Kubernetes system.
 
             :param namespace: Kubernetes namespace to use.
+            :param config_path: Path to a custom configuration file.
             """
+            global config_loader
+            # Load custom config if provided
+            if config_path and os.path.isfile(config_path):
+                logging.debug(f"Loading custom config from: {config_path}")
+                config_loader = ConfigLoader(config_file_path=config_path)
+            else:
+                # Load default config
+                logging.error(f"Configuration file not found: {config_path}")
             # Use the provided namespace if given, else read from config
             if not namespace:
                 namespace = config_loader.get(
@@ -492,13 +500,16 @@ class SpliceOrcPlugin:
 
         module_config_path = os.getenv("MODULE_CONFIG_PATH", "/cfg/module_config.json")
         try:
-            logging.info(f"Loading from {module_config_path} for module_config...")
+            logging.debug(f"Loading from {module_config_path} for module_config...")
             with open(module_config_path, "r") as f:
                 module_config = json.load(f)
         except Exception as e:
-            logging.warning(
+            logging.debug(
                 f"No module_config found in config_map ({module_config_path}). "
                 f"Defaulting to fallback file. Error: {e}"
+            )
+            logging.debug(
+                f"Module config path: {module_config_path}, config_loader: {config_loader.default_config_file_path}"
             )
             module_config = config_loader.get("module_config", default={})
         if target in module_config and module_config[target]["load_type"] == "remote":
