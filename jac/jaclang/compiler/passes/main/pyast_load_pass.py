@@ -1683,7 +1683,13 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             pos_end=0,
         )
 
-        if isinstance(pattern, ast.MatchPattern):
+        if pattern is None:
+            return ast.MatchAs(
+                name=name,
+                pattern=None,
+                kid=[name],
+            )
+        elif isinstance(pattern, ast.MatchPattern):
             return ast.MatchAs(
                 name=name,
                 pattern=pattern,
