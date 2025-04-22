@@ -22,10 +22,10 @@ class ImportPassPassTests(TestCase):
 
     def test_pygen_jac_cli(self) -> None:
         """Basic test for pass."""
-        state = JacProgram().jac_file_to_pass(
+        state = (out := JacProgram()).jac_file_to_pass(
             self.fixture_abs_path("base.jac"), JacImportPass
         )
-        self.assertFalse(state.errors_had)
+        self.assertFalse(out.errors_had)
         mod = state.prog.modules[self.fixture_abs_path("impl/imps.jac")]
         self.assertIn("56", str(mod.to_dict()))
 

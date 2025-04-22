@@ -166,13 +166,12 @@ def get_object(
 def build(filename: str, pybuild: bool = False) -> None:
     """Build the specified .jac file."""
     if filename.endswith(".jac"):
-        out = JacProgram()
-        pass_ret = out.jac_file_to_pass(
+        (out := JacProgram()).jac_file_to_pass(
             file_path=filename,
             schedule=py_code_gen_typed if pybuild else py_code_gen_build,
         )
-        errs = len(pass_ret.errors_had)
-        warnings = len(pass_ret.warnings_had)
+        errs = len(out.errors_had)
+        warnings = len(out.warnings_had)
         print(f"Errors: {errs}, Warnings: {warnings}")
         with open(filename[:-4] + ".jir", "wb") as f:
             pickle.dump(out, f)
@@ -187,15 +186,15 @@ def check(filename: str, print_errs: bool = True) -> None:
     :param filename: The path to the .jac file.
     """
     if filename.endswith(".jac"):
-        out = JacProgram().jac_file_to_pass(
+        (prog := JacProgram()).jac_file_to_pass(
             file_path=filename,
             schedule=py_code_gen_typed,
         )
 
-        errs = len(out.errors_had)
-        warnings = len(out.warnings_had)
+        errs = len(prog.errors_had)
+        warnings = len(prog.warnings_had)
         if print_errs:
-            for e in out.errors_had:
+            for e in prog.errors_had:
                 print("Error:", e, file=sys.stderr)
         print(f"Errors: {errs}, Warnings: {warnings}")
     else:

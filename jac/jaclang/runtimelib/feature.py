@@ -492,7 +492,6 @@ class JacWalker:
     @staticmethod
     def disengage(walker: WalkerArchitype) -> bool:
         """Jac's disengage stmt feature."""
-
         walker.__jac__.disengaged = True
         return True
 

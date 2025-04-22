@@ -20,26 +20,6 @@ T = TypeVar("T", bound=ast3.AST)
 class PyastGenPass(AstPass):
     """Jac blue transpilation to python pass."""
 
-    # TODO: This should live in utils and perhaps a test added using it
-    # @staticmethod
-    # def node_compilable_test(node: ast3.AST) -> None:
-    #     """Convert any AST node to a compilable module node."""
-    #     if isinstance(node, ast3.Module):
-    #         pass
-    #     elif isinstance(node, (ast3.Expr, ast3.stmt)):
-    #         node = ast3.Module(body=[node], type_ignores=[])
-    #     elif isinstance(node, list) and all(isinstance(n, ast3.stmt) for n in node):
-    #         node = ast3.Module(body=node, type_ignores=[])
-    #     else:
-    #         node = ast3.Module(body=[], type_ignores=[])
-    #     try:
-    #         compile(node, "<ast>", "exec")
-    #     except TypeError as e:
-    #         print(ast3.dump(node, indent=2))
-    #         raise e
-    #     except Exception:
-    #         pass
-
     def before_pass(self) -> None:
         """Initialize pass."""
         self.debuginfo: dict[str, list[str]] = {"jac_mods": []}
@@ -2040,18 +2020,17 @@ class PyastGenPass(AstPass):
         )
         node.gen.py_ast = [
             self.sync(
-                ast3.Return(
+                ast3.Expr(
                     self.sync(
-                        self.sync(
-                            ast3.Call(
-                                func=self.jaclib_obj("disengage"),
-                                args=[loc],
-                                keywords=[],
-                            )
+                        ast3.Call(
+                            func=self.jaclib_obj("disengage"),
+                            args=[loc],
+                            keywords=[],
                         )
                     )
                 )
             ),
+            self.sync(ast3.Return()),
         ]
 
     def exit_await_expr(self, node: ast.AwaitExpr) -> None:

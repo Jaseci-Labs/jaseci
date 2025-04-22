@@ -76,8 +76,8 @@ class Transform(ABC, Generic[T, R]):
         from jaclang.compiler.program import JacProgram
 
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.errors_had: list[Alert] = [] if not prior else prior.errors_had
-        self.warnings_had: list[Alert] = [] if not prior else prior.warnings_had
+        self.errors_had: list[Alert] = []
+        self.warnings_had: list[Alert] = []
         self.cur_node: AstNode = ir_in  # tracks current node during traversal
         self.prog = prog or JacProgram()
         self.time_taken = 0.0
@@ -111,6 +111,7 @@ class Transform(ABC, Generic[T, R]):
             self.__class__,
         )
         self.errors_had.append(alrt)
+        self.prog.errors_had.append(alrt)
         self.logger.error(alrt.as_log())
 
     def log_warning(self, msg: str, node_override: Optional[AstNode] = None) -> None:
@@ -121,6 +122,7 @@ class Transform(ABC, Generic[T, R]):
             self.__class__,
         )
         self.warnings_had.append(alrt)
+        self.prog.warnings_had.append(alrt)
         self.logger.warning(alrt.as_log())
 
     def log_info(self, msg: str) -> None:
