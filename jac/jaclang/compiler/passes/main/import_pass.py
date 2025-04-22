@@ -39,7 +39,7 @@ class JacImportPass(AstPass):
     def process_import(self, i: ast.ModulePath) -> None:
         """Process an import."""
         imp_node = i.parent_of_type(ast.Import)
-        if imp_node.is_jac and not i.sub_module:
+        if imp_node.is_jac:
             self.import_jac_module(node=i)
 
     def import_jac_module(self, node: ast.ModulePath) -> None:
@@ -48,7 +48,7 @@ class JacImportPass(AstPass):
         target = node.resolve_relative_path()
         # If the module is a package (dir)
         if os.path.isdir(target):
-            self.attach_mod_to_node(self.import_jac_mod_from_dir(target))
+            self.load_mod(self.import_jac_mod_from_dir(target))
             import_node = node.parent_of_type(ast.Import)
             # And the import is a from import and I am the from module
             if node == import_node.from_loc:
@@ -58,22 +58,20 @@ class JacImportPass(AstPass):
                         from_mod_target = node.resolve_relative_path(i.name.value)
                         # If package
                         if os.path.isdir(from_mod_target):
-                            self.attach_mod_to_node(
-                                self.import_jac_mod_from_dir(from_mod_target)
-                            )
+                            self.load_mod(self.import_jac_mod_from_dir(from_mod_target))
                         # Else module
                         else:
-                            self.attach_mod_to_node(
+                            self.load_mod(
                                 self.prog.jac_file_to_pass(
                                     file_path=from_mod_target, schedule=[]
                                 ).ir_out
                             )
         else:
-            self.attach_mod_to_node(
+            self.load_mod(
                 self.prog.jac_file_to_pass(file_path=target, schedule=[]).ir_out
             )
 
-    def attach_mod_to_node(self, mod: ast.Module | None) -> None:
+    def load_mod(self, mod: ast.Module | None) -> None:
         """Attach a module to a node."""
         if mod and mod.loc.mod_path not in self.prog.modules:
             self.prog.modules[mod.loc.mod_path] = mod
@@ -177,7 +175,7 @@ class PyImportPass(JacImportPass):
         # handle it based on if there a from loc or not
         imp_node = i.parent_of_type(ast.Import)
 
-        if imp_node.is_py and not i.sub_module:
+        if imp_node.is_py:
             if imp_node.from_loc:
                 msg = "Processing import from node at href="
                 msg += ast.Module.get_href_path(imp_node)
@@ -214,7 +212,7 @@ class PyImportPass(JacImportPass):
             msg = f"\tRegistering module:{imported_mod.name} to "
             msg += f"import_from handling with {imp_node.loc.mod_path}:{imp_node.loc}"
 
-            self.attach_mod_to_node(imported_mod)
+            self.load_mod(imported_mod)
             self.import_from_build_list.append((imp_node, imported_mod))
             PyInspectSymTabBuildPass(ir_in=imported_mod, prior=self, prog=self.prog)
             DefUsePass(ir_in=imported_mod, prior=self, prog=self.prog)
@@ -243,7 +241,7 @@ class PyImportPass(JacImportPass):
                 or imported_mod.name == "builtins"
             ):
                 return
-            self.attach_mod_to_node(imported_mod)
+            self.load_mod(imported_mod)
 
             if imp_node.is_absorb:
                 msg = f"\tRegistering module:{imported_mod.name} to "

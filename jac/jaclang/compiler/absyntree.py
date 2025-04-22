@@ -1005,7 +1005,6 @@ class ModulePath(AstSymbolNode):
         self.path = path
         self.level = level
         self.alias = alias
-        self.sub_module: Optional[Module] = None
         self.abs_path: Optional[str] = None
 
         name_spec = alias if alias else path[0] if path else None
@@ -1101,7 +1100,6 @@ class ModuleItem(AstSymbolNode):
         """Initialize module item node."""
         self.name = name
         self.alias = alias
-        self.sub_module: Optional[Module] = None
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,

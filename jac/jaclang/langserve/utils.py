@@ -209,17 +209,6 @@ def create_range(loc: CodeLocInfo) -> lspt.Range:
     )
 
 
-def get_location_range(mod_item: ast.ModuleItem) -> tuple[int, int, int, int]:
-    """Get location range."""
-    if not mod_item.from_mod_path.sub_module:
-        raise ValueError("Module items should have module path. Not Possible.")
-    lookup = mod_item.from_mod_path.sub_module.sym_tab.lookup(mod_item.name.value)
-    if not lookup:
-        raise ValueError("Module items should have a symbol table entry. Not Possible.")
-    loc = lookup.decl.loc
-    return loc.first_line, loc.col_start, loc.last_line, loc.col_end
-
-
 def kind_map(sub_tab: ast.AstNode) -> lspt.SymbolKind:
     """Map the symbol node to an lspt.SymbolKind."""
     return (
