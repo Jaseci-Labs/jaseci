@@ -166,6 +166,31 @@ class JacParser(Transform[ast.JacSource, ast.Module]):
             if len(kid) > 1:
                 if (
                     isinstance(kid[0], ast.Expr)
+                    and (isinstance(kid[1], ast.Token) and kid[1].name == Tok.KW_ASYNC)
+                    and (isinstance(kid[2], ast.Token) and kid[2].name == Tok.KW_SPAWN)
+                    and isinstance(kid[3], ast.Expr)
+                ):
+                    return ast.SpawnExpr(
+                        left=kid[0],
+                        is_async=True,
+                        op=kid[2],
+                        right=kid[3],
+                        kid=kid,
+                    )
+                elif (
+                    isinstance(kid[0], ast.Expr)
+                    and (isinstance(kid[1], ast.Token) and kid[1].name == Tok.KW_SPAWN)
+                    and isinstance(kid[2], ast.Expr)
+                ):
+                    return ast.SpawnExpr(
+                        left=kid[0],
+                        is_async=False,
+                        op=kid[1],
+                        right=kid[2],
+                        kid=kid,
+                    )
+                elif (
+                    isinstance(kid[0], ast.Expr)
                     and isinstance(
                         kid[1],
                         (ast.Token, ast.DisconnectOp, ast.ConnectOp),

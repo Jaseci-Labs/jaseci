@@ -156,6 +156,25 @@ class PyastGenPass(AstPass):
         )
         self.already_added.append(self.needs_enum.__name__)
 
+    def needs_threading(self) -> None:
+        """Check if threading is needed."""
+        if self.needs_threading.__name__ in self.already_added:
+            return
+        self.preamble.append(
+            self.sync(
+                ast3.Import(
+                    names=[
+                        self.sync(
+                            ast3.alias(name="threading"),
+                            jac_node=self.ir_out,
+                        ),
+                    ]
+                ),
+                jac_node=self.ir_out,
+            )
+        )
+        self.already_added.append(self.needs_threading.__name__)
+
     def flatten(self, body: list[T | list[T] | None]) -> list[T]:
         """Flatten ast list."""
         new_body = []
@@ -2310,6 +2329,80 @@ class PyastGenPass(AstPass):
             ]
         else:
             node.gen.py_ast = self.translate_jac_bin_op(node)
+
+    def exit_spawn_expr(self, node: ast.SpawnExpr) -> None:
+        """Sub objects.
+
+        left: ExprType,
+        right: ExprType,
+        op: Token,
+        is_async: bool,
+        """
+        if node.is_async:
+            self.needs_threading()
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Call(
+                        func=self.sync(
+                            ast3.Attribute(
+                                value=self.sync(
+                                    ast3.Name(id="threading", ctx=ast3.Load())
+                                ),
+                                attr="Thread",
+                                ctx=ast3.Load(),
+                            )
+                        ),
+                        args=[],
+                        keywords=[
+                            self.sync(
+                                ast3.keyword(
+                                    arg="target",
+                                    value=self.sync(
+                                        ast3.Attribute(
+                                            value=self.sync(
+                                                ast3.Name(id="_", ctx=ast3.Load())
+                                            ),
+                                            attr="spawn",
+                                            ctx=ast3.Load(),
+                                        )
+                                    ),
+                                )
+                            ),
+                            self.sync(
+                                ast3.keyword(
+                                    arg="args",
+                                    value=self.sync(
+                                        ast3.Tuple(
+                                            elts=[
+                                                cast(
+                                                    ast3.expr, node.left.gen.py_ast[0]
+                                                ),
+                                                cast(
+                                                    ast3.expr, node.right.gen.py_ast[0]
+                                                ),
+                                            ],
+                                            ctx=ast3.Load(),
+                                        )
+                                    ),
+                                )
+                            ),
+                        ],
+                    )
+                )
+            ]
+        else:
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Call(
+                        func=self.jaclib_obj("spawn"),
+                        args=cast(
+                            list[ast3.expr],
+                            [node.left.gen.py_ast[0], node.right.gen.py_ast[0]],
+                        ),
+                        keywords=[],
+                    )
+                )
+            ]
 
     def translate_jac_bin_op(self, node: ast.BinaryExpr) -> list[ast3.AST]:
         """Translate jac binary op."""

@@ -2734,6 +2734,38 @@ class BinaryExpr(Expr):
         return res
 
 
+class SpawnExpr(BinaryExpr):
+    """Spawn node type for Jac Ast."""
+
+    def __init__(
+        self,
+        left: Expr,
+        right: Expr,
+        op: Token,
+        is_async: bool,
+        kid: Sequence[AstNode],
+    ) -> None:
+        """Initialize spawn expression node."""
+        super().__init__(left=left, right=right, op=op, kid=kid)
+        self.is_async = is_async
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize spawn expression node."""
+        res = True
+        if deep:
+            res = self.left.normalize(deep)
+            res = res and self.right.normalize(deep) if self.right else res
+            res = res and self.op.normalize(deep) if self.op else res
+        tok_async = [self.gen_token(Tok.KW_ASYNC)] if self.is_async else []
+        new_kid: list[AstNode] = (
+            [self.gen_token(Tok.LPAREN), self.left]
+            + tok_async
+            + [self.op, self.right, self.gen_token(Tok.RPAREN)]
+        )
+        self.set_kids(nodes=new_kid)
+        return res
+
+
 class CompareExpr(Expr):
     """CompareExpr node type for Jac Ast."""
 
