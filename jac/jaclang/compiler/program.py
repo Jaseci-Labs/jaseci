@@ -29,6 +29,7 @@ from jaclang.compiler.passes.main.sym_tab_link_pass import SymTabLinkPass
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.passes.transform import Transform
 from jaclang.compiler.semtable import SemRegistry
+from jaclang.settings import settings
 from jaclang.utils.log import logging
 
 
@@ -137,7 +138,7 @@ class JacProgram:
         top_mod: ast.Module = ast_ret.ir_out
         self.last_imported.append(ast_ret.ir_out)
         self.modules[ast_ret.ir_out.loc.mod_path] = ast_ret.ir_out
-
+        self.annex_impl(ast_ret.ir_out)
         # Only return the parsed module when the schedules are empty
         if len(schedule) == 0:
             return ast_ret
@@ -214,6 +215,54 @@ class JacProgram:
 
         ast_ret.ir_out = top_mod
         return ast_ret
+
+    def annex_impl(self, node: ast.Module) -> None:
+        """Annex impl and test modules."""
+        if node.stub_only:
+            return
+        if not node.loc.mod_path:
+            logger.error("Module has no path")
+        if not node.loc.mod_path.endswith(".jac"):
+            return
+        base_path = node.loc.mod_path[:-4]
+        directory = os.path.dirname(node.loc.mod_path)
+        if not directory:
+            directory = os.getcwd()
+            base_path = os.path.join(directory, base_path)
+        impl_folder = base_path + ".impl"
+        test_folder = base_path + ".test"
+        search_files = [
+            os.path.join(directory, impl_file) for impl_file in os.listdir(directory)
+        ]
+        if os.path.exists(impl_folder):
+            search_files += [
+                os.path.join(impl_folder, impl_file)
+                for impl_file in os.listdir(impl_folder)
+            ]
+        if os.path.exists(test_folder):
+            search_files += [
+                os.path.join(test_folder, test_file)
+                for test_file in os.listdir(test_folder)
+            ]
+        for cur_file in search_files:
+            if node.loc.mod_path.endswith(cur_file):
+                continue
+            if (
+                cur_file.startswith(f"{base_path}.")
+                or impl_folder == os.path.dirname(cur_file)
+            ) and cur_file.endswith(".impl.jac"):
+                mod = self.jac_file_to_pass(file_path=cur_file, schedule=[]).ir_out
+                if mod:
+                    node.add_kids_left(mod.kid, parent_update=True, pos_update=False)
+                    node.impl_mod.append(mod)
+            if (
+                cur_file.startswith(f"{base_path}.")
+                or test_folder == os.path.dirname(cur_file)
+            ) and cur_file.endswith(".test.jac"):
+                mod = self.jac_file_to_pass(file_path=cur_file, schedule=[]).ir_out
+                if mod and not settings.ignore_test_annex:
+                    node.test_mod.append(mod)
+                    node.add_kids_right(mod.kid, parent_update=True, pos_update=False)
 
     @staticmethod
     def jac_file_formatter(
