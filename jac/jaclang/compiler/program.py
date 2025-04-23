@@ -95,6 +95,8 @@ class JacProgram:
 
         source = ast.Source(jac_str, mod_path=file_path)
         ast_ret: Transform = JacParser(root_ir=source, prog=self)
+        if ast_ret.errors_had:
+            return ast_ret
         return self.run_pass_schedule(
             cur_pass=ast_ret,
             target=target,
@@ -120,8 +122,6 @@ class JacProgram:
             ),
             prog=self,
         )
-        # TODO: This should go inside the PyastBuildPass
-        self.modules[py_ast_build_pass.ir_out.loc.mod_path] = py_ast_build_pass.ir_out
         return self.run_pass_schedule(
             cur_pass=py_ast_build_pass,
             target=target,

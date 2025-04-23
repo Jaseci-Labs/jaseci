@@ -59,12 +59,16 @@ class JacImportPass(AstPass):
                             self.load_mod(self.import_jac_mod_from_dir(from_mod_target))
                         # Else module
                         else:
+                            if from_mod_target in self.prog.modules:
+                                return
                             self.load_mod(
                                 self.prog.jac_file_to_pass(
                                     file_path=from_mod_target, schedule=[]
                                 ).ir_out
                             )
         else:
+            if target in self.prog.modules:
+                return
             self.load_mod(
                 self.prog.jac_file_to_pass(file_path=target, schedule=[]).ir_out
             )
@@ -81,6 +85,8 @@ class JacImportPass(AstPass):
         """Import a module from a directory."""
         with_init = os.path.join(target, "__init__.jac")
         if os.path.exists(with_init):
+            if with_init in self.prog.modules:
+                return self.prog.modules[with_init]
             return self.prog.jac_file_to_pass(file_path=with_init, schedule=[]).ir_out
         else:
             return ast.Module(
