@@ -34,7 +34,6 @@ class SimpleGraphTest(JacCloudTest):
         res = get(f"{self.host}/openapi.yaml", timeout=1)
         res.raise_for_status()
 
-        self.run_server(f"{Path(__file__).parent}/simple_graph.jac")
         with open(f"{self.directory}/openapi_specs.yaml") as file:
             self.assertEqual(safe_load(file), safe_load(res.text))
 
