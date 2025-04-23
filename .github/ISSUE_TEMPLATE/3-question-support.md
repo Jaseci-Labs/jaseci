@@ -6,5 +6,3 @@ labels: "Type: Question"
 assignees:
 
 ---
-
-## **Describe your question, comment or other request.**

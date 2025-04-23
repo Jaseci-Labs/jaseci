@@ -27,7 +27,7 @@ from jaclang.compiler.passes.main import (
 )
 from jaclang.compiler.passes.main.sym_tab_link_pass import SymTabLinkPass
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
-from jaclang.compiler.passes.transform import Transform
+from jaclang.compiler.passes.transform import Alert, Transform
 from jaclang.compiler.semtable import SemRegistry
 from jaclang.settings import settings
 from jaclang.utils.log import logging
@@ -45,6 +45,8 @@ class JacProgram:
         self.modules: dict[str, Module] = {}
         self.last_imported: list[Module] = []
         self.py_raise_map: dict[str, str] = {}
+        self.errors_had: list[Alert] = []
+        self.warnings_had: list[Alert] = []
 
     def get_bytecode(self, full_target: str) -> Optional[types.CodeType]:
         """Get the bytecode for a specific module."""
@@ -118,7 +120,7 @@ class JacProgram:
                 parsed_ast,
                 orig_src=ast.JacSource(py_str, mod_path=file_path),
             ),
-            prog=None,
+            prog=self,
         )
         return self.run_pass_schedule(
             in_pass=py_ast_build_pass,
@@ -146,10 +148,10 @@ class JacProgram:
         # Run JacImportPass & SymTabBuildPass on all imported Jac Programs
         while len(self.last_imported) > 0:
             mod = self.last_imported.pop()
-            JacImportPass(ir_in=mod, prior=ast_ret, prog=self)
+            JacImportPass(ir_in=mod, prog=self)
 
         for mod in self.modules.values():
-            SymTabBuildPass(ir_in=mod, prior=ast_ret, prog=self)
+            SymTabBuildPass(ir_in=mod, prog=self)
 
         # If there is syntax error, no point in processing in further passes.
         if len(ast_ret.errors_had) != 0:
@@ -162,7 +164,7 @@ class JacProgram:
 
         # Link all Jac symbol tables created
         for mod in self.modules.values():
-            SymTabLinkPass(ir_in=mod, prior=ast_ret, prog=self)
+            SymTabLinkPass(ir_in=mod, prog=self)
 
         # Run all passes till PyBytecodeGenPass
         # Here the passes will run one by one on the imported modules instead
@@ -174,9 +176,9 @@ class JacProgram:
                 if current_pass in (target, PyBytecodeGenPass):
                     final_pass = current_pass
                     break
-                ast_ret = current_pass(mod, prior=ast_ret, prog=self)
+                ast_ret = current_pass(mod, prog=self)
             if final_pass:
-                ast_ret = final_pass(mod, prior=ast_ret, prog=self)
+                ast_ret = final_pass(mod, prog=self)
 
         for mod in self.modules.values():
             run_schedule(mod, schedule=schedule)
@@ -187,28 +189,28 @@ class JacProgram:
             return ast_ret
 
         # Run TypeCheckingPass on the top module
-        JacTypeCheckPass(top_mod, prior=ast_ret, prog=self)
+        JacTypeCheckPass(top_mod, prog=self)
 
         # if "JAC_VSCE" not in os.environ:
         #     ast_ret.ir = top_mod
         #     return ast_ret
 
         for mod in self.modules.values():
-            PyCollectDepsPass(mod, prior=ast_ret, prog=self)
+            PyCollectDepsPass(mod, prog=self)
 
         for mod in self.modules.values():
             self.last_imported.append(mod)
         # Run PyImportPass
         while len(self.last_imported) > 0:
             mod = self.last_imported.pop()
-            PyImportPass(mod, prior=ast_ret, prog=self)
+            PyImportPass(mod, prog=self)
 
         # Link all Jac symbol tables created
         for mod in self.modules.values():
-            SymTabLinkPass(ir_in=mod, prior=ast_ret, prog=self)
+            SymTabLinkPass(ir_in=mod, prog=self)
 
         for mod in self.modules.values():
-            DefUsePass(mod, prior=ast_ret, prog=self)
+            DefUsePass(mod, prog=self)
 
         for mod in self.modules.values():
             run_schedule(mod, schedule=type_checker_sched)
@@ -270,10 +272,13 @@ class JacProgram:
     ) -> JacFormatPass:
         """Convert a Jac file to an AST."""
         target = JacFormatPass
+        prog = JacProgram()
         with open(file_path) as file:
             source = ast.JacSource(file.read(), mod_path=file_path)
-            prse: Transform = JacParser(root_ir=source, prog=None)
+            prse: Transform = JacParser(root_ir=source, prog=prog)
         for i in [FuseCommentsPass, JacFormatPass]:
-            prse = i(ir_in=prse.ir_out, prior=prse, prog=None)
-        prse = target(ir_in=prse.ir_out, prior=prse, prog=None)
+            prse = i(ir_in=prse.ir_out, prog=prog)
+        prse = target(ir_in=prse.ir_out, prog=prog)
+        prse.errors_had = prog.errors_had
+        prse.warnings_had = prog.warnings_had
         return prse

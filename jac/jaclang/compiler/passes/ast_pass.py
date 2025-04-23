@@ -20,13 +20,12 @@ class AstPass(Transform[ast.Module, ast.Module]):
     def __init__(
         self,
         ir_in: ast.Module,
-        prior: Optional[Transform],
-        prog: Optional[JacProgram],
+        prog: JacProgram,
     ) -> None:
         """Initialize parser."""
         self.term_signal = False
         self.prune_signal = False
-        Transform.__init__(self, ir_in, prior, prog)
+        Transform.__init__(self, ir_in, prog)
 
     def before_pass(self) -> None:
         """Run once before pass."""

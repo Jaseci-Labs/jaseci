@@ -235,6 +235,7 @@ class ObjectAnchor(Anchor):
     architype: ObjectArchitype
 
 
+@dataclass(eq=False, repr=False, kw_only=True)
 class Architype:
     """Architype Protocol."""
 

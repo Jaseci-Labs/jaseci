@@ -79,14 +79,16 @@ class JacLangServer(LanguageServer):
         """Rebuild a file."""
         try:
             document = self.workspace.get_text_document(file_path)
-            build = self.program.jac_str_to_pass(
+            self.program.jac_str_to_pass(
                 jac_str=document.source, file_path=document.path, schedule=[]
             )
             self.publish_diagnostics(
                 file_path,
-                gen_diagnostics(file_path, build.errors_had, build.warnings_had),
+                gen_diagnostics(
+                    file_path, self.program.errors_had, self.program.warnings_had
+                ),
             )
-            return len(build.errors_had) == 0
+            return len(self.program.errors_had) == 0
         except Exception as e:
             self.log_error(f"Error during syntax check: {e}")
             return False
@@ -116,8 +118,8 @@ class JacLangServer(LanguageServer):
                 annex_view if annex_view else file_path,
                 gen_diagnostics(
                     annex_view if annex_view else file_path,
-                    build.errors_had,
-                    build.warnings_had,
+                    self.program.errors_had,
+                    self.program.warnings_had,
                 ),
             )
             if annex_view:
@@ -125,12 +127,12 @@ class JacLangServer(LanguageServer):
                     file_path,
                     gen_diagnostics(
                         file_path,
-                        build.errors_had,
-                        build.warnings_had,
+                        self.program.errors_had,
+                        self.program.warnings_had,
                     ),
                 )
             self.log_py(f"PROFILE: Deep check took {time.time() - start_time} seconds.")
-            return len(build.errors_had) == 0
+            return len(self.program.errors_had) == 0
         except Exception as e:
             self.log_error(f"Error during deep check: {e}")
             return False
@@ -295,7 +297,7 @@ class JacLangServer(LanguageServer):
             )
             formatted_text = (
                 format.ir_out.gen.jac
-                if JacParser not in [e.from_pass for e in format.errors_had]
+                if JacParser not in [e.from_pass for e in self.program.errors_had]
                 else document.source
             )
         except Exception as e:
