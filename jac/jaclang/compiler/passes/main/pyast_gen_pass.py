@@ -959,7 +959,7 @@ class PyastGenPass(AstPass):
     def gen_llm_body(self, node: ast.Ability) -> list[ast3.AST]:
         """Generate the by LLM body."""
         # to Avoid circular import
-        from jaclang.runtimelib.feature import JacMachine
+        from jaclang.runtimelib.machine import JacMachine
 
         return JacMachine.gen_llm_body(self, node)
 
@@ -2902,7 +2902,7 @@ class PyastGenPass(AstPass):
     ) -> ast3.Call:
         """Return the LLM Call, e.g. _Jac.with_llm()."""
         # to avoid circular import
-        from jaclang.runtimelib.feature import JacMachine
+        from jaclang.runtimelib.machine import JacMachine
 
         return JacMachine.by_llm_call(
             self,
@@ -2919,7 +2919,7 @@ class PyastGenPass(AstPass):
     def get_by_llm_call_args(self, node: ast.FuncCall) -> dict:
         """Get the arguments for the by_llm_call."""
         # to avoid circular import
-        from jaclang.runtimelib.feature import JacMachine
+        from jaclang.runtimelib.machine import JacMachine
 
         return JacMachine.get_by_llm_call_args(self, node)
 

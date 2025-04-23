@@ -3,7 +3,7 @@
 import inspect
 from typing import List, Type
 
-from jaclang.runtimelib.feature import JacMachine, JacMachineImpl, JacMachineSpec
+from jaclang.runtimelib.machine import JacMachine, JacMachineImpl, JacMachineSpec
 from jaclang.utils.test import TestCase
 
 import pluggy

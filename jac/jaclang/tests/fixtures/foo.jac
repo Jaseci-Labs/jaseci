@@ -1,4 +1,4 @@
-import:py from jaclang.runtimelib.feature { JacMachine, JacMachineState }
+import:py from jaclang.runtimelib.machine { JacMachine, JacMachineState }
 import:jac from bar, bar_walk;
 # Test runner to initialize the walker
 

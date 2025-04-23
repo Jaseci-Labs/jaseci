@@ -11,7 +11,7 @@ from jac_splice_orc.config.config_loader import ConfigLoader
 from jac_splice_orc.managers.proxy_manager import ModuleProxy
 
 from jaclang.cli.cmdreg import cmd_registry
-from jaclang.runtimelib.feature import JacMachine, JacMachineState, JacProgram
+from jaclang.runtimelib.machine import JacMachine, JacMachineState, JacProgram
 
 
 from kubernetes import client, config

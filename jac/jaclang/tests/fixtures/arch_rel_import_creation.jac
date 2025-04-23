@@ -1,4 +1,4 @@
-import:py from jaclang.runtimelib.feature { JacMachine, JacMachineState }
+import:py from jaclang.runtimelib.machine { JacMachine, JacMachineState }
 
 glob dynamic_module_source = """
 import from .arch_create_util {UtilityNode}

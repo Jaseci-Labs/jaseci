@@ -6,7 +6,7 @@ import sys
 from jaclang import JacMachine as Jac
 from jaclang.cli import cli
 from jaclang.compiler.program import JacProgram
-from jaclang.runtimelib.feature import JacMachine, JacMachineState
+from jaclang.runtimelib.machine import JacMachine, JacMachineState
 from jaclang.utils.test import TestCase
 
 

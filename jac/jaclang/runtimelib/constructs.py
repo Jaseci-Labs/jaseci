@@ -17,7 +17,7 @@ from .architype import (
     WalkerAnchor,
     WalkerArchitype,
 )
-from .machine import ExecutionContext, JacMachineState
+from .machinestate import ExecutionContext, JacMachineState
 from .memory import Memory, ShelfStorage
 from .test import JacTestCheck, JacTestResult, JacTextTestRunner
 

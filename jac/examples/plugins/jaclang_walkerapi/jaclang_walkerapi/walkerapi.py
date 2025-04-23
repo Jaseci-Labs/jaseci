@@ -1,5 +1,5 @@
 from jaclang.runtimelib.default import hookimpl
-from jaclang.runtimelib.feature import Architype, WalkerArchitype, DataSpatialFunction
+from jaclang.runtimelib.machine import Architype, WalkerArchitype, DataSpatialFunction
 
 from dataclasses import dataclass
 from functools import wraps

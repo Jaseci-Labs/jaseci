@@ -8,7 +8,7 @@ import types
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes.main import PyastGenPass
 from jaclang.compiler.program import JacProgram
-from jaclang.runtimelib.machine import JacMachineState
+from jaclang.runtimelib.machinestate import JacMachineState
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
 
 

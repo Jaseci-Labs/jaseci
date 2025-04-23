@@ -45,7 +45,7 @@ with entry {
     einstein = Person('Albert Einstein', einstein_age);
 }
 
-import from jaclang.runtimelib.feature { JacMachine, JacMachineState }
+import from jaclang.runtimelib.machine { JacMachine, JacMachineState }
 
 with entry {
     registry = JacMachine.py_get_jac_machine().jac_program.sem_ir;

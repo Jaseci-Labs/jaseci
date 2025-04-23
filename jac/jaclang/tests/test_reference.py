@@ -7,7 +7,7 @@ from typing import Callable, Optional
 
 import jaclang
 from jaclang.compiler.program import JacProgram
-from jaclang.runtimelib.machine import JacMachineState
+from jaclang.runtimelib.machinestate import JacMachineState
 from jaclang.utils.test import TestCase
 
 

@@ -28,7 +28,7 @@ from fastapi import (
 )
 from fastapi.responses import ORJSONResponse
 
-from jaclang.runtimelib.feature import JacMachine as Jac
+from jaclang.runtimelib.machine import JacMachine as Jac
 
 from orjson import loads
 

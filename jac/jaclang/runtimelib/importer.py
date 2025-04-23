@@ -10,13 +10,13 @@ import types
 from os import getcwd, path
 from typing import Optional, TYPE_CHECKING, Union
 
-from jaclang.runtimelib.feature import JacMachine
+from jaclang.runtimelib.machine import JacMachine
 from jaclang.runtimelib.utils import sys_path_context
 from jaclang.utils.helpers import dump_traceback
 from jaclang.utils.log import logging
 
 if TYPE_CHECKING:
-    from jaclang.runtimelib.machine import JacMachineState
+    from jaclang.runtimelib.machinestate import JacMachineState
 
 logger = logging.getLogger(__name__)
 
