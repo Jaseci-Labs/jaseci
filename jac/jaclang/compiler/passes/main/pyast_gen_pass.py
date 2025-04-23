@@ -163,7 +163,7 @@ class PyastGenPass(AstPass):
         self.preamble.append(
             self.sync(
                 ast3.ImportFrom(
-                    module="jaclang.runtimelib.jacoroutine",
+                    module="jaclang.runtimelib.jacroutine",
                     names=[
                         self.sync(ast3.alias(name="Task", asname=None)),
                         self.sync(ast3.alias(name="Group", asname=None)),
