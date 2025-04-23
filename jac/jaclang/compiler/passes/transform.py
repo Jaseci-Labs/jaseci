@@ -75,24 +75,24 @@ class Transform(ABC, Generic[T, R]):
         self.prog = prog
         self.time_taken = 0.0
         self.ir_in: T = ir_in
-        self.ir_out: R = self.timed_transform(ir=ir_in)
+        self.ir_out: R = self.timed_transform(ir_in=ir_in)
 
     def timed_transform(
         self,
-        ir: T,
+        ir_in: T,
     ) -> R:
         """Transform with time tracking."""
         start_time = time.time()
-        ret = self.transform(ir=ir)
+        ir_out = self.transform(ir_in=ir_in)
         self.time_taken = time.time() - start_time
         if settings.pass_timer:
             self.log_info(
                 f"Time taken in {self.__class__.__name__}: {self.time_taken:.4f} seconds"
             )
-        return ret
+        return ir_out
 
     @abstractmethod
-    def transform(self, ir: T) -> R:
+    def transform(self, ir_in: T) -> R:
         """Transform interface."""
         pass
 

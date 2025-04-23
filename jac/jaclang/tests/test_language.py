@@ -297,7 +297,31 @@ class JacLanguageTests(TestCase):
         Jac.jac_import(self.mach, "deep_import", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
+        print(self.mach.loaded_modules.keys())
         self.assertEqual(stdout_value.split("\n")[0], "one level deeperslHello World!")
+
+    def test_deep_imports_interp_mode(self) -> None:
+        """Parse micro jac file."""
+        mach = JacMachineState(self.fixture_abs_path("./"), interp_mode=True)
+        Jac.attach_program(
+            mach,
+            JacProgram(),
+        )
+        Jac.jac_import(
+            mach, "deep_import_interp", base_path=self.fixture_abs_path("./")
+        )
+        print(mach.jac_program.modules.keys())
+        self.assertEqual(len(mach.jac_program.modules.keys()), 1)
+        mach = JacMachineState(self.fixture_abs_path("./"), interp_mode=False)
+        Jac.attach_program(
+            mach,
+            JacProgram(),
+        )
+        Jac.jac_import(
+            mach, "deep_import_interp", base_path=self.fixture_abs_path("./")
+        )
+        print(mach.jac_program.modules.keys())
+        self.assertEqual(len(mach.jac_program.modules.keys()), 5)
 
     def test_deep_imports_mods(self) -> None:
         """Parse micro jac file."""
@@ -574,16 +598,16 @@ class JacLanguageTests(TestCase):
             parsed_ast = py_ast.parse(file_source)
             try:
                 py_ast_build_pass = PyastBuildPass(
-                    root_ir=ast.PythonModuleAst(
-                        parsed_ast, orig_src=ast.JacSource(file_source, file_name)
+                    ir_in=ast.PythonModuleAst(
+                        parsed_ast, orig_src=ast.Source(file_source, file_name)
                     ),
-                    prog=None,
+                    prog=JacProgram(),
                 )
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
 
         (prog := JacProgram()).jac_str_to_pass(
-            jac_str=py_ast_build_pass.ir.unparse(),
+            jac_str=py_ast_build_pass.ir_out.unparse(),
             file_path=file_name[:-3] + ".jac",
             schedule=py_code_gen_typed,
         ).ir_out
@@ -614,13 +638,12 @@ class JacLanguageTests(TestCase):
         with open(py_out_path) as f:
             file_source = f.read()
             output = PyastBuildPass(
-                root_ir=ast.PythonModuleAst(
+                ir_in=ast.PythonModuleAst(
                     py_ast.parse(file_source),
-                    orig_src=ast.JacSource(file_source, py_out_path),
+                    orig_src=ast.Source(file_source, py_out_path),
                 ),
-                prog=None,
-            ).ir.unparse()
-        # print(output)
+                prog=JacProgram(),
+            ).ir_out.unparse()
         self.assertIn("can greet2(**kwargs: Any)", output)
         self.assertEqual(output.count("with entry {"), 13)
         self.assertIn(
@@ -650,17 +673,17 @@ class JacLanguageTests(TestCase):
             parsed_ast = py_ast.parse(file_source)
             try:
                 py_ast_build_pass = PyastBuildPass(
-                    root_ir=ast.PythonModuleAst(
+                    ir_in=ast.PythonModuleAst(
                         parsed_ast,
-                        orig_src=ast.JacSource(file_source, file_name),
+                        orig_src=ast.Source(file_source, file_name),
                     ),
-                    prog=None,
+                    prog=JacProgram(),
                 )
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
 
             (prog := JacProgram()).jac_str_to_pass(
-                jac_str=py_ast_build_pass.ir.unparse(),
+                jac_str=py_ast_build_pass.ir_out.unparse(),
                 file_path=file_name[:-3] + ".jac",
                 schedule=py_code_gen_typed,
             ).ir_out
@@ -692,12 +715,12 @@ class JacLanguageTests(TestCase):
         with open(py_out_path) as f:
             file_source = f.read()
             output = PyastBuildPass(
-                root_ir=ast.PythonModuleAst(
+                ir_in=ast.PythonModuleAst(
                     py_ast.parse(file_source),
-                    orig_src=ast.JacSource(file_source, py_out_path),
+                    orig_src=ast.Source(file_source, py_out_path),
                 ),
-                prog=None,
-            ).ir.unparse()
+                prog=JacProgram(),
+            ).ir_out.unparse()
         self.assertIn("class X {\n    with entry {\n\n        a_b = 67;", output)
         self.assertIn("br = b'Hello\\\\\\\\nWorld'", output)
         self.assertIn("class Circle {\n    can init(radius: float", output)
@@ -749,12 +772,12 @@ class JacLanguageTests(TestCase):
         with open(py_out_path) as f:
             file_source = f.read()
             output = PyastBuildPass(
-                root_ir=ast.PythonModuleAst(
+                ir_in=ast.PythonModuleAst(
                     py_ast.parse(file_source),
-                    orig_src=ast.JacSource(file_source, py_out_path),
+                    orig_src=ast.Source(file_source, py_out_path),
                 ),
-                prog=None,
-            ).ir.unparse()
+                prog=JacProgram(),
+            ).ir_out.unparse()
         self.assertIn("if 0 <= x<= 5 {", output)
         self.assertIn("  case _:\n", output)
         self.assertIn(" case Point(x = int(_), y = 0):\n", output)
