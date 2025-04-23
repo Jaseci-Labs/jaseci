@@ -15,7 +15,7 @@ class PyBytecodeGenPassTests(TestCase):
 
     def test_simple_bcgen(self) -> None:
         """Basic test for pass."""
-        jac_code = JacProgram().jac_file_to_pass(
+        jac_code = JacProgram().compile(
             file_path=self.fixture_abs_path("func.jac"),
         )
         try:

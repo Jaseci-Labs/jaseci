@@ -170,7 +170,7 @@ def get_object(
 def build(filename: str, pybuild: bool = False) -> None:
     """Build the specified .jac file."""
     if filename.endswith(".jac"):
-        (out := JacProgram()).jac_file_to_pass(
+        (out := JacProgram()).compile(
             file_path=filename,
             schedule=py_code_gen_typed if pybuild else py_code_gen_build,
         )
@@ -190,7 +190,7 @@ def check(filename: str, print_errs: bool = True) -> None:
     :param filename: The path to the .jac file.
     """
     if filename.endswith(".jac"):
-        (prog := JacProgram()).jac_file_to_pass(
+        (prog := JacProgram()).compile(
             file_path=filename,
             schedule=py_code_gen_typed,
         )
@@ -360,7 +360,7 @@ def debug(filename: str, main: bool = True, cache: bool = False) -> None:
     base = base if base else "./"
     mod = mod[:-4]
     if filename.endswith(".jac"):
-        bytecode = JacProgram().jac_file_to_pass(filename).ir_out.gen.py_bytecode
+        bytecode = JacProgram().compile(filename).ir_out.gen.py_bytecode
         if bytecode:
             code = marshal.loads(bytecode)
             if db.has_breakpoint(bytecode):
@@ -466,7 +466,7 @@ def jac2py(filename: str) -> None:
     """
     if filename.endswith(".jac"):
         with open(filename, "r"):
-            code = JacProgram().jac_file_to_pass(file_path=filename).ir_out.gen.py
+            code = JacProgram().compile(file_path=filename).ir_out.gen.py
         print(code)
     else:
         print("Not a .jac file.", file=sys.stderr)

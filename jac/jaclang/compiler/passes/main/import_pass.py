@@ -62,16 +62,14 @@ class JacImportPass(AstPass):
                             if from_mod_target in self.prog.modules:
                                 return
                             self.load_mod(
-                                self.prog.jac_file_to_pass(
+                                self.prog.compile(
                                     file_path=from_mod_target, schedule=[]
                                 ).ir_out
                             )
         else:
             if target in self.prog.modules:
                 return
-            self.load_mod(
-                self.prog.jac_file_to_pass(file_path=target, schedule=[]).ir_out
-            )
+            self.load_mod(self.prog.compile(file_path=target, schedule=[]).ir_out)
 
     def load_mod(self, mod: ast.Module | None) -> None:
         """Attach a module to a node."""
@@ -87,7 +85,7 @@ class JacImportPass(AstPass):
         if os.path.exists(with_init):
             if with_init in self.prog.modules:
                 return self.prog.modules[with_init]
-            return self.prog.jac_file_to_pass(file_path=with_init, schedule=[]).ir_out
+            return self.prog.compile(file_path=with_init, schedule=[]).ir_out
         else:
             return ast.Module(
                 name=target.split(os.path.sep)[-1],

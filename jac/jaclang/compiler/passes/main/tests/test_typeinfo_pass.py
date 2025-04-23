@@ -17,7 +17,7 @@ class TestFuseTypeInfo(TestCase):
         """Test module type assignment."""
         gen_ast = (
             JacProgram()
-            .jac_file_to_pass(
+            .compile(
                 self.fixture_abs_path("mod_type_assign.jac"),
                 FuseTypeInfoPass,
                 schedule=py_code_gen_typed,

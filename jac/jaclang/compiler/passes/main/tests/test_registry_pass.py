@@ -17,7 +17,7 @@ class RegistryPassTests(TestCase):
 
     def test_registry_pass(self) -> None:
         """Basic test for pass."""
-        state = (out := JacProgram()).jac_file_to_pass(
+        state = (out := JacProgram()).compile(
             self.fixture_abs_path("registry.jac"), RegistryPass
         )
         self.assertFalse(out.errors_had)

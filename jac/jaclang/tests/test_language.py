@@ -535,9 +535,7 @@ class JacLanguageTests(TestCase):
 
     def test_annotation_tuple_issue(self) -> None:
         """Test conn assign on edges."""
-        mypass = JacProgram().jac_file_to_pass(
-            self.fixture_abs_path("./slice_vals.jac")
-        )
+        mypass = JacProgram().compile(self.fixture_abs_path("./slice_vals.jac"))
         self.assertIn("Annotated[Str, INT, BLAH]", mypass.ir_out.gen.py)
         self.assertIn(
             "tuple[int, Optional[type], Optional[tuple]]", mypass.ir_out.gen.py
@@ -993,7 +991,7 @@ class JacLanguageTests(TestCase):
 
     def test_ds_type_check_pass(self) -> None:
         """Test conn assign on edges."""
-        (mypass := JacProgram()).jac_file_to_pass(
+        (mypass := JacProgram()).compile(
             self.examples_abs_path("micro/simple_walk.jac"),
             schedule=py_code_gen_typed,
         )
@@ -1002,7 +1000,7 @@ class JacLanguageTests(TestCase):
 
     def test_ds_type_check_pass2(self) -> None:
         """Test conn assign on edges."""
-        (mypass := JacProgram()).jac_file_to_pass(
+        (mypass := JacProgram()).compile(
             self.examples_abs_path("guess_game/guess_game5.jac"),
             schedule=py_code_gen_typed,
         )
@@ -1011,7 +1009,7 @@ class JacLanguageTests(TestCase):
 
     def test_circle_override1_type_check_pass(self) -> None:
         """Test conn assign on edges."""
-        (mypass := JacProgram()).jac_file_to_pass(
+        (mypass := JacProgram()).compile(
             self.examples_abs_path("manual_code/circle.jac"),
             schedule=py_code_gen_typed,
         )
@@ -1041,7 +1039,7 @@ class JacLanguageTests(TestCase):
 
     def test_multiline_single_tok(self) -> None:
         """Test conn assign on edges."""
-        mypass = JacProgram().jac_file_to_pass(self.fixture_abs_path("byllmissue.jac"))
+        mypass = JacProgram().compile(self.fixture_abs_path("byllmissue.jac"))
         self.assertIn("2:5 - 4:8", mypass.ir_out.pp())
 
     @pytest.mark.xfail(
@@ -1049,14 +1047,14 @@ class JacLanguageTests(TestCase):
     )
     def test_single_impl_annex(self) -> None:
         """Basic test for pass."""
-        mypass = JacProgram().jac_file_to_pass(
+        mypass = JacProgram().compile(
             self.examples_abs_path("manual_code/circle_pure.jac"),
             target=passes.JacImportPass,
         )
 
         self.assertEqual(mypass.ir_out.pp().count("AbilityDef - (o)Circle.(c)area"), 1)
         self.assertIsNone(mypass.ir_out._sym_tab)
-        mypass = JacProgram().jac_file_to_pass(
+        mypass = JacProgram().compile(
             self.examples_abs_path("manual_code/circle_pure.jac"),
             target=passes.SymTabBuildPass,
         )
@@ -1067,7 +1065,7 @@ class JacLanguageTests(TestCase):
 
     def test_inherit_baseclass_sym(self) -> None:
         """Basic test for symtable support for inheritance."""
-        mypass = JacProgram().jac_file_to_pass(
+        mypass = JacProgram().compile(
             self.examples_abs_path("guess_game/guess_game4.jac"),
             target=passes.DefUsePass,
         )

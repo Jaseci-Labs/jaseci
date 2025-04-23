@@ -236,7 +236,7 @@ class AstTool:
                 except Exception as e:
                     return f"Error While Jac to Py AST conversion: {e}"
             else:
-                ir = prog.jac_file_to_pass(
+                ir = prog.compile(
                     file_name, schedule=[*(py_code_gen), *type_checker_sched]
                 ).ir_out
 

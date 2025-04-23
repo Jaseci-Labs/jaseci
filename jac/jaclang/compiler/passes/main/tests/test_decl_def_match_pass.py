@@ -15,7 +15,7 @@ class DeclImplMatchPassTests(TestCase):
 
     def test_parameter_count_mismatch(self) -> None:
         """Basic test for pass."""
-        (out := JacProgram()).jac_file_to_pass(
+        (out := JacProgram()).compile(
             self.fixture_abs_path("defn_decl_mismatch.jac"), DeclImplMatchPass
         )
 
@@ -45,7 +45,7 @@ class DeclImplMatchPassTests(TestCase):
 
     def test_ability_connected_to_decl(self) -> None:
         """Basic test for pass."""
-        state = (out := JacProgram()).jac_file_to_pass(
+        state = (out := JacProgram()).compile(
             self.fixture_abs_path("base.jac"), DeclImplMatchPass
         )
         self.assertFalse(out.errors_had)
@@ -60,7 +60,7 @@ class DeclImplMatchPassTests(TestCase):
 
     def test_ability_connected_to_decl_post(self) -> None:
         """Basic test for pass."""
-        state = (out := JacProgram()).jac_file_to_pass(
+        state = (out := JacProgram()).compile(
             self.fixture_abs_path("base2.jac"), DeclImplMatchPass
         )
         self.assertFalse(out.errors_had)
@@ -75,7 +75,7 @@ class DeclImplMatchPassTests(TestCase):
 
     def test_arch_ref_has_sym(self) -> None:
         """Basic test for pass."""
-        state = JacProgram().jac_file_to_pass(
+        state = JacProgram().compile(
             self.fixture_abs_path("defs_and_uses.jac"), DeclImplMatchPass
         )
         for i in state.ir_out.get_all_sub_nodes(ast.ArchRef):
@@ -83,7 +83,7 @@ class DeclImplMatchPassTests(TestCase):
 
     def test_obj_hasvar_initialization(self) -> None:
         """Basic test for pass."""
-        (out := JacProgram()).jac_file_to_pass(
+        (out := JacProgram()).compile(
             self.fixture_abs_path("uninitialized_hasvars.jac"), DeclImplMatchPass
         )
         self.assertTrue(out.errors_had)

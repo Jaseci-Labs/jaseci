@@ -18,7 +18,7 @@ class MypyTypeCheckPassTests(TestCase):
 
     def test_type_errors(self) -> None:
         """Basic test for pass."""
-        (type_checked := JacProgram()).jac_file_to_pass(
+        (type_checked := JacProgram()).compile(
             file_path=self.fixture_abs_path("func.jac"),
             schedule=py_code_gen_typed,
         )
@@ -36,7 +36,7 @@ class MypyTypeCheckPassTests(TestCase):
 
     def test_imported_module_typecheck(self) -> None:
         """Basic test for pass."""
-        (type_checked := JacProgram()).jac_file_to_pass(
+        (type_checked := JacProgram()).compile(
             file_path=self.fixture_abs_path("game1.jac"),
             schedule=py_code_gen_typed,
         )

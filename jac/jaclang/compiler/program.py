@@ -55,7 +55,7 @@ class JacProgram:
         if full_target in self.modules:
             codeobj = self.modules[full_target].gen.py_bytecode
             return marshal.loads(codeobj) if isinstance(codeobj, bytes) else None
-        result = self.jac_file_to_pass(file_path=full_target, full_compile=full_compile)
+        result = self.compile(file_path=full_target, full_compile=full_compile)
         if result.errors_had:
             for alrt in result.errors_had:
                 logger.error(alrt.pretty_print())
@@ -64,7 +64,7 @@ class JacProgram:
         else:
             return None
 
-    def jac_file_to_pass(
+    def compile(
         self,
         file_path: str,
         target: Optional[Type[AstPass]] = None,
@@ -73,6 +73,13 @@ class JacProgram:
     ) -> Transform:
         """Convert a Jac file to an AST."""
         with open(file_path, "r", encoding="utf-8") as file:
+            if file_path.endswith(".py"):
+                return self.py_str_to_pass(
+                    py_str=file.read(),
+                    file_path=file_path,
+                    target=target,
+                    schedule=schedule,
+                )
             return self.jac_str_to_pass(
                 jac_str=file.read(),
                 file_path=file_path,
@@ -259,7 +266,7 @@ class JacProgram:
                 cur_file.startswith(f"{base_path}.")
                 or impl_folder == os.path.dirname(cur_file)
             ) and cur_file.endswith(".impl.jac"):
-                mod = self.jac_file_to_pass(file_path=cur_file, schedule=[]).ir_out
+                mod = self.compile(file_path=cur_file, schedule=[]).ir_out
                 if mod:
                     node.add_kids_left(mod.kid, parent_update=True, pos_update=False)
                     node.impl_mod.append(mod)
@@ -267,7 +274,7 @@ class JacProgram:
                 cur_file.startswith(f"{base_path}.")
                 or test_folder == os.path.dirname(cur_file)
             ) and cur_file.endswith(".test.jac"):
-                mod = self.jac_file_to_pass(file_path=cur_file, schedule=[]).ir_out
+                mod = self.compile(file_path=cur_file, schedule=[]).ir_out
                 if mod and not settings.ignore_test_annex:
                     node.test_mod.append(mod)
                     node.add_kids_right(mod.kid, parent_update=True, pos_update=False)

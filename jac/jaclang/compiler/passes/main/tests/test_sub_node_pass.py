@@ -14,7 +14,7 @@ class SubNodePassTests(TestCase):
 
     def test_sub_node_pass(self) -> None:
         """Basic test for pass."""
-        code_gen = (out := JacProgram()).jac_file_to_pass(
+        code_gen = (out := JacProgram()).compile(
             file_path=self.examples_abs_path("manual_code/circle.jac"),
             schedule=[],
         )
