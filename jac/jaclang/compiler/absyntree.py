@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast as ast3
 import builtins
 import os
+from copy import copy
 from dataclasses import dataclass
 from hashlib import md5
 from types import EllipsisType
@@ -47,10 +48,26 @@ class AstNode:
         self.kid: list[AstNode] = [x.set_parent(self) for x in kid]
         self._sym_tab: Optional[SymbolTable] = None
         self._sub_node_tab: dict[type, list[AstNode]] = {}
+        self.construct_sub_node_tab()
         self._in_mod_nodes: list[AstNode] = []
         self.gen: CodeGenTarget = CodeGenTarget()
         self.meta: dict[str, str] = {}
         self.loc: CodeLocInfo = CodeLocInfo(*self.resolve_tok_range())
+
+    def construct_sub_node_tab(self) -> None:
+        """Construct sub node table."""
+        for i in self.kid:
+            if not i:
+                continue
+            for k, v in i._sub_node_tab.items():
+                if k in self._sub_node_tab:
+                    self._sub_node_tab[k].extend(v)
+                else:
+                    self._sub_node_tab[k] = copy(v)
+            if type(i) in self._sub_node_tab:
+                self._sub_node_tab[type(i)].append(i)
+            else:
+                self._sub_node_tab[type(i)] = [i]
 
     @property
     def sym_tab(self) -> SymbolTable:
@@ -70,7 +87,10 @@ class AstNode:
         self._sym_tab = sym_tab
 
     def add_kids_left(
-        self, nodes: Sequence[AstNode], pos_update: bool = True
+        self,
+        nodes: Sequence[AstNode],
+        pos_update: bool = True,
+        parent_update: bool = False,
     ) -> AstNode:
         """Add kid left."""
         self.kid = [*nodes, *self.kid]
@@ -78,10 +98,16 @@ class AstNode:
             for i in nodes:
                 i.parent = self
             self.loc.update_first_token(self.kid[0].loc.first_tok)
+        elif parent_update:
+            for i in nodes:
+                i.parent = self
         return self
 
     def add_kids_right(
-        self, nodes: Sequence[AstNode], pos_update: bool = True
+        self,
+        nodes: Sequence[AstNode],
+        pos_update: bool = True,
+        parent_update: bool = False,
     ) -> AstNode:
         """Add kid right."""
         self.kid = [*self.kid, *nodes]
@@ -89,6 +115,9 @@ class AstNode:
             for i in nodes:
                 i.parent = self
             self.loc.update_last_token(self.kid[-1].loc.last_tok)
+        elif parent_update:
+            for i in nodes:
+                i.parent = self
         return self
 
     def insert_kids_at_pos(
@@ -152,15 +181,15 @@ class AstNode:
 
     def get_all_sub_nodes(self, typ: Type[T], brute_force: bool = True) -> list[T]:
         """Get all sub nodes of type."""
-        from jaclang.compiler.passes import Pass
+        from jaclang.compiler.passes import AstPass
 
-        return Pass.get_all_sub_nodes(node=self, typ=typ, brute_force=brute_force)
+        return AstPass.get_all_sub_nodes(node=self, typ=typ, brute_force=brute_force)
 
     def find_parent_of_type(self, typ: Type[T]) -> Optional[T]:
         """Get parent of type."""
-        from jaclang.compiler.passes import Pass
+        from jaclang.compiler.passes import AstPass
 
-        return Pass.find_parent_of_type(node=self, typ=typ)
+        return AstPass.find_parent_of_type(node=self, typ=typ)
 
     def parent_of_type(self, typ: Type[T]) -> T:
         """Get parent of type."""
@@ -169,12 +198,6 @@ class AstNode:
             return ret
         else:
             raise ValueError(f"Parent of type {typ} not found.")
-
-    def format(self) -> str:
-        """Get all sub nodes of type."""
-        from jaclang.compiler.passes.tool import JacFormatPass
-
-        return JacFormatPass(self, None).ir.gen.jac
 
     def to_dict(self) -> dict[str, str]:
         """Return dict representation of node."""
@@ -619,10 +642,9 @@ class Module(AstDocNode):
     def __init__(
         self,
         name: str,
-        source: JacSource,
+        source: Source,
         doc: Optional[String],
         body: Sequence[ElementStmt | String | EmptyToken],
-        is_imported: bool,
         terminals: list[Token],
         kid: Sequence[AstNode],
         stub_only: bool = False,
@@ -632,11 +654,9 @@ class Module(AstDocNode):
         self.name = name
         self.source = source
         self.body = body
-        self.is_imported = is_imported
         self.stub_only = stub_only
         self.impl_mod: list[Module] = []
         self.test_mod: list[Module] = []
-        self.mod_deps: dict[str, Module] = {}
         self.registry = registry
         self.terminals: list[Token] = terminals
         self.py_info: PyInfo = PyInfo()
@@ -687,6 +707,13 @@ class Module(AstDocNode):
         new_kid.extend(self.body)
         self.set_kids(nodes=new_kid if len(new_kid) else [EmptyToken()])
         return res
+
+    def format(self) -> str:
+        """Get all sub nodes of type."""
+        from jaclang.compiler.passes.tool import JacFormatPass
+        from jaclang.compiler.program import JacProgram
+
+        return JacFormatPass(ir_in=self, prog=JacProgram()).ir_out.gen.jac
 
     def unparse(self) -> str:
         """Unparse module node."""
@@ -979,7 +1006,6 @@ class ModulePath(AstSymbolNode):
         self.path = path
         self.level = level
         self.alias = alias
-        self.sub_module: Optional[Module] = None
         self.abs_path: Optional[str] = None
 
         name_spec = alias if alias else path[0] if path else None
@@ -1075,7 +1101,6 @@ class ModuleItem(AstSymbolNode):
         """Initialize module item node."""
         self.name = name
         self.alias = alias
-        self.sub_module: Optional[Module] = None
         AstNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
@@ -3996,7 +4021,7 @@ class MatchKVPair(MatchPattern):
 
     def __init__(
         self,
-        key: MatchPattern | NameAtom,
+        key: MatchPattern | NameAtom | AtomExpr,
         value: MatchPattern,
         kid: Sequence[AstNode],
     ) -> None:
@@ -4090,7 +4115,7 @@ class Token(AstNode):
 
     def __init__(
         self,
-        orig_src: JacSource,
+        orig_src: Source,
         name: str,
         value: str,
         line: int,
@@ -4126,7 +4151,7 @@ class Name(Token, NameAtom):
 
     def __init__(
         self,
-        orig_src: JacSource,
+        orig_src: Source,
         name: str,
         value: str,
         line: int,
@@ -4257,7 +4282,7 @@ class Literal(Token, AtomExpr):
 
     def __init__(
         self,
-        orig_src: JacSource,
+        orig_src: Source,
         name: str,
         value: str,
         line: int,
@@ -4410,11 +4435,11 @@ class Ellipsis(Literal):
 class EmptyToken(Token):
     """EmptyToken node type for Jac Ast."""
 
-    def __init__(self, orig_src: JacSource | None = None) -> None:
+    def __init__(self, orig_src: Source | None = None) -> None:
         """Initialize empty token."""
         super().__init__(
             name="EmptyToken",
-            orig_src=orig_src or JacSource("", ""),
+            orig_src=orig_src or Source("", ""),
             value="",
             line=0,
             end_line=0,
@@ -4434,7 +4459,7 @@ class CommentToken(Token):
 
     def __init__(
         self,
-        orig_src: JacSource,
+        orig_src: Source,
         name: str,
         value: str,
         line: int,
@@ -4466,7 +4491,7 @@ class CommentToken(Token):
 
 
 # ----------------
-class JacSource(EmptyToken):
+class Source(EmptyToken):
     """SourceString node type for Jac Ast."""
 
     def __init__(self, source: str, mod_path: str) -> None:
@@ -4486,7 +4511,7 @@ class JacSource(EmptyToken):
 class PythonModuleAst(EmptyToken):
     """SourceString node type for Jac Ast."""
 
-    def __init__(self, ast: ast3.Module, orig_src: JacSource) -> None:
+    def __init__(self, ast: ast3.Module, orig_src: Source) -> None:
         """Initialize source string."""
         super().__init__()
         self.ast = ast

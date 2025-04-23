@@ -1,26 +1,31 @@
 """Abstract class for IR Passes for Jac."""
 
-import time
-from typing import Optional, Type, TypeVar
+from __future__ import annotations
+
+from typing import Optional, TYPE_CHECKING, Type, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.passes.transform import Transform
-from jaclang.settings import settings
 from jaclang.utils.helpers import pascal_to_snake
+
+if TYPE_CHECKING:
+    from jaclang.compiler.program import JacProgram
 
 T = TypeVar("T", bound=ast.AstNode)
 
 
-class Pass(Transform[T]):
+class AstPass(Transform[ast.Module, ast.Module]):
     """Abstract class for IR passes."""
 
-    def __init__(self, input_ir: T, prior: Optional[Transform]) -> None:
+    def __init__(
+        self,
+        ir_in: ast.Module,
+        prog: JacProgram,
+    ) -> None:
         """Initialize parser."""
         self.term_signal = False
         self.prune_signal = False
-        self.ir: ast.AstNode = input_ir
-        self.time_taken = 0.0
-        Transform.__init__(self, input_ir, prior)
+        Transform.__init__(self, ir_in, prog)
 
     def before_pass(self) -> None:
         """Run once before pass."""
@@ -70,7 +75,7 @@ class Pass(Transform[T]):
                 for i in node.kid:
                     if isinstance(i, typ):
                         result.append(i)
-                    result.extend(Pass.get_all_sub_nodes(i, typ, brute_force))
+                    result.extend(AstPass.get_all_sub_nodes(i, typ, brute_force))
         return result
 
     @staticmethod
@@ -102,23 +107,18 @@ class Pass(Transform[T]):
 
     # Transform Implementations
     # -------------------------
-    def transform(self, ir: T) -> ast.AstNode:
+    def transform(self, ir_in: ast.Module) -> ast.Module:
         """Run pass."""
         # Only performs passes on proper ASTs
-        if not isinstance(ir, ast.AstNode):
-            return ir
-        start_time = time.time()
+        self.ir_out = ir_in  # TODO: this should go away and just be orig
+        if not isinstance(ir_in, ast.AstNode):
+            return ir_in
         self.before_pass()
-        if not isinstance(ir, ast.AstNode):
+        if not isinstance(ir_in, ast.AstNode):
             raise ValueError("Current node is not an AstNode.")
-        self.traverse(ir)
+        self.traverse(ir_in)
         self.after_pass()
-        self.time_taken = time.time() - start_time
-        if settings.pass_timer:
-            self.log_info(
-                f"Time taken in {self.__class__.__name__}: {self.time_taken:.4f} seconds"
-            )
-        return self.ir
+        return self.ir_in
 
     def traverse(self, node: ast.AstNode) -> ast.AstNode:
         """Traverse tree."""
@@ -138,23 +138,8 @@ class Pass(Transform[T]):
         self.exit_node(node)
         return node
 
-    def error(self, msg: str, node_override: Optional[ast.AstNode] = None) -> None:
-        """Pass Error."""
-        self.log_error(msg, node_override=node_override)
 
-    def warning(self, msg: str, node_override: Optional[ast.AstNode] = None) -> None:
-        """Pass Error."""
-        self.log_warning(msg, node_override=node_override)
-
-    def ice(self, msg: str = "Something went horribly wrong!") -> RuntimeError:
-        """Pass Error."""
-        self.log_error(f"ICE: Pass {self.__class__.__name__} - {msg}")
-        return RuntimeError(
-            f"Internal Compiler Error: Pass {self.__class__.__name__} - {msg}"
-        )
-
-
-class PrinterPass(Pass):
+class PrinterPass(AstPass):
     """Printer Pass for Jac AST."""
 
     def enter_node(self, node: ast.AstNode) -> None:

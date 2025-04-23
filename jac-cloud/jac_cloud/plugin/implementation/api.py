@@ -28,7 +28,7 @@ from fastapi import (
 )
 from fastapi.responses import ORJSONResponse
 
-from jaclang.plugin.feature import JacFeature as Jac
+from jaclang.runtimelib.feature import JacFeature as Jac
 
 from orjson import loads
 
@@ -108,7 +108,14 @@ def gen_model_field(cls: type, field: Field, is_file: bool = False) -> tuple[typ
     if field.default is not MISSING:
         consts = (cls, pyField(default=field.default))
     elif callable(field.default_factory):
-        consts = (cls, pyField(default_factory=field.default_factory))
+        consts = (
+            cls,
+            (
+                field.default_factory()
+                if is_file
+                else pyField(default_factory=field.default_factory)
+            ),
+        )
     else:
         consts = (cls, File(...) if is_file else ...)
 
@@ -238,7 +245,7 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
 
             if Jac.check_read_access(jctx.entry_node):
                 wlk: WalkerAnchor = cls(**body, **query, **files).__jac__
-                Jac.spawn_call(wlk.architype, jctx.entry_node.architype)
+                Jac.spawn(wlk.architype, jctx.entry_node.architype)
                 jctx.close()
 
                 if jctx.custom is not MISSING:

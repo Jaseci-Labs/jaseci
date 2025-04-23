@@ -392,7 +392,23 @@ def _build_symbol_tree_common(
     symbols = SymbolTree(node_name="Symbols", parent=root)
     children = SymbolTree(node_name="Sub Tables", parent=root)
 
-    for sym in node.tab.values():
+    syms_to_iterate = set(node.tab.values())
+    for inhrited_symtab in node.inherit:
+        for inhrited_sym in inhrited_symtab.symbols:
+            sym = inhrited_symtab.lookup(inhrited_sym)
+            assert sym is not None
+            syms_to_iterate.add(sym)
+
+    for stab in node.inherit:
+        if stab.load_all_symbols:
+            syms_to_iterate.update(list(stab.base_symbol_table.tab.values()))
+        else:
+            for sname in stab.symbols:
+                sym = stab.base_symbol_table.lookup(sname)
+                assert sym is not None
+                syms_to_iterate.add(sym)
+
+    for sym in syms_to_iterate:
         symbol_node = SymbolTree(node_name=f"{sym.sym_name}", parent=symbols)
         SymbolTree(node_name=f"{sym.access} {sym.sym_type}", parent=symbol_node)
 
@@ -422,6 +438,11 @@ def _build_symbol_tree_common(
         if k.name == "builtins":
             continue
         _build_symbol_tree_common(k, children)
+
+    for k2 in node.inherit:
+        if k2.base_symbol_table.name == "builtins":
+            continue
+        _build_symbol_tree_common(k2.base_symbol_table, children)
     return root
 
 

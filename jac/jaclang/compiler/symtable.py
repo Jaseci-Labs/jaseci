@@ -86,7 +86,7 @@ class SymbolTable:
         self.parent = parent
         self.kid: list[SymbolTable] = []
         self.tab: dict[str, Symbol] = {}
-        self.inherit: list[SymbolTable] = []
+        self.inherit: list[InheritedSymbolTable] = []
 
     def get_type(self) -> SymbolType:
         """Get type."""
@@ -147,6 +147,9 @@ class SymbolTable:
         for k in self.kid:
             if k.name == name:
                 return k
+        for k2 in self.inherit:
+            if k2.base_symbol_table.name == name:
+                return k2.base_symbol_table
         return None
 
     def push_kid_scope(self, name: str, key_node: ast.AstNode) -> SymbolTable:
@@ -270,7 +273,11 @@ class SymbolTable:
                     and (found := self.use_lookup(base_cls))
                     and found
                 ):
-                    self.inherit.append(found.decl.sym_tab)
+                    found_tab = found.decl.sym_tab
+                    inher_sym_tab = InheritedSymbolTable(
+                        base_symbol_table=found_tab, load_all_symbols=True, symbols=[]
+                    )
+                    self.inherit.append(inher_sym_tab)
                     base_cls.name_spec.name_of = found.decl.name_of
 
     def pp(self, depth: Optional[int] = None) -> str:
@@ -295,3 +302,27 @@ __all__ = [
     "SymbolType",
     "SymbolAccess",
 ]
+
+
+class InheritedSymbolTable:
+
+    def __init__(
+        self,
+        base_symbol_table: SymbolTable,
+        load_all_symbols: bool = False,  # This is needed for python imports
+        symbols: Optional[list[str]] = None,
+    ) -> None:
+        """Initialize."""
+        self.base_symbol_table: SymbolTable = base_symbol_table
+        self.load_all_symbols: bool = load_all_symbols
+        self.symbols: list[str] = symbols if symbols else []
+
+    def lookup(self, name: str, deep: bool = False) -> Optional[Symbol]:
+        """Lookup a variable in the symbol table."""
+        if self.load_all_symbols:
+            return self.base_symbol_table.lookup(name, deep)
+        else:
+            if name in self.symbols:
+                return self.base_symbol_table.lookup(name, deep)
+            else:
+                return None

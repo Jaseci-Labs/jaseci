@@ -9,11 +9,12 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Optional
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.compile import jac_str_to_pass
 from jaclang.compiler.parser import JacParser
-from jaclang.compiler.passes import Pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
+from jaclang.compiler.passes.transform import Transform
+from jaclang.compiler.program import JacProgram
+from jaclang.compiler.symtable import SymbolTable
 from jaclang.langserve.sem_manager import SemTokManager
 from jaclang.langserve.utils import (
     add_unique_text_edit,
@@ -23,7 +24,6 @@ from jaclang.langserve.utils import (
     find_deepest_symbol_node_at_pos,
     find_index,
     gen_diagnostics,
-    get_location_range,
     get_symbols_for_outline,
     parse_symbol_path,
 )
@@ -39,11 +39,9 @@ class ModuleInfo:
     def __init__(
         self,
         ir: ast.Module,
-        impl_parent: Optional[ModuleInfo] = None,
     ) -> None:
         """Initialize module info."""
         self.ir = ir
-        self.impl_parent: Optional[ModuleInfo] = impl_parent
         self.sem_manager = SemTokManager(ir=ir)
         self.is_modified: bool = False
 
@@ -62,38 +60,35 @@ class JacLangServer(LanguageServer):
         self.modules: dict[str, ModuleInfo] = {}
         self.executor = ThreadPoolExecutor()
         self.tasks: dict[str, asyncio.Task] = {}
+        self.program = JacProgram()
 
     def update_modules(
-        self, file_path: str, build: Pass, refresh: bool = False
+        self, file_path: str, build: Transform, refresh: bool = False
     ) -> None:
         """Update modules."""
-        if not isinstance(build.ir, ast.Module):
+        if not isinstance(build.ir_out, ast.Module):
             self.log_error("Error with module build.")
             return
-        keep_parent = (
-            self.modules[file_path].impl_parent if file_path in self.modules else None
-        )
-        self.modules[file_path] = ModuleInfo(ir=build.ir, impl_parent=keep_parent)
-        for p in build.ir.mod_deps.keys():
+        self.modules[file_path] = ModuleInfo(ir=build.ir_out)
+        for p in self.program.modules.keys():
             uri = uris.from_fs_path(p)
             if file_path != uri:
-                self.modules[uri] = ModuleInfo(
-                    ir=build.ir.mod_deps[p],
-                    impl_parent=self.modules[file_path],
-                )
+                self.modules[uri] = ModuleInfo(ir=self.program.modules[p])
 
     def quick_check(self, file_path: str) -> bool:
         """Rebuild a file."""
         try:
             document = self.workspace.get_text_document(file_path)
-            build = jac_str_to_pass(
+            self.program.jac_str_to_pass(
                 jac_str=document.source, file_path=document.path, schedule=[]
             )
             self.publish_diagnostics(
                 file_path,
-                gen_diagnostics(file_path, build.errors_had, build.warnings_had),
+                gen_diagnostics(
+                    file_path, self.program.errors_had, self.program.warnings_had
+                ),
             )
-            return len(build.errors_had) == 0
+            return len(self.program.errors_had) == 0
         except Exception as e:
             self.log_error(f"Error during syntax check: {e}")
             return False
@@ -103,13 +98,12 @@ class JacLangServer(LanguageServer):
         try:
             start_time = time.time()
             document = self.workspace.get_text_document(file_path)
-            if file_path in self.modules and (
-                parent := self.modules[file_path].impl_parent
-            ):
+            if file_path in self.modules:
                 return self.deep_check(
-                    uris.from_fs_path(parent.ir.loc.mod_path), annex_view=file_path
+                    uris.from_fs_path(file_path), annex_view=file_path
                 )
-            build = jac_str_to_pass(
+            self.program = JacProgram()  # TODO: Remove this Hack
+            build = self.program.jac_str_to_pass(
                 jac_str=document.source,
                 file_path=document.path,
                 schedule=py_code_gen_typed,
@@ -124,8 +118,8 @@ class JacLangServer(LanguageServer):
                 annex_view if annex_view else file_path,
                 gen_diagnostics(
                     annex_view if annex_view else file_path,
-                    build.errors_had,
-                    build.warnings_had,
+                    self.program.errors_had,
+                    self.program.warnings_had,
                 ),
             )
             if annex_view:
@@ -133,12 +127,12 @@ class JacLangServer(LanguageServer):
                     file_path,
                     gen_diagnostics(
                         file_path,
-                        build.errors_had,
-                        build.warnings_had,
+                        self.program.errors_had,
+                        self.program.warnings_had,
                     ),
                 )
             self.log_py(f"PROFILE: Deep check took {time.time() - start_time} seconds.")
-            return len(build.errors_had) == 0
+            return len(self.program.errors_had) == 0
         except Exception as e:
             self.log_error(f"Error during deep check: {e}")
             return False
@@ -171,14 +165,18 @@ class JacLangServer(LanguageServer):
 
     def get_completion(
         self, file_path: str, position: lspt.Position, completion_trigger: Optional[str]
-    ) -> lspt.CompletionList:
+    ) -> lspt.CompletionList:  # TODO : need to refactor this
         """Return completion for a file."""
         document = self.workspace.get_text_document(file_path)
         mod_ir = self.modules[file_path].ir
         current_line = document.lines[position.line]
         current_pos = position.character
         current_symbol_path = parse_symbol_path(current_line, current_pos)
-        builtin_tab = mod_ir.sym_tab.kid[-1]
+        builtin_mod = next(
+            mod for name, mod in self.program.modules.items() if "builtins" in name
+        )
+        builtin_tab = builtin_mod.sym_tab
+        assert isinstance(builtin_tab, SymbolTable)
         completion_items = []
 
         node_selected = find_deepest_symbol_node_at_pos(
@@ -291,15 +289,15 @@ class JacLangServer(LanguageServer):
         """Return formatted jac."""
         try:
             document = self.workspace.get_text_document(file_path)
-            format = jac_str_to_pass(
+            format = self.program.jac_str_to_pass(
                 jac_str=document.source,
                 file_path=document.path,
                 target=JacFormatPass,
                 schedule=[FuseCommentsPass, JacFormatPass],
             )
             formatted_text = (
-                format.ir.gen.jac
-                if JacParser not in [e.from_pass for e in format.errors_had]
+                format.ir_out.gen.jac
+                if JacParser not in [e.from_pass for e in self.program.errors_had]
                 else document.source
             )
         except Exception as e:
@@ -413,13 +411,7 @@ class JacLangServer(LanguageServer):
                     node_selected.parent.abs_path
                     or node_selected.parent.from_mod_path.abs_path
                 )
-                try:  # TODO: Get rid of this when 'from' import is fixed
-                    loc_range = tuple(
-                        loc - 1 if loc > 0 else loc
-                        for loc in get_location_range(node_selected.parent)
-                    )
-                except ValueError:
-                    loc_range = (0, 0, 0, 0)
+                loc_range = (0, 0, 0, 0)
 
                 if path and loc_range:
                     path = path[5:] if path.startswith("File:") else path

@@ -1,5 +1,5 @@
-from jaclang.plugin.default import hookimpl
-from jaclang.plugin.spec import Architype, WalkerArchitype, DSFunc
+from jaclang.runtimelib.default import hookimpl
+from jaclang.runtimelib.feature import Architype, WalkerArchitype, DataSpatialFunction
 
 from dataclasses import dataclass
 from functools import wraps
@@ -10,7 +10,7 @@ class JacFeature:
     @staticmethod
     @hookimpl
     def make_walker(
-        on_entry: list[DSFunc], on_exit: list[DSFunc]
+        on_entry: list[DataSpatialFunction], on_exit: list[DataSpatialFunction]
     ) -> Callable[[type], type]:
         """Create a walker architype."""
 

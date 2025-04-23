@@ -1,18 +1,23 @@
 """JAC Splice-Orchestrator Plugin."""
 
 import json
+import logging
 import os
 import time
 import types
 from typing import Optional, Union
 
-from kubernetes import client, config
-from jaclang.cli.cmdreg import cmd_registry
-from jac_splice_orc.managers.proxy_manager import ModuleProxy
 from jac_splice_orc.config.config_loader import ConfigLoader
+from jac_splice_orc.managers.proxy_manager import ModuleProxy
+
+from jaclang.cli.cmdreg import cmd_registry
+from jaclang.runtimelib.feature import JacFeature, JacMachineState, JacProgram
+
+
+from kubernetes import client, config
 
 import pluggy
-import logging
+
 
 logging.basicConfig(level=logging.INFO)
 
@@ -54,7 +59,7 @@ class SpliceOrcPlugin:
     """JAC Splice-Orchestrator Plugin."""
 
     @staticmethod
-    def is_kind_cluster():
+    def is_kind_cluster() -> bool:
         """Detect if the cluster is a kind cluster."""
         try:
             contexts, current_context = config.list_kube_config_contexts()
@@ -70,11 +75,11 @@ class SpliceOrcPlugin:
             return False
 
     @classmethod
-    def create_namespace(cls, namespace_name):
+    def create_namespace(cls, namespace_name: str) -> None:
         """Create a new namespace if it does not exist."""
         logging.info(f"Creating namespace '{namespace_name}'")
 
-        in_cluster = try_incluster_or_local()
+        # in_cluster = try_incluster_or_local()
 
         v1 = client.CoreV1Api()
         # Check if the namespace exists
@@ -87,7 +92,7 @@ class SpliceOrcPlugin:
             logging.info(f"Namespace '{namespace_name}' created.")
 
     @classmethod
-    def create_service_account(cls, namespace):
+    def create_service_account(cls, namespace: str) -> None:
         _ = try_incluster_or_local()
         v1 = client.CoreV1Api()
         service_account_name = config_loader.get(
@@ -120,7 +125,7 @@ class SpliceOrcPlugin:
         cls.create_role_and_binding(namespace, service_account_name)
 
     @classmethod
-    def create_role_and_binding(cls, namespace, service_account_name):
+    def create_role_and_binding(cls, namespace: str, service_account_name: str) -> None:
         _ = try_incluster_or_local()
         rbac_api = client.RbacAuthorizationV1Api()
 
@@ -198,9 +203,9 @@ class SpliceOrcPlugin:
                 raise
 
     @classmethod
-    def apply_pod_manager_yaml(cls, namespace):
+    def apply_pod_manager_yaml(cls, namespace: str) -> None:
         """Generate and apply the Pod Manager Deployment and Service."""
-        in_cluster = try_incluster_or_local()
+        # in_cluster = try_incluster_or_local()
 
         # Read configuration
         kubernetes_config = config_loader.get("kubernetes")
@@ -222,7 +227,6 @@ class SpliceOrcPlugin:
             node_port = 30080
         else:
             node_port = None
-
         # Create the Deployment object
         apps_v1 = client.AppsV1Api()
 
@@ -340,7 +344,7 @@ class SpliceOrcPlugin:
                 raise
 
     @classmethod
-    def configure_pod_manager_url(cls, namespace):
+    def configure_pod_manager_url(cls, namespace: str) -> None:
         """
         Dynamically set the POD_MANAGER_URL:
           - If in-cluster: use 'pod-manager-service.{namespace}.svc.cluster.local:8000'
@@ -377,7 +381,7 @@ class SpliceOrcPlugin:
                 logging.info(
                     "Service type=LoadBalancer, but we are not in-cluster. Might fail."
                 )
-                pod_manager_url_local = cls.get_load_balancer_url(namespace)
+                pod_manager_url_local = cls.get_load_balancer_url(namespace) or ""
                 if not pod_manager_url_local:
                     logging.error(
                         "Failed to retrieve LB URL, defaulting to localhost:30080"
@@ -391,9 +395,11 @@ class SpliceOrcPlugin:
         logging.info(f"Pod manager URL updated: {pod_manager_url_local}")
 
     @classmethod
-    def get_load_balancer_url(cls, namespace, timeout=300, interval=5):
+    def get_load_balancer_url(
+        cls, namespace: str, timeout: int = 300, interval: int = 5
+    ) -> Optional[str]:
         """Retrieve the LoadBalancer service URL."""
-        in_cluster = try_incluster_or_local()
+        # in_cluster = try_incluster_or_local()
         v1 = client.CoreV1Api()
         service_name = config_loader.get(
             "kubernetes", "pod_manager", "service_name", default="pod-manager-service"
@@ -434,11 +440,20 @@ class SpliceOrcPlugin:
         """Creating Jac CLI commands."""
 
         @cmd_registry.register
-        def orc_initialize(namespace: str) -> None:
+        def orc_initialize(namespace: str, config_path: str = None) -> None:
             """Initialize the Pod Manager and Kubernetes system.
 
             :param namespace: Kubernetes namespace to use.
+            :param config_path: Path to a custom configuration file.
             """
+            global config_loader
+            # Load custom config if provided
+            if config_path and os.path.isfile(config_path):
+                logging.debug(f"Loading custom config from: {config_path}")
+                config_loader = ConfigLoader(config_file_path=config_path)
+            else:
+                # Load default config
+                logging.error(f"Configuration file not found: {config_path}")
             # Use the provided namespace if given, else read from config
             if not namespace:
                 namespace = config_loader.get(
@@ -465,6 +480,7 @@ class SpliceOrcPlugin:
     @staticmethod
     @hookimpl
     def jac_import(
+        mach: JacMachineState,
         target: str,
         base_path: str,
         absorb: bool,
@@ -481,17 +497,19 @@ class SpliceOrcPlugin:
             JacImporter,
             PythonImporter,
         )
-        from jaclang.runtimelib.machine import JacMachine, JacProgram
 
         module_config_path = os.getenv("MODULE_CONFIG_PATH", "/cfg/module_config.json")
         try:
-            logging.info(f"Loading from {module_config_path} for module_config...")
+            logging.debug(f"Loading from {module_config_path} for module_config...")
             with open(module_config_path, "r") as f:
                 module_config = json.load(f)
         except Exception as e:
-            logging.warning(
+            logging.debug(
                 f"No module_config found in config_map ({module_config_path}). "
                 f"Defaulting to fallback file. Error: {e}"
+            )
+            logging.debug(
+                f"Module config path: {module_config_path}, config_loader: {config_loader.default_config_file_path}"
             )
             module_config = config_loader.get("module_config", default={})
         if target in module_config and module_config[target]["load_type"] == "remote":
@@ -526,18 +544,13 @@ class SpliceOrcPlugin:
             items,
         )
 
-        jac_machine = JacMachine.get(base_path)
-        if not jac_machine.jac_program:
-            jac_machine.attach_program(
-                JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
-            )
+        if not mach.jac_program:
+            JacFeature.attach_program(mach, JacProgram())
 
         if lng == "py":
-            import_result = PythonImporter(JacMachine.get()).run_import(spec)
+            import_result = PythonImporter(mach).run_import(spec)
         else:
-            import_result = JacImporter(JacMachine.get()).run_import(
-                spec, reload_module
-            )
+            import_result = JacImporter(mach).run_import(spec, reload_module)
 
         return (
             (import_result.ret_mod,)

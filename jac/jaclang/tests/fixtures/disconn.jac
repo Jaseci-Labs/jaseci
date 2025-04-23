@@ -19,7 +19,7 @@ with entry{
     x<++>y; # just adding one trigger of undirected connect
     y++>z;
     apple: int;
-    # print(x -:aaa:-> );
+    # print(x ->:aaa:-> );
     print([x-->y-->z]);
     print([x -->]);
     print(x del--> y);

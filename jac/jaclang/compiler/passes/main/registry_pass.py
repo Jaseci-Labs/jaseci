@@ -7,13 +7,13 @@ each module
 """
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes import AstPass
 from jaclang.compiler.semtable import SemInfo, SemRegistry
 from jaclang.runtimelib.utils import get_sem_scope
 from jaclang.settings import settings
 
 
-class RegistryPass(Pass):
+class RegistryPass(AstPass):
     """Creates a registry for each module."""
 
     modules_visited: list[ast.Module] = []
@@ -23,18 +23,20 @@ class RegistryPass(Pass):
         if settings.disable_mtllm:
             self.terminate()
             return None
-        node.registry = SemRegistry()
+        node.registry = SemRegistry()  # TODO: Remove from ast and make pass only var
         self.modules_visited.append(node)
 
     def exit_module(self, node: ast.Module) -> None:
         """Save registry for each module."""
         module_name = node.name
         try:
-            from jaclang.runtimelib.machine import JacMachine
-
-            JacMachine.get().get_sem_ir(node.registry)
+            if node.registry:
+                if self.prog.sem_ir:
+                    self.prog.sem_ir.registry.update(node.registry.registry)
+                else:
+                    self.prog.sem_ir = node.registry
         except Exception as e:
-            self.warning(f"Can't save registry for {module_name}: {e}")
+            self.log_warning(f"Can't save registry for {module_name}: {e}")
         self.modules_visited.pop()
 
     def exit_architype(self, node: ast.Architype) -> None:

@@ -18,14 +18,14 @@ with entry{
     Start = A(5);
     Intermediate = B(10);
     End = C(25);
-    root +:a:+> Start;
-    Start +:b:+> Intermediate +:c:+> C(15);
-    Start +:b:+> A(20) +:a:+> End;
-    Intermediate +:c:+> End;
+    root +>:a:+> Start;
+    Start +>:b:+> Intermediate +>:c:+> C(15);
+    Start +>:b:+> A(20) +>:a:+> End;
+    Intermediate +>:c:+> End;
 
-    print([root-->-:b:->(`?A)]);
-    print([root-:a:-> -:b:-> -:a:->(`?C)]);
-    print([root-:a:-> -:b:-> -:c:->(`?C)]);
-    print([root-:a:-> -:b:-> -:c:->(?val==25)]);
-    print([root-:a:-> -:b:-> -:c:->(?val<20)]);
+    print([root-->->:b:->(`?A)]);
+    print([root->:a:-> ->:b:-> ->:a:->(`?C)]);
+    print([root->:a:-> ->:b:-> ->:c:->(`?C)]);
+    print([root->:a:-> ->:b:-> ->:c:->(?val==25)]);
+    print([root->:a:-> ->:b:-> ->:c:->(?val<20)]);
 }

@@ -9,7 +9,7 @@ from typing import Optional, TYPE_CHECKING
 from jaclang.vendor.mypy.nodes import Node as MypyNode
 
 if TYPE_CHECKING:
-    from jaclang.compiler.absyntree import JacSource, Token
+    from jaclang.compiler.absyntree import Source, Token
 
 
 @dataclass
@@ -43,7 +43,7 @@ class CodeLocInfo:
         self.last_tok = last_tok
 
     @property
-    def orig_src(self) -> JacSource:
+    def orig_src(self) -> Source:
         """Get file source."""
         return self.first_tok.orig_src
 

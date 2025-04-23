@@ -9,11 +9,11 @@ from typing import Optional
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.absyntree import AstNode
 from jaclang.compiler.constant import Tokens as Tok
-from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes import AstPass
 from jaclang.settings import settings
 
 
-class JacFormatPass(Pass):
+class JacFormatPass(AstPass):
     """JacFormat Pass format Jac code."""
 
     def before_pass(self) -> None:
@@ -30,19 +30,19 @@ class JacFormatPass(Pass):
 
     def token_before(self, node: ast.Token) -> Optional[ast.Token]:
         """Token before."""
-        if not isinstance(self.ir, ast.Module):
+        if not isinstance(self.ir_out, ast.Module):
             raise self.ice("IR must be module. Impossible")
-        if self.ir.terminals.index(node) == 0:
+        if self.ir_out.terminals.index(node) == 0:
             return None
-        return self.ir.terminals[self.ir.terminals.index(node) - 1]
+        return self.ir_out.terminals[self.ir_out.terminals.index(node) - 1]
 
     def token_after(self, node: ast.Token) -> Optional[ast.Token]:
         """Token after."""
-        if not isinstance(self.ir, ast.Module):
+        if not isinstance(self.ir_out, ast.Module):
             raise self.ice("IR must be module. Impossible")
-        if self.ir.terminals.index(node) == len(self.ir.terminals) - 1:
+        if self.ir_out.terminals.index(node) == len(self.ir_out.terminals) - 1:
             return None
-        return self.ir.terminals[self.ir.terminals.index(node) + 1]
+        return self.ir_out.terminals[self.ir_out.terminals.index(node) + 1]
 
     def indent_str(self) -> str:
         """Return string for indent."""
@@ -985,7 +985,7 @@ class JacFormatPass(Pass):
                     f"{node.left.gen.jac} {node.op.value} {node.right.gen.jac}",
                 )
             else:
-                self.error(
+                self.log_error(
                     f"Binary operator {node.op.value} not supported in bootstrap Jac"
                 )
         if isinstance(
@@ -1530,7 +1530,7 @@ class JacFormatPass(Pass):
 
     def decl_def_missing(self, decl: str = "this") -> None:
         """Warn about declaration."""
-        self.error(
+        self.log_error(
             f"Unable to find definition for {decl} declaration. Perhaps there's an `include` missing?"  # noqa
         )
 
@@ -1594,7 +1594,9 @@ class JacFormatPass(Pass):
         elif node.op.name in [Tok.BW_AND]:
             self.emit(node, f"{node.op.value}{node.operand.gen.jac}")
         else:
-            self.error(f"Unary operator {node.op.value} not supported in bootstrap Jac")
+            self.log_error(
+                f"Unary operator {node.op.value} not supported in bootstrap Jac"
+            )
 
     def exit_raise_stmt(self, node: ast.RaiseStmt) -> None:
         """Sub objects.

@@ -25,23 +25,10 @@ class FastAPI:
     @staticmethod
     def enable() -> None:
         """Tag Fastapi as enabled."""
-        from jaclang.plugin.feature import JacFeature as Jac
-
-        from ..core.architype import (
-            EdgeArchitype,
-            NodeArchitype,
-            ObjectArchitype,
-            Root,
-            WalkerArchitype,
-        )
+        from jaclang.runtimelib.feature import JacFeature
 
         FastAPI.__is_enabled__ = True
-
-        Jac.RootType = Root  # type: ignore[assignment]
-        Jac.Obj = ObjectArchitype  # type: ignore[assignment]
-        Jac.Node = NodeArchitype  # type: ignore[assignment]
-        Jac.Edge = EdgeArchitype  # type: ignore[assignment]
-        Jac.Walker = WalkerArchitype  # type: ignore[assignment]
+        JacFeature.setup()
 
     @staticmethod
     def is_enabled() -> bool:

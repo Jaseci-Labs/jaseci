@@ -1,5 +1,5 @@
 """Passes for Jac."""
 
-from .ir_pass import Pass
+from .ast_pass import AstPass
 
-__all__ = ["Pass"]
+__all__ = ["AstPass"]

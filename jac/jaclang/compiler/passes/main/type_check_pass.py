@@ -11,10 +11,10 @@ import sys
 import jaclang.compiler.absyntree as ast
 import jaclang.compiler.passes.utils.mypy_ast_build as myab
 from jaclang.compiler.constant import Constants as Con
-from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes import AstPass
 
 
-class JacTypeCheckPass(Pass):
+class JacTypeCheckPass(AstPass):
     """Python and bytecode file printing pass."""
 
     def before_pass(self) -> None:
@@ -24,19 +24,16 @@ class JacTypeCheckPass(Pass):
             / "vendor"
             / "mypy"
         )
-        self.__modules: list[ast.Module] = []
+        self.__modules = list(self.prog.modules.values())
+        self.terminate()
         return super().before_pass()
-
-    def enter_module(self, node: ast.Module) -> None:
-        """Call mypy checks on module level only."""
-        self.__modules.append(node)
 
     def after_pass(self) -> None:
         """Call mypy api after traversing all the modules."""
         try:
-            self.api(os.path.dirname(self.ir.loc.mod_path))
+            self.api(os.path.dirname(self.ir_out.loc.mod_path))
         except Exception as e:
-            self.error(f"Unable to run type checking: {e}")
+            self.log_error(f"Unable to run type checking: {e}")
         return super().after_pass()
 
     def default_message_cb(
@@ -97,7 +94,7 @@ class JacTypeCheckPass(Pass):
             mypy_graph[module.name] = st
             new_modules.append(st)
 
-        if not isinstance(self.ir, ast.Module):
+        if not isinstance(self.ir_out, ast.Module):
             raise self.ice("Expected module node. Impossible")
         mypy_graph = myab.load_graph(
             [
@@ -120,9 +117,9 @@ class JacTypeCheckPass(Pass):
             )
         }
         for i in mypy_graph:
-            self.ir.py_info.py_mod_dep_map[i] = mypy_graph[i].xpath
+            self.ir_out.py_info.py_mod_dep_map[i] = mypy_graph[i].xpath
             for j in mypy_graph[i].dependencies:
-                self.ir.py_info.py_mod_dep_map[j] = str(
+                self.ir_out.py_info.py_mod_dep_map[j] = str(
                     myab.find_module_with_reason(j, manager)
                 )
         myab.process_graph(mypy_graph, manager)

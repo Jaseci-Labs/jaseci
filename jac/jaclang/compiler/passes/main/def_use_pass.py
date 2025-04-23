@@ -10,10 +10,10 @@ import ast as ast3
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Tokens as Tok
-from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes import AstPass
 
 
-class DefUsePass(Pass):
+class DefUsePass(AstPass):
     """Jac Ast build pass."""
 
     def after_pass(self) -> None:
@@ -119,7 +119,7 @@ class DefUsePass(Pass):
             elif isinstance(i, ast.AstSymbolNode):
                 i.sym_tab.def_insert(i)
             else:
-                self.error("Assignment target not valid")
+                self.log_error("Assignment target not valid")
 
     def enter_inner_compr(self, node: ast.InnerCompr) -> None:
         """Sub objects.
@@ -134,7 +134,7 @@ class DefUsePass(Pass):
         elif isinstance(node.target, ast.AstSymbolNode):
             node.target.sym_tab.def_insert(node.target)
         else:
-            self.error("Named target not valid")
+            self.log_error("Named target not valid")
 
     def enter_atom_trailer(self, node: ast.AtomTrailer) -> None:
         """Sub objects.
@@ -300,7 +300,7 @@ class DefUsePass(Pass):
         elif isinstance(node.target, ast.AstSymbolNode):
             node.target.sym_tab.def_insert(node.target)
         else:
-            self.error("For loop assignment target not valid")
+            self.log_error("For loop assignment target not valid")
 
     def enter_delete_stmt(self, node: ast.DeleteStmt) -> None:
         """Sub objects.
@@ -318,7 +318,7 @@ class DefUsePass(Pass):
             elif isinstance(i, ast.AstSymbolNode):
                 i.name_spec.py_ctx_func = ast3.Del
             else:
-                self.error("Delete target not valid")
+                self.log_error("Delete target not valid")
 
     def enter_expr_as_item(self, node: ast.ExprAsItem) -> None:
         """Sub objects.
@@ -332,4 +332,4 @@ class DefUsePass(Pass):
             elif isinstance(node.alias, ast.AstSymbolNode):
                 node.alias.sym_tab.def_insert(node.alias)
             else:
-                self.error("For expr as target not valid")
+                self.log_error("For expr as target not valid")
