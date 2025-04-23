@@ -79,7 +79,7 @@ class JacImportPass(AstPass):
 
     # TODO: Refactor this to a function for impl and function for test
 
-    def import_jac_mod_from_dir(self, target: str) -> ast.Module | None:
+    def import_jac_mod_from_dir(self, target: str) -> ast.Module:
         """Import a module from a directory."""
         with_init = os.path.join(target, "__init__.jac")
         if os.path.exists(with_init):
