@@ -788,7 +788,7 @@ class SymTabBuildPass(AstPass):
         left: ExprType,
         right: ExprType,
         op: Token,
-        is_async: bool,
+        is_spatial: bool,
         """
         self.sync_node_to_scope(node)
 

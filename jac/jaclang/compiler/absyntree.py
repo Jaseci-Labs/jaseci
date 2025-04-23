@@ -2742,12 +2742,12 @@ class SpawnExpr(BinaryExpr):
         left: Expr,
         right: Expr,
         op: Token,
-        is_async: bool,
+        is_spatial: bool,
         kid: Sequence[AstNode],
     ) -> None:
         """Initialize spawn expression node."""
         super().__init__(left=left, right=right, op=op, kid=kid)
-        self.is_async = is_async
+        self.is_spatial = is_spatial
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize spawn expression node."""
@@ -2756,7 +2756,7 @@ class SpawnExpr(BinaryExpr):
             res = self.left.normalize(deep)
             res = res and self.right.normalize(deep) if self.right else res
             res = res and self.op.normalize(deep) if self.op else res
-        tok_async = [self.gen_token(Tok.KW_ASYNC)] if self.is_async else []
+        tok_async = [self.gen_token(Tok.KW_SPATIAL)] if self.is_spatial else []
         new_kid: list[AstNode] = (
             [self.gen_token(Tok.LPAREN), self.left]
             + tok_async

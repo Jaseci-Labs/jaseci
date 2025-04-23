@@ -17,16 +17,16 @@ walker MyWalker {
 }
 
 with entry {
-    t1 = MyWalker(5) async spawn MyNode();
-    t2 = MyWalker(3) async spawn MyNode();
-    t3 = MyWalker(1) async spawn MyNode();
+    t1 = MyWalker(5) spatial spawn MyNode();
+    t2 = MyWalker(3) spatial spawn MyNode();
+    t3 = MyWalker(1) spatial spawn MyNode();
     t1.start();
     t2.start();
     print('1st, 2nd tasks are started...');
     t3.start();
     print('3rd task is started...');
-    t1.wait();
-    t2.wait();
-    t3.wait();
+    t1.converge();
+    t2.converge();
+    t3.converge();
 
 }

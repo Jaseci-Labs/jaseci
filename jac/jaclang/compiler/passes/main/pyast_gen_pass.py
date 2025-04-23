@@ -156,9 +156,9 @@ class PyastGenPass(AstPass):
         )
         self.already_added.append(self.needs_enum.__name__)
 
-    def needs_threading(self) -> None:
+    def needs_jacroutine(self) -> None:
         """Check if threading is needed."""
-        if self.needs_threading.__name__ in self.already_added:
+        if self.needs_jacroutine.__name__ in self.already_added:
             return
         self.preamble.append(
             self.sync(
@@ -173,7 +173,7 @@ class PyastGenPass(AstPass):
                 jac_node=self.ir_out,
             )
         )
-        self.already_added.append(self.needs_threading.__name__)
+        self.already_added.append(self.needs_jacroutine.__name__)
 
     def flatten(self, body: list[T | list[T] | None]) -> list[T]:
         """Flatten ast list."""
@@ -2336,10 +2336,10 @@ class PyastGenPass(AstPass):
         left: ExprType,
         right: ExprType,
         op: Token,
-        is_async: bool,
+        is_spatial: bool,
         """
-        if node.is_async:
-            self.needs_threading()
+        if node.is_spatial:
+            self.needs_jacroutine()
             node.gen.py_ast = [
                 self.sync(
                     ast3.Call(

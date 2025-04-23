@@ -1002,10 +1002,10 @@ class JacFormatPass(AstPass):
         is_async:bool,
         """
         assert isinstance(node.op, ast.Token)
-        if node.is_async:
+        if node.is_spatial:
             self.emit(
                 node,
-                f"{node.left.gen.jac} async {node.op.value} {node.right.gen.jac}",
+                f"{node.left.gen.jac} spatial {node.op.value} {node.right.gen.jac}",
             )
         else:
             self.emit(

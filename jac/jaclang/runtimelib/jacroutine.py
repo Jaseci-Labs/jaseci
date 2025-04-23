@@ -11,8 +11,8 @@ class Task:
     def start(self) -> None:
         self._thread.start()
 
-    def wait(self) -> None:
-        self._thread.join()
+    def converge(self, timeout: float | None = None) -> None:
+        self._thread.join(timeout)
 
 
 class Group:
@@ -29,6 +29,6 @@ class Group:
         for task in self.tasks:
             task.start()
 
-    def wait(self) -> None:
+    def converge(self, timeout: float | None = None) -> None:
         for task in self.tasks:
-            task.wait()
+            task.converge(timeout)

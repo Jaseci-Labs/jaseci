@@ -17,11 +17,11 @@ walker MyWalker {
 }
 
 with entry {
-    t1 = MyWalker(5) async spawn MyNode();
-    t2 = MyWalker(3) async spawn MyNode();
-    t3 = MyWalker(1) async spawn MyNode();
+    t1 = MyWalker(5) spatial spawn MyNode();
+    t2 = MyWalker(3) spatial spawn MyNode();
+    t3 = MyWalker(1) spatial spawn MyNode();
     g1 = Group(t1, t2);
     g1.start();
-    g1.wait();
+    g1.converge();
 
 }
