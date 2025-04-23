@@ -299,6 +299,21 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value.split("\n")[0], "one level deeperslHello World!")
 
+    def test_deep_imports_interp_mode(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        mach = JacMachineState(self.fixture_abs_path("./"), interp_mode=True)
+        Jac.attach_program(
+            mach,
+            JacProgram(),
+        )
+        sys.stdout = captured_output
+
+        Jac.jac_import(mach, "deep_import", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value.split("\n")[0], "one level deeperslHello World!")
+
     def test_deep_imports_mods(self) -> None:
         """Parse micro jac file."""
         targets = [

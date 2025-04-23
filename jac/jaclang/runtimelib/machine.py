@@ -100,6 +100,7 @@ class JacMachineState:
         base_path: str = "",
         session: Optional[str] = None,
         root: Optional[str] = None,
+        interp_mode: bool = False,
     ) -> None:
         """Initialize the JacMachine object."""
         self.loaded_modules: dict[str, types.ModuleType] = {}
@@ -113,4 +114,5 @@ class JacMachineState:
             else os.path.abspath(base_path)
         )
         self.jac_program: JacProgram = JacProgram()
+        self.interp_mode = interp_mode
         self.exec_ctx = ExecutionContext(session=session, root=root, mach=self)

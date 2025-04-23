@@ -58,7 +58,6 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
     def transform(self, ir_in: ast.PythonModuleAst) -> ast.Module:
         """Transform input IR."""
         self.ir_out: ast.Module = self.proc_module(ir_in.ast)
-        # self.prog.modules[self.ir_out.loc.mod_path] = self.ir_out # TODO: Why does this break things
         return self.ir_out
 
     def extract_with_entry(
