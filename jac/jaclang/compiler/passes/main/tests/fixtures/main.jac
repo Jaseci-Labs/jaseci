@@ -1,6 +1,0 @@
-
-
-import second;
-
-
-can foo;
