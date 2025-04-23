@@ -28,6 +28,7 @@ def compare(current: dict, baseline: dict) -> list:
 
 
 if __name__ == "__main__":
+    print(__file__)
     curr_dur = parse_durations(CURRENT)
     try:
         base_dur = parse_durations(BASELINE)
