@@ -6,7 +6,7 @@ import sys
 import sysconfig
 
 import jaclang.compiler.passes.main as passes
-from jaclang import JacFeature as Jac
+from jaclang import JacMachine as Jac
 from jaclang.cli import cli
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.program import JacProgram

@@ -19,7 +19,11 @@ class SymTabLinkPass(AstPass):
             if os.path.isdir(rel_path):
                 rel_path = f"{rel_path}/__init__.jac"
             if rel_path not in self.prog.modules:
-                self.ice()
+                self.log_error(
+                    f"Module {rel_path} not found in the program. Something went wrong.",
+                    node,
+                )
+                return
         else:
             if node.sym_name in self.prog.py_raise_map:
                 rel_path = self.prog.py_raise_map[node.sym_name]

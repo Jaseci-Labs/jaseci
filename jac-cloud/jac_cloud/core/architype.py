@@ -44,7 +44,7 @@ from jaclang.runtimelib.architype import (
     WalkerAnchor as _WalkerAnchor,
     WalkerArchitype as _WalkerArchitype,
 )
-from jaclang.runtimelib.feature import JacFeature as Jac
+from jaclang.runtimelib.feature import JacMachine as Jac
 from jaclang.runtimelib.utils import is_instance
 
 from orjson import dumps
