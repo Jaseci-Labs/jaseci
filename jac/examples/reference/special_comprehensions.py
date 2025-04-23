@@ -1,34 +1,34 @@
 from __future__ import annotations
-from jaclang import *
-import typing
+from jaclang.runtimelib.builtin import *
+from jaclang import JacFeature as _
 
-if typing.TYPE_CHECKING:
+if _.TYPE_CHECKING:
     import random
 else:
-    (random,) = jac_import("random", "py")
+    (random,) = _.py_jac_import("random", __file__, lng="py")
 
 
-class TestObj(Obj):
-    x: int = field(gen=lambda: random.randint(0, 15))
-    y: int = field(gen=lambda: random.randint(0, 15))
-    z: int = field(gen=lambda: random.randint(0, 15))
+class TestObj(_.Obj):
+    x: int = random.randint(0, 15)
+    y: int = random.randint(0, 15)
+    z: int = random.randint(0, 15)
 
 
 random.seed(42)
-apple = JacList([])
+apple = []
 i = 0
-while i < 10:
+while i < 100:
     apple.append(TestObj())
     i += 1
-print(apple.filter(None, lambda item: item.y <= 7))
+print(_.filter(apple, lambda i: i.x >= 0 and i.x <= 15) == apple)
 
 
-class MyObj(Obj):
-    apple: int = field(0)
-    banana: int = field(0)
+class MyObj(_.Obj):
+    apple: int = 0
+    banana: int = 0
 
 
 x = MyObj()
 y = MyObj()
-mvar = JacList([x, y]).assign(("apple", "banana"), (5, 7))
+mvar = _.assign([x, y], (("apple", "banana"), (5, 7)))
 print(mvar)

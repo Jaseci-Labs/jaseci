@@ -7,7 +7,7 @@ import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
-from jaclang.plugin.default import hookimpl
+from jaclang.runtimelib.default import hookimpl
 from jaclang.runtimelib.utils import extract_params, extract_type, get_sem_scope
 
 from mtllm.aott import (
@@ -51,9 +51,9 @@ class JacFeature:
         _locals: Mapping,
     ) -> Any:  # noqa: ANN401
         """Jac's with_llm feature."""
-        from jaclang.runtimelib.machine import JacMachine
+        from jaclang.runtimelib.machine import JacMachineState
 
-        mod_registry = JacMachine.get().jac_program.sem_ir
+        mod_registry = JacMachineState.get().jac_program.sem_ir
 
         _scope = SemScope.get_scope_from_str(scope)
         assert _scope is not None, f"Invalid scope: {scope}"

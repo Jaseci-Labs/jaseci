@@ -7,12 +7,12 @@ from typing import Optional
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import SymbolAccess
-from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes import AstPass
 from jaclang.compiler.symtable import Symbol
 from jaclang.settings import settings
 
 
-class AccessCheckPass(Pass):
+class AccessCheckPass(AstPass):
     """Jac Ast Access Check pass."""
 
     # NOTE: This method is a hacky way to detect if the drivied class is inherit from base class, it
@@ -36,7 +36,7 @@ class AccessCheckPass(Pass):
 
     def report_error(self, message: str, node: Optional[ast.AstNode] = None) -> None:
         """Report error message related to illegal access of attributes and objects."""
-        self.error(message, node)
+        self.log_error(message, node)
 
     def exit_node(self, node: ast.AstNode) -> None:  # TODO: Move to debug pass
         """Exit node."""
@@ -52,7 +52,7 @@ class AccessCheckPass(Pass):
                 and isinstance(node.parent.parent, ast.Import)
             )
         ):
-            self.warning(f"Name {node.sym_name} not present in symbol table")
+            self.log_warning(f"Name {node.sym_name} not present in symbol table")
 
     def enter_name(self, node: ast.Name) -> None:
         """Sub objects.
@@ -67,7 +67,7 @@ class AccessCheckPass(Pass):
         # TODO: Enums are not considered at the moment, I'll need to test and add them bellow.
 
         # If the current node is a global variable's name there is no access, it's just the declaration.
-        if Pass.find_parent_of_type(node, ast.GlobalVars) is not None:
+        if AstPass.find_parent_of_type(node, ast.GlobalVars) is not None:
             return
 
         # Class name, and ability name are declarations and there is no access here as well.
@@ -75,10 +75,12 @@ class AccessCheckPass(Pass):
             return
 
         # Get the context to check the access.
-        curr_class: Optional[ast.Architype] = Pass.find_parent_of_type(
+        curr_class: Optional[ast.Architype] = AstPass.find_parent_of_type(
             node, ast.Architype
         )
-        curr_module: Optional[ast.Module] = Pass.find_parent_of_type(node, ast.Module)
+        curr_module: Optional[ast.Module] = AstPass.find_parent_of_type(
+            node, ast.Module
+        )
         if curr_module is None:
             return
 

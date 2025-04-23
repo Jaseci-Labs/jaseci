@@ -1,8 +1,6 @@
-from jaclang import JacList
-
 a = 9.2
 b = 44
-c = JacList([2, 4, 6, 10])
+c = [2, 4, 6, 10]
 d = {"name": "john", "age": 28}
 e = ("jaseci", 5, 4, 14)
 f = True

@@ -41,8 +41,6 @@ print(foo())
 print(car.name)
 print(Size.Medium.value)
 
-
-from jaclang import jac_import as __jac_import__
 import os
 from math import sqrt as square_root
 import datetime as dt

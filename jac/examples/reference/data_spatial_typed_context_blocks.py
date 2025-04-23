@@ -1,26 +1,27 @@
 from __future__ import annotations
-from jaclang import *
+from jaclang.runtimelib.builtin import *
+from jaclang import JacFeature as _
 
 
-class Producer(Walker):
+class Producer(_.Walker):
 
-    @with_entry
-    def produce(self, here: Root) -> None:
+    @_.entry
+    def produce(self, here: _.Root) -> None:
         end = here
         i = 0
         while i < 3:
-            end.connect((end := Product(number=i + 1)))
+            _.connect(end, (end := Product(number=i + 1)))
             i += 1
-        self.visit(here.refs())
+        _.visit(self, _.refs(here))
 
 
-class Product(Node):
+class Product(_.Node):
     number: int
 
-    @with_entry
+    @_.entry
     def make(self, here: Producer) -> None:
         print(f"Hi, I am {self} returning a String")
-        here.visit(self.refs())
+        _.visit(here, _.refs(self))
 
 
-root.spawn(Producer())
+_.spawn(_.root(), Producer())

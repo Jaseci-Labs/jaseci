@@ -19,11 +19,11 @@ with entry{
     x<++>y; # just adding one trigger of undirected connect
     y++>z;
     apple: int;
-    # print(x -:aaa:-> );
+    # print(x ->:aaa:-> );
     print([x-->y-->z]);
     print([x -->]);
     print(x del--> y);
     print([x -->]);
     print([i.__class__.__name__ for i in (x ++> y)]);
-    print([i.__class__.__name__ for i in (:e:[x[0] --> y])]);
+    print([i.__class__.__name__ for i in ([edge x[0] --> y])]);
 }

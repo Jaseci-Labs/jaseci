@@ -5,47 +5,46 @@ from __future__ import annotations
 import keyword
 import logging
 import os
-from typing import Callable, TypeAlias, TypeVar
+from typing import Callable, Optional, TYPE_CHECKING, TypeAlias, TypeVar
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler import jac_lark as jl  # type: ignore
 from jaclang.compiler.constant import EdgeDir, Tokens as Tok
-from jaclang.compiler.passes.ir_pass import Pass
+from jaclang.compiler.passes.ast_pass import Transform
 from jaclang.vendor.lark import Lark, Transformer, Tree, logger
 
+if TYPE_CHECKING:
+    from jaclang.compiler.program import JacProgram
 
 T = TypeVar("T", bound=ast.AstNode)
 
 
-class JacParser(Pass):
+class JacParser(Transform[ast.JacSource, ast.Module]):
     """Jac Parser."""
 
     dev_mode = False
 
-    def __init__(self, input_ir: ast.JacSource) -> None:
+    def __init__(self, root_ir: ast.JacSource, prog: Optional[JacProgram]) -> None:
         """Initialize parser."""
-        self.source = input_ir
-        self.mod_path = input_ir.loc.mod_path
+        self.mod_path = root_ir.loc.mod_path
         self.node_list: list[ast.AstNode] = []
         if JacParser.dev_mode:
             JacParser.make_dev()
-        Pass.__init__(self, input_ir=input_ir, prior=None)
+        Transform.__init__(self, ir_in=root_ir, prior=None, prog=prog)
 
-    def transform(self, ir: ast.AstNode) -> ast.Module:
+    def transform(self, ir: ast.JacSource) -> ast.Module:
         """Transform input IR."""
         try:
-            tree, comments = JacParser.parse(
-                self.source.value, on_error=self.error_callback
-            )
+            tree, comments = JacParser.parse(ir.value, on_error=self.error_callback)
             mod = JacParser.TreeToAST(parser=self).transform(tree)
-            self.source.comments = [self.proc_comment(i, mod) for i in comments]
+            ir.comments = [self.proc_comment(i, mod) for i in comments]
             if isinstance(mod, ast.Module):
                 return mod
             else:
                 raise self.ice()
         except jl.UnexpectedInput as e:
             catch_error = ast.EmptyToken()
-            catch_error.orig_src = self.source
+            catch_error.orig_src = ir
             catch_error.line_no = e.line
             catch_error.end_line = e.line
             catch_error.c_start = e.column
@@ -56,18 +55,17 @@ class JacParser(Pass):
             error_msg = "Syntax Error"
             if len(e.args) >= 1 and isinstance(e.args[0], str):
                 error_msg += e.args[0]
-            self.error(error_msg, node_override=catch_error)
+            self.log_error(error_msg, node_override=catch_error)
 
         except Exception as e:
-            self.error(f"Internal Error: {e}")
+            self.log_error(f"Internal Error: {e}")
 
         return ast.Module(
             name="",
-            source=self.source,
+            source=ir,
             doc=None,
             body=[],
             terminals=[],
-            is_imported=False,
             kid=[ast.EmptyToken()],
         )
 
@@ -139,7 +137,7 @@ class JacParser(Pass):
 
         def ice(self) -> Exception:
             """Raise internal compiler error."""
-            self.parse_ref.error("Internal Compiler Error, Invalid Parse Tree!")
+            self.parse_ref.log_error("Internal Compiler Error, Invalid Parse Tree!")
             return RuntimeError(
                 f"{self.parse_ref.__class__.__name__} - Internal Compiler Error, Invalid Parse Tree!"
             )
@@ -259,10 +257,9 @@ class JacParser(Pass):
             body = self.match_many(ast.ElementStmt)
             mod = ast.Module(
                 name=self.parse_ref.mod_path.split(os.path.sep)[-1].rstrip(".jac"),
-                source=self.parse_ref.source,
+                source=self.parse_ref.ir_in,
                 doc=doc,
                 body=body,
-                is_imported=False,
                 terminals=self.terminals,
                 kid=(
                     self.cur_nodes
@@ -383,7 +380,7 @@ class JacParser(Pass):
                 self.consume(ast.Token)  # LBRACE or COMMA
                 items = self.consume(ast.SubNodeList)
                 if self.consume(ast.Token).name == Tok.SEMI:  # RBRACE or SEMI
-                    self.parse_ref.warning(
+                    self.parse_ref.log_warning(
                         "Deprecated syntax, use braces for multiple imports (e.g, import from mymod {a, b, c})",
                     )
             else:
@@ -1096,7 +1093,7 @@ class JacParser(Pass):
             token = self.consume(ast.Token)
             return ast.BuiltinType(
                 name=token.name,
-                orig_src=self.parse_ref.source,
+                orig_src=self.parse_ref.ir_in,
                 value=token.value,
                 line=token.loc.first_line,
                 end_line=token.loc.last_line,
@@ -2701,11 +2698,11 @@ class JacParser(Pass):
         def edge_ref_chain(self, _: None) -> ast.EdgeRefTrailer:
             """Grammar rule.
 
-            (EDGE_OP|NODE_OP)? LSQUARE expression? (edge_op_ref (filter_compr | expression)?)+ RSQUARE
+            LSQUARE (KW_NODE| KW_EDGE)? expression? (edge_op_ref (filter_compr | expression)?)+ RSQUARE
             """
-            edges_only = bool(self.match_token(Tok.EDGE_OP))
-            self.match_token(Tok.NODE_OP)
             self.consume_token(Tok.LSQUARE)
+            edges_only = bool(self.match_token(Tok.KW_EDGE))
+            self.match_token(Tok.KW_NODE)
             valid_chain = []
             if expr := self.match(ast.Expr):
                 valid_chain.append(expr)
@@ -2733,7 +2730,11 @@ class JacParser(Pass):
             if self.match_token(Tok.ARROW_R):
                 fcond = None
             else:
-                self.consume_token(Tok.ARROW_R_P1)
+                if not self.match_token(Tok.ARROW_R_P1):
+                    self.consume_token(Tok.DARROW_R_P1)
+                    self.parse_ref.log_warning(
+                        "Deprecated syntax, use '->:' instead of '-:'",
+                    )
                 fcond = self.consume(ast.FilterCompr)
                 self.consume_token(Tok.ARROW_R_P2)
             return ast.EdgeOpRef(
@@ -2751,7 +2752,11 @@ class JacParser(Pass):
             else:
                 self.consume_token(Tok.ARROW_L_P1)
                 fcond = self.consume(ast.FilterCompr)
-                self.consume_token(Tok.ARROW_L_P2)
+                if not self.match_token(Tok.ARROW_L_P2):
+                    self.consume_token(Tok.DARROW_L_P2)
+                    self.parse_ref.log_warning(
+                        "Deprecated syntax, use ':<-' instead of ':-'",
+                    )
             return ast.EdgeOpRef(
                 filter_cond=fcond, edge_dir=EdgeDir.IN, kid=self.cur_nodes
             )
@@ -2800,7 +2805,9 @@ class JacParser(Pass):
             """
             conn_type: ast.Expr | None = None
             conn_assign_sub: ast.SubNodeList | None = None
-            if self.match_token(Tok.CARROW_R_P1):
+            if (tok_rp1 := self.match_token(Tok.CARROW_R_P1)) or self.match_token(
+                Tok.DCARROW_R_P1
+            ):
                 conn_type = self.consume(ast.Expr)
                 conn_assign_sub = (
                     self.consume(ast.SubNodeList)
@@ -2808,6 +2815,10 @@ class JacParser(Pass):
                     else None
                 )
                 self.consume_token(Tok.CARROW_R_P2)
+                if not tok_rp1:
+                    self.parse_ref.log_warning(
+                        "Deprecated syntax, use '+>:' instead of '+:'",
+                    )
             else:
                 self.consume_token(Tok.CARROW_R)
             conn_assign = (
@@ -2839,7 +2850,11 @@ class JacParser(Pass):
                     if self.match_token(Tok.COLON)
                     else None
                 )
-                self.consume_token(Tok.CARROW_L_P2)
+                if not self.match_token(Tok.CARROW_L_P2):
+                    self.consume_token(Tok.DCARROW_L_P2)
+                    self.parse_ref.log_warning(
+                        "Deprecated syntax, use ':<+' instead of ':+'",
+                    )
             else:
                 self.consume_token(Tok.CARROW_L)
             conn_assign = (
@@ -3290,7 +3305,7 @@ class JacParser(Pass):
             elif token.type == Tok.PYNLINE and isinstance(token.value, str):
                 token.value = token.value.replace("::py::", "")
             ret = ret_type(
-                orig_src=self.parse_ref.source,
+                orig_src=self.parse_ref.ir_in,
                 name=token.type,
                 value=token.value[2:] if token.type == Tok.KWESC_NAME else token.value,
                 line=token.line if token.line is not None else 0,

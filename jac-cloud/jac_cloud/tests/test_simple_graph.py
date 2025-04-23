@@ -1,5 +1,7 @@
 """JacLang Jaseci Unit Test."""
 
+from pathlib import Path
+
 from httpx import get, post
 
 from yaml import safe_load
@@ -13,7 +15,8 @@ class SimpleGraphTest(JacCloudTest):
 
     def setUp(self) -> None:
         """Override setUp."""
-        self.run_server("jac_cloud/tests/simple_graph.jac")
+        self.directory = Path(__file__).parent
+        self.run_server(f"{self.directory}/simple_graph.jac")
 
         Collection.__client__ = None
         Collection.__database__ = None
@@ -31,7 +34,8 @@ class SimpleGraphTest(JacCloudTest):
         res = get(f"{self.host}/openapi.yaml", timeout=1)
         res.raise_for_status()
 
-        with open("jac_cloud/tests/openapi_specs.yaml") as file:
+        self.run_server(f"{Path(__file__).parent}/simple_graph.jac")
+        with open(f"{self.directory}/openapi_specs.yaml") as file:
             self.assertEqual(safe_load(file), safe_load(res.text))
 
     def trigger_create_user_test(self, suffix: str = "") -> None:
@@ -537,7 +541,7 @@ class SimpleGraphTest(JacCloudTest):
 
     def trigger_upload_file(self) -> None:
         """Test upload file."""
-        with open("jac_cloud/tests/simple.json", mode="br") as s:
+        with open(f"{self.directory}/simple.json", mode="br") as s:
             files = [
                 ("single", ("simple.json", s)),
                 ("multiple", ("simple.json", s)),

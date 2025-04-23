@@ -2,8 +2,8 @@
 
 from typing import List
 
-from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+from jaclang.compiler.program import JacProgram
 from jaclang.utils.lang_tools import AstTool
 from jaclang.utils.test import TestCase
 
@@ -18,7 +18,7 @@ class MypyTypeCheckPassTests(TestCase):
 
     def test_type_errors(self) -> None:
         """Basic test for pass."""
-        type_checked = jac_file_to_pass(
+        type_checked = JacProgram().jac_file_to_pass(
             file_path=self.fixture_abs_path("func.jac"),
             schedule=py_code_gen_typed,
         )
@@ -36,7 +36,7 @@ class MypyTypeCheckPassTests(TestCase):
 
     def test_imported_module_typecheck(self) -> None:
         """Basic test for pass."""
-        type_checked = jac_file_to_pass(
+        type_checked = JacProgram().jac_file_to_pass(
             file_path=self.fixture_abs_path("game1.jac"),
             schedule=py_code_gen_typed,
         )
@@ -70,22 +70,22 @@ class MypyTypeCheckPassTests(TestCase):
         )
         self.assertRegex(
             out,
-            r"129:24 - 129:28.*SpecialVarRef - Jac.get_root\(\) \- Type\: jaclang.Root",
+            r"129:22 - 129:26.*SpecialVarRef - root \- Type\: jaclang.runtimelib.architype.Root",
+        )
+        self.assertRegex(out, r"129:11 - 129:27.*FuncCall \- Type\: builtins\.str")
+        self.assertRegex(
+            out,
+            r"129:13 - 129:21.*Name \- node_dot \- Type\: builtins.str",
         )
 
-        self.assertRegex(out, r"129:11 - 129:29.*FuncCall \- Type\: builtins\.str")
         self.assertRegex(
             out,
-            r"129:15 - 129:23.*Name \- node_dot \- Type\: builtins.str,  SymbolTable\: str",
+            r"128:5 - 128:25.*BinaryExpr \- Type\: jaclang.runtimelib.architype.WalkerArchitype",
         )
 
         self.assertRegex(
             out,
-            r"128:5 - 128:25.*BinaryExpr \- Type\: jaclang.Walker",
-        )
-        self.assertRegex(
-            out,
-            r"48:11 - 48:28.*EdgeRefTrailer \- Type\: jaclang.JacList\[data_spatial_types.A\]",
+            r"48:11 - 48:28.*EdgeRefTrailer \- Type\: builtins.list\[jaclang.runtimelib.architype.Architype\]",
         )
 
         self.assertRegex(out, r"24:5 - 24:25.*BinaryExpr \- Type\: builtins.bool", out)
