@@ -36,16 +36,16 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
     def test_hodge_podge(self) -> None:
         """Basic test for pass."""
-        code_gen = JacProgram().jac_file_to_pass(
+        (out := JacProgram()).jac_file_to_pass(
             self.examples_abs_path("micro/hodge_podge.jac"),
             target=PyastGenPass,
         )
 
-        self.assertFalse(code_gen.errors_had)
+        self.assertFalse(out.errors_had)
 
     def test_circle_py_ast(self) -> None:
         """Basic test for pass."""
-        code_gen = JacProgram().jac_file_to_pass(
+        code_gen = (out := JacProgram()).jac_file_to_pass(
             self.examples_abs_path("manual_code/circle.jac"),
             target=PyastGenPass,
         )
@@ -72,7 +72,7 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
                 stdout_value,
             )
 
-        self.assertFalse(code_gen.errors_had)
+        self.assertFalse(out.errors_had)
 
     def parent_scrub(self, node: ast.AstNode) -> bool:
         """Validate every node has parent."""

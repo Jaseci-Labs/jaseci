@@ -91,7 +91,7 @@ class JacImportPass(AstPass):
         else:
             return ast.Module(
                 name=target.split(os.path.sep)[-1],
-                source=ast.JacSource("", mod_path=target),
+                source=ast.Source("", mod_path=target),
                 doc=None,
                 body=[],
                 terminals=[],
@@ -171,8 +171,8 @@ class PyImportPass(JacImportPass):
 
             self.load_mod(imported_mod)
             self.import_from_build_list.append((imp_node, imported_mod))
-            PyInspectSymTabBuildPass(ir_in=imported_mod, prior=self, prog=self.prog)
-            DefUsePass(ir_in=imported_mod, prior=self, prog=self.prog)
+            PyInspectSymTabBuildPass(ir_in=imported_mod, prog=self.prog)
+            DefUsePass(ir_in=imported_mod, prog=self.prog)
 
     def __process_import(self, imp_node: ast.Import) -> None:
         """Process the imports in form of `import X`."""
@@ -205,11 +205,11 @@ class PyImportPass(JacImportPass):
                 msg += f"import_from (import all) handling with {imp_node.loc.mod_path}:{imp_node.loc}"
 
                 self.import_from_build_list.append((imp_node, imported_mod))
-                PyInspectSymTabBuildPass(ir_in=imported_mod, prior=self, prog=self.prog)
-                DefUsePass(ir_in=imported_mod, prior=self, prog=self.prog)
+                PyInspectSymTabBuildPass(ir_in=imported_mod, prog=self.prog)
+                DefUsePass(ir_in=imported_mod, prog=self.prog)
 
             else:
-                SymTabBuildPass(ir_in=imported_mod, prior=self, prog=self.prog)
+                SymTabBuildPass(ir_in=imported_mod, prog=self.prog)
 
     def __import_py_module(
         self,
@@ -244,12 +244,12 @@ class PyImportPass(JacImportPass):
             with open(file_to_raise, "r", encoding="utf-8") as f:
                 file_source = f.read()
                 mod = PyastBuildPass(
-                    root_ir=ast.PythonModuleAst(
+                    ir_in=ast.PythonModuleAst(
                         py_ast.parse(file_source),
-                        orig_src=ast.JacSource(file_source, file_to_raise),
+                        orig_src=ast.Source(file_source, file_to_raise),
                     ),
                     prog=self.prog,
-                ).ir
+                ).ir_out
 
             if mod:
                 mod.name = imported_mod_name if imported_mod_name else mod.name
@@ -281,13 +281,13 @@ class PyImportPass(JacImportPass):
         with open(file_to_raise, "r", encoding="utf-8") as f:
             file_source = f.read()
             mod = PyastBuildPass(
-                root_ir=ast.PythonModuleAst(
+                ir_in=ast.PythonModuleAst(
                     py_ast.parse(file_source),
-                    orig_src=ast.JacSource(file_source, file_to_raise),
+                    orig_src=ast.Source(file_source, file_to_raise),
                 ),
                 prog=self.prog,
-            ).ir
-            SymTabBuildPass(ir_in=mod, prior=self, prog=self.prog)
+            ).ir_out
+            SymTabBuildPass(ir_in=mod, prog=self.prog)
             self.prog.modules[file_to_raise] = mod
             mod.py_info.is_raised_from_py = True
 

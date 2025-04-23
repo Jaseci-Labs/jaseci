@@ -67,7 +67,7 @@ def format(path: str, outfile: str = "", to_screen: bool = False) -> None:
 
 
 def proc_file_sess(
-    filename: str, session: str, root: Optional[str] = None
+    filename: str, session: str, root: Optional[str] = None, interp: bool = False
 ) -> tuple[str, str, JacMachineState]:
     if session == "":
         session = (
@@ -80,18 +80,22 @@ def proc_file_sess(
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
-    mach = JacMachineState(base, session=session, root=root)
+    mach = JacMachineState(base, session=session, root=root, interp_mode=interp)
     return base, mod, mach
 
 
 @cmd_registry.register
 def run(
-    filename: str, session: str = "", main: bool = True, cache: bool = True
+    filename: str,
+    session: str = "",
+    main: bool = True,
+    cache: bool = True,
+    interp: bool = False,
 ) -> None:
     """Run the specified .jac file."""
     # if no session specified, check if it was defined when starting the command shell
     # otherwise default to jaclang.session
-    base, mod, mach = proc_file_sess(filename, session)
+    base, mod, mach = proc_file_sess(filename, session, interp=interp)
 
     if filename.endswith(".jac"):
         try:
@@ -166,13 +170,12 @@ def get_object(
 def build(filename: str, pybuild: bool = False) -> None:
     """Build the specified .jac file."""
     if filename.endswith(".jac"):
-        out = JacProgram()
-        pass_ret = out.jac_file_to_pass(
+        (out := JacProgram()).jac_file_to_pass(
             file_path=filename,
             schedule=py_code_gen_typed if pybuild else py_code_gen_build,
         )
-        errs = len(pass_ret.errors_had)
-        warnings = len(pass_ret.warnings_had)
+        errs = len(out.errors_had)
+        warnings = len(out.warnings_had)
         print(f"Errors: {errs}, Warnings: {warnings}")
         with open(filename[:-4] + ".jir", "wb") as f:
             pickle.dump(out, f)
@@ -187,15 +190,15 @@ def check(filename: str, print_errs: bool = True) -> None:
     :param filename: The path to the .jac file.
     """
     if filename.endswith(".jac"):
-        out = JacProgram().jac_file_to_pass(
+        (prog := JacProgram()).jac_file_to_pass(
             file_path=filename,
             schedule=py_code_gen_typed,
         )
 
-        errs = len(out.errors_had)
-        warnings = len(out.warnings_had)
+        errs = len(prog.errors_had)
+        warnings = len(prog.warnings_had)
         if print_errs:
-            for e in out.errors_had:
+            for e in prog.errors_had:
                 print("Error:", e, file=sys.stderr)
         print(f"Errors: {errs}, Warnings: {warnings}")
     else:
@@ -444,12 +447,12 @@ def py2jac(filename: str) -> None:
         with open(filename, "r") as f:
             file_source = f.read()
             code = PyastBuildPass(
-                root_ir=ast.PythonModuleAst(
+                ir_in=ast.PythonModuleAst(
                     ast3.parse(file_source),
-                    orig_src=ast.JacSource(file_source, filename),
+                    orig_src=ast.Source(file_source, filename),
                 ),
                 prog=JacProgram(),
-            ).ir.unparse()
+            ).ir_out.unparse()
         print(code)
     else:
         print("Not a .py file.")
