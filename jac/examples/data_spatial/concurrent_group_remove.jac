@@ -20,13 +20,9 @@ with entry {
     t1 = MyWalker(5) async spawn MyNode();
     t2 = MyWalker(3) async spawn MyNode();
     t3 = MyWalker(1) async spawn MyNode();
-    t1.start();
-    t2.start();
-    print('1st, 2nd tasks are started...');
-    t3.start();
-    print('3rd task is started...');
-    t1.wait();
-    t2.wait();
-    t3.wait();
+    g1 = Group(t1, t2, t3);
+    g1.remove(t2);
+    g1.start();
+    g1.wait();
 
 }

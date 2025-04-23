@@ -162,13 +162,13 @@ class PyastGenPass(AstPass):
             return
         self.preamble.append(
             self.sync(
-                ast3.Import(
+                ast3.ImportFrom(
+                    module="jaclang.runtimelib.jacoroutine",
                     names=[
-                        self.sync(
-                            ast3.alias(name="threading"),
-                            jac_node=self.ir_out,
-                        ),
-                    ]
+                        self.sync(ast3.alias(name="Task", asname=None)),
+                        self.sync(ast3.alias(name="Group", asname=None)),
+                    ],
+                    level=0,
                 ),
                 jac_node=self.ir_out,
             )
@@ -2343,20 +2343,12 @@ class PyastGenPass(AstPass):
             node.gen.py_ast = [
                 self.sync(
                     ast3.Call(
-                        func=self.sync(
-                            ast3.Attribute(
-                                value=self.sync(
-                                    ast3.Name(id="threading", ctx=ast3.Load())
-                                ),
-                                attr="Thread",
-                                ctx=ast3.Load(),
-                            )
-                        ),
+                        func=self.sync(ast3.Name(id="Task", ctx=ast3.Load())),
                         args=[],
                         keywords=[
                             self.sync(
                                 ast3.keyword(
-                                    arg="target",
+                                    arg="func",
                                     value=self.sync(
                                         ast3.Attribute(
                                             value=self.sync(
