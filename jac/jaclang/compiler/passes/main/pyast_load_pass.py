@@ -1702,6 +1702,8 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
                 pattern=pattern,
                 kid=[name, pattern],
             )
+        else:
+            return ast.MatchWild(kid=[name])
 
     def proc_match_class(self, node: py_ast.MatchClass) -> ast.MatchArch:
         """Process python node.
