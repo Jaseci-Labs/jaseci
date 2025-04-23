@@ -69,6 +69,7 @@ TOKEN_MAP.update(
         "DIV_EQ": "/=", "MOD_EQ": "%=", "BW_AND_EQ": "&=",
         "BW_OR_EQ": "|=", "BW_XOR_EQ": "^=", "BW_NOT_EQ": "~=",
         "LSHIFT_EQ": "<<=",
+        "KW_VISITOR": "visitor",
     }
 )
 # fmt: on

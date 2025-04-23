@@ -91,6 +91,7 @@ class Constants(StrEnum):
     """Token constants for Jac."""
 
     HERE = "here"
+    VISITOR = "visitor"
     ROOT = "root"
     JAC_CHECK = "_check"
     JAC_MYPY_CACHE = ".jac_mypy_cache"
@@ -281,6 +282,7 @@ class Tokens(str, Enum):
     GLOBAL_OP = "GLOBAL_OP"
     NONLOCAL_OP = "NONLOCAL_OP"
     KW_HERE = "KW_HERE"
+    KW_VISITOR = "KW_VISITOR"
     KW_SELF = "KW_SELF"
     KW_INIT = "KW_INIT"
     KW_SUPER = "KW_SUPER"

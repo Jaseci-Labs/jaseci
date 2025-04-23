@@ -469,6 +469,7 @@ special_ref: KW_INIT
             | KW_SUPER
             | KW_SELF
             | KW_HERE
+            | KW_VISITOR
 
 // [Heading]: Builtin types.
 builtin_type: TYP_TYPE
@@ -603,6 +604,7 @@ KW_HERE: "here"
 KW_SELF: "self"
 KW_SUPER: "super"
 KW_ROOT: "root"
+KW_VISITOR: "visitor"
 
 KW_NIN.1: /\bnot\s+in\b/
 KW_ISN.1: /\bis\s+not\b/
