@@ -55,14 +55,7 @@ class JacProgram:
         if full_target in self.modules:
             codeobj = self.modules[full_target].gen.py_bytecode
             return marshal.loads(codeobj) if isinstance(codeobj, bytes) else None
-        if full_compile:
-            result = self.jac_file_to_pass(file_path=full_target)
-        else:
-            result = self.jac_file_to_pass(
-                file_path=full_target,
-                target=PyBytecodeGenPass,
-                schedule=[FuseCommentsPass, JacFormatPass],
-            )
+        result = self.jac_file_to_pass(file_path=full_target, full_compile=full_compile)
         if result.errors_had:
             for alrt in result.errors_had:
                 logger.error(alrt.pretty_print())
@@ -85,6 +78,7 @@ class JacProgram:
                 file_path=file_path,
                 target=target,
                 schedule=schedule,
+                full_compile=full_compile,
             )
 
     def jac_str_to_pass(

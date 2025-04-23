@@ -85,9 +85,7 @@ def proc_file_sess(
 
 
 @cmd_registry.register
-def run(
-    filename: str, session: str = "", main: bool = True, cache: bool = True
-) -> None:
+def run(filename: str, session: str = "", main: bool = True) -> None:
     """Run the specified .jac file."""
     # if no session specified, check if it was defined when starting the command shell
     # otherwise default to jaclang.session

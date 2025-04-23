@@ -297,22 +297,31 @@ class JacLanguageTests(TestCase):
         Jac.jac_import(self.mach, "deep_import", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
+        print(self.mach.loaded_modules.keys())
         self.assertEqual(stdout_value.split("\n")[0], "one level deeperslHello World!")
 
     def test_deep_imports_interp_mode(self) -> None:
         """Parse micro jac file."""
-        captured_output = io.StringIO()
         mach = JacMachineState(self.fixture_abs_path("./"), interp_mode=True)
         Jac.attach_program(
             mach,
             JacProgram(),
         )
-        sys.stdout = captured_output
-
-        Jac.jac_import(mach, "deep_import", base_path=self.fixture_abs_path("./"))
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        self.assertEqual(stdout_value.split("\n")[0], "one level deeperslHello World!")
+        Jac.jac_import(
+            mach, "deep_import_interp", base_path=self.fixture_abs_path("./")
+        )
+        print(mach.jac_program.modules.keys())
+        self.assertEqual(len(mach.jac_program.modules.keys()), 1)
+        mach = JacMachineState(self.fixture_abs_path("./"), interp_mode=False)
+        Jac.attach_program(
+            mach,
+            JacProgram(),
+        )
+        Jac.jac_import(
+            mach, "deep_import_interp", base_path=self.fixture_abs_path("./")
+        )
+        print(mach.jac_program.modules.keys())
+        self.assertEqual(len(mach.jac_program.modules.keys()), 5)
 
     def test_deep_imports_mods(self) -> None:
         """Parse micro jac file."""
@@ -635,7 +644,6 @@ class JacLanguageTests(TestCase):
                 ),
                 prog=JacProgram(),
             ).ir_out.unparse()
-        # print(output)
         self.assertIn("can greet2(**kwargs: Any)", output)
         self.assertEqual(output.count("with entry {"), 13)
         self.assertIn(
