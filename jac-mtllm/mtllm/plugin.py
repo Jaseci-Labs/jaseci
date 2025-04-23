@@ -30,7 +30,7 @@ def callable_to_tool(tool: Callable, mod_registry: SemRegistry) -> Tool:
     return Tool(tool, tool_info, tool_info.get_children(mod_registry, ast.ParamVar))
 
 
-class JacFeature:
+class JacMachine:
     """Jac's with_llm feature."""
 
     @staticmethod

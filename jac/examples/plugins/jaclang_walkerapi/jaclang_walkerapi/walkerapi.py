@@ -6,7 +6,7 @@ from functools import wraps
 from typing import Type, Callable
 
 
-class JacFeature:
+class JacMachine:
     @staticmethod
     @hookimpl
     def make_walker(

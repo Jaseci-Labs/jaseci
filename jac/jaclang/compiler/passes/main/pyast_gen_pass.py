@@ -57,7 +57,7 @@ class PyastGenPass(AstPass):
                         names=[
                             self.sync(
                                 ast3.alias(
-                                    name="JacFeature",
+                                    name="JacMachine",
                                     asname=settings.pyout_jaclib_alias,
                                 )
                             ),
@@ -959,9 +959,9 @@ class PyastGenPass(AstPass):
     def gen_llm_body(self, node: ast.Ability) -> list[ast3.AST]:
         """Generate the by LLM body."""
         # to Avoid circular import
-        from jaclang.runtimelib.feature import JacFeature
+        from jaclang.runtimelib.feature import JacMachine
 
-        return JacFeature.gen_llm_body(self, node)
+        return JacMachine.gen_llm_body(self, node)
 
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.
@@ -2902,9 +2902,9 @@ class PyastGenPass(AstPass):
     ) -> ast3.Call:
         """Return the LLM Call, e.g. _Jac.with_llm()."""
         # to avoid circular import
-        from jaclang.runtimelib.feature import JacFeature
+        from jaclang.runtimelib.feature import JacMachine
 
-        return JacFeature.by_llm_call(
+        return JacMachine.by_llm_call(
             self,
             model,
             model_params,
@@ -2919,9 +2919,9 @@ class PyastGenPass(AstPass):
     def get_by_llm_call_args(self, node: ast.FuncCall) -> dict:
         """Get the arguments for the by_llm_call."""
         # to avoid circular import
-        from jaclang.runtimelib.feature import JacFeature
+        from jaclang.runtimelib.feature import JacMachine
 
-        return JacFeature.get_by_llm_call_args(self, node)
+        return JacMachine.get_by_llm_call_args(self, node)
 
     def exit_func_call(self, node: ast.FuncCall) -> None:
         """Sub objects.

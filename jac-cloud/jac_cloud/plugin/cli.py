@@ -29,7 +29,7 @@ class JacCmd:
 
         @cmd_registry.register
         def serve(filename: str, host: str = "0.0.0.0", port: int = 8000) -> None:
-            from jaclang import JacFeature as Jac
+            from jaclang import JacMachine as Jac
             from jac_cloud import FastAPI
 
             """Serve the jac application."""
@@ -67,7 +67,7 @@ class JacCmd:
         def create_system_admin(
             filename: str, email: str = "", password: str = ""
         ) -> str:
-            from jaclang import JacFeature as Jac
+            from jaclang import JacMachine as Jac
 
             if not getenv("DATABASE_HOST"):
                 raise NotImplementedError(

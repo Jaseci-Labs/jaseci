@@ -1,6 +1,6 @@
 from __future__ import annotations
 from jaclang.runtimelib.builtin import *
-from jaclang import JacFeature as _
+from jaclang import JacMachine as _
 
 
 def print_base_classes(cls: type) -> type:

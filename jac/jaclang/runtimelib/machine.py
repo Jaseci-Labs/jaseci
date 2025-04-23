@@ -93,7 +93,7 @@ class ExecutionContext:
 
 
 class JacMachineState:
-    """JacMachine to handle the VM-related functionalities and loaded programs."""
+    """Jac Machine State."""
 
     def __init__(
         self,
@@ -102,7 +102,7 @@ class JacMachineState:
         root: Optional[str] = None,
         interp_mode: bool = False,
     ) -> None:
-        """Initialize the JacMachine object."""
+        """Initialize JacMachineState."""
         self.loaded_modules: dict[str, types.ModuleType] = {}
         if not base_path:
             base_path = os.getcwd()
