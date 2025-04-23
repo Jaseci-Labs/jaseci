@@ -19,12 +19,12 @@ if TYPE_CHECKING:
 T = TypeVar("T", bound=ast.AstNode)
 
 
-class JacParser(Transform[ast.JacSource, ast.Module]):
+class JacParser(Transform[ast.Source, ast.Module]):
     """Jac Parser."""
 
     dev_mode = False
 
-    def __init__(self, root_ir: ast.JacSource, prog: JacProgram) -> None:
+    def __init__(self, root_ir: ast.Source, prog: JacProgram) -> None:
         """Initialize parser."""
         self.mod_path = root_ir.loc.mod_path
         self.node_list: list[ast.AstNode] = []
@@ -32,19 +32,21 @@ class JacParser(Transform[ast.JacSource, ast.Module]):
             JacParser.make_dev()
         Transform.__init__(self, ir_in=root_ir, prog=prog)
 
-    def transform(self, ir: ast.JacSource) -> ast.Module:
+    def transform(self, ir_in: ast.Source) -> ast.Module:
         """Transform input IR."""
         try:
-            tree, comments = JacParser.parse(ir.value, on_error=self.error_callback)
+            tree, comments = JacParser.parse(ir_in.value, on_error=self.error_callback)
             mod = JacParser.TreeToAST(parser=self).transform(tree)
-            ir.comments = [self.proc_comment(i, mod) for i in comments]
+            ir_in.comments = [self.proc_comment(i, mod) for i in comments]
             if isinstance(mod, ast.Module):
+                self.ir_out = mod
+                self.prog.modules[self.ir_out.loc.mod_path] = self.ir_out
                 return mod
             else:
                 raise self.ice()
         except jl.UnexpectedInput as e:
             catch_error = ast.EmptyToken()
-            catch_error.orig_src = ir
+            catch_error.orig_src = ir_in
             catch_error.line_no = e.line
             catch_error.end_line = e.line
             catch_error.c_start = e.column
@@ -62,7 +64,7 @@ class JacParser(Transform[ast.JacSource, ast.Module]):
 
         return ast.Module(
             name="",
-            source=ir,
+            source=ir_in,
             doc=None,
             body=[],
             terminals=[],
@@ -263,7 +265,7 @@ class JacParser(Transform[ast.JacSource, ast.Module]):
                 terminals=self.terminals,
                 kid=(
                     self.cur_nodes
-                    or [ast.EmptyToken(ast.JacSource("", self.parse_ref.mod_path))]
+                    or [ast.EmptyToken(ast.Source("", self.parse_ref.mod_path))]
                 ),
             )
             return mod
@@ -923,7 +925,7 @@ class JacParser(Transform[ast.JacSource, ast.Module]):
                 kid=(
                     self.cur_nodes
                     if len(self.cur_nodes)
-                    else [ast.EmptyToken(ast.JacSource("", self.parse_ref.mod_path))]
+                    else [ast.EmptyToken(ast.Source("", self.parse_ref.mod_path))]
                 ),
             )
 

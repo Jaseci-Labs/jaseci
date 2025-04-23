@@ -121,7 +121,7 @@ class AstSyncTestMixin:
             not in [
                 "ast_node",
                 "walker_stmt_only_node",
-                "jac_source",
+                "source",
                 "empty_token",
                 "ast_symbol_node",
                 "ast_symbol_stub_node",

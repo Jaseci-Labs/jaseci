@@ -107,16 +107,16 @@ class AstPass(Transform[ast.Module, ast.Module]):
 
     # Transform Implementations
     # -------------------------
-    def transform(self, ir: ast.Module) -> ast.Module:
+    def transform(self, ir_in: ast.Module) -> ast.Module:
         """Run pass."""
         # Only performs passes on proper ASTs
-        self.ir_out = ir  # TODO: this should go away and just be orig
-        if not isinstance(ir, ast.AstNode):
-            return ir
+        self.ir_out = ir_in  # TODO: this should go away and just be orig
+        if not isinstance(ir_in, ast.AstNode):
+            return ir_in
         self.before_pass()
-        if not isinstance(ir, ast.AstNode):
+        if not isinstance(ir_in, ast.AstNode):
             raise ValueError("Current node is not an AstNode.")
-        self.traverse(ir)
+        self.traverse(ir_in)
         self.after_pass()
         return self.ir_in
 

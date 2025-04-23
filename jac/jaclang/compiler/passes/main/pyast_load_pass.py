@@ -22,11 +22,11 @@ T = TypeVar("T", bound=ast.AstNode)
 class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
     """Jac Parser."""
 
-    def __init__(self, root_ir: ast.PythonModuleAst, prog: JacProgram) -> None:
+    def __init__(self, ir_in: ast.PythonModuleAst, prog: JacProgram) -> None:
         """Initialize parser."""
-        self.mod_path = root_ir.loc.mod_path
-        self.orig_src = root_ir.loc.orig_src
-        Transform.__init__(self, ir_in=root_ir, prog=prog)
+        self.mod_path = ir_in.loc.mod_path
+        self.orig_src = ir_in.loc.orig_src
+        Transform.__init__(self, ir_in=ir_in, prog=prog)
 
     def nu(self, node: T) -> T:
         """Update node."""
@@ -55,10 +55,11 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         # ret.unparse()
         return ret
 
-    def transform(self, ir: ast.PythonModuleAst) -> ast.Module:
+    def transform(self, ir_in: ast.PythonModuleAst) -> ast.Module:
         """Transform input IR."""
-        self.ir: ast.Module = self.proc_module(ir.ast)
-        return self.ir
+        self.ir_out: ast.Module = self.proc_module(ir_in.ast)
+        # self.prog.modules[self.ir_out.loc.mod_path] = self.ir_out # TODO: Why does this break things
+        return self.ir_out
 
     def extract_with_entry(
         self, body: list[ast.AstNode], exclude_types: TypeAlias = T
@@ -125,7 +126,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         self.convert_to_doc(doc_str) if doc_str else None
         ret = ast.Module(
             name=self.mod_path.split(os.path.sep)[-1].split(".")[0],
-            source=ast.JacSource("", mod_path=self.mod_path),
+            source=ast.Source("", mod_path=self.mod_path),
             doc=doc_str,
             body=valid[1:] if valid and isinstance(valid[0], ast.String) else valid,
             terminals=[],

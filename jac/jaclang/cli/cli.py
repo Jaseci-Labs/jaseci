@@ -443,12 +443,12 @@ def py2jac(filename: str) -> None:
         with open(filename, "r") as f:
             file_source = f.read()
             code = PyastBuildPass(
-                root_ir=ast.PythonModuleAst(
+                ir_in=ast.PythonModuleAst(
                     ast3.parse(file_source),
-                    orig_src=ast.JacSource(file_source, filename),
+                    orig_src=ast.Source(file_source, filename),
                 ),
                 prog=JacProgram(),
-            ).ir.unparse()
+            ).ir_out.unparse()
         print(code)
     else:
         print("Not a .py file.")

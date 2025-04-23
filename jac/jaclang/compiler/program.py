@@ -96,7 +96,7 @@ class JacProgram:
         if not target:
             target = schedule[-1] if schedule else None
 
-        source = ast.JacSource(jac_str, mod_path=file_path)
+        source = ast.Source(jac_str, mod_path=file_path)
         ast_ret: Transform = JacParser(root_ir=source, prog=self)
         return self.run_pass_schedule(
             in_pass=ast_ret,
@@ -116,12 +116,14 @@ class JacProgram:
             target = schedule[-1] if schedule else None
         parsed_ast = py_ast.parse(py_str)
         py_ast_build_pass = PyastBuildPass(
-            root_ir=ast.PythonModuleAst(
+            ir_in=ast.PythonModuleAst(
                 parsed_ast,
-                orig_src=ast.JacSource(py_str, mod_path=file_path),
+                orig_src=ast.Source(py_str, mod_path=file_path),
             ),
             prog=self,
         )
+        # TODO: This should go inside the PyastBuildPass
+        self.modules[py_ast_build_pass.ir_out.loc.mod_path] = py_ast_build_pass.ir_out
         return self.run_pass_schedule(
             in_pass=py_ast_build_pass,
             target=target,
@@ -139,7 +141,6 @@ class JacProgram:
         # Creating a new JacProgram and attaching it to top module
         top_mod: ast.Module = ast_ret.ir_out
         self.last_imported.append(ast_ret.ir_out)
-        self.modules[ast_ret.ir_out.loc.mod_path] = ast_ret.ir_out
         self.annex_impl(ast_ret.ir_out)
         # Only return the parsed module when the schedules are empty
         if len(schedule) == 0:
@@ -274,7 +275,7 @@ class JacProgram:
         target = JacFormatPass
         prog = JacProgram()
         with open(file_path) as file:
-            source = ast.JacSource(file.read(), mod_path=file_path)
+            source = ast.Source(file.read(), mod_path=file_path)
             prse: Transform = JacParser(root_ir=source, prog=prog)
         for i in [FuseCommentsPass, JacFormatPass]:
             prse = i(ir_in=prse.ir_out, prog=prog)
