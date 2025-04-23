@@ -69,6 +69,7 @@ def format(path: str, outfile: str = "", to_screen: bool = False) -> None:
 def proc_file_sess(
     filename: str, session: str, root: Optional[str] = None, interp: bool = False
 ) -> tuple[str, str, JacMachineState]:
+    """Create JacMachineState and return the base path, module name, and machine state."""
     if session == "":
         session = (
             cmd_registry.args.session

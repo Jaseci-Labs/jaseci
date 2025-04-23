@@ -43,7 +43,6 @@ class ExecutionContext:
         root: Optional[str] = None,
     ) -> None:
         """Create ExecutionContext."""
-
         self.mach = mach
         self.mem = ShelfStorage(session)
         self.reports = []

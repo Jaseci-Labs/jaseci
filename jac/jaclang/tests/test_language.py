@@ -782,10 +782,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("class Sample {\n    can init", output)
 
     def test_refs_target(self) -> None:
-        """
-        This test added after a bug in jaclib Node.refs() wasn't code gen as expected and it
-        wasn't captured with the tests.
-        """
+        """Test py ast to Jac ast conversion output."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(self.mach, "refs_target", base_path=self.fixture_abs_path("./"))

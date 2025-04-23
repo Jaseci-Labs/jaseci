@@ -49,7 +49,6 @@ class TestFeatures(TestCase):
 
     def test_multiple_plugins(self) -> None:
         """Test that multiple plugins can implement the same hook."""
-
         pm = pluggy.PluginManager("jac")
         hookimpl = pluggy.HookimplMarker("jac")
 

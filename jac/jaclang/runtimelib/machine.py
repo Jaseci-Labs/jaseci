@@ -80,7 +80,6 @@ class JacAccessValidation:
     @staticmethod
     def elevate_root() -> None:
         """Elevate context root to system_root."""
-
         jctx = JacMachine.get_context()
         jctx.root = jctx.system_root
 
@@ -115,7 +114,6 @@ class JacAccessValidation:
         architype: Architype, level: AccessLevel | int | str = AccessLevel.READ
     ) -> None:
         """Allow everyone to access current Architype."""
-
         anchor = architype.__jac__
         level = AccessLevel.cast(level)
         if level != anchor.access.all:
@@ -124,7 +122,6 @@ class JacAccessValidation:
     @staticmethod
     def restrict(architype: Architype) -> None:
         """Disallow others to access current Architype."""
-
         anchor = architype.__jac__
         if anchor.access.all > AccessLevel.NO_ACCESS:
             anchor.access.all = AccessLevel.NO_ACCESS
@@ -132,7 +129,6 @@ class JacAccessValidation:
     @staticmethod
     def check_read_access(to: Anchor) -> bool:
         """Read Access Validation."""
-
         if not (
             access_level := JacMachine.check_access_level(to) > AccessLevel.NO_ACCESS
         ):
@@ -144,7 +140,6 @@ class JacAccessValidation:
     @staticmethod
     def check_connect_access(to: Anchor) -> bool:
         """Write Access Validation."""
-
         if not (access_level := JacMachine.check_access_level(to) > AccessLevel.READ):
             logger.info(
                 f"Current root doesn't have connect access to {to.__class__.__name__}[{to.id}]"
@@ -154,7 +149,6 @@ class JacAccessValidation:
     @staticmethod
     def check_write_access(to: Anchor) -> bool:
         """Write Access Validation."""
-
         if not (
             access_level := JacMachine.check_access_level(to) > AccessLevel.CONNECT
         ):
@@ -166,7 +160,6 @@ class JacAccessValidation:
     @staticmethod
     def check_access_level(to: Anchor) -> AccessLevel:
         """Access validation."""
-
         if not to.persistent:
             return AccessLevel.WRITE
 
@@ -209,7 +202,6 @@ class JacNode:
     @staticmethod
     def node_dot(node: NodeArchitype, dot_file: Optional[str] = None) -> str:
         """Generate Dot file for visualizing nodes and edges."""
-
         visited_nodes: set[NodeAnchor] = set()
         connections: set[tuple[NodeArchitype, NodeArchitype, str]] = set()
         unique_node_id_dict = {}
@@ -300,7 +292,6 @@ class JacNode:
     @staticmethod
     def remove_edge(node: NodeAnchor, edge: EdgeAnchor) -> None:
         """Remove reference without checking sync status."""
-
         for idx, ed in enumerate(node.edges):
             if ed.id == edge.id:
                 node.edges.pop(idx)
@@ -313,7 +304,6 @@ class JacEdge:
     @staticmethod
     def detach(edge: EdgeAnchor) -> None:
         """Detach edge from nodes."""
-
         JacMachine.remove_edge(node=edge.source, edge=edge)
         JacMachine.remove_edge(node=edge.target, edge=edge)
 
@@ -333,7 +323,6 @@ class JacWalker:
         ),
     ) -> bool:  # noqa: ANN401
         """Jac's visit stmt feature."""
-
         if isinstance(walker, WalkerArchitype):
             """Walker visits node."""
             wanch = walker.__jac__
@@ -365,7 +354,6 @@ class JacWalker:
         ),
     ) -> bool:  # noqa: ANN401
         """Jac's ignore stmt feature."""
-
         if isinstance(walker, WalkerArchitype):
             wanch = walker.__jac__
             before_len = len(wanch.ignores)
@@ -387,7 +375,6 @@ class JacWalker:
     @staticmethod
     def spawn(op1: Architype, op2: Architype) -> WalkerArchitype:
         """Jac's spawn operator feature."""
-
         if isinstance(op1, WalkerArchitype):
             warch = op1
             walker = op1.__jac__
@@ -623,7 +610,6 @@ class JacBasics:
     @staticmethod
     def reset_graph(root: Optional[Root] = None) -> int:
         """Purge current or target graph."""
-
         ctx = JacMachine.get_context()
         mem = cast(ShelfStorage, ctx.mem)
         ranchor = root.__jac__ if root else ctx.root
@@ -646,7 +632,6 @@ class JacBasics:
     @staticmethod
     def get_object(id: str) -> Architype | None:
         """Get object given id."""
-
         if id == "root":
             return JacMachine.get_context().root.architype
         elif obj := JacMachine.get_context().mem.find_by_id(UUID(id)):
@@ -657,13 +642,11 @@ class JacBasics:
     @staticmethod
     def object_ref(obj: Architype) -> str:
         """Get object reference id."""
-
         return obj.__jac__.id.hex
 
     @staticmethod
     def make_architype(cls: Type[Architype]) -> Type[Architype]:
         """Create a obj architype."""
-
         entries: OrderedDict[str, JacMachine.DSFunc] = OrderedDict(
             (fn.name, fn) for fn in cls._jac_entry_funcs_
         )
@@ -807,7 +790,6 @@ class JacBasics:
     @staticmethod
     def jac_test(test_fun: Callable) -> Callable:
         """Create a test."""
-
         file_path = getfile(test_fun)
         func_name = test_fun.__name__
 
@@ -890,7 +872,6 @@ class JacBasics:
     @staticmethod
     def field(factory: Callable[[], T] | None = None, init: bool = True) -> T:
         """Jac's field handler."""
-
         if factory:
             return field(default_factory=factory)
         return field(init=init)
@@ -898,7 +879,6 @@ class JacBasics:
     @staticmethod
     def report(expr: Any, custom: bool = False) -> None:  # noqa: ANN401
         """Jac's report stmt feature."""
-
         ctx = JacMachine.get_context()
         if custom:
             ctx.custom = expr
@@ -948,7 +928,6 @@ class JacBasics:
         func: Callable[[Architype], bool],
     ) -> list[Architype]:
         """Jac's filter architype list."""
-
         return [item for item in items if func(item)]
 
     @staticmethod
@@ -1032,7 +1011,6 @@ class JacBasics:
     @staticmethod
     def assign(target: list[T], attr_val: tuple[tuple[str], tuple[Any]]) -> list[T]:
         """Jac's assign comprehension feature."""
-
         for obj in target:
             attrs, values = attr_val
             for attr, value in zip(attrs, values):
@@ -1042,7 +1020,6 @@ class JacBasics:
     @staticmethod
     def root() -> Root:
         """Jac's root getter."""
-
         return JacMachine.py_get_jac_machine().exec_ctx.get_root()
 
     @staticmethod
@@ -1083,7 +1060,6 @@ class JacBasics:
         obj: Architype | Anchor,
     ) -> None:
         """Destroy object."""
-
         anchor = obj.__jac__ if isinstance(obj, Architype) else obj
 
         jctx = JacMachine.get_context()
@@ -1111,7 +1087,6 @@ class JacBasics:
         obj: Architype | Anchor,
     ) -> None:
         """Destroy object."""
-
         anchor = obj.__jac__ if isinstance(obj, Architype) else obj
 
         if JacMachine.check_write_access(anchor):
@@ -1129,14 +1104,12 @@ class JacBasics:
     @staticmethod
     def entry(func: Callable) -> Callable:
         """Mark a method as jac entry with this decorator."""
-
         setattr(func, "__jac_entry", None)  # noqa:B010
         return func
 
     @staticmethod
     def exit(func: Callable) -> Callable:
         """Mark a method as jac exit with this decorator."""
-
         setattr(func, "__jac_exit", None)  # noqa:B010
         return func
 
@@ -1514,8 +1487,8 @@ class JacMachine(
 def generate_plugin_helpers(
     plugin_class: Type[Any],
 ) -> tuple[Type[Any], Type[Any], Type[Any]]:
-    """
-    Generate three helper classes based on a plugin class:
+    """Generate three helper classes based on a plugin class.
+
     - Spec class: contains @hookspec placeholder methods.
     - Impl class: contains original plugin methods decorated with @hookimpl.
     - Proxy class: contains methods that call plugin_manager.hook.<method>.
