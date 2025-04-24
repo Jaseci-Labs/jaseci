@@ -6,7 +6,7 @@ import time
 from abc import ABC, abstractmethod
 from typing import Generic, Optional, TYPE_CHECKING, Type, TypeVar
 
-from jaclang.compiler.absyntree import AstNode
+from jaclang.compiler.absyntree import UniNode
 from jaclang.compiler.codeloc import CodeLocInfo
 from jaclang.settings import settings
 from jaclang.utils.helpers import pretty_print_source_location
@@ -15,8 +15,8 @@ from jaclang.utils.log import logging
 if TYPE_CHECKING:
     from jaclang.compiler.program import JacProgram
 
-T = TypeVar("T", bound=AstNode)
-R = TypeVar("R", bound=AstNode)
+T = TypeVar("T", bound=UniNode)
+R = TypeVar("R", bound=UniNode)
 
 
 class Alert:
@@ -71,7 +71,7 @@ class Transform(ABC, Generic[T, R]):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.errors_had: list[Alert] = []
         self.warnings_had: list[Alert] = []
-        self.cur_node: AstNode = ir_in  # tracks current node during traversal
+        self.cur_node: UniNode = ir_in  # tracks current node during traversal
         self.prog = prog
         self.time_taken = 0.0
         self.ir_in: T = ir_in
@@ -96,7 +96,7 @@ class Transform(ABC, Generic[T, R]):
         """Transform interface."""
         pass
 
-    def log_error(self, msg: str, node_override: Optional[AstNode] = None) -> None:
+    def log_error(self, msg: str, node_override: Optional[UniNode] = None) -> None:
         """Pass Error."""
         alrt = Alert(
             msg,
@@ -107,7 +107,7 @@ class Transform(ABC, Generic[T, R]):
         self.prog.errors_had.append(alrt)
         self.logger.error(alrt.as_log())
 
-    def log_warning(self, msg: str, node_override: Optional[AstNode] = None) -> None:
+    def log_warning(self, msg: str, node_override: Optional[UniNode] = None) -> None:
         """Pass Error."""
         alrt = Alert(
             msg,

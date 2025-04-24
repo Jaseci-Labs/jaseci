@@ -74,7 +74,7 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
         self.assertFalse(out.errors_had)
 
-    def parent_scrub(self, node: ast.AstNode) -> bool:
+    def parent_scrub(self, node: ast.UniNode) -> bool:
         """Validate every node has parent."""
         success = True
         for i in node.kid:
@@ -118,7 +118,7 @@ class ValidateTreeParentTest(TestCaseMicroSuite):
         """Set up test."""
         return super().setUp()
 
-    def parent_scrub(self, node: ast.AstNode) -> bool:
+    def parent_scrub(self, node: ast.UniNode) -> bool:
         """Validate every node has parent."""
         success = True
         for i in node.kid:

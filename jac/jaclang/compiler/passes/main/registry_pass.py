@@ -148,7 +148,7 @@ class RegistryPass(AstPass):
             if len(self.modules_visited) and self.modules_visited[-1].registry:
                 self.modules_visited[-1].registry.add(scope, seminfo)
 
-    def extract_type(self, node: ast.AstNode) -> list[str]:
+    def extract_type(self, node: ast.UniNode) -> list[str]:
         """Collect type information in assignment using bfs."""
         extracted_type = []
         if isinstance(node, (ast.BuiltinType, ast.Token)):

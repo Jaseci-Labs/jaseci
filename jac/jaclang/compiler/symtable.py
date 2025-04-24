@@ -78,7 +78,7 @@ class SymbolTable:
     """Symbol Table."""
 
     def __init__(
-        self, name: str, owner: ast.AstNode, parent: Optional[SymbolTable] = None
+        self, name: str, owner: ast.UniNode, parent: Optional[SymbolTable] = None
     ) -> None:
         """Initialize."""
         self.name = name
@@ -116,7 +116,7 @@ class SymbolTable:
         access_spec: Optional[ast.AstAccessNode] | SymbolAccess = None,
         single: bool = False,
         force_overwrite: bool = False,
-    ) -> Optional[ast.AstNode]:
+    ) -> Optional[ast.UniNode]:
         """Set a variable in the symbol table.
 
         Returns original symbol as collision if single check fails, none otherwise.
@@ -152,7 +152,7 @@ class SymbolTable:
                 return k2.base_symbol_table
         return None
 
-    def push_kid_scope(self, name: str, key_node: ast.AstNode) -> SymbolTable:
+    def push_kid_scope(self, name: str, key_node: ast.UniNode) -> SymbolTable:
         """Push a new scope onto the symbol table."""
         self.kid.append(SymbolTable(name, key_node, self))
         return self.kid[-1]

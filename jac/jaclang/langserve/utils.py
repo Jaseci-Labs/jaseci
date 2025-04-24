@@ -86,7 +86,7 @@ def sym_tab_list(sym_tab: SymbolTable, file_path: str) -> list[SymbolTable]:
 
 
 def find_deepest_symbol_node_at_pos(
-    node: ast.AstNode, line: int, character: int
+    node: ast.UniNode, line: int, character: int
 ) -> Optional[ast.AstSymbolNode]:
     """Return the deepest symbol node that contains the given position."""
     last_symbol_node = None
@@ -104,7 +104,7 @@ def find_deepest_symbol_node_at_pos(
     return last_symbol_node
 
 
-def position_within_node(node: ast.AstNode, line: int, character: int) -> bool:
+def position_within_node(node: ast.UniNode, line: int, character: int) -> bool:
     """Check if the position falls within the node's location."""
     if node.loc.first_line < line + 1 < node.loc.last_line:
         return True
@@ -209,7 +209,7 @@ def create_range(loc: CodeLocInfo) -> lspt.Range:
     )
 
 
-def kind_map(sub_tab: ast.AstNode) -> lspt.SymbolKind:
+def kind_map(sub_tab: ast.UniNode) -> lspt.SymbolKind:
     """Map the symbol node to an lspt.SymbolKind."""
     return (
         lspt.SymbolKind.Function

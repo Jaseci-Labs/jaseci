@@ -23,7 +23,7 @@ class PyCollectDepsPass(AstPass):
         if settings.collect_py_dep_debug:
             self.log_info("CollectPythonDependencies::" + msg)
 
-    def enter_node(self, node: ast.AstNode) -> None:
+    def enter_node(self, node: ast.UniNode) -> None:
         """Collect python dependencies from all Jac Nodes."""
         if not isinstance(node, ast.AstSymbolNode):
             return

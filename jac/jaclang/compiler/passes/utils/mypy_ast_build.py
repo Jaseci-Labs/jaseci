@@ -6,7 +6,7 @@ import ast
 import os
 from typing import Callable, TYPE_CHECKING, TextIO, cast
 
-from jaclang.compiler.absyntree import AstNode
+from jaclang.compiler.absyntree import UniNode
 from jaclang.compiler.passes import AstPass
 from jaclang.compiler.passes.main.fuse_typeinfo_pass import (
     FuseTypeInfoPass,
@@ -87,7 +87,7 @@ EXPRESSION_NODES = (
 
 
 mypy_to_jac_node_map: dict[
-    tuple[int, int | None, int | None, int | None], list[AstNode]
+    tuple[int, int | None, int | None, int | None], list[UniNode]
 ] = {}
 
 

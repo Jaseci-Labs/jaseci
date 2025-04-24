@@ -25,7 +25,7 @@ class AstKidInfo:
         self.default = default
 
 
-class AstNodeInfo:
+class UniNodeInfo:
     """Meta data about AST nodes."""
 
     type_map: dict[str, type] = {}
@@ -35,11 +35,11 @@ class AstNodeInfo:
         self.cls = cls
         self.process(cls)
 
-    def process(self, cls: Type[ast.AstNode]) -> None:
-        """Process AstNode class."""
+    def process(self, cls: Type[ast.UniNode]) -> None:
+        """Process UniNode class."""
         self.name = cls.__name__
         self.doc = cls.__doc__
-        AstNodeInfo.type_map[self.name] = cls
+        UniNodeInfo.type_map[self.name] = cls
         self.class_name_snake = pascal_to_snake(cls.__name__)
         self.init_sig = inspect.signature(cls.__init__)
         self.kids: list[AstKidInfo] = []
@@ -70,13 +70,13 @@ class AstTool:
         module = sys.modules[ast.__name__]
         source_code = inspect.getsource(module)
         classes = inspect.getmembers(module, inspect.isclass)
-        ast_node_classes = [
-            AstNodeInfo(cls)
+        uni_node_classes = [
+            UniNodeInfo(cls)
             for _, cls in classes
-            if issubclass(cls, ast.AstNode)
+            if issubclass(cls, ast.UniNode)
             and cls.__name__
             not in [
-                "AstNode",
+                "UniNode",
                 "OOPAccessNode",
                 "WalkerStmtOnlyNode",
                 "Source",
@@ -105,7 +105,7 @@ class AstTool:
         ]
 
         self.ast_classes = sorted(
-            ast_node_classes,
+            uni_node_classes,
             key=lambda cls: source_code.find(f"class {cls.name}"),
         )
 
@@ -145,7 +145,7 @@ class AstTool:
         )
         return output
 
-    def py_ast_nodes(self) -> str:
+    def py_uni_nodes(self) -> str:
         """List python ast nodes."""
         from jaclang.compiler.passes.main import PyastBuildPass
 
@@ -162,7 +162,7 @@ class AstTool:
         for i in node_names:
             nd = pascal_to_snake(i)
             this_func = (
-                f"def proc_{nd}(self, node: py_ast.{i}) -> ast.AstNode:\n"
+                f"def proc_{nd}(self, node: py_ast.{i}) -> ast.UniNode:\n"
                 + '    """Process python node."""\n\n'
             )
             if nd not in pass_func_names:

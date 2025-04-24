@@ -18,7 +18,7 @@ class SymTabBuildPass(AstPass):
         """Before pass."""
         self.cur_sym_tab: list[SymbolTable] = []
 
-    def push_scope(self, name: str, key_node: ast.AstNode) -> None:
+    def push_scope(self, name: str, key_node: ast.UniNode) -> None:
         """Push scope."""
         inherit = key_node.parent
 
@@ -39,7 +39,7 @@ class SymTabBuildPass(AstPass):
         """Return current scope."""
         return self.cur_sym_tab[-1]
 
-    def sync_node_to_scope(self, node: ast.AstNode) -> None:
+    def sync_node_to_scope(self, node: ast.UniNode) -> None:
         """Sync node to scope."""
         node.sym_tab = self.cur_scope
 
@@ -201,7 +201,7 @@ class SymTabBuildPass(AstPass):
 
         name: Name,
         alias: Optional[Token],
-        body: Optional[AstNode],
+        body: Optional[UniNode],
         """
         self.sync_node_to_scope(node)
 
@@ -1270,13 +1270,13 @@ class SymTabBuildPass(AstPass):
         self.sync_node_to_scope(node)
 
 
-T = TypeVar("T", bound=ast.AstNode)
+T = TypeVar("T", bound=ast.UniNode)
 
 
 class PyInspectSymTabBuildPass(SymTabBuildPass):
     """Jac Symbol table build pass."""
 
-    def push_scope(self, name: str, key_node: ast.AstNode) -> None:
+    def push_scope(self, name: str, key_node: ast.UniNode) -> None:
         """Push scope."""
         if not len(self.cur_sym_tab):
             self.cur_sym_tab.append(SymbolTable(name, key_node))

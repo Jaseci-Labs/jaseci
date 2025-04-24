@@ -119,7 +119,7 @@ class TestLarkParser(TestCaseMicroSuite):
         import sys
 
         exclude = [
-            "AstNode",
+            "UniNode",
             "WalkerStmtOnlyNode",
             "Source",
             "EmptyToken",
@@ -155,7 +155,7 @@ class TestLarkParser(TestCaseMicroSuite):
         ast_node_classes = [
             cls
             for _, cls in classes
-            if issubclass(cls, ast.AstNode) and not issubclass(cls, ast.Token)
+            if issubclass(cls, ast.UniNode) and not issubclass(cls, ast.Token)
         ]
 
         ordered_classes = sorted(

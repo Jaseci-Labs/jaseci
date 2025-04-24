@@ -33,7 +33,7 @@ class DefUsePass(AstPass):
         """
         node.sym_tab.inherit_baseclasses_sym(node)
 
-        def inform_from_walker(node: ast.AstNode) -> None:
+        def inform_from_walker(node: ast.UniNode) -> None:
             for i in (
                 node.get_all_sub_nodes(ast.VisitStmt)
                 + node.get_all_sub_nodes(ast.IgnoreStmt)
