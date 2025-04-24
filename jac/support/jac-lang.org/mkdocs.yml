@@ -1,5 +1,6 @@
 site_name: The Jac Programming Language
 site_url: https://jac-lang.org
+use_directory_urls: true
 nav:
   - For coders:
       - "for_coders/introduction.md"
@@ -68,7 +69,7 @@ nav:
     - "lang_ref/jac_ref.md"
 
   - Jac Playground:
-    - Playground (New Tab): https://jac-playground.vercel.app/
+    - Playground (New Tab): playground/index.html
 
 theme:
   logo: "assets/logo.png"
