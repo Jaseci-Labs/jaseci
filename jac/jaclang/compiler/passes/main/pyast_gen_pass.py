@@ -1852,7 +1852,7 @@ class PyastGenPass(AstPass):
             node.gen.py_ast = [self.sync(ast3.Return(value=None))]
 
     def exit_delete_stmt(self, node: ast.DeleteStmt) -> None:
-        """Transforms DeleteStmt into Python AST with destroy call and deletion."""
+        """Transform DeleteStmt into Python AST with destroy call and deletion."""
 
         def set_ctx(
             targets: Union[ast3.AST, List[ast3.AST]], ctx: type
