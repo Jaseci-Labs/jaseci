@@ -36,7 +36,7 @@ from jaclang.compiler.semtable import SemRegistry
 from jaclang.utils.treeprinter import dotgen_ast_tree, print_ast_tree
 
 if TYPE_CHECKING:
-    from jaclang.compiler.symtable import Symbol, SymbolTable
+    from jaclang.compiler.symtable import Symbol, UniScopeNode
 
 
 class UniNode:
@@ -46,7 +46,7 @@ class UniNode:
         """Initialize ast."""
         self.parent: Optional[UniNode] = None
         self.kid: list[UniNode] = [x.set_parent(self) for x in kid]
-        self._sym_tab: Optional[SymbolTable] = None
+        self._sym_tab: Optional[UniScopeNode] = None
         self._sub_node_tab: dict[type, list[UniNode]] = {}
         self.construct_sub_node_tab()
         self._in_mod_nodes: list[UniNode] = []
@@ -69,7 +69,7 @@ class UniNode:
                 self._sub_node_tab[type(i)] = [i]
 
     @property
-    def sym_tab(self) -> SymbolTable:
+    def sym_tab(self) -> UniScopeNode:
         """Get symbol table."""
         # sym_tab should never be accessed without being set in codebase
         if not self._sym_tab:
@@ -81,7 +81,7 @@ class UniNode:
         return self._sym_tab
 
     @sym_tab.setter
-    def sym_tab(self, sym_tab: SymbolTable) -> None:
+    def sym_tab(self, sym_tab: UniScopeNode) -> None:
         """Set symbol table."""
         self._sym_tab = sym_tab
 
@@ -277,7 +277,7 @@ class AstSymbolNode(UniNode):
         return self.name_spec.expr_type
 
     @property
-    def type_sym_tab(self) -> Optional[SymbolTable]:
+    def type_sym_tab(self) -> Optional[UniScopeNode]:
         """Get type symbol table."""
         return self.name_spec.type_sym_tab
 
@@ -374,7 +374,7 @@ class Expr(UniNode):
         """Initialize expression node."""
         self.type_src = type_src or self  # Only used for ArchRef
         self._sym_type: str = "NoType"
-        self._type_sym_tab: Optional[SymbolTable] = None
+        self._type_sym_tab: Optional[UniScopeNode] = None
 
     @property
     def expr_type(self) -> str:
@@ -387,12 +387,12 @@ class Expr(UniNode):
         self.type_src._sym_type = sym_type
 
     @property
-    def type_sym_tab(self) -> Optional[SymbolTable]:
+    def type_sym_tab(self) -> Optional[UniScopeNode]:
         """Get type symbol table."""
         return self.type_src._type_sym_tab
 
     @type_sym_tab.setter
-    def type_sym_tab(self, type_sym_tab: SymbolTable) -> None:
+    def type_sym_tab(self, type_sym_tab: UniScopeNode) -> None:
         """Set type symbol table."""
         self.type_src._type_sym_tab = type_sym_tab
 
@@ -435,12 +435,12 @@ class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
         )
 
     @property
-    def sym_tab(self) -> SymbolTable:
+    def sym_tab(self) -> UniScopeNode:
         """Get symbol table."""
         return super().sym_tab
 
     @sym_tab.setter
-    def sym_tab(self, sym_tab: SymbolTable) -> None:
+    def sym_tab(self, sym_tab: UniScopeNode) -> None:
         """Set symbol table."""
         self._sym_tab = sym_tab
         self.name_spec._sym_tab = sym_tab
@@ -753,6 +753,7 @@ class ProgramModule(Module):
         self._sym_tab = main_mod._sym_tab if main_mod else None
         self._sub_node_tab = main_mod._sub_node_tab if main_mod else {}
         self.py_info = main_mod.py_info if main_mod else PyInfo()
+
         self.hub: dict[str, Module] = {self.loc.mod_path: self} if main_mod else {}
 
 

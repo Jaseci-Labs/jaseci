@@ -6,12 +6,12 @@ import os
 import sys
 from typing import List, Optional, Type
 
-import jaclang.compiler.unitree as ast
+import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 from jaclang.compiler.passes.main.schedules import py_code_gen, type_checker_sched
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.program import JacProgram
-from jaclang.compiler.symtable import SymbolTable
+from jaclang.compiler.symtable import UniScopeNode
 from jaclang.utils.helpers import auto_generate_refs, pascal_to_snake
 
 
@@ -35,7 +35,7 @@ class UniNodeInfo:
         self.cls = cls
         self.process(cls)
 
-    def process(self, cls: Type[ast.UniNode]) -> None:
+    def process(self, cls: Type[uni.UniNode]) -> None:
         """Process UniNode class."""
         self.name = cls.__name__
         self.doc = cls.__doc__
@@ -67,13 +67,13 @@ class AstTool:
 
     def __init__(self) -> None:
         """Initialize."""
-        module = sys.modules[ast.__name__]
+        module = sys.modules[uni.__name__]
         source_code = inspect.getsource(module)
         classes = inspect.getmembers(module, inspect.isclass)
         uni_node_classes = [
             UniNodeInfo(cls)
             for _, cls in classes
-            if issubclass(cls, ast.UniNode)
+            if issubclass(cls, uni.UniNode)
             and cls.__name__
             not in [
                 "UniNode",
@@ -222,9 +222,9 @@ class AstTool:
                     return f"\n{py_ast.dump(parsed_ast, indent=2)}"
                 try:
                     rep = PyastBuildPass(
-                        ir_in=ast.PythonModuleAst(
+                        ir_in=uni.PythonModuleAst(
                             parsed_ast,
-                            orig_src=ast.Source(file_source, file_name),
+                            orig_src=uni.Source(file_source, file_name),
                         ),
                         prog=prog,
                     ).ir_out
@@ -252,7 +252,7 @@ class AstTool:
                 case "sym.":
                     return (
                         ir.sym_tab.dotgen()
-                        if isinstance(ir.sym_tab, SymbolTable)
+                        if isinstance(ir.sym_tab, UniScopeNode)
                         else "Sym_tab is None."
                     )
                 case "ast":

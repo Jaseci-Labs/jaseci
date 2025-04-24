@@ -114,7 +114,7 @@ class TestLarkParser(TestCaseMicroSuite):
 
     def test_all_ast_has_normalize(self) -> None:
         """Test for enter/exit name diffs with parser."""
-        import jaclang.compiler.unitree as ast
+        import jaclang.compiler.unitree as uni
         import inspect
         import sys
 
@@ -146,7 +146,7 @@ class TestLarkParser(TestCaseMicroSuite):
             "ArchSpec",
             "MatchPattern",
         ]
-        module_name = ast.__name__
+        module_name = uni.__name__
         module = sys.modules[module_name]
 
         # Retrieve the source code of the module
@@ -156,7 +156,7 @@ class TestLarkParser(TestCaseMicroSuite):
         uni_node_classes = [
             cls
             for _, cls in classes
-            if issubclass(cls, ast.UniNode) and not issubclass(cls, ast.Token)
+            if issubclass(cls, uni.UniNode) and not issubclass(cls, uni.Token)
         ]
 
         ordered_classes = sorted(

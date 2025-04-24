@@ -5,7 +5,7 @@ from __future__ import annotations
 import ast as ast3
 from typing import Optional, Sequence
 
-import jaclang.compiler.unitree as ast
+import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import SymbolAccess, SymbolType
 from jaclang.utils.treeprinter import dotgen_symtab_tree, print_symtab_tree
 
@@ -17,19 +17,19 @@ class Symbol:
 
     def __init__(
         self,
-        defn: ast.NameAtom,
+        defn: uni.NameAtom,
         access: SymbolAccess,
-        parent_tab: SymbolTable,
+        parent_tab: UniScopeNode,
     ) -> None:
         """Initialize."""
-        self.defn: list[ast.NameAtom] = [defn]
-        self.uses: list[ast.NameAtom] = []
+        self.defn: list[uni.NameAtom] = [defn]
+        self.uses: list[uni.NameAtom] = []
         defn.sym = self
         self.access: SymbolAccess = access
         self.parent_tab = parent_tab
 
     @property
-    def decl(self) -> ast.NameAtom:
+    def decl(self) -> uni.NameAtom:
         """Get decl."""
         return self.defn[0]
 
@@ -47,24 +47,24 @@ class Symbol:
     def sym_dotted_name(self) -> str:
         """Return a full path of the symbol."""
         out = [self.defn[0].sym_name]
-        current_tab: SymbolTable | None = self.parent_tab
+        current_tab: UniScopeNode | None = self.parent_tab
         while current_tab is not None:
-            out.append(current_tab.name)
-            current_tab = current_tab.parent
+            out.append(current_tab.nix_name)
+            current_tab = current_tab.parent_scope
         out.reverse()
         return ".".join(out)
 
     @property
-    def fetch_sym_tab(self) -> Optional[SymbolTable]:
+    def fetch_sym_tab(self) -> Optional[UniScopeNode]:
         """Get symbol table."""
         return self.parent_tab.find_scope(self.sym_name)
 
-    def add_defn(self, node: ast.NameAtom) -> None:
+    def add_defn(self, node: uni.NameAtom) -> None:
         """Add defn."""
         self.defn.append(node)
         node.sym = self
 
-    def add_use(self, node: ast.NameAtom) -> None:
+    def add_use(self, node: uni.NameAtom) -> None:
         """Add use."""
         self.uses.append(node)
         node.sym = self
@@ -74,61 +74,61 @@ class Symbol:
         return f"Symbol({self.sym_name}, {self.sym_type}, {self.access}, {self.defn})"
 
 
-class SymbolTable:
+class UniScopeNode:
     """Symbol Table."""
 
     def __init__(
-        self, name: str, owner: ast.UniNode, parent: Optional[SymbolTable] = None
+        self, name: str, owner: uni.UniNode, parent: Optional[UniScopeNode] = None
     ) -> None:
         """Initialize."""
-        self.name = name
-        self.owner = owner
-        self.parent = parent
-        self.kid: list[SymbolTable] = []
-        self.tab: dict[str, Symbol] = {}
-        self.inherit: list[InheritedSymbolTable] = []
+        self.nix_name = name
+        self.nix_owner = owner
+        self.parent_scope = parent
+        self.kid_scope: list[UniScopeNode] = []
+        self.names_in_scope: dict[str, Symbol] = {}
+        self.inherited_scope: list[InheritedSymbolTable] = []
 
     def get_type(self) -> SymbolType:
         """Get type."""
-        if isinstance(self.owner, ast.AstSymbolNode):
-            return self.owner.sym_category
+        if isinstance(self.nix_owner, uni.AstSymbolNode):
+            return self.nix_owner.sym_category
         return SymbolType.VAR
 
-    def get_parent(self) -> Optional[SymbolTable]:
+    def get_parent(self) -> Optional[UniScopeNode]:
         """Get parent."""
-        return self.parent
+        return self.parent_scope
 
     def lookup(self, name: str, deep: bool = True) -> Optional[Symbol]:
         """Lookup a variable in the symbol table."""
-        if name in self.tab:
-            return self.tab[name]
-        for i in self.inherit:
+        if name in self.names_in_scope:
+            return self.names_in_scope[name]
+        for i in self.inherited_scope:
             found = i.lookup(name, deep=False)
             if found:
                 return found
-        if deep and self.parent:
-            return self.parent.lookup(name, deep)
+        if deep and self.parent_scope:
+            return self.parent_scope.lookup(name, deep)
         return None
 
     def insert(
         self,
-        node: ast.AstSymbolNode,
-        access_spec: Optional[ast.AstAccessNode] | SymbolAccess = None,
+        node: uni.AstSymbolNode,
+        access_spec: Optional[uni.AstAccessNode] | SymbolAccess = None,
         single: bool = False,
         force_overwrite: bool = False,
-    ) -> Optional[ast.UniNode]:
+    ) -> Optional[uni.UniNode]:
         """Set a variable in the symbol table.
 
         Returns original symbol as collision if single check fails, none otherwise.
         Also updates node.sym to create pointer to symbol.
         """
         collision = (
-            self.tab[node.sym_name].defn[-1]
-            if single and node.sym_name in self.tab
+            self.names_in_scope[node.sym_name].defn[-1]
+            if single and node.sym_name in self.names_in_scope
             else None
         )
-        if force_overwrite or node.sym_name not in self.tab:
-            self.tab[node.sym_name] = Symbol(
+        if force_overwrite or node.sym_name not in self.names_in_scope:
+            self.names_in_scope[node.sym_name] = Symbol(
                 defn=node.name_spec,
                 access=(
                     access_spec
@@ -138,34 +138,34 @@ class SymbolTable:
                 parent_tab=self,
             )
         else:
-            self.tab[node.sym_name].add_defn(node.name_spec)
-        node.name_spec.sym = self.tab[node.sym_name]
+            self.names_in_scope[node.sym_name].add_defn(node.name_spec)
+        node.name_spec.sym = self.names_in_scope[node.sym_name]
         return collision
 
-    def find_scope(self, name: str) -> Optional[SymbolTable]:
+    def find_scope(self, name: str) -> Optional[UniScopeNode]:
         """Find a scope in the symbol table."""
-        for k in self.kid:
-            if k.name == name:
+        for k in self.kid_scope:
+            if k.nix_name == name:
                 return k
-        for k2 in self.inherit:
-            if k2.base_symbol_table.name == name:
+        for k2 in self.inherited_scope:
+            if k2.base_symbol_table.nix_name == name:
                 return k2.base_symbol_table
         return None
 
-    def push_kid_scope(self, name: str, key_node: ast.UniNode) -> SymbolTable:
+    def push_kid_scope(self, name: str, key_node: uni.UniNode) -> UniScopeNode:
         """Push a new scope onto the symbol table."""
-        self.kid.append(SymbolTable(name, key_node, self))
-        return self.kid[-1]
+        self.kid_scope.append(UniScopeNode(name, key_node, self))
+        return self.kid_scope[-1]
 
-    def inherit_sym_tab(self, target_sym_tab: SymbolTable) -> None:
+    def inherit_sym_tab(self, target_sym_tab: UniScopeNode) -> None:
         """Inherit symbol table."""
-        for i in target_sym_tab.tab.values():
+        for i in target_sym_tab.names_in_scope.values():
             self.def_insert(i.decl, access_spec=i.access)
 
     def def_insert(
         self,
-        node: ast.AstSymbolNode,
-        access_spec: Optional[ast.AstAccessNode] | SymbolAccess = None,
+        node: uni.AstSymbolNode,
+        access_spec: Optional[uni.AstAccessNode] | SymbolAccess = None,
         single_decl: Optional[str] = None,
         force_overwrite: bool = False,
     ) -> Optional[Symbol]:
@@ -181,13 +181,13 @@ class SymbolTable:
         self.update_py_ctx_for_def(node)
         return node.sym
 
-    def chain_def_insert(self, node_list: list[ast.AstSymbolNode]) -> None:
+    def chain_def_insert(self, node_list: list[uni.AstSymbolNode]) -> None:
         """Link chain of containing names to symbol."""
         if not node_list:
             return
-        cur_sym_tab: SymbolTable | None = node_list[0].sym_tab
+        cur_sym_tab: UniScopeNode | None = node_list[0].sym_tab
         node_list[-1].name_spec.py_ctx_func = ast3.Store
-        if isinstance(node_list[-1].name_spec, ast.AstSymbolNode):
+        if isinstance(node_list[-1].name_spec, uni.AstSymbolNode):
             node_list[-1].name_spec.py_ctx_func = ast3.Store
 
         node_list = node_list[:-1]  # Just performs lookup mappings of pre assign chain
@@ -205,8 +205,8 @@ class SymbolTable:
 
     def use_lookup(
         self,
-        node: ast.AstSymbolNode,
-        sym_table: Optional[SymbolTable] = None,
+        node: uni.AstSymbolNode,
+        sym_table: Optional[UniScopeNode] = None,
     ) -> Optional[Symbol]:
         """Link to symbol."""
         if node.sym:
@@ -218,11 +218,11 @@ class SymbolTable:
             lookup.add_use(node.name_spec) if lookup else None
         return node.sym
 
-    def chain_use_lookup(self, node_list: Sequence[ast.AstSymbolNode]) -> None:
+    def chain_use_lookup(self, node_list: Sequence[uni.AstSymbolNode]) -> None:
         """Link chain of containing names to symbol."""
         if not node_list:
             return
-        cur_sym_tab: SymbolTable | None = node_list[0].sym_tab
+        cur_sym_tab: UniScopeNode | None = node_list[0].sym_tab
         for i in node_list:
             if cur_sym_tab is None:
                 break
@@ -235,41 +235,41 @@ class SymbolTable:
                 # This is used to get the scope in case of
                 #      import:py math;
                 #      b = math.floor(1.7);
-                if cur_sym_tab.name != i.sym_name:
+                if cur_sym_tab.nix_name != i.sym_name:
                     t = cur_sym_tab.find_scope(i.sym_name)
                     if t:
                         cur_sym_tab = t
             else:
                 cur_sym_tab = None
 
-    def update_py_ctx_for_def(self, node: ast.AstSymbolNode) -> None:
+    def update_py_ctx_for_def(self, node: uni.AstSymbolNode) -> None:
         """Update python context for definition."""
         node.name_spec.py_ctx_func = ast3.Store
-        if isinstance(node, (ast.TupleVal, ast.ListVal)) and node.values:
+        if isinstance(node, (uni.TupleVal, uni.ListVal)) and node.values:
             # Handling of UnaryExpr case for item is only necessary for
             # the generation of Starred nodes in the AST for examples
             # like `(a, *b) = (1, 2, 3, 4)`.
-            def fix(item: ast.TupleVal | ast.ListVal | ast.UnaryExpr) -> None:
-                if isinstance(item, ast.UnaryExpr):
-                    if isinstance(item.operand, ast.AstSymbolNode):
+            def fix(item: uni.TupleVal | uni.ListVal | uni.UnaryExpr) -> None:
+                if isinstance(item, uni.UnaryExpr):
+                    if isinstance(item.operand, uni.AstSymbolNode):
                         item.operand.name_spec.py_ctx_func = ast3.Store
-                elif isinstance(item, (ast.TupleVal, ast.ListVal)):
+                elif isinstance(item, (uni.TupleVal, uni.ListVal)):
                     for i in item.values.items if item.values else []:
-                        if isinstance(i, ast.AstSymbolNode):
+                        if isinstance(i, uni.AstSymbolNode):
                             i.name_spec.py_ctx_func = ast3.Store
-                        elif isinstance(i, ast.AtomTrailer):
+                        elif isinstance(i, uni.AtomTrailer):
                             self.chain_def_insert(i.as_attr_list)
-                        if isinstance(i, (ast.TupleVal, ast.ListVal, ast.UnaryExpr)):
+                        if isinstance(i, (uni.TupleVal, uni.ListVal, uni.UnaryExpr)):
                             fix(i)
 
             fix(node)
 
-    def inherit_baseclasses_sym(self, node: ast.Architype | ast.Enum) -> None:
+    def inherit_baseclasses_sym(self, node: uni.Architype | uni.Enum) -> None:
         """Inherit base classes symbol tables."""
         if node.base_classes:
             for base_cls in node.base_classes.items:
                 if (
-                    isinstance(base_cls, ast.AstSymbolNode)
+                    isinstance(base_cls, uni.AstSymbolNode)
                     and (found := self.use_lookup(base_cls))
                     and found
                 ):
@@ -277,7 +277,7 @@ class SymbolTable:
                     inher_sym_tab = InheritedSymbolTable(
                         base_symbol_table=found_tab, load_all_symbols=True, symbols=[]
                     )
-                    self.inherit.append(inher_sym_tab)
+                    self.inherited_scope.append(inher_sym_tab)
                     base_cls.name_spec.name_of = found.decl.name_of
 
     def pp(self, depth: Optional[int] = None) -> str:
@@ -290,15 +290,15 @@ class SymbolTable:
 
     def __repr__(self) -> str:
         """Repr."""
-        out = f"{self.name} {super().__repr__()}:\n"
-        for k, v in self.tab.items():
+        out = f"{self.nix_name} {super().__repr__()}:\n"
+        for k, v in self.names_in_scope.items():
             out += f"    {k}: {v}\n"
         return out
 
 
 __all__ = [
     "Symbol",
-    "SymbolTable",
+    "UniScopeNode",
     "SymbolType",
     "SymbolAccess",
 ]
@@ -308,12 +308,12 @@ class InheritedSymbolTable:
 
     def __init__(
         self,
-        base_symbol_table: SymbolTable,
+        base_symbol_table: UniScopeNode,
         load_all_symbols: bool = False,  # This is needed for python imports
         symbols: Optional[list[str]] = None,
     ) -> None:
         """Initialize."""
-        self.base_symbol_table: SymbolTable = base_symbol_table
+        self.base_symbol_table: UniScopeNode = base_symbol_table
         self.load_all_symbols: bool = load_all_symbols
         self.symbols: list[str] = symbols if symbols else []
 

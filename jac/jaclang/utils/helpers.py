@@ -44,16 +44,16 @@ def get_uni_nodes_as_snake_case() -> list[str]:
     """Get all AST nodes as snake case."""
     import inspect
     import sys
-    import jaclang.compiler.unitree as ast
+    import jaclang.compiler.unitree as uni
 
-    module_name = ast.__name__
+    module_name = uni.__name__
     module = sys.modules[module_name]
 
     # Retrieve the source code of the module
     source_code = inspect.getsource(module)
 
     classes = inspect.getmembers(module, inspect.isclass)
-    uni_node_classes = [cls for _, cls in classes if issubclass(cls, ast.UniNode)]
+    uni_node_classes = [cls for _, cls in classes if issubclass(cls, uni.UniNode)]
 
     ordered_classes = sorted(
         uni_node_classes, key=lambda cls: source_code.find(f"class {cls.__name__}")

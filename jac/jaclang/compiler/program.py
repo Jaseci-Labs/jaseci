@@ -8,7 +8,7 @@ import os
 import types
 from typing import Optional, Type
 
-import jaclang.compiler.unitree as ast
+import jaclang.compiler.unitree as uni
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes import AstPass
 from jaclang.compiler.passes.main import (
@@ -39,10 +39,10 @@ logger = logging.getLogger(__name__)
 class JacProgram:
     """JacProgram to handle the Jac program-related functionalities."""
 
-    def __init__(self, main_mod: Optional[ast.ProgramModule] = None) -> None:
+    def __init__(self, main_mod: Optional[uni.ProgramModule] = None) -> None:
         """Initialize the JacProgram object."""
         self.sem_ir = SemRegistry()
-        self.mod: ast.ProgramModule = main_mod if main_mod else ast.ProgramModule()
+        self.mod: uni.ProgramModule = main_mod if main_mod else uni.ProgramModule()
         self.last_imported: list[Module] = []
         self.py_raise_map: dict[str, str] = {}
         self.errors_had: list[Alert] = []
@@ -100,7 +100,7 @@ class JacProgram:
         if not target:
             target = schedule[-1] if schedule else None
 
-        source = ast.Source(jac_str, mod_path=file_path)
+        source = uni.Source(jac_str, mod_path=file_path)
         ast_ret: Transform = JacParser(root_ir=source, prog=self)
         if ast_ret.errors_had:
             return ast_ret
@@ -123,9 +123,9 @@ class JacProgram:
             target = schedule[-1] if schedule else None
         parsed_ast = py_ast.parse(py_str)
         py_ast_build_pass = PyastBuildPass(
-            ir_in=ast.PythonModuleAst(
+            ir_in=uni.PythonModuleAst(
                 parsed_ast,
-                orig_src=ast.Source(py_str, mod_path=file_path),
+                orig_src=uni.Source(py_str, mod_path=file_path),
             ),
             prog=self,
         )
@@ -143,9 +143,9 @@ class JacProgram:
         full_compile: bool = True,
     ) -> Transform:
         """Convert a Jac file to an AST."""
-        top_mod: ast.Module = cur_pass.ir_out
+        top_mod: uni.Module = cur_pass.ir_out
         if self.mod.stub_only:
-            self.mod = ast.ProgramModule(top_mod)
+            self.mod = uni.ProgramModule(top_mod)
         # Creating a new JacProgram and attaching it to top module
         self.mod.hub[cur_pass.ir_out.loc.mod_path] = cur_pass.ir_out
 
@@ -158,7 +158,7 @@ class JacProgram:
         # Run all passes till PyBytecodeGenPass
         # Here the passes will run one by one on the imported modules instead
         # of running on  a huge AST
-        def run_schedule(mod: ast.Module, schedule: list[type[AstPass]]) -> None:
+        def run_schedule(mod: uni.Module, schedule: list[type[AstPass]]) -> None:
             nonlocal cur_pass
             final_pass: Optional[type[AstPass]] = None
             for current_pass in schedule:
@@ -234,7 +234,7 @@ class JacProgram:
         cur_pass.ir_out = top_mod
         return cur_pass
 
-    def annex_impl(self, node: ast.Module) -> None:
+    def annex_impl(self, node: uni.Module) -> None:
         """Annex impl and test modules."""
         if node.stub_only:
             return
@@ -290,7 +290,7 @@ class JacProgram:
         target = JacFormatPass
         prog = JacProgram()
         with open(file_path) as file:
-            source = ast.Source(file.read(), mod_path=file_path)
+            source = uni.Source(file.read(), mod_path=file_path)
             prse: Transform = JacParser(root_ir=source, prog=prog)
         for i in [FuseCommentsPass, JacFormatPass]:
             prse = i(ir_in=prse.ir_out, prog=prog)

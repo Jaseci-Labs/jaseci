@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from types import UnionType
 from typing import Callable, Iterator, TYPE_CHECKING
 
-import jaclang.compiler.unitree as ast
+import jaclang.compiler.unitree as uni
 from jaclang.compiler.semtable import SemScope
 
 if TYPE_CHECKING:
@@ -116,24 +116,24 @@ def traverse_graph(
                     dfs(other_nd, cur_depth + 1)
 
 
-def get_sem_scope(node: ast.UniNode) -> SemScope:
+def get_sem_scope(node: uni.UniNode) -> SemScope:
     """Get scope of the node."""
     a = (
         node.name
-        if isinstance(node, ast.Module)
+        if isinstance(node, uni.Module)
         else (
             node.name.value
-            if isinstance(node, (ast.Enum, ast.Architype))
-            else node.name_ref.sym_name if isinstance(node, ast.Ability) else ""
+            if isinstance(node, (uni.Enum, uni.Architype))
+            else node.name_ref.sym_name if isinstance(node, uni.Ability) else ""
         )
     )
-    if isinstance(node, ast.Module):
+    if isinstance(node, uni.Module):
         return SemScope(a, "Module", None)
-    elif isinstance(node, (ast.Enum, ast.Architype, ast.Ability)):
+    elif isinstance(node, (uni.Enum, uni.Architype, uni.Ability)):
         node_type = (
             node.__class__.__name__
-            if isinstance(node, ast.Enum)
-            else ("Ability" if isinstance(node, ast.Ability) else node.arch_type.value)
+            if isinstance(node, uni.Enum)
+            else ("Ability" if isinstance(node, uni.Ability) else node.arch_type.value)
         )
         if node.parent:
             return SemScope(
@@ -147,10 +147,10 @@ def get_sem_scope(node: ast.UniNode) -> SemScope:
     return SemScope("", "", None)
 
 
-def extract_type(node: ast.UniNode) -> list[str]:
+def extract_type(node: uni.UniNode) -> list[str]:
     """Collect type information in assignment using bfs."""
     extracted_type = []
-    if isinstance(node, (ast.BuiltinType, ast.Token)):
+    if isinstance(node, (uni.BuiltinType, uni.Token)):
         extracted_type.append(node.value)
     for child in node.kid:
         extracted_type.extend(extract_type(child))
@@ -158,61 +158,61 @@ def extract_type(node: ast.UniNode) -> list[str]:
 
 
 def extract_params(
-    body: ast.FuncCall,
-) -> tuple[dict[str, ast.Expr], list[tuple[str, ast3.AST]], list[tuple[str, ast3.AST]]]:
+    body: uni.FuncCall,
+) -> tuple[dict[str, uni.Expr], list[tuple[str, ast3.AST]], list[tuple[str, ast3.AST]]]:
     """Extract model parameters, include and exclude information."""
     model_params = {}
     include_info = []
     exclude_info = []
     if body.params:
         for param in body.params.items:
-            if isinstance(param, ast.KWPair) and isinstance(param.key, ast.Name):
+            if isinstance(param, uni.KWPair) and isinstance(param.key, uni.Name):
                 key = param.key.value
                 value = param.value
                 if key not in ["incl_info", "excl_info"]:
                     model_params[key] = value
                 elif key == "incl_info":
-                    if isinstance(value, ast.AtomUnit):
+                    if isinstance(value, uni.AtomUnit):
                         var_name = (
                             value.value.right.value
-                            if isinstance(value.value, ast.AtomTrailer)
-                            and isinstance(value.value.right, ast.Name)
+                            if isinstance(value.value, uni.AtomTrailer)
+                            and isinstance(value.value.right, uni.Name)
                             else (
                                 value.value.value
-                                if isinstance(value.value, ast.Name)
+                                if isinstance(value.value, uni.Name)
                                 else ""
                             )
                         )
                         include_info.append((var_name, value.gen.py_ast[0]))
-                    elif isinstance(value, ast.TupleVal) and value.values:
+                    elif isinstance(value, uni.TupleVal) and value.values:
                         for i in value.values.items:
                             var_name = (
                                 i.right.value
-                                if isinstance(i, ast.AtomTrailer)
-                                and isinstance(i.right, ast.Name)
-                                else (i.value if isinstance(i, ast.Name) else "")
+                                if isinstance(i, uni.AtomTrailer)
+                                and isinstance(i.right, uni.Name)
+                                else (i.value if isinstance(i, uni.Name) else "")
                             )
                             include_info.append((var_name, i.gen.py_ast[0]))
                 elif key == "excl_info":
-                    if isinstance(value, ast.AtomUnit):
+                    if isinstance(value, uni.AtomUnit):
                         var_name = (
                             value.value.right.value
-                            if isinstance(value.value, ast.AtomTrailer)
-                            and isinstance(value.value.right, ast.Name)
+                            if isinstance(value.value, uni.AtomTrailer)
+                            and isinstance(value.value.right, uni.Name)
                             else (
                                 value.value.value
-                                if isinstance(value.value, ast.Name)
+                                if isinstance(value.value, uni.Name)
                                 else ""
                             )
                         )
                         exclude_info.append((var_name, value.gen.py_ast[0]))
-                    elif isinstance(value, ast.TupleVal) and value.values:
+                    elif isinstance(value, uni.TupleVal) and value.values:
                         for i in value.values.items:
                             var_name = (
                                 i.right.value
-                                if isinstance(i, ast.AtomTrailer)
-                                and isinstance(i.right, ast.Name)
-                                else (i.value if isinstance(i, ast.Name) else "")
+                                if isinstance(i, uni.AtomTrailer)
+                                and isinstance(i.right, uni.Name)
+                                else (i.value if isinstance(i, uni.Name) else "")
                             )
                             exclude_info.append((var_name, i.gen.py_ast[0]))
     return model_params, include_info, exclude_info

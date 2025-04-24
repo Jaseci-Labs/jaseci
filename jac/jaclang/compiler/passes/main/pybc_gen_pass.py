@@ -9,7 +9,7 @@ import ast as ast3
 import marshal
 
 
-import jaclang.compiler.unitree as ast
+import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes import AstPass
 
 
@@ -20,7 +20,7 @@ class PyBytecodeGenPass(AstPass):
         """Before pass."""
         return super().before_pass()
 
-    def enter_module(self, node: ast.Module) -> None:
+    def enter_module(self, node: uni.Module) -> None:
         """Sub objects.
 
         name: str,
@@ -30,7 +30,7 @@ class PyBytecodeGenPass(AstPass):
         is_imported: bool,
         sym_tab: Optional[SymbolTable],
         """
-        mods = [node] + self.get_all_sub_nodes(node, ast.Module)
+        mods = [node] + self.get_all_sub_nodes(node, uni.Module)
         for mod in mods:
             if not mod.gen.py_ast or not isinstance(node.gen.py_ast[0], ast3.Module):
                 self.log_error(

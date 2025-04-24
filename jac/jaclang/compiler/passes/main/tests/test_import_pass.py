@@ -4,7 +4,7 @@ import io
 import re
 import sys
 
-import jaclang.compiler.unitree as ast
+import jaclang.compiler.unitree as uni
 from jaclang.cli import cli
 from jaclang.compiler.passes.main import JacImportPass
 from jaclang.compiler.passes.main.fuse_typeinfo_pass import FuseTypeInfoPass
@@ -108,7 +108,7 @@ class ImportPassPassTests(TestCase):
                 state.prog.mod.hub.values(),
             )
         ):
-            print(ast.Module.get_href_path(i))
+            print(uni.Module.get_href_path(i))
 
         module_count = len(
             list(

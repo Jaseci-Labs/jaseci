@@ -7,11 +7,11 @@ import builtins
 import html
 from typing import Optional, TYPE_CHECKING
 
-import jaclang.compiler.unitree as ast
+import jaclang.compiler.unitree as uni
 from jaclang.settings import settings
 
 if TYPE_CHECKING:
-    from jaclang.compiler.unitree import UniNode, SymbolTable
+    from jaclang.compiler.unitree import UniNode, UniScopeNode
 
 id_bag: dict = {}
 id_used: int = 0
@@ -147,7 +147,7 @@ def dotgen_ast_tree(
         starting_call = True
         dot_lines = []
 
-    def gen_node_id(node: ast.UniNode) -> int:
+    def gen_node_id(node: uni.UniNode) -> int:
         """Generate number for each nodes."""
         global id_bag, id_used
         if id(node) not in id_bag:
@@ -155,7 +155,7 @@ def dotgen_ast_tree(
             id_used += 1
         return id_bag[id(node)]
 
-    def gen_node_parameters(node: ast.UniNode) -> str:
+    def gen_node_parameters(node: uni.UniNode) -> str:
         shape = ""
         fillcolor = ""
         style = ""
@@ -165,7 +165,7 @@ def dotgen_ast_tree(
             style = 'style="filled"'
             fillcolor = f'fillcolor="{CLASS_COLOR_MAP[_class__]}"'
         info1: list[tuple[str, str, str]] = []
-        if isinstance(node, ast.Token):
+        if isinstance(node, uni.Token):
             """ "Only tokens and some declared types are box(others are oval )"""
             shape = 'shape="box"'
             info1.append(("name", "=", node.name))
@@ -206,11 +206,11 @@ def print_ast_tree(
     def __node_repr_in_tree(node: UniNode) -> str:
         access = (
             f"Access: {node.access.tag.value} ,"
-            if isinstance(node, ast.AstAccessNode) and node.access is not None
+            if isinstance(node, uni.AstAccessNode) and node.access is not None
             else ""
         )
         sym_table_link = (
-            f"SymbolTable: {node.type_sym_tab.name}"
+            f"SymbolTable: {node.type_sym_tab.nix_name}"
             if isinstance(node, AstSymbolNode) and node.type_sym_tab
             else "SymbolTable: None" if isinstance(node, AstSymbolNode) else ""
         )
@@ -231,12 +231,12 @@ def print_ast_tree(
         elif isinstance(node, Token):
             return f"{node.__class__.__name__} - {node.value}, {access}"
         elif (
-            isinstance(node, ast.Module)
+            isinstance(node, uni.Module)
             and node.py_info.is_raised_from_py
             and not print_py_raise
         ):
             return f"{node.__class__.__name__} - PythonModuleRaised: {node.name}"
-        elif isinstance(node, (ast.ModuleItem, ast.ModulePath)):
+        elif isinstance(node, (uni.ModuleItem, uni.ModulePath)):
             out = (
                 f"{node.__class__.__name__} - {node.sym_name} - "
                 f"abs_path: {node.abs_path}"
@@ -256,7 +256,7 @@ def print_ast_tree(
                 )
                 out += f" SymbolPath: {symbol}"
             return out
-        elif isinstance(node, ast.Expr):
+        elif isinstance(node, uni.Expr):
             return f"{node.__class__.__name__} - Type: {node.expr_type}"
         else:
             return f"{node.__class__.__name__}, {access}"
@@ -316,17 +316,17 @@ def print_ast_tree(
     markers = "".join(map(mapper, level_markers[:-1]))
     markers += marker if level > 0 else ""
 
-    if isinstance(root, ast.UniNode):
+    if isinstance(root, uni.UniNode):
         tree_str = f"{root.loc}\t{markers}{__node_repr_in_tree(root)}\n"
         if (
-            isinstance(root, ast.Module)
+            isinstance(root, uni.Module)
             and root.py_info.is_raised_from_py
             and not print_py_raise
         ):
             kids: list[UniNode] = [
                 *filter(
                     lambda x: x.py_info.is_raised_from_py,
-                    root.get_all_sub_nodes(ast.Module),
+                    root.get_all_sub_nodes(uni.Module),
                 )
             ]
         else:
@@ -383,25 +383,25 @@ class SymbolTree:
 
 
 def _build_symbol_tree_common(
-    node: SymbolTable, parent_node: Optional[SymbolTree] = None
+    node: UniScopeNode, parent_node: Optional[SymbolTree] = None
 ) -> SymbolTree:
     root = SymbolTree(
-        node_name=f"SymTable::{node.owner.__class__.__name__}({node.name})",
+        node_name=f"SymTable::{node.nix_owner.__class__.__name__}({node.nix_name})",
         parent=parent_node,
     )
     symbols = SymbolTree(node_name="Symbols", parent=root)
     children = SymbolTree(node_name="Sub Tables", parent=root)
 
-    syms_to_iterate = set(node.tab.values())
-    for inhrited_symtab in node.inherit:
+    syms_to_iterate = set(node.names_in_scope.values())
+    for inhrited_symtab in node.inherited_scope:
         for inhrited_sym in inhrited_symtab.symbols:
             sym = inhrited_symtab.lookup(inhrited_sym)
             assert sym is not None
             syms_to_iterate.add(sym)
 
-    for stab in node.inherit:
+    for stab in node.inherited_scope:
         if stab.load_all_symbols:
-            syms_to_iterate.update(list(stab.base_symbol_table.tab.values()))
+            syms_to_iterate.update(list(stab.base_symbol_table.names_in_scope.values()))
         else:
             for sname in stab.symbols:
                 sym = stab.base_symbol_table.lookup(sname)
@@ -434,20 +434,20 @@ def _build_symbol_tree_common(
                 for n in sym.uses
             ]
 
-    for k in node.kid:
-        if k.name == "builtins":
+    for k in node.kid_scope:
+        if k.nix_name == "builtins":
             continue
         _build_symbol_tree_common(k, children)
 
-    for k2 in node.inherit:
-        if k2.base_symbol_table.name == "builtins":
+    for k2 in node.inherited_scope:
+        if k2.base_symbol_table.nix_name == "builtins":
             continue
         _build_symbol_tree_common(k2.base_symbol_table, children)
     return root
 
 
 def print_symtab_tree(
-    root: SymbolTable,
+    root: UniScopeNode,
     marker: str = "+-- ",
     level_markers: Optional[list[bool]] = None,
     output_file: Optional[str] = None,
@@ -503,7 +503,7 @@ def get_symtab_tree_str(
     )
 
 
-def dotgen_symtab_tree(node: SymbolTable) -> str:
+def dotgen_symtab_tree(node: UniScopeNode) -> str:
     """Generate DOT graph representation of a symbol table tree."""
     dot_lines = []
     id_map = {}

@@ -6,7 +6,7 @@ import shutil
 from contextlib import suppress
 from difflib import unified_diff
 
-import jaclang.compiler.unitree as ast
+import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes.main import PyastGenPass
 from jaclang.compiler.passes.main.schedules import py_code_gen as without_format
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
@@ -139,8 +139,8 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             return
         try:
             self.assertTrue(
-                isinstance(code_gen_pure.ir_out, ast.Module)
-                and isinstance(code_gen_jac.ir_out, ast.Module),
+                isinstance(code_gen_pure.ir_out, uni.Module)
+                and isinstance(code_gen_jac.ir_out, uni.Module),
                 "Parsed objects are not modules.",
             )
             before = ast3.dump(code_gen_pure.ir_out.gen.py_ast[0], indent=2)

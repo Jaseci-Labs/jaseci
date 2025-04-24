@@ -9,7 +9,7 @@ import pathlib
 import sys
 
 import jaclang.compiler.passes.utils.mypy_ast_build as myab
-import jaclang.compiler.unitree as ast
+import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.passes import AstPass
 
@@ -94,7 +94,7 @@ class JacTypeCheckPass(AstPass):
             mypy_graph[module.name] = st
             new_modules.append(st)
 
-        if not isinstance(self.ir_out, ast.Module):
+        if not isinstance(self.ir_out, uni.Module):
             raise self.ice("Expected module node. Impossible")
         mypy_graph = myab.load_graph(
             [

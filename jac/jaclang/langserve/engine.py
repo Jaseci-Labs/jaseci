@@ -8,13 +8,13 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Optional
 
-import jaclang.compiler.unitree as ast
+import jaclang.compiler.unitree as uni
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.passes.transform import Transform
 from jaclang.compiler.program import JacProgram
-from jaclang.compiler.symtable import SymbolTable
+from jaclang.compiler.symtable import UniScopeNode
 from jaclang.langserve.sem_manager import SemTokManager
 from jaclang.langserve.utils import (
     add_unique_text_edit,
@@ -38,7 +38,7 @@ class ModuleInfo:
 
     def __init__(
         self,
-        ir: ast.Module,
+        ir: uni.Module,
     ) -> None:
         """Initialize module info."""
         self.ir = ir
@@ -66,7 +66,7 @@ class JacLangServer(LanguageServer):
         self, file_path: str, build: Transform, refresh: bool = False
     ) -> None:
         """Update modules."""
-        if not isinstance(build.ir_out, ast.Module):
+        if not isinstance(build.ir_out, uni.Module):
             self.log_error("Error with module build.")
             return
         self.modules[file_path] = ModuleInfo(ir=build.ir_out)
@@ -176,7 +176,7 @@ class JacLangServer(LanguageServer):
             mod for name, mod in self.program.mod.hub.items() if "builtins" in name
         )
         builtin_tab = builtin_mod.sym_tab
-        assert isinstance(builtin_tab, SymbolTable)
+        assert isinstance(builtin_tab, UniScopeNode)
         completion_items = []
 
         node_selected = find_deepest_symbol_node_at_pos(
@@ -193,13 +193,13 @@ class JacLangServer(LanguageServer):
                 for symbol in current_symbol_path:
                     if symbol == "self":
                         is_ability_def = (
-                            temp_tab.owner
-                            if isinstance(temp_tab.owner, ast.AbilityDef)
-                            else temp_tab.owner.find_parent_of_type(ast.AbilityDef)
+                            temp_tab.nix_owner
+                            if isinstance(temp_tab.nix_owner, uni.AbilityDef)
+                            else temp_tab.nix_owner.find_parent_of_type(uni.AbilityDef)
                         )
                         if not is_ability_def:
-                            archi_owner = mod_tab.owner.find_parent_of_type(
-                                ast.Architype
+                            archi_owner = mod_tab.nix_owner.find_parent_of_type(
+                                uni.Architype
                             )
                             temp_tab = (
                                 archi_owner._sym_tab
@@ -211,7 +211,7 @@ class JacLangServer(LanguageServer):
                             archi_owner = (
                                 (
                                     is_ability_def.decl_link.find_parent_of_type(
-                                        ast.Architype
+                                        uni.Architype
                                     )
                                 )
                                 if is_ability_def.decl_link
@@ -240,12 +240,12 @@ class JacLangServer(LanguageServer):
                     temp_tab, up_tree=False
                 )
                 if (
-                    isinstance(temp_tab.owner, ast.Architype)
-                    and temp_tab.owner.base_classes
+                    isinstance(temp_tab.nix_owner, uni.Architype)
+                    and temp_tab.nix_owner.base_classes
                 ):
                     base = []
-                    for base_name in temp_tab.owner.base_classes.items:
-                        if isinstance(base_name, ast.Name) and base_name.sym:
+                    for base_name in temp_tab.nix_owner.base_classes.items:
+                        if isinstance(base_name, uni.Name) and base_name.sym:
                             base.append(base_name.sym)
                     for base_class_symbol in base:
                         if base_class_symbol.fetch_sym_tab:
@@ -256,8 +256,8 @@ class JacLangServer(LanguageServer):
 
         else:
             if node_selected and (
-                node_selected.find_parent_of_type(ast.Architype)
-                or node_selected.find_parent_of_type(ast.AbilityDef)
+                node_selected.find_parent_of_type(uni.Architype)
+                or node_selected.find_parent_of_type(uni.AbilityDef)
             ):
                 self_symbol = [
                     lspt.CompletionItem(
@@ -340,10 +340,10 @@ class JacLangServer(LanguageServer):
             )
         return None
 
-    def get_node_info(self, node: ast.AstSymbolNode) -> Optional[str]:
+    def get_node_info(self, node: uni.AstSymbolNode) -> Optional[str]:
         """Extract meaningful information from the AST node."""
         try:
-            if isinstance(node, ast.NameAtom):
+            if isinstance(node, uni.NameAtom):
                 node = node.name_of
             access = node.sym.access.value + " " if node.sym else None
             node_info = (
@@ -351,11 +351,11 @@ class JacLangServer(LanguageServer):
             )
             if node.name_spec.clean_type:
                 node_info += f": {node.name_spec.clean_type}"
-            if isinstance(node, ast.AstSemStrNode) and node.semstr:
+            if isinstance(node, uni.AstSemStrNode) and node.semstr:
                 node_info += f"\n{node.semstr.value}"
-            if isinstance(node, ast.AstDocNode) and node.doc:
+            if isinstance(node, uni.AstDocNode) and node.doc:
                 node_info += f"\n{node.doc.value}"
-            if isinstance(node, ast.Ability) and node.signature:
+            if isinstance(node, uni.Ability) and node.signature:
                 node_info += f"\n{node.signature.unparse()}"
             self.log_py(f"mypy_node: {node.gen.mypy_ast}")
         except AttributeError as e:
@@ -388,9 +388,9 @@ class JacLangServer(LanguageServer):
         ][3]
         if node_selected:
             if (
-                isinstance(node_selected, ast.Name)
+                isinstance(node_selected, uni.Name)
                 and node_selected.parent
-                and isinstance(node_selected.parent, ast.ModulePath)
+                and isinstance(node_selected.parent, uni.ModulePath)
             ):
                 spec = node_selected.parent.abs_path
                 if spec:
@@ -405,7 +405,7 @@ class JacLangServer(LanguageServer):
                 else:
                     return None
             elif node_selected.parent and isinstance(
-                node_selected.parent, ast.ModuleItem
+                node_selected.parent, uni.ModuleItem
             ):
                 path = (
                     node_selected.parent.abs_path
@@ -426,13 +426,13 @@ class JacLangServer(LanguageServer):
                             ),
                         ),
                     )
-            elif isinstance(node_selected, ast.ElementStmt):
+            elif isinstance(node_selected, uni.ElementStmt):
                 return None
             decl_node = (
                 node_selected.parent.body.target
                 if node_selected.parent
-                and isinstance(node_selected.parent, ast.AstImplNeedingNode)
-                and isinstance(node_selected.parent.body, ast.AstImplOnlyNode)
+                and isinstance(node_selected.parent, uni.AstImplNeedingNode)
+                and isinstance(node_selected.parent.body, uni.AstImplOnlyNode)
                 else (
                     node_selected.sym.decl
                     if (node_selected.sym and node_selected.sym.decl)
