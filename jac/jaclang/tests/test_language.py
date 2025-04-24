@@ -774,7 +774,7 @@ class JacLanguageTests(TestCase):
                     py_ast.parse(file_source),
                     orig_src=ast.JacSource(file_source, py_out_path),
                 ),
-                prog=None,
+                prog=JacProgram(),
             ).ir.unparse()
         self.assertIn("match Container(inner=Inner(x=a, y=b)){\n", output)
         self.assertIn("case Container(inner = Inner(x = a, y = 0)):\n", output)
