@@ -165,6 +165,7 @@ class PyastGenPass(AstPass):
                 ast3.ImportFrom(
                     module="jaclang.runtimelib.jacroutine",
                     names=[
+                        self.sync(ast3.alias(name="create_jacroutine", asname=None)),
                         self.sync(ast3.alias(name="Task", asname=None)),
                         self.sync(ast3.alias(name="Group", asname=None)),
                     ],
@@ -2343,7 +2344,9 @@ class PyastGenPass(AstPass):
             node.gen.py_ast = [
                 self.sync(
                     ast3.Call(
-                        func=self.sync(ast3.Name(id="Task", ctx=ast3.Load())),
+                        func=self.sync(
+                            ast3.Name(id="create_jacroutine", ctx=ast3.Load())
+                        ),
                         args=[],
                         keywords=[
                             self.sync(
