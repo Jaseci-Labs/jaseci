@@ -77,6 +77,7 @@ class AstTool:
             and cls.__name__
             not in [
                 "UniNode",
+                "UniScopeNode",
                 "ProgramModule",
                 "OOPAccessNode",
                 "WalkerStmtOnlyNode",

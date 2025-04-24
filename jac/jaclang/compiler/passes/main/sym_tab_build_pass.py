@@ -23,7 +23,9 @@ class SymTabBuildPass(AstPass):
         inherit = key_node.parent
 
         if not len(self.cur_sym_tab) and not inherit:
-            self.cur_sym_tab.append(UniScopeNode(name, key_node))
+            self.cur_sym_tab.append(
+                UniScopeNode(name=name, owner=key_node, kid=[uni.EmptyToken()])
+            )
         elif not len(self.cur_sym_tab) and inherit:
             self.cur_sym_tab.append(inherit.sym_tab)
             self.cur_sym_tab.append(self.cur_scope.push_kid_scope(name, key_node))
@@ -1279,6 +1281,8 @@ class PyInspectSymTabBuildPass(SymTabBuildPass):
     def push_scope(self, name: str, key_node: uni.UniNode) -> None:
         """Push scope."""
         if not len(self.cur_sym_tab):
-            self.cur_sym_tab.append(UniScopeNode(name, key_node))
+            self.cur_sym_tab.append(
+                UniScopeNode(name=name, owner=key_node, kid=[uni.EmptyToken()])
+            )
         else:
             self.cur_sym_tab.append(self.cur_scope.push_kid_scope(name, key_node))

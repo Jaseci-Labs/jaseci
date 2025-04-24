@@ -304,19 +304,24 @@ class Symbol:
         return f"Symbol({self.sym_name}, {self.sym_type}, {self.access}, {self.defn})"
 
 
-class UniScopeNode:
+class UniScopeNode(UniNode):
     """Symbol Table."""
 
     def __init__(
-        self, name: str, owner: UniNode, parent: Optional[UniScopeNode] = None
+        self,
+        name: str,
+        owner: UniNode,
+        kid: Sequence[UniNode],
+        parent_scope: Optional[UniScopeNode] = None,
     ) -> None:
         """Initialize."""
         self.nix_name = name
         self.nix_owner = owner
-        self.parent_scope = parent
+        self.parent_scope = parent_scope
         self.kid_scope: list[UniScopeNode] = []
         self.names_in_scope: dict[str, Symbol] = {}
         self.inherited_scope: list[InheritedSymbolTable] = []
+        UniNode.__init__(self, kid)
 
     def get_type(self) -> SymbolType:
         """Get type."""
@@ -384,7 +389,11 @@ class UniScopeNode:
 
     def push_kid_scope(self, name: str, key_node: UniNode) -> UniScopeNode:
         """Push a new scope onto the symbol table."""
-        self.kid_scope.append(UniScopeNode(name, key_node, self))
+        self.kid_scope.append(
+            UniScopeNode(
+                name=name, owner=key_node, parent_scope=self, kid=[EmptyToken()]
+            )
+        )
         return self.kid_scope[-1]
 
     def inherit_sym_tab(self, target_sym_tab: UniScopeNode) -> None:

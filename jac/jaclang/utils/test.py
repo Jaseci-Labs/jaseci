@@ -120,6 +120,7 @@ class AstSyncTestMixin:
             if x
             not in [
                 "uni_node",
+                "uni_scope_node",
                 "program_module",
                 "walker_stmt_only_node",
                 "source",
