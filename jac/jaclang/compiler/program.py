@@ -8,8 +8,7 @@ import os
 import types
 from typing import Optional, Type
 
-import jaclang.compiler.absyntree as ast
-from jaclang.compiler.absyntree import Module
+import jaclang.compiler.unitree as ast
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes import AstPass
 from jaclang.compiler.passes.main import (
@@ -29,6 +28,7 @@ from jaclang.compiler.passes.main.sym_tab_link_pass import SymTabLinkPass
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.passes.transform import Alert, Transform
 from jaclang.compiler.semtable import SemRegistry
+from jaclang.compiler.unitree import Module
 from jaclang.settings import settings
 from jaclang.utils.log import logging
 

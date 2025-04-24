@@ -7,7 +7,7 @@ however Ability does.
 
 import ast as ast3
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as ast
 from jaclang.compiler.passes import AstPass
 
 
@@ -15,7 +15,7 @@ class PyJacAstLinkPass(AstPass):
     """Link jac ast to python ast nodes."""
 
     def link_jac_py_nodes(
-        self, jac_node: ast.UniNode, py_nodes: list[ast3.AST]
+        self, jac_node: ast.UniAstNode, py_nodes: list[ast3.AST]
     ) -> None:
         """Link jac name ast to py ast nodes."""
         jac_node.gen.py_ast = py_nodes

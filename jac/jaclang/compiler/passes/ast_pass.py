@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from typing import Optional, TYPE_CHECKING, Type, TypeVar
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as ast
 from jaclang.compiler.passes.transform import Transform
 from jaclang.utils.helpers import pascal_to_snake
 
 if TYPE_CHECKING:
     from jaclang.compiler.program import JacProgram
 
-T = TypeVar("T", bound=ast.UniNode)
+T = TypeVar("T", bound=ast.UniAstNode)
 
 
 class AstPass(Transform[ast.Module, ast.Module]):
@@ -35,12 +35,12 @@ class AstPass(Transform[ast.Module, ast.Module]):
         """Run once after pass."""
         pass
 
-    def enter_node(self, node: ast.UniNode) -> None:
+    def enter_node(self, node: ast.UniAstNode) -> None:
         """Run on entering node."""
         if hasattr(self, f"enter_{pascal_to_snake(type(node).__name__)}"):
             getattr(self, f"enter_{pascal_to_snake(type(node).__name__)}")(node)
 
-    def exit_node(self, node: ast.UniNode) -> None:
+    def exit_node(self, node: ast.UniAstNode) -> None:
         """Run on exiting node."""
         if hasattr(self, f"exit_{pascal_to_snake(type(node).__name__)}"):
             getattr(self, f"exit_{pascal_to_snake(type(node).__name__)}")(node)
@@ -55,7 +55,7 @@ class AstPass(Transform[ast.Module, ast.Module]):
 
     @staticmethod
     def get_all_sub_nodes(
-        node: ast.UniNode, typ: Type[T], brute_force: bool = False
+        node: ast.UniAstNode, typ: Type[T], brute_force: bool = False
     ) -> list[T]:
         """Get all sub nodes of type."""
         result: list[T] = []
@@ -79,7 +79,7 @@ class AstPass(Transform[ast.Module, ast.Module]):
         return result
 
     @staticmethod
-    def find_parent_of_type(node: ast.UniNode, typ: Type[T]) -> Optional[T]:
+    def find_parent_of_type(node: ast.UniAstNode, typ: Type[T]) -> Optional[T]:
         """Check if node has parent of type."""
         while node.parent:
             if isinstance(node.parent, typ):
@@ -88,7 +88,7 @@ class AstPass(Transform[ast.Module, ast.Module]):
         return None
 
     @staticmethod
-    def has_parent_of_node(node: ast.UniNode, parent: ast.UniNode) -> bool:
+    def has_parent_of_node(node: ast.UniAstNode, parent: ast.UniAstNode) -> bool:
         """Check if node has parent of type."""
         while node.parent:
             if node.parent == parent:
@@ -96,7 +96,7 @@ class AstPass(Transform[ast.Module, ast.Module]):
             node = node.parent
         return False
 
-    def recalculate_parents(self, node: ast.UniNode) -> None:
+    def recalculate_parents(self, node: ast.UniAstNode) -> None:
         """Recalculate parents."""
         if not node:
             return
@@ -111,16 +111,16 @@ class AstPass(Transform[ast.Module, ast.Module]):
         """Run pass."""
         # Only performs passes on proper ASTs
         self.ir_out = ir_in  # TODO: this should go away and just be orig
-        if not isinstance(ir_in, ast.UniNode):
+        if not isinstance(ir_in, ast.UniAstNode):
             return ir_in
         self.before_pass()
-        if not isinstance(ir_in, ast.UniNode):
+        if not isinstance(ir_in, ast.UniAstNode):
             raise ValueError("Current node is not an UniNode.")
         self.traverse(ir_in)
         self.after_pass()
         return self.ir_in
 
-    def traverse(self, node: ast.UniNode) -> ast.UniNode:
+    def traverse(self, node: ast.UniAstNode) -> ast.UniAstNode:
         """Traverse tree."""
         if self.term_signal:
             return node
@@ -142,12 +142,12 @@ class AstPass(Transform[ast.Module, ast.Module]):
 class PrinterPass(AstPass):
     """Printer Pass for Jac AST."""
 
-    def enter_node(self, node: ast.UniNode) -> None:
+    def enter_node(self, node: ast.UniAstNode) -> None:
         """Run on entering node."""
         self.log_info(f"Entering: {node.__class__.__name__}: {node.loc}")
         super().enter_node(node)
 
-    def exit_node(self, node: ast.UniNode) -> None:
+    def exit_node(self, node: ast.UniAstNode) -> None:
         """Run on exiting node."""
         super().exit_node(node)
         self.log_info(f"Exiting: {node.__class__.__name__}: {node.loc}")

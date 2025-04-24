@@ -6,7 +6,7 @@ in the ast between the Decls and Defs of Architypes and Abilities through the
 body field.
 """
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as ast
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes import AstPass
 from jaclang.compiler.symtable import Symbol, SymbolTable

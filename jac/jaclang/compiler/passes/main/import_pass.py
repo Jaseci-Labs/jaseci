@@ -11,7 +11,7 @@ import pathlib
 from typing import Optional
 
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as ast
 from jaclang.compiler.passes import AstPass
 from jaclang.compiler.passes.main import DefUsePass, SymTabBuildPass
 from jaclang.compiler.passes.main.sym_tab_build_pass import PyInspectSymTabBuildPass
@@ -299,7 +299,7 @@ class PyImportPass(JacImportPass):
         return mod_path
 
     def __check_cyclic_imports(
-        self, imp_node: ast.UniNode, imported_module: ast.Module
+        self, imp_node: ast.UniAstNode, imported_module: ast.Module
     ) -> bool:
         """Check cyclic imports that might happen."""
         # Example of cyclic imports is import os
@@ -314,7 +314,7 @@ class PyImportPass(JacImportPass):
         if imp_node_file == imported_module_file:
             return True
 
-        parent: Optional[ast.UniNode] = imp_node.parent
+        parent: Optional[ast.UniAstNode] = imp_node.parent
         while parent is not None:
             parent_file = self.__handle_different_site_packages(parent.loc.mod_path)
             if parent_file == imported_module_file:

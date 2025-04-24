@@ -5,7 +5,7 @@ import io
 import sys
 import types
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as ast
 from jaclang.compiler.passes.main import PyastGenPass
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.machinestate import JacMachineState
@@ -74,7 +74,7 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
         self.assertFalse(out.errors_had)
 
-    def parent_scrub(self, node: ast.UniNode) -> bool:
+    def parent_scrub(self, node: ast.UniAstNode) -> bool:
         """Validate every node has parent."""
         success = True
         for i in node.kid:
@@ -118,7 +118,7 @@ class ValidateTreeParentTest(TestCaseMicroSuite):
         """Set up test."""
         return super().setUp()
 
-    def parent_scrub(self, node: ast.UniNode) -> bool:
+    def parent_scrub(self, node: ast.UniAstNode) -> bool:
         """Validate every node has parent."""
         success = True
         for i in node.kid:

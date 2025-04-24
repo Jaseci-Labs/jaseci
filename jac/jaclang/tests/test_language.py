@@ -589,7 +589,7 @@ class JacLanguageTests(TestCase):
         from jaclang.compiler.passes.main.schedules import py_code_gen_typed
         from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
         import ast as py_ast
-        import jaclang.compiler.absyntree as ast
+        import jaclang.compiler.unitree as ast
 
         with open(file_name, "r") as f:
             file_source = f.read()
@@ -629,7 +629,7 @@ class JacLanguageTests(TestCase):
     def test_pyfunc_1(self) -> None:
         """Test py ast to Jac ast conversion."""
         from jaclang.compiler.passes.main import PyastBuildPass
-        import jaclang.compiler.absyntree as ast
+        import jaclang.compiler.unitree as ast
         import ast as py_ast
 
         py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_1.py")
@@ -664,7 +664,7 @@ class JacLanguageTests(TestCase):
         from jaclang.compiler.passes.main.schedules import py_code_gen_typed
         from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
         import ast as py_ast
-        import jaclang.compiler.absyntree as ast
+        import jaclang.compiler.unitree as ast
 
         with open(file_name, "r") as f:
             file_source = f.read()
@@ -706,7 +706,7 @@ class JacLanguageTests(TestCase):
     def test_pyfunc_2(self) -> None:
         """Test py ast to Jac ast conversion."""
         from jaclang.compiler.passes.main import PyastBuildPass
-        import jaclang.compiler.absyntree as ast
+        import jaclang.compiler.unitree as ast
         import ast as py_ast
 
         py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_2.py")
@@ -730,7 +730,7 @@ class JacLanguageTests(TestCase):
         """Test py ast to Jac ast conversion output."""
         file_name = self.fixture_abs_path("pyfunc_3.py")
         from jaclang.compiler.passes.main.schedules import py_code_gen_typed
-        import jaclang.compiler.absyntree as ast
+        import jaclang.compiler.unitree as ast
 
         with open(file_name, "r") as f:
             file_source = f.read()
@@ -763,7 +763,7 @@ class JacLanguageTests(TestCase):
     def test_pyfunc_3(self) -> None:
         """Test py ast to Jac ast conversion."""
         from jaclang.compiler.passes.main import PyastBuildPass
-        import jaclang.compiler.absyntree as ast
+        import jaclang.compiler.unitree as ast
         import ast as py_ast
 
         py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_3.py")
@@ -947,7 +947,7 @@ class JacLanguageTests(TestCase):
         file_name = self.fixture_abs_path("pyfunc_1.py")
 
         from jaclang.compiler.passes.main.schedules import py_code_gen_typed
-        import jaclang.compiler.absyntree as ast
+        import jaclang.compiler.unitree as ast
         from jaclang.settings import settings
 
         settings.print_py_raised_ast = True

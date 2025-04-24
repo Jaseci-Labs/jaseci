@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from types import UnionType
 from typing import Callable, Iterator, TYPE_CHECKING
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as ast
 from jaclang.compiler.semtable import SemScope
 
 if TYPE_CHECKING:
@@ -116,7 +116,7 @@ def traverse_graph(
                     dfs(other_nd, cur_depth + 1)
 
 
-def get_sem_scope(node: ast.UniNode) -> SemScope:
+def get_sem_scope(node: ast.UniAstNode) -> SemScope:
     """Get scope of the node."""
     a = (
         node.name
@@ -147,7 +147,7 @@ def get_sem_scope(node: ast.UniNode) -> SemScope:
     return SemScope("", "", None)
 
 
-def extract_type(node: ast.UniNode) -> list[str]:
+def extract_type(node: ast.UniAstNode) -> list[str]:
     """Collect type information in assignment using bfs."""
     extracted_type = []
     if isinstance(node, (ast.BuiltinType, ast.Token)):

@@ -3,7 +3,7 @@
 import ast as ast3
 from typing import Any, Callable, Mapping, Optional, Sequence
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as ast
 from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope

@@ -6,7 +6,7 @@ import shutil
 from contextlib import suppress
 from difflib import unified_diff
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as ast
 from jaclang.compiler.passes.main import PyastGenPass
 from jaclang.compiler.passes.main.schedules import py_code_gen as without_format
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass

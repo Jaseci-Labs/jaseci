@@ -4,7 +4,7 @@ import io
 import re
 import sys
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as ast
 from jaclang.cli import cli
 from jaclang.compiler.passes.main import JacImportPass
 from jaclang.compiler.passes.main.fuse_typeinfo_pass import FuseTypeInfoPass

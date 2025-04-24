@@ -1,6 +1,6 @@
 """Test pass module."""
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as ast
 from jaclang.compiler.passes.main import DeclImplMatchPass
 from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import TestCase

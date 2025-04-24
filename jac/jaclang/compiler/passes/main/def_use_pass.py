@@ -8,7 +8,7 @@ sybmols in the symbol table (including uses).
 
 import ast as ast3
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as ast
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes import AstPass
 
@@ -33,7 +33,7 @@ class DefUsePass(AstPass):
         """
         node.sym_tab.inherit_baseclasses_sym(node)
 
-        def inform_from_walker(node: ast.UniNode) -> None:
+        def inform_from_walker(node: ast.UniAstNode) -> None:
             for i in (
                 node.get_all_sub_nodes(ast.VisitStmt)
                 + node.get_all_sub_nodes(ast.IgnoreStmt)

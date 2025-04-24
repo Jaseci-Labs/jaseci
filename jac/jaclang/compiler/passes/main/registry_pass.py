@@ -6,7 +6,7 @@ semstrings after PyASTGen pass. So we create those as a pickled file for
 each module
 """
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as ast
 from jaclang.compiler.passes import AstPass
 from jaclang.compiler.semtable import SemInfo, SemRegistry
 from jaclang.runtimelib.utils import get_sem_scope
@@ -148,7 +148,7 @@ class RegistryPass(AstPass):
             if len(self.modules_visited) and self.modules_visited[-1].registry:
                 self.modules_visited[-1].registry.add(scope, seminfo)
 
-    def extract_type(self, node: ast.UniNode) -> list[str]:
+    def extract_type(self, node: ast.UniAstNode) -> list[str]:
         """Collect type information in assignment using bfs."""
         extracted_type = []
         if isinstance(node, (ast.BuiltinType, ast.Token)):

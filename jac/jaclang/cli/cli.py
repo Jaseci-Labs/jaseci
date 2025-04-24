@@ -10,7 +10,7 @@ import sys
 import types
 from typing import Optional
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as ast
 from jaclang.cli.cmdreg import CommandShell, cmd_registry
 from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass

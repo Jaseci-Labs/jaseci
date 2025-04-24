@@ -9,7 +9,7 @@ from typing import Optional, TYPE_CHECKING
 from jaclang.vendor.mypy.nodes import Node as MypyNode
 
 if TYPE_CHECKING:
-    from jaclang.compiler.absyntree import Source, Token
+    from jaclang.compiler.unitree import Source, Token
 
 
 @dataclass

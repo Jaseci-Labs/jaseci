@@ -40,11 +40,11 @@ def clip_code_section(s: str, target_line: int, line_range: int) -> str:
     return "\n".join(result)
 
 
-def get_uni_nodes_as_snake_case() -> list[str]:
+def get_uni_ast_nodes_as_snake_case() -> list[str]:
     """Get all AST nodes as snake case."""
     import inspect
     import sys
-    import jaclang.compiler.absyntree as ast
+    import jaclang.compiler.unitree as ast
 
     module_name = ast.__name__
     module = sys.modules[module_name]
@@ -53,10 +53,12 @@ def get_uni_nodes_as_snake_case() -> list[str]:
     source_code = inspect.getsource(module)
 
     classes = inspect.getmembers(module, inspect.isclass)
-    uni_node_classes = [cls for _, cls in classes if issubclass(cls, ast.UniNode)]
+    uni_ast_node_classes = [
+        cls for _, cls in classes if issubclass(cls, ast.UniAstNode)
+    ]
 
     ordered_classes = sorted(
-        uni_node_classes, key=lambda cls: source_code.find(f"class {cls.__name__}")
+        uni_ast_node_classes, key=lambda cls: source_code.find(f"class {cls.__name__}")
     )
     snake_names = []
     for cls in ordered_classes:

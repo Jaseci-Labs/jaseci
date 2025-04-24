@@ -8,8 +8,8 @@ import os
 import pathlib
 import sys
 
-import jaclang.compiler.absyntree as ast
 import jaclang.compiler.passes.utils.mypy_ast_build as myab
+import jaclang.compiler.unitree as ast
 from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.passes import AstPass
 

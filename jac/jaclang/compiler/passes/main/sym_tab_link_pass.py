@@ -2,7 +2,7 @@
 
 import os
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as ast
 from jaclang.compiler.passes import AstPass
 from jaclang.compiler.symtable import InheritedSymbolTable
 

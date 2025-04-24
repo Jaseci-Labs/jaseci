@@ -9,7 +9,7 @@ import ast as ast3
 import marshal
 
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as ast
 from jaclang.compiler.passes import AstPass
 
 

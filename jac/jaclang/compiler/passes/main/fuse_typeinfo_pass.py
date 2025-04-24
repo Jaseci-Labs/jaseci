@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 from typing import Callable, Optional, TypeVar
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as ast
 from jaclang.compiler.constant import Constants, Tokens
 from jaclang.compiler.passes import AstPass
 from jaclang.compiler.symtable import SymbolTable
@@ -32,7 +32,7 @@ class FuseTypeInfoPass(AstPass):
     node_type_hash: dict[MypyNodes.Node | VNode, MyType] = {}
 
     # Override this to support enter expression.
-    def enter_node(self, node: ast.UniNode) -> None:
+    def enter_node(self, node: ast.UniAstNode) -> None:
         """Run on entering node."""
         super().enter_node(node)
 
@@ -560,9 +560,11 @@ class FuseTypeInfoPass(AstPass):
             ):
                 target.type_sym_tab = node.value.type_sym_tab
 
-    def expand_atom_trailer(self, node_list: list[ast.UniNode]) -> list[ast.UniNode]:
+    def expand_atom_trailer(
+        self, node_list: list[ast.UniAstNode]
+    ) -> list[ast.UniAstNode]:
         """Expand the atom trailer object in a list of UniNode."""
-        out: list[ast.UniNode] = []
+        out: list[ast.UniAstNode] = []
         for i in node_list:
             if isinstance(i, ast.AtomTrailer):
                 out.append(i.target)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as ast
 from jaclang.compiler.passes import AstPass
 from jaclang.compiler.symtable import Symbol, SymbolTable
 from jaclang.settings import settings

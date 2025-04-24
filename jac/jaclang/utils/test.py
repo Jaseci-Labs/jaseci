@@ -9,7 +9,7 @@ from _pytest.logging import LogCaptureFixture
 
 import jaclang
 from jaclang.compiler.passes import AstPass
-from jaclang.utils.helpers import get_uni_nodes_as_snake_case as ast_snakes
+from jaclang.utils.helpers import get_uni_ast_nodes_as_snake_case as ast_snakes
 
 import pytest
 
@@ -119,7 +119,7 @@ class AstSyncTestMixin:
             for x in ast_snakes()
             if x
             not in [
-                "uni_node",
+                "uni_ast_node",
                 "walker_stmt_only_node",
                 "source",
                 "empty_token",

@@ -6,7 +6,7 @@ for globals, imports, architypes, and abilities declarations and definitions.
 
 from typing import TypeVar
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as ast
 from jaclang.compiler.passes import AstPass
 from jaclang.compiler.symtable import SymbolTable
 
@@ -18,7 +18,7 @@ class SymTabBuildPass(AstPass):
         """Before pass."""
         self.cur_sym_tab: list[SymbolTable] = []
 
-    def push_scope(self, name: str, key_node: ast.UniNode) -> None:
+    def push_scope(self, name: str, key_node: ast.UniAstNode) -> None:
         """Push scope."""
         inherit = key_node.parent
 
@@ -39,7 +39,7 @@ class SymTabBuildPass(AstPass):
         """Return current scope."""
         return self.cur_sym_tab[-1]
 
-    def sync_node_to_scope(self, node: ast.UniNode) -> None:
+    def sync_node_to_scope(self, node: ast.UniAstNode) -> None:
         """Sync node to scope."""
         node.sym_tab = self.cur_scope
 
@@ -1270,13 +1270,13 @@ class SymTabBuildPass(AstPass):
         self.sync_node_to_scope(node)
 
 
-T = TypeVar("T", bound=ast.UniNode)
+T = TypeVar("T", bound=ast.UniAstNode)
 
 
 class PyInspectSymTabBuildPass(SymTabBuildPass):
     """Jac Symbol table build pass."""
 
-    def push_scope(self, name: str, key_node: ast.UniNode) -> None:
+    def push_scope(self, name: str, key_node: ast.UniAstNode) -> None:
         """Push scope."""
         if not len(self.cur_sym_tab):
             self.cur_sym_tab.append(SymbolTable(name, key_node))

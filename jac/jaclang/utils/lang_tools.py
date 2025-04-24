@@ -6,7 +6,7 @@ import os
 import sys
 from typing import List, Optional, Type
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as ast
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 from jaclang.compiler.passes.main.schedules import py_code_gen, type_checker_sched
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
@@ -35,7 +35,7 @@ class UniNodeInfo:
         self.cls = cls
         self.process(cls)
 
-    def process(self, cls: Type[ast.UniNode]) -> None:
+    def process(self, cls: Type[ast.UniAstNode]) -> None:
         """Process UniNode class."""
         self.name = cls.__name__
         self.doc = cls.__doc__
@@ -70,10 +70,10 @@ class AstTool:
         module = sys.modules[ast.__name__]
         source_code = inspect.getsource(module)
         classes = inspect.getmembers(module, inspect.isclass)
-        uni_node_classes = [
+        uni_ast_node_classes = [
             UniNodeInfo(cls)
             for _, cls in classes
-            if issubclass(cls, ast.UniNode)
+            if issubclass(cls, ast.UniAstNode)
             and cls.__name__
             not in [
                 "UniNode",
@@ -105,14 +105,14 @@ class AstTool:
         ]
 
         self.ast_classes = sorted(
-            uni_node_classes,
+            uni_ast_node_classes,
             key=lambda cls: source_code.find(f"class {cls.name}"),
         )
 
     def pass_template(self) -> str:
         """Generate pass template."""
         output = (
-            "import jaclang.compiler.absyntree as ast\n"
+            "import jaclang.compiler.unitree as ast\n"
             "from jaclang.compiler.passes import Pass\n\n"
             "class SomePass(Pass):\n"
         )
@@ -135,7 +135,7 @@ class AstTool:
 
             emit('    """\n')
         output = (
-            output.replace("jaclang.compiler.absyntree.", "")
+            output.replace("jaclang.compiler.unitree.", "")
             .replace("typing.", "")
             .replace("<enum '", "")
             .replace("'>", "")
@@ -145,7 +145,7 @@ class AstTool:
         )
         return output
 
-    def py_uni_nodes(self) -> str:
+    def py_uni_ast_nodes(self) -> str:
         """List python ast nodes."""
         from jaclang.compiler.passes.main import PyastBuildPass
 

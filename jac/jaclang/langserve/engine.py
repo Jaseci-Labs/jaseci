@@ -8,7 +8,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Optional
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as ast
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass

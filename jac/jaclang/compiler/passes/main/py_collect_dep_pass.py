@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import os
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as ast
 from jaclang.compiler.passes import AstPass
 from jaclang.settings import settings
 
@@ -23,7 +23,7 @@ class PyCollectDepsPass(AstPass):
         if settings.collect_py_dep_debug:
             self.log_info("CollectPythonDependencies::" + msg)
 
-    def enter_node(self, node: ast.UniNode) -> None:
+    def enter_node(self, node: ast.UniAstNode) -> None:
         """Collect python dependencies from all Jac Nodes."""
         if not isinstance(node, ast.AstSymbolNode):
             return

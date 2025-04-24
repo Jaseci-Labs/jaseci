@@ -3,7 +3,7 @@
 This is a pass for formatting Jac code.
 """
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as ast
 from jaclang.compiler.passes import AstPass
 
 
@@ -18,7 +18,7 @@ class FuseCommentsPass(AstPass):
         )
         return super().before_pass()
 
-    def exit_node(self, node: ast.UniNode) -> None:
+    def exit_node(self, node: ast.UniAstNode) -> None:
         """Exit node."""
         if isinstance(node, ast.Token):
             self.all_tokens.append(node)
