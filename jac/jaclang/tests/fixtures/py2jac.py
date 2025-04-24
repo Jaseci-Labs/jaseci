@@ -1,3 +1,7 @@
+# flake8: noqa
+
+"""Python to Jac convertion test."""
+
 from dataclasses import dataclass
 
 
