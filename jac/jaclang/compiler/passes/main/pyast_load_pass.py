@@ -1685,7 +1685,11 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             pos_end=0,
         )
 
-        if name.value == "_" or pattern is not None and not isinstance(pattern, ast.MatchPattern):
+        if (
+            name.value == "_"
+            or pattern is not None
+            and not isinstance(pattern, ast.MatchPattern)
+        ):
             return ast.MatchWild(kid=[name])
 
         return ast.MatchAs(
