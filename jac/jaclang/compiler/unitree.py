@@ -376,11 +376,10 @@ class UniScopeNode(UniNode):
                 return k2.base_symbol_table
         return None
 
-    def push_kid_scope(self, name: str, key_node: UniNode) -> UniScopeNode:
+    def link_kid_scope(self, key_node: UniScopeNode) -> UniScopeNode:
         """Push a new scope onto the symbol table."""
-        self.kid_scope.append(
-            UniScopeNode(name=name, owner=key_node, parent_scope=self)
-        )
+        key_node.parent_scope = self
+        self.kid_scope.append(key_node)
         return self.kid_scope[-1]
 
     def inherit_sym_tab(self, target_sym_tab: UniScopeNode) -> None:

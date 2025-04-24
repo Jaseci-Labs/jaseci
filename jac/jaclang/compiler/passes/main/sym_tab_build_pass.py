@@ -18,17 +18,19 @@ class SymTabBuildPass(AstPass):
         """Before pass."""
         self.cur_sym_tab: list[UniScopeNode] = []
 
-    def push_scope(self, name: str, key_node: uni.UniScopeNode) -> None:
+    def push_scope_and_link(self, key_node: uni.UniScopeNode) -> None:
         """Push scope."""
+        if not isinstance(key_node, uni.UniScopeNode):
+            raise TypeError(f"Expected a UniScopeNode, got {type(key_node).__name__}")
         inherit = key_node.parent_scope
 
         if not len(self.cur_sym_tab) and not inherit:
             self.cur_sym_tab.append(key_node)
         elif not len(self.cur_sym_tab) and inherit:
             self.cur_sym_tab.append(inherit)
-            self.cur_sym_tab.append(self.cur_scope.push_kid_scope(name, key_node))
+            self.cur_sym_tab.append(self.cur_scope.link_kid_scope(key_node=key_node))
         else:
-            self.cur_sym_tab.append(self.cur_scope.push_kid_scope(name, key_node))
+            self.cur_sym_tab.append(self.cur_scope.link_kid_scope(key_node=key_node))
 
     def pop_scope(self) -> UniScopeNode:
         """Pop scope."""
@@ -39,9 +41,6 @@ class SymTabBuildPass(AstPass):
         """Return current scope."""
         return self.cur_sym_tab[-1]
 
-    def sync_node_to_scope(self, node: uni.UniNode) -> None:
-        """Sync node to scope."""
-
     def enter_module(self, node: uni.Module) -> None:
         """Sub objects.
 
@@ -51,8 +50,7 @@ class SymTabBuildPass(AstPass):
         mod_path: str,
         is_imported: bool,
         """
-        self.push_scope(node.name, node)
-        self.sync_node_to_scope(node)
+        self.push_scope_and_link(node)
 
     def exit_module(self, node: uni.Module) -> None:
         """Sub objects.
@@ -73,7 +71,6 @@ class SymTabBuildPass(AstPass):
         is_frozen: bool,
         doc: Optional[Constant] = None,
         """
-        self.sync_node_to_scope(node)
 
     def exit_global_vars(self, node: uni.GlobalVars) -> None:
         """Sub objects.
@@ -95,14 +92,12 @@ class SymTabBuildPass(AstPass):
 
         tag: T,
         """
-        self.sync_node_to_scope(node)
 
     def enter_sub_node_list(self, node: uni.SubNodeList) -> None:
         """Sub objects.
 
         items: list[T],
         """
-        self.sync_node_to_scope(node)
 
     def enter_test(self, node: uni.Test) -> None:
         """Sub objects.
@@ -112,8 +107,7 @@ class SymTabBuildPass(AstPass):
         description: Token,
         body: CodeBlock,
         """
-        self.push_scope(node.sym_name, node)
-        self.sync_node_to_scope(node)
+        self.push_scope_and_link(node)
         import unittest
 
         for i in [j for j in dir(unittest.TestCase()) if j.startswith("assert")]:
@@ -138,8 +132,7 @@ class SymTabBuildPass(AstPass):
         name: Optional[Name],
         body: CodeBlock,
         """
-        # self.push_scope("module_code", node)
-        self.sync_node_to_scope(node)
+        # self.push_scope( node)
 
     def exit_module_code(self, node: uni.ModuleCode) -> None:
         """Sub objects.
@@ -154,7 +147,6 @@ class SymTabBuildPass(AstPass):
 
         code: Token,
         """
-        self.sync_node_to_scope(node)
 
     def enter_import(self, node: uni.Import) -> None:
         """Sub objects.
@@ -166,7 +158,6 @@ class SymTabBuildPass(AstPass):
         is_absorb: bool,
         sub_module: Optional[Module],
         """
-        self.sync_node_to_scope(node)
 
     def enter_module_path(self, node: uni.ModulePath) -> None:
         """Sub objects.
@@ -175,7 +166,6 @@ class SymTabBuildPass(AstPass):
         alias: Optional[Name],
         sub_module: Optional[Module] = None,
         """
-        self.sync_node_to_scope(node)
 
     def exit_module_path(self, node: uni.ModulePath) -> None:
         """Sub objects.
@@ -202,7 +192,6 @@ class SymTabBuildPass(AstPass):
         alias: Optional[Token],
         body: Optional[UniNode],
         """
-        self.sync_node_to_scope(node)
 
     def enter_architype(self, node: uni.Architype) -> None:
         """Sub objects.
@@ -215,10 +204,9 @@ class SymTabBuildPass(AstPass):
         base_classes: BaseClasses,
         body: Optional[ArchBlock],
         """
-        self.sync_node_to_scope(node)
-        node.sym_tab.def_insert(node, access_spec=node, single_decl="architype")
-        self.push_scope(node.name.value, node)
-        self.sync_node_to_scope(node)
+        self.push_scope_and_link(node)
+        assert node.parent_scope is not None
+        node.parent_scope.def_insert(node, access_spec=node, single_decl="architype")
 
     def exit_architype(self, node: uni.Architype) -> None:
         """Sub objects.
@@ -241,10 +229,9 @@ class SymTabBuildPass(AstPass):
         arch: ArchRef,
         body: ArchBlock,
         """
-        self.sync_node_to_scope(node)
-        node.sym_tab.def_insert(node, single_decl="arch def")
-        self.push_scope(node.sym_name, node)
-        self.sync_node_to_scope(node)
+        self.push_scope_and_link(node)
+        assert node.parent_scope is not None
+        node.parent_scope.def_insert(node, single_decl="arch def")
 
     def exit_arch_def(self, node: uni.ArchDef) -> None:
         """Sub objects.
@@ -269,10 +256,9 @@ class SymTabBuildPass(AstPass):
         signature: Optional[FuncSignature | TypeSpec | EventSignature],
         body: Optional[CodeBlock],
         """
-        self.sync_node_to_scope(node)
-        node.sym_tab.def_insert(node, access_spec=node, single_decl="ability")
-        self.push_scope(node.sym_name, node)
-        self.sync_node_to_scope(node)
+        self.push_scope_and_link(node)
+        assert node.parent_scope is not None
+        node.parent_scope.def_insert(node, access_spec=node, single_decl="ability")
         if node.is_method:
             node.sym_tab.def_insert(uni.Name.gen_stub_from_node(node, "self"))
             node.sym_tab.def_insert(
@@ -304,10 +290,9 @@ class SymTabBuildPass(AstPass):
         signature: FuncSignature | EventSignature,
         body: CodeBlock,
         """
-        self.sync_node_to_scope(node)
-        node.sym_tab.def_insert(node, single_decl="ability def")
-        self.push_scope(node.sym_name, node)
-        self.sync_node_to_scope(node)
+        self.push_scope_and_link(node)
+        assert node.parent_scope is not None
+        node.parent_scope.def_insert(node, single_decl="ability def")
 
     def exit_ability_def(self, node: uni.AbilityDef) -> None:
         """Sub objects.
@@ -327,14 +312,12 @@ class SymTabBuildPass(AstPass):
         arch_tag_info: Optional[SubNodeList[TypeSpec]],
         return_type: Optional[SubTag[SubNodeList[TypeSpec]]],
         """
-        self.sync_node_to_scope(node)
 
     def enter_arch_ref_chain(self, node: uni.ArchRefChain) -> None:
         """Sub objects.
 
         archs: list[ArchRef],
         """
-        self.sync_node_to_scope(node)
 
     def enter_func_signature(self, node: uni.FuncSignature) -> None:
         """Sub objects.
@@ -342,7 +325,6 @@ class SymTabBuildPass(AstPass):
         params: Optional['FuncParams'],
         return_type: Optional['TypeSpec'],
         """
-        self.sync_node_to_scope(node)
 
     def enter_param_var(self, node: uni.ParamVar) -> None:
         """Sub objects.
@@ -352,7 +334,6 @@ class SymTabBuildPass(AstPass):
         type_tag: 'TypeSpec',
         value: Optional[ExprType],
         """
-        self.sync_node_to_scope(node)
 
     def enter_enum(self, node: uni.Enum) -> None:
         """Sub objects.
@@ -364,10 +345,9 @@ class SymTabBuildPass(AstPass):
         base_classes: 'BaseClasses',
         body: Optional['EnumBlock'],
         """
-        self.sync_node_to_scope(node)
-        node.sym_tab.def_insert(node, access_spec=node, single_decl="enum")
-        self.push_scope(node.sym_name, node)
-        self.sync_node_to_scope(node)
+        self.push_scope_and_link(node)
+        assert node.parent_scope is not None
+        node.parent_scope.def_insert(node, access_spec=node, single_decl="enum")
 
     def exit_enum(self, node: uni.Enum) -> None:
         """Sub objects.
@@ -388,10 +368,9 @@ class SymTabBuildPass(AstPass):
         target: list[ArchRef],
         body: EnumBlock,
         """
-        self.sync_node_to_scope(node)
-        node.sym_tab.def_insert(node, single_decl="enum def")
-        self.push_scope(node.sym_name, node)
-        self.sync_node_to_scope(node)
+        self.push_scope_and_link(node)
+        assert node.parent_scope is not None
+        node.parent_scope.def_insert(node, single_decl="enum def")
 
     def exit_enum_def(self, node: uni.EnumDef) -> None:
         """Sub objects.
@@ -412,7 +391,6 @@ class SymTabBuildPass(AstPass):
         vars: 'HasVarList',
         is_frozen: bool,
         """
-        self.sync_node_to_scope(node)
 
     def enter_has_var(self, node: uni.HasVar) -> None:
         """Sub objects.
@@ -421,7 +399,6 @@ class SymTabBuildPass(AstPass):
         type_tag: 'TypeSpec',
         value: Optional[ExprType],
         """
-        self.sync_node_to_scope(node)
 
     def enter_typed_ctx_block(self, node: uni.TypedCtxBlock) -> None:
         """Sub objects.
@@ -429,8 +406,7 @@ class SymTabBuildPass(AstPass):
         type_ctx: TypeSpecList,
         body: CodeBlock,
         """
-        self.push_scope(f"{node.__class__.__name__}", node)
-        self.sync_node_to_scope(node)
+        self.push_scope_and_link(node)
 
     def exit_typed_ctx_block(self, node: uni.TypedCtxBlock) -> None:
         """Sub objects.
@@ -448,8 +424,7 @@ class SymTabBuildPass(AstPass):
         elseifs: Optional['ElseIfs'],
         else_body: Optional['ElseStmt'],
         """
-        self.push_scope(f"{node.__class__.__name__}", node)
-        self.sync_node_to_scope(node)
+        self.push_scope_and_link(node)
 
     def exit_if_stmt(self, node: uni.IfStmt) -> None:
         """Sub objects.
@@ -466,8 +441,7 @@ class SymTabBuildPass(AstPass):
 
         elseifs: list['IfStmt'],
         """
-        self.push_scope("elif_stmt", node)
-        self.sync_node_to_scope(node)
+        self.push_scope_and_link(node)
 
     def exit_else_if(self, node: uni.ElseIf) -> None:
         """Sub objects.
@@ -481,8 +455,7 @@ class SymTabBuildPass(AstPass):
 
         body: 'CodeBlock',
         """
-        self.push_scope(f"{node.__class__.__name__}", node)
-        self.sync_node_to_scope(node)
+        self.push_scope_and_link(node)
 
     def exit_else_stmt(self, node: uni.ElseStmt) -> None:
         """Sub objects.
@@ -496,7 +469,6 @@ class SymTabBuildPass(AstPass):
 
         expr: ExprType,
         """
-        self.sync_node_to_scope(node)
 
     def enter_try_stmt(self, node: uni.TryStmt) -> None:
         """Sub objects.
@@ -505,8 +477,7 @@ class SymTabBuildPass(AstPass):
         excepts: Optional['ExceptList'],
         finally_body: Optional['FinallyStmt'],
         """
-        self.push_scope(f"{node.__class__.__name__}", node)
-        self.sync_node_to_scope(node)
+        self.push_scope_and_link(node)
 
     def exit_try_stmt(self, node: uni.TryStmt) -> None:
         """Sub objects.
@@ -524,8 +495,7 @@ class SymTabBuildPass(AstPass):
         name: Optional[Token],
         body: 'CodeBlock',
         """
-        self.push_scope(f"{node.__class__.__name__}", node)
-        self.sync_node_to_scope(node)
+        self.push_scope_and_link(node)
 
     def exit_except(self, node: uni.Except) -> None:
         """Sub objects.
@@ -541,8 +511,7 @@ class SymTabBuildPass(AstPass):
 
         body: 'CodeBlock',
         """
-        self.push_scope(f"{node.__class__.__name__}", node)
-        self.sync_node_to_scope(node)
+        self.push_scope_and_link(node)
 
     def exit_finally_stmt(self, node: uni.FinallyStmt) -> None:
         """Sub objects.
@@ -559,8 +528,7 @@ class SymTabBuildPass(AstPass):
         count_by: ExprType,
         body: 'CodeBlock',
         """
-        self.push_scope(f"{node.__class__.__name__}", node)
-        self.sync_node_to_scope(node)
+        self.push_scope_and_link(node)
 
     def exit_iter_for_stmt(self, node: uni.IterForStmt) -> None:
         """Sub objects.
@@ -581,8 +549,7 @@ class SymTabBuildPass(AstPass):
         body: SubNodeList[CodeBlockStmt],
         else_body: Optional[ElseStmt],
         """
-        self.push_scope(f"{node.__class__.__name__}", node)
-        self.sync_node_to_scope(node)
+        self.push_scope_and_link(node)
 
     def exit_in_for_stmt(self, node: uni.InForStmt) -> None:
         """Sub objects.
@@ -607,7 +574,6 @@ class SymTabBuildPass(AstPass):
         pos_end: int,
         already_declared: bool,
         """
-        self.sync_node_to_scope(node)
 
     def enter_while_stmt(self, node: uni.WhileStmt) -> None:
         """Sub objects.
@@ -615,8 +581,7 @@ class SymTabBuildPass(AstPass):
         condition: ExprType,
         body: 'CodeBlock',
         """
-        self.push_scope(f"{node.__class__.__name__}", node)
-        self.sync_node_to_scope(node)
+        self.push_scope_and_link(node)
 
     def exit_while_stmt(self, node: uni.WhileStmt) -> None:
         """Sub objects.
@@ -632,8 +597,7 @@ class SymTabBuildPass(AstPass):
         exprs: 'ExprAsItemList',
         body: 'CodeBlock',
         """
-        self.push_scope(f"{node.__class__.__name__}", node)
-        self.sync_node_to_scope(node)
+        self.push_scope_and_link(node)
 
     def exit_with_stmt(self, node: uni.WithStmt) -> None:
         """Sub objects.
@@ -649,14 +613,12 @@ class SymTabBuildPass(AstPass):
         expr: ExprType,
         alias: Optional[ExprType],
         """
-        self.sync_node_to_scope(node)
 
     def enter_raise_stmt(self, node: uni.RaiseStmt) -> None:
         """Sub objects.
 
         cause: Optional[ExprType],
         """
-        self.sync_node_to_scope(node)
 
     def enter_assert_stmt(self, node: uni.AssertStmt) -> None:
         """Sub objects.
@@ -664,56 +626,48 @@ class SymTabBuildPass(AstPass):
         condition: ExprType,
         error_msg: Optional[ExprType],
         """
-        self.sync_node_to_scope(node)
 
     def enter_check_stmt(self, node: uni.CheckStmt) -> None:
         """Sub objects.
 
         target: Expr,
         """
-        self.sync_node_to_scope(node)
 
     def enter_ctrl_stmt(self, node: uni.CtrlStmt) -> None:
         """Sub objects.
 
         ctrl: Token,
         """
-        self.sync_node_to_scope(node)
 
     def enter_delete_stmt(self, node: uni.DeleteStmt) -> None:
         """Sub objects.
 
         target: ExprType,
         """
-        self.sync_node_to_scope(node)
 
     def enter_report_stmt(self, node: uni.ReportStmt) -> None:
         """Sub objects.
 
         expr: ExprType,
         """
-        self.sync_node_to_scope(node)
 
     def enter_return_stmt(self, node: uni.ReturnStmt) -> None:
         """Sub objects.
 
         expr: Optional[ExprType],
         """
-        self.sync_node_to_scope(node)
 
     def enter_yield_expr(self, node: uni.YieldExpr) -> None:
         """Sub objects.
 
         expr: Optional[ExprType],
         """
-        self.sync_node_to_scope(node)
 
     def enter_ignore_stmt(self, node: uni.IgnoreStmt) -> None:
         """Sub objects.
 
         target: ExprType,
         """
-        self.sync_node_to_scope(node)
 
     def enter_visit_stmt(self, node: uni.VisitStmt) -> None:
         """Sub objects.
@@ -723,7 +677,6 @@ class SymTabBuildPass(AstPass):
         else_body: Optional['ElseStmt'],
         from_walker: bool,
         """
-        self.sync_node_to_scope(node)
 
     def enter_revisit_stmt(self, node: uni.RevisitStmt) -> None:
         """Sub objects.
@@ -732,35 +685,30 @@ class SymTabBuildPass(AstPass):
         else_body: Optional['ElseStmt'],
         from_walker: bool,
         """
-        self.sync_node_to_scope(node)
 
     def enter_disengage_stmt(self, node: uni.DisengageStmt) -> None:
         """Sub objects.
 
         from_walker: bool,
         """
-        self.sync_node_to_scope(node)
 
     def enter_await_expr(self, node: uni.AwaitExpr) -> None:
         """Sub objects.
 
         target: ExprType,
         """
-        self.sync_node_to_scope(node)
 
     def enter_global_stmt(self, node: uni.GlobalStmt) -> None:
         """Sub objects.
 
         names: NameList,
         """
-        self.sync_node_to_scope(node)
 
     def enter_non_local_stmt(self, node: uni.NonLocalStmt) -> None:
         """Sub objects.
 
         names: NameList,
         """
-        self.sync_node_to_scope(node)
 
     def enter_assignment(self, node: uni.Assignment) -> None:
         """Sub objects.
@@ -770,7 +718,6 @@ class SymTabBuildPass(AstPass):
         value: ExprType,
         mutable: bool,
         """
-        self.sync_node_to_scope(node)
 
     def enter_binary_expr(self, node: uni.BinaryExpr) -> None:
         """Sub objects.
@@ -779,7 +726,6 @@ class SymTabBuildPass(AstPass):
         right: ExprType,
         op: Token | DisconnectOp | ConnectOp,
         """
-        self.sync_node_to_scope(node)
 
     def enter_compare_expr(self, node: uni.CompareExpr) -> None:
         """Sub objects.
@@ -788,7 +734,6 @@ class SymTabBuildPass(AstPass):
         rights: list[Expr],
         ops: list[Token],
         """
-        self.sync_node_to_scope(node)
 
     def enter_if_else_expr(self, node: uni.IfElseExpr) -> None:
         """Sub objects.
@@ -797,7 +742,6 @@ class SymTabBuildPass(AstPass):
         value: ExprType,
         else_value: ExprType,
         """
-        self.sync_node_to_scope(node)
 
     def enter_unary_expr(self, node: uni.UnaryExpr) -> None:
         """Sub objects.
@@ -805,14 +749,12 @@ class SymTabBuildPass(AstPass):
         operand: ExprType,
         op: Token,
         """
-        self.sync_node_to_scope(node)
 
     def enter_bool_expr(self, node: uni.BoolExpr) -> None:
         """Sub objects.
 
         value: Token,
         """
-        self.sync_node_to_scope(node)
 
     def enter_lambda_expr(self, node: uni.LambdaExpr) -> None:
         """Sub objects.
@@ -821,8 +763,7 @@ class SymTabBuildPass(AstPass):
         return_type: Optional['TypeSpec'],
         body: ExprType,
         """
-        self.push_scope(f"{node.__class__.__name__}", node)
-        self.sync_node_to_scope(node)
+        self.push_scope_and_link(node)
 
     def exit_lambda_expr(self, node: uni.LambdaExpr) -> None:
         """Sub objects.
@@ -838,21 +779,18 @@ class SymTabBuildPass(AstPass):
 
         strings: list['Token | FString'],
         """
-        self.sync_node_to_scope(node)
 
     def enter_list_val(self, node: uni.ListVal) -> None:
         """Sub objects.
 
         values: list[ExprType],
         """
-        self.sync_node_to_scope(node)
 
     def enter_set_val(self, node: uni.SetVal) -> None:
         """Sub objects.
 
         values: list[ExprType],
         """
-        self.sync_node_to_scope(node)
 
     def enter_tuple_val(self, node: uni.TupleVal) -> None:
         """Sub objects.
@@ -861,14 +799,12 @@ class SymTabBuildPass(AstPass):
         exprs: Optional[ExprList],
         assigns: Optional[AssignmentList],
         """
-        self.sync_node_to_scope(node)
 
     def enter_dict_val(self, node: uni.DictVal) -> None:
         """Sub objects.
 
         kv_pairs: list['KVPair'],
         """
-        self.sync_node_to_scope(node)
 
     def enter_k_v_pair(self, node: uni.KVPair) -> None:
         """Sub objects.
@@ -876,7 +812,6 @@ class SymTabBuildPass(AstPass):
         key: ExprType,
         value: ExprType,
         """
-        self.sync_node_to_scope(node)
 
     def enter_k_w_pair(self, node: uni.KWPair) -> None:
         """Sub objects.
@@ -884,28 +819,24 @@ class SymTabBuildPass(AstPass):
         key: ExprType,
         value: ExprType,
         """
-        self.sync_node_to_scope(node)
 
     def enter_list_compr(self, node: uni.ListCompr) -> None:
         """Sub objects.
 
         compr: InnerCompr,
         """
-        self.sync_node_to_scope(node)
 
     def enter_gen_compr(self, node: uni.GenCompr) -> None:
         """Sub objects.
 
         compr: InnerCompr,
         """
-        self.sync_node_to_scope(node)
 
     def enter_set_compr(self, node: uni.SetCompr) -> None:
         """Sub objects.
 
         compr: InnerCompr,
         """
-        self.sync_node_to_scope(node)
 
     def enter_inner_compr(self, node: uni.InnerCompr) -> None:
         """Sub objects.
@@ -915,8 +846,7 @@ class SymTabBuildPass(AstPass):
         collection: ExprType,
         conditional: Optional[ExprType],
         """
-        self.push_scope(f"{node.__class__.__name__}", node)
-        self.sync_node_to_scope(node)
+        self.push_scope_and_link(node)
 
     def exit_inner_compr(self, node: uni.InnerCompr) -> None:
         """Sub objects.
@@ -936,8 +866,7 @@ class SymTabBuildPass(AstPass):
         collection: ExprType,
         conditional: Optional[ExprType],
         """
-        self.push_scope(f"{node.__class__.__name__}", node)
-        self.sync_node_to_scope(node)
+        self.push_scope_and_link(node)
 
     def exit_dict_compr(self, node: uni.DictCompr) -> None:
         """Sub objects.
@@ -956,7 +885,6 @@ class SymTabBuildPass(AstPass):
         right: 'IndexSlice | ArchRef | Token',
         null_ok: bool,
         """
-        self.sync_node_to_scope(node)
 
     def enter_atom_unit(self, node: uni.AtomUnit) -> None:
         """Sub objects.
@@ -965,7 +893,6 @@ class SymTabBuildPass(AstPass):
         is_paren: bool,
         is_null_ok: bool,
         """
-        self.sync_node_to_scope(node)
 
     def enter_func_call(self, node: uni.FuncCall) -> None:
         """Sub objects.
@@ -973,7 +900,6 @@ class SymTabBuildPass(AstPass):
         target: 'AtomType',
         params: Optional['ParamList'],
         """
-        self.sync_node_to_scope(node)
 
     def enter_index_slice(self, node: uni.IndexSlice) -> None:
         """Sub objects.
@@ -981,7 +907,6 @@ class SymTabBuildPass(AstPass):
         slices: list[Slice],
         is_range: bool,
         """
-        self.sync_node_to_scope(node)
 
     def enter_arch_ref(self, node: uni.ArchRef) -> None:
         """Sub objects.
@@ -989,14 +914,12 @@ class SymTabBuildPass(AstPass):
         name_ref: Name | SpecialVarRef,
         arch: Token,
         """
-        self.sync_node_to_scope(node)
 
     def enter_special_var_ref(self, node: uni.SpecialVarRef) -> None:
         """Sub objects.
 
         var: Token,
         """
-        self.sync_node_to_scope(node)
 
     def enter_edge_ref_trailer(self, node: uni.EdgeRefTrailer) -> None:
         """Sub objects.
@@ -1004,7 +927,6 @@ class SymTabBuildPass(AstPass):
         chain: list[Expr],
         edges_only: bool,
         """
-        self.sync_node_to_scope(node)
 
     def enter_edge_op_ref(self, node: uni.EdgeOpRef) -> None:
         """Sub objects.
@@ -1014,7 +936,6 @@ class SymTabBuildPass(AstPass):
         edge_dir: EdgeDir,
         from_walker: bool,
         """
-        self.sync_node_to_scope(node)
 
     def enter_disconnect_op(self, node: uni.DisconnectOp) -> None:
         """Sub objects.
@@ -1024,7 +945,6 @@ class SymTabBuildPass(AstPass):
         edge_dir: EdgeDir,
         from_walker: bool,
         """
-        self.sync_node_to_scope(node)
 
     def enter_connect_op(self, node: uni.ConnectOp) -> None:
         """Sub objects.
@@ -1033,28 +953,24 @@ class SymTabBuildPass(AstPass):
         conn_assign: Optional[AssignmentList],
         edge_dir: EdgeDir,
         """
-        self.sync_node_to_scope(node)
 
     def enter_filter_compr(self, node: uni.FilterCompr) -> None:
         """Sub objects.
 
         compares: list[BinaryExpr],
         """
-        self.sync_node_to_scope(node)
 
     def enter_assign_compr(self, node: uni.AssignCompr) -> None:
         """Sub objects.
 
         assigns: list[KVPair],
         """
-        self.sync_node_to_scope(node)
 
     def enter_f_string(self, node: uni.FString) -> None:
         """Sub objects.
 
         parts: list['Token | ExprType'],
         """
-        self.sync_node_to_scope(node)
 
     def enter_match_stmt(self, node: uni.MatchStmt) -> None:
         """Sub objects.
@@ -1062,7 +978,6 @@ class SymTabBuildPass(AstPass):
         target: SubNodeList[ExprType],
         cases: list[MatchCase],
         """
-        self.sync_node_to_scope(node)
 
     def enter_match_case(self, node: uni.MatchCase) -> None:
         """Sub objects.
@@ -1071,8 +986,7 @@ class SymTabBuildPass(AstPass):
         guard: Optional[ExprType],
         body: SubNodeList[CodeBlockStmt],
         """
-        self.push_scope(f"{node.__class__.__name__}", node)
-        self.sync_node_to_scope(node)
+        self.push_scope_and_link(node)
 
     def exit_match_case(self, node: uni.MatchCase) -> None:
         """Sub objects.
@@ -1088,7 +1002,6 @@ class SymTabBuildPass(AstPass):
 
         list[MatchPattern],
         """
-        self.sync_node_to_scope(node)
 
     def enter_match_as(self, node: uni.MatchAs) -> None:
         """Sub objects.
@@ -1096,39 +1009,33 @@ class SymTabBuildPass(AstPass):
         name: NameType,
         pattern: MatchPattern,
         """
-        self.sync_node_to_scope(node)
 
     def enter_match_wild(self, node: uni.MatchWild) -> None:
         """Sub objects."""
-        self.sync_node_to_scope(node)
 
     def enter_match_value(self, node: uni.MatchValue) -> None:
         """Sub objects.
 
         value: ExprType,
         """
-        self.sync_node_to_scope(node)
 
     def enter_match_singleton(self, node: uni.MatchSingleton) -> None:
         """Sub objects.
 
         value: Bool | Null,
         """
-        self.sync_node_to_scope(node)
 
     def enter_match_sequence(self, node: uni.MatchSequence) -> None:
         """Sub objects.
 
         values: list[MatchPattern],
         """
-        self.sync_node_to_scope(node)
 
     def enter_match_mapping(self, node: uni.MatchMapping) -> None:
         """Sub objects.
 
         values: list[MatchKVPair | MatchStar],
         """
-        self.sync_node_to_scope(node)
 
     def enter_match_k_v_pair(self, node: uni.MatchKVPair) -> None:
         """Sub objects.
@@ -1136,7 +1043,6 @@ class SymTabBuildPass(AstPass):
         key: MatchPattern | NameType,
         value: MatchPattern,
         """
-        self.sync_node_to_scope(node)
 
     def enter_match_star(self, node: uni.MatchStar) -> None:
         """Sub objects.
@@ -1144,7 +1050,6 @@ class SymTabBuildPass(AstPass):
         name: NameType,
         is_list: bool,
         """
-        self.sync_node_to_scope(node)
 
     def enter_match_arch(self, node: uni.MatchArch) -> None:
         """Sub objects.
@@ -1153,7 +1058,6 @@ class SymTabBuildPass(AstPass):
         arg_patterns: Optional[SubNodeList[MatchPattern]],
         kw_patterns: Optional[SubNodeList[MatchKVPair]],
         """
-        self.sync_node_to_scope(node)
 
     def enter_token(self, node: uni.Token) -> None:
         """Sub objects.
@@ -1166,7 +1070,6 @@ class SymTabBuildPass(AstPass):
         pos_start: int,
         pos_end: int,
         """
-        self.sync_node_to_scope(node)
 
     def enter_float(self, node: uni.Float) -> None:
         """Sub objects.
@@ -1179,7 +1082,6 @@ class SymTabBuildPass(AstPass):
         pos_start: int,
         pos_end: int,
         """
-        self.sync_node_to_scope(node)
 
     def enter_int(self, node: uni.Int) -> None:
         """Sub objects.
@@ -1192,7 +1094,6 @@ class SymTabBuildPass(AstPass):
         pos_start: int,
         pos_end: int,
         """
-        self.sync_node_to_scope(node)
 
     def enter_string(self, node: uni.String) -> None:
         """Sub objects.
@@ -1205,7 +1106,6 @@ class SymTabBuildPass(AstPass):
         pos_start: int,
         pos_end: int,
         """
-        self.sync_node_to_scope(node)
 
     def enter_bool(self, node: uni.Bool) -> None:
         """Sub objects.
@@ -1218,7 +1118,6 @@ class SymTabBuildPass(AstPass):
         pos_start: int,
         pos_end: int,
         """
-        self.sync_node_to_scope(node)
 
     def enter_null(self, node: uni.Null) -> None:
         """Sub objects.
@@ -1231,7 +1130,6 @@ class SymTabBuildPass(AstPass):
         pos_start: int,
         pos_end: int,
         """
-        self.sync_node_to_scope(node)
 
     def enter_ellipsis(self, node: uni.Ellipsis) -> None:
         """Sub objects.
@@ -1244,7 +1142,6 @@ class SymTabBuildPass(AstPass):
         pos_start: int,
         pos_end: int,
         """
-        self.sync_node_to_scope(node)
 
     def enter_builtin_type(self, node: uni.BuiltinType) -> None:
         """Sub objects.
@@ -1258,15 +1155,12 @@ class SymTabBuildPass(AstPass):
         pos_end: int,
         typ: type,
         """
-        self.sync_node_to_scope(node)
 
     def enter_semi(self, node: uni.Semi) -> None:
         """Sub objects."""
-        self.sync_node_to_scope(node)
 
     def enter_comment_token(self, node: uni.CommentToken) -> None:
         """Sub objects."""
-        self.sync_node_to_scope(node)
 
 
 T = TypeVar("T", bound=uni.UniNode)
@@ -1275,9 +1169,9 @@ T = TypeVar("T", bound=uni.UniNode)
 class PyInspectSymTabBuildPass(SymTabBuildPass):
     """Jac Symbol table build pass."""
 
-    def push_scope(self, name: str, key_node: uni.UniNode) -> None:
+    def push_scope_and_link(self, key_node: uni.UniScopeNode) -> None:
         """Push scope."""
         if not len(self.cur_sym_tab):
-            self.cur_sym_tab.append(UniScopeNode(name=name, owner=key_node))
+            self.cur_sym_tab.append(key_node)
         else:
-            self.cur_sym_tab.append(self.cur_scope.push_kid_scope(name, key_node))
+            self.cur_sym_tab.append(self.cur_scope.link_kid_scope(key_node=key_node))
