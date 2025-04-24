@@ -760,6 +760,27 @@ class JacLanguageTests(TestCase):
         self.assertIn(" case Point(x = int(a), y = 0):\n", output)
         self.assertIn("class Sample {\n    can init", output)
 
+    def test_py2jac(self) -> None:
+        """Test py ast to Jac ast conversion."""
+        from jaclang.compiler.passes.main import PyastBuildPass
+        import jaclang.compiler.absyntree as ast
+        import ast as py_ast
+
+        py_out_path = os.path.join(self.fixture_abs_path("./"), "py2jac.py")
+        with open(py_out_path) as f:
+            file_source = f.read()
+            output = PyastBuildPass(
+                root_ir=ast.PythonModuleAst(
+                    py_ast.parse(file_source),
+                    orig_src=ast.JacSource(file_source, py_out_path),
+                ),
+                prog=None,
+            ).ir.unparse()
+        self.assertIn("match Container(inner=Inner(x=a, y=b)){\n", output)
+        self.assertIn("case Container(inner = Inner(x = a, y = 0)):\n", output)
+        self.assertIn("case Container(inner = Inner(x = a, y = b)):\n", output)
+        self.assertIn("case _:\n", output)
+
     def test_refs_target(self) -> None:
         """
         This test added after a bug in jaclib Node.refs() wasn't code gen as expected and it
