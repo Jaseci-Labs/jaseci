@@ -20,26 +20,6 @@ T = TypeVar("T", bound=ast3.AST)
 class PyastGenPass(AstPass):
     """Jac blue transpilation to python pass."""
 
-    # TODO: This should live in utils and perhaps a test added using it
-    # @staticmethod
-    # def node_compilable_test(node: ast3.AST) -> None:
-    #     """Convert any AST node to a compilable module node."""
-    #     if isinstance(node, ast3.Module):
-    #         pass
-    #     elif isinstance(node, (ast3.Expr, ast3.stmt)):
-    #         node = ast3.Module(body=[node], type_ignores=[])
-    #     elif isinstance(node, list) and all(isinstance(n, ast3.stmt) for n in node):
-    #         node = ast3.Module(body=node, type_ignores=[])
-    #     else:
-    #         node = ast3.Module(body=[], type_ignores=[])
-    #     try:
-    #         compile(node, "<ast>", "exec")
-    #     except TypeError as e:
-    #         print(ast3.dump(node, indent=2))
-    #         raise e
-    #     except Exception:
-    #         pass
-
     def before_pass(self) -> None:
         """Initialize pass."""
         self.debuginfo: dict[str, list[str]] = {"jac_mods": []}
@@ -77,7 +57,7 @@ class PyastGenPass(AstPass):
                         names=[
                             self.sync(
                                 ast3.alias(
-                                    name="JacFeature",
+                                    name="JacMachine",
                                     asname=settings.pyout_jaclib_alias,
                                 )
                             ),
@@ -979,9 +959,9 @@ class PyastGenPass(AstPass):
     def gen_llm_body(self, node: ast.Ability) -> list[ast3.AST]:
         """Generate the by LLM body."""
         # to Avoid circular import
-        from jaclang.runtimelib.feature import JacFeature
+        from jaclang.runtimelib.machine import JacMachine
 
-        return JacFeature.gen_llm_body(self, node)
+        return JacMachine.gen_llm_body(self, node)
 
     def exit_ability(self, node: ast.Ability) -> None:
         """Sub objects.
@@ -2040,18 +2020,17 @@ class PyastGenPass(AstPass):
         )
         node.gen.py_ast = [
             self.sync(
-                ast3.Return(
+                ast3.Expr(
                     self.sync(
-                        self.sync(
-                            ast3.Call(
-                                func=self.jaclib_obj("disengage"),
-                                args=[loc],
-                                keywords=[],
-                            )
+                        ast3.Call(
+                            func=self.jaclib_obj("disengage"),
+                            args=[loc],
+                            keywords=[],
                         )
                     )
                 )
             ),
+            self.sync(ast3.Return()),
         ]
 
     def exit_await_expr(self, node: ast.AwaitExpr) -> None:
@@ -2923,9 +2902,9 @@ class PyastGenPass(AstPass):
     ) -> ast3.Call:
         """Return the LLM Call, e.g. _Jac.with_llm()."""
         # to avoid circular import
-        from jaclang.runtimelib.feature import JacFeature
+        from jaclang.runtimelib.machine import JacMachine
 
-        return JacFeature.by_llm_call(
+        return JacMachine.by_llm_call(
             self,
             model,
             model_params,
@@ -2940,9 +2919,9 @@ class PyastGenPass(AstPass):
     def get_by_llm_call_args(self, node: ast.FuncCall) -> dict:
         """Get the arguments for the by_llm_call."""
         # to avoid circular import
-        from jaclang.runtimelib.feature import JacFeature
+        from jaclang.runtimelib.machine import JacMachine
 
-        return JacFeature.get_by_llm_call_args(self, node)
+        return JacMachine.get_by_llm_call_args(self, node)
 
     def exit_func_call(self, node: ast.FuncCall) -> None:
         """Sub objects.
