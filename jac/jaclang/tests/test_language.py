@@ -1050,7 +1050,7 @@ class JacLanguageTests(TestCase):
         )
 
         self.assertEqual(mypass.ir_out.pp().count("AbilityDef - (o)Circle.(c)area"), 1)
-        self.assertIsNone(mypass.ir_out._sym_tab)
+        self.assertIsNone(mypass.ir_out.sym_tab)
         mypass = JacProgram().compile(
             self.examples_abs_path("manual_code/circle_pure.jac"),
             target=passes.SymTabBuildPass,

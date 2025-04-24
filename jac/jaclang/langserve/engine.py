@@ -202,8 +202,8 @@ class JacLangServer(LanguageServer):
                                 uni.Architype
                             )
                             temp_tab = (
-                                archi_owner._sym_tab
-                                if archi_owner and archi_owner._sym_tab
+                                archi_owner.sym_tab
+                                if archi_owner and archi_owner.sym_tab
                                 else mod_tab
                             )
                             continue
@@ -365,7 +365,7 @@ class JacLangServer(LanguageServer):
     def get_outline(self, file_path: str) -> list[lspt.DocumentSymbol]:
         """Return document symbols for a file."""
         if file_path in self.modules and (
-            root_node := self.modules[file_path].ir._sym_tab
+            root_node := self.modules[file_path].ir.sym_tab
         ):
             return get_symbols_for_outline(root_node)
         return []

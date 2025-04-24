@@ -47,7 +47,6 @@ class UniNode:
         """Initialize ast."""
         self.parent: Optional[UniNode] = None
         self.kid: list[UniNode] = [x.set_parent(self) for x in kid]
-        self._sym_tab: Optional[UniScopeNode] = None
         self._sub_node_tab: dict[type, list[UniNode]] = {}
         self.construct_sub_node_tab()
         self._in_mod_nodes: list[UniNode] = []
@@ -72,19 +71,11 @@ class UniNode:
     @property
     def sym_tab(self) -> UniScopeNode:
         """Get symbol table."""
-        # sym_tab should never be accessed without being set in codebase
-        if not self._sym_tab:
-            raise ValueError(
-                f"Symbol table not set for {type(self).__name__}. Impossible.\n"
-                f"Node: {self.pp()}\n"
-                f"Parent: {self.parent.pp() if self.parent else None}\n"
-            )
-        return self._sym_tab
-
-    @sym_tab.setter
-    def sym_tab(self, sym_tab: UniScopeNode) -> None:
-        """Set symbol table."""
-        self._sym_tab = sym_tab
+        return (
+            self
+            if isinstance(self, UniScopeNode)
+            else self.parent_of_type(UniScopeNode)
+        )
 
     def add_kids_left(
         self,
@@ -311,7 +302,6 @@ class UniScopeNode(UniNode):
         self,
         name: str,
         owner: UniNode,
-        kid: Sequence[UniNode],
         parent_scope: Optional[UniScopeNode] = None,
     ) -> None:
         """Initialize."""
@@ -321,7 +311,6 @@ class UniScopeNode(UniNode):
         self.kid_scope: list[UniScopeNode] = []
         self.names_in_scope: dict[str, Symbol] = {}
         self.inherited_scope: list[InheritedSymbolTable] = []
-        UniNode.__init__(self, kid)
 
     def get_type(self) -> SymbolType:
         """Get type."""
@@ -390,9 +379,7 @@ class UniScopeNode(UniNode):
     def push_kid_scope(self, name: str, key_node: UniNode) -> UniScopeNode:
         """Push a new scope onto the symbol table."""
         self.kid_scope.append(
-            UniScopeNode(
-                name=name, owner=key_node, parent_scope=self, kid=[EmptyToken()]
-            )
+            UniScopeNode(name=name, owner=key_node, parent_scope=self)
         )
         return self.kid_scope[-1]
 
@@ -755,17 +742,6 @@ class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
             sym_category=SymbolType.IMPL,
         )
 
-    @property
-    def sym_tab(self) -> UniScopeNode:
-        """Get symbol table."""
-        return super().sym_tab
-
-    @sym_tab.setter
-    def sym_tab(self, sym_tab: UniScopeNode) -> None:
-        """Set symbol table."""
-        self._sym_tab = sym_tab
-        self.name_spec._sym_tab = sym_tab
-
     def create_impl_name_node(self) -> Name:
         """Create impl name."""
         ret = Name(
@@ -956,7 +932,7 @@ class SubNodeList(UniNode, Generic[T]):
 
 # AST Mid Level Node Types
 # --------------------------
-class Module(AstDocNode):
+class Module(AstDocNode, UniScopeNode):
     """Whole Program node type for Jac Ast."""
 
     def __init__(
@@ -983,6 +959,7 @@ class Module(AstDocNode):
 
         UniNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
+        UniScopeNode.__init__(self, name=self.name, owner=self)
 
     @property
     def annexable_by(self) -> Optional[str]:
@@ -1071,7 +1048,6 @@ class ProgramModule(Module):
             stub_only=main_mod.stub_only if main_mod else True,
             registry=main_mod.registry if main_mod else None,
         )
-        self._sym_tab = main_mod._sym_tab if main_mod else None
         self._sub_node_tab = main_mod._sub_node_tab if main_mod else {}
         self.py_info = main_mod.py_info if main_mod else PyInfo()
 
@@ -1117,7 +1093,7 @@ class GlobalVars(ElementStmt, AstAccessNode):
         return res
 
 
-class Test(AstSymbolNode, ElementStmt):
+class Test(AstSymbolNode, ElementStmt, UniScopeNode):
     """Test node type for Jac Ast."""
 
     TEST_COUNT = 0
@@ -1163,6 +1139,7 @@ class Test(AstSymbolNode, ElementStmt):
             sym_category=SymbolType.TEST,
         )
         AstDocNode.__init__(self, doc=doc)
+        UniScopeNode.__init__(self, name=self.sym_name, owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize test node."""
@@ -1484,7 +1461,9 @@ class ModuleItem(AstSymbolNode):
         return res
 
 
-class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
+class Architype(
+    ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode, UniScopeNode
+):
     """ObjectArch node type for Jac Ast."""
 
     def __init__(
@@ -1531,6 +1510,7 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
         AstDocNode.__init__(self, doc=doc)
         AstSemStrNode.__init__(self, semstr=semstr)
         ArchSpec.__init__(self, decorators=decorators)
+        UniScopeNode.__init__(self, name=self.name.value, owner=self)
 
     @property
     def is_abstract(self) -> bool:
@@ -1583,7 +1563,7 @@ class Architype(ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode):
         return res
 
 
-class ArchDef(AstImplOnlyNode):
+class ArchDef(AstImplOnlyNode, UniScopeNode):
     """ArchDef node type for Jac Ast."""
 
     def __init__(
@@ -1598,6 +1578,7 @@ class ArchDef(AstImplOnlyNode):
         UniNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
         AstImplOnlyNode.__init__(self, target=target, body=body, decl_link=decl_link)
+        UniScopeNode.__init__(self, name=self.sym_name, owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize arch def node."""
@@ -1615,7 +1596,7 @@ class ArchDef(AstImplOnlyNode):
         return res
 
 
-class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
+class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt, UniScopeNode):
     """Enum node type for Jac Ast."""
 
     def __init__(
@@ -1644,6 +1625,7 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
         AstDocNode.__init__(self, doc=doc)
         AstSemStrNode.__init__(self, semstr=semstr)
         ArchSpec.__init__(self, decorators=decorators)
+        UniScopeNode.__init__(self, name=self.sym_name, owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize enum node."""
@@ -1687,7 +1669,7 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt):
         return res
 
 
-class EnumDef(AstImplOnlyNode):
+class EnumDef(AstImplOnlyNode, UniScopeNode):
     """EnumDef node type for Jac Ast."""
 
     def __init__(
@@ -1703,6 +1685,7 @@ class EnumDef(AstImplOnlyNode):
         UniNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
         AstImplOnlyNode.__init__(self, target=target, body=body, decl_link=decl_link)
+        UniScopeNode.__init__(self, name=self.sym_name, owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize enum def node."""
@@ -1731,6 +1714,7 @@ class Ability(
     CodeBlockStmt,
     AstSemStrNode,
     AstImplNeedingNode,
+    UniScopeNode,
 ):
     """Ability node type for Jac Ast."""
 
@@ -1768,6 +1752,7 @@ class Ability(
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
         AstAsyncNode.__init__(self, is_async=is_async)
+        UniScopeNode.__init__(self, name=self.sym_name, owner=self)
 
     @property
     def is_method(self) -> bool:
@@ -1848,7 +1833,7 @@ class Ability(
         return res
 
 
-class AbilityDef(AstImplOnlyNode):
+class AbilityDef(AstImplOnlyNode, UniScopeNode):
     """AbilityDef node type for Jac Ast."""
 
     def __init__(
@@ -1867,6 +1852,7 @@ class AbilityDef(AstImplOnlyNode):
         UniNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
         AstImplOnlyNode.__init__(self, target=target, body=body, decl_link=decl_link)
+        UniScopeNode.__init__(self, name=self.sym_name, owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ability def node."""
@@ -2186,7 +2172,7 @@ class HasVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
         return res
 
 
-class TypedCtxBlock(CodeBlockStmt):
+class TypedCtxBlock(CodeBlockStmt, UniScopeNode):
     """TypedCtxBlock node type for Jac Ast."""
 
     def __init__(
@@ -2199,6 +2185,7 @@ class TypedCtxBlock(CodeBlockStmt):
         self.type_ctx = type_ctx
         self.body = body
         UniNode.__init__(self, kid=kid)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize typed context block node."""
@@ -2215,7 +2202,7 @@ class TypedCtxBlock(CodeBlockStmt):
         return res
 
 
-class IfStmt(CodeBlockStmt, AstElseBodyNode):
+class IfStmt(CodeBlockStmt, AstElseBodyNode, UniScopeNode):
     """IfStmt node type for Jac Ast."""
 
     def __init__(
@@ -2230,6 +2217,7 @@ class IfStmt(CodeBlockStmt, AstElseBodyNode):
         self.body = body
         UniNode.__init__(self, kid=kid)
         AstElseBodyNode.__init__(self, else_body=else_body)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize if statement node."""
@@ -2270,7 +2258,7 @@ class ElseIf(IfStmt):
         return res
 
 
-class ElseStmt(UniNode):
+class ElseStmt(UniScopeNode):
     """Else node type for Jac Ast."""
 
     def __init__(
@@ -2281,6 +2269,7 @@ class ElseStmt(UniNode):
         """Initialize else node."""
         self.body = body
         UniNode.__init__(self, kid=kid)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize else statement node."""
@@ -2323,7 +2312,7 @@ class ExprStmt(CodeBlockStmt):
         return res and self.expr is not None
 
 
-class TryStmt(AstElseBodyNode, CodeBlockStmt):
+class TryStmt(AstElseBodyNode, CodeBlockStmt, UniScopeNode):
     """TryStmt node type for Jac Ast."""
 
     def __init__(
@@ -2340,6 +2329,7 @@ class TryStmt(AstElseBodyNode, CodeBlockStmt):
         self.finally_body = finally_body
         UniNode.__init__(self, kid=kid)
         AstElseBodyNode.__init__(self, else_body=else_body)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize try statement node."""
@@ -2365,7 +2355,7 @@ class TryStmt(AstElseBodyNode, CodeBlockStmt):
         return res
 
 
-class Except(CodeBlockStmt):
+class Except(CodeBlockStmt, UniScopeNode):
     """Except node type for Jac Ast."""
 
     def __init__(
@@ -2380,6 +2370,7 @@ class Except(CodeBlockStmt):
         self.name = name
         self.body = body
         UniNode.__init__(self, kid=kid)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize except node."""
@@ -2400,7 +2391,7 @@ class Except(CodeBlockStmt):
         return res
 
 
-class FinallyStmt(CodeBlockStmt):
+class FinallyStmt(CodeBlockStmt, UniScopeNode):
     """FinallyStmt node type for Jac Ast."""
 
     def __init__(
@@ -2411,6 +2402,7 @@ class FinallyStmt(CodeBlockStmt):
         """Initialize finally statement node."""
         self.body = body
         UniNode.__init__(self, kid=kid)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize finally statement node."""
@@ -2425,7 +2417,7 @@ class FinallyStmt(CodeBlockStmt):
         return res
 
 
-class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
+class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
     """IterFor node type for Jac Ast."""
 
     def __init__(
@@ -2446,6 +2438,7 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         UniNode.__init__(self, kid=kid)
         AstAsyncNode.__init__(self, is_async=is_async)
         AstElseBodyNode.__init__(self, else_body=else_body)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize iter for node."""
@@ -2472,7 +2465,7 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         return res
 
 
-class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
+class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
     """InFor node type for Jac Ast."""
 
     def __init__(
@@ -2491,6 +2484,7 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         UniNode.__init__(self, kid=kid)
         AstAsyncNode.__init__(self, is_async=is_async)
         AstElseBodyNode.__init__(self, else_body=else_body)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize in for node."""
@@ -2516,7 +2510,7 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt):
         return res
 
 
-class WhileStmt(CodeBlockStmt):
+class WhileStmt(CodeBlockStmt, UniScopeNode):
     """WhileStmt node type for Jac Ast."""
 
     def __init__(
@@ -2529,6 +2523,7 @@ class WhileStmt(CodeBlockStmt):
         self.condition = condition
         self.body = body
         UniNode.__init__(self, kid=kid)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize while statement node."""
@@ -2546,7 +2541,7 @@ class WhileStmt(CodeBlockStmt):
         return res
 
 
-class WithStmt(AstAsyncNode, CodeBlockStmt):
+class WithStmt(AstAsyncNode, CodeBlockStmt, UniScopeNode):
     """WithStmt node type for Jac Ast."""
 
     def __init__(
@@ -2561,6 +2556,7 @@ class WithStmt(AstAsyncNode, CodeBlockStmt):
         self.body = body
         UniNode.__init__(self, kid=kid)
         AstAsyncNode.__init__(self, is_async=is_async)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize with statement node."""
@@ -3142,7 +3138,7 @@ class BoolExpr(Expr):
         return res
 
 
-class LambdaExpr(Expr):
+class LambdaExpr(Expr, UniScopeNode):
     """ExprLambda node type for Jac Ast."""
 
     def __init__(
@@ -3156,6 +3152,7 @@ class LambdaExpr(Expr):
         self.body = body
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ast node."""
@@ -3499,7 +3496,7 @@ class KWPair(UniNode):
         return res
 
 
-class InnerCompr(AstAsyncNode):
+class InnerCompr(AstAsyncNode, UniScopeNode):
     """ListCompr node type for Jac Ast."""
 
     def __init__(
@@ -3516,6 +3513,7 @@ class InnerCompr(AstAsyncNode):
         self.conditional = conditional
         UniNode.__init__(self, kid=kid)
         AstAsyncNode.__init__(self, is_async=is_async)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ast node."""
@@ -3615,7 +3613,7 @@ class SetCompr(ListCompr):
         return res
 
 
-class DictCompr(AtomExpr):
+class DictCompr(AtomExpr, UniScopeNode):
     """DictCompr node type for Jac Ast."""
 
     def __init__(
@@ -3630,6 +3628,7 @@ class DictCompr(AtomExpr):
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ast node."""
@@ -4147,7 +4146,7 @@ class MatchStmt(CodeBlockStmt):
         return res
 
 
-class MatchCase(UniNode):
+class MatchCase(UniScopeNode):
     """MatchCase node type for Jac Ast."""
 
     def __init__(
@@ -4162,6 +4161,7 @@ class MatchCase(UniNode):
         self.guard = guard
         self.body = body
         UniNode.__init__(self, kid=kid)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize match case node."""
@@ -4552,8 +4552,6 @@ class Name(Token, NameAtom):
             pos_end=node.loc.pos_end,
         )
         ret.name_of = set_name_of if set_name_of else ret
-        if node._sym_tab:
-            ret.sym_tab = node.sym_tab
         return ret
 
 
