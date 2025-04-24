@@ -10,7 +10,7 @@ import jaclang.compiler.unitree as uni
 from jaclang.compiler.codeloc import CodeLocInfo
 from jaclang.compiler.constant import SymbolType
 from jaclang.compiler.passes.transform import Alert
-from jaclang.compiler.symtable import Symbol, UniScopeNode
+from jaclang.compiler.unitree import Symbol, UniScopeNode
 from jaclang.vendor.pygls import uris
 
 import lsprotocol.types as lspt

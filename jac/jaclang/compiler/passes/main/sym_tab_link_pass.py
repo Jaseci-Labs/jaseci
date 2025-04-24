@@ -4,7 +4,7 @@ import os
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes import AstPass
-from jaclang.compiler.symtable import InheritedSymbolTable
+from jaclang.compiler.unitree import InheritedSymbolTable
 
 
 class SymTabLinkPass(AstPass):

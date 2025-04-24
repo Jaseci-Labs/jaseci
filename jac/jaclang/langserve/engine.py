@@ -14,7 +14,7 @@ from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.passes.transform import Transform
 from jaclang.compiler.program import JacProgram
-from jaclang.compiler.symtable import UniScopeNode
+from jaclang.compiler.unitree import UniScopeNode
 from jaclang.langserve.sem_manager import SemTokManager
 from jaclang.langserve.utils import (
     add_unique_text_edit,

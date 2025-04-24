@@ -8,7 +8,7 @@ from typing import TypeVar
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes import AstPass
-from jaclang.compiler.symtable import UniScopeNode
+from jaclang.compiler.unitree import UniScopeNode
 
 
 class SymTabBuildPass(AstPass):

@@ -8,7 +8,7 @@ from typing import Optional
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import SymbolAccess
 from jaclang.compiler.passes import AstPass
-from jaclang.compiler.symtable import Symbol
+from jaclang.compiler.unitree import Symbol
 from jaclang.settings import settings
 
 

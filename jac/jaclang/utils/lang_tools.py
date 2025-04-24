@@ -11,7 +11,7 @@ from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 from jaclang.compiler.passes.main.schedules import py_code_gen, type_checker_sched
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.program import JacProgram
-from jaclang.compiler.symtable import UniScopeNode
+from jaclang.compiler.unitree import UniScopeNode
 from jaclang.utils.helpers import auto_generate_refs, pascal_to_snake
 
 

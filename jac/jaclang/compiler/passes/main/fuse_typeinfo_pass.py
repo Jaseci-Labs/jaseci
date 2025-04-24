@@ -12,7 +12,7 @@ from typing import Callable, Optional, TypeVar
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Constants, Tokens
 from jaclang.compiler.passes import AstPass
-from jaclang.compiler.symtable import UniScopeNode
+from jaclang.compiler.unitree import UniScopeNode
 from jaclang.settings import settings
 from jaclang.utils.helpers import pascal_to_snake
 from jaclang.vendor.mypy.nodes import Node as VNode  # bit of a hack

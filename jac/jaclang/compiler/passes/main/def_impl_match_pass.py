@@ -9,7 +9,7 @@ body field.
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes import AstPass
-from jaclang.compiler.symtable import Symbol, UniScopeNode
+from jaclang.compiler.unitree import Symbol, UniScopeNode
 
 
 class DeclImplMatchPass(AstPass):
