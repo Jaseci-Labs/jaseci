@@ -782,6 +782,16 @@ class SymTabBuildPass(AstPass):
         """
         self.sync_node_to_scope(node)
 
+    def enter_spawn_expr(self, node: ast.SpawnExpr) -> None:
+        """Sub objects.
+
+        left: ExprType,
+        right: ExprType,
+        op: Token,
+        is_spatial: bool,
+        """
+        self.sync_node_to_scope(node)
+
     def enter_compare_expr(self, node: ast.CompareExpr) -> None:
         """Sub objects.
 

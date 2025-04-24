@@ -993,6 +993,26 @@ class JacFormatPass(AstPass):
         ) and not node.gen.jac.endswith("\n"):
             self.emit_ln(node, node.kid[-1].value)
 
+    def exit_spawn_expr(self, node: ast.SpawnExpr) -> None:
+        """Sub objects.
+
+        left:Expr,
+        right:Expr,
+        op:Token,
+        is_async:bool,
+        """
+        assert isinstance(node.op, ast.Token)
+        if node.is_spatial:
+            self.emit(
+                node,
+                f"{node.left.gen.jac} spatial {node.op.value} {node.right.gen.jac}",
+            )
+        else:
+            self.emit(
+                node,
+                f"{node.left.gen.jac} {node.op.value} {node.right.gen.jac}",
+            )
+
     def exit_compare_expr(self, node: ast.CompareExpr) -> None:
         """Sub objects.
 

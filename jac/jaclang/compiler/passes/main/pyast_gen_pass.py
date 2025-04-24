@@ -2351,6 +2351,45 @@ class PyastGenPass(AstPass):
             )
         return []
 
+    def exit_spawn_expr(self, node: ast.SpawnExpr) -> None:
+        """Sub objects.
+
+        left: ExprType,
+        right: ExprType,
+        op: Token,
+        is_spatial: bool,
+        """
+        if node.is_spatial:
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Call(
+                        func=self.jaclib_obj("spawn"),
+                        args=cast(
+                            list[ast3.expr],
+                            [
+                                node.left.gen.py_ast[0],
+                                node.right.gen.py_ast[0],
+                                self.sync(ast3.Constant(value=True)),
+                            ],
+                        ),
+                        keywords=[],
+                    )
+                )
+            ]
+        else:
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Call(
+                        func=self.jaclib_obj("spawn"),
+                        args=cast(
+                            list[ast3.expr],
+                            [node.left.gen.py_ast[0], node.right.gen.py_ast[0]],
+                        ),
+                        keywords=[],
+                    )
+                )
+            ]
+
     def exit_compare_expr(self, node: ast.CompareExpr) -> None:
         """Sub objects.
 
