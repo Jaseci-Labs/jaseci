@@ -642,7 +642,7 @@ class Module(AstDocNode):
     def __init__(
         self,
         name: str,
-        source: JacSource,
+        source: Source,
         doc: Optional[String],
         body: Sequence[ElementStmt | String | EmptyToken],
         terminals: list[Token],
@@ -711,8 +711,9 @@ class Module(AstDocNode):
     def format(self) -> str:
         """Get all sub nodes of type."""
         from jaclang.compiler.passes.tool import JacFormatPass
+        from jaclang.compiler.program import JacProgram
 
-        return JacFormatPass(ir_in=self, prior=None, prog=None).ir_out.gen.jac
+        return JacFormatPass(ir_in=self, prog=JacProgram()).ir_out.gen.jac
 
     def unparse(self) -> str:
         """Unparse module node."""
@@ -4123,7 +4124,7 @@ class Token(AstNode):
 
     def __init__(
         self,
-        orig_src: JacSource,
+        orig_src: Source,
         name: str,
         value: str,
         line: int,
@@ -4159,7 +4160,7 @@ class Name(Token, NameAtom):
 
     def __init__(
         self,
-        orig_src: JacSource,
+        orig_src: Source,
         name: str,
         value: str,
         line: int,
@@ -4290,7 +4291,7 @@ class Literal(Token, AtomExpr):
 
     def __init__(
         self,
-        orig_src: JacSource,
+        orig_src: Source,
         name: str,
         value: str,
         line: int,
@@ -4443,11 +4444,11 @@ class Ellipsis(Literal):
 class EmptyToken(Token):
     """EmptyToken node type for Jac Ast."""
 
-    def __init__(self, orig_src: JacSource | None = None) -> None:
+    def __init__(self, orig_src: Source | None = None) -> None:
         """Initialize empty token."""
         super().__init__(
             name="EmptyToken",
-            orig_src=orig_src or JacSource("", ""),
+            orig_src=orig_src or Source("", ""),
             value="",
             line=0,
             end_line=0,
@@ -4467,7 +4468,7 @@ class CommentToken(Token):
 
     def __init__(
         self,
-        orig_src: JacSource,
+        orig_src: Source,
         name: str,
         value: str,
         line: int,
@@ -4499,7 +4500,7 @@ class CommentToken(Token):
 
 
 # ----------------
-class JacSource(EmptyToken):
+class Source(EmptyToken):
     """SourceString node type for Jac Ast."""
 
     def __init__(self, source: str, mod_path: str) -> None:
@@ -4519,7 +4520,7 @@ class JacSource(EmptyToken):
 class PythonModuleAst(EmptyToken):
     """SourceString node type for Jac Ast."""
 
-    def __init__(self, ast: ast3.Module, orig_src: JacSource) -> None:
+    def __init__(self, ast: ast3.Module, orig_src: Source) -> None:
         """Initialize source string."""
         super().__init__()
         self.ast = ast

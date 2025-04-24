@@ -14,7 +14,7 @@ class DefUsePassTests(TestCase):
 
     def test_def_uses(self) -> None:
         """Basic test for pass."""
-        state = JacProgram().jac_file_to_pass(
+        state = JacProgram().compile(
             file_path=self.fixture_abs_path("defs_and_uses.jac"),
             target=DefUsePass,
         )

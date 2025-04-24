@@ -79,7 +79,7 @@ class AstTool:
                 "AstNode",
                 "OOPAccessNode",
                 "WalkerStmtOnlyNode",
-                "JacSource",
+                "Source",
                 "EmptyToken",
                 "AstSymbolNode",
                 "AstSymbolStubNode",
@@ -221,12 +221,12 @@ class AstTool:
                     return f"\n{py_ast.dump(parsed_ast, indent=2)}"
                 try:
                     rep = PyastBuildPass(
-                        root_ir=ast.PythonModuleAst(
+                        ir_in=ast.PythonModuleAst(
                             parsed_ast,
-                            orig_src=ast.JacSource(file_source, file_name),
+                            orig_src=ast.Source(file_source, file_name),
                         ),
                         prog=prog,
-                    ).ir
+                    ).ir_out
 
                     ir = prog.jac_str_to_pass(
                         jac_str=rep.unparse(),
@@ -236,7 +236,7 @@ class AstTool:
                 except Exception as e:
                     return f"Error While Jac to Py AST conversion: {e}"
             else:
-                ir = prog.jac_file_to_pass(
+                ir = prog.compile(
                     file_name, schedule=[*(py_code_gen), *type_checker_sched]
                 ).ir_out
 

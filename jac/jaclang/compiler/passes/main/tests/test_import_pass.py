@@ -22,16 +22,16 @@ class ImportPassPassTests(TestCase):
 
     def test_pygen_jac_cli(self) -> None:
         """Basic test for pass."""
-        state = JacProgram().jac_file_to_pass(
+        state = (out := JacProgram()).compile(
             self.fixture_abs_path("base.jac"), JacImportPass
         )
-        self.assertFalse(state.errors_had)
+        self.assertFalse(out.errors_had)
         mod = state.prog.modules[self.fixture_abs_path("impl/imps.jac")]
         self.assertIn("56", str(mod.to_dict()))
 
     def test_import_auto_impl(self) -> None:
         """Basic test for pass."""
-        state = JacProgram().jac_file_to_pass(
+        state = JacProgram().compile(
             self.fixture_abs_path("autoimpl.jac"), JacImportPass
         )
         num_modules = len(list(state.prog.modules.values())[0].impl_mod)
@@ -43,7 +43,7 @@ class ImportPassPassTests(TestCase):
 
     def test_import_include_auto_impl(self) -> None:
         """Basic test for pass."""
-        state = JacProgram().jac_file_to_pass(
+        state = JacProgram().compile(
             self.fixture_abs_path("incautoimpl.jac"), JacImportPass
         )
         # Adding 1 because of the included module it self
@@ -61,7 +61,7 @@ class ImportPassPassTests(TestCase):
 
     def test_annexalbe_by_discovery(self) -> None:
         """Basic test for pass."""
-        state = JacProgram().jac_file_to_pass(
+        state = JacProgram().compile(
             self.fixture_abs_path("incautoimpl.jac"), JacImportPass
         )
         count = 0
@@ -78,7 +78,7 @@ class ImportPassPassTests(TestCase):
 
     def test_py_raise_map(self) -> None:
         """Basic test for pass."""
-        (build := JacProgram()).jac_file_to_pass(
+        (build := JacProgram()).compile(
             self.fixture_abs_path("py_imp_test.jac"),
             FuseTypeInfoPass,
             schedule=py_code_gen_typed,
@@ -103,7 +103,7 @@ class ImportPassPassTests(TestCase):
 
     def test_py_raised_mods(self) -> None:
         """Basic test for pass."""
-        state = JacProgram().jac_file_to_pass(
+        state = JacProgram().compile(
             self.fixture_abs_path("py_imp_test.jac"), schedule=py_code_gen_typed
         )
         for i in list(
@@ -136,3 +136,12 @@ class ImportPassPassTests(TestCase):
         self.assertIn("foo", stdout_value)
         self.assertIn("bar", stdout_value)
         self.assertIn("baz", stdout_value)
+
+    def test_raise_syntax_error(self) -> None:
+        """Test raise error on the parser , dont go to the next pass."""
+        (state := JacProgram()).compile(
+            self.fixture_abs_path("main_err.jac"), JacImportPass
+        )
+        self.assertTrue(state.errors_had)
+        self.assertEqual(len(state.errors_had), 1)
+        self.assertIn("Syntax Error", state.errors_had[0].msg)

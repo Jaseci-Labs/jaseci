@@ -1,4 +1,4 @@
-from jaclang import JacFeature as _
+from jaclang import JacMachine as _
 import os
 import datetime as dt
 from math import sqrt as square_root, log

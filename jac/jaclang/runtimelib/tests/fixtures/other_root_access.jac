@@ -1,4 +1,4 @@
-import:py from jaclang.runtimelib.feature {JacFeature as Jac}
+import:py from jaclang.runtimelib.machine {JacMachine as Jac}
 import:py from jaclang.runtimelib.architype {Anchor}
 import:py from uuid {UUID}
 

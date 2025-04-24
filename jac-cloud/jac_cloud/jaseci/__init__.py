@@ -25,10 +25,10 @@ class FastAPI:
     @staticmethod
     def enable() -> None:
         """Tag Fastapi as enabled."""
-        from jaclang.runtimelib.feature import JacFeature
+        from jaclang.runtimelib.machine import JacMachine
 
         FastAPI.__is_enabled__ = True
-        JacFeature.setup()
+        JacMachine.setup()
 
     @staticmethod
     def is_enabled() -> bool:

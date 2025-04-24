@@ -6,7 +6,7 @@ from typing import Callable, Generator, Iterable, TypeVar, cast
 
 from bson import ObjectId
 
-from jaclang.runtimelib.feature import JacFeature as Jac
+from jaclang.runtimelib.machine import JacMachine as Jac
 from jaclang.runtimelib.memory import Memory
 
 

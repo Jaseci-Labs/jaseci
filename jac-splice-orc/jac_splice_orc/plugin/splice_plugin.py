@@ -11,7 +11,7 @@ from jac_splice_orc.config.config_loader import ConfigLoader
 from jac_splice_orc.managers.proxy_manager import ModuleProxy
 
 from jaclang.cli.cmdreg import cmd_registry
-from jaclang.runtimelib.feature import JacFeature, JacMachineState, JacProgram
+from jaclang.runtimelib.machine import JacMachine, JacMachineState, JacProgram
 
 
 from kubernetes import client, config
@@ -440,7 +440,7 @@ class SpliceOrcPlugin:
         """Creating Jac CLI commands."""
 
         @cmd_registry.register
-        def orc_initialize(namespace: str, config_path: str = None) -> None:
+        def orc_initialize(namespace: str, config_path: Optional[str] = None) -> None:
             """Initialize the Pod Manager and Kubernetes system.
 
             :param namespace: Kubernetes namespace to use.
@@ -537,7 +537,6 @@ class SpliceOrcPlugin:
             target,
             base_path,
             absorb,
-            cachable,
             mdl_alias,
             override_name,
             lng,
@@ -545,7 +544,7 @@ class SpliceOrcPlugin:
         )
 
         if not mach.jac_program:
-            JacFeature.attach_program(mach, JacProgram())
+            JacMachine.attach_program(mach, JacProgram())
 
         if lng == "py":
             import_result = PythonImporter(mach).run_import(spec)

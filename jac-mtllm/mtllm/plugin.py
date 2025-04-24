@@ -30,7 +30,7 @@ def callable_to_tool(tool: Callable, mod_registry: SemRegistry) -> Tool:
     return Tool(tool, tool_info, tool_info.get_children(mod_registry, ast.ParamVar))
 
 
-class JacFeature:
+class JacMachine:
     """Jac's with_llm feature."""
 
     @staticmethod
@@ -51,7 +51,7 @@ class JacFeature:
         _locals: Mapping,
     ) -> Any:  # noqa: ANN401
         """Jac's with_llm feature."""
-        from jaclang.runtimelib.machine import JacMachineState
+        from jaclang.runtimelib.machinestate import JacMachineState
 
         mod_registry = JacMachineState.get().jac_program.sem_ir
 
