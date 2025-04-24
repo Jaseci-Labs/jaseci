@@ -120,6 +120,7 @@ class TestLarkParser(TestCaseMicroSuite):
 
         exclude = [
             "UniNode",
+            "ProgramModule",
             "WalkerStmtOnlyNode",
             "Source",
             "EmptyToken",
@@ -152,14 +153,14 @@ class TestLarkParser(TestCaseMicroSuite):
         source_code = inspect.getsource(module)
 
         classes = inspect.getmembers(module, inspect.isclass)
-        uni_ast_node_classes = [
+        uni_node_classes = [
             cls
             for _, cls in classes
-            if issubclass(cls, ast.UniAstNode) and not issubclass(cls, ast.Token)
+            if issubclass(cls, ast.UniNode) and not issubclass(cls, ast.Token)
         ]
 
         ordered_classes = sorted(
-            uni_ast_node_classes,
+            uni_node_classes,
             key=lambda cls: source_code.find(f"class {cls.__name__}"),
         )
         for cls in ordered_classes:

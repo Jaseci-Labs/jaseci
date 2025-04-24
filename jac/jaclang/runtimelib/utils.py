@@ -116,7 +116,7 @@ def traverse_graph(
                     dfs(other_nd, cur_depth + 1)
 
 
-def get_sem_scope(node: ast.UniAstNode) -> SemScope:
+def get_sem_scope(node: ast.UniNode) -> SemScope:
     """Get scope of the node."""
     a = (
         node.name
@@ -147,7 +147,7 @@ def get_sem_scope(node: ast.UniAstNode) -> SemScope:
     return SemScope("", "", None)
 
 
-def extract_type(node: ast.UniAstNode) -> list[str]:
+def extract_type(node: ast.UniNode) -> list[str]:
     """Collect type information in assignment using bfs."""
     extracted_type = []
     if isinstance(node, (ast.BuiltinType, ast.Token)):

@@ -16,7 +16,7 @@ from jaclang.vendor.lark import Lark, Transformer, Tree, logger
 if TYPE_CHECKING:
     from jaclang.compiler.program import JacProgram
 
-T = TypeVar("T", bound=ast.UniAstNode)
+T = TypeVar("T", bound=ast.UniNode)
 
 
 class JacParser(Transform[ast.Source, ast.Module]):
@@ -27,7 +27,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
     def __init__(self, root_ir: ast.Source, prog: JacProgram) -> None:
         """Initialize parser."""
         self.mod_path = root_ir.loc.mod_path
-        self.node_list: list[ast.UniAstNode] = []
+        self.node_list: list[ast.UniNode] = []
         if JacParser.dev_mode:
             JacParser.make_dev()
         Transform.__init__(self, ir_in=root_ir, prog=prog)
@@ -40,7 +40,6 @@ class JacParser(Transform[ast.Source, ast.Module]):
             ir_in.comments = [self.proc_comment(i, mod) for i in comments]
             if isinstance(mod, ast.Module):
                 self.ir_out = mod
-                self.prog.modules[self.ir_out.loc.mod_path] = self.ir_out
                 return mod
             else:
                 raise self.ice()
@@ -68,11 +67,12 @@ class JacParser(Transform[ast.Source, ast.Module]):
             doc=None,
             body=[],
             terminals=[],
+            stub_only=True,
             kid=[ast.EmptyToken()],
         )
 
     @staticmethod
-    def proc_comment(token: jl.Token, mod: ast.UniAstNode) -> ast.CommentToken:
+    def proc_comment(token: jl.Token, mod: ast.UniNode) -> ast.CommentToken:
         """Process comment."""
         return ast.CommentToken(
             orig_src=mod.loc.orig_src,
@@ -116,13 +116,13 @@ class JacParser(Transform[ast.Source, ast.Module]):
             debug=True,
             lexer_callbacks={"COMMENT": JacParser._comment_callback},
         )
-        JacParser.JacTransformer = Transformer[Tree[str], ast.UniAstNode]  # type: ignore
+        JacParser.JacTransformer = Transformer[Tree[str], ast.UniNode]  # type: ignore
         logger.setLevel(logging.DEBUG)
 
     comment_cache: list[jl.Token] = []
 
     parser = jl.Lark_StandAlone(lexer_callbacks={"COMMENT": _comment_callback})  # type: ignore
-    JacTransformer: TypeAlias = jl.Transformer[jl.Tree[str], ast.UniAstNode]
+    JacTransformer: TypeAlias = jl.Transformer[jl.Tree[str], ast.UniNode]
 
     class TreeToAST(JacTransformer):
         """Transform parse tree to AST."""
@@ -135,7 +135,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
             # TODO: Once the kid is removed from the ast, we can get rid of this
             # node_idx and directly pop(0) kid as we process the nodes.
             self.node_idx = 0
-            self.cur_nodes: list[ast.UniAstNode] = []
+            self.cur_nodes: list[ast.UniNode] = []
 
         def ice(self) -> Exception:
             """Raise internal compiler error."""
@@ -151,8 +151,8 @@ class JacParser(Transform[ast.Source, ast.Module]):
             return node
 
         def _call_userfunc(
-            self, tree: jl.Tree, new_children: None | list[ast.UniAstNode] = None
-        ) -> ast.UniAstNode:
+            self, tree: jl.Tree, new_children: None | list[ast.UniNode] = None
+        ) -> ast.UniNode:
             self.cur_nodes = new_children or tree.children  # type: ignore[assignment]
             try:
                 return self._node_update(super()._call_userfunc(tree, new_children))
@@ -160,10 +160,10 @@ class JacParser(Transform[ast.Source, ast.Module]):
                 self.cur_nodes = []
                 self.node_idx = 0
 
-        def _call_userfunc_token(self, token: jl.Token) -> ast.UniAstNode:
+        def _call_userfunc_token(self, token: jl.Token) -> ast.UniNode:
             return self._node_update(super()._call_userfunc_token(token))
 
-        def _binary_expr_unwind(self, kid: list[ast.UniAstNode]) -> ast.Expr:
+        def _binary_expr_unwind(self, kid: list[ast.UniNode]) -> ast.Expr:
             """Binary expression helper."""
             if len(kid) > 1:
                 if (
@@ -224,14 +224,14 @@ class JacParser(Transform[ast.Source, ast.Module]):
 
         def match_many(self, ty: type[T]) -> list[T]:
             """Match 0 or more of the given type and return the list."""
-            nodes: list[ast.UniAstNode] = []
+            nodes: list[ast.UniNode] = []
             while node := self.match(ty):
                 nodes.append(node)
             return nodes  # type: ignore[return-value]
 
         def consume_many(self, ty: type[T]) -> list[T]:
             """Match 1 or more of the given type and return the list."""
-            nodes: list[ast.UniAstNode] = [self.consume(ty)]
+            nodes: list[ast.UniNode] = [self.consume(ty)]
             while node := self.match(ty):
                 nodes.append(node)
             return nodes  # type: ignore[return-value]
@@ -591,9 +591,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
                 kid=self.cur_nodes,
             )
 
-        def inherited_archs(
-            self, kid: list[ast.UniAstNode]
-        ) -> ast.SubNodeList[ast.Expr]:
+        def inherited_archs(self, kid: list[ast.UniNode]) -> ast.SubNodeList[ast.Expr]:
             """Grammar rule.
 
             inherited_archs: LT (atomic_chain COMMA)* atomic_chain GT
@@ -802,7 +800,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
                 kid=self.cur_nodes,
             )
 
-        def ability_def(self, kid: list[ast.UniAstNode]) -> ast.AbilityDef:
+        def ability_def(self, kid: list[ast.UniNode]) -> ast.AbilityDef:
             """Grammar rule.
 
             ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
@@ -1000,7 +998,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
                 ret.signature.is_method = True
             return ret
 
-        def has_stmt(self, kid: list[ast.UniAstNode]) -> ast.ArchHas:
+        def has_stmt(self, kid: list[ast.UniNode]) -> ast.ArchHas:
             """Grammar rule.
 
             has_stmt: KW_STATIC? (KW_LET | KW_HAS) access_tag? has_assign_list SEMI
@@ -1108,7 +1106,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
             )
 
         def code_block(
-            self, kid: list[ast.UniAstNode]
+            self, kid: list[ast.UniNode]
         ) -> ast.SubNodeList[ast.CodeBlockStmt]:
             """Grammar rule.
 
@@ -1128,7 +1126,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
             else:
                 raise self.ice()
 
-        def statement(self, kid: list[ast.UniAstNode]) -> ast.CodeBlockStmt:
+        def statement(self, kid: list[ast.UniNode]) -> ast.CodeBlockStmt:
             """Grammar rule.
 
             statement: import_stmt
@@ -1683,7 +1681,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
             lamda_expr: KW_WITH func_decl_params? (RETURN_HINT expression)? KW_CAN expression
             """
             return_type: ast.Expr | None = None
-            sig_kid: list[ast.UniAstNode] = []
+            sig_kid: list[ast.UniNode] = []
             self.consume_token(Tok.KW_WITH)
             params = self.match(ast.SubNodeList)
             if self.match_token(Tok.RETURN_HINT):
@@ -2129,7 +2127,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
             """
             return self.consume(ast.AtomExpr)
 
-        def atom_collection(self, kid: list[ast.UniAstNode]) -> ast.AtomExpr:
+        def atom_collection(self, kid: list[ast.UniNode]) -> ast.AtomExpr:
             """Grammar rule.
 
             atom_collection: dict_compr
@@ -2251,7 +2249,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
                 kid=self.cur_nodes,
             )
 
-        def expr_list(self, kid: list[ast.UniAstNode]) -> ast.SubNodeList[ast.Expr]:
+        def expr_list(self, kid: list[ast.UniNode]) -> ast.SubNodeList[ast.Expr]:
             """Grammar rule.
 
             expr_list: (expr_list COMMA)? expression
@@ -2269,9 +2267,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
                 kid=new_kid,
             )
 
-        def kw_expr_list(
-            self, kid: list[ast.UniAstNode]
-        ) -> ast.SubNodeList[ast.KWPair]:
+        def kw_expr_list(self, kid: list[ast.UniNode]) -> ast.SubNodeList[ast.KWPair]:
             """Grammar rule.
 
             kw_expr_list: (kw_expr_list COMMA)? kw_expr
@@ -2521,7 +2517,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
                 kid=new_kid,
             )
 
-        def arch_ref(self, kid: list[ast.UniAstNode]) -> ast.ArchRef:
+        def arch_ref(self, kid: list[ast.UniNode]) -> ast.ArchRef:
             """Grammar rule.
 
             arch_ref: object_ref
@@ -2532,7 +2528,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
             """
             return self.consume(ast.ArchRef)
 
-        def node_ref(self, kid: list[ast.UniAstNode]) -> ast.ArchRef:
+        def node_ref(self, kid: list[ast.UniNode]) -> ast.ArchRef:
             """Grammar rule.
 
             node_ref: NODE_OP NAME
@@ -2545,7 +2541,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
                 kid=self.cur_nodes,
             )
 
-        def edge_ref(self, kid: list[ast.UniAstNode]) -> ast.ArchRef:
+        def edge_ref(self, kid: list[ast.UniNode]) -> ast.ArchRef:
             """Grammar rule.
 
             edge_ref: EDGE_OP NAME
@@ -2558,7 +2554,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
                 kid=self.cur_nodes,
             )
 
-        def walker_ref(self, kid: list[ast.UniAstNode]) -> ast.ArchRef:
+        def walker_ref(self, kid: list[ast.UniNode]) -> ast.ArchRef:
             """Grammar rule.
 
             walker_ref: WALKER_OP NAME
@@ -2571,7 +2567,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
                 kid=self.cur_nodes,
             )
 
-        def class_ref(self, kid: list[ast.UniAstNode]) -> ast.ArchRef:
+        def class_ref(self, kid: list[ast.UniNode]) -> ast.ArchRef:
             """Grammar rule.
 
             class_ref: CLASS_OP name_ref
@@ -2584,7 +2580,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
                 kid=self.cur_nodes,
             )
 
-        def object_ref(self, kid: list[ast.UniAstNode]) -> ast.ArchRef:
+        def object_ref(self, kid: list[ast.UniNode]) -> ast.ArchRef:
             """Grammar rule.
 
             object_ref: OBJECT_OP name_ref
@@ -2597,7 +2593,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
                 kid=self.cur_nodes,
             )
 
-        def type_ref(self, kid: list[ast.UniAstNode]) -> ast.ArchRef:
+        def type_ref(self, kid: list[ast.UniNode]) -> ast.ArchRef:
             """Grammar rule.
 
             type_ref: TYPE_OP (named_ref | builtin_type)
@@ -2610,7 +2606,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
                 kid=self.cur_nodes,
             )
 
-        def enum_ref(self, kid: list[ast.UniAstNode]) -> ast.ArchRef:
+        def enum_ref(self, kid: list[ast.UniNode]) -> ast.ArchRef:
             """Grammar rule.
 
             enum_ref: ENUM_OP NAME
@@ -2636,7 +2632,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
                 kid=self.cur_nodes,
             )
 
-        def arch_or_ability_chain(self, kid: list[ast.UniAstNode]) -> ast.ArchRefChain:
+        def arch_or_ability_chain(self, kid: list[ast.UniNode]) -> ast.ArchRefChain:
             """Grammar rule.
 
             arch_or_ability_chain: arch_or_ability_chain? (ability_ref | arch_ref)
@@ -2720,7 +2716,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
                 kid=self.cur_nodes,
             )
 
-        def edge_op_ref(self, kid: list[ast.UniAstNode]) -> ast.EdgeOpRef:
+        def edge_op_ref(self, kid: list[ast.UniNode]) -> ast.EdgeOpRef:
             """Grammar rule.
 
             edge_op_ref: (edge_any | edge_from | edge_to)
@@ -2790,7 +2786,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
             """
             return self.consume(ast.ConnectOp)
 
-        def disconnect_op(self, kid: list[ast.UniAstNode]) -> ast.DisconnectOp:
+        def disconnect_op(self, kid: list[ast.UniNode]) -> ast.DisconnectOp:
             """Grammar rule.
 
             disconnect_op: NOT edge_op_ref
@@ -3060,7 +3056,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
                 kid=self.cur_nodes,
             )
 
-        def pattern(self, kid: list[ast.UniAstNode]) -> ast.MatchPattern:
+        def pattern(self, kid: list[ast.UniNode]) -> ast.MatchPattern:
             """Grammar rule.
 
             pattern: literal_pattern

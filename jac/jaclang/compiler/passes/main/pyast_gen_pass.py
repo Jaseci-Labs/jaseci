@@ -69,14 +69,14 @@ class PyastGenPass(AstPass):
             ),
         ]
 
-    def enter_node(self, node: ast.UniAstNode) -> None:
+    def enter_node(self, node: ast.UniNode) -> None:
         """Enter node."""
         if node.gen.py_ast:
             self.prune()
             return
         super().enter_node(node)
 
-    def exit_node(self, node: ast.UniAstNode) -> None:
+    def exit_node(self, node: ast.UniNode) -> None:
         """Exit node."""
         super().exit_node(node)
         # for i in node.gen.py_ast:  # Internal validation
@@ -147,7 +147,7 @@ class PyastGenPass(AstPass):
         return new_body
 
     def sync(
-        self, py_node: T, jac_node: Optional[ast.UniAstNode] = None, deep: bool = False
+        self, py_node: T, jac_node: Optional[ast.UniNode] = None, deep: bool = False
     ) -> T:
         """Sync ast locations."""
         if not jac_node:
@@ -227,14 +227,14 @@ class PyastGenPass(AstPass):
             ]
         return ret
 
-    def sync_many(self, py_nodes: list[T], jac_node: ast.UniAstNode) -> list[T]:
+    def sync_many(self, py_nodes: list[T], jac_node: ast.UniNode) -> list[T]:
         """Sync ast locations."""
         for py_node in py_nodes:
             self.sync(py_node, jac_node)
         return py_nodes
 
     def list_to_attrib(
-        self, attribute_list: list[str], sync_node_list: Sequence[ast.UniAstNode]
+        self, attribute_list: list[str], sync_node_list: Sequence[ast.UniNode]
     ) -> ast3.AST:
         """Convert list to attribute."""
         attr_node: ast3.Name | ast3.Attribute = self.sync(
@@ -275,7 +275,7 @@ class PyastGenPass(AstPass):
         is_imported: bool,
         """
         clean_body = [i for i in node.body if not isinstance(i, ast.AstImplOnlyNode)]
-        pre_body: list[ast.UniAstNode] = []
+        pre_body: list[ast.UniNode] = []
         for pbody in node.impl_mod:
             pre_body = [*pre_body, *pbody.body]
         pre_body = [*pre_body, *clean_body]

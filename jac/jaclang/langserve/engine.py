@@ -70,10 +70,10 @@ class JacLangServer(LanguageServer):
             self.log_error("Error with module build.")
             return
         self.modules[file_path] = ModuleInfo(ir=build.ir_out)
-        for p in self.program.modules.keys():
+        for p in self.program.mod.hub.keys():
             uri = uris.from_fs_path(p)
             if file_path != uri:
-                self.modules[uri] = ModuleInfo(ir=self.program.modules[p])
+                self.modules[uri] = ModuleInfo(ir=self.program.mod.hub[p])
 
     def quick_check(self, file_path: str) -> bool:
         """Rebuild a file."""
@@ -173,7 +173,7 @@ class JacLangServer(LanguageServer):
         current_pos = position.character
         current_symbol_path = parse_symbol_path(current_line, current_pos)
         builtin_mod = next(
-            mod for name, mod in self.program.modules.items() if "builtins" in name
+            mod for name, mod in self.program.mod.hub.items() if "builtins" in name
         )
         builtin_tab = builtin_mod.sym_tab
         assert isinstance(builtin_tab, SymbolTable)

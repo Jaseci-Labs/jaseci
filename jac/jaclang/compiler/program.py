@@ -39,10 +39,10 @@ logger = logging.getLogger(__name__)
 class JacProgram:
     """JacProgram to handle the Jac program-related functionalities."""
 
-    def __init__(self) -> None:
+    def __init__(self, main_mod: Optional[ast.ProgramModule] = None) -> None:
         """Initialize the JacProgram object."""
         self.sem_ir = SemRegistry()
-        self.modules: dict[str, Module] = {}
+        self.mod: ast.ProgramModule = main_mod if main_mod else ast.ProgramModule()
         self.last_imported: list[Module] = []
         self.py_raise_map: dict[str, str] = {}
         self.errors_had: list[Alert] = []
@@ -52,8 +52,8 @@ class JacProgram:
         self, full_target: str, full_compile: bool = True
     ) -> Optional[types.CodeType]:
         """Get the bytecode for a specific module."""
-        if full_target in self.modules:
-            codeobj = self.modules[full_target].gen.py_bytecode
+        if self.mod and full_target in self.mod.hub:
+            codeobj = self.mod.hub[full_target].gen.py_bytecode
             return marshal.loads(codeobj) if isinstance(codeobj, bytes) else None
         result = self.compile(file_path=full_target, full_compile=full_compile)
         if result.errors_had:
@@ -143,9 +143,12 @@ class JacProgram:
         full_compile: bool = True,
     ) -> Transform:
         """Convert a Jac file to an AST."""
-        # Creating a new JacProgram and attaching it to top module
-        self.modules[cur_pass.ir_out.loc.mod_path] = cur_pass.ir_out
         top_mod: ast.Module = cur_pass.ir_out
+        if self.mod.stub_only:
+            self.mod = ast.ProgramModule(top_mod)
+        # Creating a new JacProgram and attaching it to top module
+        self.mod.hub[cur_pass.ir_out.loc.mod_path] = cur_pass.ir_out
+
         self.last_imported.append(cur_pass.ir_out)
         self.annex_impl(cur_pass.ir_out)
         # Only return the parsed module when the schedules are empty
@@ -177,7 +180,7 @@ class JacProgram:
             mod = self.last_imported.pop()
             JacImportPass(ir_in=mod, prog=self)
 
-        for mod in self.modules.values():
+        for mod in self.mod.hub.values():
             SymTabBuildPass(ir_in=mod, prog=self)
 
         # If there is syntax error, no point in processing in further passes.
@@ -190,14 +193,14 @@ class JacProgram:
             return cur_pass
 
         # Link all Jac symbol tables created
-        for mod in self.modules.values():
+        for mod in self.mod.hub.values():
             SymTabLinkPass(ir_in=mod, prog=self)
 
-        for mod in self.modules.values():
+        for mod in self.mod.hub.values():
             run_schedule(mod, schedule=schedule)
 
         # Check if we need to run without type checking then just return
-        if "JAC_NO_TYPECHECK" in os.environ or target in py_code_gen:
+        if target in py_code_gen:
             cur_pass.ir_out = top_mod
             return cur_pass
 
@@ -208,10 +211,10 @@ class JacProgram:
         #     ast_ret.ir = top_mod
         #     return ast_ret
 
-        for mod in self.modules.values():
+        for mod in self.mod.hub.values():
             PyCollectDepsPass(mod, prog=self)
 
-        for mod in self.modules.values():
+        for mod in self.mod.hub.values():
             self.last_imported.append(mod)
         # Run PyImportPass
         while len(self.last_imported) > 0:
@@ -219,13 +222,13 @@ class JacProgram:
             PyImportPass(mod, prog=self)
 
         # Link all Jac symbol tables created
-        for mod in self.modules.values():
+        for mod in self.mod.hub.values():
             SymTabLinkPass(ir_in=mod, prog=self)
 
-        for mod in self.modules.values():
+        for mod in self.mod.hub.values():
             DefUsePass(mod, prog=self)
 
-        for mod in self.modules.values():
+        for mod in self.mod.hub.values():
             run_schedule(mod, schedule=type_checker_sched)
 
         cur_pass.ir_out = top_mod

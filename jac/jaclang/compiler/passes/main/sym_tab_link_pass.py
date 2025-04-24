@@ -18,7 +18,7 @@ class SymTabLinkPass(AstPass):
             rel_path = node.resolve_relative_path()
             if os.path.isdir(rel_path):
                 rel_path = f"{rel_path}/__init__.jac"
-            if rel_path not in self.prog.modules:
+            if rel_path not in self.prog.mod.hub:
                 self.log_error(
                     f"Module {rel_path} not found in the program. Something went wrong.",
                     node,
@@ -37,7 +37,7 @@ class SymTabLinkPass(AstPass):
             else:
                 return
 
-        imported_mod_symtab = self.prog.modules[rel_path].sym_tab
+        imported_mod_symtab = self.prog.mod.hub[rel_path].sym_tab
 
         all_import = False
         symbols_str_list: list[str] = []

@@ -15,7 +15,7 @@ class PyJacAstLinkPass(AstPass):
     """Link jac ast to python ast nodes."""
 
     def link_jac_py_nodes(
-        self, jac_node: ast.UniAstNode, py_nodes: list[ast3.AST]
+        self, jac_node: ast.UniNode, py_nodes: list[ast3.AST]
     ) -> None:
         """Link jac name ast to py ast nodes."""
         jac_node.gen.py_ast = py_nodes

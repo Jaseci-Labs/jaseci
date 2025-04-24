@@ -310,8 +310,8 @@ class JacLanguageTests(TestCase):
         Jac.jac_import(
             mach, "deep_import_interp", base_path=self.fixture_abs_path("./")
         )
-        print(mach.jac_program.modules.keys())
-        self.assertEqual(len(mach.jac_program.modules.keys()), 1)
+        print(mach.jac_program.mod.hub.keys())
+        self.assertEqual(len(mach.jac_program.mod.hub.keys()), 1)
         mach = JacMachineState(self.fixture_abs_path("./"), interp_mode=False)
         Jac.attach_program(
             mach,
@@ -320,8 +320,8 @@ class JacLanguageTests(TestCase):
         Jac.jac_import(
             mach, "deep_import_interp", base_path=self.fixture_abs_path("./")
         )
-        print(mach.jac_program.modules.keys())
-        self.assertEqual(len(mach.jac_program.modules.keys()), 5)
+        print(mach.jac_program.mod.hub.keys())
+        self.assertEqual(len(mach.jac_program.mod.hub.keys()), 5)
 
     def test_deep_imports_mods(self) -> None:
         """Parse micro jac file."""
@@ -611,7 +611,7 @@ class JacLanguageTests(TestCase):
         ).ir_out
 
         architype_count = 0
-        for mod in prog.modules.values():
+        for mod in prog.mod.hub.values():
             if mod.name == "builtins":
                 continue
             architype_count += len(mod.get_all_sub_nodes(ast.Architype))
@@ -687,7 +687,7 @@ class JacLanguageTests(TestCase):
             ).ir_out
 
         architype_count = 0
-        for mod in prog.modules.values():
+        for mod in prog.mod.hub.values():
             if mod.name == "builtins":
                 continue
             architype_count += len(mod.get_all_sub_nodes(ast.Architype))
@@ -740,14 +740,14 @@ class JacLanguageTests(TestCase):
 
         architype_count = sum(
             len(mod.get_all_sub_nodes(ast.Architype))
-            for mod in prog.modules.values()
+            for mod in prog.mod.hub.values()
             if mod.name != "builtins"
         )
         self.assertEqual(
             architype_count, 55
         )  # Fixed duplication of 'case' module (previously included 3 times, added 20 extra Architypes; 75 → 55)
         builtin_mod = next(
-            (mod for name, mod in prog.modules.items() if "builtins" in name),
+            (mod for name, mod in prog.mod.hub.items() if "builtins" in name),
             None,
         )
         self.assertEqual(len(builtin_mod.get_all_sub_nodes(ast.Architype)), 108)
@@ -963,7 +963,7 @@ class JacLanguageTests(TestCase):
         jac_ast = ir.pp()
         self.assertIn(" |   +-- String - 'Loop completed normally{}'", jac_ast)
         sub_node_list_count = 0
-        for i in prog.modules.values():
+        for i in prog.mod.hub.values():
             if i.name == "builtins":
                 continue
             sub_node_list_count += len(i.get_all_sub_nodes(ast.SubNodeList))

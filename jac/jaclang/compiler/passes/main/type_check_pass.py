@@ -24,7 +24,7 @@ class JacTypeCheckPass(AstPass):
             / "vendor"
             / "mypy"
         )
-        self.__modules = list(self.prog.modules.values())
+        self.__modules = list(self.prog.mod.hub.values())
         self.terminate()
         return super().before_pass()
 

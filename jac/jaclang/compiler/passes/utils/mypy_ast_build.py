@@ -10,7 +10,7 @@ from jaclang.compiler.passes import AstPass
 from jaclang.compiler.passes.main.fuse_typeinfo_pass import (
     FuseTypeInfoPass,
 )
-from jaclang.compiler.unitree import UniAstNode
+from jaclang.compiler.unitree import UniNode
 
 import mypy.build as myb
 import mypy.checkexpr as mycke
@@ -87,7 +87,7 @@ EXPRESSION_NODES = (
 
 
 mypy_to_jac_node_map: dict[
-    tuple[int, int | None, int | None, int | None], list[UniAstNode]
+    tuple[int, int | None, int | None, int | None], list[UniNode]
 ] = {}
 
 

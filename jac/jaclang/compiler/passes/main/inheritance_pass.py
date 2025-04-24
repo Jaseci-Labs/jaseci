@@ -22,7 +22,7 @@ class InheritancePass(AstPass):
         if symbol is None:
             # Check if the needed symbol in builtins
             builtins_symtable = None
-            for mod in self.prog.modules.values():
+            for mod in self.prog.mod.hub.values():
                 if mod.name == "builtins":
                     builtins_symtable = mod.sym_tab
 

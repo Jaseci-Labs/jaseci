@@ -17,7 +17,7 @@ class SemInfo:
 
     def __init__(
         self,
-        node: ast.UniAstNode,
+        node: ast.UniNode,
         name: str,
         type_str: Optional[str] = None,
         semstr: str = "",
@@ -33,7 +33,7 @@ class SemInfo:
         return f"{self.semstr} ({self.type}) ({self.name})"
 
     def get_children(
-        self, sem_registry: SemRegistry, filter: Optional[type[ast.UniAstNode]] = None
+        self, sem_registry: SemRegistry, filter: Optional[type[ast.UniNode]] = None
     ) -> list[SemInfo]:
         """Get the children of the SemInfo."""
         scope, _ = sem_registry.lookup(name=self.name)

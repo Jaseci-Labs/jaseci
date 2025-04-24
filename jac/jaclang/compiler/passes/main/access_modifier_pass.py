@@ -34,11 +34,11 @@ class AccessCheckPass(AstPass):
                 return True
         return False
 
-    def report_error(self, message: str, node: Optional[ast.UniAstNode] = None) -> None:
+    def report_error(self, message: str, node: Optional[ast.UniNode] = None) -> None:
         """Report error message related to illegal access of attributes and objects."""
         self.log_error(message, node)
 
-    def exit_node(self, node: ast.UniAstNode) -> None:  # TODO: Move to debug pass
+    def exit_node(self, node: ast.UniNode) -> None:  # TODO: Move to debug pass
         """Exit node."""
         super().exit_node(node)
         if (
@@ -98,7 +98,7 @@ class AccessCheckPass(AstPass):
         access_type = "protected" if is_portect else "private"
 
         # The class we're currently in (None if we're not inside any).
-        sym_owner: ast.UniAstNode = node.sym.parent_tab.owner
+        sym_owner: ast.UniNode = node.sym.parent_tab.owner
 
         # If the symbol belongs to a class, we need to check if the access used properly
         # within the class and in it's inherited classes.

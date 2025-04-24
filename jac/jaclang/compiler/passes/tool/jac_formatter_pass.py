@@ -9,7 +9,7 @@ from typing import Optional
 import jaclang.compiler.unitree as ast
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes import AstPass
-from jaclang.compiler.unitree import UniAstNode
+from jaclang.compiler.unitree import UniNode
 from jaclang.settings import settings
 
 
@@ -23,7 +23,7 @@ class JacFormatPass(AstPass):
         self.indent_level = 0
         self.MAX_LINE_LENGTH = int(float(settings.max_line_length) / 2)
 
-    def enter_node(self, node: ast.UniAstNode) -> None:
+    def enter_node(self, node: ast.UniNode) -> None:
         """Enter node."""
         node.gen.jac = ""
         super().enter_node(node)
@@ -48,7 +48,7 @@ class JacFormatPass(AstPass):
         """Return string for indent."""
         return " " * self.indent_size * self.indent_level
 
-    def emit(self, node: ast.UniAstNode, s: str, strip_mode: bool = True) -> None:
+    def emit(self, node: ast.UniNode, s: str, strip_mode: bool = True) -> None:
         """Emit code to node."""
         indented_str = re.sub(r"\n(?!\n)", f"\n{self.indent_str()}", s)
         node.gen.jac += self.indent_str() + indented_str
@@ -58,7 +58,7 @@ class JacFormatPass(AstPass):
             else:
                 node.gen.jac = node.gen.jac
 
-    def emit_ln(self, node: ast.UniAstNode, s: str) -> None:
+    def emit_ln(self, node: ast.UniNode, s: str) -> None:
         """Emit code to node."""
         self.emit(node, s.strip().strip("\n"))
         self.emit(node, "\n")
@@ -387,7 +387,7 @@ class JacFormatPass(AstPass):
         target: AtomType,
         params: Optional[ParamList],
         """
-        prev_token: Optional[UniAstNode] = None
+        prev_token: Optional[UniNode] = None
         line_break_needed = False
         indented = False
         test_str = ""
@@ -1353,7 +1353,7 @@ class JacFormatPass(AstPass):
         if isinstance(node.kid[-1], (ast.Semi, ast.CommentToken)):
             self.emit_ln(node, "")
 
-    def handle_long_assignment(self, node: ast.Assignment, kid: ast.UniAstNode) -> None:
+    def handle_long_assignment(self, node: ast.Assignment, kid: ast.UniNode) -> None:
         """Handle long assignment lines."""
         parts = re.split(r"(=)", kid.gen.jac)
         first_part = parts.pop(0).strip()
@@ -1373,7 +1373,7 @@ class JacFormatPass(AstPass):
                 self.emit(node, op)
                 self.indent_level -= 1
 
-    def handle_long_expression(self, node: ast.UniAstNode, kid: ast.UniAstNode) -> None:
+    def handle_long_expression(self, node: ast.UniNode, kid: ast.UniNode) -> None:
         """Handle long expressions with multiple operators."""
         parts = re.split(r"(\+|\-|\*|\/)", kid.gen.jac)
         self.emit_ln(node, f"{parts.pop(0).strip()}")

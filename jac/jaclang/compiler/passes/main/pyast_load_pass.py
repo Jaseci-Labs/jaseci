@@ -16,7 +16,7 @@ from jaclang.utils.helpers import pascal_to_snake
 if TYPE_CHECKING:
     from jaclang.compiler.program import JacProgram
 
-T = TypeVar("T", bound=ast.UniAstNode)
+T = TypeVar("T", bound=ast.UniNode)
 
 
 class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
@@ -39,7 +39,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         #     f"{node.__class__.__name__} - {[(k, type(v)) for k, v in vars(node).items()]}"
         # )
 
-    def convert(self, node: py_ast.AST) -> ast.UniAstNode:
+    def convert(self, node: py_ast.AST) -> ast.UniNode:
         """Get python node type."""
         # print(
         #     f"working on {type(node).__name__} line {node.lineno if hasattr(node, 'lineno') else 0}"
@@ -61,7 +61,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         return self.ir_out
 
     def extract_with_entry(
-        self, body: list[ast.UniAstNode], exclude_types: TypeAlias = T
+        self, body: list[ast.UniNode], exclude_types: TypeAlias = T
     ) -> list[T | ast.ModuleCode]:
         """Extract with entry from a body."""
 
@@ -107,7 +107,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             body: list[stmt]
             type_ignores: list[TypeIgnore]
         """
-        elements: list[ast.UniAstNode] = [self.convert(i) for i in node.body]
+        elements: list[ast.UniNode] = [self.convert(i) for i in node.body]
         elements[0] = (
             elements[0].expr
             if isinstance(elements[0], ast.ExprStmt)
@@ -331,7 +331,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             if body and not (isinstance(body[0], ast.Semi) and len(body) == 1)
             else []
         )
-        empty_block: Sequence[ast.UniAstNode] = [
+        empty_block: Sequence[ast.UniNode] = [
             self.operator(Tok.LBRACE, "{"),
             self.operator(Tok.RBRACE, "}"),
         ]
@@ -1984,7 +1984,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             valid_elts = ast.SubNodeList[ast.Expr](
                 items=valid, delim=Tok.COMMA, kid=valid
             )
-            kid: list[ast.UniAstNode] = [*valid]
+            kid: list[ast.UniNode] = [*valid]
         else:
             valid_elts = None
             l_brace = self.operator(Tok.LBRACE, "{")
@@ -2116,7 +2116,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             left_enc=self.operator(Tok.LBRACE, "{"),
             right_enc=self.operator(Tok.RBRACE, "}"),
         )
-        kid: list[ast.UniAstNode] = [valid_body]
+        kid: list[ast.UniNode] = [valid_body]
 
         if len(node.handlers) != 0:
             handlers = [self.convert(i) for i in node.handlers]

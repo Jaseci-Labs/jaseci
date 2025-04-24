@@ -59,7 +59,7 @@ class JacImportPass(AstPass):
                             self.load_mod(self.import_jac_mod_from_dir(from_mod_target))
                         # Else module
                         else:
-                            if from_mod_target in self.prog.modules:
+                            if from_mod_target in self.prog.mod.hub:
                                 return
                             self.load_mod(
                                 self.prog.compile(
@@ -67,14 +67,14 @@ class JacImportPass(AstPass):
                                 ).ir_out
                             )
         else:
-            if target in self.prog.modules:
+            if target in self.prog.mod.hub:
                 return
             self.load_mod(self.prog.compile(file_path=target, schedule=[]).ir_out)
 
     def load_mod(self, mod: ast.Module | None) -> None:
         """Attach a module to a node."""
-        if mod and mod.loc.mod_path not in self.prog.modules:
-            self.prog.modules[mod.loc.mod_path] = mod
+        if mod and mod.loc.mod_path not in self.prog.mod.hub:
+            self.prog.mod.hub[mod.loc.mod_path] = mod
             self.prog.last_imported.append(mod)
 
     # TODO: Refactor this to a function for impl and function for test
@@ -83,8 +83,8 @@ class JacImportPass(AstPass):
         """Import a module from a directory."""
         with_init = os.path.join(target, "__init__.jac")
         if os.path.exists(with_init):
-            if with_init in self.prog.modules:
-                return self.prog.modules[with_init]
+            if with_init in self.prog.mod.hub:
+                return self.prog.mod.hub[with_init]
             return self.prog.compile(file_path=with_init, schedule=[]).ir_out
         else:
             return ast.Module(
@@ -228,7 +228,7 @@ class PyImportPass(JacImportPass):
             resolved_mod_path = f"{parent_node_path}.{mod_path}"
             resolved_mod_path = resolved_mod_path.replace("..", ".")
             resolved_mod_path = resolved_mod_path.replace(
-                f"{list(self.prog.modules.values())[0]}.", ""
+                f"{list(self.prog.mod.hub.values())[0]}.", ""
             )
             file_to_raise = python_raise_map.get(resolved_mod_path)
 
@@ -286,7 +286,7 @@ class PyImportPass(JacImportPass):
                 prog=self.prog,
             ).ir_out
             SymTabBuildPass(ir_in=mod, prog=self.prog)
-            self.prog.modules[file_to_raise] = mod
+            self.prog.mod.hub[file_to_raise] = mod
             mod.py_info.is_raised_from_py = True
 
     def annex_impl(self, node: ast.Module) -> None:
@@ -299,7 +299,7 @@ class PyImportPass(JacImportPass):
         return mod_path
 
     def __check_cyclic_imports(
-        self, imp_node: ast.UniAstNode, imported_module: ast.Module
+        self, imp_node: ast.UniNode, imported_module: ast.Module
     ) -> bool:
         """Check cyclic imports that might happen."""
         # Example of cyclic imports is import os
@@ -314,7 +314,7 @@ class PyImportPass(JacImportPass):
         if imp_node_file == imported_module_file:
             return True
 
-        parent: Optional[ast.UniAstNode] = imp_node.parent
+        parent: Optional[ast.UniNode] = imp_node.parent
         while parent is not None:
             parent_file = self.__handle_different_site_packages(parent.loc.mod_path)
             if parent_file == imported_module_file:

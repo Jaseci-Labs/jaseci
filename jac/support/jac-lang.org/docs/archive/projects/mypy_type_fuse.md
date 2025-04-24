@@ -11,7 +11,7 @@ The goal of this project is to have a deeper fusing between mypy's internal AST 
 
 * Validate ASTConverter in MYPY is seeing our Jac generated python ast nodes with the .jac_link field present.
 
-* If that is the case, the .jac_link field is pointing to a Jac ast node, and we simply have to create a .gen.mypy_ast on jac nodes to point to the relevant mypy ast node. And we can add a jac_link on each mypy uni_ast_node.
+* If that is the case, the .jac_link field is pointing to a Jac ast node, and we simply have to create a .gen.mypy_ast on jac nodes to point to the relevant mypy ast node. And we can add a jac_link on each mypy uni_node.
 
 * Finally... we are going to take advantage of these links between ASTs to register type error properly through Jac's alert system.
 

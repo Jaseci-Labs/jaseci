@@ -32,7 +32,7 @@ class FuseTypeInfoPass(AstPass):
     node_type_hash: dict[MypyNodes.Node | VNode, MyType] = {}
 
     # Override this to support enter expression.
-    def enter_node(self, node: ast.UniAstNode) -> None:
+    def enter_node(self, node: ast.UniNode) -> None:
         """Run on entering node."""
         super().enter_node(node)
 
@@ -214,7 +214,7 @@ class FuseTypeInfoPass(AstPass):
         if isinstance(node.parent, ast.AtomTrailer) and node is node.parent.right:
             return
         builtins_sym_tab = None
-        for mod in self.prog.modules.values():
+        for mod in self.prog.mod.hub.values():
             if mod.name == "builtins":
                 builtins_sym_tab = mod.sym_tab
 
@@ -560,11 +560,9 @@ class FuseTypeInfoPass(AstPass):
             ):
                 target.type_sym_tab = node.value.type_sym_tab
 
-    def expand_atom_trailer(
-        self, node_list: list[ast.UniAstNode]
-    ) -> list[ast.UniAstNode]:
+    def expand_atom_trailer(self, node_list: list[ast.UniNode]) -> list[ast.UniNode]:
         """Expand the atom trailer object in a list of UniNode."""
-        out: list[ast.UniAstNode] = []
+        out: list[ast.UniNode] = []
         for i in node_list:
             if isinstance(i, ast.AtomTrailer):
                 out.append(i.target)
@@ -661,7 +659,7 @@ class FuseTypeInfoPass(AstPass):
                         right.name_spec.sym.add_use(right.name_spec)
 
     def __get_parent_symtab(self, typ: str) -> Optional[SymbolTable]:
-        for mod_ast in self.prog.modules.values():
+        for mod_ast in self.prog.mod.hub.values():
             mod_table = mod_ast.sym_tab
             if mod_table.name == typ.split(".")[0]:
                 return mod_table

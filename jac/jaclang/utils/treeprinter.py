@@ -11,7 +11,7 @@ import jaclang.compiler.unitree as ast
 from jaclang.settings import settings
 
 if TYPE_CHECKING:
-    from jaclang.compiler.unitree import UniAstNode, SymbolTable
+    from jaclang.compiler.unitree import UniNode, SymbolTable
 
 id_bag: dict = {}
 id_used: int = 0
@@ -137,7 +137,7 @@ CLASS_COLOR_MAP: dict[str, str] = {
 
 
 def dotgen_ast_tree(
-    root: UniAstNode,
+    root: UniNode,
     dot_lines: Optional[list[str]] = None,
 ) -> str:
     """Recursively generate ast tree in dot format."""
@@ -147,7 +147,7 @@ def dotgen_ast_tree(
         starting_call = True
         dot_lines = []
 
-    def gen_node_id(node: ast.UniAstNode) -> int:
+    def gen_node_id(node: ast.UniNode) -> int:
         """Generate number for each nodes."""
         global id_bag, id_used
         if id(node) not in id_bag:
@@ -155,7 +155,7 @@ def dotgen_ast_tree(
             id_used += 1
         return id_bag[id(node)]
 
-    def gen_node_parameters(node: ast.UniAstNode) -> str:
+    def gen_node_parameters(node: ast.UniNode) -> str:
         shape = ""
         fillcolor = ""
         style = ""
@@ -192,7 +192,7 @@ def dotgen_ast_tree(
 
 
 def print_ast_tree(
-    root: UniAstNode | ast3.AST,
+    root: UniNode | ast3.AST,
     marker: str = "+-- ",
     level_markers: Optional[list[bool]] = None,
     output_file: Optional[str] = None,
@@ -203,7 +203,7 @@ def print_ast_tree(
 
     print_py_raise: bool = settings.print_py_raised_ast
 
-    def __node_repr_in_tree(node: UniAstNode) -> str:
+    def __node_repr_in_tree(node: UniNode) -> str:
         access = (
             f"Access: {node.access.tag.value} ,"
             if isinstance(node, ast.AstAccessNode) and node.access is not None
@@ -316,14 +316,14 @@ def print_ast_tree(
     markers = "".join(map(mapper, level_markers[:-1]))
     markers += marker if level > 0 else ""
 
-    if isinstance(root, ast.UniAstNode):
+    if isinstance(root, ast.UniNode):
         tree_str = f"{root.loc}\t{markers}{__node_repr_in_tree(root)}\n"
         if (
             isinstance(root, ast.Module)
             and root.py_info.is_raised_from_py
             and not print_py_raise
         ):
-            kids: list[UniAstNode] = [
+            kids: list[UniNode] = [
                 *filter(
                     lambda x: x.py_info.is_raised_from_py,
                     root.get_all_sub_nodes(ast.Module),

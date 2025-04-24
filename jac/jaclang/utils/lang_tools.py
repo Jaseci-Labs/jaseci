@@ -35,7 +35,7 @@ class UniNodeInfo:
         self.cls = cls
         self.process(cls)
 
-    def process(self, cls: Type[ast.UniAstNode]) -> None:
+    def process(self, cls: Type[ast.UniNode]) -> None:
         """Process UniNode class."""
         self.name = cls.__name__
         self.doc = cls.__doc__
@@ -70,13 +70,14 @@ class AstTool:
         module = sys.modules[ast.__name__]
         source_code = inspect.getsource(module)
         classes = inspect.getmembers(module, inspect.isclass)
-        uni_ast_node_classes = [
+        uni_node_classes = [
             UniNodeInfo(cls)
             for _, cls in classes
-            if issubclass(cls, ast.UniAstNode)
+            if issubclass(cls, ast.UniNode)
             and cls.__name__
             not in [
                 "UniNode",
+                "ProgramModule",
                 "OOPAccessNode",
                 "WalkerStmtOnlyNode",
                 "Source",
@@ -105,7 +106,7 @@ class AstTool:
         ]
 
         self.ast_classes = sorted(
-            uni_ast_node_classes,
+            uni_node_classes,
             key=lambda cls: source_code.find(f"class {cls.name}"),
         )
 
@@ -145,7 +146,7 @@ class AstTool:
         )
         return output
 
-    def py_uni_ast_nodes(self) -> str:
+    def py_uni_nodes(self) -> str:
         """List python ast nodes."""
         from jaclang.compiler.passes.main import PyastBuildPass
 
@@ -243,7 +244,7 @@ class AstTool:
             match output:
                 case "sym":
                     out = ""
-                    for module_ in prog.modules.values():
+                    for module_ in prog.mod.hub.values():
                         mod_name = module_.name
                         t = "#" * len(mod_name)
                         out += f"##{t}##\n# {mod_name} #\n##{t}##\n{module_.sym_tab.pp()}\n"
@@ -256,7 +257,7 @@ class AstTool:
                     )
                 case "ast":
                     out = ""
-                    for module_ in prog.modules.values():
+                    for module_ in prog.mod.hub.values():
                         mod_name = module_.name
                         t = "#" * len(mod_name)
                         out += f"##{t}##\n# {mod_name} #\n##{t}##\n{module_.pp()}\n"
