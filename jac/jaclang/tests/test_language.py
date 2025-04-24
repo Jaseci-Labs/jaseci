@@ -791,12 +791,12 @@ class JacLanguageTests(TestCase):
         with open(py_out_path) as f:
             file_source = f.read()
             output = PyastBuildPass(
-                root_ir=ast.PythonModuleAst(
+                ir_in=ast.PythonModuleAst(
                     py_ast.parse(file_source),
-                    orig_src=ast.JacSource(file_source, py_out_path),
+                    orig_src=ast.Source(file_source, py_out_path),
                 ),
                 prog=None,
-            ).ir.unparse()
+            ).ir_out.unparse()
         self.assertIn("match Container(inner=Inner(x=a, y=b)){\n", output)
         self.assertIn("case Container(inner = Inner(x = a, y = 0)):\n", output)
         self.assertIn("case Container(inner = Inner(x = a, y = b)):\n", output)
