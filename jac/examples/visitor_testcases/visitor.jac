@@ -2,21 +2,10 @@ node A{
     has val:int =0;
 }
 
-node B{
-    has val:int =0;
-}
-
 edge a{
 }
 
-edge b{
-}
-
 walker W1{
-    can create with `root entry;
-}
-
-walker W2{
     can create with `root entry;
 }
 
@@ -31,24 +20,8 @@ walker W2{
 
 }
 
-:walker:W2:can:create{
-    One = B(5);
-    Two = B(30);
-    here +>:a:+> Two;
-    One +>:b:+> B(10) +>:b:+> B(15);
-    One +>:b:+> B(20) +>:b:+> B(25);
-    Two +>:b:+> B(40) +>:b:+> B(50);
-    here +>:b:+> One;
-
-}
-    
 with entry{
     root spawn W1();
     print([root-->-->(`?A)]);
     print([root--> --> -->(`?A)]);
-
-    root spawn W2();
-    print([root-->-->(`?B)]);
-    print([root--> --> -->(`?B)]);
-
 }
