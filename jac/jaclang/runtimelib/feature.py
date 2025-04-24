@@ -1112,7 +1112,8 @@ class JacBasics:
         obj: Architype | Anchor,
     ) -> None:
         """Destroy object."""
-
+        if not isinstance(obj, (Architype, Anchor)):
+            return
         anchor = obj.__jac__ if isinstance(obj, Architype) else obj
 
         if JacFeature.check_write_access(anchor):

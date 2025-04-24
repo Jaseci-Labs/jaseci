@@ -307,12 +307,7 @@ class DefUsePass(AstPass):
 
         target: expression,
         """
-        items = (
-            node.target.values.items
-            if isinstance(node.target, ast.TupleVal) and node.target.values
-            else [node.target]
-        )
-        for i in items:
+        for i in node.py_ast_targets:
             if isinstance(i, ast.AtomTrailer):
                 i.as_attr_list[-1].name_spec.py_ctx_func = ast3.Del
             elif isinstance(i, ast.AstSymbolNode):

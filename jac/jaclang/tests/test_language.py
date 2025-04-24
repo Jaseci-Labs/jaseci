@@ -1377,3 +1377,15 @@ class JacLanguageTests(TestCase):
         self.assertIn(
             "[Root(), A(val=20)]", stdout_value[3]
         )  # Remove after dropping deprecated syntax support
+
+    def test_node_del(self) -> None:
+        """Test complex nested impls."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(self.mach, "node_del", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("3 : [1, 2, 4, 5]", stdout_value[0])
+        self.assertIn("1 : [2, 4, 5]", stdout_value[1])
+        self.assertIn("before delete : Inner(c=[1, 2, 3], d=4)", stdout_value[2])
+        self.assertIn("after delete : Inner(c=[1, 3], d=4)", stdout_value[3])

@@ -8,7 +8,7 @@ import ast as ast3
 import copy
 import textwrap
 from dataclasses import dataclass
-from typing import Optional, Sequence, TypeVar, cast
+from typing import List, Optional, Sequence, TypeVar, Union, cast
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Constants as Con, EdgeDir, Tokens as Tok
@@ -1874,45 +1874,37 @@ class PyastGenPass(AstPass):
     def exit_delete_stmt(self, node: ast.DeleteStmt) -> None:
         """Transforms DeleteStmt into Python AST with destroy call and deletion."""
 
-        # Creating a copy of the node to have separate ctx for each delete target
-        # since we are generating both Jac.destroy and Python del statements.
-        node_copy = copy.deepcopy(node)
-        targets = (
-            node_copy.target.values.gen.py_ast
-            if isinstance(node_copy.target, ast.TupleVal) and node_copy.target.values
-            else node_copy.target.gen.py_ast
-        )
-        for target in targets if isinstance(targets, list) else [targets[0]]:
-            if hasattr(target, "ctx"):
-                target.ctx = ast3.Load()
+        def set_ctx(
+            targets: Union[ast3.AST, List[ast3.AST]], ctx: type
+        ) -> List[ast3.AST]:
+            """Set the given ctx (Load, Del) to AST node(s)."""
+            if not isinstance(targets, list):
+                targets = [targets]
+            elif isinstance(targets[0], (ast3.List, ast3.Tuple)):
+                targets = [i for i in targets[0].elts if isinstance(i, ast3.AST)]
+            result = []
+            for target in targets:
+                if hasattr(target, "ctx"):
+                    target = copy.copy(target)
+                    target.ctx = ctx()
+                result.append(target)
+            return result
 
         destroy_expr = ast3.Expr(
             value=self.sync(
                 ast3.Call(
                     func=self.jaclib_obj("destroy"),
-                    args=cast(list[ast3.expr], targets),
+                    args=cast(list[ast3.expr], set_ctx(node.py_ast_targets, ast3.Load)),
                     keywords=[],
                 )
             )
         )
-
         delete_stmt = self.sync(
             ast3.Delete(
-                targets=cast(
-                    list[ast3.expr],
-                    (
-                        node.target.values.gen.py_ast
-                        if isinstance(node.target, ast.TupleVal) and node.target.values
-                        else node.target.gen.py_ast
-                    ),
-                )
+                targets=cast(list[ast3.expr], set_ctx(node.py_ast_targets, ast3.Del))
             )
         )
-
-        node.gen.py_ast = [
-            self.sync(destroy_expr),
-            self.sync(delete_stmt),
-        ]
+        node.gen.py_ast = [self.sync(destroy_expr), self.sync(delete_stmt)]
 
     def exit_report_stmt(self, node: ast.ReportStmt) -> None:
         """Sub objects.
