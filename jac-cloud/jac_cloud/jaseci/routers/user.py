@@ -30,7 +30,7 @@ from ...core.architype import BulkWrite, NodeAnchor
 
 
 RESTRICT_UNVERIFIED_USER = getenv("RESTRICT_UNVERIFIED_USER") == "true"
-router = APIRouter(prefix="/user", tags=["user"])
+router = APIRouter(prefix="/user", tags=["User APIs"])
 
 User = BaseUser.model()  # type: ignore[misc]
 
@@ -38,7 +38,7 @@ User = BaseUser.model()  # type: ignore[misc]
 @router.post("/register", status_code=status.HTTP_200_OK)
 def register(req: User.register_type()) -> ORJSONResponse:  # type: ignore
     """Register user API."""
-    from jaclang import Root
+    from ...core.architype import Root
 
     log = log_entry("register", req.email, req.printable())
 

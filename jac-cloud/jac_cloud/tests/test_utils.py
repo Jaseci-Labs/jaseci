@@ -3,6 +3,7 @@
 from contextlib import suppress
 from os import environ, getenv
 from subprocess import Popen, run
+from time import sleep
 from typing import Literal, overload
 from unittest import TestCase
 
@@ -37,6 +38,7 @@ class JacCloudTest(TestCase):
         base_envs = environ.copy()
         base_envs["DATABASE_NAME"] = database
         base_envs.update(envs or {"DATABASE_NAME": database})
+        base_envs["SHOW_ENDPOINT_RETURNS"] = "true"
 
         self.server = Popen(
             ["jac", "serve", f"{file}", "--port", f"{port}"], env=base_envs
@@ -44,7 +46,7 @@ class JacCloudTest(TestCase):
 
         run(["sleep", f"{wait}"])
 
-        self.host = f"http://0.0.0.0:{port}"
+        self.host = f"http://localhost:{port}"
         self.database = database
         self.users: list[dict] = []
 
@@ -59,6 +61,7 @@ class JacCloudTest(TestCase):
                 with suppress(Exception):
                     self.check_server()
                     break
+                sleep(1)
             count += 1
 
     def stop_server(self) -> None:

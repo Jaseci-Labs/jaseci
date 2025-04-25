@@ -90,30 +90,11 @@ class JacSemTokenModifier(IntFlag):
 class Constants(StrEnum):
     """Token constants for Jac."""
 
-    JAC_LANG_IMP = "jac"
-    HERE = "here"  # "_jac_here_"
+    HERE = "here"
+    ROOT = "root"
     JAC_CHECK = "_check"
-    JAC_FEATURE = "Jac"  # "_Jac"
-    ROOT = f"{JAC_FEATURE}.get_root()"
-    EDGES_TO_NODE = "__jac__.edges_to_nodes"
-    EDGE_REF = "__jac__.edge_ref"
-    CONNECT_NODE = "__jac__.connect_node"
-    DISCONNECT_NODE = "__jac__.disconnect_node"
-    WALKER_VISIT = "__jac__.visit_node"
-    WALKER_IGNORE = "__jac__.ignore_node"
-    DISENGAGE = "__jac__.disengage_now"
-    OBJECT_CLASS = "_jac_Object_"
-    NODE_CLASS = "_jac_Node_"
-    EDGE_CLASS = "_jac_Edge_"
-    WALKER_CLASS = "_jac_Walker_"
-    WITH_DIR = "__jac__.apply_dir"
-    EDGE_DIR = "_jac_Edge_Dir"
-    ON_ENTRY = "_jac_ds_.on_entry"
-    ON_EXIT = "_jac_ds_.on_exit"
-
-    PYNLINE = "::py::"
-    JAC_GEN_DIR = "__jac_gen__"
     JAC_MYPY_CACHE = ".jac_mypy_cache"
+    SUPER_ROOT_UUID = "00000000-0000-0000-0000-000000000000"
 
     def __str__(self) -> str:
         """Return the string representation of the token."""
@@ -327,6 +308,10 @@ class Tokens(str, Enum):
     FSTR_BESC = "FSTR_BESC"
     COMMENT = "COMMENT"
     WS = "WS"
+    DCARROW_L_P2 = "DCARROW_L_P2"
+    DCARROW_R_P1 = "DCARROW_R_P1"
+    DARROW_L_P2 = "DARROW_L_P2"
+    DARROW_R_P1 = "DARROW_R_P1"
 
     def __str__(self) -> str:
         """Return the string representation of the token."""

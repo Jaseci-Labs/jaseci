@@ -22,9 +22,7 @@ class Settings:
     # Compiler configuration
     disable_mtllm: bool = False
     ignore_test_annex: bool = False
-    allow_import_from: bool = False
-    pyout_jaclib_import_all: bool = True
-    pyout_jaclib_alias = "jl"
+    pyout_jaclib_alias: str = "_"
 
     # Formatter configuration
     max_line_length: int = 88

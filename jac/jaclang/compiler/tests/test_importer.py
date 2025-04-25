@@ -3,9 +3,10 @@
 import io
 import sys
 
-from jaclang import jac_import
+from jaclang import JacMachine as Jac
 from jaclang.cli import cli
-from jaclang.runtimelib.machine import JacMachine, JacProgram
+from jaclang.compiler.program import JacProgram
+from jaclang.runtimelib.machine import JacMachine, JacMachineState
 from jaclang.utils.test import TestCase
 
 
@@ -14,28 +15,30 @@ class TestLoader(TestCase):
 
     def test_import_basic_python(self) -> None:
         """Test basic self loading."""
-        JacMachine(self.fixture_abs_path(__file__)).attach_program(
-            JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
+        mach = JacMachineState(self.fixture_abs_path(__file__))
+        JacMachine.attach_program(
+            mach,
+            JacProgram(),
         )
-        (h,) = jac_import("fixtures.hello_world", base_path=__file__)
+        (h,) = Jac.jac_import(mach, "fixtures.hello_world", base_path=__file__)
         self.assertEqual(h.hello(), "Hello World!")  # type: ignore
-        JacMachine.detach()
 
     def test_modules_correct(self) -> None:
         """Test basic self loading."""
-        JacMachine(self.fixture_abs_path(__file__)).attach_program(
-            JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
+        mach = JacMachineState(self.fixture_abs_path(__file__))
+        JacMachine.attach_program(
+            mach,
+            JacProgram(),
         )
-        jac_import("fixtures.hello_world", base_path=__file__)
+        Jac.jac_import(mach, "fixtures.hello_world", base_path=__file__)
         self.assertIn(
             "module 'fixtures.hello_world'",
-            str(JacMachine.get().loaded_modules),
+            str(mach.loaded_modules),
         )
         self.assertIn(
             "/tests/fixtures/hello_world.jac",
-            str(JacMachine.get().loaded_modules).replace("\\\\", "/"),
+            str(mach.loaded_modules).replace("\\\\", "/"),
         )
-        JacMachine.detach()
 
     def test_jac_py_import(self) -> None:
         """Basic test for pass."""
@@ -89,10 +92,12 @@ class TestLoader(TestCase):
         sys.stdout = captured_output
 
         try:
-            JacMachine(self.fixture_abs_path(__file__)).attach_program(
-                JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
+            mach = JacMachineState(self.fixture_abs_path(__file__))
+            JacMachine.attach_program(
+                mach,
+                JacProgram(),
             )
-            jac_import(module_name, base_path=__file__)
+            Jac.jac_import(mach, module_name, base_path=__file__)
             cli.run(jac_file_path)
 
             # Reset stdout and get the output
@@ -103,6 +108,6 @@ class TestLoader(TestCase):
 
         finally:
             captured_output.close()
-            JacMachine.detach()
+
             os.environ.pop("JACPATH", None)
             jacpath_dir.cleanup()

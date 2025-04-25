@@ -4,9 +4,10 @@ import inspect
 import os
 
 from jaclang.compiler import jac_lark as jl
-from jaclang.compiler.absyntree import JacSource
+from jaclang.compiler.absyntree import Source
 from jaclang.compiler.constant import Tokens
 from jaclang.compiler.parser import JacParser
+from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import TestCaseMicroSuite
 
 
@@ -19,14 +20,15 @@ class TestLarkParser(TestCaseMicroSuite):
 
     def test_fstring_escape_brace(self) -> None:
         """Test fstring escape brace."""
-        source = JacSource('glob a=f"{{}}", not_b=4;', mod_path="")
-        prse = JacParser(input_ir=source)
+        source = Source('glob a=f"{{}}", not_b=4;', mod_path="")
+        prse = JacParser(root_ir=source, prog=JacProgram())
         self.assertFalse(prse.errors_had)
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
         prse = JacParser(
-            input_ir=JacSource(self.file_to_str(filename), mod_path=filename),
+            root_ir=Source(self.file_to_str(filename), mod_path=filename),
+            prog=JacProgram(),
         )
         # A list of files where the errors are expected.
         files_expected_errors = [
@@ -37,32 +39,38 @@ class TestLarkParser(TestCaseMicroSuite):
 
     def test_parser_fam(self) -> None:
         """Parse micro jac file."""
-        prse = JacParser(input_ir=JacSource(self.load_fixture("fam.jac"), mod_path=""))
+        prse = JacParser(
+            root_ir=Source(self.load_fixture("fam.jac"), mod_path=""),
+            prog=JacProgram(),
+        )
         self.assertFalse(prse.errors_had)
 
     def test_staticmethod_checks_out(self) -> None:
         """Parse micro jac file."""
         prse = JacParser(
-            input_ir=JacSource(
+            root_ir=Source(
                 self.load_fixture("staticcheck.jac"),
                 mod_path="",
-            )
+            ),
+            prog=JacProgram(),
         )
-        out = prse.ir.pp()
+        out = prse.ir_out.pp()
         self.assertFalse(prse.errors_had)
         self.assertNotIn("staticmethod", out)
 
     def test_parser_kwesc(self) -> None:
         """Parse micro jac file."""
         prse = JacParser(
-            input_ir=JacSource(self.load_fixture("kwesc.jac"), mod_path="")
+            root_ir=Source(self.load_fixture("kwesc.jac"), mod_path=""),
+            prog=JacProgram(),
         )
         self.assertFalse(prse.errors_had)
 
     def test_parser_mod_doc_test(self) -> None:
         """Parse micro jac file."""
         prse = JacParser(
-            input_ir=JacSource(self.load_fixture("mod_doc_test.jac"), mod_path="")
+            root_ir=Source(self.load_fixture("mod_doc_test.jac"), mod_path=""),
+            prog=JacProgram(),
         )
         self.assertFalse(prse.errors_had)
 
@@ -113,7 +121,7 @@ class TestLarkParser(TestCaseMicroSuite):
         exclude = [
             "AstNode",
             "WalkerStmtOnlyNode",
-            "JacSource",
+            "Source",
             "EmptyToken",
             "AstSymbolNode",
             "AstSymbolStubNode",

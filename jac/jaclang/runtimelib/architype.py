@@ -91,7 +91,7 @@ class Anchor:
 
     def populate(self) -> None:
         """Retrieve the Architype from db and return."""
-        from jaclang.plugin.feature import JacFeature as Jac
+        from jaclang.runtimelib.machine import JacMachine as Jac
 
         jsrc = Jac.get_context().mem
 
@@ -235,15 +235,24 @@ class ObjectAnchor(Anchor):
     architype: ObjectArchitype
 
 
+@dataclass(eq=False, repr=False, kw_only=True)
 class Architype:
     """Architype Protocol."""
 
-    _jac_entry_funcs_: ClassVar[list[DSFunc]]
-    _jac_exit_funcs_: ClassVar[list[DSFunc]]
+    _jac_entry_funcs_: ClassVar[list[DataSpatialFunction]] = []
+    _jac_exit_funcs_: ClassVar[list[DataSpatialFunction]] = []
 
-    def __init__(self) -> None:
-        """Create default architype."""
-        self.__jac__ = Anchor(architype=self)
+    @cached_property
+    def __jac__(self) -> Anchor:
+        """Create default anchor."""
+        return Anchor(architype=self)
+
+    def __init_subclass__(cls) -> None:
+        """Configure subclasses."""
+        if not cls.__dict__.get("__jac_base__", False):
+            from jaclang import JacMachine as _
+
+            _.make_architype(cls)
 
     def __repr__(self) -> str:
         """Override repr for architype."""
@@ -253,69 +262,83 @@ class Architype:
 class NodeArchitype(Architype):
     """Node Architype Protocol."""
 
-    __jac__: NodeAnchor
+    __jac_base__: ClassVar[bool] = True
 
-    def __init__(self) -> None:
-        """Create node architype."""
-        self.__jac__ = NodeAnchor(architype=self, edges=[])
+    @cached_property
+    def __jac__(self) -> NodeAnchor:
+        """Create default anchor."""
+        return NodeAnchor(architype=self, edges=[])
 
 
 class EdgeArchitype(Architype):
     """Edge Architype Protocol."""
 
+    __jac_base__: ClassVar[bool] = True
     __jac__: EdgeAnchor
 
 
 class WalkerArchitype(Architype):
     """Walker Architype Protocol."""
 
-    __jac__: WalkerAnchor
+    __jac_base__: ClassVar[bool] = True
 
-    def __init__(self) -> None:
-        """Create walker architype."""
-        self.__jac__ = WalkerAnchor(architype=self)
+    @cached_property
+    def __jac__(self) -> WalkerAnchor:
+        """Create default anchor."""
+        return WalkerAnchor(architype=self)
 
 
 class ObjectArchitype(Architype):
     """Walker Architype Protocol."""
 
-    __jac__: ObjectAnchor
+    __jac_base__: ClassVar[bool] = True
 
-    def __init__(self) -> None:
-        """Create walker architype."""
-        self.__jac__ = ObjectAnchor(architype=self)
-
-
-class GenericEdge(EdgeArchitype):
-    """Generic Edge."""
-
-
-class Root(NodeArchitype):
-    """Generic Root Node."""
-
-    def __init__(self) -> None:
-        """Create root node."""
-        self.__jac__ = NodeAnchor(architype=self, persistent=True, edges=[])
+    @cached_property
+    def __jac__(self) -> ObjectAnchor:
+        """Create default anchor."""
+        return ObjectAnchor(architype=self)
 
 
 @dataclass(eq=False)
-class DSFunc:
+class GenericEdge(EdgeArchitype):
+    """Generic Edge."""
+
+    __jac_base__: ClassVar[bool] = True
+
+    def __repr__(self) -> str:
+        """Override repr for architype."""
+        return f"{self.__class__.__name__}()"
+
+
+@dataclass(eq=False)
+class Root(NodeArchitype):
+    """Generic Root Node."""
+
+    __jac_base__: ClassVar[bool] = True
+
+    @cached_property
+    def __jac__(self) -> NodeAnchor:
+        """Create default anchor."""
+        return NodeAnchor(architype=self, persistent=True, edges=[])
+
+    def __repr__(self) -> str:
+        """Override repr for architype."""
+        return f"{self.__class__.__name__}()"
+
+
+@dataclass(eq=False)
+class DataSpatialFunction:
     """Data Spatial Function."""
 
     name: str
-    func: Callable[[Any, Any], Any] | None = None
+    func: Callable[[Any, Any], Any]
 
     @cached_property
     def trigger(self) -> type | UnionType | tuple[type | UnionType, ...] | None:
         """Get function parameter annotations."""
-        if self.func:
-            parameters = inspect.signature(self.func, eval_str=True).parameters
-            if len(parameters) >= 2:
-                second_param = list(parameters.values())[1]
-                ty = second_param.annotation
-                return ty if ty != inspect._empty else None
+        parameters = inspect.signature(self.func, eval_str=True).parameters
+        if len(parameters) >= 2:
+            second_param = list(parameters.values())[1]
+            ty = second_param.annotation
+            return ty if ty != inspect._empty else None
         return None
-
-    def resolve(self, cls: type) -> None:
-        """Resolve the function."""
-        self.func = getattr(cls, self.name)

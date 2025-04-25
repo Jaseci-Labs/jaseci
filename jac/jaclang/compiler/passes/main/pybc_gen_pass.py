@@ -10,10 +10,10 @@ import marshal
 
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes import AstPass
 
 
-class PyBytecodeGenPass(Pass):
+class PyBytecodeGenPass(AstPass):
     """Python and bytecode file printing pass."""
 
     def before_pass(self) -> None:
@@ -33,14 +33,14 @@ class PyBytecodeGenPass(Pass):
         mods = [node] + self.get_all_sub_nodes(node, ast.Module)
         for mod in mods:
             if not mod.gen.py_ast or not isinstance(node.gen.py_ast[0], ast3.Module):
-                self.error(
+                self.log_error(
                     f"Unable to find ast for module {node.loc.mod_path}.",
                     node,
                 )
                 continue
+            root_node = mod.gen.py_ast[0]
+            assert isinstance(root_node, ast3.Module)
             mod.gen.py_bytecode = marshal.dumps(
-                compile(
-                    source=mod.gen.py_ast[0], filename=mod.loc.mod_path, mode="exec"
-                )
+                compile(source=root_node, filename=mod.loc.mod_path, mode="exec")
             )
         self.terminate()

@@ -9,7 +9,7 @@ import sys
 import traceback
 
 from jaclang.cli import cli
-from jaclang.plugin.builtin import dotgen
+from jaclang.runtimelib.builtin import dotgen
 from jaclang.utils.test import TestCase
 
 
@@ -222,15 +222,15 @@ class JacCliTests(TestCase):
 
         self.assertRegex(
             stdout_value,
-            r"2\:8 \- 2\:12.*BuiltinType - list - .*SymbolPath: builtins_test.builtins.list",
+            r"2\:8 \- 2\:12.*BuiltinType - list - .*SymbolPath: builtins.list",
         )
         self.assertRegex(
             stdout_value,
-            r"15\:5 \- 15\:8.*Name - dir - .*SymbolPath: builtins_test.builtins.dir",
+            r"15\:5 \- 15\:8.*Name - dir - .*SymbolPath: builtins.dir",
         )
         self.assertRegex(
             stdout_value,
-            r"13\:12 \- 13\:18.*Name - append - .*SymbolPath: builtins_test.builtins.list.append",
+            r"13\:12 \- 13\:18.*Name - append - .*SymbolPath: builtins.list.append",
         )
 
     def test_import_all(self) -> None:
@@ -249,11 +249,11 @@ class JacCliTests(TestCase):
 
         self.assertRegex(
             stdout_value,
-            r"6\:25 - 6\:30.*Name - floor -.*SymbolPath: import_all.import_all_py.floor",
+            r"6\:25 - 6\:30.*Name - floor -.*SymbolPath: math.floor",
         )
         self.assertRegex(
             stdout_value,
-            r"5\:25 - 5\:27.*Name - pi -.*SymbolPath: import_all.import_all_py.pi",
+            r"5\:25 - 5\:27.*Name - pi -.*SymbolPath: math.pi",
         )
 
     def test_sub_class_symbol_table_fix_1(self) -> None:
@@ -292,6 +292,27 @@ class JacCliTests(TestCase):
         self.assertRegex(
             stdout_value,
             r"10:7 - 10:12.*Name - start - Type.*SymbolPath: base_class2.B.start",
+        )
+
+    def test_base_class_complex_expr(self) -> None:
+        """Testing for print AstTool."""
+        from jaclang.settings import settings
+
+        # settings.ast_symbol_info_detailed = True
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        cli.tool(
+            "ir", ["ast", f"{self.fixture_abs_path('base_class_complex_expr.jac')}"]
+        )
+
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        settings.ast_symbol_info_detailed = False
+
+        self.assertRegex(
+            stdout_value,
+            r"36\:9 \- 36\:13.*Name \- Kiwi \- Type\: base_class_complex_expr.Kiwi,  SymbolTable\: Kiwi",
         )
 
     def test_expr_types(self) -> None:
@@ -339,7 +360,10 @@ class JacCliTests(TestCase):
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertIn('[label="MultiString"]', stdout_value)
+        self.assertIn(
+            '[label="MultiString" shape="oval" style="filled" fillcolor="#fccca4"]',
+            stdout_value,
+        )
 
     def test_type_check(self) -> None:
         """Testing for print AstTool."""
@@ -402,14 +426,6 @@ class JacCliTests(TestCase):
         )
         stdout, _ = process.communicate()
         self.assertIn("Hello World!", stdout)
-        self.assertTrue(
-            os.path.exists(
-                f"{self.fixture_abs_path(os.path.join('__jac_gen__', 'hello_nc.jbc'))}"
-            )
-        )
-        os.remove(
-            f"{self.fixture_abs_path(os.path.join('__jac_gen__', 'hello_nc.jbc'))}"
-        )
 
     def test_run_test(self) -> None:
         """Basic test for pass."""

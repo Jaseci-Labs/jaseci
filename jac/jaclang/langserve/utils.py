@@ -15,8 +15,8 @@ from jaclang.vendor.pygls import uris
 
 import lsprotocol.types as lspt
 
-T = TypeVar("T", bound=Callable[..., Coroutine[Any, Any, Any]])
 P = ParamSpec("P")
+T = TypeVar("T", bound=Callable[P, Coroutine[Any, Any, Any]])
 
 
 def gen_diagnostics(
@@ -45,7 +45,7 @@ def gen_diagnostics(
 def debounce(wait: float) -> Callable[[T], Callable[..., Awaitable[None]]]:
     """Debounce decorator for async functions."""
 
-    def decorator(fn: T) -> Callable[..., Awaitable[None]]:
+    def decorator(fn: T) -> Callable[P, Awaitable[None]]:
         @wraps(fn)
         async def debounced(*args: P.args, **kwargs: P.kwargs) -> None:
             async def call_it() -> None:
@@ -207,17 +207,6 @@ def create_range(loc: CodeLocInfo) -> lspt.Range:
             character=loc.col_end - 1 if loc.col_end > 0 else 0,
         ),
     )
-
-
-def get_location_range(mod_item: ast.ModuleItem) -> tuple[int, int, int, int]:
-    """Get location range."""
-    if not mod_item.from_mod_path.sub_module:
-        raise ValueError("Module items should have module path. Not Possible.")
-    lookup = mod_item.from_mod_path.sub_module.sym_tab.lookup(mod_item.name.value)
-    if not lookup:
-        raise ValueError("Module items should have a symbol table entry. Not Possible.")
-    loc = lookup.decl.loc
-    return loc.first_line, loc.col_start, loc.last_line, loc.col_end
 
 
 def kind_map(sub_tab: ast.AstNode) -> lspt.SymbolKind:

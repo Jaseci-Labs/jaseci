@@ -4,26 +4,29 @@ from __future__ import annotations
 
 import ast as py_ast
 import os
-from typing import Optional, Sequence, TypeAlias, TypeVar
+from typing import Optional, Sequence, TYPE_CHECKING, TypeAlias, TypeVar
 
 # from icecream import ic
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import Tokens as Tok
-from jaclang.compiler.passes.ir_pass import Pass
+from jaclang.compiler.passes.ast_pass import Transform
 from jaclang.utils.helpers import pascal_to_snake
+
+if TYPE_CHECKING:
+    from jaclang.compiler.program import JacProgram
 
 T = TypeVar("T", bound=ast.AstNode)
 
 
-class PyastBuildPass(Pass[ast.PythonModuleAst]):
+class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
     """Jac Parser."""
 
-    def __init__(self, input_ir: ast.PythonModuleAst) -> None:
+    def __init__(self, ir_in: ast.PythonModuleAst, prog: JacProgram) -> None:
         """Initialize parser."""
-        self.mod_path = input_ir.loc.mod_path
-        self.orig_src = input_ir.loc.orig_src
-        Pass.__init__(self, input_ir=input_ir, prior=None)
+        self.mod_path = ir_in.loc.mod_path
+        self.orig_src = ir_in.loc.orig_src
+        Transform.__init__(self, ir_in=ir_in, prog=prog)
 
     def nu(self, node: T) -> T:
         """Update node."""
@@ -52,10 +55,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         # ret.unparse()
         return ret
 
-    def transform(self, ir: ast.PythonModuleAst) -> ast.Module:
+    def transform(self, ir_in: ast.PythonModuleAst) -> ast.Module:
         """Transform input IR."""
-        self.ir: ast.Module = self.proc_module(ir.ast)
-        return self.ir
+        self.ir_out: ast.Module = self.proc_module(ir_in.ast)
+        return self.ir_out
 
     def extract_with_entry(
         self, body: list[ast.AstNode], exclude_types: TypeAlias = T
@@ -122,11 +125,10 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         self.convert_to_doc(doc_str) if doc_str else None
         ret = ast.Module(
             name=self.mod_path.split(os.path.sep)[-1].split(".")[0],
-            source=ast.JacSource("", mod_path=self.mod_path),
+            source=ast.Source("", mod_path=self.mod_path),
             doc=doc_str,
             body=valid[1:] if valid and isinstance(valid[0], ast.String) else valid,
             terminals=[],
-            is_imported=False,
             kid=valid,
         )
         ret.py_info.is_raised_from_py = True
@@ -746,7 +748,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         body = [self.convert(stmt) for stmt in node.body]
         valid_body = [stmt for stmt in body if isinstance(stmt, ast.CodeBlockStmt)]
         if len(valid_body) != len(body):
-            self.error("Length mismatch in async for body")
+            self.log_error("Length mismatch in async for body")
         body2 = ast.SubNodeList[ast.CodeBlockStmt](
             items=valid_body,
             delim=Tok.WS,
@@ -1441,7 +1443,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         names = [self.convert(name) for name in node.names]
         valid_names = [name for name in names if isinstance(name, ast.ExprAsItem)]
         if len(valid_names) != len(names):
-            self.error("Length mismatch in import names")
+            self.log_error("Length mismatch in import names")
         paths = []
         for name in valid_names:
             if isinstance(name.expr, ast.Name) and (
@@ -1683,14 +1685,18 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
             pos_end=0,
         )
 
-        if isinstance(pattern, ast.MatchPattern):
-            return ast.MatchAs(
-                name=name,
-                pattern=pattern,
-                kid=[name, pattern] if pattern else [name],
-            )
-        else:
+        if (
+            name.value == "_"
+            or pattern is not None
+            and not isinstance(pattern, ast.MatchPattern)
+        ):
             return ast.MatchWild(kid=[name])
+
+        return ast.MatchAs(
+            name=name,
+            pattern=pattern,
+            kid=[name] if pattern is None else [name, pattern],
+        )
 
     def proc_match_class(self, node: py_ast.MatchClass) -> ast.MatchArch:
         """Process python node.
@@ -1769,7 +1775,9 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
         values: list[ast.MatchKVPair | ast.MatchStar] = []
         keys = [self.convert(i) for i in node.keys]
         valid_keys = [
-            i for i in keys if isinstance(i, (ast.MatchPattern, ast.NameAtom))
+            i
+            for i in keys
+            if isinstance(i, (ast.MatchPattern, ast.NameAtom, ast.AtomExpr))
         ]
         patterns = [self.convert(i) for i in node.patterns]
         valid_patterns = [i for i in patterns if isinstance(i, ast.MatchPattern)]
@@ -1792,7 +1800,7 @@ class PyastBuildPass(Pass[ast.PythonModuleAst]):
                 pos_start=0,
                 pos_end=0,
             )
-            values.append(ast.MatchStar(name=name, is_list=True, kid=[name]))
+            values.append(ast.MatchStar(name=name, is_list=False, kid=[name]))
         return ast.MatchMapping(values=values, kid=values)
 
     def proc_match_or(self, node: py_ast.MatchOr) -> ast.MatchOr:

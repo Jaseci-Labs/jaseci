@@ -10,13 +10,13 @@ obj TestObj {
 with entry {
     random.seed(42);
     apple = [];
-    for i=0 to i<10 by i+=1  {
+    for i=0 to i<100 by i+=1  {
         apple.append(TestObj());
     }
-    #To get the instances with the y value less than 7
-    print(apple(?y <= 7));
+
+    # check if all apple's x are random between 0 and 15
+    print(apple(?x >= 0, x <= 15) == apple);
 }
-#assign comprehension
 
 obj MyObj {
     has apple: int = 0,

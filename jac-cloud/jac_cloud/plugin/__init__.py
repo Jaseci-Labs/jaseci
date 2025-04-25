@@ -1,6 +1,6 @@
 """Jaseci Plugins."""
 
-from .implementation import WEBSOCKET_MANAGER, specs
+from .implementation import EntryType, WEBSOCKET_MANAGER, specs
 
 
-__all__ = ["WEBSOCKET_MANAGER", "specs"]
+__all__ = ["EntryType", "WEBSOCKET_MANAGER", "specs"]

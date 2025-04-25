@@ -12,7 +12,9 @@ let client: LanguageClient;
 function getCondaEnvironment(): string | undefined {
     const condaPath = process.env.CONDA_PREFIX;
     if (condaPath) {
-        const jacPath = path.join(condaPath, 'bin', 'jac');
+        const jacPath = (process.platform === 'win32')
+            ? path.join(condaPath, 'Scripts', 'jac.exe')
+            : path.join(condaPath, 'bin', 'jac');
         if (fs.existsSync(jacPath)) {
             return jacPath;
         }
@@ -23,7 +25,10 @@ function getCondaEnvironment(): string | undefined {
 function getVenvEnvironment(): string | undefined {
     const venvPath = process.env.VIRTUAL_ENV;
     if (venvPath) {
-        const jacPath = path.join(venvPath, 'bin', 'jac');
+        const jacPath = (process.platform === 'win32')
+            ? path.join(venvPath, 'Scripts', 'jac.exe')
+            : path.join(venvPath, 'bin', 'jac');
+
         if (fs.existsSync(jacPath)) {
             return jacPath;
         }
@@ -31,10 +36,31 @@ function getVenvEnvironment(): string | undefined {
     return undefined;
 }
 
+function getJacInterpreterPath(): string {
+    const possiblePath = getCondaEnvironment() || getVenvEnvironment();
+
+    if (possiblePath) {
+        return possiblePath;
+    }
+
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (workspaceFolders) {
+        for (const folder of workspaceFolders) {
+            const venvJac = (process.platform === 'win32')
+                ? path.join(folder.uri.fsPath, 'Scripts', 'jac.exe')
+                : path.join(folder.uri.fsPath, 'bin', 'jac');
+
+            if (fs.existsSync(venvJac)) {
+                return venvJac;
+            }
+        }
+    }
+
+    return (process.platform === 'win32') ? 'jac.exe' : 'jac';
+}
+
 export function activate(context: vscode.ExtensionContext) {
-    const condaJac = getCondaEnvironment();
-    const venvJac = getVenvEnvironment();
-    const jacCommand = condaJac || venvJac || 'jac';
+    const jacCommand = getJacInterpreterPath();
 
     let serverOptions: ServerOptions = {
         run: { command: jacCommand, args: ["lsp"] },

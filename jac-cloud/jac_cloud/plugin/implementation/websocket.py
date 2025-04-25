@@ -15,9 +15,9 @@ from broadcaster import Broadcast
 
 from fastapi import APIRouter, WebSocket
 
-from jaclang.plugin.feature import JacFeature as Jac
+from jaclang.runtimelib.machine import JacMachine as Jac
 
-from orjson import loads
+from orjson import dumps, loads
 
 from pydantic import ValidationError
 
@@ -39,6 +39,22 @@ from ...jaseci.utils import utc_timestamp
 
 websocket_router = APIRouter(prefix="/websocket", tags=["walker"])
 websocket_events: dict[str, dict[str, Any]] = {}
+
+
+async def send_json(
+    self: WebSocket, data: Any, mode: str = "text"  # noqa: ANN401
+) -> None:
+    """Overide Websocket send_json."""
+    if mode not in {"text", "binary"}:
+        raise RuntimeError('The "mode" argument should be "text" or "binary".')
+    text = dumps(data)
+    if mode == "text":
+        await self.send({"type": "websocket.send", "text": text.decode()})
+    else:
+        await self.send({"type": "websocket.send", "bytes": text})
+
+
+WebSocket.send_json = send_json
 
 
 class WalkerExecutionError(Exception):
@@ -235,7 +251,7 @@ def walker_execution(websocket: WebSocket, event: WalkerEvent) -> dict:
 
         wlk: WalkerAnchor = walker(**payload).__jac__
         if Jac.check_read_access(jctx.entry_node):
-            Jac.spawn_call(wlk.architype, jctx.entry_node.architype)
+            Jac.spawn(wlk.architype, jctx.entry_node.architype)
             jctx.close()
 
             if jctx.custom is not MISSING:

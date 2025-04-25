@@ -17,10 +17,10 @@ with entry {
     node_4 = a(value=20);
     node_5 = c(value=25);
     print(type(root ++> node_1));
-    node_1 +:edge_1 := b(value=5):+> node_2;
-    node_1 +:edge_2 := b(value=10):+> node_3;
-    node_1 +:edge_3 := b(value=15):+> node_4;
-    node_1 +:edge_4 := b():+> node_5;
+    node_1 +>:edge_1 := b(value=5):+> node_2;
+    node_1 +>:edge_2 := b(value=10):+> node_3;
+    node_1 +>:edge_3 := b(value=15):+> node_4;
+    node_1 +>:edge_4 := b():+> node_5;
     node_1 del--> node_2;
     del node_3;
 }
@@ -38,9 +38,9 @@ walker W {
 
 :walker:W:can:create {
     Start = A(5);
-    here +:a:+> Start;
-    Start +:a:+> A(10) +:a:+> A(15);
-    Start +:a:+> A(20) +:a:+> A(25);
+    here +>:a:+> Start;
+    Start +>:a:+> A(10) +>:a:+> A(15);
+    Start +>:a:+> A(20) +>:a:+> A(25);
 }
 
 with entry {
@@ -126,5 +126,5 @@ with entry {
     root spawn walker1();
     root spawn walker2();
     root spawn walker3();
-    print(Jac.node_dot(root));
+    print(_.node_dot(root));
 }

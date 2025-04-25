@@ -7,10 +7,10 @@ import sys
 from typing import List, Optional, Type
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 from jaclang.compiler.passes.main.schedules import py_code_gen, type_checker_sched
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+from jaclang.compiler.program import JacProgram
 from jaclang.compiler.symtable import SymbolTable
 from jaclang.utils.helpers import auto_generate_refs, pascal_to_snake
 
@@ -79,7 +79,7 @@ class AstTool:
                 "AstNode",
                 "OOPAccessNode",
                 "WalkerStmtOnlyNode",
-                "JacSource",
+                "Source",
                 "EmptyToken",
                 "AstSymbolNode",
                 "AstSymbolStubNode",
@@ -205,7 +205,7 @@ class AstTool:
             return error
 
         output, file_name = args
-
+        prog = JacProgram()
         if not os.path.isfile(file_name):
             return f"Error: {file_name} not found"
 
@@ -221,34 +221,33 @@ class AstTool:
                     return f"\n{py_ast.dump(parsed_ast, indent=2)}"
                 try:
                     rep = PyastBuildPass(
-                        input_ir=ast.PythonModuleAst(
+                        ir_in=ast.PythonModuleAst(
                             parsed_ast,
-                            orig_src=ast.JacSource(file_source, file_name),
+                            orig_src=ast.Source(file_source, file_name),
                         ),
-                    ).ir
+                        prog=prog,
+                    ).ir_out
 
-                    schedule = py_code_gen_typed
-                    target = schedule[-1]
-                    for i in schedule:
-                        if i == target:
-                            break
-                        ast_ret = i(input_ir=rep, prior=None)
-                    ast_ret = target(input_ir=rep, prior=None)
-                    ir = ast_ret.ir
+                    ir = prog.jac_str_to_pass(
+                        jac_str=rep.unparse(),
+                        file_path=file_name[:-3] + ".jac",
+                        schedule=py_code_gen_typed,
+                    ).ir_out
                 except Exception as e:
                     return f"Error While Jac to Py AST conversion: {e}"
             else:
-                ir = jac_file_to_pass(
-                    file_name, schedule=[*(py_code_gen[:-1]), *type_checker_sched]
-                ).ir
+                ir = prog.compile(
+                    file_name, schedule=[*(py_code_gen), *type_checker_sched]
+                ).ir_out
 
             match output:
                 case "sym":
-                    return (
-                        ir.sym_tab.pp()
-                        if isinstance(ir.sym_tab, SymbolTable)
-                        else "Sym_tab is None."
-                    )
+                    out = ""
+                    for module_ in prog.modules.values():
+                        mod_name = module_.name
+                        t = "#" * len(mod_name)
+                        out += f"##{t}##\n# {mod_name} #\n##{t}##\n{module_.sym_tab.pp()}\n"
+                    return out
                 case "sym.":
                     return (
                         ir.sym_tab.dotgen()
@@ -256,7 +255,12 @@ class AstTool:
                         else "Sym_tab is None."
                     )
                 case "ast":
-                    return ir.pp()
+                    out = ""
+                    for module_ in prog.modules.values():
+                        mod_name = module_.name
+                        t = "#" * len(mod_name)
+                        out += f"##{t}##\n# {mod_name} #\n##{t}##\n{module_.pp()}\n"
+                    return out
                 case "ast.":
                     return ir.dotgen()
                 case "unparse":

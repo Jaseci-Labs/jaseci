@@ -20,6 +20,7 @@ repos:
           [
             pep8-naming,
             flake8_import_order,
+            flake8_docstrings,
             flake8_comprehensions,
             flake8_bugbear,
             flake8_annotations,
@@ -27,7 +28,7 @@ repos:
           ]
         exclude: "venv|vendor|__jac_gen__|generated|examples|langserve/tests|pygame_mock"
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.10.1
+    rev: v1.15.0
     hooks:
       - id: mypy
         exclude: "venv|vendor|__jac_gen__|generated|examples|tests|stubs|support|setup.py"

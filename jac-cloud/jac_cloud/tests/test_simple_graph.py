@@ -1,5 +1,7 @@
 """JacLang Jaseci Unit Test."""
 
+from pathlib import Path
+
 from httpx import get, post
 
 from yaml import safe_load
@@ -13,7 +15,8 @@ class SimpleGraphTest(JacCloudTest):
 
     def setUp(self) -> None:
         """Override setUp."""
-        self.run_server("jac_cloud/tests/simple_graph.jac")
+        self.directory = Path(__file__).parent
+        self.run_server(f"{self.directory}/simple_graph.jac")
 
         Collection.__client__ = None
         Collection.__database__ = None
@@ -31,7 +34,8 @@ class SimpleGraphTest(JacCloudTest):
         res = get(f"{self.host}/openapi.yaml", timeout=1)
         res.raise_for_status()
 
-        with open("jac_cloud/tests/openapi_specs.yaml") as file:
+        self.run_server(f"{Path(__file__).parent}/simple_graph.jac")
+        with open(f"{self.directory}/openapi_specs.yaml") as file:
             self.assertEqual(safe_load(file), safe_load(res.text))
 
     def trigger_create_user_test(self, suffix: str = "") -> None:
@@ -167,15 +171,15 @@ class SimpleGraphTest(JacCloudTest):
             {
                 "val": 0,
                 "arr": [],
-                "json": {},
+                "data": {},
                 "parent": {
                     "val": 1,
                     "arr": [1],
-                    "json": {"a": 1},
+                    "data": {"a": 1},
                     "child": {
                         "val": 2,
                         "arr": [1, 2],
-                        "json": {"a": 1, "b": 2},
+                        "data": {"a": 1, "b": 2},
                         "enum_field": "C",
                     },
                     "enum_field": "B",
@@ -199,15 +203,15 @@ class SimpleGraphTest(JacCloudTest):
                 {
                     "val": 1,
                     "arr": [1],
-                    "json": {"a": 1},
+                    "data": {"a": 1},
                     "parent": {
                         "val": 2,
                         "arr": [1, 2],
-                        "json": {"a": 1, "b": 2},
+                        "data": {"a": 1, "b": 2},
                         "child": {
                             "val": 3,
                             "arr": [1, 2, 3],
-                            "json": {"a": 1, "b": 2, "c": 3},
+                            "data": {"a": 1, "b": 2, "c": 3},
                             "enum_field": "A",
                         },
                         "enum_field": "C",
@@ -264,15 +268,15 @@ class SimpleGraphTest(JacCloudTest):
             {
                 "val": 0,
                 "arr": [],
-                "json": {},
+                "data": {},
                 "parent": {
                     "val": 1,
                     "arr": [1],
-                    "json": {"a": 1},
+                    "data": {"a": 1},
                     "child": {
                         "val": 2,
                         "arr": [1, 2],
-                        "json": {"a": 1, "b": 2},
+                        "data": {"a": 1, "b": 2},
                         "enum_field": "C",
                     },
                     "enum_field": "B",
@@ -311,15 +315,15 @@ class SimpleGraphTest(JacCloudTest):
             {
                 "val": 1,
                 "arr": [1],
-                "json": {"a": 1},
+                "data": {"a": 1},
                 "parent": {
                     "val": 2,
                     "arr": [1, 2],
-                    "json": {"a": 1, "b": 2},
+                    "data": {"a": 1, "b": 2},
                     "child": {
                         "val": 3,
                         "arr": [1, 2, 3],
-                        "json": {"a": 1, "b": 2, "c": 3},
+                        "data": {"a": 1, "b": 2, "c": 3},
                         "enum_field": "A",
                     },
                     "enum_field": "C",
@@ -337,15 +341,15 @@ class SimpleGraphTest(JacCloudTest):
             {
                 "val": 0,
                 "arr": [],
-                "json": {},
+                "data": {},
                 "parent": {
                     "val": 1,
                     "arr": [1],
-                    "json": {"a": 1},
+                    "data": {"a": 1},
                     "child": {
                         "val": 2,
                         "arr": [1, 2],
-                        "json": {"a": 1, "b": 2},
+                        "data": {"a": 1, "b": 2},
                         "enum_field": "C",
                     },
                     "enum_field": "B",
@@ -376,15 +380,15 @@ class SimpleGraphTest(JacCloudTest):
             {
                 "val": 1,
                 "arr": [1],
-                "json": {"a": 1},
+                "data": {"a": 1},
                 "parent": {
                     "val": 2,
                     "arr": [1, 2],
-                    "json": {"a": 1, "b": 2},
+                    "data": {"a": 1, "b": 2},
                     "child": {
                         "val": 3,
                         "arr": [1, 2, 3],
-                        "json": {"a": 1, "b": 2, "c": 3},
+                        "data": {"a": 1, "b": 2, "c": 3},
                         "enum_field": "A",
                     },
                     "enum_field": "C",
@@ -402,15 +406,15 @@ class SimpleGraphTest(JacCloudTest):
             {
                 "val": 1,
                 "arr": [1],
-                "json": {"a": 1},
+                "data": {"a": 1},
                 "parent": {
                     "val": 2,
                     "arr": [1, 2],
-                    "json": {"a": 1, "b": 2},
+                    "data": {"a": 1, "b": 2},
                     "child": {
                         "val": 3,
                         "arr": [1, 2, 3],
-                        "json": {"a": 1, "b": 2, "c": 3},
+                        "data": {"a": 1, "b": 2, "c": 3},
                         "enum_field": "A",
                     },
                     "enum_field": "C",
@@ -537,7 +541,7 @@ class SimpleGraphTest(JacCloudTest):
 
     def trigger_upload_file(self) -> None:
         """Test upload file."""
-        with open("jac_cloud/tests/simple.json", mode="br") as s:
+        with open(f"{self.directory}/simple.json", mode="br") as s:
             files = [
                 ("single", ("simple.json", s)),
                 ("multiple", ("simple.json", s)),
@@ -647,15 +651,15 @@ class SimpleGraphTest(JacCloudTest):
             {
                 "val": 0,
                 "arr": [],
-                "json": {},
+                "data": {},
                 "parent": {
                     "val": 1,
                     "arr": [1],
-                    "json": {"a": 1},
+                    "data": {"a": 1},
                     "child": {
                         "val": 2,
                         "arr": [1, 2],
-                        "json": {"a": 1, "b": 2},
+                        "data": {"a": 1, "b": 2},
                         "enum_field": "C",
                     },
                     "enum_field": "B",
@@ -674,15 +678,15 @@ class SimpleGraphTest(JacCloudTest):
             {
                 "val": 0,
                 "arr": [],
-                "json": {},
+                "data": {},
                 "parent": {
                     "val": 1,
                     "arr": [1],
-                    "json": {"a": 1},
+                    "data": {"a": 1},
                     "child": {
                         "val": 2,
                         "arr": [1, 2],
-                        "json": {"a": 1, "b": 2},
+                        "data": {"a": 1, "b": 2},
                         "enum_field": "C",
                     },
                     "enum_field": "B",
@@ -705,15 +709,15 @@ class SimpleGraphTest(JacCloudTest):
             {
                 "val": 1,
                 "arr": [1],
-                "json": {"a": 1},
+                "data": {"a": 1},
                 "parent": {
                     "val": 2,
                     "arr": [1, 2],
-                    "json": {"a": 1, "b": 2},
+                    "data": {"a": 1, "b": 2},
                     "child": {
                         "val": 3,
                         "arr": [1, 2, 3],
-                        "json": {"a": 1, "b": 2, "c": 3},
+                        "data": {"a": 1, "b": 2, "c": 3},
                         "enum_field": "A",
                     },
                     "enum_field": "C",
@@ -732,15 +736,15 @@ class SimpleGraphTest(JacCloudTest):
             {
                 "val": 1,
                 "arr": [1],
-                "json": {"a": 1},
+                "data": {"a": 1},
                 "parent": {
                     "val": 2,
                     "arr": [1, 2],
-                    "json": {"a": 1, "b": 2},
+                    "data": {"a": 1, "b": 2},
                     "child": {
                         "val": 3,
                         "arr": [1, 2, 3],
-                        "json": {"a": 1, "b": 2, "c": 3},
+                        "data": {"a": 1, "b": 2, "c": 3},
                         "enum_field": "A",
                     },
                     "enum_field": "C",
@@ -827,6 +831,62 @@ class SimpleGraphTest(JacCloudTest):
         self.assertEqual(
             {"status": 200, "reports": [True], "returns": [None]},
             self.post_webhook("webhook_by_body", {"test_key": key}),
+        )
+
+    def trigger_nested_request_payload_test(self) -> None:
+        """Test nested request payload."""
+        res = self.post_api(
+            "nested_request_payload",
+            json={
+                "adult": {
+                    "enum_field": "a",
+                    "kid": {"enum_field": "a"},
+                    "arr": [{"enum_field": "a"}],
+                    "data": {"kid1": {"enum_field": "a"}},
+                },
+                "arr": [
+                    {
+                        "enum_field": "a",
+                        "kid": {"enum_field": "a"},
+                        "arr": [{"enum_field": "a"}],
+                        "data": {"kid1": {"enum_field": "a"}},
+                    }
+                ],
+                "data": {
+                    "kid1": {
+                        "enum_field": "a",
+                        "kid": {"enum_field": "a"},
+                        "arr": [{"enum_field": "a"}],
+                        "data": {"kid1": {"enum_field": "a"}},
+                    }
+                },
+                "enum_field": "a",
+            },
+        )
+        self.assertEqual(
+            {
+                "status": 200,
+                "reports": [
+                    "Adult",
+                    "Kid",
+                    "Kid",
+                    "Kid",
+                    "Enum",
+                    "Adult",
+                    "Kid",
+                    "Kid",
+                    "Kid",
+                    "Enum",
+                    "Adult",
+                    "Kid",
+                    "Kid",
+                    "Kid",
+                    "Enum",
+                    "Enum",
+                ],
+                "returns": [None],
+            },
+            res,
         )
 
     def test_all_features(self) -> None:
@@ -951,3 +1011,9 @@ class SimpleGraphTest(JacCloudTest):
         ###################################################
 
         self.trigger_webhook_test()
+
+        ###################################################
+        #     CHECKING NESTED REQUEST PAYLOAD TYPINGS     #
+        ###################################################
+
+        self.trigger_nested_request_payload_test()

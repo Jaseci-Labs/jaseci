@@ -1,4 +1,4 @@
-can foo() {
+can foo -> int{
     a = 42;
     return a;
 }

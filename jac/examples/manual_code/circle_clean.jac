@@ -3,8 +3,6 @@ This module demonstrates a simple circle class and a function to calculate
 the area of a circle in all of Jac's glory.
 """
 
-include:jac circle_clean_impl;
-
 enum ShapeType;
 
 can calculate_area(radius: float) -> float;

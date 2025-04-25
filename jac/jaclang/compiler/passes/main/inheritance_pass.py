@@ -5,12 +5,12 @@ from __future__ import annotations
 from typing import Optional
 
 import jaclang.compiler.absyntree as ast
-from jaclang.compiler.passes import Pass
+from jaclang.compiler.passes import AstPass
 from jaclang.compiler.symtable import Symbol, SymbolTable
 from jaclang.settings import settings
 
 
-class InheritancePass(Pass):
+class InheritancePass(AstPass):
     """Add inherited abilities in the target symbol tables."""
 
     def __debug_print(self, msg: str) -> None:
@@ -21,7 +21,11 @@ class InheritancePass(Pass):
         symbol = sym_table.lookup(name)
         if symbol is None:
             # Check if the needed symbol in builtins
-            builtins_symtable = self.ir.sym_tab.find_scope("builtins")
+            builtins_symtable = None
+            for mod in self.prog.modules.values():
+                if mod.name == "builtins":
+                    builtins_symtable = mod.sym_tab
+
             assert builtins_symtable is not None
             symbol = builtins_symtable.lookup(name)
         return symbol
@@ -34,7 +38,7 @@ class InheritancePass(Pass):
         for item in node.base_classes.items:
             # The assumption is that the base class can only be a name node
             # or an atom trailer only.
-            assert isinstance(item, (ast.Name, ast.AtomTrailer))
+            assert isinstance(item, (ast.Name, ast.AtomTrailer, ast.FuncCall))
 
             # In case of name node, then get the symbol table that contains
             # the current class and lookup for that name after that use the
@@ -63,6 +67,11 @@ class InheritancePass(Pass):
                 assert base_class_symbol_table is not None
                 node.sym_tab.inherit_sym_tab(base_class_symbol_table)
 
+            elif isinstance(item, ast.FuncCall):
+                self.__debug_print(
+                    "Base class depends on the type of a function call expression, this is not supported yet"
+                )
+
             # In case of atom trailer, unwind it and use each name node to
             # as the code above to lookup for the base class
             elif isinstance(item, ast.AtomTrailer):
@@ -90,6 +99,20 @@ class InheritancePass(Pass):
                         msg = "Missing symbol table for python base class "
                         msg += f"{ast.Module.get_href_path(name)}.{name.sym_name}"
                         msg += f" needed for {ast.Module.get_href_path(node)}"
+                        self.__debug_print(msg)
+                        not_found = True
+                        break
+
+                    if (
+                        current_sym_table is None
+                        and item.as_attr_list.index(name) < len(item.as_attr_list) - 1
+                        and isinstance(
+                            item.as_attr_list[item.as_attr_list.index(name) + 1],
+                            ast.IndexSlice,
+                        )
+                    ):
+                        msg = "Base class depends on the type of an "
+                        msg += "Index slice expression, this is not supported yet"
                         self.__debug_print(msg)
                         not_found = True
                         break

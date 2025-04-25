@@ -64,7 +64,7 @@ node C {
 }
 
 obj Child {
-    has val: int, arr: list[int], json: dict[str, int], enum_field: Enum;
+    has val: int, arr: list[int], data: dict[str, int], enum_field: Enum;
 }
 
 obj Parent:Child: {
@@ -72,7 +72,15 @@ obj Parent:Child: {
 }
 
 node Nested {
-    has val: int, arr: list[int], json: dict[str, int], parent: Parent, enum_field: Enum;
+    has val: int, arr: list[int], data: dict[str, int], parent: Parent, enum_field: Enum;
+}
+
+obj Kid {
+    has enum_field: Enum;
+}
+
+obj Adult:Kid: {
+    has kid: Kid, arr: list[Kid], data: dict[str, Kid];
 }
 
 walker create_graph {
@@ -80,9 +88,9 @@ walker create_graph {
         a = A(val=0);
         b = B(val=1);
         c = C(val=2);
-        here ++> a;
         a ++> b;
         b ++> c;
+        here ++> a;
 
         report here;
         report a;
@@ -150,15 +158,15 @@ walker create_nested_node {
         n = Nested(
             val=0,
             arr=[],
-            json={},
+            data={},
             parent=Parent(
                 val=1,
                 arr=[1],
-                json={"a": 1},
+                data={"a": 1},
                 child=Child(
                     val=2,
                     arr=[1, 2],
-                    json={"a": 1, "b": 2},
+                    data={"a": 1, "b": 2},
                     enum_field = Enum.C
                 ),
                 enum_field = Enum.B
@@ -173,15 +181,15 @@ walker create_nested_node {
 walker update_nested_node {
     can enter_root with `root entry {
         nested = [-->(`?Nested)][0];
-        nested.parent.child.json["c"] = 3;
+        nested.parent.child.data["c"] = 3;
         nested.parent.child.arr.append(3);
         nested.parent.child.val = 3;
         nested.parent.child.enum_field = Enum.A;
-        nested.parent.json["b"] = 2;
+        nested.parent.data["b"] = 2;
         nested.parent.arr.append(2);
         nested.parent.val = 2;
         nested.parent.enum_field = Enum.C;
-        nested.json["a"] = 1;
+        nested.data["a"] = 1;
         nested.arr.append(1);
         nested.val = 1;
         nested.enum_field = Enum.B;
@@ -189,15 +197,15 @@ walker update_nested_node {
     }
 
     can enter_nested with Nested entry {
-        here.parent.child.json["c"] = 3;
+        here.parent.child.data["c"] = 3;
         here.parent.child.arr.append(3);
         here.parent.child.val = 3;
         here.parent.child.enum_field = Enum.A;
-        here.parent.json["b"] = 2;
+        here.parent.data["b"] = 2;
         here.parent.arr.append(2);
         here.parent.val = 2;
         here.parent.enum_field = Enum.C;
-        here.json["a"] = 1;
+        here.data["a"] = 1;
         here.arr.append(1);
         here.val = 1;
         here.enum_field = Enum.B;
@@ -229,7 +237,7 @@ walker visit_nested_node {
 walker delete_nested_node {
     can enter_root with `root entry {
         nested = [-->(`?Nested)][0];
-        Jac.destroy(nested);
+        _.destroy(nested);
         # nested.__jac__.apply();
 
         report [-->(`?Nested)];
@@ -238,8 +246,8 @@ walker delete_nested_node {
 
 walker delete_nested_edge {
     can enter_root with `root entry {
-        nested_edge = :e:[-->][0];
-        Jac.destroy(nested_edge);
+        nested_edge = [edge -->][0];
+        _.destroy(nested_edge);
 
         report [-->(`?Nested)];
     }
@@ -250,19 +258,19 @@ walker allow_other_root_access {
 
     can enter_root with `root entry {
         if self.via_all {
-            Jac.unrestrict(here, self.level);
+            _.unrestrict(here, self.level);
         } else {
             import:py from jac_cloud.core.architype {BaseAnchor}
-            Jac.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
+            _.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
         }
     }
 
     can enter_nested with Nested entry {
         if self.via_all {
-            Jac.unrestrict(here, self.level);
+            _.unrestrict(here, self.level);
         } else {
             import:py from jac_cloud.core.architype {BaseAnchor}
-            Jac.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
+            _.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
         }
     }
 }
@@ -272,19 +280,19 @@ walker disallow_other_root_access {
 
     can enter_root with `root entry {
         if self.via_all {
-            Jac.restrict(here);
+            _.restrict(here);
         } else {
             import:py from jac_cloud.core.architype {BaseAnchor}
-            Jac.disallow_root(here, BaseAnchor.ref(self.root_id));
+            _.disallow_root(here, BaseAnchor.ref(self.root_id));
         }
     }
 
     can enter_nested with Nested entry {
         if self.via_all {
-            Jac.restrict(here);
+            _.restrict(here);
         } else {
             import:py from jac_cloud.core.architype {BaseAnchor}
-            Jac.disallow_root(here, BaseAnchor.ref(self.root_id));
+            _.disallow_root(here, BaseAnchor.ref(self.root_id));
         }
     }
 }
@@ -435,7 +443,7 @@ walker custom_status_code {
     has status: int;
 
     can enter with `root entry {
-        Jac.get_context().status = self.status;
+        _.get_context().status = self.status;
     }
 }
 
@@ -486,15 +494,15 @@ walker manual_create_nested_node {
         n = Nested(
             val=0,
             arr=[],
-            json={},
+            data={},
             parent=Parent(
                 val=1,
                 arr=[1],
-                json={"a": 1},
+                data={"a": 1},
                 child=Child(
                     val=2,
                     arr=[1, 2],
-                    json={"a": 1, "b": 2},
+                    data={"a": 1, "b": 2},
                     enum_field = Enum.C
                 ),
                 enum_field = Enum.B
@@ -505,7 +513,7 @@ walker manual_create_nested_node {
         here.__jac__.apply();
 
         # simulate no auto save
-        jsrc = Jac.get_context().mem;
+        jsrc = _.get_context().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -516,22 +524,22 @@ walker manual_create_nested_node {
 walker manual_update_nested_node {
     can enter_root with `root entry {
         nested = [-->(`?Nested)][0];
-        nested.parent.child.json["c"] = 3;
+        nested.parent.child.data["c"] = 3;
         nested.parent.child.arr.append(3);
         nested.parent.child.val = 3;
         nested.parent.child.enum_field = Enum.A;
-        nested.parent.json["b"] = 2;
+        nested.parent.data["b"] = 2;
         nested.parent.arr.append(2);
         nested.parent.val = 2;
         nested.parent.enum_field = Enum.C;
-        nested.json["a"] = 1;
+        nested.data["a"] = 1;
         nested.arr.append(1);
         nested.val = 1;
         nested.enum_field = Enum.B;
         nested.__jac__.apply();
 
         # simulate no auto save
-        jsrc = Jac.get_context().mem;
+        jsrc = _.get_context().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -543,11 +551,11 @@ walker manual_detach_nested_node {
     can enter_root with `root entry {
         nested = [-->(`?Nested)][0];
         detached = here del--> [-->(`?Nested)];
-        Jac.destroy(nested);
+        _.destroy(nested);
         nested.__jac__.apply();
 
         # simulate no auto save
-        jsrc = Jac.get_context().mem;
+        jsrc = _.get_context().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -558,11 +566,11 @@ walker manual_detach_nested_node {
 walker manual_delete_nested_node {
     can enter_root with `root entry {
         nested = [-->(`?Nested)][0];
-        Jac.destroy(nested);
+        _.destroy(nested);
         nested.__jac__.apply();
 
         # simulate no auto save
-        jsrc = Jac.get_context().mem;
+        jsrc = _.get_context().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -572,12 +580,12 @@ walker manual_delete_nested_node {
 
 walker manual_delete_nested_edge {
     can enter_root with `root entry {
-        nested_edge = :e:[-->][0];
-        Jac.destroy(nested_edge);
+        nested_edge = [edge-->][0];
+        _.destroy(nested_edge);
         nested_edge.__jac__.apply();
 
         # simulate no auto save
-        jsrc = Jac.get_context().mem;
+        jsrc = _.get_context().mem;
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
@@ -591,7 +599,7 @@ walker custom_report {
         report 2;
         report 3;
 
-        Jac.report({
+        _.report({
             "testing": 1
         }, True);
     }
@@ -697,7 +705,7 @@ walker traverse_populated_graph {
 
 walker purge_populated_graph {
     can purge with `root entry {
-        report Jac.reset_graph();
+        report _.reset_graph();
     }
 }
 
@@ -729,7 +737,7 @@ walker check_memory_sync {
 #################################################################
 
 obj SavableObject {
-    has val: int, arr: list[int], json: dict[str, int], parent: Parent, enum_field: Enum;
+    has val: int, arr: list[int], data: dict[str, int], parent: Parent, enum_field: Enum;
 }
 
 walker create_custom_object {
@@ -737,22 +745,22 @@ walker create_custom_object {
         o = SavableObject(
             val=0,
             arr=[],
-            json={},
+            data={},
             parent=Parent(
                 val=1,
                 arr=[1],
-                json={"a": 1},
+                data={"a": 1},
                 child=Child(
                     val=2,
                     arr=[1, 2],
-                    json={"a": 1, "b": 2},
+                    data={"a": 1, "b": 2},
                     enum_field = Enum.C
                 ),
                 enum_field = Enum.B
             ),
             enum_field = Enum.A
         );
-        Jac.save(o);
+        _.save(o);
         report o;
     }
 }
@@ -774,15 +782,15 @@ walker update_custom_object {
 
     can enter1 with `root entry {
         savable_object = &(self.object_id);
-        savable_object.parent.child.json["c"] = 3;
+        savable_object.parent.child.data["c"] = 3;
         savable_object.parent.child.arr.append(3);
         savable_object.parent.child.val = 3;
         savable_object.parent.child.enum_field = Enum.A;
-        savable_object.parent.json["b"] = 2;
+        savable_object.parent.data["b"] = 2;
         savable_object.parent.arr.append(2);
         savable_object.parent.val = 2;
         savable_object.parent.enum_field = Enum.C;
-        savable_object.json["a"] = 1;
+        savable_object.data["a"] = 1;
         savable_object.arr.append(1);
         savable_object.val = 1;
         savable_object.enum_field = Enum.B;
@@ -795,14 +803,41 @@ walker delete_custom_object {
 
     can enter1 with `root entry {
         import:py from jac_cloud.core.architype {BaseAnchor}
-        Jac.destroy(&(self.object_id));
+        _.destroy(&(self.object_id));
 
         # This is similar to
         #
-        # Jac.destroy(BaseAnchor.ref(self.object_id));
+        # _.destroy(BaseAnchor.ref(self.object_id));
         #
         # The only difference is BaseAnchor.ref doesn't
         # load the actual object and just use it as reference
+    }
+}
+
+walker nested_request_payload {
+    has adult: Adult, arr: list[Adult], data: dict[str, Adult], enum_field: Enum;
+
+    can enter1 with `root entry {
+        report type(self.adult).__name__;
+        report type(self.adult.kid).__name__;
+        report type(self.adult.arr[0]).__name__;
+        report type(self.adult.data["kid1"]).__name__;
+        report type(self.adult.enum_field).__name__;
+
+
+        report type(self.arr[0]).__name__;
+        report type(self.arr[0].kid).__name__;
+        report type(self.arr[0].arr[0]).__name__;
+        report type(self.arr[0].data["kid1"]).__name__;
+        report type(self.arr[0].enum_field).__name__;
+
+        report type(self.data["kid1"]).__name__;
+        report type(self.data["kid1"].kid).__name__;
+        report type(self.data["kid1"].arr[0]).__name__;
+        report type(self.data["kid1"].data["kid1"]).__name__;
+        report type(self.data["kid1"].enum_field).__name__;
+
+        report type(self.enum_field).__name__;
     }
 }
 
@@ -924,5 +959,27 @@ walker websocket {
 
     class __specs__ {
         has methods: list = ["websocket"];
+    }
+}
+
+walker documentation {
+
+    class __specs__ {
+        has tags: list[str] | None = ["Documented"];
+        has entry_type: EntryType = "root";
+        has status_code: int | None = "201";
+        has summary: str | None = "Enter summary here!!!";
+        has description: str | None = "Enter description here!!!";
+        has response_description: str = "Enter response description here!!! Defaults to 'Successful Response'";
+        has responses: dict[int | str, dict[str, Any]] | None = {
+            200: {
+                "description": "Enter response description for http status 200!!!",
+                "content": {"application/json": {}},
+                "links": {"sample_link": {"description": "Enter link description here!!!"}}
+            }
+        };
+        has deprecated: bool | None = True;
+        has name: str | None = "Enter name here!!!";
+        has openapi_extra: dict[str, Any] | None = {"addons": True};
     }
 }
