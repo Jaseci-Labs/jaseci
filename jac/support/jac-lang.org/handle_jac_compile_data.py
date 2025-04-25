@@ -1,3 +1,5 @@
+"""Handle jac compile data for jaclang.org."""
+
 import os
 import zipfile
 
@@ -8,11 +10,13 @@ ZIP_FOLDER_NAME = "jaclang"
 
 
 def pre_build_hook(**kwargs: any) -> None:
+    """This function is called before the build process starts."""
     print("Running pre-build hook...")
     create_final_zip()
 
 
 def create_final_zip() -> None:
+    """Create a zip file containing the jaclang folder."""
     print("Creating final zip...")
 
     if not os.path.exists(TARGET_FOLDER):
