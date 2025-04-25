@@ -1685,14 +1685,18 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             pos_end=0,
         )
 
-        if isinstance(pattern, ast.MatchPattern):
-            return ast.MatchAs(
-                name=name,
-                pattern=pattern,
-                kid=[name, pattern] if pattern else [name],
-            )
-        else:
+        if (
+            name.value == "_"
+            or pattern is not None
+            and not isinstance(pattern, ast.MatchPattern)
+        ):
             return ast.MatchWild(kid=[name])
+
+        return ast.MatchAs(
+            name=name,
+            pattern=pattern,
+            kid=[name] if pattern is None else [name, pattern],
+        )
 
     def proc_match_class(self, node: py_ast.MatchClass) -> ast.MatchArch:
         """Process python node.
