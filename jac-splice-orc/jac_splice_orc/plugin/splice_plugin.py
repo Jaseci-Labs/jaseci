@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+import re
 import time
 import types
 from typing import Optional, Union
@@ -25,6 +26,7 @@ hookimpl = pluggy.HookimplMarker("jac")
 
 # Initialize ConfigLoader
 config_loader = ConfigLoader()
+rfc1123_pattern = r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
 
 
 def try_incluster_or_local() -> bool:
@@ -451,16 +453,51 @@ class SpliceOrcPlugin:
             if config_path and os.path.isfile(config_path):
                 logging.debug(f"Loading custom config from: {config_path}")
                 config_loader = ConfigLoader(config_file_path=config_path)
-            else:
-                # Load default config
-                logging.error(f"Configuration file not found: {config_path}")
+            elif config_path:
+                logging.error(
+                    f"Configuration file not found: {config_path}. Using default."
+                )
+            # --- Start: Corrected Kubernetes Connectivity Check ---
+            logging.info("Attempting to load Kubernetes configuration...")
+            try:
+                # Load config (in-cluster or local).
+                try_incluster_or_local()
+
+                # Now, verify the loaded config actually allows connection.
+                logging.info("Verifying connection to Kubernetes API server...")
+                client.CoreV1Api().get_api_resources()
+                logging.info("Successfully connected to Kubernetes API server.")
+
+            except client.exceptions.ApiException as e:
+                logging.error(
+                    f"Failed to connect to Kubernetes API server using the loaded configuration: {e.reason} (Status: {e.status}). "
+                    "Please ensure your Kubernetes cluster (e.g., kind, minikube, Docker Desktop) is running "
+                    "and your kubectl context (`kubectl config current-context`) points to a valid, running cluster."
+                )
+                return
+            except Exception as e:
+                logging.error(
+                    f"An unexpected error occurred while initializing Kubernetes connection: {e}. "
+                    "Check your Kubernetes setup and ~/.kube/config file."
+                )
+                return
+            # --- End: Corrected Kubernetes Connectivity Check ---
             # Use the provided namespace if given, else read from config
             if not namespace:
                 namespace = config_loader.get(
                     "kubernetes", "namespace", default="jac-splice-orc"
                 )
+                logging.info(f"Using default namespace from config: '{namespace}'")
             else:
                 # Update the namespace in the config
+                logging.info(f"Using provided namespace: '{namespace}'")
+
+                if not re.match(rfc1123_pattern, namespace) or len(namespace) > 63:
+                    logging.error(
+                        f"Invalid namespace name: '{namespace}'. Namespaces must comply with RFC 1123 "
+                        "(lowercase letters, numbers, hyphens only; start/end with letter/number; max 63 chars)."
+                    )
+                    return
                 config_loader.set(
                     ["kubernetes", "pod_manager", "env_vars", "NAMESPACE"], namespace
                 )
@@ -484,7 +521,6 @@ class SpliceOrcPlugin:
         target: str,
         base_path: str,
         absorb: bool,
-        cachable: bool,
         mdl_alias: Optional[str],
         override_name: Optional[str],
         lng: Optional[str],
