@@ -931,7 +931,7 @@ class SubNodeList(UniNode, Generic[T]):
 
 # AST Mid Level Node Types
 # --------------------------
-class Module(AstDocNode, UniScopeNode):
+class Module(AstDocNode, AstSymbolNode, UniScopeNode):
     """Whole Program node type for Jac Ast."""
 
     def __init__(
@@ -1513,7 +1513,7 @@ class Architype(
         AstDocNode.__init__(self, doc=doc)
         AstSemStrNode.__init__(self, semstr=semstr)
         ArchSpec.__init__(self, decorators=decorators)
-        UniScopeNode.__init__(self, name=self.name.value, owner=self)
+        UniScopeNode.__init__(self, name=self.sym_name, owner=self)
 
     @property
     def is_abstract(self) -> bool:
