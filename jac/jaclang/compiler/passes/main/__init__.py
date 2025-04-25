@@ -13,6 +13,7 @@ from .type_check_pass import JacTypeCheckPass  # noqa: I100
 from .registry_pass import RegistryPass  # noqa: I100
 from .pybc_gen_pass import PyBytecodeGenPass  # noqa: I100
 from .py_collect_dep_pass import PyCollectDepsPass  # noqa: I100
+from .cfg_build_pass import CFGBuildPass  # noqa: I100
 from .schedules import type_checker_sched  # noqa: I100
 
 
@@ -32,4 +33,5 @@ __all__ = [
     "type_checker_sched",
     "py_code_gen",
     "PyCollectDepsPass",
+    "CFGBuildPass",
 ]

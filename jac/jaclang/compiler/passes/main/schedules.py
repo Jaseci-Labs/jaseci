@@ -16,8 +16,10 @@ from .fuse_typeinfo_pass import FuseTypeInfoPass  # noqa: I100
 from .registry_pass import RegistryPass  # noqa: I100
 from .access_modifier_pass import AccessCheckPass  # noqa: I100
 from .inheritance_pass import InheritancePass  # noqa: I100
+from .cfg_build_pass import CFGBuildPass  # noqa: I100
 
 py_code_gen = [
+    CFGBuildPass,
     DeclImplMatchPass,
     DefUsePass,
     RegistryPass,
