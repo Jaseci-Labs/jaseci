@@ -248,11 +248,11 @@ class AstTool:
                     for module_ in prog.mod.hub.values():
                         mod_name = module_.name
                         t = "#" * len(mod_name)
-                        out += f"##{t}##\n# {mod_name} #\n##{t}##\n{module_.sym_tab.pp()}\n"
+                        out += f"##{t}##\n# {mod_name} #\n##{t}##\n{module_.sym_tab.sym_pp()}\n"
                     return out
                 case "sym.":
                     return (
-                        ir.sym_tab.dotgen()
+                        ir.sym_tab.sym_dotgen()
                         if isinstance(ir.sym_tab, UniScopeNode)
                         else "Sym_tab is None."
                     )

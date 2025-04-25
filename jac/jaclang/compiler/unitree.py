@@ -505,11 +505,11 @@ class UniScopeNode(UniNode):
                     self.inherited_scope.append(inher_sym_tab)
                     base_cls.name_spec.name_of = found.decl.name_of
 
-    def pp(self, depth: Optional[int] = None) -> str:
+    def sym_pp(self, depth: Optional[int] = None) -> str:
         """Pretty print."""
         return print_symtab_tree(root=self, depth=depth)
 
-    def dotgen(self) -> str:
+    def sym_dotgen(self) -> str:
         """Generate dot graph for sym table."""
         return dotgen_symtab_tree(self)
 

@@ -144,8 +144,6 @@ class JacProgram:
     ) -> Transform:
         """Convert a Jac file to an AST."""
         top_mod: uni.Module = cur_pass.ir_out
-        if self.mod.stub_only:
-            self.mod = uni.ProgramModule(top_mod)
         # Creating a new JacProgram and attaching it to top module
         self.mod.hub[cur_pass.ir_out.loc.mod_path] = cur_pass.ir_out
 
