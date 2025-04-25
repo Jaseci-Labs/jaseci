@@ -157,3 +157,6 @@ plugins:
       video_autoplay: True
       # video_loop: True
       video_controls: False
+  - mkdocs-simple-hooks:
+      hooks:
+        on_pre_build: create_zip:pre_build_hook
