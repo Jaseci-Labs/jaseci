@@ -931,7 +931,7 @@ class SubNodeList(UniNode, Generic[T]):
 
 # AST Mid Level Node Types
 # --------------------------
-class Module(AstDocNode, AstSymbolNode, UniScopeNode):
+class Module(AstDocNode, UniScopeNode):
     """Whole Program node type for Jac Ast."""
 
     def __init__(
