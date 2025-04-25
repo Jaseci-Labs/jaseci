@@ -5,7 +5,7 @@ import io
 import sys
 import types
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes.main import PyastGenPass
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.machinestate import JacMachineState
@@ -49,8 +49,6 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             self.examples_abs_path("manual_code/circle.jac"),
             target=PyastGenPass,
         )
-        import ast as ast3
-
         if code_gen.ir_out.gen.py_ast and isinstance(
             code_gen.ir_out.gen.py_ast[0], ast3.Module
         ):
@@ -74,11 +72,11 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
         self.assertFalse(out.errors_had)
 
-    def parent_scrub(self, node: ast.AstNode) -> bool:
+    def parent_scrub(self, node: uni.UniNode) -> bool:
         """Validate every node has parent."""
         success = True
         for i in node.kid:
-            if not isinstance(i, ast.Module) and i.parent is None:
+            if not isinstance(i, uni.Module) and i.parent is None:
                 success = False
                 break
             else:
@@ -118,11 +116,11 @@ class ValidateTreeParentTest(TestCaseMicroSuite):
         """Set up test."""
         return super().setUp()
 
-    def parent_scrub(self, node: ast.AstNode) -> bool:
+    def parent_scrub(self, node: uni.UniNode) -> bool:
         """Validate every node has parent."""
         success = True
         for i in node.kid:
-            if not isinstance(i, ast.Module) and i.parent is None:
+            if not isinstance(i, uni.Module) and i.parent is None:
                 success = False
                 break
             else:

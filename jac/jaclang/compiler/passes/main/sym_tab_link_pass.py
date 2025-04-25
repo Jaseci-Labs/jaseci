@@ -2,23 +2,23 @@
 
 import os
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes import AstPass
-from jaclang.compiler.symtable import InheritedSymbolTable
+from jaclang.compiler.unitree import InheritedSymbolTable
 
 
 class SymTabLinkPass(AstPass):
     """Link the symbol table."""
 
-    def enter_module_path(self, node: ast.ModulePath) -> None:
+    def enter_module_path(self, node: uni.ModulePath) -> None:
         """Link the symbol tables."""
-        imp_node = node.parent_of_type(ast.Import)
+        imp_node = node.parent_of_type(uni.Import)
 
         if imp_node.is_jac:
             rel_path = node.resolve_relative_path()
             if os.path.isdir(rel_path):
                 rel_path = f"{rel_path}/__init__.jac"
-            if rel_path not in self.prog.modules:
+            if rel_path not in self.prog.mod.hub:
                 self.log_error(
                     f"Module {rel_path} not found in the program. Something went wrong.",
                     node,
@@ -37,27 +37,27 @@ class SymTabLinkPass(AstPass):
             else:
                 return
 
-        imported_mod_symtab = self.prog.modules[rel_path].sym_tab
+        imported_mod_symtab = self.prog.mod.hub[rel_path].sym_tab
 
         all_import = False
         symbols_str_list: list[str] = []
         if (
-            imp_node.is_jac and node.parent and isinstance(node.parent, ast.SubNodeList)
+            imp_node.is_jac and node.parent and isinstance(node.parent, uni.SubNodeList)
         ) or (imp_node.is_py and imp_node.from_loc is None and not imp_node.is_absorb):
             all_import = True
         else:
-            if node.parent and isinstance(node.parent, ast.Import):
+            if node.parent and isinstance(node.parent, uni.Import):
                 for mod_items in node.parent.items.items:
-                    if isinstance(mod_items, ast.ModuleItem):
+                    if isinstance(mod_items, uni.ModuleItem):
                         symbols_str_list.append(mod_items.name.value)
 
         # all import is set, need to add the imported symtable as a kid
         # to the current sym table
         if all_import:
-            node.sym_tab.kid.append(imported_mod_symtab)
+            node.sym_tab.kid_scope.append(imported_mod_symtab)
         else:
             if imported_mod_symtab not in [
-                stab.base_symbol_table for stab in node.sym_tab.inherit
+                stab.base_symbol_table for stab in node.sym_tab.inherited_scope
             ]:
                 # Check if the needed symbol will be inherited from the current symbol table
                 # This will happen if you are doing `from . import X` check how path is imported in
@@ -65,7 +65,7 @@ class SymTabLinkPass(AstPass):
                 if node.sym_tab == imported_mod_symtab:
                     return
 
-                node.sym_tab.inherit.append(
+                node.sym_tab.inherited_scope.append(
                     InheritedSymbolTable(
                         base_symbol_table=imported_mod_symtab,
                         # load_all_symbols will only be needed when doing from x imoport * in py imports
@@ -77,12 +77,14 @@ class SymTabLinkPass(AstPass):
             else:
                 # if the imported symbol table is already in the kid list,
                 # just add the symbols to it
-                for sym_tab in node.sym_tab.kid:
+                for sym_tab in node.sym_tab.kid_scope:
                     if sym_tab == imported_mod_symtab:
                         for sym in symbols_str_list:
-                            if sym not in sym_tab.tab.values():
-                                sym_tab.tab[sym] = imported_mod_symtab.tab[sym]
-                for symtb in node.sym_tab.inherit:
+                            if sym not in sym_tab.names_in_scope.values():
+                                sym_tab.names_in_scope[sym] = (
+                                    imported_mod_symtab.names_in_scope[sym]
+                                )
+                for symtb in node.sym_tab.inherited_scope:
                     if symtb.base_symbol_table == imported_mod_symtab:
                         symtb.symbols.extend(symbols_str_list)
                         break

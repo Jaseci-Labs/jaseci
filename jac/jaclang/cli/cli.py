@@ -10,7 +10,7 @@ import sys
 import types
 from typing import Optional
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as uni
 from jaclang.cli.cmdreg import CommandShell, cmd_registry
 from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
@@ -448,9 +448,9 @@ def py2jac(filename: str) -> None:
         with open(filename, "r") as f:
             file_source = f.read()
             code = PyastBuildPass(
-                ir_in=ast.PythonModuleAst(
+                ir_in=uni.PythonModuleAst(
                     ast3.parse(file_source),
-                    orig_src=ast.Source(file_source, filename),
+                    orig_src=uni.Source(file_source, filename),
                 ),
                 prog=JacProgram(),
             ).ir_out.unparse()

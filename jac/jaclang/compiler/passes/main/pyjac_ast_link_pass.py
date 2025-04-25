@@ -7,7 +7,7 @@ however Ability does.
 
 import ast as ast3
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes import AstPass
 
 
@@ -15,7 +15,7 @@ class PyJacAstLinkPass(AstPass):
     """Link jac ast to python ast nodes."""
 
     def link_jac_py_nodes(
-        self, jac_node: ast.AstNode, py_nodes: list[ast3.AST]
+        self, jac_node: uni.UniNode, py_nodes: list[ast3.AST]
     ) -> None:
         """Link jac name ast to py ast nodes."""
         jac_node.gen.py_ast = py_nodes
@@ -23,7 +23,7 @@ class PyJacAstLinkPass(AstPass):
             if isinstance(i.jac_link, list):  # type: ignore
                 i.jac_link.append(jac_node)  # type: ignore
 
-    def exit_module_path(self, node: ast.ModulePath) -> None:
+    def exit_module_path(self, node: uni.ModulePath) -> None:
         """Sub objects.
 
         path: Sequence[Token],
@@ -33,7 +33,7 @@ class PyJacAstLinkPass(AstPass):
         if node.alias:
             self.link_jac_py_nodes(jac_node=node.alias, py_nodes=node.gen.py_ast)
 
-    def exit_architype(self, node: ast.Architype) -> None:
+    def exit_architype(self, node: uni.Architype) -> None:
         """Sub objects.
 
         name: Name,
@@ -45,10 +45,10 @@ class PyJacAstLinkPass(AstPass):
         decorators: Optional[SubNodeList[ExprType]],
         """
         self.link_jac_py_nodes(jac_node=node.name, py_nodes=node.gen.py_ast)
-        if isinstance(node.body, ast.ArchDef):
+        if isinstance(node.body, uni.ArchDef):
             self.link_jac_py_nodes(jac_node=node.body, py_nodes=node.gen.py_ast)
 
-    def exit_arch_def(self, node: ast.ArchDef) -> None:
+    def exit_arch_def(self, node: uni.ArchDef) -> None:
         """Sub objects.
 
         target: ArchRefChain,
@@ -66,7 +66,7 @@ class PyJacAstLinkPass(AstPass):
                     py_nodes=i.name_spec.name_of.sym.decl.gen.py_ast,
                 )
 
-    def exit_enum(self, node: ast.Enum) -> None:
+    def exit_enum(self, node: uni.Enum) -> None:
         """Sub objects.
 
         name: Name,
@@ -76,10 +76,10 @@ class PyJacAstLinkPass(AstPass):
         doc: Optional[String],
         decorators: Optional[SubNodeList[ExprType]],
         """
-        if isinstance(node.body, ast.EnumDef):
+        if isinstance(node.body, uni.EnumDef):
             self.link_jac_py_nodes(jac_node=node.body, py_nodes=node.gen.py_ast)
 
-    def exit_enum_def(self, node: ast.EnumDef) -> None:
+    def exit_enum_def(self, node: uni.EnumDef) -> None:
         """Sub objects.
 
         target: ArchRefChain,
@@ -97,7 +97,7 @@ class PyJacAstLinkPass(AstPass):
                     py_nodes=i.name_spec.name_of.sym.decl.gen.py_ast,
                 )
 
-    def exit_ability(self, node: ast.Ability) -> None:
+    def exit_ability(self, node: uni.Ability) -> None:
         """Sub objects.
 
         name_ref: NameType,
@@ -112,10 +112,10 @@ class PyJacAstLinkPass(AstPass):
         decorators: Optional[SubNodeList[ExprType]],
         """
         self.link_jac_py_nodes(jac_node=node.name_ref, py_nodes=node.gen.py_ast)
-        if isinstance(node.body, ast.AbilityDef):
+        if isinstance(node.body, uni.AbilityDef):
             self.link_jac_py_nodes(jac_node=node.body, py_nodes=node.gen.py_ast)
 
-    def exit_ability_def(self, node: ast.AbilityDef) -> None:
+    def exit_ability_def(self, node: uni.AbilityDef) -> None:
         """Sub objects.
 
         target: ArchRefChain,
@@ -134,11 +134,11 @@ class PyJacAstLinkPass(AstPass):
                     py_nodes=i.name_spec.name_of.sym.decl.gen.py_ast,
                 )
 
-        if isinstance(node.decl_link, ast.Ability) and node.decl_link.signature:
-            if isinstance(node.signature, ast.FuncSignature) and node.signature.params:
+        if isinstance(node.decl_link, uni.Ability) and node.decl_link.signature:
+            if isinstance(node.signature, uni.FuncSignature) and node.signature.params:
                 for src_prm in node.signature.params.items:
                     if (
-                        isinstance(node.decl_link.signature, ast.FuncSignature)
+                        isinstance(node.decl_link.signature, uni.FuncSignature)
                         and node.decl_link.signature.params
                     ):
                         for trg_prm in node.decl_link.signature.params.items:
@@ -151,10 +151,10 @@ class PyJacAstLinkPass(AstPass):
                                     py_nodes=trg_prm.name.gen.py_ast,
                                 )
             if (
-                isinstance(node.signature, ast.FuncSignature)
+                isinstance(node.signature, uni.FuncSignature)
                 and node.signature.return_type
             ) and (
-                isinstance(node.decl_link.signature, ast.FuncSignature)
+                isinstance(node.decl_link.signature, uni.FuncSignature)
                 and node.decl_link.signature.return_type
             ):
                 self.link_jac_py_nodes(
@@ -162,14 +162,14 @@ class PyJacAstLinkPass(AstPass):
                     py_nodes=node.decl_link.signature.return_type.gen.py_ast,
                 )
 
-        if isinstance(node.decl_link, ast.Ability) and isinstance(
-            node.target, ast.ArchRefChain
+        if isinstance(node.decl_link, uni.Ability) and isinstance(
+            node.target, uni.ArchRefChain
         ):
             for arch in node.target.archs:
                 if arch.arch_name.sym:
                     arch.arch_name.sym.add_use(arch.arch_name)
 
-    def exit_param_var(self, node: ast.ParamVar) -> None:
+    def exit_param_var(self, node: uni.ParamVar) -> None:
         """Sub objects.
 
         name: Name,
@@ -179,7 +179,7 @@ class PyJacAstLinkPass(AstPass):
         """
         self.link_jac_py_nodes(jac_node=node.name, py_nodes=node.gen.py_ast)
 
-    def exit_except(self, node: ast.Except) -> None:
+    def exit_except(self, node: uni.Except) -> None:
         """Sub objects.
 
         ex_type: ExprType,
@@ -189,7 +189,7 @@ class PyJacAstLinkPass(AstPass):
         if node.name:
             self.link_jac_py_nodes(jac_node=node.name, py_nodes=node.gen.py_ast)
 
-    def exit_expr_as_item(self, node: ast.ExprAsItem) -> None:
+    def exit_expr_as_item(self, node: uni.ExprAsItem) -> None:
         """Sub objects.
 
         expr: ExprType,
@@ -199,7 +199,7 @@ class PyJacAstLinkPass(AstPass):
         if node.alias:
             self.link_jac_py_nodes(jac_node=node.alias, py_nodes=node.gen.py_ast)
 
-    def exit_global_stmt(self, node: ast.GlobalStmt) -> None:
+    def exit_global_stmt(self, node: uni.GlobalStmt) -> None:
         """Sub objects.
 
         target: SubNodeList[NameType],
@@ -207,7 +207,7 @@ class PyJacAstLinkPass(AstPass):
         for x, y in enumerate(node.target.items):
             self.link_jac_py_nodes(jac_node=y, py_nodes=[node.gen.py_ast[x]])
 
-    def exit_non_local_stmt(self, node: ast.NonLocalStmt) -> None:
+    def exit_non_local_stmt(self, node: uni.NonLocalStmt) -> None:
         """Sub objects.
 
         target: SubNodeList[NameType],
@@ -215,7 +215,7 @@ class PyJacAstLinkPass(AstPass):
         for x, y in enumerate(node.target.items):
             self.link_jac_py_nodes(jac_node=y, py_nodes=[node.gen.py_ast[x]])
 
-    def exit_k_w_pair(self, node: ast.KWPair) -> None:
+    def exit_k_w_pair(self, node: uni.KWPair) -> None:
         """Sub objects.
 
         key: NameType,
@@ -224,7 +224,7 @@ class PyJacAstLinkPass(AstPass):
         if node.key:
             self.link_jac_py_nodes(jac_node=node.key, py_nodes=node.gen.py_ast)
 
-    def exit_atom_trailer(self, node: ast.AtomTrailer) -> None:
+    def exit_atom_trailer(self, node: uni.AtomTrailer) -> None:
         """Sub objects.
 
         target: Expr,
@@ -233,7 +233,7 @@ class PyJacAstLinkPass(AstPass):
         is_null_ok: bool,
         is_genai: bool = False,
         """
-        if node.is_attr and isinstance(node.right, ast.AstSymbolNode):
+        if node.is_attr and isinstance(node.right, uni.AstSymbolNode):
             self.link_jac_py_nodes(
                 jac_node=node.right.name_spec, py_nodes=node.gen.py_ast
             )
