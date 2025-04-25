@@ -5,7 +5,6 @@ import os
 import sys
 import sysconfig
 
-
 import jaclang.compiler.passes.main as passes
 from jaclang import JacMachine as Jac
 from jaclang.cli import cli
@@ -13,6 +12,8 @@ from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.machinestate import JacMachineState
 from jaclang.utils.test import TestCase
+
+import pytest
 
 
 class JacLanguageTests(TestCase):
@@ -1395,3 +1396,21 @@ class JacLanguageTests(TestCase):
         self.assertIn("Hello, World!", stdout_value[3])
         self.assertIn("Last message:!", stdout_value[4])
         self.assertIn("Final message:!", stdout_value[5])
+
+    def test_connect_traverse_syntax(self) -> None:
+            """Test connect traverse syntax."""
+            captured_output = io.StringIO()
+            sys.stdout = captured_output
+            Jac.jac_import(
+                self.mach, "connect_traverse_syntax", base_path=self.fixture_abs_path("./")
+            )
+            sys.stdout = sys.__stdout__
+            stdout_value = captured_output.getvalue().split("\n")
+            self.assertIn("A(val=5), A(val=10)", stdout_value[0])
+            self.assertIn("[Root(), A(val=20)]", stdout_value[1])
+            self.assertIn(
+                "A(val=5), A(val=10)", stdout_value[2]
+            )  # Remove after dropping deprecated syntax support
+            self.assertIn(
+                "[Root(), A(val=20)]", stdout_value[3]
+            )  # Remove after dropping deprecated syntax support
