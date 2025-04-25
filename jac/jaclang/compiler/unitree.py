@@ -1017,6 +1017,21 @@ class Module(AstDocNode, UniScopeNode):
         return self.format()
 
     @staticmethod
+    def make_stub(
+        inject_name: Optional[str] = None, inject_src: Optional[Source] = None
+    ) -> Module:
+        """Create a stub module."""
+        return Module(
+            name=inject_name or "",
+            source=inject_src or Source("", ""),
+            doc=None,
+            body=[],
+            terminals=[],
+            stub_only=True,
+            kid=[EmptyToken()],
+        )
+
+    @staticmethod
     def get_href_path(node: UniNode) -> str:
         """Return the full path of the module that contains this node."""
         parent = node.find_parent_of_type(Module)
@@ -1032,25 +1047,14 @@ class Module(AstDocNode, UniScopeNode):
         )
 
 
-class ProgramModule(Module):
+class ProgramModule(UniNode):
     """Whole Program node type for Jac Ast."""
 
     def __init__(self, main_mod: Optional[Module] = None) -> None:
         """Initialize whole program node."""
-        super().__init__(
-            name=main_mod.name if main_mod else "",
-            source=main_mod.source if main_mod else Source("", ""),
-            doc=main_mod.doc if main_mod else None,
-            body=main_mod.body if main_mod else [],
-            terminals=main_mod.terminals if main_mod else [],
-            kid=main_mod.kid if main_mod else [EmptyToken()],
-            stub_only=main_mod.stub_only if main_mod else True,
-            registry=main_mod.registry if main_mod else None,
-        )
-        self._sub_node_tab = main_mod._sub_node_tab if main_mod else {}
-        self.py_info = main_mod.py_info if main_mod else PyInfo()
-
-        self.hub: dict[str, Module] = {self.loc.mod_path: self} if main_mod else {}
+        self.main = main_mod if main_mod else Module.make_stub()
+        UniNode.__init__(self, kid=[self.main])
+        self.hub: dict[str, Module] = {self.loc.mod_path: main_mod} if main_mod else {}
 
 
 class GlobalVars(ElementStmt, AstAccessNode):

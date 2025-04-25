@@ -61,15 +61,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
         except Exception as e:
             self.log_error(f"Internal Error: {e}")
 
-        return uni.Module(
-            name="",
-            source=ir_in,
-            doc=None,
-            body=[],
-            terminals=[],
-            stub_only=True,
-            kid=[uni.EmptyToken()],
-        )
+        return uni.Module.make_stub(inject_src=ir_in)
 
     @staticmethod
     def proc_comment(token: jl.Token, mod: uni.UniNode) -> uni.CommentToken:

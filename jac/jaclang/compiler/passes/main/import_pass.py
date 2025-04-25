@@ -87,14 +87,9 @@ class JacImportPass(AstPass):
                 return self.prog.mod.hub[with_init]
             return self.prog.compile(file_path=with_init, schedule=[]).ir_out
         else:
-            return uni.Module(
-                name=target.split(os.path.sep)[-1],
-                source=uni.Source("", mod_path=target),
-                doc=None,
-                body=[],
-                terminals=[],
-                stub_only=True,
-                kid=[uni.EmptyToken()],
+            return uni.Module.make_stub(
+                inject_name=target.split(os.path.sep)[-1],
+                inject_src=uni.Source("", target),
             )
 
 
