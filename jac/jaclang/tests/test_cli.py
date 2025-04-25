@@ -9,6 +9,7 @@ import sys
 import traceback
 
 from jaclang.cli import cli
+from jaclang.cli.jacrunner import REPL
 from jaclang.runtimelib.builtin import dotgen
 from jaclang.utils.test import TestCase
 
@@ -148,6 +149,35 @@ class JacCliTests(TestCase):
         stdout_value, _ = process.communicate(input="exit\n")
         self.assertEqual(process.returncode, 0, "Process did not exit successfully")
         self.assertIn("Welcome to the Jac CLI!", stdout_value)
+
+    def test_jac_runner(self) -> None:
+        """Testing for Jac Runner of REPL/Jupyter notebook."""
+        stdout = ''
+        inputs = [
+            "print('Hello World!')",
+            "node n {",
+            "  has val:int = 0;",
+            "}",
+            "n1 = n(1)",
+            "n1",
+            "root ++> n1",
+            "exit()",
+        ]
+        def _print(msg, end='\n', **kwargs: object) -> None:
+            nonlocal stdout
+            stdout += (msg + end)
+
+        def _input(prompt: str) -> str:
+            return inputs.pop(0)
+
+        repl = REPL()
+        repl.print = _print
+        repl.input = _input
+        repl.run()
+
+        self.assertIn("Hello World!", stdout)
+        self.assertIn("n(val=1)", stdout)
+        self.assertIn("[n(val=1)]", stdout)
 
     def test_ast_print(self) -> None:
         """Testing for print AstTool."""

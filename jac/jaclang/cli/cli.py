@@ -13,6 +13,7 @@ from typing import Optional
 
 import jaclang.compiler.unitree as uni
 from jaclang.cli.cmdreg import CommandShell, cmd_registry
+from jaclang.cli.jacrunner import REPL
 from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
 from jaclang.compiler.passes.main.schedules import CompilerMode as CMode
@@ -269,6 +270,13 @@ def jackernel() -> None:
         kernel_file.write(json.dumps(kernel_json, indent=2))
 
     print(f"{ansi_green}Success{ansi_reset}: Jac kernel installed at {conf_file}")
+
+
+# TODO: Maybe this should be the default when running jac in terminal.
+@cmd_registry.register
+def repl() -> None:
+    """Start a Jac REPL (Read-Eval-Print Loop)."""
+    exit(REPL().run())
 
 
 @cmd_registry.register

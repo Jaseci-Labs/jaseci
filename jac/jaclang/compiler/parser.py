@@ -28,6 +28,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
         """Initialize parser."""
         self.mod_path = root_ir.loc.mod_path
         self.node_list: list[uni.UniNode] = []
+        self.unexpected_eof = False
         if JacParser.dev_mode:
             JacParser.make_dev()
         Transform.__init__(self, ir_in=root_ir, prog=prog)
@@ -52,6 +53,11 @@ class JacParser(Transform[uni.Source, uni.Module]):
             catch_error.c_end = e.column + 1
             catch_error.pos_start = e.pos_in_stream or 0
             catch_error.pos_end = catch_error.pos_start + 1
+
+            # FIXME: This needs to be done properly this is a quick workaround
+            # to make it work first.
+            if hasattr(e, "token") and e.token.type in ("$END", "FSTR_SQ_END"):
+                self.unexpected_eof = True
 
             error_msg = "Syntax Error"
             if len(e.args) >= 1 and isinstance(e.args[0], str):
