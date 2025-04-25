@@ -4550,6 +4550,7 @@ class Name(Token, NameAtom):
             pos_start=node.loc.pos_start,
             pos_end=node.loc.pos_end,
         )
+        ret.parent = node.parent
         ret.name_of = set_name_of if set_name_of else ret
         return ret
 

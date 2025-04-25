@@ -49,8 +49,6 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             self.examples_abs_path("manual_code/circle.jac"),
             target=PyastGenPass,
         )
-        import ast as ast3
-
         if code_gen.ir_out.gen.py_ast and isinstance(
             code_gen.ir_out.gen.py_ast[0], ast3.Module
         ):
