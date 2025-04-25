@@ -14,6 +14,8 @@ from jaclang.runtimelib.machinestate import JacMachineState
 from jaclang.utils.test import TestCase
 
 import pytest
+import tempfile
+from unittest.mock import patch
 
 
 class JacLanguageTests(TestCase):
@@ -1398,19 +1400,104 @@ class JacLanguageTests(TestCase):
         self.assertIn("Final message:!", stdout_value[5])
 
     def test_connect_traverse_syntax(self) -> None:
-            """Test connect traverse syntax."""
+        """Test connect traverse syntax."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(
+            self.mach, "connect_traverse_syntax", base_path=self.fixture_abs_path("./")
+        )
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("A(val=5), A(val=10)", stdout_value[0])
+        self.assertIn("[Root(), A(val=20)]", stdout_value[1])
+        self.assertIn(
+            "A(val=5), A(val=10)", stdout_value[2]
+        )  # Remove after dropping deprecated syntax support
+        self.assertIn(
+            "[Root(), A(val=20)]", stdout_value[3]
+        )  # Remove after dropping deprecated syntax support
+
+    # Helper method to create files within tests
+    def create_temp_jac_file(
+        self, content: str, dir_path: str, filename: str = "test_mod.jac"
+    ) -> str:
+        """Helper to create a Jac file in a specific directory."""
+        full_path = os.path.join(dir_path, filename)
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+        with open(full_path, "w") as f:
+            f.write(content)
+        return full_path
+
+    def test_import_from_site_packages(self) -> None:
+        """Test importing a Jac module from simulated site-packages."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Simulate site-packages directory structure
+            mock_site_dir = os.path.join(tmpdir, "site-packages")
+            os.makedirs(mock_site_dir)
+
+            # Create a module within the simulated site-packages
+            site_mod_content = 'with entry { "Site package module loaded!" |> print; }'
+            self.create_temp_jac_file(
+                site_mod_content, mock_site_dir, "site_pkg_mod.jac"
+            )
+
+            # Create the importing script in the main temp directory
+            importer_content = "import:jac site_pkg_mod;"
+            importer_path = self.create_temp_jac_file(
+                importer_content, tmpdir, "importer_site.jac"
+            )
+            with patch("site.getsitepackages", return_value=[mock_site_dir]):
+                captured_output = io.StringIO()
+                sys.stdout = captured_output
+                original_cwd = os.getcwd()
+                try:
+                    Jac.jac_import(self.mach, "importer_site", base_path=tmpdir)
+                finally:
+                    os.chdir(original_cwd)
+                    sys.stdout = sys.__stdout__
+
+                stdout_value = captured_output.getvalue()
+                self.assertIn("Site package module loaded!", stdout_value)
+
+    def test_import_from_jacpath(self) -> None:
+        """Test importing a Jac module from JACPATH."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Simulate JACPATH directory
+            jacpath_dir = os.path.join(tmpdir, "jaclibs")
+            os.makedirs(jacpath_dir)
+
+            # Create a module in the JACPATH directory
+            jacpath_mod_content = 'with entry { "JACPATH module loaded!" |> print; }'
+            self.create_temp_jac_file(
+                jacpath_mod_content, jacpath_dir, "jacpath_mod.jac"
+            )
+
+            # Create the importing script in a different location
+            script_dir = os.path.join(tmpdir, "scripts")
+            os.makedirs(script_dir)
+            importer_content = "import jacpath_mod;"
+            importer_path = self.create_temp_jac_file(
+                importer_content, script_dir, "importer.jac"
+            )
+
+            # Set JACPATH environment variable and run
+            original_jacpath = os.environ.get("JACPATH")
+            os.environ["JACPATH"] = jacpath_dir
             captured_output = io.StringIO()
             sys.stdout = captured_output
-            Jac.jac_import(
-                self.mach, "connect_traverse_syntax", base_path=self.fixture_abs_path("./")
-            )
-            sys.stdout = sys.__stdout__
-            stdout_value = captured_output.getvalue().split("\n")
-            self.assertIn("A(val=5), A(val=10)", stdout_value[0])
-            self.assertIn("[Root(), A(val=20)]", stdout_value[1])
-            self.assertIn(
-                "A(val=5), A(val=10)", stdout_value[2]
-            )  # Remove after dropping deprecated syntax support
-            self.assertIn(
-                "[Root(), A(val=20)]", stdout_value[3]
-            )  # Remove after dropping deprecated syntax support
+            original_cwd = os.getcwd()
+            os.chdir(script_dir)
+            try:
+                cli.run("importer.jac")
+            finally:
+                os.chdir(original_cwd)
+                sys.stdout = sys.__stdout__
+                # Clean up environment variable
+                if original_jacpath is None:
+                    if "JACPATH" in os.environ:
+                        del os.environ["JACPATH"]
+                else:
+                    os.environ["JACPATH"] = original_jacpath
+
+            stdout_value = captured_output.getvalue()
+            self.assertIn("JACPATH module loaded!", stdout_value)
