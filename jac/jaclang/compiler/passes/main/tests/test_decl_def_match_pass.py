@@ -1,6 +1,10 @@
 """Test pass module."""
 
+import io
+import sys
+
 import jaclang.compiler.unitree as uni
+from jaclang.cli import cli
 from jaclang.compiler.passes.main import DeclImplMatchPass
 from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import TestCase
@@ -72,6 +76,14 @@ class DeclImplMatchPassTests(TestCase):
         self.assertIsNotNone(
             state.ir_out.sym_tab.names_in_scope["(o)Test.(c)__init__"].decl.name_of.body
         )
+
+    def test_run_base2(self) -> None:
+        """Test that the walker and node can be created dynamically."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.run(self.fixture_abs_path("base2.jac"))
+        output = captured_output.getvalue().strip()
+        self.assertIn("56", output)
 
     def test_arch_ref_has_sym(self) -> None:
         """Basic test for pass."""

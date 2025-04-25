@@ -2310,6 +2310,7 @@ class PyastGenPass(AstPass):
                 genai_call=None,
                 kid=node.kid,
             )
+            func_node.parent = node.parent
             self.exit_func_call(func_node)
             return func_node.gen.py_ast
         elif node.op.name in [Tok.KW_SPAWN]:
@@ -2341,6 +2342,7 @@ class PyastGenPass(AstPass):
                 genai_call=None,
                 kid=node.kid,
             )
+            func_node.parent = node.parent
             self.exit_func_call(func_node)
             return func_node.gen.py_ast
         elif node.op.name == Tok.PIPE_FWD and isinstance(node.right, uni.TupleVal):
