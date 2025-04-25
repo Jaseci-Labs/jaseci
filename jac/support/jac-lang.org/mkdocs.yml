@@ -159,4 +159,4 @@ plugins:
       video_controls: False
   - mkdocs-simple-hooks:
       hooks:
-        on_pre_build: create_zip:pre_build_hook
+        on_pre_build: handle_jac_compile_data:pre_build_hook
