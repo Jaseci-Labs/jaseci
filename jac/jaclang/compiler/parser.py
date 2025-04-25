@@ -635,6 +635,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
                         | KW_SUPER
                         | KW_SELF
                         | KW_HERE
+                        | KW_VISITOR
             """
             return ast.SpecialVarRef(var=self.consume(ast.Name))
 
@@ -3281,6 +3282,7 @@ class JacParser(Transform[ast.Source, ast.Module]):
                 Tok.KW_SUPER,
                 Tok.KW_SELF,
                 Tok.KW_HERE,
+                Tok.KW_VISITOR,
             ]:
                 ret_type = ast.Name
             elif token.type == Tok.SEMI:
