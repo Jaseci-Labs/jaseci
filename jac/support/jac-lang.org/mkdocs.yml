@@ -69,7 +69,7 @@ nav:
     - "lang_ref/jac_ref.md"
 
   - Jac Playground:
-    - Playground (New Tab): playground/index.html
+    - Playground: playground/index.html
 
 theme:
   logo: "assets/logo.png"
@@ -159,4 +159,4 @@ plugins:
       video_controls: False
   - mkdocs-simple-hooks:
       hooks:
-        on_pre_build: handle_jac_compile_data:pre_build_hook
+        on_post_build: handle_jac_compile_data:pre_build_hook

@@ -18,7 +18,10 @@ def pre_build_hook(**kwargs: any) -> None:
     This function is called before the build process starts.
     """
     print("Running pre-build hook...")
-    create_final_zip()
+    if not os.path.exists(FINAL_ZIP_PATH):
+        create_final_zip()
+    else:
+        print(f"Zip file already exists: {FINAL_ZIP_PATH}. Skipping creation.")
 
 
 def create_final_zip() -> None:
