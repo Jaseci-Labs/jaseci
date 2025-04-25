@@ -4,7 +4,10 @@ import io
 import os
 import sys
 import sysconfig
-
+import site # Add this import
+import tempfile # Add this import
+import shutil # Add this import
+from unittest.mock import patch # Add this import
 
 import jaclang.compiler.passes.main as passes
 from jaclang import jac_import
@@ -14,6 +17,8 @@ from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.runtimelib.context import ExecutionContext
 from jaclang.runtimelib.machine import JacMachine, JacProgram
 from jaclang.utils.test import TestCase
+import logging
+log = logging.getLogger(__name__)
 
 
 class JacLanguageTests(TestCase):
@@ -1261,3 +1266,125 @@ class JacLanguageTests(TestCase):
         self.assertIn("Hello, World!", stdout_value[3])
         self.assertIn("Last message:!", stdout_value[4])
         self.assertIn("Final message:!", stdout_value[5])
+    # Helper method to create files within tests
+    def create_temp_jac_file(
+        self, content: str, dir_path: str, filename: str = "test_mod.jac"
+    ) -> str:
+        """Helper to create a Jac file in a specific directory."""
+        full_path = os.path.join(dir_path, filename)
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+        with open(full_path, "w") as f:
+            f.write(content)
+        return full_path
+
+    # --- New Tests for Importer Logic ---
+
+    def test_import_from_site_packages(self) -> None:
+        """Test importing a Jac module from simulated site-packages."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Simulate site-packages directory structure
+            mock_site_dir = os.path.join(tmpdir, "site-packages")
+            os.makedirs(mock_site_dir)
+
+            # Create a module within the simulated site-packages
+            site_mod_content = 'with entry { "Site package module loaded!" |> print; }'
+            self.create_temp_jac_file(
+                site_mod_content, mock_site_dir, "site_pkg_mod.jac"
+            )
+
+            # Create the importing script in the main temp directory
+            importer_content = "import:jac site_pkg_mod;"
+            _ = self.create_temp_jac_file(
+                importer_content, tmpdir, "importer_exp.jac"
+            )
+            with patch("site.getsitepackages", return_value=[mock_site_dir]):
+                captured_output = io.StringIO()
+                sys.stdout = captured_output
+                original_cwd = os.getcwd()
+                try:
+                    jac_import("importer_exp",base_path=tmpdir)
+                finally:
+                    os.chdir(original_cwd)
+                    sys.stdout = sys.__stdout__
+
+                stdout_value = captured_output.getvalue()
+                self.assertIn("Site package module loaded!", stdout_value)
+
+    def test_import_from_user_site(self) -> None:
+        """Test importing a Jac module from simulated user site-packages."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Simulate user site-packages directory
+            mock_user_site_dir = os.path.join(tmpdir, "user-site")
+            os.makedirs(mock_user_site_dir)
+
+            # Create a module within the simulated user site
+            user_mod_content = 'with entry { "User site module loaded!" |> print; }'
+            self.create_temp_jac_file(
+                user_mod_content, mock_user_site_dir, "user_pkg_mod.jac"
+            )
+
+            # Create the importing script
+            importer_content = "import:jac user_pkg_mod;"
+            _ = self.create_temp_jac_file(
+                importer_content, tmpdir, "importer.jac"
+            )
+
+            # Patch site functions
+            with patch(
+                "site.getusersitepackages", return_value=mock_user_site_dir
+            ):
+                captured_output = io.StringIO()
+                sys.stdout = captured_output
+                original_cwd = os.getcwd()
+                try:
+                    jac_import("importer",base_path=tmpdir)
+                finally:
+                    os.chdir(original_cwd)
+                    sys.stdout = sys.__stdout__
+
+                stdout_value = captured_output.getvalue()
+                self.assertIn("User site module loaded!", stdout_value)
+
+    def test_import_from_jacpath(self) -> None:
+        """Test importing a Jac module from JACPATH."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Simulate JACPATH directory
+            jacpath_dir = os.path.join(tmpdir, "jaclibs")
+            os.makedirs(jacpath_dir)
+
+            # Create a module in the JACPATH directory
+            jacpath_mod_content = 'with entry { "JACPATH module loaded!" |> print; }'
+            self.create_temp_jac_file(
+                jacpath_mod_content, jacpath_dir, "jacpath_mod.jac"
+            )
+
+            # Create the importing script in a different location
+            script_dir = os.path.join(tmpdir, "scripts")
+            os.makedirs(script_dir)
+            importer_content = "import jacpath_mod;"
+            _ = self.create_temp_jac_file(
+                importer_content, script_dir, "importer.jac"
+            )
+
+            # Set JACPATH environment variable and run
+            original_jacpath = os.environ.get("JACPATH")
+            os.environ["JACPATH"] = jacpath_dir
+            captured_output = io.StringIO()
+            sys.stdout = captured_output
+            original_cwd = os.getcwd()
+            os.chdir(script_dir) # Run from the script's directory
+            log.debug(f"JACPATH: {os.environ.get('JACPATH')}")
+            log.debug(f"os.listdir: {os.listdir(os.environ.get('JACPATH'))}")
+            try:
+                cli.run("importer.jac")
+            finally:
+                os.chdir(original_cwd)
+                sys.stdout = sys.__stdout__
+                # Clean up environment variable
+                if original_jacpath is None:
+                    if "JACPATH" in os.environ: del os.environ["JACPATH"]
+                else:
+                    os.environ["JACPATH"] = original_jacpath
+
+            stdout_value = captured_output.getvalue()
+            self.assertIn("JACPATH module loaded!", stdout_value)
