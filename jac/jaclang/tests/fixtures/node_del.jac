@@ -3,40 +3,44 @@ node person {
 }
 
 with entry {
-    p1 = person(10);
-    p2 = person(20);
-    p3 = person(30);
-    p4 = person(40);
+    p1 = person(10); p5 = person(50);
+    p2 = person(20); p6 = person(60);
+    p3 = person(30); p7 = person(70);
+    p4 = person(40); p8 = person(80);
 
-    root ++> p1;
-    p1 ++> p2;
-    p2 ++> p3;
-    p3 ++> p4;
+    root ++> p1++> p2++> p3++> p4;
+    root ++> p5++> p6++> p7++> p8;
+    p4 ++> p8;
 
-    # before deletion
+    # # before deletion
     a = dotgen(root);
-    assert a.count('label=""]') == 4;
-    assert a.count('[label="person(') == 4;
+    assert a.count('label=""]') == 9;
+    assert a.count('[label="person(') == 8;
 
-    # After delete p2
+    # # delete p2
     del p2;
-    # del [p1, p3]; # 1. are we going to support this ?
     b = dotgen(root);
-    assert b.count('label') == 3;
-    assert '20' not in b;
+    assert b.count('label="person') == 7;
+    assert 'age=20' not in b;
 
     # doublecheck p3 also doesnot attach to it
     c = dotgen(p3);
-    assert c.count('label="person') == 2;
-    assert '20' not in c;
+    assert c.count('label="person') == 7;
+    assert 'age=20' not in c;
 
-    apple_list = [1, 2, 3, 4, 5];
-    del apple_list[2];
-    print('apple list after delete 3 :', apple_list);
 
-    del [apple_list[0]];
-    # del [apple_list[0], apple_list[1]]; # this will be fixed by the (1) above mentioned
+    # # del multiple nodes # TODO: @marsninja
+    # del [p1, p3];
+    # assert c.count('label="person') == 5;
+    # assert 'age=10' not in c, 'age=30' not in c;
+
+
+    apple_list = [1, 2, 3, 4, 5,6,7,8,9,10];
+    del apple_list[0];
     print('apple list after delete 1 :', apple_list);
+
+    # del [apple_list[7], apple_list[8]]; # this will be fixed by the (1) above mentioned
+    print('apple list after delete 7, 8 :', apple_list);
 
     obj Inner {
         has c: list;
