@@ -674,6 +674,17 @@ class WalkerStmtOnlyNode(UniNode):
         self.from_walker: bool = False
 
 
+class UniBasicBlock(UniNode):
+    """ControlFlow Basic Block node type for Jac Ast."""
+
+    def __init__(self) -> None:
+        """Initialize control flow node."""
+        self.BB_start: bool = False
+        self.control_in_BBs: Optional[list[UniBasicBlock]] = []
+        self.control_out_BBs: Optional[list[UniBasicBlock]] = []
+        self.BB_stmts: Optional[list[UniBasicBlock]] = []
+
+
 class Expr(UniNode):
     """Expr node type for Jac Ast."""
 
