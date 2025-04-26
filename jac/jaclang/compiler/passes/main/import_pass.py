@@ -13,8 +13,7 @@ from typing import Optional
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes import AstPass
-from jaclang.compiler.passes.main import DefUsePass, SymTabBuildPass
-from jaclang.compiler.passes.main.sym_tab_build_pass import PyInspectSymTabBuildPass
+from jaclang.compiler.passes.main import SymTabBuildPass
 from jaclang.utils.log import logging
 
 
@@ -164,8 +163,7 @@ class PyImportPass(JacImportPass):
 
             self.load_mod(imported_mod)
             self.import_from_build_list.append((imp_node, imported_mod))
-            PyInspectSymTabBuildPass(ir_in=imported_mod, prog=self.prog)
-            DefUsePass(ir_in=imported_mod, prog=self.prog)
+            SymTabBuildPass(ir_in=imported_mod, prog=self.prog)
 
     def __process_import(self, imp_node: uni.Import) -> None:
         """Process the imports in form of `import X`."""
@@ -198,11 +196,7 @@ class PyImportPass(JacImportPass):
                 msg += f"import_from (import all) handling with {imp_node.loc.mod_path}:{imp_node.loc}"
 
                 self.import_from_build_list.append((imp_node, imported_mod))
-                PyInspectSymTabBuildPass(ir_in=imported_mod, prog=self.prog)
-                DefUsePass(ir_in=imported_mod, prog=self.prog)
-
-            else:
-                SymTabBuildPass(ir_in=imported_mod, prog=self.prog)
+            SymTabBuildPass(ir_in=imported_mod, prog=self.prog)
 
     def __import_py_module(
         self,

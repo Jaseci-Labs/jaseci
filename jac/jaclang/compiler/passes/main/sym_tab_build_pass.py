@@ -4,8 +4,6 @@ This pass builds the symbol table tree for the Jaseci Ast. It also adds symbols
 for globals, imports, architypes, and abilities declarations and definitions.
 """
 
-from typing import TypeVar
-
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes import AstPass
 from jaclang.compiler.unitree import UniScopeNode
@@ -1154,17 +1152,3 @@ class SymTabBuildPass(AstPass):
 
     def enter_comment_token(self, node: uni.CommentToken) -> None:
         """Sub objects."""
-
-
-T = TypeVar("T", bound=uni.UniNode)
-
-
-class PyInspectSymTabBuildPass(SymTabBuildPass):
-    """Jac Symbol table build pass."""
-
-    def push_scope_and_link(self, key_node: uni.UniScopeNode) -> None:
-        """Push scope."""
-        if not len(self.cur_sym_tab):
-            self.cur_sym_tab.append(key_node)
-        else:
-            self.cur_sym_tab.append(self.cur_scope.link_kid_scope(key_node=key_node))
