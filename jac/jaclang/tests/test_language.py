@@ -192,7 +192,7 @@ class JacLanguageTests(TestCase):
 
     def test_arith_precedence(self) -> None:
         """Basic precedence test."""
-        prog = JacProgram().jac_str_to_pass("with entry {print(4-5-4);}", "test.jac")
+        prog = JacProgram().compile_from_str("with entry {print(4-5-4);}", "test.jac")
         captured_output = io.StringIO()
         sys.stdout = captured_output
         exec(compile(prog.ir_out.gen.py_ast[0], "test.py", "exec"))
@@ -604,8 +604,8 @@ class JacLanguageTests(TestCase):
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
 
-        (prog := JacProgram()).jac_str_to_pass(
-            jac_str=py_ast_build_pass.ir_out.unparse(),
+        (prog := JacProgram()).compile_from_str(
+            source_str=py_ast_build_pass.ir_out.unparse(),
             file_path=file_name[:-3] + ".jac",
             schedule=py_code_gen_typed,
         ).ir_out
@@ -680,8 +680,8 @@ class JacLanguageTests(TestCase):
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
 
-            (prog := JacProgram()).jac_str_to_pass(
-                jac_str=py_ast_build_pass.ir_out.unparse(),
+            (prog := JacProgram()).compile_from_str(
+                source_str=py_ast_build_pass.ir_out.unparse(),
                 file_path=file_name[:-3] + ".jac",
                 schedule=py_code_gen_typed,
             ).ir_out
@@ -734,8 +734,8 @@ class JacLanguageTests(TestCase):
 
         with open(file_name, "r") as f:
             file_source = f.read()
-        (prog := JacProgram()).py_str_to_pass(
-            py_str=file_source, file_path=file_name, schedule=py_code_gen_typed
+        (prog := JacProgram()).compile_from_str(
+            source_str=file_source, file_path=file_name, schedule=py_code_gen_typed
         ).ir_out
 
         architype_count = sum(
@@ -814,14 +814,14 @@ class JacLanguageTests(TestCase):
 
     def test_py_kw_as_name_disallowed(self) -> None:
         """Basic precedence test."""
-        prog = JacProgram().jac_str_to_pass(
+        prog = JacProgram().compile_from_str(
             "with entry {print.is.not.True(4-5-4);}", "test.jac"
         )
         self.assertIn("Python keyword is used as name", str(prog.errors_had[0].msg))
 
     def test_double_format_issue(self) -> None:
         """Basic precedence test."""
-        prog = JacProgram().jac_str_to_pass("with entry {print(hello);}", "test.jac")
+        prog = JacProgram().compile_from_str("with entry {print(hello);}", "test.jac")
         prog.ir_out.unparse()
         before = prog.ir_out.format()
         prog.ir_out.format()
@@ -938,8 +938,10 @@ class JacLanguageTests(TestCase):
                 file_source = f.read()
             ir = (
                 JacProgram()
-                .py_str_to_pass(
-                    py_str=file_source, file_path=file_path, schedule=py_code_gen_typed
+                .compile_from_str(
+                    source_str=file_source,
+                    file_path=file_path,
+                    schedule=py_code_gen_typed,
                 )
                 .ir_out
             )
@@ -976,8 +978,8 @@ class JacLanguageTests(TestCase):
             file_source = f.read()
         ir = (
             (prog := JacProgram())
-            .py_str_to_pass(
-                py_str=file_source, file_path=file_name, schedule=py_code_gen_typed
+            .compile_from_str(
+                source_str=file_source, file_path=file_name, schedule=py_code_gen_typed
             )
             .ir_out
         )

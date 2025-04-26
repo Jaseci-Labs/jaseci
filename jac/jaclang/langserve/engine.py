@@ -79,8 +79,8 @@ class JacLangServer(LanguageServer):
         """Rebuild a file."""
         try:
             document = self.workspace.get_text_document(file_path)
-            self.program.jac_str_to_pass(
-                jac_str=document.source, file_path=document.path, schedule=[]
+            self.program.compile_from_str(
+                source_str=document.source, file_path=document.path, schedule=[]
             )
             self.publish_diagnostics(
                 file_path,
@@ -103,8 +103,8 @@ class JacLangServer(LanguageServer):
                     uris.from_fs_path(file_path), annex_view=file_path
                 )
             self.program = JacProgram()  # TODO: Remove this Hack
-            build = self.program.jac_str_to_pass(
-                jac_str=document.source,
+            build = self.program.compile_from_str(
+                source_str=document.source,
                 file_path=document.path,
                 schedule=py_code_gen_typed,
             )
@@ -289,8 +289,8 @@ class JacLangServer(LanguageServer):
         """Return formatted jac."""
         try:
             document = self.workspace.get_text_document(file_path)
-            format = self.program.jac_str_to_pass(
-                jac_str=document.source,
+            format = self.program.compile_from_str(
+                source_str=document.source,
                 file_path=document.path,
                 target=JacFormatPass,
                 schedule=[FuseCommentsPass, JacFormatPass],

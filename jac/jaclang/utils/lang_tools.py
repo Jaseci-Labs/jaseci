@@ -231,8 +231,8 @@ class AstTool:
                         prog=prog,
                     ).ir_out
 
-                    ir = prog.jac_str_to_pass(
-                        jac_str=rep.unparse(),
+                    ir = prog.compile_from_str(
+                        source_str=rep.unparse(),
                         file_path=file_name[:-3] + ".jac",
                         schedule=py_code_gen_typed,
                     ).ir_out

@@ -73,24 +73,17 @@ class JacProgram:
     ) -> Transform:
         """Convert a Jac file to an AST."""
         with open(file_path, "r", encoding="utf-8") as file:
-            if file_path.endswith(".py"):
-                return self.py_str_to_pass(
-                    py_str=file.read(),
-                    file_path=file_path,
-                    target=target,
-                    schedule=schedule,
-                )
-            return self.jac_str_to_pass(
-                jac_str=file.read(),
+            return self.compile_from_str(
+                source_str=file.read(),
                 file_path=file_path,
                 target=target,
                 schedule=schedule,
                 full_compile=full_compile,
             )
 
-    def jac_str_to_pass(
+    def compile_from_str(
         self,
-        jac_str: str,
+        source_str: str,
         file_path: str,
         target: Optional[Type[AstPass]] = None,
         schedule: list[Type[AstPass]] = pass_schedule,
@@ -99,36 +92,26 @@ class JacProgram:
         """Convert a Jac file to an AST."""
         if not target:
             target = schedule[-1] if schedule else None
-
-        source = uni.Source(jac_str, mod_path=file_path)
-        ast_ret: Transform = JacParser(root_ir=source, prog=self)
-        if ast_ret.errors_had:
-            return ast_ret
-        return self.run_pass_schedule(
-            cur_pass=ast_ret,
-            target=target,
-            schedule=schedule,
-            full_compile=full_compile,
-        )
-
-    def py_str_to_pass(
-        self,
-        py_str: str,
-        file_path: str,
-        target: Optional[Type[AstPass]] = None,
-        schedule: list[Type[AstPass]] = pass_schedule,
-    ) -> Transform:
-        """Convert a Jac file to an AST."""
-        if not target:
-            target = schedule[-1] if schedule else None
-        parsed_ast = py_ast.parse(py_str)
-        py_ast_build_pass = PyastBuildPass(
-            ir_in=uni.PythonModuleAst(
-                parsed_ast,
-                orig_src=uni.Source(py_str, mod_path=file_path),
-            ),
-            prog=self,
-        )
+        if file_path.endswith(".py"):
+            parsed_ast = py_ast.parse(source_str)
+            py_ast_build_pass = PyastBuildPass(
+                ir_in=uni.PythonModuleAst(
+                    parsed_ast,
+                    orig_src=uni.Source(source_str, mod_path=file_path),
+                ),
+                prog=self,
+            )
+        else:
+            source = uni.Source(source_str, mod_path=file_path)
+            ast_ret: Transform = JacParser(root_ir=source, prog=self)
+            if ast_ret.errors_had:
+                return ast_ret
+            return self.run_pass_schedule(
+                cur_pass=ast_ret,
+                target=target,
+                schedule=schedule,
+                full_compile=full_compile,
+            )
         return self.run_pass_schedule(
             cur_pass=py_ast_build_pass,
             target=target,

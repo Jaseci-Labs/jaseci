@@ -122,8 +122,8 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             schedule=without_format,
         )
         code_gen_format = JacProgram.jac_file_formatter(self.fixture_abs_path(filename))
-        code_gen_jac = JacProgram().jac_str_to_pass(
-            jac_str=code_gen_format.ir_out.gen.jac,
+        code_gen_jac = JacProgram().compile_from_str(
+            source_str=code_gen_format.ir_out.gen.jac,
             file_path=filename,
             target=PyastGenPass,
             schedule=without_format,
