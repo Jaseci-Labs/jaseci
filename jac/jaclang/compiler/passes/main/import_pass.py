@@ -64,12 +64,12 @@ class JacImportPass(AstPass):
                             self.load_mod(
                                 self.prog.compile(
                                     file_path=from_mod_target, schedule=[]
-                                ).ir_out
+                                )
                             )
         else:
             if target in self.prog.mod.hub:
                 return
-            self.load_mod(self.prog.compile(file_path=target, schedule=[]).ir_out)
+            self.load_mod(self.prog.compile(file_path=target, schedule=[]))
 
     def load_mod(self, mod: uni.Module | None) -> None:
         """Attach a module to a node."""
@@ -85,7 +85,7 @@ class JacImportPass(AstPass):
         if os.path.exists(with_init):
             if with_init in self.prog.mod.hub:
                 return self.prog.mod.hub[with_init]
-            return self.prog.compile(file_path=with_init, schedule=[]).ir_out
+            return self.prog.compile(file_path=with_init, schedule=[])
         else:
             return uni.Module.make_stub(
                 inject_name=target.split(os.path.sep)[-1],
