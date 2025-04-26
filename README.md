@@ -28,9 +28,17 @@ This is a collection of libraries and frameworks in the Jaseci Ecosystem.
 - [`jac-streamlit`](tool_plugins/streamlit): Quickly build UI with Jac and Streamlit.
 - [`jac VSCE`](jac/support/vscode_ext): Official VSCode Extension for the Jac programming language.
 
-## Showcase Projects
- - [`Visit_Zoo`](https://github.com/Thamirawaran/Visit_Zoo): An interactive zoo simulation where players explore various zoo sections through clickable buttons, images, and videos.
- - [`littleX`](https://github.com/Thamirawaran/littleX): A minimalistic social media platform prototype developed using the Jac programming language.
+## Awesome Jaseci Projects 🚀
+
+Explore these impressive projects built with Jaseci! These innovative applications showcase the power and versatility of the Jaseci ecosystem. Consider supporting these projects or getting inspired to build your own.
+
+| Project | Description | Link |
+|---------|-------------|------|
+| **Jivas** | An Agentic Framework for rapidly prototyping and deploying graph-based, AI solutions | [GitHub](https://github.com/TrueSelph/jivas) |
+| **Tobu** | Your AI-powered memory keeper that captures the stories behind your photos and videos | [Website](https://tobu.life/) |
+| **Myca** | An AI-powered productivity tool designed for high-performing individuals | [Website](https://www.myca.ai/) |
+| **LittleX** | A lightweight social media application inspired by X, developed using the Jaseci Stack | [GitHub](https://github.com/Jaseci-Labs/littleX) |
+| **Visit_Zoo** | An interactive zoo simulation with clickable sections, images, and videos | [GitHub](https://github.com/Thamirawaran/Visit_Zoo) |
 
 ## Contributing
 
