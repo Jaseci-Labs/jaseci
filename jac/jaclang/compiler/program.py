@@ -94,28 +94,30 @@ class JacProgram:
             target = schedule[-1] if schedule else None
         if file_path.endswith(".py"):
             parsed_ast = py_ast.parse(source_str)
-            py_ast_build_pass = PyastBuildPass(
+            py_ast_ret: Transform[uni.PythonModuleAst, uni.Module] = PyastBuildPass(
                 ir_in=uni.PythonModuleAst(
                     parsed_ast,
                     orig_src=uni.Source(source_str, mod_path=file_path),
                 ),
                 prog=self,
             )
+            ast_ret: (
+                Transform[uni.PythonModuleAst, uni.Module]
+                | Transform[uni.Source, uni.Module]
+            ) = py_ast_ret
         else:
             source = uni.Source(source_str, mod_path=file_path)
-            ast_ret: Transform = JacParser(root_ir=source, prog=self)
-            if ast_ret.errors_had:
-                return ast_ret
-            return self.run_pass_schedule(
-                cur_pass=ast_ret,
-                target=target,
-                schedule=schedule,
-                full_compile=full_compile,
+            jac_ast_ret: Transform[uni.Source, uni.Module] = JacParser(
+                root_ir=source, prog=self
             )
+            ast_ret = jac_ast_ret
+        if ast_ret.errors_had:
+            return ast_ret
         return self.run_pass_schedule(
-            cur_pass=py_ast_build_pass,
+            cur_pass=ast_ret,
             target=target,
             schedule=schedule,
+            full_compile=full_compile,
         )
 
     def run_pass_schedule(
