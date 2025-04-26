@@ -9,7 +9,7 @@ from dataclasses import dataclass, fields
 class Settings:
     """Main settings of Jac lang."""
 
-    # Debug configuration
+    # Debug configurationt
     fuse_type_info_debug: bool = False
     filter_sym_builtins: bool = True
     ast_symbol_info_detailed: bool = False
@@ -19,6 +19,7 @@ class Settings:
     py_import_pass_debug: bool = False
     inherit_pass_debug: bool = False
     compile_debug: bool = False
+    jac_semantics: bool = False
 
     # Compiler configuration
     disable_mtllm: bool = False

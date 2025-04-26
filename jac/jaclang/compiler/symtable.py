@@ -7,6 +7,7 @@ from typing import Optional, Sequence
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.constant import SymbolAccess, SymbolType
+from jaclang.compiler.passes.typecheck.type import JNoType, JType
 from jaclang.utils.treeprinter import dotgen_symtab_tree, print_symtab_tree
 
 
@@ -27,7 +28,7 @@ class Symbol:
         defn.sym = self
         self.access: SymbolAccess = access
         self.parent_tab = parent_tab
-        self.jtype = None
+        self.jtype: JType = JNoType()
 
     @property
     def decl(self) -> ast.NameAtom:
