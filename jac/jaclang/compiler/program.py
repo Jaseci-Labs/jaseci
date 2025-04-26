@@ -113,6 +113,8 @@ class JacProgram:
             ast_ret = jac_ast_ret
         if ast_ret.errors_had:
             return ast_ret.ir_out
+        # FIXME: Should remove other references to the below
+        SymTabBuildPass(ir_in=ast_ret.ir_out, prog=self)
         return self.run_pass_schedule(
             mod_targ=ast_ret.ir_out,
             target_pass=target,

@@ -104,7 +104,7 @@ class TestJacLangServer(TestCase):
         lsp.lsp._workspace = workspace
         circle_file = uris.from_fs_path(self.fixture_abs_path("circle_pure.jac"))
         lsp.deep_check(circle_file)
-        self.assertEqual(8, len(lsp.get_outline(circle_file)))
+        self.assertEqual(13, len(lsp.get_outline(circle_file)))
 
     def test_go_to_definition(self) -> None:
         """Test that the go to definition is correct."""
