@@ -141,29 +141,30 @@ class JacProgram:
         full_compile: bool = True,
     ) -> uni.Module:
         """Convert a Jac file to an AST."""
-
-        def run_schedule(mod: uni.Module, schedule: list[type[AstPass]]) -> None:
-            final_pass: Optional[type[AstPass]] = None
-            for current_pass in schedule:
-                if current_pass in (target_pass, PyBytecodeGenPass):
-                    final_pass = current_pass
-                    break
-                current_pass(mod, prog=self)
-            if final_pass:
-                final_pass(mod, prog=self)
-
-        # TODO: we need a elegant way of doing this [should be genaralized].
         if len(self.errors_had) or target_pass in (JacImportPass, SymTabBuildPass):
             return mod_targ
         if not full_compile:
-            run_schedule(mod_targ, schedule=schedule)
+            self.schedule_runner(mod_targ, target_pass=target_pass, schedule=schedule)
             return mod_targ
+        else:
+            return self.run_deep_pass_schedule(
+                mod_targ=mod_targ,
+                target_pass=target_pass,
+                schedule=schedule,
+            )
 
+    def run_deep_pass_schedule(
+        self,
+        mod_targ: uni.Module,
+        target_pass: Optional[Type[AstPass]] = None,
+        schedule: list[Type[AstPass]] = pass_schedule,
+    ) -> uni.Module:
+        """Convert a Jac file to an AST."""
         for mod in self.mod.hub.values():
             SymTabLinkPass(ir_in=mod, prog=self)
 
         for mod in self.mod.hub.values():
-            run_schedule(mod, schedule=schedule)
+            self.schedule_runner(mod, target_pass=target_pass, schedule=schedule)
 
         # Check if we need to run without type checking then just return
         if target_pass in py_code_gen:
@@ -190,7 +191,9 @@ class JacProgram:
             DefUsePass(mod, prog=self)
 
         for mod in self.mod.hub.values():
-            run_schedule(mod, schedule=type_checker_sched)
+            self.schedule_runner(
+                mod, target_pass=target_pass, schedule=type_checker_sched
+            )
 
         return mod_targ
 
@@ -241,6 +244,22 @@ class JacProgram:
                 if mod and not settings.ignore_test_annex:
                     node.test_mod.append(mod)
                     node.add_kids_right(mod.kid, parent_update=True, pos_update=False)
+
+    def schedule_runner(
+        self,
+        mod: uni.Module,
+        target_pass: Optional[type[AstPass]] = None,
+        schedule: list[Type[AstPass]] = pass_schedule,
+    ) -> None:
+        """Run premade passes on the module."""
+        final_pass: Optional[type[AstPass]] = None
+        for current_pass in schedule:
+            if current_pass in (target_pass, PyBytecodeGenPass):
+                final_pass = current_pass
+                break
+            current_pass(mod, prog=self)
+        if final_pass:
+            final_pass(mod, prog=self)
 
     @staticmethod
     def jac_file_formatter(file_path: str) -> str:
