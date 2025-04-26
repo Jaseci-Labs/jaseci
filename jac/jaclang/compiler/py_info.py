@@ -13,10 +13,5 @@ class PyInfo:
         # TypeCheck pass
         self.py_mod_dep_map: dict[str, str] = {}
 
-        # Get all the modules that we really need to raise inorder to make
-        # all Jac types correct (FuseTypeInfo works). This is computed using
-        # PyCollectDepsPass.
-        self.py_raise_map: dict[str, str] = {}
-
         # Flag for python modules raised into jac
         self.is_raised_from_py: bool = False

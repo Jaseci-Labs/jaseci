@@ -91,7 +91,7 @@ class Anchor:
 
     def populate(self) -> None:
         """Retrieve the Architype from db and return."""
-        from jaclang.plugin.feature import JacFeature as Jac
+        from jaclang.runtimelib.machine import JacMachine as Jac
 
         jsrc = Jac.get_context().mem
 
@@ -235,6 +235,7 @@ class ObjectAnchor(Anchor):
     architype: ObjectArchitype
 
 
+@dataclass(eq=False, repr=False, kw_only=True)
 class Architype:
     """Architype Protocol."""
 
@@ -249,7 +250,7 @@ class Architype:
     def __init_subclass__(cls) -> None:
         """Configure subclasses."""
         if not cls.__dict__.get("__jac_base__", False):
-            from jaclang import JacFeature as _
+            from jaclang import JacMachine as _
 
             _.make_architype(cls)
 

@@ -4,13 +4,8 @@ from contextlib import suppress
 from typing import Callable, Type
 
 from jaclang.compiler.constant import EdgeDir
-from jaclang.plugin.default import (
-    JacCallableImplementation as _JacCallableImplementation,
-    JacFeatureImpl,
-    hookimpl,
-)
-from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.runtimelib.architype import Architype
+from jaclang.runtimelib.machine import JacMachine as Jac, JacMachineImpl, hookimpl
 from jaclang.runtimelib.utils import all_issubclass
 
 from ..core.architype import (
@@ -33,22 +28,6 @@ from ..core.context import ExecutionContext, JaseciContext
 from ..jaseci import FastAPI
 
 
-class JacCallableImplementation:
-    """Callable Implementations."""
-
-    @staticmethod
-    def get_object(id: str) -> Architype | None:
-        """Get object by id."""
-        if not FastAPI.is_enabled():
-            return _JacCallableImplementation.get_object(id=id)
-
-        with suppress(ValueError):
-            if isinstance(architype := BaseAnchor.ref(id).architype, Architype):
-                return architype
-
-        return None
-
-
 class JacAccessValidationPlugin:
     """Jac Access Validation Implementations."""
 
@@ -59,7 +38,7 @@ class JacAccessValidationPlugin:
     ) -> None:
         """Allow all access from target root graph to current Architype."""
         if not FastAPI.is_enabled():
-            JacFeatureImpl.allow_root(
+            JacMachineImpl.allow_root(
                 architype=architype, root_id=root_id, level=level  # type: ignore[arg-type]
             )
             return
@@ -84,7 +63,7 @@ class JacAccessValidationPlugin:
     ) -> None:
         """Disallow all access from target root graph to current Architype."""
         if not FastAPI.is_enabled():
-            JacFeatureImpl.disallow_root(
+            JacMachineImpl.disallow_root(
                 architype=architype, root_id=root_id, level=level  # type: ignore[arg-type]
             )
             return
@@ -106,7 +85,7 @@ class JacAccessValidationPlugin:
     def unrestrict(architype: Architype, level: AccessLevel | int | str) -> None:
         """Allow everyone to access current Architype."""
         if not FastAPI.is_enabled():
-            JacFeatureImpl.unrestrict(architype=architype, level=level)
+            JacMachineImpl.unrestrict(architype=architype, level=level)
             return
 
         anchor = architype.__jac__
@@ -121,7 +100,7 @@ class JacAccessValidationPlugin:
     def restrict(architype: Architype) -> None:
         """Disallow others to access current Architype."""
         if not FastAPI.is_enabled():
-            JacFeatureImpl.restrict(architype=architype)
+            JacMachineImpl.restrict(architype=architype)
             return
 
         anchor = architype.__jac__
@@ -135,7 +114,7 @@ class JacAccessValidationPlugin:
     def check_access_level(to: Anchor) -> AccessLevel:
         """Access validation."""
         if not FastAPI.is_enabled():
-            return JacFeatureImpl.check_access_level(to=to)
+            return JacMachineImpl.check_access_level(to=to)
 
         if not to.persistent:
             return AccessLevel.WRITE
@@ -192,7 +171,7 @@ class JacNodePlugin:
         if FastAPI.is_enabled():
             JaseciContext.get().mem.populate_data(node.edges)
 
-        return JacFeatureImpl.get_edges(
+        return JacMachineImpl.get_edges(
             node=node, dir=dir, filter=filter, target_obj=target_obj  # type: ignore[arg-type, return-value]
         )
 
@@ -208,7 +187,7 @@ class JacNodePlugin:
         if FastAPI.is_enabled():
             JaseciContext.get().mem.populate_data(node.edges)
 
-        return JacFeatureImpl.edges_to_nodes(
+        return JacMachineImpl.edges_to_nodes(
             node=node, dir=dir, filter=filter, target_obj=target_obj  # type: ignore[arg-type, return-value]
         )
 
@@ -221,7 +200,7 @@ class JacEdgePlugin:
     def detach(edge: EdgeAnchor) -> None:
         """Detach edge from nodes."""
         if not FastAPI.is_enabled():
-            JacFeatureImpl.detach(edge=edge)
+            JacMachineImpl.detach(edge=edge)
             return
 
         Jac.remove_edge(node=edge.source, edge=edge)
@@ -239,7 +218,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
     def setup() -> None:
         """Set Class References."""
         if not FastAPI.is_enabled():
-            return JacFeatureImpl.setup()
+            return JacMachineImpl.setup()
 
         Jac.Obj = ObjectArchitype
         Jac.Node = NodeArchitype
@@ -254,7 +233,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
     def get_context() -> ExecutionContext:
         """Get current execution context."""
         if not FastAPI.is_enabled():
-            return JacFeatureImpl.get_context()
+            return JacMachineImpl.get_context()
 
         return JaseciContext.get()
 
@@ -263,7 +242,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
     def reset_graph(root: Root | None = None) -> int:
         """Purge current or target graph."""
         if not FastAPI.is_enabled():
-            return JacFeatureImpl.reset_graph(root=root)  # type: ignore[arg-type]
+            return JacMachineImpl.reset_graph(root=root)  # type: ignore[arg-type]
 
         ctx = JaseciContext.get()
         ranchor = root.__jac__ if root else ctx.root
@@ -294,7 +273,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
     def root() -> Root:
         """Jac's assign comprehension feature."""
         if not FastAPI.is_enabled():
-            return JacFeatureImpl.root()  # type:ignore[return-value]
+            return JacMachineImpl.root()  # type:ignore[return-value]
 
         return JaseciContext.get_root()
 
@@ -307,7 +286,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
     ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchitype]:
         """Jac's root getter."""
         if not FastAPI.is_enabled():
-            return JacFeatureImpl.build_edge(  # type:ignore[return-value]
+            return JacMachineImpl.build_edge(  # type:ignore[return-value]
                 is_undirected=is_undirected,
                 conn_type=conn_type,
                 conn_assign=conn_assign,
@@ -348,16 +327,23 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
-    def get_object_func() -> Callable[[str], Architype | None]:
-        """Get object by id func."""
-        return JacCallableImplementation.get_object
+    def get_object(id: str) -> Architype | None:
+        """Get object by id."""
+        if not FastAPI.is_enabled():
+            return JacMachineImpl.get_object(id=id)
+
+        with suppress(ValueError):
+            if isinstance(architype := BaseAnchor.ref(id).architype, Architype):
+                return architype
+
+        return None
 
     @staticmethod
     @hookimpl
     def object_ref(obj: Architype) -> str:
         """Get object reference id."""
         if not FastAPI.is_enabled():
-            return JacFeatureImpl.object_ref(obj=obj)
+            return JacMachineImpl.object_ref(obj=obj)
 
         return str(obj.__jac__.ref_id)
 
@@ -366,7 +352,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
     def spawn(op1: Architype, op2: Architype) -> WalkerArchitype:
         """Invoke data spatial call."""
         if not FastAPI.is_enabled():
-            return JacFeatureImpl.spawn(op1=op1, op2=op2)  # type:ignore[return-value]
+            return JacMachineImpl.spawn(op1=op1, op2=op2)  # type:ignore[return-value]
 
         if isinstance(op1, WalkerArchitype):
             warch = op1
@@ -475,7 +461,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
     def destroy(obj: Architype | Anchor | BaseAnchor) -> None:
         """Destroy object."""
         if not FastAPI.is_enabled():
-            return JacFeatureImpl.destroy(obj=obj)  # type:ignore[arg-type]
+            return JacMachineImpl.destroy(obj=obj)  # type:ignore[arg-type]
 
         anchor = obj.__jac__ if isinstance(obj, Architype) else obj
 

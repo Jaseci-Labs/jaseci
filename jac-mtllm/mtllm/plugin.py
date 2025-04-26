@@ -3,11 +3,11 @@
 import ast as ast3
 from typing import Any, Callable, Mapping, Optional, Sequence
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
-from jaclang.plugin.default import hookimpl
+from jaclang.runtimelib.default import hookimpl
 from jaclang.runtimelib.utils import extract_params, extract_type, get_sem_scope
 
 from mtllm.aott import (
@@ -27,10 +27,10 @@ def callable_to_tool(tool: Callable, mod_registry: SemRegistry) -> Tool:
     assert tool_info and isinstance(
         tool_info, SemInfo
     ), f"Tool {tool_name} not found in the registry"
-    return Tool(tool, tool_info, tool_info.get_children(mod_registry, ast.ParamVar))
+    return Tool(tool, tool_info, tool_info.get_children(mod_registry, uni.ParamVar))
 
 
-class JacFeature:
+class JacMachine:
     """Jac's with_llm feature."""
 
     @staticmethod
@@ -51,9 +51,9 @@ class JacFeature:
         _locals: Mapping,
     ) -> Any:  # noqa: ANN401
         """Jac's with_llm feature."""
-        from jaclang.runtimelib.machine import JacMachine
+        from jaclang.runtimelib.machinestate import JacMachineState
 
-        mod_registry = JacMachine.get().jac_program.sem_ir
+        mod_registry = JacMachineState.get().jac_program.sem_ir
 
         _scope = SemScope.get_scope_from_str(scope)
         assert _scope is not None, f"Invalid scope: {scope}"
@@ -132,13 +132,13 @@ class JacFeature:
 
     @staticmethod
     @hookimpl
-    def gen_llm_body(_pass: PyastGenPass, node: ast.Ability) -> list[ast3.AST]:
+    def gen_llm_body(_pass: PyastGenPass, node: uni.Ability) -> list[ast3.AST]:
         """Generate the by LLM body."""
-        if isinstance(node.body, ast.FuncCall):
+        if isinstance(node.body, uni.FuncCall):
             model = node.body.target.gen.py_ast[0]
             extracted_type = (
                 "".join(extract_type(node.signature.return_type))
-                if isinstance(node.signature, ast.FuncSignature)
+                if isinstance(node.signature, uni.FuncSignature)
                 and node.signature.return_type
                 else None
             )
@@ -178,7 +178,7 @@ class JacFeature:
                     )
                     for param in node.signature.params.items
                 ]
-                if isinstance(node.signature, ast.FuncSignature)
+                if isinstance(node.signature, uni.FuncSignature)
                 and node.signature.params
                 else []
             )
@@ -197,7 +197,7 @@ class JacFeature:
                     ),
                     (_pass.sync(ast3.Constant(value=(extracted_type)))),
                 ]
-                if isinstance(node.signature, ast.FuncSignature)
+                if isinstance(node.signature, uni.FuncSignature)
                 else []
             )
             action = (
@@ -231,7 +231,7 @@ class JacFeature:
     def by_llm_call(
         _pass: PyastGenPass,
         model: ast3.AST,
-        model_params: dict[str, ast.Expr],
+        model_params: dict[str, uni.Expr],
         scope: ast3.AST,
         inputs: Sequence[Optional[ast3.AST]],
         outputs: Sequence[Optional[ast3.AST]] | ast3.Call,
@@ -411,7 +411,7 @@ class JacFeature:
 
     @staticmethod
     @hookimpl
-    def get_by_llm_call_args(_pass: PyastGenPass, node: ast.FuncCall) -> dict:
+    def get_by_llm_call_args(_pass: PyastGenPass, node: uni.FuncCall) -> dict:
         """Get the by LLM call args."""
         if node.genai_call is None:
             raise _pass.ice("No genai_call")
@@ -512,7 +512,7 @@ class JacFeature:
                                             ast3.Constant(
                                                 value=(
                                                     kw_pair.key.value
-                                                    if isinstance(kw_pair.key, ast.Name)
+                                                    if isinstance(kw_pair.key, uni.Name)
                                                     else None
                                                 )
                                             )
@@ -545,7 +545,7 @@ class JacFeature:
                                             ast3.Constant(
                                                 value=(
                                                     kw_pair.key.value
-                                                    if isinstance(kw_pair.key, ast.Name)
+                                                    if isinstance(kw_pair.key, uni.Name)
                                                     else None
                                                 )
                                             )
@@ -559,7 +559,7 @@ class JacFeature:
                                 ast3.Constant(
                                     value=(
                                         kw_pair.key.value
-                                        if isinstance(kw_pair.key, ast.Name)
+                                        if isinstance(kw_pair.key, uni.Name)
                                         else None
                                     )
                                 )
@@ -570,7 +570,7 @@ class JacFeature:
                     )
                 )
                 for kw_pair in node.params.items
-                if isinstance(kw_pair, ast.KWPair)
+                if isinstance(kw_pair, uni.KWPair)
             ]
         else:
             inputs = []

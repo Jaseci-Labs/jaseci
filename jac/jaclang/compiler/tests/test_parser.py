@@ -4,9 +4,10 @@ import inspect
 import os
 
 from jaclang.compiler import jac_lark as jl
-from jaclang.compiler.absyntree import JacSource
 from jaclang.compiler.constant import Tokens
 from jaclang.compiler.parser import JacParser
+from jaclang.compiler.program import JacProgram
+from jaclang.compiler.unitree import Source
 from jaclang.utils.test import TestCaseMicroSuite
 
 
@@ -19,14 +20,15 @@ class TestLarkParser(TestCaseMicroSuite):
 
     def test_fstring_escape_brace(self) -> None:
         """Test fstring escape brace."""
-        source = JacSource('glob a=f"{{}}", not_b=4;', mod_path="")
-        prse = JacParser(input_ir=source)
+        source = Source('glob a=f"{{}}", not_b=4;', mod_path="")
+        prse = JacParser(root_ir=source, prog=JacProgram())
         self.assertFalse(prse.errors_had)
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
         prse = JacParser(
-            input_ir=JacSource(self.file_to_str(filename), mod_path=filename),
+            root_ir=Source(self.file_to_str(filename), mod_path=filename),
+            prog=JacProgram(),
         )
         # A list of files where the errors are expected.
         files_expected_errors = [
@@ -37,32 +39,38 @@ class TestLarkParser(TestCaseMicroSuite):
 
     def test_parser_fam(self) -> None:
         """Parse micro jac file."""
-        prse = JacParser(input_ir=JacSource(self.load_fixture("fam.jac"), mod_path=""))
+        prse = JacParser(
+            root_ir=Source(self.load_fixture("fam.jac"), mod_path=""),
+            prog=JacProgram(),
+        )
         self.assertFalse(prse.errors_had)
 
     def test_staticmethod_checks_out(self) -> None:
         """Parse micro jac file."""
         prse = JacParser(
-            input_ir=JacSource(
+            root_ir=Source(
                 self.load_fixture("staticcheck.jac"),
                 mod_path="",
-            )
+            ),
+            prog=JacProgram(),
         )
-        out = prse.ir.pp()
+        out = prse.ir_out.pp()
         self.assertFalse(prse.errors_had)
         self.assertNotIn("staticmethod", out)
 
     def test_parser_kwesc(self) -> None:
         """Parse micro jac file."""
         prse = JacParser(
-            input_ir=JacSource(self.load_fixture("kwesc.jac"), mod_path="")
+            root_ir=Source(self.load_fixture("kwesc.jac"), mod_path=""),
+            prog=JacProgram(),
         )
         self.assertFalse(prse.errors_had)
 
     def test_parser_mod_doc_test(self) -> None:
         """Parse micro jac file."""
         prse = JacParser(
-            input_ir=JacSource(self.load_fixture("mod_doc_test.jac"), mod_path="")
+            root_ir=Source(self.load_fixture("mod_doc_test.jac"), mod_path=""),
+            prog=JacProgram(),
         )
         self.assertFalse(prse.errors_had)
 
@@ -106,14 +114,16 @@ class TestLarkParser(TestCaseMicroSuite):
 
     def test_all_ast_has_normalize(self) -> None:
         """Test for enter/exit name diffs with parser."""
-        import jaclang.compiler.absyntree as ast
+        import jaclang.compiler.unitree as uni
         import inspect
         import sys
 
         exclude = [
-            "AstNode",
+            "UniNode",
+            "UniScopeNode",
+            "ProgramModule",
             "WalkerStmtOnlyNode",
-            "JacSource",
+            "Source",
             "EmptyToken",
             "AstSymbolNode",
             "AstSymbolStubNode",
@@ -137,21 +147,22 @@ class TestLarkParser(TestCaseMicroSuite):
             "ArchSpec",
             "MatchPattern",
         ]
-        module_name = ast.__name__
+        module_name = uni.__name__
         module = sys.modules[module_name]
 
         # Retrieve the source code of the module
         source_code = inspect.getsource(module)
 
         classes = inspect.getmembers(module, inspect.isclass)
-        ast_node_classes = [
+        uni_node_classes = [
             cls
             for _, cls in classes
-            if issubclass(cls, ast.AstNode) and not issubclass(cls, ast.Token)
+            if issubclass(cls, uni.UniNode) and not issubclass(cls, uni.Token)
         ]
 
         ordered_classes = sorted(
-            ast_node_classes, key=lambda cls: source_code.find(f"class {cls.__name__}")
+            uni_node_classes,
+            key=lambda cls: source_code.find(f"class {cls.__name__}"),
         )
         for cls in ordered_classes:
             if cls.__name__ not in exclude:

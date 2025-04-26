@@ -29,7 +29,6 @@ from typing import (
 
 from bson import ObjectId
 
-from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.runtimelib.architype import (
     Access as _Access,
     AccessLevel,
@@ -45,6 +44,7 @@ from jaclang.runtimelib.architype import (
     WalkerAnchor as _WalkerAnchor,
     WalkerArchitype as _WalkerArchitype,
 )
+from jaclang.runtimelib.machine import JacMachine as Jac
 from jaclang.runtimelib.utils import is_instance
 
 from orjson import dumps
@@ -469,7 +469,7 @@ class BaseAnchor:
         if self.is_populated():
             unloaded = object.__new__(self.__class__)
             # this will be refactored on abstraction
-            unloaded.name = self.name  # type: ignore[attr-defined]
+            unloaded.name = self.name  # type: ignore[union-attr]
             unloaded.id = self.id  # type: ignore[attr-defined]
             return unloaded  # type: ignore[return-value]
         return self

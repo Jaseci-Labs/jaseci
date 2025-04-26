@@ -1,8 +1,12 @@
 """Test pass module."""
 
-import jaclang.compiler.absyntree as ast
-from jaclang.compiler.compile import jac_file_to_pass
+import io
+import sys
+
+import jaclang.compiler.unitree as uni
+from jaclang.cli import cli
 from jaclang.compiler.passes.main import DeclImplMatchPass
+from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import TestCase
 
 
@@ -15,7 +19,7 @@ class DeclImplMatchPassTests(TestCase):
 
     def test_parameter_count_mismatch(self) -> None:
         """Basic test for pass."""
-        state = jac_file_to_pass(
+        (out := JacProgram()).compile(
             self.fixture_abs_path("defn_decl_mismatch.jac"), DeclImplMatchPass
         )
 
@@ -37,7 +41,7 @@ class DeclImplMatchPassTests(TestCase):
         )
 
         errors_output = ""
-        for error in state.errors_had:
+        for error in out.errors_had:
             errors_output += error.pretty_print() + "\n"
 
         for exp in expected_stdout_values:
@@ -45,44 +49,56 @@ class DeclImplMatchPassTests(TestCase):
 
     def test_ability_connected_to_decl(self) -> None:
         """Basic test for pass."""
-        state = jac_file_to_pass(self.fixture_abs_path("base.jac"), DeclImplMatchPass)
-        self.assertFalse(state.errors_had)
-        self.assertIn("(o)Test.(c)say_hi", state.ir.sym_tab.tab)
-        self.assertIsNotNone(
-            state.ir.sym_tab.tab["(o)Test.(c)say_hi"].decl.name_of.body
+        state = (out := JacProgram()).compile(
+            self.fixture_abs_path("base.jac"), DeclImplMatchPass
         )
-        self.assertIn("(o)Test.(c)__init__", state.ir.sym_tab.tab)
+        self.assertFalse(out.errors_had)
+        self.assertIn("(o)Test.(c)say_hi", state.ir_out.sym_tab.names_in_scope)
         self.assertIsNotNone(
-            state.ir.sym_tab.tab["(o)Test.(c)__init__"].decl.name_of.body
+            state.ir_out.sym_tab.names_in_scope["(o)Test.(c)say_hi"].decl.name_of.body
+        )
+        self.assertIn("(o)Test.(c)__init__", state.ir_out.sym_tab.names_in_scope)
+        self.assertIsNotNone(
+            state.ir_out.sym_tab.names_in_scope["(o)Test.(c)__init__"].decl.name_of.body
         )
 
     def test_ability_connected_to_decl_post(self) -> None:
         """Basic test for pass."""
-        state = jac_file_to_pass(self.fixture_abs_path("base2.jac"), DeclImplMatchPass)
-        self.assertFalse(state.errors_had)
-        self.assertIn("(o)Test.(c)say_hi", state.ir.sym_tab.tab)
-        self.assertIsNotNone(
-            state.ir.sym_tab.tab["(o)Test.(c)say_hi"].decl.name_of.body
+        state = (out := JacProgram()).compile(
+            self.fixture_abs_path("base2.jac"), DeclImplMatchPass
         )
-        self.assertIn("(o)Test.(c)__init__", state.ir.sym_tab.tab)
+        self.assertFalse(out.errors_had)
+        self.assertIn("(o)Test.(c)say_hi", state.ir_out.sym_tab.names_in_scope)
         self.assertIsNotNone(
-            state.ir.sym_tab.tab["(o)Test.(c)__init__"].decl.name_of.body
+            state.ir_out.sym_tab.names_in_scope["(o)Test.(c)say_hi"].decl.name_of.body
         )
+        self.assertIn("(o)Test.(c)__init__", state.ir_out.sym_tab.names_in_scope)
+        self.assertIsNotNone(
+            state.ir_out.sym_tab.names_in_scope["(o)Test.(c)__init__"].decl.name_of.body
+        )
+
+    def test_run_base2(self) -> None:
+        """Test that the walker and node can be created dynamically."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.run(self.fixture_abs_path("base2.jac"))
+        output = captured_output.getvalue().strip()
+        self.assertIn("56", output)
 
     def test_arch_ref_has_sym(self) -> None:
         """Basic test for pass."""
-        state = jac_file_to_pass(
+        state = JacProgram().compile(
             self.fixture_abs_path("defs_and_uses.jac"), DeclImplMatchPass
         )
-        for i in state.ir.get_all_sub_nodes(ast.ArchRef):
+        for i in state.ir_out.get_all_sub_nodes(uni.ArchRef):
             self.assertIsNotNone(i.sym)
 
     def test_obj_hasvar_initialization(self) -> None:
         """Basic test for pass."""
-        state = jac_file_to_pass(
+        (out := JacProgram()).compile(
             self.fixture_abs_path("uninitialized_hasvars.jac"), DeclImplMatchPass
         )
-        self.assertTrue(state.errors_had)
+        self.assertTrue(out.errors_had)
 
         expected_stdout_values = (
             "Non default attribute 'var3' follows default attribute",
@@ -107,7 +123,7 @@ class DeclImplMatchPassTests(TestCase):
         )
 
         errors_output = ""
-        for error in state.errors_had:
+        for error in out.errors_had:
             errors_output += error.pretty_print() + "\n"
 
         for exp in expected_stdout_values:

@@ -6,38 +6,40 @@ semstrings after PyASTGen pass. So we create those as a pickled file for
 each module
 """
 
-import jaclang.compiler.absyntree as ast
-from jaclang.compiler.passes import Pass
+import jaclang.compiler.unitree as uni
+from jaclang.compiler.passes import AstPass
 from jaclang.compiler.semtable import SemInfo, SemRegistry
 from jaclang.runtimelib.utils import get_sem_scope
 from jaclang.settings import settings
 
 
-class RegistryPass(Pass):
+class RegistryPass(AstPass):
     """Creates a registry for each module."""
 
-    modules_visited: list[ast.Module] = []
+    modules_visited: list[uni.Module] = []
 
-    def enter_module(self, node: ast.Module) -> None:
+    def enter_module(self, node: uni.Module) -> None:
         """Create registry for each module."""
         if settings.disable_mtllm:
             self.terminate()
             return None
-        node.registry = SemRegistry()
+        node.registry = SemRegistry()  # TODO: Remove from ast and make pass only var
         self.modules_visited.append(node)
 
-    def exit_module(self, node: ast.Module) -> None:
+    def exit_module(self, node: uni.Module) -> None:
         """Save registry for each module."""
         module_name = node.name
         try:
-            from jaclang.runtimelib.machine import JacMachine
-
-            JacMachine.get().get_sem_ir(node.registry)
+            if node.registry:
+                if self.prog.sem_ir:
+                    self.prog.sem_ir.registry.update(node.registry.registry)
+                else:
+                    self.prog.sem_ir = node.registry
         except Exception as e:
-            self.warning(f"Can't save registry for {module_name}: {e}")
+            self.log_warning(f"Can't save registry for {module_name}: {e}")
         self.modules_visited.pop()
 
-    def exit_architype(self, node: ast.Architype) -> None:
+    def exit_architype(self, node: uni.Architype) -> None:
         """Save architype information."""
         scope = get_sem_scope(node)
         seminfo = SemInfo(
@@ -53,7 +55,7 @@ class RegistryPass(Pass):
         ):
             self.modules_visited[-1].registry.add(scope.parent, seminfo)
 
-    def exit_enum(self, node: ast.Enum) -> None:
+    def exit_enum(self, node: uni.Enum) -> None:
         """Save enum information."""
         scope = get_sem_scope(node)
         seminfo = SemInfo(
@@ -66,7 +68,7 @@ class RegistryPass(Pass):
         ):
             self.modules_visited[-1].registry.add(scope.parent, seminfo)
 
-    def exit_has_var(self, node: ast.HasVar) -> None:
+    def exit_has_var(self, node: uni.HasVar) -> None:
         """Save variable information."""
         extracted_type = (
             "".join(self.extract_type(node.type_tag.tag)) if node.type_tag else None
@@ -81,7 +83,7 @@ class RegistryPass(Pass):
         if len(self.modules_visited) and self.modules_visited[-1].registry:
             self.modules_visited[-1].registry.add(scope, seminfo)
 
-    def exit_ability(self, node: ast.Ability) -> None:
+    def exit_ability(self, node: uni.Ability) -> None:
         """Save ability information."""
         scope = get_sem_scope(node)
         seminfo = SemInfo(
@@ -97,7 +99,7 @@ class RegistryPass(Pass):
                 else None
             )
 
-    def exit_param_var(self, node: ast.ParamVar) -> None:
+    def exit_param_var(self, node: uni.ParamVar) -> None:
         """Save param information."""
         scope = get_sem_scope(node)
         extracted_type = (
@@ -112,7 +114,7 @@ class RegistryPass(Pass):
         if len(self.modules_visited) and self.modules_visited[-1].registry:
             self.modules_visited[-1].registry.add(scope, seminfo)
 
-    def exit_assignment(self, node: ast.Assignment) -> None:
+    def exit_assignment(self, node: uni.Assignment) -> None:
         """Save assignment information."""
         if node.aug_op:
             return
@@ -125,7 +127,7 @@ class RegistryPass(Pass):
             node,
             (
                 node.target.items[0].value
-                if isinstance(node.target.items[0], ast.Name)
+                if isinstance(node.target.items[0], uni.Name)
                 else ""
             ),
             extracted_type,
@@ -134,7 +136,7 @@ class RegistryPass(Pass):
         if len(self.modules_visited) and self.modules_visited[-1].registry:
             self.modules_visited[-1].registry.add(scope, seminfo)
 
-    def exit_name(self, node: ast.Name) -> None:
+    def exit_name(self, node: uni.Name) -> None:
         """Save name information. for enum stmts."""
         if (
             node.parent
@@ -146,10 +148,10 @@ class RegistryPass(Pass):
             if len(self.modules_visited) and self.modules_visited[-1].registry:
                 self.modules_visited[-1].registry.add(scope, seminfo)
 
-    def extract_type(self, node: ast.AstNode) -> list[str]:
+    def extract_type(self, node: uni.UniNode) -> list[str]:
         """Collect type information in assignment using bfs."""
         extracted_type = []
-        if isinstance(node, (ast.BuiltinType, ast.Token)):
+        if isinstance(node, (uni.BuiltinType, uni.Token)):
             extracted_type.append(node.value)
         for child in node.kid:
             extracted_type.extend(self.extract_type(child))

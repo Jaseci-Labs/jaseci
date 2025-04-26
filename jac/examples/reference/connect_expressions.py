@@ -1,6 +1,6 @@
 from __future__ import annotations
-from jaclang.plugin.builtin import *
-from jaclang import JacFeature as _
+from jaclang.runtimelib.builtin import *
+from jaclang import JacMachine as _
 
 
 class node_a(_.Node):

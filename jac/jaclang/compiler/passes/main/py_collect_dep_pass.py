@@ -9,43 +9,41 @@ from __future__ import annotations
 
 import os
 
-import jaclang.compiler.absyntree as ast
-from jaclang.compiler.passes import Pass
+import jaclang.compiler.unitree as uni
+from jaclang.compiler.passes import AstPass
 from jaclang.settings import settings
 
 import mypy.nodes as MypyNodes  # noqa N812
 
 
-class PyCollectDepsPass(Pass):
+class PyCollectDepsPass(AstPass):
     """Python and bytecode file self.__debug_printing pass."""
 
     def __debug_print(self, msg: str) -> None:
         if settings.collect_py_dep_debug:
             self.log_info("CollectPythonDependencies::" + msg)
 
-    def enter_node(self, node: ast.AstNode) -> None:
+    def enter_node(self, node: uni.UniNode) -> None:
         """Collect python dependencies from all Jac Nodes."""
-        assert isinstance(self.ir, ast.Module)
-
-        if not isinstance(node, ast.AstSymbolNode):
+        if not isinstance(node, uni.AstSymbolNode):
             return
 
         # Adding the path of the file related to the py import
         path: str = ""
-        if isinstance(node, ast.ModulePath):
+        if isinstance(node, uni.ModulePath):
             if node.path:
                 path = ".".join([i.value for i in node.path])
-            node.abs_path = self.ir.py_info.py_mod_dep_map.get(path)
+            node.abs_path = self.ir_out.py_info.py_mod_dep_map.get(path)
             if node.abs_path and os.path.isfile(node.abs_path.replace(".pyi", ".py")):
                 node.abs_path = node.abs_path.replace(".pyi", ".py")
 
-        elif isinstance(node, ast.ModuleItem):
-            imp = node.parent_of_type(ast.Import)
-            mod_path_node = imp.get_all_sub_nodes(ast.ModulePath)[0]
+        elif isinstance(node, uni.ModuleItem):
+            imp = node.parent_of_type(uni.Import)
+            mod_path_node = imp.get_all_sub_nodes(uni.ModulePath)[0]
             if mod_path_node.path:
                 path = ".".join([i.value for i in mod_path_node.path])
             path += f".{node.name.value}"
-            node.abs_path = self.ir.py_info.py_mod_dep_map.get(path)
+            node.abs_path = self.ir_out.py_info.py_mod_dep_map.get(path)
             if node.abs_path and os.path.isfile(node.abs_path.replace(".pyi", ".py")):
                 node.abs_path = node.abs_path.replace(".pyi", ".py")
 
@@ -61,17 +59,17 @@ class PyCollectDepsPass(Pass):
             else:
                 mod_name = node_full_name
 
-            if mod_name not in self.ir.py_info.py_mod_dep_map:
+            if mod_name not in self.ir_out.py_info.py_mod_dep_map:
                 self.__debug_print(
                     f"Can't find a python file associated with {type(node)}::{node.loc}"
                 )
                 return
 
-            mode_path = self.ir.py_info.py_mod_dep_map[mod_name]
+            mode_path = self.ir_out.py_info.py_mod_dep_map[mod_name]
             if mode_path.endswith(".jac"):
                 return
 
-            self.ir.py_info.py_raise_map[mod_name] = mode_path
+            self.prog.py_raise_map[mod_name] = mode_path
         else:
             self.__debug_print(
                 f"Collect python dependencies is not supported in {type(node)}::{node.loc}"

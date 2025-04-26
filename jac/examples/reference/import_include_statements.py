@@ -1,9 +1,9 @@
-from jaclang import JacFeature as _
+from jaclang import JacMachine as _
 import os
 import datetime as dt
 from math import sqrt as square_root, log
 
-(add, subtract) = _.jac_import(
+(add, subtract) = _.py_jac_import(
     target="base_module_structure",
     base_path=__file__,
     items={"add": None, "subtract": None},

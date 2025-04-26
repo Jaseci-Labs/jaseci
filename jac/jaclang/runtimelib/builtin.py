@@ -5,8 +5,8 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import ClassVar, Optional, override
 
-from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.runtimelib.constructs import Architype, NodeArchitype
+from jaclang.runtimelib.machine import JacMachine as Jac
 
 
 def dotgen(
@@ -20,7 +20,7 @@ def dotgen(
     dot_file: Optional[str] = None,
 ) -> str:
     """Print the dot graph."""
-    from jaclang.plugin.feature import JacFeature as Jac
+    from jaclang.runtimelib.machine import JacMachine as Jac
 
     root = Jac.root()
     node = node if node is not None else root

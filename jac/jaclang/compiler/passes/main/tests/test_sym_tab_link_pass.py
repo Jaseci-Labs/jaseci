@@ -2,8 +2,8 @@
 
 import os
 
-from jaclang.compiler.compile import jac_file_to_pass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import TestCase
 
 
@@ -23,26 +23,26 @@ class SymTabLinkPassTests(TestCase):
             "symtab_link_tests",
             "no_dupls.jac",
         )
-        mod = jac_file_to_pass(file_path, schedule=py_code_gen_typed).ir
+        mod = JacProgram().compile(file_path, schedule=py_code_gen_typed).ir_out
         self.assertEqual(
-            len(mod.sym_tab.tab.values()),
+            len(mod.sym_tab.names_in_scope.values()),
             3,
         )
         for i in ["[Symbol(a,", "Symbol(Man,", "Symbol(p,"]:
             self.assertIn(
                 i,
-                str(mod.sym_tab.tab.values()),
+                str(mod.sym_tab.names_in_scope.values()),
             )
-        self.assertEqual(len(mod.sym_tab.tab["a"].uses), 2)
+        self.assertEqual(len(mod.sym_tab.names_in_scope["a"].uses), 2)
         self.assertEqual(
             len(
                 list(
-                    mod.sym_tab.kid[0]
-                    .kid[0]
-                    .kid[0]
-                    .kid[0]
-                    .inherit[0]
-                    .base_symbol_table.tab.values()
+                    mod.sym_tab.kid_scope[0]
+                    .kid_scope[0]
+                    .kid_scope[0]
+                    .kid_scope[0]
+                    .inherited_scope[0]
+                    .base_symbol_table.names_in_scope.values()
                 )[0].uses,
             ),
             3,
