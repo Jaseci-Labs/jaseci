@@ -128,7 +128,6 @@ class JacProgram:
         full_compile: bool = True,
     ) -> uni.Module:
         """Convert a Jac file to an AST."""
-        top_mod = mod_targ
         if self.mod.main.stub_only:
             self.mod = uni.ProgramModule(mod_targ)
         # Creating a new JacProgram and attaching it to top module
@@ -154,9 +153,8 @@ class JacProgram:
                 final_pass(mod, prog=self)
 
         if not full_compile:
-            SymTabBuildPass(ir_in=top_mod, prog=self)
-            run_schedule(top_mod, schedule=schedule)
-            mod_targ = top_mod
+            SymTabBuildPass(ir_in=mod_targ, prog=self)
+            run_schedule(mod_targ, schedule=schedule)
             return mod_targ
 
         # Run JacImportPass & SymTabBuildPass on all imported Jac Programs
@@ -173,7 +171,6 @@ class JacProgram:
 
         # TODO: we need a elegant way of doing this [should be genaralized].
         if target_pass in (JacImportPass, SymTabBuildPass):
-            mod_targ = top_mod
             return mod_targ
 
         # Link all Jac symbol tables created
@@ -185,15 +182,10 @@ class JacProgram:
 
         # Check if we need to run without type checking then just return
         if target_pass in py_code_gen:
-            mod_targ = top_mod
             return mod_targ
 
         # Run TypeCheckingPass on the top module
-        JacTypeCheckPass(top_mod, prog=self)
-
-        # if "JAC_VSCE" not in os.environ:
-        #     ast_ret.ir = top_mod
-        #     return ast_ret
+        JacTypeCheckPass(mod_targ, prog=self)
 
         for mod in self.mod.hub.values():
             PyCollectDepsPass(mod, prog=self)
@@ -215,7 +207,6 @@ class JacProgram:
         for mod in self.mod.hub.values():
             run_schedule(mod, schedule=type_checker_sched)
 
-        mod_targ = top_mod
         return mod_targ
 
     def annex_impl(self, node: uni.Module) -> None:
