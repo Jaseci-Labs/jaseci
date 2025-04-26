@@ -12,7 +12,6 @@ import jaclang.compiler.unitree as uni
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
-from jaclang.compiler.passes.transform import Transform
 from jaclang.compiler.program import JacProgram
 from jaclang.compiler.unitree import UniScopeNode
 from jaclang.langserve.sem_manager import SemTokManager
@@ -63,13 +62,13 @@ class JacLangServer(LanguageServer):
         self.program = JacProgram()
 
     def update_modules(
-        self, file_path: str, build: Transform, refresh: bool = False
+        self, file_path: str, build: uni.Module, refresh: bool = False
     ) -> None:
         """Update modules."""
-        if not isinstance(build.ir_out, uni.Module):
+        if not isinstance(build, uni.Module):
             self.log_error("Error with module build.")
             return
-        self.modules[file_path] = ModuleInfo(ir=build.ir_out)
+        self.modules[file_path] = ModuleInfo(ir=build)
         for p in self.program.mod.hub.keys():
             uri = uris.from_fs_path(p)
             if file_path != uri:
@@ -296,7 +295,7 @@ class JacLangServer(LanguageServer):
                 schedule=[FuseCommentsPass, JacFormatPass],
             )
             formatted_text = (
-                format.ir_out.gen.jac
+                format.gen.jac
                 if JacParser not in [e.from_pass for e in self.program.errors_had]
                 else document.source
             )

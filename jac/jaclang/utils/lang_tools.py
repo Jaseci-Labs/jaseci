@@ -235,13 +235,13 @@ class AstTool:
                         source_str=rep.unparse(),
                         file_path=file_name[:-3] + ".jac",
                         schedule=py_code_gen_typed,
-                    ).ir_out
+                    )
                 except Exception as e:
                     return f"Error While Jac to Py AST conversion: {e}"
             else:
                 ir = prog.compile(
                     file_name, schedule=[*(py_code_gen), *type_checker_sched]
-                ).ir_out
+                )
 
             match output:
                 case "sym":

@@ -22,20 +22,18 @@ class ImportPassPassTests(TestCase):
 
     def test_pygen_jac_cli(self) -> None:
         """Basic test for pass."""
-        state = (out := JacProgram()).compile(
-            self.fixture_abs_path("base.jac"), JacImportPass
-        )
+        (out := JacProgram()).compile(self.fixture_abs_path("base.jac"), JacImportPass)
         self.assertFalse(out.errors_had)
-        mod = state.prog.mod.hub[self.fixture_abs_path("impl/imps.jac")]
+        mod = out.mod.hub[self.fixture_abs_path("impl/imps.jac")]
         self.assertIn("56", str(mod.to_dict()))
 
     def test_import_auto_impl(self) -> None:
         """Basic test for pass."""
-        state = JacProgram().compile(
+        (prog := JacProgram()).compile(
             self.fixture_abs_path("autoimpl.jac"), JacImportPass
         )
-        num_modules = len(list(state.prog.mod.hub.values())[0].impl_mod)
-        mod_names = [i.name for i in list(state.prog.mod.hub.values())[0].impl_mod]
+        num_modules = len(list(prog.mod.hub.values())[0].impl_mod)
+        mod_names = [i.name for i in list(prog.mod.hub.values())[0].impl_mod]
         self.assertEqual(num_modules, 4)
         self.assertIn("getme.impl", mod_names)
         self.assertIn("autoimpl.impl", mod_names)
@@ -43,25 +41,25 @@ class ImportPassPassTests(TestCase):
 
     def test_import_include_auto_impl(self) -> None:
         """Basic test for pass."""
-        state = JacProgram().compile(
+        (prog := JacProgram()).compile(
             self.fixture_abs_path("incautoimpl.jac"), JacImportPass
         )
-        num_modules = len(list(state.prog.mod.hub.values())[1].impl_mod) + 1
-        mod_names = [i.name for i in list(state.prog.mod.hub.values())[1].impl_mod]
+        num_modules = len(list(prog.mod.hub.values())[1].impl_mod) + 1
+        mod_names = [i.name for i in list(prog.mod.hub.values())[1].impl_mod]
         self.assertEqual(num_modules, 5)
-        self.assertEqual("incautoimpl", list(state.prog.mod.hub.values())[0].name)
-        self.assertEqual("autoimpl", list(state.prog.mod.hub.values())[1].name)
+        self.assertEqual("incautoimpl", list(prog.mod.hub.values())[0].name)
+        self.assertEqual("autoimpl", list(prog.mod.hub.values())[1].name)
         self.assertIn("getme.impl", mod_names)
         self.assertIn("autoimpl.impl", mod_names)
         self.assertIn("autoimpl.something.else.impl", mod_names)
 
     def test_annexalbe_by_discovery(self) -> None:
         """Basic test for pass."""
-        state = JacProgram().compile(
+        (prog := JacProgram()).compile(
             self.fixture_abs_path("incautoimpl.jac"), JacImportPass
         )
         count = 0
-        all_mods = state.prog.mod.hub.values()
+        all_mods = prog.mod.hub.values()
         self.assertEqual(len(all_mods), 6)
         for main_mod in all_mods:
             for i in main_mod.impl_mod:
@@ -99,13 +97,13 @@ class ImportPassPassTests(TestCase):
 
     def test_py_raised_mods(self) -> None:
         """Basic test for pass."""
-        state = JacProgram().compile(
+        (prog := JacProgram()).compile(
             self.fixture_abs_path("py_imp_test.jac"), schedule=py_code_gen_typed
         )
         for i in list(
             filter(
                 lambda x: x.py_info.is_raised_from_py,
-                state.prog.mod.hub.values(),
+                prog.mod.hub.values(),
             )
         ):
             print(uni.Module.get_href_path(i))
@@ -114,7 +112,7 @@ class ImportPassPassTests(TestCase):
             list(
                 filter(
                     lambda x: x.py_info.is_raised_from_py,
-                    state.prog.mod.hub.values(),
+                    prog.mod.hub.values(),
                 )
             )
         )

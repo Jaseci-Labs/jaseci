@@ -17,11 +17,12 @@ class TestDeclSemantics(TestCase):
     def test_function_decl_semantics(self) -> None:
         """Test basic semantic analysis for assignments & var declarations."""
         settings.enable_jac_semantics = True
-        out = JacProgram().compile(
+        program = JacProgram()
+        out = program.compile(
             self.fixture_abs_path("declarations/function.jac"),
             target=DefUsePass,
         )
-        sem_analysis_pass = SemanticAnalysisPass(out.ir_out, prog=out.prog)
+        sem_analysis_pass = SemanticAnalysisPass(out, prog=program)
         settings.enable_jac_semantics = False
 
         for e in sem_analysis_pass.semantic_warning:

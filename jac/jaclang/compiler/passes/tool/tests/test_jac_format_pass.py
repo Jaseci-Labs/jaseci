@@ -30,7 +30,7 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
                 code_gen_format = JacProgram().compile(
                     original_path, schedule=[FuseCommentsPass, JacFormatPass]
                 )
-                formatted_content = code_gen_format.ir_out.gen.jac
+                formatted_content = code_gen_format.gen.jac
             else:
                 with open(self.fixture_abs_path(formatted_file), "r") as file:
                     formatted_content = file.read()
@@ -123,13 +123,13 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         )
         code_gen_format = JacProgram.jac_file_formatter(self.fixture_abs_path(filename))
         code_gen_jac = JacProgram().compile_from_str(
-            source_str=code_gen_format.ir_out.gen.jac,
+            source_str=code_gen_format,
             file_path=filename,
             target=PyastGenPass,
             schedule=without_format,
         )
         if "circle_clean_tests.jac" in filename:
-            tokens = code_gen_format.ir_out.gen.jac.split()
+            tokens = code_gen_format.split()
             num_test = 0
             for i in range(len(tokens)):
                 if tokens[i] == "test":
@@ -139,19 +139,19 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             return
         try:
             self.assertTrue(
-                isinstance(code_gen_pure.ir_out, uni.Module)
-                and isinstance(code_gen_jac.ir_out, uni.Module),
+                isinstance(code_gen_pure, uni.Module)
+                and isinstance(code_gen_jac, uni.Module),
                 "Parsed objects are not modules.",
             )
-            before = ast3.dump(code_gen_pure.ir_out.gen.py_ast[0], indent=2)
-            after = ast3.dump(code_gen_jac.ir_out.gen.py_ast[0], indent=2)
+            before = ast3.dump(code_gen_pure.gen.py_ast[0], indent=2)
+            after = ast3.dump(code_gen_jac.gen.py_ast[0], indent=2)
             diff = "\n".join(unified_diff(before.splitlines(), after.splitlines()))
             self.assertFalse(diff, "AST structures differ after formatting.")
 
         except Exception as e:
-            print(add_line_numbers(code_gen_pure.ir_out.source.code))
+            print(add_line_numbers(code_gen_pure.source.code))
             print("\n+++++++++++++++++++++++++++++++++++++++\n")
-            print(add_line_numbers(code_gen_format.ir_out.gen.jac))
+            print(add_line_numbers(code_gen_format))
             print("\n+++++++++++++++++++++++++++++++++++++++\n")
             print("\n".join(unified_diff(before.splitlines(), after.splitlines())))
             raise e

@@ -17,11 +17,12 @@ class TestStmtSemantics(TestCase):
     def test_assignment_semantics(self) -> None:
         """Test basic semantic analysis for assignments & var declarations."""
         settings.enable_jac_semantics = True
-        out = JacProgram().compile(
+        program = JacProgram()
+        out = program.compile(
             self.fixture_abs_path("statements/assignment.jac"),
             target=DefUsePass,
         )
-        sem_analysis_pass = SemanticAnalysisPass(out.ir_out, prog=out.prog)
+        sem_analysis_pass = SemanticAnalysisPass(out, prog=program)
         settings.enable_jac_semantics = False
 
         expected_errors: dict[str, SemanticError] = {
@@ -61,11 +62,12 @@ class TestStmtSemantics(TestCase):
     def test_function_call_semantics(self) -> None:
         """Test basic semantic analysis for function calls."""
         settings.enable_jac_semantics = True
-        out = JacProgram().compile(
+        program = JacProgram()
+        out = program.compile(
             self.fixture_abs_path("statements/func_call.jac"),
             target=DefUsePass,
         )
-        sem_analysis_pass = SemanticAnalysisPass(out.ir_out, prog=out.prog)
+        sem_analysis_pass = SemanticAnalysisPass(out, prog=program)
         settings.enable_jac_semantics = False
 
         # for e in sem_analysis_pass.semantic_warning:
