@@ -88,6 +88,7 @@ class AstTool:
                 "AstAccessNode",
                 "Literal",
                 "AstDocNode",
+                "AstImplNeedingNode",
                 "AstSemStrNode",
                 "PythonModuleAst",
                 "AstAsyncNode",
@@ -174,8 +175,8 @@ class AstTool:
             output += f"# missing: \n{i}\n"
         return output
 
-    def md_doc(self) -> str:
-        """Generate mermaid markdown doc."""
+    def autodoc_uninode(self) -> str:
+        """Generate mermaid markdown doc for uninodes."""
         output = ""
         for cls in self.ast_classes:
             if not len(cls.kids):

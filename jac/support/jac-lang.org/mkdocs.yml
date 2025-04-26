@@ -50,7 +50,7 @@ nav:
       - "for_contributors/contrib.md"
       - "for_contributors/internals.md"
       - "for_contributors/jac_plugins.md"
-      - "for_contributors/ast_doc.md"
+      - "for_contributors/uniir_node.md"
       - "for_contributors/roadmap.md"
       - "for_contributors/mtp_impl/inference_engine.md"
       - "for_contributors/mtp_impl/sem_registry.md"
