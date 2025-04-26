@@ -152,7 +152,6 @@ class JacProgram:
                 final_pass(mod, prog=self)
 
         if not full_compile:
-            SymTabBuildPass(ir_in=mod_targ, prog=self)
             run_schedule(mod_targ, schedule=schedule)
             return mod_targ
 
