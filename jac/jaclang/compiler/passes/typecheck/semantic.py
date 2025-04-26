@@ -1,52 +1,62 @@
+"""Semantic analysis for Jac language."""
+
 from typing import Any, Optional
 
-import jaclang.compiler.absyntree as ast
 import jaclang.compiler.passes.typecheck.type as jtype
-from jaclang.compiler.passes import Pass
+import jaclang.compiler.unitree as ast
+from jaclang.compiler.passes import AstPass
 from jaclang.compiler.passes.typecheck.expr_type import JacExpressionType
 from jaclang.compiler.passes.typecheck.semantic_msgs import JacSemanticMessages
 from jaclang.settings import settings
 
 
-class SemanticAnalysisPass(Pass):
+class SemanticAnalysisPass(AstPass):
+    """Jac pass for semantic analysis."""
 
     def before_pass(self) -> None:
+        """Do setup pass vars."""  # noqa D403, D401
         # TODO: Change this to use the errors_had infrastructure
+        if not settings.enable_jac_semantics:
+            self.terminate()
         self.expr_check = JacExpressionType()
         self.semantic_errors: list[
-            tuple[JacSemanticMessages, ast.AstNode, dict[str, str]]
+            tuple[JacSemanticMessages, ast.UniNode, dict[str, str]]
         ] = []
         self.semantic_warning: list[
-            tuple[JacSemanticMessages, ast.AstNode, dict[str, str]]
+            tuple[JacSemanticMessages, ast.UniNode, dict[str, str]]
         ] = []
         return super().before_pass()
 
     def report_error(
         self,
         msg: JacSemanticMessages,
-        node_override: Optional[ast.AstNode] = None,
+        node_override: Optional[ast.UniNode] = None,
         **fmt_args: Any,  # noqa ANN401
     ) -> None:
         """Generate Semantic error message."""
         node = self.cur_node if node_override is None else node_override
-        self.semantic_errors.append((msg, node, fmt_args))
+        self.semantic_errors.append(
+            (msg, node, {k: str(fmt_args[k]) for k in fmt_args})
+        )
         formatted_msg = msg.value.format(**fmt_args)
-        return self.error(f"[JAC] {formatted_msg}", node_override)
+        return self.log_error(f"[JAC] {formatted_msg}", node_override)
 
     def report_warning(
         self,
         msg: JacSemanticMessages,
-        node_override: Optional[ast.AstNode] = None,
+        node_override: Optional[ast.UniNode] = None,
         **fmt_args: Any,  # noqa ANN401
     ) -> None:
         """Generate Semantic warning message."""
         node = self.cur_node if node_override is None else node_override
-        self.semantic_warning.append((msg, node, fmt_args))
+        self.semantic_warning.append(
+            (msg, node, {k: str(fmt_args[k]) for k in fmt_args})
+        )
         formatted_msg = msg.value.format(**fmt_args)
-        return self.warning(f"[JAC] {formatted_msg}", node_override)
+        return self.log_warning(f"[JAC] {formatted_msg}", node_override)
 
     def __debug_print(self, msg: str) -> None:
-        if settings.jac_semantics:
+        if settings.debug_jac_semantics:
             print("[SemanticAnalysisPass]", msg)
 
     #############
@@ -93,11 +103,11 @@ class SemanticAnalysisPass(Pass):
         if isinstance(node.target, ast.Name):
             func_symbol = node.sym_tab.find_scope(node.target.name_spec.sym_name)
             if func_symbol:
-                assert isinstance(func_symbol.owner, ast.Ability)
-                assert isinstance(func_symbol.owner.signature, ast.FuncSignature)
+                assert isinstance(func_symbol, ast.Ability)
+                assert isinstance(func_symbol.signature, ast.FuncSignature)
                 func_params = (
-                    {a.sym_name: a for a in func_symbol.owner.signature.params.items}
-                    if func_symbol.owner.signature.params
+                    {a.sym_name: a for a in func_symbol.signature.params.items}
+                    if func_symbol.signature.params
                     else {}
                 )
                 actual_params = node.params
@@ -115,6 +125,7 @@ class SemanticAnalysisPass(Pass):
 
                         formal_type: jtype.JType
                         actual_type: jtype.JType
+                        param_name: str
 
                         # No kw args parameter is seen till now
                         # Parameter is a positional argument parameter
@@ -122,6 +133,7 @@ class SemanticAnalysisPass(Pass):
                             assert not isinstance(actual, ast.KWPair)
                             actual_type = self.expr_check.get_type(actual)
                             formal_type = self.expr_check.get_type(formal.name)
+                            param_name = formal.name.sym_name
                             params_connected.append(formal.name)
 
                         # KW Args parameter is seen before
@@ -140,7 +152,7 @@ class SemanticAnalysisPass(Pass):
                                     self.report_error(
                                         JacSemanticMessages.ARG_NAME_NOT_FOUND,
                                         param_name=param_name,
-                                        arg_name=func_symbol.name,
+                                        arg_name=func_symbol.name_spec.sym_name,
                                     )
                                     continue
                                 else:
@@ -161,6 +173,7 @@ class SemanticAnalysisPass(Pass):
                         if not formal_type.is_assignable_from(actual_type):
                             self.report_error(
                                 JacSemanticMessages.CONFLICTING_ARG_TYPE,
+                                param_name=param_name,
                                 formal_type=formal_type,
                                 actual_type=actual_type,
                             )
@@ -199,7 +212,7 @@ class SemanticAnalysisPass(Pass):
             # type annotation exists
             if type_annotation:
                 # symbol doesn't have a type, assign its' type
-                if sym_type is None:
+                if isinstance(sym_type, jtype.JNoType):
                     sym_type = self.expr_check.get_type(type_annotation)
                     self.expr_check.set_type(target, sym_type)
 
@@ -207,7 +220,9 @@ class SemanticAnalysisPass(Pass):
                 # same as current type
                 else:
                     annotation_type = self.expr_check.get_type(type_annotation)
-                    if type(sym_type) is not type(annotation_type):
+                    if type(sym_type) is not jtype.JNoType and type(
+                        sym_type
+                    ) is not type(annotation_type):
                         self.report_error(
                             JacSemanticMessages.VAR_REDEFINITION,
                             var_name=target.unparse(),

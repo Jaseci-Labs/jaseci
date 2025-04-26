@@ -1,5 +1,6 @@
-from .semantic import SemanticAnalysisPass
+"""Semantic analysis module for Jac."""
 
-__all__ = [
-    "SemanticAnalysisPass",
-]
+from .semantic import SemanticAnalysisPass
+from .semantic_msgs import JacSemanticMessages
+
+__all__ = ["SemanticAnalysisPass", "JacSemanticMessages"]

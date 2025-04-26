@@ -1,39 +1,67 @@
+"""Builtin types for Jac."""
+
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 
-class JType:
+
+class JType(ABC):
+    """Base class for jac builtin types."""
+
     def is_assignable_from(self, other: JType) -> bool:
-        return isinstance(other, self.__class__)
+        """Check if type can be assigned from another type."""
+        return (
+            isinstance(self, JNoType)
+            or isinstance(other, self.__class__)
+            or self._is_assignable_from(other)
+        )
+
+    @abstractmethod
+    def _is_assignable_from(self, other: JType) -> bool:
+        pass
 
     def __repr__(self) -> str:
+        """Generate string representation of the object."""
         return self.__class__.__name__.replace("J", "").replace("Type", "").lower()
 
 
 class JIntType(JType):
-    def is_assignable_from(self, other: JType) -> bool:
+    """Jac int type."""
+
+    def _is_assignable_from(self, other: JType) -> bool:
         return isinstance(other, (JIntType, JBoolType))
 
 
 class JFloatType(JType):
-    def is_assignable_from(self, other: JType) -> bool:
+    """Jac float type."""
+
+    def _is_assignable_from(self, other: JType) -> bool:
         return isinstance(other, (JFloatType, JIntType, JBoolType))
 
 
 class JBoolType(JType):
-    def is_assignable_from(self, other: JType) -> bool:
-        return isinstance(other, (JBoolType))
+    """Jac bool type."""
+
+    def _is_assignable_from(self, other: JType) -> bool:
+        return isinstance(other, (JBoolType,))
 
 
 class JStrType(JType):
-    def is_assignable_from(self, other: JType) -> bool:
-        return isinstance(other, (JStrType))
+    """Jac str type."""
+
+    def _is_assignable_from(self, other: JType) -> bool:
+        return isinstance(other, (JStrType,))
 
 
 class JNoneType(JType):
-    def is_assignable_from(self, other: JType) -> bool:
-        return isinstance(other, (JNoneType))
+    """Jac none type."""
+
+    def _is_assignable_from(self, other: JType) -> bool:
+        return isinstance(other, (JNoneType,))
 
 
 class JNoType(JType):
-    def is_assignable_from(self, other: JType) -> bool:
+    """Jac no type."""
+
+    def _is_assignable_from(self, other: JType) -> bool:
         return True

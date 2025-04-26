@@ -243,11 +243,14 @@ class Symbol:
         parent_tab: UniScopeNode,
     ) -> None:
         """Initialize."""
+        from jaclang.compiler.passes.typecheck.type import JType, JNoType
+
         self.defn: list[NameAtom] = [defn]
         self.uses: list[NameAtom] = []
         defn.sym = self
         self.access: SymbolAccess = access
         self.parent_tab = parent_tab
+        self.jtype: JType = JNoType()
 
     @property
     def decl(self) -> NameAtom:

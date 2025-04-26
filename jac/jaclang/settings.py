@@ -18,12 +18,13 @@ class Settings:
     print_py_raised_ast: bool = False
     py_import_pass_debug: bool = False
     inherit_pass_debug: bool = False
-    jac_semantics: bool = False
+    debug_jac_semantics: bool = False
 
     # Compiler configuration
     disable_mtllm: bool = False
     ignore_test_annex: bool = False
     pyout_jaclib_alias: str = "_"
+    enable_jac_semantics: bool = False
 
     # Formatter configuration
     max_line_length: int = 88

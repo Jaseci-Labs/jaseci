@@ -1,7 +1,11 @@
+"""Jac semantic messages."""
+
 from enum import Enum
 
 
 class JacSemanticMessages(Enum):
+    """Messages enum for jac semantic analysis."""
+
     # Abilities semantics
     MISSING_RETURN_STATEMENT = "Missing return statement"
     RETURN_FOR_NONE_ABILITY = (
@@ -13,9 +17,7 @@ class JacSemanticMessages(Enum):
     POSITIONAL_ARG_AFTER_KWARG = "Can't use positional argument after kwargs"
     ARG_NAME_NOT_FOUND = "No argument named '{param_name}' in function '{arg_name}()'"
     REPEATED_ARG = "'{param_name}' argument is repeated"
-    CONFLICTING_ARG_TYPE = (
-        "Error: Can't assign a value {formal_type} to a {actual_type} object"
-    )
+    CONFLICTING_ARG_TYPE = "Error: Can't assign a value {actual_type} to a parameter '{param_name}' of type {formal_type}"  # noqa E501
     PARAM_NUMBER_MISMATCH = (
         "Required number of params {actual_number}, passed number is {passed_number}"
     )
