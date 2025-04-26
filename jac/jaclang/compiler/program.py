@@ -114,51 +114,50 @@ class JacProgram:
         if ast_ret.errors_had:
             return ast_ret.ir_out
         return self.run_pass_schedule(
-            cur_pass=ast_ret,
-            target=target,
+            mod_targ=ast_ret.ir_out,
+            target_pass=target,
             schedule=schedule,
             full_compile=full_compile,
         )
 
     def run_pass_schedule(
         self,
-        cur_pass: Transform,
-        target: Optional[Type[AstPass]] = None,
+        mod_targ: uni.Module,
+        target_pass: Optional[Type[AstPass]] = None,
         schedule: list[Type[AstPass]] = pass_schedule,
         full_compile: bool = True,
     ) -> uni.Module:
         """Convert a Jac file to an AST."""
-        top_mod = cur_pass.ir_out
+        top_mod = mod_targ
         if self.mod.main.stub_only:
-            self.mod = uni.ProgramModule(top_mod)
+            self.mod = uni.ProgramModule(mod_targ)
         # Creating a new JacProgram and attaching it to top module
-        self.mod.hub[cur_pass.ir_out.loc.mod_path] = cur_pass.ir_out
+        self.mod.hub[mod_targ.loc.mod_path] = mod_targ
 
-        self.last_imported.append(cur_pass.ir_out)
-        self.annex_impl(cur_pass.ir_out)
+        self.last_imported.append(mod_targ)
+        self.annex_impl(mod_targ)
         # Only return the parsed module when the schedules are empty
         if len(schedule) == 0:
-            return cur_pass.ir_out
+            return mod_targ
 
         # Run all passes till PyBytecodeGenPass
         # Here the passes will run one by one on the imported modules instead
         # of running on  a huge AST
         def run_schedule(mod: uni.Module, schedule: list[type[AstPass]]) -> None:
-            nonlocal cur_pass
             final_pass: Optional[type[AstPass]] = None
             for current_pass in schedule:
-                if current_pass in (target, PyBytecodeGenPass):
+                if current_pass in (target_pass, PyBytecodeGenPass):
                     final_pass = current_pass
                     break
-                cur_pass = current_pass(mod, prog=self)
+                current_pass(mod, prog=self)
             if final_pass:
-                cur_pass = final_pass(mod, prog=self)
+                final_pass(mod, prog=self)
 
         if not full_compile:
-            cur_pass = SymTabBuildPass(ir_in=top_mod, prog=self)
+            SymTabBuildPass(ir_in=top_mod, prog=self)
             run_schedule(top_mod, schedule=schedule)
-            cur_pass.ir_out = top_mod
-            return cur_pass.ir_out
+            mod_targ = top_mod
+            return mod_targ
 
         # Run JacImportPass & SymTabBuildPass on all imported Jac Programs
         while len(self.last_imported) > 0:
@@ -169,13 +168,13 @@ class JacProgram:
             SymTabBuildPass(ir_in=mod, prog=self)
 
         # If there is syntax error, no point in processing in further passes.
-        if len(cur_pass.errors_had) != 0:
-            return cur_pass.ir_out
+        if len(self.errors_had) != 0:
+            return mod_targ
 
         # TODO: we need a elegant way of doing this [should be genaralized].
-        if target in (JacImportPass, SymTabBuildPass):
-            cur_pass.ir_out = top_mod
-            return cur_pass.ir_out
+        if target_pass in (JacImportPass, SymTabBuildPass):
+            mod_targ = top_mod
+            return mod_targ
 
         # Link all Jac symbol tables created
         for mod in self.mod.hub.values():
@@ -185,9 +184,9 @@ class JacProgram:
             run_schedule(mod, schedule=schedule)
 
         # Check if we need to run without type checking then just return
-        if target in py_code_gen:
-            cur_pass.ir_out = top_mod
-            return cur_pass.ir_out
+        if target_pass in py_code_gen:
+            mod_targ = top_mod
+            return mod_targ
 
         # Run TypeCheckingPass on the top module
         JacTypeCheckPass(top_mod, prog=self)
@@ -216,8 +215,8 @@ class JacProgram:
         for mod in self.mod.hub.values():
             run_schedule(mod, schedule=type_checker_sched)
 
-        cur_pass.ir_out = top_mod
-        return cur_pass.ir_out
+        mod_targ = top_mod
+        return mod_targ
 
     def annex_impl(self, node: uni.Module) -> None:
         """Annex impl and test modules."""
