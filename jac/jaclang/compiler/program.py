@@ -130,12 +130,9 @@ class JacProgram:
         """Convert a Jac file to an AST."""
         if self.mod.main.stub_only:
             self.mod = uni.ProgramModule(mod_targ)
-        # Creating a new JacProgram and attaching it to top module
         self.mod.hub[mod_targ.loc.mod_path] = mod_targ
-
         self.last_imported.append(mod_targ)
         self.annex_impl(mod_targ)
-        # Only return the parsed module when the schedules are empty
         if len(schedule) == 0:
             return mod_targ
 
