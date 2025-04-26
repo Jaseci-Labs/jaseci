@@ -113,8 +113,19 @@ class JacProgram:
             ast_ret = jac_ast_ret
         if ast_ret.errors_had:
             return ast_ret.ir_out
-        # FIXME: Should remove other references to the below
         SymTabBuildPass(ir_in=ast_ret.ir_out, prog=self)
+        if self.mod.main.stub_only:
+            self.mod = uni.ProgramModule(ast_ret.ir_out)
+        self.mod.hub[ast_ret.ir_out.loc.mod_path] = ast_ret.ir_out
+        self.last_imported.append(ast_ret.ir_out)
+        self.annex_impl(ast_ret.ir_out)
+        if len(schedule) == 0:
+            return ast_ret.ir_out
+        if full_compile:
+            while len(self.last_imported) > 0:
+                mod = self.last_imported.pop()
+                JacImportPass(ir_in=mod, prog=self)
+                SymTabBuildPass(ir_in=mod, prog=self)  # FIXME: Move to ImportPass
         return self.run_pass_schedule(
             mod_targ=ast_ret.ir_out,
             target_pass=target,
@@ -130,17 +141,7 @@ class JacProgram:
         full_compile: bool = True,
     ) -> uni.Module:
         """Convert a Jac file to an AST."""
-        if self.mod.main.stub_only:
-            self.mod = uni.ProgramModule(mod_targ)
-        self.mod.hub[mod_targ.loc.mod_path] = mod_targ
-        self.last_imported.append(mod_targ)
-        self.annex_impl(mod_targ)
-        if len(schedule) == 0:
-            return mod_targ
 
-        # Run all passes till PyBytecodeGenPass
-        # Here the passes will run one by one on the imported modules instead
-        # of running on  a huge AST
         def run_schedule(mod: uni.Module, schedule: list[type[AstPass]]) -> None:
             final_pass: Optional[type[AstPass]] = None
             for current_pass in schedule:
@@ -151,27 +152,13 @@ class JacProgram:
             if final_pass:
                 final_pass(mod, prog=self)
 
+        # TODO: we need a elegant way of doing this [should be genaralized].
+        if len(self.errors_had) or target_pass in (JacImportPass, SymTabBuildPass):
+            return mod_targ
         if not full_compile:
             run_schedule(mod_targ, schedule=schedule)
             return mod_targ
 
-        # Run JacImportPass & SymTabBuildPass on all imported Jac Programs
-        while len(self.last_imported) > 0:
-            mod = self.last_imported.pop()
-            JacImportPass(ir_in=mod, prog=self)
-
-        for mod in self.mod.hub.values():
-            SymTabBuildPass(ir_in=mod, prog=self)
-
-        # If there is syntax error, no point in processing in further passes.
-        if len(self.errors_had) != 0:
-            return mod_targ
-
-        # TODO: we need a elegant way of doing this [should be genaralized].
-        if target_pass in (JacImportPass, SymTabBuildPass):
-            return mod_targ
-
-        # Link all Jac symbol tables created
         for mod in self.mod.hub.values():
             SymTabLinkPass(ir_in=mod, prog=self)
 
