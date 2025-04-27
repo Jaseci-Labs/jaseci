@@ -172,15 +172,15 @@ class UniNode:
 
     def get_all_sub_nodes(self, typ: Type[T], brute_force: bool = True) -> list[T]:
         """Get all sub nodes of type."""
-        from jaclang.compiler.passes import AstPass
+        from jaclang.compiler.passes import UniPass
 
-        return AstPass.get_all_sub_nodes(node=self, typ=typ, brute_force=brute_force)
+        return UniPass.get_all_sub_nodes(node=self, typ=typ, brute_force=brute_force)
 
     def find_parent_of_type(self, typ: Type[T]) -> Optional[T]:
         """Get parent of type."""
-        from jaclang.compiler.passes import AstPass
+        from jaclang.compiler.passes import UniPass
 
-        return AstPass.find_parent_of_type(node=self, typ=typ)
+        return UniPass.find_parent_of_type(node=self, typ=typ)
 
     def parent_of_type(self, typ: Type[T]) -> T:
         """Get parent of type."""

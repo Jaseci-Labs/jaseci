@@ -8,8 +8,7 @@ from typing import List, Optional, Type
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
-from jaclang.compiler.passes.main.schedules import py_code_gen, type_checker_sched
-from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+from jaclang.compiler.passes.main.schedules import CompilerMode as CMode
 from jaclang.compiler.program import JacProgram
 from jaclang.compiler.unitree import UniScopeNode
 from jaclang.utils.helpers import auto_generate_refs, pascal_to_snake
@@ -234,14 +233,12 @@ class AstTool:
                     ir = prog.compile_from_str(
                         source_str=rep.unparse(),
                         file_path=file_name[:-3] + ".jac",
-                        schedule=py_code_gen_typed,
+                        mode=CMode.TYPECHECK,
                     )
                 except Exception as e:
                     return f"Error While Jac to Py AST conversion: {e}"
             else:
-                ir = prog.compile(
-                    file_name, schedule=[*(py_code_gen), *type_checker_sched]
-                )
+                ir = prog.compile(file_name, mode=CMode.TYPECHECK)
 
             match output:
                 case "sym":

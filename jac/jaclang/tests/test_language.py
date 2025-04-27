@@ -7,7 +7,7 @@ import sysconfig
 
 from jaclang import JacMachine as Jac
 from jaclang.cli import cli
-from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+from jaclang.compiler.passes.main.schedules import CompilerMode as CMode
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.machinestate import JacMachineState
 from jaclang.utils.test import TestCase
@@ -581,7 +581,6 @@ class JacLanguageTests(TestCase):
         """Test py ast to Jac ast conversion output."""
         file_name = self.fixture_abs_path("pyfunc_1.py")
 
-        from jaclang.compiler.passes.main.schedules import py_code_gen_typed
         from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
         import ast as py_ast
         import jaclang.compiler.unitree as uni
@@ -602,7 +601,7 @@ class JacLanguageTests(TestCase):
         (prog := JacProgram()).compile_from_str(
             source_str=py_ast_build_pass.unparse(),
             file_path=file_name[:-3] + ".jac",
-            schedule=py_code_gen_typed,
+            mode=CMode.TYPECHECK,
         )
 
         architype_count = 0
@@ -656,7 +655,6 @@ class JacLanguageTests(TestCase):
         """Test py ast to Jac ast conversion output."""
         file_name = self.fixture_abs_path("pyfunc_2.py")
 
-        from jaclang.compiler.passes.main.schedules import py_code_gen_typed
         from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
         import ast as py_ast
         import jaclang.compiler.unitree as uni
@@ -678,7 +676,7 @@ class JacLanguageTests(TestCase):
             (prog := JacProgram()).compile_from_str(
                 source_str=py_ast_build_pass.unparse(),
                 file_path=file_name[:-3] + ".jac",
-                schedule=py_code_gen_typed,
+                mode=CMode.TYPECHECK,
             )
 
         architype_count = 0
@@ -724,13 +722,12 @@ class JacLanguageTests(TestCase):
     ) -> None:  # TODO : Pyfunc_3 has a bug in conversion in matchmapping node
         """Test py ast to Jac ast conversion output."""
         file_name = self.fixture_abs_path("pyfunc_3.py")
-        from jaclang.compiler.passes.main.schedules import py_code_gen_typed
         import jaclang.compiler.unitree as uni
 
         with open(file_name, "r") as f:
             file_source = f.read()
         (prog := JacProgram()).compile_from_str(
-            source_str=file_source, file_path=file_name, schedule=py_code_gen_typed
+            source_str=file_source, file_path=file_name, mode=CMode.TYPECHECK
         )
 
         architype_count = sum(
@@ -934,7 +931,7 @@ class JacLanguageTests(TestCase):
             ir = JacProgram().compile_from_str(
                 source_str=file_source,
                 file_path=file_path,
-                schedule=py_code_gen_typed,
+                mode=CMode.TYPECHECK,
             )
             gen_ast = ir.pp()
             if module_path == "random":
@@ -960,7 +957,6 @@ class JacLanguageTests(TestCase):
         """Test py ast to Jac ast conversion output."""
         file_name = self.fixture_abs_path("pyfunc_1.py")
 
-        from jaclang.compiler.passes.main.schedules import py_code_gen_typed
         import jaclang.compiler.unitree as uni
         from jaclang.settings import settings
 
@@ -968,7 +964,7 @@ class JacLanguageTests(TestCase):
         with open(file_name, "r") as f:
             file_source = f.read()
         ir = (prog := JacProgram()).compile_from_str(
-            source_str=file_source, file_path=file_name, schedule=py_code_gen_typed
+            source_str=file_source, file_path=file_name, mode=CMode.TYPECHECK
         )
         jac_ast = ir.pp()
         self.assertIn(" |   +-- String - 'Loop completed normally{}'", jac_ast)
@@ -1000,7 +996,7 @@ class JacLanguageTests(TestCase):
         """Test conn assign on edges."""
         (mypass := JacProgram()).compile(
             self.examples_abs_path("micro/simple_walk.jac"),
-            schedule=py_code_gen_typed,
+            mode=CMode.TYPECHECK,
         )
         self.assertEqual(len(mypass.errors_had), 0)
         self.assertEqual(len(mypass.warnings_had), 0)
@@ -1009,7 +1005,7 @@ class JacLanguageTests(TestCase):
         """Test conn assign on edges."""
         (mypass := JacProgram()).compile(
             self.examples_abs_path("guess_game/guess_game5.jac"),
-            schedule=py_code_gen_typed,
+            mode=CMode.TYPECHECK,
         )
         self.assertEqual(len(mypass.errors_had), 0)
         self.assertEqual(len(mypass.warnings_had), 0)
@@ -1018,7 +1014,7 @@ class JacLanguageTests(TestCase):
         """Test conn assign on edges."""
         (mypass := JacProgram()).compile(
             self.examples_abs_path("manual_code/circle.jac"),
-            schedule=py_code_gen_typed,
+            mode=CMode.TYPECHECK,
         )
         self.assertEqual(len(mypass.errors_had), 0)
         # FIXME: Figure out what to do with warning.

@@ -11,13 +11,13 @@ from typing import Optional, Sequence, TypeVar, cast
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Constants as Con, EdgeDir, Tokens as Tok
-from jaclang.compiler.passes import AstPass
+from jaclang.compiler.passes import UniPass
 from jaclang.settings import settings
 
 T = TypeVar("T", bound=ast3.AST)
 
 
-class PyastGenPass(AstPass):
+class PyastGenPass(UniPass):
     """Jac blue transpilation to python pass."""
 
     def before_pass(self) -> None:

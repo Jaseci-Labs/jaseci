@@ -7,12 +7,12 @@ from typing import Optional
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import SymbolAccess
-from jaclang.compiler.passes import AstPass
+from jaclang.compiler.passes import UniPass
 from jaclang.compiler.unitree import Symbol
 from jaclang.settings import settings
 
 
-class AccessCheckPass(AstPass):
+class AccessCheckPass(UniPass):
     """Jac Ast Access Check pass."""
 
     # NOTE: This method is a hacky way to detect if the drivied class is inherit from base class, it
@@ -67,7 +67,7 @@ class AccessCheckPass(AstPass):
         # TODO: Enums are not considered at the moment, I'll need to test and add them bellow.
 
         # If the current node is a global variable's name there is no access, it's just the declaration.
-        if AstPass.find_parent_of_type(node, uni.GlobalVars) is not None:
+        if UniPass.find_parent_of_type(node, uni.GlobalVars) is not None:
             return
 
         # Class name, and ability name are declarations and there is no access here as well.
@@ -75,10 +75,10 @@ class AccessCheckPass(AstPass):
             return
 
         # Get the context to check the access.
-        curr_class: Optional[uni.Architype] = AstPass.find_parent_of_type(
+        curr_class: Optional[uni.Architype] = UniPass.find_parent_of_type(
             node, uni.Architype
         )
-        curr_module: Optional[uni.Module] = AstPass.find_parent_of_type(
+        curr_module: Optional[uni.Module] = UniPass.find_parent_of_type(
             node, uni.Module
         )
         if curr_module is None:

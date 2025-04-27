@@ -10,13 +10,13 @@ from __future__ import annotations
 import os
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.passes import AstPass
+from jaclang.compiler.passes import UniPass
 from jaclang.settings import settings
 
 import mypy.nodes as MypyNodes  # noqa N812
 
 
-class PyCollectDepsPass(AstPass):
+class PyCollectDepsPass(UniPass):
     """Python and bytecode file self.__debug_printing pass."""
 
     def __debug_print(self, msg: str) -> None:

@@ -6,7 +6,7 @@ import sys
 
 import jaclang.compiler.unitree as uni
 from jaclang.cli import cli
-from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+from jaclang.compiler.passes.main.schedules import CompilerMode as CMode
 from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import TestCase
 
@@ -66,7 +66,7 @@ class ImportPassPassTests(TestCase):
         """Basic test for pass."""
         (build := JacProgram()).compile(
             self.fixture_abs_path("py_imp_test.jac"),
-            schedule=py_code_gen_typed,
+            mode=CMode.TYPECHECK,
         )
         p = {
             "math": r"jaclang/vendor/mypy/typeshed/stdlib/math.pyi$",
@@ -89,7 +89,7 @@ class ImportPassPassTests(TestCase):
     def test_py_raised_mods(self) -> None:
         """Basic test for pass."""
         (prog := JacProgram()).compile(
-            self.fixture_abs_path("py_imp_test.jac"), schedule=py_code_gen_typed
+            self.fixture_abs_path("py_imp_test.jac"), mode=CMode.TYPECHECK
         )
         for i in list(
             filter(

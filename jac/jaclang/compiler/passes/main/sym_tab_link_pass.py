@@ -3,11 +3,11 @@
 import os
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.passes import AstPass
+from jaclang.compiler.passes import UniPass
 from jaclang.compiler.unitree import InheritedSymbolTable
 
 
-class SymTabLinkPass(AstPass):
+class SymTabLinkPass(UniPass):
     """Link the symbol table."""
 
     def enter_module_path(self, node: uni.ModulePath) -> None:

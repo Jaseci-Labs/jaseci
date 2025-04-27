@@ -8,12 +8,12 @@ from typing import Optional
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Tokens as Tok
-from jaclang.compiler.passes import AstPass
+from jaclang.compiler.passes import UniPass
 from jaclang.compiler.unitree import UniNode
 from jaclang.settings import settings
 
 
-class JacFormatPass(AstPass):
+class JacFormatPass(UniPass):
     """JacFormat Pass format Jac code."""
 
     def before_pass(self) -> None:

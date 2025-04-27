@@ -14,7 +14,7 @@ import jaclang.compiler.unitree as uni
 from jaclang.cli.cmdreg import CommandShell, cmd_registry
 from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
-from jaclang.compiler.passes.main.schedules import py_code_gen, py_code_gen_typed
+from jaclang.compiler.passes.main.schedules import CompilerMode as CMode
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.builtin import dotgen
 from jaclang.runtimelib.constructs import WalkerArchitype
@@ -168,7 +168,7 @@ def build(filename: str, typecheck: bool = True) -> None:
     if filename.endswith(".jac"):
         (out := JacProgram()).compile(
             file_path=filename,
-            schedule=py_code_gen_typed if typecheck else py_code_gen,
+            mode=CMode.TYPECHECK if typecheck else CMode.COMPILE,
         )
         errs = len(out.errors_had)
         warnings = len(out.warnings_had)
@@ -191,7 +191,7 @@ def check(filename: str, print_errs: bool = True) -> None:
     if filename.endswith(".jac"):
         (prog := JacProgram()).compile(
             file_path=filename,
-            schedule=py_code_gen_typed,
+            mode=CMode.TYPECHECK,
         )
 
         errs = len(prog.errors_had)

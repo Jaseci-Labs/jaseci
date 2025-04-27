@@ -6,12 +6,13 @@ import ast as py_ast
 import marshal
 import os
 import types
-from typing import Optional, Type
+from typing import Optional
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.parser import JacParser
-from jaclang.compiler.passes import AstPass
+from jaclang.compiler.passes import UniPass
 from jaclang.compiler.passes.main import (
+    CompilerMode,
     DefUsePass,
     JacImportPass,
     JacTypeCheckPass,
@@ -20,7 +21,6 @@ from jaclang.compiler.passes.main import (
     PyImportPass,
     PyastBuildPass,
     SymTabBuildPass,
-    pass_schedule,
     py_code_gen,
     type_checker_sched,
 )
@@ -67,7 +67,7 @@ class JacProgram:
     def compile(
         self,
         file_path: str,
-        schedule: list[Type[AstPass]] = pass_schedule,
+        mode: CompilerMode = CompilerMode.COMPILE,
         full_compile: bool = True,
     ) -> uni.Module:
         """Convert a Jac file to an AST."""
@@ -75,7 +75,7 @@ class JacProgram:
             return self.compile_from_str(
                 source_str=file.read(),
                 file_path=file_path,
-                schedule=schedule,
+                mode=mode,
                 full_compile=full_compile,
             )
 
@@ -83,7 +83,7 @@ class JacProgram:
         self,
         source_str: str,
         file_path: str,
-        schedule: list[Type[AstPass]] = pass_schedule,
+        mode: CompilerMode = CompilerMode.COMPILE,
         full_compile: bool = True,
     ) -> uni.Module:
         """Convert a Jac file to an AST."""
@@ -113,24 +113,24 @@ class JacProgram:
         self.mod.hub[ast_ret.ir_out.loc.mod_path] = ast_ret.ir_out
         return self.run_pass_schedule(
             mod_targ=ast_ret.ir_out,
-            schedule=schedule,
+            mode=mode,
             full_compile=full_compile,
         )
 
     def run_pass_schedule(
         self,
         mod_targ: uni.Module,
-        schedule: list[Type[AstPass]] = pass_schedule,
+        mode: CompilerMode = CompilerMode.COMPILE,
         full_compile: bool = True,
     ) -> uni.Module:
         """Convert a Jac file to an AST."""
         self.last_imported.append(mod_targ)
         self.annex_impl(mod_targ)
         SymTabBuildPass(ir_in=mod_targ, prog=self)
-        if len(schedule) == 0:
+        if mode == CompilerMode.PARSE:
             return mod_targ
         if not full_compile:
-            self.schedule_runner(mod_targ, schedule=schedule)
+            self.schedule_runner(mod_targ, mode=mode)
             return mod_targ
         else:
             while len(self.last_imported) > 0:
@@ -141,23 +141,23 @@ class JacProgram:
         else:
             return self.run_whole_program_schedule(
                 mod_targ=mod_targ,
-                schedule=schedule,
+                mode=mode,
             )
 
     def run_whole_program_schedule(
         self,
         mod_targ: uni.Module,
-        schedule: list[Type[AstPass]] = pass_schedule,
+        mode: CompilerMode = CompilerMode.COMPILE,
     ) -> uni.Module:
         """Convert a Jac file to an AST."""
         for mod in self.mod.hub.values():
             SymTabLinkPass(ir_in=mod, prog=self)
 
         for mod in self.mod.hub.values():
-            self.schedule_runner(mod, schedule=schedule)
+            self.schedule_runner(mod, mode=CompilerMode.COMPILE)
 
         # Check if we need to run without type checking then just return
-        if schedule == py_code_gen:
+        if mode == CompilerMode.COMPILE:
             return mod_targ
 
         # Run TypeCheckingPass on the top module
@@ -181,7 +181,7 @@ class JacProgram:
             DefUsePass(mod, prog=self)
 
         for mod in self.mod.hub.values():
-            self.schedule_runner(mod, schedule=type_checker_sched)
+            self.schedule_runner(mod, mode=CompilerMode.TYPECHECK)
 
         return mod_targ
 
@@ -220,7 +220,7 @@ class JacProgram:
                 cur_file.startswith(f"{base_path}.")
                 or impl_folder == os.path.dirname(cur_file)
             ) and cur_file.endswith(".impl.jac"):
-                mod = self.compile(file_path=cur_file, schedule=[])
+                mod = self.compile(file_path=cur_file, mode=CompilerMode.PARSE)
                 if mod:
                     node.add_kids_left(mod.kid, parent_update=True, pos_update=False)
                     node.impl_mod.append(mod)
@@ -228,7 +228,7 @@ class JacProgram:
                 cur_file.startswith(f"{base_path}.")
                 or test_folder == os.path.dirname(cur_file)
             ) and cur_file.endswith(".test.jac"):
-                mod = self.compile(file_path=cur_file, schedule=[])
+                mod = self.compile(file_path=cur_file, mode=CompilerMode.PARSE)
                 if mod and not settings.ignore_test_annex:
                     node.test_mod.append(mod)
                     node.add_kids_right(mod.kid, parent_update=True, pos_update=False)
@@ -236,11 +236,12 @@ class JacProgram:
     def schedule_runner(
         self,
         mod: uni.Module,
-        schedule: list[Type[AstPass]] = pass_schedule,
+        mode: CompilerMode = CompilerMode.COMPILE,
     ) -> None:
         """Run premade passes on the module."""
-        final_pass: Optional[type[AstPass]] = None
-        for current_pass in schedule:
+        final_pass: Optional[type[UniPass]] = None
+        passes = py_code_gen if mode == CompilerMode.COMPILE else type_checker_sched
+        for current_pass in passes:
             if current_pass == PyBytecodeGenPass:
                 final_pass = current_pass
                 break

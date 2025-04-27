@@ -11,7 +11,7 @@ from typing import Callable, Optional, TypeVar
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Constants, Tokens
-from jaclang.compiler.passes import AstPass
+from jaclang.compiler.passes import UniPass
 from jaclang.compiler.unitree import UniScopeNode
 from jaclang.settings import settings
 from jaclang.utils.helpers import pascal_to_snake
@@ -26,7 +26,7 @@ from mypy.checkexpr import Type as MyType
 T = TypeVar("T", bound=uni.AstSymbolNode)
 
 
-class FuseTypeInfoPass(AstPass):
+class FuseTypeInfoPass(UniPass):
     """Python and bytecode file self.__debug_printing pass."""
 
     node_type_hash: dict[MypyNodes.Node | VNode, MyType] = {}

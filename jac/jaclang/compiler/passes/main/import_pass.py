@@ -12,7 +12,7 @@ from typing import Optional
 
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.passes import AstPass
+from jaclang.compiler.passes import UniPass
 from jaclang.compiler.passes.main import SymTabBuildPass
 from jaclang.utils.log import logging
 
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 # TODO: This pass finds imports dependencies, parses them, and adds them to
 # JacProgram's table, then table calls again if needed, should rename
-class JacImportPass(AstPass):
+class JacImportPass(UniPass):
     """Jac statically imports Jac modules."""
 
     def enter_module(self, node: uni.Module) -> None:
@@ -41,6 +41,8 @@ class JacImportPass(AstPass):
 
     def import_jac_module(self, node: uni.ModulePath) -> None:
         """Import a module."""
+        from jaclang.compiler.passes.main import CompilerMode as CMode
+
         self.cur_node = node  # impacts error reporting
         target = node.resolve_relative_path()
         # If the module is a package (dir)
@@ -62,13 +64,13 @@ class JacImportPass(AstPass):
                                 return
                             self.load_mod(
                                 self.prog.compile(
-                                    file_path=from_mod_target, schedule=[]
+                                    file_path=from_mod_target, mode=CMode.PARSE
                                 )
                             )
         else:
             if target in self.prog.mod.hub:
                 return
-            self.load_mod(self.prog.compile(file_path=target, schedule=[]))
+            self.load_mod(self.prog.compile(file_path=target, mode=CMode.PARSE))
 
     def load_mod(self, mod: uni.Module | None) -> None:
         """Attach a module to a node."""
@@ -80,11 +82,13 @@ class JacImportPass(AstPass):
 
     def import_jac_mod_from_dir(self, target: str) -> uni.Module:
         """Import a module from a directory."""
+        from jaclang.compiler.passes.main import CompilerMode as CMode
+
         with_init = os.path.join(target, "__init__.jac")
         if os.path.exists(with_init):
             if with_init in self.prog.mod.hub:
                 return self.prog.mod.hub[with_init]
-            return self.prog.compile(file_path=with_init, schedule=[])
+            return self.prog.compile(file_path=with_init, mode=CMode.PARSE)
         else:
             return uni.Module.make_stub(
                 inject_name=target.split(os.path.sep)[-1],

@@ -7,13 +7,13 @@ each module
 """
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.passes import AstPass
+from jaclang.compiler.passes import UniPass
 from jaclang.compiler.semtable import SemInfo, SemRegistry
 from jaclang.runtimelib.utils import get_sem_scope
 from jaclang.settings import settings
 
 
-class RegistryPass(AstPass):
+class RegistryPass(UniPass):
     """Creates a registry for each module."""
 
     modules_visited: list[uni.Module] = []
