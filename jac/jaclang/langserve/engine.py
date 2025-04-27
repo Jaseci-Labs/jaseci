@@ -291,7 +291,7 @@ class JacLangServer(LanguageServer):
             format = self.program.compile_from_str(
                 source_str=document.source,
                 file_path=document.path,
-                target=JacFormatPass,
+                target_pass=JacFormatPass,
                 schedule=[FuseCommentsPass, JacFormatPass],
             )
             formatted_text = (

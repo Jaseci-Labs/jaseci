@@ -1059,14 +1059,14 @@ class JacLanguageTests(TestCase):
         """Basic test for pass."""
         mypass = JacProgram().compile(
             self.examples_abs_path("manual_code/circle_pure.jac"),
-            target=passes.JacImportPass,
+            target_pass=passes.JacImportPass,
         )
 
         self.assertEqual(mypass.pp().count("AbilityDef - (o)Circle.(c)area"), 1)
         self.assertIsNone(mypass.sym_tab)
         mypass = JacProgram().compile(
             self.examples_abs_path("manual_code/circle_pure.jac"),
-            target=passes.SymTabBuildPass,
+            target_pass=passes.SymTabBuildPass,
         )
         self.assertEqual(
             len(
@@ -1083,7 +1083,7 @@ class JacLanguageTests(TestCase):
         """Basic test for symtable support for inheritance."""
         mypass = JacProgram().compile(
             self.examples_abs_path("guess_game/guess_game4.jac"),
-            target=passes.DefUsePass,
+            target_pass=passes.DefUsePass,
         )
         table = None
         for i in mypass.sym_tab.kid_scope:

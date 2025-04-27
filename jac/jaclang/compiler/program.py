@@ -67,7 +67,7 @@ class JacProgram:
     def compile(
         self,
         file_path: str,
-        target: Optional[Type[AstPass]] = None,
+        target_pass: Optional[Type[AstPass]] = None,
         schedule: list[Type[AstPass]] = pass_schedule,
         full_compile: bool = True,
     ) -> uni.Module:
@@ -76,7 +76,7 @@ class JacProgram:
             return self.compile_from_str(
                 source_str=file.read(),
                 file_path=file_path,
-                target=target,
+                target_pass=target_pass,
                 schedule=schedule,
                 full_compile=full_compile,
             )
@@ -85,13 +85,13 @@ class JacProgram:
         self,
         source_str: str,
         file_path: str,
-        target: Optional[Type[AstPass]] = None,
+        target_pass: Optional[Type[AstPass]] = None,
         schedule: list[Type[AstPass]] = pass_schedule,
         full_compile: bool = True,
     ) -> uni.Module:
         """Convert a Jac file to an AST."""
-        if not target:
-            target = schedule[-1] if schedule else None
+        if not target_pass:
+            target_pass = schedule[-1] if schedule else None
         if file_path.endswith(".py"):
             parsed_ast = py_ast.parse(source_str)
             py_ast_ret: Transform[uni.PythonModuleAst, uni.Module] = PyastBuildPass(
@@ -118,7 +118,7 @@ class JacProgram:
         self.mod.hub[ast_ret.ir_out.loc.mod_path] = ast_ret.ir_out
         return self.run_pass_schedule(
             mod_targ=ast_ret.ir_out,
-            target_pass=target,
+            target_pass=target_pass,
             schedule=schedule,
             full_compile=full_compile,
         )

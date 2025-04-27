@@ -7,7 +7,6 @@ from contextlib import suppress
 from difflib import unified_diff
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.passes.main import PyastGenPass
 from jaclang.compiler.passes.main.schedules import py_code_gen as without_format
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.program import JacProgram
@@ -118,14 +117,12 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         """Parse micro jac file."""
         code_gen_pure = JacProgram().compile(
             self.fixture_abs_path(filename),
-            target=PyastGenPass,
             schedule=without_format,
         )
         code_gen_format = JacProgram.jac_file_formatter(self.fixture_abs_path(filename))
         code_gen_jac = JacProgram().compile_from_str(
             source_str=code_gen_format,
             file_path=filename,
-            target=PyastGenPass,
             schedule=without_format,
         )
         if "circle_clean_tests.jac" in filename:
