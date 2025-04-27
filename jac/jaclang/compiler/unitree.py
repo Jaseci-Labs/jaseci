@@ -1238,7 +1238,7 @@ class PyInlineCode(ElementStmt, ArchBlockStmt, EnumBlockStmt, CodeBlockStmt):
         return res
 
 
-class Import(ElementStmt, CodeBlockStmt):
+class Import(ElementStmt, CodeBlockStmt, UniBasicBlock):
     """Import node type for Jac Ast."""
 
     def __init__(
@@ -1257,6 +1257,7 @@ class Import(ElementStmt, CodeBlockStmt):
         self.is_absorb = is_absorb
         UniNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
+        UniBasicBlock.__init__(self)
 
     @property
     def is_py(self) -> bool:
@@ -1730,6 +1731,7 @@ class Ability(
     AstSemStrNode,
     AstImplNeedingNode,
     UniScopeNode,
+    UniBasicBlock,
 ):
     """Ability node type for Jac Ast."""
 
@@ -1768,6 +1770,7 @@ class Ability(
         AstDocNode.__init__(self, doc=doc)
         AstAsyncNode.__init__(self, is_async=is_async)
         UniScopeNode.__init__(self, name=self.sym_name, owner=self)
+        UniBasicBlock.__init__(self)
 
     @property
     def is_method(self) -> bool:
@@ -1848,7 +1851,7 @@ class Ability(
         return res
 
 
-class AbilityDef(AstImplOnlyNode, UniScopeNode):
+class AbilityDef(AstImplOnlyNode, UniScopeNode, UniBasicBlock):
     """AbilityDef node type for Jac Ast."""
 
     def __init__(
@@ -1868,6 +1871,7 @@ class AbilityDef(AstImplOnlyNode, UniScopeNode):
         AstDocNode.__init__(self, doc=doc)
         AstImplOnlyNode.__init__(self, target=target, body=body, decl_link=decl_link)
         UniScopeNode.__init__(self, name=self.sym_name, owner=self)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ability def node."""
@@ -2187,7 +2191,7 @@ class HasVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
         return res
 
 
-class TypedCtxBlock(CodeBlockStmt, UniScopeNode):
+class TypedCtxBlock(CodeBlockStmt, UniScopeNode, UniBasicBlock):
     """TypedCtxBlock node type for Jac Ast."""
 
     def __init__(
@@ -2201,6 +2205,7 @@ class TypedCtxBlock(CodeBlockStmt, UniScopeNode):
         self.body = body
         UniNode.__init__(self, kid=kid)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize typed context block node."""
@@ -2217,7 +2222,7 @@ class TypedCtxBlock(CodeBlockStmt, UniScopeNode):
         return res
 
 
-class IfStmt(CodeBlockStmt, AstElseBodyNode, UniScopeNode):
+class IfStmt(CodeBlockStmt, AstElseBodyNode, UniScopeNode, UniBasicBlock):
     """IfStmt node type for Jac Ast."""
 
     def __init__(
@@ -2233,6 +2238,7 @@ class IfStmt(CodeBlockStmt, AstElseBodyNode, UniScopeNode):
         UniNode.__init__(self, kid=kid)
         AstElseBodyNode.__init__(self, else_body=else_body)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize if statement node."""
@@ -2299,7 +2305,7 @@ class ElseStmt(UniScopeNode):
         return res
 
 
-class ExprStmt(CodeBlockStmt):
+class ExprStmt(CodeBlockStmt, UniBasicBlock):
     """ExprStmt node type for Jac Ast."""
 
     def __init__(
@@ -2312,6 +2318,7 @@ class ExprStmt(CodeBlockStmt):
         self.expr = expr
         self.in_fstring = in_fstring
         UniNode.__init__(self, kid=kid)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = True) -> bool:
         """Normalize ast node."""
@@ -2327,7 +2334,7 @@ class ExprStmt(CodeBlockStmt):
         return res and self.expr is not None
 
 
-class TryStmt(AstElseBodyNode, CodeBlockStmt, UniScopeNode):
+class TryStmt(AstElseBodyNode, CodeBlockStmt, UniScopeNode, UniBasicBlock):
     """TryStmt node type for Jac Ast."""
 
     def __init__(
@@ -2345,6 +2352,7 @@ class TryStmt(AstElseBodyNode, CodeBlockStmt, UniScopeNode):
         UniNode.__init__(self, kid=kid)
         AstElseBodyNode.__init__(self, else_body=else_body)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize try statement node."""
@@ -2370,7 +2378,7 @@ class TryStmt(AstElseBodyNode, CodeBlockStmt, UniScopeNode):
         return res
 
 
-class Except(CodeBlockStmt, UniScopeNode):
+class Except(CodeBlockStmt, UniScopeNode, UniBasicBlock):
     """Except node type for Jac Ast."""
 
     def __init__(
@@ -2386,6 +2394,7 @@ class Except(CodeBlockStmt, UniScopeNode):
         self.body = body
         UniNode.__init__(self, kid=kid)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize except node."""
@@ -2406,7 +2415,7 @@ class Except(CodeBlockStmt, UniScopeNode):
         return res
 
 
-class FinallyStmt(CodeBlockStmt, UniScopeNode):
+class FinallyStmt(CodeBlockStmt, UniScopeNode, UniBasicBlock):
     """FinallyStmt node type for Jac Ast."""
 
     def __init__(
@@ -2418,6 +2427,7 @@ class FinallyStmt(CodeBlockStmt, UniScopeNode):
         self.body = body
         UniNode.__init__(self, kid=kid)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize finally statement node."""
@@ -2432,7 +2442,9 @@ class FinallyStmt(CodeBlockStmt, UniScopeNode):
         return res
 
 
-class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
+class IterForStmt(
+    AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode, UniBasicBlock
+):
     """IterFor node type for Jac Ast."""
 
     def __init__(
@@ -2454,6 +2466,7 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
         AstAsyncNode.__init__(self, is_async=is_async)
         AstElseBodyNode.__init__(self, else_body=else_body)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize iter for node."""
@@ -2480,7 +2493,9 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
         return res
 
 
-class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
+class InForStmt(
+    AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode, UniBasicBlock
+):
     """InFor node type for Jac Ast."""
 
     def __init__(
@@ -2500,6 +2515,7 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
         AstAsyncNode.__init__(self, is_async=is_async)
         AstElseBodyNode.__init__(self, else_body=else_body)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize in for node."""
@@ -2525,7 +2541,7 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
         return res
 
 
-class WhileStmt(CodeBlockStmt, UniScopeNode):
+class WhileStmt(CodeBlockStmt, UniScopeNode, UniBasicBlock):
     """WhileStmt node type for Jac Ast."""
 
     def __init__(
@@ -2539,6 +2555,7 @@ class WhileStmt(CodeBlockStmt, UniScopeNode):
         self.body = body
         UniNode.__init__(self, kid=kid)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize while statement node."""
@@ -2556,7 +2573,7 @@ class WhileStmt(CodeBlockStmt, UniScopeNode):
         return res
 
 
-class WithStmt(AstAsyncNode, CodeBlockStmt, UniScopeNode):
+class WithStmt(AstAsyncNode, CodeBlockStmt, UniScopeNode, UniBasicBlock):
     """WithStmt node type for Jac Ast."""
 
     def __init__(
@@ -2572,6 +2589,7 @@ class WithStmt(AstAsyncNode, CodeBlockStmt, UniScopeNode):
         UniNode.__init__(self, kid=kid)
         AstAsyncNode.__init__(self, is_async=is_async)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize with statement node."""
@@ -2651,7 +2669,7 @@ class RaiseStmt(CodeBlockStmt):
         return res
 
 
-class AssertStmt(CodeBlockStmt):
+class AssertStmt(CodeBlockStmt, UniBasicBlock):
     """AssertStmt node type for Jac Ast."""
 
     def __init__(
@@ -2664,6 +2682,7 @@ class AssertStmt(CodeBlockStmt):
         self.condition = condition
         self.error_msg = error_msg
         UniNode.__init__(self, kid=kid)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize assert statement node."""
@@ -2683,7 +2702,7 @@ class AssertStmt(CodeBlockStmt):
         return res
 
 
-class CheckStmt(CodeBlockStmt):
+class CheckStmt(CodeBlockStmt, UniBasicBlock):
     """DeleteStmt node type for Jac Ast."""
 
     def __init__(
@@ -2694,6 +2713,7 @@ class CheckStmt(CodeBlockStmt):
         """Initialize delete statement node."""
         self.target = target
         UniNode.__init__(self, kid=kid)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize delete statement node."""
@@ -2709,7 +2729,7 @@ class CheckStmt(CodeBlockStmt):
         return res
 
 
-class CtrlStmt(CodeBlockStmt):
+class CtrlStmt(CodeBlockStmt, UniBasicBlock):
     """CtrlStmt node type for Jac Ast."""
 
     def __init__(
@@ -2720,6 +2740,7 @@ class CtrlStmt(CodeBlockStmt):
         """Initialize control statement node."""
         self.ctrl = ctrl
         UniNode.__init__(self, kid=kid)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize control statement node."""
@@ -2731,7 +2752,7 @@ class CtrlStmt(CodeBlockStmt):
         return res
 
 
-class DeleteStmt(CodeBlockStmt):
+class DeleteStmt(CodeBlockStmt, UniBasicBlock):
     """DeleteStmt node type for Jac Ast."""
 
     def __init__(
@@ -2742,6 +2763,7 @@ class DeleteStmt(CodeBlockStmt):
         """Initialize delete statement node."""
         self.target = target
         UniNode.__init__(self, kid=kid)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize delete statement node."""
@@ -2757,7 +2779,7 @@ class DeleteStmt(CodeBlockStmt):
         return res
 
 
-class ReportStmt(CodeBlockStmt):
+class ReportStmt(CodeBlockStmt, UniBasicBlock):
     """ReportStmt node type for Jac Ast."""
 
     def __init__(
@@ -2768,6 +2790,7 @@ class ReportStmt(CodeBlockStmt):
         """Initialize report statement node."""
         self.expr = expr
         UniNode.__init__(self, kid=kid)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize report statement node."""
@@ -2783,7 +2806,7 @@ class ReportStmt(CodeBlockStmt):
         return res
 
 
-class ReturnStmt(CodeBlockStmt):
+class ReturnStmt(CodeBlockStmt, UniBasicBlock):
     """ReturnStmt node type for Jac Ast."""
 
     def __init__(
@@ -2794,6 +2817,7 @@ class ReturnStmt(CodeBlockStmt):
         """Initialize return statement node."""
         self.expr = expr
         UniNode.__init__(self, kid=kid)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize return statement node."""
@@ -2810,7 +2834,7 @@ class ReturnStmt(CodeBlockStmt):
         return res
 
 
-class IgnoreStmt(WalkerStmtOnlyNode, CodeBlockStmt):
+class IgnoreStmt(WalkerStmtOnlyNode, CodeBlockStmt, UniBasicBlock):
     """IgnoreStmt node type for Jac Ast."""
 
     def __init__(
@@ -2822,6 +2846,7 @@ class IgnoreStmt(WalkerStmtOnlyNode, CodeBlockStmt):
         self.target = target
         UniNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ignore statement node."""
@@ -2837,7 +2862,7 @@ class IgnoreStmt(WalkerStmtOnlyNode, CodeBlockStmt):
         return res
 
 
-class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
+class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt, UniBasicBlock):
     """VisitStmt node type for Jac Ast."""
 
     def __init__(
@@ -2853,6 +2878,7 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
         UniNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
         AstElseBodyNode.__init__(self, else_body=else_body)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize visit statement node."""
@@ -2876,7 +2902,7 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
         return res
 
 
-class RevisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
+class RevisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt, UniBasicBlock):
     """ReVisitStmt node type for Jac Ast."""
 
     def __init__(
@@ -2890,6 +2916,7 @@ class RevisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
         UniNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
         AstElseBodyNode.__init__(self, else_body=else_body)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize revisit statement node."""
@@ -2907,7 +2934,7 @@ class RevisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
         return res
 
 
-class DisengageStmt(WalkerStmtOnlyNode, CodeBlockStmt):
+class DisengageStmt(WalkerStmtOnlyNode, CodeBlockStmt, UniBasicBlock):
     """DisengageStmt node type for Jac Ast."""
 
     def __init__(
@@ -2917,6 +2944,7 @@ class DisengageStmt(WalkerStmtOnlyNode, CodeBlockStmt):
         """Initialize disengage statement node."""
         UniNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize disengage statement node."""
@@ -2954,7 +2982,7 @@ class AwaitExpr(Expr):
         return res
 
 
-class GlobalStmt(CodeBlockStmt):
+class GlobalStmt(CodeBlockStmt, UniBasicBlock):
     """GlobalStmt node type for Jac Ast."""
 
     def __init__(
@@ -2965,6 +2993,7 @@ class GlobalStmt(CodeBlockStmt):
         """Initialize global statement node."""
         self.target = target
         UniNode.__init__(self, kid=kid)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize global statement node."""
@@ -4130,7 +4159,7 @@ class AssignCompr(AtomExpr):
 # ------------
 
 
-class MatchStmt(CodeBlockStmt):
+class MatchStmt(CodeBlockStmt, UniBasicBlock):
     """MatchStmt node type for Jac Ast."""
 
     def __init__(
@@ -4143,6 +4172,7 @@ class MatchStmt(CodeBlockStmt):
         self.target = target
         self.cases = cases
         UniNode.__init__(self, kid=kid)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize match statement node."""
