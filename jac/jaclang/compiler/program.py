@@ -67,7 +67,6 @@ class JacProgram:
     def compile(
         self,
         file_path: str,
-        target_pass: Optional[Type[AstPass]] = None,
         schedule: list[Type[AstPass]] = pass_schedule,
         full_compile: bool = True,
     ) -> uni.Module:
@@ -76,7 +75,6 @@ class JacProgram:
             return self.compile_from_str(
                 source_str=file.read(),
                 file_path=file_path,
-                target_pass=target_pass,
                 schedule=schedule,
                 full_compile=full_compile,
             )
@@ -85,13 +83,10 @@ class JacProgram:
         self,
         source_str: str,
         file_path: str,
-        target_pass: Optional[Type[AstPass]] = None,
         schedule: list[Type[AstPass]] = pass_schedule,
         full_compile: bool = True,
     ) -> uni.Module:
         """Convert a Jac file to an AST."""
-        if not target_pass:
-            target_pass = schedule[-1] if schedule else None
         if file_path.endswith(".py"):
             parsed_ast = py_ast.parse(source_str)
             py_ast_ret: Transform[uni.PythonModuleAst, uni.Module] = PyastBuildPass(
@@ -118,7 +113,6 @@ class JacProgram:
         self.mod.hub[ast_ret.ir_out.loc.mod_path] = ast_ret.ir_out
         return self.run_pass_schedule(
             mod_targ=ast_ret.ir_out,
-            target_pass=target_pass,
             schedule=schedule,
             full_compile=full_compile,
         )
@@ -126,7 +120,6 @@ class JacProgram:
     def run_pass_schedule(
         self,
         mod_targ: uni.Module,
-        target_pass: Optional[Type[AstPass]] = None,
         schedule: list[Type[AstPass]] = pass_schedule,
         full_compile: bool = True,
     ) -> uni.Module:
@@ -137,25 +130,23 @@ class JacProgram:
         if len(schedule) == 0:
             return mod_targ
         if not full_compile:
-            self.schedule_runner(mod_targ, target_pass=target_pass, schedule=schedule)
+            self.schedule_runner(mod_targ, schedule=schedule)
             return mod_targ
         else:
             while len(self.last_imported) > 0:
                 mod = self.last_imported.pop()
                 JacImportPass(ir_in=mod, prog=self)
-        if len(self.errors_had) or target_pass in (JacImportPass, SymTabBuildPass):
+        if len(self.errors_had):
             return mod_targ
         else:
             return self.run_whole_program_schedule(
                 mod_targ=mod_targ,
-                target_pass=target_pass,
                 schedule=schedule,
             )
 
     def run_whole_program_schedule(
         self,
         mod_targ: uni.Module,
-        target_pass: Optional[Type[AstPass]] = None,
         schedule: list[Type[AstPass]] = pass_schedule,
     ) -> uni.Module:
         """Convert a Jac file to an AST."""
@@ -163,10 +154,10 @@ class JacProgram:
             SymTabLinkPass(ir_in=mod, prog=self)
 
         for mod in self.mod.hub.values():
-            self.schedule_runner(mod, target_pass=target_pass, schedule=schedule)
+            self.schedule_runner(mod, schedule=schedule)
 
         # Check if we need to run without type checking then just return
-        if target_pass in py_code_gen:
+        if schedule == py_code_gen:
             return mod_targ
 
         # Run TypeCheckingPass on the top module
@@ -190,9 +181,7 @@ class JacProgram:
             DefUsePass(mod, prog=self)
 
         for mod in self.mod.hub.values():
-            self.schedule_runner(
-                mod, target_pass=target_pass, schedule=type_checker_sched
-            )
+            self.schedule_runner(mod, schedule=type_checker_sched)
 
         return mod_targ
 
@@ -247,13 +236,12 @@ class JacProgram:
     def schedule_runner(
         self,
         mod: uni.Module,
-        target_pass: Optional[type[AstPass]] = None,
         schedule: list[Type[AstPass]] = pass_schedule,
     ) -> None:
         """Run premade passes on the module."""
         final_pass: Optional[type[AstPass]] = None
         for current_pass in schedule:
-            if current_pass in (target_pass, PyBytecodeGenPass):
+            if current_pass == PyBytecodeGenPass:
                 final_pass = current_pass
                 break
             current_pass(mod, prog=self)

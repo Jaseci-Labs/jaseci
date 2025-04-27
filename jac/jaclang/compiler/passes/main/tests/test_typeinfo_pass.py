@@ -1,6 +1,5 @@
 """Test pass module."""
 
-from jaclang.compiler.passes.main.fuse_typeinfo_pass import FuseTypeInfoPass
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import TestCase
@@ -19,7 +18,6 @@ class TestFuseTypeInfo(TestCase):
             JacProgram()
             .compile(
                 self.fixture_abs_path("mod_type_assign.jac"),
-                FuseTypeInfoPass,
                 schedule=py_code_gen_typed,
             )
             .pp()
