@@ -5,15 +5,12 @@ import os
 import sys
 import sysconfig
 
-import jaclang.compiler.passes.main as passes
 from jaclang import JacMachine as Jac
 from jaclang.cli import cli
 from jaclang.compiler.passes.main.schedules import py_code_gen_typed
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.machinestate import JacMachineState
 from jaclang.utils.test import TestCase
-
-import pytest
 
 
 class JacLanguageTests(TestCase):
@@ -1052,38 +1049,17 @@ class JacLanguageTests(TestCase):
         mypass = JacProgram().compile(self.fixture_abs_path("byllmissue.jac"))
         self.assertIn("2:5 - 4:8", mypass.pp())
 
-    @pytest.mark.xfail(
-        reason="New schedules system is different and this test is not valid anymore"
-    )
     def test_single_impl_annex(self) -> None:
         """Basic test for pass."""
         mypass = JacProgram().compile(
-            self.examples_abs_path("manual_code/circle_pure.jac"),
-            target_pass=passes.JacImportPass,
+            self.examples_abs_path("manual_code/circle_pure.jac")
         )
-
         self.assertEqual(mypass.pp().count("AbilityDef - (o)Circle.(c)area"), 1)
-        self.assertIsNone(mypass.sym_tab)
-        mypass = JacProgram().compile(
-            self.examples_abs_path("manual_code/circle_pure.jac"),
-            target_pass=passes.SymTabBuildPass,
-        )
-        self.assertEqual(
-            len(
-                [
-                    i
-                    for i in mypass.sym_tab.kid_scope
-                    if i.nix_name == "circle_pure.impl"
-                ]
-            ),
-            1,
-        )
 
     def test_inherit_baseclass_sym(self) -> None:
         """Basic test for symtable support for inheritance."""
         mypass = JacProgram().compile(
-            self.examples_abs_path("guess_game/guess_game4.jac"),
-            target_pass=passes.DefUsePass,
+            self.examples_abs_path("guess_game/guess_game4.jac")
         )
         table = None
         for i in mypass.sym_tab.kid_scope:
