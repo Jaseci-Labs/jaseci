@@ -113,19 +113,15 @@ class JacProgram:
             ast_ret = jac_ast_ret
         if ast_ret.errors_had:
             return ast_ret.ir_out
-        SymTabBuildPass(ir_in=ast_ret.ir_out, prog=self)
         if self.mod.main.stub_only:
             self.mod = uni.ProgramModule(ast_ret.ir_out)
         self.mod.hub[ast_ret.ir_out.loc.mod_path] = ast_ret.ir_out
         self.last_imported.append(ast_ret.ir_out)
         self.annex_impl(ast_ret.ir_out)
+        SymTabBuildPass(ir_in=ast_ret.ir_out, prog=self)
         if len(schedule) == 0:
             return ast_ret.ir_out
-        if full_compile:
-            while len(self.last_imported) > 0:
-                mod = self.last_imported.pop()
-                JacImportPass(ir_in=mod, prog=self)
-                SymTabBuildPass(ir_in=mod, prog=self)  # FIXME: Move to ImportPass
+
         return self.run_pass_schedule(
             mod_targ=ast_ret.ir_out,
             target_pass=target,
@@ -141,10 +137,14 @@ class JacProgram:
         full_compile: bool = True,
     ) -> uni.Module:
         """Convert a Jac file to an AST."""
-        if len(self.errors_had) or target_pass in (JacImportPass, SymTabBuildPass):
-            return mod_targ
         if not full_compile:
             self.schedule_runner(mod_targ, target_pass=target_pass, schedule=schedule)
+            return mod_targ
+        else:
+            while len(self.last_imported) > 0:
+                mod = self.last_imported.pop()
+                JacImportPass(ir_in=mod, prog=self)
+        if len(self.errors_had) or target_pass in (JacImportPass, SymTabBuildPass):
             return mod_targ
         else:
             return self.run_deep_pass_schedule(
