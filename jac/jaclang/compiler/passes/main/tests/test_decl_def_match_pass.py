@@ -53,13 +53,13 @@ class DeclImplMatchPassTests(TestCase):
             self.fixture_abs_path("base.jac"), DeclImplMatchPass
         )
         self.assertFalse(out.errors_had)
-        self.assertIn("(o)Test.(c)say_hi", state.ir_out.sym_tab.names_in_scope)
+        self.assertIn("(o)Test.(c)say_hi", state.sym_tab.names_in_scope)
         self.assertIsNotNone(
-            state.ir_out.sym_tab.names_in_scope["(o)Test.(c)say_hi"].decl.name_of.body
+            state.sym_tab.names_in_scope["(o)Test.(c)say_hi"].decl.name_of.body
         )
-        self.assertIn("(o)Test.(c)__init__", state.ir_out.sym_tab.names_in_scope)
+        self.assertIn("(o)Test.(c)__init__", state.sym_tab.names_in_scope)
         self.assertIsNotNone(
-            state.ir_out.sym_tab.names_in_scope["(o)Test.(c)__init__"].decl.name_of.body
+            state.sym_tab.names_in_scope["(o)Test.(c)__init__"].decl.name_of.body
         )
 
     def test_ability_connected_to_decl_post(self) -> None:
@@ -68,13 +68,13 @@ class DeclImplMatchPassTests(TestCase):
             self.fixture_abs_path("base2.jac"), DeclImplMatchPass
         )
         self.assertFalse(out.errors_had)
-        self.assertIn("(o)Test.(c)say_hi", state.ir_out.sym_tab.names_in_scope)
+        self.assertIn("(o)Test.(c)say_hi", state.sym_tab.names_in_scope)
         self.assertIsNotNone(
-            state.ir_out.sym_tab.names_in_scope["(o)Test.(c)say_hi"].decl.name_of.body
+            state.sym_tab.names_in_scope["(o)Test.(c)say_hi"].decl.name_of.body
         )
-        self.assertIn("(o)Test.(c)__init__", state.ir_out.sym_tab.names_in_scope)
+        self.assertIn("(o)Test.(c)__init__", state.sym_tab.names_in_scope)
         self.assertIsNotNone(
-            state.ir_out.sym_tab.names_in_scope["(o)Test.(c)__init__"].decl.name_of.body
+            state.sym_tab.names_in_scope["(o)Test.(c)__init__"].decl.name_of.body
         )
 
     def test_run_base2(self) -> None:
@@ -90,7 +90,7 @@ class DeclImplMatchPassTests(TestCase):
         state = JacProgram().compile(
             self.fixture_abs_path("defs_and_uses.jac"), DeclImplMatchPass
         )
-        for i in state.ir_out.get_all_sub_nodes(uni.ArchRef):
+        for i in state.get_all_sub_nodes(uni.ArchRef):
             self.assertIsNotNone(i.sym)
 
     def test_obj_hasvar_initialization(self) -> None:

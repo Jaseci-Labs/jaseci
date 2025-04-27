@@ -13,8 +13,7 @@ from typing import Optional
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes import AstPass
-from jaclang.compiler.passes.main import DefUsePass, SymTabBuildPass
-from jaclang.compiler.passes.main.sym_tab_build_pass import PyInspectSymTabBuildPass
+from jaclang.compiler.passes.main import SymTabBuildPass
 from jaclang.utils.log import logging
 
 
@@ -64,12 +63,12 @@ class JacImportPass(AstPass):
                             self.load_mod(
                                 self.prog.compile(
                                     file_path=from_mod_target, schedule=[]
-                                ).ir_out
+                                )
                             )
         else:
             if target in self.prog.mod.hub:
                 return
-            self.load_mod(self.prog.compile(file_path=target, schedule=[]).ir_out)
+            self.load_mod(self.prog.compile(file_path=target, schedule=[]))
 
     def load_mod(self, mod: uni.Module | None) -> None:
         """Attach a module to a node."""
@@ -85,7 +84,7 @@ class JacImportPass(AstPass):
         if os.path.exists(with_init):
             if with_init in self.prog.mod.hub:
                 return self.prog.mod.hub[with_init]
-            return self.prog.compile(file_path=with_init, schedule=[]).ir_out
+            return self.prog.compile(file_path=with_init, schedule=[])
         else:
             return uni.Module.make_stub(
                 inject_name=target.split(os.path.sep)[-1],
@@ -164,8 +163,7 @@ class PyImportPass(JacImportPass):
 
             self.load_mod(imported_mod)
             self.import_from_build_list.append((imp_node, imported_mod))
-            PyInspectSymTabBuildPass(ir_in=imported_mod, prog=self.prog)
-            DefUsePass(ir_in=imported_mod, prog=self.prog)
+            SymTabBuildPass(ir_in=imported_mod, prog=self.prog)
 
     def __process_import(self, imp_node: uni.Import) -> None:
         """Process the imports in form of `import X`."""
@@ -198,11 +196,7 @@ class PyImportPass(JacImportPass):
                 msg += f"import_from (import all) handling with {imp_node.loc.mod_path}:{imp_node.loc}"
 
                 self.import_from_build_list.append((imp_node, imported_mod))
-                PyInspectSymTabBuildPass(ir_in=imported_mod, prog=self.prog)
-                DefUsePass(ir_in=imported_mod, prog=self.prog)
-
-            else:
-                SymTabBuildPass(ir_in=imported_mod, prog=self.prog)
+            SymTabBuildPass(ir_in=imported_mod, prog=self.prog)
 
     def __import_py_module(
         self,
@@ -250,6 +244,7 @@ class PyImportPass(JacImportPass):
                     # (thakee): This needs to be re-done after implementing path handling properly.
                     mod_name = mod.loc.mod_path.split(os.path.sep)[-2]
                     mod.name = mod_name
+                    mod.nix_name = mod_name
                 mod.py_info.is_raised_from_py = True
                 return mod
             else:

@@ -192,10 +192,10 @@ class JacLanguageTests(TestCase):
 
     def test_arith_precedence(self) -> None:
         """Basic precedence test."""
-        prog = JacProgram().jac_str_to_pass("with entry {print(4-5-4);}", "test.jac")
+        prog = JacProgram().compile_from_str("with entry {print(4-5-4);}", "test.jac")
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        exec(compile(prog.ir_out.gen.py_ast[0], "test.py", "exec"))
+        exec(compile(prog.gen.py_ast[0], "test.py", "exec"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value, "-5\n")
@@ -536,10 +536,8 @@ class JacLanguageTests(TestCase):
     def test_annotation_tuple_issue(self) -> None:
         """Test conn assign on edges."""
         mypass = JacProgram().compile(self.fixture_abs_path("./slice_vals.jac"))
-        self.assertIn("Annotated[Str, INT, BLAH]", mypass.ir_out.gen.py)
-        self.assertIn(
-            "tuple[int, Optional[type], Optional[tuple]]", mypass.ir_out.gen.py
-        )
+        self.assertIn("Annotated[Str, INT, BLAH]", mypass.gen.py)
+        self.assertIn("tuple[int, Optional[type], Optional[tuple]]", mypass.gen.py)
 
     def test_impl_decl_resolution_fix(self) -> None:
         """Test walking through edges and nodes."""
@@ -600,15 +598,15 @@ class JacLanguageTests(TestCase):
                         parsed_ast, orig_src=uni.Source(file_source, file_name)
                     ),
                     prog=JacProgram(),
-                )
+                ).ir_out
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
 
-        (prog := JacProgram()).jac_str_to_pass(
-            jac_str=py_ast_build_pass.ir_out.unparse(),
+        (prog := JacProgram()).compile_from_str(
+            source_str=py_ast_build_pass.unparse(),
             file_path=file_name[:-3] + ".jac",
             schedule=py_code_gen_typed,
-        ).ir_out
+        )
 
         architype_count = 0
         for mod in prog.mod.hub.values():
@@ -676,15 +674,15 @@ class JacLanguageTests(TestCase):
                         orig_src=uni.Source(file_source, file_name),
                     ),
                     prog=JacProgram(),
-                )
+                ).ir_out
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
 
-            (prog := JacProgram()).jac_str_to_pass(
-                jac_str=py_ast_build_pass.ir_out.unparse(),
+            (prog := JacProgram()).compile_from_str(
+                source_str=py_ast_build_pass.unparse(),
                 file_path=file_name[:-3] + ".jac",
                 schedule=py_code_gen_typed,
-            ).ir_out
+            )
 
         architype_count = 0
         for mod in prog.mod.hub.values():
@@ -734,9 +732,9 @@ class JacLanguageTests(TestCase):
 
         with open(file_name, "r") as f:
             file_source = f.read()
-        (prog := JacProgram()).py_str_to_pass(
-            py_str=file_source, file_path=file_name, schedule=py_code_gen_typed
-        ).ir_out
+        (prog := JacProgram()).compile_from_str(
+            source_str=file_source, file_path=file_name, schedule=py_code_gen_typed
+        )
 
         architype_count = sum(
             len(mod.get_all_sub_nodes(uni.Architype))
@@ -778,8 +776,29 @@ class JacLanguageTests(TestCase):
             ).ir_out.unparse()
         self.assertIn("if 0 <= x<= 5 {", output)
         self.assertIn("  case _:\n", output)
-        self.assertIn(" case Point(x = int(_), y = 0):\n", output)
+        self.assertIn(" case Point(x = int(a), y = 0):\n", output)
         self.assertIn("class Sample {\n    can init", output)
+
+    def test_py2jac(self) -> None:
+        """Test py ast to Jac ast conversion."""
+        from jaclang.compiler.passes.main import PyastBuildPass
+        import jaclang.compiler.unitree as ast
+        import ast as py_ast
+
+        py_out_path = os.path.join(self.fixture_abs_path("./"), "py2jac.py")
+        with open(py_out_path) as f:
+            file_source = f.read()
+            output = PyastBuildPass(
+                ir_in=ast.PythonModuleAst(
+                    py_ast.parse(file_source),
+                    orig_src=ast.Source(file_source, py_out_path),
+                ),
+                prog=None,
+            ).ir_out.unparse()
+        self.assertIn("match Container(inner=Inner(x=a, y=b)){\n", output)
+        self.assertIn("case Container(inner = Inner(x = a, y = 0)):\n", output)
+        self.assertIn("case Container(inner = Inner(x = a, y = b)):\n", output)
+        self.assertIn("case _:\n", output)
 
     def test_refs_target(self) -> None:
         """Test py ast to Jac ast conversion output."""
@@ -793,19 +812,19 @@ class JacLanguageTests(TestCase):
 
     def test_py_kw_as_name_disallowed(self) -> None:
         """Basic precedence test."""
-        prog = JacProgram().jac_str_to_pass(
+        (prog := JacProgram()).compile_from_str(
             "with entry {print.is.not.True(4-5-4);}", "test.jac"
         )
         self.assertIn("Python keyword is used as name", str(prog.errors_had[0].msg))
 
     def test_double_format_issue(self) -> None:
         """Basic precedence test."""
-        prog = JacProgram().jac_str_to_pass("with entry {print(hello);}", "test.jac")
-        prog.ir_out.unparse()
-        before = prog.ir_out.format()
-        prog.ir_out.format()
-        prog.ir_out.format()
-        after = prog.ir_out.format()
+        prog = JacProgram().compile_from_str("with entry {print(hello);}", "test.jac")
+        prog.unparse()
+        before = prog.format()
+        prog.format()
+        prog.format()
+        after = prog.format()
         self.assertEqual(before, after)
 
     def test_type_fuse_expr(self) -> None:
@@ -915,12 +934,10 @@ class JacLanguageTests(TestCase):
             settings.print_py_raised_ast = True
             with open(file_path) as f:
                 file_source = f.read()
-            ir = (
-                JacProgram()
-                .py_str_to_pass(
-                    py_str=file_source, file_path=file_path, schedule=py_code_gen_typed
-                )
-                .ir_out
+            ir = JacProgram().compile_from_str(
+                source_str=file_source,
+                file_path=file_path,
+                schedule=py_code_gen_typed,
             )
             gen_ast = ir.pp()
             if module_path == "random":
@@ -953,12 +970,8 @@ class JacLanguageTests(TestCase):
         settings.print_py_raised_ast = True
         with open(file_name, "r") as f:
             file_source = f.read()
-        ir = (
-            (prog := JacProgram())
-            .py_str_to_pass(
-                py_str=file_source, file_path=file_name, schedule=py_code_gen_typed
-            )
-            .ir_out
+        ir = (prog := JacProgram()).compile_from_str(
+            source_str=file_source, file_path=file_name, schedule=py_code_gen_typed
         )
         jac_ast = ir.pp()
         self.assertIn(" |   +-- String - 'Loop completed normally{}'", jac_ast)
@@ -1037,7 +1050,7 @@ class JacLanguageTests(TestCase):
     def test_multiline_single_tok(self) -> None:
         """Test conn assign on edges."""
         mypass = JacProgram().compile(self.fixture_abs_path("byllmissue.jac"))
-        self.assertIn("2:5 - 4:8", mypass.ir_out.pp())
+        self.assertIn("2:5 - 4:8", mypass.pp())
 
     @pytest.mark.xfail(
         reason="New schedules system is different and this test is not valid anymore"
@@ -1046,20 +1059,20 @@ class JacLanguageTests(TestCase):
         """Basic test for pass."""
         mypass = JacProgram().compile(
             self.examples_abs_path("manual_code/circle_pure.jac"),
-            target=passes.JacImportPass,
+            target_pass=passes.JacImportPass,
         )
 
-        self.assertEqual(mypass.ir_out.pp().count("AbilityDef - (o)Circle.(c)area"), 1)
-        self.assertIsNone(mypass.ir_out.sym_tab)
+        self.assertEqual(mypass.pp().count("AbilityDef - (o)Circle.(c)area"), 1)
+        self.assertIsNone(mypass.sym_tab)
         mypass = JacProgram().compile(
             self.examples_abs_path("manual_code/circle_pure.jac"),
-            target=passes.SymTabBuildPass,
+            target_pass=passes.SymTabBuildPass,
         )
         self.assertEqual(
             len(
                 [
                     i
-                    for i in mypass.ir_out.sym_tab.kid_scope
+                    for i in mypass.sym_tab.kid_scope
                     if i.nix_name == "circle_pure.impl"
                 ]
             ),
@@ -1070,10 +1083,10 @@ class JacLanguageTests(TestCase):
         """Basic test for symtable support for inheritance."""
         mypass = JacProgram().compile(
             self.examples_abs_path("guess_game/guess_game4.jac"),
-            target=passes.DefUsePass,
+            target_pass=passes.DefUsePass,
         )
         table = None
-        for i in mypass.ir_out.sym_tab.kid_scope:
+        for i in mypass.sym_tab.kid_scope:
             if i.nix_name == "GuessTheNumberGame":
                 for j in i.kid_scope:
                     if j.nix_name == "play":

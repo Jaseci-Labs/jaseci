@@ -67,7 +67,7 @@ class JacReferenceTests(TestCase):
         try:
             if "tests.jac" in filename or "check_statements.jac" in filename:
                 return
-            jacast = JacProgram().compile(filename).ir_out
+            jacast = JacProgram().compile(filename)
             code_content = compile(
                 source=jacast.gen.py_ast[0],
                 filename=jacast.loc.mod_path,
