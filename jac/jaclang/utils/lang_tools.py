@@ -88,6 +88,7 @@ class AstTool:
                 "AstAccessNode",
                 "Literal",
                 "AstDocNode",
+                "AstImplNeedingNode",
                 "AstSemStrNode",
                 "PythonModuleAst",
                 "AstAsyncNode",
@@ -174,8 +175,8 @@ class AstTool:
             output += f"# missing: \n{i}\n"
         return output
 
-    def md_doc(self) -> str:
-        """Generate mermaid markdown doc."""
+    def autodoc_uninode(self) -> str:
+        """Generate mermaid markdown doc for uninodes."""
         output = ""
         for cls in self.ast_classes:
             if not len(cls.kids):
@@ -230,17 +231,17 @@ class AstTool:
                         prog=prog,
                     ).ir_out
 
-                    ir = prog.jac_str_to_pass(
-                        jac_str=rep.unparse(),
+                    ir = prog.compile_from_str(
+                        source_str=rep.unparse(),
                         file_path=file_name[:-3] + ".jac",
                         schedule=py_code_gen_typed,
-                    ).ir_out
+                    )
                 except Exception as e:
                     return f"Error While Jac to Py AST conversion: {e}"
             else:
                 ir = prog.compile(
                     file_name, schedule=[*(py_code_gen), *type_checker_sched]
-                ).ir_out
+                )
 
             match output:
                 case "sym":

@@ -30,4 +30,4 @@ class RegistryPassTests(TestCase):
                 )
             )
         )
-        self.assertIn("109", str(state.ir_out.to_dict()))
+        self.assertIn("109", str(state.to_dict()))

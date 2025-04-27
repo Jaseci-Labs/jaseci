@@ -12,6 +12,7 @@ dependencies = [
     "mkdocs-material",
     "mkdocs-video",
     "mkdocs-open-in-new-tab",
+    "mkdocs-simple-hooks"
 ]
 authors = [
     { name = "Jason Mars", email = "jason@jaseci.org" }
