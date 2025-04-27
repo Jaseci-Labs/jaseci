@@ -274,3 +274,15 @@ class JacProgram:
         prse.errors_had = prog.errors_had
         prse.warnings_had = prog.warnings_had
         return prse.ir_out.gen.jac
+
+    @staticmethod
+    def jac_str_formatter(source_str: str, file_path: str) -> str:
+        """Convert a Jac file to an AST."""
+        prog = JacProgram()
+        source = uni.Source(source_str, mod_path=file_path)
+        prse: Transform = JacParser(root_ir=source, prog=prog)
+        for i in [FuseCommentsPass, JacFormatPass]:
+            prse = i(ir_in=prse.ir_out, prog=prog)
+        prse.errors_had = prog.errors_had
+        prse.warnings_had = prog.warnings_had
+        return prse.ir_out.gen.jac if not prse.errors_had else source_str
