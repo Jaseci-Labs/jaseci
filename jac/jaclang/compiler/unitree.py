@@ -679,10 +679,10 @@ class UniBasicBlock(UniNode):
 
     def __init__(self) -> None:
         """Initialize control flow node."""
-        self.BB_start: bool = False
-        self.control_in_BBs: Optional[list[UniBasicBlock]] = []
-        self.control_out_BBs: Optional[list[UniBasicBlock]] = []
-        self.BB_stmts: Optional[list[UniBasicBlock]] = []
+        self.bb_start: bool = False
+        self.control_in_bbs: Optional[list[UniBasicBlock]] = []
+        self.control_out_bbs: Optional[list[UniBasicBlock]] = []
+        self.bb_stmts: list[UniBasicBlock] = []
 
 
 class Expr(UniNode):
@@ -942,7 +942,7 @@ class SubNodeList(UniNode, Generic[T]):
 
 # AST Mid Level Node Types
 # --------------------------
-class Module(AstDocNode, UniScopeNode):
+class Module(AstDocNode, UniScopeNode, UniBasicBlock):
     """Whole Program node type for Jac Ast."""
 
     def __init__(
@@ -970,6 +970,7 @@ class Module(AstDocNode, UniScopeNode):
         UniNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
         UniScopeNode.__init__(self, name=self.name, owner=self)
+        UniBasicBlock.__init__(self)
 
     @property
     def annexable_by(self) -> Optional[str]:
@@ -2996,7 +2997,9 @@ class NonLocalStmt(GlobalStmt):
         return res
 
 
-class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
+class Assignment(
+    AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt, UniBasicBlock
+):
     """Assignment node type for Jac Ast."""
 
     def __init__(
@@ -3019,6 +3022,7 @@ class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
         UniNode.__init__(self, kid=kid)
         AstSemStrNode.__init__(self, semstr=semstr)
         AstTypedVarNode.__init__(self, type_tag=type_tag)
+        UniBasicBlock.__init__(self)
 
     def normalize(self, deep: bool = True) -> bool:
         """Normalize ast node."""
