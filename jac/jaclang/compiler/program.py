@@ -147,13 +147,13 @@ class JacProgram:
         if len(self.errors_had) or target_pass in (JacImportPass, SymTabBuildPass):
             return mod_targ
         else:
-            return self.run_deep_pass_schedule(
+            return self.run_whole_program_schedule(
                 mod_targ=mod_targ,
                 target_pass=target_pass,
                 schedule=schedule,
             )
 
-    def run_deep_pass_schedule(
+    def run_whole_program_schedule(
         self,
         mod_targ: uni.Module,
         target_pass: Optional[Type[AstPass]] = None,
