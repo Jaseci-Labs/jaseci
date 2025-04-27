@@ -6,7 +6,6 @@ These are various pass schedules for the Jac compiler and static analysis.
 from __future__ import annotations
 
 
-from .import_pass import PyImportPass  # noqa: I100
 from .def_impl_match_pass import DeclImplMatchPass  # noqa: I100
 from .def_use_pass import DefUsePass  # noqa: I100
 from .pybc_gen_pass import PyBytecodeGenPass  # noqa: I100
@@ -32,5 +31,3 @@ type_checker_sched = [
     AccessCheckPass,
 ]
 py_code_gen_typed = [*py_code_gen, *type_checker_sched]
-# py_code_gen_build should be like py_code_gen_typed but without the PyImportPass
-py_code_gen_build = [i for i in py_code_gen if i != PyImportPass]
