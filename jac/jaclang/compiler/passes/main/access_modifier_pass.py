@@ -5,28 +5,28 @@ This pass checks for access to attributes in the Jac language.
 
 from typing import Optional
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import SymbolAccess
-from jaclang.compiler.passes import AstPass
-from jaclang.compiler.symtable import Symbol
+from jaclang.compiler.passes import UniPass
+from jaclang.compiler.unitree import Symbol
 from jaclang.settings import settings
 
 
-class AccessCheckPass(AstPass):
+class AccessCheckPass(UniPass):
     """Jac Ast Access Check pass."""
 
     # NOTE: This method is a hacky way to detect if the drivied class is inherit from base class, it
     # doesn't work if the base class was provided as an expression (ex. obj Dri :module.Base: {...}).
     def is_class_inherited_from(
-        self, dri_class: ast.Architype, base_class: ast.Architype
+        self, dri_class: uni.Architype, base_class: uni.Architype
     ) -> bool:
         """Return true if the dri_class inherited from base_class."""
         if dri_class.base_classes is None:
             return False
         for expr in dri_class.base_classes.items:
-            if not isinstance(expr, ast.Name):
+            if not isinstance(expr, uni.Name):
                 continue
-            if not isinstance(expr.name_of, ast.Architype):
+            if not isinstance(expr.name_of, uni.Architype):
                 continue  # Unlikely.
             if expr.name_of == base_class:
                 return True
@@ -34,27 +34,27 @@ class AccessCheckPass(AstPass):
                 return True
         return False
 
-    def report_error(self, message: str, node: Optional[ast.AstNode] = None) -> None:
+    def report_error(self, message: str, node: Optional[uni.UniNode] = None) -> None:
         """Report error message related to illegal access of attributes and objects."""
         self.log_error(message, node)
 
-    def exit_node(self, node: ast.AstNode) -> None:  # TODO: Move to debug pass
+    def exit_node(self, node: uni.UniNode) -> None:  # TODO: Move to debug pass
         """Exit node."""
         super().exit_node(node)
         if (
             settings.lsp_debug
-            and isinstance(node, ast.NameAtom)
+            and isinstance(node, uni.NameAtom)
             and not node.sym
-            and not node.parent_of_type(ast.Module).py_info.is_raised_from_py
+            and not node.parent_of_type(uni.Module).py_info.is_raised_from_py
             and not (
                 node.sym_name == "py"
                 and node.parent
-                and isinstance(node.parent.parent, ast.Import)
+                and isinstance(node.parent.parent, uni.Import)
             )
         ):
             self.log_warning(f"Name {node.sym_name} not present in symbol table")
 
-    def enter_name(self, node: ast.Name) -> None:
+    def enter_name(self, node: uni.Name) -> None:
         """Sub objects.
 
         name: str,
@@ -67,19 +67,19 @@ class AccessCheckPass(AstPass):
         # TODO: Enums are not considered at the moment, I'll need to test and add them bellow.
 
         # If the current node is a global variable's name there is no access, it's just the declaration.
-        if AstPass.find_parent_of_type(node, ast.GlobalVars) is not None:
+        if UniPass.find_parent_of_type(node, uni.GlobalVars) is not None:
             return
 
         # Class name, and ability name are declarations and there is no access here as well.
-        if isinstance(node.name_of, (ast.Ability, ast.Architype, ast.Enum)):
+        if isinstance(node.name_of, (uni.Ability, uni.Architype, uni.Enum)):
             return
 
         # Get the context to check the access.
-        curr_class: Optional[ast.Architype] = AstPass.find_parent_of_type(
-            node, ast.Architype
+        curr_class: Optional[uni.Architype] = UniPass.find_parent_of_type(
+            node, uni.Architype
         )
-        curr_module: Optional[ast.Module] = AstPass.find_parent_of_type(
-            node, ast.Module
+        curr_module: Optional[uni.Module] = UniPass.find_parent_of_type(
+            node, uni.Module
         )
         if curr_module is None:
             return
@@ -98,11 +98,11 @@ class AccessCheckPass(AstPass):
         access_type = "protected" if is_portect else "private"
 
         # The class we're currently in (None if we're not inside any).
-        sym_owner: ast.AstNode = node.sym.parent_tab.owner
+        sym_owner: uni.UniNode = node.sym.parent_tab.nix_owner
 
         # If the symbol belongs to a class, we need to check if the access used properly
         # within the class and in it's inherited classes.
-        if isinstance(sym_owner, ast.Architype):
+        if isinstance(sym_owner, uni.Architype):
 
             # Accessing a private/protected member within the top level scope illegal.
             if curr_class is None:
@@ -111,7 +111,7 @@ class AccessCheckPass(AstPass):
                     node,
                 )
 
-            if curr_class != node.sym.parent_tab.owner:
+            if curr_class != node.sym.parent_tab.nix_owner:
                 if not is_portect:  # private member accessed in a different class.
                     return self.report_error(
                         f'Error: Invalid access of {access_type} member "{node.sym_name}".',
@@ -124,7 +124,7 @@ class AccessCheckPass(AstPass):
                             node,
                         )
 
-        elif isinstance(sym_owner, ast.Module) and sym_owner != curr_module:
+        elif isinstance(sym_owner, uni.Module) and sym_owner != curr_module:
             # Accessing a private/public member in a different module.
             return self.report_error(
                 f'Error: Invalid access of {access_type} member "{node.sym_name}".',

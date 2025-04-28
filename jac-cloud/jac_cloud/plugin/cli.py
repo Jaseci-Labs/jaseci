@@ -28,7 +28,12 @@ class JacCmd:
         """Create Jac CLI cmds."""
 
         @cmd_registry.register
-        def serve(filename: str, host: str = "0.0.0.0", port: int = 8000) -> None:
+        def serve(
+            filename: str,
+            host: str = "0.0.0.0",
+            port: int = 8000,
+            interp_mode: bool = False,
+        ) -> None:
             from jaclang import JacMachine as Jac
             from jac_cloud import FastAPI
 
@@ -38,7 +43,7 @@ class JacCmd:
             mod = mod[:-4]
 
             FastAPI.enable()
-            mach = JacMachineState(base)
+            mach = JacMachineState(base, interp_mode=interp_mode)
 
             if filename.endswith(".jac"):
                 Jac.jac_import(

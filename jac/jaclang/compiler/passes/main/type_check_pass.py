@@ -8,13 +8,13 @@ import os
 import pathlib
 import sys
 
-import jaclang.compiler.absyntree as ast
 import jaclang.compiler.passes.utils.mypy_ast_build as myab
+import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Constants as Con
-from jaclang.compiler.passes import AstPass
+from jaclang.compiler.passes import UniPass
 
 
-class JacTypeCheckPass(AstPass):
+class JacTypeCheckPass(UniPass):
     """Python and bytecode file printing pass."""
 
     def before_pass(self) -> None:
@@ -24,7 +24,7 @@ class JacTypeCheckPass(AstPass):
             / "vendor"
             / "mypy"
         )
-        self.__modules = list(self.prog.modules.values())
+        self.__modules = list(self.prog.mod.hub.values())
         self.terminate()
         return super().before_pass()
 
@@ -94,7 +94,7 @@ class JacTypeCheckPass(AstPass):
             mypy_graph[module.name] = st
             new_modules.append(st)
 
-        if not isinstance(self.ir_out, ast.Module):
+        if not isinstance(self.ir_out, uni.Module):
             raise self.ice("Expected module node. Impossible")
         mypy_graph = myab.load_graph(
             [

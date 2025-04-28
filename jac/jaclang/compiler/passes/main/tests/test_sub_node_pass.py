@@ -1,6 +1,7 @@
 """Test sub node pass module."""
 
-from jaclang.compiler.passes import AstPass
+from jaclang.compiler.passes import UniPass
+from jaclang.compiler.passes.main.schedules import CompilerMode as CMode
 from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import TestCase
 
@@ -16,10 +17,10 @@ class SubNodePassTests(TestCase):
         """Basic test for pass."""
         code_gen = (out := JacProgram()).compile(
             file_path=self.examples_abs_path("manual_code/circle.jac"),
-            schedule=[],
+            mode=CMode.PARSE,
         )
-        for i in code_gen.ir_out.kid[1].kid:
+        for i in code_gen.kid[1].kid:
             for k, v in i._sub_node_tab.items():
                 for n in v:
-                    self.assertIn(n, AstPass.get_all_sub_nodes(i, k, brute_force=True))
+                    self.assertIn(n, UniPass.get_all_sub_nodes(i, k, brute_force=True))
         self.assertFalse(out.errors_had)

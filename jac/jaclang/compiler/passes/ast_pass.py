@@ -4,22 +4,22 @@ from __future__ import annotations
 
 from typing import Optional, TYPE_CHECKING, Type, TypeVar
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes.transform import Transform
 from jaclang.utils.helpers import pascal_to_snake
 
 if TYPE_CHECKING:
     from jaclang.compiler.program import JacProgram
 
-T = TypeVar("T", bound=ast.AstNode)
+T = TypeVar("T", bound=uni.UniNode)
 
 
-class AstPass(Transform[ast.Module, ast.Module]):
+class UniPass(Transform[uni.Module, uni.Module]):
     """Abstract class for IR passes."""
 
     def __init__(
         self,
-        ir_in: ast.Module,
+        ir_in: uni.Module,
         prog: JacProgram,
     ) -> None:
         """Initialize parser."""
@@ -35,12 +35,12 @@ class AstPass(Transform[ast.Module, ast.Module]):
         """Run once after pass."""
         pass
 
-    def enter_node(self, node: ast.AstNode) -> None:
+    def enter_node(self, node: uni.UniNode) -> None:
         """Run on entering node."""
         if hasattr(self, f"enter_{pascal_to_snake(type(node).__name__)}"):
             getattr(self, f"enter_{pascal_to_snake(type(node).__name__)}")(node)
 
-    def exit_node(self, node: ast.AstNode) -> None:
+    def exit_node(self, node: uni.UniNode) -> None:
         """Run on exiting node."""
         if hasattr(self, f"exit_{pascal_to_snake(type(node).__name__)}"):
             getattr(self, f"exit_{pascal_to_snake(type(node).__name__)}")(node)
@@ -55,7 +55,7 @@ class AstPass(Transform[ast.Module, ast.Module]):
 
     @staticmethod
     def get_all_sub_nodes(
-        node: ast.AstNode, typ: Type[T], brute_force: bool = False
+        node: uni.UniNode, typ: Type[T], brute_force: bool = False
     ) -> list[T]:
         """Get all sub nodes of type."""
         result: list[T] = []
@@ -75,11 +75,11 @@ class AstPass(Transform[ast.Module, ast.Module]):
                 for i in node.kid:
                     if isinstance(i, typ):
                         result.append(i)
-                    result.extend(AstPass.get_all_sub_nodes(i, typ, brute_force))
+                    result.extend(UniPass.get_all_sub_nodes(i, typ, brute_force))
         return result
 
     @staticmethod
-    def find_parent_of_type(node: ast.AstNode, typ: Type[T]) -> Optional[T]:
+    def find_parent_of_type(node: uni.UniNode, typ: Type[T]) -> Optional[T]:
         """Check if node has parent of type."""
         while node.parent:
             if isinstance(node.parent, typ):
@@ -88,7 +88,7 @@ class AstPass(Transform[ast.Module, ast.Module]):
         return None
 
     @staticmethod
-    def has_parent_of_node(node: ast.AstNode, parent: ast.AstNode) -> bool:
+    def has_parent_of_node(node: uni.UniNode, parent: uni.UniNode) -> bool:
         """Check if node has parent of type."""
         while node.parent:
             if node.parent == parent:
@@ -96,7 +96,7 @@ class AstPass(Transform[ast.Module, ast.Module]):
             node = node.parent
         return False
 
-    def recalculate_parents(self, node: ast.AstNode) -> None:
+    def recalculate_parents(self, node: uni.UniNode) -> None:
         """Recalculate parents."""
         if not node:
             return
@@ -107,20 +107,20 @@ class AstPass(Transform[ast.Module, ast.Module]):
 
     # Transform Implementations
     # -------------------------
-    def transform(self, ir_in: ast.Module) -> ast.Module:
+    def transform(self, ir_in: uni.Module) -> uni.Module:
         """Run pass."""
         # Only performs passes on proper ASTs
         self.ir_out = ir_in  # TODO: this should go away and just be orig
-        if not isinstance(ir_in, ast.AstNode):
+        if not isinstance(ir_in, uni.UniNode):
             return ir_in
         self.before_pass()
-        if not isinstance(ir_in, ast.AstNode):
-            raise ValueError("Current node is not an AstNode.")
+        if not isinstance(ir_in, uni.UniNode):
+            raise ValueError("Current node is not an UniNode.")
         self.traverse(ir_in)
         self.after_pass()
         return self.ir_in
 
-    def traverse(self, node: ast.AstNode) -> ast.AstNode:
+    def traverse(self, node: uni.UniNode) -> uni.UniNode:
         """Traverse tree."""
         if self.term_signal:
             return node
@@ -139,15 +139,15 @@ class AstPass(Transform[ast.Module, ast.Module]):
         return node
 
 
-class PrinterPass(AstPass):
+class PrinterPass(UniPass):
     """Printer Pass for Jac AST."""
 
-    def enter_node(self, node: ast.AstNode) -> None:
+    def enter_node(self, node: uni.UniNode) -> None:
         """Run on entering node."""
         self.log_info(f"Entering: {node.__class__.__name__}: {node.loc}")
         super().enter_node(node)
 
-    def exit_node(self, node: ast.AstNode) -> None:
+    def exit_node(self, node: uni.UniNode) -> None:
         """Run on exiting node."""
         super().exit_node(node)
         self.log_info(f"Exiting: {node.__class__.__name__}: {node.loc}")

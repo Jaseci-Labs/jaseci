@@ -1,5 +1,6 @@
 site_name: The Jac Programming Language
 site_url: https://jac-lang.org
+use_directory_urls: true
 nav:
   - For coders:
       - "for_coders/introduction.md"
@@ -49,7 +50,7 @@ nav:
       - "for_contributors/contrib.md"
       - "for_contributors/internals.md"
       - "for_contributors/jac_plugins.md"
-      - "for_contributors/ast_doc.md"
+      - "for_contributors/uniir_node.md"
       - "for_contributors/roadmap.md"
       - "for_contributors/mtp_impl/inference_engine.md"
       - "for_contributors/mtp_impl/sem_registry.md"
@@ -66,6 +67,9 @@ nav:
 
   - Language Reference:
     - "lang_ref/jac_ref.md"
+
+  - Jac Playground:
+    - Playground: playground/index.html
 
 theme:
   logo: "assets/logo.png"
@@ -153,3 +157,6 @@ plugins:
       video_autoplay: True
       # video_loop: True
       video_controls: False
+  - mkdocs-simple-hooks:
+      hooks:
+        on_pre_build: scripts.handle_jac_compile_data:pre_build_hook

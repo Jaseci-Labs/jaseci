@@ -32,7 +32,7 @@ from typing import (
 from uuid import UUID
 
 
-from jaclang.compiler import absyntree as ast
+from jaclang.compiler import unitree as ast
 from jaclang.compiler.constant import EdgeDir, colors
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.compiler.program import JacProgram
