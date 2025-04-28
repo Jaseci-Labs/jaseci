@@ -1,4 +1,5 @@
 """Preconfigured converters for ujson."""
+
 from base64 import b85decode, b85encode
 from datetime import date, datetime
 from typing import Any, AnyStr, Type, TypeVar, Union
@@ -9,6 +10,7 @@ from cattrs._compat import AbstractSet
 
 from ..converters import BaseConverter, Converter
 from ..strategies import configure_union_passthrough
+from . import wrap
 
 T = TypeVar("T")
 
@@ -41,6 +43,7 @@ def configure_converter(converter: BaseConverter):
     configure_union_passthrough(Union[str, bool, int, float, None], converter)
 
 
+@wrap(UjsonConverter)
 def make_converter(*args: Any, **kwargs: Any) -> UjsonConverter:
     kwargs["unstruct_collection_overrides"] = {
         AbstractSet: list,

@@ -1,4 +1,5 @@
 """Preconfigured converters for cbor2."""
+
 from datetime import date, datetime, timezone
 from typing import Any, Type, TypeVar, Union
 
@@ -8,6 +9,7 @@ from cattrs._compat import AbstractSet
 
 from ..converters import BaseConverter, Converter
 from ..strategies import configure_union_passthrough
+from . import wrap
 
 T = TypeVar("T")
 
@@ -36,6 +38,7 @@ def configure_converter(converter: BaseConverter):
     configure_union_passthrough(Union[str, bool, int, float, None, bytes], converter)
 
 
+@wrap(Cbor2Converter)
 def make_converter(*args: Any, **kwargs: Any) -> Cbor2Converter:
     kwargs["unstruct_collection_overrides"] = {
         AbstractSet: list,

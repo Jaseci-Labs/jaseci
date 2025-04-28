@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: lsprotocol
 Version: 2023.0.1
 Summary: Python implementation of the Language Server Protocol.
@@ -17,6 +17,7 @@ Classifier: Programming Language :: Python :: 3.11
 Classifier: Programming Language :: Python :: 3.12
 Classifier: Programming Language :: Python :: Implementation :: CPython
 Classifier: Programming Language :: Python :: Implementation :: PyPy
+License-File: LICENSE
 Requires-Dist: attrs>=21.3.0
 Requires-Dist: cattrs!=23.2.1
 Project-URL: Issues, https://github.com/microsoft/lsprotocol/issues
