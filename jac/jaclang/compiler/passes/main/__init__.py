@@ -8,7 +8,6 @@ from .pyast_load_pass import PyastBuildPass  # type: ignore # noqa: I100
 from .pyast_gen_pass import PyastGenPass  # noqa: I100
 from .schedules import py_code_gen  # noqa: I100
 from .type_check_pass import JacTypeCheckPass  # noqa: I100
-from .registry_pass import RegistryPass  # noqa: I100
 from .pybc_gen_pass import PyBytecodeGenPass  # noqa: I100
 from .py_collect_dep_pass import PyCollectDepsPass  # noqa: I100
 from .schedules import CompilerMode, type_checker_sched  # noqa: I100
@@ -23,7 +22,6 @@ __all__ = [
     "PyastBuildPass",
     "PyastGenPass",
     "JacTypeCheckPass",
-    "RegistryPass",
     "PyBytecodeGenPass",
     "CompilerMode",
     "type_checker_sched",
