@@ -15,22 +15,34 @@ class CFGBuildPass(AstPass):
 
     def before_pass(self) -> None:
         """Before pass."""
-        self.loop_stack: list[list[uni.UniBasicBlock]] = []
+        self.while_loop_stack: list[list[uni.UniBasicBlock]] = []
+        self.for_loop_stack: list[list[uni.UniBasicBlock]] = []
+        self.function_call_stack: list[list[uni.UniBasicBlock]] = []
 
     def push_loop_stack(self, loop_header: uni.UniBasicBlock) -> None:
         """Push loop stack."""
-        if len(self.loop_stack) > 0:
-            self.loop_stack.append([loop_header])
+        if isinstance(loop_header, uni.WhileStmt) and len(self.while_loop_stack) > 0:
+            self.while_loop_stack.append([loop_header])
+        elif (
+            isinstance(loop_header, (uni.InForStmt, uni.IterForStmt))
+            and len(self.for_loop_stack) > 0
+        ):
+            self.for_loop_stack.append([loop_header])
 
-    def pop_loop_stack(self) -> None:
+    def pop_loop_stack(self, node: uni.UniBasicBlock) -> None:
         """Pop loop stack."""
-        if len(self.loop_stack) > 0:
-            self.loop_stack.pop()
+        if isinstance(node, uni.WhileStmt) and len(self.while_loop_stack) > 0:
+            self.while_loop_stack.pop()
+        elif (
+            isinstance(node, (uni.InForStmt, uni.IterForStmt))
+            and len(self.for_loop_stack) > 0
+        ):
+            self.for_loop_stack.pop()
 
     def top_loop_stack(self) -> list[uni.UniBasicBlock]:
         """Get top loop stack."""
-        if len(self.loop_stack) > 0:
-            return self.loop_stack[-1]
+        if len(self.while_loop_stack) > 0:
+            return self.while_loop_stack[-1]
         else:
             return []
 
@@ -63,19 +75,26 @@ class CFGBuildPass(AstPass):
                 if isinstance(parent_bb, uni.IfStmt):
                     node.bb_stmts.append(node)
                     self.link_bbs(parent_bb, node)
-                elif isinstance(node, uni.WhileStmt):
+                elif isinstance(node, (uni.InForStmt, uni.IterForStmt)):
                     self.push_loop_stack(parent_bb)
                     node.bb_stmts.append(node)
                     self.link_bbs(parent_bb, node)
                 elif isinstance(parent_bb, uni.WhileStmt):
                     node.bb_stmts.append(node)
                     self.link_bbs(parent_bb, node)
-                    if self.top_loop_stack():
-                        self.loop_stack[-1].append(node)
-                elif self.loop_stack:
-                    if self.top_loop_stack():
-                        self.loop_stack[-1][-1] = node
+                    if self.while_loop_stack:
+                        self.while_loop_stack[-1].append(node)
+                elif isinstance(parent_bb, (uni.InForStmt, uni.IterForStmt)):
                     node.bb_stmts.append(node)
+                    self.link_bbs(parent_bb, node)
+                    if self.for_loop_stack:
+                        self.for_loop_stack[-1].append(node)
+                elif self.while_loop_stack or self.for_loop_stack:
+                    if self.for_loop_stack:
+                        self.for_loop_stack[-1][-1] = node
+                    if self.while_loop_stack:
+                        self.while_loop_stack[-1][-1] = node
+                    parent_bb.bb_stmts.append(node)
                     self.sync_bbs(parent_bb, node)
                 else:
                     parent_bb.bb_stmts.append(node)
@@ -87,7 +106,21 @@ class CFGBuildPass(AstPass):
 
     def exit_while_stmt(self, node: uni.WhileStmt) -> None:
         """Exit while statement."""
-        if self.top_loop_stack():
-            from_node = self.loop_stack[-1][-1]
+        if self.while_loop_stack:
+            from_node = self.while_loop_stack[-1][-1]
             self.link_bbs(from_node, node)
-            self.pop_loop_stack()
+            self.pop_loop_stack(node)
+
+    def exit_iter_for_stmt(self, node: uni.IterForStmt) -> None:
+        """Exit for statement."""
+        if self.for_loop_stack:
+            from_node = self.for_loop_stack[-1][-1]
+            self.link_bbs(from_node, node)
+            self.pop_loop_stack(node)
+
+    def exit_in_for_stmt(self, node: uni.InForStmt) -> None:
+        """Exit for statement."""
+        if self.for_loop_stack:
+            from_node = self.for_loop_stack[-1][-1]
+            self.link_bbs(from_node, node)
+            self.pop_loop_stack(node)

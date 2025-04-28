@@ -683,6 +683,7 @@ class UniBasicBlock(UniNode):
         self.control_in_bbs: list[UniBasicBlock] = []
         self.control_out_bbs: list[UniBasicBlock] = []
         self.bb_stmts: list[UniBasicBlock] = []
+        self.func_call: Optional[UniNode] = None
 
 
 class Expr(UniNode):
