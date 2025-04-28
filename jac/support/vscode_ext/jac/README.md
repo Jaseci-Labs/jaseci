@@ -37,6 +37,10 @@ This animated GIF bellow will demonstrate on the steps discuessed above.
 
 ![Animation](https://github.com/user-attachments/assets/dcf808a4-b54e-4079-9948-9e88e6b0559e)
 
+To visualize the Jac graph while debugging, open the graph visualize view using the command `jacvis: Visualize Jac Graph` in the command palette, (shortcut for command palette is `ctrl+shift+p`)
+
+<img src="https://github.com/user-attachments/assets/f763fe86-33b5-4254-bb72-34c069d0f0c8" width="100%">
+
 # Features
 
 - Code completion

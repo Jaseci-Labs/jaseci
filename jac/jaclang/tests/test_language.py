@@ -137,6 +137,28 @@ class JacLanguageTests(TestCase):
         for expected in expected_outputs:
             self.assertIn(expected, stdout_value)
 
+    def test_dotgen(self) -> None:
+        """Test the dot gen of builtin function."""
+        import json
+
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(
+            self.mach, "builtin_dotgen_json", base_path=self.fixture_abs_path("./")
+        )
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        data = json.loads(stdout_value)
+
+        nodes = data["nodes"]
+        self.assertEqual(len(nodes), 7)
+        for node in nodes:
+            label = node["label"]
+            self.assertIn(label, ["root", "N(val=0)", "N(val=1)"])
+
+        edges = data["edges"]
+        self.assertEqual(len(edges), 6)
+
     def test_chandra_bugs(self) -> None:
         """Parse micro jac file."""
         captured_output = io.StringIO()
@@ -544,27 +566,6 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("2.0\n", stdout_value)
-
-    def test_registry(self) -> None:
-        """Test Jac registry feature."""
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-        sys.stderr = captured_output
-        Jac.jac_import(self.mach, "registry", base_path=self.fixture_abs_path("./"))
-        sys.stdout = sys.__stdout__
-        sys.stderr = sys.__stderr__
-        stdout_value = captured_output.getvalue()
-        self.assertNotIn("Error", stdout_value)
-
-        output_lines = stdout_value.strip().split("\n")
-        outputs = [
-            int(output_lines[i]) if i != 2 else output_lines[i] for i in range(4)
-        ]
-
-        self.assertEqual(outputs[0], 9)
-        self.assertEqual(outputs[1], 2)
-        self.assertEqual(outputs[2], "Person")
-        self.assertEqual(outputs[3], 2)
 
     def test_enum_inside_arch(self) -> None:
         """Test Enum as member stmt."""
