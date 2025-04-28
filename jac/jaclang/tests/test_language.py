@@ -4,6 +4,8 @@ import io
 import os
 import sys
 import sysconfig
+import tempfile
+from unittest.mock import patch
 
 from jaclang import JacMachine as Jac
 from jaclang.cli import cli
@@ -11,9 +13,6 @@ from jaclang.compiler.passes.main.schedules import CompilerMode as CMode
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.machinestate import JacMachineState
 from jaclang.utils.test import TestCase
-
-import tempfile
-from unittest.mock import patch
 
 
 class JacLanguageTests(TestCase):
@@ -1392,7 +1391,7 @@ class JacLanguageTests(TestCase):
     def create_temp_jac_file(
         self, content: str, dir_path: str, filename: str = "test_mod.jac"
     ) -> str:
-        """Helper to create a Jac file in a specific directory."""
+        """Create a temporary Jac file in a specific directory."""
         full_path = os.path.join(dir_path, filename)
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
         with open(full_path, "w") as f:
@@ -1414,9 +1413,7 @@ class JacLanguageTests(TestCase):
 
             # Create the importing script in the main temp directory
             importer_content = "import:jac site_pkg_mod;"
-            importer_path = self.create_temp_jac_file(
-                importer_content, tmpdir, "importer_site.jac"
-            )
+            _ = self.create_temp_jac_file(importer_content, tmpdir, "importer_site.jac")
             with patch("site.getsitepackages", return_value=[mock_site_dir]):
                 captured_output = io.StringIO()
                 sys.stdout = captured_output
@@ -1447,9 +1444,7 @@ class JacLanguageTests(TestCase):
             script_dir = os.path.join(tmpdir, "scripts")
             os.makedirs(script_dir)
             importer_content = "import jacpath_mod;"
-            importer_path = self.create_temp_jac_file(
-                importer_content, script_dir, "importer.jac"
-            )
+            _ = self.create_temp_jac_file(importer_content, script_dir, "importer.jac")
 
             # Set JACPATH environment variable and run
             original_jacpath = os.environ.get("JACPATH")
