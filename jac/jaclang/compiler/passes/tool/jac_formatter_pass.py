@@ -8,7 +8,7 @@ from typing import Optional
 
 import jaclang.compiler.absyntree as ast
 from jaclang.compiler.absyntree import AstNode
-from jaclang.compiler.constant import Constants, Tokens as Tok
+from jaclang.compiler.constant import Constants as Con, Tokens as Tok
 from jaclang.compiler.passes import Pass
 from jaclang.settings import settings
 
@@ -84,6 +84,18 @@ class JacFormatPass(Pass):
         """Render newline separated node list."""
         node.gen.jac = f"{delim}".join([i.gen.jac for i in node.items])
         return node.gen.jac
+
+    def emit_body(self, node: ast.AstNode, body: ast.Body) -> None:
+        """Emit the codegen for body node."""
+        self.emit(node, "{\n")
+        self.indent_level += 1
+        for stmt in body.statements:
+            # The emit(), emit_ln are messed up.
+            # Imma do it this way and come back to fix the format pass.
+            for line in stmt.gen.jac.splitlines():
+                node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
+        self.indent_level -= 1
+        self.emit(node, "}\n")
 
     def enter_module(self, node: ast.Module) -> None:
         """Sub objects.
@@ -1202,6 +1214,7 @@ class JacFormatPass(Pass):
         self.emit(node, f" except {node.ex_type.gen.jac} ")
         if node.name:
             self.emit(node, f"as {node.name.gen.jac} ")
+
         self.emit(node, "{\n")
         self.indent_level += 1
         for stmt in node.body:
@@ -2060,26 +2073,16 @@ class JacFormatPass(Pass):
         self.emit(node, "}\n")
 
     def exit_test(self, node: ast.Test) -> None:
-        """Sub objects.
+        """Grammer:
 
-        name: Optional[Name],
-        doc: Optional[Token],
-        body: CodeBlock,
+        test: KW_TEST NAME? code_block
         """
-        self.emit_ln(node, node.doc.gen.jac) if node.doc else None
-        name = (
-            ""
-            if node.name.value.startswith(Constants.JAC_TEST_NAME_PREFIX.value)
-            else node.name.value
-        )
-        self.emit(node, f"test {name} {{\n")
-        self.indent_level += 1
-        for stmt in node.body:
-            for line in stmt.gen.jac.splitlines():
-                node.gen.jac += (self.indent_str() + line).rstrip() + "\n"
-        self.indent_level -= 1
-
-        self.emit(node, "}\n")
+        if node.doc:
+            node.gen.jac = f"{node.doc.gen.jac}\n"
+        node.gen.jac += f"{self.indent_str()}test "
+        if not node.name.value.startswith(Con.JAC_TEST_NAME_PREFIX):
+            node.gen.jac += f"{node.name.gen.jac} "
+        self.emit_body(node, node.body)
 
     def exit_py_inline_code(self, node: ast.PyInlineCode) -> None:
         """Sub objects.
