@@ -3,33 +3,33 @@
 This is a pass for formatting Jac code.
 """
 
-import jaclang.compiler.absyntree as ast
-from jaclang.compiler.passes import AstPass
+import jaclang.compiler.unitree as uni
+from jaclang.compiler.passes import UniPass
 
 
-class FuseCommentsPass(AstPass):
+class FuseCommentsPass(UniPass):
     """JacFormat Pass format Jac code."""
 
     def before_pass(self) -> None:
         """Before pass."""
-        self.all_tokens: list[ast.Token] = []
-        self.comments: list[ast.CommentToken] = (
-            self.ir_out.source.comments if isinstance(self.ir_out, ast.Module) else []
+        self.all_tokens: list[uni.Token] = []
+        self.comments: list[uni.CommentToken] = (
+            self.ir_out.source.comments if isinstance(self.ir_out, uni.Module) else []
         )
         return super().before_pass()
 
-    def exit_node(self, node: ast.AstNode) -> None:
+    def exit_node(self, node: uni.UniNode) -> None:
         """Exit node."""
-        if isinstance(node, ast.Token):
+        if isinstance(node, uni.Token):
             self.all_tokens.append(node)
 
     def after_pass(self) -> None:
         """Insert comment tokens into all_tokens."""
         comment_stream = iter(self.comments)  # Iterator for comments
         code_stream = iter(self.all_tokens)  # Iterator for code tokens
-        new_stream: list[ast.Token] = []  # New stream to hold ordered tokens
+        new_stream: list[uni.Token] = []  # New stream to hold ordered tokens
 
-        if not isinstance(self.ir_out, ast.Module):
+        if not isinstance(self.ir_out, uni.Module):
             raise self.ice(
                 f"FuseCommentsPass can only be run on a Module, not a {type(self.ir_out)}"
             )
@@ -72,7 +72,7 @@ class FuseCommentsPass(AstPass):
 
         # Insert the tokens back into the AST
         for i, token in enumerate(new_stream):
-            if isinstance(token, ast.CommentToken):
+            if isinstance(token, uni.CommentToken):
                 if i == 0:
                     self.ir_out.add_kids_left([token])
                 else:
@@ -88,7 +88,7 @@ class FuseCommentsPass(AstPass):
                         )
 
 
-def is_comment_next(cmt: ast.CommentToken, code: ast.Token) -> bool:
+def is_comment_next(cmt: uni.CommentToken, code: uni.Token) -> bool:
     """Compare two CodeLocInfo objects."""
     if cmt.loc.first_line < code.loc.first_line:
         return True

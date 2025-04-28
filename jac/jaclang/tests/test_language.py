@@ -5,15 +5,13 @@ import os
 import sys
 import sysconfig
 
-import jaclang.compiler.passes.main as passes
 from jaclang import JacMachine as Jac
 from jaclang.cli import cli
-from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+from jaclang.compiler.passes.main.schedules import CompilerMode as CMode
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.machinestate import JacMachineState
 from jaclang.utils.test import TestCase
 
-import pytest
 import tempfile
 from unittest.mock import patch
 
@@ -194,10 +192,10 @@ class JacLanguageTests(TestCase):
 
     def test_arith_precedence(self) -> None:
         """Basic precedence test."""
-        prog = JacProgram().jac_str_to_pass("with entry {print(4-5-4);}", "test.jac")
+        prog = JacProgram().compile_from_str("with entry {print(4-5-4);}", "test.jac")
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        exec(compile(prog.ir_out.gen.py_ast[0], "test.py", "exec"))
+        exec(compile(prog.gen.py_ast[0], "test.py", "exec"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value, "-5\n")
@@ -312,8 +310,8 @@ class JacLanguageTests(TestCase):
         Jac.jac_import(
             mach, "deep_import_interp", base_path=self.fixture_abs_path("./")
         )
-        print(mach.jac_program.modules.keys())
-        self.assertEqual(len(mach.jac_program.modules.keys()), 1)
+        print(mach.jac_program.mod.hub.keys())
+        self.assertEqual(len(mach.jac_program.mod.hub.keys()), 1)
         mach = JacMachineState(self.fixture_abs_path("./"), interp_mode=False)
         Jac.attach_program(
             mach,
@@ -322,8 +320,8 @@ class JacLanguageTests(TestCase):
         Jac.jac_import(
             mach, "deep_import_interp", base_path=self.fixture_abs_path("./")
         )
-        print(mach.jac_program.modules.keys())
-        self.assertEqual(len(mach.jac_program.modules.keys()), 5)
+        print(mach.jac_program.mod.hub.keys())
+        self.assertEqual(len(mach.jac_program.mod.hub.keys()), 5)
 
     def test_deep_imports_mods(self) -> None:
         """Parse micro jac file."""
@@ -538,10 +536,8 @@ class JacLanguageTests(TestCase):
     def test_annotation_tuple_issue(self) -> None:
         """Test conn assign on edges."""
         mypass = JacProgram().compile(self.fixture_abs_path("./slice_vals.jac"))
-        self.assertIn("Annotated[Str, INT, BLAH]", mypass.ir_out.gen.py)
-        self.assertIn(
-            "tuple[int, Optional[type], Optional[tuple]]", mypass.ir_out.gen.py
-        )
+        self.assertIn("Annotated[Str, INT, BLAH]", mypass.gen.py)
+        self.assertIn("tuple[int, Optional[type], Optional[tuple]]", mypass.gen.py)
 
     def test_impl_decl_resolution_fix(self) -> None:
         """Test walking through edges and nodes."""
@@ -588,35 +584,34 @@ class JacLanguageTests(TestCase):
         """Test py ast to Jac ast conversion output."""
         file_name = self.fixture_abs_path("pyfunc_1.py")
 
-        from jaclang.compiler.passes.main.schedules import py_code_gen_typed
         from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
         import ast as py_ast
-        import jaclang.compiler.absyntree as ast
+        import jaclang.compiler.unitree as uni
 
         with open(file_name, "r") as f:
             file_source = f.read()
             parsed_ast = py_ast.parse(file_source)
             try:
                 py_ast_build_pass = PyastBuildPass(
-                    ir_in=ast.PythonModuleAst(
-                        parsed_ast, orig_src=ast.Source(file_source, file_name)
+                    ir_in=uni.PythonModuleAst(
+                        parsed_ast, orig_src=uni.Source(file_source, file_name)
                     ),
                     prog=JacProgram(),
-                )
+                ).ir_out
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
 
-        (prog := JacProgram()).jac_str_to_pass(
-            jac_str=py_ast_build_pass.ir_out.unparse(),
+        (prog := JacProgram()).compile_from_str(
+            source_str=py_ast_build_pass.unparse(),
             file_path=file_name[:-3] + ".jac",
-            schedule=py_code_gen_typed,
-        ).ir_out
+            mode=CMode.TYPECHECK,
+        )
 
         architype_count = 0
-        for mod in prog.modules.values():
+        for mod in prog.mod.hub.values():
             if mod.name == "builtins":
                 continue
-            architype_count += len(mod.get_all_sub_nodes(ast.Architype))
+            architype_count += len(mod.get_all_sub_nodes(uni.Architype))
 
         self.assertEqual(architype_count, 21)
         captured_output = io.StringIO()
@@ -631,16 +626,16 @@ class JacLanguageTests(TestCase):
     def test_pyfunc_1(self) -> None:
         """Test py ast to Jac ast conversion."""
         from jaclang.compiler.passes.main import PyastBuildPass
-        import jaclang.compiler.absyntree as ast
+        import jaclang.compiler.unitree as uni
         import ast as py_ast
 
         py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_1.py")
         with open(py_out_path) as f:
             file_source = f.read()
             output = PyastBuildPass(
-                ir_in=ast.PythonModuleAst(
+                ir_in=uni.PythonModuleAst(
                     py_ast.parse(file_source),
-                    orig_src=ast.Source(file_source, py_out_path),
+                    orig_src=uni.Source(file_source, py_out_path),
                 ),
                 prog=JacProgram(),
             ).ir_out.unparse()
@@ -663,36 +658,35 @@ class JacLanguageTests(TestCase):
         """Test py ast to Jac ast conversion output."""
         file_name = self.fixture_abs_path("pyfunc_2.py")
 
-        from jaclang.compiler.passes.main.schedules import py_code_gen_typed
         from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
         import ast as py_ast
-        import jaclang.compiler.absyntree as ast
+        import jaclang.compiler.unitree as uni
 
         with open(file_name, "r") as f:
             file_source = f.read()
             parsed_ast = py_ast.parse(file_source)
             try:
                 py_ast_build_pass = PyastBuildPass(
-                    ir_in=ast.PythonModuleAst(
+                    ir_in=uni.PythonModuleAst(
                         parsed_ast,
-                        orig_src=ast.Source(file_source, file_name),
+                        orig_src=uni.Source(file_source, file_name),
                     ),
                     prog=JacProgram(),
-                )
+                ).ir_out
             except Exception as e:
                 return f"Error While Jac to Py AST conversion: {e}"
 
-            (prog := JacProgram()).jac_str_to_pass(
-                jac_str=py_ast_build_pass.ir_out.unparse(),
+            (prog := JacProgram()).compile_from_str(
+                source_str=py_ast_build_pass.unparse(),
                 file_path=file_name[:-3] + ".jac",
-                schedule=py_code_gen_typed,
-            ).ir_out
+                mode=CMode.TYPECHECK,
+            )
 
         architype_count = 0
-        for mod in prog.modules.values():
+        for mod in prog.mod.hub.values():
             if mod.name == "builtins":
                 continue
-            architype_count += len(mod.get_all_sub_nodes(ast.Architype))
+            architype_count += len(mod.get_all_sub_nodes(uni.Architype))
 
         self.assertEqual(architype_count, 27)  # Because of the Architype from math
         captured_output = io.StringIO()
@@ -708,16 +702,16 @@ class JacLanguageTests(TestCase):
     def test_pyfunc_2(self) -> None:
         """Test py ast to Jac ast conversion."""
         from jaclang.compiler.passes.main import PyastBuildPass
-        import jaclang.compiler.absyntree as ast
+        import jaclang.compiler.unitree as uni
         import ast as py_ast
 
         py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_2.py")
         with open(py_out_path) as f:
             file_source = f.read()
             output = PyastBuildPass(
-                ir_in=ast.PythonModuleAst(
+                ir_in=uni.PythonModuleAst(
                     py_ast.parse(file_source),
-                    orig_src=ast.Source(file_source, py_out_path),
+                    orig_src=uni.Source(file_source, py_out_path),
                 ),
                 prog=JacProgram(),
             ).ir_out.unparse()
@@ -731,28 +725,27 @@ class JacLanguageTests(TestCase):
     ) -> None:  # TODO : Pyfunc_3 has a bug in conversion in matchmapping node
         """Test py ast to Jac ast conversion output."""
         file_name = self.fixture_abs_path("pyfunc_3.py")
-        from jaclang.compiler.passes.main.schedules import py_code_gen_typed
-        import jaclang.compiler.absyntree as ast
+        import jaclang.compiler.unitree as uni
 
         with open(file_name, "r") as f:
             file_source = f.read()
-        (prog := JacProgram()).py_str_to_pass(
-            py_str=file_source, file_path=file_name, schedule=py_code_gen_typed
-        ).ir_out
+        (prog := JacProgram()).compile_from_str(
+            source_str=file_source, file_path=file_name, mode=CMode.TYPECHECK
+        )
 
         architype_count = sum(
-            len(mod.get_all_sub_nodes(ast.Architype))
-            for mod in prog.modules.values()
+            len(mod.get_all_sub_nodes(uni.Architype))
+            for mod in prog.mod.hub.values()
             if mod.name != "builtins"
         )
         self.assertEqual(
             architype_count, 55
         )  # Fixed duplication of 'case' module (previously included 3 times, added 20 extra Architypes; 75 → 55)
         builtin_mod = next(
-            (mod for name, mod in prog.modules.items() if "builtins" in name),
+            (mod for name, mod in prog.mod.hub.items() if "builtins" in name),
             None,
         )
-        self.assertEqual(len(builtin_mod.get_all_sub_nodes(ast.Architype)), 108)
+        self.assertEqual(len(builtin_mod.get_all_sub_nodes(uni.Architype)), 108)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(
@@ -765,16 +758,16 @@ class JacLanguageTests(TestCase):
     def test_pyfunc_3(self) -> None:
         """Test py ast to Jac ast conversion."""
         from jaclang.compiler.passes.main import PyastBuildPass
-        import jaclang.compiler.absyntree as ast
+        import jaclang.compiler.unitree as uni
         import ast as py_ast
 
         py_out_path = os.path.join(self.fixture_abs_path("./"), "pyfunc_3.py")
         with open(py_out_path) as f:
             file_source = f.read()
             output = PyastBuildPass(
-                ir_in=ast.PythonModuleAst(
+                ir_in=uni.PythonModuleAst(
                     py_ast.parse(file_source),
-                    orig_src=ast.Source(file_source, py_out_path),
+                    orig_src=uni.Source(file_source, py_out_path),
                 ),
                 prog=JacProgram(),
             ).ir_out.unparse()
@@ -786,7 +779,7 @@ class JacLanguageTests(TestCase):
     def test_py2jac(self) -> None:
         """Test py ast to Jac ast conversion."""
         from jaclang.compiler.passes.main import PyastBuildPass
-        import jaclang.compiler.absyntree as ast
+        import jaclang.compiler.unitree as ast
         import ast as py_ast
 
         py_out_path = os.path.join(self.fixture_abs_path("./"), "py2jac.py")
@@ -816,19 +809,19 @@ class JacLanguageTests(TestCase):
 
     def test_py_kw_as_name_disallowed(self) -> None:
         """Basic precedence test."""
-        prog = JacProgram().jac_str_to_pass(
+        (prog := JacProgram()).compile_from_str(
             "with entry {print.is.not.True(4-5-4);}", "test.jac"
         )
         self.assertIn("Python keyword is used as name", str(prog.errors_had[0].msg))
 
     def test_double_format_issue(self) -> None:
         """Basic precedence test."""
-        prog = JacProgram().jac_str_to_pass("with entry {print(hello);}", "test.jac")
-        prog.ir_out.unparse()
-        before = prog.ir_out.format()
-        prog.ir_out.format()
-        prog.ir_out.format()
-        after = prog.ir_out.format()
+        prog = JacProgram().compile_from_str("with entry {print(hello);}", "test.jac")
+        prog.unparse()
+        before = prog.format()
+        prog.format()
+        prog.format()
+        after = prog.format()
         self.assertEqual(before, after)
 
     def test_type_fuse_expr(self) -> None:
@@ -938,12 +931,10 @@ class JacLanguageTests(TestCase):
             settings.print_py_raised_ast = True
             with open(file_path) as f:
                 file_source = f.read()
-            ir = (
-                JacProgram()
-                .py_str_to_pass(
-                    py_str=file_source, file_path=file_path, schedule=py_code_gen_typed
-                )
-                .ir_out
+            ir = JacProgram().compile_from_str(
+                source_str=file_source,
+                file_path=file_path,
+                mode=CMode.TYPECHECK,
             )
             gen_ast = ir.pp()
             if module_path == "random":
@@ -969,27 +960,22 @@ class JacLanguageTests(TestCase):
         """Test py ast to Jac ast conversion output."""
         file_name = self.fixture_abs_path("pyfunc_1.py")
 
-        from jaclang.compiler.passes.main.schedules import py_code_gen_typed
-        import jaclang.compiler.absyntree as ast
+        import jaclang.compiler.unitree as uni
         from jaclang.settings import settings
 
         settings.print_py_raised_ast = True
         with open(file_name, "r") as f:
             file_source = f.read()
-        ir = (
-            (prog := JacProgram())
-            .py_str_to_pass(
-                py_str=file_source, file_path=file_name, schedule=py_code_gen_typed
-            )
-            .ir_out
+        ir = (prog := JacProgram()).compile_from_str(
+            source_str=file_source, file_path=file_name, mode=CMode.TYPECHECK
         )
         jac_ast = ir.pp()
         self.assertIn(" |   +-- String - 'Loop completed normally{}'", jac_ast)
         sub_node_list_count = 0
-        for i in prog.modules.values():
+        for i in prog.mod.hub.values():
             if i.name == "builtins":
                 continue
-            sub_node_list_count += len(i.get_all_sub_nodes(ast.SubNodeList))
+            sub_node_list_count += len(i.get_all_sub_nodes(uni.SubNodeList))
         self.assertEqual(sub_node_list_count, 586)
         captured_output = io.StringIO()
         sys.stdout = captured_output
@@ -1013,7 +999,7 @@ class JacLanguageTests(TestCase):
         """Test conn assign on edges."""
         (mypass := JacProgram()).compile(
             self.examples_abs_path("micro/simple_walk.jac"),
-            schedule=py_code_gen_typed,
+            mode=CMode.TYPECHECK,
         )
         self.assertEqual(len(mypass.errors_had), 0)
         self.assertEqual(len(mypass.warnings_had), 0)
@@ -1022,7 +1008,7 @@ class JacLanguageTests(TestCase):
         """Test conn assign on edges."""
         (mypass := JacProgram()).compile(
             self.examples_abs_path("guess_game/guess_game5.jac"),
-            schedule=py_code_gen_typed,
+            mode=CMode.TYPECHECK,
         )
         self.assertEqual(len(mypass.errors_had), 0)
         self.assertEqual(len(mypass.warnings_had), 0)
@@ -1031,7 +1017,7 @@ class JacLanguageTests(TestCase):
         """Test conn assign on edges."""
         (mypass := JacProgram()).compile(
             self.examples_abs_path("manual_code/circle.jac"),
-            schedule=py_code_gen_typed,
+            mode=CMode.TYPECHECK,
         )
         self.assertEqual(len(mypass.errors_had), 0)
         # FIXME: Figure out what to do with warning.
@@ -1060,40 +1046,25 @@ class JacLanguageTests(TestCase):
     def test_multiline_single_tok(self) -> None:
         """Test conn assign on edges."""
         mypass = JacProgram().compile(self.fixture_abs_path("byllmissue.jac"))
-        self.assertIn("2:5 - 4:8", mypass.ir_out.pp())
+        self.assertIn("2:5 - 4:8", mypass.pp())
 
-    @pytest.mark.xfail(
-        reason="New schedules system is different and this test is not valid anymore"
-    )
     def test_single_impl_annex(self) -> None:
         """Basic test for pass."""
         mypass = JacProgram().compile(
-            self.examples_abs_path("manual_code/circle_pure.jac"),
-            target=passes.JacImportPass,
+            self.examples_abs_path("manual_code/circle_pure.jac")
         )
-
-        self.assertEqual(mypass.ir_out.pp().count("AbilityDef - (o)Circle.(c)area"), 1)
-        self.assertIsNone(mypass.ir_out._sym_tab)
-        mypass = JacProgram().compile(
-            self.examples_abs_path("manual_code/circle_pure.jac"),
-            target=passes.SymTabBuildPass,
-        )
-        self.assertEqual(
-            len([i for i in mypass.ir_out.sym_tab.kid if i.name == "circle_pure.impl"]),
-            1,
-        )
+        self.assertEqual(mypass.pp().count("AbilityDef - (o)Circle.(c)area"), 1)
 
     def test_inherit_baseclass_sym(self) -> None:
         """Basic test for symtable support for inheritance."""
         mypass = JacProgram().compile(
-            self.examples_abs_path("guess_game/guess_game4.jac"),
-            target=passes.DefUsePass,
+            self.examples_abs_path("guess_game/guess_game4.jac")
         )
         table = None
-        for i in mypass.ir_out.sym_tab.kid:
-            if i.name == "GuessTheNumberGame":
-                for j in i.kid:
-                    if j.name == "play":
+        for i in mypass.sym_tab.kid_scope:
+            if i.nix_name == "GuessTheNumberGame":
+                for j in i.kid_scope:
+                    if j.nix_name == "play":
                         table = j
                         break
                 break

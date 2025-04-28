@@ -6,12 +6,11 @@ import os
 import sys
 from typing import List, Optional, Type
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
-from jaclang.compiler.passes.main.schedules import py_code_gen, type_checker_sched
-from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+from jaclang.compiler.passes.main.schedules import CompilerMode as CMode
 from jaclang.compiler.program import JacProgram
-from jaclang.compiler.symtable import SymbolTable
+from jaclang.compiler.unitree import UniScopeNode
 from jaclang.utils.helpers import auto_generate_refs, pascal_to_snake
 
 
@@ -25,7 +24,7 @@ class AstKidInfo:
         self.default = default
 
 
-class AstNodeInfo:
+class UniNodeInfo:
     """Meta data about AST nodes."""
 
     type_map: dict[str, type] = {}
@@ -35,11 +34,11 @@ class AstNodeInfo:
         self.cls = cls
         self.process(cls)
 
-    def process(self, cls: Type[ast.AstNode]) -> None:
-        """Process AstNode class."""
+    def process(self, cls: Type[uni.UniNode]) -> None:
+        """Process UniNode class."""
         self.name = cls.__name__
         self.doc = cls.__doc__
-        AstNodeInfo.type_map[self.name] = cls
+        UniNodeInfo.type_map[self.name] = cls
         self.class_name_snake = pascal_to_snake(cls.__name__)
         self.init_sig = inspect.signature(cls.__init__)
         self.kids: list[AstKidInfo] = []
@@ -67,16 +66,18 @@ class AstTool:
 
     def __init__(self) -> None:
         """Initialize."""
-        module = sys.modules[ast.__name__]
+        module = sys.modules[uni.__name__]
         source_code = inspect.getsource(module)
         classes = inspect.getmembers(module, inspect.isclass)
-        ast_node_classes = [
-            AstNodeInfo(cls)
+        uni_node_classes = [
+            UniNodeInfo(cls)
             for _, cls in classes
-            if issubclass(cls, ast.AstNode)
+            if issubclass(cls, uni.UniNode)
             and cls.__name__
             not in [
-                "AstNode",
+                "UniNode",
+                "UniScopeNode",
+                "ProgramModule",
                 "OOPAccessNode",
                 "WalkerStmtOnlyNode",
                 "Source",
@@ -86,6 +87,7 @@ class AstTool:
                 "AstAccessNode",
                 "Literal",
                 "AstDocNode",
+                "AstImplNeedingNode",
                 "AstSemStrNode",
                 "PythonModuleAst",
                 "AstAsyncNode",
@@ -105,14 +107,14 @@ class AstTool:
         ]
 
         self.ast_classes = sorted(
-            ast_node_classes,
+            uni_node_classes,
             key=lambda cls: source_code.find(f"class {cls.name}"),
         )
 
     def pass_template(self) -> str:
         """Generate pass template."""
         output = (
-            "import jaclang.compiler.absyntree as ast\n"
+            "import jaclang.compiler.unitree as ast\n"
             "from jaclang.compiler.passes import Pass\n\n"
             "class SomePass(Pass):\n"
         )
@@ -135,7 +137,7 @@ class AstTool:
 
             emit('    """\n')
         output = (
-            output.replace("jaclang.compiler.absyntree.", "")
+            output.replace("jaclang.compiler.unitree.", "")
             .replace("typing.", "")
             .replace("<enum '", "")
             .replace("'>", "")
@@ -145,7 +147,7 @@ class AstTool:
         )
         return output
 
-    def py_ast_nodes(self) -> str:
+    def py_uni_nodes(self) -> str:
         """List python ast nodes."""
         from jaclang.compiler.passes.main import PyastBuildPass
 
@@ -162,7 +164,7 @@ class AstTool:
         for i in node_names:
             nd = pascal_to_snake(i)
             this_func = (
-                f"def proc_{nd}(self, node: py_ast.{i}) -> ast.AstNode:\n"
+                f"def proc_{nd}(self, node: py_ast.{i}) -> ast.UniNode:\n"
                 + '    """Process python node."""\n\n'
             )
             if nd not in pass_func_names:
@@ -172,8 +174,8 @@ class AstTool:
             output += f"# missing: \n{i}\n"
         return output
 
-    def md_doc(self) -> str:
-        """Generate mermaid markdown doc."""
+    def autodoc_uninode(self) -> str:
+        """Generate mermaid markdown doc for uninodes."""
         output = ""
         for cls in self.ast_classes:
             if not len(cls.kids):
@@ -221,42 +223,40 @@ class AstTool:
                     return f"\n{py_ast.dump(parsed_ast, indent=2)}"
                 try:
                     rep = PyastBuildPass(
-                        ir_in=ast.PythonModuleAst(
+                        ir_in=uni.PythonModuleAst(
                             parsed_ast,
-                            orig_src=ast.Source(file_source, file_name),
+                            orig_src=uni.Source(file_source, file_name),
                         ),
                         prog=prog,
                     ).ir_out
 
-                    ir = prog.jac_str_to_pass(
-                        jac_str=rep.unparse(),
+                    ir = prog.compile_from_str(
+                        source_str=rep.unparse(),
                         file_path=file_name[:-3] + ".jac",
-                        schedule=py_code_gen_typed,
-                    ).ir_out
+                        mode=CMode.TYPECHECK,
+                    )
                 except Exception as e:
                     return f"Error While Jac to Py AST conversion: {e}"
             else:
-                ir = prog.compile(
-                    file_name, schedule=[*(py_code_gen), *type_checker_sched]
-                ).ir_out
+                ir = prog.compile(file_name, mode=CMode.TYPECHECK)
 
             match output:
                 case "sym":
                     out = ""
-                    for module_ in prog.modules.values():
+                    for module_ in prog.mod.hub.values():
                         mod_name = module_.name
                         t = "#" * len(mod_name)
-                        out += f"##{t}##\n# {mod_name} #\n##{t}##\n{module_.sym_tab.pp()}\n"
+                        out += f"##{t}##\n# {mod_name} #\n##{t}##\n{module_.sym_tab.sym_pp()}\n"
                     return out
                 case "sym.":
                     return (
-                        ir.sym_tab.dotgen()
-                        if isinstance(ir.sym_tab, SymbolTable)
+                        ir.sym_tab.sym_dotgen()
+                        if isinstance(ir.sym_tab, UniScopeNode)
                         else "Sym_tab is None."
                     )
                 case "ast":
                     out = ""
-                    for module_ in prog.modules.values():
+                    for module_ in prog.mod.hub.values():
                         mod_name = module_.name
                         t = "#" * len(mod_name)
                         out += f"##{t}##\n# {mod_name} #\n##{t}##\n{module_.pp()}\n"

@@ -4,10 +4,10 @@ import inspect
 import os
 
 from jaclang.compiler import jac_lark as jl
-from jaclang.compiler.absyntree import Source
 from jaclang.compiler.constant import Tokens
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.program import JacProgram
+from jaclang.compiler.unitree import Source
 from jaclang.utils.test import TestCaseMicroSuite
 
 
@@ -114,12 +114,14 @@ class TestLarkParser(TestCaseMicroSuite):
 
     def test_all_ast_has_normalize(self) -> None:
         """Test for enter/exit name diffs with parser."""
-        import jaclang.compiler.absyntree as ast
+        import jaclang.compiler.unitree as uni
         import inspect
         import sys
 
         exclude = [
-            "AstNode",
+            "UniNode",
+            "UniScopeNode",
+            "ProgramModule",
             "WalkerStmtOnlyNode",
             "Source",
             "EmptyToken",
@@ -145,21 +147,22 @@ class TestLarkParser(TestCaseMicroSuite):
             "ArchSpec",
             "MatchPattern",
         ]
-        module_name = ast.__name__
+        module_name = uni.__name__
         module = sys.modules[module_name]
 
         # Retrieve the source code of the module
         source_code = inspect.getsource(module)
 
         classes = inspect.getmembers(module, inspect.isclass)
-        ast_node_classes = [
+        uni_node_classes = [
             cls
             for _, cls in classes
-            if issubclass(cls, ast.AstNode) and not issubclass(cls, ast.Token)
+            if issubclass(cls, uni.UniNode) and not issubclass(cls, uni.Token)
         ]
 
         ordered_classes = sorted(
-            ast_node_classes, key=lambda cls: source_code.find(f"class {cls.__name__}")
+            uni_node_classes,
+            key=lambda cls: source_code.find(f"class {cls.__name__}"),
         )
         for cls in ordered_classes:
             if cls.__name__ not in exclude:

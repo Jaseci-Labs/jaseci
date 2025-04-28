@@ -9,10 +9,10 @@ from __future__ import annotations
 import re
 from typing import Callable, Optional, TypeVar
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Constants, Tokens
-from jaclang.compiler.passes import AstPass
-from jaclang.compiler.symtable import SymbolTable
+from jaclang.compiler.passes import UniPass
+from jaclang.compiler.unitree import UniScopeNode
 from jaclang.settings import settings
 from jaclang.utils.helpers import pascal_to_snake
 from jaclang.vendor.mypy.nodes import Node as VNode  # bit of a hack
@@ -23,20 +23,20 @@ import mypy.types as MypyTypes  # noqa N812
 from mypy.checkexpr import Type as MyType
 
 
-T = TypeVar("T", bound=ast.AstSymbolNode)
+T = TypeVar("T", bound=uni.AstSymbolNode)
 
 
-class FuseTypeInfoPass(AstPass):
+class FuseTypeInfoPass(UniPass):
     """Python and bytecode file self.__debug_printing pass."""
 
     node_type_hash: dict[MypyNodes.Node | VNode, MyType] = {}
 
     # Override this to support enter expression.
-    def enter_node(self, node: ast.AstNode) -> None:
+    def enter_node(self, node: uni.UniNode) -> None:
         """Run on entering node."""
         super().enter_node(node)
 
-        if isinstance(node, ast.Expr):
+        if isinstance(node, uni.Expr):
             self.enter_expr(node)
 
     def __debug_print(self, msg: str) -> None:
@@ -53,7 +53,7 @@ class FuseTypeInfoPass(AstPass):
         )
         return None
 
-    def __set_type_sym_table_link(self, node: ast.AstSymbolNode) -> None:
+    def __set_type_sym_table_link(self, node: uni.AstSymbolNode) -> None:
         sym_type = node.expr_type
         if re.match(r"builtins.(list|dict|tuple)", sym_type):
             sym_type = re.sub(r"\[.*\]", "", sym_type)
@@ -63,7 +63,7 @@ class FuseTypeInfoPass(AstPass):
         if node.expr_type == "types.ModuleType" and node.sym:
             node.name_spec.type_sym_tab = self.__get_parent_symtab(node.sym_name)
 
-        partent_sym_table: Optional[SymbolTable] = self.__get_parent_symtab(sym_type)
+        partent_sym_table: Optional[UniScopeNode] = self.__get_parent_symtab(sym_type)
         if partent_sym_table is None:
             return
         typ = sym_type.split(".")
@@ -84,7 +84,7 @@ class FuseTypeInfoPass(AstPass):
         func: Callable[[FuseTypeInfoPass, T], None],
     ) -> Callable[[FuseTypeInfoPass, T], None]:
         def node_handler(self: FuseTypeInfoPass, node: T) -> None:
-            if not isinstance(node, ast.AstSymbolNode):
+            if not isinstance(node, uni.AstSymbolNode):
                 self.__debug_print(
                     f"Warning {node.__class__.__name__} is not an AstSymbolNode"
                 )
@@ -125,7 +125,7 @@ class FuseTypeInfoPass(AstPass):
                         self.__set_type_sym_table_link(node)
 
                 # Special handing for BuiltinType
-                elif isinstance(node, ast.BuiltinType):
+                elif isinstance(node, uni.BuiltinType):
                     func(self, node)  # type: ignore
                     self.__set_type_sym_table_link(node)
 
@@ -144,7 +144,7 @@ class FuseTypeInfoPass(AstPass):
 
         return node_handler
 
-    def __collect_type_from_symbol(self, node: ast.AstSymbolNode) -> None:
+    def __collect_type_from_symbol(self, node: uni.AstSymbolNode) -> None:
         mypy_node = node.gen.mypy_ast[0]
 
         if isinstance(mypy_node, MypyNodes.MemberExpr):
@@ -210,11 +210,11 @@ class FuseTypeInfoPass(AstPass):
                     f"{type(mypy_node)}"
                 )
 
-    def __check_builltin_symbol(self, node: ast.NameAtom) -> None:
-        if isinstance(node.parent, ast.AtomTrailer) and node is node.parent.right:
+    def __check_builltin_symbol(self, node: uni.NameAtom) -> None:
+        if isinstance(node.parent, uni.AtomTrailer) and node is node.parent.right:
             return
         builtins_sym_tab = None
-        for mod in self.prog.modules.values():
+        for mod in self.prog.mod.hub.values():
             if mod.name == "builtins":
                 builtins_sym_tab = mod.sym_tab
 
@@ -224,12 +224,12 @@ class FuseTypeInfoPass(AstPass):
             node.name_spec._sym = builtins_sym
 
     collection_types_map = {
-        ast.ListVal: "builtins.list",
-        ast.SetVal: "builtins.set",
-        ast.TupleVal: "builtins.tuple",
-        ast.DictVal: "builtins.dict",
-        ast.ListCompr: None,
-        ast.DictCompr: None,
+        uni.ListVal: "builtins.list",
+        uni.SetVal: "builtins.set",
+        uni.TupleVal: "builtins.tuple",
+        uni.DictVal: "builtins.dict",
+        uni.ListCompr: None,
+        uni.DictCompr: None,
     }
 
     # NOTE (Thakee): Since expression nodes are not AstSymbolNodes, I'm not decorating this with __handle_node
@@ -237,7 +237,7 @@ class FuseTypeInfoPass(AstPass):
     # valid nodes that can have symbols. At this point I'm leaving this like this and lemme know
     # otherwise.
     # NOTE (GAMAL): This will be fixed through the AstTypedNode
-    def enter_expr(self: FuseTypeInfoPass, node: ast.Expr) -> None:
+    def enter_expr(self: FuseTypeInfoPass, node: uni.Expr) -> None:
         """Enter an expression node."""
         if len(node.gen.mypy_ast) == 0:
             return
@@ -250,14 +250,14 @@ class FuseTypeInfoPass(AstPass):
 
         # Check if the expression is a data spatial expression
         # Support disconnectOp
-        if isinstance(node, ast.BinaryExpr):
-            if isinstance(node.op, ast.DisconnectOp):
+        if isinstance(node, uni.BinaryExpr):
+            if isinstance(node.op, uni.DisconnectOp):
                 node.expr_type = "builtins.bool"
                 return
 
             # Support spwan and connectOp
             elif (
-                isinstance(node.op, ast.ConnectOp)
+                isinstance(node.op, uni.ConnectOp)
                 or node.op.name == Tokens.KW_SPAWN.value
             ):
                 if node.gen.mypy_ast[-1] in self.node_type_hash:
@@ -269,8 +269,8 @@ class FuseTypeInfoPass(AstPass):
                     )
                 return
 
-        if isinstance(node, ast.EdgeRefTrailer) and any(
-            isinstance(k, ast.FilterCompr) for k in node.kid
+        if isinstance(node, uni.EdgeRefTrailer) and any(
+            isinstance(k, uni.FilterCompr) for k in node.kid
         ):
             if node.gen.mypy_ast[-1] in self.node_type_hash:
                 node.expr_type = (
@@ -290,7 +290,7 @@ class FuseTypeInfoPass(AstPass):
         # GenCompr is an instance of ListCompr but we don't handle it here.
         # so the isinstace (node, <classes>) doesn't work, I'm going with type(...) == ...
         if type(node) in self.collection_types_map:
-            assert isinstance(node, ast.AtomExpr)  # To make mypy happy.
+            assert isinstance(node, uni.AtomExpr)  # To make mypy happy.
             collection_type = self.collection_types_map[type(node)]
             if collection_type is not None:
                 node.name_spec.expr_type = collection_type
@@ -300,44 +300,44 @@ class FuseTypeInfoPass(AstPass):
                 )
 
     @__handle_node
-    def enter_name(self, node: ast.NameAtom) -> None:
+    def enter_name(self, node: uni.NameAtom) -> None:
         """Pass handler for name nodes."""
         self.__collect_type_from_symbol(node)
         if node.sym is None:
             self.__check_builltin_symbol(node)
 
     @__handle_node
-    def enter_module_path(self, node: ast.ModulePath) -> None:
+    def enter_module_path(self, node: uni.ModulePath) -> None:
         """Pass handler for ModulePath nodes."""
         self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
-    def enter_module_item(self, node: ast.ModuleItem) -> None:
+    def enter_module_item(self, node: uni.ModuleItem) -> None:
         """Pass handler for ModuleItem nodes."""
         self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
-    def enter_architype(self, node: ast.Architype) -> None:
+    def enter_architype(self, node: uni.Architype) -> None:
         """Pass handler for Architype nodes."""
         self.__collect_type_from_symbol(node)
 
     @__handle_node
-    def enter_arch_def(self, node: ast.ArchDef) -> None:
+    def enter_arch_def(self, node: uni.ArchDef) -> None:
         """Pass handler for ArchDef nodes."""
         self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
-    def enter_enum(self, node: ast.Enum) -> None:
+    def enter_enum(self, node: uni.Enum) -> None:
         """Pass handler for Enum nodes."""
         self.__collect_type_from_symbol(node)
 
     @__handle_node
-    def enter_enum_def(self, node: ast.EnumDef) -> None:
+    def enter_enum_def(self, node: uni.EnumDef) -> None:
         """Pass handler for EnumDef nodes."""
         self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
-    def enter_ability(self, node: ast.Ability) -> None:
+    def enter_ability(self, node: uni.Ability) -> None:
         """Pass handler for Ability nodes."""
         if isinstance(node.gen.mypy_ast[0], MypyNodes.FuncDef):
             node.name_spec.expr_type = (
@@ -351,7 +351,7 @@ class FuseTypeInfoPass(AstPass):
             )
 
     @__handle_node
-    def enter_ability_def(self, node: ast.AbilityDef) -> None:
+    def enter_ability_def(self, node: uni.AbilityDef) -> None:
         """Pass handler for AbilityDef nodes."""
         if isinstance(node.gen.mypy_ast[0], MypyNodes.FuncDef):
             node.name_spec.expr_type = (
@@ -365,7 +365,7 @@ class FuseTypeInfoPass(AstPass):
             )
 
     @__handle_node
-    def enter_param_var(self, node: ast.ParamVar) -> None:
+    def enter_param_var(self, node: uni.ParamVar) -> None:
         """Pass handler for ParamVar nodes."""
         if isinstance(node.gen.mypy_ast[0], MypyNodes.Argument):
             mypy_node: MypyNodes.Argument = node.gen.mypy_ast[0]
@@ -381,7 +381,7 @@ class FuseTypeInfoPass(AstPass):
 
     # TODO: support all lhs if needed
     @__handle_node
-    def enter_has_var(self, node: ast.HasVar) -> None:
+    def enter_has_var(self, node: uni.HasVar) -> None:
         """Pass handler for HasVar nodes."""
         mypy_node = node.gen.mypy_ast[0]
         if isinstance(mypy_node, MypyNodes.AssignmentStmt):
@@ -399,23 +399,23 @@ class FuseTypeInfoPass(AstPass):
                 "Getting type of 'HasVar' is only supported with AssignmentStmt"
             )
 
-    def exit_has_var(self, node: ast.HasVar) -> None:
+    def exit_has_var(self, node: uni.HasVar) -> None:
         """Pass handler for HasVar nodes."""
         node.name_spec.expr_type = node.name.expr_type
         node.name_spec.type_sym_tab = node.name.type_sym_tab
 
     @__handle_node
-    def enter_multi_string(self, node: ast.MultiString) -> None:
+    def enter_multi_string(self, node: uni.MultiString) -> None:
         """Pass handler for MultiString nodes."""
         node.name_spec.expr_type = "builtins.str"
 
     @__handle_node
-    def enter_f_string(self, node: ast.FString) -> None:
+    def enter_f_string(self, node: uni.FString) -> None:
         """Pass handler for FString nodes."""
         self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
-    def enter_arch_ref(self, node: ast.ArchRef) -> None:
+    def enter_arch_ref(self, node: uni.ArchRef) -> None:
         """Pass handler for ArchRef nodes."""
         if isinstance(node.gen.mypy_ast[0], MypyNodes.ClassDef):
             mypy_node: MypyNodes.ClassDef = node.gen.mypy_ast[0]
@@ -433,7 +433,7 @@ class FuseTypeInfoPass(AstPass):
             )
 
     @__handle_node
-    def enter_special_var_ref(self, node: ast.SpecialVarRef) -> None:
+    def enter_special_var_ref(self, node: uni.SpecialVarRef) -> None:
         """Pass handler for SpecialVarRef nodes."""
         if node.py_resolve_name() == Constants.ROOT:
             if node.gen.mypy_ast[-1] in self.node_type_hash:
@@ -445,42 +445,42 @@ class FuseTypeInfoPass(AstPass):
             self.enter_name(node)
 
     @__handle_node
-    def enter_edge_op_ref(self, node: ast.EdgeOpRef) -> None:
+    def enter_edge_op_ref(self, node: uni.EdgeOpRef) -> None:
         """Pass handler for EdgeOpRef nodes."""
         self.__collect_type_from_symbol(node)
 
     @__handle_node
-    def enter_filter_compr(self, node: ast.FilterCompr) -> None:
+    def enter_filter_compr(self, node: uni.FilterCompr) -> None:
         """Pass handler for FilterCompr nodes."""
         self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
-    def enter_assign_compr(self, node: ast.AssignCompr) -> None:
+    def enter_assign_compr(self, node: uni.AssignCompr) -> None:
         """Pass handler for AssignCompr nodes."""
         self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
-    def enter_int(self, node: ast.Int) -> None:
+    def enter_int(self, node: uni.Int) -> None:
         """Pass handler for Int nodes."""
         node.name_spec.expr_type = "builtins.int"
 
     @__handle_node
-    def enter_float(self, node: ast.Float) -> None:
+    def enter_float(self, node: uni.Float) -> None:
         """Pass handler for Float nodes."""
         node.name_spec.expr_type = "builtins.float"
 
     @__handle_node
-    def enter_string(self, node: ast.String) -> None:
+    def enter_string(self, node: uni.String) -> None:
         """Pass handler for String nodes."""
         node.name_spec.expr_type = "builtins.str"
 
     @__handle_node
-    def enter_bool(self, node: ast.Bool) -> None:
+    def enter_bool(self, node: uni.Bool) -> None:
         """Pass handler for Bool nodes."""
         node.name_spec.expr_type = "builtins.bool"
 
     @__handle_node
-    def enter_builtin_type(self, node: ast.BuiltinType) -> None:
+    def enter_builtin_type(self, node: uni.BuiltinType) -> None:
         """Pass handler for BuiltinType nodes."""
         self.__check_builltin_symbol(node)
         node.name_spec.expr_type = f"builtins.{node.sym_name}"
@@ -530,19 +530,19 @@ class FuseTypeInfoPass(AstPass):
         """Get type info from mypy type TypeType."""
         return str(mypy_type.name)
 
-    def exit_assignment(self, node: ast.Assignment) -> None:
+    def exit_assignment(self, node: uni.Assignment) -> None:
         """Add new symbols in the symbol table in case of self."""
         # This will fix adding new items to the class through self
         # self.x = 5  # will add x to self datatype symbol table
         for target in node.target.items:
             if (
-                isinstance(target, ast.AtomTrailer)
-                and isinstance(target.target, ast.SpecialVarRef)
+                isinstance(target, uni.AtomTrailer)
+                and isinstance(target.target, uni.SpecialVarRef)
                 and target.target.sym_name == "self"
             ):
                 self_obj = target.target
                 right_obj = target.right
-                if self_obj.type_sym_tab and isinstance(right_obj, ast.AstSymbolNode):
+                if self_obj.type_sym_tab and isinstance(right_obj, uni.AstSymbolNode):
                     self_obj.type_sym_tab.def_insert(right_obj)
 
         # Support adding the correct type symbol table in case of ModuleType
@@ -554,26 +554,26 @@ class FuseTypeInfoPass(AstPass):
         #   - a.b.c = val                    <-- will be fixed after thakee's PR
         for target in node.target.items:
             if (
-                isinstance(target, ast.Name)
+                isinstance(target, uni.Name)
                 and target.expr_type == "types.ModuleType"
-                and isinstance(node.value, ast.Name)
+                and isinstance(node.value, uni.Name)
             ):
                 target.type_sym_tab = node.value.type_sym_tab
 
-    def expand_atom_trailer(self, node_list: list[ast.AstNode]) -> list[ast.AstNode]:
-        """Expand the atom trailer object in a list of AstNode."""
-        out: list[ast.AstNode] = []
+    def expand_atom_trailer(self, node_list: list[uni.UniNode]) -> list[uni.UniNode]:
+        """Expand the atom trailer object in a list of UniNode."""
+        out: list[uni.UniNode] = []
         for i in node_list:
-            if isinstance(i, ast.AtomTrailer):
+            if isinstance(i, uni.AtomTrailer):
                 out.append(i.target)
                 out.append(i.right)
-            elif isinstance(i, ast.FuncCall):
+            elif isinstance(i, uni.FuncCall):
                 out.append(i.target)
             else:
                 out.append(i)
         return out
 
-    def exit_atom_trailer(self, node: ast.AtomTrailer) -> None:
+    def exit_atom_trailer(self, node: uni.AtomTrailer) -> None:
         """Adding symbol links to AtomTrailer right nodes."""
         # This will fix adding the symbol links to nodes in atom trailer
         # self.x.z = 5  # will add symbol links to both x and z
@@ -586,7 +586,7 @@ class FuseTypeInfoPass(AstPass):
         atom_trailer_unwind = self.expand_atom_trailer([node])
         iteration_count = 0
         while any(
-            isinstance(i, (ast.AtomTrailer, ast.FuncCall)) for i in atom_trailer_unwind
+            isinstance(i, (uni.AtomTrailer, uni.FuncCall)) for i in atom_trailer_unwind
         ):
             atom_trailer_unwind = self.expand_atom_trailer(atom_trailer_unwind)
             iteration_count += 1
@@ -597,10 +597,10 @@ class FuseTypeInfoPass(AstPass):
             left = atom_trailer_unwind[i - 1]
             right = atom_trailer_unwind[i]
 
-            assert isinstance(left, (ast.Expr, ast.AstSymbolNode))
-            assert isinstance(right, ast.AstSymbolNode)
+            assert isinstance(left, (uni.Expr, uni.AstSymbolNode))
+            assert isinstance(right, uni.AstSymbolNode)
 
-            if isinstance(right, ast.IndexSlice):
+            if isinstance(right, uni.IndexSlice):
                 # In case of index slice, left won't have a symbol table as it's a list/dict/set
                 node_type: str = ""
 
@@ -611,7 +611,7 @@ class FuseTypeInfoPass(AstPass):
                     # right index slice is a range then it's type is the same as left
                     if right.is_range:
                         right.expr_type = left.expr_type
-                        right.parent_of_type(ast.AtomTrailer).expr_type = node_type
+                        right.parent_of_type(uni.AtomTrailer).expr_type = node_type
                         continue
 
                 # left type is a dictionary
@@ -625,19 +625,21 @@ class FuseTypeInfoPass(AstPass):
                     continue
 
                 right.expr_type = node_type
-                right.parent_of_type(ast.AtomTrailer).expr_type = node_type
+                right.parent_of_type(uni.AtomTrailer).expr_type = node_type
 
                 if re.match(r"builtins.(list|dict|tuple)", node_type):
                     node_type = re.sub(r"\[.*\]", "", node_type)
 
                 # Getting the correct symbol table and link it
-                type_symtab: Optional[SymbolTable] = self.__get_parent_symtab(node_type)
+                type_symtab: Optional[UniScopeNode] = self.__get_parent_symtab(
+                    node_type
+                )
 
                 if type_symtab is None:
                     return
 
                 for j in node_type.split("."):
-                    if j == type_symtab.name:
+                    if j == type_symtab.nix_name:
                         continue
                     type_symtab = type_symtab.find_scope(j)
                     if type_symtab is None:
@@ -647,8 +649,8 @@ class FuseTypeInfoPass(AstPass):
             else:
                 # Fix the symbolTable linking in case of type annotations
                 # TODO: This will not work if an AtomTrailer was used as type annotations
-                if left.type_sym_tab is None and isinstance(node.parent, ast.SubTag):
-                    assert isinstance(left, ast.AstSymbolNode)
+                if left.type_sym_tab is None and isinstance(node.parent, uni.SubTag):
+                    assert isinstance(left, uni.AstSymbolNode)
                     left.name_spec.type_sym_tab = self.ir_out.sym_tab.find_scope(
                         left.sym_name
                     )
@@ -658,10 +660,10 @@ class FuseTypeInfoPass(AstPass):
                     if right.name_spec.sym:
                         right.name_spec.sym.add_use(right.name_spec)
 
-    def __get_parent_symtab(self, typ: str) -> Optional[SymbolTable]:
-        for mod_ast in self.prog.modules.values():
+    def __get_parent_symtab(self, typ: str) -> Optional[UniScopeNode]:
+        for mod_ast in self.prog.mod.hub.values():
             mod_table = mod_ast.sym_tab
-            if mod_table.name == typ.split(".")[0]:
+            if mod_table.nix_name == typ.split(".")[0]:
                 return mod_table
 
         self.__debug_print(f"Couldn't get a symbol for {typ}")
