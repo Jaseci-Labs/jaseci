@@ -680,8 +680,8 @@ class UniBasicBlock(UniNode):
     def __init__(self) -> None:
         """Initialize control flow node."""
         self.bb_start: bool = False
-        self.control_in_bbs: Optional[list[UniBasicBlock]] = []
-        self.control_out_bbs: Optional[list[UniBasicBlock]] = []
+        self.control_in_bbs: list[UniBasicBlock] = []
+        self.control_out_bbs: list[UniBasicBlock] = []
         self.bb_stmts: list[UniBasicBlock] = []
 
 
