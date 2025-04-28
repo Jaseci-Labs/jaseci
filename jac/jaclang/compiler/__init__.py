@@ -13,18 +13,18 @@ from jaclang.vendor.lark.tools import standalone
 def generate_static_parser(force: bool = False) -> None:
     """Generate static parser."""
     cur_dir = os.path.dirname(__file__)
-    if force or not os.path.exists(os.path.join(cur_dir, "generated", "jac_parser.py")):
-        if os.path.exists(os.path.join(cur_dir, "generated")):
-            shutil.rmtree(os.path.join(cur_dir, "generated"))
-        os.makedirs(os.path.join(cur_dir, "generated"), exist_ok=True)
-        with open(os.path.join(cur_dir, "generated", "__init__.py"), "w"):
+    if force or not os.path.exists(os.path.join(cur_dir, "larkparse", "jac_parser.py")):
+        if os.path.exists(os.path.join(cur_dir, "larkparse")):
+            shutil.rmtree(os.path.join(cur_dir, "larkparse"))
+        os.makedirs(os.path.join(cur_dir, "larkparse"), exist_ok=True)
+        with open(os.path.join(cur_dir, "larkparse", "__init__.py"), "w"):
             pass
         save_argv = sys.argv
         sys.argv = [
             "lark",
             os.path.join(cur_dir, "jac.lark"),
             "-o",
-            os.path.join(cur_dir, "generated", "jac_parser.py"),
+            os.path.join(cur_dir, "larkparse", "jac_parser.py"),
             "-c",
         ]
         standalone.main()
@@ -36,10 +36,10 @@ def generate_static_parser(force: bool = False) -> None:
 
 
 try:
-    from jaclang.compiler.generated import jac_parser as jac_lark
+    from jaclang.compiler.larkparse import jac_parser as jac_lark
 except ModuleNotFoundError:
     generate_static_parser(force=True)
-    from jaclang.compiler.generated import jac_parser as jac_lark
+    from jaclang.compiler.larkparse import jac_parser as jac_lark
 
 jac_lark.logger.setLevel(logging.DEBUG)
 contextlib.suppress(ModuleNotFoundError)
