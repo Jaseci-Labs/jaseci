@@ -60,7 +60,7 @@ class JaseciContext(ExecutionContext):
     root: NodeAnchor
     entry_node: NodeAnchor
     base: ExecutionContext | None
-    connection: Request | WebSocket
+    connection: Request | WebSocket | None
 
     def close(self) -> None:
         """Clean up context."""
@@ -68,7 +68,7 @@ class JaseciContext(ExecutionContext):
 
     @staticmethod
     def create(  # type: ignore[override]
-        connection: Request | WebSocket, entry: NodeAnchor | None = None
+        connection: Request | WebSocket | None, entry: NodeAnchor | None = None
     ) -> "JaseciContext":
         """Create JacContext."""
         ctx = JaseciContext(JacMachineState())
@@ -89,7 +89,9 @@ class JaseciContext(ExecutionContext):
 
         ctx.system_root = system_root
 
-        if _root := getattr(connection, "_root", None):
+        if connection is None:
+            ctx.root = system_root
+        elif _root := getattr(connection, "_root", None):
             ctx.root = _root
             ctx.mem.set(_root.id, _root)
         else:

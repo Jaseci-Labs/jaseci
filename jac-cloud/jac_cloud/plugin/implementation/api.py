@@ -36,6 +36,7 @@ from pydantic import BaseModel, Field as pyField, ValidationError, create_model
 
 from starlette.datastructures import UploadFile as BaseUploadFile
 
+from .scheduler import scheduled_job
 from .websocket import websocket_events
 from ...core.architype import NodeAnchor, WalkerAnchor, WalkerArchitype
 from ...core.context import ContextResponse, JaseciContext
@@ -87,6 +88,7 @@ class DefaultSpecs:
     deprecated: bool | None = None
     name: str | None = None
     openapi_extra: dict[str, Any] | None = None
+    schedule: dict[str, Any] | None = None
 
 
 def get_specs(cls: type) -> Type["DefaultSpecs"] | None:
@@ -124,7 +126,13 @@ def gen_model_field(cls: type, field: Field, is_file: bool = False) -> tuple[typ
 
 def populate_apis(cls: Type[WalkerArchitype]) -> None:
     """Generate FastAPI endpoint based on WalkerArchitype class."""
-    if (specs := get_specs(cls)) and not specs.private:
+    if not (specs := get_specs(cls)):
+        return
+
+    if schedule := specs.schedule:
+        scheduled_job(**schedule)(cls)
+
+    if not specs.private:
         path: str = specs.path or ""
         methods: list = specs.methods or []
         as_query: str | list[str] = specs.as_query or []
@@ -350,6 +358,7 @@ def specs(
     deprecated: bool | None = None,
     name: str | None = None,
     openapi_extra: dict[str, Any] | None = None,
+    schedule: dict[str, Any] | None = None,
 ) -> Callable:
     """Walker Decorator."""
 
@@ -372,6 +381,7 @@ def specs(
             _deprecated = deprecated
             _name = name
             _openapi_extra = openapi_extra
+            _schedule = schedule
 
             class __specs__(DefaultSpecs):  # noqa: N801
                 path: str = _path
@@ -391,6 +401,7 @@ def specs(
                 deprecated: bool | None = _deprecated
                 name: str | None = _name
                 openapi_extra: dict[str, Any] | None = _openapi_extra
+                schedule: dict[str, Any] | None = _schedule
 
             cls.__specs__ = __specs__  # type: ignore[attr-defined]
 

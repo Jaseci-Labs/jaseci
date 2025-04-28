@@ -1,6 +1,11 @@
 """JacLang Jaseci Unit Test."""
 
+from os import getenv
 from pathlib import Path
+from time import sleep
+from typing import cast
+
+from bson import ObjectId
 
 from httpx import get, post
 
@@ -16,13 +21,16 @@ class SimpleGraphTest(JacCloudTest):
     def setUp(self) -> None:
         """Override setUp."""
         self.directory = Path(__file__).parent
-        self.run_server(f"{self.directory}/simple_graph.jac")
+        self.run_server(
+            f"{self.directory}/simple_graph.jac", envs={"SHOW_ENDPOINT_RETURNS": "true"}
+        )
 
         Collection.__client__ = None
         Collection.__database__ = None
         self.client = Collection.get_client()
         self.q_node = Collection.get_collection("node")
         self.q_edge = Collection.get_collection("edge")
+        self.q_walker = Collection.get_collection("walker")
 
     def tearDown(self) -> None:
         """Override tearDown."""
@@ -34,7 +42,6 @@ class SimpleGraphTest(JacCloudTest):
         res = get(f"{self.host}/openapi.yaml", timeout=1)
         res.raise_for_status()
 
-        self.run_server(f"{Path(__file__).parent}/simple_graph.jac")
         with open(f"{self.directory}/openapi_specs.yaml") as file:
             self.assertEqual(safe_load(file), safe_load(res.text))
 
@@ -889,6 +896,105 @@ class SimpleGraphTest(JacCloudTest):
             res,
         )
 
+    def trigger_task_creation_and_scheduled_walker(self) -> None:
+        """Test task creation."""
+        res = self.post_api("get_or_create_counter")
+
+        self.assertEqual(200, res["status"])
+        self.assertEqual([None], res["returns"])
+        self.assertEqual(1, len(res["reports"]))
+
+        report = res["reports"][0]
+
+        self.assertEqual({"val": 0}, report["context"])
+
+        task_counter = report["id"]
+
+        if getenv("DATABASE_HOST") and getenv("TASK_CONSUMER_CRON_SECOND"):
+            for i in range(1, 4):
+                res = self.post_api("trigger_counter_task")
+
+                self.assertEqual(200, res["status"])
+                self.assertEqual([None], res["returns"])
+                self.assertEqual(1, len(res["reports"]))
+                self.assertTrue(res["reports"][0].startswith("w:increment_counter:"))
+
+                sleep(1)
+
+                res = self.post_api(f"get_or_create_counter/{task_counter}")
+
+                self.assertEqual(200, res["status"])
+                self.assertEqual([None], res["returns"])
+                self.assertEqual(1, len(res["reports"]))
+
+                report = res["reports"][0]
+
+                self.assertEqual({"val": i}, report["context"])
+
+                sleep(1)
+
+                walker = self.q_walker.find_one(
+                    {"name": "walker_cron"}, sort=[("_id", -1)]
+                )
+
+                self.assertIsNotNone(walker)
+
+                cast(dict, walker).pop("_id")
+
+                self.assertEqual(
+                    {
+                        "name": "walker_cron",
+                        "root": ObjectId("000000000000000000000000"),
+                        "access": {"all": "NO_ACCESS", "roots": {"anchors": {}}},
+                        "architype": {
+                            "arg1": 1,
+                            "arg2": "2",
+                            "kwarg1": 30,
+                            "kwarg2": "40",
+                        },
+                        "schedule": {
+                            "status": "COMPLETED",
+                            "node_id": None,
+                            "execute_date": None,
+                            "executed_date": None,
+                            "http_status": 200,
+                            "returns": [None],
+                            "reports": [i],
+                            "custom": None,
+                            "error": None,
+                        },
+                    },
+                    walker,
+                )
+
+        else:
+            walker = self.q_walker.find_one({"name": "walker_cron"}, sort=[("_id", -1)])
+
+            self.assertIsNotNone(walker)
+
+            cast(dict, walker).pop("_id")
+
+            self.assertEqual(
+                {
+                    "name": "walker_cron",
+                    "root": ObjectId("000000000000000000000000"),
+                    "access": {"all": "NO_ACCESS", "roots": {"anchors": {}}},
+                    "architype": {"arg1": 1, "arg2": "2", "kwarg1": 30, "kwarg2": "40"},
+                    "schedule": {
+                        "status": "COMPLETED",
+                        "node_id": None,
+                        "execute_date": None,
+                        "executed_date": None,
+                        "http_status": 200,
+                        "returns": [None],
+                        "reports": [None],
+                        "custom": None,
+                        "error": None,
+                    },
+                },
+                walker,
+            )
+
     def test_all_features(self) -> None:
         """Test Full Features."""
         self.trigger_openapi_specs_test()
@@ -1017,3 +1123,9 @@ class SimpleGraphTest(JacCloudTest):
         ###################################################
 
         self.trigger_nested_request_payload_test()
+
+        ##################################################
+        #              TASK CREATION TESTS               #
+        ##################################################
+
+        self.trigger_task_creation_and_scheduled_walker()
