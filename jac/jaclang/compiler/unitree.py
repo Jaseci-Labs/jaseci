@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast as ast3
 import builtins
 import os
+import site
 from copy import copy
 from dataclasses import dataclass
 from hashlib import md5
@@ -1355,33 +1356,43 @@ class ModulePath(AstSymbolNode):
 
     def resolve_relative_path(self, target_item: Optional[str] = None) -> str:
         """Convert an import target string into a relative file path."""
-        target = self.dot_path_str
-        if target_item:
-            target += f".{target_item}"
+        # Build the target module name
+        target = self.dot_path_str + (f".{target_item}" if target_item else "")
+        site_packages = site.getsitepackages()[0]
+
+        # Split the target into parts and determine how many levels to traverse.
+        parts = target.split(".")
+        traversal_levels = max(self.level - 1, 0)
+        actual_parts = parts[traversal_levels:]
+
+        def candidate_from(base: str) -> str:
+            candidate = os.path.join(base, *actual_parts)
+            candidate_jac = candidate + ".jac"
+            return candidate_jac if os.path.exists(candidate_jac) else candidate
+
+        # 1. Try resolving using the first site-packages directory.
+        candidate = candidate_from(site_packages)
+        if os.path.exists(candidate):
+            return candidate
+
+        # 2. Adjust the base path by moving up for each traversal level.
         base_path = (
             os.getenv("JACPATH") or os.path.dirname(self.loc.mod_path) or os.getcwd()
         )
-        parts = target.split(".")
-        traversal_levels = self.level - 1 if self.level > 0 else 0
-        actual_parts = parts[traversal_levels:]
         for _ in range(traversal_levels):
             base_path = os.path.dirname(base_path)
-        relative_path = os.path.join(base_path, *actual_parts)
-        relative_path = (
-            relative_path + ".jac"
-            if os.path.exists(relative_path + ".jac")
-            else relative_path
-        )
-        jacpath = os.getenv("JACPATH")
-        if not os.path.exists(relative_path) and jacpath:
-            name_to_find = actual_parts[-1] + ".jac"
+        candidate = candidate_from(base_path)
 
-            # Walk through the single path in JACPATH
+        # 3. If candidate doesn't exist and JACPATH is provided, search recursively.
+        jacpath = os.getenv("JACPATH")
+        if not os.path.exists(candidate) and jacpath:
+            target_filename = actual_parts[-1] + ".jac"
             for root, _, files in os.walk(jacpath):
-                if name_to_find in files:
-                    relative_path = os.path.join(root, name_to_find)
+                if target_filename in files:
+                    candidate = os.path.join(root, target_filename)
                     break
-        return relative_path
+
+        return candidate
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize module path node."""
