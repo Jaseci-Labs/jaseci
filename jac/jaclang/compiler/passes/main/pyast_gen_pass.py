@@ -136,6 +136,26 @@ class PyastGenPass(UniPass):
         )
         self.already_added.append(self.needs_enum.__name__)
 
+    def needs_jacgo(self) -> None:
+        """Check if threading is needed."""
+        if self.needs_jacgo.__name__ in self.already_added:
+            return
+        self.preamble.append(
+            self.sync(
+                ast3.ImportFrom(
+                    module="jaclang.runtimelib.jacgo",
+                    names=[
+                        self.sync(ast3.alias(name="waitgroup", asname=None)),
+                        # self.sync(ast3.alias(name="Task", asname=None)),
+                        # self.sync(ast3.alias(name="Group", asname=None)),
+                    ],
+                    level=0,
+                ),
+                jac_node=self.ir_out,
+            )
+        )
+        self.already_added.append(self.needs_jacgo.__name__)
+
     def flatten(self, body: list[T | list[T] | None]) -> list[T]:
         """Flatten ast list."""
         new_body = []
@@ -1966,7 +1986,10 @@ class PyastGenPass(UniPass):
         vis_type: Optional[SubNodeList[AtomType]],
         target: ExprType,
         else_body: Optional[ElseStmt],
+        is_jacgo: bool,
         """
+        if node.is_jacgo:
+            self.needs_jacgo()
         loc = self.sync(
             ast3.Name(id="self", ctx=ast3.Load())
             if node.from_walker
@@ -1976,7 +1999,14 @@ class PyastGenPass(UniPass):
         visit_call = self.sync(
             ast3.Call(
                 func=self.jaclib_obj("visit"),
-                args=cast(list[ast3.expr], [loc, node.target.gen.py_ast[0]]),
+                args=cast(
+                    list[ast3.expr],
+                    [
+                        loc,
+                        node.target.gen.py_ast[0],
+                        self.sync(ast3.Constant(value=node.is_jacgo)),
+                    ],
+                ),
                 keywords=[],
             )
         )

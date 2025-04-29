@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast as ast3
+import copy
 import fnmatch
 import html
 import inspect
@@ -31,7 +32,6 @@ from typing import (
 )
 from uuid import UUID
 
-
 from jaclang.compiler import unitree as ast
 from jaclang.compiler.constant import EdgeDir, colors
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
@@ -54,6 +54,7 @@ from jaclang.runtimelib.constructs import (
     Root,
     WalkerArchitype,
 )
+from jaclang.runtimelib.jacgo import jacroutine
 from jaclang.runtimelib.machinestate import ExecutionContext, JacMachineState
 from jaclang.runtimelib.memory import Shelf, ShelfStorage
 from jaclang.runtimelib.utils import (
@@ -321,8 +322,10 @@ class JacWalker:
             | NodeArchitype
             | EdgeArchitype
         ),
+        is_jacgo: bool = False,
     ) -> bool:  # noqa: ANN401
         """Jac's visit stmt feature."""
+        nodes = []
         if isinstance(walker, WalkerArchitype):
             """Walker visits node."""
             wanch = walker.__jac__
@@ -332,12 +335,16 @@ class JacWalker:
             ):
                 if anchor not in wanch.ignores:
                     if isinstance(anchor, NodeAnchor):
-                        wanch.next.append(anchor)
+                        nodes.append(anchor)
                     elif isinstance(anchor, EdgeAnchor):
                         if target := anchor.target:
-                            wanch.next.append(target)
+                            nodes.append(target)
                         else:
                             raise ValueError("Edge has no target.")
+            if nodes and is_jacgo:
+                wanch.next.append(nodes)  # type: ignore
+            elif nodes:
+                wanch.next.extend(nodes)
             return len(wanch.next) > before_len
         else:
             raise TypeError("Invalid walker object")
@@ -408,7 +415,11 @@ class JacWalker:
                 return warch
 
         while len(walker.next):
-            if current_node := walker.next.pop(0).architype:
+
+            def run_spawn(
+                current_node: NodeArchitype,
+                warch: WalkerArchitype,
+            ) -> WalkerArchitype:
                 # walker entry with
                 for i in warch._jac_entry_funcs_:
                     if (
@@ -466,6 +477,15 @@ class JacWalker:
                         i.func(warch, current_node)
                     if walker.disengaged:
                         return warch
+
+                return warch
+
+            current = walker.next.pop(0)
+            if isinstance(current, list):
+                for i in current:
+                    jacroutine(func=run_spawn, args=(i.architype, copy.copy(warch)))
+            else:
+                run_spawn(current.architype, warch)
         # walker exit
         for i in warch._jac_exit_funcs_:
             if not i.trigger:
