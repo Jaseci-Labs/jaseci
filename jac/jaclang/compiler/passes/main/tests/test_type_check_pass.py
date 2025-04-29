@@ -80,7 +80,7 @@ class MypyTypeCheckPassTests(TestCase):
 
         self.assertRegex(
             out,
-            r"128:5 - 128:25.*BinaryExpr \- Type\: jaclang.runtimelib.architype.WalkerArchitype",
+            r"128:5 - 128:25.*SpawnExpr \- Type\: jaclang.runtimelib.architype.WalkerArchitype",
         )
 
         self.assertRegex(

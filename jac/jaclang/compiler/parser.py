@@ -160,6 +160,31 @@ class JacParser(Transform[uni.Source, uni.Module]):
             if len(kid) > 1:
                 if (
                     isinstance(kid[0], uni.Expr)
+                    and (isinstance(kid[1], uni.Token) and kid[1].name == Tok.KW_JACGO)
+                    and (isinstance(kid[2], uni.Token) and kid[2].name == Tok.KW_SPAWN)
+                    and isinstance(kid[3], uni.Expr)
+                ):
+                    return uni.SpawnExpr(
+                        left=kid[0],
+                        is_jacgo=True,
+                        op=kid[2],
+                        right=kid[3],
+                        kid=kid,
+                    )
+                elif (
+                    isinstance(kid[0], uni.Expr)
+                    and (isinstance(kid[1], uni.Token) and kid[1].name == Tok.KW_SPAWN)
+                    and isinstance(kid[2], uni.Expr)
+                ):
+                    return uni.SpawnExpr(
+                        left=kid[0],
+                        is_jacgo=False,
+                        op=kid[1],
+                        right=kid[2],
+                        kid=kid,
+                    )
+                elif (
+                    isinstance(kid[0], uni.Expr)
                     and isinstance(
                         kid[1],
                         (uni.Token, uni.DisconnectOp, uni.ConnectOp),

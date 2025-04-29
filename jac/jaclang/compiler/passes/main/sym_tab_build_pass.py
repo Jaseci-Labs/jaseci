@@ -718,6 +718,15 @@ class SymTabBuildPass(UniPass):
         op: Token | DisconnectOp | ConnectOp,
         """
 
+    def enter_spawn_expr(self, node: uni.SpawnExpr) -> None:
+        """Sub objects.
+
+        left: ExprType,
+        right: ExprType,
+        op: Token,
+        is_jacgo: bool,
+        """
+
     def enter_compare_expr(self, node: uni.CompareExpr) -> None:
         """Sub objects.
 
