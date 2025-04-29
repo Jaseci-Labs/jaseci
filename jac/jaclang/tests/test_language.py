@@ -1388,6 +1388,18 @@ class JacLanguageTests(TestCase):
             "[Root(), A(val=20)]", stdout_value[3]
         )  # Remove after dropping deprecated syntax support
 
+    def test_node_del(self) -> None:
+        """Test complex nested impls."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(self.mach, "node_del", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("0 : [2, 3, 4, 5, 6, 7, 8, 9, 10]", stdout_value[0])
+        self.assertIn("7, 8 : [2, 3, 4, 5, 6, 7, 9]", stdout_value[1])
+        self.assertIn("before delete : Inner(c=[1, 2, 3], d=4)", stdout_value[2])
+        self.assertIn("after delete : Inner(c=[1, 3], d=4)", stdout_value[3])
+
     # Helper method to create files within tests
     def create_temp_jac_file(
         self, content: str, dir_path: str, filename: str = "test_mod.jac"

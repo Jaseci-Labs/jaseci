@@ -458,26 +458,29 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
-    def destroy(obj: Architype | Anchor | BaseAnchor) -> None:
+    def destroy(
+        objs: Architype | Anchor | BaseAnchor | list[Architype | Anchor | BaseAnchor],
+    ) -> None:
         """Destroy object."""
         if not FastAPI.is_enabled():
-            return JacMachineImpl.destroy(obj=obj)  # type:ignore[arg-type]
+            return JacMachineImpl.destroy(objs=objs)  # type:ignore[arg-type]
+        obj_list = objs if isinstance(objs, list) else [objs]
+        for obj in obj_list:
+            anchor = obj.__jac__ if isinstance(obj, Architype) else obj
 
-        anchor = obj.__jac__ if isinstance(obj, Architype) else obj
+            if (
+                isinstance(anchor, BaseAnchor)
+                and anchor.state.deleted is None
+                and Jac.check_write_access(anchor)  # type: ignore[arg-type]
+            ):
+                anchor.state.deleted = False
+                match anchor:
+                    case NodeAnchor():
+                        for edge in anchor.edges:
+                            Jac.destroy(edge)
+                    case EdgeAnchor():
+                        Jac.detach(anchor)
+                    case _:
+                        pass
 
-        if (
-            isinstance(anchor, BaseAnchor)
-            and anchor.state.deleted is None
-            and Jac.check_write_access(anchor)  # type: ignore[arg-type]
-        ):
-            anchor.state.deleted = False
-            match anchor:
-                case NodeAnchor():
-                    for edge in anchor.edges:
-                        Jac.destroy(edge)
-                case EdgeAnchor():
-                    Jac.detach(anchor)
-                case _:
-                    pass
-
-            Jac.get_context().mem.remove(anchor.id)
+                Jac.get_context().mem.remove(anchor.id)

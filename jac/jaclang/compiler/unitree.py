@@ -2739,6 +2739,15 @@ class DeleteStmt(CodeBlockStmt):
         self.target = target
         UniNode.__init__(self, kid=kid)
 
+    @property
+    def py_ast_targets(self) -> list[ast3.AST]:
+        """Get Python AST targets (without setting ctx)."""
+        return (
+            self.target.values.gen.py_ast
+            if isinstance(self.target, TupleVal) and self.target.values
+            else self.target.gen.py_ast
+        )
+
     def normalize(self, deep: bool = False) -> bool:
         """Normalize delete statement node."""
         res = True
