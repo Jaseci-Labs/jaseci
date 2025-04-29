@@ -1875,19 +1875,19 @@ class PyastGenPass(UniPass):
             return result
 
         destroy_expr = ast3.Expr(
-                value=self.sync(
-                    ast3.Call(
-                        func=self.jaclib_obj("destroy"),
-                        args=cast(list[ast3.expr], set_ctx(node.py_ast_targets, ast3.Load)),
-                        keywords=[],
-                    )
-                )
-        )
-        delete_stmt = self.sync(
-                ast3.Delete(
-                    targets=cast(list[ast3.expr], set_ctx(node.py_ast_targets, ast3.Del))
+            value=self.sync(
+                ast3.Call(
+                    func=self.jaclib_obj("destroy"),
+                    args=cast(list[ast3.expr], set_ctx(node.py_ast_targets, ast3.Load)),
+                    keywords=[],
                 )
             )
+        )
+        delete_stmt = self.sync(
+            ast3.Delete(
+                targets=cast(list[ast3.expr], set_ctx(node.py_ast_targets, ast3.Del))
+            )
+        )
         node.gen.py_ast = [self.sync(destroy_expr), self.sync(delete_stmt)]
 
     def exit_report_stmt(self, node: uni.ReportStmt) -> None:

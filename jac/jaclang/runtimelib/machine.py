@@ -1094,7 +1094,7 @@ class JacBasics:
         if JacMachine.check_write_access(anchor):
             match anchor:
                 case NodeAnchor():
-                    for edge in anchor.edges:
+                    for edge in anchor.edges[:]:
                         JacMachine.destroy(edge)
                 case EdgeAnchor():
                     JacMachine.detach(anchor)
