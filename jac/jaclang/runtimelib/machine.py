@@ -1083,9 +1083,10 @@ class JacBasics:
                 pass
 
     @staticmethod
-    def destroy(objs: list[Architype | Anchor]) -> None:
+    def destroy(objs: Architype | Anchor | list[Architype | Anchor]) -> None:
         """Destroy multiple objects passed in a tuple or list."""
-        for obj in objs:
+        obj_list = objs if isinstance(objs, list) else [objs]
+        for obj in obj_list:
             if not isinstance(obj, (Architype, Anchor)):
                 return
             anchor = obj.__jac__ if isinstance(obj, Architype) else obj
