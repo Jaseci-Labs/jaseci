@@ -162,6 +162,7 @@ class Tokens(str, Enum):
     KW_IGNORE = "KW_IGNORE"
     KW_VISIT = "KW_VISIT"
     KW_SPAWN = "KW_SPAWN"
+    KW_JACGO = "KW_JACGO"
     KW_WITH = "KW_WITH"
     KW_LAMBDA = "KW_LAMBDA"
     KW_ENTRY = "KW_ENTRY"

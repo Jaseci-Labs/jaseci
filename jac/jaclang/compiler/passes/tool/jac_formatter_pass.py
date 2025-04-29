@@ -754,6 +754,26 @@ class JacFormatPass(UniPass):
         ) and not node.gen.jac.endswith("\n"):
             self.emit_ln(node, node.kid[-1].value)
 
+    def exit_spawn_expr(self, node: uni.SpawnExpr) -> None:
+        """Sub objects.
+
+        left:Expr,
+        right:Expr,
+        op:Token,
+        is_jacgo:bool,
+        """
+        assert isinstance(node.op, uni.Token)
+        if node.is_jacgo:
+            self.emit(
+                node,
+                f"{node.left.gen.jac} jacgo {node.op.value} {node.right.gen.jac}",
+            )
+        else:
+            self.emit(
+                node,
+                f"{node.left.gen.jac} {node.op.value} {node.right.gen.jac}",
+            )
+
     def exit_compare_expr(self, node: uni.CompareExpr) -> None:
         self.emit(node, f"{node.left.gen.jac} ")
         for i in range(len(node.rights)):

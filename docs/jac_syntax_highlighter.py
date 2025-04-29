@@ -356,6 +356,7 @@ class JacLexer(RegexLexer):
                         "visit",
                         "revisit",
                         "spawn",
+                        "jacgo",
                         "entry",
                         "exit",
                         "disengage",
