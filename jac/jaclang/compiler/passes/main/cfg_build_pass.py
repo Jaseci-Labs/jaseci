@@ -102,10 +102,8 @@ class CFGBuildPass(AstPass):
 
     def exit_while_stmt(self, node: uni.WhileStmt) -> None:
         """Exit while statement."""
-        print(self.while_loop_stack)
         if self.while_loop_stack:
             from_node = self.while_loop_stack[-1][-1]
-            print(f"Exit while {from_node} -> {node}")
             self.link_bbs(from_node, node)
             self.pop_loop_stack(node)
 
