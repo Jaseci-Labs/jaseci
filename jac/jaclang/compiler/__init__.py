@@ -6,7 +6,6 @@ import os
 import shutil
 import sys
 
-from jaclang.utils.helpers import auto_generate_refs
 from jaclang.vendor.lark.tools import standalone
 
 
@@ -29,10 +28,6 @@ def generate_static_parser(force: bool = False) -> None:
         ]
         standalone.main()
         sys.argv = save_argv
-        try:
-            auto_generate_refs()
-        except Exception as e:
-            logging.error(f"Error generating reference files: {e}")
 
 
 try:
