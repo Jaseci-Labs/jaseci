@@ -1883,6 +1883,7 @@ class JacFormatPass(UniPass):
         vis_type: Optional[SubTag[SubNodeList[Name]]],
         target: ExprType,
         else_body: Optional[ElseStmt],
+        is_jacgo: bool = False,
         from_walker: bool = False,
         """
         for i in node.kid:
@@ -1898,6 +1899,8 @@ class JacFormatPass(UniPass):
                 ),
             ):
                 self.emit(node, f" {i.gen.jac}")
+            elif i.gen.jac == "jacgo":
+                self.emit(node, f"{i.gen.jac} ")
             else:
                 self.emit(node, i.gen.jac)
         self.emit_ln(node, "")

@@ -54,7 +54,7 @@ from jaclang.runtimelib.constructs import (
     Root,
     WalkerArchitype,
 )
-from jaclang.runtimelib.jacgo import jacroutine
+from jaclang.runtimelib.jacgo import jacroutine, update
 from jaclang.runtimelib.machinestate import ExecutionContext, JacMachineState
 from jaclang.runtimelib.memory import Shelf, ShelfStorage
 from jaclang.runtimelib.utils import (
@@ -481,9 +481,19 @@ class JacWalker:
                 return warch
 
             current = walker.next.pop(0)
-            if isinstance(current, list):
+            if isinstance(current, list) and len(current) == 1:
+                update(current[0].architype)
+                run_spawn(current[0].architype, warch)
+
+            elif isinstance(current, list):
                 for i in current:
+                    update(i.architype)
+                tasks = [
                     jacroutine(func=run_spawn, args=(i.architype, copy.copy(warch)))
+                    for i in current
+                ]
+                for i in tasks:
+                    i.join()
             else:
                 run_spawn(current.architype, warch)
         # walker exit

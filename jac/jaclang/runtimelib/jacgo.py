@@ -17,11 +17,14 @@ class Task:
         self.args = args
         self._thread = threading.Thread(target=self.func, args=self.args)
         self.start()
-        self._thread.join()
 
     def start(self) -> None:
         """Start the task in a separate thread."""
         self._thread.start()
+
+    def join(self) -> None:
+        """Wait for the task to finish."""
+        self._thread.join()
 
 
 def jacroutine(func: Any | None, args: Tuple) -> Task:
@@ -33,20 +36,26 @@ def jacroutine(func: Any | None, args: Tuple) -> Task:
 def waitgroup(group: list) -> None:
     """Wait group functionality."""
     global groups
-    groups = group
-    while sum([i[1] for i in groups]) > 0:
-        pass
+    groups.extend(group)
 
 
-def done(node: NodeArchitype) -> None:
-    """Ensure walker reaches the expected node."""
-    # from jaclang.runtimelib.machine import JacNode, JacWalker
-    # print(groups)
+def update(node: NodeArchitype) -> None:
+    """Update the wait group with the current node."""
+    global groups
     for group in groups:
         if group[0] == node:
-            print("done node", node)
             group[1] -= 1
         if group[1] == 0:
             groups.remove(group)
-            print("done", groups)
-            print("removed", group[0])
+
+
+def is_done(node: NodeArchitype) -> bool:
+    """Check if the wait group is done."""
+    global groups
+    nodes = [group[0] for group in groups]
+    if node not in nodes:
+        return True
+    for group in groups:
+        if group[0] == node:
+            return group[1] == 0
+    return False
