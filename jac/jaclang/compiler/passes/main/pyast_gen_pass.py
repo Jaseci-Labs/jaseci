@@ -1878,7 +1878,17 @@ class PyastGenPass(UniPass):
             value=self.sync(
                 ast3.Call(
                     func=self.jaclib_obj("destroy"),
-                    args=cast(list[ast3.expr], set_ctx(node.py_ast_targets, ast3.Load)),
+                    args=[
+                        self.sync(
+                            ast3.List(
+                                elts=cast(
+                                    list[ast3.expr],
+                                    set_ctx(node.py_ast_targets, ast3.Load),
+                                ),
+                                ctx=ast3.Load(),
+                            )
+                        )
+                    ],
                     keywords=[],
                 )
             )

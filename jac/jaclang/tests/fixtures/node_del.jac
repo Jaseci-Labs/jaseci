@@ -29,17 +29,19 @@ with entry {
     assert 'age=20' not in c;
 
 
-    # # del multiple nodes # TODO: @marsninja
-    # del [p1, p3];
-    # assert c.count('label="person') == 5;
-    # assert 'age=10' not in c, 'age=30' not in c;
+    # # del multiple nodes
+    del [p1, p4];
+    d = dotgen(root);
+    assert d.count('label="person') == 4;
+    for i in [10, 20, 30, 40 ]{
+        assert f'age={i}' not in d;
+    }
 
 
     apple_list = [1, 2, 3, 4, 5,6,7,8,9,10];
     del apple_list[0];
-    print('apple list after delete 1 :', apple_list);
-
-    # del [apple_list[7], apple_list[8]]; # this will be fixed by the (1) above mentioned
+    print('apple list after delete 0 :', apple_list);
+    del [apple_list[6], apple_list[7]];
     print('apple list after delete 7, 8 :', apple_list);
 
     obj Inner {

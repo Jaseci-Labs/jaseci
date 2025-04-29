@@ -625,7 +625,7 @@ class JacBasics:
 
             if loaded_anchor := mem.find_by_id(anchor.id):
                 deleted_count += 1
-                JacMachine.destroy(loaded_anchor)
+                JacMachine.destroy([loaded_anchor])
 
         return deleted_count
 
@@ -988,7 +988,7 @@ class JacBasics:
                         and JacMachine.check_connect_access(target)
                     ):
                         (
-                            JacMachine.destroy(anchor)
+                            JacMachine.destroy([anchor])
                             if anchor.persistent
                             else JacMachine.detach(anchor)
                         )
@@ -1000,7 +1000,7 @@ class JacBasics:
                         and JacMachine.check_connect_access(source)
                     ):
                         (
-                            JacMachine.destroy(anchor)
+                            JacMachine.destroy([anchor])
                             if anchor.persistent
                             else JacMachine.detach(anchor)
                         )
@@ -1083,25 +1083,24 @@ class JacBasics:
                 pass
 
     @staticmethod
-    def destroy(
-        obj: Architype | Anchor,
-    ) -> None:
-        """Destroy object."""
-        if not isinstance(obj, (Architype, Anchor)):
-            return
-        anchor = obj.__jac__ if isinstance(obj, Architype) else obj
+    def destroy(objs: list[Architype | Anchor]) -> None:
+        """Destroy multiple objects passed in a tuple or list."""
+        for obj in objs:
+            if not isinstance(obj, (Architype, Anchor)):
+                return
+            anchor = obj.__jac__ if isinstance(obj, Architype) else obj
 
-        if JacMachine.check_write_access(anchor):
-            match anchor:
-                case NodeAnchor():
-                    for edge in anchor.edges[:]:
-                        JacMachine.destroy(edge)
-                case EdgeAnchor():
-                    JacMachine.detach(anchor)
-                case _:
-                    pass
+            if JacMachine.check_write_access(anchor):
+                match anchor:
+                    case NodeAnchor():
+                        for edge in anchor.edges[:]:
+                            JacMachine.destroy([edge])
+                    case EdgeAnchor():
+                        JacMachine.detach(anchor)
+                    case _:
+                        pass
 
-            JacMachine.get_context().mem.remove(anchor.id)
+                JacMachine.get_context().mem.remove(anchor.id)
 
     @staticmethod
     def entry(func: Callable) -> Callable:
