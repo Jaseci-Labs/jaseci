@@ -13,6 +13,8 @@ EXTRACTED_FOLDER = "docs/playground"
 PLAYGROUND_ZIP_PATH = os.path.join(EXTRACTED_FOLDER, "jaclang.zip")
 ZIP_FOLDER_NAME = "jaclang"
 UNIIR_NODE_DOC = "docs/for_contributors/uniir_node.md"
+LANG_REF_DOC = "docs/lang_ref/jac_ref.md"
+INTERNALS_DOC = "docs/for_contributors/internals.md"
 AST_TOOL = AstTool()
 
 
@@ -28,6 +30,8 @@ def pre_build_hook(**kwargs: any) -> None:
         print(f"Zip file already exists: {PLAYGROUND_ZIP_PATH}. Skipping creation.")
     with open(UNIIR_NODE_DOC, "w") as f:
         f.write(AST_TOOL.autodoc_uninode())
+    with open(LANG_REF_DOC, "w") as f:
+        f.write(AST_TOOL.automate_ref())
 
 
 def create_playground_zip() -> None:

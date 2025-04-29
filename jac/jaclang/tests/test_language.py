@@ -4,6 +4,8 @@ import io
 import os
 import sys
 import sysconfig
+import tempfile
+from unittest.mock import patch
 
 from jaclang import JacMachine as Jac
 from jaclang.cli import cli
@@ -136,6 +138,28 @@ class JacLanguageTests(TestCase):
 
         for expected in expected_outputs:
             self.assertIn(expected, stdout_value)
+
+    def test_dotgen(self) -> None:
+        """Test the dot gen of builtin function."""
+        import json
+
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(
+            self.mach, "builtin_dotgen_json", base_path=self.fixture_abs_path("./")
+        )
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        data = json.loads(stdout_value)
+
+        nodes = data["nodes"]
+        self.assertEqual(len(nodes), 7)
+        for node in nodes:
+            label = node["label"]
+            self.assertIn(label, ["root", "N(val=0)", "N(val=1)"])
+
+        edges = data["edges"]
+        self.assertEqual(len(edges), 6)
 
     def test_chandra_bugs(self) -> None:
         """Parse micro jac file."""
@@ -544,27 +568,6 @@ class JacLanguageTests(TestCase):
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertIn("2.0\n", stdout_value)
-
-    def test_registry(self) -> None:
-        """Test Jac registry feature."""
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-        sys.stderr = captured_output
-        Jac.jac_import(self.mach, "registry", base_path=self.fixture_abs_path("./"))
-        sys.stdout = sys.__stdout__
-        sys.stderr = sys.__stderr__
-        stdout_value = captured_output.getvalue()
-        self.assertNotIn("Error", stdout_value)
-
-        output_lines = stdout_value.strip().split("\n")
-        outputs = [
-            int(output_lines[i]) if i != 2 else output_lines[i] for i in range(4)
-        ]
-
-        self.assertEqual(outputs[0], 9)
-        self.assertEqual(outputs[1], 2)
-        self.assertEqual(outputs[2], "Person")
-        self.assertEqual(outputs[3], 2)
 
     def test_enum_inside_arch(self) -> None:
         """Test Enum as member stmt."""
@@ -1396,3 +1399,84 @@ class JacLanguageTests(TestCase):
         self.assertIn("7, 8 : [2, 3, 4, 5, 6, 7, 9]", stdout_value[1])
         self.assertIn("before delete : Inner(c=[1, 2, 3], d=4)", stdout_value[2])
         self.assertIn("after delete : Inner(c=[1, 3], d=4)", stdout_value[3])
+
+    # Helper method to create files within tests
+    def create_temp_jac_file(
+        self, content: str, dir_path: str, filename: str = "test_mod.jac"
+    ) -> str:
+        """Create a temporary Jac file in a specific directory."""
+        full_path = os.path.join(dir_path, filename)
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+        with open(full_path, "w") as f:
+            f.write(content)
+        return full_path
+
+    def test_import_from_site_packages(self) -> None:
+        """Test importing a Jac module from simulated site-packages."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Simulate site-packages directory structure
+            mock_site_dir = os.path.join(tmpdir, "site-packages")
+            os.makedirs(mock_site_dir)
+
+            # Create a module within the simulated site-packages
+            site_mod_content = 'with entry { "Site package module loaded!" |> print; }'
+            self.create_temp_jac_file(
+                site_mod_content, mock_site_dir, "site_pkg_mod.jac"
+            )
+
+            # Create the importing script in the main temp directory
+            importer_content = "import:jac site_pkg_mod;"
+            _ = self.create_temp_jac_file(importer_content, tmpdir, "importer_site.jac")
+            with patch("site.getsitepackages", return_value=[mock_site_dir]):
+                captured_output = io.StringIO()
+                sys.stdout = captured_output
+                original_cwd = os.getcwd()
+                try:
+                    Jac.jac_import(self.mach, "importer_site", base_path=tmpdir)
+                finally:
+                    os.chdir(original_cwd)
+                    sys.stdout = sys.__stdout__
+
+                stdout_value = captured_output.getvalue()
+                self.assertIn("Site package module loaded!", stdout_value)
+
+    def test_import_from_jacpath(self) -> None:
+        """Test importing a Jac module from JACPATH."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Simulate JACPATH directory
+            jacpath_dir = os.path.join(tmpdir, "jaclibs")
+            os.makedirs(jacpath_dir)
+
+            # Create a module in the JACPATH directory
+            jacpath_mod_content = 'with entry { "JACPATH module loaded!" |> print; }'
+            self.create_temp_jac_file(
+                jacpath_mod_content, jacpath_dir, "jacpath_mod.jac"
+            )
+
+            # Create the importing script in a different location
+            script_dir = os.path.join(tmpdir, "scripts")
+            os.makedirs(script_dir)
+            importer_content = "import jacpath_mod;"
+            _ = self.create_temp_jac_file(importer_content, script_dir, "importer.jac")
+
+            # Set JACPATH environment variable and run
+            original_jacpath = os.environ.get("JACPATH")
+            os.environ["JACPATH"] = jacpath_dir
+            captured_output = io.StringIO()
+            sys.stdout = captured_output
+            original_cwd = os.getcwd()
+            os.chdir(script_dir)
+            try:
+                cli.run("importer.jac")
+            finally:
+                os.chdir(original_cwd)
+                sys.stdout = sys.__stdout__
+                # Clean up environment variable
+                if original_jacpath is None:
+                    if "JACPATH" in os.environ:
+                        del os.environ["JACPATH"]
+                else:
+                    os.environ["JACPATH"] = original_jacpath
+
+            stdout_value = captured_output.getvalue()
+            self.assertIn("JACPATH module loaded!", stdout_value)

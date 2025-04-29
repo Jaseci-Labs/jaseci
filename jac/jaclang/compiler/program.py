@@ -27,7 +27,6 @@ from jaclang.compiler.passes.main import (
 from jaclang.compiler.passes.main.sym_tab_link_pass import SymTabLinkPass
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.passes.transform import Alert, Transform
-from jaclang.compiler.semtable import SemRegistry
 from jaclang.compiler.unitree import Module
 from jaclang.settings import settings
 from jaclang.utils.log import logging
@@ -41,7 +40,6 @@ class JacProgram:
 
     def __init__(self, main_mod: Optional[uni.ProgramModule] = None) -> None:
         """Initialize the JacProgram object."""
-        self.sem_ir = SemRegistry()
         self.mod: uni.ProgramModule = main_mod if main_mod else uni.ProgramModule()
         self.last_imported: list[Module] = []
         self.py_raise_map: dict[str, str] = {}
