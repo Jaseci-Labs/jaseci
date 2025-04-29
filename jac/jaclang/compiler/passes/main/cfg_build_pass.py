@@ -4,7 +4,7 @@ This pass builds the control flow graph for the Jac program by filling in  detai
 These nodes will be linked together in the CFG pass.
 """
 
-# import json
+import json
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes import AstPass
@@ -21,12 +21,9 @@ class CFGBuildPass(AstPass):
 
     def push_loop_stack(self, loop_header: uni.UniBasicBlock) -> None:
         """Push loop stack."""
-        if isinstance(loop_header, uni.WhileStmt) and len(self.while_loop_stack) > 0:
+        if isinstance(loop_header, uni.WhileStmt):
             self.while_loop_stack.append([loop_header])
-        elif (
-            isinstance(loop_header, (uni.InForStmt, uni.IterForStmt))
-            and len(self.for_loop_stack) > 0
-        ):
+        elif isinstance(loop_header, (uni.InForStmt, uni.IterForStmt)):
             self.for_loop_stack.append([loop_header])
 
     def pop_loop_stack(self, node: uni.UniBasicBlock) -> None:
@@ -77,20 +74,21 @@ class CFGBuildPass(AstPass):
         """Enter UniBasicBlock nodes."""
         if isinstance(node, uni.UniBasicBlock) and not isinstance(node, uni.Module):
             parent_bb = self.get_parent_bb(node)
-            if isinstance(parent_bb, uni.UniBasicBlock):
+            if isinstance(parent_bb, uni.UniBasicBlock):  # Branch handling
                 if isinstance(parent_bb, uni.IfStmt):
                     node.bb_stmts.append(node)
                     self.link_bbs(parent_bb, node)
-                elif isinstance(node, (uni.InForStmt, uni.IterForStmt, uni.WhileStmt)):
-                    self.push_loop_stack(node)
-                    node.bb_stmts.append(node)
-                    # self.link_bbs(parent_bb, node)
                 elif isinstance(
-                    parent_bb, (uni.InForStmt, uni.IterForStmt, uni.WhileStmt)
-                ):
+                    node, (uni.InForStmt, uni.IterForStmt, uni.WhileStmt)
+                ):  # Loop Header Handling
+                    self.push_loop_stack(node)
                     node.bb_stmts.append(node)
                     self.link_bbs(parent_bb, node)
-                    self.push_loop_stack(node)
+                elif isinstance(
+                    parent_bb, (uni.InForStmt, uni.IterForStmt, uni.WhileStmt)
+                ):  # Loop Body Handling
+                    node.bb_stmts.append(node)
+                    self.link_bbs(parent_bb, node)
                 elif self.while_loop_stack or self.for_loop_stack:
                     if self.for_loop_stack:
                         self.for_loop_stack[-1][-1] = node
@@ -104,8 +102,10 @@ class CFGBuildPass(AstPass):
 
     def exit_while_stmt(self, node: uni.WhileStmt) -> None:
         """Exit while statement."""
+        print(self.while_loop_stack)
         if self.while_loop_stack:
             from_node = self.while_loop_stack[-1][-1]
+            print(f"Exit while {from_node} -> {node}")
             self.link_bbs(from_node, node)
             self.pop_loop_stack(node)
 
@@ -128,8 +128,16 @@ class CFGBuildPass(AstPass):
         bb_colector_pass = BBColectorPass(ir_in=node, prog=self.prog)
         bb_colector_pass.traverse(node)
         self.basic_blocks = bb_colector_pass.basic_blocks
-        # with open(f"basic_blocks_{node.name}.json", "w") as json_file:
-        #     json.dump(self.basic_blocks, json_file, default=str, indent=4)
+        unparsed_blocks = {
+            bb_id: {
+                "bb_stmts": [stmt.unparse() for stmt in bb_info["bb_stmts"]],
+                "control_in_bbs": [bb.unparse() for bb in bb_info["control_in_bbs"]],
+                "control_out_bbs": [bb.unparse() for bb in bb_info["control_out_bbs"]],
+            }
+            for bb_id, bb_info in self.basic_blocks.items()
+        }
+        with open(f"basic_blocks_{node.name}.json", "w") as json_file:
+            json.dump(unparsed_blocks, json_file, default=str, indent=4)
 
 
 class CFGLinkPass(AstPass):
