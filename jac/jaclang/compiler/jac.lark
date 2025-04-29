@@ -261,7 +261,7 @@ walker_stmt: visit_stmt
        | ignore_stmt
 
 // [Heading]: Visit statements.
-visit_stmt: KW_VISIT (inherited_archs)? expression (else_stmt | SEMI)
+visit_stmt: KW_JACGO? KW_VISIT (inherited_archs)? expression (else_stmt | SEMI)
 
 // [Heading]: Revisit statements.
 revisit_stmt: KW_REVISIT expression? (else_stmt | SEMI)

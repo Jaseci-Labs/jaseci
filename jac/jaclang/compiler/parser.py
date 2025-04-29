@@ -1538,6 +1538,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             visit_stmt: KW_VISIT (inherited_archs)? expression (else_stmt | SEMI)
             """
+            tok_jacgo = self.match_token(Tok.KW_JACGO)
             self.consume_token(Tok.KW_VISIT)
             sub_name = self.match(uni.SubNodeList)
             target = self.consume(uni.Expr)
@@ -1548,6 +1549,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 vis_type=sub_name,
                 target=target,
                 else_body=else_body,
+                is_jacgo=tok_jacgo is not None,
                 kid=self.cur_nodes,
             )
 
