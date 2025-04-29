@@ -327,6 +327,7 @@ class JacWalker:
             | NodeArchitype
             | EdgeArchitype
         ),
+        is_jacgo: bool = False,
     ) -> bool:  # noqa: ANN401
         """Jac's visit stmt feature."""
         if isinstance(walker, WalkerArchitype):

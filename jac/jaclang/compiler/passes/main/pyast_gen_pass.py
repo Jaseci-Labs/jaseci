@@ -1744,7 +1744,14 @@ class PyastGenPass(UniPass):
         visit_call = self.sync(
             ast3.Call(
                 func=self.jaclib_obj("visit"),
-                args=cast(list[ast3.expr], [loc, node.target.gen.py_ast[0]]),
+                args=cast(
+                    list[ast3.expr],
+                    [
+                        loc,
+                        node.target.gen.py_ast[0],
+                        self.sync(ast3.Constant(value=node.is_jacgo)),
+                    ],
+                ),
                 keywords=[],
             )
         )

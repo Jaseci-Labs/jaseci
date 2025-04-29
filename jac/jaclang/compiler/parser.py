@@ -1464,6 +1464,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             visit_stmt: KW_VISIT (COLON expression COLON)?
                 expression (else_stmt | SEMI)
             """
+            tok_jacgo = self.match_token(Tok.KW_JACGO)
             self.consume_token(Tok.KW_VISIT)
             insert_loc = None
             if self.match_token(Tok.COLON):
@@ -1477,6 +1478,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 insert_loc=insert_loc,
                 target=target,
                 else_body=else_body,
+                is_jacgo=tok_jacgo is not None,
                 kid=self.cur_nodes,
             )
 

@@ -1367,6 +1367,8 @@ class JacFormatPass(UniPass):
                 ),
             ):
                 self.emit(node, f" {i.gen.jac}")
+            elif i.gen.jac == "jacgo":
+                self.emit(node, f"{i.gen.jac} ")
             else:
                 self.emit(node, i.gen.jac)
         self.emit_ln(node, "")

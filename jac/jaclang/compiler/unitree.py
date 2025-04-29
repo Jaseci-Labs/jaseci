@@ -2678,10 +2678,12 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
         insert_loc: Optional[Expr],
         target: Expr,
         else_body: Optional[ElseStmt],
+        is_jacgo: bool,
         kid: Sequence[UniNode],
     ) -> None:
         self.insert_loc = insert_loc
         self.target = target
+        self.is_jacgo = is_jacgo
         UniNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
         AstElseBodyNode.__init__(self, else_body=else_body)
