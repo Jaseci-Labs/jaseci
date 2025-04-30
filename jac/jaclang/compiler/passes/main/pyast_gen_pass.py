@@ -2395,6 +2395,14 @@ class PyastGenPass(UniPass):
                                                 cast(
                                                     ast3.expr, node.right.gen.py_ast[0]
                                                 ),
+                                                cast(
+                                                    ast3.expr,
+                                                    self.sync(
+                                                        ast3.Constant(
+                                                            value=node.is_jacgo
+                                                        )
+                                                    ),
+                                                ),
                                             ],
                                             ctx=ast3.Load(),
                                         )
@@ -2412,7 +2420,11 @@ class PyastGenPass(UniPass):
                         func=self.jaclib_obj("spawn"),
                         args=cast(
                             list[ast3.expr],
-                            [node.left.gen.py_ast[0], node.right.gen.py_ast[0]],
+                            [
+                                node.left.gen.py_ast[0],
+                                node.right.gen.py_ast[0],
+                                self.sync(ast3.Constant(value=node.is_jacgo)),
+                            ],
                         ),
                         keywords=[],
                     )

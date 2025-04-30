@@ -380,7 +380,9 @@ class JacWalker:
             raise TypeError("Invalid walker object")
 
     @staticmethod
-    def spawn(op1: Architype, op2: Architype) -> WalkerArchitype:
+    def spawn(
+        op1: Architype, op2: Architype, is_jacgo: bool = False
+    ) -> WalkerArchitype:
         """Jac's spawn operator feature."""
         if isinstance(op1, WalkerArchitype):
             warch = op1
