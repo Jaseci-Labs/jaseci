@@ -403,7 +403,7 @@ class JacWalker:
             def run_spawn(
                 current_node: NodeArchitype,
                 warch: WalkerArchitype,
-            ) -> WalkerArchitype:
+            ) -> WalkerArchitype | None:
                 # walker entry with
                 for i in warch._jac_entry_funcs_:
                     if (
@@ -462,7 +462,7 @@ class JacWalker:
                     if walker.disengaged:
                         return warch
 
-                return warch
+                return None
 
             current = walker.next.pop(0)
             if isinstance(current, list) and len(current) == 1:
@@ -482,7 +482,9 @@ class JacWalker:
                     i.join()
             else:
                 current_node = current.architype
-                run_spawn(current_node, warch)
+                val = run_spawn(current_node, warch)
+                if val:
+                    return warch
         # walker exit
         for i in warch._jac_exit_funcs_:
             if not i.trigger:
