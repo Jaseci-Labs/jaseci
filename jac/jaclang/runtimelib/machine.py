@@ -465,6 +465,7 @@ class JacWalker:
                 return None
 
             current = walker.next.pop(0)
+            tasks: list = []
             if isinstance(current, list) and len(current) == 1:
                 current_node = current[0].architype
                 update(current_node)
@@ -474,10 +475,11 @@ class JacWalker:
                 for i in current:
                     update(i.architype)
                     current_node = i.architype
-                tasks = [
-                    jacroutine(func=run_spawn, args=(current_node, copy.copy(warch)))
-                    for i in current
-                ]
+                    tasks.append(
+                        jacroutine(
+                            func=run_spawn, args=(current_node, copy.copy(warch))
+                        )
+                    )
                 for i in tasks:
                     i.join()
             else:
