@@ -2696,6 +2696,8 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
             res = self.target.normalize(deep)
             res = res and self.else_body.normalize(deep) if self.else_body else res
         new_kid: list[UniNode] = []
+        if self.is_jacgo:
+            new_kid.append(self.gen_token(Tok.KW_JACGO))
         new_kid.append(self.gen_token(Tok.KW_VISIT))
         if self.insert_loc:
             new_kid.append(self.gen_token(Tok.COLON))
