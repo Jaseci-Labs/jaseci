@@ -1,9 +1,12 @@
 """JacAnnexManager handles the loading of annex modules."""
 
+from __future__ import annotations
+
 import os
 from typing import TYPE_CHECKING
 
 from jaclang.compiler import unitree as uni
+from jaclang.compiler.passes import Transform
 from jaclang.settings import settings
 from jaclang.utils.log import logging
 
@@ -13,16 +16,18 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class JacAnnexManager:
+class JacAnnexManager(Transform[uni.Module, uni.Module]):
     """Handles loading and attaching of annex files (.impl.jac and .test.jac)."""
 
-    def __init__(self, mod_path: str) -> None:
-        """Initialize JacAnnexManager with the module path."""
-        self.mod_path = mod_path
-        self.base_path = mod_path[:-4]
+    def transform(self, ir_in: uni.Module) -> uni.Module:
+        """Initialize JacAnnexPass with the module path."""
+        self.mod_path = ir_in.loc.mod_path
+        self.base_path = self.mod_path[:-4]
         self.impl_folder = self.base_path + ".impl"
         self.test_folder = self.base_path + ".test"
-        self.directory = os.path.dirname(mod_path) or os.getcwd()
+        self.directory = os.path.dirname(self.mod_path) or os.getcwd()
+        self.load_annexes(jac_program=self.prog, node=ir_in)
+        return ir_in
 
     def find_annex_paths(self) -> list[str]:
         """Return list of .impl.jac and .test.jac files related to base module."""
@@ -32,7 +37,7 @@ class JacAnnexManager:
                 paths += [os.path.join(folder, f) for f in os.listdir(folder)]
         return paths
 
-    def load_annexes(self, jac_program: "JacProgram", node: uni.Module) -> None:
+    def load_annexes(self, jac_program: JacProgram, node: uni.Module) -> None:
         """Parse and attach annex modules to the node."""
         from jaclang.compiler.program import CompilerMode
 

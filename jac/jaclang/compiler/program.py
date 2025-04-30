@@ -8,12 +8,12 @@ import types
 from typing import Optional
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.annex import JacAnnexManager
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes import UniPass
 from jaclang.compiler.passes.main import (
     CompilerMode,
     DefUsePass,
+    JacAnnexManager,
     JacImportPass,
     JacTypeCheckPass,
     PyBytecodeGenPass,
@@ -122,7 +122,7 @@ class JacProgram:
     ) -> uni.Module:
         """Convert a Jac file to an AST."""
         self.last_imported.append(mod_targ)
-        JacAnnexManager(mod_targ.loc.mod_path).load_annexes(self, mod_targ)
+        JacAnnexManager(ir_in=mod_targ, prog=self)
 
         SymTabBuildPass(ir_in=mod_targ, prog=self)
         if mode == CompilerMode.PARSE:
