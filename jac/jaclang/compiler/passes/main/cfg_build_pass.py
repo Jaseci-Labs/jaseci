@@ -36,24 +36,9 @@ class CFGBuildPass(AstPass):
         ):
             self.for_loop_stack.pop()
 
-    def top_loop_stack(self) -> list[uni.UniBasicBlock]:
-        """Get top loop stack."""
-        if len(self.while_loop_stack) > 0:
-            return self.while_loop_stack[-1]
-        else:
-            return []
-
     def get_parent_bb(self, node: uni.UniNode) -> uni.UniBasicBlock | None:
         """Get parent basic block."""
-        parent_bb = None  # <-- fix
         if not isinstance(node, uni.Module):
-            # if isinstance(node.parent, uni.SubNodeList):
-            #     code_block_list = [n for n in node.parent.kid if isinstance(n, uni.UniBasicBlock)]
-            #     for i in range(len(code_block_list)):
-            #         if node == code_block_list[i]:
-            #             if i != 0:
-            #                 parent_bb = code_block_list[i - 1]
-            # else:
             parent_bb = node.parent_of_type(uni.UniBasicBlock)
         return parent_bb
 
@@ -74,29 +59,32 @@ class CFGBuildPass(AstPass):
         """Enter UniBasicBlock nodes."""
         if isinstance(node, uni.UniBasicBlock) and not isinstance(node, uni.Module):
             parent_bb = self.get_parent_bb(node)
-            if isinstance(parent_bb, uni.UniBasicBlock):  # Branch handling
-                if isinstance(parent_bb, uni.IfStmt):
-                    node.bb_stmts.append(node)
-                    self.link_bbs(parent_bb, node)
-                elif isinstance(
-                    node, (uni.InForStmt, uni.IterForStmt, uni.WhileStmt)
-                ):  # Loop Header Handling
-                    self.push_loop_stack(node)
-                    node.bb_stmts.append(node)
-                    self.link_bbs(parent_bb, node)
-                elif isinstance(
-                    parent_bb, (uni.InForStmt, uni.IterForStmt, uni.WhileStmt)
-                ):  # Loop Body Handling
-                    node.bb_stmts.append(node)
-                    self.link_bbs(parent_bb, node)
-                elif self.while_loop_stack or self.for_loop_stack:
-                    if self.for_loop_stack:
-                        self.for_loop_stack[-1][-1] = node
-                    if self.while_loop_stack:
-                        self.while_loop_stack[-1][-1] = node
+
+            if isinstance(parent_bb, uni.IfStmt) and not isinstance(
+                node, (uni.InForStmt, uni.IterForStmt, uni.WhileStmt)
+            ):
+                node.bb_stmts.append(node)
+                self.link_bbs(parent_bb, node)
+            elif isinstance(
+                node, (uni.InForStmt, uni.IterForStmt, uni.WhileStmt)
+            ):  # Loop Header Handling
+
+                self.push_loop_stack(node)
+                node.bb_stmts.append(node)
+
+            elif isinstance(parent_bb, (uni.InForStmt, uni.IterForStmt, uni.WhileStmt)):
+                node.bb_stmts.append(node)
+                self.link_bbs(parent_bb, node)
+            elif self.while_loop_stack or self.for_loop_stack:
+                if self.for_loop_stack:
+                    self.for_loop_stack[-1][-1] = node
+                if self.while_loop_stack:
+                    self.while_loop_stack[-1][-1] = node
+                if parent_bb:
                     parent_bb.bb_stmts.append(node)
                     self.sync_bbs(parent_bb, node)
-                else:
+            else:
+                if parent_bb:
                     parent_bb.bb_stmts.append(node)
                     self.sync_bbs(parent_bb, node)
 
@@ -123,14 +111,14 @@ class CFGBuildPass(AstPass):
 
     def exit_module(self, node: uni.Module) -> None:
         """After pass."""
+        CFGLinkPass(ir_in=node, prog=self.prog)
         bb_colector_pass = BBColectorPass(ir_in=node, prog=self.prog)
-        bb_colector_pass.traverse(node)
         self.basic_blocks = bb_colector_pass.basic_blocks
         # unparsed_blocks = {
         #     bb_id: {
-        #         "bb_stmts": [stmt.unparse() for stmt in bb_info["bb_stmts"]],
-        #         "control_in_bbs": [bb.unparse() for bb in bb_info["control_in_bbs"]],
-        #         "control_out_bbs": [bb.unparse() for bb in bb_info["control_out_bbs"]],
+        #         "bb_stmts": bb_info["bb_stmts"],
+        #         "control_in_bbs": bb_info["control_in_bbs"],
+        #         "control_out_bbs": bb_info["control_out_bbs"],
         #     }
         #     for bb_id, bb_info in self.basic_blocks.items()
         # }
@@ -143,11 +131,77 @@ class CFGLinkPass(AstPass):
 
     def before_pass(self) -> None:
         """Before pass."""
-        pass
+        self.new_links: list[tuple[uni.UniBasicBlock, uni.UniBasicBlock]] = []
+
+    def get_parent_bb(self, node: uni.UniNode) -> list[uni.UniBasicBlock] | None:
+        """Get parent basic block."""
+        parent_bb: list[uni.UniBasicBlock] = []  # <-- fix
+        if not isinstance(node, uni.Module):
+            if isinstance(node.parent, uni.SubNodeList):
+                code_block_list = [
+                    n for n in node.parent.kid if isinstance(n, uni.UniBasicBlock)
+                ]
+                for i in range(len(code_block_list)):
+                    if (
+                        node == code_block_list[i]
+                        and node not in code_block_list[i - 1].bb_stmts
+                    ):
+                        if i != 0:
+                            top_parent_bb = code_block_list[i - 1]
+                            parent_bb = self.get_end_of_control_flow(top_parent_bb)
+                            if len(parent_bb) == 0:
+
+                                parent_bb = [top_parent_bb]
+
+                            return parent_bb
+
+                        else:
+                            parent_bb = [node.parent_of_type(uni.UniBasicBlock)]
+                    else:
+                        parent_bb = (
+                            [node.parent_of_type(uni.UniBasicBlock)]
+                            if not isinstance(
+                                node.parent_of_type(uni.UniBasicBlock), uni.Module
+                            )
+                            else []
+                        )
+            else:
+                parent_bb = [node.parent_of_type(uni.UniBasicBlock)]
+        return parent_bb
+
+    def get_end_of_control_flow(
+        self, node: uni.UniBasicBlock
+    ) -> list[uni.UniBasicBlock]:
+        """Get end of control flow."""
+        end_nodes: list[uni.UniBasicBlock] = []
+        if isinstance(node, (uni.InForStmt, uni.IterForStmt, uni.WhileStmt)):
+            if len(node.control_out_bbs) == 1:
+                end_nodes.append(node)
+            else:
+                end_nodes.extend(self.get_end_of_control_flow(node.control_out_bbs[1]))
+        else:
+
+            if len(node.control_out_bbs) > 0:
+                for bb in node.control_out_bbs:
+
+                    end_nodes.extend(self.get_end_of_control_flow(bb))
+            else:
+                end_nodes.append(node)
+        return end_nodes
 
     def enter_node(self, node: uni.UniNode) -> None:
         """Enter UniBasicBlock nodes."""
-        pass
+        if isinstance(node, uni.UniBasicBlock) and not isinstance(node, uni.Module):
+            parent_bbs = self.get_parent_bb(node)
+            if parent_bbs:
+                for parent_bb in parent_bbs:
+                    self.new_links.append((parent_bb, node))
+
+    def after_pass(self) -> None:
+        """After pass."""
+        for source, target in self.new_links:
+            source.control_out_bbs.append(target)
+            target.control_in_bbs.append(source)
 
 
 class BBColectorPass(AstPass):
@@ -161,7 +215,6 @@ class BBColectorPass(AstPass):
     def enter_node(self, node: uni.UniNode) -> None:
         """Enter UniBasicBlock nodes."""
         if isinstance(node, uni.UniBasicBlock):
-            # print(f"BB {self.bb_counter} {node}")
             if self.bb_counter == 0:
                 self.basic_blocks[self.bb_counter] = {
                     "bb_stmts": node.bb_stmts,
@@ -171,9 +224,7 @@ class BBColectorPass(AstPass):
                 self.bb_counter += 1
             else:
                 for bb_id, bb_info in list(self.basic_blocks.items()):
-                    # print(f"BB {node.bb_stmts}")
                     if bb_info["bb_stmts"] == node.bb_stmts:
-                        # print(f"BB {bb_id} already exists")
                         break
                     if bb_id == self.bb_counter - 1:
                         self.basic_blocks[self.bb_counter] = {
