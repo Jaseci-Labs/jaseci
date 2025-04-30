@@ -14,6 +14,13 @@ node A{
 
 walker W{
     has num: int;
+
+    can do1 with entry {
+        print("W Entry action ", here);
+    }
+    can do2 with exit {
+        print("W Exit action ", here);
+    }
 }
 
 with entry {
