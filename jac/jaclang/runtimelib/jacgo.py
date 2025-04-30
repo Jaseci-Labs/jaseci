@@ -29,7 +29,6 @@ class Task:
 
 def jacroutine(func: Any | None, args: Tuple) -> Task:
     """Create a task with the given function and arguments."""
-    assert len(args) == 2
     return Task(func, args)
 
 
