@@ -150,9 +150,9 @@ class JacCliTests(TestCase):
         self.assertEqual(process.returncode, 0, "Process did not exit successfully")
         self.assertIn("Welcome to the Jac CLI!", stdout_value)
 
-    def test_jac_runner(self) -> None:
+    def test_jac_repl(self) -> None:
         """Testing for Jac Runner of REPL/Jupyter notebook."""
-        stdout = ''
+        stdout = ""
         inputs = [
             "print('Hello World!')",
             "node n {",
@@ -163,9 +163,10 @@ class JacCliTests(TestCase):
             "root ++> n1",
             "exit()",
         ]
-        def _print(msg, end='\n', **kwargs: object) -> None:
+
+        def _print(msg: str, end: str = "\n", **kwargs: object) -> None:
             nonlocal stdout
-            stdout += (msg + end)
+            stdout += msg + end
 
         def _input(prompt: str) -> str:
             return inputs.pop(0)

@@ -10,7 +10,6 @@ from typing import Any, Callable, Tuple
 
 import jaclang.compiler.unitree as jac_ast
 from jaclang import JacMachine
-from jaclang.compiler.parser import JacParser
 from jaclang.compiler.program import JacProgram
 from jaclang.compiler.unitree import Module as JacModule
 from jaclang.runtimelib.machinestate import JacMachineState
@@ -42,17 +41,16 @@ class JacRunner:
         # I had to do this cause the str_to_pass interface requires.
         # This must fixed from the jac compiler itself.
         tmpfile = NamedTemporaryFile(suffix=".jac")
-        self.unexpected_eof = False
         ret = self._redirect_exec(self.program.compile_from_str, (source, tmpfile.name))
 
         had_syntax_error = False
-        if isinstance(ret, JacParser):
-            self.unexpected_eof = ret.unexpected_eof
-            had_syntax_error = len(ret.errors_had) != 0
+        if isinstance(ret, JacModule):
+            had_syntax_error = len(self.program.errors_had) != 0
+            self.unexpected_eof = self.program.unexpected_eof
 
         # Since the jac_str_to_pass doesn't report error we need to handle here.
         if had_syntax_error:
-            for alrt in ret.errors_had:
+            for alrt in self.program.errors_had:
                 self.stderr += alrt.pretty_print()
             return None
 
@@ -103,6 +101,8 @@ class JacRunner:
     def _redirect_exec(self, fn: Callable, args: Tuple) -> Any:  # noqa: ANN401
         ret = None
         self.stdout, self.stderr = "", ""
+        self.program.errors_had = []
+        self.program.warnings_had = []
         with io.StringIO() as out_buf, io.StringIO() as err_buf, redirect_stdout(
             out_buf
         ), redirect_stderr(err_buf):
@@ -115,6 +115,7 @@ class JacRunner:
 class REPL:
     """Simple REPL for Jaclang."""
 
+    # FIXME: These values are hardcoded.
     VERSION = "jaclang v1.0.0"
     COPYRIGHT = "Copyright (c) 2025 Jaseci Labs, LLC."
 
@@ -127,9 +128,10 @@ class REPL:
         self.should_exit = False
         self.exit_code = 0
 
-        def _exit(code:int = 0) -> None:
+        def _exit(code: int = 0) -> None:
             self.should_exit = True
             self.exit_code = code
+
         self.runner.session["exit"] = _exit
 
         logging.disable()
@@ -141,7 +143,9 @@ class REPL:
         while not self.should_exit:
             mod: JacModule | None = None
             try:  # noqa: SIM105
-                self.code += self.input(">>> " if not self.runner.unexpected_eof else "... ")
+                self.code += self.input(
+                    ">>> " if not self.runner.unexpected_eof else "... "
+                )
                 mod = self._try_compiling()
                 if mod is None and (
                     self.runner.unexpected_eof or self._check_need_more_inputs()
@@ -176,7 +180,9 @@ class REPL:
         if self.runner.stdout:
             self.print(self.runner.stdout, end="", flush=True)
         if self.runner.stderr:
-            self.print(f"{ansi_red}{self.runner.stderr}{ansi_reset}", end="\n", flush=True)
+            self.print(
+                f"{ansi_red}{self.runner.stderr}{ansi_reset}", end="\n", flush=True
+            )
 
     def _print_info(self) -> None:
         """Print REPL info."""
