@@ -14,6 +14,6 @@ with entry {
     }
 
     while z < 10 {
-        z = z + 1;
+        z = z + 2;
     }
 }

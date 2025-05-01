@@ -18,10 +18,10 @@ from .inheritance_pass import InheritancePass  # noqa: I100
 from .cfg_build_pass import CFGBuildPass  # noqa: I100
 
 py_code_gen = [
-    CFGBuildPass,
     DeclImplMatchPass,
     DefUsePass,
     RegistryPass,
+    CFGBuildPass,
     PyastGenPass,
     PyJacAstLinkPass,
     PyBytecodeGenPass,
