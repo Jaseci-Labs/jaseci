@@ -21,6 +21,7 @@ from jaclang.compiler.passes.main import (
     PyImportPass,
     PyastBuildPass,
     SymTabBuildPass,
+    analysis_sched,
     py_code_gen,
     type_checker_sched,
 )
@@ -194,7 +195,7 @@ class JacProgram:
             py_code_gen
             if mode == CompilerMode.COMPILE
             else (
-                py_code_gen[:3]
+                analysis_sched
                 if mode == CompilerMode.QUICKCHECK
                 else type_checker_sched
             )

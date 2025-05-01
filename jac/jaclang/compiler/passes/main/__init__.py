@@ -11,7 +11,7 @@ from .schedules import py_code_gen  # noqa: I100
 from .type_check_pass import JacTypeCheckPass  # noqa: I100
 from .pybc_gen_pass import PyBytecodeGenPass  # noqa: I100
 from .py_collect_dep_pass import PyCollectDepsPass  # noqa: I100
-from .schedules import CompilerMode, type_checker_sched  # noqa: I100
+from .schedules import CompilerMode, analysis_sched, type_checker_sched  # noqa: I100
 
 __all__ = [
     "UniPass",
@@ -28,5 +28,6 @@ __all__ = [
     "CompilerMode",
     "type_checker_sched",
     "py_code_gen",
+    "analysis_sched",
     "PyCollectDepsPass",
 ]

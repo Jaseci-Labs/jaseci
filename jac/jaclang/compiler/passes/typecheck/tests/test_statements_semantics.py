@@ -1,10 +1,7 @@
 """Tests for semantic analysis for Jac statements."""
 
 from jaclang.compiler.passes.main import CompilerMode
-from jaclang.compiler.passes.typecheck import (
-    JacSemanticMessages,
-    SemanticAnalysisPass,
-)
+from jaclang.compiler.passes.typecheck import JacSemanticMessages
 from jaclang.compiler.program import JacProgram
 from jaclang.settings import settings
 from jaclang.utils.test import TestCase
@@ -21,11 +18,10 @@ class TestStmtSemantics(TestCase):
         """Test basic semantic analysis for assignments & var declarations."""
         settings.enable_jac_semantics = True
         program = JacProgram()
-        out = program.compile(
+        program.compile(
             self.fixture_abs_path("statements/assignment_err.jac"),
             mode=CompilerMode.QUICKCHECK,
         )
-        SemanticAnalysisPass(out, prog=program)
         settings.enable_jac_semantics = False
 
         expected_errors: dict[str, SemanticError] = {
@@ -90,11 +86,10 @@ class TestStmtSemantics(TestCase):
         """Test basic semantic analysis for function calls."""
         settings.enable_jac_semantics = True
         program = JacProgram()
-        out = program.compile(
+        program.compile(
             self.fixture_abs_path("statements/func_call_err.jac"),
             mode=CompilerMode.QUICKCHECK,
         )
-        SemanticAnalysisPass(out, prog=program)
         settings.enable_jac_semantics = False
 
         for e in program.semantic_warnnings_had:

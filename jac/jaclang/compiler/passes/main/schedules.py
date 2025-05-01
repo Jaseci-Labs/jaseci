@@ -28,11 +28,15 @@ class CompilerMode(Enum):
     TYPECHECK = "TYPECHECK"
 
 
-py_code_gen = [
+analysis_sched = [
     DeclImplMatchPass,
     DefUsePass,
     JTypeAnnotatePass,
     SemanticAnalysisPass,
+]
+
+py_code_gen = [
+    *analysis_sched,
     PyastGenPass,
     PyJacAstLinkPass,
     PyBytecodeGenPass,
