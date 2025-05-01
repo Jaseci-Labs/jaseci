@@ -4,7 +4,7 @@ This pass builds the control flow graph for the Jac program by filling in  detai
 These nodes will be linked together in the CFG pass.
 """
 
-# import json
+import json
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes import AstPass
@@ -111,19 +111,19 @@ class CFGBuildPass(AstPass):
 
     def exit_module(self, node: uni.Module) -> None:
         """After pass."""
-        CFGLinkPass(ir_in=node, prog=self.prog)
+        # CFGLinkPass(ir_in=node, prog=self.prog)
         bb_colector_pass = BBColectorPass(ir_in=node, prog=self.prog)
         self.basic_blocks = bb_colector_pass.basic_blocks
-        # unparsed_blocks = {
-        #     bb_id: {
-        #         "bb_stmts": bb_info["bb_stmts"],
-        #         "control_in_bbs": bb_info["control_in_bbs"],
-        #         "control_out_bbs": bb_info["control_out_bbs"],
-        #     }
-        #     for bb_id, bb_info in self.basic_blocks.items()
-        # }
-        # with open(f"basic_blocks_{node.name}.json", "w") as json_file:
-        #     json.dump(unparsed_blocks, json_file, default=str, indent=4)
+        unparsed_blocks = {
+            bb_id: {
+                "bb_stmts": [bb.unparse() for bb in bb_info["bb_stmts"]],
+                "control_in_bbs": [bb.unparse() for bb in bb_info["control_in_bbs"]],
+                "control_out_bbs": [bb.unparse() for bb in bb_info["control_out_bbs"]],
+            }
+            for bb_id, bb_info in self.basic_blocks.items()
+        }
+        with open(f"basic_blocks_{node.name}.json", "w") as json_file:
+            json.dump(unparsed_blocks, json_file, default=str, indent=4)
 
 
 class CFGLinkPass(AstPass):
