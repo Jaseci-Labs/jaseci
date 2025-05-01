@@ -91,7 +91,7 @@ class TestStmtSemantics(TestCase):
         settings.enable_jac_semantics = True
         program = JacProgram()
         out = program.compile(
-            self.fixture_abs_path("statements/func_call.jac"),
+            self.fixture_abs_path("statements/func_call_err.jac"),
             target=JTypeAnnotatePass,
         )
         SemanticAnalysisPass(out, prog=program)
