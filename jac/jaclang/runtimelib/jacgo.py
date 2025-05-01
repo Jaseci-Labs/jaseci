@@ -33,6 +33,7 @@ def jacgo_spawn(func: Any, args: Tuple) -> WalkerArchitype:  # noqa: ANN401
         result = result_queue.get_nowait()
         if isinstance(result, Exception):
             raise result
+        print("done")
         return result
     return args[0]  # return same walker if no result is returned
 
@@ -59,7 +60,7 @@ def jacgo_visit(
         if isinstance(result, Exception):
             raise result
         return result
-    return args[0]  # return same walker if no result is returned
+    return args[0].architype, None  # return same walker if no result is returned
 
 
 def create_walker(walker: WalkerAnchor, node: NodeAnchor) -> WalkerAnchor:
