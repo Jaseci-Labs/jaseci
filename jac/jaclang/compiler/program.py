@@ -39,9 +39,10 @@ class JacProgram:
 
     def __init__(self, main_mod: Optional[uni.ProgramModule] = None) -> None:
         """Initialize the JacProgram object."""
-        self.mod: uni.ProgramModule = main_mod if main_mod else uni.ProgramModule()
+        self.mod: uni.ProgramModule = main_mod or uni.ProgramModule()
         self.last_imported: list[Module] = []
         self.py_raise_map: dict[str, str] = {}
+        self.unexpected_eof: bool = False
         self.errors_had: list[Alert] = []
         self.warnings_had: list[Alert] = []
 

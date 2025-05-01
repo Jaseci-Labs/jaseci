@@ -35,6 +35,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
     def transform(self, ir_in: uni.Source) -> uni.Module:
         """Transform input IR."""
         try:
+            self.prog.unexpected_eof = False
             tree, comments = JacParser.parse(ir_in.value, on_error=self.error_callback)
             mod = JacParser.TreeToAST(parser=self).transform(tree)
             ir_in.comments = [self.proc_comment(i, mod) for i in comments]
@@ -52,6 +53,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
             catch_error.c_end = e.column + 1
             catch_error.pos_start = e.pos_in_stream or 0
             catch_error.pos_end = catch_error.pos_start + 1
+
+            if hasattr(e, "token") and e.token.type in ("$END", "FSTR_SQ_END"):
+                self.prog.unexpected_eof = True
 
             error_msg = "Syntax Error"
             if len(e.args) >= 1 and isinstance(e.args[0], str):

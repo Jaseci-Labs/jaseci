@@ -954,6 +954,11 @@ class Module(AstDocNode, UniScopeNode):
         self.terminals: list[Token] = terminals
         self.py_info: PyInfo = PyInfo()
 
+        # Currently the compile error still returns an empty module
+        # this variable states that the returned module is failed to
+        # compiled because of an unexpected EOF. This is used in REPL.
+        self.unexpected_eof: bool = False
+
         UniNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
         UniScopeNode.__init__(self, name=self.name, owner=self)
