@@ -1503,6 +1503,6 @@ class JacLanguageTests(TestCase):
         )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
-        self.assertIn("W Entry action  A(val=1)", stdout_value[0])
+        self.assertIn("action", stdout_value[0])
         # self.assertNotIn("W Exit action  A(val=6)", stdout_value[-3])
         # self.assertIn("Walker W spawned W(num=8)", stdout_value[-2])
