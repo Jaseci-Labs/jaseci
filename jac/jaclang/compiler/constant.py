@@ -4,6 +4,7 @@ from enum import Enum, IntEnum, IntFlag, StrEnum
 
 
 class SymbolType(Enum):
+    """Symbol types."""
 
     MODULE = "module"  # LSP: Module
     MOD_VAR = "mod_var"  # LSP: Variable

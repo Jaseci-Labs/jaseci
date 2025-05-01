@@ -1,4 +1,4 @@
-""""
+"""
 Connect Decls and Defs in AST.
 
 This pass creates and manages compilation of Python code from the AST. This pass

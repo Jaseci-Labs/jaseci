@@ -119,6 +119,7 @@ class Transform(ABC, Generic[T, R]):
         self.logger.warning(alrt.as_log())
 
     def log_info(self, msg: str) -> None:
+        """Log info."""
         self.logger.info(msg)
 
     def ice(self, msg: str = "Something went horribly wrong!") -> RuntimeError:

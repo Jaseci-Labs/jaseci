@@ -655,8 +655,7 @@ class WalkerStmtOnlyNode(UniNode):
 
 
 class Expr(UniNode):
-    """Expression is a combination of values, variables operators and fuctions
-    that are evaluated to produce a value.
+    """Expression is a combination of values, variables operators and fuctions that are evaluated to produce a value.
 
     1. Literal Expressions.
     2. Binary Operations.
@@ -710,11 +709,11 @@ class Expr(UniNode):
 
 
 class AtomExpr(Expr, AstSymbolStubNode):
-    pass
+    """AtomExpr node type for Jac Ast."""
 
 
 class ElementStmt(AstDocNode):
-    pass
+    """ElementStmt node type for Jac Ast."""
 
 
 class ArchBlockStmt(UniNode):
@@ -730,6 +729,7 @@ class CodeBlockStmt(UniNode):
 
 
 class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
+    """AstImplOnlyNode node type for Jac Ast."""
 
     def __init__(
         self, target: ArchRefChain, body: SubNodeList, decl_link: Optional[UniNode]
@@ -761,6 +761,7 @@ class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
 
 
 class AstImplNeedingNode(AstSymbolNode, Generic[T]):
+    """AstImplNeedingNode node type for Jac Ast."""
 
     def __init__(self, body: Optional[T]) -> None:
         self.body = body
@@ -771,6 +772,7 @@ class AstImplNeedingNode(AstSymbolNode, Generic[T]):
 
 
 class NameAtom(AtomExpr, EnumBlockStmt):
+    """NameAtom node type for Jac Ast."""
 
     def __init__(self) -> None:
         self.name_of: AstSymbolNode = self
@@ -848,6 +850,7 @@ class NameAtom(AtomExpr, EnumBlockStmt):
 
 
 class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode, AstSemStrNode):
+    """ArchSpec node type for Jac Ast."""
 
     def __init__(self, decorators: Optional[SubNodeList[Expr]] = None) -> None:
         self.decorators = decorators
@@ -1039,6 +1042,7 @@ class ProgramModule(UniNode):
 
 
 class GlobalVars(ElementStmt, AstAccessNode):
+    """GlobalVars node type for Jac Ast."""
 
     def __init__(
         self,
@@ -1138,6 +1142,7 @@ class Test(AstSymbolNode, ElementStmt, UniScopeNode):
 
 
 class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
+    """ModuleCode node type for Jac Ast."""
 
     def __init__(
         self,
@@ -1170,6 +1175,7 @@ class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
 
 
 class PyInlineCode(ElementStmt, ArchBlockStmt, EnumBlockStmt, CodeBlockStmt):
+    """PyInlineCode node type for Jac Ast."""
 
     def __init__(
         self,
@@ -1197,6 +1203,7 @@ class PyInlineCode(ElementStmt, ArchBlockStmt, EnumBlockStmt, CodeBlockStmt):
 
 
 class Import(ElementStmt, CodeBlockStmt):
+    """Import node type for Jac Ast."""
 
     def __init__(
         self,
@@ -1282,6 +1289,7 @@ class Import(ElementStmt, CodeBlockStmt):
 
 
 class ModulePath(AstSymbolNode):
+    """ModulePath node type for Jac Ast."""
 
     def __init__(
         self,
@@ -1386,6 +1394,7 @@ class ModulePath(AstSymbolNode):
 
 
 class ModuleItem(AstSymbolNode):
+    """ModuleItem node type for Jac Ast."""
 
     def __init__(
         self,
@@ -1683,6 +1692,7 @@ class Ability(
     AstImplNeedingNode,
     UniScopeNode,
 ):
+    """Ability node type for Jac Ast."""
 
     def __init__(
         self,
@@ -1834,6 +1844,7 @@ class AbilityDef(AstImplOnlyNode, UniScopeNode):
 
 
 class FuncSignature(AstSemStrNode):
+    """FuncSignature node type for Jac Ast."""
 
     def __init__(
         self,
@@ -1893,6 +1904,7 @@ class FuncSignature(AstSemStrNode):
 
 
 class EventSignature(AstSemStrNode):
+    """EventSignature node type for Jac Ast."""
 
     def __init__(
         self,
@@ -1973,6 +1985,7 @@ class ArchRefChain(UniNode):
 
 
 class ParamVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
+    """ParamVar node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2021,6 +2034,7 @@ class ParamVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
 
 
 class ArchHas(AstAccessNode, AstDocNode, ArchBlockStmt):
+    """ArchHas node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2063,6 +2077,7 @@ class ArchHas(AstAccessNode, AstDocNode, ArchBlockStmt):
 
 
 class HasVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
+    """HasVar node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2171,6 +2186,7 @@ class IfStmt(CodeBlockStmt, AstElseBodyNode, UniScopeNode):
 
 
 class ElseIf(IfStmt):
+    """ElseIf node type for Jac Ast."""
 
     def normalize(self, deep: bool = False) -> bool:
         res = True
@@ -2190,7 +2206,7 @@ class ElseIf(IfStmt):
 
 
 class ElseStmt(UniScopeNode):
-    """Else node type for Jac Ast."""
+    """ElseStmt node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2214,6 +2230,7 @@ class ElseStmt(UniScopeNode):
 
 
 class ExprStmt(CodeBlockStmt):
+    """ExprStmt node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2338,7 +2355,7 @@ class FinallyStmt(CodeBlockStmt, UniScopeNode):
 
 
 class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
-    """IterFor node type for Jac Ast."""
+    """IterForStmt node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2384,7 +2401,7 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
 
 
 class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
-    """InFor node type for Jac Ast."""
+    """InForStmt node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2516,6 +2533,7 @@ class ExprAsItem(UniNode):
 
 
 class RaiseStmt(CodeBlockStmt):
+    """RaiseStmt node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2544,6 +2562,7 @@ class RaiseStmt(CodeBlockStmt):
 
 
 class AssertStmt(CodeBlockStmt):
+    """AssertStmt node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2573,6 +2592,7 @@ class AssertStmt(CodeBlockStmt):
 
 
 class CheckStmt(CodeBlockStmt):
+    """CheckStmt node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2596,6 +2616,7 @@ class CheckStmt(CodeBlockStmt):
 
 
 class CtrlStmt(CodeBlockStmt):
+    """CtrlStmt node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2615,6 +2636,7 @@ class CtrlStmt(CodeBlockStmt):
 
 
 class DeleteStmt(CodeBlockStmt):
+    """DeleteStmt node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2647,6 +2669,7 @@ class DeleteStmt(CodeBlockStmt):
 
 
 class ReportStmt(CodeBlockStmt):
+    """ReportStmt node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2670,6 +2693,7 @@ class ReportStmt(CodeBlockStmt):
 
 
 class ReturnStmt(CodeBlockStmt):
+    """ReturnStmt node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2694,6 +2718,7 @@ class ReturnStmt(CodeBlockStmt):
 
 
 class IgnoreStmt(WalkerStmtOnlyNode, CodeBlockStmt):
+    """IgnoreStmt node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2718,6 +2743,7 @@ class IgnoreStmt(WalkerStmtOnlyNode, CodeBlockStmt):
 
 
 class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
+    """VisitStmt node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2754,6 +2780,7 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
 
 
 class RevisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
+    """RevisitStmt node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2782,6 +2809,7 @@ class RevisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
 
 
 class DisengageStmt(WalkerStmtOnlyNode, CodeBlockStmt):
+    """DisengageStmt node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2802,6 +2830,7 @@ class DisengageStmt(WalkerStmtOnlyNode, CodeBlockStmt):
 
 
 class AwaitExpr(Expr):
+    """AwaitExpr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2825,6 +2854,7 @@ class AwaitExpr(Expr):
 
 
 class GlobalStmt(CodeBlockStmt):
+    """GlobalStmt node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2848,6 +2878,7 @@ class GlobalStmt(CodeBlockStmt):
 
 
 class NonLocalStmt(GlobalStmt):
+    """NonLocalStmt node type for Jac Ast."""
 
     def normalize(self, deep: bool = False) -> bool:
         res = True
@@ -2863,6 +2894,7 @@ class NonLocalStmt(GlobalStmt):
 
 
 class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
+    """Assignment node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2916,6 +2948,7 @@ class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
 
 
 class BinaryExpr(Expr):
+    """BinaryExpr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2948,6 +2981,7 @@ class BinaryExpr(Expr):
 
 
 class CompareExpr(Expr):
+    """CompareExpr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2979,6 +3013,7 @@ class CompareExpr(Expr):
 
 
 class BoolExpr(Expr):
+    """BoolExpr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3007,7 +3042,7 @@ class BoolExpr(Expr):
 
 
 class LambdaExpr(Expr, UniScopeNode):
-    """ExprLambda node type for Jac Ast."""
+    """LambdaExpr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3039,6 +3074,7 @@ class LambdaExpr(Expr, UniScopeNode):
 
 
 class UnaryExpr(Expr):
+    """UnaryExpr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3062,6 +3098,7 @@ class UnaryExpr(Expr):
 
 
 class IfElseExpr(Expr):
+    """IfElseExpr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3094,6 +3131,7 @@ class IfElseExpr(Expr):
 
 
 class MultiString(AtomExpr):
+    """MultiString node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3118,6 +3156,7 @@ class MultiString(AtomExpr):
 
 
 class FString(AtomExpr):
+    """FString node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3157,6 +3196,7 @@ class FString(AtomExpr):
 
 
 class ListVal(AtomExpr):
+    """ListVal node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3183,6 +3223,7 @@ class ListVal(AtomExpr):
 
 
 class SetVal(AtomExpr):
+    """SetVal node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3209,6 +3250,7 @@ class SetVal(AtomExpr):
 
 
 class TupleVal(AtomExpr):
+    """TupleVal node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3250,6 +3292,7 @@ class TupleVal(AtomExpr):
 
 
 class DictVal(AtomExpr):
+    """DictVal node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3279,7 +3322,7 @@ class DictVal(AtomExpr):
 
 
 class KVPair(UniNode):
-    """ExprKVPair node type for Jac Ast."""
+    """KVPair node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3308,7 +3351,7 @@ class KVPair(UniNode):
 
 
 class KWPair(UniNode):
-    """ExprKWPair node type for Jac Ast."""
+    """KWPair node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3335,7 +3378,7 @@ class KWPair(UniNode):
 
 
 class InnerCompr(AstAsyncNode, UniScopeNode):
-    """ListCompr node type for Jac Ast."""
+    """InnerCompr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3374,6 +3417,7 @@ class InnerCompr(AstAsyncNode, UniScopeNode):
 
 
 class ListCompr(AtomExpr):
+    """ListCompr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3405,6 +3449,7 @@ class ListCompr(AtomExpr):
 
 
 class GenCompr(ListCompr):
+    """GenCompr node type for Jac Ast."""
 
     def normalize(self, deep: bool = False) -> bool:
         res = True
@@ -3424,6 +3469,7 @@ class GenCompr(ListCompr):
 
 
 class SetCompr(ListCompr):
+    """SetCompr node type for Jac Ast."""
 
     def normalize(self, deep: bool = False) -> bool:
         res = True
@@ -3475,6 +3521,7 @@ class DictCompr(AtomExpr, UniScopeNode):
 
 
 class AtomTrailer(Expr):
+    """AtomTrailer node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3525,6 +3572,7 @@ class AtomTrailer(Expr):
 
 
 class AtomUnit(Expr):
+    """AtomUnit node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3548,6 +3596,7 @@ class AtomUnit(Expr):
 
 
 class YieldExpr(Expr):
+    """YieldExpr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3575,6 +3624,7 @@ class YieldExpr(Expr):
 
 
 class FuncCall(Expr):
+    """FuncCall node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3605,9 +3655,11 @@ class FuncCall(Expr):
 
 
 class IndexSlice(AtomExpr):
+    """IndexSlice node type for Jac Ast."""
 
     @dataclass
     class Slice:
+        """Slice node type for Jac Ast."""
 
         start: Optional[Expr]
         stop: Optional[Expr]
@@ -3656,6 +3708,7 @@ class IndexSlice(AtomExpr):
 
 
 class ArchRef(AtomExpr):
+    """ArchRef node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3684,6 +3737,7 @@ class ArchRef(AtomExpr):
 
 
 class EdgeRefTrailer(Expr):
+    """EdgeRefTrailer node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3711,6 +3765,7 @@ class EdgeRefTrailer(Expr):
 
 
 class EdgeOpRef(WalkerStmtOnlyNode, AtomExpr):
+    """EdgeOpRef node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3756,6 +3811,7 @@ class EdgeOpRef(WalkerStmtOnlyNode, AtomExpr):
 
 
 class DisconnectOp(WalkerStmtOnlyNode):
+    """DisconnectOp node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3834,6 +3890,7 @@ class ConnectOp(UniNode):
 
 
 class FilterCompr(AtomExpr):
+    """FilterCompr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3871,6 +3928,7 @@ class FilterCompr(AtomExpr):
 
 
 class AssignCompr(AtomExpr):
+    """AssignCompr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3903,6 +3961,7 @@ class AssignCompr(AtomExpr):
 
 
 class MatchStmt(CodeBlockStmt):
+    """MatchStmt node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3968,6 +4027,7 @@ class MatchCase(UniScopeNode):
 
 
 class MatchOr(MatchPattern):
+    """MatchOr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3992,6 +4052,7 @@ class MatchOr(MatchPattern):
 
 
 class MatchAs(MatchPattern):
+    """MatchAs node type for Jac Ast."""
 
     def __init__(
         self,
@@ -4018,6 +4079,7 @@ class MatchAs(MatchPattern):
 
 
 class MatchWild(MatchPattern):
+    """MatchWild node type for Jac Ast."""
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize match wild card node."""
@@ -4041,6 +4103,7 @@ class MatchWild(MatchPattern):
 
 
 class MatchValue(MatchPattern):
+    """MatchValue node type for Jac Ast."""
 
     def __init__(
         self,
@@ -4059,6 +4122,7 @@ class MatchValue(MatchPattern):
 
 
 class MatchSingleton(MatchPattern):
+    """MatchSingleton node type for Jac Ast."""
 
     def __init__(
         self,
@@ -4075,6 +4139,7 @@ class MatchSingleton(MatchPattern):
 
 
 class MatchSequence(MatchPattern):
+    """MatchSequence node type for Jac Ast."""
 
     def __init__(
         self,
@@ -4100,6 +4165,7 @@ class MatchSequence(MatchPattern):
 
 
 class MatchMapping(MatchPattern):
+    """MatchMapping node type for Jac Ast."""
 
     def __init__(
         self,
@@ -4125,6 +4191,7 @@ class MatchMapping(MatchPattern):
 
 
 class MatchKVPair(MatchPattern):
+    """MatchKVPair node type for Jac Ast."""
 
     def __init__(
         self,
@@ -4150,6 +4217,7 @@ class MatchKVPair(MatchPattern):
 
 
 class MatchStar(MatchPattern):
+    """MatchStar node type for Jac Ast."""
 
     def __init__(
         self,
@@ -4174,6 +4242,7 @@ class MatchStar(MatchPattern):
 
 
 class MatchArch(MatchPattern):
+    """MatchArch node type for Jac Ast."""
 
     def __init__(
         self,
@@ -4243,6 +4312,7 @@ class Token(UniNode):
 
 
 class Name(Token, NameAtom):
+    """Name node type for Jac Ast."""
 
     def __init__(
         self,
@@ -4308,6 +4378,7 @@ class Name(Token, NameAtom):
 
 
 class SpecialVarRef(Name):
+    """SpecialVarRef node type for Jac Ast."""
 
     def __init__(
         self,
@@ -4352,6 +4423,7 @@ class SpecialVarRef(Name):
 
 
 class Literal(Token, AtomExpr):
+    """Literal node type for Jac Ast."""
 
     SYMBOL_TYPE = SymbolType.VAR
 
@@ -4404,6 +4476,7 @@ class Literal(Token, AtomExpr):
 
 
 class BuiltinType(Name, Literal):
+    """BuiltinType node type for Jac Ast."""
 
     SYMBOL_TYPE = SymbolType.VAR
 
@@ -4416,6 +4489,7 @@ class BuiltinType(Name, Literal):
 
 
 class Float(Literal):
+    """Float node type for Jac Ast."""
 
     SYMBOL_TYPE = SymbolType.NUMBER
 
@@ -4425,6 +4499,7 @@ class Float(Literal):
 
 
 class Int(Literal):
+    """Int node type for Jac Ast."""
 
     SYMBOL_TYPE = SymbolType.NUMBER
 
@@ -4434,6 +4509,7 @@ class Int(Literal):
 
 
 class String(Literal):
+    """String node type for Jac Ast."""
 
     SYMBOL_TYPE = SymbolType.STRING
 
@@ -4478,6 +4554,7 @@ class String(Literal):
 
 
 class Bool(Literal):
+    """Bool node type for Jac Ast."""
 
     SYMBOL_TYPE = SymbolType.BOOL
 
@@ -4487,6 +4564,7 @@ class Bool(Literal):
 
 
 class Null(Literal):
+    """Null node type for Jac Ast."""
 
     SYMBOL_TYPE = SymbolType.NULL
 
@@ -4496,6 +4574,7 @@ class Null(Literal):
 
 
 class Ellipsis(Literal):
+    """Ellipsis node type for Jac Ast."""
 
     SYMBOL_TYPE = SymbolType.NULL
 
@@ -4505,6 +4584,7 @@ class Ellipsis(Literal):
 
 
 class EmptyToken(Token):
+    """EmptyToken node type for Jac Ast."""
 
     def __init__(self, orig_src: Source | None = None) -> None:
         super().__init__(
@@ -4525,6 +4605,7 @@ class Semi(Token, CodeBlockStmt):
 
 
 class CommentToken(Token):
+    """CommentToken node type for Jac Ast."""
 
     def __init__(
         self,

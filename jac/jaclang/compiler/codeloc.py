@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class CodeGenTarget:
+    """Code generation target."""
 
     py: str = ""
     jac: str = ""
@@ -22,6 +23,7 @@ class CodeGenTarget:
     py_bytecode: Optional[bytes] = None
 
     def clean(self) -> None:
+        """Clean code generation target."""
         self.py = ""
         self.jac = ""
         self.py_ast = []
@@ -29,12 +31,14 @@ class CodeGenTarget:
 
 
 class CodeLocInfo:
+    """Code location info."""
 
     def __init__(
         self,
         first_tok: Token,
         last_tok: Token,
     ) -> None:
+        """Initialize code location info."""
         self.first_tok = first_tok
         self.last_tok = last_tok
 

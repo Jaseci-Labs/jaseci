@@ -20,6 +20,7 @@ class AccessCheckPass(UniPass):
     def is_class_inherited_from(
         self, dri_class: uni.Architype, base_class: uni.Architype
     ) -> bool:
+        """Return true if the dri_class inherited from base_class."""
         if dri_class.base_classes is None:
             return False
         for expr in dri_class.base_classes.items:
