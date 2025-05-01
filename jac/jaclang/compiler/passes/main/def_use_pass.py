@@ -10,10 +10,10 @@ import ast as ast3
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Tokens as Tok
-from jaclang.compiler.passes import AstPass
+from jaclang.compiler.passes import UniPass
 
 
-class DefUsePass(AstPass):
+class DefUsePass(UniPass):
     """Jac Ast build pass."""
 
     def after_pass(self) -> None:
@@ -307,12 +307,7 @@ class DefUsePass(AstPass):
 
         target: expression,
         """
-        items = (
-            node.target.values.items
-            if isinstance(node.target, uni.TupleVal) and node.target.values
-            else [node.target]
-        )
-        for i in items:
+        for i in node.py_ast_targets:
             if isinstance(i, uni.AtomTrailer):
                 i.as_attr_list[-1].name_spec.py_ctx_func = ast3.Del
             elif isinstance(i, uni.AstSymbolNode):

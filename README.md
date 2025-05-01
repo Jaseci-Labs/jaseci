@@ -36,7 +36,9 @@ Explore these impressive projects built with Jaseci! These innovative applicatio
 |---------|-------------|------|
 | **Jivas** | An Agentic Framework for rapidly prototyping and deploying graph-based, AI solutions | [GitHub](https://github.com/TrueSelph/jivas) |
 | **Tobu** | Your AI-powered memory keeper that captures the stories behind your photos and videos | [Website](https://tobu.life/) |
+| **TrueSelph** | A Platform Built on Jivas for building Production-grade Scalable Agentic Conversational AI solutions | [Website](https://trueselph.com/) |
 | **Myca** | An AI-powered productivity tool designed for high-performing individuals | [Website](https://www.myca.ai/) |
+| **Pocketnest Birdy AI** | A Commercial Financial AI Empowered by Your Own Financial Journey | [Website](https://www.pocketnest.com/) |
 | **LittleX** | A lightweight social media application inspired by X, developed using the Jaseci Stack | [GitHub](https://github.com/Jaseci-Labs/littleX) |
 | **Visit_Zoo** | An interactive zoo simulation with clickable sections, images, and videos | [GitHub](https://github.com/Thamirawaran/Visit_Zoo) |
 

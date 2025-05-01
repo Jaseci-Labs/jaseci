@@ -9,7 +9,6 @@ from types import UnionType
 from typing import Callable, Iterator, TYPE_CHECKING
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.semtable import SemScope
 
 if TYPE_CHECKING:
     from jaclang.runtimelib.constructs import NodeAnchor, NodeArchitype
@@ -114,37 +113,6 @@ def traverse_graph(
                 else:
 
                     dfs(other_nd, cur_depth + 1)
-
-
-def get_sem_scope(node: uni.UniNode) -> SemScope:
-    """Get scope of the node."""
-    a = (
-        node.name
-        if isinstance(node, uni.Module)
-        else (
-            node.name.value
-            if isinstance(node, (uni.Enum, uni.Architype))
-            else node.name_ref.sym_name if isinstance(node, uni.Ability) else ""
-        )
-    )
-    if isinstance(node, uni.Module):
-        return SemScope(a, "Module", None)
-    elif isinstance(node, (uni.Enum, uni.Architype, uni.Ability)):
-        node_type = (
-            node.__class__.__name__
-            if isinstance(node, uni.Enum)
-            else ("Ability" if isinstance(node, uni.Ability) else node.arch_type.value)
-        )
-        if node.parent:
-            return SemScope(
-                a,
-                node_type,
-                get_sem_scope(node.parent),
-            )
-    else:
-        if node.parent:
-            return get_sem_scope(node.parent)
-    return SemScope("", "", None)
 
 
 def extract_type(node: uni.UniNode) -> list[str]:

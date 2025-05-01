@@ -6,7 +6,7 @@ import sys
 import types
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.passes.main import PyastGenPass
+from jaclang.compiler.passes.main import CompilerMode as CMode, PyastGenPass
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.machinestate import JacMachineState
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
@@ -38,7 +38,6 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         """Basic test for pass."""
         (out := JacProgram()).compile(
             self.examples_abs_path("micro/hodge_podge.jac"),
-            target=PyastGenPass,
         )
 
         self.assertFalse(out.errors_had)
@@ -47,7 +46,6 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         """Basic test for pass."""
         code_gen = (out := JacProgram()).compile(
             self.examples_abs_path("manual_code/circle.jac"),
-            target=PyastGenPass,
         )
         if code_gen.gen.py_ast and isinstance(code_gen.gen.py_ast[0], ast3.Module):
             prog = compile(code_gen.gen.py_ast[0], filename="<ast>", mode="exec")
@@ -83,9 +81,7 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        code_gen = JacProgram().compile(
-            self.fixture_abs_path(filename), target=PyastGenPass
-        )
+        code_gen = JacProgram().compile(self.fixture_abs_path(filename))
         from_jac_str = ast3.dump(code_gen.gen.py_ast[0], indent=2)
         from_jac = code_gen.gen.py_ast[0]
         try:
@@ -127,11 +123,11 @@ class ValidateTreeParentTest(TestCaseMicroSuite):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        code_gen = JacProgram().compile(self.fixture_abs_path(filename), schedule=[])
-        self.assertTrue(self.parent_scrub(code_gen))
         code_gen = JacProgram().compile(
-            self.fixture_abs_path(filename), target=PyastGenPass
+            self.fixture_abs_path(filename), mode=CMode.PARSE
         )
+        self.assertTrue(self.parent_scrub(code_gen))
+        code_gen = JacProgram().compile(self.fixture_abs_path(filename))
         self.assertTrue(self.parent_scrub(code_gen))
 
 

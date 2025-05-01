@@ -1,7 +1,7 @@
 """Tests for semantic analysis for Jac statements."""
 
+from jaclang.compiler.passes.main import CompilerMode
 from jaclang.compiler.passes.typecheck import (
-    JTypeAnnotatePass,
     JacSemanticMessages,
     SemanticAnalysisPass,
 )
@@ -23,7 +23,7 @@ class TestStmtSemantics(TestCase):
         program = JacProgram()
         out = program.compile(
             self.fixture_abs_path("statements/assignment_err.jac"),
-            target=JTypeAnnotatePass,
+            mode=CompilerMode.QUICKCHECK,
         )
         SemanticAnalysisPass(out, prog=program)
         settings.enable_jac_semantics = False
@@ -92,7 +92,7 @@ class TestStmtSemantics(TestCase):
         program = JacProgram()
         out = program.compile(
             self.fixture_abs_path("statements/func_call_err.jac"),
-            target=JTypeAnnotatePass,
+            mode=CompilerMode.QUICKCHECK,
         )
         SemanticAnalysisPass(out, prog=program)
         settings.enable_jac_semantics = False

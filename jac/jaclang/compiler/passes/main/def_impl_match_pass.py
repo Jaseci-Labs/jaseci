@@ -8,11 +8,11 @@ body field.
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Tokens as Tok
-from jaclang.compiler.passes import AstPass
+from jaclang.compiler.passes import UniPass
 from jaclang.compiler.unitree import Symbol, UniScopeNode
 
 
-class DeclImplMatchPass(AstPass):
+class DeclImplMatchPass(UniPass):
     """Decls and Def matching pass."""
 
     def enter_module(self, node: uni.Module) -> None:

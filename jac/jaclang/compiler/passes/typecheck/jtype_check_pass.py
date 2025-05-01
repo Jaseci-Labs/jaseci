@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 import jaclang.compiler.passes.typecheck.jtype as jtype
 import jaclang.compiler.unitree as ast
-from jaclang.compiler.passes import AstPass
+from jaclang.compiler.passes import UniPass
 from jaclang.compiler.passes.typecheck.semantic_msgs import JacSemanticMessages
 from jaclang.settings import settings
 
@@ -12,7 +12,7 @@ from jaclang.settings import settings
 SemanticErrorObject = tuple[JacSemanticMessages, ast.UniNode, dict[str, str]]
 
 
-class SemanticAnalysisPass(AstPass):
+class SemanticAnalysisPass(UniPass):
     """Jac pass for semantic analysis."""
 
     def before_pass(self) -> None:

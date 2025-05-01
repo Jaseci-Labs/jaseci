@@ -14,7 +14,7 @@ import jaclang.compiler.unitree as uni
 from jaclang.cli.cmdreg import CommandShell, cmd_registry
 from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
-from jaclang.compiler.passes.main.schedules import py_code_gen_build, py_code_gen_typed
+from jaclang.compiler.passes.main.schedules import CompilerMode as CMode
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.builtin import dotgen
 from jaclang.runtimelib.constructs import WalkerArchitype
@@ -163,16 +163,19 @@ def get_object(
 
 
 @cmd_registry.register
-def build(filename: str, pybuild: bool = False) -> None:
+def build(filename: str, typecheck: bool = True) -> None:
     """Build the specified .jac file."""
     if filename.endswith(".jac"):
         (out := JacProgram()).compile(
             file_path=filename,
-            schedule=py_code_gen_typed if pybuild else py_code_gen_build,
+            mode=CMode.TYPECHECK if typecheck else CMode.COMPILE,
         )
         errs = len(out.errors_had)
         warnings = len(out.warnings_had)
         print(f"Errors: {errs}, Warnings: {warnings}")
+        for i in out.mod.hub.values():
+            for j in i.flatten():
+                j.gen.mypy_ast = []
         with open(filename[:-4] + ".jir", "wb") as f:
             pickle.dump(out, f)
     else:
@@ -188,7 +191,7 @@ def check(filename: str, print_errs: bool = True) -> None:
     if filename.endswith(".jac"):
         (prog := JacProgram()).compile(
             file_path=filename,
-            schedule=py_code_gen_typed,
+            mode=CMode.TYPECHECK,
         )
 
         errs = len(prog.errors_had)

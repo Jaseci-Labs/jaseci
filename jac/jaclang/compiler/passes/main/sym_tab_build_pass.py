@@ -4,14 +4,12 @@ This pass builds the symbol table tree for the Jaseci Ast. It also adds symbols
 for globals, imports, architypes, and abilities declarations and definitions.
 """
 
-from typing import TypeVar
-
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.passes import AstPass
+from jaclang.compiler.passes import UniPass
 from jaclang.compiler.unitree import UniScopeNode
 
 
-class SymTabBuildPass(AstPass):
+class SymTabBuildPass(UniPass):
     """Jac Symbol table build pass."""
 
     def before_pass(self) -> None:
@@ -20,15 +18,8 @@ class SymTabBuildPass(AstPass):
 
     def push_scope_and_link(self, key_node: uni.UniScopeNode) -> None:
         """Push scope."""
-        if not isinstance(key_node, uni.UniScopeNode):
-            raise TypeError(f"Expected a UniScopeNode, got {type(key_node).__name__}")
-        inherit = key_node.parent_scope
-
-        if not len(self.cur_sym_tab) and not inherit:
+        if not len(self.cur_sym_tab):
             self.cur_sym_tab.append(key_node)
-        elif not len(self.cur_sym_tab) and inherit:
-            self.cur_sym_tab.append(inherit)
-            self.cur_sym_tab.append(self.cur_scope.link_kid_scope(key_node=key_node))
         else:
             self.cur_sym_tab.append(self.cur_scope.link_kid_scope(key_node=key_node))
 
@@ -1161,17 +1152,3 @@ class SymTabBuildPass(AstPass):
 
     def enter_comment_token(self, node: uni.CommentToken) -> None:
         """Sub objects."""
-
-
-T = TypeVar("T", bound=uni.UniNode)
-
-
-class PyInspectSymTabBuildPass(SymTabBuildPass):
-    """Jac Symbol table build pass."""
-
-    def push_scope_and_link(self, key_node: uni.UniScopeNode) -> None:
-        """Push scope."""
-        if not len(self.cur_sym_tab):
-            self.cur_sym_tab.append(key_node)
-        else:
-            self.cur_sym_tab.append(self.cur_scope.link_kid_scope(key_node=key_node))

@@ -8,12 +8,12 @@ from typing import Any, Optional
 
 import jaclang.compiler.passes.typecheck.jtype as jtype
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.passes import AstPass
+from jaclang.compiler.passes import UniPass
 from jaclang.compiler.passes.typecheck.semantic_msgs import JacSemanticMessages
 from jaclang.settings import settings
 
 
-class JTypeAnnotatePass(AstPass):
+class JTypeAnnotatePass(UniPass):
     """Populate type annotations to symbols."""
 
     def report_error(

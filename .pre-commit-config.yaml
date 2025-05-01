@@ -26,12 +26,12 @@ repos:
             flake8_annotations,
             flake8_simplify,
           ]
-        exclude: "venv|vendor|__jac_gen__|generated|examples|langserve/tests|pygame_mock"
+        exclude: "venv|vendor|__jac_gen__|larkparse|examples|langserve/tests|pygame_mock"
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.15.0
     hooks:
       - id: mypy
-        exclude: "venv|vendor|__jac_gen__|generated|examples|tests|stubs|support|setup.py|jac-mtllm"
+        exclude: "venv|vendor|__jac_gen__|larkparse|examples|tests|stubs|support|setup.py|jac-mtllm"
         args:
           - --follow-imports=silent
           - --ignore-missing-imports

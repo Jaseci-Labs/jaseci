@@ -5,12 +5,12 @@ from __future__ import annotations
 from typing import Optional
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.passes import AstPass
+from jaclang.compiler.passes import UniPass
 from jaclang.compiler.unitree import Symbol, UniScopeNode
 from jaclang.settings import settings
 
 
-class InheritancePass(AstPass):
+class InheritancePass(UniPass):
     """Add inherited abilities in the target symbol tables."""
 
     def __debug_print(self, msg: str) -> None:

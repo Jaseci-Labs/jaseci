@@ -1,6 +1,5 @@
 """Test pass module."""
 
-from jaclang.compiler.passes.main import DefUsePass
 from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import TestCase
 
@@ -15,8 +14,7 @@ class DefUsePassTests(TestCase):
     def test_def_uses(self) -> None:
         """Basic test for pass."""
         state = JacProgram().compile(
-            file_path=self.fixture_abs_path("defs_and_uses.jac"),
-            target=DefUsePass,
+            file_path=self.fixture_abs_path("defs_and_uses.jac")
         )
         uses = [i.uses for i in state.sym_tab.kid_scope[0].names_in_scope.values()]
         self.assertEqual(len(uses[0]), 1)
