@@ -2057,7 +2057,7 @@ class PyastGenPass(UniPass):
             node.gen.py_ast = [
                 self.sync(
                     ast3.Call(
-                        func=self.sync(ast3.Name(id="jacroutine", ctx=ast3.Load())),
+                        func=self.sync(ast3.Name(id="jacgo_spawn", ctx=ast3.Load())),
                         args=[],
                         keywords=[
                             self.sync(
@@ -2086,14 +2086,6 @@ class PyastGenPass(UniPass):
                                                 cast(
                                                     ast3.expr, node.right.gen.py_ast[0]
                                                 ),
-                                                cast(
-                                                    ast3.expr,
-                                                    self.sync(
-                                                        ast3.Constant(
-                                                            value=node.is_jacgo
-                                                        )
-                                                    ),
-                                                ),
                                             ],
                                             ctx=ast3.Load(),
                                         )
@@ -2114,7 +2106,6 @@ class PyastGenPass(UniPass):
                             [
                                 node.left.gen.py_ast[0],
                                 node.right.gen.py_ast[0],
-                                self.sync(ast3.Constant(value=node.is_jacgo)),
                             ],
                         ),
                         keywords=[],
