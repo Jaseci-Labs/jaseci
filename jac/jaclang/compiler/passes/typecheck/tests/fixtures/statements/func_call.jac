@@ -26,6 +26,7 @@ with entry {
     function2(a=x0);
     function2(x0, x0, x0);
     function2(x0, a=x0, b=x0);
+    function2(x0, a=x0);
     x0 = function3(a=x0);
     function4(x0, x0, x0);
     function5(x0, x0, x0);

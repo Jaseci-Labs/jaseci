@@ -2,7 +2,7 @@
 
 from typing import Optional, Type
 
-import jaclang.compiler.passes.typecheck.type as jtype
+import jaclang.compiler.passes.typecheck.jtype as jtype
 import jaclang.compiler.unitree as ast
 from jaclang.settings import settings
 from jaclang.utils.helpers import pascal_to_snake
@@ -70,9 +70,9 @@ class JacExpressionType:
             return jtype.JNoType()
 
     def _get_func_call_expr_type(self, node: ast.FuncCall) -> jtype.JType:
-        assert isinstance(node.target, ast.Name)
-        assert node.target.name_spec.sym is not None
-        return node.target.name_spec.sym.jtype
+        func_type = self.get_type(node.target)
+        assert isinstance(func_type, jtype.JCallableType)
+        return func_type.return_type
 
     def _set_name_expr_type(self, node: ast.Name, expr_type: jtype.JType) -> None:
         assert node.name_spec.sym is not None

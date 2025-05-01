@@ -28,3 +28,9 @@ class JacSemanticMessages(Enum):
     CONFLICTING_VAR_TYPE = (
         "Error: Can't assign a value {val_type} to a {var_type} object"
     )
+    ASSIGN_TO_RTYPE = "Expression '{expr}' can't be assigned (not a valid ltype)"
+
+    # Misc.
+    UNSUPPORTED_TYPE_ANNOTATION = (
+        "Type annotations is not supported for '{expr}' expression"
+    )

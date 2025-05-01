@@ -1,7 +1,10 @@
 """Tests for semantic analysis for Jac declarations."""
 
-from jaclang.compiler.passes.main import DefUsePass
-from jaclang.compiler.passes.typecheck import JacSemanticMessages, SemanticAnalysisPass
+from jaclang.compiler.passes.typecheck import (
+    JTypeAnnotatePass,
+    JacSemanticMessages,
+    SemanticAnalysisPass,
+)
 from jaclang.compiler.program import JacProgram
 from jaclang.settings import settings
 from jaclang.utils.test import TestCase
@@ -20,12 +23,12 @@ class TestDeclSemantics(TestCase):
         program = JacProgram()
         out = program.compile(
             self.fixture_abs_path("declarations/function.jac"),
-            target=DefUsePass,
+            target=JTypeAnnotatePass,
         )
-        sem_analysis_pass = SemanticAnalysisPass(out, prog=program)
+        SemanticAnalysisPass(out, prog=program)
         settings.enable_jac_semantics = False
 
-        for e in sem_analysis_pass.semantic_warning:
+        for e in program.semantic_errors_had:
             print(e[1].loc, e[0], e[2])
 
         expected_errors: dict[str, SemanticError] = {
@@ -39,16 +42,19 @@ class TestDeclSemantics(TestCase):
             "3:5 - 3:14": (JacSemanticMessages.RETURN_FOR_NONE_ABILITY, {})
         }
 
-        for msg, node, msg_frmt in sem_analysis_pass.semantic_errors:
+        for msg, node, msg_frmt in program.semantic_errors_had:
             assert str(node.loc) in expected_errors, "Missing semantic errors"
             expected_error = expected_errors.pop(str(node.loc))
             assert msg == expected_error[0]
             assert msg_frmt == expected_error[1]
         assert len(expected_errors.items()) == 0, "Extra semantic errors"
 
-        for msg, node, msg_frmt in sem_analysis_pass.semantic_warning:
+        for msg, node, msg_frmt in program.semantic_warnnings_had:
             assert str(node.loc) in expected_warnings, "Missing semantic warning"
             expected_error = expected_warnings.pop(str(node.loc))
             assert msg == expected_error[0]
             assert msg_frmt == expected_error[1]
         assert len(expected_errors.items()) == 0, "Extra semantic warnings"
+
+
+TestDeclSemantics().test_function_decl_semantics()

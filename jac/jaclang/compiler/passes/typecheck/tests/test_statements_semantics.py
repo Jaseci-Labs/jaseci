@@ -1,7 +1,10 @@
 """Tests for semantic analysis for Jac statements."""
 
-from jaclang.compiler.passes.main import DefUsePass
-from jaclang.compiler.passes.typecheck import JacSemanticMessages, SemanticAnalysisPass
+from jaclang.compiler.passes.typecheck import (
+    JTypeAnnotatePass,
+    JacSemanticMessages,
+    SemanticAnalysisPass,
+)
 from jaclang.compiler.program import JacProgram
 from jaclang.settings import settings
 from jaclang.utils.test import TestCase
@@ -20,9 +23,9 @@ class TestStmtSemantics(TestCase):
         program = JacProgram()
         out = program.compile(
             self.fixture_abs_path("statements/assignment.jac"),
-            target=DefUsePass,
+            target=JTypeAnnotatePass,
         )
-        sem_analysis_pass = SemanticAnalysisPass(out, prog=program)
+        SemanticAnalysisPass(out, prog=program)
         settings.enable_jac_semantics = False
 
         expected_errors: dict[str, SemanticError] = {
@@ -42,17 +45,41 @@ class TestStmtSemantics(TestCase):
                 JacSemanticMessages.CONFLICTING_VAR_TYPE,
                 {"val_type": "int", "var_type": "bool"},
             ),
+            "12:5 - 12:12": (
+                JacSemanticMessages.CONFLICTING_VAR_TYPE,
+                {"val_type": "int", "var_type": "Callable[none, [a]]"},
+            ),
+            "13:5 - 13:14": (JacSemanticMessages.ASSIGN_TO_RTYPE, {"expr": "fn ( )"}),
+            "13:5 - 13:0": (
+                JacSemanticMessages.PARAM_NUMBER_MISMATCH,
+                {"actual_number": "1", "passed_number": "0"},
+            ),
+            "14:5 - 14:21": (
+                JacSemanticMessages.CONFLICTING_VAR_TYPE,
+                {"val_type": "float", "var_type": "bool"},
+            ),
         }
-        expected_warnings: dict[str, SemanticError] = {}
+        expected_warnings: dict[str, SemanticError] = {
+            "14:5 - 14:21": (
+                JacSemanticMessages.VAR_REDEFINITION,
+                {"var_name": "x1", "new_type": "float"},
+            ),
+            "18:5 - 18:18": (JacSemanticMessages.RETURN_FOR_NONE_ABILITY, {}),
+        }
 
-        for msg, node, msg_frmt in sem_analysis_pass.semantic_errors:
-            assert str(node.loc) in expected_errors, "Missing semantic errors"
+        for e in program.semantic_warnnings_had:
+            print(e[1].loc, e[0], e[2])
+
+        for msg, node, msg_frmt in program.semantic_errors_had:
+            assert (
+                str(node.loc) in expected_errors
+            ), f"Missing semantic errors for {node.loc}"
             expected_error = expected_errors.pop(str(node.loc))
             assert msg == expected_error[0]
             assert msg_frmt == expected_error[1]
         assert len(expected_errors.items()) == 0, "Extra semantic errors"
 
-        for msg, node, msg_frmt in sem_analysis_pass.semantic_warning:
+        for msg, node, msg_frmt in program.semantic_warnnings_had:
             assert str(node.loc) in expected_warnings, "Missing semantic warning"
             expected_error = expected_warnings.pop(str(node.loc))
             assert msg == expected_error[0]
@@ -65,20 +92,20 @@ class TestStmtSemantics(TestCase):
         program = JacProgram()
         out = program.compile(
             self.fixture_abs_path("statements/func_call.jac"),
-            target=DefUsePass,
+            target=JTypeAnnotatePass,
         )
-        sem_analysis_pass = SemanticAnalysisPass(out, prog=program)
+        SemanticAnalysisPass(out, prog=program)
         settings.enable_jac_semantics = False
 
-        # for e in sem_analysis_pass.semantic_warning:
-        #     print(e[1].loc, e[0], e[2])
+        for e in program.semantic_warnnings_had:
+            print(e[1].loc, e[0], e[2])
 
         expected_errors: dict[str, SemanticError] = {
+            "11:1 - 12:2": (JacSemanticMessages.MISSING_RETURN_STATEMENT, {}),
             "4:5 - 4:14": (
                 JacSemanticMessages.CONFLICTING_RETURN_TYPE,
                 {"actual_return_type": "str", "formal_return_type": "int"},
             ),
-            "11:1 - 12:2": (JacSemanticMessages.MISSING_RETURN_STATEMENT, {}),
             "21:5 - 21:25": (
                 JacSemanticMessages.CONFLICTING_VAR_TYPE,
                 {"val_type": "str", "var_type": "int"},
@@ -104,11 +131,12 @@ class TestStmtSemantics(TestCase):
                 JacSemanticMessages.PARAM_NUMBER_MISMATCH,
                 {"actual_number": "2", "passed_number": "3"},
             ),
-            "30:5 - 30:26": (
+            "29:5 - 29:24": (JacSemanticMessages.REPEATED_ARG, {"param_name": "a"}),
+            "31:5 - 31:26": (
                 JacSemanticMessages.PARAM_NUMBER_MISMATCH,
                 {"actual_number": "1", "passed_number": "3"},
             ),
-            "31:5 - 31:26": (
+            "32:5 - 32:26": (
                 JacSemanticMessages.UNDEFINED_FUNCTION_NAME,
                 {"func_name": "function5"},
             ),
@@ -117,14 +145,14 @@ class TestStmtSemantics(TestCase):
             "15:5 - 15:18": (JacSemanticMessages.RETURN_FOR_NONE_ABILITY, {})
         }
 
-        for msg, node, msg_frmt in sem_analysis_pass.semantic_errors:
+        for msg, node, msg_frmt in program.semantic_errors_had:
             assert str(node.loc) in expected_errors, "Missing semantic errors"
             expected_error = expected_errors.pop(str(node.loc))
             assert msg == expected_error[0]
             assert msg_frmt == expected_error[1]
         assert len(expected_errors.items()) == 0, "Extra semantic errors"
 
-        for msg, node, msg_frmt in sem_analysis_pass.semantic_warning:
+        for msg, node, msg_frmt in program.semantic_warnnings_had:
             assert str(node.loc) in expected_warnings, "Missing semantic warning"
             expected_error = expected_warnings.pop(str(node.loc))
             assert msg == expected_error[0]

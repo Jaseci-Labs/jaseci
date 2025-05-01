@@ -27,6 +27,7 @@ from jaclang.compiler.passes.main import (
 from jaclang.compiler.passes.main.sym_tab_link_pass import SymTabLinkPass
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.passes.transform import Alert, Transform
+from jaclang.compiler.passes.typecheck import JacExpressionType, SemanticErrorObject
 from jaclang.compiler.semtable import SemRegistry
 from jaclang.compiler.unitree import Module
 from jaclang.settings import settings
@@ -47,6 +48,9 @@ class JacProgram:
         self.py_raise_map: dict[str, str] = {}
         self.errors_had: list[Alert] = []
         self.warnings_had: list[Alert] = []
+        self.expr_type_handler = JacExpressionType()
+        self.semantic_errors_had: list[SemanticErrorObject] = []
+        self.semantic_warnnings_had: list[SemanticErrorObject] = []
 
     def get_bytecode(
         self, full_target: str, full_compile: bool = True

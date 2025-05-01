@@ -9,4 +9,11 @@ with entry {
     # data: list = [];
     x1 += 1;
     x1 -= 3;
+    fn = 3;
+    fn() = 4;
+    x1: float = 7.7;
+}
+
+can fn(a: int) {
+    return False;
 }

@@ -243,7 +243,7 @@ class Symbol:
         parent_tab: UniScopeNode,
     ) -> None:
         """Initialize."""
-        from jaclang.compiler.passes.typecheck.type import JType, JNoType
+        from jaclang.compiler.passes.typecheck.jtype import JType, JNoType
 
         self.defn: list[NameAtom] = [defn]
         self.uses: list[NameAtom] = []
