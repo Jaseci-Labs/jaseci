@@ -1,11 +1,18 @@
 """This file contains the JacGo runtime, which is a simple implementation of the Go concurrency model in Python."""
 
-import threading
+import copy
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Tuple
 
-from jaclang.runtimelib.constructs import NodeArchitype
+from jaclang.runtimelib.constructs import (
+    NodeAnchor,
+    NodeArchitype,
+    WalkerAnchor,
+)
 
 groups = []
+
+pool = ThreadPoolExecutor(max_workers=10)
 
 
 class Task:
@@ -15,21 +22,20 @@ class Task:
         """Initialize the task with a function and its arguments."""
         self.func = func
         self.args = args
-        self._thread = threading.Thread(target=self.func, args=self.args)
-        self.start()
+        self.t = self.start()
 
-    def start(self) -> None:
+    def start(self) -> Any:  # noqa: ANN401
         """Start the task in a separate thread."""
-        self._thread.start()
-
-    def join(self) -> None:
-        """Wait for the task to finish."""
-        self._thread.join()
+        global pool
+        if self.func is not None:
+            t1 = pool.submit(self.func, *self.args)
+        return t1.result()
 
 
 def jacroutine(func: Any | None, args: Tuple) -> Task:
     """Create a task with the given function and arguments."""
-    return Task(func, args)
+    task = Task(func, args)
+    return task.t
 
 
 def waitgroup(group: list) -> None:
@@ -58,3 +64,14 @@ def is_done(node: NodeArchitype) -> bool:
         if group[0] == node:
             return group[1] == 0
     return False
+
+
+def create_walker(walker: WalkerAnchor, node: NodeAnchor) -> WalkerAnchor:
+    """Create a walker."""
+    walker_new = copy.deepcopy(walker)
+    walker_new.next = [node]
+    walker_new.path = []
+    walker_new.ignores = []
+    # walker_new.parent = walker
+    # walker.child.append(walker_new)
+    return walker_new
