@@ -22,7 +22,7 @@ class TestStmtSemantics(TestCase):
         settings.enable_jac_semantics = True
         program = JacProgram()
         out = program.compile(
-            self.fixture_abs_path("statements/assignment.jac"),
+            self.fixture_abs_path("statements/assignment_err.jac"),
             target=JTypeAnnotatePass,
         )
         SemanticAnalysisPass(out, prog=program)
