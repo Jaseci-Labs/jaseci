@@ -49,17 +49,11 @@ class JacProgram:
         self, full_target: str, full_compile: bool = True
     ) -> Optional[types.CodeType]:
         """Get the bytecode for a specific module."""
-        if self.mod and full_target in self.mod.hub:
+        if full_target in self.mod.hub:
             codeobj = self.mod.hub[full_target].gen.py_bytecode
             return marshal.loads(codeobj) if isinstance(codeobj, bytes) else None
         result = self.compile(file_path=full_target, full_compile=full_compile)
-        if self.errors_had:
-            for alrt in self.errors_had:
-                logger.error(alrt.pretty_print())
-        if result.gen.py_bytecode is not None:
-            return marshal.loads(result.gen.py_bytecode)
-        else:
-            return None
+        return marshal.loads(result.gen.py_bytecode) if result.gen.py_bytecode else None
 
     def compile(
         self,
@@ -84,32 +78,32 @@ class JacProgram:
         full_compile: bool = True,
     ) -> uni.Module:
         """Convert a Jac file to an AST."""
+        had_error = False
         if file_path.endswith(".py"):
             parsed_ast = py_ast.parse(source_str)
-            py_ast_ret: Transform[uni.PythonModuleAst, uni.Module] = PyastBuildPass(
+            py_ast_ret = PyastBuildPass(
                 ir_in=uni.PythonModuleAst(
                     parsed_ast,
                     orig_src=uni.Source(source_str, mod_path=file_path),
                 ),
                 prog=self,
             )
-            ast_ret: (
-                Transform[uni.PythonModuleAst, uni.Module]
-                | Transform[uni.Source, uni.Module]
-            ) = py_ast_ret
+            had_error = len(py_ast_ret.errors_had) > 0
+            mod = py_ast_ret.ir_out
         else:
             source = uni.Source(source_str, mod_path=file_path)
             jac_ast_ret: Transform[uni.Source, uni.Module] = JacParser(
                 root_ir=source, prog=self
             )
-            ast_ret = jac_ast_ret
-        if ast_ret.errors_had:
-            return ast_ret.ir_out
+            had_error = len(jac_ast_ret.errors_had) > 0
+            mod = jac_ast_ret.ir_out
+        if had_error:
+            return mod
         if self.mod.main.stub_only:
-            self.mod = uni.ProgramModule(ast_ret.ir_out)
-        self.mod.hub[ast_ret.ir_out.loc.mod_path] = ast_ret.ir_out
+            self.mod = uni.ProgramModule(mod)
+        self.mod.hub[mod.loc.mod_path] = mod
         return self.run_pass_schedule(
-            mod_targ=ast_ret.ir_out,
+            mod_targ=mod,
             mode=mode,
             full_compile=full_compile,
         )
@@ -123,7 +117,6 @@ class JacProgram:
         """Convert a Jac file to an AST."""
         self.last_imported.append(mod_targ)
         JacAnnexManager(ir_in=mod_targ, prog=self)
-
         SymTabBuildPass(ir_in=mod_targ, prog=self)
         if mode == CompilerMode.PARSE:
             return mod_targ
