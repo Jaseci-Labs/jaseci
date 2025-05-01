@@ -4,7 +4,7 @@ node A{
 
     can do1 with W entry {
         print("A Entry action ", self);
-        visit [self -->];
+        jacgo visit [self -->];
     }
     can do2 with W exit {
         print("A Exit action ", self);
@@ -29,6 +29,5 @@ with entry {
     w2 = (w1 := W(8)) jacgo spawn a1;
     print("Walker W spawned", w2);
     sleep(1);
-    print("Walker W completed", w2);
 
 }

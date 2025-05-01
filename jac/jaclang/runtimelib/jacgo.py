@@ -54,7 +54,12 @@ def jacgo_visit(
     thread.start()
     while not thread.is_alive():
         time.sleep(0.5)
-    return result_queue.get()
+    if not result_queue.empty():
+        result = result_queue.get_nowait()
+        if isinstance(result, Exception):
+            raise result
+        return result
+    return args[0]  # return same walker if no result is returned
 
 
 def create_walker(walker: WalkerAnchor, node: NodeAnchor) -> WalkerAnchor:
