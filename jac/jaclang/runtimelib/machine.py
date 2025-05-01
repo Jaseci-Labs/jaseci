@@ -54,7 +54,7 @@ from jaclang.runtimelib.constructs import (
     Root,
     WalkerArchitype,
 )
-from jaclang.runtimelib.jacgo import create_walker, jacroutine
+from jaclang.runtimelib.jacgo import create_walker, jacroutine, shutdown
 from jaclang.runtimelib.machinestate import ExecutionContext, JacMachineState
 from jaclang.runtimelib.memory import Shelf, ShelfStorage
 from jaclang.runtimelib.utils import (
@@ -511,6 +511,7 @@ class JacWalker:
             if walker.disengaged:
                 return warch
 
+        shutdown()
         walker.ignores = []
         return warch
 
