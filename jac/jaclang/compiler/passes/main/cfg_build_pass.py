@@ -114,16 +114,8 @@ class CFGBuildPass(AstPass):
         # CFGLinkPass(ir_in=node, prog=self.prog)
         bb_colector_pass = BBColectorPass(ir_in=node, prog=self.prog)
         self.basic_blocks = bb_colector_pass.basic_blocks
-        unparsed_blocks = {
-            bb_id: {
-                "bb_stmts": [bb.unparse() for bb in bb_info["bb_stmts"]],
-                "control_in_bbs": [bb.unparse() for bb in bb_info["control_in_bbs"]],
-                "control_out_bbs": [bb.unparse() for bb in bb_info["control_out_bbs"]],
-            }
-            for bb_id, bb_info in self.basic_blocks.items()
-        }
         with open(f"basic_blocks_{node.name}.json", "w") as json_file:
-            json.dump(unparsed_blocks, json_file, default=str, indent=4)
+            json.dump(self.basic_blocks, json_file, default=str, indent=4)
 
 
 class CFGLinkPass(AstPass):
@@ -233,3 +225,13 @@ class BBColectorPass(AstPass):
                             "control_out_bbs": node.control_out_bbs,
                         }
                         self.bb_counter += 1
+    
+    def after_pass(self):
+        self.basic_blocks = {
+            bb_id: {
+                "bb_stmts": [bb.unparse() for bb in bb_info["bb_stmts"]],
+                "control_in_bbs": [bb.unparse() for bb in bb_info["control_in_bbs"]],
+                "control_out_bbs": [bb.unparse() for bb in bb_info["control_out_bbs"]],
+            }
+            for bb_id, bb_info in self.basic_blocks.items()
+        }
