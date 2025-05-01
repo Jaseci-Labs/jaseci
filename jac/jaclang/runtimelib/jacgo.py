@@ -75,3 +75,10 @@ def create_walker(walker: WalkerAnchor, node: NodeAnchor) -> WalkerAnchor:
     # walker_new.parent = walker
     # walker.child.append(walker_new)
     return walker_new
+
+
+def shutdown() -> None:
+    """Shut down the thread pool."""
+    global pool
+    pool.shutdown(wait=False)
+    # pool = ThreadPoolExecutor(max_workers=10)

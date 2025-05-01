@@ -494,6 +494,7 @@ class JacWalker:
             if walker.disengaged:
                 return warch
 
+        shutdown()
         walker.ignores = []
         return warch
 
