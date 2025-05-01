@@ -28,7 +28,5 @@ with entry {
     [a4,a5] ++> (a6:=A(6));
     w2 = (w1 := W(8)) jacgo spawn a1;
     print("Walker W spawned", w2);
-    sleep(1);
-    print("Walker W completed", w2);
 
 }
