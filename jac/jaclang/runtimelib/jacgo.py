@@ -1,69 +1,40 @@
-"""This file contains the JacGo runtime, which is a simple implementation of the Go concurrency model in Python."""
+"""This file contains the JacGo runtime, which is a simple implementation of the spawn call concurrency."""
 
 import copy
-from concurrent.futures import ThreadPoolExecutor
+import threading
+import time
+from queue import Queue
 from typing import Any, Tuple
 
 from jaclang.runtimelib.constructs import (
     NodeAnchor,
-    NodeArchitype,
+    # NodeArchitype,
     WalkerAnchor,
+    WalkerArchitype,
 )
 
-groups = []
 
-pool = ThreadPoolExecutor(max_workers=10)
+def jacgo_spawn(func: Any, args: Tuple) -> WalkerArchitype:  # noqa: ANN401
+    """Create a spawn call with the given walker and nodes."""
+    result_queue: Queue = Queue()
 
+    def wrapper() -> None:
+        try:
+            result = func(*args)
+            result_queue.put(result)
+        except Exception as e:
+            result_queue.put(e)
 
-class Task:
-    """Class to represent a task that can be run concurrently."""
-
-    def __init__(self, func: Any | None, args: Tuple) -> None:
-        """Initialize the task with a function and its arguments."""
-        self.func = func
-        self.args = args
-        self.t = self.start()
-
-    def start(self) -> Any:  # noqa: ANN401
-        """Start the task in a separate thread."""
-        global pool
-        if self.func is not None:
-            t1 = pool.submit(self.func, *self.args)
-        return t1.result()
-
-
-def jacroutine(func: Any | None, args: Tuple) -> Task:
-    """Create a task with the given function and arguments."""
-    task = Task(func, args)
-    return task.t
-
-
-def waitgroup(group: list) -> None:
-    """Wait group functionality."""
-    global groups
-    groups.extend(group)
-
-
-def update(node: NodeArchitype) -> None:
-    """Update the wait group with the current node."""
-    global groups
-    for group in groups:
-        if group[0] == node:
-            group[1] -= 1
-        if group[1] == 0:
-            groups.remove(group)
-
-
-def is_done(node: NodeArchitype) -> bool:
-    """Check if the wait group is done."""
-    global groups
-    nodes = [group[0] for group in groups]
-    if node not in nodes:
-        return True
-    for group in groups:
-        if group[0] == node:
-            return group[1] == 0
-    return False
+    thread = threading.Thread(target=wrapper, daemon=True)
+    thread.start()
+    while not thread.is_alive():
+        time.sleep(0.5)
+    if not result_queue.empty():
+        result = result_queue.get_nowait()
+        if isinstance(result, Exception):
+            raise result
+        return result
+    return args[0].__jac__  # return same walker if no result is returned
 
 
 def create_walker(walker: WalkerAnchor, node: NodeAnchor) -> WalkerAnchor:
@@ -72,13 +43,6 @@ def create_walker(walker: WalkerAnchor, node: NodeAnchor) -> WalkerAnchor:
     walker_new.next = [node]
     walker_new.path = []
     walker_new.ignores = []
-    # walker_new.parent = walker
-    # walker.child.append(walker_new)
+    walker_new.parent = walker
+    walker.child.append(walker_new)
     return walker_new
-
-
-def shutdown() -> None:
-    """Shut down the thread pool."""
-    global pool
-    pool.shutdown(wait=False)
-    # pool = ThreadPoolExecutor(max_workers=10)
