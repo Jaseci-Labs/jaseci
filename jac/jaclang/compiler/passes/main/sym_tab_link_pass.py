@@ -17,7 +17,11 @@ class SymTabLinkPass(UniPass):
         if imp_node.is_jac:
             rel_path = node.resolve_relative_path()
             if os.path.isdir(rel_path):
-                rel_path = f"{rel_path}/__init__.jac"
+                init_path = os.path.join(rel_path, "__init__")
+                if os.path.isfile(f"{init_path}.jac"):
+                    rel_path = f"{init_path}.jac"
+                else:
+                    rel_path = f"{init_path}.py"
             if rel_path not in self.prog.mod.hub:
                 self.log_error(
                     f"Module {rel_path} not found in the program. Something went wrong.",

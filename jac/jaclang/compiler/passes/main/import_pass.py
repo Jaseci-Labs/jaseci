@@ -87,6 +87,15 @@ class JacImportPass(Transform[uni.Module, uni.Module]):
             if with_init in self.prog.mod.hub:
                 return self.prog.mod.hub[with_init]
             return self.prog.compile(file_path=with_init, mode=CMode.PARSE)
+        elif os.path.exists(a := os.path.join(target, "__init__.py")):
+            with open(a, "r") as f:
+                file_source = f.read()
+                mod = uni.Module.make_stub(
+                    inject_name=target.split(os.path.sep)[-1],
+                    inject_src=uni.Source(file_source, a),
+                )
+                self.prog.mod.hub[a] = mod
+                return mod
         else:
             return uni.Module.make_stub(
                 inject_name=target.split(os.path.sep)[-1],
