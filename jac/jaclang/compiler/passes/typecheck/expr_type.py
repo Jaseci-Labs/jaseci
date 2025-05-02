@@ -71,8 +71,13 @@ class JacExpressionType:
 
     def _get_func_call_expr_type(self, node: ast.FuncCall) -> jtype.JType:
         func_type = self.get_type(node.target)
-        assert isinstance(func_type, jtype.JCallableType)
-        return func_type.return_type
+        assert isinstance(func_type, (jtype.JCallableType, jtype.JClassType))
+        # In case of normal functions
+        if isinstance(func_type, jtype.JCallableType):
+            return func_type.return_type
+        # In case of class constructor
+        elif isinstance(func_type, jtype.JClassType):
+            return jtype.JClassInstanceType(func_type)
 
     def _set_name_expr_type(self, node: ast.Name, expr_type: jtype.JType) -> None:
         assert node.name_spec.sym is not None

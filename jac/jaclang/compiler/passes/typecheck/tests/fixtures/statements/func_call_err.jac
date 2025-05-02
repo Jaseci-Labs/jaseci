@@ -30,4 +30,10 @@ with entry {
     x0 = function3(a=x0);
     function4(x0, x0, x0);
     function5(x0, x0, x0);
+    9();
+    function6(function4("6"));
+}
+
+can function6(a: int) -> bool {
+    return function(a);
 }

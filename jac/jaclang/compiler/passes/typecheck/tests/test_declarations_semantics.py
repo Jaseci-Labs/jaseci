@@ -5,16 +5,12 @@ from jaclang.compiler.passes.typecheck import (
     JacSemanticMessages,
     SemanticAnalysisPass,
 )
+from jaclang.compiler.passes.typecheck.tests.semantic_test import SemanticTest
 from jaclang.compiler.program import JacProgram
 from jaclang.settings import settings
-from jaclang.utils.test import TestCase
 
 
-NodeLocation = str
-SemanticError = tuple[JacSemanticMessages, dict[str, str]]
-
-
-class TestDeclSemantics(TestCase):
+class TestDeclSemantics(SemanticTest):
     """Tests for semantic analysis for Jac declarations."""
 
     def test_function_decl_semantics(self) -> None:
@@ -31,30 +27,73 @@ class TestDeclSemantics(TestCase):
         for e in program.semantic_errors_had:
             print(e[1].loc, e[0], e[2])
 
-        expected_errors: dict[str, SemanticError] = {
-            "9:1 - 10:2": (JacSemanticMessages.MISSING_RETURN_STATEMENT, {}),
-            "17:5 - 17:14": (
-                JacSemanticMessages.CONFLICTING_RETURN_TYPE,
-                {"actual_return_type": "bool", "formal_return_type": "int"},
-            ),
-        }
-        expected_warnings: dict[str, SemanticError] = {
-            "3:5 - 3:14": (JacSemanticMessages.RETURN_FOR_NONE_ABILITY, {})
-        }
+        self.assert_semantic_errors(
+            {
+                "9:1 - 10:2": (JacSemanticMessages.MISSING_RETURN_STATEMENT, {}),
+                "17:5 - 17:14": (
+                    JacSemanticMessages.CONFLICTING_RETURN_TYPE,
+                    {"actual_return_type": "bool", "formal_return_type": "int"},
+                ),
+            },
+            program.semantic_errors_had,
+        )
 
-        for msg, node, msg_frmt in program.semantic_errors_had:
-            assert str(node.loc) in expected_errors, "Missing semantic errors"
-            expected_error = expected_errors.pop(str(node.loc))
-            assert msg == expected_error[0]
-            assert msg_frmt == expected_error[1]
-        assert len(expected_errors.items()) == 0, "Extra semantic errors"
+        self.assert_semantic_errors(
+            {"3:5 - 3:14": (JacSemanticMessages.RETURN_FOR_NONE_ABILITY, {})},
+            program.semantic_warnnings_had,
+            is_warning=True,
+        )
 
-        for msg, node, msg_frmt in program.semantic_warnnings_had:
-            assert str(node.loc) in expected_warnings, "Missing semantic warning"
-            expected_error = expected_warnings.pop(str(node.loc))
-            assert msg == expected_error[0]
-            assert msg_frmt == expected_error[1]
-        assert len(expected_errors.items()) == 0, "Extra semantic warnings"
+    def test_architype_decl_semantics(self) -> None:
+        """Test basic semantic analysis for assignments & var declarations."""
+        settings.enable_jac_semantics = True
+        program = JacProgram()
+        out = program.compile(
+            self.fixture_abs_path("declarations/architype_err.jac"),
+            target=JTypeAnnotatePass,
+        )
+        SemanticAnalysisPass(out, prog=program)
+        settings.enable_jac_semantics = False
 
+        for e in program.semantic_errors_had:
+            print(e[1].loc, e[0], e[2])
 
-TestDeclSemantics().test_function_decl_semantics()
+        self.assert_semantic_errors(
+            {
+                "3:9 - 3:23": (
+                    JacSemanticMessages.CLASS_VAR_REDEFINITION,
+                    {"var_name": "str_obj"},
+                ),
+                "13:9 - 13:14": (
+                    JacSemanticMessages.PARAM_NUMBER_MISMATCH,
+                    {"actual_number": "0", "passed_number": "1"},
+                ),
+                "16:5 - 16:16": (
+                    JacSemanticMessages.CONFLICTING_VAR_TYPE,
+                    {"val_type": "JInstanceOf[JClass[A]]", "var_type": "int"},
+                ),
+                "17:5 - 17:11": (
+                    JacSemanticMessages.CONFLICTING_VAR_TYPE,
+                    {"val_type": "int", "var_type": "JInstanceOf[JClass[A]]"},
+                ),
+                "27:10 - 27:13": (
+                    JacSemanticMessages.PARAM_NUMBER_MISMATCH,
+                    {"actual_number": "1", "passed_number": "0"},
+                ),
+                "29:10 - 29:16": (
+                    JacSemanticMessages.CONFLICTING_ARG_TYPE,
+                    {"param_name": "c", "formal_type": "int", "actual_type": "str"},
+                ),
+                "30:10 - 30:17": (
+                    JacSemanticMessages.CONFLICTING_ARG_TYPE,
+                    {
+                        "param_name": "c",
+                        "formal_type": "int",
+                        "actual_type": "JInstanceOf[JClass[B]]",
+                    },
+                ),
+            },
+            program.semantic_errors_had,
+        )
+
+        self.assert_semantic_errors({}, program.semantic_warnnings_had, is_warning=True)

@@ -22,6 +22,7 @@ class JacSemanticMessages(Enum):
         "Required number of params {actual_number}, passed number is {passed_number}"
     )
     UNDEFINED_FUNCTION_NAME = "No function called {func_name} available"
+    EXPR_NOT_CALLABLE = "'{expr}' is not callable"
 
     # Var Declarations
     VAR_REDEFINITION = "Can't redefine {var_name} to be {new_type}"
@@ -29,6 +30,9 @@ class JacSemanticMessages(Enum):
         "Error: Can't assign a value {val_type} to a {var_type} object"
     )
     ASSIGN_TO_RTYPE = "Expression '{expr}' can't be assigned (not a valid ltype)"
+
+    # Architypes Declarations
+    CLASS_VAR_REDEFINITION = "'{var_name}' was defined before"
 
     # Misc.
     UNSUPPORTED_TYPE_ANNOTATION = (

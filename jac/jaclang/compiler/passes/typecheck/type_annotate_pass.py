@@ -58,6 +58,10 @@ class JTypeAnnotatePass(AstPass):
             else jtype.JNoType()
         )
 
+        # if the annotation is a JClass type then we need to convert it to a JClassInstance
+        if isinstance(type_annotation, jtype.JClassType):
+            type_annotation = jtype.JClassInstanceType(type_annotation)
+
         # Iterate over each target in the assignment (e.g., `x` in `x: int = 5`)
         for target in node.target.items:
             if isinstance(target, uni.Name):
@@ -86,15 +90,25 @@ class JTypeAnnotatePass(AstPass):
         """Process a function/ability definition.
 
         - Sets the return type
+            - convert JClassType return type to JClassInstanceType
+            - TODO: Need to check how to support returning the actual class
         - Validates presence of return statements when required
         - Sets parameter types based on annotations
         """
         # Get and set the declared return type of the ability
         ret_type = self.prog.expr_type_handler.get_type(node.signature.return_type)
 
-        # If the function has a non-void return type but no return statements, report error
+        # if the ret_type is a JClass type then we need to convert it to a JClassInstance
+        if isinstance(ret_type, jtype.JClassType):
+            ret_type = jtype.JClassInstanceType(ret_type)
+
+        # If the function has a non-None return type but no return statements, report error
         has_return_stmts = len(node.get_all_sub_nodes(uni.ReturnStmt)) > 0
-        if not has_return_stmts and not isinstance(ret_type, jtype.JNoneType):
+        if (
+            not has_return_stmts
+            and not isinstance(ret_type, jtype.JNoneType)
+            and not node.is_abstract
+        ):
             self.report_error(JacSemanticMessages.MISSING_RETURN_STATEMENT)
 
         # Set types for parameters (if any)
@@ -118,3 +132,32 @@ class JTypeAnnotatePass(AstPass):
                 param_types=params, return_type=ret_type, is_assignable=False
             ),
         )
+
+    def enter_architype(self, node: uni.Architype) -> None:
+        """Register the type of an architype type annotation pass.
+
+        This assigns a JClassType to the architype's name based on its symbol table,
+        enabling type checking for later references to the architype.
+        """
+        self.prog.expr_type_handler.set_type(
+            node.name_spec, jtype.JClassType(node.sym_tab)
+        )
+
+    def enter_has_var(self, node: uni.HasVar) -> None:
+        """Analyze a `has` variable declaration and populates its type.
+
+        Ensures that each declared variable has an associated type, and checks for redefinitions.
+        Raises an error if a variable is declared more than once.
+        """
+
+        assert node.type_tag is not None  # QA: why type_tag is optional?
+        type_annotation = self.prog.expr_type_handler.get_type(node.type_tag.tag)
+
+        assert node.name_spec.sym is not None
+        if isinstance(node.name_spec.sym.jtype, jtype.JNoType):
+            self.prog.expr_type_handler.set_type(node.name_spec, type_annotation)
+        else:
+            self.report_error(
+                JacSemanticMessages.CLASS_VAR_REDEFINITION,
+                var_name=node.name_spec.sym_name,
+            )

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
+import jaclang.compiler.unitree as uni
+
 
 class JType(ABC):
     """Base class for jac builtin types."""
@@ -95,13 +97,31 @@ class JCallableType(JType):
         return f"Callable[{self.return_type}, [{params}]]"
 
 
-# class JUserType(JType):
-#     """User defined types & builtin types."""
+class JClassType(JType):
+    """Type for Classes/Architypes."""
 
-#     def __init__(
-#         self,
-#         name: str,
-#         fields: dict[str, JType],
-#         methods:
-#     ):
-#         super().__init__()
+    def __init__(self, symbol_table: uni.UniScopeNode) -> None:
+        """Create an object from JClassType."""
+        self.__symbol_table = symbol_table
+
+    def _is_assignable_from(self, other: JType) -> bool:
+        return False
+
+    def __repr__(self) -> str:
+        """Generate string representation of the JClassType object."""
+        return f"JClass[{self.__symbol_table.nix_name}]"
+
+
+class JClassInstanceType(JType):
+    """Type for objects."""
+
+    def __init__(self, instance_of: JClassType) -> None:
+        """Create an object from JClassInstanceType."""
+        self.__instance_of = instance_of
+
+    def _is_assignable_from(self, other: JType) -> bool:
+        return False
+
+    def __repr__(self) -> str:
+        """Generate string representation of the JClassInstanceType object."""
+        return f"JInstanceOf[{self.__instance_of}]"
