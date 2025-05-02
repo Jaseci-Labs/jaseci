@@ -15,6 +15,7 @@ from .pyjac_ast_link_pass import PyJacAstLinkPass  # noqa: I100
 from .fuse_typeinfo_pass import FuseTypeInfoPass  # noqa: I100
 from .access_modifier_pass import AccessCheckPass  # noqa: I100
 from .inheritance_pass import InheritancePass  # noqa: I100
+from .visit_prediction_pass import VisitPredictionPass  # noqa: I100
 
 
 class CompilerMode(Enum):
@@ -30,6 +31,7 @@ py_code_gen = [
     DefUsePass,
     PyastGenPass,
     PyJacAstLinkPass,
+    VisitPredictionPass,
     PyBytecodeGenPass,
 ]
 
