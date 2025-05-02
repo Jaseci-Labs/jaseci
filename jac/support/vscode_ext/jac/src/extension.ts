@@ -7,6 +7,11 @@ import {
 import * as path from 'path';
 import * as fs from 'fs';
 
+import {
+    makeWebView,
+    getDebugGraphData
+} from './visual_debugger/visdbg';
+
 let client: LanguageClient;
 
 function getCondaEnvironment(): string | undefined {
@@ -109,6 +114,53 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showErrorMessage(err_msg);
         return null;
 	}));
+
+    // Debugger Visualize Plugin.
+	let webviewPanel: vscode.WebviewPanel | undefined;
+    let graphData: JSON = JSON.parse('{}');
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('jac.visualize', async () => {
+            if (webviewPanel) {
+                webviewPanel.reveal();
+            } else {
+                webviewPanel = makeWebView();
+                webviewPanel.onDidDispose(() => { webviewPanel = undefined; });
+            }
+        })
+    );
+
+    vscode.debug.onDidStartDebugSession(async (event) => {
+        if (webviewPanel) {
+            graphData = await getDebugGraphData();
+            if (graphData != null) {
+                webviewPanel.webview.postMessage({
+                    "command": "init",
+                    "data": graphData,
+                });
+            }
+        }
+    });
+
+	vscode.debug.onDidChangeActiveStackItem(async (event) => {
+		if (webviewPanel) {
+			graphData = await getDebugGraphData();
+			if (graphData != null) {
+				webviewPanel.webview.postMessage({
+                    "command": "update",
+                    "data": graphData,
+                });
+			}
+		}
+	});
+
+    vscode.debug.onDidTerminateDebugSession(async (event) => {
+        if (webviewPanel) {
+            webviewPanel.webview.postMessage({
+                "command": "clear",
+            });
+        }
+    });
 }
 
 export function deactivate(): Thenable<void> | undefined {

@@ -1,10 +1,7 @@
 """Tests for semantic analysis for Jac statements."""
 
-from jaclang.compiler.passes.typecheck import (
-    JTypeAnnotatePass,
-    JacSemanticMessages,
-    SemanticAnalysisPass,
-)
+from jaclang.compiler.passes.main import CompilerMode
+from jaclang.compiler.passes.typecheck import JacSemanticMessages
 from jaclang.compiler.passes.typecheck.tests.semantic_test import SemanticTest
 from jaclang.compiler.program import JacProgram
 from jaclang.settings import settings
@@ -17,11 +14,10 @@ class TestStmtSemantics(SemanticTest):
         """Test basic semantic analysis for assignments & var declarations."""
         settings.enable_jac_semantics = True
         program = JacProgram()
-        out = program.compile(
+        program.compile(
             self.fixture_abs_path("statements/assignment_err.jac"),
-            target=JTypeAnnotatePass,
+            mode=CompilerMode.QUICKCHECK,
         )
-        SemanticAnalysisPass(out, prog=program)
         settings.enable_jac_semantics = False
 
         self.assert_semantic_errors(
@@ -78,11 +74,10 @@ class TestStmtSemantics(SemanticTest):
         """Test basic semantic analysis for function calls."""
         settings.enable_jac_semantics = True
         program = JacProgram()
-        out = program.compile(
+        program.compile(
             self.fixture_abs_path("statements/func_call_err.jac"),
-            target=JTypeAnnotatePass,
+            mode=CompilerMode.QUICKCHECK,
         )
-        SemanticAnalysisPass(out, prog=program)
         settings.enable_jac_semantics = False
 
         for e in program.semantic_errors_had:

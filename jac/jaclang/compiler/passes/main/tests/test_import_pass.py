@@ -6,9 +6,7 @@ import sys
 
 import jaclang.compiler.unitree as uni
 from jaclang.cli import cli
-from jaclang.compiler.passes.main import JacImportPass
-from jaclang.compiler.passes.main.fuse_typeinfo_pass import FuseTypeInfoPass
-from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+from jaclang.compiler.passes.main.schedules import CompilerMode as CMode
 from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import TestCase
 
@@ -22,16 +20,14 @@ class ImportPassPassTests(TestCase):
 
     def test_pygen_jac_cli(self) -> None:
         """Basic test for pass."""
-        (out := JacProgram()).compile(self.fixture_abs_path("base.jac"), JacImportPass)
+        (out := JacProgram()).compile(self.fixture_abs_path("base.jac"))
         self.assertFalse(out.errors_had)
         mod = out.mod.hub[self.fixture_abs_path("impl/imps.jac")]
         self.assertIn("56", str(mod.to_dict()))
 
     def test_import_auto_impl(self) -> None:
         """Basic test for pass."""
-        (prog := JacProgram()).compile(
-            self.fixture_abs_path("autoimpl.jac"), JacImportPass
-        )
+        (prog := JacProgram()).compile(self.fixture_abs_path("autoimpl.jac"))
         num_modules = len(list(prog.mod.hub.values())[0].impl_mod)
         mod_names = [i.name for i in list(prog.mod.hub.values())[0].impl_mod]
         self.assertEqual(num_modules, 4)
@@ -41,9 +37,7 @@ class ImportPassPassTests(TestCase):
 
     def test_import_include_auto_impl(self) -> None:
         """Basic test for pass."""
-        (prog := JacProgram()).compile(
-            self.fixture_abs_path("incautoimpl.jac"), JacImportPass
-        )
+        (prog := JacProgram()).compile(self.fixture_abs_path("incautoimpl.jac"))
         num_modules = len(list(prog.mod.hub.values())[1].impl_mod) + 1
         mod_names = [i.name for i in list(prog.mod.hub.values())[1].impl_mod]
         self.assertEqual(num_modules, 5)
@@ -55,9 +49,7 @@ class ImportPassPassTests(TestCase):
 
     def test_annexalbe_by_discovery(self) -> None:
         """Basic test for pass."""
-        (prog := JacProgram()).compile(
-            self.fixture_abs_path("incautoimpl.jac"), JacImportPass
-        )
+        (prog := JacProgram()).compile(self.fixture_abs_path("incautoimpl.jac"))
         count = 0
         all_mods = prog.mod.hub.values()
         self.assertEqual(len(all_mods), 6)
@@ -74,8 +66,7 @@ class ImportPassPassTests(TestCase):
         """Basic test for pass."""
         (build := JacProgram()).compile(
             self.fixture_abs_path("py_imp_test.jac"),
-            FuseTypeInfoPass,
-            schedule=py_code_gen_typed,
+            mode=CMode.TYPECHECK,
         )
         p = {
             "math": r"jaclang/vendor/mypy/typeshed/stdlib/math.pyi$",
@@ -98,7 +89,7 @@ class ImportPassPassTests(TestCase):
     def test_py_raised_mods(self) -> None:
         """Basic test for pass."""
         (prog := JacProgram()).compile(
-            self.fixture_abs_path("py_imp_test.jac"), schedule=py_code_gen_typed
+            self.fixture_abs_path("py_imp_test.jac"), mode=CMode.TYPECHECK
         )
         for i in list(
             filter(
@@ -133,9 +124,7 @@ class ImportPassPassTests(TestCase):
 
     def test_raise_syntax_error(self) -> None:
         """Test raise error on the parser , dont go to the next pass."""
-        (state := JacProgram()).compile(
-            self.fixture_abs_path("main_err.jac"), JacImportPass
-        )
+        (state := JacProgram()).compile(self.fixture_abs_path("main_err.jac"))
         self.assertTrue(state.errors_had)
         self.assertEqual(len(state.errors_had), 1)
         self.assertIn("Syntax Error", state.errors_had[0].msg)

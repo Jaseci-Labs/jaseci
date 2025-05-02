@@ -1,5 +1,5 @@
 """Passes for Jac."""
 
-from .ast_pass import AstPass
+from .uni_pass import Transform, UniPass
 
-__all__ = ["AstPass"]
+__all__ = ["Transform", "UniPass"]

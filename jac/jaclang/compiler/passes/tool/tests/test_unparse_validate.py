@@ -4,8 +4,6 @@ import ast as ast3
 from difflib import unified_diff
 
 
-from jaclang.compiler.passes.main import PyastGenPass
-from jaclang.compiler.passes.main.schedules import py_code_gen as without_format
 from jaclang.compiler.passes.tool import JacFormatPass
 from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
@@ -20,9 +18,7 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
         """Parse micro jac file."""
         try:
             code_gen_pure = JacProgram().compile(
-                self.examples_abs_path("manual_code/circle.jac"),
-                target=PyastGenPass,
-                schedule=without_format,
+                self.examples_abs_path("manual_code/circle.jac")
             )
             x = code_gen_pure.unparse()
             y = code_gen_pure.unparse()
@@ -35,8 +31,6 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
         """Parse micro jac file."""
         code_gen_pure = JacProgram().compile(
             self.fixture_abs_path(filename),
-            target=PyastGenPass,
-            schedule=without_format,
         )
         before = ast3.dump(code_gen_pure.gen.py_ast[0], indent=2)
         x = code_gen_pure.unparse()
@@ -44,8 +38,6 @@ class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
         code_gen_jac = JacProgram().compile_from_str(
             source_str=x,
             file_path=filename,
-            target=PyastGenPass,
-            schedule=without_format,
         )
         after = ast3.dump(code_gen_jac.gen.py_ast[0], indent=2)
         if "circle_clean_tests.jac" in filename:

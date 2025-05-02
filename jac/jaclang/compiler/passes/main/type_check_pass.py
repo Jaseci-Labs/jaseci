@@ -11,10 +11,10 @@ import sys
 import jaclang.compiler.passes.utils.mypy_ast_build as myab
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Constants as Con
-from jaclang.compiler.passes import AstPass
+from jaclang.compiler.passes import UniPass
 
 
-class JacTypeCheckPass(AstPass):
+class JacTypeCheckPass(UniPass):
     """Python and bytecode file printing pass."""
 
     def before_pass(self) -> None:

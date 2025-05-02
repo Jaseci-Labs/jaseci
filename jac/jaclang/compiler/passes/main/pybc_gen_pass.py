@@ -10,10 +10,10 @@ import marshal
 
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.passes import AstPass
+from jaclang.compiler.passes import UniPass
 
 
-class PyBytecodeGenPass(AstPass):
+class PyBytecodeGenPass(UniPass):
     """Python and bytecode file printing pass."""
 
     def before_pass(self) -> None:
