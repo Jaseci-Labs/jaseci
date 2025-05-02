@@ -682,6 +682,50 @@ class BasicBlockStmt(UniNode):
         self.bb_in: Optional[list[BasicBlockStmt]] = None
         self.bb_out: Optional[list[BasicBlockStmt]] = None
 
+    def get_head(self) -> BasicBlockStmt:
+        """Get head."""
+
+        def go_up(node: BasicBlockStmt) -> BasicBlockStmt:
+            if node.bb_in:
+                if len(node.bb_in) == 1 and not isinstance(
+                    node.bb_in[0], (InForStmt, IterForStmt, WhileStmt)
+                ):
+                    if node.bb_in[0].bb_out:
+                        if len(node.bb_in[0].bb_out) == 1:
+                            return go_up(node.bb_in[0])
+                        else:
+                            return node
+                    else:
+                        return node
+                else:
+                    return node
+            else:
+                return node
+
+        return go_up(self)
+
+    def get_tail(self) -> BasicBlockStmt:
+        """Get tail."""
+
+        def go_down(node: BasicBlockStmt) -> BasicBlockStmt:
+            if node.bb_out:
+                if len(node.bb_out) == 1 and not isinstance(
+                    node.bb_out[0], (InForStmt, IterForStmt, WhileStmt)
+                ):
+                    if node.bb_out[0].bb_in:
+                        if len(node.bb_out[0].bb_in) == 1:
+                            return go_down(node.bb_out[0])
+                        else:
+                            return node
+                    else:
+                        return node
+                else:
+                    return node
+            else:
+                return node
+
+        return go_down(self)
+
 
 class Expr(UniNode):
     """Expr node type for Jac Ast."""
