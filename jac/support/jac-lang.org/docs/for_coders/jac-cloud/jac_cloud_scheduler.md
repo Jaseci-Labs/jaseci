@@ -136,7 +136,7 @@ walker walker_date {
 
 # Jac Cloud Optional Task
 
-- This will only be enabled if you have `DATABASE_HOST` and `TASK_CONSUMER_CRON_SECOND`
+- This will only be enabled if you have set `TASK_CONSUMER_CRON_SECOND`
 
 ## Example Use Case
 
