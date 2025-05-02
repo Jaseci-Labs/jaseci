@@ -729,7 +729,7 @@ class EnumBlockStmt(UniNode):
     """EnumBlockStmt node type for Jac Ast."""
 
 
-class CodeBlockStmt(UniNode):
+class CodeBlockStmt(BasicBlockStmt):
     """CodeBlockStmt node type for Jac Ast."""
 
 
@@ -749,7 +749,7 @@ class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
             name_spec=self.create_impl_name_node(),
             sym_category=SymbolType.IMPL,
         )
-        # BasicBlockStmt.__init__(self)
+        BasicBlockStmt.__init__(self)
 
     def create_impl_name_node(self) -> Name:
         """Create impl name."""
@@ -871,7 +871,7 @@ class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode, AstSemStrN
     def __init__(self, decorators: Optional[SubNodeList[Expr]] = None) -> None:
         """Initialize walker statement only node."""
         self.decorators = decorators
-        # BasicBlockStmt.__init__(self)
+        BasicBlockStmt.__init__(self)
 
 
 class MatchPattern(UniNode):
@@ -1208,9 +1208,7 @@ class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
         return res
 
 
-class PyInlineCode(
-    ElementStmt, ArchBlockStmt, EnumBlockStmt, CodeBlockStmt, BasicBlockStmt
-):
+class PyInlineCode(ElementStmt, ArchBlockStmt, EnumBlockStmt, CodeBlockStmt):
     """Inline Python code node type for Jac Ast."""
 
     def __init__(
@@ -1241,7 +1239,7 @@ class PyInlineCode(
         return res
 
 
-class Import(ElementStmt, CodeBlockStmt, BasicBlockStmt):
+class Import(ElementStmt, CodeBlockStmt):
     """Import node type for Jac Ast."""
 
     def __init__(
@@ -1772,7 +1770,7 @@ class Ability(
         AstDocNode.__init__(self, doc=doc)
         AstAsyncNode.__init__(self, is_async=is_async)
         UniScopeNode.__init__(self, name=self.sym_name, owner=self)
-        # BasicBlockStmt.__init__(self)
+        BasicBlockStmt.__init__(self)
 
     @property
     def is_method(self) -> bool:
@@ -2193,7 +2191,7 @@ class HasVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
         return res
 
 
-class TypedCtxBlock(CodeBlockStmt, UniScopeNode, BasicBlockStmt):
+class TypedCtxBlock(CodeBlockStmt, UniScopeNode):
     """TypedCtxBlock node type for Jac Ast."""
 
     def __init__(
@@ -2224,7 +2222,7 @@ class TypedCtxBlock(CodeBlockStmt, UniScopeNode, BasicBlockStmt):
         return res
 
 
-class IfStmt(CodeBlockStmt, AstElseBodyNode, UniScopeNode, BasicBlockStmt):
+class IfStmt(CodeBlockStmt, AstElseBodyNode, UniScopeNode):
     """IfStmt node type for Jac Ast."""
 
     def __init__(
@@ -2307,7 +2305,7 @@ class ElseStmt(UniScopeNode):
         return res
 
 
-class ExprStmt(CodeBlockStmt, BasicBlockStmt):
+class ExprStmt(CodeBlockStmt):
     """ExprStmt node type for Jac Ast."""
 
     def __init__(
@@ -2354,7 +2352,7 @@ class TryStmt(AstElseBodyNode, CodeBlockStmt, UniScopeNode):
         UniNode.__init__(self, kid=kid)
         AstElseBodyNode.__init__(self, else_body=else_body)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
-        # BasicBlockStmt.__init__(self)
+        BasicBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize try statement node."""
@@ -2396,7 +2394,7 @@ class Except(CodeBlockStmt, UniScopeNode):
         self.body = body
         UniNode.__init__(self, kid=kid)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
-        # BasicBlockStmt.__init__(self)
+        BasicBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize except node."""
@@ -2429,7 +2427,7 @@ class FinallyStmt(CodeBlockStmt, UniScopeNode):
         self.body = body
         UniNode.__init__(self, kid=kid)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
-        # BasicBlockStmt.__init__(self)
+        BasicBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize finally statement node."""
@@ -2444,9 +2442,7 @@ class FinallyStmt(CodeBlockStmt, UniScopeNode):
         return res
 
 
-class IterForStmt(
-    AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode, BasicBlockStmt
-):
+class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
     """IterFor node type for Jac Ast."""
 
     def __init__(
@@ -2495,9 +2491,7 @@ class IterForStmt(
         return res
 
 
-class InForStmt(
-    AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode, BasicBlockStmt
-):
+class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
     """InFor node type for Jac Ast."""
 
     def __init__(
@@ -2543,7 +2537,7 @@ class InForStmt(
         return res
 
 
-class WhileStmt(CodeBlockStmt, UniScopeNode, BasicBlockStmt):
+class WhileStmt(CodeBlockStmt, UniScopeNode):
     """WhileStmt node type for Jac Ast."""
 
     def __init__(
@@ -2575,7 +2569,7 @@ class WhileStmt(CodeBlockStmt, UniScopeNode, BasicBlockStmt):
         return res
 
 
-class WithStmt(AstAsyncNode, CodeBlockStmt, UniScopeNode, BasicBlockStmt):
+class WithStmt(AstAsyncNode, CodeBlockStmt, UniScopeNode):
     """WithStmt node type for Jac Ast."""
 
     def __init__(
@@ -2640,7 +2634,7 @@ class ExprAsItem(UniNode):
         return res
 
 
-class RaiseStmt(CodeBlockStmt, BasicBlockStmt):
+class RaiseStmt(CodeBlockStmt):
     """RaiseStmt node type for Jac Ast."""
 
     def __init__(
@@ -2672,7 +2666,7 @@ class RaiseStmt(CodeBlockStmt, BasicBlockStmt):
         return res
 
 
-class AssertStmt(CodeBlockStmt, BasicBlockStmt):
+class AssertStmt(CodeBlockStmt):
     """AssertStmt node type for Jac Ast."""
 
     def __init__(
@@ -2705,7 +2699,7 @@ class AssertStmt(CodeBlockStmt, BasicBlockStmt):
         return res
 
 
-class CheckStmt(CodeBlockStmt, BasicBlockStmt):
+class CheckStmt(CodeBlockStmt):
     """DeleteStmt node type for Jac Ast."""
 
     def __init__(
@@ -2732,7 +2726,7 @@ class CheckStmt(CodeBlockStmt, BasicBlockStmt):
         return res
 
 
-class CtrlStmt(CodeBlockStmt, BasicBlockStmt):
+class CtrlStmt(CodeBlockStmt):
     """CtrlStmt node type for Jac Ast."""
 
     def __init__(
@@ -2755,7 +2749,7 @@ class CtrlStmt(CodeBlockStmt, BasicBlockStmt):
         return res
 
 
-class DeleteStmt(CodeBlockStmt, BasicBlockStmt):
+class DeleteStmt(CodeBlockStmt):
     """DeleteStmt node type for Jac Ast."""
 
     def __init__(
@@ -2782,7 +2776,7 @@ class DeleteStmt(CodeBlockStmt, BasicBlockStmt):
         return res
 
 
-class ReportStmt(CodeBlockStmt, BasicBlockStmt):
+class ReportStmt(CodeBlockStmt):
     """ReportStmt node type for Jac Ast."""
 
     def __init__(
@@ -2809,7 +2803,7 @@ class ReportStmt(CodeBlockStmt, BasicBlockStmt):
         return res
 
 
-class ReturnStmt(CodeBlockStmt, BasicBlockStmt):
+class ReturnStmt(CodeBlockStmt):
     """ReturnStmt node type for Jac Ast."""
 
     def __init__(
@@ -2837,7 +2831,7 @@ class ReturnStmt(CodeBlockStmt, BasicBlockStmt):
         return res
 
 
-class IgnoreStmt(WalkerStmtOnlyNode, CodeBlockStmt, BasicBlockStmt):
+class IgnoreStmt(WalkerStmtOnlyNode, CodeBlockStmt):
     """IgnoreStmt node type for Jac Ast."""
 
     def __init__(
@@ -2865,7 +2859,7 @@ class IgnoreStmt(WalkerStmtOnlyNode, CodeBlockStmt, BasicBlockStmt):
         return res
 
 
-class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt, BasicBlockStmt):
+class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
     """VisitStmt node type for Jac Ast."""
 
     def __init__(
@@ -2905,7 +2899,7 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt, BasicBlockSt
         return res
 
 
-class RevisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt, BasicBlockStmt):
+class RevisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
     """ReVisitStmt node type for Jac Ast."""
 
     def __init__(
@@ -2947,7 +2941,7 @@ class DisengageStmt(WalkerStmtOnlyNode, CodeBlockStmt):
         """Initialize disengage statement node."""
         UniNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
-        # BasicBlockStmt.__init__(self)
+        BasicBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize disengage statement node."""
@@ -2985,7 +2979,7 @@ class AwaitExpr(Expr):
         return res
 
 
-class GlobalStmt(CodeBlockStmt, BasicBlockStmt):
+class GlobalStmt(CodeBlockStmt):
     """GlobalStmt node type for Jac Ast."""
 
     def __init__(
@@ -3029,9 +3023,7 @@ class NonLocalStmt(GlobalStmt):
         return res
 
 
-class Assignment(
-    AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt, BasicBlockStmt
-):
+class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
     """Assignment node type for Jac Ast."""
 
     def __init__(
@@ -4175,7 +4167,7 @@ class MatchStmt(CodeBlockStmt):
         self.target = target
         self.cases = cases
         UniNode.__init__(self, kid=kid)
-        # BasicBlockStmt.__init__(self)
+        BasicBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize match statement node."""
@@ -4848,32 +4840,32 @@ class Semi(
 ):
     """Semicolon node type for Jac Ast."""
 
-    # def __init__(
-    #     self,
-    #     orig_src: Source,
-    #     name: str,
-    #     value: str,
-    #     line: int,
-    #     end_line: int,
-    #     col_start: int,
-    #     col_end: int,
-    #     pos_start: int,
-    #     pos_end: int,
-    # ) -> None:
-    #     """Initialize token."""
-    #     Token.__init__(
-    #         self,
-    #         orig_src=orig_src,
-    #         name=name,
-    #         value=value,
-    #         line=line,
-    #         end_line=end_line,
-    #         col_start=col_start,
-    #         col_end=col_end,
-    #         pos_start=pos_start,
-    #         pos_end=pos_end,
-    #     )
-    #     BasicBlockStmt.__init__(self)
+    def __init__(
+        self,
+        orig_src: Source,
+        name: str,
+        value: str,
+        line: int,
+        end_line: int,
+        col_start: int,
+        col_end: int,
+        pos_start: int,
+        pos_end: int,
+    ) -> None:
+        """Initialize token."""
+        Token.__init__(
+            self,
+            orig_src=orig_src,
+            name=name,
+            value=value,
+            line=line,
+            end_line=end_line,
+            col_start=col_start,
+            col_end=col_end,
+            pos_start=pos_start,
+            pos_end=pos_end,
+        )
+        BasicBlockStmt.__init__(self)
 
 
 class CommentToken(Token):
