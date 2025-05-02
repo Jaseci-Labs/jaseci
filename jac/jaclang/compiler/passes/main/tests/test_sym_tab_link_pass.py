@@ -15,7 +15,7 @@ class SymTabLinkPassTests(TestCase):
         """Set up test."""
         return super().setUp()
 
-    def test_registry_pass(self) -> None:
+    def test_no_dupl_symbols(self) -> None:
         """Basic test for pass."""
         file_path = os.path.join(
             os.path.dirname(__file__),
@@ -47,3 +47,16 @@ class SymTabLinkPassTests(TestCase):
             ),
             3,
         )
+
+    def test_package(self) -> None:
+        """Test package."""
+        file_path = os.path.join(
+            os.path.dirname(__file__),
+            "fixtures",
+            "symtab_link_tests",
+            "main.jac",
+        )
+        prog = JacProgram()
+        prog.compile(file_path, mode=CMode.COMPILE)
+        self.assertEqual(prog.errors_had, [])
+        self.assertEqual(prog.warnings_had, [])
