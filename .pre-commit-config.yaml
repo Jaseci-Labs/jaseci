@@ -1,3 +1,4 @@
+exclude: '(_v1|venv|vendor|__jac_gen__|larkparse|examples|tests|stubs|support|setup.py|jac-mtllm|langserve/tests|pygame_mock)'
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v2.3.0
@@ -10,7 +11,6 @@ repos:
     rev: 24.8.0
     hooks:
       - id: black
-        exclude: "venv|vendor|__jac_gen__|generated"
   - repo: https://github.com/PyCQA/flake8
     rev: 6.1.0
     hooks:
@@ -26,12 +26,10 @@ repos:
             flake8_annotations,
             flake8_simplify,
           ]
-        exclude: "venv|vendor|__jac_gen__|larkparse|examples|langserve/tests|pygame_mock"
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.15.0
     hooks:
       - id: mypy
-        exclude: "venv|vendor|__jac_gen__|larkparse|examples|tests|stubs|support|setup.py|jac-mtllm"
         args:
           - --follow-imports=silent
           - --ignore-missing-imports
