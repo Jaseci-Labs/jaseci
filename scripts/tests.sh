@@ -1,1 +1,1 @@
-pytest jac -s -n 30; pytest jac-cloud
+pytest -s -n 30
