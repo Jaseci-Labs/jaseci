@@ -329,13 +329,12 @@ class JacWalker:
             | EdgeArchitype
         ),
         is_jacgo: bool = False,
-    ) -> bool:  # noqa: ANN401
+    ) -> WalkerArchitype | list[WalkerArchitype]:  # noqa: ANN401
         """Jac's visit stmt feature."""
         nodes = []
         if isinstance(walker, WalkerArchitype):
             """Walker visits node."""
             wanch = walker.__jac__
-            before_len = len(wanch.next)
             for anchor in (
                 (i.__jac__ for i in expr) if isinstance(expr, list) else [expr.__jac__]
             ):
@@ -349,9 +348,11 @@ class JacWalker:
                             raise ValueError("Edge has no target.")
             if nodes and is_jacgo:
                 wanch.next.append(nodes)  # type: ignore
+                return create_threads([wanch, nodes])
             elif nodes:
                 wanch.next.extend(nodes)
-            return len(wanch.next) > before_len
+                return [wanch.architype]
+            return []
         else:
             raise TypeError("Invalid walker object")
 
@@ -458,8 +459,11 @@ class JacWalker:
                     walker.next = [currentn]
                     warch, current_node = exec_ability(walker)
                 elif isinstance(current, list):
+                    # currentn = current[0]
+                    # current_node = currentn.architype
+                    # walker.next = [currentn]
                     for i in current:
-                        walker = create_walker(walker, i)
+                        walker = get_walker(i)
                         warch, current_node = jacgo_visit(
                             func=exec_ability, args=(walker,)
                         )

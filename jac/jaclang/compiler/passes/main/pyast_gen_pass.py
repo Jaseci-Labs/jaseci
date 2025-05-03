@@ -1763,7 +1763,7 @@ class PyastGenPass(UniPass):
                         test=self.sync(
                             ast3.UnaryOp(
                                 op=self.sync(ast3.Not()),
-                                operand=visit_call,
+                                operand=cast(ast3.expr, visit_stmt),
                             )
                         ),
                         body=cast(list[ast3.stmt], node.else_body.gen.py_ast),
