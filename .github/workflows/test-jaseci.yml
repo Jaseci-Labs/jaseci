@@ -1,4 +1,4 @@
-name: Run tests for jac-splice-orc
+name: Run tests for jaseci
 
 on:
   pull_request:

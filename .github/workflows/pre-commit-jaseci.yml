@@ -1,4 +1,4 @@
-name: Linting and Pre-commit checks for jaclang
+name: Linting and Pre-commit checks for jaseci
 
 on:
   pull_request:
