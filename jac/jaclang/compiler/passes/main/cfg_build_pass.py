@@ -5,10 +5,10 @@ These nodes will be linked together in the CFG pass.
 """
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.passes import AstPass
+from jaclang.compiler.passes import UniPass
 
 
-class CFGBuildPass(AstPass):
+class CFGBuildPass(UniPass):
     """Jac Symbol table build pass."""
 
     def before_pass(self) -> None:
@@ -131,7 +131,7 @@ class CFGBuildPass(AstPass):
                     if parent_bb:
                         self.link_bbs(parent_bb, node)
 
-class FetchBBPass(AstPass):
+class FetchBBPass(UniPass):
     """Fetch basic blocks."""
 
     def before_pass(self) -> None:
