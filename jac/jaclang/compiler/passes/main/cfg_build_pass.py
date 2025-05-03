@@ -131,6 +131,7 @@ class CFGBuildPass(UniPass):
                     if parent_bb:
                         self.link_bbs(parent_bb, node)
 
+
 class FetchBBPass(UniPass):
     """Fetch basic blocks."""
 

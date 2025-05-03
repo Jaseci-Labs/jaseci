@@ -1492,7 +1492,7 @@ class JacLanguageTests(TestCase):
             file_source = f.read()
 
         ir = (prog := JacProgram()).compile_from_str(
-            source_str=file_source, file_path=file_name, schedule=py_code_gen_typed
+            source_str=file_source, file_path=file_name, mode=CMode.TYPECHECK
         )
 
         cfg_pass = FetchBBPass(
