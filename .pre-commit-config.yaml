@@ -15,7 +15,7 @@ repos:
     rev: 6.1.0
     hooks:
       - id: flake8
-        args: ["--config=jac/.flake8"]
+        args: ["--config=.flake8"]
         additional_dependencies:
           [
             pep8-naming,

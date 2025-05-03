@@ -497,9 +497,9 @@ class SpliceOrcPlugin:
 
             except client.exceptions.ApiException as e:
                 logging.error(
-                    f"Failed to connect to Kubernetes API server using the loaded configuration: {e.reason} (Status: {e.status}). "
-                    "Please ensure your Kubernetes cluster (e.g., kind, minikube, Docker Desktop) is running "
-                    "and your kubectl context (`kubectl config current-context`) points to a valid, running cluster."
+                    f"Failed to connect to Kubernetes API server: {e.reason} (Status: {e.status}).\n"
+                    "Please ensure your Kubernetes cluster (e.g., kind, minikube, Docker Desktop) is running\n"
+                    "and your kubectl context (`kubectl config current-context`) points to a valid cluster."
                 )
                 return
             except Exception as e:

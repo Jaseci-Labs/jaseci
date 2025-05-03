@@ -318,15 +318,21 @@ pod_manager = PodManager()
 
 
 # Define empty defaults for pydantic models
-EMPTY_LIST_FACTORY = list
-EMPTY_DICT_FACTORY = dict
+def empty_list_factory() -> List[Any]:
+    """Return an empty list for default factory."""
+    return []
+
+
+def empty_dict_factory() -> Dict[str, Any]:
+    """Return an empty dict for default factory."""
+    return {}
 
 
 class RunModuleRequest(BaseModel):
     """Request for running a module."""
 
-    args: List[Any] = Field(default_factory=EMPTY_LIST_FACTORY)
-    kwargs: Dict[str, Any] = Field(default_factory=EMPTY_DICT_FACTORY)
+    args: List[Any] = Field(default_factory=empty_list_factory)
+    kwargs: Dict[str, Any] = Field(default_factory=empty_dict_factory)
 
 
 @app.post("/run_module")
@@ -334,9 +340,7 @@ async def run_module(
     module_name: str = Query(..., description="Name of the module"),
     method_name: str = Query(..., description="Name of the method"),
     obj_id: Optional[str] = Query(None, description="Object ID"),
-    request: RunModuleRequest = Body(
-        ..., description="Arguments and keyword arguments"
-    ),
+    request: RunModuleRequest = Body(...),
 ) -> Union[Dict[str, str], str]:
     """Run a module and return the result."""
     return pod_manager.forward_to_pod(

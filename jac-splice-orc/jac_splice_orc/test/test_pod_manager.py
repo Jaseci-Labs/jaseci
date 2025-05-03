@@ -1,11 +1,12 @@
 """Tests for the pod manager module."""
 
 from datetime import datetime, timezone
+from typing import Any, Generator
 from unittest import mock
 from unittest.mock import MagicMock
 
-import pytest
 from fastapi.testclient import TestClient
+
 from kubernetes.client import (
     V1Condition,
     V1ObjectMeta,
@@ -16,6 +17,8 @@ from kubernetes.client import (
     V1Status,
 )
 from kubernetes.client.rest import ApiException
+
+import pytest
 
 # Mock gRPC imports to avoid ImportError in test environment
 with mock.patch.dict(
@@ -50,7 +53,7 @@ def create_condition_ready(status: str) -> V1Condition:
 
 
 @pytest.fixture
-def mock_kubernetes_and_grpc() -> None:
+def mock_kubernetes_and_grpc() -> Generator[None, None, None]:
     """Mock Kubernetes and gRPC for testing.
 
     Yields:
@@ -76,7 +79,23 @@ def mock_kubernetes_and_grpc() -> None:
 
         call_count = [0]
 
-        def read_pod_side_effect(name, namespace, *args, **kwargs):
+        def read_pod_side_effect(
+            name: str, namespace: str, *args: Any, **kwargs: Any
+        ) -> V1Pod:
+            """Side effect function for read_namespaced_pod.
+
+            Args:
+                name: Name of the pod
+                namespace: Namespace of the pod
+                *args: Additional positional arguments
+                **kwargs: Additional keyword arguments
+
+            Returns:
+                A V1Pod object
+
+            Raises:
+                ApiException: If the pod is not found
+            """
             if name == "numpy-pod":
                 if call_count[0] == 0:
                     call_count[0] += 1

@@ -1,15 +1,18 @@
-# server.py
+"""Module for running a gRPC server that exposes module functionality."""
+
+import importlib
+import logging
+import threading
+import traceback
+import uuid
+from concurrent import futures
+from typing import Any, Dict
 
 import grpc
-from concurrent import futures
-import importlib
-import threading
-import uuid
-from grpc_local import module_service_pb2_grpc
-from grpc_local import module_service_pb2
-from grpc_health.v1 import health, health_pb2_grpc, health_pb2
-import logging
-import traceback
+
+from grpc_health.v1 import health, health_pb2, health_pb2_grpc
+
+from grpc_local import module_service_pb2, module_service_pb2_grpc
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
@@ -17,25 +20,47 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 class ObjectRegistry:
     """Thread-safe registry for storing objects with unique IDs."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize the object registry."""
         self.lock = threading.Lock()
-        self.objects = {}
+        self.objects: Dict[str, Any] = {}
         logging.debug("ObjectRegistry initialized.")
 
-    def add(self, obj):
+    def add(self, obj: Any) -> str:
+        """Add an object to the registry.
+
+        Args:
+            obj: The object to add
+
+        Returns:
+            The ID of the added object
+        """
         obj_id = str(uuid.uuid4())
         with self.lock:
             self.objects[obj_id] = obj
             logging.debug(f"Object added with ID {obj_id}: {obj}")
         return obj_id
 
-    def get(self, obj_id):
+    def get(self, obj_id: str) -> Any:
+        """Get an object from the registry.
+
+        Args:
+            obj_id: The ID of the object to get
+
+        Returns:
+            The object, or None if not found
+        """
         with self.lock:
             obj = self.objects.get(obj_id)
             logging.debug(f"Object retrieved with ID {obj_id}: {obj}")
             return obj
 
-    def remove(self, obj_id):
+    def remove(self, obj_id: str) -> None:
+        """Remove an object from the registry.
+
+        Args:
+            obj_id: The ID of the object to remove
+        """
         with self.lock:
             if obj_id in self.objects:
                 del self.objects[obj_id]
@@ -46,7 +71,14 @@ object_registry = ObjectRegistry()
 
 
 class ModuleService(module_service_pb2_grpc.ModuleServiceServicer):
-    def __init__(self, module_name):
+    """Service for executing methods on a module."""
+
+    def __init__(self, module_name: str) -> None:
+        """Initialize the module service.
+
+        Args:
+            module_name: Name of the module to load
+        """
         logging.debug(f"Initializing ModuleService with module '{module_name}'")
         try:
             self.module = importlib.import_module(module_name.replace("-", "_"))
@@ -56,7 +88,18 @@ class ModuleService(module_service_pb2_grpc.ModuleServiceServicer):
             traceback.print_exc()
             raise e
 
-    def ExecuteMethod(self, request, context):
+    def execute_method(
+        self, request: module_service_pb2.MethodRequest, context: grpc.ServicerContext
+    ) -> module_service_pb2.MethodResponse:
+        """Execute a method on the module or an object.
+
+        Args:
+            request: The method request
+            context: The gRPC context
+
+        Returns:
+            The method response
+        """
         try:
             logging.debug(f"Received ExecuteMethod request: {request}")
             if request.obj_id:
@@ -85,13 +128,19 @@ class ModuleService(module_service_pb2_grpc.ModuleServiceServicer):
             # Deserialize arguments
             import json
 
-            def deserialize_arg(arg):
+            def deserialize_arg(arg: Dict[str, Any]) -> Any:
+                """Deserialize an argument from the request.
+
+                Args:
+                    arg: The serialized argument
+
+                Returns:
+                    The deserialized argument
+                """
                 import numpy as np
                 import base64
 
-                if arg["type"] == "primitive":
-                    return arg["value"]
-                elif arg["type"] == "json":
+                if arg["type"] == "primitive" or arg["type"] == "json":
                     return arg["value"]
                 elif arg["type"] == "ndarray":
                     data_bytes = base64.b64decode(arg["data"])
@@ -126,7 +175,15 @@ class ModuleService(module_service_pb2_grpc.ModuleServiceServicer):
 
             logging.debug(f"Execution result: {result}")
 
-            def serialize_result(res):
+            def serialize_result(res: Any) -> Dict[str, Any]:
+                """Serialize a result for the response.
+
+                Args:
+                    res: The result to serialize
+
+                Returns:
+                    The serialized result
+                """
                 import numpy as np
                 import base64
 
@@ -177,7 +234,12 @@ class ModuleService(module_service_pb2_grpc.ModuleServiceServicer):
             return module_service_pb2.MethodResponse()
 
 
-def serve(module_name):
+def serve(module_name: str) -> None:
+    """Start the gRPC server.
+
+    Args:
+        module_name: Name of the module to serve
+    """
     logging.info(f"Starting gRPC server for module '{module_name}'")
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     module_service_pb2_grpc.add_ModuleServiceServicer_to_server(
