@@ -130,12 +130,6 @@ class CFGBuildPass(AstPass):
                     parent_bb = self.get_parent_bb_stmt(node)
                     if parent_bb:
                         self.link_bbs(parent_bb, node)
-        fetch_bb_pass = FetchBBPass(ir_in=self.ir_in, prog=self.prog)
-        dot = fetch_bb_pass.dotgen_cfg()
-
-        with open("basic_blocks.dot", "w") as file:
-            file.write(dot)
-
 
 class FetchBBPass(AstPass):
     """Fetch basic blocks."""
@@ -175,32 +169,37 @@ class FetchBBPass(AstPass):
             }
             self.bb_counter += 1
 
-    def after_pass(self) -> None:
-        """After pass."""
+    def dotgen_cfg(self) -> str:
+        """Generate dot file for CFG."""
+        cfg: dict = {}
+        dot = "digraph G {\n"
+
         for key, bb in self.basic_blocks.items():
+            cfg[key] = {
+                "bb_stmts": bb["bb_stmts"],
+                "bb_out": (
+                    [0 for _ in range(len(bb["bb_out"]))] if bb["bb_out"] else None
+                ),
+            }
+
             if bb["bb_out"]:
+
                 for out_obj in bb["bb_out"]:
                     for k, v in self.basic_blocks.items():
                         if out_obj == v["bb_stmts"][0]:
-                            self.basic_blocks[key]["bb_out"][
-                                bb["bb_out"].index(out_obj)
-                            ] = k
+                            cfg[key]["bb_out"][bb["bb_out"].index(out_obj)] = k
                             break
 
-        for key, bb in self.basic_blocks.items():
+        for key, bb in cfg.items():
             for i, bbs in enumerate(bb["bb_stmts"]):
                 if isinstance(bbs, uni.ElseIf):
-                    self.basic_blocks[key]["bb_stmts"][i] = (
-                        "elif " + bbs.condition.unparse()
-                    )
+                    cfg[key]["bb_stmts"][i] = "elif " + bbs.condition.unparse()
                 elif isinstance(bbs, uni.IfStmt):
-                    self.basic_blocks[key]["bb_stmts"][i] = (
-                        "if " + bbs.condition.unparse()
-                    )
+                    cfg[key]["bb_stmts"][i] = "if " + bbs.condition.unparse()
                 elif isinstance(bbs, uni.ElseStmt):
-                    self.basic_blocks[key]["bb_stmts"][i] = "else"
+                    cfg[key]["bb_stmts"][i] = "else"
                 elif isinstance(bbs, (uni.InForStmt, uni.IterForStmt)):
-                    self.basic_blocks[key]["bb_stmts"][i] = (
+                    cfg[key]["bb_stmts"][i] = (
                         (
                             "for "
                             + bbs.target.unparse()
@@ -216,16 +215,9 @@ class FetchBBPass(AstPass):
                         )
                     )
                 elif isinstance(bbs, uni.WhileStmt):
-                    self.basic_blocks[key]["bb_stmts"][i] = (
-                        "while " + bbs.condition.unparse()
-                    )
+                    cfg[key]["bb_stmts"][i] = "while " + bbs.condition.unparse()
                 else:
-                    self.basic_blocks[key]["bb_stmts"][i] = bbs.unparse()
-
-    def dotgen_cfg(self) -> str:
-        """Generate dot file for CFG."""
-        cfg = self.basic_blocks
-        dot = "digraph G {\n"
+                    cfg[key]["bb_stmts"][i] = bbs.unparse()
 
         for key, value in cfg.items():
             if value.get("bb_stmts"):
