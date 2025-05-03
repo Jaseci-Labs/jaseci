@@ -1539,9 +1539,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
             visit_stmt: (atomic_chain type_tag? EQ )? KW_JACGO?
                         KW_VISIT (inherited_archs)? expression (else_stmt | SEMI)
             """
-            targets = self.match(uni.Expr)
+            store_target = self.match(uni.Expr)
             type_tag = self.match(uni.SubTag)
-            if targets:
+            if store_target:
                 self.consume_token(Tok.EQ)
             tok_jacgo = self.match_token(Tok.KW_JACGO)
             self.consume_token(Tok.KW_VISIT)
@@ -1552,7 +1552,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 self.consume_token(Tok.SEMI)
             return uni.VisitStmt(
                 vis_type=sub_name,
-                targets=targets,
+                store_target=store_target,
                 type_tag=type_tag,
                 target=target,
                 else_body=else_body,

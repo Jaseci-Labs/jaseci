@@ -2015,7 +2015,7 @@ class PyastGenPass(UniPass):
         """Sub objects.
 
         vis_type: Optional[SubNodeList[AtomType]],
-        targets: Optional[ExprType],
+        store_target: Optional[ExprType],
         type_tag: Optional[SubTag[ExprType]],
         target: ExprType,
         else_body: Optional[ElseStmt],
@@ -2043,17 +2043,17 @@ class PyastGenPass(UniPass):
                 keywords=[],
             )
         )
-        if node.targets and node.else_body:
-            if isinstance(node.targets.gen.py_ast[0], ast3.Name):
-                node.targets.gen.py_ast[0].ctx = ast3.Store()
+        if node.store_target and node.else_body:
+            if isinstance(node.store_target.gen.py_ast[0], ast3.Name):
+                node.store_target.gen.py_ast[0].ctx = ast3.Store()
             visit_stmt: ast3.Assign | ast3.NamedExpr = self.sync(
                 ast3.NamedExpr(
-                    target=cast(ast3.Name, node.targets.gen.py_ast[0]),
+                    target=cast(ast3.Name, node.store_target.gen.py_ast[0]),
                     value=visit_call,
                 )
             )
 
-        if node.targets and node.else_body:
+        if node.store_target and node.else_body:
             node.gen.py_ast = [
                 self.sync(
                     ast3.If(
@@ -2069,13 +2069,13 @@ class PyastGenPass(UniPass):
                 )
             ]
 
-        elif node.targets:
-            if isinstance(node.targets.gen.py_ast[0], ast3.Name):
-                node.targets.gen.py_ast[0].ctx = ast3.Store()
+        elif node.store_target:
+            if isinstance(node.store_target.gen.py_ast[0], ast3.Name):
+                node.store_target.gen.py_ast[0].ctx = ast3.Store()
             node.gen.py_ast = [
                 self.sync(
                     ast3.Assign(
-                        targets=cast(list[ast3.expr], node.targets.gen.py_ast),
+                        targets=cast(list[ast3.expr], node.store_target.gen.py_ast),
                         value=(
                             cast(ast3.expr, visit_call)
                             if isinstance(visit_call, ast3.expr)
