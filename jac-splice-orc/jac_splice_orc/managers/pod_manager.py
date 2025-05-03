@@ -3,8 +3,7 @@
 import logging
 import os
 import time
-
-from typing import Any, List
+from typing import Any, Dict, List, Optional
 
 from fastapi import Body, FastAPI, HTTPException, Query
 
@@ -37,7 +36,9 @@ class PodManager:
         self.v1 = client.CoreV1Api()
         self.namespace = os.getenv("NAMESPACE", namespace)
 
-    def create_requirements_file(self, module_name: str, module_config: dict) -> str:
+    def create_requirements_file(
+        self, module_name: str, module_config: Dict[str, Any]
+    ) -> str:
         """Generate a requirements.txt file based on the module configuration."""
         requirements_path = f"/app/requirements/{module_name}/requirements.txt"
 
@@ -54,7 +55,9 @@ class PodManager:
         )
         return requirements_path
 
-    def create_pod(self, module_name: str, module_config: dict) -> Any:
+    def create_pod(
+        self, module_name: str, module_config: Dict[str, Any]
+    ) -> Dict[str, str]:
         """Create a pod and service for the given module."""
         image_name = os.getenv("IMAGE_NAME", "ashishmahendra/jac-splice-orc:0.1.8")
 
@@ -139,17 +142,14 @@ class PodManager:
                         print(
                             f"ConfigMap '{module_name}-requirements' not found. Creating it..."
                         )
-                        _ = self.v1.create_namespaced_config_map(
-                            self.namespace,
-                            body={
-                                "metadata": {"name": f"{module_name}-requirements"},
-                                "data": {
-                                    "requirements.txt": open(
-                                        requirements_file_path, "r"
-                                    ).read()
+                        with open(requirements_file_path, "r") as req_file:
+                            _ = self.v1.create_namespaced_config_map(
+                                self.namespace,
+                                body={
+                                    "metadata": {"name": f"{module_name}-requirements"},
+                                    "data": {"requirements.txt": req_file.read()},
                                 },
-                            },
-                        )
+                            )
                     else:
                         raise
                 self.v1.create_namespaced_pod(self.namespace, body=pod_manifest)
@@ -181,7 +181,7 @@ class PodManager:
 
         return {"message": f"Pod {pod_name} and service {service_name} created."}
 
-    def delete_pod(self, module_name: str) -> Any:
+    def delete_pod(self, module_name: str) -> Dict[str, str]:
         """Delete the pod and service for the given module."""
         pod_name = f"{module_name}-pod"
         service_name = f"{module_name}-service"
@@ -256,10 +256,11 @@ class PodManager:
         self,
         module_name: str,
         method_name: str,
-        obj_id: str,
-        args: list,
-        kwargs: dict,
+        obj_id: Optional[str],
+        args: List[Any],
+        kwargs: Dict[str, Any],
     ) -> Any:
+        """Forward a method call to a pod and return the result."""
         import json
 
         pod_name = f"{module_name}-pod"
@@ -272,7 +273,7 @@ class PodManager:
         channel = grpc.insecure_channel(f"{service_ip}:50051")
         stub = module_service_pb2_grpc.ModuleServiceStub(channel)
         request = module_service_pb2.MethodRequest(
-            obj_id=obj_id,
+            obj_id=obj_id if obj_id is not None else "",
             method_name=method_name,
             args=serialized_args,
             kwargs=serialized_kwargs,
@@ -287,7 +288,7 @@ class PodManager:
                         "is_callable": response.is_callable,
                     }
                 else:
-                    return {"result": response.result}
+                    return response.result
             except grpc.RpcError as e:
                 if e.code() == grpc.StatusCode.UNAVAILABLE:
                     time.sleep(2)
@@ -303,6 +304,12 @@ class PodManager:
         )
 
 
+# Create module-level constants for default values
+DEFAULT_MAX_RETRIES = 5
+DEFAULT_RETRY_DELAY = 2
+DEFAULT_TIMEOUT = 120
+DEFAULT_IMAGE_NAME = "ashishmahendra/jac-splice-orc:0.1.8"
+
 pod_manager = PodManager()
 
 
@@ -310,14 +317,14 @@ class RunModuleRequest(BaseModel):
     """Request for running a module."""
 
     args: List[Any] = []
-    kwargs: dict[str, Any] = {}
+    kwargs: Dict[str, Any] = {}
 
 
 @app.post("/run_module")
 async def run_module(
     module_name: str = Query(..., description="Name of the module"),
     method_name: str = Query(..., description="Name of the method"),
-    obj_id: str = Query(None, description="Object ID"),
+    obj_id: Optional[str] = Query(None, description="Object ID"),
     request: RunModuleRequest = Body(
         ..., description="Arguments and keyword arguments"
     ),
@@ -329,12 +336,14 @@ async def run_module(
 
 
 @app.post("/create_pod/{module_name}")
-def create_pod(module_name: str, module_config: dict = Body(...)) -> Any:
+def create_pod(
+    module_name: str, module_config: Dict[str, Any] = Body(...)
+) -> Dict[str, str]:
     """Create a pod and service for the given module and return the result."""
     return pod_manager.create_pod(module_name.replace("_", "-"), module_config)
 
 
 @app.delete("/delete_pod/{module_name}")
-def delete_pod(module_name: str) -> Any:
+def delete_pod(module_name: str) -> Dict[str, str]:
     """Delete the pod and service for the given module and return the result."""
     return pod_manager.delete_pod(module_name.replace("_", "-"))

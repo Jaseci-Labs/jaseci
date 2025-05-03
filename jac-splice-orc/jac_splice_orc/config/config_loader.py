@@ -4,12 +4,13 @@ import json
 import logging
 import os
 import shutil
+from typing import Any, Dict, List, Optional
 
 
 class ConfigLoader:
     """Loads and manages configurations from a JSON file."""
 
-    def __init__(self, config_file_path=None):
+    def __init__(self, config_file_path: Optional[str] = None) -> None:
         """Initialize the ConfigLoader."""
         # Figure out our default path
         self.default_config_file_path = os.path.join(
@@ -21,13 +22,13 @@ class ConfigLoader:
 
         self.default_config_file_path = self.default_config_file_path
         self.config_file_path = config_file_path
-        self.config = self.load_config()
+        self.config: Dict[str, Any] = self.load_config()
 
         # If user-specified path != default, copy the config over to default
         if config_file_path != self.default_config_file_path:
             self.copy_to_default()
 
-    def load_config(self):
+    def load_config(self) -> Dict[str, Any]:
         """Load the JSON configuration file if it exists."""
         try:
             with open(self.config_file_path, "r") as f:
@@ -39,7 +40,7 @@ class ConfigLoader:
             logging.error(f"Error parsing JSON configuration: {e}")
             raise
 
-    def copy_to_default(self):
+    def copy_to_default(self) -> None:
         """Copy the loaded config into the default file path."""
         try:
             # Make sure the destination folder exists
@@ -53,17 +54,17 @@ class ConfigLoader:
         except Exception as e:
             logging.error(f"Failed to copy config to default location: {e}")
 
-    def get(self, *keys, default=None):
+    def get(self, *keys: str, default: Any = None) -> Any:
         """Retrieve a configuration value using a sequence of keys."""
-        cfg = self.config
+        cfg: Any = self.config
         for key in keys:
-            if cfg and key in cfg:
+            if cfg and isinstance(cfg, dict) and key in cfg:
                 cfg = cfg.get(key)
             else:
                 return default
         return cfg if cfg is not None else default
 
-    def set(self, keys, value):
+    def set(self, keys: List[str], value: Any) -> None:
         """Set a configuration value using a list of keys."""
         cfg = self.config
         for key in keys[:-1]:
@@ -72,7 +73,7 @@ class ConfigLoader:
             cfg = cfg[key]
         cfg[keys[-1]] = value
 
-    def save_config(self):
+    def save_config(self) -> None:
         """Save the current configuration back to the JSON file."""
         try:
             with open(self.config_file_path, "w") as f:
