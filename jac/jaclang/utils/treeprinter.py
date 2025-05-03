@@ -78,6 +78,7 @@ CLASS_COLOR_MAP: dict[str, str] = {
     "NonLocalStmt": "#ffc596",
     "Assignment": "#ffc596",
     "BinaryExpr": "#fbeb93",
+    "SpawnExpr": "#fbeb93",
     "CompareExpr": "#fbeb93",
     "BoolExpr": "#fbeb93",
     "LambdaExpr": "#fbeb93",
