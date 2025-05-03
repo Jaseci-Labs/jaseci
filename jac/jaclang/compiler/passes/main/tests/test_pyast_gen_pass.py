@@ -5,8 +5,8 @@ import io
 import sys
 import types
 
-import jaclang.compiler.absyntree as ast
-from jaclang.compiler.passes.main import PyastGenPass
+import jaclang.compiler.unitree as uni
+from jaclang.compiler.passes.main import CompilerMode as CMode, PyastGenPass
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.machinestate import JacMachineState
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
@@ -38,7 +38,6 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         """Basic test for pass."""
         (out := JacProgram()).compile(
             self.examples_abs_path("micro/hodge_podge.jac"),
-            target=PyastGenPass,
         )
 
         self.assertFalse(out.errors_had)
@@ -47,18 +46,13 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         """Basic test for pass."""
         code_gen = (out := JacProgram()).compile(
             self.examples_abs_path("manual_code/circle.jac"),
-            target=PyastGenPass,
         )
-        import ast as ast3
-
-        if code_gen.ir_out.gen.py_ast and isinstance(
-            code_gen.ir_out.gen.py_ast[0], ast3.Module
-        ):
-            prog = compile(code_gen.ir_out.gen.py_ast[0], filename="<ast>", mode="exec")
+        if code_gen.gen.py_ast and isinstance(code_gen.gen.py_ast[0], ast3.Module):
+            prog = compile(code_gen.gen.py_ast[0], filename="<ast>", mode="exec")
             captured_output = io.StringIO()
             sys.stdout = captured_output
             module = types.ModuleType("__main__")
-            module.__dict__["__file__"] = code_gen.ir_out.loc.mod_path
+            module.__dict__["__file__"] = code_gen.loc.mod_path
             module.__dict__["__jac_mach__"] = JacMachineState()
             exec(prog, module.__dict__)
             sys.stdout = sys.__stdout__
@@ -74,11 +68,11 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
         self.assertFalse(out.errors_had)
 
-    def parent_scrub(self, node: ast.AstNode) -> bool:
+    def parent_scrub(self, node: uni.UniNode) -> bool:
         """Validate every node has parent."""
         success = True
         for i in node.kid:
-            if not isinstance(i, ast.Module) and i.parent is None:
+            if not isinstance(i, uni.Module) and i.parent is None:
                 success = False
                 break
             else:
@@ -87,11 +81,9 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        code_gen = JacProgram().compile(
-            self.fixture_abs_path(filename), target=PyastGenPass
-        )
-        from_jac_str = ast3.dump(code_gen.ir_out.gen.py_ast[0], indent=2)
-        from_jac = code_gen.ir_out.gen.py_ast[0]
+        code_gen = JacProgram().compile(self.fixture_abs_path(filename))
+        from_jac_str = ast3.dump(code_gen.gen.py_ast[0], indent=2)
+        from_jac = code_gen.gen.py_ast[0]
         try:
             compile(from_jac, filename="<ast>", mode="exec")
         except Exception as e:
@@ -104,7 +96,7 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             except Exception as e:
                 print(filename, ast3.dump(i, indent=2))
                 raise e
-        self.assertTrue(self.parent_scrub(code_gen.ir_out))
+        self.assertTrue(self.parent_scrub(code_gen))
         self.assertGreater(len(from_jac_str), 10)
 
 
@@ -118,11 +110,11 @@ class ValidateTreeParentTest(TestCaseMicroSuite):
         """Set up test."""
         return super().setUp()
 
-    def parent_scrub(self, node: ast.AstNode) -> bool:
+    def parent_scrub(self, node: uni.UniNode) -> bool:
         """Validate every node has parent."""
         success = True
         for i in node.kid:
-            if not isinstance(i, ast.Module) and i.parent is None:
+            if not isinstance(i, uni.Module) and i.parent is None:
                 success = False
                 break
             else:
@@ -131,12 +123,12 @@ class ValidateTreeParentTest(TestCaseMicroSuite):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        code_gen = JacProgram().compile(self.fixture_abs_path(filename), schedule=[])
-        self.assertTrue(self.parent_scrub(code_gen.ir_out))
         code_gen = JacProgram().compile(
-            self.fixture_abs_path(filename), target=PyastGenPass
+            self.fixture_abs_path(filename), mode=CMode.PARSE
         )
-        self.assertTrue(self.parent_scrub(code_gen.ir_out))
+        self.assertTrue(self.parent_scrub(code_gen))
+        code_gen = JacProgram().compile(self.fixture_abs_path(filename))
+        self.assertTrue(self.parent_scrub(code_gen))
 
 
 ValidateTreeParentTest.self_attach_micro_tests()

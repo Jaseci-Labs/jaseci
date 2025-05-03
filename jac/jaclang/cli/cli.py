@@ -10,11 +10,11 @@ import sys
 import types
 from typing import Optional
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as uni
 from jaclang.cli.cmdreg import CommandShell, cmd_registry
 from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
-from jaclang.compiler.passes.main.schedules import py_code_gen_build, py_code_gen_typed
+from jaclang.compiler.passes.main.schedules import CompilerMode as CMode
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.builtin import dotgen
 from jaclang.runtimelib.constructs import WalkerArchitype
@@ -34,19 +34,14 @@ def format(path: str, outfile: str = "", to_screen: bool = False) -> None:
 
     def format_file(filename: str) -> None:
         code_gen_format = JacProgram.jac_file_formatter(filename)
-        if code_gen_format.errors_had:
-            print(
-                f"Errors occurred while formatting the file {filename}.",
-                file=sys.stderr,
-            )
-        elif to_screen:
-            print(code_gen_format.ir_out.gen.jac)
+        if to_screen:
+            print(code_gen_format)
         elif outfile:
             with open(outfile, "w") as f:
-                f.write(code_gen_format.ir_out.gen.jac)
+                f.write(code_gen_format)
         else:
             with open(filename, "w") as f:
-                f.write(code_gen_format.ir_out.gen.jac)
+                f.write(code_gen_format)
 
     if path.endswith(".jac"):
         if os.path.exists(path):
@@ -168,16 +163,19 @@ def get_object(
 
 
 @cmd_registry.register
-def build(filename: str, pybuild: bool = False) -> None:
+def build(filename: str, typecheck: bool = True) -> None:
     """Build the specified .jac file."""
     if filename.endswith(".jac"):
         (out := JacProgram()).compile(
             file_path=filename,
-            schedule=py_code_gen_typed if pybuild else py_code_gen_build,
+            mode=CMode.TYPECHECK if typecheck else CMode.COMPILE,
         )
         errs = len(out.errors_had)
         warnings = len(out.warnings_had)
         print(f"Errors: {errs}, Warnings: {warnings}")
+        for i in out.mod.hub.values():
+            for j in i.flatten():
+                j.gen.mypy_ast = []
         with open(filename[:-4] + ".jir", "wb") as f:
             pickle.dump(out, f)
     else:
@@ -193,7 +191,7 @@ def check(filename: str, print_errs: bool = True) -> None:
     if filename.endswith(".jac"):
         (prog := JacProgram()).compile(
             file_path=filename,
-            schedule=py_code_gen_typed,
+            mode=CMode.TYPECHECK,
         )
 
         errs = len(prog.errors_had)
@@ -361,7 +359,7 @@ def debug(filename: str, main: bool = True, cache: bool = False) -> None:
     base = base if base else "./"
     mod = mod[:-4]
     if filename.endswith(".jac"):
-        bytecode = JacProgram().compile(filename).ir_out.gen.py_bytecode
+        bytecode = JacProgram().compile(filename).gen.py_bytecode
         if bytecode:
             code = marshal.loads(bytecode)
             if db.has_breakpoint(bytecode):
@@ -448,9 +446,9 @@ def py2jac(filename: str) -> None:
         with open(filename, "r") as f:
             file_source = f.read()
             code = PyastBuildPass(
-                ir_in=ast.PythonModuleAst(
+                ir_in=uni.PythonModuleAst(
                     ast3.parse(file_source),
-                    orig_src=ast.Source(file_source, filename),
+                    orig_src=uni.Source(file_source, filename),
                 ),
                 prog=JacProgram(),
             ).ir_out.unparse()
@@ -467,7 +465,7 @@ def jac2py(filename: str) -> None:
     """
     if filename.endswith(".jac"):
         with open(filename, "r"):
-            code = JacProgram().compile(file_path=filename).ir_out.gen.py
+            code = JacProgram().compile(file_path=filename).gen.py
         print(code)
     else:
         print("Not a .jac file.", file=sys.stderr)

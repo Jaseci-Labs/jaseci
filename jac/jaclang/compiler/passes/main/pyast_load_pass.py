@@ -8,21 +8,21 @@ from typing import Optional, Sequence, TYPE_CHECKING, TypeAlias, TypeVar
 
 # from icecream import ic
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Tokens as Tok
-from jaclang.compiler.passes.ast_pass import Transform
+from jaclang.compiler.passes.uni_pass import Transform
 from jaclang.utils.helpers import pascal_to_snake
 
 if TYPE_CHECKING:
     from jaclang.compiler.program import JacProgram
 
-T = TypeVar("T", bound=ast.AstNode)
+T = TypeVar("T", bound=uni.UniNode)
 
 
-class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
+class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
     """Jac Parser."""
 
-    def __init__(self, ir_in: ast.PythonModuleAst, prog: JacProgram) -> None:
+    def __init__(self, ir_in: uni.PythonModuleAst, prog: JacProgram) -> None:
         """Initialize parser."""
         self.mod_path = ir_in.loc.mod_path
         self.orig_src = ir_in.loc.orig_src
@@ -39,7 +39,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         #     f"{node.__class__.__name__} - {[(k, type(v)) for k, v in vars(node).items()]}"
         # )
 
-    def convert(self, node: py_ast.AST) -> ast.AstNode:
+    def convert(self, node: py_ast.AST) -> uni.UniNode:
         """Get python node type."""
         # print(
         #     f"working on {type(node).__name__} line {node.lineno if hasattr(node, 'lineno') else 0}"
@@ -55,41 +55,41 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         # ret.unparse()
         return ret
 
-    def transform(self, ir_in: ast.PythonModuleAst) -> ast.Module:
+    def transform(self, ir_in: uni.PythonModuleAst) -> uni.Module:
         """Transform input IR."""
-        self.ir_out: ast.Module = self.proc_module(ir_in.ast)
+        self.ir_out: uni.Module = self.proc_module(ir_in.ast)
         return self.ir_out
 
     def extract_with_entry(
-        self, body: list[ast.AstNode], exclude_types: TypeAlias = T
-    ) -> list[T | ast.ModuleCode]:
+        self, body: list[uni.UniNode], exclude_types: TypeAlias = T
+    ) -> list[T | uni.ModuleCode]:
         """Extract with entry from a body."""
 
-        def gen_mod_code(with_entry_body: list[ast.CodeBlockStmt]) -> ast.ModuleCode:
-            with_entry_subnodelist = ast.SubNodeList[ast.CodeBlockStmt](
+        def gen_mod_code(with_entry_body: list[uni.CodeBlockStmt]) -> uni.ModuleCode:
+            with_entry_subnodelist = uni.SubNodeList[uni.CodeBlockStmt](
                 items=with_entry_body,
                 delim=Tok.WS,
                 kid=with_entry_body,
                 left_enc=self.operator(Tok.LBRACE, "{"),
                 right_enc=self.operator(Tok.RBRACE, "}"),
             )
-            return ast.ModuleCode(
+            return uni.ModuleCode(
                 name=None,
                 body=with_entry_subnodelist,
                 kid=[with_entry_subnodelist],
                 doc=None,
             )
 
-        extracted: list[T | ast.ModuleCode] = []
-        with_entry_body: list[ast.CodeBlockStmt] = []
+        extracted: list[T | uni.ModuleCode] = []
+        with_entry_body: list[uni.CodeBlockStmt] = []
         for i in body:
             if isinstance(i, exclude_types):
                 if len(with_entry_body):
                     extracted.append(gen_mod_code(with_entry_body))
                     with_entry_body = []
                 extracted.append(i)
-            elif isinstance(i, ast.CodeBlockStmt):
-                if isinstance(i, ast.ExprStmt) and isinstance(i.expr, ast.String):
+            elif isinstance(i, uni.CodeBlockStmt):
+                if isinstance(i, uni.ExprStmt) and isinstance(i.expr, uni.String):
                     self.convert_to_doc(i.expr)
                 with_entry_body.append(i)
             else:
@@ -99,7 +99,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             extracted.append(gen_mod_code(with_entry_body))
         return extracted
 
-    def proc_module(self, node: py_ast.Module) -> ast.Module:
+    def proc_module(self, node: py_ast.Module) -> uni.Module:
         """Process python node.
 
         class Module(mod):
@@ -107,27 +107,27 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             body: list[stmt]
             type_ignores: list[TypeIgnore]
         """
-        elements: list[ast.AstNode] = [self.convert(i) for i in node.body]
+        elements: list[uni.UniNode] = [self.convert(i) for i in node.body]
         elements[0] = (
             elements[0].expr
-            if isinstance(elements[0], ast.ExprStmt)
-            and isinstance(elements[0].expr, ast.String)
+            if isinstance(elements[0], uni.ExprStmt)
+            and isinstance(elements[0].expr, uni.String)
             else elements[0]
         )
-        doc_str_list = [elements[0]] if isinstance(elements[0], ast.String) else []
+        doc_str_list = [elements[0]] if isinstance(elements[0], uni.String) else []
         valid = (
             (doc_str_list)
-            + self.extract_with_entry(elements[1:], (ast.ElementStmt, ast.EmptyToken))
+            + self.extract_with_entry(elements[1:], (uni.ElementStmt, uni.EmptyToken))
             if doc_str_list
-            else self.extract_with_entry(elements[:], (ast.ElementStmt, ast.EmptyToken))
+            else self.extract_with_entry(elements[:], (uni.ElementStmt, uni.EmptyToken))
         )
-        doc_str = elements[0] if isinstance(elements[0], ast.String) else None
+        doc_str = elements[0] if isinstance(elements[0], uni.String) else None
         self.convert_to_doc(doc_str) if doc_str else None
-        ret = ast.Module(
+        ret = uni.Module(
             name=self.mod_path.split(os.path.sep)[-1].split(".")[0],
-            source=ast.Source("", mod_path=self.mod_path),
+            source=uni.Source("", mod_path=self.mod_path),
             doc=doc_str,
-            body=valid[1:] if valid and isinstance(valid[0], ast.String) else valid,
+            body=valid[1:] if valid and isinstance(valid[0], uni.String) else valid,
             terminals=[],
             kid=valid,
         )
@@ -136,7 +136,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
 
     def proc_function_def(
         self, node: py_ast.FunctionDef | py_ast.AsyncFunctionDef
-    ) -> ast.Ability:
+    ) -> uni.Ability:
         """Process python node.
 
         class FunctionDef(stmt):
@@ -153,7 +153,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         reserved_keywords = [v for _, v in TOKEN_MAP.items()]
 
         value = node.name if node.name not in reserved_keywords else f"<>{node.name}"
-        name = ast.Name(
+        name = uni.Name(
             orig_src=self.orig_src,
             name=Tok.NAME,
             value=value,
@@ -165,18 +165,18 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             pos_end=0,
         )
         body = [self.convert(i) for i in node.body]
-        valid = [i for i in body if isinstance(i, (ast.CodeBlockStmt))]
+        valid = [i for i in body if isinstance(i, (uni.CodeBlockStmt))]
         if len(valid) != len(body):
             raise self.ice("Length mismatch in function body")
 
         if (
             len(valid)
-            and isinstance(valid[0], ast.ExprStmt)
-            and isinstance(valid[0].expr, ast.String)
+            and isinstance(valid[0], uni.ExprStmt)
+            and isinstance(valid[0].expr, uni.String)
         ):
             self.convert_to_doc(valid[0].expr)
             doc = valid[0]
-            valid_body = ast.SubNodeList[ast.CodeBlockStmt](
+            valid_body = uni.SubNodeList[uni.CodeBlockStmt](
                 items=[doc] + valid[1:],
                 delim=Tok.WS,
                 kid=valid[1:] + [doc],
@@ -185,7 +185,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             )
         else:
             doc = None
-            valid_body = ast.SubNodeList[ast.CodeBlockStmt](
+            valid_body = uni.SubNodeList[uni.CodeBlockStmt](
                 items=valid,
                 delim=Tok.WS,
                 kid=valid,
@@ -193,24 +193,24 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
                 right_enc=self.operator(Tok.RBRACE, "}"),
             )
         decorators = [self.convert(i) for i in node.decorator_list]
-        valid_dec = [i for i in decorators if isinstance(i, ast.Expr)]
+        valid_dec = [i for i in decorators if isinstance(i, uni.Expr)]
         if len(valid_dec) != len(decorators):
             raise self.ice("Length mismatch in decorators on function")
         valid_decorators = (
-            ast.SubNodeList[ast.Expr](
+            uni.SubNodeList[uni.Expr](
                 items=valid_dec, delim=Tok.DECOR_OP, kid=decorators
             )
             if len(valid_dec)
             else None
         )
         res = self.convert(node.args)
-        sig: Optional[ast.FuncSignature] = (
-            res if isinstance(res, ast.FuncSignature) else None
+        sig: Optional[uni.FuncSignature] = (
+            res if isinstance(res, uni.FuncSignature) else None
         )
         ret_sig = self.convert(node.returns) if node.returns else None
-        if isinstance(ret_sig, ast.Expr):
+        if isinstance(ret_sig, uni.Expr):
             if not sig:
-                sig = ast.FuncSignature(params=None, return_type=ret_sig, kid=[ret_sig])
+                sig = uni.FuncSignature(params=None, return_type=ret_sig, kid=[ret_sig])
             else:
                 sig.return_type = ret_sig
                 sig.add_kids_right([sig.return_type])
@@ -219,7 +219,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         )
         if not sig:
             raise self.ice("Function signature not found")
-        ret = ast.Ability(
+        ret = uni.Ability(
             name_ref=name,
             is_async=False,
             is_static=False,
@@ -234,7 +234,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         )
         return ret
 
-    def proc_async_function_def(self, node: py_ast.AsyncFunctionDef) -> ast.Ability:
+    def proc_async_function_def(self, node: py_ast.AsyncFunctionDef) -> uni.Ability:
         """Process python node.
 
         class AsyncFunctionDef(stmt):
@@ -252,7 +252,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         ability.is_async = True
         return ability
 
-    def proc_class_def(self, node: py_ast.ClassDef) -> ast.Architype | ast.Enum:
+    def proc_class_def(self, node: py_ast.ClassDef) -> uni.Architype | uni.Enum:
         """Process python node.
 
         class ClassDef(stmt):
@@ -266,7 +266,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             if sys.version_info >= (3, 12):
             type_params: list[type_param]
         """
-        name = ast.Name(
+        name = uni.Name(
             orig_src=self.orig_src,
             name=Tok.NAME,
             value=node.name,
@@ -277,7 +277,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             pos_start=0,
             pos_end=0,
         )
-        arch_type = ast.Token(
+        arch_type = uni.Token(
             orig_src=self.orig_src,
             name=Tok.KW_CLASS,
             value="class",
@@ -291,11 +291,11 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         body = [self.convert(i) for i in node.body]
         for body_stmt in body:
             if (
-                isinstance(body_stmt, ast.Ability)
-                and isinstance(body_stmt.name_ref, ast.Name)
+                isinstance(body_stmt, uni.Ability)
+                and isinstance(body_stmt.name_ref, uni.Name)
                 and body_stmt.name_ref.value == "__init__"
             ):
-                tok = ast.Name(
+                tok = uni.Name(
                     orig_src=self.orig_src,
                     name=Tok.KW_INIT,
                     value="init",
@@ -306,11 +306,11 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
                     pos_start=0,
                     pos_end=0,
                 )
-                body_stmt.name_ref = ast.SpecialVarRef(var=tok)
+                body_stmt.name_ref = uni.SpecialVarRef(var=tok)
             if (
-                isinstance(body_stmt, ast.Ability)
+                isinstance(body_stmt, uni.Ability)
                 and body_stmt.signature
-                and isinstance(body_stmt.signature, ast.FuncSignature)
+                and isinstance(body_stmt.signature, uni.FuncSignature)
                 and body_stmt.signature.params
             ):
                 body_stmt.signature.params.items = [
@@ -320,22 +320,22 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
                 ]
         doc = (
             body[0].expr
-            if isinstance(body[0], ast.ExprStmt)
-            and isinstance(body[0].expr, ast.String)
+            if isinstance(body[0], uni.ExprStmt)
+            and isinstance(body[0].expr, uni.String)
             else None
         )
         self.convert_to_doc(doc) if doc else None
         body = body[1:] if doc else body
-        valid: list[ast.ArchBlockStmt] = (
-            self.extract_with_entry(body, ast.ArchBlockStmt)
-            if body and not (isinstance(body[0], ast.Semi) and len(body) == 1)
+        valid: list[uni.ArchBlockStmt] = (
+            self.extract_with_entry(body, uni.ArchBlockStmt)
+            if body and not (isinstance(body[0], uni.Semi) and len(body) == 1)
             else []
         )
-        empty_block: Sequence[ast.AstNode] = [
+        empty_block: Sequence[uni.UniNode] = [
             self.operator(Tok.LBRACE, "{"),
             self.operator(Tok.RBRACE, "}"),
         ]
-        valid_body = ast.SubNodeList[ast.ArchBlockStmt](
+        valid_body = uni.SubNodeList[uni.ArchBlockStmt](
             items=valid,
             delim=Tok.WS,
             kid=(valid if valid else empty_block),
@@ -343,20 +343,20 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             right_enc=self.operator(Tok.RBRACE, "}"),
         )
         converted_base_classes = [self.convert(base) for base in node.bases]
-        base_classes: list[ast.Expr] = [
-            base for base in converted_base_classes if isinstance(base, ast.Expr)
+        base_classes: list[uni.Expr] = [
+            base for base in converted_base_classes if isinstance(base, uni.Expr)
         ]
         valid_bases = (
-            ast.SubNodeList[ast.Expr](
+            uni.SubNodeList[uni.Expr](
                 items=base_classes, delim=Tok.COMMA, kid=base_classes
             )
             if base_classes
             else None
         )
         converted_decorators_list = [self.convert(i) for i in node.decorator_list]
-        decorators = [i for i in converted_decorators_list if isinstance(i, ast.Expr)]
+        decorators = [i for i in converted_decorators_list if isinstance(i, uni.Expr)]
         valid_decorators = (
-            ast.SubNodeList[ast.Expr](
+            uni.SubNodeList[uni.Expr](
                 items=decorators, delim=Tok.DECOR_OP, kid=decorators
             )
             if decorators
@@ -364,7 +364,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         )
         if (
             base_classes
-            and isinstance(base_classes[0], ast.Name)
+            and isinstance(base_classes[0], uni.Name)
             and base_classes[0].value == "Enum"
         ):
             if len(base_classes) > 1:
@@ -373,19 +373,19 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
                 )
             arch_type.name = Tok.KW_ENUM
             arch_type.value = "enum"
-            valid_enum_body: list[ast.EnumBlockStmt] = []
+            valid_enum_body: list[uni.EnumBlockStmt] = []
             for class_body_stmt in node.body:
                 converted_stmt = self.convert(class_body_stmt)
-                if isinstance(converted_stmt, ast.EnumBlockStmt):
-                    if isinstance(converted_stmt, ast.Assignment):
+                if isinstance(converted_stmt, uni.EnumBlockStmt):
+                    if isinstance(converted_stmt, uni.Assignment):
                         converted_stmt.is_enum_stmt = True
                     valid_enum_body.append(converted_stmt)
                 else:
-                    if isinstance(converted_stmt, ast.ExprStmt) and isinstance(
-                        converted_stmt.expr, ast.String
+                    if isinstance(converted_stmt, uni.ExprStmt) and isinstance(
+                        converted_stmt.expr, uni.String
                     ):
                         continue
-                    pintok = ast.Token(
+                    pintok = uni.Token(
                         orig_src=self.orig_src,
                         name=Tok.PYNLINE,
                         value=py_ast.unparse(class_body_stmt),
@@ -396,13 +396,13 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
                         pos_start=0,
                         pos_end=0,
                     )
-                    valid_enum_body.append(ast.PyInlineCode(code=pintok, kid=[pintok]))
+                    valid_enum_body.append(uni.PyInlineCode(code=pintok, kid=[pintok]))
 
-            valid_enum_body2: list[ast.EnumBlockStmt] = [
-                i for i in valid_enum_body if isinstance(i, ast.EnumBlockStmt)
+            valid_enum_body2: list[uni.EnumBlockStmt] = [
+                i for i in valid_enum_body if isinstance(i, uni.EnumBlockStmt)
             ]
             enum_body = (
-                ast.SubNodeList[ast.EnumBlockStmt](
+                uni.SubNodeList[uni.EnumBlockStmt](
                     items=valid_enum_body2, delim=Tok.COMMA, kid=valid_enum_body2
                 )
                 if valid_enum_body2
@@ -410,7 +410,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             )
             if doc:
                 doc.line_no = name.line_no
-            return ast.Enum(
+            return uni.Enum(
                 name=name,
                 access=None,
                 base_classes=None,
@@ -436,7 +436,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
                 else [name, valid_body, doc] if doc else [name, valid_body]
             )
         )
-        return ast.Architype(
+        return uni.Architype(
             arch_type=arch_type,
             name=name,
             access=None,
@@ -447,7 +447,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             decorators=valid_decorators,
         )
 
-    def proc_return(self, node: py_ast.Return) -> ast.ReturnStmt | None:
+    def proc_return(self, node: py_ast.Return) -> uni.ReturnStmt | None:
         """Process python node.
 
         class Return(stmt):
@@ -456,15 +456,15 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         value = self.convert(node.value) if node.value else None
         if not value:
-            return ast.ReturnStmt(
+            return uni.ReturnStmt(
                 expr=None, kid=[self.operator(Tok.KW_RETURN, "return")]
             )
-        elif value and isinstance(value, ast.Expr):
-            return ast.ReturnStmt(expr=value, kid=[value])
+        elif value and isinstance(value, uni.Expr):
+            return uni.ReturnStmt(expr=value, kid=[value])
         else:
             raise self.ice("Invalid return value")
 
-    def proc_delete(self, node: py_ast.Delete) -> ast.DeleteStmt:
+    def proc_delete(self, node: py_ast.Delete) -> uni.DeleteStmt:
         """Process python node.
 
         class Delete(stmt):
@@ -472,23 +472,23 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             targets: list[expr]
         """
         exprs = [self.convert(target) for target in node.targets]
-        valid_exprs = [expr for expr in exprs if isinstance(expr, ast.Expr)]
+        valid_exprs = [expr for expr in exprs if isinstance(expr, uni.Expr)]
         if not len(valid_exprs) or len(valid_exprs) != len(exprs):
             raise self.ice("Length mismatch in delete targets")
-        target = ast.SubNodeList[ast.Expr | ast.KWPair](
+        target = uni.SubNodeList[uni.Expr | uni.KWPair](
             items=[*valid_exprs], delim=Tok.COMMA, kid=exprs
         )
         target_1 = (
             valid_exprs[0]
             if len(valid_exprs) > 1
-            else ast.TupleVal(values=target, kid=[target])
+            else uni.TupleVal(values=target, kid=[target])
         )
-        return ast.DeleteStmt(
+        return uni.DeleteStmt(
             target=target_1,
             kid=[target],
         )
 
-    def proc_assign(self, node: py_ast.Assign) -> ast.Assignment:
+    def proc_assign(self, node: py_ast.Assign) -> uni.Assignment:
         """Process python node.
 
         class Assign(stmt):
@@ -497,15 +497,15 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         value = self.convert(node.value)
         targets = [self.convert(target) for target in node.targets]
-        valid = [target for target in targets if isinstance(target, ast.Expr)]
+        valid = [target for target in targets if isinstance(target, uni.Expr)]
         if len(valid) == len(targets):
-            valid_targets = ast.SubNodeList[ast.Expr](
+            valid_targets = uni.SubNodeList[uni.Expr](
                 items=valid, delim=Tok.EQ, kid=valid
             )
         else:
             raise self.ice("Length mismatch in assignment targets")
-        if isinstance(value, ast.Expr):
-            return ast.Assignment(
+        if isinstance(value, uni.Expr):
+            return uni.Assignment(
                 target=valid_targets,
                 value=value,
                 type_tag=None,
@@ -514,7 +514,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         else:
             raise self.ice()
 
-    def proc_aug_assign(self, node: py_ast.AugAssign) -> ast.Assignment:
+    def proc_aug_assign(self, node: py_ast.AugAssign) -> uni.Assignment:
         """Process python node.
 
         class AugAssign(stmt):
@@ -527,18 +527,18 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
 
         target = self.convert(node.target)
         op = self.convert(node.op)
-        if isinstance(op, ast.Token):
+        if isinstance(op, uni.Token):
             op.name = self.aug_op_map(TOKEN_MAP, op)
         value = self.convert(node.value)
         if (
-            isinstance(value, ast.Expr)
-            and isinstance(target, ast.Expr)
-            and isinstance(op, ast.Token)
+            isinstance(value, uni.Expr)
+            and isinstance(target, uni.Expr)
+            and isinstance(op, uni.Token)
         ):
-            targ = ast.SubNodeList[ast.Expr](
+            targ = uni.SubNodeList[uni.Expr](
                 items=[target], delim=Tok.COMMA, kid=[target]
             )
-            return ast.Assignment(
+            return uni.Assignment(
                 target=targ,
                 type_tag=None,
                 mutable=True,
@@ -549,7 +549,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         else:
             raise self.ice()
 
-    def proc_ann_assign(self, node: py_ast.AnnAssign) -> ast.Assignment:
+    def proc_ann_assign(self, node: py_ast.AnnAssign) -> uni.Assignment:
         """Process python node.
 
         class AnnAssign(stmt):
@@ -561,22 +561,22 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         target = self.convert(node.target)
         annotation = self.convert(node.annotation)
-        if isinstance(annotation, ast.Expr):
-            annotation_subtag = ast.SubTag[ast.Expr](tag=annotation, kid=[annotation])
+        if isinstance(annotation, uni.Expr):
+            annotation_subtag = uni.SubTag[uni.Expr](tag=annotation, kid=[annotation])
         else:
             raise self.ice()
         value = self.convert(node.value) if node.value else None
         if (
-            (isinstance(value, (ast.Expr, ast.YieldExpr)) or not value)
-            and isinstance(annotation, ast.Expr)
-            and isinstance(target, ast.Expr)
+            (isinstance(value, (uni.Expr, uni.YieldExpr)) or not value)
+            and isinstance(annotation, uni.Expr)
+            and isinstance(target, uni.Expr)
         ):
-            target = ast.SubNodeList[ast.Expr](
+            target = uni.SubNodeList[uni.Expr](
                 items=[target], delim=Tok.EQ, kid=[target]
             )
-            return ast.Assignment(
+            return uni.Assignment(
                 target=target,
-                value=value if isinstance(value, (ast.Expr, ast.YieldExpr)) else None,
+                value=value if isinstance(value, (uni.Expr, uni.YieldExpr)) else None,
                 type_tag=annotation_subtag,
                 kid=(
                     [target, annotation_subtag, value]
@@ -587,7 +587,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         else:
             raise self.ice()
 
-    def proc_for(self, node: py_ast.For) -> ast.InForStmt:
+    def proc_for(self, node: py_ast.For) -> uni.InForStmt:
         """Process python node.
 
         class For(stmt):
@@ -600,11 +600,11 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         target = self.convert(node.target)
         iter = self.convert(node.iter)
         body = [self.convert(i) for i in node.body]
-        val_body = [i for i in body if isinstance(i, ast.CodeBlockStmt)]
+        val_body = [i for i in body if isinstance(i, uni.CodeBlockStmt)]
         if len(val_body) != len(body):
             raise self.ice("Length mismatch in for body")
 
-        valid_body = ast.SubNodeList[ast.CodeBlockStmt](
+        valid_body = uni.SubNodeList[uni.CodeBlockStmt](
             items=val_body,
             delim=Tok.WS,
             kid=val_body,
@@ -612,11 +612,11 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             right_enc=self.operator(Tok.RBRACE, "}"),
         )
         orelse = [self.convert(i) for i in node.orelse]
-        val_orelse = [i for i in orelse if isinstance(i, ast.CodeBlockStmt)]
+        val_orelse = [i for i in orelse if isinstance(i, uni.CodeBlockStmt)]
         if len(val_orelse) != len(orelse):
             raise self.ice("Length mismatch in for orelse")
         if orelse:
-            valid_orelse = ast.SubNodeList[ast.CodeBlockStmt](
+            valid_orelse = uni.SubNodeList[uni.CodeBlockStmt](
                 items=val_orelse,
                 delim=Tok.WS,
                 kid=orelse,
@@ -626,12 +626,12 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         else:
             valid_orelse = None
         fin_orelse = (
-            ast.ElseStmt(body=valid_orelse, kid=[valid_orelse])
+            uni.ElseStmt(body=valid_orelse, kid=[valid_orelse])
             if valid_orelse
             else None
         )
-        if isinstance(target, ast.Expr) and isinstance(iter, ast.Expr):
-            return ast.InForStmt(
+        if isinstance(target, uni.Expr) and isinstance(iter, uni.Expr):
+            return uni.InForStmt(
                 target=target,
                 is_async=False,
                 collection=iter,
@@ -646,7 +646,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         else:
             raise self.ice()
 
-    def proc_async_for(self, node: py_ast.AsyncFor) -> ast.InForStmt:
+    def proc_async_for(self, node: py_ast.AsyncFor) -> uni.InForStmt:
         """Process AsyncFor node.
 
         class AsyncFor(stmt):
@@ -659,11 +659,11 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         target = self.convert(node.target)
         iter = self.convert(node.iter)
         body = [self.convert(i) for i in node.body]
-        val_body = [i for i in body if isinstance(i, ast.CodeBlockStmt)]
+        val_body = [i for i in body if isinstance(i, uni.CodeBlockStmt)]
         if len(val_body) != len(body):
             raise self.ice("Length mismatch in for body")
 
-        valid_body = ast.SubNodeList[ast.CodeBlockStmt](
+        valid_body = uni.SubNodeList[uni.CodeBlockStmt](
             items=val_body,
             delim=Tok.WS,
             kid=val_body,
@@ -671,11 +671,11 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             right_enc=self.operator(Tok.RBRACE, "}"),
         )
         orelse = [self.convert(i) for i in node.orelse]
-        val_orelse = [i for i in orelse if isinstance(i, ast.CodeBlockStmt)]
+        val_orelse = [i for i in orelse if isinstance(i, uni.CodeBlockStmt)]
         if len(val_orelse) != len(orelse):
             raise self.ice("Length mismatch in for orelse")
         if orelse:
-            valid_orelse = ast.SubNodeList[ast.CodeBlockStmt](
+            valid_orelse = uni.SubNodeList[uni.CodeBlockStmt](
                 items=val_orelse,
                 delim=Tok.WS,
                 kid=orelse,
@@ -685,12 +685,12 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         else:
             valid_orelse = None
         fin_orelse = (
-            ast.ElseStmt(body=valid_orelse, kid=[valid_orelse])
+            uni.ElseStmt(body=valid_orelse, kid=[valid_orelse])
             if valid_orelse
             else None
         )
-        if isinstance(target, ast.Expr) and isinstance(iter, ast.Expr):
-            return ast.InForStmt(
+        if isinstance(target, uni.Expr) and isinstance(iter, uni.Expr):
+            return uni.InForStmt(
                 target=target,
                 is_async=True,
                 collection=iter,
@@ -705,7 +705,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         else:
             raise self.ice()
 
-    def proc_while(self, node: py_ast.While) -> ast.WhileStmt:
+    def proc_while(self, node: py_ast.While) -> uni.WhileStmt:
         """Process While node.
 
         class While(stmt):
@@ -716,18 +716,18 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         test = self.convert(node.test)
         body = [self.convert(stmt) for stmt in node.body]
-        valid_body = [stmt for stmt in body if isinstance(stmt, ast.CodeBlockStmt)]
+        valid_body = [stmt for stmt in body if isinstance(stmt, uni.CodeBlockStmt)]
         if len(valid_body) != len(body):
             raise self.ice("Length mismatch in while body")
-        fin_body = ast.SubNodeList[ast.CodeBlockStmt](
+        fin_body = uni.SubNodeList[uni.CodeBlockStmt](
             items=valid_body,
             delim=Tok.WS,
             kid=valid_body,
             left_enc=self.operator(Tok.LBRACE, "{"),
             right_enc=self.operator(Tok.RBRACE, "}"),
         )
-        if isinstance(test, ast.Expr):
-            return ast.WhileStmt(
+        if isinstance(test, uni.Expr):
+            return uni.WhileStmt(
                 condition=test,
                 body=fin_body,
                 kid=[test, fin_body],
@@ -735,7 +735,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         else:
             raise self.ice()
 
-    def proc_if(self, node: py_ast.If) -> ast.IfStmt:
+    def proc_if(self, node: py_ast.If) -> uni.IfStmt:
         """Process If node.
 
         class If(stmt):
@@ -746,10 +746,10 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         test = self.convert(node.test)
         body = [self.convert(stmt) for stmt in node.body]
-        valid_body = [stmt for stmt in body if isinstance(stmt, ast.CodeBlockStmt)]
+        valid_body = [stmt for stmt in body if isinstance(stmt, uni.CodeBlockStmt)]
         if len(valid_body) != len(body):
             self.log_error("Length mismatch in async for body")
-        body2 = ast.SubNodeList[ast.CodeBlockStmt](
+        body2 = uni.SubNodeList[uni.CodeBlockStmt](
             items=valid_body,
             delim=Tok.WS,
             kid=body,
@@ -759,30 +759,30 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
 
         orelse = [self.convert(stmt) for stmt in node.orelse]
         valid_orelse = [
-            stmt for stmt in orelse if isinstance(stmt, (ast.CodeBlockStmt))
+            stmt for stmt in orelse if isinstance(stmt, (uni.CodeBlockStmt))
         ]
         if valid_orelse:
             first_elm = valid_orelse[0]
-            if isinstance(first_elm, ast.IfStmt):
-                else_body: Optional[ast.ElseIf | ast.ElseStmt] = ast.ElseIf(
+            if isinstance(first_elm, uni.IfStmt):
+                else_body: Optional[uni.ElseIf | uni.ElseStmt] = uni.ElseIf(
                     condition=first_elm.condition,
                     body=first_elm.body,
                     else_body=first_elm.else_body,
                     kid=first_elm.kid,
                 )
             else:
-                orelse2 = ast.SubNodeList[ast.CodeBlockStmt](
+                orelse2 = uni.SubNodeList[uni.CodeBlockStmt](
                     items=valid_orelse,
                     delim=Tok.WS,
                     kid=orelse,
                     left_enc=self.operator(Tok.LBRACE, "{"),
                     right_enc=self.operator(Tok.RBRACE, "}"),
                 )
-                else_body = ast.ElseStmt(body=orelse2, kid=[orelse2])
+                else_body = uni.ElseStmt(body=orelse2, kid=[orelse2])
         else:
             else_body = None
-        if isinstance(test, ast.Expr):
-            ret = ast.IfStmt(
+        if isinstance(test, uni.Expr):
+            ret = uni.IfStmt(
                 condition=test,
                 body=body2,
                 else_body=else_body,
@@ -792,7 +792,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             raise self.ice()
         return ret
 
-    def proc_with(self, node: py_ast.With) -> ast.WithStmt:
+    def proc_with(self, node: py_ast.With) -> uni.WithStmt:
         """Process With node.
 
         class With(stmt):
@@ -801,28 +801,28 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             body: list[stmt]
         """
         items = [self.convert(item) for item in node.items]
-        valid_items = [item for item in items if isinstance(item, ast.ExprAsItem)]
+        valid_items = [item for item in items if isinstance(item, uni.ExprAsItem)]
         if len(valid_items) != len(items):
             raise self.ice("Length mismatch in with items")
-        items_sub = ast.SubNodeList[ast.ExprAsItem](
+        items_sub = uni.SubNodeList[uni.ExprAsItem](
             items=valid_items, delim=Tok.COMMA, kid=items
         )
         body = [self.convert(stmt) for stmt in node.body]
-        valid_body = [stmt for stmt in body if isinstance(stmt, ast.CodeBlockStmt)]
+        valid_body = [stmt for stmt in body if isinstance(stmt, uni.CodeBlockStmt)]
         if len(valid_body) != len(body):
             raise self.ice("Length mismatch in async for body")
-        body_sub = ast.SubNodeList[ast.CodeBlockStmt](
+        body_sub = uni.SubNodeList[uni.CodeBlockStmt](
             items=valid_body,
             delim=Tok.WS,
             kid=body,
             left_enc=self.operator(Tok.LBRACE, "{"),
             right_enc=self.operator(Tok.RBRACE, "}"),
         )
-        return ast.WithStmt(
+        return uni.WithStmt(
             is_async=False, exprs=items_sub, body=body_sub, kid=[items_sub, body_sub]
         )
 
-    def proc_async_with(self, node: py_ast.AsyncWith) -> ast.WithStmt:
+    def proc_async_with(self, node: py_ast.AsyncWith) -> uni.WithStmt:
         """Process AsyncWith node.
 
         class AsyncWith(stmt):
@@ -831,28 +831,28 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             body: list[stmt]
         """
         items = [self.convert(item) for item in node.items]
-        valid_items = [item for item in items if isinstance(item, ast.ExprAsItem)]
+        valid_items = [item for item in items if isinstance(item, uni.ExprAsItem)]
         if len(valid_items) != len(items):
             raise self.ice("Length mismatch in with items")
-        items_sub = ast.SubNodeList[ast.ExprAsItem](
+        items_sub = uni.SubNodeList[uni.ExprAsItem](
             items=valid_items, delim=Tok.COMMA, kid=items
         )
         body = [self.convert(stmt) for stmt in node.body]
-        valid_body = [stmt for stmt in body if isinstance(stmt, ast.CodeBlockStmt)]
+        valid_body = [stmt for stmt in body if isinstance(stmt, uni.CodeBlockStmt)]
         if len(valid_body) != len(body):
             raise self.ice("Length mismatch in async for body")
-        body_sub = ast.SubNodeList[ast.CodeBlockStmt](
+        body_sub = uni.SubNodeList[uni.CodeBlockStmt](
             items=valid_body,
             delim=Tok.WS,
             kid=body,
             left_enc=self.operator(Tok.LBRACE, "{"),
             right_enc=self.operator(Tok.RBRACE, "}"),
         )
-        return ast.WithStmt(
+        return uni.WithStmt(
             is_async=True, exprs=items_sub, body=body_sub, kid=[items_sub, body_sub]
         )
 
-    def proc_raise(self, node: py_ast.Raise) -> ast.RaiseStmt:
+    def proc_raise(self, node: py_ast.Raise) -> uni.RaiseStmt:
         """Process python node.
 
         class Raise(stmt):
@@ -861,28 +861,28 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         exc = self.convert(node.exc) if node.exc else None
         cause = self.convert(node.cause) if node.cause else None
-        kid: list[ast.Expr | ast.Token] = []
-        if isinstance(exc, ast.Expr):
+        kid: list[uni.Expr | uni.Token] = []
+        if isinstance(exc, uni.Expr):
             kid = [exc]
-        if isinstance(cause, ast.Expr):
+        if isinstance(cause, uni.Expr):
             kid.append(cause)
         if not (exc and cause):
             kid.append(self.operator(Tok.KW_RAISE, "raise"))
-        if (isinstance(cause, ast.Expr) or cause is None) and (
-            isinstance(exc, ast.Expr) or exc is None
+        if (isinstance(cause, uni.Expr) or cause is None) and (
+            isinstance(exc, uni.Expr) or exc is None
         ):
             if exc and not node.cause:
-                return ast.RaiseStmt(
+                return uni.RaiseStmt(
                     cause=exc,
                     from_target=None,
                     kid=[self.operator(Tok.KW_RAISE, "raise"), exc],
                 )
             else:
-                return ast.RaiseStmt(cause=cause, from_target=exc, kid=kid)
+                return uni.RaiseStmt(cause=cause, from_target=exc, kid=kid)
         else:
             raise self.ice()
 
-    def proc_assert(self, node: py_ast.Assert) -> ast.AssertStmt:
+    def proc_assert(self, node: py_ast.Assert) -> uni.AssertStmt:
         """Process python node.
 
         class Assert(stmt):
@@ -891,8 +891,8 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         test = self.convert(node.test)
         msg = self.convert(node.msg) if node.msg else None
-        if isinstance(test, ast.Expr) and (isinstance(msg, ast.Expr) or msg is None):
-            return ast.AssertStmt(
+        if isinstance(test, uni.Expr) and (isinstance(msg, uni.Expr) or msg is None):
+            return uni.AssertStmt(
                 condition=test,
                 error_msg=msg,
                 kid=[test, msg] if msg else [test],
@@ -900,7 +900,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         else:
             raise self.ice()
 
-    def proc_attribute(self, node: py_ast.Attribute) -> ast.AtomTrailer:
+    def proc_attribute(self, node: py_ast.Attribute) -> uni.AtomTrailer:
         """Proassignment targetscess python node.
 
         class Attribute(expr):
@@ -912,11 +912,11 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         value = self.convert(node.value)
         if (
-            isinstance(value, ast.FuncCall)
-            and isinstance(value.target, ast.Name)
+            isinstance(value, uni.FuncCall)
+            and isinstance(value.target, uni.Name)
             and value.target.value == "super"
         ):
-            tok = ast.Name(
+            tok = uni.Name(
                 orig_src=self.orig_src,
                 name=Tok.KW_SUPER,
                 value="super",
@@ -927,9 +927,9 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
                 pos_start=0,
                 pos_end=0,
             )
-            value = ast.SpecialVarRef(var=tok)
+            value = uni.SpecialVarRef(var=tok)
             # exit()
-        attribute = ast.Name(
+        attribute = uni.Name(
             orig_src=self.orig_src,
             name=Tok.NAME,
             value=(
@@ -944,8 +944,8 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             pos_start=0,
             pos_end=0,
         )
-        if isinstance(value, ast.Expr):
-            return ast.AtomTrailer(
+        if isinstance(value, uni.Expr):
+            return uni.AtomTrailer(
                 target=value,
                 right=attribute,
                 is_attr=True,
@@ -955,19 +955,19 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         else:
             raise self.ice()
 
-    def proc_await(self, node: py_ast.Await) -> ast.AwaitExpr:
+    def proc_await(self, node: py_ast.Await) -> uni.AwaitExpr:
         """Process python node.
 
         class Await(expr):
             value: expr
         """
         value = self.convert(node.value)
-        if isinstance(value, ast.Expr):
-            return ast.AwaitExpr(target=value, kid=[value])
+        if isinstance(value, uni.Expr):
+            return uni.AwaitExpr(target=value, kid=[value])
         else:
             raise self.ice()
 
-    def proc_bin_op(self, node: py_ast.BinOp) -> ast.AtomUnit:
+    def proc_bin_op(self, node: py_ast.BinOp) -> uni.AtomUnit:
         """Process python node.
 
         class BinOp(expr):
@@ -981,17 +981,17 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         op = self.convert(node.op)
         right = self.convert(node.right)
         if (
-            isinstance(left, ast.Expr)
-            and isinstance(op, ast.Token)
-            and isinstance(right, ast.Expr)
+            isinstance(left, uni.Expr)
+            and isinstance(op, uni.Token)
+            and isinstance(right, uni.Expr)
         ):
-            value = ast.BinaryExpr(
+            value = uni.BinaryExpr(
                 left=left,
                 op=op,
                 right=right,
                 kid=[left, op, right],
             )
-            return ast.AtomUnit(
+            return uni.AtomUnit(
                 value=value,
                 kid=[
                     self.operator(Tok.RPAREN, "("),
@@ -1002,7 +1002,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         else:
             raise self.ice()
 
-    def proc_unary_op(self, node: py_ast.UnaryOp) -> ast.UnaryExpr:
+    def proc_unary_op(self, node: py_ast.UnaryOp) -> uni.UnaryExpr:
         """Process python node.
 
         class UnaryOp(expr):
@@ -1011,8 +1011,8 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         op = self.convert(node.op)
         operand = self.convert(node.operand)
-        if isinstance(op, ast.Token) and isinstance(operand, ast.Expr):
-            return ast.UnaryExpr(
+        if isinstance(op, uni.Token) and isinstance(operand, uni.Expr):
+            return uni.UnaryExpr(
                 op=op,
                 operand=operand,
                 kid=[op, operand],
@@ -1020,7 +1020,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         else:
             raise self.ice()
 
-    def proc_bool_op(self, node: py_ast.BoolOp) -> ast.BoolExpr:
+    def proc_bool_op(self, node: py_ast.BoolOp) -> uni.BoolExpr:
         """Process python node.
 
         class BoolOp(expr): a and b and c
@@ -1029,18 +1029,18 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         op = self.convert(node.op)
         values = [self.convert(value) for value in node.values]
-        valid = [value for value in values if isinstance(value, ast.Expr)]
-        valid_values = ast.SubNodeList[ast.Expr](
+        valid = [value for value in values if isinstance(value, uni.Expr)]
+        valid_values = uni.SubNodeList[uni.Expr](
             items=valid, delim=Tok.COMMA, kid=values
         )
-        if isinstance(op, ast.Token) and len(valid) == len(values):
-            return ast.BoolExpr(op=op, values=valid, kid=[op, valid_values])
+        if isinstance(op, uni.Token) and len(valid) == len(values):
+            return uni.BoolExpr(op=op, values=valid, kid=[op, valid_values])
         else:
             raise self.ice()
 
-    def proc_break(self, node: py_ast.Break) -> ast.CtrlStmt:
+    def proc_break(self, node: py_ast.Break) -> uni.CtrlStmt:
         """Process python node."""
-        break_tok = ast.Token(
+        break_tok = uni.Token(
             orig_src=self.orig_src,
             name=Tok.KW_BREAK,
             value="break",
@@ -1051,9 +1051,9 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             pos_start=0,
             pos_end=0,
         )
-        return ast.CtrlStmt(ctrl=break_tok, kid=[break_tok])
+        return uni.CtrlStmt(ctrl=break_tok, kid=[break_tok])
 
-    def proc_call(self, node: py_ast.Call) -> ast.FuncCall:
+    def proc_call(self, node: py_ast.Call) -> uni.FuncCall:
         """Process python node.
 
         class Call(expr):
@@ -1064,24 +1064,24 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         keywords: list[keyword]
         """
         func = self.convert(node.func)
-        params_in: list[ast.Expr | ast.KWPair] = []
+        params_in: list[uni.Expr | uni.KWPair] = []
         args = [self.convert(arg) for arg in node.args]
         keywords = [self.convert(keyword) for keyword in node.keywords]
 
         for i in args:
-            if isinstance(i, ast.Expr):
+            if isinstance(i, uni.Expr):
                 params_in.append(i)
         for i in keywords:
-            if isinstance(i, ast.KWPair):
+            if isinstance(i, uni.KWPair):
                 params_in.append(i)
         if len(params_in) != 0:
-            params_in2 = ast.SubNodeList[ast.Expr | ast.KWPair](
+            params_in2 = uni.SubNodeList[uni.Expr | uni.KWPair](
                 items=params_in, delim=Tok.COMMA, kid=params_in
             )
         else:
             params_in2 = None
-        if isinstance(func, ast.Expr):
-            return ast.FuncCall(
+        if isinstance(func, uni.Expr):
+            return uni.FuncCall(
                 target=func,
                 params=params_in2,
                 genai_call=None,
@@ -1090,7 +1090,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         else:
             raise self.ice()
 
-    def proc_compare(self, node: py_ast.Compare) -> ast.CompareExpr:
+    def proc_compare(self, node: py_ast.Compare) -> uni.CompareExpr:
         """Process python node.
 
         class Compare(expr):
@@ -1103,28 +1103,28 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         left = self.convert(node.left)
         comparators = [self.convert(comparator) for comparator in node.comparators]
         valid_comparators = [
-            comparator for comparator in comparators if isinstance(comparator, ast.Expr)
+            comparator for comparator in comparators if isinstance(comparator, uni.Expr)
         ]
-        comparators2 = ast.SubNodeList[ast.Expr](
+        comparators2 = uni.SubNodeList[uni.Expr](
             items=valid_comparators, delim=Tok.COMMA, kid=comparators
         )
         ops = [self.convert(op) for op in node.ops]
-        valid_ops = [op for op in ops if isinstance(op, ast.Token)]
-        ops2 = ast.SubNodeList[ast.Token](items=valid_ops, delim=Tok.COMMA, kid=ops)
+        valid_ops = [op for op in ops if isinstance(op, uni.Token)]
+        ops2 = uni.SubNodeList[uni.Token](items=valid_ops, delim=Tok.COMMA, kid=ops)
 
         kids = [left, ops2, comparators2]
         if (
-            isinstance(left, ast.Expr)
+            isinstance(left, uni.Expr)
             and len(ops) == len(valid_ops)
             and len(comparators) == len(valid_comparators)
         ):
-            return ast.CompareExpr(
+            return uni.CompareExpr(
                 left=left, rights=valid_comparators, ops=valid_ops, kid=kids
             )
         else:
             raise self.ice()
 
-    def proc_constant(self, node: py_ast.Constant) -> ast.Literal:
+    def proc_constant(self, node: py_ast.Constant) -> uni.Literal:
         """Process python node.
 
         class Constant(expr):
@@ -1135,12 +1135,12 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             n: int | float | complex
         """
         type_mapping = {
-            int: ast.Int,
-            float: ast.Float,
-            str: ast.String,
-            bytes: ast.String,
-            bool: ast.Bool,
-            type(None): ast.Null,
+            int: uni.Int,
+            float: uni.Float,
+            str: uni.String,
+            bytes: uni.String,
+            bool: uni.Bool,
+            type(None): uni.Null,
         }
         value_type = type(node.value)
         if value_type in type_mapping:
@@ -1169,7 +1169,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
                 pos_end=0,
             )
         elif node.value == Ellipsis:
-            return ast.Ellipsis(
+            return uni.Ellipsis(
                 orig_src=self.orig_src,
                 name=Tok.ELLIPSIS,
                 value="...",
@@ -1183,9 +1183,9 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         else:
             raise self.ice("Invalid type for constant")
 
-    def proc_continue(self, node: py_ast.Continue) -> ast.CtrlStmt:
+    def proc_continue(self, node: py_ast.Continue) -> uni.CtrlStmt:
         """Process python node."""
-        continue_tok = ast.Token(
+        continue_tok = uni.Token(
             orig_src=self.orig_src,
             name=Tok.KW_CONTINUE,
             value="continue",
@@ -1196,9 +1196,9 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             pos_start=0,
             pos_end=0,
         )
-        return ast.CtrlStmt(ctrl=continue_tok, kid=[continue_tok])
+        return uni.CtrlStmt(ctrl=continue_tok, kid=[continue_tok])
 
-    def proc_dict(self, node: py_ast.Dict) -> ast.DictVal:
+    def proc_dict(self, node: py_ast.Dict) -> uni.DictVal:
         """Process python node.
 
         class Dict(expr):
@@ -1207,18 +1207,18 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         keys = [self.convert(i) if i else None for i in node.keys]
         values = [self.convert(i) for i in node.values]
-        valid_keys = [i for i in keys if isinstance(i, ast.Expr) or i is None]
-        valid_values = [i for i in values if isinstance(i, ast.Expr)]
-        kvpair: list[ast.KVPair] = []
+        valid_keys = [i for i in keys if isinstance(i, uni.Expr) or i is None]
+        valid_values = [i for i in values if isinstance(i, uni.Expr)]
+        kvpair: list[uni.KVPair] = []
         for i in range(len(values)):
             key_pluck = valid_keys[i]
-            kvp = ast.KVPair(
+            kvp = uni.KVPair(
                 key=key_pluck,
                 value=valid_values[i],
                 kid=([key_pluck, valid_values[i]] if key_pluck else [valid_values[i]]),
             )
             kvpair.append(kvp)
-        return ast.DictVal(
+        return uni.DictVal(
             kv_pairs=kvpair,
             kid=(
                 [*kvpair]
@@ -1227,7 +1227,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             ),
         )
 
-    def proc_dict_comp(self, node: py_ast.DictComp) -> ast.DictCompr:
+    def proc_dict_comp(self, node: py_ast.DictComp) -> uni.DictCompr:
         """Process python node.
 
         class DictComp(expr):
@@ -1237,21 +1237,21 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         key = self.convert(node.key)
         value = self.convert(node.value)
-        if isinstance(key, ast.Expr) and isinstance(value, ast.Expr):
-            kv_pair = ast.KVPair(key=key, value=value, kid=[key, value])
+        if isinstance(key, uni.Expr) and isinstance(value, uni.Expr):
+            kv_pair = uni.KVPair(key=key, value=value, kid=[key, value])
         else:
             raise self.ice()
         generators = [self.convert(i) for i in node.generators]
-        valid = [i for i in generators if isinstance(i, (ast.InnerCompr))]
+        valid = [i for i in generators if isinstance(i, (uni.InnerCompr))]
         if len(valid) != len(generators):
             raise self.ice("Length mismatch in dict compr generators")
-        compr = ast.SubNodeList[ast.InnerCompr](items=valid, delim=Tok.COMMA, kid=valid)
-        return ast.DictCompr(kv_pair=kv_pair, compr=valid, kid=[kv_pair, compr])
+        compr = uni.SubNodeList[uni.InnerCompr](items=valid, delim=Tok.COMMA, kid=valid)
+        return uni.DictCompr(kv_pair=kv_pair, compr=valid, kid=[kv_pair, compr])
 
     def proc_ellipsis(self, node: py_ast.Ellipsis) -> None:
         """Process python node."""
 
-    def proc_except_handler(self, node: py_ast.ExceptHandler) -> ast.Except:
+    def proc_except_handler(self, node: py_ast.ExceptHandler) -> uni.Except:
         """Process python node.
 
         class ExceptHandler(excepthandler):
@@ -1260,9 +1260,9 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             body: list[stmt]
         """
         type = self.convert(node.type) if node.type else None
-        name: ast.Name | None = None
+        name: uni.Name | None = None
         if not type and not node.name:
-            type = ast.Name(
+            type = uni.Name(
                 orig_src=self.orig_src,
                 name=Tok.NAME,
                 value="Exception",
@@ -1273,7 +1273,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
                 pos_start=0,
                 pos_end=0,
             )
-            name = ast.Name(
+            name = uni.Name(
                 orig_src=self.orig_src,
                 name=Tok.NAME,
                 value="e",
@@ -1285,7 +1285,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
                 pos_end=0,
             )
         else:
-            # type = ast.Name(
+            # type = uni.Name(
             #     orig_src=self.orig_src,
             #     name=Tok.NAME,
             #     value=no,
@@ -1297,7 +1297,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             #     pos_end=0,
             # )
             name = (
-                ast.Name(
+                uni.Name(
                     orig_src=self.orig_src,
                     name=Tok.NAME,
                     value=node.name,
@@ -1313,10 +1313,10 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             )
 
         body = [self.convert(i) for i in node.body]
-        valid = [i for i in body if isinstance(i, (ast.CodeBlockStmt))]
+        valid = [i for i in body if isinstance(i, (uni.CodeBlockStmt))]
         if len(valid) != len(body):
             raise self.ice("Length mismatch in except handler body")
-        valid_body = ast.SubNodeList[ast.CodeBlockStmt](
+        valid_body = uni.SubNodeList[uni.CodeBlockStmt](
             items=valid,
             delim=Tok.WS,
             kid=valid,
@@ -1324,8 +1324,8 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             right_enc=self.operator(Tok.RBRACE, "}"),
         )
         kid = [item for item in [type, name, valid_body] if item]
-        if isinstance(type, ast.Expr) and (isinstance(name, ast.Name) or not name):
-            return ast.Except(
+        if isinstance(type, uni.Expr) and (isinstance(name, uni.Name) or not name):
+            return uni.Except(
                 ex_type=type,
                 name=name,
                 body=valid_body,
@@ -1334,19 +1334,19 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         else:
             raise self.ice()
 
-    def proc_expr(self, node: py_ast.Expr) -> ast.ExprStmt:
+    def proc_expr(self, node: py_ast.Expr) -> uni.ExprStmt:
         """Process python node.
 
         class Expr(stmt):
             value: expr
         """
         value = self.convert(node.value)
-        if isinstance(value, ast.Expr):
-            return ast.ExprStmt(expr=value, in_fstring=False, kid=[value])
+        if isinstance(value, uni.Expr):
+            return uni.ExprStmt(expr=value, in_fstring=False, kid=[value])
         else:
             raise self.ice()
 
-    def proc_formatted_value(self, node: py_ast.FormattedValue) -> ast.ExprStmt:
+    def proc_formatted_value(self, node: py_ast.FormattedValue) -> uni.ExprStmt:
         """Process python node.
 
         class FormattedValue(expr):
@@ -1357,8 +1357,8 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         format_spec: expr | None
         """
         value = self.convert(node.value)
-        if isinstance(value, ast.Expr):
-            ret = ast.ExprStmt(
+        if isinstance(value, uni.Expr):
+            ret = uni.ExprStmt(
                 expr=value,
                 in_fstring=True,
                 kid=[value],
@@ -1370,7 +1370,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
     def proc_function_type(self, node: py_ast.FunctionType) -> None:
         """Process python node."""
 
-    def proc_generator_exp(self, node: py_ast.GeneratorExp) -> ast.GenCompr:
+    def proc_generator_exp(self, node: py_ast.GeneratorExp) -> uni.GenCompr:
         """Process python node..
 
         class SetComp(expr):
@@ -1379,25 +1379,25 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         elt = self.convert(node.elt)
         generators = [self.convert(gen) for gen in node.generators]
-        valid = [gen for gen in generators if isinstance(gen, ast.InnerCompr)]
+        valid = [gen for gen in generators if isinstance(gen, uni.InnerCompr)]
         if len(generators) != len(valid):
             raise self.ice("Length mismatch in list comp generators")
-        compr = ast.SubNodeList[ast.InnerCompr](items=valid, delim=Tok.COMMA, kid=valid)
-        if isinstance(elt, ast.Expr):
-            return ast.GenCompr(out_expr=elt, compr=valid, kid=[elt, compr])
+        compr = uni.SubNodeList[uni.InnerCompr](items=valid, delim=Tok.COMMA, kid=valid)
+        if isinstance(elt, uni.Expr):
+            return uni.GenCompr(out_expr=elt, compr=valid, kid=[elt, compr])
         else:
             raise self.ice()
 
-    def proc_global(self, node: py_ast.Global) -> ast.GlobalStmt:
+    def proc_global(self, node: py_ast.Global) -> uni.GlobalStmt:
         """Process python node.
 
         class Global(stmt):
             names: list[_Identifier]
         """
-        names: list[ast.NameAtom] = []
+        names: list[uni.NameAtom] = []
         for id in node.names:
             names.append(
-                ast.Name(
+                uni.Name(
                     orig_src=self.orig_src,
                     name=Tok.NAME,
                     value=id,
@@ -1409,10 +1409,10 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
                     pos_end=0,
                 )
             )
-        target = ast.SubNodeList[ast.NameAtom](items=names, delim=Tok.COMMA, kid=names)
-        return ast.GlobalStmt(target=target, kid=[target])
+        target = uni.SubNodeList[uni.NameAtom](items=names, delim=Tok.COMMA, kid=names)
+        return uni.GlobalStmt(target=target, kid=[target])
 
-    def proc_if_exp(self, node: py_ast.IfExp) -> ast.IfElseExpr:
+    def proc_if_exp(self, node: py_ast.IfExp) -> uni.IfElseExpr:
         """Process python node.
 
         class IfExp(expr):
@@ -1424,33 +1424,33 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         body = self.convert(node.body)
         orelse = self.convert(node.orelse)
         if (
-            isinstance(test, ast.Expr)
-            and isinstance(body, ast.Expr)
-            and isinstance(orelse, ast.Expr)
+            isinstance(test, uni.Expr)
+            and isinstance(body, uni.Expr)
+            and isinstance(orelse, uni.Expr)
         ):
-            return ast.IfElseExpr(
+            return uni.IfElseExpr(
                 value=body, condition=test, else_value=orelse, kid=[body, test, orelse]
             )
         else:
             raise self.ice()
 
-    def proc_import(self, node: py_ast.Import) -> ast.Import:
+    def proc_import(self, node: py_ast.Import) -> uni.Import:
         """Process python node.
 
         class Import(stmt):
             names: list[alias]
         """
         names = [self.convert(name) for name in node.names]
-        valid_names = [name for name in names if isinstance(name, ast.ExprAsItem)]
+        valid_names = [name for name in names if isinstance(name, uni.ExprAsItem)]
         if len(valid_names) != len(names):
             self.log_error("Length mismatch in import names")
         paths = []
         for name in valid_names:
-            if isinstance(name.expr, ast.Name) and (
-                isinstance(name.alias, ast.Name) or name.alias is None
+            if isinstance(name.expr, uni.Name) and (
+                isinstance(name.alias, uni.Name) or name.alias is None
             ):
                 paths.append(
-                    ast.ModulePath(
+                    uni.ModulePath(
                         path=[name.expr],
                         level=0,
                         alias=name.alias,
@@ -1460,7 +1460,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             # Need to unravel atom trailers
             else:
                 raise self.ice()
-        lang = ast.Name(
+        lang = uni.Name(
             orig_src=self.orig_src,
             name=Tok.NAME,
             value="py",
@@ -1471,9 +1471,9 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             pos_start=0,
             pos_end=0,
         )
-        pytag = ast.SubTag[ast.Name](tag=lang, kid=[lang])
-        items = ast.SubNodeList[ast.ModulePath](items=paths, delim=Tok.COMMA, kid=paths)
-        ret = ast.Import(
+        pytag = uni.SubTag[uni.Name](tag=lang, kid=[lang])
+        items = uni.SubNodeList[uni.ModulePath](items=paths, delim=Tok.COMMA, kid=paths)
+        ret = uni.Import(
             hint=pytag,
             from_loc=None,
             items=items,
@@ -1482,7 +1482,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         )
         return ret
 
-    def proc_import_from(self, node: py_ast.ImportFrom) -> ast.Import:
+    def proc_import_from(self, node: py_ast.ImportFrom) -> uni.Import:
         """Process python node.
 
         class ImportFrom(stmt):
@@ -1490,7 +1490,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             names: list[alias]
             level: int
         """
-        lang = ast.Name(
+        lang = uni.Name(
             orig_src=self.orig_src,
             name=Tok.NAME,
             value="py",
@@ -1501,11 +1501,11 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             pos_start=0,
             pos_end=0,
         )
-        modpaths: list[ast.Name] = []
+        modpaths: list[uni.Name] = []
         if node.module:
             for i in node.module.split("."):
                 modpaths.append(
-                    ast.Name(
+                    uni.Name(
                         orig_src=self.orig_src,
                         name=Tok.NAME,
                         value=i,
@@ -1519,7 +1519,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
                 )
         moddots = [self.operator(Tok.DOT, ".") for _ in range(node.level)]
         modparts = moddots + modpaths
-        path = ast.ModulePath(
+        path = uni.ModulePath(
             path=modpaths,
             level=node.level,
             alias=None,
@@ -1529,12 +1529,12 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         valid_names = []
         for name in names:
             if (
-                isinstance(name, ast.ExprAsItem)
-                and isinstance(name.expr, ast.Name)
-                and (isinstance(name.alias, ast.Name) or name.alias is None)
+                isinstance(name, uni.ExprAsItem)
+                and isinstance(name.expr, uni.Name)
+                and (isinstance(name.alias, uni.Name) or name.alias is None)
             ):
                 valid_names.append(
-                    ast.ModuleItem(
+                    uni.ModuleItem(
                         name=name.expr,
                         alias=name.alias if name.alias else None,
                         kid=[i for i in name.kid if i],
@@ -1543,7 +1543,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             else:
                 raise self.ice()
         items = (
-            ast.SubNodeList[ast.ModuleItem](
+            uni.SubNodeList[uni.ModuleItem](
                 items=valid_names, delim=Tok.COMMA, kid=valid_names
             )
             if valid_names
@@ -1551,12 +1551,12 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         )
         if not items:
             raise self.ice("No valid names in import from")
-        pytag = ast.SubTag[ast.Name](tag=lang, kid=[lang])
+        pytag = uni.SubTag[uni.Name](tag=lang, kid=[lang])
         if len(node.names) == 1 and node.names[0].name == "*":
-            path_in = ast.SubNodeList[ast.ModulePath](
+            path_in = uni.SubNodeList[uni.ModulePath](
                 items=[path], delim=Tok.COMMA, kid=[path]
             )
-            ret = ast.Import(
+            ret = uni.Import(
                 hint=pytag,
                 from_loc=None,
                 items=path_in,
@@ -1564,7 +1564,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
                 kid=[pytag, path_in],
             )
             return ret
-        ret = ast.Import(
+        ret = uni.Import(
             hint=pytag,
             from_loc=path,
             items=items,
@@ -1573,7 +1573,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         )
         return ret
 
-    def proc_joined_str(self, node: py_ast.JoinedStr) -> ast.FString:
+    def proc_joined_str(self, node: py_ast.JoinedStr) -> uni.FString:
         """Process python node.
 
         class JoinedStr(expr):
@@ -1583,14 +1583,14 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         values = [self.convert(value) for value in node.values]
         valid = [
-            value for value in values if isinstance(value, (ast.String, ast.ExprStmt))
+            value for value in values if isinstance(value, (uni.String, uni.ExprStmt))
         ]
-        valid_values = ast.SubNodeList[ast.String | ast.ExprStmt](
+        valid_values = uni.SubNodeList[uni.String | uni.ExprStmt](
             items=valid, delim=None, kid=valid
         )
-        return ast.FString(parts=valid_values, kid=[valid_values])
+        return uni.FString(parts=valid_values, kid=[valid_values])
 
-    def proc_lambda(self, node: py_ast.Lambda) -> ast.LambdaExpr:
+    def proc_lambda(self, node: py_ast.Lambda) -> uni.LambdaExpr:
         """Process python node.
 
         class Lambda(expr):
@@ -1599,12 +1599,12 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         args = self.convert(node.args)
         body = self.convert(node.body)
-        if isinstance(args, ast.FuncSignature) and isinstance(body, ast.Expr):
-            return ast.LambdaExpr(signature=args, body=body, kid=[args, body])
+        if isinstance(args, uni.FuncSignature) and isinstance(body, uni.Expr):
+            return uni.LambdaExpr(signature=args, body=body, kid=[args, body])
         else:
             raise self.ice()
 
-    def proc_list(self, node: py_ast.List) -> ast.ListVal:
+    def proc_list(self, node: py_ast.List) -> uni.ListVal:
         """Process python node.
 
         class List(expr):
@@ -1612,14 +1612,14 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             ctx: expr_context
         """
         elts = [self.convert(elt) for elt in node.elts]
-        valid_elts = [elt for elt in elts if isinstance(elt, ast.Expr)]
+        valid_elts = [elt for elt in elts if isinstance(elt, uni.Expr)]
         if len(valid_elts) != len(elts):
             raise self.ice("Length mismatch in list elements")
         l_square = self.operator(Tok.LSQUARE, "[")
         r_square = self.operator(Tok.RSQUARE, "]")
-        return ast.ListVal(
+        return uni.ListVal(
             values=(
-                ast.SubNodeList[ast.Expr](
+                uni.SubNodeList[uni.Expr](
                     items=valid_elts, delim=Tok.COMMA, kid=valid_elts
                 )
                 if valid_elts
@@ -1628,7 +1628,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             kid=[*valid_elts] if valid_elts else [l_square, r_square],
         )
 
-    def proc_list_comp(self, node: py_ast.ListComp) -> ast.ListCompr:
+    def proc_list_comp(self, node: py_ast.ListComp) -> uni.ListCompr:
         """Process python node.
 
         class ListComp(expr):
@@ -1637,16 +1637,16 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         elt = self.convert(node.elt)
         generators = [self.convert(gen) for gen in node.generators]
-        valid = [gen for gen in generators if isinstance(gen, ast.InnerCompr)]
+        valid = [gen for gen in generators if isinstance(gen, uni.InnerCompr)]
         if len(generators) != len(valid):
             raise self.ice("Length mismatch in list comp generators")
-        compr = ast.SubNodeList[ast.InnerCompr](items=valid, delim=Tok.COMMA, kid=valid)
-        if isinstance(elt, ast.Expr):
-            return ast.ListCompr(out_expr=elt, compr=valid, kid=[elt, compr])
+        compr = uni.SubNodeList[uni.InnerCompr](items=valid, delim=Tok.COMMA, kid=valid)
+        if isinstance(elt, uni.Expr):
+            return uni.ListCompr(out_expr=elt, compr=valid, kid=[elt, compr])
         else:
             raise self.ice()
 
-    def proc_match(self, node: py_ast.Match) -> ast.MatchStmt:
+    def proc_match(self, node: py_ast.Match) -> uni.MatchStmt:
         """Process python node.
 
         class Match(stmt):
@@ -1655,13 +1655,13 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         subject = self.convert(node.subject)
         cases = [self.convert(i) for i in node.cases]
-        valid = [case for case in cases if isinstance(case, ast.MatchCase)]
-        if isinstance(subject, ast.Expr):
-            return ast.MatchStmt(target=subject, cases=valid, kid=[subject, *valid])
+        valid = [case for case in cases if isinstance(case, uni.MatchCase)]
+        if isinstance(subject, uni.Expr):
+            return uni.MatchStmt(target=subject, cases=valid, kid=[subject, *valid])
         else:
             raise self.ice()
 
-    def proc_match_as(self, node: py_ast.MatchAs) -> ast.MatchAs | ast.MatchWild:
+    def proc_match_as(self, node: py_ast.MatchAs) -> uni.MatchAs | uni.MatchWild:
         """Process python node.
 
         class MatchAs(pattern):
@@ -1669,7 +1669,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             name: _Identifier | None
         """
         pattern = self.convert(node.pattern) if node.pattern else None
-        name = ast.Name(
+        name = uni.Name(
             orig_src=self.orig_src,
             name=Tok.NAME,
             value=node.name if node.name else "_",
@@ -1685,16 +1685,20 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             pos_end=0,
         )
 
-        if isinstance(pattern, ast.MatchPattern):
-            return ast.MatchAs(
-                name=name,
-                pattern=pattern,
-                kid=[name, pattern] if pattern else [name],
-            )
-        else:
-            return ast.MatchWild(kid=[name])
+        if (
+            name.value == "_"
+            or pattern is not None
+            and not isinstance(pattern, uni.MatchPattern)
+        ):
+            return uni.MatchWild(kid=[name])
 
-    def proc_match_class(self, node: py_ast.MatchClass) -> ast.MatchArch:
+        return uni.MatchAs(
+            name=name,
+            pattern=pattern,
+            kid=[name] if pattern is None else [name, pattern],
+        )
+
+    def proc_match_class(self, node: py_ast.MatchClass) -> uni.MatchArch:
         """Process python node.
 
         class MatchClass(pattern):
@@ -1707,9 +1711,9 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         kid = [cls]
         if len(node.patterns) != 0:
             patterns = [self.convert(i) for i in node.patterns]
-            valid_patterns = [i for i in patterns if isinstance(i, ast.MatchPattern)]
+            valid_patterns = [i for i in patterns if isinstance(i, uni.MatchPattern)]
             if len(patterns) == len(valid_patterns):
-                patterns_sub = ast.SubNodeList[ast.MatchPattern](
+                patterns_sub = uni.SubNodeList[uni.MatchPattern](
                     items=valid_patterns, delim=Tok.COMMA, kid=valid_patterns
                 )
                 kid.append(patterns_sub)
@@ -1719,11 +1723,11 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             patterns_sub = None
 
         if len(node.kwd_patterns):
-            names: list[ast.Name] = []
-            kv_pairs: list[ast.MatchKVPair] = []
+            names: list[uni.Name] = []
+            kv_pairs: list[uni.MatchKVPair] = []
             for kwd_attrs in node.kwd_attrs:
                 names.append(
-                    ast.Name(
+                    uni.Name(
                         orig_src=self.orig_src,
                         name=Tok.NAME,
                         value=kwd_attrs,
@@ -1737,30 +1741,30 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
                 )
             kwd_patterns = [self.convert(i) for i in node.kwd_patterns]
             valid_kwd_patterns = [
-                i for i in kwd_patterns if isinstance(i, ast.MatchPattern)
+                i for i in kwd_patterns if isinstance(i, uni.MatchPattern)
             ]
             for i in range(len(kwd_patterns)):
                 kv_pairs.append(
-                    ast.MatchKVPair(
+                    uni.MatchKVPair(
                         key=names[i],
                         value=valid_kwd_patterns[i],
                         kid=[names[i], valid_kwd_patterns[i]],
                     )
                 )
-            kw_patterns = ast.SubNodeList[ast.MatchKVPair](
+            kw_patterns = uni.SubNodeList[uni.MatchKVPair](
                 items=kv_pairs, delim=Tok.COMMA, kid=kv_pairs
             )
             kid.append(kw_patterns)
         else:
             kw_patterns = None
-        if isinstance(cls, (ast.NameAtom, ast.AtomTrailer)):
-            return ast.MatchArch(
+        if isinstance(cls, (uni.NameAtom, uni.AtomTrailer)):
+            return uni.MatchArch(
                 name=cls, arg_patterns=patterns_sub, kw_patterns=kw_patterns, kid=kid
             )
         else:
             raise self.ice()
 
-    def proc_match_mapping(self, node: py_ast.MatchMapping) -> ast.MatchMapping:
+    def proc_match_mapping(self, node: py_ast.MatchMapping) -> uni.MatchMapping:
         """Process python node.
 
         class MatchMapping(pattern):
@@ -1768,24 +1772,24 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             patterns: list[pattern]
             rest: _Identifier | None
         """
-        values: list[ast.MatchKVPair | ast.MatchStar] = []
+        values: list[uni.MatchKVPair | uni.MatchStar] = []
         keys = [self.convert(i) for i in node.keys]
         valid_keys = [
             i
             for i in keys
-            if isinstance(i, (ast.MatchPattern, ast.NameAtom, ast.AtomExpr))
+            if isinstance(i, (uni.MatchPattern, uni.NameAtom, uni.AtomExpr))
         ]
         patterns = [self.convert(i) for i in node.patterns]
-        valid_patterns = [i for i in patterns if isinstance(i, ast.MatchPattern)]
+        valid_patterns = [i for i in patterns if isinstance(i, uni.MatchPattern)]
         for i in range(len(valid_keys)):
-            kv_pair = ast.MatchKVPair(
+            kv_pair = uni.MatchKVPair(
                 key=valid_keys[i],
                 value=valid_patterns[i],
                 kid=[valid_keys[i], valid_patterns[i]],
             )
             values.append(kv_pair)
         if node.rest:
-            name = ast.Name(
+            name = uni.Name(
                 orig_src=self.orig_src,
                 name=Tok.NAME,
                 value=node.rest,
@@ -1796,40 +1800,40 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
                 pos_start=0,
                 pos_end=0,
             )
-            values.append(ast.MatchStar(name=name, is_list=False, kid=[name]))
-        return ast.MatchMapping(values=values, kid=values)
+            values.append(uni.MatchStar(name=name, is_list=False, kid=[name]))
+        return uni.MatchMapping(values=values, kid=values)
 
-    def proc_match_or(self, node: py_ast.MatchOr) -> ast.MatchOr:
+    def proc_match_or(self, node: py_ast.MatchOr) -> uni.MatchOr:
         """Process python node.
 
         class MatchOr(pattern):
             patterns: list[pattern]
         """
         patterns = [self.convert(i) for i in node.patterns]
-        valid = [i for i in patterns if isinstance(i, ast.MatchPattern)]
-        return ast.MatchOr(patterns=valid, kid=valid)
+        valid = [i for i in patterns if isinstance(i, uni.MatchPattern)]
+        return uni.MatchOr(patterns=valid, kid=valid)
 
-    def proc_match_sequence(self, node: py_ast.MatchSequence) -> ast.MatchSequence:
+    def proc_match_sequence(self, node: py_ast.MatchSequence) -> uni.MatchSequence:
         """Process python node.
 
         class MatchSequence(pattern):
             patterns: list[pattern]
         """
         patterns = [self.convert(i) for i in node.patterns]
-        valid = [i for i in patterns if isinstance(i, ast.MatchPattern)]
+        valid = [i for i in patterns if isinstance(i, uni.MatchPattern)]
         if len(patterns) == len(valid):
-            return ast.MatchSequence(values=valid, kid=valid)
+            return uni.MatchSequence(values=valid, kid=valid)
         else:
             raise self.ice()
 
-    def proc_match_singleton(self, node: py_ast.MatchSingleton) -> ast.MatchSingleton:
+    def proc_match_singleton(self, node: py_ast.MatchSingleton) -> uni.MatchSingleton:
         """Process python node.
 
         class MatchSingleton(pattern):
             value: Literal[True, False] | None
         """
         type = Tok.NULL if node.value is None else Tok.BOOL
-        ret_type = ast.Null if node.value is None else ast.Bool
+        ret_type = uni.Null if node.value is None else uni.Bool
         value = ret_type(
             orig_src=self.orig_src,
             name=type,
@@ -1841,18 +1845,18 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             pos_start=0,
             pos_end=0,
         )
-        if isinstance(value, (ast.Bool, ast.Null)):
-            return ast.MatchSingleton(value=value, kid=[value])
+        if isinstance(value, (uni.Bool, uni.Null)):
+            return uni.MatchSingleton(value=value, kid=[value])
         else:
             raise self.ice()
 
-    def proc_match_star(self, node: py_ast.MatchStar) -> ast.MatchStar:
+    def proc_match_star(self, node: py_ast.MatchStar) -> uni.MatchStar:
         """Process python node.
 
         class MatchStar(pattern):
             name: _Identifier | None
         """
-        name = ast.Name(
+        name = uni.Name(
             orig_src=self.orig_src,
             name=Tok.NAME,
             value=node.name if node.name else "_",
@@ -1863,21 +1867,21 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             pos_start=0,
             pos_end=0,
         )
-        return ast.MatchStar(name=name, is_list=True, kid=[name])
+        return uni.MatchStar(name=name, is_list=True, kid=[name])
 
-    def proc_match_value(self, node: py_ast.MatchValue) -> ast.MatchValue:
+    def proc_match_value(self, node: py_ast.MatchValue) -> uni.MatchValue:
         """Process python node.
 
         class MatchValue(pattern):
             value: expr
         """
         value = self.convert(node.value)
-        if isinstance(value, ast.Expr):
-            return ast.MatchValue(value=value, kid=[value])
+        if isinstance(value, uni.Expr):
+            return uni.MatchValue(value=value, kid=[value])
         else:
             raise self.ice()
 
-    def proc_name(self, node: py_ast.Name) -> ast.Name:
+    def proc_name(self, node: py_ast.Name) -> uni.Name:
         """Process python node.
 
         class Name(expr):
@@ -1895,7 +1899,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         ]
 
         value = node.id if node.id not in reserved_keywords else f"<>{node.id}"
-        ret = ast.Name(
+        ret = uni.Name(
             orig_src=self.orig_src,
             name=Tok.NAME,
             value=value,
@@ -1908,7 +1912,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         )
         return ret
 
-    def proc_named_expr(self, node: py_ast.NamedExpr) -> ast.BinaryExpr:
+    def proc_named_expr(self, node: py_ast.NamedExpr) -> uni.BinaryExpr:
         """Process python node.
 
         class NamedExpr(expr):
@@ -1917,8 +1921,8 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         target = self.convert(node.target)
         value = self.convert(node.value)
-        if isinstance(value, ast.Expr) and isinstance(target, ast.Name):
-            return ast.BinaryExpr(
+        if isinstance(value, uni.Expr) and isinstance(target, uni.Name):
+            return uni.BinaryExpr(
                 left=target,
                 op=self.operator(Tok.WALRUS_EQ, ":="),
                 right=value,
@@ -1927,7 +1931,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         else:
             raise self.ice()
 
-    def proc_nonlocal(self, node: py_ast.Nonlocal) -> ast.NonLocalStmt:
+    def proc_nonlocal(self, node: py_ast.Nonlocal) -> uni.NonLocalStmt:
         """Process python node.
 
         class Nonlocal(stmt):
@@ -1937,11 +1941,11 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
 
         reserved_keywords = [v for _, v in TOKEN_MAP.items()]
 
-        names: list[ast.NameAtom] = []
+        names: list[uni.NameAtom] = []
         for name in node.names:
             value = name if name not in reserved_keywords else f"<>{name}"
             names.append(
-                ast.Name(
+                uni.Name(
                     orig_src=self.orig_src,
                     name=Tok.NAME,
                     value=value,
@@ -1953,12 +1957,12 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
                     pos_end=0,
                 )
             )
-        target = ast.SubNodeList[ast.NameAtom](items=names, delim=Tok.COMMA, kid=names)
-        return ast.NonLocalStmt(target=target, kid=names)
+        target = uni.SubNodeList[uni.NameAtom](items=names, delim=Tok.COMMA, kid=names)
+        return uni.NonLocalStmt(target=target, kid=names)
 
-    def proc_pass(self, node: py_ast.Pass) -> ast.Semi:
+    def proc_pass(self, node: py_ast.Pass) -> uni.Semi:
         """Process python node."""
-        return ast.Semi(
+        return uni.Semi(
             orig_src=self.orig_src,
             name=Tok.SEMI,
             value=";",
@@ -1970,7 +1974,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             pos_end=0,
         )
 
-    def proc_set(self, node: py_ast.Set) -> ast.SetVal:
+    def proc_set(self, node: py_ast.Set) -> uni.SetVal:
         """Process python node.
 
         class Set(expr):
@@ -1978,21 +1982,21 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         if len(node.elts) != 0:
             elts = [self.convert(i) for i in node.elts]
-            valid = [i for i in elts if isinstance(i, (ast.Expr))]
+            valid = [i for i in elts if isinstance(i, (uni.Expr))]
             if len(valid) != len(elts):
                 raise self.ice("Length mismatch in set body")
-            valid_elts = ast.SubNodeList[ast.Expr](
+            valid_elts = uni.SubNodeList[uni.Expr](
                 items=valid, delim=Tok.COMMA, kid=valid
             )
-            kid: list[ast.AstNode] = [*valid]
+            kid: list[uni.UniNode] = [*valid]
         else:
             valid_elts = None
             l_brace = self.operator(Tok.LBRACE, "{")
             r_brace = self.operator(Tok.RBRACE, "}")
             kid = [l_brace, r_brace]
-        return ast.SetVal(values=valid_elts, kid=kid)
+        return uni.SetVal(values=valid_elts, kid=kid)
 
-    def proc_set_comp(self, node: py_ast.SetComp) -> ast.ListCompr:
+    def proc_set_comp(self, node: py_ast.SetComp) -> uni.ListCompr:
         """Process python node.
 
         class SetComp(expr):
@@ -2001,16 +2005,16 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         elt = self.convert(node.elt)
         generators = [self.convert(gen) for gen in node.generators]
-        valid = [gen for gen in generators if isinstance(gen, ast.InnerCompr)]
+        valid = [gen for gen in generators if isinstance(gen, uni.InnerCompr)]
         if len(generators) != len(valid):
             raise self.ice("Length mismatch in list comp generators")
-        compr = ast.SubNodeList[ast.InnerCompr](items=valid, delim=Tok.COMMA, kid=valid)
-        if isinstance(elt, ast.Expr):
-            return ast.SetCompr(out_expr=elt, compr=valid, kid=[elt, compr])
+        compr = uni.SubNodeList[uni.InnerCompr](items=valid, delim=Tok.COMMA, kid=valid)
+        if isinstance(elt, uni.Expr):
+            return uni.SetCompr(out_expr=elt, compr=valid, kid=[elt, compr])
         else:
             raise self.ice()
 
-    def proc_slice(self, node: py_ast.Slice) -> ast.IndexSlice:
+    def proc_slice(self, node: py_ast.Slice) -> uni.IndexSlice:
         """Process python node.
 
         class Slice(_Slice):
@@ -2025,19 +2029,19 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         if not valid_kid:
             valid_kid = [self.operator(Tok.COLON, ":")]
         if (
-            (isinstance(lower, ast.Expr) or lower is None)
-            and (isinstance(upper, ast.Expr) or upper is None)
-            and (isinstance(step, ast.Expr) or step is None)
+            (isinstance(lower, uni.Expr) or lower is None)
+            and (isinstance(upper, uni.Expr) or upper is None)
+            and (isinstance(step, uni.Expr) or step is None)
         ):
-            return ast.IndexSlice(
-                slices=[ast.IndexSlice.Slice(lower, upper, step)],
+            return uni.IndexSlice(
+                slices=[uni.IndexSlice.Slice(lower, upper, step)],
                 is_range=True,
                 kid=valid_kid,
             )
         else:
             raise self.ice()
 
-    def proc_starred(self, node: py_ast.Starred) -> ast.UnaryExpr:
+    def proc_starred(self, node: py_ast.Starred) -> uni.UnaryExpr:
         """Process python node.
 
         class Starred(expr):
@@ -2046,12 +2050,12 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         star_tok = self.operator(Tok.STAR_MUL, "*")
         value = self.convert(node.value)
-        if isinstance(value, ast.Expr):
-            return ast.UnaryExpr(operand=value, op=star_tok, kid=[value, star_tok])
+        if isinstance(value, uni.Expr):
+            return uni.UnaryExpr(operand=value, op=star_tok, kid=[value, star_tok])
         else:
             raise self.ice()
 
-    def proc_subscript(self, node: py_ast.Subscript) -> ast.AtomTrailer:
+    def proc_subscript(self, node: py_ast.Subscript) -> uni.AtomTrailer:
         """Process python node.
 
         class Subscript(expr):
@@ -2061,32 +2065,32 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         value = self.convert(node.value)
         slice = self.convert(node.slice)
-        if not isinstance(slice, ast.IndexSlice) and isinstance(slice, ast.Expr):
-            slice = ast.IndexSlice(
-                slices=[ast.IndexSlice.Slice(slice, None, None)],
+        if not isinstance(slice, uni.IndexSlice) and isinstance(slice, uni.Expr):
+            slice = uni.IndexSlice(
+                slices=[uni.IndexSlice.Slice(slice, None, None)],
                 is_range=False,
                 kid=[slice],
             )
         if (
-            not isinstance(slice, ast.IndexSlice)
-            and isinstance(slice, ast.TupleVal)
+            not isinstance(slice, uni.IndexSlice)
+            and isinstance(slice, uni.TupleVal)
             and slice.values is not None
         ):
 
-            slices: list[ast.IndexSlice.Slice] = []
+            slices: list[uni.IndexSlice.Slice] = []
             for index_slice in slice.values.items:
-                if not isinstance(index_slice, ast.IndexSlice):
+                if not isinstance(index_slice, uni.IndexSlice):
                     raise self.ice()
                 slices.append(index_slice.slices[0])
 
-            slice = ast.IndexSlice(
+            slice = uni.IndexSlice(
                 slices=slices,
                 is_range=True,
                 kid=[slice],
             )
 
-        if isinstance(value, ast.Expr) and isinstance(slice, ast.IndexSlice):
-            return ast.AtomTrailer(
+        if isinstance(value, uni.Expr) and isinstance(slice, uni.IndexSlice):
+            return uni.AtomTrailer(
                 target=value,
                 right=slice,
                 is_attr=False,
@@ -2096,7 +2100,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         else:
             raise self.ice()
 
-    def proc_try(self, node: py_ast.Try | py_ast.TryStar) -> ast.TryStmt:
+    def proc_try(self, node: py_ast.Try | py_ast.TryStar) -> uni.TryStmt:
         """Process python node.
 
         class Try(stmt):
@@ -2106,24 +2110,24 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             finalbody: list[stmt]
         """
         body = [self.convert(i) for i in node.body]
-        valid = [i for i in body if isinstance(i, (ast.CodeBlockStmt))]
+        valid = [i for i in body if isinstance(i, (uni.CodeBlockStmt))]
         if len(valid) != len(body):
             raise self.ice("Length mismatch in try body")
-        valid_body = ast.SubNodeList[ast.CodeBlockStmt](
+        valid_body = uni.SubNodeList[uni.CodeBlockStmt](
             items=valid,
             delim=Tok.WS,
             kid=valid,
             left_enc=self.operator(Tok.LBRACE, "{"),
             right_enc=self.operator(Tok.RBRACE, "}"),
         )
-        kid: list[ast.AstNode] = [valid_body]
+        kid: list[uni.UniNode] = [valid_body]
 
         if len(node.handlers) != 0:
             handlers = [self.convert(i) for i in node.handlers]
-            valid_handlers = [i for i in handlers if isinstance(i, (ast.Except))]
+            valid_handlers = [i for i in handlers if isinstance(i, (uni.Except))]
             if len(handlers) != len(valid_handlers):
                 raise self.ice("Length mismatch in try handlers")
-            excepts = ast.SubNodeList[ast.Except](
+            excepts = uni.SubNodeList[uni.Except](
                 items=valid_handlers, delim=Tok.WS, kid=valid_handlers
             )
             kid.append(excepts)
@@ -2132,17 +2136,17 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
 
         if len(node.orelse) != 0:
             orelse = [self.convert(i) for i in node.orelse]
-            valid_orelse = [i for i in orelse if isinstance(i, (ast.CodeBlockStmt))]
+            valid_orelse = [i for i in orelse if isinstance(i, (uni.CodeBlockStmt))]
             if len(orelse) != len(valid_orelse):
                 raise self.ice("Length mismatch in try orelse")
-            else_body = ast.SubNodeList[ast.CodeBlockStmt](
+            else_body = uni.SubNodeList[uni.CodeBlockStmt](
                 items=valid_orelse,
                 delim=Tok.WS,
                 kid=valid_orelse,
                 left_enc=self.operator(Tok.LBRACE, "{"),
                 right_enc=self.operator(Tok.RBRACE, "}"),
             )
-            elsestmt = ast.ElseStmt(body=else_body, kid=[else_body])
+            elsestmt = uni.ElseStmt(body=else_body, kid=[else_body])
             kid.append(else_body)
         else:
             else_body = None
@@ -2150,23 +2154,23 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         if len(node.finalbody) != 0:
             finalbody = [self.convert(i) for i in node.finalbody]
             valid_finalbody = [
-                i for i in finalbody if isinstance(i, (ast.CodeBlockStmt))
+                i for i in finalbody if isinstance(i, (uni.CodeBlockStmt))
             ]
             if len(finalbody) != len(valid_finalbody):
                 raise self.ice("Length mismatch in try finalbody")
-            finally_body = ast.SubNodeList[ast.CodeBlockStmt](
+            finally_body = uni.SubNodeList[uni.CodeBlockStmt](
                 items=valid_finalbody,
                 delim=Tok.WS,
                 kid=valid_finalbody,
                 left_enc=self.operator(Tok.LBRACE, "{"),
                 right_enc=self.operator(Tok.RBRACE, "}"),
             )
-            finally_stmt = ast.FinallyStmt(body=finally_body, kid=[finally_body])
+            finally_stmt = uni.FinallyStmt(body=finally_body, kid=[finally_body])
 
             kid.append(finally_stmt)
         else:
             finally_body = None
-        ret = ast.TryStmt(
+        ret = uni.TryStmt(
             body=valid_body,
             excepts=excepts,
             else_body=elsestmt if else_body else None,
@@ -2175,7 +2179,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         )
         return ret
 
-    def proc_try_star(self, node: py_ast.TryStar) -> ast.TryStmt:
+    def proc_try_star(self, node: py_ast.TryStar) -> uni.TryStmt:
         """Process python node.
 
         class Try(stmt):
@@ -2186,7 +2190,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         return self.proc_try(node)
 
-    def proc_tuple(self, node: py_ast.Tuple) -> ast.TupleVal:
+    def proc_tuple(self, node: py_ast.Tuple) -> uni.TupleVal:
         """Process python node.
 
         class Tuple(expr):
@@ -2195,10 +2199,10 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         elts = [self.convert(elt) for elt in node.elts]
         if len(node.elts) != 0:
-            valid = [i for i in elts if isinstance(i, (ast.Expr, ast.KWPair))]
+            valid = [i for i in elts if isinstance(i, (uni.Expr, uni.KWPair))]
             if len(elts) != len(valid):
                 raise self.ice("Length mismatch in tuple elts")
-            valid_elts = ast.SubNodeList[ast.Expr | ast.KWPair](
+            valid_elts = uni.SubNodeList[uni.Expr | uni.KWPair](
                 items=valid, delim=Tok.COMMA, kid=valid
             )
             kid = elts
@@ -2207,40 +2211,40 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             r_paren = self.operator(Tok.RPAREN, ")")
             valid_elts = None
             kid = [l_paren, r_paren]
-        return ast.TupleVal(values=valid_elts, kid=kid)
+        return uni.TupleVal(values=valid_elts, kid=kid)
 
-    def proc_yield(self, node: py_ast.Yield) -> ast.YieldExpr:
+    def proc_yield(self, node: py_ast.Yield) -> uni.YieldExpr:
         """Process python node.
 
         class Yield(expr):
             value: expr | None
         """
         value = self.convert(node.value) if node.value else None
-        if isinstance(value, ast.Expr):
-            return ast.YieldExpr(expr=value, with_from=False, kid=[value])
+        if isinstance(value, uni.Expr):
+            return uni.YieldExpr(expr=value, with_from=False, kid=[value])
         elif not value:
-            return ast.YieldExpr(
+            return uni.YieldExpr(
                 expr=None, with_from=False, kid=[self.operator(Tok.KW_YIELD, "yield")]
             )
         else:
             raise self.ice()
 
-    def proc_yield_from(self, node: py_ast.YieldFrom) -> ast.YieldExpr:
+    def proc_yield_from(self, node: py_ast.YieldFrom) -> uni.YieldExpr:
         """Process python node."""
         value = self.convert(node.value)
-        if isinstance(value, ast.Expr):
-            return ast.YieldExpr(expr=value, with_from=True, kid=[value])
+        if isinstance(value, uni.Expr):
+            return uni.YieldExpr(expr=value, with_from=True, kid=[value])
         else:
             raise self.ice()
 
-    def proc_alias(self, node: py_ast.alias) -> ast.ExprAsItem:
+    def proc_alias(self, node: py_ast.alias) -> uni.ExprAsItem:
         """Process python node.
 
         class alias(AST):
             name: _Identifier
             asname: _Identifier | None
         """
-        name = ast.Name(
+        name = uni.Name(
             orig_src=self.orig_src,
             name=Tok.NAME,
             value=node.name,
@@ -2252,7 +2256,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             pos_end=0,
         )
         asname = (
-            ast.Name(
+            uni.Name(
                 orig_src=self.orig_src,
                 name=Tok.NAME,
                 value=node.asname,
@@ -2266,11 +2270,11 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             if node.asname
             else None
         )
-        return ast.ExprAsItem(
+        return uni.ExprAsItem(
             expr=name, alias=asname, kid=[name, asname] if asname else [name]
         )
 
-    def proc_arg(self, node: py_ast.arg) -> ast.ParamVar:
+    def proc_arg(self, node: py_ast.arg) -> uni.ParamVar:
         """Process python node.
 
         class arg(AST):
@@ -2286,7 +2290,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         ]
 
         value = node.arg if node.arg not in reserved_keywords else f"<>{node.arg}"
-        name = ast.Name(
+        name = uni.Name(
             orig_src=self.orig_src,
             name=Tok.NAME,
             value=value,
@@ -2300,7 +2304,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         ann_expr = (
             self.convert(node.annotation)
             if node.annotation
-            else ast.Name(
+            else uni.Name(
                 orig_src=self.orig_src,
                 name=Tok.NAME,
                 value="Any",
@@ -2312,15 +2316,15 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
                 pos_end=0,
             )
         )
-        if not isinstance(ann_expr, ast.Expr):
+        if not isinstance(ann_expr, uni.Expr):
             raise self.ice("Expected annotation to be an expression")
-        annot = ast.SubTag[ast.Expr](tag=ann_expr, kid=[ann_expr])
-        paramvar = ast.ParamVar(
+        annot = uni.SubTag[uni.Expr](tag=ann_expr, kid=[ann_expr])
+        paramvar = uni.ParamVar(
             name=name, type_tag=annot, unpack=None, value=None, kid=[name, annot]
         )
         return paramvar
 
-    def proc_arguments(self, node: py_ast.arguments) -> ast.FuncSignature:
+    def proc_arguments(self, node: py_ast.arguments) -> uni.FuncSignature:
         """Process python node.
 
         class arguments(AST):
@@ -2333,8 +2337,8 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         args = [self.convert(arg) for arg in node.args]
         vararg = self.convert(node.vararg) if node.vararg else None
-        if vararg and isinstance(vararg, ast.ParamVar):
-            vararg.unpack = ast.Token(
+        if vararg and isinstance(vararg, uni.ParamVar):
+            vararg.unpack = uni.Token(
                 orig_src=self.orig_src,
                 name=Tok.STAR_MUL,
                 value="*",
@@ -2353,14 +2357,14 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             kwdefault = self.convert(kwd) if kwd else None
             if (
                 kwdefault
-                and isinstance(kwa, ast.ParamVar)
-                and isinstance(kwdefault, ast.Expr)
+                and isinstance(kwa, uni.ParamVar)
+                and isinstance(kwdefault, uni.Expr)
             ):
                 kwa.value = kwdefault
                 kwa.add_kids_right([kwa.value])
         kwarg = self.convert(node.kwarg) if node.kwarg else None
-        if kwarg and isinstance(kwarg, ast.ParamVar):
-            kwarg.unpack = ast.Token(
+        if kwarg and isinstance(kwarg, uni.ParamVar):
+            kwarg.unpack = uni.Token(
                 orig_src=self.orig_src,
                 name=Tok.STAR_POW,
                 value="**",
@@ -2375,7 +2379,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         defaults = [self.convert(expr) for expr in node.defaults]
         params = [*args]
         for param, default in zip(params[::-1], defaults[::-1]):
-            if isinstance(default, ast.Expr) and isinstance(param, ast.ParamVar):
+            if isinstance(default, uni.Expr) and isinstance(param, uni.ParamVar):
                 param.value = default
                 param.add_kids_right([default])
         if vararg:
@@ -2385,12 +2389,12 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             params.append(kwarg)
         params += defaults
 
-        valid_params = [param for param in params if isinstance(param, ast.ParamVar)]
+        valid_params = [param for param in params if isinstance(param, uni.ParamVar)]
         if valid_params:
-            fs_params = ast.SubNodeList[ast.ParamVar](
+            fs_params = uni.SubNodeList[uni.ParamVar](
                 items=valid_params, delim=Tok.COMMA, kid=valid_params
             )
-            return ast.FuncSignature(
+            return uni.FuncSignature(
                 params=fs_params,
                 return_type=None,
                 kid=[fs_params],
@@ -2398,15 +2402,15 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         else:
             _lparen = self.operator(Tok.LPAREN, "(")
             _rparen = self.operator(Tok.RPAREN, ")")
-            return ast.FuncSignature(
+            return uni.FuncSignature(
                 params=None,
                 return_type=None,
                 kid=[_lparen, _rparen],
             )
 
-    def operator(self, tok: Tok, value: str) -> ast.Token:
+    def operator(self, tok: Tok, value: str) -> uni.Token:
         """Create an operator token."""
-        return ast.Token(
+        return uni.Token(
             orig_src=self.orig_src,
             name=tok,
             value=value,
@@ -2418,123 +2422,123 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             pos_end=0,
         )
 
-    def proc_and(self, node: py_ast.And) -> ast.Token:
+    def proc_and(self, node: py_ast.And) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.KW_AND, "and")
 
-    def proc_or(self, node: py_ast.Or) -> ast.Token:
+    def proc_or(self, node: py_ast.Or) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.KW_OR, "or")
 
-    def proc_add(self, node: py_ast.Add) -> ast.Token:
+    def proc_add(self, node: py_ast.Add) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.PLUS, "+")
 
-    def proc_bit_and(self, node: py_ast.BitAnd) -> ast.Token:
+    def proc_bit_and(self, node: py_ast.BitAnd) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.BW_AND, "&")
 
-    def proc_bit_or(self, node: py_ast.BitOr) -> ast.Token:
+    def proc_bit_or(self, node: py_ast.BitOr) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.BW_OR, "|")
 
-    def proc_bit_xor(self, node: py_ast.BitXor) -> ast.Token:
+    def proc_bit_xor(self, node: py_ast.BitXor) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.BW_XOR, "^")
 
-    def proc_div(self, node: py_ast.Div) -> ast.Token:
+    def proc_div(self, node: py_ast.Div) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.DIV, "/")
 
-    def proc_floor_div(self, node: py_ast.FloorDiv) -> ast.Token:
+    def proc_floor_div(self, node: py_ast.FloorDiv) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.FLOOR_DIV, "//")
 
-    def proc_l_shift(self, node: py_ast.LShift) -> ast.Token:
+    def proc_l_shift(self, node: py_ast.LShift) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.LSHIFT, "<<")
 
-    def proc_mod(self, node: py_ast.Mod) -> ast.Token:
+    def proc_mod(self, node: py_ast.Mod) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.MOD, "%")
 
-    def proc_mult(self, node: py_ast.Mult) -> ast.Token:
+    def proc_mult(self, node: py_ast.Mult) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.STAR_MUL, "*")
 
-    def proc_mat_mult(self, node: py_ast.MatMult) -> ast.Token:
+    def proc_mat_mult(self, node: py_ast.MatMult) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.DECOR_OP, "@")
 
-    def proc_pow(self, node: py_ast.Pow) -> ast.Token:
+    def proc_pow(self, node: py_ast.Pow) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.STAR_POW, "**")
 
-    def proc_r_shift(self, node: py_ast.RShift) -> ast.Token:
+    def proc_r_shift(self, node: py_ast.RShift) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.RSHIFT, ">>")
 
-    def proc_sub(self, node: py_ast.Sub) -> ast.Token:
+    def proc_sub(self, node: py_ast.Sub) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.MINUS, "-")
 
-    def proc_invert(self, node: py_ast.Invert) -> ast.Token:
+    def proc_invert(self, node: py_ast.Invert) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.BW_NOT, "~")
 
-    def proc_not(self, node: py_ast.Not) -> ast.Token:
+    def proc_not(self, node: py_ast.Not) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.NOT, "not")
 
-    def proc_u_add(self, node: py_ast.UAdd) -> ast.Token:
+    def proc_u_add(self, node: py_ast.UAdd) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.PLUS, "+")
 
-    def proc_u_sub(self, node: py_ast.USub) -> ast.Token:
+    def proc_u_sub(self, node: py_ast.USub) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.MINUS, "-")
 
-    def proc_eq(self, node: py_ast.Eq) -> ast.Token:
+    def proc_eq(self, node: py_ast.Eq) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.EE, "==")
 
-    def proc_gt(self, node: py_ast.Gt) -> ast.Token:
+    def proc_gt(self, node: py_ast.Gt) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.GT, ">")
 
-    def proc_gt_e(self, node: py_ast.GtE) -> ast.Token:
+    def proc_gt_e(self, node: py_ast.GtE) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.GTE, ">=")
 
-    def proc_in(self, node: py_ast.In) -> ast.Token:
+    def proc_in(self, node: py_ast.In) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.KW_IN, "in")
 
-    def proc_is(self, node: py_ast.Is) -> ast.Token:
+    def proc_is(self, node: py_ast.Is) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.KW_IS, "is")
 
-    def proc_is_not(self, node: py_ast.IsNot) -> ast.Token:
+    def proc_is_not(self, node: py_ast.IsNot) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.KW_ISN, "is not")
 
-    def proc_lt(self, node: py_ast.Lt) -> ast.Token:
+    def proc_lt(self, node: py_ast.Lt) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.LT, "<")
 
-    def proc_lt_e(self, node: py_ast.LtE) -> ast.Token:
+    def proc_lt_e(self, node: py_ast.LtE) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.LTE, "<=")
 
-    def proc_not_eq(self, node: py_ast.NotEq) -> ast.Token:
+    def proc_not_eq(self, node: py_ast.NotEq) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.NE, "!=")
 
-    def proc_not_in(self, node: py_ast.NotIn) -> ast.Token:
+    def proc_not_in(self, node: py_ast.NotIn) -> uni.Token:
         """Process python node."""
         return self.operator(Tok.KW_NIN, "not in")
 
-    def proc_comprehension(self, node: py_ast.comprehension) -> ast.InnerCompr:
+    def proc_comprehension(self, node: py_ast.comprehension) -> uni.InnerCompr:
         """Process python node.
 
         class comprehension(AST):
@@ -2547,12 +2551,12 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         iter = self.convert(node.iter)
         if len(node.ifs) != 0:
             ifs_list = [self.convert(ifs) for ifs in node.ifs]
-            valid = [ifs for ifs in ifs_list if isinstance(ifs, ast.Expr)]
+            valid = [ifs for ifs in ifs_list if isinstance(ifs, uni.Expr)]
         else:
             valid = None
         is_async = node.is_async > 0
-        if isinstance(target, ast.Expr) and isinstance(iter, ast.Expr):
-            return ast.InnerCompr(
+        if isinstance(target, uni.Expr) and isinstance(iter, uni.Expr):
+            return uni.InnerCompr(
                 is_async=is_async,
                 target=target,
                 collection=iter,
@@ -2562,7 +2566,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         else:
             raise self.ice()
 
-    def proc_keyword(self, node: py_ast.keyword) -> ast.KWPair:
+    def proc_keyword(self, node: py_ast.keyword) -> uni.KWPair:
         """Process python node.
 
         class keyword(AST):
@@ -2571,7 +2575,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         arg: _Identifier | None
         value: expr
         """
-        arg = ast.Name(
+        arg = uni.Name(
             orig_src=self.orig_src,
             name=Tok.NAME,
             value=node.arg if node.arg else "_",
@@ -2583,12 +2587,12 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
             pos_end=0,
         )
         value = self.convert(node.value)
-        if isinstance(value, ast.Expr):
-            return ast.KWPair(key=arg, value=value, kid=[arg, value])
+        if isinstance(value, uni.Expr):
+            return uni.KWPair(key=arg, value=value, kid=[arg, value])
         else:
             raise self.ice()
 
-    def proc_match_case(self, node: py_ast.match_case) -> ast.MatchCase:
+    def proc_match_case(self, node: py_ast.match_case) -> uni.MatchCase:
         """Process python node.
 
         class match_case(AST):
@@ -2599,11 +2603,11 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         pattern = self.convert(node.pattern)
         guard = self.convert(node.guard) if node.guard else None
         body = [self.convert(i) for i in node.body]
-        valid = [i for i in body if isinstance(i, ast.CodeBlockStmt)]
-        if isinstance(pattern, ast.MatchPattern) and (
-            isinstance(guard, ast.Expr) or guard is None
+        valid = [i for i in body if isinstance(i, uni.CodeBlockStmt)]
+        if isinstance(pattern, uni.MatchPattern) and (
+            isinstance(guard, uni.Expr) or guard is None
         ):
-            return ast.MatchCase(
+            return uni.MatchCase(
                 pattern=pattern,
                 guard=guard,
                 body=valid,
@@ -2612,7 +2616,7 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         else:
             raise self.ice()
 
-    def proc_withitem(self, node: py_ast.withitem) -> ast.ExprAsItem:
+    def proc_withitem(self, node: py_ast.withitem) -> uni.ExprAsItem:
         """Process python node.
 
         class withitem(AST):
@@ -2621,10 +2625,10 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
         """
         context_expr = self.convert(node.context_expr)
         optional_vars = self.convert(node.optional_vars) if node.optional_vars else None
-        if isinstance(context_expr, ast.Expr) and (
-            isinstance(optional_vars, ast.Expr) or optional_vars is None
+        if isinstance(context_expr, uni.Expr) and (
+            isinstance(optional_vars, uni.Expr) or optional_vars is None
         ):
-            return ast.ExprAsItem(
+            return uni.ExprAsItem(
                 expr=context_expr,
                 alias=optional_vars if optional_vars else None,
                 kid=[context_expr, optional_vars] if optional_vars else [context_expr],
@@ -2644,11 +2648,11 @@ class PyastBuildPass(Transform[ast.PythonModuleAst, ast.Module]):
     def proc_type_var_tuple(self, node: py_ast.TypeVarTuple) -> None:
         """Process python node."""
 
-    def convert_to_doc(self, string: ast.String) -> None:
+    def convert_to_doc(self, string: uni.String) -> None:
         """Convert a string to a docstring."""
         string.value = f'"""{string.value[1:-1]}"""'
 
-    def aug_op_map(self, tok_dict: dict, op: ast.Token) -> str:
+    def aug_op_map(self, tok_dict: dict, op: uni.Token) -> str:
         """aug_mapper."""
         op.value += "="
         for _key, value in tok_dict.items():
