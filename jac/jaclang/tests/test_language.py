@@ -1485,7 +1485,6 @@ class JacLanguageTests(TestCase):
         """Test basic blocks."""
         file_name = self.fixture_abs_path("cfg_gen.jac")
 
-        from jaclang.compiler.passes.main.schedules import py_code_gen_typed
         from jaclang.compiler.passes.main.cfg_build_pass import FetchBBPass
 
         with open(file_name, "r") as f:
