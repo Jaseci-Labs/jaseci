@@ -8,10 +8,10 @@ however Ability does.
 import ast as ast3
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.passes import AstPass
+from jaclang.compiler.passes import UniPass
 
 
-class PyJacAstLinkPass(AstPass):
+class PyJacAstLinkPass(UniPass):
     """Link jac ast to python ast nodes."""
 
     def link_jac_py_nodes(

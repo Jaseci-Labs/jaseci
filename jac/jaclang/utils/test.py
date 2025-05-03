@@ -8,7 +8,7 @@ from unittest import TestCase as _TestCase
 from _pytest.logging import LogCaptureFixture
 
 import jaclang
-from jaclang.compiler.passes import AstPass
+from jaclang.compiler.passes import UniPass
 from jaclang.utils.helpers import get_uni_nodes_as_snake_case as ast_snakes
 
 import pytest
@@ -110,7 +110,7 @@ class TestCaseMicroSuite(TestCase):
 class AstSyncTestMixin:
     """Mixin for testing AST sync."""
 
-    TargetPass: Optional[AstPass] = None
+    TargetPass: Optional[UniPass] = None
 
     def test_pass_ast_complete(self) -> None:
         """Test for enter/exit name diffs with parser."""

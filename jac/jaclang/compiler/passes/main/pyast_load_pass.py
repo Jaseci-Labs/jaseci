@@ -10,7 +10,7 @@ from typing import Optional, Sequence, TYPE_CHECKING, TypeAlias, TypeVar
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Tokens as Tok
-from jaclang.compiler.passes.ast_pass import Transform
+from jaclang.compiler.passes.uni_pass import Transform
 from jaclang.utils.helpers import pascal_to_snake
 
 if TYPE_CHECKING:

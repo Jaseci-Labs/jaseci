@@ -495,7 +495,7 @@ class JacCliTests(TestCase):
         """Test for coverage of graph cmd."""
         graph_params = set(inspect.signature(cli.dot).parameters.keys())
         dotgen_params = set(inspect.signature(dotgen).parameters.keys())
-        dotgen_params = dotgen_params - {"node", "dot_file", "edge_type"}
+        dotgen_params = dotgen_params - {"node", "dot_file", "edge_type", "as_json"}
         dotgen_params.update({"initial", "saveto", "connection", "session"})
         self.assertTrue(dotgen_params.issubset(graph_params))
         self.assertEqual(len(dotgen_params) + 1, len(graph_params))

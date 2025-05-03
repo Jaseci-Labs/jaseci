@@ -5,11 +5,11 @@ for globals, imports, architypes, and abilities declarations and definitions.
 """
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.passes import AstPass
+from jaclang.compiler.passes import UniPass
 from jaclang.compiler.unitree import UniScopeNode
 
 
-class SymTabBuildPass(AstPass):
+class SymTabBuildPass(UniPass):
     """Jac Symbol table build pass."""
 
     def before_pass(self) -> None:

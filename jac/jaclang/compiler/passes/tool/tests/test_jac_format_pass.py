@@ -7,8 +7,7 @@ from contextlib import suppress
 from difflib import unified_diff
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.passes.main.schedules import py_code_gen as without_format
-from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
+from jaclang.compiler.passes.tool import JacFormatPass
 from jaclang.compiler.program import JacProgram
 from jaclang.utils.helpers import add_line_numbers
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
@@ -26,10 +25,7 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             with open(original_path, "r") as file:
                 original_file_content = file.read()
             if formatted_file is None:
-                code_gen_format = JacProgram().compile(
-                    original_path, schedule=[FuseCommentsPass, JacFormatPass]
-                )
-                formatted_content = code_gen_format.gen.jac
+                formatted_content = JacProgram.jac_file_formatter(original_path)
             else:
                 with open(self.fixture_abs_path(formatted_file), "r") as file:
                     formatted_content = file.read()
@@ -115,15 +111,10 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
     def micro_suite_test(self, filename: str) -> None:
         """Parse micro jac file."""
-        code_gen_pure = JacProgram().compile(
-            self.fixture_abs_path(filename),
-            schedule=without_format,
-        )
+        code_gen_pure = JacProgram().compile(self.fixture_abs_path(filename))
         code_gen_format = JacProgram.jac_file_formatter(self.fixture_abs_path(filename))
         code_gen_jac = JacProgram().compile_from_str(
-            source_str=code_gen_format,
-            file_path=filename,
-            schedule=without_format,
+            source_str=code_gen_format, file_path=filename
         )
         if "circle_clean_tests.jac" in filename:
             tokens = code_gen_format.split()

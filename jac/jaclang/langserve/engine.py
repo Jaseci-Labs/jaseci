@@ -9,9 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Optional
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.parser import JacParser
-from jaclang.compiler.passes.main.schedules import py_code_gen_typed
-from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
+from jaclang.compiler.passes.main.schedules import CompilerMode as CMode
 from jaclang.compiler.program import JacProgram
 from jaclang.compiler.unitree import UniScopeNode
 from jaclang.langserve.sem_manager import SemTokManager
@@ -79,7 +77,9 @@ class JacLangServer(LanguageServer):
         try:
             document = self.workspace.get_text_document(file_path)
             self.program.compile_from_str(
-                source_str=document.source, file_path=document.path, schedule=[]
+                source_str=document.source,
+                file_path=document.path,
+                mode=CMode.PARSE,
             )
             self.publish_diagnostics(
                 file_path,
@@ -105,7 +105,7 @@ class JacLangServer(LanguageServer):
             build = self.program.compile_from_str(
                 source_str=document.source,
                 file_path=document.path,
-                schedule=py_code_gen_typed,
+                mode=CMode.TYPECHECK,
             )
             self.update_modules(file_path, build)
             if discover := self.modules[file_path].ir.annexable_by:
@@ -288,16 +288,8 @@ class JacLangServer(LanguageServer):
         """Return formatted jac."""
         try:
             document = self.workspace.get_text_document(file_path)
-            format = self.program.compile_from_str(
-                source_str=document.source,
-                file_path=document.path,
-                target_pass=JacFormatPass,
-                schedule=[FuseCommentsPass, JacFormatPass],
-            )
-            formatted_text = (
-                format.gen.jac
-                if JacParser not in [e.from_pass for e in self.program.errors_had]
-                else document.source
+            formatted_text = JacProgram.jac_str_formatter(
+                source_str=document.source, file_path=document.path
             )
         except Exception as e:
             self.log_error(f"Error during formatting: {e}")

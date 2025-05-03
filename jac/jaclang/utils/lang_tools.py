@@ -8,8 +8,7 @@ from typing import List, Optional, Type
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
-from jaclang.compiler.passes.main.schedules import py_code_gen, type_checker_sched
-from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+from jaclang.compiler.passes.main.schedules import CompilerMode as CMode
 from jaclang.compiler.program import JacProgram
 from jaclang.compiler.unitree import UniScopeNode
 from jaclang.utils.helpers import auto_generate_refs, pascal_to_snake
@@ -176,32 +175,6 @@ class AstTool:
             output += f"# missing: \n{i}\n"
         return output
 
-    def autodoc_uninode(self) -> str:
-        """Generate mermaid markdown doc for uninodes."""
-        output = ""
-        for cls in self.ast_classes:
-            if not len(cls.kids):
-                continue
-            output += f"## {cls.name}\n"
-            output += "```mermaid\nflowchart LR\n"
-            for kid in cls.kids:
-                if "_end" in kid.name:
-                    kid.name = kid.name.replace("_end", "_end_")
-                arrow = "-.->" if "Optional" in kid.typ else "-->"
-                typ = (
-                    kid.typ.replace("Optional[", "")
-                    .replace("SubNodeList[", "")
-                    .replace("SubTag[", "")
-                    .replace("Sequence[", "")
-                    .replace("]", "")
-                    .replace("|", ",")
-                    .replace("list[", "list - ")
-                )
-                output += f"{cls.name} {arrow}|{typ}| {kid.name}\n"
-            output += "```\n\n"
-            output += f"{cls.doc} \n\n"
-        return output
-
     def ir(self, args: List[str]) -> str:
         """Generate a AST, SymbolTable tree for .jac file, or Python AST for .py file."""
         error = "Usage: ir <choose one of (sym / sym. / ast / ast. / pyast / py / unparse)> <.py or .jac file_path>"
@@ -235,14 +208,12 @@ class AstTool:
                     ir = prog.compile_from_str(
                         source_str=rep.unparse(),
                         file_path=file_name[:-3] + ".jac",
-                        schedule=py_code_gen_typed,
+                        mode=CMode.TYPECHECK,
                     )
                 except Exception as e:
                     return f"Error While Jac to Py AST conversion: {e}"
             else:
-                ir = prog.compile(
-                    file_name, schedule=[*(py_code_gen), *type_checker_sched]
-                )
+                ir = prog.compile(file_name, mode=CMode.TYPECHECK)
 
             match output:
                 case "sym":
@@ -286,10 +257,35 @@ class AstTool:
         else:
             return "Not a .jac or .py file, or invalid command for file type."
 
+    def autodoc_uninode(self) -> str:
+        """Generate mermaid markdown doc for uninodes."""
+        output = ""
+        for cls in self.ast_classes:
+            if not len(cls.kids):
+                continue
+            output += f"## {cls.name}\n"
+            output += "```mermaid\nflowchart LR\n"
+            for kid in cls.kids:
+                if "_end" in kid.name:
+                    kid.name = kid.name.replace("_end", "_end_")
+                arrow = "-.->" if "Optional" in kid.typ else "-->"
+                typ = (
+                    kid.typ.replace("Optional[", "")
+                    .replace("SubNodeList[", "")
+                    .replace("SubTag[", "")
+                    .replace("Sequence[", "")
+                    .replace("]", "")
+                    .replace("|", ",")
+                    .replace("list[", "list - ")
+                )
+                output += f"{cls.name} {arrow}|{typ}| {kid.name}\n"
+            output += "```\n\n"
+            output += f"{cls.doc} \n\n"
+        return output
+
     def automate_ref(self) -> str:
         """Automate the reference guide generation."""
-        auto_generate_refs()
-        return "References generated."
+        return auto_generate_refs()
 
     def gen_parser(self) -> str:
         """Generate static parser."""
