@@ -3,7 +3,7 @@
 import logging
 import os
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from fastapi import Body, FastAPI, HTTPException, Query
 
@@ -13,7 +13,7 @@ from grpc_local import module_service_pb2, module_service_pb2_grpc
 
 from kubernetes import client, config
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -132,7 +132,7 @@ class PodManager:
                 }
 
                 try:
-                    existing_configmap = self.v1.read_namespaced_config_map(
+                    self.v1.read_namespaced_config_map(
                         name=f"{module_name}-requirements", namespace=self.namespace
                     )
                     print(f"ConfigMap '{module_name}-requirements' already exists.")
@@ -258,8 +258,8 @@ class PodManager:
         method_name: str,
         obj_id: Optional[str],
         args: List[Any],
-        kwargs: Dict[str, Any],
-    ) -> Any:
+        kwargs: Dict[str, Dict[str, str]],
+    ) -> Union[Dict[str, str], str]:
         """Forward a method call to a pod and return the result."""
         import json
 
@@ -310,14 +310,23 @@ DEFAULT_RETRY_DELAY = 2
 DEFAULT_TIMEOUT = 120
 DEFAULT_IMAGE_NAME = "ashishmahendra/jac-splice-orc:0.1.8"
 
+# Initialize empty lists and dicts for defaults
+EMPTY_LIST: List[Any] = []
+EMPTY_DICT: Dict[str, Any] = {}
+
 pod_manager = PodManager()
+
+
+# Define empty defaults for pydantic models
+EMPTY_LIST_FACTORY = list
+EMPTY_DICT_FACTORY = dict
 
 
 class RunModuleRequest(BaseModel):
     """Request for running a module."""
 
-    args: List[Any] = []
-    kwargs: Dict[str, Any] = {}
+    args: List[Any] = Field(default_factory=EMPTY_LIST_FACTORY)
+    kwargs: Dict[str, Any] = Field(default_factory=EMPTY_DICT_FACTORY)
 
 
 @app.post("/run_module")
@@ -328,7 +337,7 @@ async def run_module(
     request: RunModuleRequest = Body(
         ..., description="Arguments and keyword arguments"
     ),
-):
+) -> Union[Dict[str, str], str]:
     """Run a module and return the result."""
     return pod_manager.forward_to_pod(
         module_name.replace("_", "-"), method_name, obj_id, request.args, request.kwargs

@@ -1,18 +1,21 @@
-import pytest
-from fastapi.testclient import TestClient
+"""Tests for the pod manager module."""
+
+from datetime import datetime, timezone
 from unittest import mock
 from unittest.mock import MagicMock
+
+import pytest
+from fastapi.testclient import TestClient
 from kubernetes.client import (
-    V1Pod,
+    V1Condition,
     V1ObjectMeta,
+    V1Pod,
     V1PodSpec,
     V1PodStatus,
-    V1Condition,
     V1Service,
     V1Status,
 )
 from kubernetes.client.rest import ApiException
-from datetime import datetime, timezone
 
 # Mock gRPC imports to avoid ImportError in test environment
 with mock.patch.dict(
@@ -28,7 +31,15 @@ with mock.patch.dict(
 client = TestClient(app)
 
 
-def create_condition_ready(status):
+def create_condition_ready(status: str) -> V1Condition:
+    """Create a ready condition for testing.
+
+    Args:
+        status: Status of the condition
+
+    Returns:
+        A V1Condition object
+    """
     return V1Condition(
         type="Ready",
         status=status,
@@ -39,7 +50,12 @@ def create_condition_ready(status):
 
 
 @pytest.fixture
-def mock_kubernetes_and_grpc():
+def mock_kubernetes_and_grpc() -> None:
+    """Mock Kubernetes and gRPC for testing.
+
+    Yields:
+        None
+    """
     with mock.patch(
         "kubernetes.config.load_incluster_config"
     ) as mock_load_incluster_config, mock.patch(
@@ -118,7 +134,12 @@ def mock_kubernetes_and_grpc():
         yield
 
 
-def test_create_pod(mock_kubernetes_and_grpc):
+def test_create_pod(mock_kubernetes_and_grpc: None) -> None:
+    """Test creating a pod.
+
+    Args:
+        mock_kubernetes_and_grpc: Fixture for mocking Kubernetes and gRPC
+    """
     module_config = {
         "numpy": {
             "lib_mem_size_req": "100MB",
@@ -134,7 +155,12 @@ def test_create_pod(mock_kubernetes_and_grpc):
     }
 
 
-def test_run_module(mock_kubernetes_and_grpc):
+def test_run_module(mock_kubernetes_and_grpc: None) -> None:
+    """Test running a module.
+
+    Args:
+        mock_kubernetes_and_grpc: Fixture for mocking Kubernetes and gRPC
+    """
     response = client.post(
         "/run_module?module_name=numpy&method_name=array", json={"args": [1, 2, 3, 4]}
     )
@@ -142,7 +168,12 @@ def test_run_module(mock_kubernetes_and_grpc):
     assert response.json() == "[1, 2, 3, 4]"
 
 
-def test_delete_pod(mock_kubernetes_and_grpc):
+def test_delete_pod(mock_kubernetes_and_grpc: None) -> None:
+    """Test deleting a pod.
+
+    Args:
+        mock_kubernetes_and_grpc: Fixture for mocking Kubernetes and gRPC
+    """
     response = client.delete("/delete_pod/numpy")
     assert response.status_code == 200
     assert response.json() == {

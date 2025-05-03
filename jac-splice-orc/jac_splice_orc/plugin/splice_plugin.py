@@ -1,4 +1,7 @@
-"""JAC Splice-Orchestrator Plugin."""
+"""JAC Splice-Orchestrator Plugin.
+
+This plugin provides functionality for orchestrating Kubernetes pods for JAC modules.
+"""
 
 import json
 import logging
@@ -9,7 +12,7 @@ import types
 from typing import Optional, Union
 
 from jac_splice_orc.config.config_loader import ConfigLoader
-from jac_splice_orc.managers.proxy_manager import ModuleProxy
+from jac_splice_orc.managers.proxy_manager import ModuleProxy, RemoteObjectProxy
 
 from jaclang.cli.cmdreg import cmd_registry
 from jaclang.runtimelib.machine import JacMachine, JacMachineState, JacProgram
@@ -30,11 +33,13 @@ rfc1123_pattern = r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
 
 
 def try_incluster_or_local() -> bool:
-    """
-    Attempt to load in-cluster config if we're in a real K8s Pod
-    (service account token present). If that fails, fallback
-    to local kubeconfig. Returns True if in-cluster config loaded,
-    False if local config loaded.
+    """Attempt to load in-cluster config if we're in a real K8s Pod.
+
+    If we're in a real K8s Pod (service account token present), load in-cluster config.
+    If that fails, fallback to local kubeconfig.
+
+    Returns:
+        True if in-cluster config loaded, False if local config loaded.
     """
     token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
     if os.getenv("KUBERNETES_SERVICE_HOST") and os.path.exists(token_file):
@@ -62,7 +67,11 @@ class SpliceOrcPlugin:
 
     @staticmethod
     def is_kind_cluster() -> bool:
-        """Detect if the cluster is a kind cluster."""
+        """Detect if the cluster is a kind cluster.
+
+        Returns:
+            True if the cluster is a kind cluster, False otherwise.
+        """
         try:
             contexts, current_context = config.list_kube_config_contexts()
             current_context_name = current_context["name"]
@@ -78,7 +87,11 @@ class SpliceOrcPlugin:
 
     @classmethod
     def create_namespace(cls, namespace_name: str) -> None:
-        """Create a new namespace if it does not exist."""
+        """Create a new namespace if it does not exist.
+
+        Args:
+            namespace_name: Name of the namespace to create.
+        """
         logging.info(f"Creating namespace '{namespace_name}'")
 
         # in_cluster = try_incluster_or_local()
@@ -95,6 +108,11 @@ class SpliceOrcPlugin:
 
     @classmethod
     def create_service_account(cls, namespace: str) -> None:
+        """Create a service account in the specified namespace.
+
+        Args:
+            namespace: Namespace to create the service account in.
+        """
         _ = try_incluster_or_local()
         v1 = client.CoreV1Api()
         service_account_name = config_loader.get(
@@ -128,6 +146,12 @@ class SpliceOrcPlugin:
 
     @classmethod
     def create_role_and_binding(cls, namespace: str, service_account_name: str) -> None:
+        """Create a role and role binding for the service account.
+
+        Args:
+            namespace: Namespace to create the role and binding in.
+            service_account_name: Name of the service account to bind to.
+        """
         _ = try_incluster_or_local()
         rbac_api = client.RbacAuthorizationV1Api()
 
@@ -347,11 +371,14 @@ class SpliceOrcPlugin:
 
     @classmethod
     def configure_pod_manager_url(cls, namespace: str) -> None:
-        """
-        Dynamically set the POD_MANAGER_URL:
-          - If in-cluster: use 'pod-manager-service.{namespace}.svc.cluster.local:8000'
-          - If local dev: use 'localhost:30080'
-          - If 'LoadBalancer', call get_load_balancer_url() (optional).
+        """Dynamically set the POD_MANAGER_URL based on environment.
+
+        If in-cluster: use 'pod-manager-service.{namespace}.svc.cluster.local:8000'
+        If local dev: use 'localhost:30080'
+        If 'LoadBalancer', call get_load_balancer_url() (optional).
+
+        Args:
+            namespace: Kubernetes namespace
         """
         in_cluster = try_incluster_or_local()
 
@@ -439,7 +466,7 @@ class SpliceOrcPlugin:
     @staticmethod
     @hookimpl
     def create_cmd() -> None:
-        """Creating Jac CLI commands."""
+        """Create Jac CLI commands for orchestration."""
 
         @cmd_registry.register
         def orc_initialize(namespace: str, config_path: Optional[str] = None) -> None:
@@ -526,8 +553,23 @@ class SpliceOrcPlugin:
         lng: Optional[str],
         items: Optional[dict[str, Union[str, Optional[str]]]],
         reload_module: Optional[bool],
-    ) -> tuple[types.ModuleType, ...]:
-        """Core Import Process with Kubernetes Pod Integration."""
+    ) -> tuple[Union[types.ModuleType, "RemoteObjectProxy"], ...]:
+        """Core Import Process with Kubernetes Pod Integration.
+
+        Args:
+            mach: JAC machine state
+            target: Import target
+            base_path: Base path for import
+            absorb: Whether to absorb the module
+            mdl_alias: Module alias
+            override_name: Override name
+            lng: Language
+            items: Items to import
+            reload_module: Whether to reload the module
+
+        Returns:
+            Tuple of imported modules or objects
+        """
         from jaclang.runtimelib.importer import (
             ImportPathSpec,
             JacImporter,

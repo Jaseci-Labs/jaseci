@@ -2,9 +2,10 @@
 
 import base64
 import json
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import numpy as np
+
 import requests
 
 
@@ -85,7 +86,7 @@ class PodManagerProxy:
         """
 
         # Serialize arguments
-        def serialize_arg(arg: Any) -> Dict[str, Any]:
+        def serialize_arg(arg: Any) -> Dict[str, Union[str, List[Any], Dict[str, Any]]]:
             """Serialize an argument for transmission to the pod manager.
 
             Args:
@@ -193,7 +194,10 @@ class RemoteObjectProxy:
         self.pod_manager = pod_manager
         self.obj_id = obj_id  # None for module-level
 
-    def __getattr__(self, method_name: str) -> Callable[..., Any]:
+    def __getattr__(self, method_name: str) -> Callable[
+        ...,
+        Union[Dict[str, Any], List[Any], str, float, int, bool, "RemoteObjectProxy"],
+    ]:
         """Get a method from the remote object.
 
         Args:
@@ -203,7 +207,11 @@ class RemoteObjectProxy:
             Function that calls the remote method
         """
 
-        def method(*args: Any, **kwargs: Any) -> Any:
+        def method(
+            *args: Any, **kwargs: Any
+        ) -> Union[
+            Dict[str, Any], List[Any], str, float, int, bool, "RemoteObjectProxy"
+        ]:
             """Call the remote method.
 
             Args:
@@ -253,7 +261,9 @@ class RemoteObjectProxy:
 
         return method
 
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+    def __call__(
+        self, *args: Any, **kwargs: Any
+    ) -> Union[Dict[str, Any], List[Any], str, float, int, bool, "RemoteObjectProxy"]:
         """Call the remote object as a function.
 
         Args:
