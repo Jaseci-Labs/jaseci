@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  test-jaclang:
+  test-jaseci:
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
