@@ -2696,11 +2696,11 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
             res = self.target.normalize(deep)
             res = res and self.else_body.normalize(deep) if self.else_body else res
         new_kid: list[UniNode] = []
-        if self.targets:
-            new_kid.append(self.targets)
+        if self.store_target:
+            new_kid.append(self.store_target)
         if self.type_tag:
             new_kid.append(self.gen_token(Tok.COLON))
-        if self.targets:
+        if self.store_target:
             new_kid.append(self.gen_token(Tok.EQ))
         if self.is_jacgo:
             new_kid.append(self.gen_token(Tok.KW_JACGO))

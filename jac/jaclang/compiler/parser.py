@@ -1464,9 +1464,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
             visit_stmt: KW_VISIT (COLON expression COLON)?
                 expression (else_stmt | SEMI)
             """
-            targets = self.match(uni.Expr)
+            store_target = self.match(uni.Expr)
             type_tag = self.match(uni.SubTag)
-            if targets:
+            if store_target:
                 self.consume_token(Tok.EQ)
             tok_jacgo = self.match_token(Tok.KW_JACGO)
             self.consume_token(Tok.KW_VISIT)
