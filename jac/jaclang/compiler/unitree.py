@@ -2848,6 +2848,8 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
     def __init__(
         self,
         vis_type: Optional[SubNodeList[Expr]],
+        targets: Optional[Expr],
+        type_tag: Optional[SubTag[Expr]],
         target: Expr,
         else_body: Optional[ElseStmt],
         is_jacgo: bool,
@@ -2855,6 +2857,8 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
     ) -> None:
         """Initialize visit statement node."""
         self.vis_type = vis_type
+        self.targets = targets
+        self.type_tag = type_tag
         self.target = target
         self.is_jacgo = is_jacgo
         UniNode.__init__(self, kid=kid)
@@ -2866,9 +2870,17 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
         res = True
         if deep:
             res = self.vis_type.normalize(deep) if self.vis_type else res
+            res = res and self.targets.normalize(deep) if self.targets else res
+            res = res and self.type_tag.normalize(deep) if self.type_tag else res
             res = self.target.normalize(deep)
             res = res and self.else_body.normalize(deep) if self.else_body else res
         new_kid: list[UniNode] = []
+        if self.targets:
+            new_kid.append(self.targets)
+        if self.type_tag:
+            new_kid.append(self.gen_token(Tok.COLON))
+        if self.targets:
+            new_kid.append(self.gen_token(Tok.EQ))
         if self.is_jacgo:
             new_kid.append(self.gen_token(Tok.KW_JACGO))
         new_kid.append(self.gen_token(Tok.KW_VISIT))

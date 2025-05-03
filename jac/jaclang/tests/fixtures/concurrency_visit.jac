@@ -3,11 +3,12 @@ node A{
     has val: int;
 
     can do1 with W entry {
-        print("A Entry action ", self);
-        jacgo visit [self -->];
+        # print("A Entry action ", self);
+        k1 = jacgo visit [self -->];
+        print("visit action",k1, self);
     }
     can do2 with W exit {
-        print("A Exit action ", self);
+        # print("A Exit action ", self);
     }
 }
 
@@ -15,10 +16,10 @@ walker W{
     has num: int;
 
     can do1 with entry {
-        print("W Entry action ", here);
+        # print("W Entry action ", here);
     }
     can do2 with exit {
-        print("W Exit action ", here);
+        # print("W Exit action ", here);
     }
 }
 

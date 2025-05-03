@@ -1536,8 +1536,13 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def visit_stmt(self, _: None) -> uni.VisitStmt:
             """Grammar rule.
 
-            visit_stmt: KW_VISIT (inherited_archs)? expression (else_stmt | SEMI)
+            visit_stmt: (atomic_chain type_tag? EQ )? KW_JACGO?
+                        KW_VISIT (inherited_archs)? expression (else_stmt | SEMI)
             """
+            targets = self.match(uni.Expr)
+            type_tag = self.match(uni.SubTag)
+            if targets:
+                self.consume_token(Tok.EQ)
             tok_jacgo = self.match_token(Tok.KW_JACGO)
             self.consume_token(Tok.KW_VISIT)
             sub_name = self.match(uni.SubNodeList)
@@ -1547,6 +1552,8 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 self.consume_token(Tok.SEMI)
             return uni.VisitStmt(
                 vis_type=sub_name,
+                targets=targets,
+                type_tag=type_tag,
                 target=target,
                 else_body=else_body,
                 is_jacgo=tok_jacgo is not None,

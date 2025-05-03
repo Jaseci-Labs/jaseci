@@ -2015,6 +2015,8 @@ class PyastGenPass(UniPass):
         """Sub objects.
 
         vis_type: Optional[SubNodeList[AtomType]],
+        targets: Optional[ExprType],
+        type_tag: Optional[SubTag[ExprType]],
         target: ExprType,
         else_body: Optional[ElseStmt],
         is_jacgo: bool,
@@ -2041,9 +2043,50 @@ class PyastGenPass(UniPass):
                 keywords=[],
             )
         )
+        if node.targets and node.else_body:
+            if isinstance(node.targets.gen.py_ast[0], ast3.Name):
+                node.targets.gen.py_ast[0].ctx = ast3.Store()
+            visit_stmt: ast3.Assign | ast3.NamedExpr = self.sync(
+                ast3.NamedExpr(
+                    target=cast(ast3.Name, node.targets.gen.py_ast[0]),
+                    value=visit_call,
+                )
+            )
 
-        node.gen.py_ast = [
-            (
+        if node.targets and node.else_body:
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.If(
+                        test=self.sync(
+                            ast3.UnaryOp(
+                                op=self.sync(ast3.Not()),
+                                operand=cast(ast3.expr, visit_stmt),
+                            )
+                        ),
+                        body=cast(list[ast3.stmt], node.else_body.gen.py_ast),
+                        orelse=[],
+                    )
+                )
+            ]
+
+        elif node.targets:
+            if isinstance(node.targets.gen.py_ast[0], ast3.Name):
+                node.targets.gen.py_ast[0].ctx = ast3.Store()
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Assign(
+                        targets=cast(list[ast3.expr], node.targets.gen.py_ast),
+                        value=(
+                            cast(ast3.expr, visit_call)
+                            if isinstance(visit_call, ast3.expr)
+                            else self.sync(ast3.Constant(value=None))
+                        ),
+                    )
+                )
+            ]
+
+        elif node.else_body:
+            node.gen.py_ast = [
                 self.sync(
                     ast3.If(
                         test=self.sync(
@@ -2056,10 +2099,19 @@ class PyastGenPass(UniPass):
                         orelse=[],
                     )
                 )
-                if node.else_body
-                else self.sync(ast3.Expr(value=visit_call))
-            )
-        ]
+            ]
+        else:
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Expr(
+                        value=(
+                            visit_call
+                            if isinstance(visit_call, ast3.expr)
+                            else self.sync(ast3.Constant(value=None))
+                        )
+                    )
+                )
+            ]
 
     def exit_revisit_stmt(self, node: uni.RevisitStmt) -> None:
         """Sub objects.
