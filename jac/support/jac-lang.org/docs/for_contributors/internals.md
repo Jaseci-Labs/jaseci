@@ -19,12 +19,12 @@ flowchart LR
     D --> E[Runtime]
     E --> F[Results]
 
-    style A fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style B fill:#d4f1f9,stroke:#333,stroke-width:2px
-    style C fill:#d4f1f9,stroke:#333,stroke-width:2px
-    style D fill:#e6f3e6,stroke:#333,stroke-width:2px
-    style E fill:#e6f3e6,stroke:#333,stroke-width:2px
-    style F fill:#f9f9f9,stroke:#333,stroke-width:2px
+    style A fill:#2d3748,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style B fill:#3182ce,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style C fill:#3182ce,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style D fill:#38a169,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style E fill:#38a169,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style F fill:#2d3748,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
 ```
 
 ## Compiler Components
@@ -45,14 +45,14 @@ flowchart TD
     F --> G[Bytecode Generation]
     G --> H[Python Bytecode]
 
-    style A fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style B fill:#d4f1f9,stroke:#333,stroke-width:2px
-    style C fill:#d4f1f9,stroke:#333,stroke-width:2px
-    style D fill:#d4f1f9,stroke:#333,stroke-width:2px
-    style E fill:#d4f1f9,stroke:#333,stroke-width:2px
-    style F fill:#d4f1f9,stroke:#333,stroke-width:2px
-    style G fill:#d4f1f9,stroke:#333,stroke-width:2px
-    style H fill:#f9f9f9,stroke:#333,stroke-width:2px
+    style A fill:#2d3748,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style B fill:#3182ce,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style C fill:#3182ce,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style D fill:#3182ce,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style E fill:#3182ce,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style F fill:#3182ce,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style G fill:#3182ce,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style H fill:#2d3748,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
 ```
 
 1. **Parsing**: Converts Jac source code into an Abstract Syntax Tree (AST)
@@ -163,12 +163,12 @@ flowchart LR
     D --> E[PyastBuildPass]
     E --> F[PyBytecodeGenPass]
 
-    style A fill:#d4f1f9,stroke:#333,stroke-width:2px
-    style B fill:#d4f1f9,stroke:#333,stroke-width:2px
-    style C fill:#d4f1f9,stroke:#333,stroke-width:2px
-    style D fill:#d4f1f9,stroke:#333,stroke-width:2px
-    style E fill:#d4f1f9,stroke:#333,stroke-width:2px
-    style F fill:#d4f1f9,stroke:#333,stroke-width:2px
+    style A fill:#3182ce,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style B fill:#3182ce,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style C fill:#3182ce,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style D fill:#3182ce,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style E fill:#3182ce,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style F fill:#3182ce,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
 ```
 
 Main passes:
@@ -468,16 +468,16 @@ flowchart TD
     I --> J[Update Module Registry]
     E --> J
 
-    style A fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style B fill:#f9d9d9,stroke:#333,stroke-width:2px
-    style C fill:#d4f1f9,stroke:#333,stroke-width:2px
-    style D fill:#d4f1f9,stroke:#333,stroke-width:2px
-    style E fill:#e6f3e6,stroke:#333,stroke-width:2px
-    style F fill:#e6f3e6,stroke:#333,stroke-width:2px
-    style G fill:#e6f3e6,stroke:#333,stroke-width:2px
-    style H fill:#e6f3e6,stroke:#333,stroke-width:2px
-    style I fill:#e6f3e6,stroke:#333,stroke-width:2px
-    style J fill:#f9f9f9,stroke:#333,stroke-width:2px
+    style A fill:#2d3748,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style B fill:#c53030,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style C fill:#3182ce,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style D fill:#3182ce,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style E fill:#38a169,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style F fill:#38a169,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style G fill:#38a169,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style H fill:#38a169,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style I fill:#38a169,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style J fill:#2d3748,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
 ```
 
 ```mermaid
@@ -682,17 +682,17 @@ flowchart TD
     I --> J{Check target's allowed roots}
     J --> K[Return Final Access Level]
 
-    style A fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style B fill:#f9d9d9,stroke:#333,stroke-width:2px
-    style C fill:#f9d9d9,stroke:#333,stroke-width:2px
-    style D fill:#e6f3e6,stroke:#333,stroke-width:2px
-    style E fill:#f9d9d9,stroke:#333,stroke-width:2px
-    style F fill:#f9d9d9,stroke:#333,stroke-width:2px
-    style G fill:#f9d9d9,stroke:#333,stroke-width:2px
-    style H fill:#f9d9d9,stroke:#333,stroke-width:2px
-    style I fill:#f9d9d9,stroke:#333,stroke-width:2px
-    style J fill:#f9d9d9,stroke:#333,stroke-width:2px
-    style K fill:#f9f9f9,stroke:#333,stroke-width:2px
+    style A fill:#2d3748,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style B fill:#c53030,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style C fill:#c53030,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style D fill:#38a169,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style E fill:#c53030,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style F fill:#c53030,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style G fill:#c53030,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style H fill:#c53030,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style I fill:#c53030,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style J fill:#c53030,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style K fill:#2d3748,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
 ```
 
 ### Permission
@@ -746,12 +746,20 @@ graph TD
     C --> C3[memory.py]
     C --> C4[importer.py]
 
-    style A fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style B fill:#d4f1f9,stroke:#333,stroke-width:2px
-    style C fill:#e6f3e6,stroke:#333,stroke-width:2px
-    style D fill:#f9d9d9,stroke:#333,stroke-width:2px
-    style E fill:#f9d9d9,stroke:#333,stroke-width:2px
-    style F fill:#f9d9d9,stroke:#333,stroke-width:2px
+    style A fill:#2d3748,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style B fill:#3182ce,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style C fill:#38a169,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style D fill:#805ad5,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style E fill:#805ad5,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style F fill:#805ad5,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style B1 fill:#3182ce,stroke:#e2e8f0,stroke-width:1px,color:#e2e8f0
+    style B2 fill:#3182ce,stroke:#e2e8f0,stroke-width:1px,color:#e2e8f0
+    style B3 fill:#3182ce,stroke:#e2e8f0,stroke-width:1px,color:#e2e8f0
+    style B4 fill:#3182ce,stroke:#e2e8f0,stroke-width:1px,color:#e2e8f0
+    style C1 fill:#38a169,stroke:#e2e8f0,stroke-width:1px,color:#e2e8f0
+    style C2 fill:#38a169,stroke:#e2e8f0,stroke-width:1px,color:#e2e8f0
+    style C3 fill:#38a169,stroke:#e2e8f0,stroke-width:1px,color:#e2e8f0
+    style C4 fill:#38a169,stroke:#e2e8f0,stroke-width:1px,color:#e2e8f0
 ```
 
 - `jaclang/compiler`: Contains the compiler components
@@ -771,13 +779,13 @@ flowchart LR
     E --> F[Code Review]
     F --> G[Merge]
 
-    style A fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style B fill:#d4f1f9,stroke:#333,stroke-width:2px
-    style C fill:#d4f1f9,stroke:#333,stroke-width:2px
-    style D fill:#d4f1f9,stroke:#333,stroke-width:2px
-    style E fill:#e6f3e6,stroke:#333,stroke-width:2px
-    style F fill:#e6f3e6,stroke:#333,stroke-width:2px
-    style G fill:#e6f3e6,stroke:#333,stroke-width:2px
+    style A fill:#2d3748,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style B fill:#3182ce,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style C fill:#3182ce,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style D fill:#3182ce,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style E fill:#38a169,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style F fill:#38a169,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style G fill:#38a169,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
 ```
 
 1. **Setup**: Clone the repository and install dependencies
@@ -785,6 +793,8 @@ flowchart LR
 3. **Implementation**: Make your changes following the project's coding standards
 4. **Documentation**: Update documentation to reflect your changes
 5. **Pull Request**: Submit a pull request with your changes
+6. **Code Review**: Address feedback from reviewers
+7. **Merge**: Once approved, your changes will be merged into the main codebase
 
 ### Best Practices
 
