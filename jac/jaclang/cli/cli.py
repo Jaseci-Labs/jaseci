@@ -286,6 +286,9 @@ def lsp() -> None:
     Starts the Jac Language Server that provides IDE features like code completion,
     error checking, and navigation for Jac files. Used by editor extensions.
 
+    Args:
+        This command takes no parameters.
+
     Examples:
         jac lsp
     """
@@ -457,6 +460,9 @@ def clean() -> None:
     Removes the __jac_gen__, __pycache__, and other temporary folders created
     during Jac compilation and execution. Helps maintain a clean project directory
     and can resolve certain caching-related issues.
+
+    Args:
+        This command takes no parameters.
 
     Examples:
         jac clean

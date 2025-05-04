@@ -4,11 +4,13 @@ import contextlib
 import inspect
 import io
 import os
+import re
 import subprocess
 import sys
 import traceback
 
 from jaclang.cli import cli
+from jaclang.cli.cmdreg import cmd_registry
 from jaclang.runtimelib.builtin import dotgen
 from jaclang.utils.test import TestCase
 
@@ -548,3 +550,54 @@ class JacCliTests(TestCase):
                 self.assertNotIn("Passed successfully.", stdout)
                 self.assertIn("F", stderr)
         os.remove(test_file)
+
+    def test_cli_docstring_parameters(self) -> None:
+        """Test that all CLI command parameters are documented in their docstrings."""
+        # Get all registered CLI commands
+        commands = {}
+        for name, _ in cmd_registry.registry.items():
+            # Skip commands that might be registered from outside cli.py
+            if hasattr(cli, name):
+                commands[name] = getattr(cli, name)
+
+        missing_params = {}
+
+        for cmd_name, cmd_func in commands.items():
+            # Get function parameters from signature
+            signature_params = set(inspect.signature(cmd_func).parameters.keys())
+
+            # Parse docstring to extract documented parameters
+            docstring = cmd_func.__doc__ or ""
+
+            # Check if the docstring has an Args section
+            args_match = re.search(r"Args:(.*?)(?:\n\n|\Z)", docstring, re.DOTALL)
+            if not args_match:
+                missing_params[cmd_name] = list(signature_params)
+                continue
+
+            args_section = args_match.group(1)
+
+            # Extract parameter names from the Args section
+            # Looking for patterns like "param_name: Description" or "param_name (type): Description"
+            doc_params = set()
+            for line in args_section.strip().split("\n"):
+                line = line.strip()
+                if not line:
+                    continue
+
+                # Match parameter name at the beginning of the line
+                param_match = re.match(r"\s*([a-zA-Z0-9_]+)(?:\s*\([^)]*\))?:\s*", line)
+                if param_match:
+                    doc_params.add(param_match.group(1))
+
+            # Find parameters that are in the signature but not in the docstring
+            undocumented_params = signature_params - doc_params
+            if undocumented_params:
+                missing_params[cmd_name] = list(undocumented_params)
+
+        # Assert that there are no missing parameters
+        self.assertEqual(
+            missing_params,
+            {},
+            f"The following CLI commands have undocumented parameters: {missing_params}",
+        )
