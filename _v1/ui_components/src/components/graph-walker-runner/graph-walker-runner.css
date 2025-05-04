@@ -1,8 +1,0 @@
-:host {
-  display: block;
-}
-
-.test :empty:not(:focus) {
-background: red;
-}
-

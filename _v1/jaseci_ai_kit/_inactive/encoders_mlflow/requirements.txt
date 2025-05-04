@@ -1,5 +1,0 @@
-transformers
-sentence-transformers
-pytorch
-fastapi
-uvicorn

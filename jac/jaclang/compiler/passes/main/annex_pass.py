@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class JacAnnexManager(Transform[uni.Module, uni.Module]):
+class JacAnnexPass(Transform[uni.Module, uni.Module]):
     """Handles loading and attaching of annex files (.impl.jac and .test.jac)."""
 
     def transform(self, ir_in: uni.Module) -> uni.Module:

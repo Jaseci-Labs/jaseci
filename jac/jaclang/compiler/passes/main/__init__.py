@@ -1,6 +1,6 @@
 """Collection of passes for Jac IR."""
 
-from .annex_pass import JacAnnexManager  # noqa: I100
+from .annex_pass import JacAnnexPass  # noqa: I100
 from .sym_tab_build_pass import SymTabBuildPass, UniPass  # noqa: I100
 from .def_use_pass import DefUsePass  # noqa: I100
 from .import_pass import JacImportPass, PyImportPass  # noqa: I100
@@ -15,7 +15,7 @@ from .schedules import CompilerMode, type_checker_sched  # noqa: I100
 
 __all__ = [
     "UniPass",
-    "JacAnnexManager",
+    "JacAnnexPass",
     "JacImportPass",
     "PyImportPass",
     "SymTabBuildPass",
