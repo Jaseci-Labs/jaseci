@@ -75,4 +75,3 @@ flowchart TB
     style CompilerIntegration fill:#2d333b,stroke:#30363d,color:#adbac7
     style IDEServices fill:#2d333b,stroke:#30363d,color:#adbac7
     style LanguageServer fill:#2d333b,stroke:#30363d,color:#adbac7
-</code_block_to_apply_changes_from>
