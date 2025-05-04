@@ -4,8 +4,10 @@ import io
 import sys
 
 import jaclang.compiler.unitree as uni
+from jaclang import JacMachine as Jac
 from jaclang.cli import cli
 from jaclang.compiler.program import JacProgram
+from jaclang.runtimelib.machinestate import JacMachineState
 from jaclang.utils.test import TestCase
 
 
@@ -14,6 +16,11 @@ class DeclImplMatchPassTests(TestCase):
 
     def setUp(self) -> None:
         """Set up test."""
+        self.mach = JacMachineState(self.fixture_abs_path("./"))
+        Jac.attach_program(
+            self.mach,
+            JacProgram(),
+        )
         return super().setUp()
 
     def test_parameter_count_mismatch(self) -> None:
@@ -84,38 +91,41 @@ class DeclImplMatchPassTests(TestCase):
         for i in state.get_all_sub_nodes(uni.ArchRef):
             self.assertIsNotNone(i.sym)
 
-    def test_obj_hasvar_initialization(self) -> None:
+    def test_single_impl_annex(self) -> None:
         """Basic test for pass."""
-        (out := JacProgram()).compile(
-            self.fixture_abs_path("uninitialized_hasvars.jac")
+        mypass = JacProgram().compile(
+            self.examples_abs_path("manual_code/circle_pure.jac")
         )
-        self.assertTrue(out.errors_had)
+        self.assertEqual(mypass.pp().count("AbilityDef - (o)Circle.(c)area"), 1)
 
-        expected_stdout_values = (
-            "Non default attribute 'var3' follows default attribute",
-            "    4 |     has var1: int;",
-            "    5 |     has var2: int = 42;",
-            "    6 |     has var3: int; # <-- This should be syntax error.",
-            "      |         ^^^^",
-            "    7 | }",
-            'Missing "postinit" method required by un initialized attribute(s).',
-            "   11 | obj Test2 {",
-            "   12 |     has var1: str;",
-            "   13 |     has var2: int by postinit;",
-            "      |         ^^^^",
-            "   14 | }",
-            "Non default attribute 'var4' follows default attribute",
-            "   19 |     has var2: int = 42;",
-            "   20 |     has var3: int by postinit;  # <-- This is fine.",
-            "   21 |     has var4: int;  # <-- This should be syntax error.",
-            "      |         ^^^^",
-            "   22 |",
-            "   23 |     can postinit() {",
-        )
+    def test_impl_decl_resolution_fix(self) -> None:
+        """Test walking through edges and nodes."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(self.mach, "mtest", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("2.0\n", stdout_value)
 
-        errors_output = ""
-        for error in out.errors_had:
-            errors_output += error.pretty_print() + "\n"
+    def test_impl_grab(self) -> None:
+        """Test walking through edges."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(self.mach, "impl_grab", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("1.414", stdout_value)
 
-        for exp in expected_stdout_values:
-            self.assertIn(exp, errors_output)
+    def test_nested_impls(self) -> None:
+        """Test complex nested impls."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(self.mach, "nested_impls", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("Hello,from bar in kk", stdout_value[0])
+        self.assertIn("Greeting: Hello, World!", stdout_value[1])
+        self.assertIn("Repeated: Hello", stdout_value[2])
+        self.assertIn("Hello, World!", stdout_value[3])
+        self.assertIn("Last message:!", stdout_value[4])
+        self.assertIn("Final message:!", stdout_value[5])

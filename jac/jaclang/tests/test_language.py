@@ -462,15 +462,6 @@ class JacLanguageTests(TestCase):
         self.assertIn("node_a(val=2)", stdout_value)
         self.assertIn("[node_a(val=42), node_a(val=42)]\n", stdout_value)
 
-    def test_impl_grab(self) -> None:
-        """Test walking through edges."""
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-        Jac.jac_import(self.mach, "impl_grab", base_path=self.fixture_abs_path("./"))
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        self.assertIn("1.414", stdout_value)
-
     def test_tuple_of_tuple_assign(self) -> None:
         """Test walking through edges."""
         captured_output = io.StringIO()
@@ -559,15 +550,6 @@ class JacLanguageTests(TestCase):
         mypass = JacProgram().compile(self.fixture_abs_path("./slice_vals.jac"))
         self.assertIn("Annotated[Str, INT, BLAH]", mypass.gen.py)
         self.assertIn("tuple[int, Optional[type], Optional[tuple]]", mypass.gen.py)
-
-    def test_impl_decl_resolution_fix(self) -> None:
-        """Test walking through edges and nodes."""
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-        Jac.jac_import(self.mach, "mtest", base_path=self.fixture_abs_path("./"))
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        self.assertIn("2.0\n", stdout_value)
 
     def test_enum_inside_arch(self) -> None:
         """Test Enum as member stmt."""
@@ -1034,13 +1016,6 @@ class JacLanguageTests(TestCase):
         mypass = JacProgram().compile(self.fixture_abs_path("byllmissue.jac"))
         self.assertIn("2:5 - 4:8", mypass.pp())
 
-    def test_single_impl_annex(self) -> None:
-        """Basic test for pass."""
-        mypass = JacProgram().compile(
-            self.examples_abs_path("manual_code/circle_pure.jac")
-        )
-        self.assertEqual(mypass.pp().count("AbilityDef - (o)Circle.(c)area"), 1)
-
     def test_inherit_baseclass_sym(self) -> None:
         """Basic test for symtable support for inheritance."""
         mypass = JacProgram().compile(
@@ -1342,20 +1317,6 @@ class JacLanguageTests(TestCase):
             captured_output.getvalue(),
         )
 
-    def test_nested_impls(self) -> None:
-        """Test complex nested impls."""
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-        Jac.jac_import(self.mach, "nested_impls", base_path=self.fixture_abs_path("./"))
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue().split("\n")
-        self.assertIn("Hello,from bar in kk", stdout_value[0])
-        self.assertIn("Greeting: Hello, World!", stdout_value[1])
-        self.assertIn("Repeated: Hello", stdout_value[2])
-        self.assertIn("Hello, World!", stdout_value[3])
-        self.assertIn("Last message:!", stdout_value[4])
-        self.assertIn("Final message:!", stdout_value[5])
-
     def test_connect_traverse_syntax(self) -> None:
         """Test connect traverse syntax."""
         captured_output = io.StringIO()
@@ -1466,3 +1427,39 @@ class JacLanguageTests(TestCase):
 
             stdout_value = captured_output.getvalue()
             self.assertIn("JACPATH module loaded!", stdout_value)
+
+    def test_obj_hasvar_initialization(self) -> None:
+        """Basic test for pass."""
+        (out := JacProgram()).compile(
+            self.fixture_abs_path("uninitialized_hasvars.jac")
+        )
+        self.assertTrue(out.errors_had)
+
+        expected_stdout_values = (
+            "Non default attribute 'var3' follows default attribute",
+            "    4 |     has var1: int;",
+            "    5 |     has var2: int = 42;",
+            "    6 |     has var3: int; # <-- This should be syntax error.",
+            "      |         ^^^^",
+            "    7 | }",
+            'Missing "postinit" method required by un initialized attribute(s).',
+            "   11 | obj Test2 {",
+            "   12 |     has var1: str;",
+            "   13 |     has var2: int by postinit;",
+            "      |         ^^^^",
+            "   14 | }",
+            "Non default attribute 'var4' follows default attribute",
+            "   19 |     has var2: int = 42;",
+            "   20 |     has var3: int by postinit;  # <-- This is fine.",
+            "   21 |     has var4: int;  # <-- This should be syntax error.",
+            "      |         ^^^^",
+            "   22 |",
+            "   23 |     can postinit() {",
+        )
+
+        errors_output = ""
+        for error in out.errors_had:
+            errors_output += error.pretty_print() + "\n"
+
+        for exp in expected_stdout_values:
+            self.assertIn(exp, errors_output)
