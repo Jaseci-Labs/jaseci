@@ -18,7 +18,14 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
     def transform(self, ir_in: uni.Module) -> uni.Module:
         """Connect Decls and Defs."""
         self.cur_node = ir_in
-        self.connect_def_impl(ir_in.sym_tab)
+
+        # Process implementations within the main module
+        self.connect_impls(ir_in.sym_tab, ir_in.sym_tab)
+
+        # Process implementations from impl_mod modules
+        for impl_module in ir_in.impl_mod:
+            self.connect_impls(impl_module.sym_tab, ir_in.sym_tab)
+
         self.check_architypes(ir_in)
         return ir_in
 
@@ -33,29 +40,41 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
                 return candidate
         return None
 
-    def connect_def_impl(self, sym_tab: UniScopeNode) -> None:
-        """Connect Decls and Defs."""
-        for sym in sym_tab.names_in_scope.values():
+    def connect_impls(
+        self, source_sym_tab: UniScopeNode, target_sym_tab: UniScopeNode
+    ) -> None:
+        """Connect implementations from source symbol table to declarations in target symbol table.
+
+        When source_sym_tab and target_sym_tab are the same, this connects within the same module.
+        When different, it connects implementations from impl_mod to declarations in the main module.
+        """
+        # Process all symbols in the source symbol table
+        for sym in source_sym_tab.names_in_scope.values():
             if not isinstance(sym.decl.name_of, uni.AstImplOnlyNode):
                 continue
-            # currently strips the type info from impls
+
+            # Extract architype references
             arch_refs = [x[3:] for x in sym.sym_name.split(".")]
             name_of_links: list[uni.NameAtom] = []  # to link archref names to decls
-            lookup = sym_tab.lookup(arch_refs[0])
-            # If below may need to be a while instead of if to skip over local
-            # import name collisions (see test: test_impl_decl_resolution_fix)
+
+            # Look up the architype in the target symbol table
+            lookup = target_sym_tab.lookup(arch_refs[0])
+
+            # Skip over local import name collisions
             if lookup and not isinstance(lookup.decl.name_of, uni.AstImplNeedingNode):
                 lookup = (
-                    sym_tab.parent_scope.lookup(arch_refs[0])
-                    if sym_tab.parent_scope
-                    else sym_tab.lookup(arch_refs[0])
+                    target_sym_tab.parent_scope.lookup(arch_refs[0])
+                    if target_sym_tab.parent_scope
+                    else target_sym_tab.lookup(arch_refs[0])
                 )
+
             decl_node = (
                 self.defn_lookup(lookup)
                 if len(arch_refs) == 1 and lookup
                 else lookup.defn[-1] if lookup else None
             )
             name_of_links.append(decl_node) if decl_node else None
+
             for name in arch_refs[1:]:
                 if decl_node:
                     lookup = (
@@ -71,6 +90,7 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
                     name_of_links.append(decl_node) if decl_node else None
                 else:
                     break
+
             if not decl_node:
                 continue
             elif isinstance(decl_node, uni.Ability) and decl_node.is_abstract:
@@ -79,6 +99,7 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
                     decl_node,
                 )
                 continue
+
             if not isinstance(
                 valid_decl := decl_node.name_of, uni.AstImplNeedingNode
             ) or not (valid_decl.sym_tab and sym.decl.name_of.sym_tab):
@@ -92,15 +113,25 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
             valid_decl.body = sym.decl.name_of
             sym.decl.name_of.decl_link = valid_decl
             for idx, a in enumerate(sym.decl.name_of.target.archs):
-                a.name_spec.name_of = name_of_links[idx].name_of
-                a.name_spec.sym = name_of_links[idx].sym
+                if idx < len(name_of_links) and name_of_links[idx]:
+                    a.name_spec.name_of = name_of_links[idx].name_of
+                    a.name_spec.sym = name_of_links[idx].sym
             sym.decl.name_of.sym_tab.names_in_scope.update(
                 valid_decl.sym_tab.names_in_scope
             )
             valid_decl.sym_tab.names_in_scope = sym.decl.name_of.sym_tab.names_in_scope
 
-        for i in sym_tab.kid_scope:
-            self.connect_def_impl(i)
+        # Process kid scopes recursively
+        for source_scope in source_sym_tab.kid_scope:
+            # If source and target are the same, process within the same scope
+            if source_sym_tab is target_sym_tab:
+                self.connect_impls(source_scope, source_scope)
+            else:
+                # Otherwise, try to find corresponding scopes by name
+                for target_scope in target_sym_tab.kid_scope:
+                    if source_scope.nix_name == target_scope.nix_name:
+                        self.connect_impls(source_scope, target_scope)
+                        break
 
     def validate_params_match(self, sym: Symbol, valid_decl: uni.AstSymbolNode) -> None:
         """Validate if the parameters match."""
