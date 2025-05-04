@@ -10,14 +10,11 @@ class Settings:
     """Main settings of Jac lang."""
 
     # Debug configuration
-    fuse_type_info_debug: bool = False
     filter_sym_builtins: bool = True
     ast_symbol_info_detailed: bool = False
     pass_timer: bool = False
     collect_py_dep_debug: bool = False
     print_py_raised_ast: bool = False
-    py_import_pass_debug: bool = False
-    inherit_pass_debug: bool = False
 
     # Compiler configuration
     disable_mtllm: bool = False

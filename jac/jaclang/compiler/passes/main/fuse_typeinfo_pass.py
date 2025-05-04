@@ -13,7 +13,6 @@ import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Constants, Tokens
 from jaclang.compiler.passes import UniPass
 from jaclang.compiler.unitree import UniScopeNode
-from jaclang.settings import settings
 from jaclang.utils.helpers import pascal_to_snake
 from jaclang.vendor.mypy.nodes import Node as VNode  # bit of a hack
 
@@ -39,18 +38,11 @@ class FuseTypeInfoPass(UniPass):
         if isinstance(node, uni.Expr):
             self.enter_expr(node)
 
-    def __debug_print(self, msg: str) -> None:
-        if settings.fuse_type_info_debug:
-            self.log_info("FuseTypeInfo::" + msg)
-
     def __call_type_handler(self, mypy_type: MypyTypes.Type) -> Optional[str]:
         mypy_type_name = pascal_to_snake(mypy_type.__class__.__name__)
         type_handler_name = f"get_type_from_{mypy_type_name}"
         if hasattr(self, type_handler_name):
             return getattr(self, type_handler_name)(mypy_type)
-        self.__debug_print(
-            f'"MypyTypes::{mypy_type.__class__.__name__}" isn\'t supported yet'
-        )
         return None
 
     def __set_type_sym_table_link(self, node: uni.AstSymbolNode) -> None:
@@ -84,63 +76,35 @@ class FuseTypeInfoPass(UniPass):
         func: Callable[[FuseTypeInfoPass, T], None],
     ) -> Callable[[FuseTypeInfoPass, T], None]:
         def node_handler(self: FuseTypeInfoPass, node: T) -> None:
-            if not isinstance(node, uni.AstSymbolNode):
-                self.__debug_print(
-                    f"Warning {node.__class__.__name__} is not an AstSymbolNode"
-                )
+            jac_node_str = f'jac node "{node.loc}::{node.__class__.__name__}'
+            if hasattr(node, "value"):
+                jac_node_str += f'::{node.value}"'
+            else:
+                jac_node_str += '"'
 
-            try:
-                jac_node_str = f'jac node "{node.loc}::{node.__class__.__name__}'
-                if hasattr(node, "value"):
-                    jac_node_str += f'::{node.value}"'
-                else:
-                    jac_node_str += '"'
+            # Jac node has only one mypy node linked to it
+            if len(node.gen.mypy_ast) == 1:
+                func(self, node)
+                self.__set_type_sym_table_link(node)
 
-                # Jac node has only one mypy node linked to it
-                if len(node.gen.mypy_ast) == 1:
-                    func(self, node)
-                    self.__set_type_sym_table_link(node)
+            # Jac node has multiple mypy nodes linked to it
+            elif len(node.gen.mypy_ast) > 1:
+                # Checking that these nodes are duplicate or not
+                temp = []
+                for n in node.gen.mypy_ast:
+                    n_id = f"{type(node)}"
+                    n_id += f"::{n.line}::{n.column}"
+                    n_id += f" - {n.end_line}::{n.end_column}"
+                    if n_id not in temp:
+                        temp.append(n_id)
 
-                # Jac node has multiple mypy nodes linked to it
-                elif len(node.gen.mypy_ast) > 1:
-                    # Checking that these nodes are duplicate or not
-                    temp = []
-                    for n in node.gen.mypy_ast:
-                        n_id = f"{type(node)}"
-                        n_id += f"::{n.line}::{n.column}"
-                        n_id += f" - {n.end_line}::{n.end_column}"
-                        if n_id not in temp:
-                            temp.append(n_id)
+                func(self, node)
+                self.__set_type_sym_table_link(node)
 
-                    # Check the number of unique mypy nodes linked
-                    if len(temp) > 1:
-                        self.__debug_print(
-                            f"{jac_node_str} has multiple mypy nodes associated to it"
-                        )
-                    else:
-                        self.__debug_print(
-                            f"{jac_node_str} has duplicate mypy nodes associated to it"
-                        )
-                        func(self, node)
-                        self.__set_type_sym_table_link(node)
-
-                # Special handing for BuiltinType
-                elif isinstance(node, uni.BuiltinType):
-                    func(self, node)  # type: ignore
-                    self.__set_type_sym_table_link(node)
-
-                # Jac node doesn't have mypy nodes linked to it
-                else:
-                    self.__debug_print(
-                        f"{jac_node_str} doesn't have mypy node associated to it"
-                    )
-
-            except AttributeError as e:
-                if settings.fuse_type_info_debug:
-                    raise e
-                self.__debug_print(
-                    f'{node.loc}: Internal error happened while parsing "{e.obj.__class__.__name__}"'
-                )
+            # Special handing for BuiltinType
+            elif isinstance(node, uni.BuiltinType):
+                func(self, node)  # type: ignore
+                self.__set_type_sym_table_link(node)
 
         return node_handler
 
@@ -153,8 +117,6 @@ class FuseTypeInfoPass(UniPass):
                     self.__call_type_handler(self.node_type_hash[mypy_node])
                     or node.name_spec.expr_type
                 )
-            else:
-                self.__debug_print(f"{node.loc} MemberExpr type is not found")
 
         elif hasattr(mypy_node, "node"):
             # orig_node = mypy_node
@@ -180,12 +142,6 @@ class FuseTypeInfoPass(UniPass):
             elif mypy_node is None:
                 node.name_spec.expr_type = "None"
 
-            else:
-                self.__debug_print(
-                    f'"{node.loc}::{node.__class__.__name__}" mypy (with node attr) node isn\'t supported'
-                    f"{type(mypy_node)}"
-                )
-
         else:
             if isinstance(mypy_node, MypyNodes.ClassDef):
                 node.name_spec.expr_type = mypy_node.fullname
@@ -203,11 +159,6 @@ class FuseTypeInfoPass(UniPass):
                 node.name_spec.expr_type = (
                     self.__call_type_handler(mypy_node.func.type.ret_type)
                     or node.name_spec.expr_type
-                )
-            else:
-                self.__debug_print(
-                    f'"{node.loc}::{node.__class__.__name__}" mypy node isn\'t supported'
-                    f"{type(mypy_node)}"
                 )
 
     def __check_builltin_symbol(self, node: uni.NameAtom) -> None:
@@ -309,12 +260,10 @@ class FuseTypeInfoPass(UniPass):
     @__handle_node
     def enter_module_path(self, node: uni.ModulePath) -> None:
         """Pass handler for ModulePath nodes."""
-        self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
     def enter_module_item(self, node: uni.ModuleItem) -> None:
         """Pass handler for ModuleItem nodes."""
-        self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
     def enter_architype(self, node: uni.Architype) -> None:
@@ -324,7 +273,6 @@ class FuseTypeInfoPass(UniPass):
     @__handle_node
     def enter_arch_def(self, node: uni.ArchDef) -> None:
         """Pass handler for ArchDef nodes."""
-        self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
     def enter_enum(self, node: uni.Enum) -> None:
@@ -334,7 +282,6 @@ class FuseTypeInfoPass(UniPass):
     @__handle_node
     def enter_enum_def(self, node: uni.EnumDef) -> None:
         """Pass handler for EnumDef nodes."""
-        self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
     def enter_ability(self, node: uni.Ability) -> None:
@@ -344,11 +291,6 @@ class FuseTypeInfoPass(UniPass):
                 self.__call_type_handler(node.gen.mypy_ast[0].type.ret_type)
                 or node.name_spec.expr_type
             )
-        else:
-            self.__debug_print(
-                f"{node.loc}: Can't get type of an ability from mypy node other than Ability. "
-                f"{type(node.gen.mypy_ast[0])}"
-            )
 
     @__handle_node
     def enter_ability_def(self, node: uni.AbilityDef) -> None:
@@ -357,11 +299,6 @@ class FuseTypeInfoPass(UniPass):
             node.name_spec.expr_type = (
                 self.__call_type_handler(node.gen.mypy_ast[0].type.ret_type)
                 or node.name_spec.expr_type
-            )
-        else:
-            self.__debug_print(
-                f"{node.loc}: Can't get type of an AbilityDef from mypy node other than FuncDef. "
-                f"{type(node.gen.mypy_ast[0])}"
             )
 
     @__handle_node
@@ -374,10 +311,6 @@ class FuseTypeInfoPass(UniPass):
                     self.__call_type_handler(mypy_node.variable.type)
                     or node.name_spec.expr_type
                 )
-        else:
-            self.__debug_print(
-                f"{node.loc}: Can't get parameter value from mypyNode other than Argument"
-            )
 
     # TODO: support all lhs if needed
     @__handle_node
@@ -390,14 +323,6 @@ class FuseTypeInfoPass(UniPass):
                 node.name_spec.expr_type = (
                     self.__call_type_handler(n.type) or node.name_spec.expr_type
                 )
-            else:
-                self.__debug_print(
-                    "Getting type of 'AssignmentStmt' is only supported with Var and FuncDef"
-                )
-        else:
-            self.__debug_print(
-                "Getting type of 'HasVar' is only supported with AssignmentStmt"
-            )
 
     def exit_has_var(self, node: uni.HasVar) -> None:
         """Pass handler for HasVar nodes."""
@@ -412,7 +337,6 @@ class FuseTypeInfoPass(UniPass):
     @__handle_node
     def enter_f_string(self, node: uni.FString) -> None:
         """Pass handler for FString nodes."""
-        self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
     def enter_arch_ref(self, node: uni.ArchRef) -> None:
@@ -425,11 +349,6 @@ class FuseTypeInfoPass(UniPass):
             mypy_node2: MypyNodes.FuncDef = node.gen.mypy_ast[0]
             node.name_spec.expr_type = (
                 self.__call_type_handler(mypy_node2.type) or node.name_spec.expr_type
-            )
-        else:
-            self.__debug_print(
-                f"{node.loc}: Can't get ArchRef value from mypyNode other than ClassDef "
-                f"type(node.gen.mypy_ast[0])"
             )
 
     @__handle_node
@@ -452,12 +371,10 @@ class FuseTypeInfoPass(UniPass):
     @__handle_node
     def enter_filter_compr(self, node: uni.FilterCompr) -> None:
         """Pass handler for FilterCompr nodes."""
-        self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
     def enter_assign_compr(self, node: uni.AssignCompr) -> None:
         """Pass handler for AssignCompr nodes."""
-        self.__debug_print(f"Getting type not supported in {type(node)}")
 
     @__handle_node
     def enter_int(self, node: uni.Int) -> None:
@@ -657,6 +574,4 @@ class FuseTypeInfoPass(UniPass):
             mod_table = mod_ast.sym_tab
             if mod_table.nix_name == typ.split(".")[0]:
                 return mod_table
-
-        self.__debug_print(f"Couldn't get a symbol for {typ}")
         return None
