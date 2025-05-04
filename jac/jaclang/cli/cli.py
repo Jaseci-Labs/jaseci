@@ -161,9 +161,7 @@ def run(
 
 
 @cmd_registry.register
-def get_object(
-    filename: str, id: str, session: str = "", main: bool = True, cache: bool = True
-) -> dict:
+def get_object(filename: str, id: str, session: str = "", main: bool = True) -> dict:
     """Get the object with the specified id.
 
     Retrieves a specific object from a Jac program by its unique identifier.
@@ -174,7 +172,6 @@ def get_object(
         id: Unique identifier of the object to retrieve
         session: Optional session identifier for persistent state
         main: Treat the module as __main__ (default: True)
-        cache: Use cached compilation if available (default: True)
 
     Examples:
         jac get_object myprogram.jac obj123
