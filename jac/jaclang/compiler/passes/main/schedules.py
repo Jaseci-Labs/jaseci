@@ -15,6 +15,9 @@ from .pyjac_ast_link_pass import PyJacAstLinkPass  # noqa: I100
 from .fuse_typeinfo_pass import FuseTypeInfoPass  # noqa: I100
 from .access_modifier_pass import AccessCheckPass  # noqa: I100
 from .inheritance_pass import InheritancePass  # noqa: I100
+from .type_binder_pass import TypeBinderPass  # noqa: I100
+from .type_evaluator_pass import TypeEvaluatorPass  # noqa: I100
+from .type_checker_pass import TypeCheckerPass  # noqa: I100
 
 
 class CompilerMode(Enum):
@@ -35,7 +38,10 @@ py_code_gen = [
 
 type_checker_sched = [
     InheritancePass,
-    FuseTypeInfoPass,
+    TypeBinderPass,  # Bind types to AST nodes
+    TypeEvaluatorPass,  # Infer types for expressions
+    TypeCheckerPass,  # Check type compatibility
+    FuseTypeInfoPass,  # For backward compatibility
     AccessCheckPass,
 ]
 
