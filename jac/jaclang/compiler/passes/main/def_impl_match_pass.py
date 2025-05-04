@@ -19,10 +19,7 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
         """Connect Decls and Defs."""
         self.cur_node = ir_in
 
-        # Process implementations within the main module
         self.connect_impls(ir_in.sym_tab, ir_in.sym_tab)
-
-        # Process implementations from impl_mod modules
         for impl_module in ir_in.impl_mod:
             self.connect_impls(impl_module.sym_tab, ir_in.sym_tab)
 
