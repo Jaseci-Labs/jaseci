@@ -16,6 +16,8 @@ from .pyjac_ast_link_pass import PyJacAstLinkPass  # noqa: I100
 from .fuse_typeinfo_pass import FuseTypeInfoPass  # noqa: I100
 from .access_modifier_pass import AccessCheckPass  # noqa: I100
 from .inheritance_pass import InheritancePass  # noqa: I100
+from ..typecheck import JTypeAnnotatePass  # noqa: I100
+from ..typecheck import SemanticAnalysisPass
 
 
 class CompilerMode(Enum):
@@ -30,6 +32,8 @@ class CompilerMode(Enum):
 __all__ = [
     "UniPass",
     "JacAnnexPass",
+    "JTypeAnnotatePass",
+    "SemanticAnalysisPass",
     "JacImportPass",
     "PyImportPass",
     "SymTabBuildPass",

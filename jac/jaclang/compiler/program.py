@@ -21,6 +21,8 @@ from jaclang.compiler.passes.main import (
     JacTypeCheckPass,
     PyBytecodeGenPass,
     PyCollectDepsPass,
+    JTypeAnnotatePass,
+    SemanticAnalysisPass,
     PyImportPass,
     PyJacAstLinkPass,
     PyastBuildPass,
@@ -195,6 +197,8 @@ class JacProgram:
         py_code_gen = [
             DeclImplMatchPass,
             DefUsePass,
+            JTypeAnnotatePass,
+            SemanticAnalysisPass,
             PyastGenPass,
             PyJacAstLinkPass,
             PyBytecodeGenPass,
