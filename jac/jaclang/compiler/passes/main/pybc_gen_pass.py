@@ -9,29 +9,35 @@ relevant files.
 import ast as ast3
 import marshal
 
-
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.passes import UniPass
+from jaclang.compiler.passes.transform import Transform
 
 
-class PyBytecodeGenPass(UniPass):
+class PyBytecodeGenPass(Transform[uni.Module, uni.Module]):
     """Python and bytecode file printing pass."""
 
-    def before_pass(self) -> None:
-        return super().before_pass()
+    def transform(self, ir_in: uni.Module) -> uni.Module:
+        """Transform AST into Python bytecode."""
+        self.process_modules(ir_in)
+        return ir_in
 
-    def enter_module(self, node: uni.Module) -> None:
-        mods = [node] + self.get_all_sub_nodes(node, uni.Module)
+    def process_modules(self, root_module: uni.Module) -> None:
+        """Process all modules in the program."""
+        mods = [root_module] + root_module.get_all_sub_nodes(uni.Module)
+
         for mod in mods:
-            if not mod.gen.py_ast or not isinstance(node.gen.py_ast[0], ast3.Module):
-                self.log_error(
-                    f"Unable to find ast for module {node.loc.mod_path}.",
-                    node,
-                )
-                continue
-            root_node = mod.gen.py_ast[0]
-            assert isinstance(root_node, ast3.Module)
-            mod.gen.py_bytecode = marshal.dumps(
-                compile(source=root_node, filename=mod.loc.mod_path, mode="exec")
-            )
-        self.terminate()
+            self.cur_node = mod
+            self.compile_module_to_bytecode(mod)
+
+    def compile_module_to_bytecode(self, mod: uni.Module) -> None:
+        """Compile a module to Python bytecode."""
+        if not mod.gen.py_ast or not isinstance(mod.gen.py_ast[0], ast3.Module):
+            self.log_error(f"Unable to find ast for module {mod.loc.mod_path}.")
+            return
+
+        root_node = mod.gen.py_ast[0]
+        assert isinstance(root_node, ast3.Module)
+
+        mod.gen.py_bytecode = marshal.dumps(
+            compile(source=root_node, filename=mod.loc.mod_path, mode="exec")
+        )

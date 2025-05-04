@@ -684,8 +684,8 @@ class Expr(UniNode):
         <expr> if <expr> else <expr>  # ternary.
     """
 
-    def __init__(self, type_src: Optional[Expr] = None) -> None:
-        self.type_src = type_src or self  # Only used for ArchRef
+    def __init__(self, type_src_override: Optional[Expr] = None) -> None:
+        self.type_src = type_src_override or self  # Only used for ArchRef
         self._sym_type: str = "NoType"
         self._type_sym_tab: Optional[UniScopeNode] = None
 
@@ -3719,7 +3719,7 @@ class ArchRef(AtomExpr):
         self.arch_name = arch_name
         self.arch_type = arch_type
         UniNode.__init__(self, kid=kid)
-        Expr.__init__(self, type_src=arch_name)
+        Expr.__init__(self, type_src_override=arch_name)
         AstSymbolNode.__init__(
             self,
             sym_name=arch_name.sym_name,
