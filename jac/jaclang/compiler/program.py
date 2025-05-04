@@ -11,18 +11,22 @@ import jaclang.compiler.unitree as uni
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes import UniPass
 from jaclang.compiler.passes.main import (
+    AccessCheckPass,
     CompilerMode,
+    DeclImplMatchPass,
     DefUsePass,
+    FuseTypeInfoPass,
+    InheritancePass,
     JacAnnexPass,
     JacImportPass,
     JacTypeCheckPass,
     PyBytecodeGenPass,
     PyCollectDepsPass,
     PyImportPass,
+    PyJacAstLinkPass,
     PyastBuildPass,
+    PyastGenPass,
     SymTabBuildPass,
-    py_code_gen,
-    type_checker_sched,
 )
 from jaclang.compiler.passes.main.sym_tab_link_pass import SymTabLinkPass
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
@@ -32,6 +36,20 @@ from jaclang.utils.log import logging
 
 
 logger = logging.getLogger(__name__)
+
+py_code_gen = [
+    DeclImplMatchPass,
+    DefUsePass,
+    PyastGenPass,
+    PyJacAstLinkPass,
+    PyBytecodeGenPass,
+]
+
+type_checker_sched = [
+    InheritancePass,
+    FuseTypeInfoPass,
+    AccessCheckPass,
+]
 
 
 class JacProgram:
