@@ -10,7 +10,7 @@ import sys
 import traceback
 
 from jaclang.cli import cli
-from jaclang.cli.cmdreg import cmd_registry
+from jaclang.cli.cmdreg import cmd_registry, extract_param_descriptions
 from jaclang.runtimelib.builtin import dotgen
 from jaclang.utils.test import TestCase
 
@@ -575,3 +575,53 @@ class JacCliTests(TestCase):
             {},
             f"The following CLI commands have undocumented parameters: {missing_params}",
         )
+
+    def test_cli_help_uses_docstring_descriptions(self) -> None:
+        """Test that CLI help text uses parameter descriptions from docstrings."""
+        # Get a command with well-documented parameters
+        test_commands = ["run", "dot", "test"]
+
+        for cmd_name in test_commands:
+            # Skip if command doesn't exist
+            if not hasattr(cli, cmd_name):
+                continue
+
+            cmd_func = getattr(cli, cmd_name)
+            docstring = cmd_func.__doc__ or ""
+
+            # Extract parameter descriptions from docstring
+            docstring_param_descriptions = extract_param_descriptions(docstring)
+
+            # Skip if no parameters are documented
+            if not docstring_param_descriptions:
+                continue
+
+            # Get help text for the command
+            captured_output = io.StringIO()
+            sys.stdout = captured_output
+
+            # Use subprocess to get the help text to ensure we're testing the actual CLI output
+            process = subprocess.Popen(
+                ["jac", cmd_name, "--help"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            help_text, _ = process.communicate()
+
+            sys.stdout = sys.__stdout__
+
+            # Check that each documented parameter description appears in the help text
+            for param_name, description in docstring_param_descriptions.items():
+                # The description might be truncated or formatted differently in the help text,
+                # so we'll just check for the first few words
+                description_start = description.split()[:3]
+                description_pattern = r"\s+".join(
+                    re.escape(word) for word in description_start
+                )
+                # Check if the description appears in the help text
+                self.assertRegex(
+                    help_text,
+                    description_pattern,
+                    f"Parameter description for '{param_name}' not found in help text for '{cmd_name}'",
+                )

@@ -6,7 +6,8 @@ import argparse
 import cmd
 import inspect
 import pprint
-from typing import Callable, Optional
+import re
+from typing import Callable, Dict, Optional
 
 
 class Command:
@@ -23,6 +24,57 @@ class Command:
     def call(self, *args: list, **kwargs: dict) -> str:
         """Call the associated function with the specified arguments and keyword arguments."""
         return self.func(*args, **kwargs)
+
+
+def extract_param_descriptions(docstring: str) -> Dict[str, str]:
+    """Extract parameter descriptions from a function's docstring.
+
+    Args:
+        docstring: The function's docstring
+
+    Returns:
+        A dictionary mapping parameter names to their descriptions
+    """
+    param_descriptions: dict[str, str] = {}
+
+    # Check if the docstring has an Args section
+    args_match = re.search(r"Args:(.*?)(?:\n\n|\Z)", docstring, re.DOTALL)
+    if not args_match:
+        return param_descriptions
+
+    args_section = args_match.group(1)
+
+    # Extract parameter descriptions from the Args section
+    # Looking for patterns like "param_name: Description" or "param_name (type): Description"
+    current_param = None
+    current_desc = []
+
+    for line in args_section.strip().split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+
+        # Match parameter name at the beginning of the line
+        param_match = re.match(r"\s*([a-zA-Z0-9_]+)(?:\s*\([^)]*\))?:\s*(.*)", line)
+        if param_match:
+            # Save the previous parameter if there was one
+            if current_param and current_desc:
+                param_descriptions[current_param] = " ".join(current_desc)
+                current_desc = []
+
+            # Start a new parameter
+            current_param = param_match.group(1)
+            if param_match.group(2):
+                current_desc.append(param_match.group(2))
+        elif current_param and line:
+            # Continue the description for the current parameter
+            current_desc.append(line)
+
+    # Save the last parameter
+    if current_param and current_desc:
+        param_descriptions[current_param] = " ".join(current_desc)
+
+    return param_descriptions
 
 
 class CommandRegistry:
@@ -81,44 +133,14 @@ class CommandRegistry:
                 else str(param.annotation)
             )
 
-            # Create a more descriptive help message based on parameter name
-            arg_descriptions = {
-                # Common parameter descriptions
-                "filename": f"{type_name} - Path to the file to process",
-                "path": f"{type_name} - Path to the file or directory",
-                "filepath": f"{type_name} - Path to the file to process",
-                "session": f"{type_name} - Session identifier for persistent state",
-                "main": f"{type_name} - Treat the module as __main__",
-                "cache": f"{type_name} - Use cached compilation if available",
-                "interp": f"{type_name} - Run in interpreter mode",
-                "outfile": f"{type_name} - Output file path",
-                "to_screen": f"{type_name} - Print output to screen instead of file",
-                "typecheck": f"{type_name} - Perform type checking",
-                "print_errs": f"{type_name} - Print detailed error messages",
-                "entrypoint": f"{type_name} - Name of the function to execute",
-                "args": f"{type_name} - Arguments to pass to the function",
-                "root": f"{type_name} - Root executor identifier",
-                "node": f"{type_name} - Starting node identifier",
-                "test_name": f"{type_name} - Name of the test to run (without 'test_' prefix)",
-                "filter": f"{type_name} - Filter pattern for test files",
-                "xit": f"{type_name} - Stop on first test failure",
-                "maxfail": f"{type_name} - Maximum number of test failures before stopping",
-                "directory": f"{type_name} - Directory containing test files",
-                "verbose": f"{type_name} - Show detailed output",
-                "tool": f"{type_name} - Name of the AST tool to run",
-                "initial": f"{type_name} - Starting node for graph traversal",
-                "depth": f"{type_name} - Maximum traversal depth (-1 for unlimited)",
-                "traverse": f"{type_name} - Whether to traverse the graph structure",
-                "connection": f"{type_name} - List of edge types to include",
-                "bfs": f"{type_name} - Use breadth-first search for traversal",
-                "edge_limit": f"{type_name} - Maximum number of edges to include",
-                "node_limit": f"{type_name} - Maximum number of nodes to include",
-                "saveto": f"{type_name} - Output file path",
-                "id": f"{type_name} - Unique identifier of the object to retrieve",
-            }
+            # Extract parameter descriptions from the docstring
+            docstring_param_descriptions = extract_param_descriptions(doc)
 
-            # Use the predefined description if available, otherwise use the type
-            arg_msg = arg_descriptions.get(param_name, f"{type_name}")
+            # Use docstring description if available, otherwise fallback to predefined or just type
+            if param_name in docstring_param_descriptions:
+                arg_msg = f"{type_name} - {docstring_param_descriptions[param_name]}"
+            else:
+                arg_msg = f"{type_name}"
             # shorthand is first character by default,
             # If already taken, use the first 2 characters
             shorthand = param_name[:1]
