@@ -28,10 +28,12 @@ def pre_build_hook(**kwargs: any) -> None:
         create_playground_zip()
     else:
         print(f"Zip file already exists: {PLAYGROUND_ZIP_PATH}. Skipping creation.")
-    with open(UNIIR_NODE_DOC, "w") as f:
-        f.write(AST_TOOL.autodoc_uninode())
-    with open(LANG_REF_DOC, "w") as f:
-        f.write(AST_TOOL.automate_ref())
+    if not os.path.exists(UNIIR_NODE_DOC):
+        with open(UNIIR_NODE_DOC, "w") as f:
+            f.write(AST_TOOL.autodoc_uninode())
+    if not os.path.exists(LANG_REF_DOC):
+        with open(LANG_REF_DOC, "w") as f:
+            f.write(AST_TOOL.automate_ref())
 
 
 def create_playground_zip() -> None:
