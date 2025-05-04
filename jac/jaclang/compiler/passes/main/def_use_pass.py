@@ -16,9 +16,6 @@ from jaclang.compiler.passes import UniPass
 class DefUsePass(UniPass):
     """Jac Ast build pass."""
 
-    def after_pass(self) -> None:
-        pass
-
     def enter_architype(self, node: uni.Architype) -> None:
         node.sym_tab.inherit_baseclasses_sym(node)
 
@@ -82,29 +79,8 @@ class DefUsePass(UniPass):
         chain = node.as_attr_list
         node.sym_tab.chain_use_lookup(chain)
 
-    def enter_func_call(self, node: uni.FuncCall) -> None:
-        pass
-
-    def enter_index_slice(self, node: uni.IndexSlice) -> None:
-        pass
-
     def enter_special_var_ref(self, node: uni.SpecialVarRef) -> None:
         node.sym_tab.use_lookup(node)
-
-    def enter_edge_op_ref(self, node: uni.EdgeOpRef) -> None:
-        pass
-
-    def enter_disconnect_op(self, node: uni.DisconnectOp) -> None:
-        pass
-
-    def enter_connect_op(self, node: uni.ConnectOp) -> None:
-        pass
-
-    def enter_filter_compr(self, node: uni.FilterCompr) -> None:
-        pass
-
-    def enter_token(self, node: uni.Token) -> None:
-        pass
 
     def enter_float(self, node: uni.Float) -> None:
         node.sym_tab.use_lookup(node)
