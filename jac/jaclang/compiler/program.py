@@ -37,20 +37,6 @@ from jaclang.utils.log import logging
 
 logger = logging.getLogger(__name__)
 
-py_code_gen = [
-    DeclImplMatchPass,
-    DefUsePass,
-    PyastGenPass,
-    PyJacAstLinkPass,
-    PyBytecodeGenPass,
-]
-
-type_checker_sched = [
-    InheritancePass,
-    FuseTypeInfoPass,
-    AccessCheckPass,
-]
-
 
 class JacProgram:
     """JacProgram to handle the Jac program-related functionalities."""
@@ -200,6 +186,15 @@ class JacProgram:
         mode: CompilerMode = CompilerMode.COMPILE,
     ) -> None:
         """Run premade passes on the module."""
+        py_code_gen = [
+            DeclImplMatchPass,
+            DefUsePass,
+            PyastGenPass,
+            PyJacAstLinkPass,
+            PyBytecodeGenPass,
+        ]
+        type_checker_sched = [InheritancePass, FuseTypeInfoPass, AccessCheckPass]
+
         final_pass: Optional[type[UniPass]] = None
         passes = py_code_gen if mode == CompilerMode.COMPILE else type_checker_sched
         for current_pass in passes:
