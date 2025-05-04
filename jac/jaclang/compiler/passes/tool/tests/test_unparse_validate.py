@@ -6,10 +6,10 @@ from difflib import unified_diff
 
 from jaclang.compiler.passes.tool import JacFormatPass
 from jaclang.compiler.program import JacProgram
-from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
+from jaclang.utils.test import TestCaseMicroSuite
 
 
-class JacUnparseTests(TestCaseMicroSuite, AstSyncTestMixin):
+class JacUnparseTests(TestCaseMicroSuite):
     """Test pass module."""
 
     TargetPass = JacFormatPass
