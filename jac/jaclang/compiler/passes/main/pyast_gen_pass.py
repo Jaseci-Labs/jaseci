@@ -337,7 +337,7 @@ class PyastGenPass(UniPass):
                 type_params=[],
             ),
         )
-        if node.loc.mod_path != self.ir_out.loc.mod_path:
+        if node.loc.mod_path.endswith(".test.jac"):
             func.decorator_list.append(
                 self.sync(
                     ast3.Call(

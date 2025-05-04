@@ -56,7 +56,6 @@ class JacAnnexPass(Transform[uni.Module, uni.Module]):
                     file_path=path, full_compile=False, mode=CompilerMode.COMPILE
                 )
                 if mod:
-                    node.add_kids_left(mod.kid, parent_update=True, pos_update=False)
                     node.impl_mod.append(mod)
 
             elif (
@@ -72,4 +71,3 @@ class JacAnnexPass(Transform[uni.Module, uni.Module]):
                 )
                 if mod:
                     node.test_mod.append(mod)
-                    node.add_kids_right(mod.kid, parent_update=True, pos_update=False)

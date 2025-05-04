@@ -55,26 +55,34 @@ class DeclImplMatchPassTests(TestCase):
         """Basic test for pass."""
         state = (out := JacProgram()).compile(self.fixture_abs_path("base.jac"))
         self.assertFalse(out.errors_had)
-        self.assertIn("(o)Test.(c)say_hi", state.sym_tab.names_in_scope)
+        self.assertIn("(o)Test.(c)say_hi", state.impl_mod[0].sym_tab.names_in_scope)
         self.assertIsNotNone(
-            state.sym_tab.names_in_scope["(o)Test.(c)say_hi"].decl.name_of.body
+            state.impl_mod[0]
+            .sym_tab.names_in_scope["(o)Test.(c)say_hi"]
+            .decl.name_of.body
         )
-        self.assertIn("(o)Test.(c)__init__", state.sym_tab.names_in_scope)
+        self.assertIn("(o)Test.(c)__init__", state.impl_mod[0].sym_tab.names_in_scope)
         self.assertIsNotNone(
-            state.sym_tab.names_in_scope["(o)Test.(c)__init__"].decl.name_of.body
+            state.impl_mod[0]
+            .sym_tab.names_in_scope["(o)Test.(c)__init__"]
+            .decl.name_of.body
         )
 
     def test_ability_connected_to_decl_post(self) -> None:
         """Basic test for pass."""
         state = (out := JacProgram()).compile(self.fixture_abs_path("base2.jac"))
         self.assertFalse(out.errors_had)
-        self.assertIn("(o)Test.(c)say_hi", state.sym_tab.names_in_scope)
+        self.assertIn("(o)Test.(c)say_hi", state.sym_tab.impl_mod[0].names_in_scope)
         self.assertIsNotNone(
-            state.sym_tab.names_in_scope["(o)Test.(c)say_hi"].decl.name_of.body
+            state.sym_tab.impl_mod[0]
+            .names_in_scope["(o)Test.(c)say_hi"]
+            .decl.name_of.body
         )
-        self.assertIn("(o)Test.(c)__init__", state.sym_tab.names_in_scope)
+        self.assertIn("(o)Test.(c)__init__", state.impl_mod[0].sym_tab.names_in_scope)
         self.assertIsNotNone(
-            state.sym_tab.names_in_scope["(o)Test.(c)__init__"].decl.name_of.body
+            state.impl_mod[0]
+            .sym_tab.names_in_scope["(o)Test.(c)__init__"]
+            .decl.name_of.body
         )
 
     def test_run_base2(self) -> None:
@@ -96,7 +104,9 @@ class DeclImplMatchPassTests(TestCase):
         mypass = JacProgram().compile(
             self.examples_abs_path("manual_code/circle_pure.jac")
         )
-        self.assertEqual(mypass.pp().count("AbilityDef - (o)Circle.(c)area"), 1)
+        self.assertEqual(
+            mypass.impl_mod[0].pp().count("AbilityDef - (o)Circle.(c)area"), 1
+        )
 
     def test_impl_decl_resolution_fix(self) -> None:
         """Test walking through edges and nodes."""
