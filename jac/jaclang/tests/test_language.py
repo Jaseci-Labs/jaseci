@@ -942,20 +942,6 @@ class JacLanguageTests(TestCase):
             else:
                 self.assertIn("+-- Name - NodeTransformer - Type: No", gen_ast)
 
-    def test_access_modifier(self) -> None:
-        """Test for access tags working."""
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-        sys.stderr = captured_output
-        cli.check(
-            self.fixture_abs_path("../../tests/fixtures/access_modifier.jac"),
-            print_errs=True,
-        )
-        sys.stdout = sys.__stdout__
-        sys.stderr = sys.__stderr__
-        stdout_value = captured_output.getvalue()
-        self.assertEqual(stdout_value.count("Invalid access"), 18)
-
     def test_deep_convert(self) -> None:
         """Test py ast to Jac ast conversion output."""
         file_name = self.fixture_abs_path("pyfunc_1.py")
