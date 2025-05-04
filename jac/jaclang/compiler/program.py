@@ -13,7 +13,7 @@ from jaclang.compiler.passes import UniPass
 from jaclang.compiler.passes.main import (
     CompilerMode,
     DefUsePass,
-    JacAnnexManager,
+    JacAnnexPass,
     JacImportPass,
     JacTypeCheckPass,
     PyBytecodeGenPass,
@@ -116,7 +116,7 @@ class JacProgram:
     ) -> uni.Module:
         """Convert a Jac file to an AST."""
         self.last_imported.append(mod_targ)
-        JacAnnexManager(ir_in=mod_targ, prog=self)
+        JacAnnexPass(ir_in=mod_targ, prog=self)
         SymTabBuildPass(ir_in=mod_targ, prog=self)
         if mode == CompilerMode.PARSE:
             return mod_targ
