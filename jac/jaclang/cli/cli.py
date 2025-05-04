@@ -8,6 +8,7 @@ import pickle
 import shutil
 import sys
 import types
+from pathlib import Path
 from typing import Optional
 
 import jaclang.compiler.unitree as uni
@@ -30,35 +31,48 @@ Jac.setup()
 
 @cmd_registry.register
 def format(path: str, outfile: str = "", to_screen: bool = False) -> None:
-    """Run the specified .jac file or format all .jac files in a given directory."""
+    """Format .jac files with improved code style.
 
-    def format_file(filename: str) -> None:
-        code_gen_format = JacProgram.jac_file_formatter(filename)
+    Args:
+        path: Path to a .jac file or directory containing .jac files
+        outfile: Optional output file path (when formatting a single file)
+        to_screen: Print formatted code to stdout instead of writing to file
+    """
+
+    def write_formatted_code(code: str, target_path: str) -> None:
+        """Write formatted code to the appropriate destination."""
         if to_screen:
-            print(code_gen_format)
+            print(code)
         elif outfile:
             with open(outfile, "w") as f:
-                f.write(code_gen_format)
+                f.write(code)
         else:
-            with open(filename, "w") as f:
-                f.write(code_gen_format)
+            with open(target_path, "w") as f:
+                f.write(code)
 
+    path_obj = Path(path)
+
+    # Case 1: Single .jac file
     if path.endswith(".jac"):
-        if os.path.exists(path):
-            format_file(path)
-        else:
-            print("File does not exist.", file=sys.stderr)
-    elif os.path.isdir(path):
-        count = 0
-        for root, _, files in os.walk(path):
-            for file in files:
-                if file.endswith(".jac"):
-                    file_path = os.path.join(root, file)
-                    format_file(file_path)
-                    count += 1
-        print(f"Formatted {count} '.jac' files.", file=sys.stderr)
-    else:
-        print("Not a .jac file or directory.", file=sys.stderr)
+        if not path_obj.exists():
+            print(f"Error: File '{path}' does not exist.", file=sys.stderr)
+            return
+        formatted_code = JacProgram.jac_file_formatter(str(path_obj))
+        write_formatted_code(formatted_code, str(path_obj))
+        return
+
+    # Case 2: Directory with .jac files
+    if path_obj.is_dir():
+        jac_files = list(path_obj.glob("**/*.jac"))
+        for jac_file in jac_files:
+            formatted_code = JacProgram.jac_file_formatter(str(jac_file))
+            write_formatted_code(formatted_code, str(jac_file))
+
+        print(f"Formatted {len(jac_files)} '.jac' files.", file=sys.stderr)
+        return
+
+    # Case 3: Invalid path
+    print(f"Error: '{path}' is not a .jac file or directory.", file=sys.stderr)
 
 
 def proc_file_sess(
