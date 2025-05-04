@@ -54,6 +54,7 @@ from jaclang.runtimelib.constructs import (
     Root,
     WalkerArchitype,
 )
+from jaclang.runtimelib.data_mapper import generate_data_mapping
 from jaclang.runtimelib.machinestate import ExecutionContext, JacMachineState
 from jaclang.runtimelib.memory import Shelf, ShelfStorage
 from jaclang.runtimelib.utils import (
@@ -61,6 +62,7 @@ from jaclang.runtimelib.utils import (
     collect_node_connections,
     traverse_graph,
 )
+import jaclang.compiler.unitree as uni
 
 import pluggy
 
@@ -373,6 +375,12 @@ class JacWalker:
             raise TypeError("Invalid walker object")
 
     @staticmethod
+    def graph_cut() -> None:
+        prog = JacMachine.get_context().mach.jac_program.mod
+        visits = [astNode for astNode in prog.get_all_sub_nodes(uni.VisitStmt)]
+        generate_data_mapping(visits)
+
+    @staticmethod
     def spawn(op1: Architype, op2: Architype) -> WalkerArchitype:
         """Jac's spawn operator feature."""
         if isinstance(op1, WalkerArchitype):
@@ -395,6 +403,9 @@ class JacWalker:
                 raise TypeError("Invalid target object")
         else:
             raise TypeError("Invalid walker object")
+        
+        JacMachine.graph_cut()
+        
 
         walker.path = []
         walker.next = [node]
