@@ -9,7 +9,6 @@ from typing import Optional
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.parser import JacParser
-from jaclang.compiler.passes import UniPass
 from jaclang.compiler.passes.main import (
     AccessCheckPass,
     CompilerMode,
@@ -195,13 +194,13 @@ class JacProgram:
         ]
         type_checker_sched = [InheritancePass, FuseTypeInfoPass, AccessCheckPass]
 
-        final_pass: Optional[type[UniPass]] = None
+        final_pass: Optional[type[Transform[uni.Module, uni.Module]]] = None
         passes = py_code_gen if mode == CompilerMode.COMPILE else type_checker_sched
         for current_pass in passes:
             if current_pass == PyBytecodeGenPass:
                 final_pass = current_pass
                 break
-            current_pass(mod, prog=self)
+            current_pass(ir_in=mod, prog=self)  # type: ignore
         if final_pass:
             final_pass(mod, prog=self)
 

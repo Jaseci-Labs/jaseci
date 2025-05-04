@@ -8,21 +8,19 @@ body field.
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Tokens as Tok
-from jaclang.compiler.passes import UniPass
+from jaclang.compiler.passes.transform import Transform
 from jaclang.compiler.unitree import Symbol, UniScopeNode
 
 
-class DeclImplMatchPass(UniPass):
+class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
     """Decls and Def matching pass."""
 
-    def enter_module(self, node: uni.Module) -> None:
-        """Enter module."""
-        if not node.sym_tab:
-            self.log_error(
-                f"Expected symbol table on node {node.__class__.__name__}. Perhaps an earlier pass failed."
-            )
-        else:
-            self.connect_def_impl(node.sym_tab)
+    def transform(self, ir_in: uni.Module) -> uni.Module:
+        """Connect Decls and Defs."""
+        self.cur_node = ir_in
+        self.connect_def_impl(ir_in.sym_tab)
+        self.check_architypes(ir_in)
+        return ir_in
 
     def defn_lookup(self, lookup: Symbol) -> uni.NameAtom | None:
         """Lookup a definition in a symbol table."""
@@ -38,71 +36,68 @@ class DeclImplMatchPass(UniPass):
     def connect_def_impl(self, sym_tab: UniScopeNode) -> None:
         """Connect Decls and Defs."""
         for sym in sym_tab.names_in_scope.values():
-            if isinstance(sym.decl.name_of, uni.AstImplOnlyNode):
-                # currently strips the type info from impls
-                arch_refs = [x[3:] for x in sym.sym_name.split(".")]
-                name_of_links: list[uni.NameAtom] = []  # to link archref names to decls
-                lookup = sym_tab.lookup(arch_refs[0])
-                # If below may need to be a while instead of if to skip over local
-                # import name collisions (see test: test_impl_decl_resolution_fix)
-                if lookup and not isinstance(
-                    lookup.decl.name_of, uni.AstImplNeedingNode
-                ):
+            if not isinstance(sym.decl.name_of, uni.AstImplOnlyNode):
+                continue
+            # currently strips the type info from impls
+            arch_refs = [x[3:] for x in sym.sym_name.split(".")]
+            name_of_links: list[uni.NameAtom] = []  # to link archref names to decls
+            lookup = sym_tab.lookup(arch_refs[0])
+            # If below may need to be a while instead of if to skip over local
+            # import name collisions (see test: test_impl_decl_resolution_fix)
+            if lookup and not isinstance(lookup.decl.name_of, uni.AstImplNeedingNode):
+                lookup = (
+                    sym_tab.parent_scope.lookup(arch_refs[0])
+                    if sym_tab.parent_scope
+                    else sym_tab.lookup(arch_refs[0])
+                )
+            decl_node = (
+                self.defn_lookup(lookup)
+                if len(arch_refs) == 1 and lookup
+                else lookup.defn[-1] if lookup else None
+            )
+            name_of_links.append(decl_node) if decl_node else None
+            for name in arch_refs[1:]:
+                if decl_node:
                     lookup = (
-                        sym_tab.parent_scope.lookup(arch_refs[0])
-                        if sym_tab.parent_scope
-                        else sym_tab.lookup(arch_refs[0])
+                        decl_node.name_of.sym_tab.lookup(name, deep=False)
+                        if decl_node.name_of.sym_tab
+                        else None
                     )
-                decl_node = (
-                    self.defn_lookup(lookup)
-                    if len(arch_refs) == 1 and lookup
-                    else lookup.defn[-1] if lookup else None
+                    decl_node = (
+                        self.defn_lookup(lookup)
+                        if len(arch_refs) == 1 and lookup
+                        else lookup.defn[-1] if lookup else None
+                    )
+                    name_of_links.append(decl_node) if decl_node else None
+                else:
+                    break
+            if not decl_node:
+                continue
+            elif isinstance(decl_node, uni.Ability) and decl_node.is_abstract:
+                self.log_warning(
+                    f"Abstract ability {decl_node.py_resolve_name()} should not have a definition.",
+                    decl_node,
                 )
-                name_of_links.append(decl_node) if decl_node else None
-                for name in arch_refs[1:]:
-                    if decl_node:
-                        lookup = (
-                            decl_node.name_of.sym_tab.lookup(name, deep=False)
-                            if decl_node.name_of.sym_tab
-                            else None
-                        )
-                        decl_node = (
-                            self.defn_lookup(lookup)
-                            if len(arch_refs) == 1 and lookup
-                            else lookup.defn[-1] if lookup else None
-                        )
-                        name_of_links.append(decl_node) if decl_node else None
-                    else:
-                        break
-                if not decl_node:
-                    continue
-                elif isinstance(decl_node, uni.Ability) and decl_node.is_abstract:
-                    self.log_warning(
-                        f"Abstract ability {decl_node.py_resolve_name()} should not have a definition.",
-                        decl_node,
-                    )
-                    continue
-                if not isinstance(
-                    valid_decl := decl_node.name_of, uni.AstImplNeedingNode
-                ) or not (valid_decl.sym_tab and sym.decl.name_of.sym_tab):
-                    raise self.ice(
-                        f"Expected AstImplNeedingNode, got {valid_decl.__class__.__name__}. Not possible."
-                    )
+                continue
+            if not isinstance(
+                valid_decl := decl_node.name_of, uni.AstImplNeedingNode
+            ) or not (valid_decl.sym_tab and sym.decl.name_of.sym_tab):
+                raise self.ice(
+                    f"Expected AstImplNeedingNode, got {valid_decl.__class__.__name__}. Not possible."
+                )
 
-                # Ensure if it's an ability def impl, the parameters are matched.
-                self.validate_params_match(sym, decl_node.name_of)
+            # Ensure if it's an ability def impl, the parameters are matched.
+            self.validate_params_match(sym, decl_node.name_of)
 
-                valid_decl.body = sym.decl.name_of
-                sym.decl.name_of.decl_link = valid_decl
-                for idx, a in enumerate(sym.decl.name_of.target.archs):
-                    a.name_spec.name_of = name_of_links[idx].name_of
-                    a.name_spec.sym = name_of_links[idx].sym
-                sym.decl.name_of.sym_tab.names_in_scope.update(
-                    valid_decl.sym_tab.names_in_scope
-                )
-                valid_decl.sym_tab.names_in_scope = (
-                    sym.decl.name_of.sym_tab.names_in_scope
-                )
+            valid_decl.body = sym.decl.name_of
+            sym.decl.name_of.decl_link = valid_decl
+            for idx, a in enumerate(sym.decl.name_of.target.archs):
+                a.name_spec.name_of = name_of_links[idx].name_of
+                a.name_spec.sym = name_of_links[idx].sym
+            sym.decl.name_of.sym_tab.names_in_scope.update(
+                valid_decl.sym_tab.names_in_scope
+            )
+            valid_decl.sym_tab.names_in_scope = sym.decl.name_of.sym_tab.names_in_scope
 
         for i in sym_tab.kid_scope:
             self.connect_def_impl(i)
@@ -137,12 +132,17 @@ class DeclImplMatchPass(UniPass):
                     for idx in range(len(params_defn.kid)):
                         params_decl.kid[idx] = params_defn.kid[idx]
 
-    def exit_architype(self, node: uni.Architype) -> None:
-        """Exit Architype."""
+    def check_architypes(self, ir_in: uni.Module) -> None:
+        """Check all architypes for issues with attributes and methods."""
+        for node in ir_in.get_all_sub_nodes(uni.Architype):
+            self.check_architype(node)
+
+    def check_architype(self, node: uni.Architype) -> None:
+        """Check a single architype for issues."""
         if node.arch_type.name == Tok.KW_OBJECT and isinstance(
             node.body, uni.SubNodeList
         ):
-
+            self.cur_node = node
             found_default_init = False
             for stmnt in node.body.items:
                 if not isinstance(stmnt, uni.ArchHas):
