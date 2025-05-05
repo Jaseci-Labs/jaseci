@@ -74,8 +74,9 @@ nav:
       - Runtime Plugin Interface: "for_contributors/jac_plugins.md"
 
   - Community Hub:
-    - Roadmap: "for_contributors/roadmap.md"
-    - Contributing: "for_contributors/contrib.md"
+    - Roadmap: "communityhub/roadmap.md"
+    - Breaking Changes: "communityhub/breaking_changes.md"
+    - Contributing: "communityhub/contrib.md"
 
   - Jac Playground:
     - Playground: "playground/index.html"
