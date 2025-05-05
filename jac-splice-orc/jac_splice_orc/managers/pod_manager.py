@@ -314,6 +314,12 @@ DEFAULT_IMAGE_NAME = "ashishmahendra/jac-splice-orc:0.1.8"
 EMPTY_LIST: List[Any] = []
 EMPTY_DICT: Dict[str, Any] = {}
 
+MODULE_NAME_PARAM = Query(..., description="Name of the module")
+METHOD_NAME_PARAM = Query(..., description="Name of the method")
+OBJ_ID_PARAM = Query(None, description="Object ID")
+RUNMODULE_BODY = Body(..., description="Payload for run_module")
+MODULE_CONFIG_BODY = Body(..., description="Module configuration")
+
 pod_manager = PodManager()
 
 
@@ -337,10 +343,10 @@ class RunModuleRequest(BaseModel):
 
 @app.post("/run_module")
 async def run_module(
-    module_name: str = Query(..., description="Name of the module"),
-    method_name: str = Query(..., description="Name of the method"),
-    obj_id: Optional[str] = Query(None, description="Object ID"),
-    request: RunModuleRequest = Body(...),
+    module_name: str = MODULE_NAME_PARAM,
+    method_name: str = METHOD_NAME_PARAM,
+    obj_id: Optional[str] = OBJ_ID_PARAM,
+    request: RunModuleRequest = RUNMODULE_BODY,
 ) -> Union[Dict[str, str], str]:
     """Run a module and return the result."""
     return pod_manager.forward_to_pod(
@@ -350,7 +356,8 @@ async def run_module(
 
 @app.post("/create_pod/{module_name}")
 def create_pod(
-    module_name: str, module_config: Dict[str, Any] = Body(...)
+    module_name: str,
+    module_config: Dict[str, Any] = MODULE_CONFIG_BODY,
 ) -> Dict[str, str]:
     """Create a pod and service for the given module and return the result."""
     return pod_manager.create_pod(module_name.replace("_", "-"), module_config)

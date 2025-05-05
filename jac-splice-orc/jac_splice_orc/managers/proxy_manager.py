@@ -2,11 +2,14 @@
 
 import base64
 import json
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 import numpy as np
 
 import requests
+
+Primitive = Union[str, int, float, bool]
+JSONable = Union[Primitive, List[Any], Dict[str, Any]]
 
 
 class PodManagerProxy:
@@ -43,7 +46,7 @@ class PodManagerProxy:
         else:
             raise Exception(f"Failed to create pod: {response.text}")
 
-    def delete_pod(self, module_name: str) -> Dict[str, Any]:
+    def delete_pod(self, module_name: str) -> Dict[str, Any]:  # noqa: ANN401
         """Send a request to the pod manager to delete the pod and service.
 
         Args:
@@ -67,8 +70,8 @@ class PodManagerProxy:
         method_name: str,
         obj_id: Optional[str],
         args: List[Any],
-        kwargs: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        kwargs: Dict[str, Any],  # noqa: ANN401
+    ) -> Dict[str, Any]:  # noqa: ANN401
         """Run a method on a module.
 
         Args:
@@ -85,8 +88,9 @@ class PodManagerProxy:
             Exception: If the module execution fails
         """
 
-        # Serialize arguments
-        def serialize_arg(arg: Any) -> Dict[str, Union[str, List[Any], Dict[str, Any]]]:
+        def serialize_arg(
+            arg: Any,  # noqa: ANN401
+        ) -> Dict[str, Any]:  # noqa: ANN401
             """Serialize an argument for transmission to the pod manager.
 
             Args:
@@ -102,8 +106,10 @@ class PodManagerProxy:
                 return {"type": "primitive", "value": arg}
             elif isinstance(arg, np.generic):
                 return {"type": "primitive", "value": arg.item()}
-            elif isinstance(arg, (list, dict, tuple)):
-                return {"type": "json", "value": arg}
+            elif isinstance(arg, tuple):
+                return {"type": "json", "value": list(arg)}
+            elif isinstance(arg, (list, dict)):
+                return {"type": "json", "value": cast(JSONable, arg)}
             elif isinstance(arg, np.ndarray):
                 if arg.ndim == 0:
                     # Zero-dimensional array (NumPy scalar)
@@ -207,10 +213,14 @@ class RemoteObjectProxy:
             Function that calls the remote method
         """
 
-        def method(
-            *args: Any, **kwargs: Any
-        ) -> Union[
-            Dict[str, Any], List[Any], str, float, int, bool, "RemoteObjectProxy"
+        def method(*args: Any, **kwargs: Any) -> Union[  # noqa: ANN401
+            Dict[str, Any],  # noqa: ANN401
+            List[Any],  # noqa: ANN401
+            str,
+            float,
+            int,
+            bool,
+            "RemoteObjectProxy",
         ]:
             """Call the remote method.
 
@@ -261,9 +271,15 @@ class RemoteObjectProxy:
 
         return method
 
-    def __call__(
-        self, *args: Any, **kwargs: Any
-    ) -> Union[Dict[str, Any], List[Any], str, float, int, bool, "RemoteObjectProxy"]:
+    def __call__(self, *args: Any, **kwargs: Any) -> Union[  # noqa: ANN401
+        Dict[str, Any],  # noqa: ANN401
+        List[Any],  # noqa: ANN401
+        str,
+        float,
+        int,
+        bool,
+        "RemoteObjectProxy",
+    ]:
         """Call the remote object as a function.
 
         Args:

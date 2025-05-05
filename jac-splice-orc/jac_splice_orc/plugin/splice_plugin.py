@@ -115,8 +115,8 @@ class SpliceOrcPlugin:
         """
         _ = try_incluster_or_local()
         v1 = client.CoreV1Api()
-        service_account_name = config_loader.get(
-            "kubernetes", "service_account_name", default="jac-orc-sa"
+        service_account_name: str = config_loader.get(  # type: ignore [assignment]
+            *["kubernetes", "service_account_name"], default="jac-orc-sa"
         )
 
         # Check if the ServiceAccount already exists
@@ -142,7 +142,10 @@ class SpliceOrcPlugin:
                 raise
 
         # Create the Role and RoleBinding
-        cls.create_role_and_binding(namespace, service_account_name)
+        if isinstance(service_account_name, str):
+            cls.create_role_and_binding(namespace, service_account_name)
+        else:
+            logging.error("Failed to retrieve service account name as string.")
 
     @classmethod
     def create_role_and_binding(cls, namespace: str, service_account_name: str) -> None:
@@ -234,8 +237,16 @@ class SpliceOrcPlugin:
         # in_cluster = try_incluster_or_local()
 
         # Read configuration
-        kubernetes_config = config_loader.get("kubernetes")
-        pod_manager_config = kubernetes_config["pod_manager"]
+        kubernetes_config: dict = config_loader.get("kubernetes", default={})  # type: ignore [assignment]
+        if not kubernetes_config:
+            logging.error("Kubernetes configuration section is missing.")
+            return
+
+        pod_manager_config = kubernetes_config.get("pod_manager", {})
+        if not pod_manager_config:
+            logging.error("Pod manager configuration section is missing.")
+            return
+
         service_account_name = kubernetes_config.get(
             "service_account_name", "jac-orc-sa"
         )
@@ -264,7 +275,8 @@ class SpliceOrcPlugin:
 
         # Define container resources
         resource_requirements = client.V1ResourceRequirements(
-            limits=resources.get("limits"), requests=resources.get("requests")
+            limits=resources.get("limits") if isinstance(resources, dict) else None,
+            requests=resources.get("requests") if isinstance(resources, dict) else None,
         )
 
         # Define the container
@@ -382,16 +394,17 @@ class SpliceOrcPlugin:
         """
         in_cluster = try_incluster_or_local()
 
-        service_name = config_loader.get(
-            "kubernetes", "pod_manager", "service_name", default="pod-manager-service"
+        service_name: str = config_loader.get(  # type: ignore [assignment]
+            *["kubernetes", "pod_manager", "service_name"],
+            default="pod-manager-service",
         )
-        container_port = config_loader.get(
-            "kubernetes", "pod_manager", "container_port", default=8000
+        container_port: int = config_loader.get(  # type: ignore [assignment]
+            *["kubernetes", "pod_manager", "container_port"], default=8000
         )
-        service_type = config_loader.get(
-            "kubernetes", "pod_manager", "service_type", default="NodePort"
+        service_type: str = config_loader.get(  # type: ignore [assignment]
+            *["kubernetes", "pod_manager", "service_type"], default="NodePort"
         )
-
+        pod_manager_url_local: Optional[str] = None
         if in_cluster:
             pod_manager_url_local = (
                 f"http://{service_name}.{namespace}.svc.cluster.local:{container_port}"
@@ -417,10 +430,12 @@ class SpliceOrcPlugin:
                     )
                     pod_manager_url_local = "http://localhost:30080"
 
-        # Update the config
-        config_loader.set(["environment", "POD_MANAGER_URL"], pod_manager_url_local)
-        config_loader.save_config()
-
+        if pod_manager_url_local:
+            # Update the config
+            config_loader.set(["environment", "POD_MANAGER_URL"], pod_manager_url_local)  # type: ignore [arg-type]
+            config_loader.save_config()
+        else:
+            logging.error("Could not determine Pod Manager URL.")
         logging.info(f"Pod manager URL updated: {pod_manager_url_local}")
 
     @classmethod
@@ -430,8 +445,9 @@ class SpliceOrcPlugin:
         """Retrieve the LoadBalancer service URL."""
         # in_cluster = try_incluster_or_local()
         v1 = client.CoreV1Api()
-        service_name = config_loader.get(
-            "kubernetes", "pod_manager", "service_name", default="pod-manager-service"
+        service_name: str = config_loader.get(  # type: ignore [assignment]
+            *["kubernetes", "pod_manager", "service_name"],
+            default="pod-manager-service",
         )
         start_time = time.time()
         while True:
@@ -511,8 +527,8 @@ class SpliceOrcPlugin:
             # --- End: Corrected Kubernetes Connectivity Check ---
             # Use the provided namespace if given, else read from config
             if not namespace:
-                namespace = config_loader.get(
-                    "kubernetes", "namespace", default="jac-splice-orc"
+                namespace = config_loader.get(  # type: ignore [assignment]
+                    *["kubernetes", "namespace"], default="jac-splice-orc"
                 )
                 logging.info(f"Using default namespace from config: '{namespace}'")
             else:
@@ -526,9 +542,9 @@ class SpliceOrcPlugin:
                     )
                     return
                 config_loader.set(
-                    ["kubernetes", "pod_manager", "env_vars", "NAMESPACE"], namespace
+                    *["kubernetes", "pod_manager", "env_vars", "NAMESPACE"], namespace  # type: ignore
                 )
-                config_loader.set(["kubernetes", "namespace"], namespace)
+                config_loader.set(*["kubernetes", "namespace"], namespace)  # type: ignore
                 config_loader.save_config()
 
             logging.info(f"Initializing Pod Manager in namespace '{namespace}'")
@@ -591,12 +607,17 @@ class SpliceOrcPlugin:
             )
             module_config = config_loader.get("module_config", default={})
         if target in module_config and module_config[target]["load_type"] == "remote":
-            pod_manager_url = config_loader.get("environment", "POD_MANAGER_URL")
+            pod_manager_url = config_loader.get(*["environment", "POD_MANAGER_URL"])  # type: ignore [assignment]
             if not pod_manager_url:
                 logging.error(
                     "POD_MANAGER_URL is not set. Please run 'jac orc_initialize'."
                 )
                 raise Exception("POD_MANAGER_URL is not set.")
+            if not isinstance(pod_manager_url, str):
+                logging.error(
+                    f"POD_MANAGER_URL is not a valid string: {pod_manager_url}"
+                )
+                raise Exception("POD_MANAGER_URL is not configured correctly.")
             proxy = ModuleProxy(pod_manager_url)
             remote_module_proxy = proxy.get_module_proxy(
                 module_name=target, module_config=module_config[target]
