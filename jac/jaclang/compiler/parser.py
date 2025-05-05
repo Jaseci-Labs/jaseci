@@ -355,15 +355,31 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """Grammar rule.
 
             import_stmt: KW_IMPORT sub_name? KW_FROM from_path LBRACE import_items RBRACE
-                       | KW_IMPORT sub_name? KW_FROM from_path COMMA import_items SEMI  //Deprecated
-                       | KW_IMPORT sub_name? import_path (COMMA import_path)* SEMI
-                       | include_stmt
+                    | KW_IMPORT sub_name? KW_FROM from_path COMMA import_items SEMI  //Deprecated
+                    | KW_IMPORT sub_name? import_path (COMMA import_path)* SEMI
+                    | KW_INCLUDE sub_name? import_path SEMI
             """
-            if import_stmt := self.match(uni.Import):  # Include Statement.
-                return import_stmt
-
             # TODO: kid will be removed so let's keep as it is for now.
             kid = self.cur_nodes
+
+            if self.match_token(Tok.KW_INCLUDE):
+                # Handle include statement
+                lang = self.match(uni.SubTag)
+                import_path_obj = self.consume(uni.ModulePath)
+                items = uni.SubNodeList[uni.ModulePath](
+                    items=[import_path_obj], delim=Tok.COMMA, kid=[import_path_obj]
+                )
+                kid = (
+                    (kid[:2] if lang else kid[:1]) + [items] + kid[-1:]
+                )  # TODO: Will be removed.
+                self.consume_token(Tok.SEMI)
+                return uni.Import(
+                    hint=lang,
+                    from_loc=None,
+                    items=items,
+                    is_absorb=True,
+                    kid=kid,
+                )
 
             from_path: uni.ModulePath | None = None
             self.consume_token(Tok.KW_IMPORT)
@@ -424,30 +440,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 level=level,
                 alias=None,
                 kid=self.cur_nodes,
-            )
-
-        def include_stmt(self, _: None) -> uni.Import:
-            """Grammar rule.
-
-            include_stmt: KW_INCLUDE sub_name? import_path SEMI
-            """
-            kid = self.cur_nodes  # TODO: Will be removed.
-            self.consume_token(Tok.KW_INCLUDE)
-            lang = self.match(uni.SubTag)
-            from_path = self.consume(uni.ModulePath)
-            items = uni.SubNodeList[uni.ModulePath](
-                items=[from_path], delim=Tok.COMMA, kid=[from_path]
-            )
-            kid = (
-                (kid[:2] if lang else kid[:1]) + [items] + kid[-1:]
-            )  # TODO: Will be removed.
-            is_absorb = True
-            return uni.Import(
-                hint=lang,
-                from_loc=None,
-                items=items,
-                is_absorb=is_absorb,
-                kid=kid,
             )
 
         def import_path(self, _: None) -> uni.ModulePath:

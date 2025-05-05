@@ -27,7 +27,7 @@ toplevel_stmt: import_stmt
 import_stmt: KW_IMPORT sub_name? KW_FROM from_path LBRACE import_items RBRACE
            | KW_IMPORT sub_name? KW_FROM from_path COMMA import_items SEMI  //Deprecated
            | KW_IMPORT sub_name? import_path (COMMA import_path)* SEMI
-           | include_stmt
+           | KW_INCLUDE sub_name? import_path SEMI
 
 from_path: (DOT | ELLIPSIS)* import_path
          | (DOT | ELLIPSIS)+
@@ -36,7 +36,6 @@ import_path: named_ref (DOT named_ref)* (KW_AS NAME)?
 import_items: (import_item COMMA)* import_item COMMA?
 import_item: named_ref (KW_AS NAME)?
 sub_name: COLON NAME
-include_stmt: KW_INCLUDE sub_name? import_path SEMI
 
 // [Heading]: Architypes.
 architype: decorators? architype_decl
