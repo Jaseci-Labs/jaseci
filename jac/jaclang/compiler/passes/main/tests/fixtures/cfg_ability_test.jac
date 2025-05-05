@@ -1,0 +1,23 @@
+obj math_mod {
+
+    can divide (x: int, y: int) {
+        if y == 0 {
+            return 0;
+        } else {
+            return x / y;
+        }
+    }
+
+    can multiply (x: int, y: int) {
+        return x * y;
+    }
+
+}
+
+with entry {
+    x = 5;
+    y = 0;
+    math = math_mod();
+    z = math_mod.divide(x, y);
+    print(z);
+}

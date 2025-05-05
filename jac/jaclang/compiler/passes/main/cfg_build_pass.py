@@ -149,8 +149,6 @@ class CFGBuildPass(UniPass):
                     if parent_bb:
                         self.link_bbs(parent_bb, node)
 
-        FetchBBPass(ir_in=self.ir_in, prog=self.prog).dotgen_cfg()
-
 
 class FetchBBPass(UniPass):
     """Fetch basic blocks."""
@@ -261,6 +259,4 @@ class FetchBBPass(UniPass):
                     dot += f"  {key} -> {out_id};\n"
 
         dot += "}\n"
-        with open("cfg.dot", "w") as f:
-            f.write(dot)
         return dot
