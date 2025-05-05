@@ -683,48 +683,30 @@ class BasicBlockStmt(UniNode):
         self.bb_out: Optional[list[BasicBlockStmt]] = None
 
     def get_head(self) -> BasicBlockStmt:
-        """Get head."""
-
-        def go_up(node: BasicBlockStmt) -> BasicBlockStmt:
-            if node.bb_in:
-                if len(node.bb_in) == 1 and not isinstance(
-                    node.bb_in[0], (InForStmt, IterForStmt, WhileStmt)
-                ):
-                    if node.bb_in[0].bb_out:
-                        if len(node.bb_in[0].bb_out) == 1:
-                            return go_up(node.bb_in[0])
-                        else:
-                            return node
-                    else:
-                        return node
-                else:
-                    return node
-            else:
-                return node
-
-        return go_up(self)
+        """Get head by walking up the CFG iteratively."""
+        node = self
+        while (
+            node.bb_in
+            and len(node.bb_in) == 1
+            and not isinstance(node.bb_in[0], (InForStmt, IterForStmt, WhileStmt))
+            and node.bb_in[0].bb_out
+            and len(node.bb_in[0].bb_out) == 1
+        ):
+            node = node.bb_in[0]
+        return node
 
     def get_tail(self) -> BasicBlockStmt:
-        """Get tail."""
-
-        def go_down(node: BasicBlockStmt) -> BasicBlockStmt:
-            if node.bb_out:
-                if len(node.bb_out) == 1 and not isinstance(
-                    node.bb_out[0], (InForStmt, IterForStmt, WhileStmt)
-                ):
-                    if node.bb_out[0].bb_in:
-                        if len(node.bb_out[0].bb_in) == 1:
-                            return go_down(node.bb_out[0])
-                        else:
-                            return node
-                    else:
-                        return node
-                else:
-                    return node
-            else:
-                return node
-
-        return go_down(self)
+        """Get tail by walking down the CFG iteratively."""
+        node = self
+        while (
+            node.bb_out
+            and len(node.bb_out) == 1
+            and not isinstance(node.bb_out[0], (InForStmt, IterForStmt, WhileStmt))
+            and node.bb_out[0].bb_in
+            and len(node.bb_out[0].bb_in) == 1
+        ):
+            node = node.bb_out[0]
+        return node
 
 
 class Expr(UniNode):
@@ -1531,7 +1513,12 @@ class ModuleItem(AstSymbolNode):
 
 
 class Architype(
-    ArchSpec, AstAccessNode, ArchBlockStmt, AstImplNeedingNode, UniScopeNode
+    ArchSpec,
+    AstAccessNode,
+    ArchBlockStmt,
+    AstImplNeedingNode,
+    UniScopeNode,
+    BasicBlockStmt,
 ):
     """ObjectArch node type for Jac Ast."""
 
@@ -1580,6 +1567,7 @@ class Architype(
         AstSemStrNode.__init__(self, semstr=semstr)
         ArchSpec.__init__(self, decorators=decorators)
         UniScopeNode.__init__(self, name=self.sym_name, owner=self)
+        BasicBlockStmt.__init__(self)
 
     @property
     def is_abstract(self) -> bool:

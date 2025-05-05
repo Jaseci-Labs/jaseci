@@ -69,7 +69,15 @@ class CFGBuildPass(UniPass):
                     for bbs in node.parent.kid
                     if isinstance(bbs, uni.BasicBlockStmt)
                 ]
-                if bb_stmts[0] == node:
+                if (
+                    node.parent.parent
+                    and isinstance(node.parent.parent, uni.Architype)
+                    # and isinstance(node.parent.parent, uni.BasicBlockStmt)
+                ):
+                    parent_obj = node.parent.parent
+                    if parent_obj:
+                        self.link_bbs(parent_obj, node)
+                elif bb_stmts[0] == node:
                     parent_bb = self.get_parent_bb_stmt(node)
                     if parent_bb:
                         self.link_bbs(parent_bb, node)
@@ -93,10 +101,15 @@ class CFGBuildPass(UniPass):
                     self.link_bbs(parent_bb, node)
             if isinstance(node, (uni.InForStmt, uni.IterForStmt, uni.WhileStmt)):
                 self.push_loop_stack(node)
-            elif self.for_loop_stack:
-                self.for_loop_stack[-1].append(node)
-            elif self.while_loop_stack:
-                self.while_loop_stack[-1].append(node)
+            else:
+                if self.for_loop_stack:
+                    self.for_loop_stack[-1].append(node)
+                if self.while_loop_stack:
+                    self.while_loop_stack[-1].append(node)
+            if isinstance(node, uni.Ability):
+                self.ability_stack.append([node])
+            elif self.ability_stack:
+                self.ability_stack[-1].append(node)
 
     def exit_node(self, node: uni.UniNode) -> None:
         """Exit BasicBlockStmt nodes."""
@@ -121,6 +134,11 @@ class CFGBuildPass(UniPass):
                         self.to_connect.remove(from_node)
                 self.pop_loop_stack(node)
                 self.to_connect.append(node)
+            elif isinstance(node, uni.Ability) and self.ability_stack:
+                for from_node in self.ability_stack[-1][1:]:
+                    if from_node in self.to_connect:
+                        self.to_connect.remove(from_node)
+                self.ability_stack.pop()
 
     def after_pass(self) -> None:
         """After pass."""
@@ -130,6 +148,8 @@ class CFGBuildPass(UniPass):
                     parent_bb = self.get_parent_bb_stmt(node)
                     if parent_bb:
                         self.link_bbs(parent_bb, node)
+
+        FetchBBPass(ir_in=self.ir_in, prog=self.prog).dotgen_cfg()
 
 
 class FetchBBPass(UniPass):
@@ -199,6 +219,12 @@ class FetchBBPass(UniPass):
                     cfg[key]["bb_stmts"][i] = "if " + bbs.condition.unparse()
                 elif isinstance(bbs, uni.ElseStmt):
                     cfg[key]["bb_stmts"][i] = "else"
+                elif isinstance(bbs, uni.Architype):
+                    cfg[key]["bb_stmts"][i] = "obj " + bbs.name.unparse()
+                elif isinstance(bbs, uni.Ability):
+                    cfg[key]["bb_stmts"][i] = (
+                        "can " + bbs.name_ref.unparse() + bbs.signature.unparse()
+                    )
                 elif isinstance(bbs, (uni.InForStmt, uni.IterForStmt)):
                     cfg[key]["bb_stmts"][i] = (
                         (
@@ -235,4 +261,6 @@ class FetchBBPass(UniPass):
                     dot += f"  {key} -> {out_id};\n"
 
         dot += "}\n"
+        with open("cfg.dot", "w") as f:
+            f.write(dot)
         return dot
