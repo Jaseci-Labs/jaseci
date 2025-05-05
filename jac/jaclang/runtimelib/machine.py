@@ -481,7 +481,7 @@ class JacWalker:
             walker.ignores = []
             return warch
 
-        if hasattr(warch, "is_async") and warch.is_async:
+        if hasattr(warch, "__is_async__") and warch.__is_async__:
             machine = JacMachine.py_get_jac_machine()
             return machine.pool.submit(execute_ablity, walker, node, warch)
         else:

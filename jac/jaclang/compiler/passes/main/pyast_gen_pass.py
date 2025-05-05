@@ -782,7 +782,7 @@ class PyastGenPass(UniPass):
     def exit_architype(self, node: uni.Architype) -> None:
         is_async_attr = self.sync(
             ast3.Assign(
-                targets=[self.sync(ast3.Name(id="is_async", ctx=ast3.Store()))],
+                targets=[self.sync(ast3.Name(id="__is_async__", ctx=ast3.Store()))],
                 value=self.sync(ast3.Constant(value=node.is_async)),
             )
         )

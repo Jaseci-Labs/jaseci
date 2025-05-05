@@ -522,6 +522,10 @@ class JacParser(Transform[uni.Source, uni.Module]):
             if is_async and isinstance(archspec, uni.ArchSpec):
                 archspec.is_async = True
                 archspec.add_kids_left([is_async])
+                assert isinstance(archspec, uni.Architype)
+                assert (
+                    archspec.arch_type.name == Tok.KW_WALKER
+                ), f"Expected async architype to be walker, but got {archspec.arch_type.value}"
             return archspec
 
         def architype_decl(self, _: None) -> uni.ArchSpec:
