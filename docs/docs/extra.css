@@ -23,3 +23,15 @@
     color: #ffab40 !important;
 }
 
+/* Playground iframe styling */
+.playground-container {
+    margin: 20px 0;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.playground-container iframe {
+    border: none;
+    background: #272822;
+}

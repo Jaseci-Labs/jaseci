@@ -1,4 +1,4 @@
-# <span style="color: orange; font-weight: bold">Installation</span>
+# Installation
 
 Firstly make sure that Python 3.12 or higher is installed in your environment, then simply install Jac using pip:
 

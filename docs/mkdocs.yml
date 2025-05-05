@@ -1,12 +1,14 @@
-site_name: The Jac Programming Language
+site_name: The Jac Programming Language and Jaseci Runtime Stack
 site_url: https://jac-lang.org
 use_directory_urls: true
 nav:
-  - For coders:
+  - Learn:
       - "for_coders/introduction.md"
       - "for_coders/why_jac.md"
       - "for_coders/getting_started.md"
       - "for_coders/installation.md"
+      - Full Reference:
+        - "lang_ref/jac_ref.md"
       - Language Basics:
         - "for_coders/language_basics/basic_syntax.md"
         - "for_coders/language_basics/types.md"
@@ -46,7 +48,17 @@ nav:
         - "for_coders/tools/cli.md"
       - Manual:
         - "for_coders/jac_coding_manual.md"
-  - For contributors:
+      - Examples:
+        - LittleX (your own twitter):
+          - "examples/littleX/overview.md"
+          - "examples/littleX/tutorial.md"
+          - "examples/littleX/quickstart.md"
+        - RAG-based Conversational Chatbot:
+          - "examples/rag_chatbot/readme.md"
+          - "examples/rag_chatbot/1_setting-up-jac-cloud.md"
+          - "examples/rag_chatbot/2_building-a-rag-chatbot.md"
+          - "examples/rag_chatbot/3_rag-dialogue-routing-chatbot.md"
+  - Contributor Hub:
       - "for_contributors/contrib.md"
       - "for_contributors/internals.md"
       - Symbol Tables:
@@ -59,22 +71,8 @@ nav:
       - "for_contributors/jac_plugins.md"
       - "for_contributors/uniir_node.md"
       - "for_contributors/roadmap.md"
-  - Examples:
-    - LittleX (your own twitter):
-      - "examples/littleX/overview.md"
-      - "examples/littleX/tutorial.md"
-      - "examples/littleX/quickstart.md"
-    - RAG-based Conversational Chatbot:
-      - "examples/rag_chatbot/readme.md"
-      - "examples/rag_chatbot/1_setting-up-jac-cloud.md"
-      - "examples/rag_chatbot/2_building-a-rag-chatbot.md"
-      - "examples/rag_chatbot/3_rag-dialogue-routing-chatbot.md"
-
-  - Language Reference:
-    - "lang_ref/jac_ref.md"
-
   - Jac Playground:
-    - Playground: playground/index.html
+    - Playground: "playground/index.html"
 
 theme:
   logo: "assets/logo.png"
@@ -123,7 +121,7 @@ markdown_extensions:
   # - codehilite:
   #     linenums: true
   - pymdownx.snippets:
-      base_path: [".", "../../"]
+      base_path: [".", "../"]
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid

@@ -4,6 +4,7 @@ This script is used to handle the jac compile data for jac playground.
 """
 
 import os
+import time
 import zipfile
 
 from jaclang.utils.lang_tools import AstTool
@@ -28,12 +29,30 @@ def pre_build_hook(**kwargs: dict) -> None:
         create_playground_zip()
     else:
         print(f"Zip file already exists: {PLAYGROUND_ZIP_PATH}. Skipping creation.")
-    if not os.path.exists(UNIIR_NODE_DOC):
+
+    if is_file_older_than_minutes(UNIIR_NODE_DOC, 5):
         with open(UNIIR_NODE_DOC, "w") as f:
             f.write(AST_TOOL.autodoc_uninode())
-    if not os.path.exists(LANG_REF_DOC):
+    else:
+        print(f"File is recent: {UNIIR_NODE_DOC}. Skipping creation.")
+
+    if is_file_older_than_minutes(LANG_REF_DOC, 5):
         with open(LANG_REF_DOC, "w") as f:
             f.write(AST_TOOL.automate_ref())
+    else:
+        print(f"File is recent: {LANG_REF_DOC}. Skipping creation.")
+
+
+def is_file_older_than_minutes(file_path: str, minutes: int) -> bool:
+    """Check if a file is older than the specified number of minutes."""
+    if not os.path.exists(file_path):
+        return True
+
+    file_time = os.path.getmtime(file_path)
+    current_time = time.time()
+    time_diff_minutes = (current_time - file_time) / 60
+
+    return time_diff_minutes > minutes
 
 
 def create_playground_zip() -> None:

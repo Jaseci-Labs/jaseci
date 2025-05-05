@@ -1,4 +1,4 @@
-# <span style="color: orange; font-weight: bold">Getting Started</span>
+# Getting Started
 
 If you know python, there's near zero learning curve to get started.
 
