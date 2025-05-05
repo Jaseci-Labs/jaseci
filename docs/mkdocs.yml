@@ -3,74 +3,80 @@ site_url: https://jac-lang.org
 use_directory_urls: true
 nav:
   - Learn:
-      - "for_coders/introduction.md"
-      - "for_coders/why_jac.md"
-      - "for_coders/getting_started.md"
-      - "for_coders/installation.md"
-      - Full Reference:
-        - "lang_ref/jac_ref.md"
-      - Language Basics:
-        - "for_coders/language_basics/basic_syntax.md"
-        - "for_coders/language_basics/types.md"
-        - "for_coders/language_basics/can_abilities.md"
-        - "for_coders/language_basics/import.md"
-        - "for_coders/language_basics/impl_docs.md"
-      - Data Spatial Programming:
-        # - "for_coders/data_spatial/dataspatial.md" # Why data spatial
-        - "for_coders/data_spatial/nodes_and_edges.md" # Introduction to DS primitives
-        - "for_coders/data_spatial/walkers.md" # Walker
-        - "for_coders/data_spatial/filtering.md" # Filtering
-        - "for_coders/data_spatial/sequence.md"
-        - "for_coders/data_spatial/FAQ.md" # faq
-      # - Python Integration:
-      #   - "for_coders/python_integration.md"
-      - Programming with Generative AI Models:
-        - "for_coders/jac-mtllm/with_llm.md"
-        - Quick Start Guide: "for_coders/jac-mtllm/quickstart.md"
-        - Models: "for_coders/jac-mtllm/model_declaration.md"
-        - Usage of MTLLM: "for_coders/jac-mtllm/usage.md"
-        - Optional Meaning Hints: "for_coders/jac-mtllm/semstrings.md"
-        - Using Multimodal models: "for_coders/jac-mtllm/multimodality.md"
-        - Bring your own LM: "for_coders/jac-mtllm/create_own_lm.md"
-        - Python MTLLM Interface: "for_coders/jac-mtllm/python_integration.md"
-        - Tutorials: "for_coders/jac-mtllm/rpg_game.md"
-      - Cloud Native Abstractions:
-        - "for_coders/jac-cloud/jac_cloud.md"
-        - "for_coders/jac-cloud/permission.md"
-        - "for_coders/jac-cloud/jac_cloud_logging.md"
-        - "for_coders/jac-cloud/jac_cloud_env_vars.md"
-        - "for_coders/jac-cloud/jac_cloud_webhook.md"
-        - "for_coders/jac-cloud/jac_cloud_websocket.md"
-        - "for_coders/jac-cloud/cloud-orc-integration.md"
-      - Tools:
-        - "for_coders/tools/testing.md"
-        - "for_coders/tools/jac_streamlit.md"
-        - "for_coders/tools/cli.md"
-      - Manual:
-        - "for_coders/jac_coding_manual.md"
-      - Examples:
-        - LittleX (your own twitter):
-          - "examples/littleX/overview.md"
-          - "examples/littleX/tutorial.md"
-          - "examples/littleX/quickstart.md"
-        - RAG-based Conversational Chatbot:
-          - "examples/rag_chatbot/readme.md"
-          - "examples/rag_chatbot/1_setting-up-jac-cloud.md"
-          - "examples/rag_chatbot/2_building-a-rag-chatbot.md"
-          - "examples/rag_chatbot/3_rag-dialogue-routing-chatbot.md"
-  - Contributor Hub:
-      - "for_contributors/contrib.md"
-      - "for_contributors/internals.md"
-      - Symbol Tables:
-        - "for_contributors/symbol_tables/index.md"
-        - "for_contributors/symbol_tables/structure.md"
-        - "for_contributors/symbol_tables/building.md"
-        - "for_contributors/symbol_tables/def_use.md"
-        - "for_contributors/symbol_tables/linking.md"
-        - "for_contributors/symbol_tables/resolution.md"
-      - "for_contributors/jac_plugins.md"
-      - "for_contributors/uniir_node.md"
-      - "for_contributors/roadmap.md"
+    - "for_coders/introduction.md"
+    - "for_coders/why_jac.md"
+    - "for_coders/getting_started.md"
+    - "for_coders/installation.md"
+    - Full Reference:
+      - "lang_ref/jac_ref.md"
+    - Language Basics:
+      - "for_coders/language_basics/basic_syntax.md"
+      - "for_coders/language_basics/types.md"
+      - "for_coders/language_basics/can_abilities.md"
+      - "for_coders/language_basics/import.md"
+      - "for_coders/language_basics/impl_docs.md"
+    - Data Spatial Programming:
+      # - "for_coders/data_spatial/dataspatial.md" # Why data spatial
+      - "for_coders/data_spatial/nodes_and_edges.md" # Introduction to DS primitives
+      - "for_coders/data_spatial/walkers.md" # Walker
+      - "for_coders/data_spatial/filtering.md" # Filtering
+      - "for_coders/data_spatial/sequence.md"
+      - "for_coders/data_spatial/FAQ.md" # faq
+    # - Python Integration:
+    #   - "for_coders/python_integration.md"
+    - Programming with Generative AI Models:
+      - "for_coders/jac-mtllm/with_llm.md"
+      - Quick Start Guide: "for_coders/jac-mtllm/quickstart.md"
+      - Models: "for_coders/jac-mtllm/model_declaration.md"
+      - Usage of MTLLM: "for_coders/jac-mtllm/usage.md"
+      - Optional Meaning Hints: "for_coders/jac-mtllm/semstrings.md"
+      - Using Multimodal models: "for_coders/jac-mtllm/multimodality.md"
+      - Bring your own LM: "for_coders/jac-mtllm/create_own_lm.md"
+      - Python MTLLM Interface: "for_coders/jac-mtllm/python_integration.md"
+      - Tutorials: "for_coders/jac-mtllm/rpg_game.md"
+    - Cloud Native Abstractions:
+      - "for_coders/jac-cloud/jac_cloud.md"
+      - "for_coders/jac-cloud/permission.md"
+      - "for_coders/jac-cloud/jac_cloud_logging.md"
+      - "for_coders/jac-cloud/jac_cloud_env_vars.md"
+      - "for_coders/jac-cloud/jac_cloud_webhook.md"
+      - "for_coders/jac-cloud/jac_cloud_websocket.md"
+      - "for_coders/jac-cloud/cloud-orc-integration.md"
+    - Tools:
+      - "for_coders/tools/testing.md"
+      - "for_coders/tools/jac_streamlit.md"
+      - "for_coders/tools/cli.md"
+    - Manual:
+      - "for_coders/jac_coding_manual.md"
+    - Examples:
+      - LittleX (your own twitter):
+        - "examples/littleX/overview.md"
+        - "examples/littleX/tutorial.md"
+        - "examples/littleX/quickstart.md"
+      - RAG-based Conversational Chatbot:
+        - "examples/rag_chatbot/readme.md"
+        - "examples/rag_chatbot/1_setting-up-jac-cloud.md"
+        - "examples/rag_chatbot/2_building-a-rag-chatbot.md"
+        - "examples/rag_chatbot/3_rag-dialogue-routing-chatbot.md"
+
+  - Internals:
+    - Design Docs and Guides:
+      - Compiler/Runtime Design: "for_contributors/internals.md"
+      - IR:
+        - Sym Table Design Docs:
+          - "for_contributors/symbol_tables/index.md"
+          - "for_contributors/symbol_tables/structure.md"
+          - "for_contributors/symbol_tables/building.md"
+          - "for_contributors/symbol_tables/def_use.md"
+          - "for_contributors/symbol_tables/linking.md"
+          - "for_contributors/symbol_tables/resolution.md"
+        - UniIR Nodes: "for_contributors/uniir_node.md"
+      - Runtime Plugin Interface: "for_contributors/jac_plugins.md"
+
+  - Community Hub:
+    - Roadmap: "for_contributors/roadmap.md"
+    - Contributing: "for_contributors/contrib.md"
+
   - Jac Playground:
     - Playground: "playground/index.html"
 
@@ -91,7 +97,7 @@ theme:
     - navigation.tabs
     - navigation.path
     - navigation.footer
-    - navigation.expand
+    # - navigation.expand
     - navigation.sections
     - navigation.top
   icon:
