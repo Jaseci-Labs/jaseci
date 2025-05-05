@@ -756,7 +756,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """Grammar rule.
 
             ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?
-                named_ref (func_decl | event_clause) (code_block | SEMI)
+                named_ref (func_decl | event_clause) (code_block | KW_ABSTRACT? SEMI)
             """
             signature: uni.FuncSignature | uni.EventSignature | None = None
             body: uni.SubNodeList | None = None
@@ -769,14 +769,19 @@ class JacParser(Transform[uni.Source, uni.Module]):
             signature = self.match(uni.FuncSignature) or self.consume(
                 uni.EventSignature
             )
+
             if (body := self.match(uni.SubNodeList)) is None:
+                is_abstract = self.match_token(Tok.KW_ABSTRACT) is not None
                 self.consume_token(Tok.SEMI)
+            else:
+                is_abstract = False
+
             return uni.Ability(
                 name_ref=name,
                 is_async=False,
                 is_override=is_override,
                 is_static=is_static,
-                is_abstract=False,
+                is_abstract=is_abstract,
                 access=access,
                 semstr=semstr,
                 signature=signature,
@@ -799,39 +804,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 target=target,
                 signature=signature,
                 body=body,
-                kid=self.cur_nodes,
-            )
-
-        # We need separate production rule for abstract_ability because we don't
-        # want to allow regular abilities outside of classed to be abstract.
-        def abstract_ability(self, _: None) -> uni.Ability:
-            """Grammar rule.
-
-            abstract_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?
-                named_ref (func_decl | event_clause) KW_ABSTRACT SEMI
-            """
-            signature: uni.FuncSignature | uni.EventSignature | None = None
-            is_override = self.match_token(Tok.KW_OVERRIDE) is not None
-            is_static = self.match_token(Tok.KW_STATIC) is not None
-            self.consume_token(Tok.KW_CAN)
-            access = self.match(uni.SubTag)
-            semstr = self.match(uni.String)
-            name = self.consume(uni.NameAtom)
-            signature = self.match(uni.FuncSignature) or self.consume(
-                uni.EventSignature
-            )
-            self.consume_token(Tok.KW_ABSTRACT)
-            self.consume_token(Tok.SEMI)
-            return uni.Ability(
-                name_ref=name,
-                is_async=False,
-                is_override=is_override,
-                is_static=is_static,
-                is_abstract=True,
-                access=access,
-                semstr=semstr,
-                signature=signature,
-                body=None,
                 kid=self.cur_nodes,
             )
 

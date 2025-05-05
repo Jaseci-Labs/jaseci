@@ -58,7 +58,7 @@ arch_type: KW_WALKER
 
 // [Heading]: Architype bodies.
 member_block: LBRACE member_stmt* RBRACE
-member_stmt: STRING? (py_code_block | abstract_ability | ability | architype | has_stmt | free_code)
+member_stmt: STRING? (py_code_block | ability | architype | has_stmt | free_code)
 has_stmt: KW_STATIC? (KW_LET | KW_HAS) access_tag? has_assign_list SEMI
 has_assign_list: (has_assign_list COMMA)? typed_has_clause
 typed_has_clause: named_ref (COLON STRING)? type_tag (EQ expression | KW_BY KW_POST_INIT)?
@@ -76,7 +76,6 @@ enum_stmt: NAME (COLON STRING)? EQ expression
          | NAME (COLON STRING)?
          | py_code_block
          | free_code
-         | abstract_ability
          | ability
 
 // [Heading]: Abilities.
@@ -84,9 +83,8 @@ ability: decorators? KW_ASYNC? ability_decl
         | decorators? genai_ability
         | ability_def
 
-ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref (func_decl | event_clause) (code_block | SEMI)
+ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref (func_decl | event_clause) (code_block | KW_ABSTRACT? SEMI)
 ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
-abstract_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref (func_decl | event_clause) KW_ABSTRACT SEMI
 genai_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref (func_decl) KW_BY atomic_call SEMI
 event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (STRING? RETURN_HINT expression)?
 func_decl: (LPAREN func_decl_params? RPAREN)? (RETURN_HINT (STRING COLON)? expression)?
