@@ -334,8 +334,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             self.consume_token(Tok.KW_ENTRY)
             name = None
             if self.match_token(Tok.COLON):
-                name_token = self.consume(uni.Name)
-                name = uni.SubTag(name_token, [name_token])
+                name = self.consume(uni.Name)
             codeblock = self.consume(uni.SubNodeList)
             return uni.ModuleCode(
                 name=name,
@@ -755,10 +754,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def ability_decl(self, _: None) -> uni.Ability:
             """Grammar rule.
 
-            ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref event_clause (block_tail | KW_ABSTRACT? SEMI)
+            ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?
+                named_ref event_clause (block_tail | KW_ABSTRACT? SEMI)
             """
-            signature: uni.EventSignature | None = None
-            body: uni.SubNodeList | uni.FuncCall | None = None
             is_override = self.match_token(Tok.KW_OVERRIDE) is not None
             is_static = self.match_token(Tok.KW_STATIC) is not None
             self.consume_token(Tok.KW_CAN)
@@ -768,9 +766,8 @@ class JacParser(Transform[uni.Source, uni.Module]):
             signature = self.consume(uni.EventSignature)
 
             # Handle block_tail
-            if (body := self.match(uni.SubNodeList)) is None and (
-                body := self.match(uni.FuncCall)
-            ) is None:
+            body = self.match(uni.SubNodeList) or self.match(uni.FuncCall)
+            if body is None:
                 is_abstract = self.match_token(Tok.KW_ABSTRACT) is not None
                 self.consume_token(Tok.SEMI)
             else:
@@ -797,19 +794,8 @@ class JacParser(Transform[uni.Source, uni.Module]):
             target = self.consume(uni.ArchRefChain)
             signature = self.consume(uni.EventSignature)
 
-            # Handle block_tail
-            body = self.match(uni.SubNodeList)
-            if body is None:
-                # It must be KW_BY atomic_call
-                self.consume_token(Tok.KW_BY)
-                by_call = self.consume(uni.FuncCall)
-                self.consume_token(Tok.SEMI)
-                # Create a code block with just the function call
-                body = uni.SubNodeList(
-                    items=[by_call],
-                    delim=None,
-                    kid=[by_call],
-                )
+            # Handle block_tail directly
+            body = self.consume(uni.SubNodeList) or self.consume(uni.FuncCall)
 
             return uni.AbilityDef(
                 target=target,
@@ -826,19 +812,8 @@ class JacParser(Transform[uni.Source, uni.Module]):
             target = self.consume(uni.ArchRefChain)
             signature = self.consume(uni.FuncSignature)
 
-            # Handle block_tail
-            body = self.match(uni.SubNodeList)
-            if body is None:
-                # It must be KW_BY atomic_call
-                self.consume_token(Tok.KW_BY)
-                by_call = self.consume(uni.FuncCall)
-                self.consume_token(Tok.SEMI)
-                # Create a code block with just the function call
-                body = uni.SubNodeList(
-                    items=[by_call],
-                    delim=None,
-                    kid=[by_call],
-                )
+            # Handle block_tail directly
+            body = self.consume(uni.SubNodeList) or self.consume(uni.FuncCall)
 
             return uni.AbilityDef(
                 target=target,
@@ -850,10 +825,10 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def function_decl(self, _: None) -> uni.Ability:
             """Grammar rule.
 
-            function_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref func_decl (block_tail | KW_ABSTRACT? SEMI)
+            function_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref
+                func_decl (block_tail | KW_ABSTRACT? SEMI)
             """
-            signature: uni.FuncSignature | None = None
-            body: uni.SubNodeList | uni.FuncCall | None = None
+            # Save original kids to track tokens
             is_override = self.match_token(Tok.KW_OVERRIDE) is not None
             is_static = self.match_token(Tok.KW_STATIC) is not None
             self.consume_token(Tok.KW_CAN)
@@ -863,9 +838,8 @@ class JacParser(Transform[uni.Source, uni.Module]):
             signature = self.consume(uni.FuncSignature)
 
             # Handle block_tail
-            if (body := self.match(uni.SubNodeList)) is None and (
-                body := self.match(uni.FuncCall)
-            ) is None:
+            body = self.match(uni.SubNodeList) or self.match(uni.FuncCall)
+            if body is None:
                 is_abstract = self.match_token(Tok.KW_ABSTRACT) is not None
                 self.consume_token(Tok.SEMI)
             else:
@@ -3342,7 +3316,12 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 return code_block
 
             # Otherwise, it must be KW_BY atomic_call SEMI
-            self.consume_token(Tok.KW_BY)
+            by_token = self.consume_token(Tok.KW_BY)
             func_call = self.consume(uni.FuncCall)
-            self.consume_token(Tok.SEMI)
+            semi_token = self.consume_token(Tok.SEMI)
+
+            # Add the tokens to the function call's kid array
+            func_call.add_kids_left([by_token])
+            func_call.add_kids_right([semi_token])
+
             return func_call

@@ -1146,7 +1146,7 @@ class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
 
     def __init__(
         self,
-        name: Optional[SubTag[Name]],
+        name: Optional[Name],
         body: SubNodeList[CodeBlockStmt],
         kid: Sequence[UniNode],
         doc: Optional[String] = None,
@@ -1168,6 +1168,7 @@ class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
         new_kid.append(self.gen_token(Tok.KW_WITH))
         new_kid.append(self.gen_token(Tok.KW_ENTRY))
         if self.name:
+            new_kid.append(self.gen_token(Tok.COLON))
             new_kid.append(self.name)
         new_kid.append(self.body)
         self.set_kids(nodes=new_kid)

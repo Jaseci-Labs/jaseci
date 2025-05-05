@@ -158,19 +158,13 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_module_code(self, node: uni.ModuleCode) -> None:
-        start = True
         for i in node.kid:
             if isinstance(i, uni.String):
                 self.emit_ln(node, i.gen.jac)
+            elif isinstance(i, uni.Token) and i.name != Tok.KW_ENTRY:
+                self.emit(node, i.gen.jac)
             elif isinstance(i, uni.Token):
-                if start:
-                    self.emit(node, i.gen.jac)
-                    start = False
-                else:
-                    self.emit(node, f" {i.gen.jac}")
-            elif isinstance(i, uni.SubTag):
-                for j in i.kid:
-                    self.emit(node, j.gen.jac)
+                self.emit(node, f" {i.gen.jac}")
         if node.body:
             self.emit(node, node.body.gen.jac)
 

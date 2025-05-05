@@ -92,8 +92,6 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         fixtures_dir = os.path.join(self.fixture_abs_path(""), "genai")
         fixture_files = os.listdir(fixtures_dir)
         for file_name in fixture_files:
-            if file_name == "__jac_gen__":
-                continue
             with self.subTest(file=file_name):
                 file_path = os.path.join(fixtures_dir, file_name)
                 self.compare_files(file_path)

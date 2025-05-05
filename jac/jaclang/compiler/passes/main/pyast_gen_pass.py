@@ -371,9 +371,7 @@ class PyastGenPass(UniPass):
                                 ),
                                 ops=[self.sync(ast3.Eq())],
                                 comparators=[
-                                    self.sync(
-                                        ast3.Constant(value=node.name.tag.sym_name)
-                                    )
+                                    self.sync(ast3.Constant(value=node.name.sym_name))
                                 ],
                             )
                         ),
