@@ -56,6 +56,15 @@ nav:
         - "for_contributors/symbol_tables/def_use.md"
         - "for_contributors/symbol_tables/linking.md"
         - "for_contributors/symbol_tables/resolution.md"
+      - Type Checker Roadmap:
+        - "plan/README.md"
+        - "plan/01-type-system-foundation.md"
+        - "plan/02-type-inference-engine.md"
+        - "plan/03-type-checking-pipeline.md"
+        - "plan/04-error-reporting-system.md"
+        - "plan/05-special-features.md"
+        - "plan/06-external-integration.md"
+        - "plan/07-implementation-steps.md"
       - "for_contributors/jac_plugins.md"
       - "for_contributors/uniir_node.md"
       - "for_contributors/roadmap.md"
@@ -72,15 +81,6 @@ nav:
 
   - Language Reference:
     - "lang_ref/jac_ref.md"
-  - Plan For Type Checking:
-    - "plan/README.md"
-    - "plan/01-type-system-foundation.md"
-    - "plan/02-type-inference-engine.md"
-    - "plan/03-type-checking-pipeline.md"
-    - "plan/04-error-reporting-system.md"
-    - "plan/05-special-features.md"
-    - "plan/06-external-integration.md"
-    - "plan/07-implementation-steps.md"
   - Jac Playground:
     - Playground: playground/index.html
 
@@ -96,6 +96,7 @@ theme:
     code: "Roboto Mono"
   features:
     - content.code.copy
+    - content.code.mermaid
     - navigation.instant
     - navigation.tracking
     - navigation.tabs
@@ -151,7 +152,8 @@ markdown_extensions:
   # - pymdownx.emoji:
   #     emoji_index: !!python/name:material.extensions.emoji.twemoji
   #     emoji_generator: !!python/name:material.extensions.emoji.to_svg
-
+extra_javascript:
+  - https://unpkg.com/mermaid@11.6.0/dist/mermaid.min.js  # Specify the newer version
 extra_css:
   - extra.css
 
