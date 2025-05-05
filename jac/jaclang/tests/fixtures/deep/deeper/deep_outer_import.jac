@@ -1,4 +1,4 @@
-import from ..one_lev_dup { olpyprint }
+import from ..one_lev_dup { olprint }
 import from ...needs_import_dup { my_print, pyfunc }
 
 with entry {

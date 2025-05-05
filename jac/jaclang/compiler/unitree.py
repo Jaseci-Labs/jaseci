@@ -732,7 +732,10 @@ class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
     """AstImplOnlyNode node type for Jac Ast."""
 
     def __init__(
-        self, target: ArchRefChain, body: SubNodeList, decl_link: Optional[UniNode]
+        self,
+        target: ArchRefChain,
+        body: SubNodeList | FuncCall,
+        decl_link: Optional[UniNode],
     ) -> None:
         self.target = target
         self.body = body
@@ -1501,7 +1504,12 @@ class Architype(
         body = (
             self.body.items
             if isinstance(self.body, SubNodeList)
-            else self.body.body.items if isinstance(self.body, ArchDef) else []
+            else (
+                self.body.body.items
+                if isinstance(self.body, ArchDef)
+                and isinstance(self.body.body, SubNodeList)
+                else []
+            )
         )
         return any(isinstance(i, Ability) and i.is_abstract for i in body)
 
@@ -1812,7 +1820,7 @@ class AbilityDef(AstImplOnlyNode, UniScopeNode):
         self,
         target: ArchRefChain,
         signature: FuncSignature | EventSignature,
-        body: SubNodeList[CodeBlockStmt],
+        body: SubNodeList[CodeBlockStmt] | FuncCall,
         kid: Sequence[UniNode],
         doc: Optional[String] = None,
         decorators: Optional[SubNodeList[Expr]] = None,
