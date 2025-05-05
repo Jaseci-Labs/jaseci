@@ -3,20 +3,20 @@
 
 # This game is built using the pygame module which is imported here
 
-import:py pygame;
-import:py sys;
-import:py os;
-import:py random;
-import:py time;
-import:py from mtllm.llms, Anthropic;
+import pygame;
+import sys;
+import os;
+import random;
+import time;
+import from mtllm.llms { Anthropic }
 
 glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
 
 # Importing Jac codebase
-include:jac sprites;
-include:jac config;
-include:jac map;
-include:jac game_obj;
+import sprites;
+import config;
+import map;
+import game_obj;
 
 glob context:str =  "# These rules must be strictly adhered to while creating a maps."
                     "- Must have only single Player (P) in map at the middle of the map ."

@@ -1,11 +1,11 @@
 """Example of simple walker walking nodes."""
-import:py from jac_cloud.core.context {JaseciContext}
-import:py from jac_cloud.jaseci.models {User as BaseUser, NO_PASSWORD}
-import:py from jac_cloud.jaseci.utils {SendGridEmailer}
-import:py from jac_cloud.plugin {WEBSOCKET_MANAGER as socket}
-import:py from dataclasses {dataclass}
-import:py from fastapi {UploadFile}
-import:py from typing {Any}
+import from jac_cloud.core.context {JaseciContext}
+import from jac_cloud.jaseci.models {User as BaseUser, NO_PASSWORD}
+import from jac_cloud.jaseci.utils {SendGridEmailer}
+import from jac_cloud.plugin {WEBSOCKET_MANAGER as socket}
+import from dataclasses {dataclass}
+import from fastapi {UploadFile}
+import from typing {Any}
 
 class User:BaseUser: {
     has name: str;
@@ -260,7 +260,7 @@ walker allow_other_root_access {
         if self.via_all {
             _.unrestrict(here, self.level);
         } else {
-            import:py from jac_cloud.core.architype {BaseAnchor}
+            import from jac_cloud.core.architype {BaseAnchor}
             _.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
         }
     }
@@ -269,7 +269,7 @@ walker allow_other_root_access {
         if self.via_all {
             _.unrestrict(here, self.level);
         } else {
-            import:py from jac_cloud.core.architype {BaseAnchor}
+            import from jac_cloud.core.architype {BaseAnchor}
             _.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
         }
     }
@@ -282,7 +282,7 @@ walker disallow_other_root_access {
         if self.via_all {
             _.restrict(here);
         } else {
-            import:py from jac_cloud.core.architype {BaseAnchor}
+            import from jac_cloud.core.architype {BaseAnchor}
             _.disallow_root(here, BaseAnchor.ref(self.root_id));
         }
     }
@@ -291,7 +291,7 @@ walker disallow_other_root_access {
         if self.via_all {
             _.restrict(here);
         } else {
-            import:py from jac_cloud.core.architype {BaseAnchor}
+            import from jac_cloud.core.architype {BaseAnchor}
             _.disallow_root(here, BaseAnchor.ref(self.root_id));
         }
     }
@@ -711,7 +711,7 @@ walker purge_populated_graph {
 
 walker check_populated_graph {
     can enter with `root entry {
-        import:py from jac_cloud.core.architype {NodeAnchor, EdgeAnchor, WalkerAnchor}
+        import from jac_cloud.core.architype {NodeAnchor, EdgeAnchor, WalkerAnchor}
 
         id = here.__jac__.id;
         count = NodeAnchor.Collection.count({"$or": [{"_id": id}, {"root": id}]});
@@ -725,7 +725,7 @@ walker check_populated_graph {
 walker check_memory_sync {
     has other_node_id: str;
     can enter with `root entry {
-        import:py from jac_cloud.core.architype {NodeAnchor}
+        import from jac_cloud.core.architype {NodeAnchor}
         n = &(self.other_node_id);
         n.val = 4;
         report n;
@@ -802,7 +802,7 @@ walker delete_custom_object {
     has object_id: str;
 
     can enter1 with `root entry {
-        import:py from jac_cloud.core.architype {BaseAnchor}
+        import from jac_cloud.core.architype {BaseAnchor}
         _.destroy(&(self.object_id));
 
         # This is similar to

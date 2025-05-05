@@ -1,5 +1,5 @@
-import:py wikipedia;
-import:py from mtllm.llms, Anthropic;
+import wikipedia;
+import from mtllm.llms { Anthropic }
 
 glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
 

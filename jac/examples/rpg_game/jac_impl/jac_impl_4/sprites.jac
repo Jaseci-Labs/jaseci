@@ -2,14 +2,14 @@
 
 
 # Importing python libraries
-import:py pygame;
-import:py from pygame.sprite, AbstractGroup;
-import:py random;
-import:py math;
+import pygame;
+import from pygame.sprite { AbstractGroup }
+import random;
+import math;
 # Importing configuration and map data
-include:jac config;
-include:jac map;
-import:py from typing, Tuple;
+import config;
+import map;
+import from typing { Tuple }
 
 """
 Object for impoting sprite character images.

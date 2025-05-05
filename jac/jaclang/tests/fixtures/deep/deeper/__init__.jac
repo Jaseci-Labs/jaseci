@@ -1,1 +1,1 @@
-import:jac snd_lev;
+import snd_lev;

@@ -1,6 +1,6 @@
 """A Number Guessing Game"""
 
-import:py random;
+import random;
 
 """
 A generic Game base class.

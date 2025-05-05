@@ -1,6 +1,6 @@
-import:py from mtllm.llms { OpenAI }
-import:py from mtllm.tools.math_utils { math_tool }
-import:py from PIL { Image }
+import from mtllm.llms { OpenAI }
+import from mtllm.tools.math_utils { math_tool }
+import from PIL { Image }
 
 glob llm = OpenAI(verbose=True, model_name="gpt-4o");
 

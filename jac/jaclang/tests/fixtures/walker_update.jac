@@ -1,6 +1,6 @@
-import:jac from bar { bar_walk }
-import:py from jaclang.runtimelib.machine { JacMachine, JacMachineState }
-import:py os;
+import from bar { bar_walk }
+import from jaclang.runtimelib.machine { JacMachine, JacMachineState }
+import os;
 
 can update_bar_walker {
     "Updating bar.jac with new behavior." |> print;

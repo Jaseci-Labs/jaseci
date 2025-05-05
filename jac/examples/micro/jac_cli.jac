@@ -4,10 +4,10 @@ Jac languages. It's built with the Jac language V2 via bootstraping and
 represents the first such production Jac program.
 """
 
-import:py inspect;
-import:py from argparse, ArgumentParser, ArgumentError;
-import:py cmd;
-import:py from typing, Any, Callable;
+import inspect;
+import from argparse { ArgumentParser, ArgumentError }
+import cmd;
+import from typing { Any, Callable }
 
 obj Interface {
     has functions: list[callable] = [];

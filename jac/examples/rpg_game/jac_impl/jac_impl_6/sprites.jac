@@ -1,12 +1,12 @@
 """This file containes all definitions of sprites that apear in the game"""
 
 # Importing python libraries
-import:py pygame, random, math;
-import:py from pygame.sprite, AbstractGroup;
+import pygame, random, math;
+import from pygame.sprite { AbstractGroup }
 
 # Importing settings data
-include:jac settings.config;
-include:jac settings.map;
+import settings.config;
+import settings.map;
 
 """
 Object for impoting sprite character images.

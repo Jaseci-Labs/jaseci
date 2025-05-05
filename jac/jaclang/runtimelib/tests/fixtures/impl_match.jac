@@ -1,4 +1,4 @@
-include:jac impl_match_impl;
+import impl_match_impl;
 
 obj Check {
     can run;

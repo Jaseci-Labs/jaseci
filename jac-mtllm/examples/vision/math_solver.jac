@@ -1,5 +1,5 @@
-import:py from mtllm.llms { OpenAI }
-import:py from PIL { Image }
+import from mtllm.llms { OpenAI }
+import from PIL { Image }
 
 glob llm = OpenAI(verbose=True, model_name="gpt-4o");
 

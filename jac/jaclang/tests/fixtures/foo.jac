@@ -1,5 +1,5 @@
-import:py from jaclang.runtimelib.machine { JacMachine, JacMachineState }
-import:jac from bar, bar_walk;
+import from jaclang.runtimelib.machine { JacMachine, JacMachineState }
+import from bar { bar_walk }
 # Test runner to initialize the walker
 
 can test_run {

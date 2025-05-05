@@ -1,4 +1,4 @@
-import:py json;
+import json;
 
 node N {
     has val: int;

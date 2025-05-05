@@ -1,6 +1,6 @@
-import:py from jaclang.runtimelib.machine {JacMachine as Jac}
-import:py from jaclang.runtimelib.architype {Anchor}
-import:py from uuid {UUID}
+import from jaclang.runtimelib.machine {JacMachine as Jac}
+import from jaclang.runtimelib.architype {Anchor}
+import from uuid {UUID}
 
 node A {
     has val: int;

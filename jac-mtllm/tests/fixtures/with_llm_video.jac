@@ -1,6 +1,6 @@
-import:py from mtllm.llms { BaseLLM }
-import:py from mtllm { Video }
-import:py os;
+import from mtllm.llms { BaseLLM }
+import from mtllm { Video }
+import os;
 
 obj model :BaseLLM: {
     can init {

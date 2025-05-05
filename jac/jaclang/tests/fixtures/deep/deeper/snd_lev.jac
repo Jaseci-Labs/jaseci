@@ -1,4 +1,4 @@
-import:jac from ..mycode, code;
+import from ..mycode { code }
 
 can slprint ->str {
     return "sl" + code();

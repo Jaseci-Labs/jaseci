@@ -126,13 +126,14 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             self.assertEqual(num_test, 3)
             return
         try:
+            before = ast3.dump(code_gen_pure.gen.py_ast[0], indent=2)
+            after = ast3.dump(code_gen_jac.gen.py_ast[0], indent=2)
             self.assertTrue(
                 isinstance(code_gen_pure, uni.Module)
                 and isinstance(code_gen_jac, uni.Module),
                 "Parsed objects are not modules.",
             )
-            before = ast3.dump(code_gen_pure.gen.py_ast[0], indent=2)
-            after = ast3.dump(code_gen_jac.gen.py_ast[0], indent=2)
+
             diff = "\n".join(unified_diff(before.splitlines(), after.splitlines()))
             self.assertFalse(diff, "AST structures differ after formatting.")
 

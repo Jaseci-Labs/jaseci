@@ -328,11 +328,14 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def free_code(self, _: None) -> uni.ModuleCode:
             """Grammar rule.
 
-            free_code: KW_WITH KW_ENTRY sub_name? code_block
+            free_code: KW_WITH KW_ENTRY (COLON NAME)? code_block
             """
             self.consume_token(Tok.KW_WITH)
             self.consume_token(Tok.KW_ENTRY)
-            name = self.match(uni.SubTag)
+            name = None
+            if self.match_token(Tok.COLON):
+                name_token = self.consume(uni.Name)
+                name = uni.SubTag(name_token, [name_token])
             codeblock = self.consume(uni.SubNodeList)
             return uni.ModuleCode(
                 name=name,
@@ -354,10 +357,10 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def import_stmt(self, _: None) -> uni.Import:
             """Grammar rule.
 
-            import_stmt: KW_IMPORT sub_name? KW_FROM from_path LBRACE import_items RBRACE
-                    | KW_IMPORT sub_name? KW_FROM from_path COMMA import_items SEMI  //Deprecated
-                    | KW_IMPORT sub_name? import_path (COMMA import_path)* SEMI
-                    | KW_INCLUDE sub_name? import_path SEMI
+            import_stmt: KW_IMPORT KW_FROM from_path LBRACE import_items RBRACE
+                    | KW_IMPORT KW_FROM from_path COMMA import_items SEMI  //Deprecated
+                    | KW_IMPORT import_path (COMMA import_path)* SEMI
+                    | KW_INCLUDE import_path SEMI
             """
             # TODO: kid will be removed so let's keep as it is for now.
             kid = self.cur_nodes
@@ -589,18 +592,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
             self.match_token(Tok.LT) or self.consume_token(Tok.COLON)
             return uni.SubNodeList[uni.Expr](items=items, delim=Tok.COMMA, kid=kid)
 
-        def sub_name(self, _: None) -> uni.SubTag[uni.Name]:
-            """Grammar rule.
-
-            sub_name: COLON NAME
-            """
-            self.consume_token(Tok.COLON)
-            target = self.consume(uni.Name)
-            return uni.SubTag(
-                tag=target,
-                kid=self.cur_nodes,
-            )
-
         def named_ref(self, _: None) -> uni.NameAtom:
             """Grammar rule.
 
@@ -721,21 +712,30 @@ class JacParser(Transform[uni.Source, uni.Module]):
             )
 
         def ability(self, _: None) -> uni.Ability | uni.AbilityDef | uni.FuncCall:
-            """Grammer rule.
+            """Grammar rule.
 
-            ability: decorators? KW_ASYNC? ability_decl
-                    | decorators? genai_ability
-                    | ability_def
+            ability: decorators? KW_ASYNC? (ability_decl | function_decl)
+                   | ability_def
+                   | function_def
             """
             ability: uni.Ability | uni.AbilityDef | None = None
             decorators = self.match(uni.SubNodeList)
             is_async = self.match_token(Tok.KW_ASYNC)
+
+            # Try to match ability_decl or function_decl
             ability = self.match(uni.Ability)
-            if is_async and ability:
-                ability.is_async = True
-                ability.add_kids_left([is_async])
+
+            if ability is None:
+                # Try to match ability_def or function_def
+                ability = self.match(uni.AbilityDef)
+
             if ability is None:
                 ability = self.consume(uni.AbilityDef)
+
+            if is_async and ability and isinstance(ability, uni.Ability):
+                ability.is_async = True
+                ability.add_kids_left([is_async])
+
             if decorators:
                 for dec in decorators.items:
                     if (
@@ -749,28 +749,28 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 if decorators.items:
                     ability.decorators = decorators
                     ability.add_kids_left([decorators])
-                return ability
+
             return ability
 
         def ability_decl(self, _: None) -> uni.Ability:
             """Grammar rule.
 
-            ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?
-                named_ref (func_decl | event_clause) (code_block | KW_ABSTRACT? SEMI)
+            ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref event_clause (block_tail | KW_ABSTRACT? SEMI)
             """
-            signature: uni.FuncSignature | uni.EventSignature | None = None
-            body: uni.SubNodeList | None = None
+            signature: uni.EventSignature | None = None
+            body: uni.SubNodeList | uni.FuncCall | None = None
             is_override = self.match_token(Tok.KW_OVERRIDE) is not None
             is_static = self.match_token(Tok.KW_STATIC) is not None
             self.consume_token(Tok.KW_CAN)
             access = self.match(uni.SubTag)
             semstr = self.match(uni.String)
             name = self.consume(uni.NameAtom)
-            signature = self.match(uni.FuncSignature) or self.consume(
-                uni.EventSignature
-            )
+            signature = self.consume(uni.EventSignature)
 
-            if (body := self.match(uni.SubNodeList)) is None:
+            # Handle block_tail
+            if (body := self.match(uni.SubNodeList)) is None and (
+                body := self.match(uni.FuncCall)
+            ) is None:
                 is_abstract = self.match_token(Tok.KW_ABSTRACT) is not None
                 self.consume_token(Tok.SEMI)
             else:
@@ -792,13 +792,24 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def ability_def(self, kid: list[uni.UniNode]) -> uni.AbilityDef:
             """Grammar rule.
 
-            ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
+            ability_def: arch_to_abil_chain event_clause block_tail
             """
             target = self.consume(uni.ArchRefChain)
-            signature = self.match(uni.FuncSignature) or self.consume(
-                uni.EventSignature
-            )
-            body = self.consume(uni.SubNodeList)
+            signature = self.consume(uni.EventSignature)
+
+            # Handle block_tail
+            body = self.match(uni.SubNodeList)
+            if body is None:
+                # It must be KW_BY atomic_call
+                self.consume_token(Tok.KW_BY)
+                by_call = self.consume(uni.FuncCall)
+                self.consume_token(Tok.SEMI)
+                # Create a code block with just the function call
+                body = uni.SubNodeList(
+                    items=[by_call],
+                    delim=None,
+                    kid=[by_call],
+                )
 
             return uni.AbilityDef(
                 target=target,
@@ -807,55 +818,69 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 kid=self.cur_nodes,
             )
 
-        def genai_ability(self, _: None) -> uni.Ability:
+        def function_def(self, kid: list[uni.UniNode]) -> uni.AbilityDef:
             """Grammar rule.
 
-            genai_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING?
-            named_ref (func_decl) KW_BY atomic_call SEMI
+            function_def: arch_to_abil_chain func_decl block_tail
             """
+            target = self.consume(uni.ArchRefChain)
+            signature = self.consume(uni.FuncSignature)
+
+            # Handle block_tail
+            body = self.match(uni.SubNodeList)
+            if body is None:
+                # It must be KW_BY atomic_call
+                self.consume_token(Tok.KW_BY)
+                by_call = self.consume(uni.FuncCall)
+                self.consume_token(Tok.SEMI)
+                # Create a code block with just the function call
+                body = uni.SubNodeList(
+                    items=[by_call],
+                    delim=None,
+                    kid=[by_call],
+                )
+
+            return uni.AbilityDef(
+                target=target,
+                signature=signature,
+                body=body,
+                kid=self.cur_nodes,
+            )
+
+        def function_decl(self, _: None) -> uni.Ability:
+            """Grammar rule.
+
+            function_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref func_decl (block_tail | KW_ABSTRACT? SEMI)
+            """
+            signature: uni.FuncSignature | None = None
+            body: uni.SubNodeList | uni.FuncCall | None = None
             is_override = self.match_token(Tok.KW_OVERRIDE) is not None
             is_static = self.match_token(Tok.KW_STATIC) is not None
             self.consume_token(Tok.KW_CAN)
             access = self.match(uni.SubTag)
             semstr = self.match(uni.String)
             name = self.consume(uni.NameAtom)
-            signature = self.match(uni.FuncSignature) or self.consume(
-                uni.EventSignature
-            )
-            self.consume_token(Tok.KW_BY)
-            body = self.consume(uni.FuncCall)
-            self.consume_token(Tok.SEMI)
+            signature = self.consume(uni.FuncSignature)
+
+            # Handle block_tail
+            if (body := self.match(uni.SubNodeList)) is None and (
+                body := self.match(uni.FuncCall)
+            ) is None:
+                is_abstract = self.match_token(Tok.KW_ABSTRACT) is not None
+                self.consume_token(Tok.SEMI)
+            else:
+                is_abstract = False
+
             return uni.Ability(
                 name_ref=name,
                 is_async=False,
                 is_override=is_override,
                 is_static=is_static,
-                is_abstract=False,
+                is_abstract=is_abstract,
                 access=access,
                 semstr=semstr,
                 signature=signature,
                 body=body,
-                kid=self.cur_nodes,
-            )
-
-        def event_clause(self, _: None) -> uni.EventSignature:
-            """Grammar rule.
-
-            event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (STRING? RETURN_HINT expression)?
-            """
-            return_spec: uni.Expr | None = None
-            semstr: uni.String | None = None
-            self.consume_token(Tok.KW_WITH)
-            type_specs = self.match(uni.Expr)
-            event = self.match_token(Tok.KW_EXIT) or self.consume_token(Tok.KW_ENTRY)
-            if semstr := self.match(uni.String):
-                self.consume_token(Tok.RETURN_HINT)
-                return_spec = self.consume(uni.Expr)
-            return uni.EventSignature(
-                semstr=semstr,
-                event=event,
-                arch_tag_info=type_specs,
-                return_type=return_spec,
                 kid=self.cur_nodes,
             )
 
@@ -3283,3 +3308,41 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     raise err
             self.terminals.append(ret)
             return ret
+
+        def event_clause(self, _: None) -> uni.EventSignature:
+            """Grammar rule.
+
+            event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (STRING? RETURN_HINT expression)?
+            """
+            return_spec: uni.Expr | None = None
+            semstr: uni.String | None = None
+            self.consume_token(Tok.KW_WITH)
+            type_specs = self.match(uni.Expr)
+            event = self.match_token(Tok.KW_EXIT) or self.consume_token(Tok.KW_ENTRY)
+            if self.match_token(Tok.RETURN_HINT):
+                semstr = self.match(uni.String)
+                if semstr:
+                    self.consume_token(Tok.COLON)
+                return_spec = self.consume(uni.Expr)
+            return uni.EventSignature(
+                semstr=semstr,
+                event=event,
+                arch_tag_info=type_specs,
+                return_type=return_spec,
+                kid=self.cur_nodes,
+            )
+
+        def block_tail(self, _: None) -> uni.SubNodeList | uni.FuncCall:
+            """Grammar rule.
+
+            block_tail: code_block | KW_BY atomic_call SEMI
+            """
+            # Try to match code_block first
+            if code_block := self.match(uni.SubNodeList):
+                return code_block
+
+            # Otherwise, it must be KW_BY atomic_call SEMI
+            self.consume_token(Tok.KW_BY)
+            func_call = self.consume(uni.FuncCall)
+            self.consume_token(Tok.SEMI)
+            return func_call

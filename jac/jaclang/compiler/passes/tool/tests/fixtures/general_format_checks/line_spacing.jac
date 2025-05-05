@@ -1,4 +1,4 @@
-import:py math;
+import math;
 
 glob RAD = 5;
 

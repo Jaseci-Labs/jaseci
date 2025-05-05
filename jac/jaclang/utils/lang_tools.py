@@ -202,6 +202,7 @@ class AstTool:
                         ),
                         prog=prog,
                     ).ir_out
+                    print(rep.unparse())
 
                     ir = prog.compile_from_str(
                         source_str=rep.unparse(),

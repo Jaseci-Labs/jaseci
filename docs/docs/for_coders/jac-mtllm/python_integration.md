@@ -59,7 +59,7 @@ Currently the Tasks in the Task Manager are just strings. Let's add a feature wh
 ### Creating the Jac Module
 
 ```jac
-import:py from mtllm.llms, OpenAI;
+import from mtllm.llms, OpenAI;
 
 glob llm = OpenAI();
 

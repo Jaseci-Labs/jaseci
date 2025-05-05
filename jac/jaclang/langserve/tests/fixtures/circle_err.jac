@@ -3,7 +3,7 @@ This module demonstrates a simple circle class and a function to calculate
 the area of a circle in all of Jac's glory.
 """
 
-import:py math;
+import math;
 # Module-level global var
 
 glob RAD = 5;

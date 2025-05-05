@@ -1,4 +1,4 @@
-import:py math;
+import math;
 
 obj circle {
     can init(radius: float) {

@@ -453,7 +453,7 @@ class UniScopeNode(UniNode):
                 # check if the symbol table name is not the same as symbol name
                 # then try to find a child scope with the same name
                 # This is used to get the scope in case of
-                #      import:py math;
+                #      import math;
                 #      b = math.floor(1.7);
                 if cur_sym_tab.nix_name != i.sym_name:
                     t = cur_sym_tab.find_scope(i.sym_name)
@@ -1276,14 +1276,15 @@ class Import(ElementStmt, CodeBlockStmt):
             new_kid.append(self.gen_token(Tok.KW_INCLUDE))
         else:
             new_kid.append(self.gen_token(Tok.KW_IMPORT))
-        if self.hint:
-            new_kid.append(self.hint)
         if self.from_loc:
             new_kid.append(self.gen_token(Tok.KW_FROM))
             new_kid.append(self.from_loc)
-            new_kid.append(self.gen_token(Tok.COMMA))
+            new_kid.append(self.gen_token(Tok.LBRACE))
         new_kid.append(self.items)
-        new_kid.append(self.gen_token(Tok.SEMI))
+        if self.from_loc:
+            new_kid.append(self.gen_token(Tok.RBRACE))
+        else:
+            new_kid.append(self.gen_token(Tok.SEMI))
         self.set_kids(nodes=new_kid)
         return res
 

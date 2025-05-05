@@ -1,5 +1,5 @@
 """Myca Lite to serve as example for Myca in Jaclang"""
-import:py from datetime, datetime;
+import from datetime {datetime}
 
 edge next_epoc {}
 edge prev_epoc {}

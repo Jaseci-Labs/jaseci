@@ -24,8 +24,8 @@ We start by importing the necessary modules in Jac:
 - `requests` (for making API calls)
 
 ```jac
-import:py streamlit as st;
-import:py requests;
+import streamlit as st;
+import requests;
 ```
 
 - `streamlit` will handle the user interface (UI) of the chatbot.
@@ -192,12 +192,12 @@ First, let's add a file called `rag.jac` to our project. This file will contain 
 Jac allows you to import Python libraries, making it easy to integrate existing libraries such as langchain, langchain_community, and more. In this RAG engine, we need document loaders, text splitters, embedding functions, and vector stores.
 
 ```jac
-import:py os;
-import:py from langchain_community.document_loaders {PyPDFDirectoryLoader}
-import:py from langchain_text_splitters {RecursiveCharacterTextSplitter}
-import:py from langchain.schema.document {Document}
-import:py from langchain_community.embeddings.ollama {OllamaEmbeddings}
-import:py from langchain_community.vectorstores.chroma {Chroma}
+import os;
+import from langchain_community.document_loaders {PyPDFDirectoryLoader}
+import from langchain_text_splitters {RecursiveCharacterTextSplitter}
+import from langchain.schema.document {Document}
+import from langchain_community.embeddings.ollama {OllamaEmbeddings}
+import from langchain_community.vectorstores.chroma {Chroma}
 ```
 
 - `PyPDFDirectoryLoader` is used to load documents from a directory.
@@ -367,7 +367,7 @@ Here we are going to use one of the key features of jaclang called [MTLLM](https
 We will create a new server code so delete the existing code in `server.jac` that we created in the last chapter and start from scratch and add the following.
 
 ```jac
-import:py from mtllm.llms {OpenAI}
+import from mtllm.llms {OpenAI}
 
 glob llm = OpenAI(model_name='gpt-4o');
 ```
@@ -387,7 +387,7 @@ ollama pull llama3.1
 This will download the `llama3.1` model to your local machine and make it available for inference when you run the `ollama serve` command. If you want use Ollama replace your import statement with the following:
 
 ```jac
-import:py from mtllm.llms {Ollama}
+import from mtllm.llms {Ollama}
 
 glob llm = Ollama(model_name='llama3.1');
 ```
@@ -395,7 +395,7 @@ glob llm = Ollama(model_name='llama3.1');
 Now that you have your LLM ready let's create a simple walker that uses the RAG module and MTLLM to generate responses to user queries. First, let's declare the global variables for MTLLM and the RAG engine.
 
 ```jac
-import:jac from rag {RagEngine}
+import from rag {RagEngine}
 glob rag_engine:RagEngine = RagEngine();
 ```
 

@@ -24,10 +24,9 @@ toplevel_stmt: import_stmt
        | test
 
 // [Heading]: Import/Include Statements.
-import_stmt: KW_IMPORT sub_name? KW_FROM from_path LBRACE import_items RBRACE
-           | KW_IMPORT sub_name? KW_FROM from_path COMMA import_items SEMI  //Deprecated
-           | KW_IMPORT sub_name? import_path (COMMA import_path)* SEMI
-           | KW_INCLUDE sub_name? import_path SEMI
+import_stmt: KW_IMPORT KW_FROM from_path LBRACE import_items RBRACE
+           | KW_IMPORT import_path (COMMA import_path)* SEMI
+           | KW_INCLUDE import_path SEMI
 
 from_path: (DOT | ELLIPSIS)* import_path
          | (DOT | ELLIPSIS)+
@@ -35,7 +34,6 @@ from_path: (DOT | ELLIPSIS)* import_path
 import_path: named_ref (DOT named_ref)* (KW_AS NAME)?
 import_items: (import_item COMMA)* import_item COMMA?
 import_item: named_ref (KW_AS NAME)?
-sub_name: COLON NAME
 
 // [Heading]: Architypes.
 architype: decorators? architype_decl
@@ -79,13 +77,15 @@ enum_stmt: NAME (COLON STRING)? EQ expression
          | ability
 
 // [Heading]: Abilities.
-ability: decorators? KW_ASYNC? ability_decl
-        | decorators? genai_ability
-        | ability_def
+ability: decorators? KW_ASYNC? (ability_decl | function_decl)
+       | ability_def
+       | function_def
 
-ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref (func_decl | event_clause) (code_block | KW_ABSTRACT? SEMI)
-ability_def: arch_to_abil_chain (func_decl | event_clause) code_block
-genai_ability: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref (func_decl) KW_BY atomic_call SEMI
+function_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref func_decl (block_tail | KW_ABSTRACT? SEMI)
+ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref event_clause (block_tail | KW_ABSTRACT? SEMI)
+function_def: arch_to_abil_chain func_decl block_tail
+ability_def: arch_to_abil_chain event_clause block_tail
+block_tail: code_block | KW_BY atomic_call SEMI
 event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (STRING? RETURN_HINT expression)?
 func_decl: (LPAREN func_decl_params? RPAREN)? (RETURN_HINT (STRING COLON)? expression)?
 func_decl_params: (param_var COMMA)* param_var COMMA?
@@ -96,7 +96,7 @@ global_var: (KW_LET | KW_GLOBAL) access_tag? assignment_list SEMI
 assignment_list: (assignment_list COMMA)? assignment
 
 // [Heading]: Free code.
-free_code: KW_WITH KW_ENTRY sub_name? code_block
+free_code: KW_WITH KW_ENTRY (COLON NAME)? code_block
 
 // [Heading]: Inline python.
 py_code_block: PYNLINE

@@ -44,7 +44,7 @@ Once starts, navigate to `/docs` to access the built-in API docs.
 
 ## **Examples**
 ```python
-import:py from jac_cloud {FastAPI}
+import from jac_cloud {FastAPI}
 
 walker post_no_body {}
 

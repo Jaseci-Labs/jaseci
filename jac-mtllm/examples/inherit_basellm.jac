@@ -1,5 +1,5 @@
 import from mtllm.llms.base { BaseLLM }
-import:py from PIL { Image }
+import from PIL { Image }
 import torch;
 import from transformers { AutoModelForCausalLM, AutoProcessor }
 

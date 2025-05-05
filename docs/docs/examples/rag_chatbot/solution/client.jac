@@ -1,5 +1,5 @@
-import:py streamlit as st;
-import:py requests;
+import streamlit as st;
+import requests;
 
 can bootstrap_frontend (token: str) {
     st.write("Welcome to your Demo Agent!");

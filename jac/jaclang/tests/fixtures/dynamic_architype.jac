@@ -1,5 +1,5 @@
-import:py from jaclang.runtimelib.machine {JacMachine, JacMachineState}
-import:jac from bar {Item}
+import from jaclang.runtimelib.machine {JacMachine, JacMachineState}
+import from bar {Item}
 
 node test_node {
     has value:int;

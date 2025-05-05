@@ -1,6 +1,6 @@
 """A Number Guessing Game"""
 
-import:py random;
+import random;
 
 glob guesses = [50, 25, 35, 30];
 

@@ -9,8 +9,8 @@ These are doc strings and can be used as comments
 Use them to document your code
 """
 
-import:jac stuff;
-import:py from .activity, Activity as Actvy;
+import stuff;
+import from .activity { Activity as Actvy }
 
 node location {
     has x: int,

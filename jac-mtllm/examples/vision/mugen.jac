@@ -1,5 +1,5 @@
-import:py from mtllm.llms { OpenAI }
-import:py from mtllm { Video }
+import from mtllm.llms { OpenAI }
+import from mtllm { Video }
 
 glob llm = OpenAI(model_name="gpt-4o");
 

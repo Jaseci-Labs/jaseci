@@ -1,7 +1,7 @@
-import:py from mtllm.llms.base { BaseLLM }
-import:py json;
-import:py os;
-import:py random;
+import from mtllm.llms.base { BaseLLM }
+import json;
+import os;
+import random;
 
 glob output_str = "None";
 

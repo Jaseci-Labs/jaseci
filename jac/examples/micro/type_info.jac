@@ -1,4 +1,4 @@
-import:py pygame;
+import pygame;
 
 obj Spritesheet {
     can init(file: str);

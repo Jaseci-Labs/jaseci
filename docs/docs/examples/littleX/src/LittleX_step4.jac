@@ -1,9 +1,9 @@
-import:py datetime;
-import:py from jac_cloud.core.architype { NodeAnchor }
-import:py from mtllm.llms { Ollama }
-import:py numpy;
-import:py from sentence_transformers { SentenceTransformer }
-import:py from sklearn.metrics.pairwise { cosine_similarity }
+import datetime;
+import from jac_cloud.core.architype { NodeAnchor }
+import from mtllm.llms { Ollama }
+import numpy;
+import from sentence_transformers { SentenceTransformer }
+import from sklearn.metrics.pairwise { cosine_similarity }
 
 glob llm = Ollama(host="http://127.0.0.1:11434", model_name="llama3.2:1b");
 glob sentence_transformer = SentenceTransformer('all-MiniLM-L6-v2');

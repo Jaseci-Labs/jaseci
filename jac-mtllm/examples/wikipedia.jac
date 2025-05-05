@@ -1,5 +1,5 @@
-import:py from mtllm.llms { OpenAI }
-import:py from mtllm.tools.wikipedia_utils { wikipedia_summary }
+import from mtllm.llms { OpenAI }
+import from mtllm.tools.wikipedia_utils { wikipedia_summary }
 
 glob llm = OpenAI(verbose=True, model_name="gpt-4o-mini");
 

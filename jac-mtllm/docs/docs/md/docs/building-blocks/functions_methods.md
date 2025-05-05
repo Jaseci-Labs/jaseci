@@ -23,7 +23,7 @@ In the above example, the `greet` function takes a `name` parameter of type `str
 Below is an example where we define a function `get_expert` that takes a question as input and returns the best expert to answer the question in string format using mtllm with openai model with the method `Reason`. `get_answer` function takes a question and an expert as input and returns the answer to the question using mtllm with openai model without any method. and we can call these function as normal functions.
 
 ```python
-import:py from mtllm.llms, OpenAI;
+import from mtllm.llms, OpenAI;
 
 glob llm = OpenAI(model_name="gpt-4o");
 
@@ -41,7 +41,7 @@ with entry {
 Here's another example,
 
 ```python
-import:py from mtllm.llms, OpenAI;
+import from mtllm.llms, OpenAI;
 
 glob llm = OpenAI(model_name="gpt-4o");
 
@@ -84,7 +84,7 @@ In the above example, the `greet` method returns a `str`. The method is defined 
 In the below example, we define a class `Essay` with a method `get_essay_judgement` that takes a criteria as input and returns the judgement for the essay based on the criteria using mtllm with openai model after a step of `Reasoning`. `get_reviewer_summary` method takes a dictionary of judgements as input and returns the summary of the reviewer based on the judgements using mtllm with openai model. `give_grade` method takes the summary as input and returns the grade for the essay using mtllm with openai model. and we can call these methods as normal methods.
 
 ```python
-import:py from mtllm.llms, OpenAI;
+import from mtllm.llms, OpenAI;
 
 glob llm = OpenAI(model_name="gpt-4o");
 
@@ -124,7 +124,7 @@ with entry {
 MTLLM is able to represent typed inputs in a way that is understandable to the model. Sametime, this makes the model to generate outputs in the expected output type without any additional information. Here is an example:
 
 ```python
-import:py from mtllm.llms, OpenAI;
+import from mtllm.llms, OpenAI;
 
 glob llm = OpenAI(model_name="gpt-4o");
 

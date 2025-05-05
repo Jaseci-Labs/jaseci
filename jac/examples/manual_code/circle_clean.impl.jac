@@ -1,6 +1,6 @@
 """Enum for shape types"""
 
-import:py math;
+import math;
 
 :enum:ShapeType {
     CIRCLE="Circle",

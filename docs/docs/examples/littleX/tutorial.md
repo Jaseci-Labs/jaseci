@@ -405,7 +405,7 @@ Think of your application as a personalized newsfeed or trend analyzer.
 === "Guide"
       - **Import Lamma with MTLLM**
       ```jac
-      import:py from mtllm.llms {Ollama}
+      import from mtllm.llms {Ollama}
       glob llm = Ollama(host="http://127.0.0.1:11434", model_name="llama3.2:1b");
       ```
       - **Summarize Tweets Using Lamma:**

@@ -1,4 +1,4 @@
-import:py test_py;
+import test_py;
 
 class B :test_py.A: {}
 

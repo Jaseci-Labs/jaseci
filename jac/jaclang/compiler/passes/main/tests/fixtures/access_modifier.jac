@@ -1,5 +1,5 @@
-include:jac access_checker;
-import:jac access_checker;
+import access_checker;
+import access_checker;
 
 obj SomeObj {
     obj :pub     InnerPublObj {}

@@ -1,8 +1,8 @@
-import:py math;
-import:py argparse;
-import:py from pygame_mock { color, display }
-import:py pygame_mock;
-import:py os;
+import math;
+import argparse;
+import from pygame_mock { color, display }
+import pygame_mock;
+import os;
 
 can fool_me -> `Type[pygame_mock.constants.CL] {
     return pygame_mock.constants.CL;

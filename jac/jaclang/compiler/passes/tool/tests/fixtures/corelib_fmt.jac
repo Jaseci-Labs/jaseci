@@ -1,9 +1,9 @@
 """Jac's Key Elemental Abstractions"""
 
-import:py from datetime, datetime;
-import:py from uuid, UUID, uuid4;
-import:py from jaclang.compiler.constant, EdgeDir;
-import:py from jaclang.plugin, Architype, ArchitypeProtocol, DSFunc, AbsRootHook, hookimpl;
+import from datetime { datetime }
+import from uuid { UUID, uuid4 }
+import from jaclang.compiler.constant { EdgeDir }
+import from jaclang.plugin { Architype, ArchitypeProtocol, DSFunc, AbsRootHook, hookimpl }
 
 enum AccessMode;
 

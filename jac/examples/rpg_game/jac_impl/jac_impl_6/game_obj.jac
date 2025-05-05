@@ -1,12 +1,12 @@
 """This is an RPG game built using Jaclang"""
 
 # This game is built using the pygame module which is imported here
-import:py pygame;
+import pygame;
 
 # Including Jac codebase
-include:jac sprites;
-include:jac settings.config;
-include:jac settings.map;
+import sprites;
+import settings.config;
+import settings.map;
 
 """
 The Game base class

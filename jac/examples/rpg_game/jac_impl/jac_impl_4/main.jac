@@ -2,16 +2,16 @@
 
 
 # This game is built using the pygame module which is imported here
-import:py pygame;
-import:py sys;
-import:py random;
-import:py time;
+import pygame;
+import sys;
+import random;
+import time;
 
 # Importing Jac codebase
-include:jac sprites;
-include:jac config;
-include:jac map;
-include:jac game_obj;
+import sprites;
+import config;
+import map;
+import game_obj;
 
 '''The walker that initiates the game and runs an instance of the game'''
 walker game {

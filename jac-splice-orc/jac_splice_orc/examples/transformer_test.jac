@@ -1,5 +1,5 @@
 with entry{
-    import:py transformers;
+    import transformers;
     pipe = transformers.pipeline("text-classification");
     print(pipe("This is a sample Text classification test."));
    

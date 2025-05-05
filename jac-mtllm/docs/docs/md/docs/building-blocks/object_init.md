@@ -7,7 +7,7 @@ This behavior is very hard to achieve in other languages, but with MTLLM, it is 
 In the following example, we are initializing a new object of type `Task` with only providing the `description` field. The `time_in_min` and `priority_out_of_10` fields are automatically filled by the MTLLM based on the given context after a step of reasoning.
 
 ```python
-import:py from mtllm.llms, OpenAI, Ollama;
+import from mtllm.llms, OpenAI, Ollama;
 
 glob llm = OpenAI(model_name="gpt-4o");
 
@@ -47,7 +47,7 @@ with entry {
 Here is another example with nested custom types,
 
 ```python
-import:py from jaclang.core.llms, OpenAI;
+import from jaclang.core.llms, OpenAI;
 
 glob llm = OpenAI(model_name="gpt-4o");
 

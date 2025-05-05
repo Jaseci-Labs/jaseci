@@ -62,13 +62,13 @@ Now lets break it down!
 
 In this segment we observe a docstring, imports, and a global variable. In Jac docstrings look exactly like python docstrings, however docstrings can only be used as docstrings (not as comments). That means there are a limited number of places you can place them, these places are at the top of a module, and *before* the declaration of functions, methods, classes (architypes), global variable statements, module level code blocks (i.e., `with entry {}` style blocks, more on this later), and enumerations.
 
-Import statements are very similar to python, note that you have to denote if you are importing a python module with `import:py` or jac with `import:jac`. Module paths and such are pretty much identical.
+Import statements are very similar to python, note that you have to denote if you are importing a python module with `import` or jac with `import`. Module paths and such are pretty much identical.
 
 Quick note on from import, they work like this.
 
 === "Jac"
     ```jac
-    import:py from os, getcwd, listdir, path
+    import from os, getcwd, listdir, path
     ```
 === "Python"
     ```python
@@ -119,13 +119,13 @@ As Jac does not allow docstrings to be used as comments, Jac provides an elegant
 Jac includes enums as a language feature, the semantics of this enum is simple currently however will evolve over time. Of course you can import Enum to leverage pythons path if needed. However its important to note you'll have to use Jac's keyword escape feature to avoid a syntax error when referring to the enum package.
 
 ```jac
-import:py from enum, Enum, auto;
+import from enum, Enum, auto;
 ```
 If you try to import from enum this way in jac, you'll get a syntax error.
 
 
 ```jac
-import:py from <>enum, Enum, auto;
+import from <>enum, Enum, auto;
 ```
 This is the way to import from enum. Any language level keyword can be escaped by putting a `<>` immediately before the keyword.
 

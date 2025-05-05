@@ -1372,7 +1372,7 @@ class JacLanguageTests(TestCase):
             )
 
             # Create the importing script in the main temp directory
-            importer_content = "import:jac site_pkg_mod;"
+            importer_content = "import site_pkg_mod;"
             _ = self.create_temp_jac_file(importer_content, tmpdir, "importer_site.jac")
             with patch("site.getsitepackages", return_value=[mock_site_dir]):
                 captured_output = io.StringIO()

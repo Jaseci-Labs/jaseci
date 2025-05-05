@@ -1,6 +1,6 @@
 """A Number Guessing Game"""
 
-import:py random;
+import random;
 
 """
 In this code example, we implement a simple number guessing game using graph travesel.

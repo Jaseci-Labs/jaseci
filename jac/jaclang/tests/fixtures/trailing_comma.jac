@@ -5,9 +5,9 @@ Add new jac syntax here to test if it compile without any issue.
 
 
 # Import statement without trailing comma.
-import:py from time { sleep, timezone, tzname }
+import from time { sleep, timezone, tzname }
 # Import statement with trailing comma.
-import:py from os { path, getenv, getpid,  }
+import from os { path, getenv, getpid,  }
 
 enum WithoutTrailComma {
     FOO = "FOO",

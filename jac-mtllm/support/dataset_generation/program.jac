@@ -1,6 +1,6 @@
-import:py from mtllm.llms { OpenAI }
-import:py json;
-import:py os;
+import from mtllm.llms { OpenAI }
+import json;
+import os;
 
 glob llm = OpenAI(verbose=True, model_name="gpt-4o");
 

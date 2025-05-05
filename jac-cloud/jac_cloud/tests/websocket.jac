@@ -1,5 +1,5 @@
 """Websocket scenarios."""
-import:py from jac_cloud.plugin {WEBSOCKET_MANAGER as socket}
+import from jac_cloud.plugin {WEBSOCKET_MANAGER as socket}
 
 ###########################################################
 #                   WEBSOCKET ENDPOINTS                   #

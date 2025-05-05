@@ -1,4 +1,4 @@
-import:py pygls.server;
+import pygls.server;
 
 obj ServerWrapper {
     can init(file: str);
