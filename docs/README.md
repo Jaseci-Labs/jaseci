@@ -26,7 +26,7 @@ To open a preview of the mkdocs server locally, following steps should be follow
 1. Install necessaries such as pygments and jaclang syntax highlighting from source.
 
     ```bash
-    cd support/jac-lang.org/
+    cd docs
     pip install -e .
     ```
 

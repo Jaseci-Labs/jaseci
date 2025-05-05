@@ -18,7 +18,7 @@ INTERNALS_DOC = "docs/for_contributors/internals.md"
 AST_TOOL = AstTool()
 
 
-def pre_build_hook(**kwargs: any) -> None:
+def pre_build_hook(**kwargs: dict) -> None:
     """Run pre-build tasks for preparing files.
 
     This function is called before the build process starts.
