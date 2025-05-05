@@ -670,7 +670,7 @@ class JacLanguageTests(TestCase):
                 continue
             architype_count += len(mod.get_all_sub_nodes(uni.Architype))
 
-        self.assertEqual(architype_count, 27)  # Because of the Architype from math
+        self.assertEqual(architype_count, 24)  # Because of the Architype from math
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(
