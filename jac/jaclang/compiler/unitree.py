@@ -852,8 +852,11 @@ class NameAtom(AtomExpr, EnumBlockStmt):
 class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode, AstSemStrNode):
     """ArchSpec node type for Jac Ast."""
 
-    def __init__(self, decorators: Optional[SubNodeList[Expr]] = None) -> None:
+    def __init__(
+        self, decorators: Optional[SubNodeList[Expr]] = None, is_async: bool = False
+    ) -> None:
         self.decorators = decorators
+        self.is_async = is_async
 
 
 class MatchPattern(UniNode):
@@ -1522,6 +1525,8 @@ class Architype(
         if self.decorators:
             new_kid.append(self.gen_token(Tok.DECOR_OP))
             new_kid.append(self.decorators)
+        if self.is_async:
+            new_kid.append(self.gen_token(Tok.KW_ASYNC))
         new_kid.append(self.arch_type)
         if self.access:
             new_kid.append(self.access)

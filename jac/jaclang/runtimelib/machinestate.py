@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import types
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import MISSING
 from typing import Any, Callable, Optional, cast
 from uuid import UUID
@@ -115,3 +116,4 @@ class JacMachineState:
         self.jac_program: JacProgram = JacProgram()
         self.interp_mode = interp_mode
         self.exec_ctx = ExecutionContext(session=session, root=root, mach=self)
+        self.pool = ThreadPoolExecutor()
