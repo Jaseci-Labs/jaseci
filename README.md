@@ -23,10 +23,9 @@ Welcome to the Jaseci project.
 This is a collection of libraries and frameworks in the Jaseci Ecosystem.
 
 - [`jaclang`](jac/): The Jac programming language, a drop-in replacement for and supersets Python.
-- [`mtllm`](jac-mtllm/): Integrate LLM into your existing application with minimal effort.
 - [`jac-cloud`](jac-cloud/): The cloud-native library for Jac programs. `jac-cloud` automatically converts your local application to a production-ready server stack.
-- [`jac-streamlit`](tool_plugins/streamlit): Quickly build UI with Jac and Streamlit.
 - [`jac VSCE`](jac/support/vscode_ext): Official VSCode Extension for the Jac programming language.
+- [`mtllm`](jac-mtllm/): Integrate LLM into your existing application with minimal effort.
 
 ## Awesome Jaseci Projects 🚀
 

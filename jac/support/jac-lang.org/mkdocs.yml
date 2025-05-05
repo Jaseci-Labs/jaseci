@@ -49,11 +49,16 @@ nav:
   - For contributors:
       - "for_contributors/contrib.md"
       - "for_contributors/internals.md"
+      - Symbol Tables:
+        - "for_contributors/symbol_tables/index.md"
+        - "for_contributors/symbol_tables/structure.md"
+        - "for_contributors/symbol_tables/building.md"
+        - "for_contributors/symbol_tables/def_use.md"
+        - "for_contributors/symbol_tables/linking.md"
+        - "for_contributors/symbol_tables/resolution.md"
       - "for_contributors/jac_plugins.md"
       - "for_contributors/uniir_node.md"
       - "for_contributors/roadmap.md"
-      - "for_contributors/mtp_impl/inference_engine.md"
-      - "for_contributors/mtp_impl/sem_registry.md"
   - Examples:
     - LittleX (your own twitter):
       - "examples/littleX/overview.md"

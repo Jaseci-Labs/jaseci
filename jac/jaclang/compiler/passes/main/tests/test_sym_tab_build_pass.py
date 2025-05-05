@@ -2,10 +2,10 @@
 
 # from jaclang.compiler.program import JacProgram
 from jaclang.compiler.passes.main import SymTabBuildPass
-from jaclang.utils.test import AstSyncTestMixin, TestCase
+from jaclang.utils.test import TestCase
 
 
-class SymTabBuildPassTests(TestCase, AstSyncTestMixin):
+class SymTabBuildPassTests(TestCase):
     """Test pass module."""
 
     TargetPass = SymTabBuildPass
