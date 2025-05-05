@@ -103,6 +103,7 @@ class JClassType(JType):
     def __init__(self, symbol_table: uni.UniScopeNode) -> None:
         """Create an object from JClassType."""
         self.__symbol_table = symbol_table
+        self.name = symbol_table.nix_name
 
     def _is_assignable_from(self, other: JType) -> bool:
         return False
@@ -118,6 +119,7 @@ class JClassInstanceType(JType):
     def __init__(self, instance_of: JClassType) -> None:
         """Create an object from JClassInstanceType."""
         self.__instance_of = instance_of
+        self.name = instance_of.name
 
     def _is_assignable_from(self, other: JType) -> bool:
         return False

@@ -38,7 +38,8 @@ class JacExpressionType:
             self.__debug_print(f"{func_name} is not implemented yet")
 
     def _get_name_expr_type(self, node: ast.Name) -> jtype.JType:
-        assert node.name_spec.sym is not None
+        if node.name_spec.sym is None:
+            return jtype.JNoType()
         return node.name_spec.sym.jtype
 
     def _get_int_expr_type(self, node: ast.Int) -> jtype.JType:
@@ -79,6 +80,9 @@ class JacExpressionType:
         elif isinstance(func_type, jtype.JClassType):
             return jtype.JClassInstanceType(func_type)
 
+    def _get_atom_trailer_expr_type(self, node: ast.AtomTrailer) -> jtype.JType:
+        return self.get_type(node.as_attr_list[-1])
+
     def _set_name_expr_type(self, node: ast.Name, expr_type: jtype.JType) -> None:
         assert node.name_spec.sym is not None
         node.name_spec.sym.jtype = expr_type
@@ -88,3 +92,9 @@ class JacExpressionType:
     ) -> None:
         assert node.sym is not None
         node.sym.jtype = expr_type
+
+    def _set_atom_trailer_expr_type(
+        self, node: ast.AtomTrailer, expr_type: jtype.JType
+    ) -> None:
+        # assert False, "Types should be added as part of the name node"
+        pass

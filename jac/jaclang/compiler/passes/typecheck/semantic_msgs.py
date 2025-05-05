@@ -38,3 +38,11 @@ class JacSemanticMessages(Enum):
     UNSUPPORTED_TYPE_ANNOTATION = (
         "Type annotations is not supported for '{expr}' expression"
     )
+
+    # Atom traillers
+    FIELD_ACCESS_FROM_INVALID_TYPE = (
+        "Can't access fields from '{expr}' with type '{expr_type}'"
+    )
+    FIELD_NOT_FOUND = (
+        "field '{field_name}' is not found in '{expr}' with type '{expr_type}'"
+    )

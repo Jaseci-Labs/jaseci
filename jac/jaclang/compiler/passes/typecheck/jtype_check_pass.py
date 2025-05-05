@@ -57,7 +57,7 @@ class SemanticAnalysisPass(UniPass):
     #############
     # Abilities #
     #############
-    def enter_return_stmt(self, node: ast.ReturnStmt) -> None:
+    def exit_return_stmt(self, node: ast.ReturnStmt) -> None:
         """Check the return var type across the annotated return type."""
         return_type = self.prog.expr_type_handler.get_type(node.expr)
 
@@ -82,8 +82,13 @@ class SemanticAnalysisPass(UniPass):
     #################
     # Ability calls #
     #################
-    def enter_func_call(self, node: ast.FuncCall) -> None:
+    def exit_func_call(self, node: ast.FuncCall) -> None:
         """Check the vars used as actual parameters across the formal parameters."""
+        # if isinstance(node.target, ast.AtomTrailer):
+        #     target_expr = node.target.as_attr_list[-1]
+        # else:
+        #     target_expr
+
         if not isinstance(node.target, ast.NameAtom):
             self.report_error(
                 JacSemanticMessages.EXPR_NOT_CALLABLE, expr=node.unparse()
@@ -96,19 +101,13 @@ class SemanticAnalysisPass(UniPass):
             )
             return
 
-        current_symbol_table: Optional[ast.UniNode | ast.UniScopeNode] = node.sym_tab
-        while current_symbol_table is not None and not isinstance(
-            current_symbol_table, ast.ProgramModule
-        ):
-            assert isinstance(current_symbol_table, ast.UniScopeNode)
-            func_symbol = current_symbol_table.find_scope(
-                node.target.name_spec.sym_name
-            )
-            if func_symbol:
-                break
-            else:
-                assert current_symbol_table.parent is not None
-                current_symbol_table = current_symbol_table.parent
+        # Get the symbol table where the node exists then try to get the needed symbol
+        node_href = self.prog.mod.main.get_href_path(node).split(("."))[1:]
+        current_symtab = self.prog.mod.main.sym_tab
+        for i in node_href:
+            current_symtab = current_symtab.find_scope(i)
+            assert current_symtab is not None
+        func_symbol = current_symtab.find_scope(node.target.name_spec.sym_name)
 
         if not func_symbol:
             self.report_error(
@@ -215,7 +214,7 @@ class SemanticAnalysisPass(UniPass):
     ##################################
     # Assignments & Var delcarations #
     ##################################
-    def enter_assignment(self, node: ast.Assignment) -> None:
+    def exit_assignment(self, node: ast.Assignment) -> None:
         """Set var type & check the value type across the var annotated type."""
         value = node.value
         value_type = self.prog.expr_type_handler.get_type(value) if value else None
@@ -243,3 +242,54 @@ class SemanticAnalysisPass(UniPass):
                         val_type=value_type,
                         var_type=sym_type,
                     )
+
+    # The goal here is to fix the AtomTrailer symbols after the type annotations
+    # of first nodes in the atom trailers
+    def enter_atom_trailer(self, node: ast.AtomTrailer) -> None:
+        """Fix missing symbols."""
+        self.prune()
+        # Get the symbol table where the node exists
+        node_href = self.prog.mod.main.get_href_path(node).split(("."))[1:]
+        current_symtab = self.prog.mod.main.sym_tab
+        for i in node_href:
+            current_symtab = current_symtab.find_scope(i)
+            assert current_symtab is not None
+
+        # Get the symbol table of the object that contains the needed field
+        last_node: Optional[ast.AstSymbolNode] = None
+        for atom_t_node in node.as_attr_list[:-1]:
+            assert atom_t_node.sym is not None
+            atom_t_node_jtype = self.prog.expr_type_handler.get_type(atom_t_node)
+            if not isinstance(
+                atom_t_node_jtype, (jtype.JClassInstanceType, jtype.JClassType)
+            ):
+                self.report_error(
+                    JacSemanticMessages.FIELD_ACCESS_FROM_INVALID_TYPE,
+                    expr=atom_t_node.unparse(),
+                    expr_type=atom_t_node_jtype,
+                )
+                return
+
+            atom_t_node_jtype_name = atom_t_node_jtype.name
+            current_symtab = current_symtab.find_scope(atom_t_node_jtype_name)
+            if current_symtab is None and last_node is not None:
+                self.report_error(
+                    JacSemanticMessages.FIELD_NOT_FOUND,
+                    field_name=atom_t_node.sym_name,
+                    expr=last_node.unparse(),
+                    expr_type=last_node.sym.jtype,
+                )
+                return
+            last_node = atom_t_node
+
+        needed_sym = current_symtab.lookup(node.as_attr_list[-1].sym_name)
+        if needed_sym is None:
+            self.report_error(
+                JacSemanticMessages.FIELD_NOT_FOUND,
+                field_name=node.as_attr_list[-1].sym_name,
+                expr=node.as_attr_list[-2].unparse(),
+                expr_type=self.prog.expr_type_handler.get_type(node.as_attr_list[-2]),
+            )
+            return
+        else:
+            node.as_attr_list[-1].sym = needed_sym
