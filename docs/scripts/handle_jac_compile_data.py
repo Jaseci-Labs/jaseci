@@ -9,7 +9,7 @@ import zipfile
 
 from jaclang.utils.lang_tools import AstTool
 
-TARGET_FOLDER = "../../jaclang"
+TARGET_FOLDER = "../jac/jaclang"
 EXTRACTED_FOLDER = "docs/playground"
 PLAYGROUND_ZIP_PATH = os.path.join(EXTRACTED_FOLDER, "jaclang.zip")
 ZIP_FOLDER_NAME = "jaclang"
