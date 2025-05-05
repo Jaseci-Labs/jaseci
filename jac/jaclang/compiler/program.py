@@ -21,6 +21,8 @@ from jaclang.compiler.passes.main import (
     JacTypeCheckPass,
     PyBytecodeGenPass,
     PyCollectDepsPass,
+    JTypeAnnotatePass,
+    SemanticAnalysisPass,
     PyImportPass,
     PyJacAstLinkPass,
     PyastBuildPass,
@@ -30,6 +32,7 @@ from jaclang.compiler.passes.main import (
 from jaclang.compiler.passes.main.sym_tab_link_pass import SymTabLinkPass
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.passes.transform import Alert, Transform
+from jaclang.compiler.passes.typecheck import JacExpressionType, SemanticErrorObject
 from jaclang.compiler.unitree import Module
 from jaclang.utils.log import logging
 
@@ -47,6 +50,9 @@ class JacProgram:
         self.py_raise_map: dict[str, str] = {}
         self.errors_had: list[Alert] = []
         self.warnings_had: list[Alert] = []
+        self.expr_type_handler = JacExpressionType()
+        self.semantic_errors_had: list[SemanticErrorObject] = []
+        self.semantic_warnnings_had: list[SemanticErrorObject] = []
 
     def get_bytecode(
         self, full_target: str, full_compile: bool = True
@@ -148,10 +154,13 @@ class JacProgram:
             SymTabLinkPass(ir_in=mod, prog=self)
 
         for mod in self.mod.hub.values():
-            self.schedule_runner(mod, mode=CompilerMode.COMPILE)
+            self.schedule_runner(
+                mod,
+                mode=mode if mode != CompilerMode.TYPECHECK else CompilerMode.COMPILE,
+            )
 
         # Check if we need to run without type checking then just return
-        if mode == CompilerMode.COMPILE:
+        if mode in [CompilerMode.COMPILE, CompilerMode.QUICKCHECK]:
             return mod_targ
 
         # Run TypeCheckingPass on the top module
@@ -188,6 +197,8 @@ class JacProgram:
         py_code_gen = [
             DeclImplMatchPass,
             DefUsePass,
+            JTypeAnnotatePass,
+            SemanticAnalysisPass,
             PyastGenPass,
             PyJacAstLinkPass,
             PyBytecodeGenPass,

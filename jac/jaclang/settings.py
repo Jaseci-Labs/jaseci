@@ -20,6 +20,7 @@ class Settings:
     disable_mtllm: bool = False
     ignore_test_annex: bool = False
     pyout_jaclib_alias: str = "_"
+    enable_jac_semantics: bool = False
 
     # Formatter configuration
     max_line_length: int = 88
