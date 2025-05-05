@@ -8,7 +8,7 @@ nav:
     - "for_coders/getting_started.md"
     - "for_coders/installation.md"
     - Full Reference:
-      - "lang_ref/jac_ref.md"
+      - "for_coders/jac_ref.md"
     - Language Basics:
       - "for_coders/language_basics/basic_syntax.md"
       - "for_coders/language_basics/types.md"
