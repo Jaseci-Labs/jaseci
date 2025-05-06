@@ -40,12 +40,12 @@ architype: decorators? architype_decl
          | architype_def
          | enum
 
-architype_decl: arch_type access_tag? STRING? NAME inherited_archs? (member_block | SEMI)
+architype_decl: arch_type access_tag? NAME inherited_archs? (member_block | SEMI)
 architype_def: abil_to_arch_chain member_block
 decorators: (DECOR_OP atomic_chain)+
 access_tag: COLON ( KW_PROT | KW_PUB | KW_PRIV )
 inherited_archs: LPAREN (atomic_chain COMMA)* atomic_chain RPAREN
-              
+
 
 arch_type: KW_WALKER
           | KW_OBJECT
@@ -58,19 +58,18 @@ member_block: LBRACE member_stmt* RBRACE
 member_stmt: STRING? (py_code_block | ability | architype | has_stmt | free_code)
 has_stmt: KW_STATIC? (KW_LET | KW_HAS) access_tag? has_assign_list SEMI
 has_assign_list: (has_assign_list COMMA)? typed_has_clause
-typed_has_clause: named_ref (COLON STRING)? type_tag (EQ expression | KW_BY KW_POST_INIT)?
+typed_has_clause: named_ref type_tag (EQ expression | KW_BY KW_POST_INIT)?
 type_tag: COLON expression
 
 // [Heading]: Enumerations.
 enum: decorators? enum_decl
      | enum_def
 
-enum_decl: KW_ENUM access_tag? STRING? NAME inherited_archs? (enum_block | SEMI)
+enum_decl: KW_ENUM access_tag? NAME inherited_archs? (enum_block | SEMI)
 enum_def: arch_to_enum_chain enum_block
 enum_block: LBRACE ((enum_stmt COMMA)* enum_stmt COMMA?)? RBRACE
 
-enum_stmt: NAME (COLON STRING)? EQ expression
-         | NAME (COLON STRING)?
+enum_stmt: NAME (EQ expression)?
          | py_code_block
          | free_code
          | ability
@@ -80,15 +79,15 @@ ability: decorators? KW_ASYNC? (ability_decl | function_decl)
        | ability_def
        | function_def
 
-function_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref func_decl (block_tail | KW_ABSTRACT? SEMI)
-ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? STRING? named_ref event_clause (block_tail | KW_ABSTRACT? SEMI)
+function_decl: KW_OVERRIDE? KW_STATIC? KW_DEF access_tag? named_ref func_decl (block_tail | KW_ABSTRACT? SEMI)
+ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? named_ref event_clause (block_tail | KW_ABSTRACT? SEMI)
 function_def: arch_to_abil_chain func_decl block_tail
 ability_def: arch_to_abil_chain event_clause block_tail
 block_tail: code_block | KW_BY atomic_call SEMI
-event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (STRING? RETURN_HINT expression)?
-func_decl: (LPAREN func_decl_params? RPAREN)? (RETURN_HINT (STRING COLON)? expression)?
+event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (RETURN_HINT expression)?
+func_decl: (LPAREN func_decl_params? RPAREN)? (RETURN_HINT expression)?
 func_decl_params: (param_var COMMA)* param_var COMMA?
-param_var: (STAR_POW | STAR_MUL)? NAME (COLON STRING)? type_tag (EQ expression)?
+param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
 
 // [Heading]: Global variables.
 global_var: (KW_LET | KW_GLOBAL) access_tag? assignment_list SEMI
@@ -149,7 +148,7 @@ statement: import_stmt
        | expression SEMI
        | ctrl_stmt SEMI
        | py_code_block
-       | walker_stmt
+       | spatial_stmt
        | SEMI
 
 
@@ -248,29 +247,20 @@ delete_stmt: KW_DELETE expression
 report_stmt: KW_REPORT expression
 
 // [Heading]: Control statements.
-ctrl_stmt: KW_SKIP | KW_BREAK | KW_CONTINUE
+ctrl_stmt: KW_SKIP | KW_DISENGAGE | KW_BREAK | KW_CONTINUE
 
 // [Heading]: Data spatial Walker statements.
-walker_stmt: visit_stmt
-       | revisit_stmt
-       | disengage_stmt
-       | ignore_stmt
+spatial_stmt: visit_stmt | ignore_stmt
 
 // [Heading]: Visit statements.
-visit_stmt: KW_VISIT (inherited_archs)? expression (else_stmt | SEMI)
-
-// [Heading]: Revisit statements.
-revisit_stmt: KW_REVISIT expression? (else_stmt | SEMI)
-
-// [Heading]: Disengage statements.
-disengage_stmt: KW_DISENGAGE SEMI
+visit_stmt: KW_VISIT (COLON expression COLON)? expression (else_stmt | SEMI)
 
 // [Heading]: Ignore statements.
 ignore_stmt: KW_IGNORE expression SEMI
 
 // [Heading]: Assignments.
 assignment: KW_LET? (atomic_chain EQ)+ (yield_expr | expression)
-          | atomic_chain (COLON STRING)? type_tag (EQ (yield_expr | expression))?
+          | atomic_chain type_tag (EQ (yield_expr | expression))?
           | atomic_chain aug_op (yield_expr | expression)
 
 aug_op: RSHIFT_EQ
@@ -296,7 +286,7 @@ expression: walrus_assign (KW_IF expression KW_ELSE expression)?
 walrus_assign: (named_ref WALRUS_EQ)? pipe
 
 // [Heading]: Lambda expressions.
-lambda_expr: KW_WITH func_decl_params? (RETURN_HINT expression)? KW_CAN expression
+lambda_expr: KW_LAMBDA func_decl_params? (RETURN_HINT expression)? COLON expression
 
 // [Heading]: Pipe expressions.
 pipe: (pipe PIPE_FWD)? pipe_back
@@ -437,13 +427,13 @@ kw_expr: named_ref EQ expression | STAR_POW expression
 // [Heading]: Data Spatial References.
 edge_ref_chain: LSQUARE (KW_NODE| KW_EDGE)? expression? (edge_op_ref (filter_compr | expression)?)+ RSQUARE
 edge_op_ref: edge_any | edge_from | edge_to
-edge_to: ARROW_R | (ARROW_R_P1|DARROW_R_P1) typed_filter_compare_list ARROW_R_P2 // DCARROW_R_P1 is deprecated
-edge_from: ARROW_L | ARROW_L_P1 typed_filter_compare_list (ARROW_L_P2|DARROW_L_P2) // DCARROW_L_P2 is deprecated
+edge_to: ARROW_R | ARROW_R_P1 typed_filter_compare_list ARROW_R_P2
+edge_from: ARROW_L | ARROW_L_P1 typed_filter_compare_list ARROW_L_P2
 edge_any: ARROW_BI | ARROW_L_P1 typed_filter_compare_list ARROW_R_P2
 connect_op: connect_from | connect_to | connect_any
 disconnect_op: KW_DELETE edge_op_ref
-connect_to: CARROW_R | (CARROW_R_P1|DCARROW_R_P1) expression (COLON kw_expr_list)? CARROW_R_P2 // DCARROW_R_P1 is deprecated
-connect_from: CARROW_L | CARROW_L_P1 expression (COLON kw_expr_list)? (CARROW_L_P2 | DCARROW_L_P2) // DCARROW_L_P2 is deprecated
+connect_to: CARROW_R | CARROW_R_P1 expression (COLON kw_expr_list)? CARROW_R_P2
+connect_from: CARROW_L | CARROW_L_P1 expression (COLON kw_expr_list)? CARROW_L_P2
 connect_any: CARROW_BI | CARROW_L_P1 expression (COLON kw_expr_list)? CARROW_R_P2
 
 // [Heading]: Special Comprehensions.
@@ -465,6 +455,7 @@ special_ref: KW_INIT
             | KW_SUPER
             | KW_SELF
             | KW_HERE
+            | KW_VISITOR
 
 // [Heading]: Builtin types.
 builtin_type: TYP_TYPE
@@ -544,9 +535,9 @@ KW_ENUM: "enum"
 KW_NODE: "node"
 KW_IGNORE: "ignore"
 KW_VISIT: "visit"
-KW_REVISIT: "revisit"
 KW_SPAWN: "spawn"
 KW_WITH: "with"
+KW_LAMBDA: "lambda"
 KW_ENTRY: "entry"
 KW_EXIT: "exit"
 KW_IMPORT: "import"
@@ -587,6 +578,7 @@ KW_PROT: "protect"
 KW_HAS: "has"
 KW_GLOBAL: "glob"
 KW_CAN: "can"
+KW_DEF: "def"
 KW_STATIC: "static"
 KW_OVERRIDE: "override"
 KW_MATCH: "match"
@@ -596,6 +588,7 @@ KW_INIT: "init"
 KW_POST_INIT: "postinit"
 
 KW_HERE: "here"
+KW_VISITOR: "visitor"
 KW_SELF: "self"
 KW_SUPER: "super"
 KW_ROOT: "root"
@@ -642,10 +635,6 @@ CARROW_L_P1: "<+:"
 CARROW_R_P2: ":+>"
 CARROW_L_P2: ":<+"
 CARROW_R_P1: "+>:"
-DCARROW_L_P2: ":+"
-DCARROW_R_P1: "+:"
-DARROW_L_P2: ":-"
-DARROW_R_P1: "-:"
 
 
 // Assignment Operator ----------------------------------------------------- //
