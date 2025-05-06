@@ -4,12 +4,12 @@ import from pygame_mock { color, display }
 import pygame_mock;
 import os;
 
-can fool_me -> `Type[pygame_mock.constants.CL] {
+def fool_me -> `Type[pygame_mock.constants.CL] {
     return pygame_mock.constants.CL;
 }
 
 obj kk {
-    can fool_me -> `Type[pygame_mock.constants.CL] {
+    def fool_me -> `Type[pygame_mock.constants.CL] {
         return pygame_mock.constants.CL;
     }
 }

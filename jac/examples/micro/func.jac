@@ -1,11 +1,11 @@
 """Functions in Jac."""
 
-can factorial(n: int) -> str {
+def factorial(n: int) -> str {
     if n == 0 { return 1; }
     else { return n * factorial(n-1); }
 }
 
-can factorial_recount(n: int) -> int {
+def factorial_recount(n: int) -> int {
     count = 0;
     count += 1; count |> print;
     if n == 0 { return 1; }

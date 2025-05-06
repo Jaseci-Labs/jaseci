@@ -6,12 +6,12 @@ it is assumed to be a module docstring.
 """
 
 """A docstring for add function"""
-can add(a: int, b: int) -> int {
+def add(a: int, b: int) -> int {
     return a + b;
 }
 # No docstring for subtract function
 
-can subtract(a: int, b: int) -> int {
+def subtract(a: int, b: int) -> int {
     return a - b;
 }
 
@@ -31,7 +31,7 @@ obj Colour1 {
     has color1: Colorenum,
         point1: int;
 
-    can get_color1 -> Colorenum;
+    def get_color1 -> Colorenum;
 }
 
 :obj:Colour1:can:get_color1 -> Colorenum {
@@ -39,7 +39,7 @@ obj Colour1 {
     return self.color1;
 }
 
-obj red :Colour1: {
+obj red(Colour1) {
     has base_colorred: Colorenum = Colorenum.RED,
         pointred: int = 10;
 
@@ -48,7 +48,7 @@ obj red :Colour1: {
             doublepoint22:doubleinner.double  = 2,
             point22: int = 20;
 
-        can apply_inner_red -> enum_red {
+        def apply_inner_red -> enum_red {
             return self.color22;
         }
         enum enum_red {
@@ -61,7 +61,7 @@ obj red :Colour1: {
         has double: int = 2;
     }
 
-    can apply_red -> int {
+    def apply_red -> int {
         x =
         self.inner_red.color22.GREEN22;
         return self.point1 + self.pointred;

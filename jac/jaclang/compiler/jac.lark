@@ -103,9 +103,9 @@ py_code_block: PYNLINE
 test: KW_TEST NAME? code_block
 
 // [Heading]: Implementations.
-arch_or_ability_chain: arch_or_ability_chain? (ability_ref | arch_ref)
+arch_or_ability_chain: arch_or_ability_chain? (ability_ref | def_ref | arch_ref)
 abil_to_arch_chain: arch_or_ability_chain? arch_ref
-arch_to_abil_chain: arch_or_ability_chain? ability_ref
+arch_to_abil_chain: arch_or_ability_chain? (ability_ref | def_ref)
 arch_to_enum_chain: arch_or_ability_chain? enum_ref
 
 arch_ref: class_ref
@@ -121,7 +121,7 @@ class_ref: CLASS_OP named_ref
 object_ref: OBJECT_OP named_ref
 enum_ref: ENUM_OP named_ref
 ability_ref: ABILITY_OP named_ref
-
+def_ref: DEF_OP named_ref
 // [Heading]: Codeblocks and Statements.
 code_block: LBRACE statement* RBRACE
 
@@ -485,6 +485,7 @@ OBJECT_OP: /:o:|:obj:/
 TYPE_OP: /`|:t:|:type:/
 ENUM_OP: /:enum:/
 ABILITY_OP: /:c:|:can:/
+DEF_OP: /:d:|:def:/
 
 // [Heading]: f-string tokens.
 FSTR_START.1: "f\""

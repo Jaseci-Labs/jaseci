@@ -21,7 +21,7 @@ walker game {
         map_directory:dict={};
 
     can start_game with `root entry;
-    can generate_level();
+    def generate_level();
 }
 
 edge play{

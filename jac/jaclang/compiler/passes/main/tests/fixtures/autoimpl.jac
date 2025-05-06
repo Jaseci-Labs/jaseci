@@ -1,4 +1,4 @@
-can foo;
+def foo;
 can bar;
 can baz;
 

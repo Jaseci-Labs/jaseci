@@ -11,27 +11,27 @@ obj Memory {
     has index: dict[UUID, Element] = {},
         save_queue: list[Element] = [];
     #* Main Accessors *#
-    can get_obj(caller_id: UUID, item_id: UUID, override: bool=False) -> Element;
-    can has_obj(item_id: UUID) -> bool;
-    can save_obj(caller_id: UUID, item: Element);
-    can del_obj(caller_id: UUID, item: Element);
+    def get_obj(caller_id: UUID, item_id: UUID, override: bool=False) -> Element;
+    def has_obj(item_id: UUID) -> bool;
+    def save_obj(caller_id: UUID, item: Element);
+    def del_obj(caller_id: UUID, item: Element);
     #* Utility Functions *#
-    can get_object_distribution -> dict;
-    can get_mem_size -> float;
+    def get_object_distribution -> dict;
+    def get_mem_size -> float;
 }
 
 obj ExecutionContext {
     has master: Master = :> uuid4,
         memory: Memory = Memory();
 
-    can reset;
-    can get_root() -> Architype;
+    def reset;
+    def get_root() -> Architype;
 }
 
 "Global Execution Context, should be monkey patched by the user."
 glob exec_ctx = ExecutionContext();
 
-obj Anchor :ArchitypeProtocol: {
+obj Anchor(ArchitypeProtocol) {
     has ob: object,
         ds_entry_funcs: list[DSFunc],
         ds_exit_funcs: list[DSFunc],
@@ -44,62 +44,62 @@ obj Anchor :ArchitypeProtocol: {
         owner_id: UUID = exec_ctx.master,
         mem: Memory = exec_ctx.memory;
 
-    static can on_entry(cls: type, triggers: list[type]);
-    static can on_exit(cls: type, triggers: list[type]);
-    can make_public_ro;
-    can make_public_rw;
-    can make_private;
-    can is_public_ro -> bool;
-    can is_public_rw -> bool;
-    can is_private -> bool;
-    can is_readable(caller_id: UUID) -> bool;
-    can is_writable(caller_id: UUID) -> bool;
-    can give_access(caller_id: UUID, read_write: bool=False);
-    can revoke_access(caller_id: UUID);
+    static def on_entry(cls: type, triggers: list[type]);
+    static def on_exit(cls: type, triggers: list[type]);
+    def make_public_ro;
+    def make_public_rw;
+    def make_private;
+    def is_public_ro -> bool;
+    def is_public_rw -> bool;
+    def is_private -> bool;
+    def is_readable(caller_id: UUID) -> bool;
+    def is_writable(caller_id: UUID) -> bool;
+    def give_access(caller_id: UUID, read_write: bool=False);
+    def revoke_access(caller_id: UUID);
 }
 
-obj NodeAnchor :Anchor: {
+obj NodeAnchor(Anchor) {
     has edges: dict[EdgeDir, list[Edge]] = {EdgeDir.IN: [], EdgeDir.OUT: []};
 
-    can connect_node(nd: Node, edg: Edge) -> Node;
-    can edges_to_nodes(dir: EdgeDir) -> list[Node];
-    can __call__(walk: Walker);
+    def connect_node(nd: Node, edg: Edge) -> Node;
+    def edges_to_nodes(dir: EdgeDir) -> list[Node];
+    def __call__(walk: Walker);
 }
 
-obj EdgeAnchor :Anchor: {
+obj EdgeAnchor(Anchor) {
     has source: Node = None,
         target: Node = None,
         dir: EdgeDir = None;
 
-    can apply_dir(dir: EdgeDir) -> Edge;
-    can attach(src: Node, trg: Node) -> Edge;
-    can __call__(walk: Walker);
+    def apply_dir(dir: EdgeDir) -> Edge;
+    def attach(src: Node, trg: Node) -> Edge;
+    def __call__(walk: Walker);
 }
 
-obj WalkerAnchor :Anchor: {
+obj WalkerAnchor(Anchor) {
     has path: list[Node] = [],
         next: list[Node] = [],
         ignores: list[Node] = [],
         disengaged: bool = False;
 
-    can visit_node(nds: list[Node] | list[Edge] | Node | Edge);
-    can ignore_node(nds: list[Node] | list[Edge] | Node | Edge);
-    can disengage_now;
-    can __call__(nd: Node);
+    def visit_node(nds: list[Node] | list[Edge] | Node | Edge);
+    def ignore_node(nds: list[Node] | list[Edge] | Node | Edge);
+    def disengage_now;
+    def __call__(nd: Node);
 }
 
-obj Root :AbsRootHook: {
+obj Root(AbsRootHook) {
     has __jac__: NodeAnchor | None = None;
 
-    can postinit {
+    def postinit {
         self.__jac__ = NodeAnchor(self, ds_entry_funcs=[], ds_exit_funcs=[]);
     }
 }
 
-obj GenericEdge :ArchitypeProtocol: {
+obj GenericEdge(ArchitypeProtocol) {
     has __jac__: EdgeAnchor | None = None;
 
-    can postinit {
+    def postinit {
         self.__jac__ = EdgeAnchor(self, ds_entry_funcs=[], ds_exit_funcs=[]);
     }
 }
@@ -108,22 +108,22 @@ obj Master {
     has __jac__: Anchor | None = None;
     has root_node: Root = Root(Root);
 
-    can postinit {
+    def postinit {
         self.__jac__ = Anchor(self);
     }
 }
 
 obj JacPlugin {
     @hookimpl
-    static can bind_architype(arch: AT, arch_type: str, on_entry: list[str], on_exit: list[str]) -> bool;
+    static def bind_architype(arch: AT, arch_type: str, on_entry: list[str], on_exit: list[str]) -> bool;
     @hookimpl
-    static can get_root() -> Architype;
+    static def get_root() -> Architype;
     @hookimpl
-    static can build_edge(edge_spec: tuple[int, Optional[tuple], Optional[tuple]]) -> Architype;
+    static def build_edge(edge_spec: tuple[int, Optional[tuple], Optional[tuple]]) -> Architype;
     @hookimpl
-    static can connect(left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Architype;
+    static def connect(left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Architype;
     @hookimpl
-    static can visit_node(walker_obj: Any, expr: Any) -> bool;
+    static def visit_node(walker_obj: Any, expr: Any) -> bool;
 }
 
 :obj:Memory:can:get_obj
@@ -255,11 +255,11 @@ obj JacPlugin {
 
 :obj:Anchor:can:on_entry
 (cls: type, triggers: list) {
-    can decorator(func: callable) -> callable {
+    def decorator(func: callable) -> callable {
         cls.ds_entry_funcs.append(
             {'types': triggers, 'func': func}
         );
-        can wrapper(*args: list, **kwargs: dict) -> callable {
+        def wrapper(*args: list, **kwargs: dict) -> callable {
             return func(*args, **kwargs);
         }
         return wrapper;
@@ -269,11 +269,11 @@ obj JacPlugin {
 
 :obj:Anchor:can:on_exit
 (cls: type, triggers: list) {
-    can decorator(func: callable) -> callable {
+    def decorator(func: callable) -> callable {
         cls.ds_exit_funcs.append(
             {'types': triggers, 'func': func}
         );
-        can wrapper(*args: list, **kwargs: dict) -> callable {
+        def wrapper(*args: list, **kwargs: dict) -> callable {
             return func(*args, **kwargs);
         }
         return wrapper;

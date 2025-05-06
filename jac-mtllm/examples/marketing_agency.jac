@@ -4,7 +4,7 @@ import from mtllm.tools.serper { search, scrape }
 
 glob llm = OpenAI(verbose=True, model_name="gpt-4o-mini");
 
-can save_output_as_md(output: str, filename: str) -> None {
+def save_output_as_md(output: str, filename: str) -> None {
     with open(filename, 'w') as f {
         f.write(output);
     }

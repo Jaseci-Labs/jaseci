@@ -1,11 +1,11 @@
-can init;
+def init;
 
 obj TestType {
-    can __enter__ {
+    def __enter__ {
         print("im in");
     }
 
-    can __exit__(exc_type: object, exc_value: object, traceback: object) {
+    def __exit__(exc_type: object, exc_value: object, traceback: object) {
         print("im out");
     }
 }
@@ -18,7 +18,7 @@ with entry {
     init();
 }
 
-:can:init {
+:def:init {
     print("init");
 }
 

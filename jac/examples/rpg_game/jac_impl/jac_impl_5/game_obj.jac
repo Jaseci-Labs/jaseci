@@ -26,20 +26,20 @@ obj Game {
         go_background:pygame.surface.Surface = pygame.image.load('../img/gameover.png'),
         GameMap:Map = Map();
 
-    can postinit {
+    def postinit {
         pygame.<>init();
         self.font: pygame.font.Font = pygame.font.Font(GENERAL_FONT, 32);
     }
     # Generate the map according to the tilemap variable in map.jac
-    can createTilemap;
-    can new;
-    can events;
-    can update;
-    can draw;
-    can main;
-    can intro_screen;
-    can game_won;
-    can game_over;
+    def createTilemap;
+    def new;
+    def events;
+    def update;
+    def draw;
+    def main;
+    def intro_screen;
+    def game_won;
+    def game_over;
 
 }
 #=Object=Abilities ===================================================

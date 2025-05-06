@@ -1,11 +1,11 @@
 import from mtllm.llms { BaseLLM }
 
-obj model :BaseLLM: {
-    can init {
+obj model(BaseLLM) {
+    def init {
         super.__init__();
     }
 
-    can __infer__(meaning_in: str, **kwargs: dict) {
+    def __infer__(meaning_in: str, **kwargs: dict) {
         print(meaning_in);
         return '[Reasoning] J. Robert Oppenheimer, also known as the "father of the atomic bomb," was a brilliant '
             'theoretical physicist and the director of the Manhattan Project during World War II. He played a crucial '

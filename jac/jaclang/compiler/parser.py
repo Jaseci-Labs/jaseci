@@ -1451,7 +1451,8 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def visit_stmt(self, _: None) -> uni.VisitStmt:
             """Grammar rule.
 
-            visit_stmt: KW_VISIT (COLON expression COLON)? expression (else_stmt | SEMI)
+            visit_stmt: KW_VISIT (COLON expression COLON)?
+                expression (else_stmt | SEMI)
             """
             self.consume_token(Tok.KW_VISIT)
             insert_loc = None
@@ -1465,22 +1466,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
             return uni.VisitStmt(
                 insert_loc=insert_loc,
                 target=target,
-                else_body=else_body,
-                kid=self.cur_nodes,
-            )
-
-        def revisit_stmt(self, _: None) -> uni.RevisitStmt:
-            """Grammar rule.
-
-            revisit_stmt: KW_REVISIT expression? (else_stmt | SEMI)
-            """
-            self.consume_token(Tok.KW_REVISIT)
-            target = self.match(uni.Expr)
-            else_body = self.match(uni.ElseStmt)
-            if else_body is None:
-                self.consume_token(Tok.SEMI)
-            return uni.RevisitStmt(
-                hops=target,
                 else_body=else_body,
                 kid=self.cur_nodes,
             )
@@ -2542,6 +2527,19 @@ class JacParser(Transform[uni.Source, uni.Module]):
             ability_ref: ABILITY_OP (special_ref | name_ref)
             """
             arch_type = self.consume_token(Tok.ABILITY_OP)
+            arch_name = self.consume(uni.NameAtom)
+            return uni.ArchRef(
+                arch_type=arch_type,
+                arch_name=arch_name,
+                kid=self.cur_nodes,
+            )
+
+        def def_ref(self, _: None) -> uni.ArchRef:
+            """Grammar rule.
+
+            def_ref: DEF_OP named_ref
+            """
+            arch_type = self.consume_token(Tok.DEF_OP)
             arch_name = self.consume(uni.NameAtom)
             return uni.ArchRef(
                 arch_type=arch_type,

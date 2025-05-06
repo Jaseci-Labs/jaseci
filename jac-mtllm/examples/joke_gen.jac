@@ -14,8 +14,8 @@ obj PunclineJokes {
         }
     ];
 
-    can generate_joke -> 'NEW JOKE WITH A PUNCHLINE': dict by llm(incl_info=(self.jokes), temperature=0.0);
-    can generate {
+    def generate_joke -> 'NEW JOKE WITH A PUNCHLINE': dict by llm(incl_info=(self.jokes), temperature=0.0);
+    def generate {
         joke_punchline = self.generate_joke();
         self.jokes.append(joke_punchline);
     }

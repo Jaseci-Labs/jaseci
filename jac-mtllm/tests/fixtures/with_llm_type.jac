@@ -1,12 +1,12 @@
 import from mtllm.llms { BaseLLM }
 
-obj model :BaseLLM: {
-    can init(output_str: str) {
+obj model(BaseLLM) {
+    def init(output_str: str) {
         super.__init__();
         self.output_str = output_str;
     }
 
-    can __infer__(meaning_in: str, **kwargs: dict) {
+    def __infer__(meaning_in: str, **kwargs: dict) {
         print("Meaning in: ", meaning_in);
         return f"[Output] {self.output_str}";
     }

@@ -4,7 +4,7 @@ obj outer {
     obj inner {
         has i1: int = 8;
     }
-    can foo() {
+    def foo() {
         return 'foo';
     }
     enum  color {
@@ -14,7 +14,7 @@ obj outer {
         with entry {
             print('Initializing role system..');
         },
-        can foo -> str {
+        def foo -> str {
             return 'Accessing privileged Data';
         }
     }

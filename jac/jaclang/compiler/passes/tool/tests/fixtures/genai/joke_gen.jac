@@ -15,10 +15,10 @@ JokeList {
         }
     ];
 
-    can 'Generate a Joke with a Punchline'
+    def 'Generate a Joke with a Punchline'
     generate_joke_with_punchline -> 'Joke with Punchline': dict by llm(incl_info=(self.jokes), temperature=0.0);
 
-    can generate {
+    def generate {
         joke_punchline = self.generate_joke_with_punchline();
         self.jokes.append(joke_punchline);
     }

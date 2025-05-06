@@ -2,8 +2,8 @@ import from mtllm.llms { OpenAI }
 
 glob llm = OpenAI();
 
-can get_expert(question: str) -> 'Best Expert to Answer the Question': str by llm(method='Reason');
-can get_answer(question: str, expert: str) -> str by llm();
+def get_expert(question: str) -> 'Best Expert to Answer the Question': str by llm(method='Reason');
+def get_answer(question: str, expert: str) -> str by llm();
 
 with entry {
     question = "What are Large Language Models?";

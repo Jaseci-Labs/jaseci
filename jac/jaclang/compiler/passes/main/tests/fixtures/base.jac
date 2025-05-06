@@ -4,8 +4,8 @@ import from impl.imps { test_glob as mine }
 # import impl.imps;
 
 obj Test {
-    can init;
-    can say_hi;
+    def init;
+    def say_hi;
 }
 
 with entry {

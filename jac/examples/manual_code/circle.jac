@@ -9,7 +9,7 @@ import math;
 glob RAD = 5;
 
 """Function to calculate the area of a circle."""
-can calculate_area(radius: float) -> float {
+def calculate_area(radius: float) -> float {
     return math.pi * radius * radius;
 }
 #* (This is multiline comments in Jac)
@@ -28,18 +28,18 @@ obj Shape {
     has shape_type: ShapeType;
 
     """Abstract method to calculate the area of a shape."""
-    can area -> float abs;
+    def area -> float abs;
 }
 
 """Circle class inherits from Shape."""
-obj Circle :Shape: {
-    can init(radius: float) {
+obj Circle(Shape) {
+    def init(radius: float) {
         super.init(ShapeType.CIRCLE);
         self.radius = radius;
     }
 
     """Overridden method to calculate the area of the circle."""
-    override can area -> float {
+    override def area -> float {
         return math.pi * self.radius * self.radius;
     }
 }

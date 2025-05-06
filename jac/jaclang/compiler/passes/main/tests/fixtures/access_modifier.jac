@@ -10,9 +10,9 @@ obj SomeObj {
     enum :priv    InnerPrivEnum { BAR = "BAR" }
     enum :protect InnerProtEnum { BAZ = "BAZ" }
 
-    can :pub     publ_ability() -> None {}
-    can :priv    priv_ability() -> None {}
-    can :protect prot_ability() -> None {}
+    def :pub     publ_ability() -> None {}
+    def :priv    priv_ability() -> None {}
+    def :protect prot_ability() -> None {}
 
     has :pub     publ_attrib:int = 0;
     has :priv    priv_attrib:int = 0;
@@ -25,7 +25,7 @@ obj BaseClass {
     has :priv    priv_attrib:int = 0;
     has :protect prot_attrib:int = 0;
 
-    can do_base() -> None {
+    def do_base() -> None {
         self.publ_attrib; # <-- okey.
         self.priv_attrib; # <-- okey.
         self.prot_attrib; # <-- okey.
@@ -33,8 +33,8 @@ obj BaseClass {
 }
 
 
-obj DrivedClass1 :BaseClass: {
-    can do_driv1() -> None {
+obj DrivedClass1(BaseClass) {
+    def do_driv1() -> None {
         self.publ_attrib; # <-- okey.
         self.priv_attrib; # <-- not okey.
         self.prot_attrib; # <-- okey.
@@ -43,8 +43,8 @@ obj DrivedClass1 :BaseClass: {
 
 
 # Check if the protect works from inherited chain.
-obj DrivedClass2 :BaseClass: {
-    can do_driv2() -> None {
+obj DrivedClass2(BaseClass) {
+    def do_driv2() -> None {
         self.publ_attrib; # <-- okey.
         self.priv_attrib; # <-- not okey.
         self.prot_attrib; # <-- okey.

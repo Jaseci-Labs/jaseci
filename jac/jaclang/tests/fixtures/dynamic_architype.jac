@@ -15,7 +15,7 @@ walker test_walker {
     }
 }
 
-walker child_walker :test_walker: {}
+walker child_walker(test_walker) {}
 
 with entry {
     for value in range(1, 4) {

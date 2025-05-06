@@ -8,14 +8,14 @@ import from sklearn.metrics.pairwise { cosine_similarity }
 glob llm = Ollama(host="http://127.0.0.1:11434", model_name="llama3.2:1b");
 glob sentence_transformer = SentenceTransformer('all-MiniLM-L6-v2');
 
-can search_tweets(query: str, tweets: list, tweet_embeddings: any, similarity_threshold: float=0.25) -> list {
+def search_tweets(query: str, tweets: list, tweet_embeddings: any, similarity_threshold: float=0.25) -> list {
     query_embedding = sentence_transformer.encode([query]);
     similarities = cosine_similarity(query_embedding, tweet_embeddings)[0];
     results = [{"Tweet_Info": tweets[i], "similarity": similarities[i]} for i in range(len(tweets)) if similarities[i] > similarity_threshold];
     return results;
 }
 
-can 'Extract and summarize trending themes, major highlights, and key interactions from recent tweets in one concise sentence.'
+def 'Extract and summarize trending themes, major highlights, and key interactions from recent tweets in one concise sentence.'
 summarize_tweets(tweets: list[str]) -> 'Summarisation': str by llm();
 
 node Profile {
@@ -85,7 +85,7 @@ node Tweet {
         report comment_node[0];
     }
 
-    can get_info()-> TweetInfo {
+    def get_info()-> TweetInfo {
         return TweetInfo(
             id=jid(self),
             content=self.content,
@@ -116,11 +116,11 @@ walker visit_profile {
     }
 }
 
-walker update_profile :visit_profile: {
+walker update_profile(visit_profile) {
     has new_username: str;
 }
 
-walker get_profile :visit_profile: {}
+walker get_profile(visit_profile) {}
 
 walker load_user_profiles {
     obj __specs__ {
@@ -143,7 +143,7 @@ walker follow_request {}
 
 walker un_follow_request {}
 
-walker create_tweet :visit_profile: {
+walker create_tweet(visit_profile) {
     has content: str;
 
     can tweet with Profile entry {
@@ -168,7 +168,7 @@ walker comment_tweet {
     has content: str;
 }
 
-walker load_tweets :visit_profile: {
+walker load_tweets(visit_profile) {
     has if_report: bool = False;
     has tweet_info: list[TweetInfo] = [];
 
@@ -184,7 +184,7 @@ walker load_tweets :visit_profile: {
     }
 }
 
-walker load_feed :visit_profile: {
+walker load_feed(visit_profile) {
     has search_query: str = "";
 
     can load with Profile entry {

@@ -3,7 +3,7 @@ import from mtllm { Video }
 
 glob llm = OpenAI(model_name="gpt-4o");
 
-can is_aligned(video: Video, text: str) -> bool by llm(
+def is_aligned(video: Video, text: str) -> bool by llm(
     method="Chain-of-Thoughts",
     context="Mugen is the moving character"
 );

@@ -15,7 +15,7 @@ glob b: dict[str, fruit] = {
     "c": fruit(name="grape", color="purple")
 };
 
-can foo(a: list[fruit]) -> list[fruit] {
+def foo(a: list[fruit]) -> list[fruit] {
     return a[0:2];
 }
 

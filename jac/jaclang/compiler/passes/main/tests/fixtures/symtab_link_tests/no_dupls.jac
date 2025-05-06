@@ -6,7 +6,7 @@ obj Man{
     has name:str='';
 
 
-    can speak{
+    def speak{
 
         obj Korean{
             with entry{
@@ -14,7 +14,7 @@ obj Man{
                 print(a);
             }
             has name:str='Korean';
-            can speak{
+            def speak{
                 import from one {a}
                 print(a);
                 print('speaking Korean');

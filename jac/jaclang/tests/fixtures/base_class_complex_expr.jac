@@ -20,7 +20,7 @@ class Banana :mm[1]: {
     }
 }
 
-can return_class() -> `Type[Apple] {
+def return_class() -> `Type[Apple] {
     print('Returning Apple');
     return Apple;
 }

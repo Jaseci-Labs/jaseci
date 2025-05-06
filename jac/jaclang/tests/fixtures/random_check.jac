@@ -11,7 +11,7 @@ with entry {
 
 import random;
 
-can entry() {
+def entry() {
     print("Hello World");
     random.seed(42);
     print(random.randint(0, 100));

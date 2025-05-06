@@ -5,6 +5,6 @@ import impl.defs2;
 
 obj MyObject {
 
-    can foo();
-    can bar();
+    def foo();
+    def bar();
 }

@@ -18,7 +18,7 @@ Receipt {
         items: 'Items': list[PurchasedItem],
         total: 'Total': float;
 
-    can pp() -> None {
+    def pp() -> None {
         print(f"Store: {self.store}");
         print(f"Date: {self.date}");
         for item in self.items {
@@ -28,9 +28,9 @@ Receipt {
     }
 }
 
-can 'Get Reciept Object'
+def 'Get Reciept Object'
 get_reciept(reciept_img: 'Image of the Receipt': Image) -> 'Reciept Object': Receipt by llm();
-can verity_total(reciept: Receipt) -> bool by llm(method="ReAct", tools=[math_tool]);
+def verity_total(reciept: Receipt) -> bool by llm(method="ReAct", tools=[math_tool]);
 
 with entry {
     reciept_img = Image.open("receipt.jpg");

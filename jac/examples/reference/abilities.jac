@@ -1,20 +1,20 @@
 obj Divider {
-    can divide(x: float, y: float) -> float {
+    def divide(x: float, y: float) -> float {
         return (x / y);
     }
 }
 #this is an abstract class as it has the abstract method
 
 obj Calculator {
-    static can : priv multiply(a: float, b: float) -> float {
+    static def : priv multiply(a: float, b: float) -> float {
         return a * b;
     }
-    can substract -> float abs;
-    can add(number: float, *a: tuple) -> float;
+    def substract -> float abs;
+    def add(number: float, *a: tuple) -> float;
 }
 
-obj substractor :Calculator: {
-    can substract(x: float, y: float) -> float {
+obj substractor(Calculator) {
+    def substract(x: float, y: float) -> float {
         return (x - y);
     }
 }

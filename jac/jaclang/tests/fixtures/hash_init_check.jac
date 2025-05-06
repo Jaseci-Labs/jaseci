@@ -1,12 +1,12 @@
 obj TYPE {
-    can init() {
+    def init() {
         DICT:dict = {};
         DICT[self] = 1;
     }
 }
 
-obj TASK:TYPE: {
-    can init() {
+obj TASK(TYPE) {
+    def init() {
         TYPE.init(self);
     }
 }

@@ -160,7 +160,6 @@ class Tokens(str, Enum):
     KW_NODE = "KW_NODE"
     KW_IGNORE = "KW_IGNORE"
     KW_VISIT = "KW_VISIT"
-    KW_REVISIT = "KW_REVISIT"
     KW_SPAWN = "KW_SPAWN"
     KW_WITH = "KW_WITH"
     KW_LAMBDA = "KW_LAMBDA"
@@ -295,6 +294,7 @@ class Tokens(str, Enum):
     TYPE_OP = "TYPE_OP"
     ENUM_OP = "ENUM_OP"
     ABILITY_OP = "ABILITY_OP"
+    DEF_OP = "DEF_OP"
     A_PIPE_FWD = "A_PIPE_FWD"
     A_PIPE_BKWD = "A_PIPE_BKWD"
     RETURN_HINT = "RETURN_HINT"
@@ -309,10 +309,6 @@ class Tokens(str, Enum):
     FSTR_BESC = "FSTR_BESC"
     COMMENT = "COMMENT"
     WS = "WS"
-    DCARROW_L_P2 = "DCARROW_L_P2"
-    DCARROW_R_P1 = "DCARROW_R_P1"
-    DARROW_L_P2 = "DARROW_L_P2"
-    DARROW_R_P1 = "DARROW_R_P1"
 
     def __str__(self) -> str:
         return self.value

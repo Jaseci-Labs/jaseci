@@ -24,21 +24,21 @@ class User:BaseUser: {
         ::py::
     }
 
-    static can send_verification_code(code: str, email: str) -> None {
+    static def send_verification_code(code: str, email: str) -> None {
         SendGridEmailer.send_verification_code(code, email);
     }
 
-    static can send_reset_code(code: str, email: str) -> None {
+    static def send_reset_code(code: str, email: str) -> None {
         SendGridEmailer.send_reset_code(code, email);
     }
 
-    static can sso_mapper(open_id: object) -> dict[str, object] {
+    static def sso_mapper(open_id: object) -> dict[str, object] {
         return {
             "name": f"{open_id.first_name} {open_id.last_name}"
         };
     }
 
-    static can system_admin_default() -> dict[str, object] {
+    static def system_admin_default() -> dict[str, object] {
         return {
             "name": f"System Administrator"
         };
@@ -67,7 +67,7 @@ obj Child {
     has val: int, arr: list[int], data: dict[str, int], enum_field: Enum;
 }
 
-obj Parent:Child: {
+obj Parent(Child) {
     has child: Child;
 }
 
@@ -79,7 +79,7 @@ obj Kid {
     has enum_field: Enum;
 }
 
-obj Adult:Kid: {
+obj Adult(Kid) {
     has kid: Kid, arr: list[Kid], data: dict[str, Kid];
 }
 

@@ -1,17 +1,17 @@
 obj Animal {
     has :priv species: str;
-    can :priv introduce() -> str {
+    def :priv introduce() -> str {
         return "Hello, I am " + self.species + ". ";
     }
 }
 
-obj Dog: Animal: {
+obj Dog(Animal) {
     has breed: str;
-    can init(breed: str)-> None{
+    def init(breed: str)-> None{
         super.init("Dog");
     }
 
-    can :pub bark() -> str{
+    def :pub bark() -> str{
         return "Woof! Woof!";
     }
         obj Body {

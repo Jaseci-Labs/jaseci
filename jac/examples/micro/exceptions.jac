@@ -1,6 +1,6 @@
 """Exception example in Jac."""
 
-can divide_numbers(a: float, b: float) -> float {
+def divide_numbers(a: float, b: float) -> float {
     try {
         result = a / b;
     }

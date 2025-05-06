@@ -14,7 +14,7 @@ node test_node {
     can log_exit with exit {
         print(f"<<< Some Walker exited the node {self}");
     }
-    can callable {
+    def callable {
         print(f"===== Callable on {self}");
     }
 }
@@ -46,7 +46,7 @@ walker test_walker {
         print("--- Exiting at the end of walker {self}");
     }
 
-    can callable {
+    def callable {
         print(f"===== Callable on {self}");
     }
 }

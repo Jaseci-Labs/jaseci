@@ -14,7 +14,7 @@ enum :protect Role {
     with entry {
         print('Initializing role system..');
     },
-    can foo -> str {
+    def foo -> str {
         return 'Accessing privileged Data';
     }
 }

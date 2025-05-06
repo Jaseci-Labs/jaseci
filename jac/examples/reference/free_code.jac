@@ -1,16 +1,16 @@
 import math;
 
 obj circle {
-    can init(radius: float) {
+    def init(radius: float) {
         self.radius = radius;
     }
 
-    can area -> float {
+    def area -> float {
         return math.pi * self.radius * self.radius;
     }
 }
 
-can foo(n_1: float) {
+def foo(n_1: float) {
     return n_1 ** 2;
 }
 

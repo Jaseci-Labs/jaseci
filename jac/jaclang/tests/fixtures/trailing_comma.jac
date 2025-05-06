@@ -19,9 +19,9 @@ enum WithTrailComma {
     BAR = "BAR",
 }
 
-can without_trail_comma(a: int, b: int) {}
+def without_trail_comma(a: int, b: int) {}
 
-can with_trail_comma(a: int, b: int, c: int, ) {}
+def with_trail_comma(a: int, b: int, c: int, ) {}
 
 with entry {
 

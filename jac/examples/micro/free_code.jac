@@ -3,7 +3,7 @@
 obj Obj1 {
     has var: int;
 
-    can init {
+    def init {
         here.var = 1;
     }
 }
@@ -14,7 +14,7 @@ obj Obj1 {
 obj Obj2 {
     has var: int;
 
-    can init {
+    def init {
         here.var = 2;
     }
 }
@@ -25,7 +25,7 @@ obj Obj2 {
 obj Obj3 {
     has var: int;
 
-    can init {
+    def init {
         here.var = 3;
     }
 }

@@ -1,7 +1,7 @@
 
 obj SomeClass {
-    can method1(some_long_paramenter_name: int) -> None;
-    can method2(param1:int, param2:str) -> None;
+    def method1(some_long_paramenter_name: int) -> None;
+    def method2(param1:int, param2:str) -> None;
 }
 
 :o:SomeClass:c:method1(short_name:int) -> None {

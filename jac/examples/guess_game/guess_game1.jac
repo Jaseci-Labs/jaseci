@@ -11,12 +11,12 @@ The self keyword is used to refer to the current instance of the class.
 Constructors are defined using the init method with parameters.
 """
 obj Game {
-    can init(attempts: int) {
+    def init(attempts: int) {
         self.attempts = attempts;
         self.won = False;
     }
 
-    can play() {
+    def play() {
         raise NotImplementedError(
             "Subclasses must implement this method."
         );
@@ -28,13 +28,13 @@ A number guessing game. The player must guess a number between 1 and 100.
 
 This class inherits from Game. The super() function is used to call the parent class constructor.
 """
-obj GuessTheNumberGame :Game: {
-    can init(attempts: int=10) {
+obj GuessTheNumberGame(Game) {
+    def init(attempts: int=10) {
         super.init(attempts);
         self.correct_number = random.randint(1, 100);
     }
 
-    can play() {
+    def play() {
 
         while self.attempts > 0 {
             guess = input("Guess a number between 1 and 100: ");
@@ -51,7 +51,7 @@ obj GuessTheNumberGame :Game: {
         }
     }
 
-    can process_guess(guess: int) {
+    def process_guess(guess: int) {
         if guess > self.correct_number {
             print("Too high!");
         } elif guess < self.correct_number {

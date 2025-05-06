@@ -1,5 +1,5 @@
 obj HasFault {
-    can init;
+    def init;
 }
 
 can speak {

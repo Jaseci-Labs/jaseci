@@ -26,15 +26,15 @@ obj Game {
         go_background:pygame.surface.Surface = pygame.image.load('../img/gameover.png'),
         GameMap:Map = Map();
 
-    can postinit;
-    can createTilemap;
-    can new;
-    can events;
-    can update;
-    can draw;
-    can main;
-    can intro_screen;
-    can game_won;
-    can game_over;
+    def postinit;
+    def createTilemap;
+    def new;
+    def events;
+    def update;
+    def draw;
+    def main;
+    def intro_screen;
+    def game_won;
+    def game_over;
 
 }

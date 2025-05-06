@@ -73,7 +73,7 @@ node Chat {
     has chat_type: ChatType;
 }
 
-node RagChat :Chat: {
+node RagChat(Chat) {
     has chat_type: ChatType = ChatType.RAG;
 
     can respond with infer entry {
@@ -91,7 +91,7 @@ node RagChat :Chat: {
     }
 }
 
-node QAChat :Chat: {
+node QAChat(Chat) {
     has chat_type: ChatType = ChatType.QA;
 
     can respond with infer entry {

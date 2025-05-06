@@ -6,7 +6,7 @@ obj Outer {
     }
 }
 
-can match_example(data: dict) {
+def match_example(data: dict) {
 
     match data {
         # MatchValue
