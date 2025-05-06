@@ -77,7 +77,7 @@ class AstTool:
             not in [
                 "UniNode",
                 "UniScopeNode",
-                "BasicBlockStmt",
+                "UniCFGNode",
                 "ProgramModule",
                 "OOPAccessNode",
                 "WalkerStmtOnlyNode",
