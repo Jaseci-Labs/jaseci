@@ -342,8 +342,6 @@ class JacLangServer(LanguageServer):
             )
             if node.name_spec.clean_type:
                 node_info += f": {node.name_spec.clean_type}"
-            if isinstance(node, uni.AstSemStrNode) and node.semstr:
-                node_info += f"\n{node.semstr.value}"
             if isinstance(node, uni.AstDocNode) and node.doc:
                 node_info += f"\n{node.doc.value}"
             if isinstance(node, uni.Ability) and node.signature:

@@ -1482,10 +1482,6 @@ class JacFormatPass(UniPass):
         for i in node.kid:
             self.emit(node, i.gen.jac)
 
-    def exit_revisit_stmt(self, node: uni.RevisitStmt) -> None:
-        for i in node.kid:
-            self.emit(node, i.gen.jac)
-
     def exit_visit_stmt(self, node: uni.VisitStmt) -> None:
         for i in node.kid:
             if isinstance(

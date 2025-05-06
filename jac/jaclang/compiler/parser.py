@@ -1376,14 +1376,13 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 kid=self.cur_nodes,
             )
 
-        def ctrl_stmt(self, _: None) -> uni.CtrlStmt:
+        def ctrl_stmt(self, _: None) -> uni.CtrlStmt | uni.DisengageStmt:
             """Grammar rule.
 
-            ctrl_stmt: KW_SKIP | KW_DISENGAGE | KW_BREAK | KW_CONTINUE
+            ctrl_stmt: KW_SKIP | KW_BREAK | KW_CONTINUE
             """
             tok = (
                 self.match_token(Tok.KW_SKIP)
-                or self.match_token(Tok.KW_DISENGAGE)
                 or self.match_token(Tok.KW_BREAK)
                 or self.consume_token(Tok.KW_CONTINUE)
             )
@@ -1445,6 +1444,17 @@ class JacParser(Transform[uni.Source, uni.Module]):
             self.consume_token(Tok.SEMI)
             return uni.IgnoreStmt(
                 target=target,
+                kid=self.cur_nodes,
+            )
+
+        def disenage_stmt(self, _: None) -> uni.DisengageStmt:
+            """Grammar rule.
+
+            disenage_stmt: KW_DISENGAGE SEMI
+            """
+            self.consume_token(Tok.KW_DISENGAGE)
+            self.consume_token(Tok.SEMI)
+            return uni.DisengageStmt(
                 kid=self.cur_nodes,
             )
 

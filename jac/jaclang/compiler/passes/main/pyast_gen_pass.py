@@ -1739,12 +1739,6 @@ class PyastGenPass(UniPass):
             )
         ]
 
-    def exit_revisit_stmt(self, node: uni.RevisitStmt) -> None:
-        self.log_warning("Revisit not used in Jac", node)
-        node.gen.py_ast = [
-            self.sync(ast3.Expr(value=self.sync(ast3.Constant(value=None))))
-        ]
-
     def exit_disengage_stmt(self, node: uni.DisengageStmt) -> None:
         loc = self.sync(
             ast3.Name(id="self", ctx=ast3.Load())

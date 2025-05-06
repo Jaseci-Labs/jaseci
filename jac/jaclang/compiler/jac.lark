@@ -247,16 +247,19 @@ delete_stmt: KW_DELETE expression
 report_stmt: KW_REPORT expression
 
 // [Heading]: Control statements.
-ctrl_stmt: KW_SKIP | KW_DISENGAGE | KW_BREAK | KW_CONTINUE
+ctrl_stmt: KW_SKIP | KW_BREAK | KW_CONTINUE
 
 // [Heading]: Data spatial Walker statements.
-spatial_stmt: visit_stmt | ignore_stmt
+spatial_stmt: visit_stmt | ignore_stmt | disenage_stmt
 
 // [Heading]: Visit statements.
 visit_stmt: KW_VISIT (COLON expression COLON)? expression (else_stmt | SEMI)
 
 // [Heading]: Ignore statements.
 ignore_stmt: KW_IGNORE expression SEMI
+
+// [Heading]: Disengage statements.
+disenage_stmt: KW_DISENGAGE SEMI
 
 // [Heading]: Assignments.
 assignment: KW_LET? (atomic_chain EQ)+ (yield_expr | expression)

@@ -2742,6 +2742,27 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
         return res
 
 
+class DisengageStmt(WalkerStmtOnlyNode, CodeBlockStmt):
+    """DisengageStmt node type for Jac Ast."""
+
+    def __init__(
+        self,
+        kid: Sequence[UniNode],
+    ) -> None:
+        """Initialize disengage statement node."""
+        UniNode.__init__(self, kid=kid)
+        WalkerStmtOnlyNode.__init__(self)
+
+    def normalize(self, deep: bool = False) -> bool:
+        """Normalize disengage statement node."""
+        new_kid: list[UniNode] = [
+            self.gen_token(Tok.KW_DISENGAGE),
+            self.gen_token(Tok.SEMI),
+        ]
+        self.set_kids(nodes=new_kid)
+        return True
+
+
 class AwaitExpr(Expr):
     """AwaitExpr node type for Jac Ast."""
 
