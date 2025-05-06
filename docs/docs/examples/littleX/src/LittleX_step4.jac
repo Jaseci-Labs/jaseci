@@ -50,7 +50,7 @@ walker visit_profile {
     can visit_profile with `root entry {
         visit [-->(`?Profile)] else {
             new_profile = here ++> Profile();
-            Jac.unrestrict(new_profile[0], level="CONNECT");
+            Jac.perm_grant(new_profile[0], level="CONNECT");
             visit new_profile;
         }
     }
@@ -89,7 +89,7 @@ walker create_tweet(visit_profile) {
     can tweet with Profile entry {
         embedding = sentence_transformer.encode(self.content).tolist();
         tweet_node = here +>:Post:+> Tweet(content=self.content, embedding=embedding);
-        Jac.unrestrict(tweet_node[0], level="CONNECT");
+        Jac.perm_grant(tweet_node[0], level="CONNECT");
         report tweet_node;
     }
 }

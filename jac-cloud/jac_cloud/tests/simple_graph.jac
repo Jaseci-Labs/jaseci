@@ -258,7 +258,7 @@ walker allow_other_root_access {
 
     can enter_root with `root entry {
         if self.via_all {
-            _.unrestrict(here, self.level);
+            _.perm_grant(here, self.level);
         } else {
             import from jac_cloud.core.architype {BaseAnchor}
             _.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
@@ -267,7 +267,7 @@ walker allow_other_root_access {
 
     can enter_nested with Nested entry {
         if self.via_all {
-            _.unrestrict(here, self.level);
+            _.perm_grant(here, self.level);
         } else {
             import from jac_cloud.core.architype {BaseAnchor}
             _.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
@@ -280,7 +280,7 @@ walker disallow_other_root_access {
 
     can enter_root with `root entry {
         if self.via_all {
-            _.restrict(here);
+            _.perm_revoke(here);
         } else {
             import from jac_cloud.core.architype {BaseAnchor}
             _.disallow_root(here, BaseAnchor.ref(self.root_id));
@@ -289,7 +289,7 @@ walker disallow_other_root_access {
 
     can enter_nested with Nested entry {
         if self.via_all {
-            _.restrict(here);
+            _.perm_revoke(here);
         } else {
             import from jac_cloud.core.architype {BaseAnchor}
             _.disallow_root(here, BaseAnchor.ref(self.root_id));

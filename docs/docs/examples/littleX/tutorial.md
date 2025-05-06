@@ -460,11 +460,11 @@ By default, users cannot access other users' nodes. To grant access, permission 
       ```
 - **Grant Read Access to All**
       ```jac
-      Jac.unrestrict(here, "READ");
+      Jac.perm_grant(here, "READ");
       ```
-- **Restrict Access**
+- **perm_revoke Access**
       ```jac
-      Jac.restrict(here);
+      Jac.perm_revoke(here);
       ```
 
 === "Guide"
@@ -482,12 +482,12 @@ By default, users cannot access other users' nodes. To grant access, permission 
                         can tweet with Profile entry {
                               embedding = sentence_transformer.encode(self.content).tolist();
                               tweet_node = here +:Post:+> Tweet(content=self.content, embedding=embedding);
-                              Jac.unrestrict(tweet_node[0], level="CONNECT");
+                              Jac.perm_grant(tweet_node[0], level="CONNECT");
                               report tweet_node;
                         }
                   }
                   ```
-        * `Jac.unrestrict(here, level="READ")` Unrestrict that tweet node to everyone with read access.
+        * `Jac.perm_grant(here, level="READ")` perm_grant that tweet node to everyone with read access.
 
       - Commenting on a Tweet
 
@@ -498,12 +498,12 @@ By default, users cannot access other users' nodes. To grant access, permission 
                   can comment with comment_tweet entry {
                         current_profile = [root-->(`?Profile)];
                         comment_node = current_profile[0] ++> Comment(content=here.content);
-                        Jac.unrestrict(comment_node[0], level="CONNECT");
+                        Jac.perm_grant(comment_node[0], level="CONNECT");
                         self ++> comment_node[0];
                         report comment_node[0];
                   }
                   ```
-        * `Jac.unrestrict(tweet_node, level="CONNECT")` Unrestrict the tweet node to connect level.
+        * `Jac.perm_grant(tweet_node, level="CONNECT")` perm_grant the tweet node to connect level.
 
 === "LittleX.jac Upto Now"
     ```jac linenums="1"
@@ -718,7 +718,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
 
                         can like with profile entry {
                               tweet_node = &self.tweet_id;
-                              Jac.unrestrict(tweet_node, level="CONNECT");
+                              Jac.perm_grant(tweet_node, level="CONNECT");
                               tweet_node +:like():+> here;
                               report tweet_node;
                         }
@@ -781,7 +781,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
                         can add_comment with profile entry {
                               comment_node = here ++> comment(content=self.content);
                               tweet_node = &self.tweet_id;
-                              Jac.unrestrict(tweet_node, level="CONNECT");
+                              Jac.perm_grant(tweet_node, level="CONNECT");
                               tweet_node ++> comment_node[0];
                               report comment_node[0];
                         }
@@ -794,7 +794,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
                   can comment with comment_tweet entry {
                         current_profile = [root-->(`?Profile)];
                         comment_node = current_profile[0] ++> Comment(content=here.content);
-                        Jac.unrestrict(comment_node[0], level="CONNECT");
+                        Jac.perm_grant(comment_node[0], level="CONNECT");
                         self ++> comment_node[0];
                         report comment_node[0];
                   }
@@ -818,7 +818,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
                         }
 
                         can load_tweets with tweet entry {
-                              Jac.unrestrict(here, level="READ");
+                              Jac.perm_grant(here, level="READ");
                               comments = here spawn load_comments();
                               likes = here spawn load_likes();
                               tweet_content = here spawn load_tweet();

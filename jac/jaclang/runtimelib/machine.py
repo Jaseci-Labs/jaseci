@@ -110,7 +110,7 @@ class JacAccessValidation:
         access.anchors.pop(str(root_id), None)
 
     @staticmethod
-    def unrestrict(
+    def perm_grant(
         architype: Architype, level: AccessLevel | int | str = AccessLevel.READ
     ) -> None:
         """Allow everyone to access current Architype."""
@@ -120,7 +120,7 @@ class JacAccessValidation:
             anchor.access.all = level
 
     @staticmethod
-    def restrict(architype: Architype) -> None:
+    def perm_revoke(architype: Architype) -> None:
         """Disallow others to access current Architype."""
         anchor = architype.__jac__
         if anchor.access.all > AccessLevel.NO_ACCESS:

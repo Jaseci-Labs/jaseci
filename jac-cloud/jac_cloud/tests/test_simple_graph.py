@@ -58,6 +58,14 @@ class SimpleGraphTest(JacCloudTest):
             self.stop_server()
             SimpleGraphTest._shared_state = None
 
+    @classmethod
+    def tearDownClass(cls) -> None:
+        """Tear down after all tests."""
+        if cls._shared_state is not None:
+            cls.client.drop_database(cls.database)
+            cls.stop_server()
+            cls._shared_state = None
+
     def trigger_openapi_specs_test(self) -> None:
         """Test OpenAPI Specs."""
         res = get(f"{self.host}/openapi.yaml", timeout=1)
