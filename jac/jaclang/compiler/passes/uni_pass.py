@@ -29,11 +29,9 @@ class UniPass(Transform[uni.Module, uni.Module]):
 
     def before_pass(self) -> None:
         """Run once before pass."""
-        pass
 
     def after_pass(self) -> None:
         """Run once after pass."""
-        pass
 
     def enter_node(self, node: uni.UniNode) -> None:
         """Run on entering node."""

@@ -16,8 +16,6 @@ jobs:
     defaults:
       run:
         working-directory: jac-cloud
-    env:
-      SHOW_ENDPOINT_RETURNS: true
     services:
       redis:
         image: redis
@@ -59,3 +57,4 @@ jobs:
           SHOW_ENDPOINT_RETURNS: true
           DATABASE_HOST: mongodb://localhost/?retryWrites=true&w=majority
           REDIS_HOST: redis://localhost
+          TASK_CONSUMER_CRON_SECOND: "*"

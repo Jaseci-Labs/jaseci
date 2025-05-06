@@ -136,7 +136,6 @@ class UniNode:
         return self
 
     def resolve_tok_range(self) -> tuple[Token, Token]:
-        """Get token range."""
         if len(self.kid):
             return (
                 self.kid[0].loc.first_tok,
@@ -148,7 +147,6 @@ class UniNode:
             raise ValueError(f"Empty kid for Token {type(self).__name__}")
 
     def gen_token(self, name: Tok, value: Optional[str] = None) -> Token:
-        """Generate token."""
         value = (
             value
             if value
@@ -183,7 +181,6 @@ class UniNode:
         return UniPass.find_parent_of_type(node=self, typ=typ)
 
     def parent_of_type(self, typ: Type[T]) -> T:
-        """Get parent of type."""
         ret = self.find_parent_of_type(typ)
         if isinstance(ret, typ):
             return ret
@@ -219,11 +216,9 @@ class UniNode:
         return ret
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         return False
 
     def unparse(self) -> str:
-        """Unparse ast node."""
         valid = self.normalize()
         res = " ".join([i.unparse() for i in self.kid])
         if not valid:
@@ -552,7 +547,6 @@ class AstSymbolNode(UniNode):
     def __init__(
         self, sym_name: str, name_spec: NameAtom, sym_category: SymbolType
     ) -> None:
-        """Initialize ast."""
         self.name_spec = name_spec
         self.name_spec.name_of = self
         self.name_spec._sym_name = sym_name
@@ -560,27 +554,22 @@ class AstSymbolNode(UniNode):
 
     @property
     def sym(self) -> Optional[Symbol]:
-        """Get symbol."""
         return self.name_spec.sym
 
     @property
     def sym_name(self) -> str:
-        """Get symbol name."""
         return self.name_spec.sym_name
 
     @property
     def sym_category(self) -> SymbolType:
-        """Get symbol category."""
         return self.name_spec.sym_category
 
     @property
     def py_ctx_func(self) -> Type[ast3.AST]:
-        """Get python context function."""
         return self.name_spec.py_ctx_func
 
     @property
     def expr_type(self) -> str:
-        """Get symbol type."""
         return self.name_spec.expr_type
 
     @property
@@ -593,7 +582,6 @@ class AstSymbolStubNode(AstSymbolNode):
     """Nodes that have link to a symbol in symbol table."""
 
     def __init__(self, sym_type: SymbolType) -> None:
-        """Initialize ast."""
         AstSymbolNode.__init__(
             self,
             sym_name=f"[{self.__class__.__name__}]",
@@ -606,12 +594,10 @@ class AstAccessNode(UniNode):
     """Nodes that have access."""
 
     def __init__(self, access: Optional[SubTag[Token]]) -> None:
-        """Initialize ast."""
         self.access: Optional[SubTag[Token]] = access
 
     @property
     def access_type(self) -> SymbolAccess:
-        """Get access spec."""
         return (
             SymbolAccess.PRIVATE
             if self.access and self.access.tag.name == Tok.KW_PRIV
@@ -630,7 +616,6 @@ class AstDocNode(UniNode):
     """Nodes that have access."""
 
     def __init__(self, doc: Optional[String]) -> None:
-        """Initialize ast."""
         self.doc: Optional[String] = doc
 
 
@@ -638,7 +623,6 @@ class AstSemStrNode(UniNode):
     """Nodes that have access."""
 
     def __init__(self, semstr: Optional[String]) -> None:
-        """Initialize ast."""
         self.semstr: Optional[String] = semstr
 
 
@@ -646,7 +630,6 @@ class AstAsyncNode(UniNode):
     """Nodes that have access."""
 
     def __init__(self, is_async: bool) -> None:
-        """Initialize ast."""
         self.is_async: bool = is_async
 
 
@@ -654,7 +637,6 @@ class AstElseBodyNode(UniNode):
     """Nodes that have access."""
 
     def __init__(self, else_body: Optional[ElseStmt | ElseIf]) -> None:
-        """Initialize ast."""
         self.else_body: Optional[ElseStmt | ElseIf] = else_body
 
 
@@ -662,7 +644,6 @@ class AstTypedVarNode(UniNode):
     """Nodes that have access."""
 
     def __init__(self, type_tag: Optional[SubTag[Expr]]) -> None:
-        """Initialize ast."""
         self.type_tag: Optional[SubTag[Expr]] = type_tag
 
 
@@ -670,7 +651,6 @@ class WalkerStmtOnlyNode(UniNode):
     """WalkerStmtOnlyNode node type for Jac Ast."""
 
     def __init__(self) -> None:
-        """Initialize walker statement only node."""
         self.from_walker: bool = False
 
 
@@ -710,22 +690,46 @@ class UniCFGNode(UniNode):
 
 
 class Expr(UniNode):
-    """Expr node type for Jac Ast."""
+    """Expression is a combination of values, variables operators and fuctions that are evaluated to produce a value.
 
-    def __init__(self, type_src: Optional[Expr] = None) -> None:
-        """Initialize expression node."""
-        self.type_src = type_src or self  # Only used for ArchRef
+    1. Literal Expressions.
+    2. Binary Operations.
+    3. Unary Operations.
+    4. Ternary Operations.
+    5. Attribute Access.
+    6. Subscript.
+    7. Call Expression.
+    8. List Value.
+    9. Dictionary Value.
+    10. Set Value.
+    11. Generator Expression.
+    12. Lambda Expression.
+    13. Conditional Expression.
+    14. Yield Expression.
+    etc.
+
+    An expression can be assigned to a variable, passed to a function, or
+    retuurend from a function.
+
+    Examples:
+        "hello world"         # literal.
+        <expr>(<expr>, ...);  # call.
+        <expr>.NAME           # attribute.
+        <expr>[<expr>]        # subscript.
+        <expr> if <expr> else <expr>  # ternary.
+    """
+
+    def __init__(self, type_src_override: Optional[Expr] = None) -> None:
+        self.type_src = type_src_override or self  # Only used for ArchRef
         self._sym_type: str = "NoType"
         self._type_sym_tab: Optional[UniScopeNode] = None
 
     @property
     def expr_type(self) -> str:
-        """Get symbol type."""
         return self.type_src._sym_type
 
     @expr_type.setter
     def expr_type(self, sym_type: str) -> None:
-        """Set symbol type."""
         self.type_src._sym_type = sym_type
 
     @property
@@ -764,12 +768,11 @@ class CodeBlockStmt(UniCFGNode):
 
 
 class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
-    """ImplOnly node type for Jac Ast."""
+    """AstImplOnlyNode node type for Jac Ast."""
 
     def __init__(
         self, target: ArchRefChain, body: SubNodeList, decl_link: Optional[UniNode]
     ) -> None:
-        """Initialize impl only node."""
         self.target = target
         self.body = body
         self.decl_link = decl_link
@@ -782,7 +785,6 @@ class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
         CodeBlockStmt.__init__(self)
 
     def create_impl_name_node(self) -> Name:
-        """Create impl name."""
         ret = Name(
             orig_src=self.target.archs[-1].loc.orig_src,
             name=Tok.NAME.value,
@@ -799,23 +801,20 @@ class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
 
 
 class AstImplNeedingNode(AstSymbolNode, Generic[T]):
-    """Impl needing node type for Jac Ast."""
+    """AstImplNeedingNode node type for Jac Ast."""
 
     def __init__(self, body: Optional[T]) -> None:
-        """Initialize impl needing node."""
         self.body = body
 
     @property
     def needs_impl(self) -> bool:
-        """Need impl."""
         return self.body is None
 
 
 class NameAtom(AtomExpr, EnumBlockStmt):
-    """NameSpec node type for Jac Ast."""
+    """NameAtom node type for Jac Ast."""
 
     def __init__(self) -> None:
-        """Initialize name spec node."""
         self.name_of: AstSymbolNode = self
         self._sym: Optional[Symbol] = None
         self._sym_name: str = ""
@@ -825,27 +824,22 @@ class NameAtom(AtomExpr, EnumBlockStmt):
 
     @property
     def sym(self) -> Optional[Symbol]:
-        """Get symbol."""
         return self._sym
 
     @sym.setter
     def sym(self, sym: Symbol) -> None:
-        """Set symbol."""
         self._sym = sym
 
     @property
     def sym_name(self) -> str:
-        """Get symbol name."""
         return self._sym_name
 
     @property
     def sym_category(self) -> SymbolType:
-        """Get symbol category."""
         return self._sym_category
 
     @property
     def clean_type(self) -> str:
-        """Get clean type."""
         ret_type = self.expr_type.replace("builtins.", "").replace("NoType", "")
         return ret_type
 
@@ -898,9 +892,11 @@ class NameAtom(AtomExpr, EnumBlockStmt):
 class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode, AstSemStrNode):
     """ArchSpec node type for Jac Ast."""
 
-    def __init__(self, decorators: Optional[SubNodeList[Expr]] = None) -> None:
-        """Initialize walker statement only node."""
+    def __init__(
+        self, decorators: Optional[SubNodeList[Expr]] = None, is_async: bool = False
+    ) -> None:
         self.decorators = decorators
+        self.is_async = is_async
         CodeBlockStmt.__init__(self)
 
 
@@ -916,12 +912,10 @@ class SubTag(UniNode, Generic[T]):
         tag: T,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize tag node."""
         self.tag = tag
         UniNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize sub tag node."""
         res = self.tag.normalize() if deep else True
         self.set_kids(nodes=[self.gen_token(Tok.COLON), self.tag])
         return res
@@ -942,7 +936,6 @@ class SubNodeList(UniNode, Generic[T]):
         left_enc: Optional[Token] = None,
         right_enc: Optional[Token] = None,
     ) -> None:
-        """Initialize sub node list node."""
         self.items = items
         self.delim = delim
         self.left_enc = left_enc
@@ -950,7 +943,6 @@ class SubNodeList(UniNode, Generic[T]):
         UniNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize sub node list node."""
         res = True
         if deep:
             for i in self.items:
@@ -985,7 +977,6 @@ class Module(AstDocNode, UniScopeNode):
         kid: Sequence[UniNode],
         stub_only: bool = False,
     ) -> None:
-        """Initialize whole program node."""
         self.name = name
         self.source = source
         self.body = body
@@ -1030,7 +1021,6 @@ class Module(AstDocNode, UniScopeNode):
         return None
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize module node."""
         res = True
         if deep:
             res = self.doc.normalize() if self.doc else True
@@ -1051,7 +1041,6 @@ class Module(AstDocNode, UniScopeNode):
         return JacFormatPass(ir_in=self, prog=JacProgram()).ir_out.gen.jac
 
     def unparse(self) -> str:
-        """Unparse module node."""
         super().unparse()
         return self.format()
 
@@ -1107,7 +1096,6 @@ class GlobalVars(ElementStmt, AstAccessNode):
         kid: Sequence[UniNode],
         doc: Optional[String] = None,
     ) -> None:
-        """Initialize global var node."""
         self.assignments = assignments
         self.is_frozen = is_frozen
         UniNode.__init__(self, kid=kid)
@@ -1115,7 +1103,6 @@ class GlobalVars(ElementStmt, AstAccessNode):
         AstDocNode.__init__(self, doc=doc)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize global var node."""
         res = True
         if deep:
             res = self.access.normalize(deep) if self.access else True
@@ -1147,7 +1134,6 @@ class Test(AstSymbolNode, ElementStmt, UniScopeNode):
         kid: Sequence[UniNode],
         doc: Optional[String] = None,
     ) -> None:
-        """Initialize test node."""
         Test.TEST_COUNT += 1 if isinstance(name, Token) else 0
         self.name: Name = (  # for auto generated test names
             name
@@ -1184,7 +1170,6 @@ class Test(AstSymbolNode, ElementStmt, UniScopeNode):
         UniScopeNode.__init__(self, name=self.sym_name, owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize test node."""
         res = True
         if deep:
             res = self.name.normalize(deep)
@@ -1201,7 +1186,7 @@ class Test(AstSymbolNode, ElementStmt, UniScopeNode):
 
 
 class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
-    """Free mod code for Jac Ast."""
+    """ModuleCode node type for Jac Ast."""
 
     def __init__(
         self,
@@ -1210,14 +1195,12 @@ class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
         kid: Sequence[UniNode],
         doc: Optional[String] = None,
     ) -> None:
-        """Initialize test node."""
         self.name = name
         self.body = body
         UniNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize module code node."""
         res = True
         if deep:
             res = self.name.normalize(deep) if self.name else res
@@ -1236,7 +1219,7 @@ class ModuleCode(ElementStmt, ArchBlockStmt, EnumBlockStmt):
 
 
 class PyInlineCode(ElementStmt, ArchBlockStmt, EnumBlockStmt, CodeBlockStmt):
-    """Inline Python code node type for Jac Ast."""
+    """PyInlineCode node type for Jac Ast."""
 
     def __init__(
         self,
@@ -1244,14 +1227,12 @@ class PyInlineCode(ElementStmt, ArchBlockStmt, EnumBlockStmt, CodeBlockStmt):
         kid: Sequence[UniNode],
         doc: Optional[String] = None,
     ) -> None:
-        """Initialize inline python code node."""
         self.code = code
         UniNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize inline python code node."""
         res = True
         if deep:
             res = self.code.normalize(deep)
@@ -1278,7 +1259,6 @@ class Import(ElementStmt, CodeBlockStmt):
         kid: Sequence[UniNode],
         doc: Optional[String] = None,
     ) -> None:
-        """Initialize import node."""
         self.hint = hint
         self.from_loc = from_loc
         self.items = items
@@ -1329,7 +1309,6 @@ class Import(ElementStmt, CodeBlockStmt):
         )
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize import node."""
         res = True
         if deep:
             res = self.hint.normalize(deep) if self.hint else res
@@ -1365,7 +1344,6 @@ class ModulePath(AstSymbolNode):
         alias: Optional[Name],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize module path node."""
         self.path = path
         self.level = level
         self.alias = alias
@@ -1438,7 +1416,6 @@ class ModulePath(AstSymbolNode):
         return candidate
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize module path node."""
         res = True
         if deep:
             if self.path:
@@ -1471,7 +1448,6 @@ class ModuleItem(AstSymbolNode):
         alias: Optional[Name],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize module item node."""
         self.name = name
         self.alias = alias
         UniNode.__init__(self, kid=kid)
@@ -1502,7 +1478,6 @@ class ModuleItem(AstSymbolNode):
         return self.from_parent.from_loc
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize module item node."""
         res = True
         if deep:
             res = res and self.name.normalize(deep)
@@ -1537,7 +1512,6 @@ class Architype(
         semstr: Optional[String] = None,
         decorators: Optional[SubNodeList[Expr]] = None,
     ) -> None:
-        """Initialize object arch node."""
         self.name = name
         self.arch_type = arch_type
         self.base_classes = base_classes
@@ -1574,7 +1548,6 @@ class Architype(
 
     @property
     def is_abstract(self) -> bool:
-        """Check if has an abstract method."""
         body = (
             self.body.items
             if isinstance(self.body, SubNodeList)
@@ -1583,7 +1556,6 @@ class Architype(
         return any(isinstance(i, Ability) and i.is_abstract for i in body)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize architype node."""
         res = True
         if deep:
             res = self.name.normalize(deep)
@@ -1602,6 +1574,8 @@ class Architype(
         if self.decorators:
             new_kid.append(self.gen_token(Tok.DECOR_OP))
             new_kid.append(self.decorators)
+        if self.is_async:
+            new_kid.append(self.gen_token(Tok.KW_ASYNC))
         new_kid.append(self.arch_type)
         if self.access:
             new_kid.append(self.access)
@@ -1641,7 +1615,6 @@ class ArchDef(AstImplOnlyNode, UniScopeNode):
         UniScopeNode.__init__(self, name=self.sym_name, owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize arch def node."""
         res = True
         if deep:
             res = self.target.normalize(deep)
@@ -1670,7 +1643,6 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt, UniScopeN
         semstr: Optional[String] = None,
         decorators: Optional[SubNodeList[Expr]] = None,
     ) -> None:
-        """Initialize object arch node."""
         self.name = name
         self.base_classes = base_classes
         UniNode.__init__(self, kid=kid)
@@ -1688,7 +1660,6 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt, UniScopeN
         UniScopeNode.__init__(self, name=self.sym_name, owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize enum node."""
         res = True
         if deep:
             res = self.name.normalize(deep)
@@ -1748,7 +1719,6 @@ class EnumDef(AstImplOnlyNode, UniScopeNode):
         UniScopeNode.__init__(self, name=self.sym_name, owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize enum def node."""
         res = True
         if deep:
             res = self.target.normalize(deep)
@@ -1793,7 +1763,6 @@ class Ability(
         doc: Optional[String] = None,
         decorators: Optional[SubNodeList[Expr]] = None,
     ) -> None:
-        """Initialize func arch node."""
         self.name_ref = name_ref
         self.is_override = is_override
         self.is_static = is_static
@@ -1817,12 +1786,10 @@ class Ability(
 
     @property
     def is_method(self) -> bool:
-        """Check if is func."""
         return self.signature.is_method
 
     @property
     def owner_method(self) -> Optional[Architype | Enum]:
-        """Check if is owner method."""
         return (
             self.parent.parent
             if self.parent
@@ -1833,11 +1800,9 @@ class Ability(
 
     @property
     def is_genai_ability(self) -> bool:
-        """Check if is genai_ability."""
         return isinstance(self.body, FuncCall)
 
     def py_resolve_name(self) -> str:
-        """Resolve name."""
         if isinstance(self.name_ref, Name):
             return self.name_ref.value
         elif isinstance(self.name_ref, (SpecialVarRef, ArchRef)):
@@ -1846,7 +1811,6 @@ class Ability(
             raise NotImplementedError
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.name_ref.normalize(deep)
@@ -1907,7 +1871,6 @@ class AbilityDef(AstImplOnlyNode, UniScopeNode):
         decorators: Optional[SubNodeList[Expr]] = None,
         decl_link: Optional[Ability] = None,
     ) -> None:
-        """Initialize ability def node."""
         self.signature = signature
         self.decorators = decorators
         UniNode.__init__(self, kid=kid)
@@ -1916,7 +1879,6 @@ class AbilityDef(AstImplOnlyNode, UniScopeNode):
         UniScopeNode.__init__(self, name=self.sym_name, owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ability def node."""
         res = True
         if deep:
             res = self.target.normalize(deep)
@@ -1946,7 +1908,6 @@ class FuncSignature(AstSemStrNode):
         kid: Sequence[UniNode],
         semstr: Optional[String] = None,
     ) -> None:
-        """Initialize method signature node."""
         self.params = params
         self.return_type = return_type
         self.is_method = False
@@ -1954,7 +1915,6 @@ class FuncSignature(AstSemStrNode):
         AstSemStrNode.__init__(self, semstr=semstr)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.params.normalize(deep) if self.params else res
@@ -1975,7 +1935,6 @@ class FuncSignature(AstSemStrNode):
 
     @property
     def is_static(self) -> bool:
-        """Check if is static."""
         return (isinstance(self.parent, Ability) and self.parent.is_static) or (
             isinstance(self.parent, AbilityDef)
             and isinstance(self.parent.decl_link, Ability)
@@ -1984,7 +1943,6 @@ class FuncSignature(AstSemStrNode):
 
     @property
     def is_in_py_class(self) -> bool:
-        """Check if the ability belongs to a class."""
         is_archi = self.find_parent_of_type(Architype)
         is_class = is_archi is not None and is_archi.arch_type.name == Tok.KW_CLASS
 
@@ -2011,7 +1969,6 @@ class EventSignature(AstSemStrNode):
         kid: Sequence[UniNode],
         semstr: Optional[String] = None,
     ) -> None:
-        """Initialize event signature node."""
         self.event = event
         self.arch_tag_info = arch_tag_info
         self.return_type = return_type
@@ -2020,7 +1977,6 @@ class EventSignature(AstSemStrNode):
         AstSemStrNode.__init__(self, semstr=semstr)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.event.normalize(deep)
@@ -2052,12 +2008,10 @@ class ArchRefChain(UniNode):
         archs: list[ArchRef],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize name list ."""
         self.archs = archs
         UniNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             for a in self.archs:
@@ -2069,8 +2023,6 @@ class ArchRefChain(UniNode):
         return res
 
     def py_resolve_name(self) -> str:
-        """Resolve name."""
-
         def get_tag(x: ArchRef) -> str:
             return (
                 "en"
@@ -2099,7 +2051,6 @@ class ParamVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
         kid: Sequence[UniNode],
         semstr: Optional[String] = None,
     ) -> None:
-        """Initialize param var node."""
         self.name = name
         self.unpack = unpack
         self.value = value
@@ -2114,7 +2065,6 @@ class ParamVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
         AstSemStrNode.__init__(self, semstr=semstr)
 
     def normalize(self, deep: bool = True) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.name.normalize(deep)
@@ -2139,7 +2089,7 @@ class ParamVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
 
 
 class ArchHas(AstAccessNode, AstDocNode, ArchBlockStmt):
-    """HasStmt node type for Jac Ast."""
+    """ArchHas node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2150,7 +2100,6 @@ class ArchHas(AstAccessNode, AstDocNode, ArchBlockStmt):
         kid: Sequence[UniNode],
         doc: Optional[String] = None,
     ) -> None:
-        """Initialize has statement node."""
         self.is_static = is_static
         self.vars = vars
         self.is_frozen = is_frozen
@@ -2159,7 +2108,6 @@ class ArchHas(AstAccessNode, AstDocNode, ArchBlockStmt):
         AstDocNode.__init__(self, doc=doc)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize has statement node."""
         res = True
         if deep:
             res = self.access.normalize(deep) if self.access else res
@@ -2195,7 +2143,6 @@ class HasVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
         kid: Sequence[UniNode],
         semstr: Optional[String] = None,
     ) -> None:
-        """Initialize has var node."""
         self.name = name
         self.value = value
         self.defer = defer
@@ -2210,7 +2157,6 @@ class HasVar(AstSymbolNode, AstTypedVarNode, AstSemStrNode):
         AstSemStrNode.__init__(self, semstr=semstr)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize has var node."""
         res = True
         if deep:
             res = self.name.normalize(deep)
@@ -2242,7 +2188,6 @@ class TypedCtxBlock(CodeBlockStmt, UniScopeNode):
         body: SubNodeList[CodeBlockStmt],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize typed context block node."""
         self.type_ctx = type_ctx
         self.body = body
         UniNode.__init__(self, kid=kid)
@@ -2250,7 +2195,6 @@ class TypedCtxBlock(CodeBlockStmt, UniScopeNode):
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize typed context block node."""
         res = True
         if deep:
             res = self.type_ctx.normalize(deep)
@@ -2274,7 +2218,6 @@ class IfStmt(CodeBlockStmt, AstElseBodyNode, UniScopeNode):
         else_body: Optional[ElseStmt | ElseIf],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize if statement node."""
         self.condition = condition
         self.body = body
         UniNode.__init__(self, kid=kid)
@@ -2283,7 +2226,6 @@ class IfStmt(CodeBlockStmt, AstElseBodyNode, UniScopeNode):
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize if statement node."""
         res = True
         if deep:
             res = self.condition.normalize(deep)
@@ -2301,10 +2243,9 @@ class IfStmt(CodeBlockStmt, AstElseBodyNode, UniScopeNode):
 
 
 class ElseIf(IfStmt):
-    """ElseIfs node type for Jac Ast."""
+    """ElseIf node type for Jac Ast."""
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize else if statement node."""
         res = True
         if deep:
             res = self.condition.normalize(deep)
@@ -2322,20 +2263,18 @@ class ElseIf(IfStmt):
 
 
 class ElseStmt(UniScopeNode):
-    """Else node type for Jac Ast."""
+    """ElseStmt node type for Jac Ast."""
 
     def __init__(
         self,
         body: SubNodeList[CodeBlockStmt],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize else node."""
         self.body = body
         UniNode.__init__(self, kid=kid)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize else statement node."""
         res = True
         if deep:
             res = self.body.normalize(deep)
@@ -2356,14 +2295,12 @@ class ExprStmt(CodeBlockStmt):
         in_fstring: bool,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize expr statement node."""
         self.expr = expr
         self.in_fstring = in_fstring
         UniNode.__init__(self, kid=kid)
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = True) -> bool:
-        """Normalize ast node."""
         if deep:
             res = self.expr.normalize(deep)
         new_kid: list[UniNode] = []
@@ -2387,7 +2324,6 @@ class TryStmt(AstElseBodyNode, CodeBlockStmt, UniScopeNode):
         finally_body: Optional[FinallyStmt],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize try statement node."""
         self.body = body
         self.excepts = excepts
         self.finally_body = finally_body
@@ -2397,7 +2333,6 @@ class TryStmt(AstElseBodyNode, CodeBlockStmt, UniScopeNode):
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize try statement node."""
         res = True
         if deep:
             res = self.body.normalize(deep)
@@ -2430,7 +2365,6 @@ class Except(CodeBlockStmt, UniScopeNode):
         body: SubNodeList[CodeBlockStmt],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize except node."""
         self.ex_type = ex_type
         self.name = name
         self.body = body
@@ -2439,7 +2373,6 @@ class Except(CodeBlockStmt, UniScopeNode):
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize except node."""
         res = True
         if deep:
             res = self.ex_type.normalize(deep)
@@ -2465,14 +2398,12 @@ class FinallyStmt(CodeBlockStmt, UniScopeNode):
         body: SubNodeList[CodeBlockStmt],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize finally statement node."""
         self.body = body
         UniNode.__init__(self, kid=kid)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize finally statement node."""
         res = True
         if deep:
             res = self.body.normalize(deep)
@@ -2485,7 +2416,7 @@ class FinallyStmt(CodeBlockStmt, UniScopeNode):
 
 
 class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
-    """IterFor node type for Jac Ast."""
+    """IterForStmt node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2497,7 +2428,6 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
         else_body: Optional[ElseStmt],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize iter for node."""
         self.iter = iter
         self.condition = condition
         self.count_by = count_by
@@ -2509,7 +2439,6 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize iter for node."""
         res = True
         if deep:
             res = self.iter.normalize(deep)
@@ -2534,7 +2463,7 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
 
 
 class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
-    """InFor node type for Jac Ast."""
+    """InForStmt node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2545,7 +2474,6 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
         else_body: Optional[ElseStmt],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize in for node."""
         self.target = target
         self.collection = collection
         self.body = body
@@ -2556,7 +2484,6 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize in for node."""
         res = True
         if deep:
             res = self.target.normalize(deep)
@@ -2588,7 +2515,6 @@ class WhileStmt(CodeBlockStmt, UniScopeNode):
         body: SubNodeList[CodeBlockStmt],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize while statement node."""
         self.condition = condition
         self.body = body
         UniNode.__init__(self, kid=kid)
@@ -2596,7 +2522,6 @@ class WhileStmt(CodeBlockStmt, UniScopeNode):
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize while statement node."""
         res = True
         if deep:
             res = self.condition.normalize(deep)
@@ -2621,7 +2546,6 @@ class WithStmt(AstAsyncNode, CodeBlockStmt, UniScopeNode):
         body: SubNodeList[CodeBlockStmt],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize with statement node."""
         self.exprs = exprs
         self.body = body
         UniNode.__init__(self, kid=kid)
@@ -2630,7 +2554,6 @@ class WithStmt(AstAsyncNode, CodeBlockStmt, UniScopeNode):
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize with statement node."""
         res = True
         if deep:
             res = self.exprs.normalize(deep)
@@ -2657,13 +2580,11 @@ class ExprAsItem(UniNode):
         alias: Optional[Expr],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize module item node."""
         self.expr = expr
         self.alias = alias
         UniNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = True) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.expr.normalize(deep)
@@ -2685,14 +2606,12 @@ class RaiseStmt(CodeBlockStmt):
         from_target: Optional[Expr],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize raise statement node."""
         self.cause = cause
         self.from_target = from_target
         UniNode.__init__(self, kid=kid)
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize raise statement node."""
         res = True
         if deep:
             res = res and self.cause.normalize(deep) if self.cause else res
@@ -2717,14 +2636,12 @@ class AssertStmt(CodeBlockStmt):
         error_msg: Optional[Expr],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize assert statement node."""
         self.condition = condition
         self.error_msg = error_msg
         UniNode.__init__(self, kid=kid)
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize assert statement node."""
         res = True
         if deep:
             res = self.condition.normalize(deep)
@@ -2742,20 +2659,18 @@ class AssertStmt(CodeBlockStmt):
 
 
 class CheckStmt(CodeBlockStmt):
-    """DeleteStmt node type for Jac Ast."""
+    """CheckStmt node type for Jac Ast."""
 
     def __init__(
         self,
         target: Expr,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize delete statement node."""
         self.target = target
         UniNode.__init__(self, kid=kid)
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize delete statement node."""
         res = True
         if deep:
             res = self.target.normalize(deep)
@@ -2776,13 +2691,11 @@ class CtrlStmt(CodeBlockStmt):
         ctrl: Token,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize control statement node."""
         self.ctrl = ctrl
         UniNode.__init__(self, kid=kid)
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize control statement node."""
         res = True
         if deep:
             res = self.ctrl.normalize(deep)
@@ -2799,7 +2712,6 @@ class DeleteStmt(CodeBlockStmt):
         target: Expr,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize delete statement node."""
         self.target = target
         UniNode.__init__(self, kid=kid)
         CodeBlockStmt.__init__(self)
@@ -2814,7 +2726,6 @@ class DeleteStmt(CodeBlockStmt):
         )
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize delete statement node."""
         res = True
         if deep:
             res = self.target.normalize(deep)
@@ -2835,13 +2746,11 @@ class ReportStmt(CodeBlockStmt):
         expr: Expr,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize report statement node."""
         self.expr = expr
         UniNode.__init__(self, kid=kid)
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize report statement node."""
         res = True
         if deep:
             res = self.expr.normalize(deep)
@@ -2862,13 +2771,11 @@ class ReturnStmt(CodeBlockStmt):
         expr: Optional[Expr],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize return statement node."""
         self.expr = expr
         UniNode.__init__(self, kid=kid)
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize return statement node."""
         res = True
         if deep:
             res = self.expr.normalize(deep) if self.expr else res
@@ -2890,14 +2797,12 @@ class IgnoreStmt(WalkerStmtOnlyNode, CodeBlockStmt):
         target: Expr,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize ignore statement node."""
         self.target = target
         UniNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ignore statement node."""
         res = True
         if deep:
             res = self.target.normalize(deep)
@@ -2920,7 +2825,6 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
         else_body: Optional[ElseStmt],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize visit statement node."""
         self.vis_type = vis_type
         self.target = target
         UniNode.__init__(self, kid=kid)
@@ -2929,7 +2833,6 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize visit statement node."""
         res = True
         if deep:
             res = self.vis_type.normalize(deep) if self.vis_type else res
@@ -2951,7 +2854,7 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
 
 
 class RevisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
-    """ReVisitStmt node type for Jac Ast."""
+    """RevisitStmt node type for Jac Ast."""
 
     def __init__(
         self,
@@ -2959,7 +2862,6 @@ class RevisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
         else_body: Optional[ElseStmt],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize revisit statement node."""
         self.hops = hops
         UniNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
@@ -2967,7 +2869,6 @@ class RevisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize revisit statement node."""
         res = True
         if deep:
             res = self.hops.normalize(deep) if self.hops else res
@@ -3005,20 +2906,18 @@ class DisengageStmt(WalkerStmtOnlyNode, CodeBlockStmt):
 
 
 class AwaitExpr(Expr):
-    """AwaitStmt node type for Jac Ast."""
+    """AwaitExpr node type for Jac Ast."""
 
     def __init__(
         self,
         target: Expr,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize sync statement node."""
         self.target = target
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize sync statement node."""
         res = True
         if deep:
             res = self.target.normalize(deep)
@@ -3038,13 +2937,11 @@ class GlobalStmt(CodeBlockStmt):
         target: SubNodeList[NameAtom],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize global statement node."""
         self.target = target
         UniNode.__init__(self, kid=kid)
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize global statement node."""
         res = True
         if deep:
             res = self.target.normalize(deep)
@@ -3058,10 +2955,9 @@ class GlobalStmt(CodeBlockStmt):
 
 
 class NonLocalStmt(GlobalStmt):
-    """NonlocalStmt node type for Jac Ast."""
+    """NonLocalStmt node type for Jac Ast."""
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize nonlocal statement node."""
         res = True
         if deep:
             res = self.target.normalize(deep)
@@ -3088,7 +2984,6 @@ class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
         semstr: Optional[String] = None,
         is_enum_stmt: bool = False,
     ) -> None:
-        """Initialize assignment node."""
         self.target = target
         self.value = value
         self.mutable = mutable
@@ -3100,7 +2995,6 @@ class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = True) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.target.normalize(deep)
@@ -3132,7 +3026,7 @@ class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
 
 
 class BinaryExpr(Expr):
-    """ExprBinary node type for Jac Ast."""
+    """BinaryExpr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3141,7 +3035,6 @@ class BinaryExpr(Expr):
         op: Token | DisconnectOp | ConnectOp,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize binary expression node."""
         self.left = left
         self.right = right
         self.op = op
@@ -3149,7 +3042,6 @@ class BinaryExpr(Expr):
         Expr.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.left.normalize(deep)
@@ -3176,7 +3068,6 @@ class CompareExpr(Expr):
         ops: list[Token],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize binary expression node."""
         self.left = left
         self.rights = rights
         self.ops = ops
@@ -3184,7 +3075,6 @@ class CompareExpr(Expr):
         Expr.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.left.normalize(deep)
@@ -3209,14 +3099,12 @@ class BoolExpr(Expr):
         values: list[Expr],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize binary expression node."""
         self.values = values
         self.op = op
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             for value in self.values:
@@ -3232,7 +3120,7 @@ class BoolExpr(Expr):
 
 
 class LambdaExpr(Expr, UniScopeNode):
-    """ExprLambda node type for Jac Ast."""
+    """LambdaExpr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3240,7 +3128,6 @@ class LambdaExpr(Expr, UniScopeNode):
         kid: Sequence[UniNode],
         signature: Optional[FuncSignature] = None,
     ) -> None:
-        """Initialize lambda expression node."""
         self.signature = signature
         self.body = body
         UniNode.__init__(self, kid=kid)
@@ -3248,7 +3135,6 @@ class LambdaExpr(Expr, UniScopeNode):
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.signature.normalize(deep) if self.signature else res
@@ -3266,7 +3152,7 @@ class LambdaExpr(Expr, UniScopeNode):
 
 
 class UnaryExpr(Expr):
-    """ExprUnary node type for Jac Ast."""
+    """UnaryExpr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3274,14 +3160,12 @@ class UnaryExpr(Expr):
         op: Token,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize unary expression node."""
         self.operand = operand
         self.op = op
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.operand.normalize(deep)
@@ -3292,7 +3176,7 @@ class UnaryExpr(Expr):
 
 
 class IfElseExpr(Expr):
-    """ExprIfElse node type for Jac Ast."""
+    """IfElseExpr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3301,7 +3185,6 @@ class IfElseExpr(Expr):
         else_value: Expr,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize if else expression node."""
         self.condition = condition
         self.value = value
         self.else_value = else_value
@@ -3309,7 +3192,6 @@ class IfElseExpr(Expr):
         Expr.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.condition.normalize(deep)
@@ -3327,21 +3209,19 @@ class IfElseExpr(Expr):
 
 
 class MultiString(AtomExpr):
-    """ExprMultiString node type for Jac Ast."""
+    """MultiString node type for Jac Ast."""
 
     def __init__(
         self,
         strings: Sequence[String | FString],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize multi string expression node."""
         self.strings = strings
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.STRING)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             for string in self.strings:
@@ -3361,14 +3241,12 @@ class FString(AtomExpr):
         parts: Optional[SubNodeList[String | ExprStmt]],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize fstring expression node."""
         self.parts = parts
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.STRING)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.parts.normalize(deep) if self.parts else res
@@ -3403,14 +3281,12 @@ class ListVal(AtomExpr):
         values: Optional[SubNodeList[Expr]],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize value node."""
         self.values = values
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.values.normalize(deep) if self.values else res
@@ -3432,14 +3308,12 @@ class SetVal(AtomExpr):
         values: Optional[SubNodeList[Expr]],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize value node."""
         self.values = values
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.values.normalize(deep) if self.values else res
@@ -3461,14 +3335,12 @@ class TupleVal(AtomExpr):
         values: Optional[SubNodeList[Expr | KWPair]],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize tuple value node."""
         self.values = values
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.values.normalize(deep) if self.values else res
@@ -3498,21 +3370,19 @@ class TupleVal(AtomExpr):
 
 
 class DictVal(AtomExpr):
-    """ExprDict node type for Jac Ast."""
+    """DictVal node type for Jac Ast."""
 
     def __init__(
         self,
         kv_pairs: Sequence[KVPair],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize dict expression node."""
         self.kv_pairs = kv_pairs
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             for kv_pair in self.kv_pairs:
@@ -3530,7 +3400,7 @@ class DictVal(AtomExpr):
 
 
 class KVPair(UniNode):
-    """ExprKVPair node type for Jac Ast."""
+    """KVPair node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3538,13 +3408,11 @@ class KVPair(UniNode):
         value: Expr,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize key value pair expression node."""
         self.key = key
         self.value = value
         UniNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.key.normalize(deep) if self.key else res
@@ -3561,7 +3429,7 @@ class KVPair(UniNode):
 
 
 class KWPair(UniNode):
-    """ExprKWPair node type for Jac Ast."""
+    """KWPair node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3569,13 +3437,11 @@ class KWPair(UniNode):
         value: Expr,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize keyword pair expression node."""
         self.key = key
         self.value = value
         UniNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.key.normalize(deep) if self.key else res
@@ -3590,7 +3456,7 @@ class KWPair(UniNode):
 
 
 class InnerCompr(AstAsyncNode, UniScopeNode):
-    """ListCompr node type for Jac Ast."""
+    """InnerCompr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3600,7 +3466,6 @@ class InnerCompr(AstAsyncNode, UniScopeNode):
         conditional: Optional[list[Expr]],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize comprehension expression node."""
         self.target = target
         self.collection = collection
         self.conditional = conditional
@@ -3609,7 +3474,6 @@ class InnerCompr(AstAsyncNode, UniScopeNode):
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.target.normalize(deep)
@@ -3639,7 +3503,6 @@ class ListCompr(AtomExpr):
         compr: list[InnerCompr],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize comprehension expression node."""
         self.out_expr = out_expr
         self.compr = compr
         UniNode.__init__(self, kid=kid)
@@ -3647,7 +3510,6 @@ class ListCompr(AtomExpr):
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.out_expr.normalize(deep)
@@ -3668,7 +3530,6 @@ class GenCompr(ListCompr):
     """GenCompr node type for Jac Ast."""
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.out_expr.normalize(deep)
@@ -3689,7 +3550,6 @@ class SetCompr(ListCompr):
     """SetCompr node type for Jac Ast."""
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.out_expr.normalize(deep)
@@ -3715,7 +3575,6 @@ class DictCompr(AtomExpr, UniScopeNode):
         compr: list[InnerCompr],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize comprehension expression node."""
         self.kv_pair = kv_pair
         self.compr = compr
         UniNode.__init__(self, kid=kid)
@@ -3724,7 +3583,6 @@ class DictCompr(AtomExpr, UniScopeNode):
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         res = self.kv_pair.normalize(deep)
         for comp in self.compr:
@@ -3752,7 +3610,6 @@ class AtomTrailer(Expr):
         kid: Sequence[UniNode],
         is_genai: bool = False,
     ) -> None:
-        """Initialize atom trailer expression node."""
         self.target = target
         self.right = right
         self.is_attr = is_attr
@@ -3762,7 +3619,6 @@ class AtomTrailer(Expr):
         Expr.__init__(self)
 
     def normalize(self, deep: bool = True) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.target.normalize(deep)
@@ -3779,7 +3635,6 @@ class AtomTrailer(Expr):
 
     @property
     def as_attr_list(self) -> list[AstSymbolNode]:
-        """Unwind trailer into list of ast symbol nodes."""
         left = self.right if isinstance(self.right, AtomTrailer) else self.target
         right = self.target if isinstance(self.right, AtomTrailer) else self.right
         trag_list: list[AstSymbolNode] = (
@@ -3802,13 +3657,11 @@ class AtomUnit(Expr):
         value: Expr | YieldExpr,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize atom unit expression node."""
         self.value = value
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
 
     def normalize(self, deep: bool = True) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.value.normalize(deep)
@@ -3821,7 +3674,7 @@ class AtomUnit(Expr):
 
 
 class YieldExpr(Expr):
-    """YieldStmt node type for Jac Ast."""
+    """YieldExpr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -3829,14 +3682,12 @@ class YieldExpr(Expr):
         with_from: bool,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize yeild statement node."""
         self.expr = expr
         self.with_from = with_from
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize yield statement node."""
         res = True
         if deep:
             res = self.expr.normalize(deep) if self.expr else res
@@ -3860,7 +3711,6 @@ class FuncCall(Expr):
         genai_call: Optional[FuncCall],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize function call expression node."""
         self.target = target
         self.params = params
         self.genai_call = genai_call
@@ -3868,7 +3718,6 @@ class FuncCall(Expr):
         Expr.__init__(self)
 
     def normalize(self, deep: bool = True) -> bool:
-        """Normalize ast node."""
         if deep:
             res = self.target.normalize(deep)
             res = res and (not self.params or self.params.normalize(deep))
@@ -3888,7 +3737,7 @@ class IndexSlice(AtomExpr):
 
     @dataclass
     class Slice:
-        """Slice node for index slice."""
+        """Slice node type for Jac Ast."""
 
         start: Optional[Expr]
         stop: Optional[Expr]
@@ -3900,7 +3749,6 @@ class IndexSlice(AtomExpr):
         is_range: bool,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize index slice expression node."""
         self.slices = slices
         self.is_range = is_range
         UniNode.__init__(self, kid=kid)
@@ -3908,7 +3756,6 @@ class IndexSlice(AtomExpr):
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
 
     def normalize(self, deep: bool = True) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             for slice in self.slices:
@@ -3947,11 +3794,10 @@ class ArchRef(AtomExpr):
         arch_type: Token,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize architype reference expression node."""
         self.arch_name = arch_name
         self.arch_type = arch_type
         UniNode.__init__(self, kid=kid)
-        Expr.__init__(self, type_src=arch_name)
+        Expr.__init__(self, type_src_override=arch_name)
         AstSymbolNode.__init__(
             self,
             sym_name=arch_name.sym_name,
@@ -3960,7 +3806,6 @@ class ArchRef(AtomExpr):
         )
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.arch_name.normalize(deep)
@@ -3978,14 +3823,12 @@ class EdgeRefTrailer(Expr):
         edges_only: bool,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize edge reference trailer expression node."""
         self.chain = chain
         self.edges_only = edges_only
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
 
     def normalize(self, deep: bool = True) -> bool:
-        """Normalize ast node."""
         res = True
         for expr in self.chain:
             res = res and expr.normalize(deep)
@@ -4008,7 +3851,6 @@ class EdgeOpRef(WalkerStmtOnlyNode, AtomExpr):
         edge_dir: EdgeDir,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize edge op reference expression node."""
         self.filter_cond = filter_cond
         self.edge_dir = edge_dir
         UniNode.__init__(self, kid=kid)
@@ -4017,7 +3859,6 @@ class EdgeOpRef(WalkerStmtOnlyNode, AtomExpr):
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.filter_cond.normalize(deep) if self.filter_cond else res
@@ -4048,20 +3889,18 @@ class EdgeOpRef(WalkerStmtOnlyNode, AtomExpr):
 
 
 class DisconnectOp(WalkerStmtOnlyNode):
-    """DisconnectOpRef node type for Jac Ast."""
+    """DisconnectOp node type for Jac Ast."""
 
     def __init__(
         self,
         edge_spec: EdgeOpRef,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize disconnect op reference expression node."""
         self.edge_spec = edge_spec
         UniNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.edge_spec.normalize(deep)
@@ -4080,14 +3919,12 @@ class ConnectOp(UniNode):
         edge_dir: EdgeDir,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize connect op reference expression node."""
         self.conn_type = conn_type
         self.conn_assign = conn_assign
         self.edge_dir = edge_dir
         UniNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.conn_type.normalize(deep) if self.conn_type else res
@@ -4131,7 +3968,7 @@ class ConnectOp(UniNode):
 
 
 class FilterCompr(AtomExpr):
-    """FilterCtx node type for Jac Ast."""
+    """FilterCompr node type for Jac Ast."""
 
     def __init__(
         self,
@@ -4139,7 +3976,6 @@ class FilterCompr(AtomExpr):
         compares: Optional[SubNodeList[CompareExpr]],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize filter_cond context expression node."""
         self.f_type = f_type
         self.compares = compares
         UniNode.__init__(self, kid=kid)
@@ -4147,7 +3983,6 @@ class FilterCompr(AtomExpr):
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.f_type.normalize(deep) if self.f_type else res
@@ -4171,21 +4006,19 @@ class FilterCompr(AtomExpr):
 
 
 class AssignCompr(AtomExpr):
-    """AssignCtx node type for Jac Ast."""
+    """AssignCompr node type for Jac Ast."""
 
     def __init__(
         self,
         assigns: SubNodeList[KWPair],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize assign compr expression node."""
         self.assigns = assigns
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize ast node."""
         res = True
         if deep:
             res = self.assigns.normalize(deep)
@@ -4214,14 +4047,12 @@ class MatchStmt(CodeBlockStmt):
         cases: list[MatchCase],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize match statement node."""
         self.target = target
         self.cases = cases
         UniNode.__init__(self, kid=kid)
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize match statement node."""
         res = True
         if deep:
             res = self.target.normalize(deep)
@@ -4250,7 +4081,6 @@ class MatchCase(UniScopeNode):
         body: list[CodeBlockStmt],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize match case node."""
         self.pattern = pattern
         self.guard = guard
         self.body = body
@@ -4258,7 +4088,6 @@ class MatchCase(UniScopeNode):
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize match case node."""
         res = True
         if deep:
             res = self.pattern.normalize(deep)
@@ -4284,12 +4113,10 @@ class MatchOr(MatchPattern):
         patterns: list[MatchPattern],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize match or node."""
         self.patterns = patterns
         UniNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize match or node."""
         res = True
         if deep:
             for pattern in self.patterns:
@@ -4312,13 +4139,11 @@ class MatchAs(MatchPattern):
         pattern: Optional[MatchPattern],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize match as node."""
         self.name = name
         self.pattern = pattern
         UniNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize match as node."""
         res = True
         if deep:
             res = self.name.normalize(deep)
@@ -4333,7 +4158,7 @@ class MatchAs(MatchPattern):
 
 
 class MatchWild(MatchPattern):
-    """Match wild card node type for Jac Ast."""
+    """MatchWild node type for Jac Ast."""
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize match wild card node."""
@@ -4364,12 +4189,10 @@ class MatchValue(MatchPattern):
         value: Expr,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize match value node."""
         self.value = value
         UniNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize match value node."""
         res = True
         if deep:
             res = self.value.normalize(deep)
@@ -4385,12 +4208,10 @@ class MatchSingleton(MatchPattern):
         value: Bool | Null,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize match singleton node."""
         self.value = value
         UniNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize match singleton node."""
         res = True
         self.set_kids(nodes=[self.value])
         return res
@@ -4404,12 +4225,10 @@ class MatchSequence(MatchPattern):
         values: list[MatchPattern],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize match sequence node."""
         self.values = values
         UniNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize match sequence node."""
         res = True
         if deep:
             for value in self.values:
@@ -4432,12 +4251,10 @@ class MatchMapping(MatchPattern):
         values: list[MatchKVPair | MatchStar],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize match mapping node."""
         self.values = values
         UniNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize match mapping node."""
         res = True
         if deep:
             for value in self.values:
@@ -4461,13 +4278,11 @@ class MatchKVPair(MatchPattern):
         value: MatchPattern,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize match key value pair node."""
         self.key = key
         self.value = value
         UniNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize match key value pair node."""
         res = True
         if deep:
             res = (
@@ -4489,13 +4304,11 @@ class MatchStar(MatchPattern):
         is_list: bool,
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize match star node."""
         self.name = name
         self.is_list = is_list
         UniNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize match star node."""
         res = True
         if deep:
             res = self.name.normalize(deep)
@@ -4508,7 +4321,7 @@ class MatchStar(MatchPattern):
 
 
 class MatchArch(MatchPattern):
-    """MatchClass node type for Jac Ast."""
+    """MatchArch node type for Jac Ast."""
 
     def __init__(
         self,
@@ -4517,14 +4330,12 @@ class MatchArch(MatchPattern):
         kw_patterns: Optional[SubNodeList[MatchKVPair]],
         kid: Sequence[UniNode],
     ) -> None:
-        """Initialize match class node."""
         self.name = name
         self.arg_patterns = arg_patterns
         self.kw_patterns = kw_patterns
         UniNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:
-        """Normalize match class node."""
         res = True
         if deep:
             res = self.name.normalize(deep)
@@ -4561,7 +4372,6 @@ class Token(UniNode):
         pos_start: int,
         pos_end: int,
     ) -> None:
-        """Initialize token."""
         self.orig_src = orig_src
         self.name = name
         self.value = value
@@ -4574,11 +4384,9 @@ class Token(UniNode):
         UniNode.__init__(self, kid=[])
 
     def normalize(self, deep: bool = True) -> bool:
-        """Normalize token."""
         return bool(self.value and self.name)
 
     def unparse(self) -> str:
-        """Unparse token."""
         return self.value
 
 
@@ -4599,7 +4407,6 @@ class Name(Token, NameAtom):
         is_enum_singleton: bool = False,
         is_kwesc: bool = False,
     ) -> None:
-        """Initialize token."""
         self.is_enum_singleton = is_enum_singleton
         self.is_kwesc = is_kwesc
         Token.__init__(
@@ -4623,7 +4430,6 @@ class Name(Token, NameAtom):
         )
 
     def unparse(self) -> str:
-        """Unparse name."""
         super().unparse()
         return (f"<>{self.value}" if self.is_kwesc else self.value) + (
             ",\n" if self.is_enum_singleton else ""
@@ -4651,13 +4457,12 @@ class Name(Token, NameAtom):
 
 
 class SpecialVarRef(Name):
-    """HereRef node type for Jac Ast."""
+    """SpecialVarRef node type for Jac Ast."""
 
     def __init__(
         self,
         var: Name,
     ) -> None:
-        """Initialize special var reference expression node."""
         self.orig = var
         Name.__init__(
             self,
@@ -4680,7 +4485,6 @@ class SpecialVarRef(Name):
         )
 
     def py_resolve_name(self) -> str:
-        """Resolve name."""
         if self.orig.name == Tok.KW_SELF:
             return "self"
         elif self.orig.name == Tok.KW_SUPER:
@@ -4727,7 +4531,6 @@ class Literal(Token, AtomExpr):
         pos_start: int,
         pos_end: int,
     ) -> None:
-        """Initialize token."""
         Token.__init__(
             self,
             orig_src=orig_src,
@@ -4752,7 +4555,7 @@ class Literal(Token, AtomExpr):
 
 
 class BuiltinType(Name, Literal):
-    """Type node type for Jac Ast."""
+    """BuiltinType node type for Jac Ast."""
 
     SYMBOL_TYPE = SymbolType.VAR
 
@@ -4771,7 +4574,6 @@ class Float(Literal):
 
     @property
     def lit_value(self) -> float:
-        """Return literal value in its python type."""
         return float(self.value)
 
 
@@ -4782,7 +4584,6 @@ class Int(Literal):
 
     @property
     def lit_value(self) -> int:
-        """Return literal value in its python type."""
         return int(self.value)
 
 
@@ -4793,7 +4594,6 @@ class String(Literal):
 
     @property
     def lit_value(self) -> str:
-        """Return literal value in its python type."""
         if isinstance(self.value, bytes):
             return self.value
         if any(
@@ -4824,12 +4624,10 @@ class String(Literal):
             return self.value
 
     def normalize(self, deep: bool = True) -> bool:
-        """Normalize string."""
         self.value = r"%s" % self.value
         return True
 
     def unparse(self) -> str:
-        """Unparse string."""
         super().unparse()
         return repr(self.value)
 
@@ -4841,18 +4639,16 @@ class Bool(Literal):
 
     @property
     def lit_value(self) -> bool:
-        """Return literal value in its python type."""
         return self.value == "True"
 
 
 class Null(Literal):
-    """Semicolon node type for Jac Ast."""
+    """Null node type for Jac Ast."""
 
     SYMBOL_TYPE = SymbolType.NULL
 
     @property
     def lit_value(self) -> None:
-        """Return literal value in its python type."""
         return None
 
 
@@ -4863,7 +4659,6 @@ class Ellipsis(Literal):
 
     @property
     def lit_value(self) -> EllipsisType:
-        """Return literal value in its python type."""
         return ...
 
 
@@ -4871,7 +4666,6 @@ class EmptyToken(Token):
     """EmptyToken node type for Jac Ast."""
 
     def __init__(self, orig_src: Source | None = None) -> None:
-        """Initialize empty token."""
         super().__init__(
             name="EmptyToken",
             orig_src=orig_src or Source("", ""),
@@ -4936,7 +4730,6 @@ class CommentToken(Token):
         kid: Sequence[UniNode],
         is_inline: bool = False,
     ) -> None:
-        """Initialize token."""
         self.is_inline = is_inline
 
         Token.__init__(
@@ -4960,7 +4753,6 @@ class Source(EmptyToken):
     """SourceString node type for Jac Ast."""
 
     def __init__(self, source: str, mod_path: str) -> None:
-        """Initialize source string."""
         super().__init__(self)
         self.value = source
         self.hash = md5(source.encode()).hexdigest()
@@ -4969,7 +4761,7 @@ class Source(EmptyToken):
 
     @property
     def code(self) -> str:
-        """Return code."""
+        """Return the source code as string."""
         return self.value
 
 
@@ -4977,7 +4769,6 @@ class PythonModuleAst(EmptyToken):
     """SourceString node type for Jac Ast."""
 
     def __init__(self, ast: ast3.Module, orig_src: Source) -> None:
-        """Initialize source string."""
         super().__init__()
         self.ast = ast
         self.orig_src = orig_src

@@ -55,15 +55,6 @@ class AccessCheckPass(UniPass):
             self.log_warning(f"Name {node.sym_name} not present in symbol table")
 
     def enter_name(self, node: uni.Name) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        col_start: int,
-        col_end: int,
-        pos_start: int,
-        pos_end: int,
-        """
         # TODO: Enums are not considered at the moment, I'll need to test and add them bellow.
 
         # If the current node is a global variable's name there is no access, it's just the declaration.

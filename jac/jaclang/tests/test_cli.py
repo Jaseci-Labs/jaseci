@@ -4,11 +4,13 @@ import contextlib
 import inspect
 import io
 import os
+import re
 import subprocess
 import sys
 import traceback
 
 from jaclang.cli import cli
+from jaclang.cli.cmdreg import cmd_registry, extract_param_descriptions
 from jaclang.runtimelib.builtin import dotgen
 from jaclang.utils.test import TestCase
 
@@ -401,32 +403,6 @@ class JacCliTests(TestCase):
         self.assertIn("Errors: 0, Warnings: 0", stdout_value)
         self.assertIn("<module 'pyfunc' from", stdout_value)
 
-    def test_cache_no_cache_on_run(self) -> None:
-        """Basic test for pass."""
-        process = subprocess.Popen(
-            ["jac", "run", f"{self.fixture_abs_path('hello_nc.jac')}", "-nc"],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        stdout, _ = process.communicate()
-        self.assertFalse(
-            os.path.exists(
-                f"{self.fixture_abs_path(os.path.join('__jac_gen__', 'hello_nc.jbc'))}"
-            )
-        )
-        self.assertIn("Hello World!", stdout)
-        process = subprocess.Popen(
-            ["jac", "run", f"{self.fixture_abs_path('hello_nc.jac')}", "-c"],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        stdout, _ = process.communicate()
-        self.assertIn("Hello World!", stdout)
-
     def test_run_test(self) -> None:
         """Basic test for pass."""
         process = subprocess.Popen(
@@ -548,3 +524,104 @@ class JacCliTests(TestCase):
                 self.assertNotIn("Passed successfully.", stdout)
                 self.assertIn("F", stderr)
         os.remove(test_file)
+
+    def test_cli_docstring_parameters(self) -> None:
+        """Test that all CLI command parameters are documented in their docstrings."""
+        # Get all registered CLI commands
+        commands = {}
+        for name, _ in cmd_registry.registry.items():
+            # Skip commands that might be registered from outside cli.py
+            if hasattr(cli, name):
+                commands[name] = getattr(cli, name)
+
+        missing_params = {}
+
+        for cmd_name, cmd_func in commands.items():
+            # Get function parameters from signature
+            signature_params = set(inspect.signature(cmd_func).parameters.keys())
+
+            # Parse docstring to extract documented parameters
+            docstring = cmd_func.__doc__ or ""
+
+            # Check if the docstring has an Args section
+            args_match = re.search(r"Args:(.*?)(?:\n\n|\Z)", docstring, re.DOTALL)
+            if not args_match:
+                missing_params[cmd_name] = list(signature_params)
+                continue
+
+            args_section = args_match.group(1)
+
+            # Extract parameter names from the Args section
+            # Looking for patterns like "param_name: Description" or "param_name (type): Description"
+            doc_params = set()
+            for line in args_section.strip().split("\n"):
+                line = line.strip()
+                if not line:
+                    continue
+
+                # Match parameter name at the beginning of the line
+                param_match = re.match(r"\s*([a-zA-Z0-9_]+)(?:\s*\([^)]*\))?:\s*", line)
+                if param_match:
+                    doc_params.add(param_match.group(1))
+
+            # Find parameters that are in the signature but not in the docstring
+            undocumented_params = signature_params - doc_params
+            if undocumented_params:
+                missing_params[cmd_name] = list(undocumented_params)
+
+        # Assert that there are no missing parameters
+        self.assertEqual(
+            missing_params,
+            {},
+            f"The following CLI commands have undocumented parameters: {missing_params}",
+        )
+
+    def test_cli_help_uses_docstring_descriptions(self) -> None:
+        """Test that CLI help text uses parameter descriptions from docstrings."""
+        # Get a command with well-documented parameters
+        test_commands = ["run", "dot", "test"]
+
+        for cmd_name in test_commands:
+            # Skip if command doesn't exist
+            if not hasattr(cli, cmd_name):
+                continue
+
+            cmd_func = getattr(cli, cmd_name)
+            docstring = cmd_func.__doc__ or ""
+
+            # Extract parameter descriptions from docstring
+            docstring_param_descriptions = extract_param_descriptions(docstring)
+
+            # Skip if no parameters are documented
+            if not docstring_param_descriptions:
+                continue
+
+            # Get help text for the command
+            captured_output = io.StringIO()
+            sys.stdout = captured_output
+
+            # Use subprocess to get the help text to ensure we're testing the actual CLI output
+            process = subprocess.Popen(
+                ["jac", cmd_name, "--help"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            help_text, _ = process.communicate()
+
+            sys.stdout = sys.__stdout__
+
+            # Check that each documented parameter description appears in the help text
+            for param_name, description in docstring_param_descriptions.items():
+                # The description might be truncated or formatted differently in the help text,
+                # so we'll just check for the first few words
+                description_start = description.split()[:3]
+                description_pattern = r"\s+".join(
+                    re.escape(word) for word in description_start
+                )
+                # Check if the description appears in the help text
+                self.assertRegex(
+                    help_text,
+                    description_pattern,
+                    f"Parameter description for '{param_name}' not found in help text for '{cmd_name}'",
+                )

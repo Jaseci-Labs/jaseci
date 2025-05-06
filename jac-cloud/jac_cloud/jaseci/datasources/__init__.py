@@ -2,7 +2,7 @@
 
 from .collection import Collection
 from .localdb import MontyClient
-from .redis import CodeRedis, Redis, TokenRedis
+from .redis import CodeRedis, Redis, ScheduleRedis, TokenRedis, WebhookRedis
 
 
 __all__ = [
@@ -10,5 +10,7 @@ __all__ = [
     "MontyClient",
     "CodeRedis",
     "Redis",
+    "ScheduleRedis",
     "TokenRedis",
+    "WebhookRedis",
 ]

@@ -39,7 +39,7 @@ sub_name: COLON NAME
 include_stmt: KW_INCLUDE sub_name? import_path SEMI
 
 // [Heading]: Architypes.
-architype: decorators? architype_decl
+architype: decorators? KW_ASYNC? architype_decl
          | architype_def
          | enum
 

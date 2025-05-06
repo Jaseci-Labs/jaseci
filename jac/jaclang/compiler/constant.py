@@ -31,7 +31,6 @@ class SymbolType(Enum):
     UNKNOWN = "unknown"  # LSP: Unknown
 
     def __str__(self) -> str:
-        """Stringify."""
         return self.value
 
 
@@ -63,7 +62,6 @@ class JacSemTokenType(IntEnum):
 
     @staticmethod
     def as_str_list() -> list[str]:
-        """Return the string representation of the token."""
         return [i.name.lower() for i in JacSemTokenType]
 
 
@@ -314,7 +312,6 @@ class Tokens(str, Enum):
     DARROW_R_P1 = "DARROW_R_P1"
 
     def __str__(self) -> str:
-        """Return the string representation of the token."""
         return self.value
 
 

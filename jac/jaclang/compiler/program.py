@@ -9,20 +9,23 @@ from typing import Optional
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.parser import JacParser
-from jaclang.compiler.passes import UniPass
 from jaclang.compiler.passes.main import (
+    AccessCheckPass,
     CompilerMode,
+    DeclImplMatchPass,
     DefUsePass,
-    JacAnnexManager,
+    FuseTypeInfoPass,
+    InheritancePass,
+    JacAnnexPass,
     JacImportPass,
     JacTypeCheckPass,
     PyBytecodeGenPass,
     PyCollectDepsPass,
     PyImportPass,
+    PyJacAstLinkPass,
     PyastBuildPass,
+    PyastGenPass,
     SymTabBuildPass,
-    py_code_gen,
-    type_checker_sched,
 )
 from jaclang.compiler.passes.main.sym_tab_link_pass import SymTabLinkPass
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
@@ -116,7 +119,7 @@ class JacProgram:
     ) -> uni.Module:
         """Convert a Jac file to an AST."""
         self.last_imported.append(mod_targ)
-        JacAnnexManager(ir_in=mod_targ, prog=self)
+        JacAnnexPass(ir_in=mod_targ, prog=self)
         SymTabBuildPass(ir_in=mod_targ, prog=self)
         if mode == CompilerMode.PARSE:
             return mod_targ
@@ -182,13 +185,22 @@ class JacProgram:
         mode: CompilerMode = CompilerMode.COMPILE,
     ) -> None:
         """Run premade passes on the module."""
-        final_pass: Optional[type[UniPass]] = None
+        py_code_gen = [
+            DeclImplMatchPass,
+            DefUsePass,
+            PyastGenPass,
+            PyJacAstLinkPass,
+            PyBytecodeGenPass,
+        ]
+        type_checker_sched = [InheritancePass, FuseTypeInfoPass, AccessCheckPass]
+
+        final_pass: Optional[type[Transform[uni.Module, uni.Module]]] = None
         passes = py_code_gen if mode == CompilerMode.COMPILE else type_checker_sched
         for current_pass in passes:
             if current_pass == PyBytecodeGenPass:
                 final_pass = current_pass
                 break
-            current_pass(mod, prog=self)
+            current_pass(ir_in=mod, prog=self)  # type: ignore
         if final_pass:
             final_pass(mod, prog=self)
 
