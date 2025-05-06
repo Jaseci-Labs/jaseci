@@ -185,32 +185,19 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand('jaclang-extension.runCurrentFile', async () => {
-            const editor = vscode.window.activeTextEditor;
-            const savedJacPath = context.globalState.get<string>('jacEnvPath');
-    
-            if (!editor) {
-                vscode.window.showWarningMessage("No active Jac file to run.");
-                return;
-            }
-    
-            if (!savedJacPath || !fs.existsSync(savedJacPath)) {
-                vscode.window.showErrorMessage("Jac environment not set or invalid. Please select one first.");
-                return;
-            }
-    
-            const filePath = editor.document.fileName;
-    
-            const terminal = vscode.window.createTerminal({
-                name: "Jac Runner",
-                env: process.env,
-            });
-    
-            terminal.show();
-            terminal.sendText(`"${savedJacPath}" run "${filePath}"`);
-        })
+            vscode.commands.registerCommand('jaclang-extension.runCurrentFile', () => {
+                const filePath = vscode.window.activeTextEditor?.document.uri.fsPath;
+                if (filePath) {
+                    const terminalName = "Jac Terminal";
+                    let terminal = vscode.window.terminals.find(t => t.name === terminalName);
+                    if (!terminal) {
+                        terminal = vscode.window.createTerminal(terminalName);
+                    }
+                    terminal.show();
+                    terminal.sendText(`jac run "${filePath}"`);
+                }
+            })
     );
-    
     vscode.debug.onDidStartDebugSession(async (event) => {
         if (webviewPanel) {
             graphData = await getDebugGraphData();
@@ -250,3 +237,4 @@ export function deactivate(): Thenable<void> | undefined {
     }
     return client.stop();
 }
+

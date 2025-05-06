@@ -58,16 +58,23 @@
       },
       {
         "command": "jaclang-extension.runCurrentFile",
-        "title": "Jaclang: Run Current File"
-      }      
+        "title": "Jaclang: Run Current File",
+        "icon": "$(play)"
+      }
     ],
     "menus": {
       "editor/title": [
         {
           "command": "jaclang-extension.runCurrentFile",
           "when": "resourceLangId == jac",
-          "group": "navigation"
+          "group": "navigation@1"
         }
+      ],
+      "commandPalette": [
+        {
+          "command": "jaclang-extension.runCurrentFile",
+          "when": "resourceLangId == jac"
+        }     
       ]
     },
     "languages": [
