@@ -5,6 +5,7 @@ import {
     ServerOptions
 } from 'vscode-languageclient/node';
 import * as path from 'path';
+import { findPythonEnvsWithJac } from './utils';
 import * as fs from 'fs';
 
 import {
@@ -41,6 +42,28 @@ function getVenvEnvironment(): string | undefined {
     return undefined;
 }
 
+async function promptEnvironmentSelection(context: vscode.ExtensionContext) {
+    const envs = await findPythonEnvsWithJac();
+
+    if (envs.length === 0) {
+        vscode.window.showWarningMessage("No environments with 'jac' executable found.");
+        // also show all the environments found
+        const allEnvs = await findPythonEnvsWithJac();
+        vscode.window.showInformationMessage(`Environments found: ${allEnvs.join(', ')}`);
+        return;
+    }
+
+    const choice = await vscode.window.showQuickPick(envs, {
+        placeHolder: "Select the environment containing 'jac'"
+    });
+
+    if (choice) {
+        await context.globalState.update('jacEnvPath', choice);
+        vscode.window.showInformationMessage(`Jac environment set to: ${choice}`);
+        vscode.commands.executeCommand("workbench.action.reloadWindow");
+    }
+}
+
 function getJacInterpreterPath(): string {
     const possiblePath = getCondaEnvironment() || getVenvEnvironment();
 
@@ -65,7 +88,14 @@ function getJacInterpreterPath(): string {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-    const jacCommand = getJacInterpreterPath();
+    // const jacCommand = getJacInterpreterPath();
+    if (!context.globalState.get('jacEnvPath')) {
+        promptEnvironmentSelection(context);
+    }
+
+    const savedJacPath = context.globalState.get<string>('jacEnvPath');
+    const jacCommand = savedJacPath || getJacInterpreterPath();
+
 
     let serverOptions: ServerOptions = {
         run: { command: jacCommand, args: ["lsp"] },
@@ -90,6 +120,10 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showErrorMessage('Failed to start Jac Language Server: ' + error.message);
         console.error('Failed to start Jac Language Server: ', error);
     });
+    context.subscriptions.push(vscode.commands.registerCommand(
+        'jaclang-extension.selectEnv',
+        () => promptEnvironmentSelection(context)
+    ));
 
     // Find and return the jac executable's absolute path.
     context.subscriptions.push(vscode.commands.registerCommand('extension.jaclang-extension.getJacPath', config => {
