@@ -8,7 +8,8 @@ from dataclasses import (
     fields,
     is_dataclass,
 )
-from enum import Enum
+from datetime import datetime
+from enum import Enum, StrEnum
 from functools import cached_property
 from itertools import islice
 from os import getenv
@@ -53,7 +54,7 @@ from pymongo import ASCENDING, DeleteMany, DeleteOne, InsertOne, UpdateMany, Upd
 from pymongo.client_session import ClientSession
 from pymongo.errors import ConnectionFailure, OperationFailure
 
-from ..jaseci.datasources import Collection as BaseCollection
+from ..jaseci.datasources import Collection as BaseCollection, ScheduleRedis
 from ..jaseci.utils import logger
 
 MANUAL_SAVE = getenv("MANUAL_SAVE")
@@ -166,6 +167,30 @@ def _to_dataclass(cls: type[T], data: dict[str, Any]) -> None:
                         data[attr.name] = enum
 
 
+class ScheduleStatus(StrEnum):
+    """Schedule Status."""
+
+    PENDING = "PENDING"
+    STARTED = "STARTED"
+    COMPLETED = "COMPLETED"
+    ERROR = "ERROR"
+
+
+@dataclass(eq=False)
+class Schedule:
+    """Schedule."""
+
+    status: ScheduleStatus = ScheduleStatus.PENDING
+    node_id: str | None = None
+    execute_date: datetime | None = None
+    executed_date: datetime | None = None
+    http_status: int | None = None
+    returns: list[Any] | None = None
+    reports: list[Any] | None = None
+    custom: Any = None
+    error: list[str] | None = None
+
+
 @dataclass
 class BulkWrite:
     """Bulk Write builder."""
@@ -188,6 +213,7 @@ class BulkWrite:
             ObjectAnchor: [],
         }
     )
+    schedules: list["WalkerAnchor"] = field(default_factory=list)
 
     del_ops_nodes: list[ObjectId] = field(default_factory=list)
     del_ops_edges: list[ObjectId] = field(default_factory=list)
@@ -276,6 +302,21 @@ class BulkWrite:
                 if object_operation := self.operations[ObjectAnchor]:
                     ObjectAnchor.Collection.bulk_write(object_operation, False, session)
                 self.commit(session)
+
+                if self.schedules:
+                    ScheduleRedis.rpush(
+                        "scheduled",
+                        *(
+                            {
+                                "walker_id": w.ref_id,
+                                "execute_date": w.schedule.execute_date,
+                                "node_id": w.schedule.node_id,
+                                "root_id": f"n::{w.root}",
+                            }
+                            for w in self.schedules
+                            if w.schedule
+                        ),
+                    )
                 break
             except (ConnectionFailure, OperationFailure) as ex:
                 if (
@@ -344,6 +385,13 @@ class AnchorState:
     context_hashes: dict[str, int] = field(default_factory=dict)
     deleted: bool | None = None
     connected: bool = False
+
+
+@dataclass
+class WalkerAnchorState(AnchorState):
+    """Anchor state handler."""
+
+    schedule_hashes: dict[str, int] = field(default_factory=dict)
 
 
 @dataclass(eq=False, repr=False, kw_only=True)
@@ -540,7 +588,7 @@ class BaseAnchor:
         ############################################################
 
         if Jac.check_write_access(self):  # type: ignore[arg-type]
-            set_architype = changes.pop("$set", {})
+            set_query = changes.pop("$set", {})
             if is_dataclass(architype := self.architype) and not isinstance(
                 architype, type
             ):
@@ -552,64 +600,79 @@ class BaseAnchor:
                 ):
                     if (h := hash(dumps(val))) != self.state.context_hashes.get(key):
                         self.state.context_hashes[key] = h
-                        set_architype[f"architype.{key}"] = val
-            if set_architype:
-                changes["$set"] = set_architype
+                        set_query[f"architype.{key}"] = val
+            if set_query:
+                changes["$set"] = set_query
         else:
             changes.pop("$set", None)
             changes.pop("$unset", None)
 
         # -------------------------------------------------------- #
+        match self:
+            case WalkerAnchor():
+                if is_dataclass(schedule := self.schedule) and not isinstance(
+                    schedule, type
+                ):
+                    for key, val in asdict(schedule).items():
+                        if (h := hash(dumps(val))) != self.state.schedule_hashes.get(
+                            key
+                        ):
+                            self.state.schedule_hashes[key] = h
+                            set_query[f"schedule.{key}"] = val
 
-        if isinstance(self, NodeAnchor):
-            ############################################################
-            #                   POPULATE ADDED EDGES                   #
-            ############################################################
-            added_edges: set[BaseAnchor] = (
-                changes.get("$addToSet", {}).get("edges", {}).get("$each", [])
-            )
-            if added_edges:
-                _added_edges = []
-                for anchor in added_edges:
-                    if propagate:
-                        anchor.build_query(bulk_write)  # type: ignore[operator]
-                    _added_edges.append(anchor.ref_id)
-                changes["$addToSet"]["edges"]["$each"] = _added_edges
-            else:
-                changes.pop("$addToSet", None)
-
-            # -------------------------------------------------------- #
-
-            ############################################################
-            #                  POPULATE REMOVED EDGES                  #
-            ############################################################
-            pulled_edges: set[BaseAnchor] = (
-                changes.get("$pull", {}).get("edges", {}).get("$in", [])
-            )
-            if pulled_edges:
-                _pulled_edges = []
-                for anchor in pulled_edges:
-                    # will be refactored on abstraction
-                    if propagate and anchor.state.deleted is not True:  # type: ignore[attr-defined]
-                        anchor.state.deleted = True  # type: ignore[attr-defined]
-                        bulk_write.del_edge(anchor.id)  # type: ignore[attr-defined, arg-type]
-                    _pulled_edges.append(anchor.ref_id)
-
+                if self.schedule and self.schedule.status == ScheduleStatus.PENDING:
+                    bulk_write.schedules.append(self)
+            case NodeAnchor():
+                ############################################################
+                #                   POPULATE ADDED EDGES                   #
+                ############################################################
+                added_edges: set[BaseAnchor] = (
+                    changes.get("$addToSet", {}).get("edges", {}).get("$each", [])
+                )
                 if added_edges:
-                    # Isolate pull to avoid conflict with addToSet
-                    changes.pop("$pull", None)
-                    operations.append(
-                        UpdateOne(
-                            operation_filter,
-                            {"$pull": {"edges": {"$in": _pulled_edges}}},
-                        )
-                    )
+                    _added_edges = []
+                    for anchor in added_edges:
+                        if propagate:
+                            anchor.build_query(bulk_write)  # type: ignore[operator]
+                        _added_edges.append(anchor.ref_id)
+                    changes["$addToSet"]["edges"]["$each"] = _added_edges
                 else:
-                    changes["$pull"]["edges"]["$in"] = _pulled_edges
-            else:
-                changes.pop("$pull", None)
+                    changes.pop("$addToSet", None)
 
-            # -------------------------------------------------------- #
+                # -------------------------------------------------------- #
+
+                ############################################################
+                #                  POPULATE REMOVED EDGES                  #
+                ############################################################
+                pulled_edges: set[BaseAnchor] = (
+                    changes.get("$pull", {}).get("edges", {}).get("$in", [])
+                )
+                if pulled_edges:
+                    _pulled_edges = []
+                    for anchor in pulled_edges:
+                        # will be refactored on abstraction
+                        if propagate and anchor.state.deleted is not True:  # type: ignore[attr-defined]
+                            anchor.state.deleted = True  # type: ignore[attr-defined]
+                            bulk_write.del_edge(anchor.id)  # type: ignore[attr-defined, arg-type]
+                        _pulled_edges.append(anchor.ref_id)
+
+                    if added_edges:
+                        # Isolate pull to avoid conflict with addToSet
+                        changes.pop("$pull", None)
+                        operations.append(
+                            UpdateOne(
+                                operation_filter,
+                                {"$pull": {"edges": {"$in": _pulled_edges}}},
+                            )
+                        )
+                    else:
+                        changes["$pull"]["edges"]["$in"] = _pulled_edges
+                else:
+                    changes.pop("$pull", None)
+
+                # -------------------------------------------------------- #
+            case _:
+                pass
 
         if changes:
             operations.append(UpdateOne(operation_filter, changes))
@@ -633,7 +696,7 @@ class BaseAnchor:
                 key: hash(val if isinstance(val, bytes) else dumps(val))
                 for key, val in architype.__serialize__().items()  # type:ignore[attr-defined] # mypy issue
             }
-            self.state.full_hash = hash(pdumps(self.serialize()))
+        self.state.full_hash = hash(pdumps(self.serialize()))
 
     # ---------------------------------------------------------------------- #
 
@@ -836,18 +899,28 @@ class WalkerAnchor(BaseAnchor, _WalkerAnchor):  # type: ignore[misc]
     """Walker Anchor."""
 
     architype: "WalkerArchitype"
+    state: WalkerAnchorState
     path: list[NodeAnchor] = field(default_factory=list)  # type: ignore[assignment]
     next: list[NodeAnchor] = field(default_factory=list)  # type: ignore[assignment]
     returns: list[Any] = field(default_factory=list)
     ignores: list[NodeAnchor] = field(default_factory=list)  # type: ignore[assignment]
     disengaged: bool = False
+    schedule: Schedule | None = None
 
     class Collection(BaseCollection["WalkerAnchor"]):
         """WalkerAnchor collection interface."""
 
         __collection__: str | None = "walker"
         __default_indexes__: list[dict] = [
-            {"keys": [("_id", ASCENDING), ("name", ASCENDING), ("root", ASCENDING)]}
+            {"keys": [("_id", ASCENDING), ("name", ASCENDING), ("root", ASCENDING)]},
+            {
+                "keys": [
+                    ("_id", ASCENDING),
+                    ("name", ASCENDING),
+                    ("root", ASCENDING),
+                    ("schedule.status", ASCENDING),
+                ]
+            },
         ]
 
         @classmethod
@@ -858,12 +931,21 @@ class WalkerAnchor(BaseAnchor, _WalkerAnchor):  # type: ignore[misc]
                 WalkerArchitype.__get_class__(doc.get("name") or ""),
                 doc.pop("architype"),
             )
+
+            if next := doc.pop("next", []):
+                next = [NodeAnchor.ref(n) for n in next]
+
+            if schedule := doc.pop("schedule"):
+                schedule = Schedule(ScheduleStatus(schedule.pop("status")), **schedule)
+
             anchor = WalkerAnchor(
                 architype=architype,
                 id=doc.pop("_id"),
                 access=Permission.deserialize(doc.pop("access")),
-                state=AnchorState(connected=True),
+                state=WalkerAnchorState(connected=True),
                 persistent=True,
+                next=next,
+                schedule=schedule,
                 **doc,
             )
             architype.__jac__ = anchor
@@ -887,9 +969,34 @@ class WalkerAnchor(BaseAnchor, _WalkerAnchor):  # type: ignore[misc]
         """Append Insert Query."""
         bulk_write.operations[WalkerAnchor].append(InsertOne(self.serialize()))
 
+        if self.schedule and self.schedule.status == ScheduleStatus.PENDING:
+            bulk_write.schedules.append(self)
+
     def delete(self, bulk_write: BulkWrite) -> None:
         """Append Delete Query."""
         bulk_write.del_walker(self.id)
+
+    def sync_hash(self) -> None:
+        """Sync current serialization hash."""
+        if is_dataclass(architype := self.architype) and not isinstance(
+            architype, type
+        ):
+            self.state.context_hashes = {
+                key: hash(val if isinstance(val, bytes) else dumps(val))
+                for key, val in architype.__serialize__().items()
+            }
+
+        if is_dataclass(schedule := self.schedule) and not isinstance(schedule, type):
+            self.state.schedule_hashes = {
+                key: hash(val if isinstance(val, bytes) else dumps(val))
+                for key, val in asdict(schedule).items()
+            }
+
+        self.state.full_hash = hash(pdumps(self.serialize()))
+
+    def serialize(self) -> dict[str, object]:
+        """Serialize Node Anchor."""
+        return {**super().serialize(), "schedule": asdict(self.schedule)}
 
 
 @dataclass(eq=False, repr=False, kw_only=True)
@@ -1069,7 +1176,7 @@ class WalkerArchitype(BaseArchitype, _WalkerArchitype):
             architype=self,
             name=self.__class__.__name__,
             access=Permission(),
-            state=AnchorState(),
+            state=WalkerAnchorState(),
         )
 
     @classmethod
