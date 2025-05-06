@@ -3,6 +3,7 @@
 import io
 import os
 import sys
+from pickle import PickleError
 
 from jaclang.cli import cli
 from jaclang.utils.test import TestCase
@@ -850,3 +851,73 @@ class TestJaseciPlugin(TestCase):
         )
 
         self._del_session(session)
+
+    def test_multi_imports(self) -> None:
+        """Test filtering on node, then visit."""
+        global session
+        session = self.fixture_abs_path("multi_imports.session")
+
+        ##############################################
+        #                 SCENARIO 1                 #
+        ##############################################
+
+        self._output2buffer()
+
+        # created with correct import
+        cli.enter(
+            filename=self.fixture_abs_path("multi_import_correct.jac"),
+            entrypoint="create_node",
+            args=[],
+            session=session,
+        )
+
+        # access with correct import - able to print
+        cli.enter(
+            filename=self.fixture_abs_path("multi_import_correct.jac"),
+            entrypoint="check_node",
+            args=[],
+            session=session,
+        )
+
+        self.assertEqual(self.capturedOutput.getvalue().strip(), "A()")
+        self._output2buffer()
+
+        # access with wrong import (undeclared/missing B) - not able to print BUT
+        # IT SHOULD OR ATLEAST THROW ERROR ON BUILD TIME
+        cli.enter(
+            filename=self.fixture_abs_path("multi_import_wrong.jac"),
+            entrypoint="check_node",
+            args=[],
+            session=session,
+        )
+
+        self.assertEqual(self.capturedOutput.getvalue().strip(), "A()")
+
+        self._del_session(session)
+
+        ##############################################
+        #                 SCENARIO 2                 #
+        ##############################################
+
+        try:
+            # created with wrong import (undeclared/missing B)
+            cli.enter(
+                filename=self.fixture_abs_path("multi_import_wrong.jac"),
+                entrypoint="create_node",
+                args=[],
+                session=session,
+            )
+        except PickleError as e:
+            # THIS SHOULD RETURN DIFFERENT ERROR FOR WRONG IMPORT or NO ERROR IF MODULLE IS PROPERLY HANDLED
+            self.assertNotEqual(
+                "Can't pickle <class 'multi_import2.A'>: it's not the same object as multi_import2.A",
+                str(e),
+            )
+
+            raise e
+        finally:
+            self._del_session(session)
+
+        ##############################################
+        #            TEST CORRECT - WRONG            #
+        ##############################################
