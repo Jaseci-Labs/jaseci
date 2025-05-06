@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from jaclang.compiler import unitree as uni
-from jaclang.runtimelib.architype import EdgeArchitype, GenericEdge
+from jaclang.runtimelib.architype import EdgeArchitype, GenericEdge, NodeAnchor
+import pprint
 
 @dataclass
 class VisitStmtInfo:
@@ -8,7 +9,7 @@ class VisitStmtInfo:
 
     Helps provide some more insights into the visit pattern
     """
-    edgeType: EdgeArchitype
+    edgeType: uni.EdgeOpRef
     asyncVisit: bool
 
 class VisitPredictionPass():
@@ -33,6 +34,15 @@ class VisitPredictionPass():
             raise RuntimeError()
         return walker
 
+    def _get_edge_type_name(self, node: uni.EdgeOpRef) -> str:
+        edge_type_name = ""
+        type_filter = node.get_all_sub_nodes(uni.FilterCompr)
+        if (len(type_filter) > 0):
+            type_filter = type_filter[0]
+            name_node = type_filter.get_all_sub_nodes(uni.Name)
+            edge_type_name = name_node[0].value
+        return edge_type_name
+
     def _get_name(self, node: uni.UniNode) -> str | None:
         for kid in node.kid:
             if isinstance(kid, uni.Name):
@@ -44,20 +54,24 @@ class VisitPredictionPass():
 
         It will return some information potentially useful to runtime data mapping.
         """
-        edge_op_ref_trailer = self._get_edge_list(node)
-        print(edge_op_ref_trailer.pp())
-        result = VisitStmtInfo(edgeType=GenericEdge(), asyncVisit=False)
+        edge_op_ref = self._get_edge_list(node)
+        result = VisitStmtInfo(edgeType=edge_op_ref, asyncVisit=self._get_edge_type_name(edge_op_ref).startswith("async_"))
         return result
-        # walker = self.get_name(self.get_walker(node))
-        # func = self.get_name(self.get_function(node))
-        #
-        # pprint.pprint(edge_ref_trailer.to_dict())
+
+
+def _traversal(start: NodeAnchor):
+    queue: list[list[NodeAnchor]] = [[start]]
+    traversal: list[list[NodeAnchor]] = []
+    while (len(queue) > 0):
+        node_level = queue.pop()
+        traversal.append(node_level)
+        new_nodes: list[NodeAnchor] = []
+        for node in node_level:
+            new_nodes = new_nodes + [edge.target for edge in node.edges]
+        queue.append(new_nodes)
 
 
 def generate_data_mapping(visit_stmts: list[uni.VisitStmt]) -> None:
     static_analysis = VisitPredictionPass()
     static_info = [static_analysis.get_visit_stmt_info(visit_stmt) for visit_stmt in visit_stmts]
-
-    
-    
     pass

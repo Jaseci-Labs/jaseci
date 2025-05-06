@@ -3,10 +3,12 @@ node graphnode {
   has visited: bool = False;
 }
 
+edge SampleEdge {}
+
 walker bfs {
   can run_bfs with graphnode entry {
     print(here.node_name);
-    visit [-->];
+    visit [-:SampleEdge:->];
   }
 }
 
@@ -16,9 +18,9 @@ with entry {
   n2 = graphnode(node_name = "n2");
   n3 = graphnode(node_name = "n3");
   n4 = graphnode(node_name = "n4");
-  r++>n1;
-  r++>n2;
-  n1++>n3;
-  n2++>n4;
+  r+:SampleEdge:+>n1;
+  r+:SampleEdge:+>n2;
+  n1+:SampleEdge:+>n3;
+  n2+:SampleEdge:+>n4;
   wlk = r spawn bfs();
 }
