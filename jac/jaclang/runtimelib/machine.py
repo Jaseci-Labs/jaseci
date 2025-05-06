@@ -375,7 +375,7 @@ class JacWalker:
             raise TypeError("Invalid walker object")
 
     @staticmethod
-    def spawn(op1: Architype, op2: Architype) -> WalkerArchitype | Future:
+    def spawn(op1: Architype, op2: Architype) -> Union[WalkerArchitype | Future]:
         """Jac's spawn operator feature."""
         if isinstance(op1, WalkerArchitype):
             warch = op1
@@ -1483,17 +1483,9 @@ class JacUtils:
         return None
 
     @staticmethod
-    async def async_await(obj: Any) -> Any:  # noqa: ANN401
-        """Await an object if it is a coroutine or async function."""
-        return await obj
-
-    @staticmethod
     def await_obj(obj: Any) -> Any:  # noqa: ANN401
         """Await an object if it is a coroutine or async or future function."""
-        if isinstance(obj, Future):
-            return obj.result()
-        elif inspect.isawaitable(obj):
-            return JacMachine.async_await(obj)
+        return obj.result()
 
 
 class JacMachine(

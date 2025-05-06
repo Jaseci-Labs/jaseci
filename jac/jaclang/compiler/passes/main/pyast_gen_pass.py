@@ -1781,18 +1781,25 @@ class PyastGenPass(UniPass):
         ]
 
     def exit_await_expr(self, node: uni.AwaitExpr) -> None:
-        node.gen.py_ast = [
-            self.sync(
-                ast3.Call(
-                    func=self.jaclib_obj("await_obj"),
-                    args=cast(
-                        list[ast3.expr],
-                        [node.target.gen.py_ast[0]],
-                    ),
-                    keywords=[],
+        parent_node = node.parent
+        while parent_node and (parent_node := parent_node.parent):
+            if hasattr(parent_node, "is_async") and parent_node.is_async:
+                node.gen.py_ast = [
+                    self.sync(
+                        ast3.Await(value=cast(ast3.expr, node.target.gen.py_ast[0]))
+                    )
+                ]
+                break
+        else:
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Call(
+                        func=self.jaclib_obj("await_obj"),
+                        args=[cast(ast3.expr, node.target.gen.py_ast[0])],
+                        keywords=[],
+                    )
                 )
-            )
-        ]
+            ]
 
     def exit_global_stmt(self, node: uni.GlobalStmt) -> None:
         py_nodes = []
