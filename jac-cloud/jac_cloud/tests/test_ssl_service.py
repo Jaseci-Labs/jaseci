@@ -19,7 +19,6 @@ class SSLServiceTest(TestCase):
         """Run server."""
         run(["fuser", "-k", "8443/tcp"])
         run(["jac", "clean"])
-        run(["jac", "tool", "gen_parser"])
 
         self.directory = Path(__file__).parent
 
