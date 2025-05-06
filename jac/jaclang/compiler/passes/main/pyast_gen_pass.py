@@ -761,7 +761,12 @@ class PyastGenPass(UniPass):
 
     def exit_architype(self, node: uni.Architype) -> None:
         body = self.resolve_stmt_block(
-            node.body.body if isinstance(node.body, uni.ArchDef) else node.body,
+            (
+                node.body.body
+                if isinstance(node.body, uni.ArchDef)
+                and isinstance(node.body.body, uni.SubNodeList)
+                else node.body if isinstance(node.body, uni.SubNodeList) else None
+            ),
             doc=node.doc,
         )
         decorators = (
@@ -796,7 +801,12 @@ class PyastGenPass(UniPass):
     def exit_enum(self, node: uni.Enum) -> None:
         self.needs_enum()
         body = self.resolve_stmt_block(
-            node.body.body if isinstance(node.body, uni.EnumDef) else node.body,
+            (
+                node.body.body
+                if isinstance(node.body, uni.EnumDef)
+                and isinstance(node.body.body, uni.SubNodeList)
+                else node.body if isinstance(node.body, uni.SubNodeList) else None
+            ),
             doc=node.doc,
         )
         decorators = (
@@ -841,6 +851,8 @@ class PyastGenPass(UniPass):
         body = (
             self.gen_llm_body(node)
             if isinstance(node.body, uni.FuncCall)
+            or isinstance(node.body, uni.AbilityDef)
+            and isinstance(node.body.body, uni.FuncCall)
             else (
                 [
                     self.sync(
@@ -857,6 +869,7 @@ class PyastGenPass(UniPass):
                         (
                             node.body.body
                             if isinstance(node.body, uni.AbilityDef)
+                            and isinstance(node.body.body, uni.SubNodeList)
                             else node.body
                         ),
                         doc=node.doc,

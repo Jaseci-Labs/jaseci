@@ -795,7 +795,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
             signature = self.consume(uni.EventSignature)
 
             # Handle block_tail directly
-            body = self.consume(uni.SubNodeList) or self.consume(uni.FuncCall)
+            body: uni.SubNodeList | uni.FuncCall = self.consume(uni.SubNodeList)
+            if not body:
+                body = self.consume(uni.FuncCall)
 
             return uni.AbilityDef(
                 target=target,
@@ -813,7 +815,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
             signature = self.consume(uni.FuncSignature)
 
             # Handle block_tail directly
-            body = self.consume(uni.SubNodeList) or self.consume(uni.FuncCall)
+            body: uni.SubNodeList | uni.FuncCall = self.consume(uni.SubNodeList)
+            if not body:
+                body = self.consume(uni.FuncCall)
 
             return uni.AbilityDef(
                 target=target,
