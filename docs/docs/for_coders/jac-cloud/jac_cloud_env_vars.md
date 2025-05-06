@@ -2,8 +2,6 @@
 
 | **NAME**  | **DESCRIPTION**   | **DEFAULT**   |
 |-----------|-------------------|---------------|
-| HOST      | FastAPI's host argument | 0.0.0.0 |
-| PORT      | FastAPI's port argument | 8000    |
 | DATABASE_HOST | MongoDB connection string | mongodb://localhost/?retryWrites=true&w=majority |
 | DATABASE_PATH | Local path for DB | mydatabase |
 | DATABASE_NAME | MongoDB database name | jaseci |
