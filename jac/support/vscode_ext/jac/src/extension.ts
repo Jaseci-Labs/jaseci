@@ -198,6 +198,21 @@ export function activate(context: vscode.ExtensionContext) {
                 }
             })
     );
+    context.subscriptions.push(
+        vscode.commands.registerCommand('jaclang-extension.checkCurrentFile', () => {
+          const filePath = vscode.window.activeTextEditor?.document.uri.fsPath;
+          if (filePath) {
+            const terminalName = "Jac Terminal";
+            let terminal = vscode.window.terminals.find(t => t.name === terminalName);
+            if (!terminal) {
+              terminal = vscode.window.createTerminal(terminalName);
+            }
+            terminal.show();
+            terminal.sendText(`jac check "${filePath}"`);
+          }
+        })
+      );
+      
     vscode.debug.onDidStartDebugSession(async (event) => {
         if (webviewPanel) {
             graphData = await getDebugGraphData();

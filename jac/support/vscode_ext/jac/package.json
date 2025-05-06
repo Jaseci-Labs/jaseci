@@ -60,21 +60,33 @@
         "command": "jaclang-extension.runCurrentFile",
         "title": "Jaclang: Run Current File",
         "icon": "$(play)"
+      },
+      {
+        "command": "jaclang-extension.checkCurrentFile",
+        "title": "Jaclang: Check Current File",
+        "icon": "$(check)"
       }
+      
     ],
     "menus": {
       "editor/title": [
         {
           "command": "jaclang-extension.runCurrentFile",
           "when": "resourceLangId == jac",
-          "group": "navigation@1"
+          "group": "navigation@jaclang"
+        },
+        {
+          "command": "jaclang-extension.checkCurrentFile",
+          "when": "resourceLangId == jac",
+          "group": "navigation@jaclang",
+          "alt": "jaclang-extension.runCurrentFile"
         }
       ],
       "commandPalette": [
         {
           "command": "jaclang-extension.runCurrentFile",
           "when": "resourceLangId == jac"
-        }     
+        }
       ]
     },
     "languages": [
