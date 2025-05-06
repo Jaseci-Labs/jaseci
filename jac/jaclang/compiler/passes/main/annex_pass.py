@@ -8,15 +8,12 @@ from typing import TYPE_CHECKING
 from jaclang.compiler import unitree as uni
 from jaclang.compiler.passes import Transform
 from jaclang.settings import settings
-from jaclang.utils.log import logging
 
 if TYPE_CHECKING:
     from jaclang.compiler.program import JacProgram
 
-logger = logging.getLogger(__name__)
 
-
-class JacAnnexManager(Transform[uni.Module, uni.Module]):
+class JacAnnexPass(Transform[uni.Module, uni.Module]):
     """Handles loading and attaching of annex files (.impl.jac and .test.jac)."""
 
     def transform(self, ir_in: uni.Module) -> uni.Module:
@@ -44,7 +41,7 @@ class JacAnnexManager(Transform[uni.Module, uni.Module]):
         if node.stub_only or not self.mod_path.endswith(".jac"):
             return
         if not self.mod_path:
-            logger.error("Module path is empty.")
+            self.log_error("Module path is empty.")
             return
 
         for path in self.find_annex_paths():
@@ -55,9 +52,10 @@ class JacAnnexManager(Transform[uni.Module, uni.Module]):
                 path.startswith(f"{self.base_path}.")
                 or os.path.dirname(path) == self.impl_folder
             ):
-                mod = jac_program.compile(file_path=path, mode=CompilerMode.PARSE)
+                mod = jac_program.compile(
+                    file_path=path, full_compile=False, mode=CompilerMode.COMPILE
+                )
                 if mod:
-                    node.add_kids_left(mod.kid, parent_update=True, pos_update=False)
                     node.impl_mod.append(mod)
 
             elif (
@@ -68,7 +66,8 @@ class JacAnnexManager(Transform[uni.Module, uni.Module]):
                     or os.path.dirname(path) == self.test_folder
                 )
             ):
-                mod = jac_program.compile(file_path=path, mode=CompilerMode.PARSE)
+                mod = jac_program.compile(
+                    file_path=path, full_compile=False, mode=CompilerMode.COMPILE
+                )
                 if mod:
                     node.test_mod.append(mod)
-                    node.add_kids_right(mod.kid, parent_update=True, pos_update=False)

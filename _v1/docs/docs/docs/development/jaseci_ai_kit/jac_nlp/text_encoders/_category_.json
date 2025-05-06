@@ -1,8 +1,0 @@
-{
-    "label": "Text Encoders",
-    "position": 1,
-    "link": {
-        "type": "generated-index",
-        "description": "Text encoders are a type of encoder used in natural language processing (NLP) that transform raw text into a numerical representation that can be used by machine learning algorithms. Text encoders are designed to capture the semantic and syntactic information of the input text and convert it into a vectorized format that is suitable for further processing. Text encoders are essential components in many NLP applications such as language translation, sentiment analysis, and text classification. Jaseci provides a selection of pre-built text encoders that are available for use without any training."
-    }
-}
