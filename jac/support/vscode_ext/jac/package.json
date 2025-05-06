@@ -55,9 +55,21 @@
       {
         "command": "jaclang-extension.selectEnv",
         "title": "Jaclang: Select Environment"
-      }
+      },
+      {
+        "command": "jaclang-extension.runCurrentFile",
+        "title": "Jaclang: Run Current File"
+      }      
     ],
-
+    "menus": {
+      "editor/title": [
+        {
+          "command": "jaclang-extension.runCurrentFile",
+          "when": "resourceLangId == jac",
+          "group": "navigation"
+        }
+      ]
+    },
     "languages": [
       {
         "id": "jac",
@@ -86,7 +98,8 @@
   "main": "./out/extension.js",
   "activationEvents": [
     "onLanguage:jac",
-    "onCommand:jaclang-extension.selectEnv"
+    "onCommand:jaclang-extension.selectEnv",
+    "onCommand:jaclang-extension.runCurrentFile"
   ],
 
   "scripts": {
