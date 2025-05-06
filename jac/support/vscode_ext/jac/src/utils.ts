@@ -92,14 +92,13 @@ export async function findPythonEnvsWithJac(workspaceRoot: string = process.cwd(
 
     // 5. Walk home directory (or workspace) to find other venvs
     const homeDir = process.env.HOME || process.env.USERPROFILE || workspaceRoot;
-    envs.push(...walkForVenvs(homeDir, 6));  // limit search to depth 3
+    envs.push(...walkForVenvs(homeDir, 6));  // limit search to depth 6
     const venvWrapperDir = path.join(homeDir, '.virtualenvs');
     if (fs.existsSync(venvWrapperDir)) {
         envs.push(...walkForVenvs(venvWrapperDir, 2));
     }
 
     // 6. Deduplicate
-    // const uniqueEnvs = [...new Set(envs)];
     const uniqueEnvs = Array.from(new Set(envs));
 
     return uniqueEnvs;

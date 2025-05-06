@@ -60,8 +60,6 @@ async function promptEnvironmentSelection(
 
     if (envs.length === 0) {
         vscode.window.showWarningMessage("No environments with 'jac' executable found.");
-        const allEnvs = await findPythonEnvsWithJac();
-        vscode.window.showInformationMessage(`Environments found: ${allEnvs.join(', ')}`);
         return;
     }
 
