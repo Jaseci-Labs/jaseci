@@ -24,6 +24,11 @@ def utc_datetime(**addons: int) -> datetime:
     return datetime.now(tz=timezone.utc) + timedelta(**addons)
 
 
+def utc_datetime_iso(**addons: int) -> str:
+    """Get current datetime in ISO format with option to add additional timedelta."""
+    return utc_datetime(**addons).isoformat()
+
+
 def utc_timestamp(**addons: int) -> int:
     """Get current timestamp with option to add additional timedelta."""
     return int(utc_datetime(**addons).timestamp())

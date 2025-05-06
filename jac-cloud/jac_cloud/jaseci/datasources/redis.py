@@ -1,14 +1,18 @@
 """Jaseci Redis."""
 
 from os import getenv
-from typing import Any
+from typing import Any, cast
 
 from fakeredis import FakeRedis
 
 from orjson import dumps, loads
 
 from redis.asyncio.client import Redis as _AsyncRedis
+from redis.backoff import ExponentialBackoff
 from redis.client import Redis as _Redis
+from redis.connection import ConnectionPool
+from redis.exceptions import ConnectionError, TimeoutError
+from redis.retry import Retry
 
 from ..utils import logger
 
@@ -39,11 +43,21 @@ class Redis:
         """Return redis.Redis for Redis connection."""
         if Redis.__redis__ is None:
             if host := getenv("REDIS_HOST"):
-                Redis.__redis__ = _Redis.from_url(
-                    host,
-                    port=int(getenv("REDIS_PORT", "6379")),
-                    username=getenv("REDIS_USER"),
-                    password=getenv("REDIS_PASS"),
+                Redis.__redis__ = _Redis(
+                    connection_pool=ConnectionPool.from_url(
+                        host,
+                        port=int(getenv("REDIS_PORT", "6379")),
+                        username=getenv("REDIS_USER"),
+                        password=getenv("REDIS_PASS"),
+                    ),
+                    retry=Retry(
+                        ExponentialBackoff(
+                            cap=int(getenv("REDIS_RETRY_BACKOFF_CAP", "10")),
+                            base=int(getenv("REDIS_RETRY_BACKOFF_BASE", "1")),
+                        ),
+                        retries=int(getenv("REDIS_MAX_RETRY", "5")),
+                    ),
+                    retry_on_error=[ConnectionError, TimeoutError],
                 )
             else:
                 logger.info("REDIS_HOST is not available! Using FakeRedis...")
@@ -127,6 +141,18 @@ class Redis:
             return False
 
     @classmethod
+    def hsetnx(cls, key: str, data: dict | bool | float) -> bool:
+        """Push key value pair to group."""
+        try:
+            redis = cls.get_rd()
+            return cast(bool, redis.hsetnx(cls.__table__, key, dumps(data).decode()))
+        except Exception:
+            logger.exception(
+                f"Error setting key {key} from {cls.__table__} with data\n{data}"
+            )
+            return False
+
+    @classmethod
     def hdelete(cls, *keys: Any) -> bool:  # noqa: ANN401
         """Delete via key from group."""
         try:
@@ -147,6 +173,30 @@ class Redis:
         except Exception:
             logger.exception(f"Error deleting key {key} from {cls.__table__}")
             return False
+
+    @classmethod
+    def rpush(cls, key: str, *data: dict | bool | float) -> bool:
+        """Push key value pair to group."""
+        try:
+            redis = cls.get_rd()
+            return bool(redis.rpush(key, *(dumps(d).decode() for d in data)))
+        except Exception:
+            logger.exception(f"Error rpush key {key} with data\n{data}")
+            return False
+
+    @classmethod
+    def lpop(cls, key: str, count: int | None = None) -> Any:  # noqa: ANN401
+        """Retrieve via key from group."""
+        try:
+            redis = cls.get_rd()
+            if res := redis.lpop(key, count):
+                if isinstance(res, list):
+                    res = [loads(r) for r in res]
+                else:
+                    res = loads(res)  # type: ignore[arg-type]
+            return res
+        except Exception:
+            logger.exception(f"Error lpop key {key} with count {count}")
 
 
 class CodeRedis(Redis):
@@ -170,13 +220,23 @@ class TokenRedis(Redis):
 
 
 class WebhookRedis(Redis):
-    """Token Memory Interface.
+    """Webhook Memory Interface.
 
     This interface is for Token Management.
     You may override this if you wish to implement different structure
     """
 
     __table__ = "webhook"
+
+
+class ScheduleRedis(Redis):
+    """Schedule Memory Interface.
+
+    This interface is for Schedule Management.
+    You may override this if you wish to implement different structure
+    """
+
+    __table__ = "schedule"
 
 
 class AsyncRedis:

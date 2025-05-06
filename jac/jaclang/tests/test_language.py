@@ -1463,3 +1463,26 @@ class JacLanguageTests(TestCase):
 
         for exp in expected_stdout_values:
             self.assertIn(exp, errors_output)
+
+    def test_async_walker(self) -> None:
+        """Test async walker."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(self.mach, "async_walker", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertNotIn("It is non blocking", stdout_value[4])
+        self.assertIn("W(num=8)", stdout_value[5])
+
+    def test_async_ability(self) -> None:
+        """Test async ability."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(
+            self.mach, "async_ability", base_path=self.fixture_abs_path("./")
+        )
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("Hello", stdout_value[0])
+        self.assertIn("Hello", stdout_value[1])
+        self.assertIn("World!", stdout_value[2])
