@@ -4,7 +4,7 @@ glob dynamic_module_source = """
 import from .arch_create_util {UtilityNode}
 
 walker DynamicWalker {
-def start with entry {
+can start with entry {
 print("DynamicWalker Started");
 here ++> UtilityNode(data=42);
 visit [-->](`?UtilityNode);

@@ -98,6 +98,7 @@ class JacAstToolTests(TestCase):
             for file in all_reference_files
             if file not in created_files
         ]
+        print(other_reference_files)
         self.assertEqual(len(other_reference_files), 0)
 
     def test_py_jac_mode(self) -> None:
