@@ -2,6 +2,6 @@ obj HasFault {
     def init;
 }
 
-can speak {
+def speak {
     HasFault();
 }

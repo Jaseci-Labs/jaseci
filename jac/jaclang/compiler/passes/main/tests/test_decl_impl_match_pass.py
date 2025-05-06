@@ -38,9 +38,9 @@ class DeclImplMatchPassTests(TestCase):
             "From the declaration of foo.",
             "    2 |",
             "    3 | obj SomeObj {",
-            "    4 |     can foo(param1: str, param2:int) -> str;",
+            "    4 |     def foo(param1: str, param2:int) -> str;",
             "      |         ^^^",
-            "    5 |     can bar(param1: str, param2:int) -> str;",
+            "    5 |     def bar(param1: str, param2:int) -> str;",
             "    6 | }",
         )
 

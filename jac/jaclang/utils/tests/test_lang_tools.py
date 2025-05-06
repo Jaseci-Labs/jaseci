@@ -104,7 +104,7 @@ class JacAstToolTests(TestCase):
         """Testing for py_jac_mode support."""
         file = self.fixture_abs_path("../../../tests/fixtures/pyfunc.py")
         out = self.tool.ir(["unparse", file])
-        self.assertIn("can my_print(x: object) -> None", out)
+        self.assertIn("def my_print(x: object) -> None", out)
 
     def test_sym_sym_dot(self) -> None:
         """Testing for sym, sym. AstTool."""

@@ -4,13 +4,13 @@ glob dynamic_module_source = """
 import from .arch_create_util {UtilityNode}
 
 walker DynamicWalker {
-can start with entry {
+def start with entry {
 print("DynamicWalker Started");
 here ++> UtilityNode(data=42);
 visit [-->](`?UtilityNode);
 }
 
-can UtilityNode {
+def UtilityNode {
 here.display_data();
 }
 }

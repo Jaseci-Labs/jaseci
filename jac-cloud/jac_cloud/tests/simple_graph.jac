@@ -7,10 +7,10 @@ import from dataclasses {dataclass}
 import from fastapi {UploadFile}
 import from typing {Any}
 
-class User:BaseUser: {
+class User(BaseUser) {
     has name: str;
 
-    class Collection:BaseUser.Collection: {
+    class Collection(BaseUser.Collection) {
         ::py::
         @classmethod
         def __document__(cls, doc) -> "User":

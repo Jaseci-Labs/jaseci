@@ -610,7 +610,7 @@ class JacLanguageTests(TestCase):
                 ),
                 prog=JacProgram(),
             ).ir_out.unparse()
-        self.assertIn("can greet2(**kwargs: Any)", output)
+        self.assertIn("def greet2(**kwargs: Any)", output)
         self.assertEqual(output.count("with entry {"), 13)
         self.assertIn(
             '"""Enum for shape types"""\nenum ShapeType{ CIRCLE = \'Circle\',\n',
@@ -619,10 +619,10 @@ class JacLanguageTests(TestCase):
         self.assertIn("\nUNKNOWN = 'Unknown',\n::py::\nprint('hello')\n::", output)
         self.assertIn("assert x == 5 , 'x should be equal to 5' ;", output)
         self.assertIn("if not x == y {", output)
-        self.assertIn("can greet2(**kwargs: Any) {", output)
+        self.assertIn("def greet2(**kwargs: Any) {", output)
         self.assertIn("squares_dict = {x: (x ** 2)  for x in numbers};", output)
         self.assertIn(
-            '\n\n@ my_decorator \n can say_hello() {\n\n    """Say hello""" ;', output
+            '\n\n@ my_decorator \n def say_hello() {\n\n    """Say hello""" ;', output
         )
 
     def test_needs_import_2(self) -> None:
@@ -688,7 +688,7 @@ class JacLanguageTests(TestCase):
             ).ir_out.unparse()
         self.assertIn("class X {\n    with entry {\n\n        a_b = 67;", output)
         self.assertIn("br = b'Hello\\\\\\\\nWorld'", output)
-        self.assertIn("class Circle {\n    can init(radius: float", output)
+        self.assertIn("class Circle {\n    def init(radius: float", output)
         self.assertIn("<>node = 90;    \n    print(<>node) ;\n}\n", output)
 
     def test_needs_import_3(
@@ -745,7 +745,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("if 0 <= x<= 5 {", output)
         self.assertIn("  case _:\n", output)
         self.assertIn(" case Point(x = int(a), y = 0):\n", output)
-        self.assertIn("class Sample {\n    can init", output)
+        self.assertIn("class Sample {\n    def init", output)
 
     def test_py2jac(self) -> None:
         """Test py ast to Jac ast conversion."""
@@ -1443,7 +1443,7 @@ class JacLanguageTests(TestCase):
             "   21 |     has var4: int;  # <-- This should be syntax error.",
             "      |         ^^^^",
             "   22 |",
-            "   23 |     can postinit() {",
+            "   23 |     def postinit() {",
         )
 
         errors_output = ""
