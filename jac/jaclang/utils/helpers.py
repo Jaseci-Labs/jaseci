@@ -88,44 +88,29 @@ def extract_headings(file_path: str) -> dict[str, tuple[int, int]]:
     return headings
 
 
-def auto_generate_refs() -> None:
+def auto_generate_refs() -> str:
     """Auto generate lang reference for docs."""
     file_path = os.path.join(
         os.path.split(os.path.dirname(__file__))[0], "../jaclang/compiler/jac.lark"
     )
     result = extract_headings(file_path)
-    created_file_path = os.path.join(
-        os.path.split(os.path.dirname(__file__))[0],
-        "../support/jac-lang.org/docs/lang_ref/jac_ref.md",
-    )
-    destination_folder = os.path.join(
-        os.path.split(os.path.dirname(__file__))[0], "../examples/reference/"
-    )
-    with open(created_file_path, "w") as md_file:
-        md_file.write(
-            '# Jac Language Reference\n\n--8<-- "examples/reference/introduction.md"\n\n'
-        )
+    md_str = '# Jac Language Reference\n\n--8<-- "jac/examples/reference/introduction.md"\n\n'
     for heading, lines in result.items():
         heading = heading.strip()
         heading_snakecase = heading_to_snake(heading)
         content = (
-            f'## {heading}\n**Code Example**\n=== "Jac"\n    ```jac linenums="1"\n    --8<-- "examples/reference/'
+            f'## {heading}\n**Code Example**\n=== "Jac"\n    ```jac linenums="1"\n    --8<-- "jac/examples/reference/'
             f'{heading_snakecase}.jac"\n'
-            f'    ```\n=== "Python"\n    ```python linenums="1"\n    --8<-- "examples/reference/'
+            f'    ```\n=== "Python"\n    ```python linenums="1"\n    --8<-- "jac/examples/reference/'
             f'{heading_snakecase}.py"\n    ```\n'
             f'??? example "Jac Grammar Snippet"\n    ```yaml linenums="{lines[0]}"\n    --8<-- '
             f'"jaclang/compiler/jac.lark:{lines[0]}:{lines[1]}"\n    ```\n'
             "**Description**\n\n--8<-- "
-            f'"examples/reference/'
+            f'"jac/examples/reference/'
             f'{heading_snakecase}.md"\n'
         )
-        with open(created_file_path, "a") as md_file:
-            md_file.write(f"{content}\n")
-        md_file_name = f"{heading_snakecase}.md"
-        md_file_path = os.path.join(destination_folder, md_file_name)
-        if not os.path.exists(md_file_path):
-            with open(md_file_path, "w") as md_file:
-                md_file.write("")
+        md_str += f"{content}\n"
+    return md_str
 
 
 def is_standard_lib_module(module_path: str) -> bool:

@@ -4,32 +4,33 @@ from __future__ import annotations
 
 import ast as py_ast
 import marshal
-import os
 import types
 from typing import Optional
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.parser import JacParser
-from jaclang.compiler.passes import UniPass
 from jaclang.compiler.passes.main import (
+    AccessCheckPass,
     CompilerMode,
+    DeclImplMatchPass,
     DefUsePass,
+    FuseTypeInfoPass,
+    InheritancePass,
+    JacAnnexPass,
     JacImportPass,
     JacTypeCheckPass,
     PyBytecodeGenPass,
     PyCollectDepsPass,
     PyImportPass,
+    PyJacAstLinkPass,
     PyastBuildPass,
+    PyastGenPass,
     SymTabBuildPass,
-    py_code_gen,
-    type_checker_sched,
 )
 from jaclang.compiler.passes.main.sym_tab_link_pass import SymTabLinkPass
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.passes.transform import Alert, Transform
-from jaclang.compiler.semtable import SemRegistry
 from jaclang.compiler.unitree import Module
-from jaclang.settings import settings
 from jaclang.utils.log import logging
 
 
@@ -41,7 +42,6 @@ class JacProgram:
 
     def __init__(self, main_mod: Optional[uni.ProgramModule] = None) -> None:
         """Initialize the JacProgram object."""
-        self.sem_ir = SemRegistry()
         self.mod: uni.ProgramModule = main_mod if main_mod else uni.ProgramModule()
         self.last_imported: list[Module] = []
         self.py_raise_map: dict[str, str] = {}
@@ -52,17 +52,11 @@ class JacProgram:
         self, full_target: str, full_compile: bool = True
     ) -> Optional[types.CodeType]:
         """Get the bytecode for a specific module."""
-        if self.mod and full_target in self.mod.hub:
+        if full_target in self.mod.hub:
             codeobj = self.mod.hub[full_target].gen.py_bytecode
             return marshal.loads(codeobj) if isinstance(codeobj, bytes) else None
         result = self.compile(file_path=full_target, full_compile=full_compile)
-        if self.errors_had:
-            for alrt in self.errors_had:
-                logger.error(alrt.pretty_print())
-        if result.gen.py_bytecode is not None:
-            return marshal.loads(result.gen.py_bytecode)
-        else:
-            return None
+        return marshal.loads(result.gen.py_bytecode) if result.gen.py_bytecode else None
 
     def compile(
         self,
@@ -87,32 +81,32 @@ class JacProgram:
         full_compile: bool = True,
     ) -> uni.Module:
         """Convert a Jac file to an AST."""
+        had_error = False
         if file_path.endswith(".py"):
             parsed_ast = py_ast.parse(source_str)
-            py_ast_ret: Transform[uni.PythonModuleAst, uni.Module] = PyastBuildPass(
+            py_ast_ret = PyastBuildPass(
                 ir_in=uni.PythonModuleAst(
                     parsed_ast,
                     orig_src=uni.Source(source_str, mod_path=file_path),
                 ),
                 prog=self,
             )
-            ast_ret: (
-                Transform[uni.PythonModuleAst, uni.Module]
-                | Transform[uni.Source, uni.Module]
-            ) = py_ast_ret
+            had_error = len(py_ast_ret.errors_had) > 0
+            mod = py_ast_ret.ir_out
         else:
             source = uni.Source(source_str, mod_path=file_path)
             jac_ast_ret: Transform[uni.Source, uni.Module] = JacParser(
                 root_ir=source, prog=self
             )
-            ast_ret = jac_ast_ret
-        if ast_ret.errors_had:
-            return ast_ret.ir_out
+            had_error = len(jac_ast_ret.errors_had) > 0
+            mod = jac_ast_ret.ir_out
+        if had_error:
+            return mod
         if self.mod.main.stub_only:
-            self.mod = uni.ProgramModule(ast_ret.ir_out)
-        self.mod.hub[ast_ret.ir_out.loc.mod_path] = ast_ret.ir_out
+            self.mod = uni.ProgramModule(mod)
+        self.mod.hub[mod.loc.mod_path] = mod
         return self.run_pass_schedule(
-            mod_targ=ast_ret.ir_out,
+            mod_targ=mod,
             mode=mode,
             full_compile=full_compile,
         )
@@ -125,7 +119,7 @@ class JacProgram:
     ) -> uni.Module:
         """Convert a Jac file to an AST."""
         self.last_imported.append(mod_targ)
-        self.annex_impl(mod_targ)
+        JacAnnexPass(ir_in=mod_targ, prog=self)
         SymTabBuildPass(ir_in=mod_targ, prog=self)
         if mode == CompilerMode.PARSE:
             return mod_targ
@@ -185,67 +179,28 @@ class JacProgram:
 
         return mod_targ
 
-    def annex_impl(self, node: uni.Module) -> None:
-        """Annex impl and test modules."""
-        if node.stub_only:
-            return
-        if not node.loc.mod_path:
-            logger.error("Module has no path")
-        if not node.loc.mod_path.endswith(".jac"):
-            return
-        base_path = node.loc.mod_path[:-4]
-        directory = os.path.dirname(node.loc.mod_path)
-        if not directory:
-            directory = os.getcwd()
-            base_path = os.path.join(directory, base_path)
-        impl_folder = base_path + ".impl"
-        test_folder = base_path + ".test"
-        search_files = [
-            os.path.join(directory, impl_file) for impl_file in os.listdir(directory)
-        ]
-        if os.path.exists(impl_folder):
-            search_files += [
-                os.path.join(impl_folder, impl_file)
-                for impl_file in os.listdir(impl_folder)
-            ]
-        if os.path.exists(test_folder):
-            search_files += [
-                os.path.join(test_folder, test_file)
-                for test_file in os.listdir(test_folder)
-            ]
-        for cur_file in search_files:
-            if node.loc.mod_path.endswith(cur_file):
-                continue
-            if (
-                cur_file.startswith(f"{base_path}.")
-                or impl_folder == os.path.dirname(cur_file)
-            ) and cur_file.endswith(".impl.jac"):
-                mod = self.compile(file_path=cur_file, mode=CompilerMode.PARSE)
-                if mod:
-                    node.add_kids_left(mod.kid, parent_update=True, pos_update=False)
-                    node.impl_mod.append(mod)
-            if (
-                cur_file.startswith(f"{base_path}.")
-                or test_folder == os.path.dirname(cur_file)
-            ) and cur_file.endswith(".test.jac"):
-                mod = self.compile(file_path=cur_file, mode=CompilerMode.PARSE)
-                if mod and not settings.ignore_test_annex:
-                    node.test_mod.append(mod)
-                    node.add_kids_right(mod.kid, parent_update=True, pos_update=False)
-
     def schedule_runner(
         self,
         mod: uni.Module,
         mode: CompilerMode = CompilerMode.COMPILE,
     ) -> None:
         """Run premade passes on the module."""
-        final_pass: Optional[type[UniPass]] = None
+        py_code_gen = [
+            DeclImplMatchPass,
+            DefUsePass,
+            PyastGenPass,
+            PyJacAstLinkPass,
+            PyBytecodeGenPass,
+        ]
+        type_checker_sched = [InheritancePass, FuseTypeInfoPass, AccessCheckPass]
+
+        final_pass: Optional[type[Transform[uni.Module, uni.Module]]] = None
         passes = py_code_gen if mode == CompilerMode.COMPILE else type_checker_sched
         for current_pass in passes:
             if current_pass == PyBytecodeGenPass:
                 final_pass = current_pass
                 break
-            current_pass(mod, prog=self)
+            current_pass(ir_in=mod, prog=self)  # type: ignore
         if final_pass:
             final_pass(mod, prog=self)
 
