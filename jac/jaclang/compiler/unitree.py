@@ -1211,14 +1211,13 @@ class Import(ElementStmt, CodeBlockStmt):
 
     def __init__(
         self,
-        hint: Optional[SubTag[Name]],
         from_loc: Optional[ModulePath],
         items: SubNodeList[ModuleItem] | SubNodeList[ModulePath],
         is_absorb: bool,  # For includes
         kid: Sequence[UniNode],
         doc: Optional[String] = None,
     ) -> None:
-        self.hint = hint
+        self.hint = None
         self.from_loc = from_loc
         self.items = items
         self.is_absorb = is_absorb

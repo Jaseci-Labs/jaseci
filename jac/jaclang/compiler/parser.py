@@ -366,17 +366,13 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             if self.match_token(Tok.KW_INCLUDE):
                 # Handle include statement
-                lang = self.match(uni.SubTag)
                 import_path_obj = self.consume(uni.ModulePath)
                 items = uni.SubNodeList[uni.ModulePath](
                     items=[import_path_obj], delim=Tok.COMMA, kid=[import_path_obj]
                 )
-                kid = (
-                    (kid[:2] if lang else kid[:1]) + [items] + kid[-1:]
-                )  # TODO: Will be removed.
+                kid = (kid[:1]) + [items] + kid[-1:]  # TODO: Will be removed.
                 self.consume_token(Tok.SEMI)
                 return uni.Import(
-                    hint=lang,
                     from_loc=None,
                     items=items,
                     is_absorb=True,
@@ -385,7 +381,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             from_path: uni.ModulePath | None = None
             self.consume_token(Tok.KW_IMPORT)
-            lang = self.match(uni.SubTag)
 
             if self.match_token(Tok.KW_FROM):
                 from_path = self.consume(uni.ModulePath)
@@ -404,13 +399,12 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     items=paths,
                     delim=Tok.COMMA,
                     # TODO: kid will be removed so let's keep as it is for now.
-                    kid=self.cur_nodes[2 if lang else 1 : -1],
+                    kid=self.cur_nodes[1:-1],
                 )
-                kid = (kid[:2] if lang else kid[:1]) + [items] + kid[-1:]
+                kid = kid[:1] + [items] + kid[-1:]
 
             is_absorb = False
             return uni.Import(
-                hint=lang,
                 from_loc=from_path,
                 items=items,
                 is_absorb=is_absorb,
