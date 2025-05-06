@@ -44,9 +44,8 @@ architype_decl: arch_type access_tag? STRING? NAME inherited_archs? (member_bloc
 architype_def: abil_to_arch_chain member_block
 decorators: (DECOR_OP atomic_chain)+
 access_tag: COLON ( KW_PROT | KW_PUB | KW_PRIV )
-
-inherited_archs: LT (atomic_chain COMMA)* atomic_chain GT
-               | COLON (atomic_chain COMMA)* atomic_chain COLON
+inherited_archs: LPAREN (atomic_chain COMMA)* atomic_chain RPAREN
+              
 
 arch_type: KW_WALKER
           | KW_OBJECT

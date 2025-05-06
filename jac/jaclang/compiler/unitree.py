@@ -1538,9 +1538,9 @@ class Architype(
             new_kid.append(self.semstr)
         new_kid.append(self.name)
         if self.base_classes:
-            new_kid.append(self.gen_token(Tok.COLON))
+            new_kid.append(self.gen_token(Tok.LPAREN))
             new_kid.append(self.base_classes)
-            new_kid.append(self.gen_token(Tok.COLON))
+            new_kid.append(self.gen_token(Tok.RPAREN))
         if self.body:
             if isinstance(self.body, AstImplOnlyNode):
                 new_kid.append(self.gen_token(Tok.SEMI))

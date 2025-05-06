@@ -574,15 +574,14 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def inherited_archs(self, kid: list[uni.UniNode]) -> uni.SubNodeList[uni.Expr]:
             """Grammar rule.
 
-            inherited_archs: LT (atomic_chain COMMA)* atomic_chain GT
-                           | COLON (atomic_chain COMMA)* atomic_chain COLON
+            inherited_archs: LPAREN (atomic_chain COMMA)* atomic_chain RPAREN
             """
-            self.match_token(Tok.LT) or self.consume_token(Tok.COLON)
+            self.match_token(Tok.LPAREN)
             items: list = []
             while inherited_arch := self.match(uni.Expr):
                 items.append(inherited_arch)
                 self.match_token(Tok.COMMA)
-            self.match_token(Tok.LT) or self.consume_token(Tok.COLON)
+            self.match_token(Tok.RPAREN)
             return uni.SubNodeList[uni.Expr](items=items, delim=Tok.COMMA, kid=kid)
 
         def named_ref(self, _: None) -> uni.NameAtom:
