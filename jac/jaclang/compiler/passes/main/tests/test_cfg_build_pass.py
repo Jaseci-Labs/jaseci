@@ -16,7 +16,7 @@ class TestCFGBuildPass(TestCase):
         """Test basic blocks."""
         file_name = self.fixture_abs_path("cfg_gen.jac")
 
-        from jaclang.compiler.passes.main.cfg_build_pass import FetchBBPass
+        from jaclang.compiler.passes.main.cfg_build_pass import CoalesceBBPass
 
         with open(file_name, "r") as f:
             file_source = f.read()
@@ -25,7 +25,7 @@ class TestCFGBuildPass(TestCase):
             source_str=file_source, file_path=file_name, mode=CMode.TYPECHECK
         )
 
-        cfg_pass = FetchBBPass(
+        cfg_pass = CoalesceBBPass(
             ir_in=ir,
             prog=prog,
         )
@@ -64,7 +64,7 @@ class TestCFGBuildPass(TestCase):
         """Test basic blocks."""
         file_name = self.fixture_abs_path("cfg_ability_test.jac")
 
-        from jaclang.compiler.passes.main.cfg_build_pass import FetchBBPass
+        from jaclang.compiler.passes.main.cfg_build_pass import CoalesceBBPass
 
         with open(file_name, "r") as f:
             file_source = f.read()
@@ -73,7 +73,7 @@ class TestCFGBuildPass(TestCase):
             source_str=file_source, file_path=file_name, mode=CMode.TYPECHECK
         )
 
-        cfg_pass = FetchBBPass(
+        cfg_pass = CoalesceBBPass(
             ir_in=ir,
             prog=prog,
         )

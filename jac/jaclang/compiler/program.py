@@ -11,6 +11,7 @@ import jaclang.compiler.unitree as uni
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes.main import (
     AccessCheckPass,
+    CFGBuildPass,
     CompilerMode,
     DeclImplMatchPass,
     DefUsePass,
@@ -188,6 +189,7 @@ class JacProgram:
         py_code_gen = [
             DeclImplMatchPass,
             DefUsePass,
+            CFGBuildPass,
             PyastGenPass,
             PyJacAstLinkPass,
             PyBytecodeGenPass,

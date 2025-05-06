@@ -155,7 +155,7 @@ class CFGBuildPass(UniPass):
                         self.link_bbs(parent_bb, node)
 
 
-class FetchBBPass(UniPass):
+class CoalesceBBPass(UniPass):
     """Fetch basic blocks."""
 
     def before_pass(self) -> None:
