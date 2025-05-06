@@ -80,7 +80,7 @@ def mock_kubernetes_and_grpc() -> Generator[None, None, None]:
         call_count = [0]
 
         def read_pod_side_effect(
-            name: str, namespace: str, *args: Any, **kwargs: Any
+            name: str, namespace: str, *args: Any, **kwargs: Any  # noqa: ANN401
         ) -> V1Pod:
             """Side effect function for read_namespaced_pod.
 

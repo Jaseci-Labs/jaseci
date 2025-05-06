@@ -66,7 +66,7 @@ class ConfigLoader:
                 return default
         return cfg if cfg is not None else default
 
-    def set(self, keys: List[str], value: Any) -> None:
+    def set(self, keys: List[str], value: Any) -> None:  # noqa: ANN401
         """Set a configuration value using a list of keys."""
         cfg = self.config
         for key in keys[:-1]:

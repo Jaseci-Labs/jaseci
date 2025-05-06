@@ -23,10 +23,10 @@ class ObjectRegistry:
     def __init__(self) -> None:
         """Initialize the object registry."""
         self.lock = threading.Lock()
-        self.objects: Dict[str, Any] = {}
+        self.objects: Dict[str, Any] = {}  # noqa: ANN401
         logging.debug("ObjectRegistry initialized.")
 
-    def add(self, obj: Any) -> str:
+    def add(self, obj: Any) -> str:  # noqa: ANN401
         """Add an object to the registry.
 
         Args:
@@ -41,7 +41,7 @@ class ObjectRegistry:
             logging.debug(f"Object added with ID {obj_id}: {obj}")
         return obj_id
 
-    def get(self, obj_id: str) -> Any:
+    def get(self, obj_id: str) -> Any:  # noqa: ANN401
         """Get an object from the registry.
 
         Args:
@@ -128,7 +128,7 @@ class ModuleService(module_service_pb2_grpc.ModuleServiceServicer):
             # Deserialize arguments
             import json
 
-            def deserialize_arg(arg: Dict[str, Any]) -> Any:
+            def deserialize_arg(arg: Dict[str, Any]) -> Any:  # noqa: ANN401
                 """Deserialize an argument from the request.
 
                 Args:
@@ -175,7 +175,7 @@ class ModuleService(module_service_pb2_grpc.ModuleServiceServicer):
 
             logging.debug(f"Execution result: {result}")
 
-            def serialize_result(res: Any) -> Dict[str, Any]:
+            def serialize_result(res: Any) -> Dict[str, Any]:  # noqa: ANN401
                 """Serialize a result for the response.
 
                 Args:
