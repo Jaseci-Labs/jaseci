@@ -18,6 +18,6 @@ with entry {
     x = 5;
     y = 0;
     math = math_mod();
-    z = math_mod.divide(x, y);
+    z = math.divide(x, y);
     print(z);
 }

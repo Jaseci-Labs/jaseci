@@ -87,7 +87,7 @@ class TestCFGBuildPass(TestCase):
             '  2 [label="BB2\\nreturn 0 ;", shape=box];\n'
             '  3 [label="BB3\\nreturn ( x / y ) ;", shape=box];\n'
             '  4 [label="BB4\\ncan multiply( x : int , y : int )\\nreturn ( x * y ) ;", shape=box];\n'
-            '  5 [label="BB5\\nx = 5 ;\\ny = 0 ;\\nmath = math_mod ( ) ;\\nz = math_mod . divide ( x , y ) '
+            '  5 [label="BB5\\nx = 5 ;\\ny = 0 ;\\nmath = math_mod ( ) ;\\nz = math . divide ( x , y ) '
             ';\\nprint ( z ) ;", shape=box];\n'
             "  0 -> 1;\n"
             "  0 -> 4;\n"

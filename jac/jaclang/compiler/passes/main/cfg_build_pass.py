@@ -16,8 +16,7 @@ class CFGBuildPass(UniPass):
         self.while_loop_stack: list[list[uni.BasicBlockStmt]] = []
         self.for_loop_stack: list[list[uni.BasicBlockStmt]] = []
         self.ability_stack: list[list[uni.BasicBlockStmt]] = []
-        self.not_connected_bbs: list[uni.BasicBlockStmt] = []
-        self.to_connect: list[uni.UniNode] = []
+        self.to_connect: list[uni.BasicBlockStmt] = []
         self.first_exit: bool = False
 
     def push_loop_stack(self, loop_header: uni.BasicBlockStmt) -> None:
@@ -78,9 +77,17 @@ class CFGBuildPass(UniPass):
                     if parent_obj:
                         self.link_bbs(parent_obj, node)
                 elif bb_stmts[0] == node:
-                    parent_bb = self.get_parent_bb_stmt(node)
-                    if parent_bb:
-                        self.link_bbs(parent_bb, node)
+                    if (
+                        isinstance(node.parent.parent, uni.ModuleCode)
+                        and self.to_connect
+                    ):
+                        for bb in self.to_connect:
+                            self.link_bbs(bb, node)
+                            self.to_connect.remove(bb)  # if self.to_connect:
+                    else:
+                        parent_bb = self.get_parent_bb_stmt(node)
+                        if parent_bb:
+                            self.link_bbs(parent_bb, node)
                 elif self.to_connect:
                     to_remove = []
                     for parent in self.to_connect:
@@ -189,7 +196,7 @@ class FetchBBPass(UniPass):
             self.bb_counter += 1
 
     def dotgen_cfg(self) -> str:
-        """Generate dot file for CFG."""
+        """Generate dot graph for CFG."""
         cfg: dict = {}
         dot = "digraph G {\n"
 
