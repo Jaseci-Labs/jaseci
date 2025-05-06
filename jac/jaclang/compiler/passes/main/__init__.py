@@ -24,6 +24,7 @@ class CompilerMode(Enum):
 
     PARSE = "PARSE"
     COMPILE = "COMPILE"
+    NO_CGEN = "NO_CGEN"
     TYPECHECK = "TYPECHECK"
 
 

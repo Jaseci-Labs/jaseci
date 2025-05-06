@@ -22,6 +22,8 @@ class PyastGenPass(UniPass):
     """Jac blue transpilation to python pass."""
 
     def before_pass(self) -> None:
+        for i in self.ir_in.impl_mod + self.ir_in.test_mod:
+            PyastGenPass(ir_in=i, prog=self.prog)
         self.debuginfo: dict[str, list[str]] = {"jac_mods": []}
         self.already_added: list[str] = []
         self.preamble: list[ast3.AST] = [
