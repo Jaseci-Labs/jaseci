@@ -659,8 +659,8 @@ class UniCFGNode(UniNode):
 
     def __init__(self) -> None:
         """Initialize basic block statement node."""
-        self.bb_in: Optional[list[UniCFGNode]] = None
-        self.bb_out: Optional[list[UniCFGNode]] = None
+        self.bb_in: list[UniCFGNode] = []
+        self.bb_out: list[UniCFGNode] = []
 
     def get_head(self) -> UniCFGNode:
         """Get head by walking up the CFG iteratively."""
