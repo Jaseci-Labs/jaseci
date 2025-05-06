@@ -2,7 +2,7 @@ import from jaclang.runtimelib.machine { JacMachine, JacMachineState }
 import from bar { bar_walk }
 # Test runner to initialize the walker
 
-can test_run {
+def test_run {
     # Print the loaded modules
     modules = JacMachine.list_modules(JacMachine.py_get_jac_machine());
     "Loaded Modules:" |> print;

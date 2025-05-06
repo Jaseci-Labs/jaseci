@@ -1,6 +1,6 @@
 import test_py;
 
-class B :test_py.A: {}
+class B(test_py.A) {}
 
 with entry {
     a = test_py.A();

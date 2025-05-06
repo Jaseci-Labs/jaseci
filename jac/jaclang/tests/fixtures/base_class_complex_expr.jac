@@ -14,7 +14,7 @@ with entry {
     mm = [Apple, Orange];
 }
 
-class Banana :mm[1]: {
+class Banana(mm[1]) {
     with entry {
         c = 3;
     }
@@ -25,7 +25,7 @@ def return_class() -> `Type[Apple] {
     return Apple;
 }
 
-class Kiwi :return_class(): {
+class Kiwi (return_class()) {
     with entry {
         d = 4;
         ;

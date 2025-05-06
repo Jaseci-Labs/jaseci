@@ -271,17 +271,6 @@ class JacLanguageTests(TestCase):
             stdout_value,
         )
 
-    def test_semstr(self) -> None:
-        """Test semstring."""
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-        sys.stderr = captured_output
-        Jac.jac_import(self.mach, "semstr", base_path=self.fixture_abs_path("./"))
-        sys.stdout = sys.__stdout__
-        sys.stderr = sys.__stderr__
-        stdout_value = captured_output.getvalue()
-        self.assertNotIn("Error", stdout_value)
-
     def test_raw_bytestr(self) -> None:
         """Test raw string and byte string."""
         captured_output = io.StringIO()

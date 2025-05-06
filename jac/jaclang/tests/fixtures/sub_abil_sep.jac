@@ -1,6 +1,6 @@
 """A Ninja Myca"""
 
-can plan {
+def plan {
     def say_hi(m: str);
 
     print("Hello, world!");

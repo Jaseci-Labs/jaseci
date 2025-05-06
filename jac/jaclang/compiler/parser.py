@@ -3174,6 +3174,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 Tok.KW_SUPER,
                 Tok.KW_SELF,
                 Tok.KW_HERE,
+                Tok.KW_VISITOR,
             ]:
                 ret_type = uni.Name
             elif token.type == Tok.SEMI:

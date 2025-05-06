@@ -1,6 +1,6 @@
 import from test_py { A }
 
-class B :A: {}
+class B(A) {}
 
 with entry {
     a = A();

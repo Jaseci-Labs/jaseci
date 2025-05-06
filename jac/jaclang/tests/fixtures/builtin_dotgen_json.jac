@@ -13,7 +13,7 @@ with entry {
     end = root;
 
     for i in range(0, 2){
-        end+:E:val=i:+>(end := [ N(val=i) for i in range(0, 2) ]);
+        end+>:E:val=i:+>(end := [ N(val=i) for i in range(0, 2) ]);
     }
 
     data = dotgen(node=root, as_json=True);

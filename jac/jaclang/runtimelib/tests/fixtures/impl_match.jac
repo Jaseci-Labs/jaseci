@@ -1,7 +1,7 @@
 import impl_match_impl;
 
 obj Check {
-    can run;
+    def run;
 }
 
 with entry {

@@ -2742,56 +2742,6 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
         return res
 
 
-class RevisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
-    """RevisitStmt node type for Jac Ast."""
-
-    def __init__(
-        self,
-        hops: Optional[Expr],
-        else_body: Optional[ElseStmt],
-        kid: Sequence[UniNode],
-    ) -> None:
-        self.hops = hops
-        UniNode.__init__(self, kid=kid)
-        WalkerStmtOnlyNode.__init__(self)
-        AstElseBodyNode.__init__(self, else_body=else_body)
-
-    def normalize(self, deep: bool = False) -> bool:
-        res = True
-        if deep:
-            res = self.hops.normalize(deep) if self.hops else res
-            res = res and self.else_body.normalize(deep) if self.else_body else res
-        new_kid: list[UniNode] = [self.gen_token(Tok.KW_REVISIT)]
-        if self.hops:
-            new_kid.append(self.hops)
-        if self.else_body:
-            new_kid.append(self.else_body)
-        new_kid.append(self.gen_token(Tok.SEMI))
-        self.set_kids(nodes=new_kid)
-        return res
-
-
-class DisengageStmt(WalkerStmtOnlyNode, CodeBlockStmt):
-    """DisengageStmt node type for Jac Ast."""
-
-    def __init__(
-        self,
-        kid: Sequence[UniNode],
-    ) -> None:
-        """Initialize disengage statement node."""
-        UniNode.__init__(self, kid=kid)
-        WalkerStmtOnlyNode.__init__(self)
-
-    def normalize(self, deep: bool = False) -> bool:
-        """Normalize disengage statement node."""
-        new_kid: list[UniNode] = [
-            self.gen_token(Tok.KW_DISENGAGE),
-            self.gen_token(Tok.SEMI),
-        ]
-        self.set_kids(nodes=new_kid)
-        return True
-
-
 class AwaitExpr(Expr):
     """AwaitExpr node type for Jac Ast."""
 
@@ -4372,6 +4322,8 @@ class SpecialVarRef(Name):
             return Con.ROOT.value
         elif self.orig.name == Tok.KW_HERE:
             return Con.HERE.value
+        elif self.orig.name == Tok.KW_VISITOR:
+            return Con.VISITOR.value
         elif self.orig.name == Tok.KW_INIT:
             return "__init__"
         elif self.orig.name == Tok.KW_POST_INIT:
