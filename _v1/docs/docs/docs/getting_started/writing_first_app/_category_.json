@@ -1,8 +1,0 @@
-{
-    "label": "Writing Your First App",
-    "position": 4,
-    "link": {
-        "type": "generated-index",
-        "description": "This is a simple guide to start coding with Jac Language and Jaseci eco system. This program creates a simple shop inventory management agent in Jac language and Jaseci. Before we begin ensure you have Jaseci installed."
-    }
-}

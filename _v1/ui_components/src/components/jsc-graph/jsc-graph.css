@@ -1,9 +1,0 @@
-:host {
-  display: block;
-  box-sizing: border-box;
-}
-
-p {
-  margin: 4px;
-  font-size: 0.9rem;
-}

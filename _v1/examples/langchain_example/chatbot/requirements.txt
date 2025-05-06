@@ -1,6 +1,0 @@
-streamlit
-streamlit-chat
-jaseci
-jaseci-serv
-jac_misc[langchain]
-python-dotenv

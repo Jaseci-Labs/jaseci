@@ -33,12 +33,10 @@ class JacCloudTest(TestCase):
         """Run server."""
         run(["fuser", "-k", f"{port}/tcp"])
         run(["jac", "clean"])
-        run(["jac", "tool", "gen_parser"])
 
         base_envs = environ.copy()
         base_envs["DATABASE_NAME"] = database
         base_envs.update(envs or {"DATABASE_NAME": database})
-        base_envs["SHOW_ENDPOINT_RETURNS"] = "true"
 
         self.server = Popen(
             ["jac", "serve", f"{file}", "--port", f"{port}"], env=base_envs

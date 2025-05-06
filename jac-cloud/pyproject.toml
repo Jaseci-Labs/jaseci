@@ -31,6 +31,7 @@ httpx = "0.28.1"
 fastapi-sso = "0.17.0"
 google-auth = "2.38.0"
 ecs-logging = "2.2.0"
+apscheduler = "3.11.0"
 
 [tool.poetry.group.dev.dependencies]
 python-dotenv = "1.0.1"

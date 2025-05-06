@@ -4,123 +4,110 @@ from __future__ import annotations
 
 from typing import Optional
 
-import jaclang.compiler.absyntree as ast
-from jaclang.compiler.passes import AstPass
-from jaclang.compiler.symtable import Symbol, SymbolTable
-from jaclang.settings import settings
+import jaclang.compiler.unitree as uni
+from jaclang.compiler.passes.transform import Transform
+from jaclang.compiler.unitree import Symbol, UniScopeNode
 
 
-class InheritancePass(AstPass):
+class InheritancePass(Transform[uni.Module, uni.Module]):
     """Add inherited abilities in the target symbol tables."""
 
-    def __debug_print(self, msg: str) -> None:
-        if settings.inherit_pass_debug:
-            self.log_info("[PyImportPass] " + msg)
+    def transform(self, ir_in: uni.Module) -> uni.Module:
+        """Entry point for the inheritance pass."""
+        self.process_architypes(ir_in)
+        return ir_in
 
-    def __lookup(self, name: str, sym_table: SymbolTable) -> Optional[Symbol]:
-        symbol = sym_table.lookup(name)
-        if symbol is None:
-            # Check if the needed symbol in builtins
-            builtins_symtable = None
-            for mod in self.prog.modules.values():
-                if mod.name == "builtins":
-                    builtins_symtable = mod.sym_tab
+    def process_architypes(self, module: uni.Module) -> None:
+        """Process all architypes in the module."""
+        for node in module.get_all_sub_nodes(uni.Architype):
+            self.process_architype_inheritance(node)
 
-            assert builtins_symtable is not None
-            symbol = builtins_symtable.lookup(name)
-        return symbol
-
-    def enter_architype(self, node: ast.Architype) -> None:
+    def process_architype_inheritance(self, node: uni.Architype) -> None:
         """Fill architype symbol tables with abilities from parent architypes."""
         if node.base_classes is None:
             return
 
+        self.cur_node = node
         for item in node.base_classes.items:
-            # The assumption is that the base class can only be a name node
-            # or an atom trailer only.
-            assert isinstance(item, (ast.Name, ast.AtomTrailer, ast.FuncCall))
-
-            # In case of name node, then get the symbol table that contains
-            # the current class and lookup for that name after that use the
-            # symbol to get the symbol table of the base class
-            if isinstance(item, ast.Name):
-                assert node.sym_tab.parent is not None
-                base_class_symbol = self.__lookup(item.sym_name, node.sym_tab.parent)
-                if base_class_symbol is None:
-                    msg = "Missing symbol for base class "
-                    msg += f"{ast.Module.get_href_path(item)}.{item.sym_name}"
-                    msg += f" needed for {ast.Module.get_href_path(node)}"
-                    self.__debug_print(msg)
-                    continue
-                base_class_symbol_table = base_class_symbol.fetch_sym_tab
-                if (
-                    base_class_symbol_table is None
-                    and base_class_symbol.defn[0]
-                    .parent_of_type(ast.Module)
-                    .py_info.is_raised_from_py
-                ):
-                    msg = "Missing symbol table for python base class "
-                    msg += f"{ast.Module.get_href_path(item)}.{item.sym_name}"
-                    msg += f" needed for {ast.Module.get_href_path(node)}"
-                    self.__debug_print(msg)
-                    continue
-                assert base_class_symbol_table is not None
-                node.sym_tab.inherit_sym_tab(base_class_symbol_table)
-
-            elif isinstance(item, ast.FuncCall):
-                self.__debug_print(
-                    "Base class depends on the type of a function call expression, this is not supported yet"
+            # Handle different types of base class references
+            if isinstance(item, uni.Name):
+                self.inherit_from_name(node, item)
+            elif isinstance(item, uni.AtomTrailer):
+                self.inherit_from_atom_trailer(node, item)
+            elif isinstance(item, uni.FuncCall):
+                self.log_info(
+                    "Base class depends on the type of a function call "
+                    "expression, this is not supported yet"
                 )
 
-            # In case of atom trailer, unwind it and use each name node to
-            # as the code above to lookup for the base class
-            elif isinstance(item, ast.AtomTrailer):
-                current_sym_table = node.sym_tab.parent
-                not_found: bool = False
-                assert current_sym_table is not None
-                for name in item.as_attr_list:
-                    sym = self.__lookup(name.sym_name, current_sym_table)
-                    if sym is None:
-                        msg = "Missing symbol for base class "
-                        msg += f"{ast.Module.get_href_path(name)}.{name.sym_name}"
-                        msg += f" needed for {ast.Module.get_href_path(node)}"
-                        self.__debug_print(msg)
-                        not_found = True
-                        break
-                    current_sym_table = sym.fetch_sym_tab
+    def inherit_from_name(self, node: uni.Architype, item: uni.Name) -> None:
+        """Handle inheritance from a simple name reference."""
+        assert node.sym_tab.parent_scope is not None
+        base_class_symbol = self.lookup_symbol(item.sym_name, node.sym_tab.parent_scope)
 
-                    # In case of python nodes, the base class may not be
-                    # raised so ignore these classes for now
-                    # TODO Do we need to import these classes?
-                    if (
-                        sym.defn[0].parent_of_type(ast.Module).py_info.is_raised_from_py
-                        and current_sym_table is None
-                    ):
-                        msg = "Missing symbol table for python base class "
-                        msg += f"{ast.Module.get_href_path(name)}.{name.sym_name}"
-                        msg += f" needed for {ast.Module.get_href_path(node)}"
-                        self.__debug_print(msg)
-                        not_found = True
-                        break
+        if base_class_symbol is None:
+            return
 
-                    if (
-                        current_sym_table is None
-                        and item.as_attr_list.index(name) < len(item.as_attr_list) - 1
-                        and isinstance(
-                            item.as_attr_list[item.as_attr_list.index(name) + 1],
-                            ast.IndexSlice,
-                        )
-                    ):
-                        msg = "Base class depends on the type of an "
-                        msg += "Index slice expression, this is not supported yet"
-                        self.__debug_print(msg)
-                        not_found = True
-                        break
+        base_class_symbol_table = base_class_symbol.fetch_sym_tab
 
-                    assert current_sym_table is not None
+        if self.is_missing_py_symbol_table(base_class_symbol, base_class_symbol_table):
+            return
+        assert base_class_symbol_table is not None
+        node.sym_tab.inherit_sym_tab(base_class_symbol_table)
 
-                if not_found:
-                    continue
+    def inherit_from_atom_trailer(
+        self, node: uni.Architype, item: uni.AtomTrailer
+    ) -> None:
+        """Handle inheritance from an attribute access chain."""
+        current_sym_table = node.sym_tab.parent_scope
+        assert current_sym_table is not None
 
-                assert current_sym_table is not None
-                node.sym_tab.inherit_sym_tab(current_sym_table)
+        for name in item.as_attr_list:
+            sym = self.lookup_symbol(name.sym_name, current_sym_table)
+            if sym is None:
+                return
+            current_sym_table = sym.fetch_sym_tab
+            # Handle Python base classes or index slice expressions
+            if self.is_missing_py_symbol_table(sym, current_sym_table):
+                return
+            if self.is_index_slice_next(item, name):
+                # "Base class depends on the type of an Index slice expression, this is not supported yet"
+                return
+            assert current_sym_table is not None
+        assert current_sym_table is not None
+        node.sym_tab.inherit_sym_tab(current_sym_table)
+
+    def lookup_symbol(self, name: str, sym_table: UniScopeNode) -> Optional[Symbol]:
+        """Look up a symbol in the symbol table or in builtins."""
+        symbol = sym_table.lookup(name)
+        if symbol is None:
+            # Check for the symbol in builtins
+            builtins_symtable = self.get_builtins_symtable()
+            if builtins_symtable:
+                symbol = builtins_symtable.lookup(name)
+        return symbol
+
+    def get_builtins_symtable(self) -> Optional[UniScopeNode]:
+        """Get the builtins symbol table."""
+        for mod in self.prog.mod.hub.values():
+            if mod.name == "builtins":
+                return mod.sym_tab
+        return None
+
+    def is_missing_py_symbol_table(
+        self, symbol: Symbol, symbol_table: Optional[UniScopeNode]
+    ) -> bool:
+        """Check if a Python symbol table is missing."""
+        return (
+            symbol_table is None
+            and symbol.defn[0].parent_of_type(uni.Module).py_info.is_raised_from_py
+        )
+
+    def is_index_slice_next(
+        self, item: uni.AtomTrailer, name: uni.AstSymbolNode
+    ) -> bool:
+        """Check if the next item in the atom trailer is an index slice."""
+        idx = item.as_attr_list.index(name)
+        return idx < len(item.as_attr_list) - 1 and isinstance(
+            item.as_attr_list[idx + 1], uni.IndexSlice
+        )

@@ -1,5 +1,6 @@
 """Monty Implementations."""
 
+from contextvars import ContextVar
 from typing import Any, Mapping, Sequence
 
 from montydb import MontyClient as _MontyClient, set_storage  # type: ignore[import-untyped]
@@ -15,6 +16,8 @@ from pymongo.results import (
     InsertOneResult,
     UpdateResult,
 )
+
+MONTY_CLIENT = ContextVar[_MontyClient | None]("MONTY_CLIENT", default=None)
 
 
 class MontyClientSession:
@@ -195,9 +198,19 @@ class MontyDatabase(_MontyDatabase):
 class MontyClient(_MontyClient):
     """Monty Client."""
 
+    def __init__(
+        self, repository: str, *args: Any, **kwargs: Any  # noqa: ANN401
+    ) -> None:
+        """Initialize MontyClient Mock."""
+        self.repository = repository
+        super().__init__(repository, *args, **kwargs)
+
     def get_database(self, name: str) -> MontyDatabase:
         """Get local database."""
-        return MontyDatabase(super().get_database(name))
+        if not (client := MONTY_CLIENT.get()):
+            MONTY_CLIENT.set(client := _MontyClient(self.repository))
+
+        return MontyDatabase(client.get_database(name))
 
     def start_session(self) -> MontyClientSession:
         """Start session."""

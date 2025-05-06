@@ -1,6 +1,0 @@
-{
-    "walkers" : ["init"],
-    "remote_actions" : [],
-    "local_actions" : [],
-    "src" : "walker.jac"
-}

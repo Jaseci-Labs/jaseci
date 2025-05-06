@@ -53,6 +53,8 @@ class FastAPI:
             from .routers import healthz_router, sso_router, user_router, webhook_router
             from ..plugin.implementation import (
                 WEBSOCKET_MANAGER,
+                scheduler,
+                repopulate_tasks,
                 walker_router,
                 webhook_walker_router,
                 websocket_router,
@@ -63,6 +65,8 @@ class FastAPI:
                 from .datasources import Collection
 
                 Collection.apply_indexes()
+                repopulate_tasks()
+                scheduler.start()
 
                 async with create_task_group() as task_group:
                     await WEBSOCKET_MANAGER.open_broadcaster(task_group)
@@ -70,6 +74,8 @@ class FastAPI:
                     yield
 
                     await WEBSOCKET_MANAGER.close_broadcaster(task_group)
+
+                scheduler.shutdown()
 
             cls.__app__ = _FaststAPI(lifespan=lifespan)
 

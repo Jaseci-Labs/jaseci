@@ -21,6 +21,7 @@ from .architype import (
     NodeAnchor,
     ObjectAnchor,
     Root,
+    ScheduleStatus,
     WalkerAnchor,
 )
 from ..jaseci.datasources import Collection
@@ -129,6 +130,12 @@ class MongoDB(Memory[ObjectId, BaseAnchor | Anchor]):
                     bulk_write.operations[anchor.__class__].append(
                         InsertOne(anchor.serialize())
                     )
+                    if (
+                        isinstance(anchor, WalkerAnchor)
+                        and anchor.schedule
+                        and anchor.schedule.status == ScheduleStatus.PENDING
+                    ):
+                        bulk_write.schedules.append(anchor)
                 elif (new_hash := anchor.has_changed()) and Jac.check_connect_access(
                     anchor  # type: ignore[arg-type]
                 ):

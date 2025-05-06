@@ -2,7 +2,7 @@
 
 from typing import List
 
-from jaclang.compiler.passes.main.schedules import py_code_gen_typed
+from jaclang.compiler.passes.main import CompilerMode as CMode
 from jaclang.compiler.program import JacProgram
 from jaclang.utils.lang_tools import AstTool
 from jaclang.utils.test import TestCase
@@ -20,7 +20,7 @@ class MypyTypeCheckPassTests(TestCase):
         """Basic test for pass."""
         (type_checked := JacProgram()).compile(
             file_path=self.fixture_abs_path("func.jac"),
-            schedule=py_code_gen_typed,
+            mode=CMode.TYPECHECK,
         )
 
         errs = "\n".join([i.msg for i in type_checked.warnings_had])
@@ -38,7 +38,7 @@ class MypyTypeCheckPassTests(TestCase):
         """Basic test for pass."""
         (type_checked := JacProgram()).compile(
             file_path=self.fixture_abs_path("game1.jac"),
-            schedule=py_code_gen_typed,
+            mode=CMode.TYPECHECK,
         )
 
         errs = "\n".join([i.msg for i in type_checked.warnings_had])
@@ -80,7 +80,8 @@ class MypyTypeCheckPassTests(TestCase):
 
         self.assertRegex(
             out,
-            r"128:5 - 128:25.*BinaryExpr \- Type\: jaclang.runtimelib.architype.WalkerArchitype",
+            r"128:5 - 128:25.*BinaryExpr \- Type\: "
+            + r"Union\[jaclang.runtimelib.architype.WalkerArchitype, concurrent.futures._base.Future\[Any\]\]",
         )
 
         self.assertRegex(

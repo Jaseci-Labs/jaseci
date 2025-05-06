@@ -79,6 +79,6 @@ walker delete_custom_object {
     has object_id: str;
 
     can enter1 with `root entry {
-        _.destroy(&(self.object_id));
+        _.destroy([&(self.object_id)]);
     }
 }
