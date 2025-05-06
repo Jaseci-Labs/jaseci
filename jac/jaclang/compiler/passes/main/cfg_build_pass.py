@@ -13,20 +13,20 @@ class CFGBuildPass(UniPass):
 
     def before_pass(self) -> None:
         """Before pass."""
-        self.while_loop_stack: list[list[uni.BasicBlockStmt]] = []
-        self.for_loop_stack: list[list[uni.BasicBlockStmt]] = []
-        self.ability_stack: list[list[uni.BasicBlockStmt]] = []
-        self.to_connect: list[uni.BasicBlockStmt] = []
+        self.while_loop_stack: list[list[uni.UniCFGNode]] = []
+        self.for_loop_stack: list[list[uni.UniCFGNode]] = []
+        self.ability_stack: list[list[uni.UniCFGNode]] = []
+        self.to_connect: list[uni.UniCFGNode] = []
         self.first_exit: bool = False
 
-    def push_loop_stack(self, loop_header: uni.BasicBlockStmt) -> None:
+    def push_loop_stack(self, loop_header: uni.UniCFGNode) -> None:
         """Push loop stack."""
         if isinstance(loop_header, uni.WhileStmt):
             self.while_loop_stack.append([loop_header])
         elif isinstance(loop_header, (uni.InForStmt, uni.IterForStmt)):
             self.for_loop_stack.append([loop_header])
 
-    def pop_loop_stack(self, node: uni.BasicBlockStmt) -> None:
+    def pop_loop_stack(self, node: uni.UniCFGNode) -> None:
         """Pop loop stack."""
         if isinstance(node, uni.WhileStmt) and len(self.while_loop_stack) > 0:
             self.while_loop_stack.pop()
@@ -36,18 +36,18 @@ class CFGBuildPass(UniPass):
         ):
             self.for_loop_stack.pop()
 
-    def get_parent_bb_stmt(self, node: uni.BasicBlockStmt) -> uni.BasicBlockStmt | None:
+    def get_parent_bb_stmt(self, node: uni.UniCFGNode) -> uni.UniCFGNode | None:
         """Get parent basic block."""
         if not isinstance(node, uni.Module):
             try:
-                parent_bb_stmt = node.parent_of_type(uni.BasicBlockStmt)
+                parent_bb_stmt = node.parent_of_type(uni.UniCFGNode)
                 return parent_bb_stmt
             except Exception:
                 return None
         else:
             return None
 
-    def link_bbs(self, source: uni.BasicBlockStmt, target: uni.BasicBlockStmt) -> None:
+    def link_bbs(self, source: uni.UniCFGNode, target: uni.UniCFGNode) -> None:
         """Link basic blocks."""
         if source and target:
             if source.bb_out:
@@ -61,12 +61,10 @@ class CFGBuildPass(UniPass):
 
     def enter_node(self, node: uni.UniNode) -> None:
         """Enter BasicBlockStmt nodes."""
-        if isinstance(node, uni.BasicBlockStmt) and not isinstance(node, uni.Semi):
+        if isinstance(node, uni.UniCFGNode) and not isinstance(node, uni.Semi):
             if isinstance(node.parent, uni.SubNodeList) and self.first_exit:
                 bb_stmts = [
-                    bbs
-                    for bbs in node.parent.kid
-                    if isinstance(bbs, uni.BasicBlockStmt)
+                    bbs for bbs in node.parent.kid if isinstance(bbs, uni.UniCFGNode)
                 ]
                 if (
                     node.parent.parent
@@ -91,7 +89,7 @@ class CFGBuildPass(UniPass):
                 elif self.to_connect:
                     to_remove = []
                     for parent in self.to_connect:
-                        if isinstance(parent, uni.BasicBlockStmt):
+                        if isinstance(parent, uni.UniCFGNode):
                             self.link_bbs(parent, node)
                             to_remove.append(parent)
                     for parent in to_remove:
@@ -120,7 +118,7 @@ class CFGBuildPass(UniPass):
 
     def exit_node(self, node: uni.UniNode) -> None:
         """Exit BasicBlockStmt nodes."""
-        if isinstance(node, uni.BasicBlockStmt) and not isinstance(node, uni.Semi):
+        if isinstance(node, uni.UniCFGNode) and not isinstance(node, uni.Semi):
             self.first_exit = True
             if not node.bb_out:
                 self.to_connect.append(node)
@@ -151,7 +149,7 @@ class CFGBuildPass(UniPass):
         """After pass."""
         if self.to_connect:
             for node in self.to_connect:
-                if isinstance(node, uni.BasicBlockStmt):
+                if isinstance(node, uni.UniCFGNode):
                     parent_bb = self.get_parent_bb_stmt(node)
                     if parent_bb:
                         self.link_bbs(parent_bb, node)
@@ -165,11 +163,11 @@ class FetchBBPass(UniPass):
         self.basic_blocks: dict = {}
         self.bb_counter: int = 0
 
-    def get_bb(self, node: uni.BasicBlockStmt) -> list[uni.BasicBlockStmt]:
+    def get_bb(self, node: uni.UniCFGNode) -> list[uni.UniCFGNode]:
         """Get basic block."""
         head = node.get_head()
         tail = node.get_tail()
-        bb_list: list[uni.BasicBlockStmt] = []
+        bb_list: list[uni.UniCFGNode] = []
         if head and tail:
             cur_node = head
             while cur_node != tail:
@@ -183,7 +181,7 @@ class FetchBBPass(UniPass):
 
     def enter_node(self, node: uni.UniNode) -> None:
         """Enter BasicBlockStmt nodes."""
-        if isinstance(node, uni.BasicBlockStmt) and not isinstance(node, uni.Semi):
+        if isinstance(node, uni.UniCFGNode) and not isinstance(node, uni.Semi):
             tail = node.get_tail()
             bb = self.get_bb(node)
             for bbs in self.basic_blocks.values():

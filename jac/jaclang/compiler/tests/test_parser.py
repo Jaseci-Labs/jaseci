@@ -121,7 +121,7 @@ class TestLarkParser(TestCaseMicroSuite):
         exclude = [
             "UniNode",
             "UniScopeNode",
-            "BasicBlockStmt",
+            "UniCFGNode",
             "ProgramModule",
             "WalkerStmtOnlyNode",
             "Source",

@@ -674,15 +674,15 @@ class WalkerStmtOnlyNode(UniNode):
         self.from_walker: bool = False
 
 
-class BasicBlockStmt(UniNode):
+class UniCFGNode(UniNode):
     """BasicBlockStmt node type for Jac Uniir."""
 
     def __init__(self) -> None:
         """Initialize basic block statement node."""
-        self.bb_in: Optional[list[BasicBlockStmt]] = None
-        self.bb_out: Optional[list[BasicBlockStmt]] = None
+        self.bb_in: Optional[list[UniCFGNode]] = None
+        self.bb_out: Optional[list[UniCFGNode]] = None
 
-    def get_head(self) -> BasicBlockStmt:
+    def get_head(self) -> UniCFGNode:
         """Get head by walking up the CFG iteratively."""
         node = self
         while (
@@ -695,7 +695,7 @@ class BasicBlockStmt(UniNode):
             node = node.bb_in[0]
         return node
 
-    def get_tail(self) -> BasicBlockStmt:
+    def get_tail(self) -> UniCFGNode:
         """Get tail by walking down the CFG iteratively."""
         node = self
         while (
@@ -755,8 +755,12 @@ class EnumBlockStmt(UniNode):
     """EnumBlockStmt node type for Jac Ast."""
 
 
-class CodeBlockStmt(BasicBlockStmt):
+class CodeBlockStmt(UniCFGNode):
     """CodeBlockStmt node type for Jac Ast."""
+
+    def __init__(self) -> None:
+        """Initialize code block statement node."""
+        UniCFGNode.__init__(self)
 
 
 class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
@@ -775,7 +779,7 @@ class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
             name_spec=self.create_impl_name_node(),
             sym_category=SymbolType.IMPL,
         )
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def create_impl_name_node(self) -> Name:
         """Create impl name."""
@@ -897,7 +901,7 @@ class ArchSpec(ElementStmt, CodeBlockStmt, AstSymbolNode, AstDocNode, AstSemStrN
     def __init__(self, decorators: Optional[SubNodeList[Expr]] = None) -> None:
         """Initialize walker statement only node."""
         self.decorators = decorators
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
 
 class MatchPattern(UniNode):
@@ -994,7 +998,6 @@ class Module(AstDocNode, UniScopeNode):
         UniNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
         UniScopeNode.__init__(self, name=self.name, owner=self)
-        # BasicBlockStmt.__init__(self)
 
     @property
     def annexable_by(self) -> Optional[str]:
@@ -1245,7 +1248,7 @@ class PyInlineCode(ElementStmt, ArchBlockStmt, EnumBlockStmt, CodeBlockStmt):
         self.code = code
         UniNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize inline python code node."""
@@ -1282,7 +1285,7 @@ class Import(ElementStmt, CodeBlockStmt):
         self.is_absorb = is_absorb
         UniNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     @property
     def is_py(self) -> bool:
@@ -1518,7 +1521,7 @@ class Architype(
     ArchBlockStmt,
     AstImplNeedingNode,
     UniScopeNode,
-    BasicBlockStmt,
+    UniCFGNode,
 ):
     """ObjectArch node type for Jac Ast."""
 
@@ -1567,7 +1570,7 @@ class Architype(
         AstSemStrNode.__init__(self, semstr=semstr)
         ArchSpec.__init__(self, decorators=decorators)
         UniScopeNode.__init__(self, name=self.sym_name, owner=self)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     @property
     def is_abstract(self) -> bool:
@@ -1810,7 +1813,7 @@ class Ability(
         AstDocNode.__init__(self, doc=doc)
         AstAsyncNode.__init__(self, is_async=is_async)
         UniScopeNode.__init__(self, name=self.sym_name, owner=self)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     @property
     def is_method(self) -> bool:
@@ -1911,7 +1914,6 @@ class AbilityDef(AstImplOnlyNode, UniScopeNode):
         AstDocNode.__init__(self, doc=doc)
         AstImplOnlyNode.__init__(self, target=target, body=body, decl_link=decl_link)
         UniScopeNode.__init__(self, name=self.sym_name, owner=self)
-        # BasicBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ability def node."""
@@ -2245,7 +2247,7 @@ class TypedCtxBlock(CodeBlockStmt, UniScopeNode):
         self.body = body
         UniNode.__init__(self, kid=kid)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize typed context block node."""
@@ -2278,7 +2280,7 @@ class IfStmt(CodeBlockStmt, AstElseBodyNode, UniScopeNode):
         UniNode.__init__(self, kid=kid)
         AstElseBodyNode.__init__(self, else_body=else_body)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize if statement node."""
@@ -2358,7 +2360,7 @@ class ExprStmt(CodeBlockStmt):
         self.expr = expr
         self.in_fstring = in_fstring
         UniNode.__init__(self, kid=kid)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = True) -> bool:
         """Normalize ast node."""
@@ -2392,7 +2394,7 @@ class TryStmt(AstElseBodyNode, CodeBlockStmt, UniScopeNode):
         UniNode.__init__(self, kid=kid)
         AstElseBodyNode.__init__(self, else_body=else_body)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize try statement node."""
@@ -2434,7 +2436,7 @@ class Except(CodeBlockStmt, UniScopeNode):
         self.body = body
         UniNode.__init__(self, kid=kid)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize except node."""
@@ -2467,7 +2469,7 @@ class FinallyStmt(CodeBlockStmt, UniScopeNode):
         self.body = body
         UniNode.__init__(self, kid=kid)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize finally statement node."""
@@ -2504,7 +2506,7 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
         AstAsyncNode.__init__(self, is_async=is_async)
         AstElseBodyNode.__init__(self, else_body=else_body)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize iter for node."""
@@ -2551,7 +2553,7 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
         AstAsyncNode.__init__(self, is_async=is_async)
         AstElseBodyNode.__init__(self, else_body=else_body)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize in for node."""
@@ -2591,7 +2593,7 @@ class WhileStmt(CodeBlockStmt, UniScopeNode):
         self.body = body
         UniNode.__init__(self, kid=kid)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize while statement node."""
@@ -2625,7 +2627,7 @@ class WithStmt(AstAsyncNode, CodeBlockStmt, UniScopeNode):
         UniNode.__init__(self, kid=kid)
         AstAsyncNode.__init__(self, is_async=is_async)
         UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize with statement node."""
@@ -2687,7 +2689,7 @@ class RaiseStmt(CodeBlockStmt):
         self.cause = cause
         self.from_target = from_target
         UniNode.__init__(self, kid=kid)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize raise statement node."""
@@ -2719,7 +2721,7 @@ class AssertStmt(CodeBlockStmt):
         self.condition = condition
         self.error_msg = error_msg
         UniNode.__init__(self, kid=kid)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize assert statement node."""
@@ -2750,7 +2752,7 @@ class CheckStmt(CodeBlockStmt):
         """Initialize delete statement node."""
         self.target = target
         UniNode.__init__(self, kid=kid)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize delete statement node."""
@@ -2777,7 +2779,7 @@ class CtrlStmt(CodeBlockStmt):
         """Initialize control statement node."""
         self.ctrl = ctrl
         UniNode.__init__(self, kid=kid)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize control statement node."""
@@ -2800,7 +2802,7 @@ class DeleteStmt(CodeBlockStmt):
         """Initialize delete statement node."""
         self.target = target
         UniNode.__init__(self, kid=kid)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     @property
     def py_ast_targets(self) -> list[ast3.AST]:
@@ -2836,7 +2838,7 @@ class ReportStmt(CodeBlockStmt):
         """Initialize report statement node."""
         self.expr = expr
         UniNode.__init__(self, kid=kid)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize report statement node."""
@@ -2863,7 +2865,7 @@ class ReturnStmt(CodeBlockStmt):
         """Initialize return statement node."""
         self.expr = expr
         UniNode.__init__(self, kid=kid)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize return statement node."""
@@ -2892,7 +2894,7 @@ class IgnoreStmt(WalkerStmtOnlyNode, CodeBlockStmt):
         self.target = target
         UniNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize ignore statement node."""
@@ -2924,7 +2926,7 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
         UniNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
         AstElseBodyNode.__init__(self, else_body=else_body)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize visit statement node."""
@@ -2962,7 +2964,7 @@ class RevisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
         UniNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
         AstElseBodyNode.__init__(self, else_body=else_body)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize revisit statement node."""
@@ -2990,7 +2992,7 @@ class DisengageStmt(WalkerStmtOnlyNode, CodeBlockStmt):
         """Initialize disengage statement node."""
         UniNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize disengage statement node."""
@@ -3039,7 +3041,7 @@ class GlobalStmt(CodeBlockStmt):
         """Initialize global statement node."""
         self.target = target
         UniNode.__init__(self, kid=kid)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize global statement node."""
@@ -3095,7 +3097,7 @@ class Assignment(AstSemStrNode, AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
         UniNode.__init__(self, kid=kid)
         AstSemStrNode.__init__(self, semstr=semstr)
         AstTypedVarNode.__init__(self, type_tag=type_tag)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = True) -> bool:
         """Normalize ast node."""
@@ -4216,7 +4218,7 @@ class MatchStmt(CodeBlockStmt):
         self.target = target
         self.cases = cases
         UniNode.__init__(self, kid=kid)
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         """Normalize match statement node."""
@@ -4914,7 +4916,7 @@ class Semi(
             pos_start=pos_start,
             pos_end=pos_end,
         )
-        BasicBlockStmt.__init__(self)
+        CodeBlockStmt.__init__(self)
 
 
 class CommentToken(Token):

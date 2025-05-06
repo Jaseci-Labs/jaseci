@@ -121,7 +121,7 @@ class AstSyncTestMixin:
             not in [
                 "uni_node",
                 "uni_scope_node",
-                "basic_block_stmt",
+                "uni_c_f_g_node",
                 "program_module",
                 "walker_stmt_only_node",
                 "source",
