@@ -551,8 +551,8 @@ class JacFormatPass(UniPass):
         prev_token = None
 
         for i in node.kid:
-            if i.gen.jac == "can" and node.is_static:
-                i.gen.jac = "static can"
+            if i.gen.jac in ["can", "def"] and node.is_static:
+                i.gen.jac = f"static {i.gen.jac}"
             if not i.gen.jac or i.gen.jac == "static":
                 continue
             if isinstance(i, uni.String):
@@ -1194,6 +1194,12 @@ class JacFormatPass(UniPass):
                 if prev_token and prev_token.gen.jac.strip() == "obj":
                     self.emit(node, " ")
                 self.emit_ln(node, i.gen.jac)
+            elif (
+                isinstance(i, uni.SubNodeList)
+                and prev_token
+                and isinstance(prev_token, uni.Name)
+            ):
+                self.emit(node, i.gen.jac)
             elif isinstance(i, uni.CommentToken):
                 if i.is_inline:
                     self.emit(node, i.gen.jac)
@@ -1283,7 +1289,7 @@ class JacFormatPass(UniPass):
             out += node.signature.params.gen.jac
         if node.signature and node.signature.return_type:
             out += f" -> {node.signature.return_type.gen.jac}"
-        self.emit(node, f"with {out} can {node.body.gen.jac}")
+        self.emit(node, f"lambda {out} : {node.body.gen.jac}")
 
     def exit_unary_expr(self, node: uni.UnaryExpr) -> None:
         if node.op.value in ["-", "~", "+", "*", "**"]:

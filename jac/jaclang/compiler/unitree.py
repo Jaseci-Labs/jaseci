@@ -1719,6 +1719,10 @@ class Ability(
         UniScopeNode.__init__(self, name=self.sym_name, owner=self)
 
     @property
+    def is_def(self) -> bool:
+        return isinstance(self.signature, FuncSignature)
+
+    @property
     def is_method(self) -> bool:
         return self.signature.is_method
 
@@ -1766,7 +1770,11 @@ class Ability(
             new_kid.append(self.gen_token(Tok.KW_OVERRIDE))
         if self.is_static:
             new_kid.append(self.gen_token(Tok.KW_STATIC))
-        new_kid.append(self.gen_token(Tok.KW_CAN))
+        new_kid.append(
+            self.gen_token(Tok.KW_CAN)
+            if not self.is_def
+            else self.gen_token(Tok.KW_DEF)
+        )
         if self.access:
             new_kid.append(self.access)
         new_kid.append(self.name_ref)
@@ -2990,11 +2998,11 @@ class LambdaExpr(Expr, UniScopeNode):
         if deep:
             res = self.signature.normalize(deep) if self.signature else res
             res = res and self.body.normalize(deep)
-        new_kid: list[UniNode] = [self.gen_token(Tok.KW_WITH)]
+        new_kid: list[UniNode] = [self.gen_token(Tok.KW_LAMBDA)]
         if self.signature:
             new_kid.append(self.signature)
         new_kid += [
-            self.gen_token(Tok.KW_CAN),
+            self.gen_token(Tok.COLON),
             self.body,
             self.gen_token(Tok.SEMI),
         ]
