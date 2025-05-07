@@ -2541,13 +2541,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-<<<<<<< HEAD
                 - $ref: '#/components/schemas/ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__'
                 - {}
-=======
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
->>>>>>> main
                 title: Response Api Root Walker Different Return Post
           description: Successful Response
       summary: Api Root
@@ -2571,13 +2566,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-<<<<<<< HEAD
                 - $ref: '#/components/schemas/ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__'
                 - {}
-=======
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
->>>>>>> main
                 title: Response Api Entry Walker Different Return  Node  Post
           description: Successful Response
         "422":

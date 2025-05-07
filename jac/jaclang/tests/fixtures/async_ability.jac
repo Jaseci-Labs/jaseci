@@ -1,12 +1,12 @@
-import:py asyncio;
+import asyncio;
 
-async can say_hello(){
+async def say_hello(){
     print("Hello");
     await asyncio.sleep(1);
     print("World!");
 }
 
-async can main(){
+async def main(){
     await asyncio.gather(
         say_hello(),
         say_hello()

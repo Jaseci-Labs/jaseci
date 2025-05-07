@@ -1062,7 +1062,7 @@ walker walker_cron {
     has kwarg2: str = "4";
 
     can enter with `root entry {
-        import:py from jac_cloud.core.architype {NodeAnchor}
+        import from jac_cloud.core.architype {NodeAnchor}
 
         n = NodeAnchor.Collection.find_one({
             "name": "TaskCounter"
