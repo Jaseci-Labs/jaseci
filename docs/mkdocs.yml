@@ -78,13 +78,13 @@ nav:
     - Planning Specs and Docs:
       - Error System: "internals/planning_specs/error_system.md"
       - Native Type System:
-        - "internals/planning_specs/native_type_system/index.md"
-        - "internals/planning_specs/native_type_system/architecture.md"
-        - "internals/planning_specs/native_type_system/type_representation.md"
-        - "internals/planning_specs/native_type_system/type_resolution.md"
-        - "internals/planning_specs/native_type_system/type_rules.md"
-        - "internals/planning_specs/native_type_system/type_inference.md"
-        - "internals/planning_specs/native_type_system/compiler_integration.md"
+        - Introduction: "internals/planning_specs/native_type_system/index.md"
+        - Architecture: "internals/planning_specs/native_type_system/architecture.md"
+        - Type Representation: "internals/planning_specs/native_type_system/type_representation.md"
+        - Type Resolution: "internals/planning_specs/native_type_system/type_resolution.md"
+        - Type Rules: "internals/planning_specs/native_type_system/type_rules.md"
+        - Type Inference: "internals/planning_specs/native_type_system/type_inference.md"
+        - Compiler Integration: "internals/planning_specs/native_type_system/compiler_integration.md"
   - Community Hub:
     - Roadmap: "communityhub/roadmap.md"
     - Breaking Changes: "communityhub/breaking_changes.md"

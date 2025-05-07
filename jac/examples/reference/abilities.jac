@@ -6,14 +6,14 @@ obj Divider {
 #this is an abstract class as it has the abstract method
 
 obj Calculator {
-    static def : priv multiply(a: float, b: float) -> float {
+    static def:priv multiply(a: float, b: float) -> float {
         return a * b;
     }
     def substract -> float abs;
     def add(number: float, *a: tuple) -> float;
 }
 
-obj substractor(Calculator) {
+obj Substractor(Calculator) {
     def substract(x: float, y: float) -> float {
         return (x - y);
     }
