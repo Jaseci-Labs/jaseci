@@ -51,6 +51,10 @@
       {
         "command": "jac.visualize",
         "title": "jacvis: Visualize Jaclang Graph"
+      },
+      {
+        "command": "jaclang-extension.selectEnv",
+        "title": "Jaclang: Select Environment"
       }
     ],
 
@@ -80,6 +84,11 @@
     ]
   },
   "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:jac",
+    "onCommand:jaclang-extension.selectEnv"
+  ],
+
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -b",

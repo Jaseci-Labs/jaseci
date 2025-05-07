@@ -86,25 +86,9 @@ class JacFormatPass(UniPass):
         return node.gen.jac
 
     def enter_module(self, node: uni.Module) -> None:
-        """Sub objects.
-
-        name: str,
-        source: JacSource,
-        doc: Optional[String],
-        body: Sequence[ElementStmt],
-        is_imported: bool,
-        """
         self.comments = node.source.comments
 
     def exit_module(self, node: uni.Module) -> None:
-        """Sub objects.
-
-        name: str,
-        source: JacSource,
-        doc: Optional[String],
-        body: Sequence[ElementStmt],
-        is_imported: bool,
-        """
         prev_token = None
         for i in node.kid:
             if isinstance(i, uni.String):
@@ -146,13 +130,6 @@ class JacFormatPass(UniPass):
             last_element = i
 
     def exit_global_vars(self, node: uni.GlobalVars) -> None:
-        """Sub objects.
-
-        access: Optional[SubTag[Token]],
-        assignments: SubNodeList[Assignment],
-        is_frozen: bool,
-        doc: Optional[String] = None,
-        """
         start = True
         prev_token = None
         for i in node.kid:
@@ -181,12 +158,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_module_code(self, node: uni.ModuleCode) -> None:
-        """Sub objects.
-
-        name: Optional[SubTag[Name]],
-        body: SubNodeList[CodeBlockStmt],
-        doc: Optional[Constant] = None,
-        """
         start = True
         for i in node.kid:
             if isinstance(i, uni.String):
@@ -204,10 +175,6 @@ class JacFormatPass(UniPass):
             self.emit(node, node.body.gen.jac)
 
     def exit_sub_node_list(self, node: uni.SubNodeList) -> None:
-        """Sub objects.
-
-        items: list[T],
-        """
         prev_token = None
         for stmt in node.kid:
             line_emiited = False
@@ -348,10 +315,6 @@ class JacFormatPass(UniPass):
             prev_token = stmt
 
     def exit_sub_tag(self, node: uni.SubTag) -> None:
-        """Sub objects.
-
-        tag: T,
-        """
         start = True
         prev_token = None
         for i in node.kid:
@@ -382,11 +345,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_func_call(self, node: uni.FuncCall) -> None:
-        """Sub objects.
-
-        target: AtomType,
-        params: Optional[ParamList],
-        """
         prev_token: Optional[UniNode] = None
         line_break_needed = False
         indented = False
@@ -458,10 +416,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_multi_string(self, node: uni.MultiString) -> None:
-        """Sub objects.
-
-        strings: list[Token],
-        """
         if len(node.strings) > 1:
             self.emit_ln(node, node.strings[0].gen.jac)
             self.indent_level += 1
@@ -473,22 +427,11 @@ class JacFormatPass(UniPass):
             self.emit(node, node.strings[0].gen.jac)
 
     def exit_module_path(self, node: uni.ModulePath) -> None:
-        """Sub objects.
-
-        path: list[Token],
-        alias: Optional[Name],
-        """
         self.emit(node, node.dot_path_str)
         if node.alias:
             self.emit(node, " as " + node.alias.gen.jac)
 
     def exit_tuple_val(self, node: uni.TupleVal) -> None:
-        """Sub objects.
-
-        first_expr: Optional["ExprType"],
-        exprs: Optional[ExprList],
-        assigns: Optional[AssignmentList],
-        """
         for i in node.kid:
             if (i.gen.jac).endswith(","):
                 self.indent_level -= 1
@@ -497,22 +440,9 @@ class JacFormatPass(UniPass):
             self.emit(node, i.gen.jac)
 
     def exit_special_var_ref(self, node: uni.SpecialVarRef) -> None:
-        """Sub objects.
-
-        var: Token,
-        """
         self.emit(node, node.orig.value)
 
     def exit_ability_def(self, node: uni.AbilityDef) -> None:
-        """Sub objects.
-
-        target: ArchRefChain,
-        signature: FuncSignature | EventSignature,
-        body: SubNodeList[CodeBlockStmt],
-        kid: list[UniNode],
-        doc: Optional[Constant] = None,
-        decorators: Optional[SubNodeList[ExprType]] = None,
-        """
         start = True
         prev_token = None
         for i in node.kid:
@@ -556,12 +486,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_event_signature(self, node: uni.EventSignature) -> None:
-        """Sub objects.
-
-        event: Token,
-        arch_tag_info: Optional["TypeList | TypeSpec"],
-        return_type: Optional["TypeSpec"],
-        """
         start = True
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
@@ -581,16 +505,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_import(self, node: uni.Import) -> None:
-        """Sub objects.
-
-        lang: SubTag[Name],
-        path: ModulePath,
-        alias: Optional[Name],
-        items: Optional[SubNodeList[ModuleItem]],
-        is_absorb: bool,  # For includes
-        doc: Optional[Constant] = None,
-        sub_module: Optional[Module] = None,
-        """
         start = True
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
@@ -615,13 +529,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_arch_def(self, node: uni.ArchDef) -> None:
-        """Sub objects.
-
-        target: ArchRefChain,
-        body: SubNodeList[ArchBlockStmt],
-        doc: Optional[Constant] = None,
-        decorators: Optional[SubNodeList[ExprType]] = None,
-        """
         start = True
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
@@ -646,20 +553,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_ability(self, node: uni.Ability) -> None:
-        """Sub objects.
-
-        name_ref: NameType,
-        is_func: bool,
-        is_async: bool,
-        is_static: bool,
-        is_abstract: bool,
-        access: Optional[SubTag[Token]],
-        signature: Optional[FuncSignature | SubNodeList[TypeSpec] | EventSignature],
-        body: Optional[SubNodeList[CodeBlockStmt]],
-        arch_attached: Optional[Architype] = None,
-        doc: Optional[Constant] = None,
-        decorators: Optional[SubNodeList[ExprType]] = None,
-        """
         start = True
         prev_token = None
 
@@ -706,11 +599,6 @@ class JacFormatPass(UniPass):
             prev_token = i
 
     def exit_func_signature(self, node: uni.FuncSignature) -> None:
-        """Sub objects.
-
-        params: Optional[SubNodeList[ParamVar]],
-        return_type: Optional[SubNodeList[TypeSpec]],
-        """
         prev_token = None
         for i in node.kid:
             if isinstance(i, uni.SubTag):
@@ -739,14 +627,6 @@ class JacFormatPass(UniPass):
             prev_token = i
 
     def exit_arch_has(self, node: uni.ArchHas) -> None:
-        """Sub objects.
-
-        doc: Optional[Token],
-        is_static: bool,
-        access: Optional[Token],
-        vars: "HasVarList",
-        is_frozen: bool,
-        """
         indented = False
         indent_val = 1
         for i in node.kid:
@@ -785,10 +665,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_arch_ref(self, node: uni.ArchRef) -> None:
-        """Sub objects.
-
-        archs: list[ArchRef],
-        """
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
                 if i.is_inline:
@@ -810,13 +686,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_param_var(self, node: uni.ParamVar) -> None:
-        """Sub objects.
-
-        name: Name,
-        unpack: Optional[Token],
-        type_tag: SubTag[Expr],
-        value: Optional[Expr],
-        """
         for i in node.kid:
             if isinstance(i, uni.SubTag):
                 for j in i.kid:
@@ -831,15 +700,6 @@ class JacFormatPass(UniPass):
                 self.emit(node, i.gen.jac)
 
     def exit_enum(self, node: uni.Enum) -> None:
-        """Sub objects.
-
-        name: Name,
-        doc: Optional[Token],
-        decorators: Optional[Decorators],
-        access: Optional[Token],
-        base_classes: BaseClasses,
-        body: Optional[EnumBlock],
-        """
         start = True
         prev_token = None
         for i in node.kid:
@@ -873,12 +733,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_enum_def(self, node: uni.EnumDef) -> None:
-        """Sub objects.
-
-        doc: Optional[Token],
-        mod: Optional[DottedNameList],
-        body: EnumBlock,
-        """
         start = True
         for i in node.kid:
             if isinstance(i, uni.String):
@@ -904,29 +758,13 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_atom_trailer(self, node: uni.AtomTrailer) -> None:
-        """Sub objects.
-
-        target: AtomType,
-        right: IndexSlice | ArchRefType | Token,
-        null_ok: bool,
-        """
         for i in node.kid:
             self.emit(node, i.gen.jac)
 
     def exit_atom_unit(self, node: uni.AtomUnit) -> None:
-        """Sub objects.
-
-        value: AtomType | ExprType,
-        is_paren: bool,
-        is_null_ok: bool,
-        """
         self.emit(node, f"({node.value.gen.jac})")
 
     def exit_yield_expr(self, node: uni.YieldExpr) -> None:
-        """Sub objects.
-
-        expr: Optional[ExprType],
-        """
         if not node.with_from and node.expr:
             self.emit(node, f"yield {node.expr.gen.jac}")
         elif node.expr:
@@ -943,12 +781,6 @@ class JacFormatPass(UniPass):
         return len(content) > max_line_length
 
     def exit_binary_expr(self, node: uni.BinaryExpr) -> None:
-        """Sub objects.
-
-        left: ExprType,
-        right: ExprType,
-        op: Token | DisconnectOp | ConnectOp,
-        """
         if isinstance(node.op, (uni.DisconnectOp, uni.ConnectOp)):
             self.emit(
                 node,
@@ -994,12 +826,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, node.kid[-1].value)
 
     def exit_compare_expr(self, node: uni.CompareExpr) -> None:
-        """Sub objects.
-
-        left: Expr,
-        rights: list[Expr],
-        ops: list[Token],
-        """
         self.emit(node, f"{node.left.gen.jac} ")
         for i in range(len(node.rights)):
             self.emit(node, f"{node.ops[i].value} {node.rights[i].gen.jac}")
@@ -1009,12 +835,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, node.kid[-1].value)
 
     def exit_has_var(self, node: uni.HasVar) -> None:
-        """Sub objects.
-
-        name: Token,
-        type_tag: TypeSpec,
-        value: Optional["ExprType"],
-        """
         for i in node.kid:
             if isinstance(i, uni.SubTag):
                 for j in i.kid:
@@ -1033,13 +853,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_if_stmt(self, node: uni.IfStmt) -> None:
-        """Sub objects.
-
-        condition: ExprType,
-        body: CodeBlock,
-        elseifs: Optional[ElseIfs],
-        else_body: Optional[ElseStmt],
-        """
         start = True
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
@@ -1061,10 +874,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_else_if(self, node: uni.ElseIf) -> None:
-        """Sub objects.
-
-        elseifs: list[IfStmt],
-        """
         start = True
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
@@ -1082,7 +891,6 @@ class JacFormatPass(UniPass):
                     self.emit(node, f" {i.gen.jac}")
 
     def exit_disengage_stmt(self, node: uni.DisengageStmt) -> None:
-        """Sub objects."""
         for i in node.kid:
             self.emit(node, i.gen.jac)
         self.indent_level -= 1
@@ -1090,10 +898,6 @@ class JacFormatPass(UniPass):
         self.indent_level += 1
 
     def exit_else_stmt(self, node: uni.ElseStmt) -> None:
-        """Sub objects.
-
-        body: CodeBlock,
-        """
         start = True
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
@@ -1111,10 +915,6 @@ class JacFormatPass(UniPass):
                     self.emit(node, f" {i.gen.jac}")
 
     def exit_expr_stmt(self, node: uni.ExprStmt) -> None:
-        """Sub objects.
-
-        expr: ExprType,
-        """
         start = True
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
@@ -1141,13 +941,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_iter_for_stmt(self, node: uni.IterForStmt) -> None:
-        """Sub objects.
-
-        iter: Assignment,
-        condition: ExprType,
-        count_by: ExprType,
-        body: CodeBlock,
-        """
         if (
             node.parent
             and node.parent.parent
@@ -1176,12 +969,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_try_stmt(self, node: uni.TryStmt) -> None:
-        """Sub objects.
-
-        body: CodeBlock,
-        excepts: Optional[ExceptList],
-        finally_body: Optional[FinallyStmt],
-        """
         if (
             node.parent
             and node.parent.parent
@@ -1213,12 +1000,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_except(self, node: uni.Except) -> None:
-        """Sub objects.
-
-        typ: ExprType,
-        name: Optional[Token],
-        body: CodeBlock,
-        """
         if (
             node.parent
             and node.parent.parent
@@ -1249,20 +1030,11 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_finally_stmt(self, node: uni.FinallyStmt) -> None:
-        """Sub objects.
-
-        body: CodeBlock,
-        """
         self.emit(node, " finally")
 
         self.emit(node, node.body.gen.jac)
 
     def exit_while_stmt(self, node: uni.WhileStmt) -> None:
-        """Sub objects.
-
-        condition: ExprType,
-        body: CodeBlock,
-        """
         if (
             node.parent
             and node.parent.parent
@@ -1294,32 +1066,18 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_with_stmt(self, node: uni.WithStmt) -> None:
-        """Sub objects.
-
-        exprs: "ExprAsItemList",
-        body: "CodeBlock",
-        """
         self.comma_sep_node_list(node.exprs)
         self.emit(node, f"with {node.exprs.gen.jac}")
         if node.body.gen.jac:
             self.emit(node, node.body.gen.jac)
 
     def exit_module_item(self, node: uni.ModuleItem) -> None:
-        """Sub objects.
-
-        name: Token,
-        alias: Optional[Token],
-        """
         if node.alias:
             self.emit(node, node.name.value + " as " + node.alias.value)
         else:
             self.emit(node, node.name.value)
 
     def exit_global_stmt(self, node: uni.GlobalStmt) -> None:
-        """Sub objects.
-
-        target: SubNodeList[NameType],
-        """
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
                 if i.is_inline:
@@ -1335,10 +1093,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_non_local_stmt(self, node: uni.GlobalStmt) -> None:
-        """Sub objects.
-
-        target: SubNodeList[NameType],
-        """
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
                 if i.is_inline:
@@ -1391,16 +1145,6 @@ class JacFormatPass(UniPass):
                 self.indent_level -= 1
 
     def exit_assignment(self, node: uni.Assignment) -> None:
-        """Sub objects.
-
-        target: SubNodeList[Expr],
-        value: Optional[Expr | YieldExpr],
-        type_tag: Optional[SubTag[Expr]],
-        mutable: bool = True,
-        aug_op: Optional[Token] = None,
-        semstr: Optional[String] = None,
-        is_enum_stmt: bool = False,
-        """
         prev_token = None
         for kid in node.kid:
             if isinstance(kid, uni.CommentToken):
@@ -1449,16 +1193,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_architype(self, node: uni.Architype) -> None:
-        """Sub objects.
-
-        name: Name,
-        arch_type: Token,
-        access: Optional[SubTag[Token]],
-        base_classes: Optional[SubNodeList[AtomType]],
-        body: Optional[SubNodeList[ArchBlockStmt] | ArchDef],
-        doc: Optional[Constant] = None,
-        decorators: Optional[SubNodeList[ExprType]] = None,
-        """
         start = True
         prev_token = None
         for i in node.kid:
@@ -1494,10 +1228,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_f_string(self, node: uni.FString) -> None:
-        """Sub objects.
-
-        parts: list["Token | ExprType"],
-        """
         self.emit(
             node, node.kid[0].value if isinstance(node.kid[0], uni.Token) else 'f"'
         )
@@ -1516,12 +1246,6 @@ class JacFormatPass(UniPass):
         )
 
     def exit_if_else_expr(self, node: uni.IfElseExpr) -> None:
-        """Sub objects.
-
-        condition: BinaryExpr | IfElseExpr,
-        value: ExprType,
-        else_value: ExprType,
-        """
         self.emit(
             node,
             f"{node.value.gen.jac} if {node.condition.gen.jac} "
@@ -1535,11 +1259,6 @@ class JacFormatPass(UniPass):
         )
 
     def exit_bool_expr(self, node: uni.BoolExpr) -> None:
-        """Sub objects.
-
-        op: Token,
-        values: list[Expr],
-        """
         end = node.values[-1]
         test_str = ""
         for i in node.values:
@@ -1564,11 +1283,6 @@ class JacFormatPass(UniPass):
             self.emit(node, test_str)
 
     def exit_lambda_expr(self, node: uni.LambdaExpr) -> None:
-        """Sub objects.
-
-        signature: FuncSignature,
-        body: Expr,
-        """
         out = ""
         if node.signature and node.signature.params:
             self.comma_sep_node_list(node.signature.params)
@@ -1578,11 +1292,6 @@ class JacFormatPass(UniPass):
         self.emit(node, f"with {out} can {node.body.gen.jac}")
 
     def exit_unary_expr(self, node: uni.UnaryExpr) -> None:
-        """Sub objects.
-
-        operand: ExprType,
-        op: Token,
-        """
         if node.op.value in ["-", "~", "+", "*", "**"]:
             self.emit(node, f"{node.op.value}{node.operand.gen.jac}")
         elif node.op.value == "(":
@@ -1599,10 +1308,6 @@ class JacFormatPass(UniPass):
             )
 
     def exit_raise_stmt(self, node: uni.RaiseStmt) -> None:
-        """Sub objects.
-
-        cause: Optional[ExprType],
-        """
         start = True
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
@@ -1622,10 +1327,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_edge_ref_trailer(self, node: uni.EdgeRefTrailer) -> None:
-        """Sub objects.
-
-        edge_ref: EdgeRef,
-        """
         for i in node.kid:
             if i.gen.jac == ("edge" or "node"):
                 self.emit(node, f"{i.gen.jac} ")
@@ -1633,28 +1334,14 @@ class JacFormatPass(UniPass):
                 self.emit(node, i.gen.jac)
 
     def exit_edge_op_ref(self, node: uni.EdgeOpRef) -> None:
-        """Sub objects.
-
-        filter_cond: Optional[ExprType],
-        edge_dir: EdgeDir,
-        """
         for i in node.kid:
             self.emit(node, i.gen.jac)
 
     def exit_index_slice(self, node: uni.IndexSlice) -> None:
-        """Sub objects.
-
-        slices: list[Slice],
-        is_range: bool,
-        """
         for i in node.kid:
             self.emit(node, i.gen.jac)
 
     def exit_list_val(self, node: uni.ListVal) -> None:
-        """Sub objects.
-
-        values: Optional[SubNodeList[ExprType]],
-        """
         line_break_needed = False
         indented = False
         for i in node.kid:
@@ -1680,10 +1367,6 @@ class JacFormatPass(UniPass):
                 self.emit(node, i.gen.jac)
 
     def exit_set_val(self, node: uni.ListVal) -> None:
-        """Sub objects.
-
-        values: list[ExprType],
-        """
         if node.values is not None:
             self.emit(
                 node,
@@ -1691,10 +1374,6 @@ class JacFormatPass(UniPass):
             )
 
     def exit_dict_val(self, node: uni.DictVal) -> None:
-        """Sub objects.
-
-        kv_pairs: list["KVPair"],
-        """
         start = True
         prev_token = None
         line_break_needed = False
@@ -1747,13 +1426,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_inner_compr(self, node: uni.InnerCompr) -> None:
-        """Sub objects.
-
-        is_async: bool,
-        target: ExprType,
-        collection: ExprType,
-        conditional: Optional[ExprType],
-        """
         partial = (
             f"{'async' if node.is_async else ''} for {node.target.gen.jac} in "
             f"{node.collection.gen.jac}"
@@ -1763,52 +1435,27 @@ class JacFormatPass(UniPass):
         self.emit(node, f"{partial}")
 
     def exit_list_compr(self, node: uni.ListCompr) -> None:
-        """Sub objects.
-
-        out_expr: ExprType,
-        compr: InnerCompr,
-        """
         for i in node.kid:
             self.emit(node, i.gen.jac)
 
     def exit_gen_compr(self, node: uni.GenCompr) -> None:
-        """Sub objects.
-
-        out_expr: ExprType,
-        compr: InnerCompr,
-        """
         self.emit(
             node, f"({node.out_expr.gen.jac} {' '.join(i.gen.jac for i in node.compr)})"
         )
 
     def exit_set_compr(self, node: uni.SetCompr) -> None:
-        """Sub objects.
-
-        out_expr: ExprType,
-        compr: InnerCompr,
-        """
         self.emit(
             node,
             f"{{{node.out_expr.gen.jac} {' '.join(i.gen.jac for i in node.compr)}}}",
         )
 
     def exit_dict_compr(self, node: uni.DictCompr) -> None:
-        """Sub objects.
-
-        kv_pair: KVPair,
-        compr: InnerCompr,
-        """
         self.emit(
             node,
             f"{{{node.kv_pair.gen.jac} {' '.join(i.gen.jac for i in node.compr)}}}",
         )
 
     def exit_k_v_pair(self, node: uni.KVPair) -> None:
-        """Sub objects.
-
-        key: ExprType,
-        value: ExprType,
-        """
         for i in node.kid:
             if i.gen.jac == ":":
                 self.emit(node, f"{i.gen.jac} ")
@@ -1816,75 +1463,39 @@ class JacFormatPass(UniPass):
                 self.emit(node, i.gen.jac)
 
     def exit_k_w_pair(self, node: uni.KWPair) -> None:
-        """Sub objects.
-
-        key: ExprType,
-        value: ExprType,
-        """
         if node.key:
             self.emit(node, f"{node.key.gen.jac}={node.value.gen.jac}")
         else:
             self.emit(node, f"**{node.value.gen.jac}")
 
     def exit_disconnect_op(self, node: uni.DisconnectOp) -> None:
-        """Sub objects.
-
-        filter_cond: Optional[ExprType],
-        edge_dir: EdgeDir,
-        """
         for i in node.kid:
             self.emit(node, i.gen.jac)
 
     def exit_connect_op(self, node: uni.ConnectOp) -> None:
-        """Sub objects.
-
-        spawn: Optional[ExprType],
-        edge_dir: EdgeDir,
-        """
         for i in node.kid:
             self.emit(node, i.gen.jac)
 
     def exit_filter_compr(self, node: uni.FilterCompr) -> None:
-        """Sub objects.
-
-        compares: list[BinaryExpr],
-        """
         for i in node.kid:
             self.emit(node, i.gen.jac)
 
     def exit_assign_compr(self, node: uni.AssignCompr) -> None:
-        """Sub objects.
-
-        compares: list[BinaryExpr],
-        """
         for i in node.kid:
             self.emit(node, i.gen.jac)
 
     def exit_await_expr(self, node: uni.AwaitExpr) -> None:
-        """Sub objects.
-
-        target: ExprType,
-        """
         for i in node.kid:
-            self.emit(node, i.gen.jac)
+            if isinstance(i, uni.Token):
+                self.emit(node, f"{i.gen.jac} ")
+            else:
+                self.emit(node, i.gen.jac)
 
     def exit_revisit_stmt(self, node: uni.RevisitStmt) -> None:
-        """Sub objects.
-
-        hops: Optional[ExprType],
-        else_body: Optional[ElseStmt],
-        """
         for i in node.kid:
             self.emit(node, i.gen.jac)
 
     def exit_visit_stmt(self, node: uni.VisitStmt) -> None:
-        """Sub objects.
-
-        vis_type: Optional[SubTag[SubNodeList[Name]]],
-        target: ExprType,
-        else_body: Optional[ElseStmt],
-        from_walker: bool = False,
-        """
         for i in node.kid:
             if isinstance(
                 i,
@@ -1903,20 +1514,12 @@ class JacFormatPass(UniPass):
         self.emit_ln(node, "")
 
     def exit_ignore_stmt(self, node: uni.IgnoreStmt) -> None:
-        """Sub objects.
-
-        target: ExprType,
-        """
         if node.target:
             self.emit_ln(node, f"ignore {node.target.gen.jac};")
         else:
             self.emit_ln(node, "ignore;")
 
     def exit_return_stmt(self, node: uni.ReturnStmt) -> None:
-        """Sub objects.
-
-        expr: Optional[ExprType],
-        """
         start = True
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
@@ -1936,11 +1539,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_assert_stmt(self, node: uni.AssertStmt) -> None:
-        """Sub objects.
-
-        condition: ExprType,
-        error_msg: Optional[ExprType],
-        """
         start = True
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
@@ -1962,10 +1560,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_check_stmt(self, node: uni.CheckStmt) -> None:
-        """Sub objects.
-
-        target: ExprType,
-        """
         start = True
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
@@ -1988,10 +1582,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_ctrl_stmt(self, node: uni.CtrlStmt) -> None:
-        """Sub objects.
-
-        ctrl: Token,
-        """
         start = True
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
@@ -2013,10 +1603,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_delete_stmt(self, node: uni.DeleteStmt) -> None:
-        """Sub objects.
-
-        target: ExprType,
-        """
         start = True
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
@@ -2039,10 +1625,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_report_stmt(self, node: uni.ReportStmt) -> None:
-        """Sub objects.
-
-        expr: ExprType,
-        """
         start = True
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
@@ -2062,23 +1644,12 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_expr_as_item(self, node: uni.ExprAsItem) -> None:
-        """Sub objects.
-
-        expr: "ExprType",
-        alias: Optional[Token],
-        """
         if node.alias:
             self.emit(node, node.expr.gen.jac + " as " + node.alias.gen.jac)
         else:
             self.emit(node, node.expr.gen.jac)
 
     def exit_in_for_stmt(self, node: uni.InForStmt) -> None:
-        """Sub objects.
-
-        target: ExprType,
-        collection: ExprType,
-        body: SubNodeList[CodeBlockStmt],
-        """
         if (
             node.parent
             and node.parent.parent
@@ -2112,12 +1683,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_test(self, node: uni.Test) -> None:
-        """Sub objects.
-
-        name: Optional[Name],
-        doc: Optional[Token],
-        body: CodeBlock,
-        """
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
                 if i.is_inline:
@@ -2136,19 +1701,11 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_py_inline_code(self, node: uni.PyInlineCode) -> None:
-        """Sub objects.
-
-        code: Token,
-        """
         self.emit_ln(node, "::py::")
         self.emit_ln(node, node.code.value)
         self.emit_ln(node, "::py::")
 
     def exit_arch_ref_chain(self, node: uni.ArchRefChain) -> None:
-        """Sub objects.
-
-        archs: list[ArchRef],
-        """
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
                 if i.is_inline:
@@ -2168,18 +1725,9 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_typed_ctx_block(self, node: uni.TypedCtxBlock) -> None:
-        """Sub objects.
-
-        type_ctx: TypeList,
-        body: CodeBlock,
-        """
+        pass
 
     def exit_match_stmt(self, node: uni.MatchStmt) -> None:
-        """Sub objects.
-
-        target: ExprType
-        cases: list[MatchCase],
-        """
         start = True
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
@@ -2209,12 +1757,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_match_case(self, node: uni.MatchCase) -> None:
-        """Sub objects.
-
-        pattern: ExprType,
-        guard: Optional[ExprType],
-        body: list[CodeBlockStmt],
-        """
         start = True
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
@@ -2242,10 +1784,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_match_or(self, node: uni.MatchOr) -> None:
-        """Sub objects.
-
-        list[MatchPattern],
-        """
         start = True
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
@@ -2265,11 +1803,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_match_as(self, node: uni.MatchAs) -> None:
-        """Sub objects.
-
-        name: NameType,
-        pattern: MatchPattern,
-        """
         start = True
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
@@ -2290,7 +1823,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_match_wild(self, node: uni.MatchWild) -> None:
-        """Sub objects."""
         start = True
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
@@ -2311,10 +1843,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_match_value(self, node: uni.MatchValue) -> None:
-        """Sub objects.
-
-        value: ExprType,
-        """
         start = True
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
@@ -2335,17 +1863,9 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_match_singleton(self, node: uni.MatchSingleton) -> None:
-        """Sub objects.
-
-        value: Bool | Null,
-        """
         self.emit(node, node.value.gen.jac)
 
     def exit_match_sequence(self, node: uni.MatchSequence) -> None:
-        """Sub objects.
-
-        values: list[MatchPattern],
-        """
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
                 if i.is_inline:
@@ -2364,10 +1884,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_match_mapping(self, node: uni.MatchMapping) -> None:
-        """Sub objects.
-
-        values: list[MatchKVPair | MatchStar],
-        """
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
                 if i.is_inline:
@@ -2386,11 +1902,6 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_match_k_v_pair(self, node: uni.MatchKVPair) -> None:
-        """Sub objects.
-
-        key: MatchPattern | NameType,
-        value: MatchPattern,
-        """
         start = True
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
@@ -2411,20 +1922,9 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_match_star(self, node: uni.MatchStar) -> None:
-        """Sub objects.
-
-        name: NameType,
-        is_list: bool,
-        """
         self.emit(node, f"{'*' if node.is_list else '**'}{node.name.gen.jac}")
 
     def exit_match_arch(self, node: uni.MatchArch) -> None:
-        """Sub objects.
-
-        name: NameType,
-        arg_patterns: Optional[SubNodeList[MatchPattern]],
-        kw_patterns: Optional[SubNodeList[MatchKVPair]],
-        """
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
                 if i.is_inline:
@@ -2443,65 +1943,18 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_token(self, node: uni.Token) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        col_start: int,
-        col_end: int,
-        """
         self.emit(node, node.value)
 
     def exit_name(self, node: uni.Name) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        col_start: int,
-        col_end: int,
-        already_declared: bool,
-        is_kwesc: bool,
-        """
         self.emit(node, f"<>{node.value}" if node.is_kwesc else node.value)
 
     def exit_float(self, node: uni.Float) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        line: int,
-        col_start: int,
-        col_end: int,
-        pos_start: int,
-        pos_end: int,
-        """
         self.emit(node, node.value)
 
     def exit_int(self, node: uni.Int) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        line: int,
-        col_start: int,
-        col_end: int,
-        pos_start: int,
-        pos_end: int,
-        """
         self.emit(node, node.value)
 
     def exit_string(self, node: uni.String) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        line: int,
-        col_start: int,
-        col_end: int,
-        pos_start: int,
-        pos_end: int,
-        """
-        # if string is in docstring format and spans multiple lines turn into the multiple single quoted strings
         if "\n" in node.value and (
             node.parent
             and isinstance(node.parent, uni.Expr)
@@ -2532,61 +1985,19 @@ class JacFormatPass(UniPass):
             self.emit(node, node.value)
 
     def exit_bool(self, node: uni.Bool) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        line: int,
-        col_start: int,
-        col_end: int,
-        pos_start: int,
-        pos_end: int,
-        """
         self.emit(node, node.value)
 
     def exit_builtin_type(self, node: uni.BuiltinType) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        line: int,
-        col_start: int,
-        col_end: int,
-        pos_start: int,
-        pos_end: int,
-        """
         self.emit(node, node.value)
 
     def exit_null(self, node: uni.Null) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        line: int,
-        col_start: int,
-        col_end: int,
-        pos_start: int,
-        pos_end: int,
-        """
         self.emit(node, node.value)
 
     def exit_ellipsis(self, node: uni.Ellipsis) -> None:
-        """Sub objects.
-
-        name: str,
-        value: str,
-        line: int,
-        col_start: int,
-        col_end: int,
-        pos_start: int,
-        pos_end: int,
-        """
         self.emit(node, node.value)
 
     def exit_semi(self, node: uni.Semi) -> None:
-        """Sub objects."""
         self.emit(node, node.value)
 
     def exit_comment_token(self, node: uni.CommentToken) -> None:
-        """Sub objects."""
         self.emit(node, f"{node.value}")

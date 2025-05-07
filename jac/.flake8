@@ -1,5 +1,0 @@
-[flake8]
-exclude = fixtures, __jac_gen__, build, examples, venv, vendor, generated
-plugins = flake8_import_order, flake8_comprehensions, flake8_bugbear, flake8_annotations, pep8_naming, flake8_simplify
-max-line-length = 120
-ignore = E203, W503, ANN101, ANN102

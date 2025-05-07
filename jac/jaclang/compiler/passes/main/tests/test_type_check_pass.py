@@ -2,7 +2,7 @@
 
 from typing import List
 
-from jaclang.compiler.passes.main.schedules import CompilerMode as CMode
+from jaclang.compiler.passes.main import CompilerMode as CMode
 from jaclang.compiler.program import JacProgram
 from jaclang.utils.lang_tools import AstTool
 from jaclang.utils.test import TestCase
@@ -80,7 +80,8 @@ class MypyTypeCheckPassTests(TestCase):
 
         self.assertRegex(
             out,
-            r"128:5 - 128:25.*BinaryExpr \- Type\: jaclang.runtimelib.architype.WalkerArchitype",
+            r"128:5 - 128:25.*BinaryExpr \- Type\: "
+            + r"Union\[jaclang.runtimelib.architype.WalkerArchitype, concurrent.futures._base.Future\[Any\]\]",
         )
 
         self.assertRegex(

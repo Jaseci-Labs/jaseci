@@ -12,7 +12,7 @@ from typing import Optional
 
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.passes import UniPass
+from jaclang.compiler.passes import Transform, UniPass
 from jaclang.compiler.passes.main import SymTabBuildPass
 from jaclang.utils.log import logging
 
@@ -22,16 +22,15 @@ logger = logging.getLogger(__name__)
 
 # TODO: This pass finds imports dependencies, parses them, and adds them to
 # JacProgram's table, then table calls again if needed, should rename
-class JacImportPass(UniPass):
+class JacImportPass(Transform[uni.Module, uni.Module]):
     """Jac statically imports Jac modules."""
 
-    def enter_module(self, node: uni.Module) -> None:
+    def transform(self, ir_in: uni.Module) -> uni.Module:
         """Run Importer."""
-        self.cur_node = node
-        self.terminate()  # Turns off auto traversal for deliberate traversal
-        all_imports = self.get_all_sub_nodes(node, uni.ModulePath)
+        all_imports = UniPass.get_all_sub_nodes(ir_in, uni.ModulePath)
         for i in all_imports:
             self.process_import(i)
+        return ir_in
 
     def process_import(self, i: uni.ModulePath) -> None:
         """Process an import."""
@@ -43,7 +42,6 @@ class JacImportPass(UniPass):
         """Import a module."""
         from jaclang.compiler.passes.main import CompilerMode as CMode
 
-        self.cur_node = node  # impacts error reporting
         target = node.resolve_relative_path()
         # If the module is a package (dir)
         if os.path.isdir(target):
@@ -84,11 +82,20 @@ class JacImportPass(UniPass):
         """Import a module from a directory."""
         from jaclang.compiler.passes.main import CompilerMode as CMode
 
-        with_init = os.path.join(target, "__init__.jac")
-        if os.path.exists(with_init):
-            if with_init in self.prog.mod.hub:
-                return self.prog.mod.hub[with_init]
-            return self.prog.compile(file_path=with_init, mode=CMode.PARSE)
+        jac_init_path = os.path.join(target, "__init__.jac")
+        if os.path.exists(jac_init_path):
+            if jac_init_path in self.prog.mod.hub:
+                return self.prog.mod.hub[jac_init_path]
+            return self.prog.compile(file_path=jac_init_path, mode=CMode.PARSE)
+        elif os.path.exists(py_init_path := os.path.join(target, "__init__.py")):
+            with open(py_init_path, "r") as f:
+                file_source = f.read()
+                mod = uni.Module.make_stub(
+                    inject_name=target.split(os.path.sep)[-1],
+                    inject_src=uni.Source(file_source, py_init_path),
+                )
+                self.prog.mod.hub[py_init_path] = mod
+                return mod
         else:
             return uni.Module.make_stub(
                 inject_name=target.split(os.path.sep)[-1],
@@ -99,24 +106,11 @@ class JacImportPass(UniPass):
 class PyImportPass(JacImportPass):
     """Jac statically imports Python modules."""
 
-    def enter_module(self, node: uni.Module) -> None:
+    def transform(self, ir_in: uni.Module) -> uni.Module:
         """Run Importer."""
-        self.cur_node = node
-        self.terminate()  # Turns off auto traversal for deliberate traversal
-        all_imports = self.get_all_sub_nodes(node, uni.ModulePath)
-        for i in all_imports:
-            self.process_import(i)
-
-    def before_pass(self) -> None:
-        """Only run pass if settings are set to raise python."""
-        self.import_from_build_list: list[tuple[uni.Import, uni.Module]] = []
-        super().before_pass()
         self.__load_builtins()
-
-    def after_pass(self) -> None:
-        """Build symbol tables for import from nodes."""
-        # self.__import_from_symbol_table_build()
-        return super().after_pass()
+        self.import_from_build_list: list[tuple[uni.Import, uni.Module]] = []
+        return super().transform(ir_in)
 
     def process_import(self, i: uni.ModulePath) -> None:
         """Process an import."""

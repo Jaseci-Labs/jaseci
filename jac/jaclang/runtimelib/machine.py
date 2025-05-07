@@ -11,6 +11,7 @@ import sys
 import tempfile
 import types
 from collections import OrderedDict
+from concurrent.futures import Future
 from dataclasses import dataclass, field
 from functools import wraps
 from inspect import getfile
@@ -52,6 +53,7 @@ from jaclang.runtimelib.constructs import (
     NodeAnchor,
     NodeArchitype,
     Root,
+    WalkerAnchor,
     WalkerArchitype,
 )
 from jaclang.runtimelib.machinestate import ExecutionContext, JacMachineState
@@ -373,7 +375,7 @@ class JacWalker:
             raise TypeError("Invalid walker object")
 
     @staticmethod
-    def spawn(op1: Architype, op2: Architype) -> WalkerArchitype:
+    def spawn(op1: Architype, op2: Architype) -> Union[WalkerArchitype | Future]:
         """Jac's spawn operator feature."""
         if isinstance(op1, WalkerArchitype):
             warch = op1
@@ -396,85 +398,94 @@ class JacWalker:
         else:
             raise TypeError("Invalid walker object")
 
-        walker.path = []
-        walker.next = [node]
-        current_node = node.architype
+        def execute_ablity(
+            walker: WalkerAnchor, node: NodeAnchor, warch: WalkerArchitype
+        ) -> WalkerArchitype:
+            walker.path = []
+            walker.next = [node]
+            current_node = node.architype
 
-        # walker entry
-        for i in warch._jac_entry_funcs_:
-            if not i.trigger:
-                i.func(warch, current_node)
-            if walker.disengaged:
-                return warch
+            # walker entry
+            for i in warch._jac_entry_funcs_:
+                if not i.trigger:
+                    i.func(warch, current_node)
+                if walker.disengaged:
+                    return warch
 
-        while len(walker.next):
-            if current_node := walker.next.pop(0).architype:
-                # walker entry with
-                for i in warch._jac_entry_funcs_:
-                    if (
-                        i.trigger
-                        and all_issubclass(i.trigger, NodeArchitype)
-                        and isinstance(current_node, i.trigger)
-                    ):
-                        i.func(warch, current_node)
-                    if walker.disengaged:
-                        return warch
+            while len(walker.next):
+                if current_node := walker.next.pop(0).architype:
+                    # walker entry with
+                    for i in warch._jac_entry_funcs_:
+                        if (
+                            i.trigger
+                            and all_issubclass(i.trigger, NodeArchitype)
+                            and isinstance(current_node, i.trigger)
+                        ):
+                            i.func(warch, current_node)
+                        if walker.disengaged:
+                            return warch
 
-                # node entry
-                for i in current_node._jac_entry_funcs_:
-                    if not i.trigger:
-                        i.func(current_node, warch)
-                    if walker.disengaged:
-                        return warch
+                    # node entry
+                    for i in current_node._jac_entry_funcs_:
+                        if not i.trigger:
+                            i.func(current_node, warch)
+                        if walker.disengaged:
+                            return warch
 
-                # node entry with
-                for i in current_node._jac_entry_funcs_:
-                    if (
-                        i.trigger
-                        and all_issubclass(i.trigger, WalkerArchitype)
-                        and isinstance(warch, i.trigger)
-                    ):
-                        i.func(current_node, warch)
-                    if walker.disengaged:
-                        return warch
+                    # node entry with
+                    for i in current_node._jac_entry_funcs_:
+                        if (
+                            i.trigger
+                            and all_issubclass(i.trigger, WalkerArchitype)
+                            and isinstance(warch, i.trigger)
+                        ):
+                            i.func(current_node, warch)
+                        if walker.disengaged:
+                            return warch
 
-                # node exit with
-                for i in current_node._jac_exit_funcs_:
-                    if (
-                        i.trigger
-                        and all_issubclass(i.trigger, WalkerArchitype)
-                        and isinstance(warch, i.trigger)
-                    ):
-                        i.func(current_node, warch)
-                    if walker.disengaged:
-                        return warch
+                    # node exit with
+                    for i in current_node._jac_exit_funcs_:
+                        if (
+                            i.trigger
+                            and all_issubclass(i.trigger, WalkerArchitype)
+                            and isinstance(warch, i.trigger)
+                        ):
+                            i.func(current_node, warch)
+                        if walker.disengaged:
+                            return warch
 
-                # node exit
-                for i in current_node._jac_exit_funcs_:
-                    if not i.trigger:
-                        i.func(current_node, warch)
-                    if walker.disengaged:
-                        return warch
+                    # node exit
+                    for i in current_node._jac_exit_funcs_:
+                        if not i.trigger:
+                            i.func(current_node, warch)
+                        if walker.disengaged:
+                            return warch
 
-                # walker exit with
-                for i in warch._jac_exit_funcs_:
-                    if (
-                        i.trigger
-                        and all_issubclass(i.trigger, NodeArchitype)
-                        and isinstance(current_node, i.trigger)
-                    ):
-                        i.func(warch, current_node)
-                    if walker.disengaged:
-                        return warch
-        # walker exit
-        for i in warch._jac_exit_funcs_:
-            if not i.trigger:
-                i.func(warch, current_node)
-            if walker.disengaged:
-                return warch
+                    # walker exit with
+                    for i in warch._jac_exit_funcs_:
+                        if (
+                            i.trigger
+                            and all_issubclass(i.trigger, NodeArchitype)
+                            and isinstance(current_node, i.trigger)
+                        ):
+                            i.func(warch, current_node)
+                        if walker.disengaged:
+                            return warch
+            # walker exit
+            for i in warch._jac_exit_funcs_:
+                if not i.trigger:
+                    i.func(warch, current_node)
+                if walker.disengaged:
+                    return warch
 
-        walker.ignores = []
-        return warch
+            walker.ignores = []
+            return warch
+
+        if hasattr(warch, "__is_async__") and warch.__is_async__:
+            machine = JacMachine.py_get_jac_machine()
+            return machine.pool.submit(execute_ablity, walker, node, warch)
+        else:
+            return execute_ablity(walker, node, warch)
 
     @staticmethod
     def disengage(walker: WalkerArchitype) -> bool:
@@ -625,7 +636,7 @@ class JacBasics:
 
             if loaded_anchor := mem.find_by_id(anchor.id):
                 deleted_count += 1
-                JacMachine.destroy(loaded_anchor)
+                JacMachine.destroy([loaded_anchor])
 
         return deleted_count
 
@@ -988,7 +999,7 @@ class JacBasics:
                         and JacMachine.check_connect_access(target)
                     ):
                         (
-                            JacMachine.destroy(anchor)
+                            JacMachine.destroy([anchor])
                             if anchor.persistent
                             else JacMachine.detach(anchor)
                         )
@@ -1000,7 +1011,7 @@ class JacBasics:
                         and JacMachine.check_connect_access(source)
                     ):
                         (
-                            JacMachine.destroy(anchor)
+                            JacMachine.destroy([anchor])
                             if anchor.persistent
                             else JacMachine.detach(anchor)
                         )
@@ -1083,23 +1094,25 @@ class JacBasics:
                 pass
 
     @staticmethod
-    def destroy(
-        obj: Architype | Anchor,
-    ) -> None:
-        """Destroy object."""
-        anchor = obj.__jac__ if isinstance(obj, Architype) else obj
+    def destroy(objs: Architype | Anchor | list[Architype | Anchor]) -> None:
+        """Destroy multiple objects passed in a tuple or list."""
+        obj_list = objs if isinstance(objs, list) else [objs]
+        for obj in obj_list:
+            if not isinstance(obj, (Architype, Anchor)):
+                return
+            anchor = obj.__jac__ if isinstance(obj, Architype) else obj
 
-        if JacMachine.check_write_access(anchor):
-            match anchor:
-                case NodeAnchor():
-                    for edge in anchor.edges:
-                        JacMachine.destroy(edge)
-                case EdgeAnchor():
-                    JacMachine.detach(anchor)
-                case _:
-                    pass
+            if JacMachine.check_write_access(anchor):
+                match anchor:
+                    case NodeAnchor():
+                        for edge in anchor.edges[:]:
+                            JacMachine.destroy([edge])
+                    case EdgeAnchor():
+                        JacMachine.detach(anchor)
+                    case _:
+                        pass
 
-            JacMachine.get_context().mem.remove(anchor.id)
+                JacMachine.get_context().mem.remove(anchor.id)
 
     @staticmethod
     def entry(func: Callable) -> Callable:
@@ -1468,6 +1481,11 @@ class JacUtils:
         if module:
             return getattr(module, architype_name, None)
         return None
+
+    @staticmethod
+    def await_obj(obj: Any) -> Any:  # noqa: ANN401
+        """Await an object if it is a coroutine or async or future function."""
+        return obj.result()
 
 
 class JacMachine(

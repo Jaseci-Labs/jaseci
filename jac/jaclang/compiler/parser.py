@@ -10,7 +10,7 @@ from typing import Callable, TYPE_CHECKING, TypeAlias, TypeVar
 import jaclang.compiler.unitree as uni
 from jaclang.compiler import jac_lark as jl  # type: ignore
 from jaclang.compiler.constant import EdgeDir, Tokens as Tok
-from jaclang.compiler.passes.ast_pass import Transform
+from jaclang.compiler.passes.uni_pass import Transform
 from jaclang.vendor.lark import Lark, Transformer, Tree, logger
 
 if TYPE_CHECKING:
@@ -507,6 +507,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             archspec: uni.ArchSpec | uni.ArchDef | uni.Enum | uni.EnumDef | None = None
 
             decorators = self.match(uni.SubNodeList)
+            is_async = self.match_token(Tok.KW_ASYNC)
             if decorators is not None:
                 archspec = self.consume(uni.ArchSpec)
                 archspec.decorators = decorators
@@ -518,6 +519,13 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     or self.match(uni.Enum)
                     or self.consume(uni.EnumDef)
                 )
+            if is_async and isinstance(archspec, uni.ArchSpec):
+                archspec.is_async = True
+                archspec.add_kids_left([is_async])
+                assert isinstance(archspec, uni.Architype)
+                assert (
+                    archspec.arch_type.name == Tok.KW_WALKER
+                ), f"Expected async architype to be walker, but got {archspec.arch_type.value}"
             return archspec
 
         def architype_decl(self, _: None) -> uni.ArchSpec:

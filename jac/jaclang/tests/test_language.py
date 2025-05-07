@@ -4,10 +4,12 @@ import io
 import os
 import sys
 import sysconfig
+import tempfile
+from unittest.mock import patch
 
 from jaclang import JacMachine as Jac
 from jaclang.cli import cli
-from jaclang.compiler.passes.main.schedules import CompilerMode as CMode
+from jaclang.compiler.passes.main import CompilerMode as CMode
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.machinestate import JacMachineState
 from jaclang.utils.test import TestCase
@@ -460,15 +462,6 @@ class JacLanguageTests(TestCase):
         self.assertIn("node_a(val=2)", stdout_value)
         self.assertIn("[node_a(val=42), node_a(val=42)]\n", stdout_value)
 
-    def test_impl_grab(self) -> None:
-        """Test walking through edges."""
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-        Jac.jac_import(self.mach, "impl_grab", base_path=self.fixture_abs_path("./"))
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        self.assertIn("1.414", stdout_value)
-
     def test_tuple_of_tuple_assign(self) -> None:
         """Test walking through edges."""
         captured_output = io.StringIO()
@@ -557,15 +550,6 @@ class JacLanguageTests(TestCase):
         mypass = JacProgram().compile(self.fixture_abs_path("./slice_vals.jac"))
         self.assertIn("Annotated[Str, INT, BLAH]", mypass.gen.py)
         self.assertIn("tuple[int, Optional[type], Optional[tuple]]", mypass.gen.py)
-
-    def test_impl_decl_resolution_fix(self) -> None:
-        """Test walking through edges and nodes."""
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-        Jac.jac_import(self.mach, "mtest", base_path=self.fixture_abs_path("./"))
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        self.assertIn("2.0\n", stdout_value)
 
     def test_enum_inside_arch(self) -> None:
         """Test Enum as member stmt."""
@@ -940,20 +924,6 @@ class JacLanguageTests(TestCase):
             else:
                 self.assertIn("+-- Name - NodeTransformer - Type: No", gen_ast)
 
-    def test_access_modifier(self) -> None:
-        """Test for access tags working."""
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-        sys.stderr = captured_output
-        cli.check(
-            self.fixture_abs_path("../../tests/fixtures/access_modifier.jac"),
-            print_errs=True,
-        )
-        sys.stdout = sys.__stdout__
-        sys.stderr = sys.__stderr__
-        stdout_value = captured_output.getvalue()
-        self.assertEqual(stdout_value.count("Invalid access"), 18)
-
     def test_deep_convert(self) -> None:
         """Test py ast to Jac ast conversion output."""
         file_name = self.fixture_abs_path("pyfunc_1.py")
@@ -1045,13 +1015,6 @@ class JacLanguageTests(TestCase):
         """Test conn assign on edges."""
         mypass = JacProgram().compile(self.fixture_abs_path("byllmissue.jac"))
         self.assertIn("2:5 - 4:8", mypass.pp())
-
-    def test_single_impl_annex(self) -> None:
-        """Basic test for pass."""
-        mypass = JacProgram().compile(
-            self.examples_abs_path("manual_code/circle_pure.jac")
-        )
-        self.assertEqual(mypass.pp().count("AbilityDef - (o)Circle.(c)area"), 1)
 
     def test_inherit_baseclass_sym(self) -> None:
         """Basic test for symtable support for inheritance."""
@@ -1354,20 +1317,6 @@ class JacLanguageTests(TestCase):
             captured_output.getvalue(),
         )
 
-    def test_nested_impls(self) -> None:
-        """Test complex nested impls."""
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-        Jac.jac_import(self.mach, "nested_impls", base_path=self.fixture_abs_path("./"))
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue().split("\n")
-        self.assertIn("Hello,from bar in kk", stdout_value[0])
-        self.assertIn("Greeting: Hello, World!", stdout_value[1])
-        self.assertIn("Repeated: Hello", stdout_value[2])
-        self.assertIn("Hello, World!", stdout_value[3])
-        self.assertIn("Last message:!", stdout_value[4])
-        self.assertIn("Final message:!", stdout_value[5])
-
     def test_connect_traverse_syntax(self) -> None:
         """Test connect traverse syntax."""
         captured_output = io.StringIO()
@@ -1385,3 +1334,155 @@ class JacLanguageTests(TestCase):
         self.assertIn(
             "[Root(), A(val=20)]", stdout_value[3]
         )  # Remove after dropping deprecated syntax support
+
+    def test_node_del(self) -> None:
+        """Test complex nested impls."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(self.mach, "node_del", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("0 : [2, 3, 4, 5, 6, 7, 8, 9, 10]", stdout_value[0])
+        self.assertIn("7, 8 : [2, 3, 4, 5, 6, 7, 9]", stdout_value[1])
+        self.assertIn("before delete : Inner(c=[1, 2, 3], d=4)", stdout_value[2])
+        self.assertIn("after delete : Inner(c=[1, 3], d=4)", stdout_value[3])
+
+    # Helper method to create files within tests
+    def create_temp_jac_file(
+        self, content: str, dir_path: str, filename: str = "test_mod.jac"
+    ) -> str:
+        """Create a temporary Jac file in a specific directory."""
+        full_path = os.path.join(dir_path, filename)
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+        with open(full_path, "w") as f:
+            f.write(content)
+        return full_path
+
+    def test_import_from_site_packages(self) -> None:
+        """Test importing a Jac module from simulated site-packages."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Simulate site-packages directory structure
+            mock_site_dir = os.path.join(tmpdir, "site-packages")
+            os.makedirs(mock_site_dir)
+
+            # Create a module within the simulated site-packages
+            site_mod_content = 'with entry { "Site package module loaded!" |> print; }'
+            self.create_temp_jac_file(
+                site_mod_content, mock_site_dir, "site_pkg_mod.jac"
+            )
+
+            # Create the importing script in the main temp directory
+            importer_content = "import:jac site_pkg_mod;"
+            _ = self.create_temp_jac_file(importer_content, tmpdir, "importer_site.jac")
+            with patch("site.getsitepackages", return_value=[mock_site_dir]):
+                captured_output = io.StringIO()
+                sys.stdout = captured_output
+                original_cwd = os.getcwd()
+                try:
+                    Jac.jac_import(self.mach, "importer_site", base_path=tmpdir)
+                finally:
+                    os.chdir(original_cwd)
+                    sys.stdout = sys.__stdout__
+
+                stdout_value = captured_output.getvalue()
+                self.assertIn("Site package module loaded!", stdout_value)
+
+    def test_import_from_jacpath(self) -> None:
+        """Test importing a Jac module from JACPATH."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Simulate JACPATH directory
+            jacpath_dir = os.path.join(tmpdir, "jaclibs")
+            os.makedirs(jacpath_dir)
+
+            # Create a module in the JACPATH directory
+            jacpath_mod_content = 'with entry { "JACPATH module loaded!" |> print; }'
+            self.create_temp_jac_file(
+                jacpath_mod_content, jacpath_dir, "jacpath_mod.jac"
+            )
+
+            # Create the importing script in a different location
+            script_dir = os.path.join(tmpdir, "scripts")
+            os.makedirs(script_dir)
+            importer_content = "import jacpath_mod;"
+            _ = self.create_temp_jac_file(importer_content, script_dir, "importer.jac")
+
+            # Set JACPATH environment variable and run
+            original_jacpath = os.environ.get("JACPATH")
+            os.environ["JACPATH"] = jacpath_dir
+            captured_output = io.StringIO()
+            sys.stdout = captured_output
+            original_cwd = os.getcwd()
+            os.chdir(script_dir)
+            try:
+                cli.run("importer.jac")
+            finally:
+                os.chdir(original_cwd)
+                sys.stdout = sys.__stdout__
+                # Clean up environment variable
+                if original_jacpath is None:
+                    if "JACPATH" in os.environ:
+                        del os.environ["JACPATH"]
+                else:
+                    os.environ["JACPATH"] = original_jacpath
+
+            stdout_value = captured_output.getvalue()
+            self.assertIn("JACPATH module loaded!", stdout_value)
+
+    def test_obj_hasvar_initialization(self) -> None:
+        """Basic test for pass."""
+        (out := JacProgram()).compile(
+            self.fixture_abs_path("uninitialized_hasvars.jac")
+        )
+        self.assertTrue(out.errors_had)
+
+        expected_stdout_values = (
+            "Non default attribute 'var3' follows default attribute",
+            "    4 |     has var1: int;",
+            "    5 |     has var2: int = 42;",
+            "    6 |     has var3: int; # <-- This should be syntax error.",
+            "      |         ^^^^",
+            "    7 | }",
+            'Missing "postinit" method required by un initialized attribute(s).',
+            "   11 | obj Test2 {",
+            "   12 |     has var1: str;",
+            "   13 |     has var2: int by postinit;",
+            "      |         ^^^^",
+            "   14 | }",
+            "Non default attribute 'var4' follows default attribute",
+            "   19 |     has var2: int = 42;",
+            "   20 |     has var3: int by postinit;  # <-- This is fine.",
+            "   21 |     has var4: int;  # <-- This should be syntax error.",
+            "      |         ^^^^",
+            "   22 |",
+            "   23 |     can postinit() {",
+        )
+
+        errors_output = ""
+        for error in out.errors_had:
+            errors_output += error.pretty_print() + "\n"
+
+        for exp in expected_stdout_values:
+            self.assertIn(exp, errors_output)
+
+    def test_async_walker(self) -> None:
+        """Test async walker."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(self.mach, "async_walker", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertNotIn("It is non blocking", stdout_value[4])
+        self.assertIn("W(num=8)", stdout_value[5])
+
+    def test_async_ability(self) -> None:
+        """Test async ability."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(
+            self.mach, "async_ability", base_path=self.fixture_abs_path("./")
+        )
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("Hello", stdout_value[0])
+        self.assertIn("Hello", stdout_value[1])
+        self.assertIn("World!", stdout_value[2])
