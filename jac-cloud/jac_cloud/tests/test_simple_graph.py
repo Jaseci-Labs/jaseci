@@ -18,24 +18,55 @@ from ..jaseci.datasources import Collection
 class SimpleGraphTest(JacCloudTest):
     """JacLang Jaseci Feature Tests."""
 
-    def setUp(self) -> None:
-        """Override setUp."""
-        self.directory = Path(__file__).parent
-        self.run_server(
-            f"{self.directory}/simple_graph.jac", envs={"SHOW_ENDPOINT_RETURNS": "true"}
-        )
+    # Class variables to store shared state
+    _shared_state = None
 
-        Collection.__client__ = None
-        Collection.__database__ = None
-        self.client = Collection.get_client()
-        self.q_node = Collection.get_collection("node")
-        self.q_edge = Collection.get_collection("edge")
-        self.q_walker = Collection.get_collection("walker")
+    def setUp(self) -> None:
+        """Set up once before all tests."""
+        # If this is the first test, initialize the shared state
+        if SimpleGraphTest._shared_state is None:
+            # Initialize the test
+            self.directory = Path(__file__).parent
+            self.run_server(
+                f"{self.directory}/simple_graph.jac",
+                envs={"SHOW_ENDPOINT_RETURNS": "true"},
+            )
+
+            Collection.__client__ = None
+            Collection.__database__ = None
+            self.client = Collection.get_client()
+            self.q_node = Collection.get_collection("node")
+            self.q_edge = Collection.get_collection("edge")
+            self.q_walker = Collection.get_collection("walker")
+
+            # Store all instance variables in shared state
+            SimpleGraphTest._shared_state = {
+                "directory": self.directory,
+                "host": self.host,
+                "database": self.database,
+                "users": self.users,
+                "client": self.client,
+                "q_node": self.q_node,
+                "q_edge": self.q_edge,
+                "q_walker": self.q_walker,
+                "root_id_prefix": self.root_id_prefix,
+                "server": self.server,
+            }
+        else:
+            # Copy shared state to this instance
+            for key, value in SimpleGraphTest._shared_state.items():
+                setattr(self, key, value)
 
     def tearDown(self) -> None:
-        """Override tearDown."""
-        self.client.drop_database(self.database)
-        self.stop_server()
+        """Tear down after the last test."""
+        # Only run teardown after the last test
+        if (
+            self._testMethodName == "test_17_task_creation_and_scheduled_walker"
+            and SimpleGraphTest._shared_state is not None
+        ):
+            self.client.drop_database(self.database)
+            self.stop_server()
+            SimpleGraphTest._shared_state = None
 
     def trigger_openapi_specs_test(self) -> None:
         """Test OpenAPI Specs."""
@@ -995,23 +1026,28 @@ class SimpleGraphTest(JacCloudTest):
                 walker,
             )
 
-    def test_all_features(self) -> None:
-        """Test Full Features."""
+    # Individual test methods for each feature
+
+    def test_01_openapi_specs(self) -> None:
+        """Test OpenAPI Specs."""
         self.trigger_openapi_specs_test()
 
+    def test_02_create_users(self) -> None:
+        """Test User Creation."""
         self.trigger_create_user_test()
         self.trigger_create_user_test(suffix="2")
         self.trigger_create_user_test(suffix="3")
 
+    def test_03_basic_graph_operations(self) -> None:
+        """Test basic graph operations."""
         self.trigger_create_graph_test()
         self.trigger_traverse_graph_test()
         self.trigger_detach_node_test()
         self.trigger_update_graph_test()
 
-        ###################################################
-        #                   VIA DETACH                    #
-        ###################################################
-
+    def test_04_nested_node_via_detach(self) -> None:
+        """Test nested node operations via detach."""
+        # VIA DETACH
         self.nested_count_should_be(node=0, edge=0)
 
         self.trigger_create_nested_node_test()
@@ -1028,10 +1064,9 @@ class SimpleGraphTest(JacCloudTest):
         self.trigger_detach_nested_node_test(manual=True)
         self.nested_count_should_be(node=0, edge=0)
 
-        ###################################################
-        #                   VIA DESTROY                   #
-        ###################################################
-
+    def test_05_nested_node_via_destroy(self) -> None:
+        """Test nested node operations via destroy."""
+        # VIA DESTROY
         self.trigger_create_nested_node_test()
         self.nested_count_should_be(node=1, edge=1)
 
@@ -1044,6 +1079,8 @@ class SimpleGraphTest(JacCloudTest):
         self.trigger_delete_nested_node_test(manual=True)
         self.nested_count_should_be(node=0, edge=0)
 
+    def test_06_nested_edge_operations(self) -> None:
+        """Test nested edge operations."""
         self.trigger_create_nested_node_test()
         self.nested_count_should_be(node=1, edge=1)
 
@@ -1058,6 +1095,8 @@ class SimpleGraphTest(JacCloudTest):
         self.trigger_delete_nested_edge_test(manual=True)
         self.nested_count_should_be(node=1, edge=0)
 
+    def test_07_access_validation(self) -> None:
+        """Test access validation."""
         self.trigger_access_validation_test(give_access_to_full_graph=False)
         self.trigger_access_validation_test(give_access_to_full_graph=True)
 
@@ -1068,64 +1107,48 @@ class SimpleGraphTest(JacCloudTest):
             give_access_to_full_graph=True, via_all=True
         )
 
-        ###################################################
-        #                  CUSTOM STATUS                  #
-        ###################################################
-
+    def test_08_custom_status_code(self) -> None:
+        """Test custom status code."""
         self.trigger_custom_status_code()
 
-        ###################################################
-        #                  CUSTOM REPORT                  #
-        ###################################################
-
+    def test_09_custom_report(self) -> None:
+        """Test custom report."""
         self.trigger_custom_report()
 
-        ###################################################
-        #                   FILE UPLOAD                   #
-        ###################################################
-
+    def test_10_file_upload(self) -> None:
+        """Test file upload."""
         self.trigger_upload_file()
 
-        ###################################################
-        #                   TEST PURGER                   #
-        ###################################################
-
+    def test_11_reset_graph(self) -> None:
+        """Test graph reset."""
         self.trigger_reset_graph()
 
-        ###################################################
-        #                 TEST MEMORY SYNC                #
-        ###################################################
-
+    def test_12_memory_sync(self) -> None:
+        """Test memory sync."""
         self.trigger_memory_sync()
 
-        ###################################################
-        #                 SAVABLE OBJECT                  #
-        ###################################################
-
+    def test_13_savable_object(self) -> None:
+        """Test savable object operations."""
         obj_id = self.trigger_create_custom_object_test()
         self.trigger_update_custom_object_test(obj_id)
         self.trigger_delete_custom_object_test(obj_id)
 
-        ###################################################
-        #                  VISIT SEQUENCE                 #
-        ###################################################
-
+    def test_14_visit_sequence(self) -> None:
+        """Test visit sequence."""
         self.trigger_visit_sequence()
 
-        ###################################################
-        #                     WEBHOOK                     #
-        ###################################################
-
+    def test_15_webhook(self) -> None:
+        """Test webhook."""
         self.trigger_webhook_test()
 
-        ###################################################
-        #     CHECKING NESTED REQUEST PAYLOAD TYPINGS     #
-        ###################################################
-
+    def test_16_nested_request_payload(self) -> None:
+        """Test nested request payload."""
         self.trigger_nested_request_payload_test()
 
         ##################################################
         #              TASK CREATION TESTS               #
         ##################################################
 
+    def test_17_task_creation_and_scheduled_walker(self) -> None:
+        """Test task creation and scheduled walker."""
         self.trigger_task_creation_and_scheduled_walker()
