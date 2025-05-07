@@ -1,25 +1,37 @@
-name: Release VSCE
+name: Release VSCE Extension
 
 on:
   workflow_dispatch:
 
 jobs:
   release-vsce:
+    runs-on: ubuntu-latest
     permissions:
       contents: write
       issues: write
       pull-requests: write
-    runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: 20
-      - run: |
-          cd jac/support/vscode_ext/jac/
+          cache: 'npm'
+
+      - name: Install vsce globally
+        run: npm install --global @vscode/vsce
+
+      - name: Install Dependencies & Package Extension
+        working-directory: jac/support/vscode_ext/jac/
+        run: |
           npm ci
-          npm run vsce-package
-          npm install --global @vscode/vsce
-          vsce publish -p $VSCE_TOKEN
+          vsce package
+
+      - name: Publish to VS Code Marketplace
+        working-directory: jac/support/vscode_ext/jac/
+        run: vsce publish -p $VSCE_TOKEN
         env:
           VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
