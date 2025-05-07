@@ -1,6 +1,6 @@
 {
   "name": "jaclang-extension",
-  "version": "0.35.1",
+  "version": "2025.5.7",
   "displayName": "%extension.displayName%",
   "description": "%extension.description%",
   "publisher": "jaseci-labs",
@@ -9,7 +9,7 @@
   "homepage": "https://www.jac-lang.org/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Jaseci-Labs/jaclang/support/vscode_ext/jac"
+    "url": "https://github.com/Jaseci-Labs/jaseci/tree/main/jac/support/vscode_ext/jac"
   },
   "galleryBanner": {
     "color": "#1e415e",
