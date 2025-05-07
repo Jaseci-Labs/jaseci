@@ -65,7 +65,7 @@ class JacCmd:
                 mach.exec_ctx.close()
                 raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
-            FastAPI.start(host=host, port=port)
+            FastAPI.start(mach=mach, host=host, port=port)
             mach.exec_ctx.close()
 
         @cmd_registry.register

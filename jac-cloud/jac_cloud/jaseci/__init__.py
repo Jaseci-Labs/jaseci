@@ -12,6 +12,8 @@ from fastapi import FastAPI as _FaststAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
 
+from jaclang.runtimelib.machinestate import JacMachineState
+
 
 from uvicorn import run as _run
 from uvicorn.config import (
@@ -32,6 +34,7 @@ class FastAPI:
 
     __app__ = None
     __is_enabled__: bool = False
+    __jac_mach__: JacMachineState
 
     @staticmethod
     def enable() -> None:
@@ -121,12 +124,14 @@ class FastAPI:
     @classmethod
     def start(
         cls,
+        mach: JacMachineState,
         host: str | None = None,
         port: int | None = None,
         emailer: type[Emailer] | None = None,
         **kwargs: Any,  # noqa ANN401
     ) -> None:
         """Run FastAPI Handler via Uvicorn."""
+        cls.__jac_mach__ = mach
         if emailer:
             emailer.start()
         _run(

@@ -1085,8 +1085,27 @@ walker walker_cron {
                 "kwarg2": "40"
             },
             "save": True,
-            "second": "*",
+            "second": "0",
         };
+    }
+}
+
+# ------------------------------------------------------------- #
+#################################################################
+
+#################################################################
+#                          ASYNC WALKER                         #
+# ------------------------------------------------------------- #
+
+async walker async_walker {
+    has arg1: int;
+    has arg2: str;
+    has kwarg1: int = 3;
+    has kwarg2: str = "4";
+    has done: bool = False;
+
+    can enter with `root entry {
+        self.done = True;
     }
 }
 

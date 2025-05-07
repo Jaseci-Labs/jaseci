@@ -182,6 +182,7 @@ class Schedule:
 
     status: ScheduleStatus = ScheduleStatus.PENDING
     node_id: str | None = None
+    root_id: str | None = None
     execute_date: datetime | None = None
     executed_date: datetime | None = None
     http_status: int | None = None
