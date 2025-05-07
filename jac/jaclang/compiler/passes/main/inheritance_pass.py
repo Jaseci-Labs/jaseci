@@ -1,4 +1,16 @@
-"""Pass used to add the inherited symbols for architypes."""
+"""Inheritance Resolution Pass for the Jac compiler.
+
+This pass handles the inheritance relationships between architypes by:
+
+1. Identifying base classes for each architype in the program
+2. Resolving the inheritance hierarchy, including multi-level inheritance
+3. Populating derived class symbol tables with symbols from their base classes
+4. Handling special cases like Python base classes and index slice expressions
+5. Ensuring proper symbol visibility according to inheritance rules
+
+This pass is essential for object-oriented features in Jac, allowing derived classes
+to access methods and attributes defined in their parent classes.
+"""
 
 from __future__ import annotations
 

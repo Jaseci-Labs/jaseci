@@ -1,7 +1,13 @@
-"""Control flow graph build pass.
+"""Control flow graph build pass for the Jac compiler.
 
-This pass builds the control flow graph for the Jac program by filling in  details in BasicBlockStmt.
-These nodes will be linked together in the CFG pass.
+This pass constructs a control flow graph (CFG) representation of the program by:
+1. Identifying basic blocks (sequences of statements with a single entry and exit point)
+2. Establishing control flow relationships between these blocks
+3. Tracking loop structures and maintaining proper nesting relationships
+4. Building connections between statements that affect control flow (conditionals, loops, etc.)
+
+The CFG provides a foundation for data flow analysis, optimization, and understanding program execution paths.
+The pass also includes functionality to coalesce basic blocks and generate visual representations of the CFG.
 """
 
 import jaclang.compiler.unitree as uni

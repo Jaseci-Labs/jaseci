@@ -1,4 +1,16 @@
-"""Lark parser for Jac Lang."""
+"""Python AST to Jac AST Conversion Pass for the Jac compiler.
+
+This pass transforms Python AST nodes into equivalent Jac AST nodes by:
+
+1. Converting Python modules, classes, functions, and expressions to their Jac equivalents
+2. Preserving source location information and symbol relationships
+3. Handling Python-specific constructs and adapting them to Jac's object model
+4. Supporting both standard Python modules and type stub (.pyi) files
+5. Creating appropriate symbol tables and scopes for the converted nodes
+
+This pass is crucial for Python interoperability, allowing Python code to be imported
+and used within Jac programs while maintaining type information and semantic relationships.
+"""
 
 from __future__ import annotations
 

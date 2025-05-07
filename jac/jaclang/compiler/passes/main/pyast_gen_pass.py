@@ -1,7 +1,21 @@
-"""Jac Blue pass for Jaseci Ast.
+"""Python AST Generation Pass for the Jac compiler.
 
-At the end of this pass a meta['py_code'] is present with pure python code
-in each node. Module nodes contain the entire module code.
+This pass transforms the Jac AST into equivalent Python AST by:
+
+1. Traversing the Jac AST and generating corresponding Python AST nodes
+2. Handling all Jac language constructs and translating them to Python equivalents:
+   - Classes, functions, and methods
+   - Control flow statements (if/else, loops, try/except)
+   - Data structures (lists, dictionaries, sets)
+   - Special Jac features (walkers, abilities, architypes)
+   - Data spatial operations (node/edge connections)
+
+3. Managing imports and dependencies between modules
+4. Preserving source location information for error reporting
+5. Generating appropriate Python code for Jac-specific constructs
+
+The output of this pass is a complete Python AST representation that can be
+compiled to Python bytecode or serialized to Python source code.
 """
 
 import ast as ast3

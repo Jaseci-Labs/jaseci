@@ -1,7 +1,16 @@
-"""Integrate mypy infrastructure into Jac.
+"""Type Checking Pass for the Jac compiler.
 
-This is used to call mypy type checking into Jac files by integrating
-mypy apis into Jac and use jac py ast in it.
+This pass integrates the mypy type checking system with Jac by:
+
+1. Setting up mypy's type checking infrastructure for Jac code
+2. Converting Jac's Python AST representation to mypy's internal format
+3. Running mypy's type checking algorithms on the converted AST
+4. Collecting type errors and warnings for reporting to the user
+5. Building dependency maps between modules for proper cross-module type checking
+6. Supporting both standard library and user-defined types
+
+This pass ensures type safety in Jac programs by leveraging mypy's sophisticated
+static type analysis capabilities while adapting them to Jac's specific language features.
 """
 
 import os

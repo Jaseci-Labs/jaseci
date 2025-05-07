@@ -1,4 +1,16 @@
-"""JacAnnexManager handles the loading of annex modules."""
+"""Annex module loading pass for the Jac compiler.
+
+This pass handles the discovery, loading, and attachment of annex modules to their base modules.
+Annex modules are specialized extension files (.impl.jac and .test.jac) that provide
+implementations or tests for a base module. The pass:
+
+1. Identifies annex files related to the current module
+2. Compiles these annex modules
+3. Attaches them to the appropriate base module
+4. Maintains proper relationships between base modules and their annexes
+
+This enables the separation of interface and implementation, as well as test code organization.
+"""
 
 from __future__ import annotations
 
