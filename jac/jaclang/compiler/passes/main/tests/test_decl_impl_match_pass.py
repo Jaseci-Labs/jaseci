@@ -139,3 +139,12 @@ class DeclImplMatchPassTests(TestCase):
         self.assertIn("Hello, World!", stdout_value[3])
         self.assertIn("Last message:!", stdout_value[4])
         self.assertIn("Final message:!", stdout_value[5])
+
+    def test_abstraction_bug(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.run(self.fixture_abs_path("atest.jac"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value, "42\n")

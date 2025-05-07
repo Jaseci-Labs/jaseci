@@ -1486,7 +1486,10 @@ class JacFormatPass(UniPass):
 
     def exit_await_expr(self, node: uni.AwaitExpr) -> None:
         for i in node.kid:
-            self.emit(node, i.gen.jac)
+            if isinstance(i, uni.Token):
+                self.emit(node, f"{i.gen.jac} ")
+            else:
+                self.emit(node, i.gen.jac)
 
     def exit_visit_stmt(self, node: uni.VisitStmt) -> None:
         for i in node.kid:

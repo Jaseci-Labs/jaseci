@@ -5,6 +5,7 @@ import {
     ServerOptions
 } from 'vscode-languageclient/node';
 import * as path from 'path';
+import { findPythonEnvsWithJac } from './utils';
 import * as fs from 'fs';
 
 import {
@@ -13,6 +14,7 @@ import {
 } from './visual_debugger/visdbg';
 
 let client: LanguageClient;
+let jacEnvStatusBarItem: vscode.StatusBarItem;
 
 function getCondaEnvironment(): string | undefined {
     const condaPath = process.env.CONDA_PREFIX;
@@ -41,6 +43,43 @@ function getVenvEnvironment(): string | undefined {
     return undefined;
 }
 
+function updateStatusBarLabel(envPath: string | undefined) {
+    if (!jacEnvStatusBarItem) return;
+
+    const shortLabel = envPath ? path.basename(envPath) : 'No Env';
+    jacEnvStatusBarItem.text = `Jac Env: ${shortLabel}`;
+    jacEnvStatusBarItem.tooltip = envPath || 'No Jac environment selected';
+    jacEnvStatusBarItem.show();
+}
+
+async function promptEnvironmentSelection(
+    context: vscode.ExtensionContext,
+    updateStatusBarLabel?: (envPath: string | undefined) => void
+) {
+    const envs = await findPythonEnvsWithJac();
+
+    if (envs.length === 0) {
+        vscode.window.showWarningMessage("No environments with 'jac' executable found.");
+        return;
+    }
+
+    const choice = await vscode.window.showQuickPick(envs, {
+        placeHolder: "Select the environment containing 'jac'"
+    });
+
+    if (choice) {
+        await context.globalState.update('jacEnvPath', choice);
+        vscode.window.showInformationMessage(`Jac environment set to: ${choice}`);
+
+        // 🟡 Update the label on selection
+        if (updateStatusBarLabel) {
+            updateStatusBarLabel(choice);
+        }
+
+        vscode.commands.executeCommand("workbench.action.reloadWindow");
+    }
+}
+
 function getJacInterpreterPath(): string {
     const possiblePath = getCondaEnvironment() || getVenvEnvironment();
 
@@ -65,7 +104,19 @@ function getJacInterpreterPath(): string {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-    const jacCommand = getJacInterpreterPath();
+    // 🔵 Create and register the status bar item
+    jacEnvStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+    jacEnvStatusBarItem.command = 'jaclang-extension.selectEnv'; // clicking it triggers this
+    context.subscriptions.push(jacEnvStatusBarItem);
+
+    if (!context.globalState.get('jacEnvPath')) {
+        promptEnvironmentSelection(context);
+    }
+
+    const savedJacPath = context.globalState.get<string>('jacEnvPath');
+    const jacCommand = savedJacPath || getJacInterpreterPath();
+
+    updateStatusBarLabel(savedJacPath);
 
     let serverOptions: ServerOptions = {
         run: { command: jacCommand, args: ["lsp"] },
@@ -90,6 +141,10 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showErrorMessage('Failed to start Jac Language Server: ' + error.message);
         console.error('Failed to start Jac Language Server: ', error);
     });
+    context.subscriptions.push(vscode.commands.registerCommand(
+        'jaclang-extension.selectEnv',
+        () => promptEnvironmentSelection(context, updateStatusBarLabel)
+    ));
 
     // Find and return the jac executable's absolute path.
     context.subscriptions.push(vscode.commands.registerCommand('extension.jaclang-extension.getJacPath', config => {

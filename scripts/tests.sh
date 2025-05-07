@@ -1,1 +1,3 @@
-pytest jac -s -n 30; pytest jac-cloud
+pytest -n 30 jac
+pytest jac-splice-orc
+pytest jac-cloud

@@ -36,7 +36,7 @@ import_items: (import_item COMMA)* import_item COMMA?
 import_item: named_ref (KW_AS NAME)?
 
 // [Heading]: Architypes.
-architype: decorators? architype_decl
+architype: decorators? KW_ASYNC? architype_decl
          | architype_def
          | enum
 

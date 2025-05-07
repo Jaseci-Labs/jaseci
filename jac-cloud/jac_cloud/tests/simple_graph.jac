@@ -3,6 +3,7 @@ import from jac_cloud.core.context {JaseciContext}
 import from jac_cloud.jaseci.models {User as BaseUser, NO_PASSWORD}
 import from jac_cloud.jaseci.utils {SendGridEmailer}
 import from jac_cloud.plugin {WEBSOCKET_MANAGER as socket}
+import from jac_cloud.plugin.implementation {create_task}
 import from dataclasses {dataclass}
 import from fastapi {UploadFile}
 import from typing {Any}
@@ -299,7 +300,7 @@ walker disallow_other_root_access {
 
 #################################################################
 #                    ENDPOINT CUSTOMIZATIONS                    #
-#################################################################
+# ------------------------------------------------------------- #
 
 walker post_no_body {}
 
@@ -609,9 +610,33 @@ walker custom_report {
     }
 }
 
-##################################################################
-#                           FOR PURGER                           #
-##################################################################
+walker documentation {
+    class __specs__ {
+        has tags: list[str] | None = ["Documented"];
+        has entry_type: EntryType = "root";
+        has status_code: int | None = "201";
+        has summary: str | None = "Enter summary here!!!";
+        has description: str | None = "Enter description here!!!";
+        has response_description: str = "Enter response description here!!! Defaults to 'Successful Response'";
+        has responses: dict[int | str, dict[str, Any]] | None = {
+            200: {
+                "description": "Enter response description for http status 200!!!",
+                "content": {"application/json": {}},
+                "links": {"sample_link": {"description": "Enter link description here!!!"}}
+            }
+        };
+        has deprecated: bool | None = True;
+        has name: str | None = "Enter name here!!!";
+        has openapi_extra: dict[str, Any] | None = {"addons": True};
+    }
+}
+
+# ------------------------------------------------------------- #
+#################################################################
+
+#################################################################
+#                           FOR PURGER                          #
+# ------------------------------------------------------------- #
 
 node D {
     has id: int;
@@ -732,9 +757,12 @@ walker check_memory_sync {
     }
 }
 
+# ------------------------------------------------------------- #
+#################################################################
+
 #################################################################
 #                        SAVABLE OBJECT                         #
-#################################################################
+# ------------------------------------------------------------- #
 
 obj SavableObject {
     has val: int, arr: list[int], data: dict[str, int], parent: Parent, enum_field: Enum;
@@ -841,9 +869,12 @@ walker nested_request_payload {
     }
 }
 
-##################################################################
-#                     FOR SPAWN CALL SEQUENCE                    #
-##################################################################
+# ------------------------------------------------------------- #
+#################################################################
+
+#################################################################
+#                    FOR SPAWN CALL SEQUENCE                    #
+# ------------------------------------------------------------- #
 
 node Node {
     has val: str;
@@ -895,9 +926,12 @@ walker visit_sequence {
     }
 }
 
+# ------------------------------------------------------------- #
+#################################################################
+
 #################################################################
 #                           WEBHOOKS                            #
-#################################################################
+# ------------------------------------------------------------- #
 
 walker webhook_by_header {
     can enter1 with `root entry {
@@ -951,6 +985,13 @@ walker webhook_by_body {
     }
 }
 
+# ------------------------------------------------------------- #
+#################################################################
+
+#################################################################
+#                           WEBSOCKET                           #
+# ------------------------------------------------------------- #
+
 walker websocket {
     has val: int;
     can enter1 with `root entry {
@@ -962,24 +1003,92 @@ walker websocket {
     }
 }
 
-walker documentation {
+# ------------------------------------------------------------- #
+#################################################################
 
-    class __specs__ {
-        has tags: list[str] | None = ["Documented"];
-        has entry_type: EntryType = "root";
-        has status_code: int | None = "201";
-        has summary: str | None = "Enter summary here!!!";
-        has description: str | None = "Enter description here!!!";
-        has response_description: str = "Enter response description here!!! Defaults to 'Successful Response'";
-        has responses: dict[int | str, dict[str, Any]] | None = {
-            200: {
-                "description": "Enter response description for http status 200!!!",
-                "content": {"application/json": {}},
-                "links": {"sample_link": {"description": "Enter link description here!!!"}}
-            }
-        };
-        has deprecated: bool | None = True;
-        has name: str | None = "Enter name here!!!";
-        has openapi_extra: dict[str, Any] | None = {"addons": True};
+#################################################################
+#                              TASK                             #
+# ------------------------------------------------------------- #
+
+node TaskCounter {
+    has val: int = 0;
+}
+
+walker get_or_create_counter {
+    can enter1 with `root entry {
+        tc = TaskCounter();
+        here ++> tc;
+
+        report tc;
+    }
+
+    can enter2 with TaskCounter entry {
+        report here;
     }
 }
+
+walker increment_counter {
+    has val: int;
+
+    can enter with TaskCounter entry {
+        here.val += self.val;
+    }
+
+    class __specs__ {
+        has private: bool = True;
+    }
+}
+
+walker trigger_counter_task {
+    can enter with `root entry {
+        tcs = [-->(`?TaskCounter)];
+        if tcs {
+            report create_task(increment_counter(val=1), tcs[0]);
+        }
+    }
+}
+
+# ------------------------------------------------------------- #
+#################################################################
+
+#################################################################
+#                           SCHEDULER                           #
+# ------------------------------------------------------------- #
+
+walker walker_cron {
+    has arg1: int;
+    has arg2: str;
+    has kwarg1: int = 3;
+    has kwarg2: str = "4";
+
+    can enter with `root entry {
+        import:py from jac_cloud.core.architype {NodeAnchor}
+
+        n = NodeAnchor.Collection.find_one({
+            "name": "TaskCounter"
+        });
+
+        if n {
+            report n.architype.val;
+        } else {
+            report None;
+        }
+    }
+
+    class __specs__ {
+        has private: bool = True;
+        has schedule: dict = {
+            "trigger": "cron",
+            "args": [1, "2"],
+            "kwargs": {
+                "kwarg1": 30,
+                "kwarg2": "40"
+            },
+            "save": True,
+            "second": "*",
+        };
+    }
+}
+
+# ------------------------------------------------------------- #
+#################################################################

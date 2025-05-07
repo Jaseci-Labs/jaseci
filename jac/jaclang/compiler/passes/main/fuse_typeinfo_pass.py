@@ -39,11 +39,22 @@ class FuseTypeInfoPass(UniPass):
             self.enter_expr(node)
 
     def __call_type_handler(self, mypy_type: MypyTypes.Type) -> Optional[str]:
-        mypy_type_name = pascal_to_snake(mypy_type.__class__.__name__)
-        type_handler_name = f"get_type_from_{mypy_type_name}"
-        if hasattr(self, type_handler_name):
-            return getattr(self, type_handler_name)(mypy_type)
-        return None
+        if isinstance(mypy_type, MypyTypes.UnionType):
+            types: str = "Union["
+            for i in mypy_type.items:
+                mypy_type_name = pascal_to_snake(i.__class__.__name__)
+                type_handler_name = f"get_type_from_{mypy_type_name}"
+                if hasattr(self, type_handler_name):
+                    types += getattr(self, type_handler_name)(i)
+                    types += ", "
+            types = types[:-2] + "]"
+            return types
+        else:
+            mypy_type_name = pascal_to_snake(mypy_type.__class__.__name__)
+            type_handler_name = f"get_type_from_{mypy_type_name}"
+            if hasattr(self, type_handler_name):
+                return getattr(self, type_handler_name)(mypy_type)
+            return None
 
     def __set_type_sym_table_link(self, node: uni.AstSymbolNode) -> None:
         sym_type = node.expr_type

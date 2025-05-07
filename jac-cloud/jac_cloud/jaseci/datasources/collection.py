@@ -276,6 +276,25 @@ class Collection(Generic[T]):
         return None
 
     @classmethod
+    def find_one_and_update(
+        cls,
+        filter: Mapping[str, Any],
+        update: dict,
+        projection: Mapping[str, Any] | Iterable[str] | None = None,
+        session: ClientSession | None = None,
+        **kwargs: Any,  # noqa: ANN401
+    ) -> T | None:
+        """Retrieve single document from db."""
+        if projection is None:
+            projection = cls.__excluded_obj__
+
+        if ops := cls.collection().find_one_and_update(
+            filter, update, projection, session=session, **kwargs
+        ):
+            return cls.__document__(ops)
+        return None
+
+    @classmethod
     def find_by_id(
         cls,
         id: str | ObjectId,

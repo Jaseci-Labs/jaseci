@@ -19,7 +19,7 @@ from .architype import (
     Root,
     asdict,
 )
-from .memory import MongoDB
+from .memory import MongoDB  # type: ignore[attr-defined]
 
 
 SHOW_ENDPOINT_RETURNS = getenv("SHOW_ENDPOINT_RETURNS") == "true"
@@ -60,7 +60,7 @@ class JaseciContext(ExecutionContext):
     root: NodeAnchor
     entry_node: NodeAnchor
     base: ExecutionContext | None
-    connection: Request | WebSocket
+    connection: Request | WebSocket | None
 
     def close(self) -> None:
         """Clean up context."""
@@ -68,7 +68,7 @@ class JaseciContext(ExecutionContext):
 
     @staticmethod
     def create(  # type: ignore[override]
-        connection: Request | WebSocket, entry: NodeAnchor | None = None
+        connection: Request | WebSocket | None, entry: NodeAnchor | None = None
     ) -> "JaseciContext":
         """Create JacContext."""
         ctx = JaseciContext(JacMachineState())
@@ -78,7 +78,8 @@ class JaseciContext(ExecutionContext):
         ctx.status = 200
 
         system_root: NodeAnchor | None = None
-        if not isinstance(system_root := ctx.mem.find_by_id(SUPER_ROOT), NodeAnchor):
+        system_root = ctx.mem.find_by_id(SUPER_ROOT)
+        if not isinstance(system_root, NodeAnchor):
             system_root = Root().__jac__  # type: ignore[attr-defined]
             system_root.id = SUPER_ROOT_ID
             system_root.state.connected = True
@@ -89,7 +90,9 @@ class JaseciContext(ExecutionContext):
 
         ctx.system_root = system_root
 
-        if _root := getattr(connection, "_root", None):
+        if connection is None:
+            ctx.root = system_root
+        elif _root := getattr(connection, "_root", None):
             ctx.root = _root
             ctx.mem.set(_root.id, _root)
         else:
