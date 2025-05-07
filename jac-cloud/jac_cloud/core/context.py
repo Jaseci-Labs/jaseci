@@ -19,7 +19,7 @@ from .architype import (
     Root,
     asdict,
 )
-from .memory import MongoDB
+from .memory import MongoDB  # type: ignore[attr-defined]
 
 
 SHOW_ENDPOINT_RETURNS = getenv("SHOW_ENDPOINT_RETURNS") == "true"
@@ -78,7 +78,8 @@ class JaseciContext(ExecutionContext):
         ctx.status = 200
 
         system_root: NodeAnchor | None = None
-        if not isinstance(system_root := ctx.mem.find_by_id(SUPER_ROOT), NodeAnchor):
+        system_root = ctx.mem.find_by_id(SUPER_ROOT)
+        if not isinstance(system_root, NodeAnchor):
             system_root = Root().__jac__  # type: ignore[attr-defined]
             system_root.id = SUPER_ROOT_ID
             system_root.state.connected = True
