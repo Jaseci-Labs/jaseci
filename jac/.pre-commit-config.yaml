@@ -5,6 +5,7 @@ repos:
       - id: check-yaml
         args: [--allow-multiple-documents]
       - id: check-json
+        exclude: "node_modules/|.vscode/|venv/"
       - id: trailing-whitespace
   - repo: https://github.com/psf/black
     rev: 24.8.0
@@ -26,12 +27,12 @@ repos:
             flake8_annotations,
             flake8_simplify,
           ]
-        exclude: "venv|vendor|__jac_gen__|generated|examples|langserve/tests|pygame_mock"
+        exclude: "venv|vendor|__jac_gen__|generated|examples|langserve/tests|pygame_mock|.vscode"
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.15.0
     hooks:
       - id: mypy
-        exclude: "venv|vendor|__jac_gen__|generated|examples|tests|stubs|support|setup.py"
+        exclude: "venv|vendor|__jac_gen__|generated|examples|tests|stubs|support|setup.py|.vscode"
         args:
           - --follow-imports=silent
           - --ignore-missing-imports

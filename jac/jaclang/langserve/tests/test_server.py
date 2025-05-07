@@ -429,7 +429,7 @@ class TestJacLangServer(TestCase):
             (20, 45, "pygame_mock/color.py:0:0-2:4"),
             (19, 77, "mock/constants.py:4:3-4:15"),
             (26, 28, "mock/display.py:0:0-1:7"),
-            (24, 22, "/argparse.pyi:124:0-249:13"),
+            (24, 22, "vendor/mypy/typeshed/stdlib/argparse.pyi:125:0-256:13"),
             (19, 74, "pygame_mock/constants.py:4:3-4:15"),
             # TODO: Need to properly support this
             # (27, 17, "/stdlib/os/__init__.pyi:50:0-50:3"),
@@ -493,8 +493,8 @@ class TestJacLangServer(TestCase):
                 [
                     "24:42-24:56",
                     "24:16-24:30",
-                    "argparse.pyi:334:21-334:35",
-                    "argparse.pyi:163:29-163:43",
+                    "argparse.pyi:358:21-358:35",
+                    "argparse.pyi:164:29-164:43",
                     "argparse.pyi:32:52-32:66",
                 ],
             ),
