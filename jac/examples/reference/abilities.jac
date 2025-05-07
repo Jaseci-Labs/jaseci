@@ -26,7 +26,7 @@ obj Substractor(Calculator) {
 
 with entry {
     div = Divider();
-    sub = substractor();
+    sub = Substractor();
     print(div.divide(55, 11));
     print(Calculator.multiply(9, -2));
     print(sub.add(5, 20, 34, 56));
