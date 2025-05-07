@@ -1085,7 +1085,7 @@ walker walker_cron {
                 "kwarg2": "40"
             },
             "save": True,
-            "second": "0",
+            "second": "*",
         };
     }
 }

@@ -26,7 +26,7 @@ from ..core.architype import (
     WalkerArchitype,
 )
 from ..core.context import ExecutionContext, JaseciContext
-from ..jaseci import FastAPI
+from ..jaseci.main import FastAPI
 
 
 class JacAccessValidationPlugin:
@@ -441,6 +441,9 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
     @hookimpl
     def spawn(op1: Architype, op2: Architype) -> WalkerArchitype | Future:
         """Jac's spawn operator feature."""
+        if not FastAPI.is_enabled():
+            return JacMachineImpl.spawn(op1=op1, op2=op2)
+
         if isinstance(op1, WalkerArchitype):
             walker = op1.__jac__
             if isinstance(op2, NodeArchitype):
@@ -469,7 +472,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
     ) -> None:
         """Destroy object."""
         if not FastAPI.is_enabled():
-            return JacMachineImpl.destroy(objs=objs)  # type:ignore[arg-type]
+            return JacMachineImpl.destroy(objs=objs)
         obj_list = objs if isinstance(objs, list) else [objs]
         for obj in obj_list:
             anchor = obj.__jac__ if isinstance(obj, Architype) else obj
