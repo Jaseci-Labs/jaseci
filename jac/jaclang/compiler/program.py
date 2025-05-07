@@ -11,6 +11,7 @@ import jaclang.compiler.unitree as uni
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes.main import (
     AccessCheckPass,
+    CFGBuildPass,
     CompilerMode,
     DeclImplMatchPass,
     DefUsePass,
@@ -185,9 +186,12 @@ class JacProgram:
         mode: CompilerMode = CompilerMode.COMPILE,
     ) -> None:
         """Run premade passes on the module."""
-        py_code_gen = [
+        ir_gen_sched = [
             DeclImplMatchPass,
             DefUsePass,
+            CFGBuildPass,
+        ]
+        py_code_gen = [
             PyastGenPass,
             PyJacAstLinkPass,
             PyBytecodeGenPass,
@@ -195,7 +199,15 @@ class JacProgram:
         type_checker_sched = [InheritancePass, FuseTypeInfoPass, AccessCheckPass]
 
         final_pass: Optional[type[Transform[uni.Module, uni.Module]]] = None
-        passes = py_code_gen if mode == CompilerMode.COMPILE else type_checker_sched
+        match mode:
+            case CompilerMode.NO_CGEN:
+                passes = ir_gen_sched
+            case CompilerMode.COMPILE:
+                passes = [*ir_gen_sched, *py_code_gen]
+            case CompilerMode.TYPECHECK:
+                passes = type_checker_sched
+            case _:
+                raise ValueError(f"Invalid mode: {mode}")
         for current_pass in passes:
             if current_pass == PyBytecodeGenPass:
                 final_pass = current_pass

@@ -1,41 +1,40 @@
 """Sample Runner."""
 
+from os import getenv
 from os.path import split
 from pickle import load
 
 from jac_cloud import FastAPI
 
-from jaclang import jac_import
-from jaclang.runtimelib.machinestate import ExecutionContext, JacMachineState
+from jaclang import JacMachine as Jac
+from jaclang.runtimelib.machine import JacMachineState
 
-filename = "./jac_cloud/tests/websocket.jac"
+if not (filename := getenv("APP_PATH")):
+    raise ValueError("APP_PATH is required")
 base, mod = split(filename)
 base = base if base else "./"
 mod = mod[:-4]
 
 FastAPI.enable()
-jctx = ExecutionContext.create()
-
+mach = JacMachineState(base)
 if filename.endswith(".jac"):
-    jac_import(
+    Jac.jac_import(
+        mach=mach,
         target=mod,
         base_path=base,
-        cachable=True,
         override_name="__main__",
     )
 elif filename.endswith(".jir"):
     with open(filename, "rb") as f:
-        JacMachineState(base).attach_program(load(f))
-        jac_import(
+        Jac.attach_program(mach, load(f))
+        Jac.jac_import(
+            mach=mach,
             target=mod,
             base_path=base,
-            cachable=True,
             override_name="__main__",
         )
 else:
-    jctx.close()
+    mach.exec_ctx.close()
     raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
 app = FastAPI.get()
-
-jctx.close()

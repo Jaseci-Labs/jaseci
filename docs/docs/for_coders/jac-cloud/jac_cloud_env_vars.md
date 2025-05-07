@@ -2,8 +2,6 @@
 
 | **NAME**  | **DESCRIPTION**   | **DEFAULT**   |
 |-----------|-------------------|---------------|
-| HOST      | FastAPI's host argument | 0.0.0.0 |
-| PORT      | FastAPI's port argument | 8000    |
 | DATABASE_HOST | MongoDB connection string | mongodb://localhost/?retryWrites=true&w=majority |
 | DATABASE_PATH | Local path for DB | mydatabase |
 | DATABASE_NAME | MongoDB database name | jaseci |
@@ -68,3 +66,58 @@
 | SSO_APPLE_CLIENT_KEY | apple's client key |
 | SSO_APPLE_CLIENT_CERTIFICATE_PATH | apple's client certificate path |
 | SSO_APPLE_CLIENT_CERTIFICATE | apple's client certificate raw content |
+
+## Uvicorn Configs
+- You may check [uvicorn settings](https://www.uvicorn.org/settings/) for more informations relates to their respective purpose and formats
+- **All comma separated configs should not have space in between values**
+- `UV_RELOAD` and `UV_WORKERS` are currently not supported on `jac serve` as we run it via app object instead of import string.
+- As alternative, you can run your jac app using `poetry run standalone` to support `UV_WORKERS`. **This trigger will require you to set `APP_PATH` environment variable to point your `jac file`**
+
+| **NAME**  | **UVICORN KWARGS EQUIVALENT** | **DEFAULT** |
+|---|---|---|
+| UV_HOST   | host | "127.0.0.1" |
+| UV_PORT   | port | 8000 |
+| UV_UDS    | uds | None |
+| UV_FD     | fd | None |
+| UV_LOOP   | loop | "auto" |
+| UV_HTTP   | http | "auto" |
+| UV_WS     | ws | "auto" |
+| UV_WS_MAX_SIZE    | ws_max_size | 16777216 |
+| UV_WS_MAX_QUEUE   | ws_max_queue | 32 |
+| UV_WS_PING_INTERVAL   | ws_ping_interval | 20.0 |
+| UV_WS_PING_TIMEOUT    | ws_ping_timeout | 20.0 |
+| UV_WS_PER_MESSAGE_DEFLATE     | ws_per_message_deflate | True |
+| UV_LIFESPAN   | lifespan | "auto" |
+| UV_INTERFACE  | interface | "auto" |
+| ~~UV_RELOAD~~     | reload | False |
+| UV_RELOAD_DIRS    | reload_dirs | None |
+| UV_RELOAD_INCLUDES    | reload_includes | None |
+| UV_RELOAD_EXCLUDES    | reload_excludes | None |
+| UV_RELOAD_DELAY   | reload_delay | 0.25 |
+| ~~UV_WORKERS~~    | workers | None |
+| UV_ENV_FILE   | env_file | None |
+| UV_LOG_CONFIG     | log_config | LOGGING_CONFIG |
+| UV_LOG_LEVEL  | log_level | None |
+| UV_ACCESS_LOG     | access_log | True |
+| UV_PROXY_HEADERS  | proxy_headers | True |
+| UV_SERVER_HEADER  | server_header | True |
+| UV_DATE_HEADER    | date_header | True |
+| UV_FORWARDED_ALLOW_IPS    | forwarded_allow_ips | None |
+| UV_ROOT_PATH  | root_path | "" |
+| UV_LIMIT_CONCURRENCY  | limit_concurrency | None |
+| UV_BACKLOG    | backlog | 2048 |
+| UV_LIMIT_MAX_REQUESTS     | limit_max_requests | None |
+| UV_TIMEOUT_KEEP_ALIVE     | timeout_keep_alive | 5 |
+| UV_TIMEOUT_GRACEFUL_SHUTDOWN  | timeout_graceful_shutdown | None |
+| UV_SSL_KEYFILE    | ssl_keyfile | None |
+| UV_SSL_CERTFILE   | ssl_certfile | None |
+| UV_SSL_KEYFILE_PASSWORD   | ssl_keyfile_password | None |
+| UV_SSL_VERSION    | ssl_version | SSL_PROTOCOL_VERSION |
+| UV_SSL_CERT_REQS  | ssl_cert_reqs | ssl.CERT_NONE |
+| UV_SSL_CA_CERTS   | ssl_ca_certs | None |
+| UV_SSL_CIPHERS    | ssl_ciphers | "TLSv1" |
+| UV_HEADERS    | headers | None |
+| UV_USE_COLORS     | use_colors | None |
+| UV_APP_DIR    | app_dir | None |
+| UV_FACTORY    | factory | False |
+| UV_H11_MAX_INCOMPLETE_EVENT_SIZE | h11_max_incomplete_event_size | None |

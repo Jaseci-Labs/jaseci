@@ -39,6 +39,7 @@ nav:
       - "for_coders/jac-cloud/permission.md"
       - "for_coders/jac-cloud/jac_cloud_logging.md"
       - "for_coders/jac-cloud/jac_cloud_env_vars.md"
+      - "for_coders/jac-cloud/jac_cloud_scheduler.md"
       - "for_coders/jac-cloud/jac_cloud_webhook.md"
       - "for_coders/jac-cloud/jac_cloud_websocket.md"
       - "for_coders/jac-cloud/cloud-orc-integration.md"
