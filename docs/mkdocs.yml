@@ -62,17 +62,19 @@ nav:
 
   - Internals:
     - Design Docs and Guides:
-      - Compiler/Runtime Design: "for_contributors/internals.md"
+      - Compiler/Runtime Design: "internals/internals.md"
       - IR:
         - Sym Table Design Docs:
-          - "for_contributors/symbol_tables/index.md"
-          - "for_contributors/symbol_tables/structure.md"
-          - "for_contributors/symbol_tables/building.md"
-          - "for_contributors/symbol_tables/def_use.md"
-          - "for_contributors/symbol_tables/linking.md"
-          - "for_contributors/symbol_tables/resolution.md"
-        - UniIR Nodes: "for_contributors/uniir_node.md"
-      - Runtime Plugin Interface: "for_contributors/jac_plugins.md"
+          - "internals/symbol_tables/index.md"
+          - "internals/symbol_tables/structure.md"
+          - "internals/symbol_tables/building.md"
+          - "internals/symbol_tables/def_use.md"
+          - "internals/symbol_tables/linking.md"
+          - "internals/symbol_tables/resolution.md"
+        - UniIR Nodes: "internals/uniir_node.md"
+      - Runtime Plugin Interface: "internals/jac_plugins.md"
+    - Planning Specs and Docs:
+      - Error System: "internals/planning_specs/error_system.md"
 
   - Community Hub:
     - Roadmap: "communityhub/roadmap.md"
