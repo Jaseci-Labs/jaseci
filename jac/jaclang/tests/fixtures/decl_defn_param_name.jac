@@ -4,11 +4,11 @@ obj SomeClass {
     def method2(param1:int, param2:str) -> None;
 }
 
-:o:SomeClass:c:method1(short_name:int) -> None {
+impl def SomeClass.method1(short_name:int) -> None {
   print("short_name =", short_name);
 }
 
-:o:SomeClass:c:method2(p1:int, p2: str) -> None {
+impl def SomeClass.method2(p1:int, p2: str) -> None {
   print("p1 =", p1, ", p2 =", p2);
 }
 

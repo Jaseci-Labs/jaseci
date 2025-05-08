@@ -12,7 +12,7 @@ edge connector {
     has value: int = 10;
 }
 
-:walker:Creator:can:create {
+impl def Creator.create {
     end = here;
     for i=0 to i<3 by i+=1  {
         end ++> (end := node_a(val=i));
@@ -22,7 +22,7 @@ edge connector {
     visit [-->];
 }
 
-:node:node_a:can:make_something {
+impl def node_a.make_something {
     i = 0;
     while i < 5 {
         print(f"wlecome to {self}");

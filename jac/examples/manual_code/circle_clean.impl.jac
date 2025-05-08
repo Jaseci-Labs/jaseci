@@ -2,29 +2,29 @@
 
 import math;
 
-:enum:ShapeType {
+impl enum ShapeType {
     CIRCLE="Circle",
     UNKNOWN="Unknown"
 }
 
 """Function to calculate the area of a circle."""
-:can:calculate_area
+impl def calculate_area
 (radius: float) -> float {
     return math.pi * radius * radius;
 }
 
-:obj:Circle:can:init
+impl def Circle.init
 (radius: float) {
     self.radius = radius;
     super.init(ShapeType.CIRCLE);
 }
 
 """Overridden method to calculate the area of the circle."""
-:obj:Circle:can:area -> float {
+impl def Circle.area -> float {
     return math.pi * self.radius * self.radius;
 }
 
-:can:main_run {
+impl def main_run {
     print(f"Area of a circle with radius {RAD} using function: {calculate_area(RAD)}");
     print(f"Area of a {c.shape_type.value} with radius {RAD} using class: {c.area()}");
 }

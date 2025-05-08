@@ -365,7 +365,7 @@ class FuseTypeInfoPass(UniPass):
         """Pass handler for FString nodes."""
 
     @__handle_node
-    def enter_arch_ref(self, node: uni.ArchRef) -> None:
+    def enter_type_ref(self, node: uni.TypeRef) -> None:
         """Pass handler for ArchRef nodes."""
         if isinstance(node.gen.mypy_ast[0], MypyNodes.ClassDef):
             mypy_node: MypyNodes.ClassDef = node.gen.mypy_ast[0]

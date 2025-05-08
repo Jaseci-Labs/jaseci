@@ -64,4 +64,4 @@ walker tourist {
     def outside_func() -> None;
 }
 
-:walker:tourist:can:outside_func {}
+impl can tourist.outside_func {}

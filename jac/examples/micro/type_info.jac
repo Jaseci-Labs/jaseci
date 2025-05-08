@@ -5,12 +5,12 @@ obj Spritesheet {
     def get_sprite(x: int, y: int, width: int, height: int) -> pygame.Surface;
 }
 
-:obj:Spritesheet:can:init
+impl def Spritesheet.init
 (file: str) {
     self.sheet = pygame.image.load(file).convert();
 }
 
-:obj:Spritesheet:can:get_sprite
+impl def Spritesheet.get_sprite
 (x: int, y: int, width: int, height: int) {
     sprite = pygame.Surface([width, height]);
     sprite.blit(self.sheet, (0, 0), (x, y, width, height));

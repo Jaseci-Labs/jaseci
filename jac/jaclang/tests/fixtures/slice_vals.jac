@@ -3,5 +3,5 @@ obj MyObj {
     def foo(edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Architype;
 }
 
-:obj:MyObj:can:foo
+impl def MyObj.foo
 (edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Architype {}

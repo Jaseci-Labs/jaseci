@@ -1058,47 +1058,23 @@ class PyastGenPass(UniPass):
             )
         ]
 
-    def exit_arch_ref(self, node: uni.ArchRef) -> None:
-        if node.arch_type.name == Tok.TYPE_OP:
-            if (
-                isinstance(node.arch_name, uni.SpecialVarRef)
-                and node.arch_name.orig.name == Tok.KW_ROOT
-            ):
-                node.gen.py_ast = [self.jaclib_obj("Root")]
-            else:
-                self.needs_typing()
-                node.gen.py_ast = [
-                    self.sync(
-                        ast3.Attribute(
-                            value=self.sync(ast3.Name(id="typing", ctx=ast3.Load())),
-                            attr=node.arch_name.sym_name,
-                            ctx=ast3.Load(),
-                        )
-                    )
-                ]
+    def exit_type_ref(self, node: uni.TypeRef) -> None:
+        if (
+            isinstance(node.target, uni.SpecialVarRef)
+            and node.target.orig.name == Tok.KW_ROOT
+        ):
+            node.gen.py_ast = [self.jaclib_obj("Root")]
         else:
-            node.gen.py_ast = node.arch_name.gen.py_ast
-
-    def exit_arch_ref_chain(self, node: uni.ArchRefChain) -> None:
-
-        def make_attr_chain(arch: list[uni.ArchRef]) -> list[ast3.AST]:
-            """Make attr chain."""
-            if len(arch) == 0:
-                return []
-            if len(arch) == 1 and isinstance(arch[0].gen.py_ast, ast3.AST):
-                return arch[0].gen.py_ast
-            cur = arch[-1]
-            attr = self.sync(
-                ast3.Attribute(
-                    value=cast(ast3.expr, make_attr_chain(arch[:-1])),
-                    attr=cur.arch_name.sym_name,
-                    ctx=ast3.Load(),
-                ),
-                jac_node=cur,
-            )
-            return [attr]
-
-        node.gen.py_ast = make_attr_chain(node.archs)
+            self.needs_typing()
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Attribute(
+                        value=self.sync(ast3.Name(id="typing", ctx=ast3.Load())),
+                        attr=node.target.sym_name,
+                        ctx=ast3.Load(),
+                    )
+                )
+            ]
 
     def exit_param_var(self, node: uni.ParamVar) -> None:
         node.gen.py_ast = [

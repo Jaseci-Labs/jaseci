@@ -8,7 +8,7 @@ obj Foo {
     def say2;
 }
 
-:o:Foo:c:say2 {
+impl def Foo.say2 {
     print(self.a);
 }
 

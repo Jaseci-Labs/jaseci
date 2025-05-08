@@ -1,3 +1,3 @@
-:walker:W:can:enter {
+impl can W.enter {
     visit [here-->] else {}
 }

@@ -120,7 +120,7 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
 
             valid_decl.body = sym.decl.name_of
             sym.decl.name_of.decl_link = valid_decl
-            for idx, a in enumerate(sym.decl.name_of.target.archs):
+            for idx, a in enumerate(sym.decl.name_of.target.items):
                 if idx < len(name_of_links) and name_of_links[idx]:
                     a.name_spec.name_of = name_of_links[idx].name_of
                     a.name_spec.sym = name_of_links[idx].sym

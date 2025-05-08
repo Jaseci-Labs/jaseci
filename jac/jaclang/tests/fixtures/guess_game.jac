@@ -15,13 +15,13 @@ node turn {
     can check with GuessGame entry;
 }
 
-:node:turn:can:check {
+impl can turn.check {
     guess = guesses.pop(0);
     guess |> here.process_guess;
     visit [-->];
 }
 
-:walker:GuessGame:can:start_game {
+impl can GuessGame.start_game {
     end = here;
     for i=0 to i<10 by i+=1  {
         end ++> (end := :> turn);
@@ -29,7 +29,7 @@ node turn {
     visit [-->];
 }
 
-:walker:GuessGame:can:process_guess
+impl def GuessGame.process_guess
 (guess: int) {
     if guess > self.correct_number {
         "Too high!" |> print;

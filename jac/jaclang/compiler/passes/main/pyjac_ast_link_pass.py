@@ -41,7 +41,7 @@ class PyJacAstLinkPass(UniPass):
             self.link_jac_py_nodes(jac_node=node.body, py_nodes=node.gen.py_ast)
 
     def exit_arch_def(self, node: uni.ArchDef) -> None:
-        for i in node.target.archs:
+        for i in node.target.items:
             if i.name_spec.name_of.sym:
                 self.link_jac_py_nodes(
                     jac_node=i, py_nodes=i.name_spec.name_of.sym.decl.gen.py_ast
@@ -56,7 +56,7 @@ class PyJacAstLinkPass(UniPass):
             self.link_jac_py_nodes(jac_node=node.body, py_nodes=node.gen.py_ast)
 
     def exit_enum_def(self, node: uni.EnumDef) -> None:
-        for i in node.target.archs:
+        for i in node.target.items:
             if i.name_spec.name_of.sym:
                 self.link_jac_py_nodes(
                     jac_node=i, py_nodes=i.name_spec.name_of.sym.decl.gen.py_ast
@@ -72,7 +72,7 @@ class PyJacAstLinkPass(UniPass):
             self.link_jac_py_nodes(jac_node=node.body, py_nodes=node.gen.py_ast)
 
     def exit_ability_def(self, node: uni.AbilityDef) -> None:
-        for i in node.target.archs:
+        for i in node.target.items:
             if i.name_spec.name_of.sym:
                 self.link_jac_py_nodes(
                     jac_node=i, py_nodes=i.name_spec.name_of.sym.decl.gen.py_ast
@@ -111,11 +111,11 @@ class PyJacAstLinkPass(UniPass):
                 )
 
         if isinstance(node.decl_link, uni.Ability) and isinstance(
-            node.target, uni.ArchRefChain
+            node.target, uni.SubNodeList
         ):
-            for arch in node.target.archs:
-                if arch.arch_name.sym:
-                    arch.arch_name.sym.add_use(arch.arch_name)
+            for arch in node.target.items:
+                if arch.name_spec.name_of.sym:
+                    arch.name_spec.name_of.sym.add_use(arch.name_spec)
 
     def exit_param_var(self, node: uni.ParamVar) -> None:
         self.link_jac_py_nodes(jac_node=node.name, py_nodes=node.gen.py_ast)

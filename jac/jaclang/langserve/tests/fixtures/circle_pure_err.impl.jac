@@ -11,14 +11,14 @@
     return math.pi * radius * radius;
 }
 
-:obj:Circle:can:init
+impl can Circle.init
 (radius: float) {
     self.radius = radius;
     super.init(ShapeType.CIRCLE);
 }
 
 """Overridden method to calculate the area of the circle."""
-:obj:Circle:can:area -> float {
+impl can Circle.area -> float {
     return math.pi * self.radius * self.radius;
 }
 

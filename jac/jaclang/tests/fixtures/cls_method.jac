@@ -25,12 +25,12 @@ class MyClass2 {
     def Ability_2(cls: Type[MyClass2]) -> str;
 }
 
-:obj:MyClass2:can:Ability_1
+impl def MyClass2.Ability_1
 (self: MyClass2) -> str {
     return "Hello, World!";
 }
 
-:obj:MyClass2:can:Ability_2 {
+impl can MyClass2.Ability_2 {
     return "Hello, World22!";
 }
 

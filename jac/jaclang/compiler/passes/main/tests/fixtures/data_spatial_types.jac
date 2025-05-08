@@ -36,7 +36,7 @@ walker W {
     can create with `root entry;
 }
 
-:walker:W:can:create {
+impl can W.create {
     Start = A(5);
     here +>:a:+> Start;
     Start +>:a:+> A(10) +>:a:+> A(15);
@@ -65,7 +65,7 @@ walker walker1 {
     can create_main_node with `root entry;
 }
 
-:walker:walker1:can:create_main_node {
+impl can walker1.create_main_node {
     end = here;
     for i=0 to i<len(list1)+1 by i+=1  {
         end ++> (end := main_node(no=i + 1));
@@ -81,7 +81,7 @@ walker walker2 {
     can process with main_node entry;
 }
 
-:walker:walker2:can:process {
+impl can walker2.process {
     :g: list1 ;
 
     for j in range(0, len(list1) - (here.no)) {
@@ -98,7 +98,7 @@ walker walker3 {
     can adjust with main_node entry;
 }
 
-:walker:walker3:can:adjust {
+impl can walker3.adjust {
     here spawn walker4();
 }
 

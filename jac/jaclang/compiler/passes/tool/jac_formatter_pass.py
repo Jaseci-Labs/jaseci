@@ -454,7 +454,7 @@ class JacFormatPass(UniPass):
                     self.emit_ln(node, i.gen.jac)
                 else:
                     self.emit_ln(node, i.gen.jac)
-            elif isinstance(prev_token, uni.ArchRefChain) and isinstance(
+            elif isinstance(prev_token, uni.SubNodeList) and isinstance(
                 i, uni.FuncSignature
             ):
                 m = next((True for j in i.kid if isinstance(j, uni.SubNodeList)), False)
@@ -658,7 +658,7 @@ class JacFormatPass(UniPass):
         if isinstance(node.kid[-1], uni.Semi) and not node.gen.jac.endswith("\n"):
             self.emit_ln(node, "")
 
-    def exit_arch_ref(self, node: uni.ArchRef) -> None:
+    def exit_type_ref(self, node: uni.TypeRef) -> None:
         for i in node.kid:
             if isinstance(i, uni.CommentToken):
                 if i.is_inline:
@@ -728,6 +728,7 @@ class JacFormatPass(UniPass):
 
     def exit_enum_def(self, node: uni.EnumDef) -> None:
         start = True
+        prev_token = None
         for i in node.kid:
             if isinstance(i, uni.String):
                 self.emit_ln(node, i.gen.jac)
@@ -736,8 +737,11 @@ class JacFormatPass(UniPass):
                     self.emit(node, f" {i.gen.jac}")
                 else:
                     self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, (uni.Semi, uni.ArchRefChain)):
-                self.emit(node, i.gen.jac)
+            elif isinstance(i, (uni.Semi, uni.SubNodeList)):
+                if prev_token and prev_token.gen.jac.strip() == "enum":
+                    self.emit(node, f" {i.gen.jac}")
+                else:
+                    self.emit(node, i.gen.jac)
             elif isinstance(i, uni.SubNodeList) and i.gen.jac.startswith("@"):
                 self.emit_ln(node, i.gen.jac)
             else:
@@ -746,6 +750,7 @@ class JacFormatPass(UniPass):
                     start = False
                 else:
                     self.emit(node, f" {i.gen.jac}")
+            prev_token = i
         if isinstance(
             node.kid[-1], (uni.Semi, uni.CommentToken)
         ) and not node.gen.jac.endswith("\n"):
@@ -1700,25 +1705,6 @@ class JacFormatPass(UniPass):
         self.emit_ln(node, "::py::")
         self.emit_ln(node, node.code.value)
         self.emit_ln(node, "::py::")
-
-    def exit_arch_ref_chain(self, node: uni.ArchRefChain) -> None:
-        for i in node.kid:
-            if isinstance(i, uni.CommentToken):
-                if i.is_inline:
-                    self.emit(node, f" {i.gen.jac}")
-                elif not node.gen.jac.endswith("\n"):
-                    self.emit_ln(node, "")
-                    self.emit_ln(node, i.gen.jac)
-                else:
-                    self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, uni.Semi):
-                self.emit(node, i.gen.jac)
-            elif i.gen.jac == ",":
-                self.emit(node, f"{i.gen.jac} ")
-            else:
-                self.emit(node, i.gen.jac)
-        if isinstance(node.kid[-1], uni.Semi) and not node.gen.jac.endswith("\n"):
-            self.emit_ln(node, "")
 
     def exit_typed_ctx_block(self, node: uni.TypedCtxBlock) -> None:
         pass

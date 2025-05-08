@@ -4,7 +4,7 @@
 def my_print(messag: str) -> str;
 
 # Definitions
-:can:my_print
+impl def my_print
 (message: str) -> str {
     output = f"from me: {message}";
     print("from me: {message}");
@@ -18,7 +18,7 @@ obj MyPrinter {
 }
 
 # Definition
-:obj:MyPrinter:can:my_print
+impl def MyPrinter.my_print
 (message: str) -> str {
     y = ".".join([i for i in range(10)]);
     output = f"from me: {message} {y}";

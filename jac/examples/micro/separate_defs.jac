@@ -7,10 +7,10 @@ obj MyObj {
     def : pub set_a(val: int) -> None;
 }
 
-:o:MyObj:c:init {
+impl def MyObj.init {
     here.a = a;
 }
 
-:o:MyObj:c:set_a {
+impl def MyObj.set_a {
     here.a = val;
 }

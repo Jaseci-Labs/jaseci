@@ -1,4 +1,4 @@
-:enum:x {
+impl enum x {
     aa=67,
     y="aaa" + f"b{aa}bbcc"
 }

@@ -52,11 +52,8 @@ class DefUsePass(UniPass):
     def enter_enum(self, node: uni.Enum) -> None:
         node.sym_tab.inherit_baseclasses_sym(node)
 
-    def enter_arch_ref(self, node: uni.ArchRef) -> None:
+    def enter_type_ref(self, node: uni.TypeRef) -> None:
         node.sym_tab.use_lookup(node)
-
-    def enter_arch_ref_chain(self, node: uni.ArchRefChain) -> None:
-        node.sym_tab.chain_use_lookup(node.archs)
 
     def enter_param_var(self, node: uni.ParamVar) -> None:
         node.sym_tab.def_insert(node)
