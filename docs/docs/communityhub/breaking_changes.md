@@ -12,7 +12,7 @@ The syntax for specifying inheritance has been updated from using colons to usin
 
 **Before (v0.7.x):**
 ```jac
-obj Vehicle: {
+obj Vehicle {
     has wheels: int;
 }
 
@@ -20,7 +20,7 @@ obj Car :Vehicle: {
     has doors: int = 4;
 }
 
-node BaseUser: {
+node BaseUser {
     has username: str;
 }
 
