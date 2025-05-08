@@ -185,7 +185,7 @@ class UniNode:
         if isinstance(ret, typ):
             return ret
         else:
-            raise ValueError(f"Parent of type {typ} not found.")
+            raise ValueError(f"Parent of type {typ} not found from {type(self)}.")
 
     def to_dict(self) -> dict[str, str]:
         """Return dict representation of node."""
@@ -792,6 +792,7 @@ class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
             pos_end=self.target.items[-1].loc.pos_end,
         )
         ret.name_of = self
+        ret.parent = self.parent
         return ret
 
 
@@ -1335,7 +1336,7 @@ class ModulePath(AstSymbolNode):
 
     def __init__(
         self,
-        path: Optional[list[Name]],
+        path: Optional[SubNodeList[Name]],
         level: int,
         alias: Optional[Name],
         kid: Sequence[UniNode],
@@ -1345,7 +1346,7 @@ class ModulePath(AstSymbolNode):
         self.alias = alias
         self.abs_path: Optional[str] = None
 
-        name_spec = alias if alias else path[0] if path else None
+        name_spec = alias if alias else path.items[0] if path else None
 
         UniNode.__init__(self, kid=kid)
         if not name_spec:
@@ -1368,7 +1369,9 @@ class ModulePath(AstSymbolNode):
     def dot_path_str(self) -> str:
         """Get path string."""
         return ("." * self.level) + ".".join(
-            [p.value for p in self.path] if self.path else [self.name_spec.sym_name]
+            [p.value for p in self.path.items]
+            if self.path
+            else [self.name_spec.sym_name]
         )
 
     def resolve_relative_path(self, target_item: Optional[str] = None) -> str:
@@ -1415,14 +1418,14 @@ class ModulePath(AstSymbolNode):
         res = True
         if deep:
             if self.path:
-                for p in self.path:
+                for p in self.path.items:
                     res = res and p.normalize(deep)
             res = res and self.alias.normalize(deep) if self.alias else res
         new_kid: list[UniNode] = []
         for _ in range(self.level):
             new_kid.append(self.gen_token(Tok.DOT))
         if self.path:
-            for p in self.path:
+            for p in self.path.items:
                 res = res and p.normalize(deep)
                 new_kid.append(p)
                 new_kid.append(self.gen_token(Tok.DOT))

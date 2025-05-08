@@ -82,6 +82,7 @@ class DefUsePass(UniPass):
     def enter_inner_compr(self, node: uni.InnerCompr) -> None:
         if isinstance(node.target, uni.AtomTrailer):
             node.target.sym_tab.chain_def_insert(node.target.as_attr_list)
+
         elif isinstance(node.target, uni.AstSymbolNode):
             node.target.sym_tab.def_insert(node.target)
         else:
@@ -89,6 +90,7 @@ class DefUsePass(UniPass):
 
     def enter_atom_trailer(self, node: uni.AtomTrailer) -> None:
         chain = node.as_attr_list
+        print(f"Entering atom trailer: {[x.pp() for x in chain]}")
         node.sym_tab.chain_use_lookup(chain)
 
     def enter_special_var_ref(self, node: uni.SpecialVarRef) -> None:

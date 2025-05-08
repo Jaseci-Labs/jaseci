@@ -1463,7 +1463,9 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             ):
                 paths.append(
                     uni.ModulePath(
-                        path=[name.expr],
+                        path=uni.SubNodeList[uni.Name](
+                            items=[name.expr], delim=Tok.DOT, kid=[name.expr]
+                        ),
                         level=0,
                         alias=name.alias,
                         kid=[i for i in name.kid if i],
@@ -1519,7 +1521,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         moddots = [self.operator(Tok.DOT, ".") for _ in range(node.level)]
         modparts = moddots + modpaths
         path = uni.ModulePath(
-            path=modpaths,
+            path=uni.SubNodeList[uni.Name](items=modpaths, delim=Tok.DOT, kid=modpaths),
             level=node.level,
             alias=None,
             kid=modparts,

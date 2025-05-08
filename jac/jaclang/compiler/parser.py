@@ -446,11 +446,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             valid_path = self.consume(uni.SubNodeList)
             alias = self.consume(uni.Name) if self.match_token(Tok.KW_AS) else None
             return uni.ModulePath(
-                path=(
-                    valid_path.items
-                    if isinstance(valid_path.items[0], uni.Name)
-                    else None
-                ),
+                path=valid_path,
                 level=0,
                 alias=alias,
                 kid=self.cur_nodes,

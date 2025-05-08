@@ -75,12 +75,12 @@ class SymTabBuildPass(UniPass):
     def exit_module_path(self, node: uni.ModulePath) -> None:
         if node.alias:
             node.alias.sym_tab.def_insert(node.alias, single_decl="import")
-        elif node.path and isinstance(node.path[0], uni.Name):
+        elif node.path and isinstance(node.path.items[0], uni.Name):
             if node.parent_of_type(uni.Import) and not (
                 node.parent_of_type(uni.Import).from_loc
                 and node.parent_of_type(uni.Import).is_jac
             ):
-                node.path[0].sym_tab.def_insert(node.path[0])
+                node.path.items[0].sym_tab.def_insert(node.path.items[0])
         else:
             pass  # Need to support pythonic import symbols with dots in it
 
