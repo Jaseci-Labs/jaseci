@@ -1373,6 +1373,22 @@ class ModulePath(AstSymbolNode):
             else [self.name_spec.sym_name]
         )
 
+    def normalize(self, deep: bool = False) -> bool:
+        res = True
+        if deep:
+            res = self.path.normalize(deep) if self.path else res
+            res = res and self.alias.normalize(deep) if self.alias else res
+        new_kid: list[UniNode] = []
+        for _ in range(self.level):
+            new_kid.append(self.gen_token(Tok.DOT))
+        if self.path:
+            new_kid.append(self.path)
+        if self.alias:
+            new_kid.append(self.gen_token(Tok.KW_AS))
+            new_kid.append(self.alias)
+        self.set_kids(nodes=new_kid)
+        return res
+
     def resolve_relative_path(self, target_item: Optional[str] = None) -> str:
         """Convert an import target string into a relative file path."""
         # Build the target module name
@@ -1412,29 +1428,6 @@ class ModulePath(AstSymbolNode):
                     break
 
         return candidate
-
-    def normalize(self, deep: bool = False) -> bool:
-        res = True
-        if deep:
-            if self.path:
-                for p in self.path.items:
-                    res = res and p.normalize(deep)
-            res = res and self.alias.normalize(deep) if self.alias else res
-        new_kid: list[UniNode] = []
-        for _ in range(self.level):
-            new_kid.append(self.gen_token(Tok.DOT))
-        if self.path:
-            for p in self.path.items:
-                res = res and p.normalize(deep)
-                new_kid.append(p)
-                new_kid.append(self.gen_token(Tok.DOT))
-            new_kid.pop()
-        if self.alias:
-            res = res and self.alias.normalize(deep)
-            new_kid.append(self.gen_token(Tok.KW_AS))
-            new_kid.append(self.alias)
-        self.set_kids(nodes=new_kid)
-        return res
 
 
 class ModuleItem(AstSymbolNode):
@@ -1623,6 +1616,8 @@ class ArchDef(AstImplOnlyNode, UniScopeNode):
         new_kid: list[UniNode] = []
         if self.doc:
             new_kid.append(self.doc)
+        new_kid.append(self.gen_token(Tok.KW_IMPL))
+        new_kid.append(self.arch_type)
         new_kid.append(self.target)
         new_kid.append(self.body)
         self.set_kids(nodes=new_kid)
@@ -1722,6 +1717,8 @@ class EnumDef(AstImplOnlyNode, UniScopeNode):
         new_kid: list[UniNode] = []
         if self.doc:
             new_kid.append(self.doc)
+        new_kid.append(self.gen_token(Tok.KW_IMPL))
+        new_kid.append(self.gen_token(Tok.KW_ENUM))
         new_kid.append(self.target)
         new_kid.append(self.gen_token(Tok.LBRACE))
         new_kid.append(self.body)
@@ -1886,12 +1883,16 @@ class AbilityDef(AstImplOnlyNode, UniScopeNode):
         new_kid: list[UniNode] = []
         if self.doc:
             new_kid.append(self.doc)
+        new_kid.append(self.gen_token(Tok.KW_IMPL))
+        new_kid.append(  # TODO: need to enhance for can statement
+            self.gen_token(Tok.KW_CAN)
+            if isinstance(self.signature, EventSignature)
+            else self.gen_token(Tok.KW_DEF)
+        )
         new_kid.append(self.target)
         if self.signature:
             new_kid.append(self.signature)
-
         new_kid.append(self.body)
-
         self.set_kids(nodes=new_kid)
         return res
 
