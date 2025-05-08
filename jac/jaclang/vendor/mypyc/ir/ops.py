@@ -12,7 +12,8 @@ value has a type (RType). A value can hold various things, such as:
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Final, Generic, List, NamedTuple, Sequence, TypeVar, Union
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Final, Generic, NamedTuple, TypeVar, Union
 
 from mypy_extensions import trait
 
@@ -600,6 +601,7 @@ class PrimitiveDescription:
         ordering: list[int] | None,
         extra_int_constants: list[tuple[int, RType]],
         priority: int,
+        is_pure: bool,
     ) -> None:
         # Each primitive much have a distinct name, but otherwise they are arbitrary.
         self.name: Final = name
@@ -617,9 +619,14 @@ class PrimitiveDescription:
         self.ordering: Final = ordering
         self.extra_int_constants: Final = extra_int_constants
         self.priority: Final = priority
+        # Pure primitives have no side effects, take immutable arguments, and
+        # never fail. They support additional optimizations.
+        self.is_pure: Final = is_pure
+        if is_pure:
+            assert error_kind == ERR_NEVER
 
     def __repr__(self) -> str:
-        return f"<PrimitiveDescription {self.name}>"
+        return f"<PrimitiveDescription {self.name!r}: {self.arg_types}>"
 
 
 class PrimitiveOp(RegisterOp):
@@ -782,6 +789,9 @@ NAMESPACE_TYPE: Final = "type"
 
 # Namespace for modules
 NAMESPACE_MODULE: Final = "module"
+
+# Namespace for Python 3.12 type variable objects (implicitly created TypeVar instances, etc.)
+NAMESPACE_TYPE_VAR: Final = "typevar"
 
 
 class LoadStatic(RegisterOp):
@@ -1015,7 +1025,7 @@ class RaiseStandardError(RegisterOp):
 
 
 # True steals all arguments, False steals none, a list steals those in matching positions
-StealsDescription = Union[bool, List[bool]]
+StealsDescription = Union[bool, list[bool]]
 
 
 class CallC(RegisterOp):
@@ -1036,6 +1046,8 @@ class CallC(RegisterOp):
         error_kind: int,
         line: int,
         var_arg_idx: int = -1,
+        *,
+        is_pure: bool = False,
     ) -> None:
         self.error_kind = error_kind
         super().__init__(line)
@@ -1046,6 +1058,12 @@ class CallC(RegisterOp):
         self.is_borrowed = is_borrowed
         # The position of the first variable argument in args (if >= 0)
         self.var_arg_idx = var_arg_idx
+        # Is the function pure? Pure functions have no side effects
+        # and all the arguments are immutable. Pure functions support
+        # additional optimizations. Pure functions never fail.
+        self.is_pure = is_pure
+        if is_pure:
+            assert error_kind == ERR_NEVER
 
     def sources(self) -> list[Value]:
         return self.args

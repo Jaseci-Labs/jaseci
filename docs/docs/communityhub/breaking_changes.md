@@ -12,7 +12,7 @@ The syntax for specifying inheritance has been updated from using colons to usin
 
 **Before (v0.7.x):**
 ```jac
-obj Vehicle: {
+obj Vehicle {
     has wheels: int;
 }
 
@@ -20,7 +20,7 @@ obj Car :Vehicle: {
     has doors: int = 4;
 }
 
-node BaseUser: {
+node BaseUser {
     has username: str;
 }
 
@@ -56,6 +56,10 @@ Instead of using `can` keyword for all functions and abilities, `can` statements
 
 **Before (v0.7.x and earlier):**
 ```jac
+can add(x: int, y: int) -> int {
+    return x + y;
+}
+
 node Person {
     has name;
     has age;
@@ -76,6 +80,10 @@ node Person {
 
 **After (v0.8.0+):**
 ```jac
+def add(x: int, y: int) -> int {
+    return x + y;
+}
+
 node Person {
     has name;
     has age;
@@ -211,7 +219,7 @@ import from utils { helper, math_utils, string_formatter };
 
 This new syntax using curly braces makes it clearer which modules are being imported from which package, especially when importing multiple items from different packages.
 
-#### 7. Import statement are auto resolved with language hints
+#### 7. Import statement are auto resolved (no language hints needed)
 
 The language-specific import syntax has been simplified by removing the explicit language annotations (`:py` and `:jac`). The compiler now automatically resolves imports based on context and file extensions.
 

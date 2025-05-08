@@ -466,6 +466,8 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
             return JacMachineImpl.destroy(objs=objs)  # type:ignore[arg-type]
         obj_list = objs if isinstance(objs, list) else [objs]
         for obj in obj_list:
+            if not isinstance(obj, (Architype, Anchor)):
+                return
             anchor = obj.__jac__ if isinstance(obj, Architype) else obj
 
             if (
