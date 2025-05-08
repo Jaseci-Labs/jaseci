@@ -58,20 +58,55 @@ class VisitPredictionPass():
         result = VisitStmtInfo(edgeType=edge_op_ref, asyncVisit=self._get_edge_type_name(edge_op_ref).startswith("async_"))
         return result
 
+def get_next_steps(current_node: NodeAnchor, visited: set[NodeAnchor]) -> list[list[NodeAnchor]]:
+    next_nodes: list[list[NodeAnchor]] = []
+    one_level: list[NodeAnchor] = []
+
+    for neighbor in current_node.edges:
+        if neighbor.target in visited:
+            continue
+        print(str(neighbor.architype))
+        # TODO: Change this async to a better representation
+        if str(neighbor.architype).startswith("async_"):
+            one_level.append(neighbor.target)
+        else:
+            if one_level:
+                next_nodes.append(one_level)
+                one_level = []
+            next_nodes.append([neighbor.target])
+
+    if one_level:
+        next_nodes.append(one_level)
+
+    return next_nodes
 
 def _traversal(start: NodeAnchor):
     queue: list[list[NodeAnchor]] = [[start]]
     traversal: list[list[NodeAnchor]] = []
+    visited: set[NodeAnchor] = set()
+    print(type(start))
     while (len(queue) > 0):
         node_level = queue.pop()
         traversal.append(node_level)
-        new_nodes: list[NodeAnchor] = []
-        for node in node_level:
-            new_nodes = new_nodes + [edge.target for edge in node.edges]
-        queue.append(new_nodes)
+        next_nodes = [get_next_steps(current_node, visited) for current_node in node_level]
+        max_length = max([len(next_node) for next_node in next_nodes])
+        for i in range(max_length):
+            one_level: list[NodeAnchor] = []
+            for next_node in next_nodes:
+                if i < len(next_node):
+                    one_level += next_node[i]
+            for node in one_level:
+                visited.add(node)
+            if (len(one_level) > 0):
+                queue.append(one_level)
+
+    return traversal
 
 
-def generate_data_mapping(visit_stmts: list[uni.VisitStmt]) -> None:
+def generate_data_mapping(visit_stmts: list[uni.VisitStmt], start: NodeAnchor) -> None:
     static_analysis = VisitPredictionPass()
-    static_info = [static_analysis.get_visit_stmt_info(visit_stmt) for visit_stmt in visit_stmts]
+    # static_info = [static_analysis.get_visit_stmt_info(visit_stmt) for visit_stmt in visit_stmts]
+    static_info = {}
+    order = _traversal(start)
+    print([len(step) for step in order])
     pass

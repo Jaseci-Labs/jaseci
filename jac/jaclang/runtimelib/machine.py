@@ -375,10 +375,10 @@ class JacWalker:
             raise TypeError("Invalid walker object")
 
     @staticmethod
-    def graph_cut() -> None:
+    def graph_cut(start: NodeAnchor) -> None:
         prog = JacMachine.get_context().mach.jac_program.mod
         visits = [astNode for astNode in prog.get_all_sub_nodes(uni.VisitStmt)]
-        generate_data_mapping(visits)
+        generate_data_mapping(visits, start)
 
     @staticmethod
     def spawn(op1: Architype, op2: Architype) -> WalkerArchitype:
@@ -404,7 +404,7 @@ class JacWalker:
         else:
             raise TypeError("Invalid walker object")
         
-        JacMachine.graph_cut()
+        JacMachine.graph_cut(node)
         
 
         walker.path = []
