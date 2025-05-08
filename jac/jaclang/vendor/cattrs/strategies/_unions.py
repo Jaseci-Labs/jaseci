@@ -1,9 +1,9 @@
 from collections import defaultdict
-from typing import Any, Callable, Dict, Optional, Type, Union
+from typing import Any, Callable, Dict, Literal, Type, Union
 
 from attrs import NOTHING
 
-from cattrs import BaseConverter, Converter
+from cattrs import BaseConverter
 from cattrs._compat import get_newtype_base, is_literal, is_subclass, is_union_type
 
 __all__ = [
@@ -20,10 +20,10 @@ def default_tag_generator(typ: Type) -> str:
 
 def configure_tagged_union(
     union: Any,
-    converter: Converter,
+    converter: BaseConverter,
     tag_generator: Callable[[Type], str] = default_tag_generator,
     tag_name: str = "_type",
-    default: Optional[Type] = NOTHING,
+    default: Union[Type, Literal[NOTHING]] = NOTHING,
 ) -> None:
     """
     Configure the converter so that `union` (which should be a union) is
@@ -50,8 +50,8 @@ def configure_tagged_union(
     exact_cl_unstruct_hooks = {}
     for cl in args:
         tag = tag_generator(cl)
-        struct_handler = converter._structure_func.dispatch(cl)
-        unstruct_handler = converter._unstructure_func.dispatch(cl)
+        struct_handler = converter.get_structure_hook(cl)
+        unstruct_handler = converter.get_unstructure_hook(cl)
 
         def structure_union_member(val: dict, _cl=cl, _h=struct_handler) -> cl:
             return _h(val, _cl)
@@ -65,7 +65,7 @@ def configure_tagged_union(
     cl_to_tag = {cl: tag_generator(cl) for cl in args}
 
     if default is not NOTHING:
-        default_handler = converter._structure_func.dispatch(default)
+        default_handler = converter.get_structure_hook(default)
 
         def structure_default(val: dict, _cl=default, _h=default_handler):
             return _h(val, _cl)
@@ -84,27 +84,50 @@ def configure_tagged_union(
         return res
 
     if default is NOTHING:
+        if getattr(converter, "forbid_extra_keys", False):
 
-        def structure_tagged_union(
-            val: dict, _, _tag_to_cl=tag_to_hook, _tag_name=tag_name
-        ) -> union:
-            val = val.copy()
-            return _tag_to_cl[val.pop(_tag_name)](val)
+            def structure_tagged_union(
+                val: dict, _, _tag_to_cl=tag_to_hook, _tag_name=tag_name
+            ) -> union:
+                val = val.copy()
+                return _tag_to_cl[val.pop(_tag_name)](val)
+
+        else:
+
+            def structure_tagged_union(
+                val: dict, _, _tag_to_cl=tag_to_hook, _tag_name=tag_name
+            ) -> union:
+                return _tag_to_cl[val[_tag_name]](val)
 
     else:
+        if getattr(converter, "forbid_extra_keys", False):
 
-        def structure_tagged_union(
-            val: dict,
-            _,
-            _tag_to_hook=tag_to_hook,
-            _tag_name=tag_name,
-            _dh=default_handler,
-            _default=default,
-        ) -> union:
-            if _tag_name in val:
-                val = val.copy()
-                return _tag_to_hook[val.pop(_tag_name)](val)
-            return _dh(val, _default)
+            def structure_tagged_union(
+                val: dict,
+                _,
+                _tag_to_hook=tag_to_hook,
+                _tag_name=tag_name,
+                _dh=default_handler,
+                _default=default,
+            ) -> union:
+                if _tag_name in val:
+                    val = val.copy()
+                    return _tag_to_hook[val.pop(_tag_name)](val)
+                return _dh(val, _default)
+
+        else:
+
+            def structure_tagged_union(
+                val: dict,
+                _,
+                _tag_to_hook=tag_to_hook,
+                _tag_name=tag_name,
+                _dh=default_handler,
+                _default=default,
+            ) -> union:
+                if _tag_name in val:
+                    return _tag_to_hook[val[_tag_name]](val)
+                return _dh(val, _default)
 
     converter.register_unstructure_hook(union, unstructure_tagged_union)
     converter.register_structure_hook(union, structure_tagged_union)
