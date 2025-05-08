@@ -64,27 +64,32 @@
       {
         "command": "jaclang-extension.checkCurrentFile",
         "title": "Jaclang: Check Current File",
-        "icon": "$(check)"
+        "icon": "$(play)"
+      },
+      {
+        "command": "jaclang-extension.serveCurrentFile",
+        "title": "Jaclang: Serve Current File",
+        "icon": "$(cloud)"
       }
       
     ],
     "menus": {
-      "editor/title": [
+      "editor/title/run": [
         {
           "command": "jaclang-extension.runCurrentFile",
-          "when": "resourceLangId == jac",
-          "group": "navigation@jaclang"
+          "group": "navigation@0",
+          "when": "resourceLangId == jac"
         },
         {
           "command": "jaclang-extension.checkCurrentFile",
-          "when": "resourceLangId == jac",
-          "group": "navigation@jaclang",
-          "alt": "jaclang-extension.runCurrentFile"
+          "group": "navigation@1",
+          "when": "resourceLangId == jac"
         }
       ],
-      "commandPalette": [
+      "editor/title": [
         {
-          "command": "jaclang-extension.runCurrentFile",
+          "command": "jaclang-extension.serveCurrentFile",
+          "group": "navigation@99",
           "when": "resourceLangId == jac"
         }
       ]

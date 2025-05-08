@@ -212,7 +212,19 @@ export function activate(context: vscode.ExtensionContext) {
           }
         })
       );
-      
+    context.subscriptions.push(
+        vscode.commands.registerCommand('jaclang-extension.serveCurrentFile', () => {
+        const terminalName = "Jac Terminal";
+        let terminal = vscode.window.terminals.find(t => t.name === terminalName);
+        if (!terminal) {
+            terminal = vscode.window.createTerminal(terminalName);
+        }
+        terminal.show();
+        terminal.sendText(`jac serve`);
+        })
+    );
+
+
     vscode.debug.onDidStartDebugSession(async (event) => {
         if (webviewPanel) {
             graphData = await getDebugGraphData();
@@ -244,7 +256,9 @@ export function activate(context: vscode.ExtensionContext) {
             });
         }
     });
+
 }
+
 
 export function deactivate(): Thenable<void> | undefined {
     if (!client) {
