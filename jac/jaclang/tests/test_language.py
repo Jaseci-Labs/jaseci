@@ -716,7 +716,7 @@ class JacLanguageTests(TestCase):
             (mod for name, mod in prog.mod.hub.items() if "builtins" in name),
             None,
         )
-        self.assertEqual(len(builtin_mod.get_all_sub_nodes(uni.Architype)), 108)
+        self.assertEqual(len(builtin_mod.get_all_sub_nodes(uni.Architype)), 109)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(
@@ -933,7 +933,7 @@ class JacLanguageTests(TestCase):
             if i.name == "builtins":
                 continue
             sub_node_list_count += len(i.get_all_sub_nodes(uni.SubNodeList))
-        self.assertEqual(sub_node_list_count, 586)
+        self.assertEqual(sub_node_list_count, 605)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(self.mach, "deep_convert", base_path=self.fixture_abs_path("./"))
