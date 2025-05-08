@@ -56,6 +56,10 @@ Instead of using `can` keyword for all functions and abilities, `can` statements
 
 **Before (v0.7.x and earlier):**
 ```jac
+can add(x: int, y: int) -> int {
+    return x + y;
+}
+
 node Person {
     has name;
     has age;
@@ -76,6 +80,10 @@ node Person {
 
 **After (v0.8.0+):**
 ```jac
+def add(x: int, y: int) -> int {
+    return x + y;
+}
+
 node Person {
     has name;
     has age;
