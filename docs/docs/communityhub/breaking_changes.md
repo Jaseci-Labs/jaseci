@@ -219,7 +219,7 @@ import from utils { helper, math_utils, string_formatter };
 
 This new syntax using curly braces makes it clearer which modules are being imported from which package, especially when importing multiple items from different packages.
 
-#### 7. Import statement are auto resolved with language hints
+#### 7. Import statement are auto resolved (no language hints needed)
 
 The language-specific import syntax has been simplified by removing the explicit language annotations (`:py` and `:jac`). The compiler now automatically resolves imports based on context and file extensions.
 
