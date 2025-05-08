@@ -135,7 +135,7 @@ walker your_event_name {
 ## **`Walker Client Notification`**
 ### **`PREREQUISITE`**
 ```python
-import:py from jac_cloud.plugin {WEBSOCKET_MANAGER as socket}
+import from jac_cloud.plugin {WEBSOCKET_MANAGER as socket}
 ```
 
 ### Self
@@ -169,7 +169,7 @@ socket.notify_clients([client_id], {"any_field": "for_progress", "progress": "0%
 # Jac
 ```python
 """Websocket scenarios."""
-import:py from jac_cloud.plugin {WEBSOCKET_MANAGER as socket}
+import from jac_cloud.plugin {WEBSOCKET_MANAGER as socket}
 
 ###########################################################
 #                   WEBSOCKET ENDPOINTS                   #

@@ -1,4 +1,4 @@
-import:py from jac_cloud {FastAPI}
+import from jac_cloud {FastAPI}
 
 walker post_no_body {}
 

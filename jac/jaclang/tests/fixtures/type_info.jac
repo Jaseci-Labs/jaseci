@@ -1,8 +1,8 @@
-import:py pygls.server;
+import pygls.server;
 
 obj ServerWrapper {
-    can init(file: str);
-    can get_server(server_ip: str, port: int) -> pygls.server.LanguageServer;
+    def init(file: str);
+    def get_server(server_ip: str, port: int) -> pygls.server.LanguageServer;
 }
 
 :obj:ServerWrapper:can:init

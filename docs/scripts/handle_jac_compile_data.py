@@ -13,9 +13,8 @@ TARGET_FOLDER = "../jac/jaclang"
 EXTRACTED_FOLDER = "docs/playground"
 PLAYGROUND_ZIP_PATH = os.path.join(EXTRACTED_FOLDER, "jaclang.zip")
 ZIP_FOLDER_NAME = "jaclang"
-UNIIR_NODE_DOC = "docs/for_contributors/uniir_node.md"
+UNIIR_NODE_DOC = "docs/internals/uniir_node.md"
 LANG_REF_DOC = "docs/for_coders/jac_ref.md"
-INTERNALS_DOC = "docs/for_contributors/internals.md"
 AST_TOOL = AstTool()
 
 

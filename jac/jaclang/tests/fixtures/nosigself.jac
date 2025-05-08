@@ -1,11 +1,11 @@
 obj Foo {
     has a: int = 5;
 
-    can say {
+    def say {
         print(self.a);
     }
 
-    can say2;
+    def say2;
 }
 
 :o:Foo:c:say2 {

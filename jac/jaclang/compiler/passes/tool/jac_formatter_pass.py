@@ -158,19 +158,13 @@ class JacFormatPass(UniPass):
             self.emit_ln(node, "")
 
     def exit_module_code(self, node: uni.ModuleCode) -> None:
-        start = True
         for i in node.kid:
             if isinstance(i, uni.String):
                 self.emit_ln(node, i.gen.jac)
+            elif isinstance(i, uni.Token) and i.name != Tok.KW_ENTRY:
+                self.emit(node, i.gen.jac)
             elif isinstance(i, uni.Token):
-                if start:
-                    self.emit(node, i.gen.jac)
-                    start = False
-                else:
-                    self.emit(node, f" {i.gen.jac}")
-            elif isinstance(i, uni.SubTag):
-                for j in i.kid:
-                    self.emit(node, j.gen.jac)
+                self.emit(node, f" {i.gen.jac}")
         if node.body:
             self.emit(node, node.body.gen.jac)
 
@@ -557,8 +551,8 @@ class JacFormatPass(UniPass):
         prev_token = None
 
         for i in node.kid:
-            if i.gen.jac == "can" and node.is_static:
-                i.gen.jac = "static can"
+            if i.gen.jac in ["can", "def"] and node.is_static:
+                i.gen.jac = f"static {i.gen.jac}"
             if not i.gen.jac or i.gen.jac == "static":
                 continue
             if isinstance(i, uni.String):
@@ -1200,6 +1194,12 @@ class JacFormatPass(UniPass):
                 if prev_token and prev_token.gen.jac.strip() == "obj":
                     self.emit(node, " ")
                 self.emit_ln(node, i.gen.jac)
+            elif (
+                isinstance(i, uni.SubNodeList)
+                and prev_token
+                and isinstance(prev_token, uni.Name)
+            ):
+                self.emit(node, i.gen.jac)
             elif isinstance(i, uni.CommentToken):
                 if i.is_inline:
                     self.emit(node, i.gen.jac)
@@ -1289,7 +1289,7 @@ class JacFormatPass(UniPass):
             out += node.signature.params.gen.jac
         if node.signature and node.signature.return_type:
             out += f" -> {node.signature.return_type.gen.jac}"
-        self.emit(node, f"with {out} can {node.body.gen.jac}")
+        self.emit(node, f"lambda {out} : {node.body.gen.jac}")
 
     def exit_unary_expr(self, node: uni.UnaryExpr) -> None:
         if node.op.value in ["-", "~", "+", "*", "**"]:
@@ -1490,10 +1490,6 @@ class JacFormatPass(UniPass):
                 self.emit(node, f"{i.gen.jac} ")
             else:
                 self.emit(node, i.gen.jac)
-
-    def exit_revisit_stmt(self, node: uni.RevisitStmt) -> None:
-        for i in node.kid:
-            self.emit(node, i.gen.jac)
 
     def exit_visit_stmt(self, node: uni.VisitStmt) -> None:
         for i in node.kid:

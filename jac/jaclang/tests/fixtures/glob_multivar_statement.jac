@@ -1,7 +1,7 @@
 glob a: str, b: str;
 glob c: str;
 
-can do() {
+def do() {
     :g: a, b, c ;
 
     (a, b, c) = ("Welcome", "to", "Jaseci!");

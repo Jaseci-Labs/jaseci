@@ -1,7 +1,22 @@
-"""Integrate mypy infrastructure into Jac.
+"""Type Information Fusion Pass for the Jac compiler.
 
-This is used to call mypy type checking into Jac files by integrating
-mypy apis into Jac and use jac py ast in it.
+This pass integrates mypy's type inference capabilities with Jac's AST by:
+
+1. Collecting type information from mypy's analysis and attaching it to Jac AST nodes
+2. Establishing type relationships between expressions, variables, and function returns
+3. Resolving complex types including:
+   - Collection types (lists, dictionaries, tuples, sets)
+   - Union types
+   - Module types
+   - Custom user-defined types
+
+4. Building symbol table links based on type information, enabling:
+   - Proper attribute access resolution
+   - Method call validation
+   - Type-based code completion
+
+This pass is essential for static type checking, IDE support, and enabling type-aware
+optimizations in the compiler.
 """
 
 from __future__ import annotations

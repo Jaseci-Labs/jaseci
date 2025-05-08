@@ -1,7 +1,16 @@
-"""Collect Python dependencies based on reference sourced from Jac.
+"""Python Dependency Collection Pass for the Jac compiler.
 
-This pass will use mypy to calculate the python package/module dependencies
-that are only relevant to actual references source from Jac code.
+This pass identifies and collects Python dependencies referenced in Jac code by:
+
+1. Analyzing references to Python modules, classes, and functions in Jac source code
+2. Using mypy's dependency resolution to determine the actual Python files needed
+3. Building a mapping between module names and their file paths
+4. Filtering dependencies to include only those actually referenced from Jac
+5. Handling both direct imports and nested module references
+6. Supporting both .py and .pyi (type stub) files
+
+This pass is crucial for the Python interoperability features of Jac, ensuring that
+all necessary Python dependencies are available during compilation and runtime.
 """
 
 from __future__ import annotations

@@ -1,4 +1,16 @@
-"""Lark parser for Jac Lang."""
+"""Python AST to Jac AST Conversion Pass for the Jac compiler.
+
+This pass transforms Python AST nodes into equivalent Jac AST nodes by:
+
+1. Converting Python modules, classes, functions, and expressions to their Jac equivalents
+2. Preserving source location information and symbol relationships
+3. Handling Python-specific constructs and adapting them to Jac's object model
+4. Supporting both standard Python modules and type stub (.pyi) files
+5. Creating appropriate symbol tables and scopes for the converted nodes
+
+This pass is crucial for Python interoperability, allowing Python code to be imported
+and used within Jac programs while maintaining type information and semantic relationships.
+"""
 
 from __future__ import annotations
 
@@ -1460,25 +1472,12 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             # Need to unravel atom trailers
             else:
                 raise self.ice()
-        lang = uni.Name(
-            orig_src=self.orig_src,
-            name=Tok.NAME,
-            value="py",
-            line=node.lineno,
-            end_line=node.end_lineno if node.end_lineno else node.lineno,
-            col_start=node.col_offset,
-            col_end=0,
-            pos_start=0,
-            pos_end=0,
-        )
-        pytag = uni.SubTag[uni.Name](tag=lang, kid=[lang])
         items = uni.SubNodeList[uni.ModulePath](items=paths, delim=Tok.COMMA, kid=paths)
         ret = uni.Import(
-            hint=pytag,
             from_loc=None,
             items=items,
             is_absorb=False,
-            kid=[pytag, items],
+            kid=[items],
         )
         return ret
 
@@ -1557,7 +1556,6 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                 items=[path], delim=Tok.COMMA, kid=[path]
             )
             ret = uni.Import(
-                hint=pytag,
                 from_loc=None,
                 items=path_in,
                 is_absorb=True,
@@ -1565,7 +1563,6 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             )
             return ret
         ret = uni.Import(
-            hint=pytag,
             from_loc=path,
             items=items,
             is_absorb=False,

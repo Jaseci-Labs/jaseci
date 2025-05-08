@@ -93,7 +93,7 @@ This Map object will hold the exact positions of all objects in the map. This is
 To manage all the generations we can define a Level manager object which can hold a directory of previous levels configurations and maps, which can be used to feed the LLM to give context about the play style of the player. We will be using the OpenAI GPT-4o as the LLM in this tutorial.
 
 ```python | level_manager.jac
-import:py from mtllm.llms, OpenAI;
+import from mtllm.llms, OpenAI;
 glob llm = OpenAI(model_name="gpt-4o");
 
 obj LevelManager {

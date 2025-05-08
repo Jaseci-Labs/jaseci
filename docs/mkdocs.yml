@@ -7,8 +7,6 @@ nav:
     - "for_coders/why_jac.md"
     - "for_coders/getting_started.md"
     - "for_coders/installation.md"
-    - Full Reference:
-      - "for_coders/jac_ref.md"
     - Language Basics:
       - "for_coders/language_basics/basic_syntax.md"
       - "for_coders/language_basics/types.md"
@@ -24,6 +22,7 @@ nav:
       - "for_coders/data_spatial/FAQ.md" # faq
     # - Python Integration:
     #   - "for_coders/python_integration.md"
+    - Full Jac Reference: "for_coders/jac_ref.md"
     - Programming with Generative AI Models:
       - "for_coders/jac-mtllm/with_llm.md"
       - Quick Start Guide: "for_coders/jac-mtllm/quickstart.md"
@@ -61,23 +60,35 @@ nav:
         - "examples/rag_chatbot/3_rag-dialogue-routing-chatbot.md"
 
   - Internals:
+    - Contributing: "communityhub/contrib.md"
     - Design Docs and Guides:
-      - Compiler/Runtime Design: "for_contributors/internals.md"
-      - IR:
+      - Compiler/Runtime Design: "internals/internals.md"
+      - Static Compilation:
         - Sym Table Design Docs:
-          - "for_contributors/symbol_tables/index.md"
-          - "for_contributors/symbol_tables/structure.md"
-          - "for_contributors/symbol_tables/building.md"
-          - "for_contributors/symbol_tables/def_use.md"
-          - "for_contributors/symbol_tables/linking.md"
-          - "for_contributors/symbol_tables/resolution.md"
-        - UniIR Nodes: "for_contributors/uniir_node.md"
-      - Runtime Plugin Interface: "for_contributors/jac_plugins.md"
-
+          - "internals/symbol_tables/index.md"
+          - "internals/symbol_tables/structure.md"
+          - "internals/symbol_tables/building.md"
+          - "internals/symbol_tables/def_use.md"
+          - "internals/symbol_tables/linking.md"
+          - "internals/symbol_tables/resolution.md"
+      - Reference:
+        - Language Spec: "for_coders/jac_ref.md"
+        - UniIR Nodes: "internals/uniir_node.md"
+      - Runtime Plugin Interface: "internals/jac_plugins.md"
+    - Planning Specs and Docs:
+      - Error System: "internals/planning_specs/error_system.md"
+      - Native Type System:
+        - Introduction: "internals/planning_specs/native_type_system/index.md"
+        - Architecture: "internals/planning_specs/native_type_system/architecture.md"
+        - Type Representation: "internals/planning_specs/native_type_system/type_representation.md"
+        - Type Resolution: "internals/planning_specs/native_type_system/type_resolution.md"
+        - Type Rules: "internals/planning_specs/native_type_system/type_rules.md"
+        - Type Inference: "internals/planning_specs/native_type_system/type_inference.md"
+        - Compiler Integration: "internals/planning_specs/native_type_system/compiler_integration.md"
   - Community Hub:
     - Roadmap: "communityhub/roadmap.md"
     - Breaking Changes: "communityhub/breaking_changes.md"
-    - Contributing: "communityhub/contrib.md"
+
 
   - Jac Playground:
     - Playground: "playground/index.html"
@@ -100,7 +111,7 @@ theme:
     - navigation.path
     - navigation.footer
     # - navigation.expand
-    - navigation.sections
+    # - navigation.sections
     - navigation.top
   icon:
     admonition:
@@ -126,15 +137,12 @@ markdown_extensions:
       pygments_lang_class: true
       pygments_style: "autumn"
   - pymdownx.inlinehilite
-  # - codehilite:
-  #     linenums: true
   - pymdownx.snippets:
       base_path: [".", "../"]
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
           class: mermaid
-          # format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tasklist:
       custom_checkbox: true
   - attr_list
@@ -146,9 +154,7 @@ markdown_extensions:
   - tables
   - toc:
         permalink: "#"
-  # - pymdownx.emoji:
-  #     emoji_index: !!python/name:material.extensions.emoji.twemoji
-  #     emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
 
 extra_css:
   - extra.css

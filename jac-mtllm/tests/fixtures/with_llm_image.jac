@@ -1,13 +1,13 @@
-import:py from mtllm.llms { BaseLLM }
-import:py from mtllm { Image }
-import:py os;
+import from mtllm.llms { BaseLLM }
+import from mtllm { Image }
+import os;
 
-obj model :BaseLLM: {
-    can init {
+obj model(BaseLLM) {
+    def init {
         super.__init__();
     }
 
-    can __infer__(meaning_in: str, **kwargs: dict) {
+    def __infer__(meaning_in: str, **kwargs: dict) {
         print(kwargs);
         print(meaning_in);
         return "[Output] Something";

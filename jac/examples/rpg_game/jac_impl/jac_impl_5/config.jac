@@ -1,9 +1,9 @@
-import:py from openai, ChatCompletion;
-import:py openai;
-import:py re;
-import:py ast;
+import from openai { ChatCompletion }
+import openai;
+import re;
+import ast;
 
-# include:jac _secrets;
+# import _secrets;
 
 glob WIN_WIDTH = 640;
 glob WIN_HEIGHT = 480;

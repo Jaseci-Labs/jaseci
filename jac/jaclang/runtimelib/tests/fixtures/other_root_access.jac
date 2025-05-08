@@ -1,6 +1,6 @@
-import:py from jaclang.runtimelib.machine {JacMachine as Jac}
-import:py from jaclang.runtimelib.architype {Anchor}
-import:py from uuid {UUID}
+import from jaclang.runtimelib.machine {JacMachine as Jac}
+import from jaclang.runtimelib.architype {Anchor}
+import from uuid {UUID}
 
 node A {
     has val: int;
@@ -66,7 +66,7 @@ walker allow_other_root_access {
 
     can enter_root with `root entry {
         if self.via_all {
-            Jac.unrestrict(here, self.level);
+            Jac.perm_grant(here, self.level);
         } else {
             Jac.allow_root(here, UUID(self.root_id), self.level);
         }
@@ -74,7 +74,7 @@ walker allow_other_root_access {
 
     can enter_nested with A entry {
         if self.via_all {
-            Jac.unrestrict(here, self.level);
+            Jac.perm_grant(here, self.level);
         } else {
             Jac.allow_root(here, UUID(self.root_id), self.level);
         }
@@ -86,7 +86,7 @@ walker disallow_other_root_access {
 
     can enter_root with `root entry {
         if self.via_all {
-            Jac.restrict(here);
+            Jac.perm_revoke(here);
         } else {
             Jac.disallow_root(here, UUID(self.root_id));
         }
@@ -94,7 +94,7 @@ walker disallow_other_root_access {
 
     can enter_nested with A entry {
         if self.via_all {
-            Jac.restrict(here);
+            Jac.perm_revoke(here);
         } else {
             Jac.disallow_root(here, UUID(self.root_id));
         }

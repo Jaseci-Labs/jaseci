@@ -1,11 +1,11 @@
-import:py from mtllm.llms { BaseLLM }
+import from mtllm.llms { BaseLLM }
 
-obj model :BaseLLM: {
-    can init {
+obj model(BaseLLM) {
+    def init {
         super.__init__();
     }
 
-    can __infer__(meaning_in: str, **kwargs: dict) {
+    def __infer__(meaning_in: str, **kwargs: dict) {
         print(meaning_in);
         return "[Output] Personality.INTROVERT";
     }
@@ -41,7 +41,7 @@ outer {
     inner {
         has diary_entries: 'Diary Entries': list[str];
 
-        can 'Get Personality of the Person'
+        def 'Get Personality of the Person'
         get_personality(person: 'Person Object': list[Person]) -> 'Personality of the Person': dict[Personality, PersonalityIndex] by llm(
             method="Reason",
             incl_info=(personality_examples, self.diary_entries)

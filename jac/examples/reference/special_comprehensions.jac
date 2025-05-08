@@ -1,5 +1,5 @@
 #Filter comprehension
-import:py random;
+import random;
 
 obj TestObj {
     has x: int = random.randint(0, 15),

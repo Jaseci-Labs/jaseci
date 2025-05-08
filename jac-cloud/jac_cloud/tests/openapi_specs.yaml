@@ -131,6 +131,30 @@ components:
         - multiple
       title: Body_api_root_walker_post_with_file_post
       type: object
+    Child:
+      properties:
+        arr:
+          items:
+            type: integer
+          title: Arr
+          type: array
+        data:
+          additionalProperties:
+            type: integer
+          title: Data
+          type: object
+        enum_field:
+          $ref: '#/components/schemas/Enum'
+        val:
+          title: Val
+          type: integer
+      required:
+      - val
+      - arr
+      - data
+      - enum_field
+      title: Child
+      type: object
     ContextResponse_NoneType_:
       properties:
         reports:
@@ -151,6 +175,36 @@ components:
           type: integer
       required:
         - status
+      title: ContextResponse
+      type: object
+    ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__:
+      properties:
+        reports:
+          anyOf:
+          - items: {}
+            type: array
+          - type: 'null'
+          title: Reports
+        returns:
+          anyOf:
+          - items:
+              anyOf:
+              - type: integer
+              - type: string
+              - type: boolean
+              - $ref: '#/components/schemas/Parent'
+              - items: {}
+                type: array
+              - type: object
+              - type: 'null'
+            type: array
+          - type: 'null'
+          title: Returns
+        status:
+          title: Status
+          type: integer
+      required:
+      - status
       title: ContextResponse
       type: object
     DetachSSO:
@@ -241,6 +295,33 @@ components:
       required:
         - enum_field
       title: Kid
+      type: object
+    Parent:
+      properties:
+        arr:
+          items:
+            type: integer
+          title: Arr
+          type: array
+        child:
+          $ref: '#/components/schemas/Child'
+        data:
+          additionalProperties:
+            type: integer
+          title: Data
+          type: object
+        enum_field:
+          $ref: '#/components/schemas/Enum'
+        val:
+          title: Val
+          type: integer
+      required:
+      - val
+      - arr
+      - data
+      - enum_field
+      - child
+      title: Parent
       type: object
     UserChangePassword:
       description: User Creation Request Model.
@@ -2460,8 +2541,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
+                - $ref: '#/components/schemas/ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__'
+                - {}
                 title: Response Api Root Walker Different Return Post
           description: Successful Response
       summary: Api Root
@@ -2485,8 +2566,8 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
+                - $ref: '#/components/schemas/ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__'
+                - {}
                 title: Response Api Entry Walker Different Return  Node  Post
           description: Successful Response
         "422":

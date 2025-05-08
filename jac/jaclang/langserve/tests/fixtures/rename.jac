@@ -1,4 +1,4 @@
-can foo;
+def foo;
 
 
 
@@ -9,8 +9,8 @@ can foo;
 
 obj out{
     has cnt :int;
-    can bar;
-    can baz;
+    def bar;
+    def baz;
 }
 
 

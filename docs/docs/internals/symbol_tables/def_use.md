@@ -105,7 +105,7 @@ def chain_use_lookup(self, node_list: Sequence[AstSymbolNode]) -> None:
             # check if the symbol table name is not the same as symbol name
             # then try to find a child scope with the same name
             # This is used to get the scope in case of
-            #      import:py math;
+            #      import math;
             #      b = math.floor(1.7);
             if cur_sym_tab.nix_name != i.sym_name:
                 t = cur_sym_tab.find_scope(i.sym_name)

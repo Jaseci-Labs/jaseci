@@ -1,17 +1,17 @@
-import:py from mtllm.llms.base { BaseLLM }
-import:py json;
-import:py os;
-import:py random;
+import from mtllm.llms.base { BaseLLM }
+import json;
+import os;
+import random;
 
 glob output_str = "None";
 
-obj model :BaseLLM: {
-    can init {
+obj model(BaseLLM) {
+    def init {
         self.verbose = True;
         self.max_tries = 1;
     }
 
-    can __infer__(meaning_in: str, **kwargs: dict) {
+    def __infer__(meaning_in: str, **kwargs: dict) {
         :g: output_str ;
 
         return f"[Output] {output_str}";
@@ -55,9 +55,9 @@ obj LevelManager {
         prev_levels: list[Level] = [],
         prev_level_maps: list[Map] = [];
 
-    can create_next_level(last_levels: list[Level], difficulty: int, level_width: int, level_height: int) -> Level by llm(temperature=1.0);
+    def create_next_level(last_levels: list[Level], difficulty: int, level_width: int, level_height: int) -> Level by llm(temperature=1.0);
     '''Get the Next Level'''
-    can get_next_level -> tuple(Level, Map) {
+    def get_next_level -> tuple(Level, Map) {
         :g: output_str ;
 
         self.current_level += 1;
@@ -126,7 +126,7 @@ obj LevelManager {
 }
 
 '''Get the map of the level'''
-can get_map(map: Map) -> str {
+def get_map(map: Map) -> str {
     map_tiles = [['.' for _ in range(map.level.width)] for _ in range(map.level.height)];
 
     for wall in map.walls {

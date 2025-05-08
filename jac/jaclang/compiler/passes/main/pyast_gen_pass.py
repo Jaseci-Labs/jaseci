@@ -1,7 +1,21 @@
-"""Jac Blue pass for Jaseci Ast.
+"""Python AST Generation Pass for the Jac compiler.
 
-At the end of this pass a meta['py_code'] is present with pure python code
-in each node. Module nodes contain the entire module code.
+This pass transforms the Jac AST into equivalent Python AST by:
+
+1. Traversing the Jac AST and generating corresponding Python AST nodes
+2. Handling all Jac language constructs and translating them to Python equivalents:
+   - Classes, functions, and methods
+   - Control flow statements (if/else, loops, try/except)
+   - Data structures (lists, dictionaries, sets)
+   - Special Jac features (walkers, abilities, architypes)
+   - Data spatial operations (node/edge connections)
+
+3. Managing imports and dependencies between modules
+4. Preserving source location information for error reporting
+5. Generating appropriate Python code for Jac-specific constructs
+
+The output of this pass is a complete Python AST representation that can be
+compiled to Python bytecode or serialized to Python source code.
 """
 
 import ast as ast3
@@ -391,9 +405,7 @@ class PyastGenPass(UniPass):
                                 ),
                                 ops=[self.sync(ast3.Eq())],
                                 comparators=[
-                                    self.sync(
-                                        ast3.Constant(value=node.name.tag.sym_name)
-                                    )
+                                    self.sync(ast3.Constant(value=node.name.sym_name))
                                 ],
                             )
                         ),
@@ -789,7 +801,12 @@ class PyastGenPass(UniPass):
             )
         )
         body = self.resolve_stmt_block(
-            node.body.body if isinstance(node.body, uni.ArchDef) else node.body,
+            (
+                node.body.body
+                if isinstance(node.body, uni.ArchDef)
+                and isinstance(node.body.body, uni.SubNodeList)
+                else node.body if isinstance(node.body, uni.SubNodeList) else None
+            ),
             doc=node.doc,
         )
         decorators = (
@@ -825,7 +842,12 @@ class PyastGenPass(UniPass):
     def exit_enum(self, node: uni.Enum) -> None:
         self.needs_enum()
         body = self.resolve_stmt_block(
-            node.body.body if isinstance(node.body, uni.EnumDef) else node.body,
+            (
+                node.body.body
+                if isinstance(node.body, uni.EnumDef)
+                and isinstance(node.body.body, uni.SubNodeList)
+                else node.body if isinstance(node.body, uni.SubNodeList) else None
+            ),
             doc=node.doc,
         )
         decorators = (
@@ -870,6 +892,8 @@ class PyastGenPass(UniPass):
         body = (
             self.gen_llm_body(node)
             if isinstance(node.body, uni.FuncCall)
+            or isinstance(node.body, uni.AbilityDef)
+            and isinstance(node.body.body, uni.FuncCall)
             else (
                 [
                     self.sync(
@@ -886,6 +910,7 @@ class PyastGenPass(UniPass):
                         (
                             node.body.body
                             if isinstance(node.body, uni.AbilityDef)
+                            and isinstance(node.body.body, uni.SubNodeList)
                             else node.body
                         ),
                         doc=node.doc,
@@ -1753,12 +1778,6 @@ class PyastGenPass(UniPass):
                 if node.else_body
                 else self.sync(ast3.Expr(value=visit_call))
             )
-        ]
-
-    def exit_revisit_stmt(self, node: uni.RevisitStmt) -> None:
-        self.log_warning("Revisit not used in Jac", node)
-        node.gen.py_ast = [
-            self.sync(ast3.Expr(value=self.sync(ast3.Constant(value=None))))
         ]
 
     def exit_disengage_stmt(self, node: uni.DisengageStmt) -> None:

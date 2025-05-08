@@ -90,6 +90,7 @@ class Constants(StrEnum):
 
     HERE = "here"
     ROOT = "root"
+    VISITOR = "visitor"
     JAC_CHECK = "_check"
     JAC_MYPY_CACHE = ".jac_mypy_cache"
     SUPER_ROOT_UUID = "00000000-0000-0000-0000-000000000000"
@@ -160,9 +161,9 @@ class Tokens(str, Enum):
     KW_NODE = "KW_NODE"
     KW_IGNORE = "KW_IGNORE"
     KW_VISIT = "KW_VISIT"
-    KW_REVISIT = "KW_REVISIT"
     KW_SPAWN = "KW_SPAWN"
     KW_WITH = "KW_WITH"
+    KW_LAMBDA = "KW_LAMBDA"
     KW_ENTRY = "KW_ENTRY"
     KW_EXIT = "KW_EXIT"
     KW_IMPORT = "KW_IMPORT"
@@ -241,6 +242,7 @@ class Tokens(str, Enum):
     KW_GLOBAL = "KW_GLOBAL"
     COMMA = "COMMA"
     KW_CAN = "KW_CAN"
+    KW_DEF = "KW_DEF"
     KW_STATIC = "KW_STATIC"
     KW_OVERRIDE = "KW_OVERRIDE"
     KW_MATCH = "KW_MATCH"
@@ -279,6 +281,7 @@ class Tokens(str, Enum):
     GLOBAL_OP = "GLOBAL_OP"
     NONLOCAL_OP = "NONLOCAL_OP"
     KW_HERE = "KW_HERE"
+    KW_VISITOR = "KW_VISITOR"
     KW_SELF = "KW_SELF"
     KW_INIT = "KW_INIT"
     KW_SUPER = "KW_SUPER"
@@ -292,6 +295,7 @@ class Tokens(str, Enum):
     TYPE_OP = "TYPE_OP"
     ENUM_OP = "ENUM_OP"
     ABILITY_OP = "ABILITY_OP"
+    DEF_OP = "DEF_OP"
     A_PIPE_FWD = "A_PIPE_FWD"
     A_PIPE_BKWD = "A_PIPE_BKWD"
     RETURN_HINT = "RETURN_HINT"
@@ -306,10 +310,6 @@ class Tokens(str, Enum):
     FSTR_BESC = "FSTR_BESC"
     COMMENT = "COMMENT"
     WS = "WS"
-    DCARROW_L_P2 = "DCARROW_L_P2"
-    DCARROW_R_P1 = "DCARROW_R_P1"
-    DARROW_L_P2 = "DARROW_L_P2"
-    DARROW_R_P1 = "DARROW_R_P1"
 
     def __str__(self) -> str:
         return self.value

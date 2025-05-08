@@ -82,10 +82,10 @@ class JacAccessValidationPlugin:
 
     @staticmethod
     @hookimpl
-    def unrestrict(architype: Architype, level: AccessLevel | int | str) -> None:
+    def perm_grant(architype: Architype, level: AccessLevel | int | str) -> None:
         """Allow everyone to access current Architype."""
         if not FastAPI.is_enabled():
-            JacMachineImpl.unrestrict(architype=architype, level=level)
+            JacMachineImpl.perm_grant(architype=architype, level=level)
             return
 
         anchor = architype.__jac__
@@ -97,10 +97,10 @@ class JacAccessValidationPlugin:
 
     @staticmethod
     @hookimpl
-    def restrict(architype: Architype) -> None:
+    def perm_revoke(architype: Architype) -> None:
         """Disallow others to access current Architype."""
         if not FastAPI.is_enabled():
-            JacMachineImpl.restrict(architype=architype)
+            JacMachineImpl.perm_revoke(architype=architype)
             return
 
         anchor = architype.__jac__

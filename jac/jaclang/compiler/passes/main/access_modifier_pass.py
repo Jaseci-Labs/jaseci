@@ -1,6 +1,12 @@
 """Access check pass for the Jac compiler.
 
-This pass checks for access to attributes in the Jac language.
+This pass enforces access control rules by validating that symbols with private or protected
+access modifiers are accessed correctly. It verifies that:
+1. Private members are only accessed within their defining class or module
+2. Protected members are only accessed within their defining class, module, or subclasses
+3. Public members can be accessed from anywhere
+
+The pass reports errors when it detects illegal access to private or protected members.
 """
 
 from typing import Optional

@@ -1,4 +1,4 @@
-import:py import_all_py;
+import import_all_py;
 
 with entry {
     print(import_all_py.custom_func(11));

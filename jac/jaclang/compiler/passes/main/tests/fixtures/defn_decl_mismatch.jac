@@ -1,8 +1,8 @@
 
 
 obj SomeObj {
-    can foo(param1: str, param2:int) -> str;
-    can bar(param1: str, param2:int) -> str;
+    def foo(param1: str, param2:int) -> str;
+    def bar(param1: str, param2:int) -> str;
 }
 
 

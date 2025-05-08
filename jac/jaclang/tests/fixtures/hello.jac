@@ -1,6 +1,6 @@
 """Hello World!"""
 
-can still_there {
+def still_there {
     print("im still here");
 }
 

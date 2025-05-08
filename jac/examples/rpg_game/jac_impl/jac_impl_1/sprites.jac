@@ -2,23 +2,23 @@
 
 
 # Importing python libraries
-import:py pygame;
-import:py from pygame.sprite, AbstractGroup;
-import:py random;
-import:py math;
+import pygame;
+import from pygame.sprite { AbstractGroup }
+import random;
+import math;
 # Importing configuration and map data
-include:jac config;
-include:jac map;
+import config;
+import map;
 
 """
 Object for impoting sprite character images.
 """
 obj Spritesheet {
-    can init(file: str) {
+    def init(file: str) {
         self.sheet = pygame.image.load(file).convert();
     }
 
-    can get_sprite(x: int, y: int, width: int, height: int) {
+    def get_sprite(x: int, y: int, width: int, height: int) {
         sprite = pygame.Surface([width, height]);
         sprite.blit(self.sheet, (0, 0), (x, y, width, height));
         sprite.set_colorkey(BLACK);
@@ -29,8 +29,8 @@ obj Spritesheet {
 """
 Object for the player with type pygame.sprite.Sprite
 """
-obj Player :pygame.sprite.Sprite: {
-    can init(game: None, x: int, y: int) {
+obj Player(pygame.sprite.Sprite) {
+    def init(game: None, x: int, y: int) {
         self.game = game;
         self._layer = PLAYER_LAYER;
         self.groups = self.game.all_sprites;
@@ -50,7 +50,7 @@ obj Player :pygame.sprite.Sprite: {
     }
     # Update the player actions
 
-    can update() {
+    def update() {
         self.movement();
         self.animate();
         self.collide_enemy();
@@ -63,7 +63,7 @@ obj Player :pygame.sprite.Sprite: {
     }
     # Movement controls based on arrow key pushes.
 
-    can movement() {
+    def movement() {
         keys = pygame.key.get_pressed();
         if keys[pygame.K_LEFT] {
             for sprite in self.game.all_sprites {
@@ -96,7 +96,7 @@ obj Player :pygame.sprite.Sprite: {
     }
     # Player death when collidong with an enemy.
 
-    can collide_enemy() {
+    def collide_enemy() {
         hits = pygame.sprite.spritecollide(self, self.game.enemies, False);
         if hits {
             self.kill();
@@ -105,7 +105,7 @@ obj Player :pygame.sprite.Sprite: {
     }
     # Anminate the player character.
 
-    can animate() {
+    def animate() {
         down_animations = [self.game.character_spritesheet.get_sprite(3, 2, self.width, self.height), self.game.character_spritesheet.get_sprite(35, 2, self.width, self.height), self.game.character_spritesheet.get_sprite(68, 2, self.width, self.height)];
         up_animations = [self.game.character_spritesheet.get_sprite(3, 34, self.width, self.height), self.game.character_spritesheet.get_sprite(35, 34, self.width, self.height), self.game.character_spritesheet.get_sprite(68, 34, self.width, self.height)];
         left_animations = [self.game.character_spritesheet.get_sprite(3, 98, self.width, self.height), self.game.character_spritesheet.get_sprite(35, 98, self.width, self.height), self.game.character_spritesheet.get_sprite(68, 98, self.width, self.height)];
@@ -157,7 +157,7 @@ obj Player :pygame.sprite.Sprite: {
     }
     # Ability to collide with blocks without passing through.
 
-    can collide_blocks(direction: str) {
+    def collide_blocks(direction: str) {
         if direction == "x" {
             hits = pygame.sprite.spritecollide(self, self.game.blocks, False);
             if hits {
@@ -198,8 +198,8 @@ obj Player :pygame.sprite.Sprite: {
 """
 Object for enemies with type pygame.sprite.Sprite
 """
-obj Enemy :pygame.sprite.Sprite: {
-    can init(game: None, x: int, y: int) {
+obj Enemy(pygame.sprite.Sprite) {
+    def init(game: None, x: int, y: int) {
         self.game = game;
         self._layer = ENEMY_LAYER;
         self.groups = (self.game.all_sprites, self.game.enemies);
@@ -221,7 +221,7 @@ obj Enemy :pygame.sprite.Sprite: {
     }
     # Update the enemy actions
 
-    can update() {
+    def update() {
         self.movement();
         self.animate();
         self.rect.x+=self.x_change;
@@ -233,7 +233,7 @@ obj Enemy :pygame.sprite.Sprite: {
     }
     # Movement controls.
 
-    can movement() {
+    def movement() {
         if self.facing == 'left' {
             self.x_change-=ENEMY_SPEED;
             self.movement_loop-=1;
@@ -265,7 +265,7 @@ obj Enemy :pygame.sprite.Sprite: {
     }
     # Anminate the enemy character.
 
-    can animate() {
+    def animate() {
         down_animations = [self.game.enemy_spritesheet.get_sprite(3, 2, self.width, self.height), self.game.enemy_spritesheet.get_sprite(35, 2, self.width, self.height), self.game.enemy_spritesheet.get_sprite(68, 2, self.width, self.height)];
         up_animations = [self.game.enemy_spritesheet.get_sprite(3, 34, self.width, self.height), self.game.enemy_spritesheet.get_sprite(35, 34, self.width, self.height), self.game.enemy_spritesheet.get_sprite(68, 34, self.width, self.height)];
         left_animations = [self.game.enemy_spritesheet.get_sprite(3, 98, self.width, self.height), self.game.enemy_spritesheet.get_sprite(35, 98, self.width, self.height), self.game.enemy_spritesheet.get_sprite(68, 98, self.width, self.height)];
@@ -301,7 +301,7 @@ obj Enemy :pygame.sprite.Sprite: {
     }
     # Ability to collide with blocks without passing through.
 
-    can collide_blocks(direction: str) {
+    def collide_blocks(direction: str) {
         if direction == "x" {
             hits = pygame.sprite.spritecollide(self, self.game.blocks, False);
             if hits {
@@ -330,8 +330,8 @@ obj Enemy :pygame.sprite.Sprite: {
 """
 Object for blocks (Walls) with type pygame.sprite.Sprite
 """
-obj Block :pygame.sprite.Sprite: {
-    can init(game: None, x: int, y: int) {
+obj Block(pygame.sprite.Sprite) {
+    def init(game: None, x: int, y: int) {
         self.game = game;
         self._layer = BLOCK_LAYER;
         self.groups = (self.game.all_sprites, self.game.blocks);
@@ -350,8 +350,8 @@ obj Block :pygame.sprite.Sprite: {
 """
 Object for ground with type pygame.sprite.Sprite
 """
-obj Ground :pygame.sprite.Sprite: {
-    can init(game: None, x: int, y: int) {
+obj Ground(pygame.sprite.Sprite) {
+    def init(game: None, x: int, y: int) {
         self.game = game;
         self._layer = GROUND_LAYER;
         self.groups = self.game.all_sprites;
@@ -371,7 +371,7 @@ obj Ground :pygame.sprite.Sprite: {
 Object class for buttons used in the game (Start, Restart)
 """
 obj Button {
-    can init(x: int, y: int, width: int, height: int, fg: tuple, bg: tuple, content: str, fontsize: int) {
+    def init(x: int, y: int, width: int, height: int, fg: tuple, bg: tuple, content: str, fontsize: int) {
         self.font = pygame.font.Font(GENERAL_FONT, fontsize);
         self.content = content;
         self.x = x;
@@ -391,7 +391,7 @@ obj Button {
     }
     # Determine if thebutton is pressed.
 
-    can is_pressed(pos: tuple, pressed: list) {
+    def is_pressed(pos: tuple, pressed: list) {
         if self.rect.collidepoint(pos) {
             if pressed[0] {
                 return True;
@@ -405,8 +405,8 @@ obj Button {
 """"
 Object class for attacks by the player
 """
-obj Attack :pygame.sprite.Sprite: {
-    can init(game: None, x: int, y: int) {
+obj Attack(pygame.sprite.Sprite) {
+    def init(game: None, x: int, y: int) {
         self.game = game;
         self._layer = ATTACK_LAYER;
         self.groups = (self.game.all_sprites, self.game.attacks);
@@ -423,18 +423,18 @@ obj Attack :pygame.sprite.Sprite: {
     }
     # Update the attack interations
 
-    can update() {
+    def update() {
         self.animate();
         self.collide();
     }
     # Ability to collide with enemies without passing through.
 
-    can collide() {
+    def collide() {
         hits = pygame.sprite.spritecollide(self, self.game.enemies, True);
     }
     # Anminate the attacks.
 
-    can animate() {
+    def animate() {
         direction = self.game.player.facing;
         right_animations = [self.game.attack_spritesheet.get_sprite(0, 64, self.width, self.height), self.game.attack_spritesheet.get_sprite(32, 64, self.width, self.height), self.game.attack_spritesheet.get_sprite(64, 64, self.width, self.height), self.game.attack_spritesheet.get_sprite(96, 64, self.width, self.height), self.game.attack_spritesheet.get_sprite(128, 64, self.width, self.height)];
         down_animations = [self.game.attack_spritesheet.get_sprite(0, 32, self.width, self.height), self.game.attack_spritesheet.get_sprite(32, 32, self.width, self.height), self.game.attack_spritesheet.get_sprite(64, 32, self.width, self.height), self.game.attack_spritesheet.get_sprite(96, 32, self.width, self.height), self.game.attack_spritesheet.get_sprite(128, 32, self.width, self.height)];

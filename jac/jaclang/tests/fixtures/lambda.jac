@@ -1,6 +1,6 @@
 with entry {
-    x = with a: int, b: int can b + a;
+    x = lambda a: int, b: int : b + a;
     print(x(5, 4));
-    y = with  can 567;
+    y = lambda : 567;
     print(y());
 }

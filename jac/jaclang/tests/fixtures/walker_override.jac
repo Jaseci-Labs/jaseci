@@ -4,13 +4,13 @@ walker a {
     }
 }
 
-walker b :a: {
+walker b(a) {
     can bar with `root entry {
         print("bar");
     }
 }
 
-walker c :b: {
+walker c(b) {
     override can foo with `root entry {
         print("baz");
     }

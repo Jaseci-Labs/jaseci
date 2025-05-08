@@ -2,18 +2,18 @@
 
 
 # This game is built using the pygame module which is imported here
-import:py pygame;
-import:py sys;
+import pygame;
+import sys;
 # Importing Jac codebase
-include:jac sprites;
-include:jac config;
-include:jac map;
+import sprites;
+import config;
+import map;
 
 """
 The Game base class
 """
 obj Game {
-    can init() {
+    def init() {
         pygame.<>init();
         self.screen = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT));
         self.clock = pygame.time.Clock();
@@ -31,7 +31,7 @@ obj Game {
     }
     # Generate the map according to the tilemap variable in map.jac
 
-    can createTilemap() {
+    def createTilemap() {
 
         for (i, row) in enumerate(tilemap) {
             for (j, column) in enumerate(row) {
@@ -50,7 +50,7 @@ obj Game {
     }
     # Start a new game
 
-    can new() {
+    def new() {
         self.playing = True;
         self.won = False;
         self.all_sprites = pygame.sprite.LayeredUpdates();
@@ -61,7 +61,7 @@ obj Game {
     }
     # Update pygame events to check if the game is quitted or attacked.
 
-    can events() {
+    def events() {
 
         for events in pygame.event.get() {
             if events.type == pygame.QUIT {
@@ -87,12 +87,12 @@ obj Game {
     }
     # Update all sprites
 
-    can update() {
+    def update() {
         self.all_sprites.update();
     }
     # Display the game
 
-    can draw() {
+    def draw() {
         self.screen.fill(BLACK);
         self.all_sprites.draw(self.screen);
         self.clock.tick(FPS);
@@ -100,7 +100,7 @@ obj Game {
     }
     # Game runtime
 
-    can main() {
+    def main() {
 
         while self.playing {
             self.events();
@@ -117,7 +117,7 @@ obj Game {
     }
     # Game over screen
 
-    can game_over() {
+    def game_over() {
         self.score-=2;
         print(self.score);
         text = self.font.render('GaMe OvEr', True, RED);
@@ -150,7 +150,7 @@ obj Game {
     }
     # Introduction Screen
 
-    can intro_screen() {
+    def intro_screen() {
         intro = True;
         title = self.font.render('Spud-nik : SOLO', True, BLUE);
         title_rect = title.get_rect(x=WIN_WIDTH / 2 - 100, y=100);
@@ -177,7 +177,7 @@ obj Game {
     }
     # Game won
 
-    can game_won {
+    def game_won {
         self.score+=5;
         print(self.score);
         text = self.font.render('YOU WON!', True, BLUE);

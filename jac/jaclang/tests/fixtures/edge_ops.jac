@@ -1,4 +1,4 @@
-import:py random;
+import random;
 
 node node_a {
     has value: int;

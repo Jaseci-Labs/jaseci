@@ -1,17 +1,17 @@
 """Example of simple walker walking nodes."""
-import:py from jac_cloud.core.context {JaseciContext}
-import:py from jac_cloud.jaseci.models {User as BaseUser, NO_PASSWORD}
-import:py from jac_cloud.jaseci.utils {SendGridEmailer}
-import:py from jac_cloud.plugin {WEBSOCKET_MANAGER as socket}
-import:py from jac_cloud.plugin.implementation {create_task}
-import:py from dataclasses {dataclass}
-import:py from fastapi {UploadFile}
-import:py from typing {Any}
+import from jac_cloud.core.context {JaseciContext}
+import from jac_cloud.jaseci.models {User as BaseUser, NO_PASSWORD}
+import from jac_cloud.jaseci.utils {SendGridEmailer}
+import from jac_cloud.plugin {WEBSOCKET_MANAGER as socket}
+import from jac_cloud.plugin.implementation {create_task}
+import from dataclasses {dataclass}
+import from fastapi {UploadFile}
+import from typing {Any}
 
-class User:BaseUser: {
+class User(BaseUser) {
     has name: str;
 
-    class Collection:BaseUser.Collection: {
+    class Collection(BaseUser.Collection) {
         ::py::
         @classmethod
         def __document__(cls, doc) -> "User":
@@ -25,21 +25,21 @@ class User:BaseUser: {
         ::py::
     }
 
-    static can send_verification_code(code: str, email: str) -> None {
+    static def send_verification_code(code: str, email: str) -> None {
         SendGridEmailer.send_verification_code(code, email);
     }
 
-    static can send_reset_code(code: str, email: str) -> None {
+    static def send_reset_code(code: str, email: str) -> None {
         SendGridEmailer.send_reset_code(code, email);
     }
 
-    static can sso_mapper(open_id: object) -> dict[str, object] {
+    static def sso_mapper(open_id: object) -> dict[str, object] {
         return {
             "name": f"{open_id.first_name} {open_id.last_name}"
         };
     }
 
-    static can system_admin_default() -> dict[str, object] {
+    static def system_admin_default() -> dict[str, object] {
         return {
             "name": f"System Administrator"
         };
@@ -68,7 +68,7 @@ obj Child {
     has val: int, arr: list[int], data: dict[str, int], enum_field: Enum;
 }
 
-obj Parent:Child: {
+obj Parent(Child) {
     has child: Child;
 }
 
@@ -80,7 +80,7 @@ obj Kid {
     has enum_field: Enum;
 }
 
-obj Adult:Kid: {
+obj Adult(Kid) {
     has kid: Kid, arr: list[Kid], data: dict[str, Kid];
 }
 
@@ -259,18 +259,18 @@ walker allow_other_root_access {
 
     can enter_root with `root entry {
         if self.via_all {
-            _.unrestrict(here, self.level);
+            _.perm_grant(here, self.level);
         } else {
-            import:py from jac_cloud.core.architype {BaseAnchor}
+            import from jac_cloud.core.architype {BaseAnchor}
             _.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
         }
     }
 
     can enter_nested with Nested entry {
         if self.via_all {
-            _.unrestrict(here, self.level);
+            _.perm_grant(here, self.level);
         } else {
-            import:py from jac_cloud.core.architype {BaseAnchor}
+            import from jac_cloud.core.architype {BaseAnchor}
             _.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
         }
     }
@@ -281,18 +281,18 @@ walker disallow_other_root_access {
 
     can enter_root with `root entry {
         if self.via_all {
-            _.restrict(here);
+            _.perm_revoke(here);
         } else {
-            import:py from jac_cloud.core.architype {BaseAnchor}
+            import from jac_cloud.core.architype {BaseAnchor}
             _.disallow_root(here, BaseAnchor.ref(self.root_id));
         }
     }
 
     can enter_nested with Nested entry {
         if self.via_all {
-            _.restrict(here);
+            _.perm_revoke(here);
         } else {
-            import:py from jac_cloud.core.architype {BaseAnchor}
+            import from jac_cloud.core.architype {BaseAnchor}
             _.disallow_root(here, BaseAnchor.ref(self.root_id));
         }
     }
@@ -736,7 +736,7 @@ walker purge_populated_graph {
 
 walker check_populated_graph {
     can enter with `root entry {
-        import:py from jac_cloud.core.architype {NodeAnchor, EdgeAnchor, WalkerAnchor}
+        import from jac_cloud.core.architype {NodeAnchor, EdgeAnchor, WalkerAnchor}
 
         id = here.__jac__.id;
         count = NodeAnchor.Collection.count({"$or": [{"_id": id}, {"root": id}]});
@@ -750,7 +750,7 @@ walker check_populated_graph {
 walker check_memory_sync {
     has other_node_id: str;
     can enter with `root entry {
-        import:py from jac_cloud.core.architype {NodeAnchor}
+        import from jac_cloud.core.architype {NodeAnchor}
         n = &(self.other_node_id);
         n.val = 4;
         report n;
@@ -830,7 +830,7 @@ walker delete_custom_object {
     has object_id: str;
 
     can enter1 with `root entry {
-        import:py from jac_cloud.core.architype {BaseAnchor}
+        import from jac_cloud.core.architype {BaseAnchor}
         _.destroy(&(self.object_id));
 
         # This is similar to
@@ -1062,7 +1062,7 @@ walker walker_cron {
     has kwarg2: str = "4";
 
     can enter with `root entry {
-        import:py from jac_cloud.core.architype {NodeAnchor}
+        import from jac_cloud.core.architype {NodeAnchor}
 
         n = NodeAnchor.Collection.find_one({
             "name": "TaskCounter"

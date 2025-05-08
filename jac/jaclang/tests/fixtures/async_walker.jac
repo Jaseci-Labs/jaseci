@@ -1,4 +1,4 @@
-import:py time;
+import time;
 node A {
     has val: int;
 

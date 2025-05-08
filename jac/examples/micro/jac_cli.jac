@@ -4,43 +4,43 @@ Jac languages. It's built with the Jac language V2 via bootstraping and
 represents the first such production Jac program.
 """
 
-import:py inspect;
-import:py from argparse, ArgumentParser, ArgumentError;
-import:py cmd;
-import:py from typing, Any, Callable;
+import inspect;
+import from argparse { ArgumentParser, ArgumentError }
+import cmd;
+import from typing { Any, Callable }
 
 obj Interface {
     has functions: list[callable] = [];
 
-    can register(func: callable) -> callable;
-    can create_parser -> ArgumentParser;
-    can run_from_cli;
-    can run_shell;
+    def register(func: callable) -> callable;
+    def create_parser -> ArgumentParser;
+    def run_from_cli;
+    def run_shell;
 }
 
-obj ShellCmd :cmd.Cmd: {
+obj ShellCmd(cmd.Cmd) {
     has reg: Interface,
         prompt: str = "> ";
 
-    can init(registry: Interface, *args: list, **kwargs: dict);
-    can default(line: str);
-    can do_quit(arg: str) -> bool;
+    def init(registry: Interface, *args: list, **kwargs: dict);
+    def default(line: str);
+    def do_quit(arg: str) -> bool;
 }
 
 with entry {
     interface = Interface();
     @interface.register
-    can function_one(a: int, b: str, c: bool=False) {
+    def function_one(a: int, b: str, c: bool=False) {
         print(f"Function One -> a: {a}, b: {b}, c: {c}");
     }
 
     @interface.register
-    can function_two(x: float, y: float) {
+    def function_two(x: float, y: float) {
         print(f"Function Two -> x: {x}, y: {y}");
     }
 
     @interface.register
-    can function_three(name: str, age: int, country: str='Unknown') {
+    def function_three(name: str, age: int, country: str='Unknown') {
         print(f"Function Three -> name: {name}, age: {age}, country: {country}");
     }
     # Run CLI or Shell mode

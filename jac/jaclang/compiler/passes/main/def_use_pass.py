@@ -1,9 +1,24 @@
-"""Ast build pass for Jaseci Ast.
+"""Definition-Use Analysis Pass for the Jac compiler.
 
-This pass adds a more complete set of symbols from the AST to the
-symbol table. This includes assignments, parameters, arch ref chains,
-and more. This pass also links the symbols in the AST to their corresponding
-sybmols in the symbol table (including uses).
+This pass performs comprehensive symbol resolution by:
+1. Populating symbol tables with additional symbols from various AST constructs:
+   - Variable assignments and declarations
+   - Function/ability parameters
+   - Architype reference chains
+   - Loop variables and comprehension targets
+   - With-statement variables
+
+2. Establishing bidirectional links between:
+   - Symbol definitions in the symbol table
+   - Symbol uses throughout the AST
+
+3. Handling special cases:
+   - Inheriting symbol tables from base classes for architypes
+   - Setting appropriate context for symbols in different operations (e.g., delete statements)
+   - Marking walker-specific statements (visit, ignore, disengage) when in walker context
+
+This pass is crucial for type checking, access control validation, and code generation as it
+creates the complete symbol resolution map for the program.
 """
 
 import ast as ast3

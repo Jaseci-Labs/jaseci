@@ -9,7 +9,7 @@ However, there are instanced where this is not the case for all instances. Hence
 Lets look into an instance where the existing code constructs are not sufficient to describe the meaning of the code for an LLM.
 
 ```python | apple.jac
-import:py from mtllm.llms, OpenAI;
+import from mtllm.llms, OpenAI;
 
 glob llm = OpenAI();
 
@@ -42,7 +42,7 @@ As the existing code abstractions does not fully allow the programmer to express
 Lets see how we can add semstring to the existing program above.
 
 ```python | apple.jac
-import:py from mtllm.llms, OpenAI;
+import from mtllm.llms, OpenAI;
 
 glob llm = OpenAI();
 

@@ -1,8 +1,8 @@
-import:py pygame;
+import pygame;
 
 obj Spritesheet {
-    can init(file: str);
-    can get_sprite(x: int, y: int, width: int, height: int) -> pygame.Surface;
+    def init(file: str);
+    def get_sprite(x: int, y: int, width: int, height: int) -> pygame.Surface;
 }
 
 :obj:Spritesheet:can:init

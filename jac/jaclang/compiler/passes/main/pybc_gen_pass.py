@@ -1,9 +1,15 @@
-"""
-Connect Decls and Defs in AST.
+"""Python Bytecode Generation Pass for the Jac compiler.
 
-This pass creates and manages compilation of Python code from the AST. This pass
-also creates bytecode files from the Python code, and manages the caching of
-relevant files.
+This pass compiles Python AST into executable bytecode by:
+
+1. Processing all modules in the program, including the main module and its sub-modules
+2. Converting Python AST nodes into Python bytecode using the standard Python compiler
+3. Serializing the bytecode for efficient storage and execution
+4. Handling error cases where AST nodes cannot be properly compiled
+
+The bytecode generation is the final step in the compilation pipeline before execution,
+transforming the high-level AST representation into an optimized form that can be
+directly executed by the Python virtual machine.
 """
 
 import ast as ast3

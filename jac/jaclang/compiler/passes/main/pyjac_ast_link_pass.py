@@ -1,8 +1,16 @@
-"""Jac to python ast link pass.
+"""Python-Jac AST Linking Pass for the Jac compiler.
 
-This pass is needed so cases where there are multiple Jac nodes relevant to a
-single python node can be linked. For example FuncDef doesn't have a Name node
-however Ability does.
+This pass establishes bidirectional links between Python AST nodes and their corresponding
+Jac AST nodes by:
+
+1. Creating connections where multiple Jac nodes map to a single Python node
+2. Handling special cases like abilities/functions where the structure differs between languages
+3. Ensuring proper name resolution across the AST boundary
+4. Maintaining parameter correspondence between declarations and implementations
+5. Supporting complex language constructs like architypes, enums, and abilities
+
+These links are essential for error reporting, debugging, and maintaining semantic
+relationships between the two AST representations throughout the compilation process.
 """
 
 import ast as ast3

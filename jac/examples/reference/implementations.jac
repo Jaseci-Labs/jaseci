@@ -1,4 +1,4 @@
-can foo -> str;
+def foo -> str;
 
 obj vehicle;
 

@@ -12,13 +12,13 @@ Comment *#
 
 glob ver = "0.0.1";  # global variable
 
-import:jac defs.utils;  # import a module
-import:py os; # import a python module
-include:jac defs.mod_defs;  # includes a file
+import defs.utils;  # import a module
+import os; # import a python module
+import defs.mod_defs;  # includes a file
 
 obj mytype {}  # define a new type
 
-node mynode:this,that: {}  # define a new node
+node mynode(this,that) {}  # define a new node
 
 edge parent {}  # define a new edge
 
@@ -28,7 +28,7 @@ a declaration of an element,
 and should target users, Use comments otherwise
 """
 walker travelor {  # define a new walker
-    can say_hello;
+    def say_hello;
 }
 
 #* Declarations and definitions
@@ -37,9 +37,9 @@ can be separate in Jac *#
     "Hello" |> print;  # |> is a pipe forward operator
 }
 
-can myablty -> int {} # define a data spacial freestyle ability
+def myablty -> int {} # define a data spacial freestyle ability
 
-can myfunc() -> None {} # define a function
+def myfunc() -> None {} # define a function
 
 with entry {
     # module level freestyle code
