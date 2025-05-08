@@ -144,7 +144,16 @@ class DeclImplMatchPassTests(TestCase):
         """Parse micro jac file."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        cli.run(self.fixture_abs_path("atest.jac"))
+        Jac.jac_import(self.mach, "atest", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
         self.assertEqual(stdout_value, "42\n")
+
+    def test_inner_mod_impl(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(self.mach, "enumerations", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(stdout_value, "1\n")

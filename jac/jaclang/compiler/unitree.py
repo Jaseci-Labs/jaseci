@@ -773,7 +773,7 @@ class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
         self.decl_link = decl_link
         AstSymbolNode.__init__(
             self,
-            sym_name=".".join([x.sym_name for x in self.target.items]),
+            sym_name="impl." + ".".join([x.sym_name for x in self.target.items]),
             name_spec=self.create_impl_name_node(),
             sym_category=SymbolType.IMPL,
         )
@@ -783,7 +783,7 @@ class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
         ret = Name(
             orig_src=self.target.items[-1].loc.orig_src,
             name=Tok.NAME.value,
-            value=".".join([x.sym_name for x in self.target.items]),
+            value="impl." + ".".join([x.sym_name for x in self.target.items]),
             col_start=self.target.items[0].loc.col_start,
             col_end=self.target.items[-1].loc.col_end,
             line=self.target.items[0].loc.first_line,

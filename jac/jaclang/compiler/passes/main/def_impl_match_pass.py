@@ -62,7 +62,7 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
                 continue
 
             # Extract architype references
-            arch_refs = sym.sym_name.split(".")
+            arch_refs = sym.sym_name.split(".")[1:]  # Remove the impl. prefix
             name_of_links: list[uni.NameAtom] = []  # to link archref names to decls
 
             # Look up the architype in the target symbol table
@@ -100,6 +100,10 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
                     break
 
             if not decl_node:
+                # self.log_error(
+                #     f"Implementation for '{sym.sym_name}' cannot be matched to any declaration.",
+                #     sym.decl.name_of,
+                # )
                 continue
             elif isinstance(decl_node, uni.Ability) and decl_node.is_abstract:
                 self.log_warning(
