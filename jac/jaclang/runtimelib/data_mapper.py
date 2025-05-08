@@ -102,11 +102,31 @@ def _traversal(start: NodeAnchor):
 
     return traversal
 
+NUM_DPU = 8  # TODO: You should define this appropriately
+MAX_NODE_NUM_PER_DPU = 64  # TODO: You should define this appropriately
 
-def generate_data_mapping(visit_stmts: list[uni.VisitStmt], start: NodeAnchor) -> None:
-    static_analysis = VisitPredictionPass()
+def generate_data_mapping(visit_stmts: list[uni.VisitStmt], start: NodeAnchor) -> dict[NodeAnchor, int]:
+    # static_analysis = VisitPredictionPass()
     # static_info = [static_analysis.get_visit_stmt_info(visit_stmt) for visit_stmt in visit_stmts]
-    static_info = {}
-    order = _traversal(start)
-    print([len(step) for step in order])
-    pass
+    # static_info = {}
+    print(type(start.architype))
+    traversal_order = _traversal(start)
+    dpu_node_count = [0] * NUM_DPU
+    node_assignments: dict[NodeAnchor, int] = {}
+    for layer in traversal_order:
+        dpu_index = 0
+        for node in layer:
+            # Find the next DPU with available capacity
+            for _ in range(NUM_DPU):
+                if dpu_node_count[dpu_index] < MAX_NODE_NUM_PER_DPU:
+                    break
+                dpu_index = (dpu_index + 1) % NUM_DPU
+
+            if dpu_node_count[dpu_index] >= MAX_NODE_NUM_PER_DPU:
+                raise RuntimeError("Node assignment failed")
+
+            node_assignments[node] = dpu_index
+            dpu_node_count[dpu_index] += 1
+            dpu_index = (dpu_index + 1) % NUM_DPU
+
+    return node_assignments
