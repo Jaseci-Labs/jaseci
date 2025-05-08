@@ -5,7 +5,7 @@ import {
     ServerOptions
 } from 'vscode-languageclient/node';
 import * as path from 'path';
-import { findPythonEnvsWithJac } from './utils';
+import { findPythonEnvsWithJac, runJacCommandForCurrentFile } from './utils';
 import * as fs from 'fs';
 
 import {
@@ -185,45 +185,22 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
     context.subscriptions.push(
-            vscode.commands.registerCommand('jaclang-extension.runCurrentFile', () => {
-                const filePath = vscode.window.activeTextEditor?.document.uri.fsPath;
-                if (filePath) {
-                    const terminalName = "Jac Terminal";
-                    let terminal = vscode.window.terminals.find(t => t.name === terminalName);
-                    if (!terminal) {
-                        terminal = vscode.window.createTerminal(terminalName);
-                    }
-                    terminal.show();
-                    terminal.sendText(`jac run "${filePath}"`);
-                }
-            })
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand('jaclang-extension.checkCurrentFile', () => {
-          const filePath = vscode.window.activeTextEditor?.document.uri.fsPath;
-          if (filePath) {
-            const terminalName = "Jac Terminal";
-            let terminal = vscode.window.terminals.find(t => t.name === terminalName);
-            if (!terminal) {
-              terminal = vscode.window.createTerminal(terminalName);
-            }
-            terminal.show();
-            terminal.sendText(`jac check "${filePath}"`);
-          }
-        })
-      );
-    context.subscriptions.push(
-        vscode.commands.registerCommand('jaclang-extension.serveCurrentFile', () => {
-        const terminalName = "Jac Terminal";
-        let terminal = vscode.window.terminals.find(t => t.name === terminalName);
-        if (!terminal) {
-            terminal = vscode.window.createTerminal(terminalName);
-        }
-        terminal.show();
-        terminal.sendText(`jac serve`);
+        vscode.commands.registerCommand('jaclang-extension.runCurrentFile', () => {
+            runJacCommandForCurrentFile('run');
         })
     );
 
+    context.subscriptions.push(
+        vscode.commands.registerCommand('jaclang-extension.checkCurrentFile', () => {
+            runJacCommandForCurrentFile('check');
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('jaclang-extension.serveCurrentFile', () => {
+            runJacCommandForCurrentFile('serve');
+        })
+    );
 
     vscode.debug.onDidStartDebugSession(async (event) => {
         if (webviewPanel) {

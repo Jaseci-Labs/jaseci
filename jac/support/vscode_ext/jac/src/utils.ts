@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as cp from 'child_process';
+import * as vscode from 'vscode';
 
 function isJacInVenv(venvPath: string): string | null {
     const jacPath = path.join(venvPath, 'bin', 'jac');
@@ -102,4 +103,17 @@ export async function findPythonEnvsWithJac(workspaceRoot: string = process.cwd(
     const uniqueEnvs = Array.from(new Set(envs));
 
     return uniqueEnvs;
+}
+
+export function runJacCommandForCurrentFile(command: string) {
+    const filePath = vscode.window.activeTextEditor?.document.uri.fsPath;
+    if (filePath) {
+        const terminalName = "Jac Terminal";
+        let terminal = vscode.window.terminals.find(t => t.name === terminalName);
+        if (!terminal) {
+            terminal = vscode.window.createTerminal(terminalName);
+        }
+        terminal.show();
+        terminal.sendText(`jac ${command} "${filePath}"`);
+    }
 }
