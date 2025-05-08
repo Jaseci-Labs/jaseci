@@ -1,6 +1,6 @@
 """A Number Guessing Game"""
 
-import:py random;
+import random;
 
 """
 In this code example, we implement a simple number guessing game using graph travesel.
@@ -9,7 +9,7 @@ walker GuessGame {
     has correct_number: int = (1, 100) |> random.randint;
 
     can start_game with `root entry;
-    can process_guess(guess: int);
+    def process_guess(guess: int);
 }
 
 node turn {

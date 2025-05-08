@@ -5,7 +5,7 @@
 This function takes a list of numbers and returns a
 generator of even numbers.
 """
-can example_function(numbers: list[int]) -> int {
+def example_function(numbers: list[int]) -> int {
 
     # multi string
     print("this function processes the provided list."

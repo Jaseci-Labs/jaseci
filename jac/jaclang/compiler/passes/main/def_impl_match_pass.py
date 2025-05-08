@@ -1,9 +1,20 @@
-"""Connect Decls and Defs in AST.
+"""Declaration-Implementation Matching Pass for the Jac compiler.
 
-This pass creates links in the ast between Decls of Architypes and Abilities
-that are separate from their implementations (Defs). This pass creates a link
-in the ast between the Decls and Defs of Architypes and Abilities through the
-body field.
+This pass connects declarations (Decls) of Architypes and Abilities with their separate
+implementations (Defs) in the AST. It:
+
+1. Establishes links between declarations in the main module and their implementations
+   in separate .impl.jac files
+2. Validates parameter matching between ability declarations and their implementations
+3. Ensures proper inheritance of symbol tables between declarations and implementations
+4. Performs validation checks on architypes, including:
+   - Proper ordering of default and non-default attributes
+   - Presence of required postinit methods for deferred attributes
+   - Abstract ability implementation validation
+
+This pass is essential for Jac's separation of interface and implementation, allowing
+developers to define architype and ability interfaces in one file while implementing
+their behavior in separate files.
 """
 
 import jaclang.compiler.unitree as uni

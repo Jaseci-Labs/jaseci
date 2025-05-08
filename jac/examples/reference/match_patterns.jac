@@ -3,7 +3,7 @@ obj Point {
         y: float;
 }
 
-can match_example(data: any) {
+def match_example(data: any) {
     match data {
         # MatchValue
         case 42:

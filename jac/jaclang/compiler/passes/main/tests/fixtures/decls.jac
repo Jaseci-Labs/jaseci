@@ -1,10 +1,10 @@
 """Test for jac decls"""
 
-include:jac impl.defs1;
-include:jac impl.defs2;
+import impl.defs1;
+import impl.defs2;
 
 obj MyObject {
 
-    can foo();
-    can bar();
+    def foo();
+    def bar();
 }

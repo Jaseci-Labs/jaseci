@@ -1,6 +1,6 @@
 """A Number Guessing Game"""
 
-import:py random;
+import random;
 
 """
 A generic Game base class.
@@ -13,7 +13,7 @@ obj Game {
     has attempts: int,
         won: bool = False;
 
-    can play {
+    def play {
         raise "Subclasses must implement this method." |> NotImplementedError;
     }
 }
@@ -21,11 +21,11 @@ obj Game {
 """
 A number guessing game. The player must guess a number between 1 and 100.
 """
-obj GuessTheNumberGame :Game: {
+obj GuessTheNumberGame(Game) {
     has attempts: int = 10,
         correct_number: int = (1, 100) |> random.randint;
 
-    override can play {
+    override def play {
 
         while self.attempts > 0 {
             guess = "Guess a number between 1 and 100: " |> input;
@@ -40,7 +40,7 @@ obj GuessTheNumberGame :Game: {
         }
     }
 
-    can process_guess(guess: int) {
+    def process_guess(guess: int) {
         if guess > self.correct_number {
             "Too high!" |> print;
         } elif guess < self.correct_number {

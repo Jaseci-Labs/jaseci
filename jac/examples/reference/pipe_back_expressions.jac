@@ -1,4 +1,4 @@
-can double(x: int) -> int {
+def double(x: int) -> int {
     return (x * 2);
 }
 

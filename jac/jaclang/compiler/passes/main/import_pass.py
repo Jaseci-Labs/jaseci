@@ -1,8 +1,20 @@
-"""Static Import Pass.
+"""Module Import Resolution Pass for the Jac compiler.
 
-This pass statically imports all modules used in import statements in the
-current module. This pass is run before the def/decl pass to ensure that all
-symbols are available for matching.
+This pass handles the static resolution and loading of imported modules by:
+
+1. Identifying import statements in the source code
+2. Resolving module paths (both relative and absolute)
+3. Loading and parsing the imported modules
+4. Handling both Jac and Python imports with appropriate strategies
+5. Managing import dependencies and preventing circular imports
+6. Supporting various import styles:
+   - Direct imports (import x)
+   - From imports (from x import y)
+   - Star imports (from x import *)
+   - Aliased imports (import x as y)
+
+The pass runs early in the compilation pipeline to ensure all symbols from imported
+modules are available for subsequent passes like symbol table building and type checking.
 """
 
 import ast as py_ast

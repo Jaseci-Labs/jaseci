@@ -1,6 +1,6 @@
-can foo;
-can bar;
-can baz;
+def foo;
+def bar;
+def baz;
 
 with entry {
     foo();

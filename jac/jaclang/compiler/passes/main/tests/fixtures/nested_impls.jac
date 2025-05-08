@@ -1,15 +1,15 @@
 obj mainObject;
 
 :obj:mainObject{
-    can greet;
+    def greet;
     obj subObject;
 }
-can foo{
+def foo{
      obj ObjInsideFunction;
      return ObjInsideFunction();
 }
 :can:foo:obj:ObjInsideFunction{
-    can bar{
+    def bar{
         print("Hello,from bar in kk");
     }
 }
@@ -22,8 +22,8 @@ with entry{
 }
 
 :obj:mainObject:obj:subObject{
-    can displayMessage;
-    can shortMessage{
+    def displayMessage;
+    def shortMessage{
         print("Hello, World!");
     }
     obj nestedObject;
@@ -33,8 +33,8 @@ with entry{
 }
 
 :obj:mainObject:obj:subObject:obj:nestedObject{
-    can lastMessage;
-    can finalMessage{
+    def lastMessage;
+    def finalMessage{
         print("Final message:!");
     }
 }

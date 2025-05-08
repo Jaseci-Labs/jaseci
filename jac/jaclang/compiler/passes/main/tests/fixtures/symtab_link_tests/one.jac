@@ -3,6 +3,6 @@
 
 glob a = 89;
 
-can foo{
+def foo{
     return a;
 }

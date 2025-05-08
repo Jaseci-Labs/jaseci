@@ -80,23 +80,23 @@ In **Jaclang** in addition to the libraries written specifically for the languag
 
 ```python
 # Importing Python modules
-import:py pygame;
-import:py sys;
+import pygame;
+import sys;
 
 # Including Jac codebase
-include:jac sprites;
-include:jac config;
-include:jac map;
+import sprites;
+import config;
+import map;
 ```
 
 > **Syntax Note:**
 >
 > - If a specific python module needs to be imported:
 >
->    ```import:py module;```
+>    ```import module;```
 > - If a specific submodule needs to be imported from a module:
 >
->    ```import:py from module, submodule_1 submodule_2;```
+>    ```import from module, submodule_1 submodule_2;```
 
 ## Global Variable Definition
 
@@ -412,14 +412,14 @@ No changes are required on these files as well.
 This new file will include the supporting architecture for the build of the data-spatial implementation and the runtime logic for graph traversal.
 
 ```python
-import:py pygame;
-import:py sys;
-import:py random;
+import pygame;
+import sys;
+import random;
 
-include:jac sprites;
-include:jac config;
-include:jac map;
-include:jac game_obj;
+import sprites;
+import config;
+import map;
+import game_obj;
 ```
 
 Now the visualization of the graph is really important in order to build the architecture.

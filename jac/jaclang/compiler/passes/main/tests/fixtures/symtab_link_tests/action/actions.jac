@@ -6,7 +6,7 @@ node LLM{
         return "LLM's response";
     }
 
-    can testing_infer {
+    def testing_infer {
         return "LLM's response";
     }
 

@@ -3,4 +3,4 @@
 import second_err;
 
 
-can foo;
+def foo;

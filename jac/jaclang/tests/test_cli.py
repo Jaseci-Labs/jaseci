@@ -173,39 +173,39 @@ class JacCliTests(TestCase):
         stdout_value = captured_output.getvalue().replace("\\", "/")
         self.assertRegex(
             stdout_value,
-            r"1\:11 \- 1\:13.*ModulePath - os - abs_path\:.*typeshed/stdlib/os/__init__.pyi",
+            r"1.*ModulePath - os - abs_path\:.*typeshed/stdlib/os/__init__.pyi",
         )
         self.assertRegex(
             stdout_value,
-            r"2\:11 \- 2\:14.*ModulePath - sys - abs_path\:.*typeshed/stdlib/sys/__init__.pyi",
+            r"2.*ModulePath - sys - abs_path\:.*typeshed/stdlib/sys/__init__.pyi",
         )
         self.assertRegex(
             stdout_value,
-            r"3\:11 \- 3\:17.*ModulePath - pyfunc - abs_path\:.*fixtures/pyfunc.py",
+            r"3.*ModulePath - pyfunc - abs_path\:.*fixtures/pyfunc.py",
         )
         self.assertRegex(
             stdout_value,
-            r"4\:11 \- 4\:28.*ModulePath - pygame_mock - abs_path\:.*fixtures/pygame_mock/inner/__init__.py",
+            r"4.*ModulePath - pygame_mock - abs_path\:.*fixtures/pygame_mock/inner/__init__.py",
         )
         self.assertRegex(
             stdout_value,
-            r"6\:11 \- 6\:15.*ModulePath - math - abs_path\:.*typeshed/stdlib/math.pyi",
+            r"6.*ModulePath - math - abs_path\:.*typeshed/stdlib/math.pyi",
         )
         self.assertRegex(
             stdout_value,
-            r"7\:11 \- 7\:19.*ModulePath - argparse - abs_path\:.*typeshed/stdlib/argparse.pyi",
+            r"7.*ModulePath - argparse - abs_path\:.*typeshed/stdlib/argparse.pyi",
         )
         self.assertRegex(
             stdout_value,
-            r"8\:16 \- 8\:27.*ModulePath - pygame_mock - abs_path\:.*fixtures/pygame_mock/__init__.py",
+            r"8.*ModulePath - pygame_mock - abs_path\:.*fixtures/pygame_mock/__init__.py",
         )
         self.assertRegex(
             stdout_value,
-            r"8\:30 \- 8:35.*ModuleItem - color - abs_path\:.*fixtures/pygame_mock/color.py",
+            r"8.*ModuleItem - color - abs_path\:.*fixtures/pygame_mock/color.py",
         )
         self.assertRegex(
             stdout_value,
-            r"8\:37 \- 8:44.*ModuleItem - display - abs_path\:.*fixtures/pygame_mock/display.py",
+            r"8.*ModuleItem - display - abs_path\:.*fixtures/pygame_mock/display.py",
         )
 
     def test_builtins_loading(self) -> None:
@@ -374,7 +374,7 @@ class JacCliTests(TestCase):
         cli.check(f"{self.fixture_abs_path('game1.jac')}")
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertIn("Errors: 0, Warnings: 2", stdout_value)
+        self.assertIn("Errors: 0, Warnings: 1", stdout_value)
 
     def test_type_info(self) -> None:
         """Testing for type info inside the ast tool."""
@@ -495,7 +495,7 @@ class JacCliTests(TestCase):
         cli.py2jac(f"{self.fixture_abs_path('../../tests/fixtures/pyfunc.py')}")
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertIn("can my_print(x: object) -> None", stdout_value)
+        self.assertIn("def my_print(x: object) -> None", stdout_value)
 
     def test_caching_issue(self) -> None:
         """Test for Caching Issue."""

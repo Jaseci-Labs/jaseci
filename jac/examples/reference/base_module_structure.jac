@@ -6,12 +6,12 @@ it is assumed to be a module docstring.
 """
 
 """A docstring for add function"""
-can add(a: int, b: int) -> int {
+def add(a: int, b: int) -> int {
     return a + b;
 }
 # No docstring for subtract function
 
-can subtract(a: int, b: int) -> int {
+def subtract(a: int, b: int) -> int {
     return a - b;
 }
 

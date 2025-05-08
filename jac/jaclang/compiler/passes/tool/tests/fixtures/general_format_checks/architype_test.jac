@@ -3,11 +3,11 @@ class Animal {}
 obj Domesticated {}
 
 @print_base_classes
-node Pet :Animal, Domesticated: {}
+node Pet(Animal, Domesticated) {}
 
-walker Person :Animal: {}
+walker Person(Animal) {}
 
-walker Feeder :Person: {}
+walker Feeder(Person) {}
 
 @print_base_classes
-walker Zoologist :Feeder: {}
+walker Zoologist(Feeder) {}

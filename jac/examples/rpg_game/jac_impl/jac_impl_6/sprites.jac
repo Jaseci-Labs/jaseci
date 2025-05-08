@@ -1,12 +1,12 @@
 """This file containes all definitions of sprites that apear in the game"""
 
 # Importing python libraries
-import:py pygame, random, math;
-import:py from pygame.sprite, AbstractGroup;
+import pygame, random, math;
+import from pygame.sprite { AbstractGroup }
 
 # Importing settings data
-include:jac settings.config;
-include:jac settings.map;
+import settings.config;
+import settings.map;
 
 """
 Object for impoting sprite character images.
@@ -14,14 +14,14 @@ Object for impoting sprite character images.
 obj Spritesheet {
     has file:str;
 
-    can postinit;
-    can get_sprite(x: int, y: int, width: int, height: int) -> pygame.Surface;
+    def postinit;
+    def get_sprite(x: int, y: int, width: int, height: int) -> pygame.Surface;
 }
 
 """
 Object for the player with type pygame.sprite.Sprite
 """
-obj Player :pygame.sprite.Sprite: {
+obj Player(pygame.sprite.Sprite) {
     has game: Game,
         x: int,
         y: int;
@@ -33,18 +33,18 @@ obj Player :pygame.sprite.Sprite: {
         facing: str = 'down',
         animation_loop: float = 1;
 
-    can postinit;
-    can update;
-    can movement;
-    can collide_enemy;
-    can animate;
-    can collide_blocks(direction: str);
+    def postinit;
+    def update;
+    def movement;
+    def collide_enemy;
+    def animate;
+    def collide_blocks(direction: str);
 }
 
 """
 Object for enemies with type pygame.sprite.Sprite
 """
-obj Enemy :pygame.sprite.Sprite: {
+obj Enemy(pygame.sprite.Sprite) {
     has game: Game,
         x: int,
         y: int;
@@ -56,17 +56,17 @@ obj Enemy :pygame.sprite.Sprite: {
         animation_loop: float = 0,
         movement_loop: int = 0;
 
-    can postinit;
-    can update;
-    can movement;
-    can animate;
-    can collide_blocks(direction: str);
+    def postinit;
+    def update;
+    def movement;
+    def animate;
+    def collide_blocks(direction: str);
 }
 
 """
 Object for blocks (Walls) with type pygame.sprite.Sprite
 """
-obj Block :pygame.sprite.Sprite: {
+obj Block(pygame.sprite.Sprite) {
     has game: Game,
         x: int,
         y: int;
@@ -74,13 +74,13 @@ obj Block :pygame.sprite.Sprite: {
         width: int = TILESIZE,
         height: int = TILESIZE;
 
-    can postinit;
+    def postinit;
 }
 
 """
 Object for ground with type pygame.sprite.Sprite
 """
-obj Ground :pygame.sprite.Sprite: {
+obj Ground(pygame.sprite.Sprite) {
     has game: Game,
         x: int,
         y: int;
@@ -88,13 +88,13 @@ obj Ground :pygame.sprite.Sprite: {
         width: int = TILESIZE,
         height: int = TILESIZE;
 
-    can postinit;
+    def postinit;
 }
 
 """"
 Object class for attacks by the player
 """
-obj Attack :pygame.sprite.Sprite: {
+obj Attack(pygame.sprite.Sprite) {
     has game: Game,
         x: int,
         y: int;
@@ -103,10 +103,10 @@ obj Attack :pygame.sprite.Sprite: {
         height: int = TILESIZE,
         animation_loop: float = 0;
 
-    can postinit;
-    can update;
-    can collide;
-    can animate;
+    def postinit;
+    def update;
+    def collide;
+    def animate;
 }
 
 """
@@ -122,6 +122,6 @@ obj Button {
         content: str,
         fontsize: int;
 
-    can postinit;
-    can is_pressed(pos: tuple, pressed: tuple) -> bool;
+    def postinit;
+    def is_pressed(pos: tuple, pressed: tuple) -> bool;
 }

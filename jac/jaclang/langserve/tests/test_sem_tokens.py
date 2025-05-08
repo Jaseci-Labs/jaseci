@@ -23,7 +23,7 @@ class TestUpdateSemTokens(TestCase):
 
         self.document_lines = [
             "",
-            "import:py math;",
+            "import math;",
             "",
             '"""Function to calculate the area of a circle."""',
             "can calculate_area(radius: float) -> float {",
@@ -264,7 +264,7 @@ class TestUpdateSemTokens(TestCase):
         )
         self.document_lines = [
             "",
-            "import:py math;",
+            "import math;",
             "",
             '"""Function to calculate the area of a circle."""',
             "can calculate_area(radius::= a + a // 2) > 5 {",

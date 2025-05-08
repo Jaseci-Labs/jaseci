@@ -1,6 +1,6 @@
 """A Number Guessing Game"""
 
-import:py random;
+import random;
 
 glob guesses = [50, 25, 35, 30];
 
@@ -8,7 +8,7 @@ walker GuessGame {
     has correct_number: int = 30;
 
     can start_game with `root entry;
-    can process_guess(guess: int);
+    def process_guess(guess: int);
 }
 
 node turn {

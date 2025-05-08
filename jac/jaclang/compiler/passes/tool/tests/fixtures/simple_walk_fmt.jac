@@ -37,7 +37,7 @@ walker Walk {
     }
 }
 
-can test_run {
+def test_run {
     root spawn Creator();
     Walk() spawn root;
 }

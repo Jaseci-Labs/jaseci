@@ -224,7 +224,13 @@ pytype_from_template_op = custom_op(
 # Create a dataclass from an extension class. See
 # CPyDataclass_SleightOfHand for more docs.
 dataclass_sleight_of_hand = custom_op(
-    arg_types=[object_rprimitive, object_rprimitive, dict_rprimitive, dict_rprimitive],
+    arg_types=[
+        object_rprimitive,
+        object_rprimitive,
+        dict_rprimitive,
+        dict_rprimitive,
+        str_rprimitive,
+    ],
     return_type=bit_rprimitive,
     c_function_name="CPyDataclass_SleightOfHand",
     error_kind=ERR_FALSE,
@@ -263,5 +269,17 @@ var_object_size = custom_primitive_op(
     name="var_object_size",
     arg_types=[object_rprimitive],
     return_type=c_pyssize_t_rprimitive,
+    error_kind=ERR_NEVER,
+)
+
+# Set the lazy value compute function of an TypeAliasType instance (Python 3.12+).
+# This must only be used as part of initializing the object. Any existing value
+# will be cleared.
+set_type_alias_compute_function_op = custom_primitive_op(
+    name="set_type_alias_compute_function",
+    c_function_name="CPy_SetTypeAliasTypeComputeFunction",
+    # (alias object, value compute function)
+    arg_types=[object_rprimitive, object_rprimitive],
+    return_type=void_rtype,
     error_kind=ERR_NEVER,
 )

@@ -1,3 +1,3 @@
-can speak {
+def speak {
     HasFault();
 }

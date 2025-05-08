@@ -1,6 +1,6 @@
 """A Number Guessing Game"""
 
-import:py random;
+import random;
 
 """
 A generic Game base class.
@@ -13,19 +13,19 @@ obj Game {
     has attempts: int,
         won: bool = False;
 
-    can play;
+    def play;
 }
 
 """
 A number guessing game. The player must guess a number between 1 and 100.
 
 """
-obj GuessTheNumberGame :Game: {
+obj GuessTheNumberGame(Game) {
     has correct_number: int = (1, 100) |> random.randint;
 
-    can init;
-    override can play;
-    can process_guess(guess: int);
+    def init;
+    override def play;
+    def process_guess(guess: int);
 }
 
 """

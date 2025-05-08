@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jaclang"
-version = "0.7.34"
+version = "0.8.0"
 description = "Jac is a unique and powerful programming language that runs on top of Python, offering an unprecedented level of intelligence and intuitive understanding."
 authors = ["Jason Mars <jason@jaseci.org>"]
 maintainers = ["Jason Mars <jason@jaseci.org>"]
@@ -22,8 +22,8 @@ documentation = "https://jac-lang.org"
 [tool.poetry.dependencies]
 python = "^3.11.0"
 # Below are vendored in using poetry export and pip download
-# lark = "^1.1.9"
-# mypy = "^1.10.0"
+# lark = "^1.2.2"
+# mypy = "^1.15.0"
 # pluggy = "^1.5.0"
 # pygls = "^1.3.1"
 

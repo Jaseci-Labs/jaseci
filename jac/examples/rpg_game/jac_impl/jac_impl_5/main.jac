@@ -3,20 +3,20 @@
 
 # This game is built using the pygame module which is imported here
 
-import:py pygame;
-import:py sys;
-import:py os;
-import:py random;
-import:py time;
-import:py from mtllm.llms, Anthropic;
+import pygame;
+import sys;
+import os;
+import random;
+import time;
+import from mtllm.llms { Anthropic }
 
 glob llm = Anthropic(model_name="claude-3-sonnet-20240229");
 
 # Importing Jac codebase
-include:jac sprites;
-include:jac config;
-include:jac map;
-include:jac game_obj;
+import sprites;
+import config;
+import map;
+import game_obj;
 
 glob context:str =  "# These rules must be strictly adhered to while creating a maps."
                     "- Must have only single Player (P) in map at the middle of the map ."
@@ -25,14 +25,11 @@ glob context:str =  "# These rules must be strictly adhered to while creating a 
                     "- All enemies should be accessible to the player (should not be enclosed with blocks)."
                     "- Hardnes of a level can be determined by the time taken to complete a level and number of retry attempts.";
 
-obj 'Consists of the level configuration data of a certain level'
-Map {
+obj Map {
     has Level_no:int = 1;
-    has time_to_win_level:'in seconds':float = 60.0;
-    has nos_retry:'How many retry attempts before completing the level':int = 0;
-    has map:
-    'the map of the level having (B) as block, (E) as enemy, (P) as player and (.) as empty space. All outer characters are B. Only one single player character (P) can be in the map.'
-    :list[str] = [
+    has time_to_win_level:float = 60.0;
+    has nos_retry:int = 0;
+    has map:list[str] = [
                                 'BBBBBBBBBBBBBBBBBBBB',
                                 'B...E..............B',
                                 'B.......B..........B',
@@ -58,14 +55,11 @@ walker game{
     has g:Game = None,
         current_level:int = 1,
         fwd_dir:bool = True,
-        map_directory:
-        'Map_directory, dict, Map directory that containes all the levels and their configurations of a game where the player is the character controlled by the person playing the game.'
-        :dict={};
+        map_directory:dict={};
 
     can start_game with `root entry;
 
-    can 'Return the map of the next level which is different and incrementally challenging than previous levels. '
-    generate_level(map_dir:dict) -> 'New Map for the next level':list[str] by llm(temperature=0.5, incl_info=(context));
+    def generate_level(map_dir:dict) -> list[str] by llm(temperature=0.5, incl_info=(context));
 }
 
 edge play{

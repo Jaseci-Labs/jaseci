@@ -3,8 +3,8 @@
 obj MyObj {
     has : protect a: int;
 
-    can : priv init(a: int) -> None;
-    can : pub set_a(val: int) -> None;
+    def : priv init(a: int) -> None;
+    def : pub set_a(val: int) -> None;
 }
 
 :o:MyObj:c:init {

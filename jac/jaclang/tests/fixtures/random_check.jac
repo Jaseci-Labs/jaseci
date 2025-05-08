@@ -1,17 +1,17 @@
-import:py os;
+import os;
 
 with entry {
     print("Hello World");
     print(os.getcwd());
 }
-# import:py tensorflow as tf;
+# import tensorflow as tf;
 # with entry{
 #     print(tf.__version__);
 # }
 
-import:py random;
+import random;
 
-can entry() {
+def entry() {
     print("Hello World");
     random.seed(42);
     print(random.randint(0, 100));
@@ -47,7 +47,7 @@ with entry {
 }
 # tkinter
 
-import:py tkinter as tk;
+import tkinter as tk;
 
 with entry {
     __root__ = tk.Tk();

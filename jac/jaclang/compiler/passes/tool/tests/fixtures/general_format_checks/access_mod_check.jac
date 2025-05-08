@@ -1,5 +1,5 @@
-can:priv hash(func: Any) {
-    can inner(a: Any) {
+def:priv hash(func: Any) {
+    def inner(a: Any) {
         print(("#" * 20));
         func(a);
         print(("#" * 20));
@@ -7,8 +7,8 @@ can:priv hash(func: Any) {
     return inner;
 }
 
-can:protect exclaim(func: Any) {
-    can inner(b: Any) {
+def:protect exclaim(func: Any) {
+    def inner(b: Any) {
         print(("!" * 20));
         func(b);
         print(("!" * 20));
@@ -18,7 +18,7 @@ can:protect exclaim(func: Any) {
 
 @hash
 @exclaim
-can greeter(name: Any) {
+def greeter(name: Any) {
     print("Hello, " + name + "!");
 }
 

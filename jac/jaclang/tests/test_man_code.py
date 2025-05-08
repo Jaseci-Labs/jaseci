@@ -147,7 +147,7 @@ class JacCliTests(TestCase):
         sys.stdout = captured_output
 
         # Execute the function
-        cli.run(self.fixture_abs_path("../../../jaclang/tests/fixtures/abc.jac"))
+        cli.run(self.fixture_abs_path("../../../jaclang/tests/fixtures/abc_check.jac"))
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()

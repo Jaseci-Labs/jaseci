@@ -1,4 +1,4 @@
-import:py from jaclang.runtimelib.machine { JacMachine, JacMachineState }
+import from jaclang.runtimelib.machine { JacMachine, JacMachineState }
 
 glob dynamic_module_source = """
 import from .arch_create_util {UtilityNode}
@@ -10,7 +10,7 @@ here ++> UtilityNode(data=42);
 visit [-->](`?UtilityNode);
 }
 
-can UtilityNode {
+def UtilityNode {
 here.display_data();
 }
 }

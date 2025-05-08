@@ -8,7 +8,7 @@ obj Child {
     has val: int, arr: list[int], json: dict[str, int], enum_field: Enum;
 }
 
-obj Parent:Child: {
+obj Parent(Child) {
     has child: Child;
 }
 

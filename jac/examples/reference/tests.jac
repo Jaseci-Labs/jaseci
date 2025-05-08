@@ -11,7 +11,7 @@ test test3 {
 }
 
 with entry:__main__ {
-    import:py subprocess;
+    import subprocess;
     result = subprocess.run(
         ["jac", "test", f"{__file__}"],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True

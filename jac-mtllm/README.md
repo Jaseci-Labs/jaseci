@@ -25,7 +25,7 @@ Refer the Documentation for detailed usage instructions.
 
 ### Using Different LLMs
 ```py
-import:py from mtllm.llms, OpenAI;
+import from mtllm.llms, OpenAI;
 
 glob llm = OpenAI();
 
@@ -40,8 +40,8 @@ export OPENAI_API_KEY="your-api-key"
 ```
 ### Using Tools
 ```py
-import:py from mtllm.llms, OpenAI;
-import:py from mtllm.tools, wikipedia;
+import from mtllm.llms, OpenAI;
+import from mtllm.tools, wikipedia;
 
 glob llm = OpenAI();
 

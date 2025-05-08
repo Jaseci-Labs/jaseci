@@ -5,8 +5,33 @@ from typing import TypeVar
 from .._compat import get_args, get_origin, is_generic
 
 
+def _tvar_has_default(tvar) -> bool:
+    """Does `tvar` have a default?
+
+    In CPython 3.13+ and typing_extensions>=4.12.0:
+    - TypeVars have a `no_default()` method for detecting
+      if a TypeVar has a default
+    - TypeVars with `default=None` have `__default__` set to `None`
+    - TypeVars with no `default` parameter passed
+      have `__default__` set to `typing(_extensions).NoDefault
+
+    On typing_exensions<4.12.0:
+    - TypeVars do not have a `no_default()` method for detecting
+      if a TypeVar has a default
+    - TypeVars with `default=None` have `__default__` set to `NoneType`
+    - TypeVars with no `default` parameter passed
+      have `__default__` set to `typing(_extensions).NoDefault
+    """
+    try:
+        return tvar.has_default()
+    except AttributeError:
+        # compatibility for typing_extensions<4.12.0
+        return getattr(tvar, "__default__", None) is not None
+
+
 def generate_mapping(cl: type, old_mapping: dict[str, type] = {}) -> dict[str, type]:
-    mapping = {}
+    """Generate a mapping of typevars to actual types for a generic class."""
+    mapping = dict(old_mapping)
 
     origin = get_origin(cl)
 
@@ -25,8 +50,6 @@ def generate_mapping(cl: type, old_mapping: dict[str, type] = {}) -> dict[str, t
                 continue
             mapping[p.__name__] = t
 
-        if not mapping:
-            return dict(old_mapping)
     elif is_generic(cl):
         # Origin is None, so this may be a subclass of a generic class.
         orig_bases = cl.__orig_bases__
@@ -34,9 +57,22 @@ def generate_mapping(cl: type, old_mapping: dict[str, type] = {}) -> dict[str, t
             if not hasattr(base, "__args__"):
                 continue
             base_args = base.__args__
-            if not hasattr(base.__origin__, "__parameters__"):
+            if hasattr(base.__origin__, "__parameters__"):
+                base_params = base.__origin__.__parameters__
+            elif any(_tvar_has_default(base_arg) for base_arg in base_args):
+                # TypeVar with a default e.g. PEP 696
+                # https://www.python.org/dev/peps/pep-0696/
+                # Extract the defaults for the TypeVars and insert
+                # them into the mapping
+                mapping_params = [
+                    (base_arg, base_arg.__default__)
+                    for base_arg in base_args
+                    if _tvar_has_default(base_arg)
+                ]
+                base_params, base_args = zip(*mapping_params)
+            else:
                 continue
-            base_params = base.__origin__.__parameters__
+
             for param, arg in zip(base_params, base_args):
                 mapping[param.__name__] = arg
 

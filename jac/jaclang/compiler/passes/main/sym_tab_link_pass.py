@@ -1,4 +1,22 @@
-"""Link the symbol tables across the modules."""
+"""Symbol Table Linking Pass for the Jac compiler.
+
+This pass connects symbol tables across different modules by:
+
+1. Establishing relationships between importing and imported modules
+2. Handling different import styles:
+   - Direct imports (import x)
+   - From imports (from x import y)
+   - Star imports (from x import *)
+   - Aliased imports (import x as y)
+
+3. Creating appropriate symbol table inheritance relationships
+4. Managing both Jac and Python module imports
+5. Preventing circular import issues
+6. Supporting relative and absolute import paths
+
+This pass is essential for cross-module symbol resolution, allowing code in one module
+to reference symbols defined in other modules while maintaining proper scoping rules.
+"""
 
 import os
 from typing import Optional

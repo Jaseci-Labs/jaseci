@@ -3,26 +3,26 @@ This module demonstrates a simple circle class and a function to calculate
 the area of a circle in all of Jac's glory.
 """
 
-import:py math;
+import math;
 
 enum ShapeType;
 
-can calculate_area(radius: float) -> float;
-can main_run;
+def calculate_area(radius: float) -> float;
+def main_run;
 
 """Base class for a shape."""
 obj Shape {
     has shape_type: ShapeType;
 
-    can area -> float abs;
+    def area -> float abs;
 }
 
 """Circle class inherits from Shape."""
-obj Circle :Shape: {
+obj Circle(Shape) {
     has radius: float;
 
-    can init(radius: float);
-    can area -> float;
+    def init(radius: float);
+    def area -> float;
 }
 # Radius of the demo circle
 

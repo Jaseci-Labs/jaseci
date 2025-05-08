@@ -1,11 +1,10 @@
-import:py from math, sin as s, cos, sqrt as sq;
-include:py random;
-import:py from ..test_cli, JacCliTests as Jac;
-
-import:jac from deep.mycode, code as c;
-import:jac hashcheck as h, assign_compr as a;
-include:jac ignore;
-import:jac from jacsamp, my_print as m;
+import from math { sin as s, cos, sqrt as sq }
+include random;
+import from ..test_cli { JacCliTests as Jac }
+import from deep.mycode { code as c }
+import hashcheck as h, assign_compr as a;
+import ignore;
+import from jacsamp { my_print as m }
 
 
 with entry{

@@ -1,8 +1,8 @@
 """Functions in Jac."""
 
-import:jac from func2, factorial as factorial;
+import from func2 { factorial as factorial }
 
-can factorial_recount(n: int) -> int {
+def factorial_recount(n: int) -> int {
     count: str=0;
     count+=1;
     count |> print;

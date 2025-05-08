@@ -4,7 +4,7 @@ walker ww {
     can gb with b entry;
 }
 
-walker www :ww: {
+walker www(ww) {
     can ggb with b entry;
 }
 

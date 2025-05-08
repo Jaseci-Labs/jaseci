@@ -5,7 +5,7 @@ obj SimpleObj {
         var2: int,
         var3: int = 0;
 
-    can postinit {
+    def postinit {
         print(self.var1, self.var2, self.var3);
     }
 }
@@ -15,7 +15,7 @@ class SimpleClass {
         var2: int,
         var3: int = 0;
 
-    can init(self: SimpleClass) {
+    def init(self: SimpleClass) {
         print(self.var3);
     }
 }

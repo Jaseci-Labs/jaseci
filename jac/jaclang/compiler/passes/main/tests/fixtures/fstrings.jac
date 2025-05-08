@@ -45,5 +45,5 @@ with entry {
     c1 = '''hello klkl"""''';
     print(c1) ;
 }
-can func() {;
+def func() {;
 }

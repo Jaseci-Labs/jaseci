@@ -141,7 +141,7 @@ walker walker_date {
 ## Example Use Case
 
 ```python
-import:py from jac_cloud.plugin.implementation {create_task}
+import from jac_cloud.plugin.implementation {create_task}
 
 node TaskCounter {
     has val: int = 0;

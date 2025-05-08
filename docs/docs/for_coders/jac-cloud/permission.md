@@ -214,7 +214,7 @@ boy1.access = {
 ## Global Access Control
 To grant read access to all, use the following syntax:
 ```python
-Jac.unrestrict(here, "READ")
+Jac.perm_grant(here, "READ")
 ```
 Equivalent structure:
 ```python

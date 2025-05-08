@@ -29,7 +29,7 @@ Assuming we went with API based translation, `target_lang` would be the language
 For this example, we will use OpenAI's GPT-3.5-turbo (default).
 
 ```python | translator.jac
-import:py from mtllm.llms, OpenAI;
+import from mtllm.llms, OpenAI;
 
 llm = OpenAI();
 
@@ -39,7 +39,7 @@ llm = OpenAI();
 ### Remove the Ability Body and Add `by LLM` keyword
 
 ```python | translator.jac
-import:py from mtllm.llms, OpenAI;
+import from mtllm.llms, OpenAI;
 
 llm = OpenAI();
 
@@ -64,7 +64,7 @@ jac run translator.jac
 In this example, we dont need to add any additional support to the LLMs. But if you want to add additional support, you can do so by adding `SemStrings` to variables, output type hint and abilities the following code snippet:
 
 ```python | translator.jac
-import:py from mtllm.llms, OpenAI;
+import from mtllm.llms, OpenAI;
 
 llm = OpenAI();
 
