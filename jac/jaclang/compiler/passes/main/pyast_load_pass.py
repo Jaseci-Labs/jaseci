@@ -1521,11 +1521,16 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         moddots = [self.operator(Tok.DOT, ".") for _ in range(node.level)]
         modparts = moddots + modpaths
         path = uni.ModulePath(
-            path=uni.SubNodeList[uni.Name](items=modpaths, delim=Tok.DOT, kid=modpaths),
+            path=(
+                uni.SubNodeList[uni.Name](items=modpaths, delim=Tok.DOT, kid=modpaths)
+                if modpaths
+                else None
+            ),
             level=node.level,
             alias=None,
             kid=modparts,
         )
+
         names = [self.convert(name) for name in node.names]
         valid_names = []
         for name in names:

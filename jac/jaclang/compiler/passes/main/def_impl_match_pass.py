@@ -62,7 +62,7 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
                 continue
 
             # Extract architype references
-            arch_refs = [x[3:] for x in sym.sym_name.split(".")]
+            arch_refs = sym.sym_name.split(".")
             name_of_links: list[uni.NameAtom] = []  # to link archref names to decls
 
             # Look up the architype in the target symbol table
