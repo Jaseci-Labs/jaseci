@@ -123,7 +123,9 @@
   "activationEvents": [
     "onLanguage:jac",
     "onCommand:jaclang-extension.selectEnv",
-    "onCommand:jaclang-extension.runCurrentFile"
+    "onCommand:jaclang-extension.runCurrentFile",
+    "onCommand:jaclang-extension.checkCurrentFile",
+    "onCommand:jaclang-extension.serveCurrentFile"
   ],
 
   "scripts": {
