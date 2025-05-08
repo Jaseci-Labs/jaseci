@@ -945,11 +945,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def member_stmt(self, _: None) -> uni.ArchBlockStmt:
             """Grammar rule.
 
-            member_stmt: doc_tag? py_code_block
-                        | doc_tag? abstract_ability
-                        | doc_tag? ability
-                        | doc_tag? architype
-                        | doc_tag? has_stmt
+            member_stmt: STRING? (py_code_block | ability | architype | has_stmt | free_code)
             """
             doc = self.match(uni.String)
             ret = self.consume(uni.ArchBlockStmt)
