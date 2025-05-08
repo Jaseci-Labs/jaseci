@@ -791,8 +791,7 @@ class AstImplOnlyNode(CodeBlockStmt, ElementStmt, AstSymbolNode):
             pos_start=self.target.items[0].loc.pos_start,
             pos_end=self.target.items[-1].loc.pos_end,
         )
-        ret.name_of = self
-        ret.parent = self.parent
+        ret.parent = self
         return ret
 
 
