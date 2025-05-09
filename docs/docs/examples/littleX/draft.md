@@ -127,7 +127,7 @@ test create_tweet {
 
 ## update_tweet test case
 
-The `update_tweet` walker enables a `Profile` node to update its username attribute.  
+The `update_tweet` walker enables a `Profile` node to update its username attribute.
 
 To test the update,first we have to filter is there any `tweet` nodes connected with `profile`node. Then `update_tweet` walker spawn on the `tweet_node`. Finally, the test checks whether the tweet's content has been correctly updated.
 
