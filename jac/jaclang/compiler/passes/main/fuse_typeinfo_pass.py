@@ -509,7 +509,7 @@ class FuseTypeInfoPass(UniPass):
         return out
 
     def exit_atom_trailer(self, node: uni.AtomTrailer) -> None:
-        """Adding symbol links to AtomTrailer right nodes."""
+        """Add symbol links to AtomTrailer right nodes."""
         # This will fix adding the symbol links to nodes in atom trailer
         # self.x.z = 5  # will add symbol links to both x and z
 

@@ -141,7 +141,6 @@ def dotgen_ast_tree(
     dot_lines: Optional[list[str]] = None,
 ) -> str:
     """Recursively generate ast tree in dot format."""
-    global id_bag, id_used
     starting_call = False
     if dot_lines is None:
         starting_call = True
@@ -149,7 +148,7 @@ def dotgen_ast_tree(
 
     def gen_node_id(node: uni.UniNode) -> int:
         """Generate number for each nodes."""
-        global id_bag, id_used
+        global id_used
         if id(node) not in id_bag:
             id_bag[id(node)] = id_used
             id_used += 1
@@ -525,7 +524,6 @@ def dotgen_symtab_tree(node: UniScopeNode) -> str:
         return f"[label={label}]"
 
     def gen_dot_graph(node: SymbolTree) -> None:
-        nonlocal dot_lines
         dot_lines.append(f"{gen_node_id(node)} {gen_node_parameters(node)};")
         for kid_node in node.kid:
             if kid_node:
