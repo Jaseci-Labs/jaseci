@@ -123,7 +123,7 @@
 						},
 						{
 							"name": "punctuation.separator.jac",
-							"match": ":"
+							"match": "(,|:|\\{|\\})"
 						},
 						{
 							"include": "#string"
@@ -1280,10 +1280,18 @@
 					},
 					"patterns": [
 						{
-							"include": "#class-name"
+							"include": "#comments"
 						},
 						{
-							"include": "#class-inheritance"
+							"name": "punctuation.separator.jac",
+							"match": "(,|:|\\{|\\})"
+						},
+						{
+							"include": "#string"
+						},
+						{
+							"name": "entity.name.type.class.jac",
+							"match": "\\b([[:alpha:]_]\\w*)\\b"
 						}
 					]
 				}

@@ -27,3 +27,9 @@ This is how we run our tests.
 --8<-- "scripts/tests.sh"
 ```
 
+## Build VSCode Extention
+
+```bash linenums="1"
+--8<-- "scripts/build_vsce.sh"
+```
+
