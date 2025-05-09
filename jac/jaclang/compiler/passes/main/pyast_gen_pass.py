@@ -794,12 +794,6 @@ class PyastGenPass(UniPass):
             self.traverse(node.body)
 
     def exit_architype(self, node: uni.Architype) -> None:
-        is_async_attr = self.sync(
-            ast3.Assign(
-                targets=[self.sync(ast3.Name(id="__is_async__", ctx=ast3.Store()))],
-                value=self.sync(ast3.Constant(value=node.is_async)),
-            )
-        )
         body = self.resolve_stmt_block(
             (
                 node.body.body
@@ -809,6 +803,20 @@ class PyastGenPass(UniPass):
             ),
             doc=node.doc,
         )
+
+        if node.is_async:
+            body.insert(
+                0,
+                self.sync(
+                    ast3.Assign(
+                        targets=[
+                            self.sync(ast3.Name(id="__jac_async__", ctx=ast3.Store()))
+                        ],
+                        value=self.sync(ast3.Constant(value=node.is_async)),
+                    )
+                ),
+            )
+
         decorators = (
             node.decorators.gen.py_ast
             if isinstance(node.decorators, uni.SubNodeList)
@@ -825,7 +833,7 @@ class PyastGenPass(UniPass):
                     name=node.name.sym_name,
                     bases=[cast(ast3.expr, i) for i in base_classes],
                     keywords=[],
-                    body=[is_async_attr] + [cast(ast3.stmt, i) for i in body],
+                    body=[cast(ast3.stmt, i) for i in body],
                     decorator_list=[cast(ast3.expr, i) for i in decorators],
                     type_params=[],
                 )

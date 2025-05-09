@@ -6,6 +6,7 @@ from os.path import split
 from pickle import load
 from typing import Any
 
+from jaclang import JacMachine as Jac
 from jaclang.cli.cmdreg import cmd_registry
 from jaclang.runtimelib.machine import hookimpl
 from jaclang.runtimelib.machinestate import JacMachineState
@@ -15,6 +16,7 @@ from pymongo.errors import ConnectionFailure, OperationFailure
 from ..core.architype import BulkWrite, NodeAnchor
 from ..core.context import PUBLIC_ROOT_ID, SUPER_ROOT_ID
 from ..jaseci.datasources import Collection
+from ..jaseci.main import FastAPI
 from ..jaseci.models import User as BaseUser
 from ..jaseci.utils import logger
 
@@ -34,9 +36,6 @@ class JacCmd:
             port: int = 8000,
             interp_mode: bool = False,
         ) -> None:
-            from jaclang import JacMachine as Jac
-            from jac_cloud import FastAPI
-
             """Serve the jac application."""
             base, mod = split(filename)
             base = base if base else "./"
@@ -65,7 +64,7 @@ class JacCmd:
                 mach.exec_ctx.close()
                 raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
-            FastAPI.start(host=host, port=port)
+            FastAPI.start(mach=mach, host=host, port=port)
             mach.exec_ctx.close()
 
         @cmd_registry.register

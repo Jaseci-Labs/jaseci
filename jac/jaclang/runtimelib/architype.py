@@ -280,6 +280,7 @@ class EdgeArchitype(Architype):
 class WalkerArchitype(Architype):
     """Walker Architype Protocol."""
 
+    __jac_async__: ClassVar[bool] = False
     __jac_base__: ClassVar[bool] = True
 
     @cached_property
