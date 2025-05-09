@@ -46,7 +46,6 @@
 
       }
     ],
-
     "commands": [
       {
         "command": "jac.visualize",
@@ -58,20 +57,19 @@
       },
       {
         "command": "jaclang-extension.runCurrentFile",
-        "title": "Jaclang: Run Current File",
+        "title": "Jac: Run",
         "icon": "$(play)"
       },
       {
         "command": "jaclang-extension.checkCurrentFile",
-        "title": "Jaclang: Check Current File",
-        "icon": "$(play)"
+        "title": "Jac: Check",
+        "icon": "$(shield)"
       },
       {
         "command": "jaclang-extension.serveCurrentFile",
-        "title": "Jaclang: Serve Current File",
+        "title": "Jac: Serve",
         "icon": "$(cloud)"
       }
-      
     ],
     "menus": {
       "editor/title/run": [
@@ -120,14 +118,6 @@
     ]
   },
   "main": "./out/extension.js",
-  "activationEvents": [
-    "onLanguage:jac",
-    "onCommand:jaclang-extension.selectEnv",
-    "onCommand:jaclang-extension.runCurrentFile",
-    "onCommand:jaclang-extension.checkCurrentFile",
-    "onCommand:jaclang-extension.serveCurrentFile"
-  ],
-
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -b",
