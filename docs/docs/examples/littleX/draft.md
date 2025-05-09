@@ -21,10 +21,12 @@ test create_profile {
 
 ## visit_profile test case
 
-The `visit_profile` functionality verifies whether a `Profile` node is connected to the `root` node. If such a node exists, it navigates to the connected profile; otherwise, it creates a new `Profile` node and proceeds to visit it. To test this behavior, the `visit_profile` walker should be spawned on the `root` node. After execution, the `Profile` node linked to the `root` can be retrieved and validated to confirm that it is indeed an instance of the `Profile` archetype.
+The `visit_profile` walker first checks whether a profile node is connected to the root node. If such a connection exists, the function proceeds to visit the existing profile node. If not, it creates a new profile node and establishes a connection to it before visiting the newly created node.
 
-spawn walker : ``root spawn visit_walker();``
-filtering profile node: ``profile = [root --> (`?Profile)][0];``
+To test the `visit_profile` function, we begin by spawning the `visit_profile` walker on the root node. Next, we filter the nodes connected to the root to identify any profile nodes. Finally, we verify whether the connected node is indeed a profile node.
+
+spawn visit_profile walker on root node: ``root spawn visit_walker();``
+filter profile node: ``profile = [root --> (`?Profile)][0];``
 check is this node Profile or not : ``check isinstance(profile,Profile);``
 
 Complete test case:
@@ -41,7 +43,7 @@ test visit_profile {
 The `update_profile` walker is responsible for updating the username of a `Profile` node. It first checks whether a `Profile` node is connected to the `root`. If such a node exists, it visits it; otherwise, it creates a new `Profile` node and proceeds to update it.
 To test this functionality, the `update_profile` walker should be spawned from the `root` node. After execution, the connected `Profile` node can be retrieved and verified to ensure that the username has been correctly updated.
 
-spawn walker: ``root spawn update_profile();``
+spawn update_profile walker on root: ``root spawn update_profile();``
 filter profile node : ``profile = [root --> (`?Profile)][0];``
 check updated username : ``check profile.username == "test_user";``
 
@@ -59,10 +61,12 @@ test update_profile {
 
 ## follow_request test case
 
-The `test follow_request` ensures that a profile can successfully initiate a follow request to another profile using the `follow_request` walker. A new `Profile` node, named "Sam," is created to serve as the followee. After executing the walker, the test proceeds by navigating from the followee to confirm the presence of a Follow edge, which indicates the successful creation of the follow request. Finally, the test verifies that the username of the connected profile matches the expected followee.
+The `follow_request` walker searchs for a profile can successfully initiate a follow request to another profile using the `follow_request` walker.
+
+To test `follow_request`, we have to create new profile and it named "Sam," is created to serve as the followee. After executing the walker, the test proceeds by navigating from the followee to confirm the presence of a Follow edge, which indicates the successful creation of the follow request. Finally, the test verifies that the username of the connected profile matches the expected followee.
 
 create followee profile : ``followee = Profile("Sam");``
-spawn walker : ``followee spawn follow_request();``
+spawn follow_request walker on profile_node : ``followee spawn follow_request();``
 filter followee profile : ``followee_profile = [root --> (`?Profile)-:Follow:->(`?Profile)][0];``
 check followee profile username : ``check followee_profile.username == "Sam";``
 
@@ -79,10 +83,14 @@ test follow_request {
 
 ## un_follow_request test case
 
-The `test un_follow_request` verifies that a follow relationship can be successfully removed between two profiles. It first checks whether there are any follow requests from the `follower profile` to the `followee profile`. To conduct the test for `un_follow_request`, the `un_follow_request` walker is first spawned on the `profile` node. The test ultimately examines how many follow connections remain, ensuring that the `un_follow_request` walker accurately handles the removal of follow edges in the graph.
+The `unfollow_request` walker is responsible for removing an existing follow relationship between two profiles. It ensures that a profile can successfully unfollow another profile it was previously connected to via a `Follow` edge.
+
+To test the `unfollow_request` walker, a new profile named "Sam" is first created to act as the followee. A follow relationship is initially established between the root profile and "Sam" using the `follow_request` walker. Then, the `unfollow_request` walker is executed to initiate the unfollow action.
+
+After executing the walker, the test proceeds by navigating from the root profile to verify the removal of the `Follow` edge. The absence of this edge confirms that the unfollow request was successfully processed. Finally, the test ensures that no connection exists between the root profile and the profile previously followed.
 
 filter profile node : ``followee = [root --> (`?Profile)-:Follow:->(`?Profile)][0];``
-spawn walker : ``followee spawn un_follow_request();``
+spawn un_follow_request walker on profile_node : ``followee spawn un_follow_request();``
 check length of the profiles that connect within Follow edge : ```check len([root --> (`?Profile)-:Follow:->(`?Profile)]) == 0;```
 
 Complete test case:
@@ -97,9 +105,11 @@ test un_follow_request {
 
 ## create tweet test case
 
-The `test create_tweet` test verifies whether a tweet is created correctly. To perform this test, the `create tweet` walker is spawned on the root node. The test then checks whether there are any `tweet` nodes connected to the `profile` node. Finally, it validates that the tweet has been correctly created and linked as expected.
+The `create_tweet` walker allows a `Profile` node to post a tweet with text content. It generates an embedding of the content using a sentence transformer, creates a `Tweet` node linked by a `Post` edge, adjusts its access level for interaction, and reports the created tweet node.
 
-spawn walker : `root spawn create_tweet();`
+To perform `create_tweet` test, the `create tweet` walker is spawned on the root node. The test then checks whether there are any `tweet` nodes connected to the `profile` node. Finally, it validates that the tweet has been correctly created and linked as expected.
+
+spawn create_tweet walker on root: `root spawn create_tweet();`
 filter tweet node : ``test1 = [root --> (`?Profile) --> (`?Tweet)][0];``
 check tweet is correctly created : `check test1.content == "test_tweet";`
 
@@ -117,10 +127,12 @@ test create_tweet {
 
 ## update_tweet test case
 
-The `test update_tweet` verifies that the content of a tweet can be successfully updated. It begins by checking whether any `tweet` nodes are connected to a `Profile` node. If such a connection exists, the test proceeds to visit the associated node. To perform the update, the `update_tweet` walker is spawned on the `tweet_node`. Finally, the test checks whether the tweet's content has been correctly updated.
+The `update_tweet` walker enables a `Profile` node to update its username attribute.  
+
+To test the update,first we have to filter is there any `tweet` nodes connected with `profile`node. Then `update_tweet` walker spawn on the `tweet_node`. Finally, the test checks whether the tweet's content has been correctly updated.
 
 filter is there any tweets : ``tweet1 = [root --> (`?Profile) --> (`?Tweet)][0];``
-spawn walker : `tweet1 spawn update_tweet();`
+spawn update_tweet walker on tweet_node : `tweet1 spawn update_tweet();`
 check tweet is updated : `check tweet1.content == "new_tweet";`
 
 Complete test case:
@@ -137,10 +149,12 @@ test update_tweet {
 
 ## Remove_tweet test case
 
-The `test remove_tweet` test case verifies the successful deletion of a tweet. It begins by retrieving an existing tweet associated with the `tweet` node through traversal from the profile. Subsequently, the `remove_tweet` walker is spawned from the `tweet node` to initiate the removal process. Finally, the test confirms that no tweets remain linked to the profile, thereby validating that the tweet has been successfully deleted.
+The `remove_tweet` walker allows a `Profile` node to delete an associated `Tweet` node.
+
+To test the `remove_tweet` walker, we have to check is there any tweets connected with `profile` node.Then we can spawn `remove_tweet` walker on the `tweet_node`. Finally, the test verifies that the tweet node has been successfully removed and is no longer connected to the profile.
 
 checks is there any tweets : ``tweet2 =  [root --> (`?Profile)--> (`?Tweet)][0];``
-spawn walker : `tweet2 spawn remove_tweet();`
+spawn remove_tweet walker on tweet_node : `tweet2 spawn remove_tweet();`
 check tweet is removed : ``check len([root --> (`?Profile) --> (`?Tweet)]) == 0;``
 
 Complete test case:
@@ -155,9 +169,11 @@ test remove_tweet {
 
 ## Like_tweet test case
 
-The `test like_tweet` verifies the capability of a profile to like a tweet. It starts by creating a tweet from the `root` node and then navigates to the corresponding `tweet` node. The process continues by spawning the `like_tweet` walker from the `tweet1` node. Finally, it confirms that the username `"test_user"` is correctly associated with the `Like` relationship on the tweet.
+The `Like_tweet` walker behavior defines a `like_tweet` capability that allows a `Tweet` node to be liked by a `Profile` node connected to the root.
 
-spawn walker : `root spawn create_tweet(0);`
+To test `Like_tweet`,we have to start by creating a tweet from the `root` node and then navigates to the corresponding `tweet` node. The process continues by spawning the `like_tweet` walker from the `tweet1` node. Finally, it confirms that the username `"test_user"` is correctly associated with the `Like` relationship on the tweet.
+
+spawn like_walker walker on tweet_node : `root spawn create_tweet(0);`
 filter is there any tweets : ``tweet1 = [root --> (`?Profile) --> (`?Tweet)][0];``
 spawn walker : `tweet1 spawn like_tweet();`
 filter is like to tweet : `test1 = [tweet1 -:Like:-> ][0];`
@@ -177,12 +193,14 @@ test like_tweet {
 }
 ```
 
-## remove_like test case
+## Remove_like test case
 
-The `test remove_like` checks the functionality of removing a like from a tweet. It first retrieves an existing tweet; if the tweet exists, it proceeds to visit the tweet node. Then, it spawns the `remove_like` walker from the `tweet` node. The function subsequently checks whether the `Like` relationship has been successfully removed by confirming that the length of the associated likes is zero.
+The `remove_like` walker enables a `Profile` node to remove its Like from a `Tweet` node. The process involves identifying the existing Like edge between the Profile and Tweet, deleting the edge, and then reporting the Tweet node to confirm the action.
+
+To test `remove_like`, we have to retrieves an existing tweet; if the tweet exists, it proceeds to visit the tweet node. Then, it spawns the `remove_like` walker from the `tweet` node. The function subsequently checks whether the `Like` relationship has been successfully removed by confirming that the length of the associated likes is zero.
 
 check is there any liked tweets : ``tweet1 = [root --> (`?Profile) --> (`?Tweet)][0];``
-spawn walker : `tweet1 spawn remove_like();`
+spawn remove_like walker on tweet_node : `tweet1 spawn remove_like();`
 check like is removed : `check len([tweet1 -:Like:-> ]) == 0;`
 
 Complete test case:
@@ -197,10 +215,12 @@ test remove_like {
 
 ## comment_tweet test case
 
-The `test comment_tweet` verifies the ability to comment on a tweet. It begins by checking whether there is any tweet with content similar to `'test_like'`. If such a tweet exists, it proceeds to visit it. To test the `comment_tweet` functionality, the function spawns a `comment_tweet` node on the `tweet` node and filters the `comment` node connected to the tweet. Finally, it verifies whether the content of the comment matches the expected value, confirming that the comment was successfully added to the tweet.
+The `comment_tweet` walker enables a `Profile` to comment on a `Tweet` by creating a `Comment` node, linking it to the profile, and ensuring unrestricted interaction. The walker then reports the created comment, allowing profile engagement with tweets.
+
+To test `comment_tweet` ,we have to begin with checking whether there is any tweet with content similar to `'test_like'`. If such a tweet exists, it proceeds to visit it. To test the `comment_tweet` functionality, the function spawns a `comment_tweet` node on the `tweet` node and filters the `comment` node connected to the tweet. Finally, it verifies whether the content of the comment matches the expected value, confirming that the comment was successfully added to the tweet.
 
 filter tweet's content : ``tweet = [root --> (`?Profile) --> (`?Tweet)](?content == "test_like")[0];``
-spawn walker : `tweet spawn comment_tweet();`
+spawn comment_tweet walker on tweet_node : `tweet spawn comment_tweet();`
 filter commnet : ``comment = [tweet --> (`?Comment)][0];``
 check comment correctly added or not : `check comment.content == "test_comment";`
 
@@ -219,11 +239,13 @@ test comment_tweet {
 
 ## update comment test case
 
-The `test update_comment` verifies that a comment on a tweet can be successfully updated. It begins by retrieving an existing tweet with the content `"test_like"` and accesses its associated comment. Then, the `update_comment` walker is spawned on the `comment` node to perform the update operation. Finally, the test checks whether the comment has been updated correctly.
+The `update_comment` walker allows a `Profile` node to update the content of an existing comment. It modifies the comment's content and reports the updated comment.
+
+To test `update_comment`,we have to begin with retrieving an existing tweet with the content `"test_like"` and accesses its associated comment. Then, the `update_comment` walker is spawned on the `comment` node to perform the update operation. Finally, the test checks whether the comment has been updated correctly.
 
 filter tweet's content : ``tweet = [root --> (`?Profile) --> (`?Tweet)](?content == "test_like")[0];``
 filter comment : ``comment = [tweet --> (`?Comment)][0];``
-spawn walker : `comment spawn update_comment();`
+spawn update_comment walker on comment_node : `comment spawn update_comment();`
 check comment is updated or not : `check comment.content == "new_comment";`
 
 Complete test case:
@@ -241,10 +263,12 @@ test update_comment{
 
 ## remove_comment test case
 
-The `test_remove_comment` verifies that a comment can be successfully removed from a tweet. It begins by retrieving an existing comment associated with a tweet from the `tweet` node. To test the `remove_comment` functionality, the `remove_comment` walker is spawned on the `comment` node to remove the comment. Finally, the test checks that no comments remain associated with the tweet, confirming that the removal was successful.
+The `remove_comment` walker allows a `Profile` node to delete a `Comment` node by using the `Jac.destroy()` function. This function removes the comment from the system, ensuring that the comment is no longer part of the graph.
+
+To test `remove_comment`, we have to start with retrieving an existing comment associated with a tweet from the `tweet` node. Then the `remove_comment` walker is spawn on the `comment` node to remove the comment. Finally, the test checks that no comments remain associated with the tweet, confirming that the removal was successful.
 
 filter is there any comment : ``comment = [root --> (`?Profile) --> (`?Tweet) --> (`?Comment)][0];``
-spawn walker : `comment spawn remove_comment();`
+spawn remove_comment walker on comment node : `comment spawn remove_comment();`
 check comment successfully removed : ``check len([root --> (`?Profile) --> (`?Tweet) --> (`?Comment)]) == 0;``
 
 Complete test case:
