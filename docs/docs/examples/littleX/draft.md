@@ -129,7 +129,7 @@ test create_tweet {
 
 The `update_tweet` walker enables a `Profile` node to update its username attribute.
 
-To test the update,first we have to filter is there any `tweet` nodes connected with `profile`node. Then `update_tweet` walker spawn on the `tweet_node`. Finally, the test checks whether the tweet's content has been correctly updated.
+To test the `update_tweet`,first we have to filter is there any `tweet` nodes connected with `profile`node. Then `update_tweet` walker spawn on the `tweet_node`. Finally, the test checks whether the tweet's content has been correctly updated.
 
 filter is there any tweets : ``tweet1 = [root --> (`?Profile) --> (`?Tweet)][0];``
 spawn update_tweet walker on tweet_node : `tweet1 spawn update_tweet();`
