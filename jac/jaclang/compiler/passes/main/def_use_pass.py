@@ -21,8 +21,6 @@ This pass is crucial for type checking, access control validation, and code gene
 creates the complete symbol resolution map for the program.
 """
 
-import ast as ast3
-
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes import UniPass
