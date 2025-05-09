@@ -165,23 +165,39 @@ Now Lets create required walkers for LittleX.
 === "Guide"
       Walkers are graph-traversing agents that perform tasks. Here are the walkers we need to create:
 
-      - **User Initialization Walker**
-        * Creates or visits a new profile node for a user.
-        * Ensures profiles exist in the system for any user action.
-            ```jac
-            walker visit_profile {
-                  can visit_profile with `root entry {
-                        visit [-->(`?Profile)] else {
-                              new_profile = here ++> Profile();
-                              visit new_profile;
+      - **User Initialization Walker** 
+
+        * **Implement User Initialization Walker** 
+            * Creates or visits a new profile node for a user.
+            * Ensures profiles exist in the system for any user action.
+                  ```jac
+                  walker visit_profile {
+                        can visit_profile with `root entry {
+                              visit [-->(`?Profile)] else {
+                                    new_profile = here ++> Profile();
+                                    visit new_profile;
+                              }
                         }
                   }
+                  ```
+            * If current walker enter via `root`, `visit_profile` ability will be executed.
+            * `visit [-->(``?profile)] else {}` Checks whether profile node exist from root, if yes, visit to that profile node. Otherwise execute to else part.
+            * `here ++> profile()` It creates a profile node and connects with current node(`root`).
+            * `visit new_profile` Walker visit to that node (`profile`).
+
+        * **Test User Initialization Walker** 
+
+            * To test the `visit_profile` function, we begin by spawning the `visit_profile` walker on the root node. Next, we filter the nodes connected to the root to identify any profile nodes. Finally, we verify whether the connected node is indeed a profile node.
+            ```Jac
+            test visit_profile {
+            root spawn visit_profile();
+            profile = [root --> (`?Profile)][0];
+            check isinstance(profile,Profile);
             }
             ```
-        * If current walker enter via `root`, `visit_profile` ability will be executed.
-        * `visit [-->(``?profile)] else {}` Checks whether profile node exist from root, if yes, visit to that profile node. Otherwise execute to else part.
-        * `here ++> profile()` It creates a profile node and connects with current node(`root`).
-        * `visit new_profile` Walker visit to that node (`profile`).
+            * spawn visit_profile walker on root node: ``root spawn visit_walker();``
+            * filter profile node: ``profile = [root --> (`?Profile)][0];``
+            * check is this node Profile or not : ``check isinstance(profile,Profile);``
 
       - **Load User Profile Walker**
         * Loads all profiles from the database.
