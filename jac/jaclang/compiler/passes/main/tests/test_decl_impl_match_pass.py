@@ -32,7 +32,7 @@ class DeclImplMatchPassTests(TestCase):
             "    8 |",
             "    9 | # Miss match parameter count.",
             "   10 | impl SomeObj.foo(param1: str) -> str {",
-            "      |          ^^^^^^^^^^^",
+            "      |      ^^^^^^^^^^^",
             '   11 |     return "foo";',
             "   12 | }",
             "From the declaration of foo.",
@@ -105,9 +105,7 @@ class DeclImplMatchPassTests(TestCase):
         mypass = JacProgram().compile(
             self.examples_abs_path("manual_code/circle_pure.jac")
         )
-        self.assertEqual(
-            mypass.impl_mod[0].pp().count("AbilityDef - impl.Circle.area"), 1
-        )
+        self.assertEqual(mypass.impl_mod[0].pp().count("ImplDef - impl.Circle.area"), 1)
 
     def test_impl_decl_resolution_fix(self) -> None:
         """Test walking through edges and nodes."""

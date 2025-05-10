@@ -100,7 +100,7 @@ class SymTabBuildPass(UniPass):
             node.sym_tab.def_insert(uni.Name.gen_stub_from_node(node, "self"))
             node.sym_tab.def_insert(
                 uni.Name.gen_stub_from_node(
-                    node, "super", set_name_of=node.owner_method
+                    node, "super", set_name_of=node.method_owner
                 )
             )
 

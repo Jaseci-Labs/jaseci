@@ -907,8 +907,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
             if doc and isinstance(ret, uni.AstDocNode):
                 ret.doc = doc
                 ret.add_kids_left([doc])
-            if isinstance(ret, uni.Ability):
-                ret.is_method = True
             return ret
 
         def has_stmt(self, kid: list[uni.UniNode]) -> uni.ArchHas:

@@ -1714,7 +1714,7 @@ class Ability(
         self.is_abstract = is_abstract
         self.decorators = decorators
         self.signature = signature
-        self.is_method: bool = False
+
         UniNode.__init__(self, kid=kid)
         AstImplNeedingNode.__init__(self, body=body)
         AstSymbolNode.__init__(
@@ -1730,18 +1730,30 @@ class Ability(
         CodeBlockStmt.__init__(self)
 
     @property
+    def is_method(self) -> bool:
+        return self.method_owner is not None
+
+    @property
     def is_def(self) -> bool:
         return not self.signature or isinstance(self.signature, FuncSignature)
 
     @property
-    def owner_method(self) -> Optional[Architype | Enum]:
-        return (
+    def method_owner(self) -> Optional[Architype | Enum]:
+        found = (
             self.parent.parent
             if self.parent
             and self.parent.parent
             and isinstance(self.parent.parent, (Architype, Enum))
             else None
+        ) or (
+            self.parent.parent.decl_link
+            if self.parent
+            and self.parent.parent
+            and isinstance(self.parent.parent, ImplDef)
+            and isinstance(self.parent.parent.decl_link, Architype)
+            else None
         )
+        return found
 
     @property
     def is_genai_ability(self) -> bool:
