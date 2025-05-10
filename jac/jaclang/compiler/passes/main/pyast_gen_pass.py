@@ -966,14 +966,16 @@ class PyastGenPass(UniPass):
                     args=(
                         cast(ast3.arguments, node.signature.gen.py_ast[0])
                         if node.signature
-                        else ast3.arguments(
-                            posonlyargs=[],
-                            args=[],
-                            vararg=None,
-                            kwonlyargs=[],
-                            kw_defaults=[],
-                            kwarg=None,
-                            defaults=[],
+                        else self.sync(
+                            ast3.arguments(
+                                posonlyargs=[],
+                                args=[],
+                                vararg=None,
+                                kwonlyargs=[],
+                                kw_defaults=[],
+                                kwarg=None,
+                                defaults=[],
+                            )
                         )
                     ),
                     body=[cast(ast3.stmt, i) for i in body],
