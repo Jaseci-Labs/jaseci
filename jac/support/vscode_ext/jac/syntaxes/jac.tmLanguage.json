@@ -119,18 +119,10 @@
 					},
 					"patterns": [
 						{
-							"include": "#comments"
+							"include": "#class-name"
 						},
 						{
-							"name": "punctuation.separator.jac",
-							"match": "(,|:|\\{|\\})"
-						},
-						{
-							"include": "#string"
-						},
-						{
-							"name": "entity.name.type.class.jac",
-							"match": "\\b([[:alpha:]_]\\w*)\\b"
+							"include": "#class-inheritance"
 						}
 					]
 				}
@@ -579,7 +571,7 @@
 				},
 				{
 					"name": "keyword.control.flow.jac",
-					"match": "(?x)\n  \\b(?<!\\.)(\n    async | await | continue | entry | exit | del | assert | check | break | finally | for\n    | from | elif | else | if | except | pass | raise\n    | return | try | while | with | to | by | spawn | ignore | visit | disengage \n  )\\b\n"
+					"match": "(?x)\n  \\b(?<!\\.)(\n    async | await | continue | entry | exit | del | assert | check | break | finally | for\n    | from | elif | else | if | except | pass | raise\n    | return | try | while | with | to | by | spawn | ignore | visit | disengage | lambda\n  )\\b\n"
 				},
 				{
 					"name": "storage.modifier.declaration.jac",
@@ -1280,18 +1272,10 @@
 					},
 					"patterns": [
 						{
-							"include": "#comments"
+							"include": "#class-name"
 						},
 						{
-							"name": "punctuation.separator.jac",
-							"match": "(,|:|\\{|\\})"
-						},
-						{
-							"include": "#string"
-						},
-						{
-							"name": "entity.name.type.class.jac",
-							"match": "\\b([[:alpha:]_]\\w*)\\b"
+							"include": "#class-inheritance"
 						}
 					]
 				}
@@ -1327,7 +1311,7 @@
 		"arch-var-reference": {
 			"patterns": [
 				{
-					"match": "(here|self|init|postinit|super|root)\\s*",
+					"match": "(here|visitor|self|init|postinit|super|root)\\s*",
 					"captures": {
 						"1": {
 							"name": "storage.type.class.jac"
@@ -1461,7 +1445,7 @@
 				},
 				{
 					"name": "meta.lambda-function.jac",
-					"begin": "(?x)\n  \\b (lambda) \\b\n",
+					"begin": "(?x)\n  \\b (lambda) \\b",
 					"end": "(:)|(\\n)",
 					"beginCaptures": {
 						"1": {
@@ -2077,7 +2061,7 @@
 			}
 		},
 		"special-variables": {
-			"match": "(?x)\\b(here|self|init|postinit|super|root)\\b",
+			"match": "(?x)\\b(here|visitor|self|init|postinit|super|root)\\b",
 			"captures": {
 				"1": {
 					"name": "variable.language.special.self.jac"
