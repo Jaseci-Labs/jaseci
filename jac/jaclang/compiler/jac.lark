@@ -42,7 +42,6 @@ architype: decorators? KW_ASYNC? architype_decl
          | enum
 
 architype_decl: arch_type access_tag? NAME inherited_archs? (member_block | SEMI)
-architype_def: KW_IMPL arch_type dotted_name member_block
 decorators: (DECOR_OP atomic_chain)+
 access_tag: COLON ( KW_PROT | KW_PUB | KW_PRIV )
 inherited_archs: LPAREN (atomic_chain COMMA)* atomic_chain RPAREN
@@ -67,7 +66,6 @@ enum: decorators? enum_decl
      | enum_def
 
 enum_decl: KW_ENUM access_tag? NAME inherited_archs? (enum_block | SEMI)
-enum_def: KW_IMPL KW_ENUM dotted_name enum_block
 enum_block: LBRACE ((enum_stmt COMMA)* enum_stmt COMMA?)? RBRACE
 
 enum_stmt: NAME (EQ expression)?
@@ -82,13 +80,18 @@ ability: decorators? KW_ASYNC? (ability_decl | function_decl)
 
 function_decl: KW_OVERRIDE? KW_STATIC? KW_DEF access_tag? named_ref func_decl (block_tail | KW_ABSTRACT? SEMI)
 ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? named_ref event_clause (block_tail | KW_ABSTRACT? SEMI)
-function_def: KW_IMPL KW_DEF dotted_name func_decl block_tail
-ability_def: KW_IMPL KW_CAN dotted_name event_clause? block_tail
+
 block_tail: code_block | KW_BY atomic_call SEMI
 event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (RETURN_HINT expression)?
 func_decl: (LPAREN func_decl_params? RPAREN)? (RETURN_HINT expression)?
 func_decl_params: (param_var COMMA)* param_var COMMA?
 param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
+
+// [Heading]: Implementations.
+architype_def: KW_IMPL arch_type dotted_name member_block
+enum_def: KW_IMPL KW_ENUM dotted_name enum_block
+function_def: KW_IMPL KW_DEF dotted_name func_decl block_tail
+ability_def: KW_IMPL KW_CAN dotted_name event_clause? block_tail
 
 // [Heading]: Global variables.
 global_var: (KW_LET | KW_GLOBAL) access_tag? assignment_list SEMI

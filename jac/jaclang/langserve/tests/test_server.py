@@ -115,7 +115,7 @@ class TestJacLangServer(TestCase):
         circle_file = uris.from_fs_path(self.fixture_abs_path("circle_pure.jac"))
         lsp.deep_check(circle_file)
         self.assertIn(
-            "fixtures/circle_pure.impl.jac:8:0-8:19",
+            "fixtures/circle_pure.impl.jac:8:9-8:23",
             str(lsp.get_definition(circle_file, lspt.Position(9, 16))),
         )
         self.assertIn(

@@ -1,3 +1,3 @@
-:o:HasFault:c:init {
+impl def HasFault.init {
     print(5 / 0);
 }

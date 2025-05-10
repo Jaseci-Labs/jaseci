@@ -28,11 +28,11 @@ class DeclImplMatchPassTests(TestCase):
         (out := JacProgram()).compile(self.fixture_abs_path("defn_decl_mismatch.jac"))
 
         expected_stdout_values = (
-            "Parameter count mismatch for ability (o)SomeObj.(c)foo.",
+            "Parameter count mismatch for ability impl.SomeObj.foo.",
             "    8 |",
             "    9 | # Miss match parameter count.",
-            "   10 | :obj:SomeObj:can:foo(param1: str) -> str {",
-            "      | ^^^^^^^^^^^^^^^^^^^^",
+            "   10 | impl def SomeObj.foo(param1: str) -> str {",
+            "      |          ^^^^^^^^^^^",
             '   11 |     return "foo";',
             "   12 | }",
             "From the declaration of foo.",
@@ -48,6 +48,7 @@ class DeclImplMatchPassTests(TestCase):
         for error in out.errors_had:
             errors_output += error.pretty_print() + "\n"
 
+        print(errors_output)
         for exp in expected_stdout_values:
             self.assertIn(exp, errors_output)
 
@@ -55,16 +56,16 @@ class DeclImplMatchPassTests(TestCase):
         """Basic test for pass."""
         state = (out := JacProgram()).compile(self.fixture_abs_path("base.jac"))
         self.assertFalse(out.errors_had)
-        self.assertIn("(o)Test.(c)say_hi", state.impl_mod[0].sym_tab.names_in_scope)
+        self.assertIn("impl.Test.say_hi", state.impl_mod[0].sym_tab.names_in_scope)
         self.assertIsNotNone(
             state.impl_mod[0]
-            .sym_tab.names_in_scope["(o)Test.(c)say_hi"]
+            .sym_tab.names_in_scope["impl.Test.say_hi"]
             .decl.name_of.body
         )
-        self.assertIn("(o)Test.(c)__init__", state.impl_mod[0].sym_tab.names_in_scope)
+        self.assertIn("impl.Test.__init__", state.impl_mod[0].sym_tab.names_in_scope)
         self.assertIsNotNone(
             state.impl_mod[0]
-            .sym_tab.names_in_scope["(o)Test.(c)__init__"]
+            .sym_tab.names_in_scope["impl.Test.__init__"]
             .decl.name_of.body
         )
 
@@ -72,16 +73,16 @@ class DeclImplMatchPassTests(TestCase):
         """Basic test for pass."""
         state = (out := JacProgram()).compile(self.fixture_abs_path("base2.jac"))
         self.assertFalse(out.errors_had)
-        self.assertIn("(o)Test.(c)say_hi", state.sym_tab.impl_mod[0].names_in_scope)
+        self.assertIn("impl.Test.say_hi", state.sym_tab.impl_mod[0].names_in_scope)
         self.assertIsNotNone(
             state.sym_tab.impl_mod[0]
-            .names_in_scope["(o)Test.(c)say_hi"]
+            .names_in_scope["impl.Test.say_hi"]
             .decl.name_of.body
         )
-        self.assertIn("(o)Test.(c)__init__", state.impl_mod[0].sym_tab.names_in_scope)
+        self.assertIn("impl.Test.__init__", state.impl_mod[0].sym_tab.names_in_scope)
         self.assertIsNotNone(
             state.impl_mod[0]
-            .sym_tab.names_in_scope["(o)Test.(c)__init__"]
+            .sym_tab.names_in_scope["impl.Test.__init__"]
             .decl.name_of.body
         )
 
@@ -105,7 +106,7 @@ class DeclImplMatchPassTests(TestCase):
             self.examples_abs_path("manual_code/circle_pure.jac")
         )
         self.assertEqual(
-            mypass.impl_mod[0].pp().count("AbilityDef - (o)Circle.(c)area"), 1
+            mypass.impl_mod[0].pp().count("AbilityDef - impl.Circle.area"), 1
         )
 
     def test_impl_decl_resolution_fix(self) -> None:
