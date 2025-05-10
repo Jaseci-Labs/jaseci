@@ -92,14 +92,6 @@ class SymTabBuildPass(UniPass):
     def exit_architype(self, node: uni.Architype) -> None:
         self.pop_scope()
 
-    def enter_arch_def(self, node: uni.ArchDef) -> None:
-        self.push_scope_and_link(node)
-        assert node.parent_scope is not None
-        node.parent_scope.def_insert(node, single_decl="arch def")
-
-    def exit_arch_def(self, node: uni.ArchDef) -> None:
-        self.pop_scope()
-
     def enter_ability(self, node: uni.Ability) -> None:
         self.push_scope_and_link(node)
         assert node.parent_scope is not None
@@ -115,12 +107,12 @@ class SymTabBuildPass(UniPass):
     def exit_ability(self, node: uni.Ability) -> None:
         self.pop_scope()
 
-    def enter_ability_def(self, node: uni.AbilityDef) -> None:
+    def enter_impl_def(self, node: uni.ImplDef) -> None:
         self.push_scope_and_link(node)
         assert node.parent_scope is not None
-        node.parent_scope.def_insert(node, single_decl="ability def")
+        node.parent_scope.def_insert(node, single_decl="impl def")
 
-    def exit_ability_def(self, node: uni.AbilityDef) -> None:
+    def exit_impl_def(self, node: uni.ImplDef) -> None:
         self.pop_scope()
 
     def enter_enum(self, node: uni.Enum) -> None:
@@ -129,14 +121,6 @@ class SymTabBuildPass(UniPass):
         node.parent_scope.def_insert(node, access_spec=node, single_decl="enum")
 
     def exit_enum(self, node: uni.Enum) -> None:
-        self.pop_scope()
-
-    def enter_enum_def(self, node: uni.EnumDef) -> None:
-        self.push_scope_and_link(node)
-        assert node.parent_scope is not None
-        node.parent_scope.def_insert(node, single_decl="enum def")
-
-    def exit_enum_def(self, node: uni.EnumDef) -> None:
         self.pop_scope()
 
     def enter_typed_ctx_block(self, node: uni.TypedCtxBlock) -> None:

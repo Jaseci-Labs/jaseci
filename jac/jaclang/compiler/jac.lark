@@ -17,6 +17,7 @@ module: (toplevel_stmt (tl_stmt_with_doc | toplevel_stmt)*)?
 tl_stmt_with_doc: STRING toplevel_stmt
 toplevel_stmt: import_stmt
        | architype
+       | impl_def
        | ability
        | global_var
        | free_code
@@ -38,7 +39,6 @@ dotted_name: named_ref (DOT named_ref)*
 
 // [Heading]: Architypes.
 architype: decorators? KW_ASYNC? architype_decl
-         | architype_def
          | enum
 
 architype_decl: arch_type access_tag? NAME inherited_archs? (member_block | SEMI)
@@ -55,7 +55,7 @@ arch_type: KW_WALKER
 
 // [Heading]: Architype bodies.
 member_block: LBRACE member_stmt* RBRACE
-member_stmt: STRING? (py_code_block | ability | architype | has_stmt | free_code)
+member_stmt: STRING? (py_code_block | ability | architype | impl_def | has_stmt | free_code)
 has_stmt: KW_STATIC? (KW_LET | KW_HAS) access_tag? has_assign_list SEMI
 has_assign_list: (has_assign_list COMMA)? typed_has_clause
 typed_has_clause: named_ref type_tag (EQ expression | KW_BY KW_POST_INIT)?
@@ -63,39 +63,28 @@ type_tag: COLON expression
 
 // [Heading]: Enumerations.
 enum: decorators? enum_decl
-     | enum_def
-
 enum_decl: KW_ENUM access_tag? NAME inherited_archs? (enum_block | SEMI)
-enum_block: LBRACE ((enum_stmt COMMA)* enum_stmt COMMA?)? RBRACE
-
-enum_stmt: NAME (EQ expression)?
-         | py_code_block
-         | free_code
-         | ability
+enum_block: LBRACE assignment_list (py_code_block | free_code)* RBRACE
 
 // [Heading]: Abilities.
 ability: decorators? KW_ASYNC? (ability_decl | function_decl)
-       | ability_def
-       | function_def
 
-function_decl: KW_OVERRIDE? KW_STATIC? KW_DEF access_tag? named_ref func_decl (block_tail | KW_ABSTRACT? SEMI)
+function_decl: KW_OVERRIDE? KW_STATIC? KW_DEF access_tag? named_ref func_decl? (block_tail | KW_ABSTRACT? SEMI)
 ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? named_ref event_clause (block_tail | KW_ABSTRACT? SEMI)
-
 block_tail: code_block | KW_BY atomic_call SEMI
 event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (RETURN_HINT expression)?
-func_decl: (LPAREN func_decl_params? RPAREN)? (RETURN_HINT expression)?
+func_decl: (LPAREN func_decl_params? RPAREN) (RETURN_HINT expression)?
 func_decl_params: (param_var COMMA)* param_var COMMA?
 param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
 
 // [Heading]: Implementations.
-architype_def: KW_IMPL arch_type dotted_name member_block
-enum_def: KW_IMPL KW_ENUM dotted_name enum_block
-function_def: KW_IMPL KW_DEF dotted_name func_decl block_tail
-ability_def: KW_IMPL KW_CAN dotted_name event_clause? block_tail
+impl_def: decorators? KW_IMPL dotted_name impl_spec? impl_tail
+impl_spec: inherited_archs | func_decl | event_clause
+impl_tail: enum_block | block_tail
 
 // [Heading]: Global variables.
 global_var: (KW_LET | KW_GLOBAL) access_tag? assignment_list SEMI
-assignment_list: (assignment_list COMMA)? assignment
+assignment_list: (assignment_list COMMA)? (assignment | NAME)
 
 // [Heading]: Free code.
 free_code: KW_WITH KW_ENTRY (COLON NAME)? code_block
@@ -112,6 +101,7 @@ code_block: LBRACE statement* RBRACE
 statement: import_stmt
        | ability
        | architype
+       | impl_def
        | if_stmt
        | while_stmt
        | for_stmt

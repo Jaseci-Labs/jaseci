@@ -37,41 +37,19 @@ class PyJacAstLinkPass(UniPass):
 
     def exit_architype(self, node: uni.Architype) -> None:
         self.link_jac_py_nodes(jac_node=node.name, py_nodes=node.gen.py_ast)
-        if isinstance(node.body, uni.ArchDef):
+        if isinstance(node.body, uni.ImplDef):
             self.link_jac_py_nodes(jac_node=node.body, py_nodes=node.gen.py_ast)
-
-    def exit_arch_def(self, node: uni.ArchDef) -> None:
-        for i in node.target.items:
-            if i.name_spec.name_of.sym:
-                self.link_jac_py_nodes(
-                    jac_node=i, py_nodes=i.name_spec.name_of.sym.decl.gen.py_ast
-                )
-                self.link_jac_py_nodes(
-                    jac_node=i.name_spec,
-                    py_nodes=i.name_spec.name_of.sym.decl.gen.py_ast,
-                )
 
     def exit_enum(self, node: uni.Enum) -> None:
-        if isinstance(node.body, uni.EnumDef):
+        if isinstance(node.body, uni.ImplDef):
             self.link_jac_py_nodes(jac_node=node.body, py_nodes=node.gen.py_ast)
-
-    def exit_enum_def(self, node: uni.EnumDef) -> None:
-        for i in node.target.items:
-            if i.name_spec.name_of.sym:
-                self.link_jac_py_nodes(
-                    jac_node=i, py_nodes=i.name_spec.name_of.sym.decl.gen.py_ast
-                )
-                self.link_jac_py_nodes(
-                    jac_node=i.name_spec,
-                    py_nodes=i.name_spec.name_of.sym.decl.gen.py_ast,
-                )
 
     def exit_ability(self, node: uni.Ability) -> None:
         self.link_jac_py_nodes(jac_node=node.name_ref, py_nodes=node.gen.py_ast)
-        if isinstance(node.body, uni.AbilityDef):
+        if isinstance(node.body, uni.ImplDef):
             self.link_jac_py_nodes(jac_node=node.body, py_nodes=node.gen.py_ast)
 
-    def exit_ability_def(self, node: uni.AbilityDef) -> None:
+    def exit_impl_def(self, node: uni.ImplDef) -> None:
         for i in node.target.items:
             if i.name_spec.name_of.sym:
                 self.link_jac_py_nodes(
@@ -83,8 +61,8 @@ class PyJacAstLinkPass(UniPass):
                 )
 
         if isinstance(node.decl_link, uni.Ability) and node.decl_link.signature:
-            if isinstance(node.signature, uni.FuncSignature) and node.signature.params:
-                for src_prm in node.signature.params.items:
+            if isinstance(node.spec, uni.FuncSignature) and node.spec.params:
+                for src_prm in node.spec.params.items:
                     if (
                         isinstance(node.decl_link.signature, uni.FuncSignature)
                         and node.decl_link.signature.params
@@ -99,14 +77,13 @@ class PyJacAstLinkPass(UniPass):
                                     py_nodes=trg_prm.name.gen.py_ast,
                                 )
             if (
-                isinstance(node.signature, uni.FuncSignature)
-                and node.signature.return_type
+                isinstance(node.spec, uni.FuncSignature) and node.spec.return_type
             ) and (
                 isinstance(node.decl_link.signature, uni.FuncSignature)
                 and node.decl_link.signature.return_type
             ):
                 self.link_jac_py_nodes(
-                    jac_node=node.signature.return_type,
+                    jac_node=node.spec.return_type,
                     py_nodes=node.decl_link.signature.return_type.gen.py_ast,
                 )
 

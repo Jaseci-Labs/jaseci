@@ -44,7 +44,7 @@ class DefUsePass(UniPass):
         if node.arch_type.name == Tok.KW_WALKER:
             inform_from_walker(node)
             for i in self.get_all_sub_nodes(node, uni.Ability):
-                if isinstance(i.body, uni.AbilityDef):
+                if isinstance(i.body, uni.ImplDef):
                     inform_from_walker(i.body)
 
     def enter_enum(self, node: uni.Enum) -> None:

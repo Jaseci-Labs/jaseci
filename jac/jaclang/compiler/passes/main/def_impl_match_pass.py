@@ -58,7 +58,7 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
         """
         # Process all symbols in the source symbol table
         for sym in source_sym_tab.names_in_scope.values():
-            if not isinstance(sym.decl.name_of, uni.AstImplOnlyNode):
+            if not isinstance(sym.decl.name_of, uni.ImplDef):
                 continue
 
             # Extract architype references
@@ -149,13 +149,13 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
         """Validate if the parameters match."""
         if (
             isinstance(valid_decl, uni.Ability)
-            and isinstance(sym.decl.name_of, uni.AbilityDef)
+            and isinstance(sym.decl.name_of, uni.ImplDef)
             and isinstance(valid_decl.signature, uni.FuncSignature)
-            and isinstance(sym.decl.name_of.signature, uni.FuncSignature)
+            and isinstance(sym.decl.name_of.spec, uni.FuncSignature)
         ):
 
             params_decl = valid_decl.signature.params
-            params_defn = sym.decl.name_of.signature.params
+            params_defn = sym.decl.name_of.spec.params
 
             if params_decl and params_defn:
                 # Check if the parameter count is matched.

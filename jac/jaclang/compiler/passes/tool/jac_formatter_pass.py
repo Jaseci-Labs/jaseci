@@ -185,7 +185,7 @@ class JacFormatPass(UniPass):
                     self.indent_level -= 1
                     self.emit_ln(node, "")
                     self.indent_level += 1
-            if isinstance(node.parent, (uni.EnumDef, uni.Enum)) and stmt.gen.jac == ",":
+            if isinstance(node.parent, (uni.ImplDef, uni.Enum)) and stmt.gen.jac == ",":
                 self.indent_level -= 1
                 self.emit_ln(node, f"{stmt.gen.jac}")
                 self.indent_level += 1
@@ -275,7 +275,7 @@ class JacFormatPass(UniPass):
                 and not isinstance(stmt, (uni.HasVar, uni.ArchHas))
             ) or (
                 isinstance(prev_token, uni.Ability)
-                and isinstance(stmt, (uni.Ability, uni.AbilityDef))
+                and isinstance(stmt, (uni.Ability, uni.ImplDef))
             ):
                 if (
                     not isinstance(prev_token.kid[-1], uni.CommentToken)
@@ -436,7 +436,7 @@ class JacFormatPass(UniPass):
     def exit_special_var_ref(self, node: uni.SpecialVarRef) -> None:
         self.emit(node, node.orig.value)
 
-    def exit_ability_def(self, node: uni.AbilityDef) -> None:
+    def exit_impl_def(self, node: uni.ImplDef) -> None:
         start = True
         prev_token = None
         for i in node.kid:
@@ -515,30 +515,6 @@ class JacFormatPass(UniPass):
                 self.emit(node, re.sub(r"\s+", "", i.gen.jac.strip()))
             else:
                 if start or i.gen.jac == ",":
-                    self.emit(node, i.gen.jac)
-                    start = False
-                else:
-                    self.emit(node, f" {i.gen.jac}")
-        if isinstance(node.kid[-1], uni.Semi) and not node.gen.jac.endswith("\n"):
-            self.emit_ln(node, "")
-
-    def exit_arch_def(self, node: uni.ArchDef) -> None:
-        start = True
-        for i in node.kid:
-            if isinstance(i, uni.CommentToken):
-                if i.is_inline:
-                    self.emit(node, f" {i.gen.jac}")
-                elif not node.gen.jac.endswith("\n"):
-                    self.indent_level -= 1
-                    self.emit_ln(node, "")
-                    self.indent_level += 1
-                    self.emit_ln(node, i.gen.jac)
-                else:
-                    self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, uni.Semi):
-                self.emit(node, i.gen.jac)
-            else:
-                if start or i.gen.jac == "," or i.gen.jac.startswith(":"):
                     self.emit(node, i.gen.jac)
                     start = False
                 else:
@@ -716,36 +692,6 @@ class JacFormatPass(UniPass):
                 if start or (
                     prev_token and isinstance(prev_token, (uni.String, uni.Name))
                 ):
-                    self.emit(node, i.gen.jac)
-                    start = False
-                else:
-                    self.emit(node, f" {i.gen.jac}")
-            prev_token = i
-        if isinstance(
-            node.kid[-1], (uni.Semi, uni.CommentToken)
-        ) and not node.gen.jac.endswith("\n"):
-            self.emit_ln(node, "")
-
-    def exit_enum_def(self, node: uni.EnumDef) -> None:
-        start = True
-        prev_token = None
-        for i in node.kid:
-            if isinstance(i, uni.String):
-                self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, uni.CommentToken):
-                if i.is_inline:
-                    self.emit(node, f" {i.gen.jac}")
-                else:
-                    self.emit_ln(node, i.gen.jac)
-            elif isinstance(i, (uni.Semi, uni.SubNodeList)):
-                if prev_token and prev_token.gen.jac.strip() == "enum":
-                    self.emit(node, f" {i.gen.jac}")
-                else:
-                    self.emit(node, i.gen.jac)
-            elif isinstance(i, uni.SubNodeList) and i.gen.jac.startswith("@"):
-                self.emit_ln(node, i.gen.jac)
-            else:
-                if start:
                     self.emit(node, i.gen.jac)
                     start = False
                 else:

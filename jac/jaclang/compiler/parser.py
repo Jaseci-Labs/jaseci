@@ -495,16 +495,14 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 kid=self.cur_nodes,
             )
 
-        def architype(
-            self, _: None
-        ) -> uni.ArchSpec | uni.ArchDef | uni.Enum | uni.EnumDef:
+        def architype(self, _: None) -> uni.ArchSpec | uni.Enum | uni.ImplDef:
             """Grammar rule.
 
             architype: decorators? architype_decl
                     | architype_def
                     | enum
             """
-            archspec: uni.ArchSpec | uni.ArchDef | uni.Enum | uni.EnumDef | None = None
+            archspec: uni.ArchSpec | uni.Enum | uni.ImplDef | None = None
 
             decorators = self.match(uni.SubNodeList)
             is_async = self.match_token(Tok.KW_ASYNC)
@@ -515,9 +513,8 @@ class JacParser(Transform[uni.Source, uni.Module]):
             else:
                 archspec = (
                     self.match(uni.ArchSpec)
-                    or self.match(uni.ArchDef)
                     or self.match(uni.Enum)
-                    or self.consume(uni.EnumDef)
+                    or self.consume(uni.ImplDef)
                 )
             if is_async and isinstance(archspec, uni.ArchSpec):
                 archspec.is_async = True
@@ -550,23 +547,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 name=name,
                 access=access,
                 base_classes=inh,
-                body=body,
-                kid=self.cur_nodes,
-            )
-
-        def architype_def(self, _: None) -> uni.ArchDef:
-            """Grammar rule.
-
-            architype_def: KW_IMPL arch_type dotted_name member_block
-            """
-            self.consume_token(Tok.KW_IMPL)
-            arch_type = self.consume(uni.Token)
-            target_path = self.consume(uni.SubNodeList)
-            body = self.consume(uni.SubNodeList)
-
-            return uni.ArchDef(
-                arch_type=arch_type,
-                target=target_path,
                 body=body,
                 kid=self.cur_nodes,
             )
@@ -628,7 +608,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """
             return uni.SpecialVarRef(var=self.consume(uni.Name))
 
-        def enum(self, _: None) -> uni.Enum | uni.EnumDef:
+        def enum(self, _: None) -> uni.Enum:
             """Grammar rule.
 
             enum: decorators? enum_decl
@@ -639,7 +619,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 enum_decl.decorators = decorator
                 enum_decl.add_kids_left([decorator])
                 return enum_decl
-            return self.match(uni.Enum) or self.consume(uni.EnumDef)
+            return self.consume(uni.Enum)
 
         def enum_decl(self, _: None) -> uni.Enum:
             """Grammar rule.
@@ -664,38 +644,17 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 kid=self.cur_nodes,
             )
 
-        def enum_def(self, _: None) -> uni.EnumDef:
+        def enum_block(self, _: None) -> uni.SubNodeList[uni.Assignment]:
             """Grammar rule.
 
-            enum_def: KW_IMPL KW_ENUM dotted_name enum_block
-            """
-            self.consume_token(Tok.KW_IMPL)
-            self.consume_token(Tok.KW_ENUM)
-            target_path = self.consume(uni.SubNodeList)
-            body = self.consume(uni.SubNodeList)
-
-            return uni.EnumDef(
-                target=target_path,
-                body=body,
-                kid=self.cur_nodes,
-            )
-
-        def enum_block(self, _: None) -> uni.SubNodeList[uni.EnumBlockStmt]:
-            """Grammar rule.
-
-            enum_block: LBRACE ((enum_stmt COMMA)* enum_stmt COMMA?)? RBRACE
+            enum_block: LBRACE assignment_list RBRACE
             """
             self.consume_token(Tok.LBRACE)
-            enum_statements: list = []
-            while enum_stmt := self.match(uni.EnumBlockStmt):
-                enum_statements.append(enum_stmt)
-                self.match_token(Tok.COMMA)
+            assignments = self.consume(uni.SubNodeList)
             self.consume_token(Tok.RBRACE)
-            return uni.SubNodeList[uni.EnumBlockStmt](
-                items=enum_statements,
-                delim=Tok.COMMA,
-                kid=self.cur_nodes,
-            )
+            assignments.add_kids_left([self.cur_nodes[0]])
+            assignments.add_kids_right([self.cur_nodes[-1]])
+            return assignments
 
         def enum_stmt(self, _: None) -> uni.EnumBlockStmt:
             """Grammar rule.
@@ -705,11 +664,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     | free_code
                     | ability
             """
-            if stmt := (
-                self.match(uni.PyInlineCode)
-                or self.match(uni.ModuleCode)
-                or self.match(uni.Ability)
-            ):
+            if stmt := (self.match(uni.PyInlineCode) or self.match(uni.ModuleCode)):
                 return stmt
             name = self.consume(uni.Name)
             expr = self.consume(uni.Expr) if self.match_token(Tok.EQ) else None
@@ -723,14 +678,14 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 is_enum_stmt=True,
             )
 
-        def ability(self, _: None) -> uni.Ability | uni.AbilityDef | uni.FuncCall:
+        def ability(self, _: None) -> uni.Ability | uni.ImplDef | uni.FuncCall:
             """Grammar rule.
 
             ability: decorators? KW_ASYNC? (ability_decl | function_decl)
                    | ability_def
                    | function_def
             """
-            ability: uni.Ability | uni.AbilityDef | None = None
+            ability: uni.Ability | uni.ImplDef | None = None
             decorators = self.match(uni.SubNodeList)
             is_async = self.match_token(Tok.KW_ASYNC)
 
@@ -739,10 +694,10 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             if ability is None:
                 # Try to match ability_def or function_def
-                ability = self.match(uni.AbilityDef)
+                ability = self.match(uni.ImplDef)
 
             if ability is None:
-                ability = self.consume(uni.AbilityDef)
+                ability = self.consume(uni.ImplDef)
 
             if is_async and ability and isinstance(ability, uni.Ability):
                 ability.is_async = True
@@ -797,51 +752,11 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 kid=self.cur_nodes,
             )
 
-        def ability_def(self, _: None) -> uni.AbilityDef:
-            """Grammar rule.
-
-            ability_def: KW_IMPL KW_CAN dotted_name event_clause? block_tail
-            """
-            self.consume_token(Tok.KW_IMPL)
-            self.consume_token(Tok.KW_CAN)
-            target_path = self.consume(uni.SubNodeList)
-            signature = self.match(uni.EventSignature)
-            body = self.match(uni.SubNodeList) or self.match(uni.FuncCall)
-            if not body:
-                raise self.ice()
-
-            return uni.AbilityDef(
-                target=target_path,
-                signature=signature,
-                body=body,
-                kid=self.cur_nodes,
-            )
-
-        def function_def(self, _: None) -> uni.AbilityDef:
-            """Grammar rule.
-
-            function_def: KW_IMPL KW_DEF dotted_name func_decl block_tail
-            """
-            self.consume_token(Tok.KW_IMPL)
-            self.consume_token(Tok.KW_DEF)
-            target_path = self.consume(uni.SubNodeList)
-            signature = self.consume(uni.FuncSignature)
-            body = self.match(uni.SubNodeList) or self.match(uni.FuncCall)
-            if not body:
-                raise self.ice()
-
-            return uni.AbilityDef(
-                target=target_path,
-                signature=signature,
-                body=body,
-                kid=self.cur_nodes,
-            )
-
         def function_decl(self, _: None) -> uni.Ability:
             """Grammar rule.
 
             function_decl: KW_OVERRIDE? KW_STATIC? KW_DEF access_tag? named_ref
-                func_decl (block_tail | KW_ABSTRACT? SEMI)
+                func_decl? (block_tail | KW_ABSTRACT? SEMI)
             """
             # Save original kids to track tokens
             is_override = self.match_token(Tok.KW_OVERRIDE) is not None
@@ -849,7 +764,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             self.consume_token(Tok.KW_DEF)
             access = self.match(uni.SubTag)
             name = self.consume(uni.NameAtom)
-            signature = self.consume(uni.FuncSignature)
+            signature = self.match(uni.FuncSignature)
 
             # Handle block_tail
             body = self.match(uni.SubNodeList) or self.match(uni.FuncCall)
@@ -874,13 +789,13 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def func_decl(self, _: None) -> uni.FuncSignature:
             """Grammar rule.
 
-            func_decl: (LPAREN func_decl_params? RPAREN)? (RETURN_HINT expression)?
+            func_decl: (LPAREN func_decl_params? RPAREN) (RETURN_HINT expression)?
             """
             params: uni.SubNodeList | None = None
             return_spec: uni.Expr | None = None
-            if self.match_token(Tok.LPAREN):
-                params = self.match(uni.SubNodeList)
-                self.consume_token(Tok.RPAREN)
+            self.consume_token(Tok.LPAREN)
+            params = self.match(uni.SubNodeList)
+            self.consume_token(Tok.RPAREN)
             if self.match_token(Tok.RETURN_HINT):
                 return_spec = self.match(uni.Expr)
             return uni.FuncSignature(
@@ -945,7 +860,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def member_stmt(self, _: None) -> uni.ArchBlockStmt:
             """Grammar rule.
 
-            member_stmt: STRING? (py_code_block | ability | architype | has_stmt | free_code)
+            member_stmt: STRING? (py_code_block | ability | architype | impl_def | has_stmt | free_code)
             """
             doc = self.match(uni.String)
             ret = self.consume(uni.ArchBlockStmt)
@@ -953,7 +868,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 ret.doc = doc
                 ret.add_kids_left([doc])
             if isinstance(ret, uni.Ability):
-                ret.signature.is_method = True
+                ret.is_method = True
             return ret
 
         def has_stmt(self, kid: list[uni.UniNode]) -> uni.ArchHas:
@@ -2427,12 +2342,24 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def assignment_list(self, _: None) -> uni.SubNodeList[uni.Assignment]:
             """Grammar rule.
 
-            assignment_list: assignment_list COMMA assignment | assignment
+            assignment_list: (assignment_list COMMA)? (assignment | NAME)
             """
             if consume := self.match(uni.SubNodeList):
                 comma = self.consume_token(Tok.COMMA)
                 assign = self.consume(uni.Assignment)
                 new_kid = [*consume.kid, comma, assign]
+            elif name_consume := self.match(uni.Name):
+                new_kid = [
+                    uni.Assignment(
+                        target=uni.SubNodeList(
+                            items=[name_consume], delim=None, kid=[name_consume]
+                        ),
+                        value=None,
+                        type_tag=None,
+                        kid=[name_consume],
+                        is_enum_stmt=True,
+                    )
+                ]
             else:
                 assign = self.consume(uni.Assignment)
                 new_kid = [assign]
