@@ -969,7 +969,11 @@ class PyastGenPass(UniPass):
                         else self.sync(
                             ast3.arguments(
                                 posonlyargs=[],
-                                args=[],
+                                args=(
+                                    [self.sync(ast3.arg(arg="self", annotation=None))]
+                                    if node.is_method
+                                    else []
+                                ),
                                 vararg=None,
                                 kwonlyargs=[],
                                 kw_defaults=[],

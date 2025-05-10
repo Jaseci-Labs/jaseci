@@ -706,6 +706,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             self.match_token(Tok.COMMA)
             while item := self.match(uni.EnumBlockStmt):
                 assignments.add_kids_right([item])
+                assignments.items.append(item)
             right_enc = self.consume_token(Tok.RBRACE)
             assignments.add_kids_left([left_enc])
             assignments.add_kids_right([right_enc])
@@ -2383,22 +2384,24 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             assignment_list: (assignment_list COMMA)? (assignment | NAME)
             """
-            if consume := self.match(uni.SubNodeList):
-                comma = self.consume_token(Tok.COMMA)
-                assign = self.match(uni.Assignment) or self.consume(uni.NameAtom)
-                new_kid = [*consume.kid, comma, assign]
-            elif name_consume := self.match(uni.NameAtom):
+
+            def name_to_assign(name_consume: uni.NameAtom) -> uni.Assignment:
                 target = uni.SubNodeList[uni.Expr](
                     items=[name_consume], delim=None, kid=[name_consume]
                 )
-                new_kid = [
-                    uni.Assignment(
-                        target=target,
-                        value=None,
-                        type_tag=None,
-                        kid=[target],
-                    )
-                ]
+                return uni.Assignment(
+                    target=target, value=None, type_tag=None, kid=[target]
+                )
+
+            if consume := self.match(uni.SubNodeList):
+                comma = self.consume_token(Tok.COMMA)
+                assign = self.match(uni.Assignment) or self.consume(uni.NameAtom)
+                if isinstance(assign, uni.NameAtom):
+                    assign = name_to_assign(assign)
+                new_kid = [*consume.kid, comma, assign]
+            elif name_consume := self.match(uni.NameAtom):
+                name_assign = name_to_assign(name_consume)
+                new_kid = [name_assign]
             else:
                 assign = self.consume(uni.Assignment)
                 new_kid = [assign]
