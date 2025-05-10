@@ -831,23 +831,35 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """Grammar rule.
 
             func_decl: (LPAREN func_decl_params? RPAREN) (RETURN_HINT expression)?
+                    | (RETURN_HINT expression)
             """
             params: uni.SubNodeList | None = None
             return_spec: uni.Expr | None = None
-            self.consume_token(Tok.LPAREN)
-            params = self.match(uni.SubNodeList)
-            self.consume_token(Tok.RPAREN)
+
+            # Check if starting with RETURN_HINT
             if self.match_token(Tok.RETURN_HINT):
-                return_spec = self.match(uni.Expr)
-            return uni.FuncSignature(
-                params=params,
-                return_type=return_spec,
-                kid=(
-                    self.cur_nodes
-                    if len(self.cur_nodes)
-                    else [uni.EmptyToken(uni.Source("", self.parse_ref.mod_path))]
-                ),
-            )
+                return_spec = self.consume(uni.Expr)
+                return uni.FuncSignature(
+                    params=None,
+                    return_type=return_spec,
+                    kid=self.cur_nodes,
+                )
+            # Otherwise, parse the traditional parameter list form
+            else:
+                self.consume_token(Tok.LPAREN)
+                params = self.match(uni.SubNodeList)
+                self.consume_token(Tok.RPAREN)
+                if self.match_token(Tok.RETURN_HINT):
+                    return_spec = self.consume(uni.Expr)
+                return uni.FuncSignature(
+                    params=params,
+                    return_type=return_spec,
+                    kid=(
+                        self.cur_nodes
+                        if len(self.cur_nodes)
+                        else [uni.EmptyToken(uni.Source("", self.parse_ref.mod_path))]
+                    ),
+                )
 
         def func_decl_params(self, _: None) -> uni.SubNodeList[uni.ParamVar]:
             """Grammar rule.

@@ -72,8 +72,11 @@ ability: decorators? KW_ASYNC? (ability_decl | function_decl)
 function_decl: KW_OVERRIDE? KW_STATIC? KW_DEF access_tag? named_ref func_decl? (block_tail | KW_ABSTRACT? SEMI)
 ability_decl: KW_OVERRIDE? KW_STATIC? KW_CAN access_tag? named_ref event_clause (block_tail | KW_ABSTRACT? SEMI)
 block_tail: code_block | KW_BY atomic_call SEMI
-event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY) (RETURN_HINT expression)?
+event_clause: KW_WITH expression? (KW_EXIT | KW_ENTRY)
+
 func_decl: (LPAREN func_decl_params? RPAREN) (RETURN_HINT expression)?
+         | (RETURN_HINT expression)
+
 func_decl_params: (param_var COMMA)* param_var COMMA?
 param_var: (STAR_POW | STAR_MUL)? NAME type_tag (EQ expression)?
 
