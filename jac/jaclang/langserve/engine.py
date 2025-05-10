@@ -379,9 +379,11 @@ class JacLangServer(LanguageServer):
             if (
                 isinstance(node_selected, uni.Name)
                 and node_selected.parent
-                and isinstance(node_selected.parent, uni.ModulePath)
+                and isinstance(node_selected.parent, uni.SubNodeList)
+                and node_selected.parent.parent
+                and isinstance(node_selected.parent.parent, uni.ModulePath)
             ):
-                spec = node_selected.parent.abs_path
+                spec = node_selected.parent.parent.abs_path
                 if spec:
                     spec = spec[5:] if spec.startswith("File:") else spec
                     return lspt.Location(
