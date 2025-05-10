@@ -1053,7 +1053,8 @@ class PyastGenPass(UniPass):
                     posonlyargs=[],
                     args=(
                         [self.sync(ast3.arg(arg="self", annotation=None)), here]
-                        if node.is_method
+                        if (abl := node.find_parent_of_type(uni.Ability))
+                        and abl.is_method
                         else [here]
                     ),
                     kwonlyargs=[],

@@ -1870,7 +1870,6 @@ class EventSignature(UniNode):
         self.event = event
         self.arch_tag_info = arch_tag_info
         self.return_type = return_type
-        self.is_method = False
         UniNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:
