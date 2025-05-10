@@ -701,14 +701,16 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             enum_block: LBRACE assignment_list COMMA? (py_code_block | free_code)* RBRACE
             """
-            self.consume_token(Tok.LBRACE)
+            left_enc = self.consume_token(Tok.LBRACE)
             assignments = self.consume(uni.SubNodeList)
             self.match_token(Tok.COMMA)
             while item := self.match(uni.EnumBlockStmt):
                 assignments.add_kids_right([item])
-            self.consume_token(Tok.RBRACE)
-            assignments.add_kids_left([self.cur_nodes[0]])
-            assignments.add_kids_right([self.cur_nodes[-1]])
+            right_enc = self.consume_token(Tok.RBRACE)
+            assignments.add_kids_left([left_enc])
+            assignments.add_kids_right([right_enc])
+            assignments.left_enc = left_enc
+            assignments.right_enc = right_enc
             for i in assignments.kid:
                 if isinstance(i, uni.Assignment):
                     i.is_enum_stmt = True

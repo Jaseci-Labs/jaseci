@@ -1676,9 +1676,7 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt, UniScopeN
             if isinstance(self.body, ImplDef):
                 new_kid.append(self.gen_token(Tok.SEMI))
             else:
-                new_kid.append(self.gen_token(Tok.LBRACE))
                 new_kid.append(self.body)
-                new_kid.append(self.gen_token(Tok.RBRACE))
         else:
             new_kid.append(self.gen_token(Tok.SEMI))
         self.set_kids(nodes=new_kid)
