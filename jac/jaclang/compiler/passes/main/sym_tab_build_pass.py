@@ -75,12 +75,12 @@ class SymTabBuildPass(UniPass):
     def exit_module_path(self, node: uni.ModulePath) -> None:
         if node.alias:
             node.alias.sym_tab.def_insert(node.alias, single_decl="import")
-        elif node.path and isinstance(node.path[0], uni.Name):
+        elif node.path and isinstance(node.path.items[0], uni.Name):
             if node.parent_of_type(uni.Import) and not (
                 node.parent_of_type(uni.Import).from_loc
                 and node.parent_of_type(uni.Import).is_jac
             ):
-                node.path[0].sym_tab.def_insert(node.path[0])
+                node.path.items[0].sym_tab.def_insert(node.path.items[0])
         else:
             pass  # Need to support pythonic import symbols with dots in it
 
@@ -92,14 +92,6 @@ class SymTabBuildPass(UniPass):
     def exit_architype(self, node: uni.Architype) -> None:
         self.pop_scope()
 
-    def enter_arch_def(self, node: uni.ArchDef) -> None:
-        self.push_scope_and_link(node)
-        assert node.parent_scope is not None
-        node.parent_scope.def_insert(node, single_decl="arch def")
-
-    def exit_arch_def(self, node: uni.ArchDef) -> None:
-        self.pop_scope()
-
     def enter_ability(self, node: uni.Ability) -> None:
         self.push_scope_and_link(node)
         assert node.parent_scope is not None
@@ -108,19 +100,19 @@ class SymTabBuildPass(UniPass):
             node.sym_tab.def_insert(uni.Name.gen_stub_from_node(node, "self"))
             node.sym_tab.def_insert(
                 uni.Name.gen_stub_from_node(
-                    node, "super", set_name_of=node.owner_method
+                    node, "super", set_name_of=node.method_owner
                 )
             )
 
     def exit_ability(self, node: uni.Ability) -> None:
         self.pop_scope()
 
-    def enter_ability_def(self, node: uni.AbilityDef) -> None:
+    def enter_impl_def(self, node: uni.ImplDef) -> None:
         self.push_scope_and_link(node)
         assert node.parent_scope is not None
-        node.parent_scope.def_insert(node, single_decl="ability def")
+        node.parent_scope.def_insert(node, single_decl="impl")
 
-    def exit_ability_def(self, node: uni.AbilityDef) -> None:
+    def exit_impl_def(self, node: uni.ImplDef) -> None:
         self.pop_scope()
 
     def enter_enum(self, node: uni.Enum) -> None:
@@ -129,14 +121,6 @@ class SymTabBuildPass(UniPass):
         node.parent_scope.def_insert(node, access_spec=node, single_decl="enum")
 
     def exit_enum(self, node: uni.Enum) -> None:
-        self.pop_scope()
-
-    def enter_enum_def(self, node: uni.EnumDef) -> None:
-        self.push_scope_and_link(node)
-        assert node.parent_scope is not None
-        node.parent_scope.def_insert(node, single_decl="enum def")
-
-    def exit_enum_def(self, node: uni.EnumDef) -> None:
         self.pop_scope()
 
     def enter_typed_ctx_block(self, node: uni.TypedCtxBlock) -> None:

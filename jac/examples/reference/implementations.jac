@@ -4,15 +4,15 @@ obj vehicle;
 
 enum Size; #implementations
 
-:can:foo -> str {
+impl foo -> str {
     return ("Hello");
 }
 
-:obj:vehicle  {
+impl vehicle  {
     has name: str = "Car";
 }
 
-:enum:Size {
+impl Size {
     Small=1,
     Medium=2,
     Large=3

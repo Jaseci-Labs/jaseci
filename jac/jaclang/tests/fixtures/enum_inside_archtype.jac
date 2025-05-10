@@ -13,9 +13,9 @@ obj outer {
         blue,
         with entry {
             print('Initializing role system..');
-        },
-        def foo -> str {
-            return 'Accessing privileged Data';
+            def foo -> str {
+                return 'Accessing privileged Data';
+            }
         }
     }
 }

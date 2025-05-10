@@ -44,17 +44,14 @@ class DefUsePass(UniPass):
         if node.arch_type.name == Tok.KW_WALKER:
             inform_from_walker(node)
             for i in self.get_all_sub_nodes(node, uni.Ability):
-                if isinstance(i.body, uni.AbilityDef):
+                if isinstance(i.body, uni.ImplDef):
                     inform_from_walker(i.body)
 
     def enter_enum(self, node: uni.Enum) -> None:
         node.sym_tab.inherit_baseclasses_sym(node)
 
-    def enter_arch_ref(self, node: uni.ArchRef) -> None:
+    def enter_type_ref(self, node: uni.TypeRef) -> None:
         node.sym_tab.use_lookup(node)
-
-    def enter_arch_ref_chain(self, node: uni.ArchRefChain) -> None:
-        node.sym_tab.chain_use_lookup(node.archs)
 
     def enter_param_var(self, node: uni.ParamVar) -> None:
         node.sym_tab.def_insert(node)
@@ -83,6 +80,7 @@ class DefUsePass(UniPass):
     def enter_inner_compr(self, node: uni.InnerCompr) -> None:
         if isinstance(node.target, uni.AtomTrailer):
             node.target.sym_tab.chain_def_insert(node.target.as_attr_list)
+
         elif isinstance(node.target, uni.AstSymbolNode):
             node.target.sym_tab.def_insert(node.target)
         else:

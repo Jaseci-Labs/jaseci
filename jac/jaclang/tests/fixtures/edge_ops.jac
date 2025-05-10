@@ -14,7 +14,7 @@ edge MyEdge {
         val2: int = 10;
 }
 
-:walker:Creator:can:create {
+impl Creator.create {
     end = here;
     for i=0 to i<5 by i+=1  {
         end ++> (end := node_a(value=i + 1));
@@ -30,7 +30,7 @@ edge MyEdge {
     }
 }
 
-:walker:Creator:can:travel {
+impl Creator.travel {
     for i in [->:MyEdge:val <= 5:->] {
         print(i.value);
     }

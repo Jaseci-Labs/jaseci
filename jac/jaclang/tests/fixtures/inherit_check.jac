@@ -15,11 +15,11 @@ node a {
     }
 }
 
-:walker:ww:can:gb {
+impl ww.gb {
     print("I am in b");
 }
 
-:walker:www:can:ggb {
+impl www.ggb {
     print("www is also in b");
 }
 

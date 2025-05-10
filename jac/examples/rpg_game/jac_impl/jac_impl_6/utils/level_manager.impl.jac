@@ -1,4 +1,4 @@
-:obj:LevelManager:can:get_next_level {
+impl LevelManager.get_next_level {
 
         # Keeping Only the Last 3 Levels
         if len(self.prev_levels) > 3 {
@@ -25,7 +25,7 @@
         return new_map;
 }
 
-:obj:LevelManager:can:get_map{
+impl LevelManager.get_map{
         map_tiles:list[list[str]] = [['.' for _ in range(map.level.width)] for _ in range(map.level.height)];
 
         for wall in map.walls {

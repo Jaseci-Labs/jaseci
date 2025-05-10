@@ -473,11 +473,11 @@ walker different_return {
     }
 }
 
-:walker:detach_nested_node:can:enter_root {
+impl detach_nested_node.enter_root {
     return here del--> [-->(`?Nested)];
 }
 
-:walker:visit_nested_node:can:enter_root {
+impl visit_nested_node.enter_root {
     nesteds = [-->(`?Nested)];
     if nesteds {
         return [-->(`?Nested)][0];
@@ -486,7 +486,7 @@ walker different_return {
     }
 }
 
-:walker:visit_nested_node:can:enter_nested {
+impl visit_nested_node.enter_nested {
     return here;
 }
 
