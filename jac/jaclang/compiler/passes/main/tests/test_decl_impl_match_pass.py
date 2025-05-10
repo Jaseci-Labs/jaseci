@@ -97,7 +97,7 @@ class DeclImplMatchPassTests(TestCase):
     def test_arch_ref_has_sym(self) -> None:
         """Basic test for pass."""
         state = JacProgram().compile(self.fixture_abs_path("defs_and_uses.jac"))
-        for i in state.get_all_sub_nodes(uni.ArchRef):
+        for i in state.get_all_sub_nodes(uni.AbilityDef):
             self.assertIsNotNone(i.sym)
 
     def test_single_impl_annex(self) -> None:
