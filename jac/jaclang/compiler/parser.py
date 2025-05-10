@@ -709,6 +709,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
             self.consume_token(Tok.RBRACE)
             assignments.add_kids_left([self.cur_nodes[0]])
             assignments.add_kids_right([self.cur_nodes[-1]])
+            for i in assignments.kid:
+                if isinstance(i, uni.Assignment):
+                    i.is_enum_stmt = True
             return assignments
 
         def ability(self, _: None) -> uni.Ability | uni.FuncCall:
@@ -2392,7 +2395,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
                         value=None,
                         type_tag=None,
                         kid=[target],
-                        is_enum_stmt=True,
                     )
                 ]
             else:

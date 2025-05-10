@@ -1614,12 +1614,7 @@ class ImplDef(CodeBlockStmt, ElementStmt, ArchBlockStmt, AstSymbolNode, UniScope
         new_kid.append(self.target)
         if self.spec:
             new_kid.append(self.spec)
-        if isinstance(self.body, SubNodeList):
-            new_kid.append(self.gen_token(Tok.LBRACE))
-            new_kid.append(self.body)
-            new_kid.append(self.gen_token(Tok.RBRACE))
-        else:
-            new_kid.append(self.body)
+        new_kid.append(self.body)
         self.set_kids(nodes=new_kid)
         return res
 
@@ -1738,7 +1733,7 @@ class Ability(
 
     @property
     def is_def(self) -> bool:
-        return isinstance(self.signature, FuncSignature)
+        return not self.signature or isinstance(self.signature, FuncSignature)
 
     @property
     def owner_method(self) -> Optional[Architype | Enum]:
