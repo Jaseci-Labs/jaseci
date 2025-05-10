@@ -1944,7 +1944,10 @@ class ParamVar(AstSymbolNode, AstTypedVarNode):
         return res
 
 
-class ArchHas(AstAccessNode, AstDocNode, ArchBlockStmt):
+# TODO: Must deal with codeblockstmt here, should only be in ArchBocks
+# but had to do this for impls to work, probably should do checks in the
+# static analysis phase
+class ArchHas(AstAccessNode, AstDocNode, ArchBlockStmt, CodeBlockStmt):
     """ArchHas node type for Jac Ast."""
 
     def __init__(

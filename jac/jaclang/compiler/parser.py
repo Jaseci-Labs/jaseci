@@ -699,36 +699,17 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def enum_block(self, _: None) -> uni.SubNodeList[uni.EnumBlockStmt]:
             """Grammar rule.
 
-            enum_block: LBRACE assignment_list (py_code_block | free_code)* RBRACE
+            enum_block: LBRACE assignment_list COMMA? (py_code_block | free_code)* RBRACE
             """
             self.consume_token(Tok.LBRACE)
             assignments = self.consume(uni.SubNodeList)
+            self.match_token(Tok.COMMA)
+            while item := self.match(uni.EnumBlockStmt):
+                assignments.add_kids_right([item])
             self.consume_token(Tok.RBRACE)
             assignments.add_kids_left([self.cur_nodes[0]])
             assignments.add_kids_right([self.cur_nodes[-1]])
             return assignments
-
-        def enum_stmt(self, _: None) -> uni.EnumBlockStmt:
-            """Grammar rule.
-
-            enum_stmt: NAME (EQ expression)?
-                    | py_code_block
-                    | free_code
-                    | ability
-            """
-            if stmt := (self.match(uni.PyInlineCode) or self.match(uni.ModuleCode)):
-                return stmt
-            name = self.consume(uni.Name)
-            expr = self.consume(uni.Expr) if self.match_token(Tok.EQ) else None
-            targ = uni.SubNodeList[uni.Expr](items=[name], delim=Tok.COMMA, kid=[name])
-            self.cur_nodes[0] = targ
-            return uni.Assignment(
-                target=targ,
-                value=expr,
-                type_tag=None,
-                kid=self.cur_nodes,
-                is_enum_stmt=True,
-            )
 
         def ability(self, _: None) -> uni.Ability | uni.FuncCall:
             """Grammar rule.
@@ -2399,17 +2380,18 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """
             if consume := self.match(uni.SubNodeList):
                 comma = self.consume_token(Tok.COMMA)
-                assign = self.consume(uni.Assignment)
+                assign = self.match(uni.Assignment) or self.match(uni.NameAtom)
                 new_kid = [*consume.kid, comma, assign]
-            elif name_consume := self.match(uni.Name):
+            elif name_consume := self.match(uni.NameAtom):
+                target = uni.SubNodeList[uni.Expr](
+                    items=[name_consume], delim=None, kid=[name_consume]
+                )
                 new_kid = [
                     uni.Assignment(
-                        target=uni.SubNodeList(
-                            items=[name_consume], delim=None, kid=[name_consume]
-                        ),
+                        target=target,
                         value=None,
                         type_tag=None,
-                        kid=[name_consume],
+                        kid=[target],
                         is_enum_stmt=True,
                     )
                 ]
@@ -2420,7 +2402,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             return uni.SubNodeList[uni.Assignment](
                 items=valid_kid,
                 delim=Tok.COMMA,
-                kid=new_kid,
+                kid=valid_kid,
             )
 
         def type_ref(self, kid: list[uni.UniNode]) -> uni.TypeRef:

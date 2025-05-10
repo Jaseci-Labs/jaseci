@@ -10,13 +10,15 @@ impl Color {
 
 enum :protect Role {
     ADMIN = 'admin',
-    USER = 'user',
+    USER = 'user'
+
     with entry {
         print('Initializing role system..');
-    },
-    def foo -> str {
-        return 'Accessing privileged Data';
+        def foo -> str {
+            return 'Accessing privileged Data';
+        }
     }
+
 }
 with entry {
     print(Color.RED.value, Role.foo());
