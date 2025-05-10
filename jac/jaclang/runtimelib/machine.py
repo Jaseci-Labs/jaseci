@@ -56,6 +56,7 @@ from jaclang.runtimelib.constructs import (
     WalkerAnchor,
     WalkerArchitype,
 )
+from jaclang.runtimelib.gins import GinSThread
 from jaclang.runtimelib.machinestate import ExecutionContext, JacMachineState
 from jaclang.runtimelib.memory import Shelf, ShelfStorage
 from jaclang.runtimelib.utils import (
@@ -1486,6 +1487,13 @@ class JacUtils:
     def await_obj(obj: Any) -> Any:  # noqa: ANN401
         """Await an object if it is a coroutine or async or future function."""
         return obj.result()
+
+    @staticmethod
+    def attach_gins(
+        mach: JacMachineState,
+    ) -> None:
+        """Attach the Gins thread to the Jac machine state."""
+        mach.gins = GinSThread()
 
 
 class JacMachine(
