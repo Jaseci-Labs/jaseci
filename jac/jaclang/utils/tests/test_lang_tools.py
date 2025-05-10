@@ -131,7 +131,7 @@ class JacAstToolTests(TestCase):
             "|   +-- d",
             "|   +-- a",
             "|   +-- b",
-            "+-- SymTable::EnumDef(impl.x)",
+            "+-- SymTable::ImplDef(impl.x)",
             " SymTable::Enum(x)",
             "+-- line 19, col 13",
         ]
