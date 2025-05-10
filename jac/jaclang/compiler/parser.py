@@ -2380,7 +2380,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """
             if consume := self.match(uni.SubNodeList):
                 comma = self.consume_token(Tok.COMMA)
-                assign = self.match(uni.Assignment) or self.match(uni.NameAtom)
+                assign = self.match(uni.Assignment) or self.consume(uni.NameAtom)
                 new_kid = [*consume.kid, comma, assign]
             elif name_consume := self.match(uni.NameAtom):
                 target = uni.SubNodeList[uni.Expr](
@@ -2402,7 +2402,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             return uni.SubNodeList[uni.Assignment](
                 items=valid_kid,
                 delim=Tok.COMMA,
-                kid=valid_kid,
+                kid=new_kid,
             )
 
         def type_ref(self, kid: list[uni.UniNode]) -> uni.TypeRef:
