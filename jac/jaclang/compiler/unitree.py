@@ -22,6 +22,7 @@ from typing import (
 
 
 from jaclang.compiler import TOKEN_MAP
+import jaclang.compiler.types as jtype
 from jaclang.compiler.codeloc import CodeGenTarget, CodeLocInfo
 from jaclang.compiler.constant import (
     Constants as Con,
@@ -243,6 +244,7 @@ class Symbol:
         defn.sym = self
         self.access: SymbolAccess = access
         self.parent_tab = parent_tab
+        self.jtype: jtype.JType = jtype.JAnyType()
 
     @property
     def decl(self) -> NameAtom:

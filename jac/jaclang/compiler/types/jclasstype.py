@@ -35,6 +35,7 @@ class JClassType(JType):
     def __init__(
         self,
         name: str,
+        full_name: str,
         module: Optional[uni.Module],
         bases: Optional[list[JClassType]] = None,
         is_abstract: bool = False,
@@ -46,6 +47,7 @@ class JClassType(JType):
 
         Args:
             name (str): The name of the class.
+            full_name (str): The fully qualified name of the class.
             module (Optional[uni.Module]): The module where the class is defined.
             bases (Optional[list[JClassType]]): List of base classes.
             is_abstract (bool): Whether the class is abstract.
@@ -53,6 +55,7 @@ class JClassType(JType):
             class_members (Optional[dict[str, JClassMember]]): Members on the class object.
         """
         super().__init__(name, module)
+        self.full_name: str = full_name
         self.bases: list[JClassType] = bases or []
         self.is_abstract: bool = is_abstract
         self.instance_members: dict[str, JClassMember] = instance_members or {}
@@ -120,3 +123,17 @@ class JClassType(JType):
         if init and isinstance(init.type, JFunctionType):
             return init.type
         return JFunctionType([], self)
+    
+    def supports_binary_op(self, op):
+        """
+        Checks whether a binary operator is supported by this class type.
+
+        Delegates to the class-level member list to find an appropriate method.
+
+        Args:
+            op (str): The operator symbol (e.g., '+', '==').
+
+        Returns:
+            bool: True if a corresponding method exists; False otherwise.
+        """
+        return op in self.class_members

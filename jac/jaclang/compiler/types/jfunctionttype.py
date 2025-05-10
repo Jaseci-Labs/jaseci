@@ -80,3 +80,54 @@ class JFunctionType(JType):
             JFunctionType: This instance.
         """
         return self
+    
+    def get_members(self):
+        """
+        Returns an empty set of members — function types have no accessible attributes.
+
+        Returns:
+            dict: Always empty.
+        """
+        return {}
+    
+    def supports_binary_op(self, op: str) -> bool:
+        """
+        Indicates whether a binary operator is supported.
+
+        Function types do not support binary operations.
+
+        Args:
+            op (str): Operator symbol.
+
+        Returns:
+            bool: Always False.
+        """
+        return False
+    
+    def can_assign_from(self, other: JType) -> bool:
+        """
+        Checks if a value of the given type can be assigned to this function type.
+
+        For function types, this checks if the other type is also a function type
+        and has compatible parameters and return type.
+
+        Args:
+            other (JType): The type of the value being assigned.
+
+        Returns:
+            bool: True if assignable; False otherwise.
+        """
+        if not isinstance(other, JFunctionType):
+            return False
+        return self.return_type.can_assign_from(other.return_type)
+    
+    def is_instantiable(self) -> bool:
+        """
+        Indicates whether this type can be instantiated.
+
+        Function types are not instantiable.
+
+        Returns:
+            bool: Always False.
+        """
+        return False

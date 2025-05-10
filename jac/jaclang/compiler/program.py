@@ -26,12 +26,15 @@ from jaclang.compiler.passes.main import (
     PyastBuildPass,
     PyastGenPass,
     SymTabBuildPass,
+    JTypeAnnotatePass,
 )
 from jaclang.compiler.passes.main.sym_tab_link_pass import SymTabLinkPass
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.passes.transform import Alert, Transform
 from jaclang.compiler.unitree import Module
 from jaclang.utils.log import logging
+from jaclang.compiler.types.registery import JTypeRegistry
+from jaclang.compiler.types.resolver import JTypeResolver
 
 
 logger = logging.getLogger(__name__)
@@ -47,6 +50,9 @@ class JacProgram:
         self.py_raise_map: dict[str, str] = {}
         self.errors_had: list[Alert] = []
         self.warnings_had: list[Alert] = []
+
+        self.type_registry = JTypeRegistry()
+        self.type_resolver = JTypeResolver(self.type_registry)
 
     def get_bytecode(
         self, full_target: str, full_compile: bool = True
@@ -192,7 +198,12 @@ class JacProgram:
             PyJacAstLinkPass,
             PyBytecodeGenPass,
         ]
-        type_checker_sched = [InheritancePass, FuseTypeInfoPass, AccessCheckPass]
+        type_checker_sched = [
+            JTypeAnnotatePass,
+            InheritancePass, 
+            FuseTypeInfoPass, 
+            AccessCheckPass
+        ]
 
         final_pass: Optional[type[Transform[uni.Module, uni.Module]]] = None
         passes = py_code_gen if mode == CompilerMode.COMPILE else type_checker_sched

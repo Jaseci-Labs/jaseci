@@ -1,0 +1,6 @@
+{
+    "int": {"methods" : []},
+    "float": {"methods" : []},
+    "str": {"methods": []},
+    "bool": {"methods": []}
+}

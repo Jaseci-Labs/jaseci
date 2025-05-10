@@ -16,6 +16,7 @@ from .pyjac_ast_link_pass import PyJacAstLinkPass  # noqa: I100
 from .fuse_typeinfo_pass import FuseTypeInfoPass  # noqa: I100
 from .access_modifier_pass import AccessCheckPass  # noqa: I100
 from .inheritance_pass import InheritancePass  # noqa: I100
+from .type_annotation_pass import JTypeAnnotatePass  # noqa: I100
 
 
 class CompilerMode(Enum):
@@ -24,6 +25,7 @@ class CompilerMode(Enum):
     PARSE = "PARSE"
     COMPILE = "COMPILE"
     TYPECHECK = "TYPECHECK"
+    QUICKCHECK = "QUICKCHECK"
 
 
 __all__ = [
@@ -44,4 +46,5 @@ __all__ = [
     "FuseTypeInfoPass",
     "AccessCheckPass",
     "InheritancePass",
+    "JTypeAnnotatePass"
 ]
