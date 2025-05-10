@@ -445,6 +445,31 @@ components:
         - root_id
       title: allow_other_root_access_body_model
       type: object
+    async_walker_body_model:
+      properties:
+        arg1:
+          title: Arg1
+          type: integer
+        arg2:
+          title: Arg2
+          type: string
+        done:
+          default: false
+          title: Done
+          type: boolean
+        kwarg1:
+          default: 3
+          title: Kwarg1
+          type: integer
+        kwarg2:
+          default: "4"
+          title: Kwarg2
+          type: string
+      required:
+        - arg1
+        - arg2
+      title: async_walker_body_model
+      type: object
     check_memory_sync_body_model:
       properties:
         other_node_id:
@@ -958,6 +983,75 @@ paths:
                   - $ref: "#/components/schemas/ContextResponse_NoneType_"
                   - {}
                 title: Response Api Entry Walker Allow Other Root Access  Node  Post
+          description: Successful Response
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+        - HTTPBearer: []
+      summary: Api Entry
+      tags:
+        - Walker APIs
+  /walker/async_walker:
+    post:
+      operationId: api_root_walker_async_walker_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/async_walker_body_model"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
+                title: Response Api Root Walker Async Walker Post
+          description: Successful Response
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+        - HTTPBearer: []
+      summary: Api Root
+      tags:
+        - Walker APIs
+  /walker/async_walker/{node}:
+    post:
+      operationId: api_entry_walker_async_walker__node__post
+      parameters:
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/async_walker_body_model"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
+                title: Response Api Entry Walker Async Walker  Node  Post
           description: Successful Response
         "422":
           content:

@@ -21,8 +21,6 @@ This pass is crucial for type checking, access control validation, and code gene
 creates the complete symbol resolution map for the program.
 """
 
-import ast as ast3
-
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes import UniPass
@@ -121,15 +119,6 @@ class DefUsePass(UniPass):
             node.target.sym_tab.def_insert(node.target)
         else:
             self.log_error("For loop assignment target not valid")
-
-    def enter_delete_stmt(self, node: uni.DeleteStmt) -> None:
-        for i in node.py_ast_targets:
-            if isinstance(i, uni.AtomTrailer):
-                i.as_attr_list[-1].name_spec.py_ctx_func = ast3.Del
-            elif isinstance(i, uni.AstSymbolNode):
-                i.name_spec.py_ctx_func = ast3.Del
-            else:
-                self.log_error("Delete target not valid")
 
     def enter_expr_as_item(self, node: uni.ExprAsItem) -> None:
         if node.alias:

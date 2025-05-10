@@ -19,7 +19,8 @@ nav:
       - "for_coders/data_spatial/walkers.md" # Walker
       - "for_coders/data_spatial/filtering.md" # Filtering
       - "for_coders/data_spatial/sequence.md"
-      - "for_coders/data_spatial/FAQ.md" # faq
+      - Theoretical Principles: "for_coders/dspfoundation.md" # DSP Foundation
+      - Quick FAQ: "for_coders/data_spatial/FAQ.md" # faq
     # - Python Integration:
     #   - "for_coders/python_integration.md"
     - Full Jac Reference: "for_coders/jac_ref.md"
@@ -145,6 +146,8 @@ markdown_extensions:
           class: mermaid
   - pymdownx.tasklist:
       custom_checkbox: true
+  - pymdownx.arithmatex:
+      generic: true
   - attr_list
   - md_in_html
   - attr_list
@@ -165,6 +168,11 @@ extra:
     - icon: fontawesome/brands/mastodon
       link: https://fosstodon.org/@squidfunk
 copyright: Copyright &copy; 2023 - 2024 Jac Hackers Everwhere
+
+extra_javascript:
+  - assets/mathjax-config.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 
 plugins:
   - search

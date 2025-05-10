@@ -75,6 +75,11 @@ class JaseciScheduler(BackgroundScheduler):
                 ):
                     wanch = WalkerAnchor.ref(walker_id := sched["walker_id"])
                     root = NodeAnchor.ref(sched["root_id"])
+                    node = (
+                        NodeAnchor.ref(node_id)
+                        if (node_id := sched["node_id"])
+                        else root
+                    )
 
                     if not WalkerAnchor.Collection.update_one(
                         {"_id": wanch.id, "schedule.status": "PENDING"},
@@ -86,53 +91,14 @@ class JaseciScheduler(BackgroundScheduler):
                         },
                     ).modified_count:
                         logger.info(f"Task `{walker_id}` skipped: {utc_datetime_iso()}")
+                        if not HAS_DB:
+                            MONTY_CLIENT.set(None)
                         return
 
                     logger.info(f"Task `{walker_id}` started: {now.isoformat()}")
-
-                    jctx = JaseciContext.create(
-                        None,
-                        (
-                            NodeAnchor.ref(node_id)
-                            if (node_id := sched["node_id"])
-                            else root
-                        ),
-                    )
-                    jctx.root = root
-
-                    wanch = WalkerAnchor.ref(walker_id)
-                    warch = wanch.architype
-
-                    try:
-                        Jac.spawn(warch, jctx.entry_node.architype)
-
-                        resp = jctx.response(wanch.returns)
-                        if jctx.custom is not MISSING:
-                            if isinstance(jctx.custom, JSONResponse):
-                                resp["custom"] = jctx.custom.body
-                            else:
-                                resp["custom"] = ORJSONResponse(jctx.custom).body
-
-                        resp["http_status"] = resp.pop("status")
-                        wanch.schedule = Schedule(ScheduleStatus.COMPLETED, **resp)
-                    except Exception as e:
-                        now = utc_datetime()
-                        logger.exception(
-                            f"Task `{walker_id}` failed: {now.isoformat()}"
-                        )
-                        wanch.schedule = Schedule(
-                            ScheduleStatus.ERROR,
-                            executed_date=now,
-                            error=format_exception(e),
-                        )
-
-                    Jac.save(wanch)
-
-                    jctx.close()
-
+                    run_task(wanch, root, node, "Task", True)
                     logger.info(f"Task `{walker_id}` done: {utc_datetime_iso()}")
-
-                if not HAS_DB:
+                elif not HAS_DB:
                     MONTY_CLIENT.set(None)
 
 
@@ -147,7 +113,7 @@ getLogger("apscheduler.executors.default").setLevel(WARNING)
 getLogger("apscheduler.executors.thread").setLevel(WARNING)
 
 
-def scheduled_job(
+def schedule_walker(
     trigger: Trigger,
     node: str | None = None,
     args: Any | None = None,
@@ -184,74 +150,30 @@ def scheduled_job(
                 logger.info(
                     f"Scheduled Walker `{walker.__name__}` started: {now.isoformat()}"
                 )
-                jctx = JaseciContext.create(
-                    None, NodeAnchor.ref(node) if node else None
+                run_task(
+                    walker(*args, **kwargs).__jac__,
+                    node=NodeAnchor.ref(node) if node else None,
+                    save=save,
                 )
-                warch = walker(*args, **kwargs)
-                wanch = warch.__jac__
-
-                try:
-                    Jac.spawn(warch, jctx.entry_node.architype)
-
-                    resp = jctx.response(wanch.returns)
-                    if jctx.custom is not MISSING:
-                        if isinstance(jctx.custom, JSONResponse):
-                            resp["custom"] = jctx.custom.body
-                        else:
-                            resp["custom"] = ORJSONResponse(jctx.custom).body
-
-                    resp["http_status"] = resp.pop("status")
-                    wanch.schedule = Schedule(ScheduleStatus.COMPLETED, **resp)
-                except Exception as e:
-                    now = utc_datetime()
-                    logger.exception(
-                        f"Scheduled Walker `{walker.__name__}` failed: {now.isoformat()}"
-                    )
-                    wanch.schedule = Schedule(
-                        ScheduleStatus.ERROR,
-                        executed_date=now,
-                        error=format_exception(e),
-                    )
-
-                if save:
-                    Jac.save(wanch)
-
-                jctx.close()
-
                 logger.info(
                     f"Scheduled Walker `{walker.__name__}` done: {utc_datetime_iso()}"
                 )
+
             if not HAS_DB:
                 MONTY_CLIENT.set(None)
 
     return wrapper
 
 
-def remove_job(id: str) -> None:
+def remove_scheduled_walker(id: str) -> None:
     """Remove existing job."""
     scheduler.remove_job(id)
 
-    if pendings := [
-        {
-            "walker_id": w.ref_id,
-            "execute_date": w.schedule.execute_date,
-            "node_id": w.schedule.node_id,
-            "root_id": f"n::{w.root}",
-        }
-        for w in WalkerAnchor.Collection.find({"schedule.status": "PENDING"})
-        if w.schedule
-    ]:
-        ScheduleRedis.rpush(
-            "scheduled",
-            *pendings,
-        )
 
-
-if TASK_CONSUMER_CRON_SECOND:
-
-    def repopulate_tasks() -> None:
-        """Repopulate Tasks."""
-        if pendings := [
+def repopulate_tasks() -> None:
+    """Repopulate Tasks."""
+    if TASK_CONSUMER_CRON_SECOND and (
+        pendings := [
             {
                 "walker_id": w.ref_id,
                 "execute_date": w.schedule.execute_date,
@@ -260,32 +182,76 @@ if TASK_CONSUMER_CRON_SECOND:
             }
             for w in WalkerAnchor.Collection.find({"schedule.status": "PENDING"})
             if w.schedule
-        ]:
-            ScheduleRedis.rpush(
-                "scheduled",
-                *pendings,
-            )
-
-    def create_task(
-        walker: WalkerArchitype, node: NodeArchitype, date: datetime | None = None
-    ) -> str:
-        """Create task."""
-        wanch = walker.__jac__
-        wanch.schedule = Schedule(ScheduleStatus.PENDING, node.__jac__.ref_id, date)
-
-        Jac.save(wanch)
-
-        return wanch.ref_id
-
-else:
-
-    def repopulate_tasks() -> None:
-        """Repopulate Tasks."""
-
-    def create_task(
-        walker: WalkerArchitype, node: NodeArchitype, date: datetime | None = None
-    ) -> str:
-        """Create task."""
-        raise NotImplementedError(
-            "Task is not enabled! Set `TASK_CONSUMER_CRON_SECOND` environment variable!"
+        ]
+    ):
+        ScheduleRedis.rpush(
+            "scheduled",
+            *pendings,
         )
+
+
+def create_task(
+    walker: WalkerArchitype, node: NodeArchitype, date: datetime | None = None
+) -> str:
+    """Create task."""
+    root_id: str = Jac.object_ref(Jac.root())
+
+    wanch = walker.__jac__
+    wanch.schedule = Schedule(
+        ScheduleStatus.PENDING, node.__jac__.ref_id, root_id, date
+    )
+
+    Jac.save(wanch)
+
+    return wanch.ref_id
+
+
+def run_task(
+    walker: WalkerAnchor,
+    root: NodeAnchor | None = None,
+    node: NodeAnchor | None = None,
+    type: str = "Task",
+    save: bool = True,
+) -> None:
+    """Run task."""
+    from ..jaseci import FastAPI
+
+    __jac_mach__ = FastAPI.__jac_mach__  # noqa: F841
+
+    jctx = JaseciContext.create(None, node or root)
+
+    if root:
+        jctx.root = root
+
+    if walker.schedule and (root_id := walker.schedule.root_id):
+        jctx.root = NodeAnchor.ref(root_id)
+        jctx.root.architype
+
+    warch = walker.architype
+
+    try:
+        Jac.spawn(warch, jctx.entry_node.architype)
+
+        resp = jctx.response(walker.returns)
+        if jctx.custom is not MISSING:
+            if isinstance(jctx.custom, JSONResponse):
+                resp["custom"] = jctx.custom.body
+            else:
+                resp["custom"] = ORJSONResponse(jctx.custom).body
+
+        resp["http_status"] = resp.pop("status")
+        walker.schedule = Schedule(ScheduleStatus.COMPLETED, **resp)
+    except Exception as e:
+        now = utc_datetime()
+        logger.exception(f"{type} `{walker.ref_id}` failed: {now.isoformat()}")
+        walker.schedule = Schedule(
+            ScheduleStatus.ERROR, executed_date=now, error=format_exception(e)
+        )
+
+    if save:
+        Jac.save(walker)
+
+    jctx.close()
+
+    if not HAS_DB:
+        MONTY_CLIENT.set(None)

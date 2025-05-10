@@ -19,6 +19,7 @@ from asyncer import syncify
 
 from fastapi import (
     APIRouter,
+    BackgroundTasks,
     Depends,
     File,
     HTTPException,
@@ -36,7 +37,7 @@ from pydantic import BaseModel, Field as pyField, ValidationError, create_model
 
 from starlette.datastructures import UploadFile as BaseUploadFile
 
-from .scheduler import scheduled_job
+from .scheduler import run_task, schedule_walker
 from .websocket import websocket_events
 from ...core.architype import NodeAnchor, WalkerAnchor, WalkerArchitype
 from ...core.context import ContextResponse, JaseciContext
@@ -130,7 +131,7 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
         return
 
     if schedule := specs.schedule:
-        scheduled_job(**schedule)(cls)
+        schedule_walker(**schedule)(cls)
 
     if not specs.private:
         path: str = specs.path or ""
@@ -222,6 +223,7 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
 
         def api_entry(
             request: Request,
+            background_task: BackgroundTasks,
             node: str | None,
             payload: payload_model = Depends(),  # type: ignore # noqa: B008
         ) -> ORJSONResponse:
@@ -252,16 +254,31 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
             validate_request(request, cls.__name__, jctx.entry_node.name or "root")
 
             if Jac.check_read_access(jctx.entry_node):
-                wlk: WalkerAnchor = cls(**body, **query, **files).__jac__
-                Jac.spawn(wlk.architype, jctx.entry_node.architype)
+                warch = cls(**body, **query, **files)
+                wanch: WalkerAnchor = warch.__jac__
+                if warch.__jac_async__:
+                    background_task.add_task(
+                        run_task, wanch, jctx.root, jctx.entry_node
+                    )
+                    resp = {"walker_id": wanch.ref_id}
+                    log_exit(resp, log)
+                else:
+                    Jac.spawn(warch, jctx.entry_node.architype)
+                    if jctx.custom is not MISSING:
+                        log_exit(
+                            (
+                                {"custom": jctx.custom.body}
+                                if isinstance(jctx.custom, Response)
+                                else jctx.custom
+                            ),
+                            log,
+                        )
+                        return jctx.custom
+
+                    resp = jctx.response(wanch.returns)
+                    log_exit(resp, log)
+
                 jctx.close()
-
-                if jctx.custom is not MISSING:
-                    return jctx.custom
-
-                resp = jctx.response(wlk.returns)
-                log_exit(resp, log)
-
                 return ORJSONResponse(resp, jctx.status)
             else:
                 error = {
@@ -274,9 +291,10 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
 
         def api_root(
             request: Request,
+            background_task: BackgroundTasks,
             payload: payload_model = Depends(),  # type: ignore # noqa: B008
         ) -> Response:
-            return api_entry(request, None, payload)
+            return api_entry(request, background_task, None, payload)
 
         if webhook is None:
             target_authenticator = authenticator

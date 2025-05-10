@@ -4,7 +4,7 @@ from os import getenv
 from os.path import split
 from pickle import load
 
-from jac_cloud import FastAPI
+from jac_cloud.jaseci.main import FastAPI
 
 from jaclang import JacMachine as Jac
 from jaclang.runtimelib.machine import JacMachineState
