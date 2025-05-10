@@ -1,8 +1,8 @@
 """Defs for test"""
 
-impl def MyObject.foo() {
+impl MyObject.foo() {
     "hello" |> print;
 }
-impl def MyObject.bar() {
+impl MyObject.bar() {
     "hello" |> print;
 }

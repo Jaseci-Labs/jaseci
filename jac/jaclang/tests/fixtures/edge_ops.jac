@@ -14,7 +14,7 @@ edge MyEdge {
         val2: int = 10;
 }
 
-impl can Creator.create {
+impl Creator.create {
     end = here;
     for i=0 to i<5 by i+=1  {
         end ++> (end := node_a(value=i + 1));
@@ -30,7 +30,7 @@ impl can Creator.create {
     }
 }
 
-impl can Creator.travel {
+impl Creator.travel {
     for i in [->:MyEdge:val <= 5:->] {
         print(i.value);
     }

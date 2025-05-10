@@ -1,4 +1,4 @@
-impl can level.run_game {
+impl level.run_game {
     # print("Walker Entry ->", self.level_id);
 
     if self.played == False {
@@ -53,7 +53,7 @@ impl can level.run_game {
     }
 }
 
-impl can level.exit_game {
+impl level.exit_game {
     if here.g.running == False {
         pygame.quit();
         sys.exit();

@@ -1,3 +1,3 @@
-impl can Check.run {
+impl Check.run {
     1/0;
 }

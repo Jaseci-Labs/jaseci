@@ -1,8 +1,8 @@
 
-impl def Test.init {
+impl Test.init {
     "initializing" |> print;
 }
 
-impl def Test.say_hi {
+impl Test.say_hi {
     "HI!" |> print;
 }

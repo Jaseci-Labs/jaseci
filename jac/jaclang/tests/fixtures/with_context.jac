@@ -18,7 +18,7 @@ with entry {
     init();
 }
 
-impl def init {
+impl init {
     print("init");
 }
 

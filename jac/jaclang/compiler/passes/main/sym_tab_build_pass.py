@@ -110,7 +110,7 @@ class SymTabBuildPass(UniPass):
     def enter_impl_def(self, node: uni.ImplDef) -> None:
         self.push_scope_and_link(node)
         assert node.parent_scope is not None
-        node.parent_scope.def_insert(node, single_decl="impl def")
+        node.parent_scope.def_insert(node, single_decl="impl")
 
     def exit_impl_def(self, node: uni.ImplDef) -> None:
         self.pop_scope()

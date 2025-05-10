@@ -4,7 +4,7 @@
 def my_print(messag: str) -> str;
 
 # Definition
-impl def my_print
+impl my_print
 (message: str) -> str {
     output = f"from me: {message}";
     print("from me: {message}");
@@ -17,7 +17,7 @@ obj MyPrinter {
 }
 
 # Definition
-impl def MyPrinter.my_print
+impl MyPrinter.my_print
 (message: str) -> str {
     output = f"from me: {message}";
     print("from me: {message}");

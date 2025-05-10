@@ -49,13 +49,13 @@ with entry {
 }
 #***Implementation***#
 
-impl def Interface.register
+impl Interface.register
 (func: callable) -> callable {
     self.functions.append(func);
     return func;
 }
 
-impl def Interface.create_parser -> ArgumentParser {
+impl Interface.create_parser -> ArgumentParser {
     parser = ArgumentParser();
     parser.add_argument("base", choices=[f.__name__  for f in functions], help="The function to run");
     for func in self.functions {
@@ -73,7 +73,7 @@ impl def Interface.create_parser -> ArgumentParser {
     return parser;
 }
 
-impl def Interface.run_from_cli {
+impl Interface.run_from_cli {
     parser = self.create_parser();
     args = parser.parse_args();
     for f in self.functions {
@@ -86,17 +86,17 @@ impl def Interface.run_from_cli {
     func(**func_args);
 }
 
-impl def Interface.run_shell {
+impl Interface.run_shell {
     ShellCmd(self).cmdloop();
 }
 
-impl def ShellCmd.init
+impl ShellCmd.init
 (registry: Interface, *args: list, **kwargs: dict) {
     self.cmd.Cmd.__init__(*args, **kwargs);
     self.reg = registry;
 }
 
-impl def ShellCmd.default
+impl ShellCmd.default
 (line: str) {
     args = line.split();
     parser = self.reg.create_parser();
@@ -115,7 +115,7 @@ impl def ShellCmd.default
     }
 }
 
-impl def ShellCmd.do_quit
+impl ShellCmd.do_quit
 (arg: str) -> bool {
     return True;
 }

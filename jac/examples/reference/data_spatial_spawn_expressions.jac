@@ -9,12 +9,12 @@ node node_a {
     can add with Adder entry;
 }
 
-impl can Adder.do {
+impl Adder.do {
     here ++> node_a();
     visit [-->];
 }
 
-impl can node_a.add {
+impl node_a.add {
     self.x = 550;
     self.y = 450;
     print(int(self.x) + int(self.y));

@@ -1,4 +1,4 @@
-impl can Enemy.postinit {
+impl Enemy.postinit {
     self._groups = (self.game.all_sprites, self.game.enemies);
     pygame.sprite.Sprite.__init__(self, self._groups);
     self.x*=TILESIZE;
@@ -12,7 +12,7 @@ impl can Enemy.postinit {
 }
 # Update the enemy actions
 
-impl can Enemy.update {
+impl Enemy.update {
     self.movement();
     self.animate();
     self.rect.x+=self.x_change;
@@ -24,7 +24,7 @@ impl can Enemy.update {
 }
 # Movement controls.
 
-impl can Enemy.movement {
+impl Enemy.movement {
     if self.facing == 'left' {
         self.x_change-=ENEMY_SPEED;
         self.movement_loop-=1;
@@ -56,7 +56,7 @@ impl can Enemy.movement {
 }
 # Anminate the enemy character.
 
-impl can Enemy.animate {
+impl Enemy.animate {
     down_animations = [self.game.enemy_spritesheet.get_sprite(3, 2, self.width, self.height), self.game.enemy_spritesheet.get_sprite(35, 2, self.width, self.height), self.game.enemy_spritesheet.get_sprite(68, 2, self.width, self.height)];
     up_animations = [self.game.enemy_spritesheet.get_sprite(3, 34, self.width, self.height), self.game.enemy_spritesheet.get_sprite(35, 34, self.width, self.height), self.game.enemy_spritesheet.get_sprite(68, 34, self.width, self.height)];
     left_animations = [self.game.enemy_spritesheet.get_sprite(3, 98, self.width, self.height), self.game.enemy_spritesheet.get_sprite(35, 98, self.width, self.height), self.game.enemy_spritesheet.get_sprite(68, 98, self.width, self.height)];
@@ -92,7 +92,7 @@ impl can Enemy.animate {
 }
 # Ability to collide with blocks without passing through.
 
-impl def Enemy.collide_blocks
+impl Enemy.collide_blocks
 (direction: str) {
     if direction == "x" {
         hits = pygame.sprite.spritecollide(self, self.game.blocks, False);

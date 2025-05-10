@@ -4,15 +4,15 @@ obj vehicle;
 
 enum Size; #implementations
 
-impl def foo -> str {
+impl foo -> str {
     return ("Hello");
 }
 
-impl obj vehicle  {
+impl vehicle  {
     has name: str = "Car";
 }
 
-impl enum Size {
+impl Size {
     Small=1,
     Medium=2,
     Large=3

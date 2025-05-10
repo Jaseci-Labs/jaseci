@@ -12,7 +12,7 @@ edge connector {
     has value: int = 10;
 }
 
-impl def Creator.create {
+impl Creator.create {
     end = here;
     for i=0 to i<3 by i+=1  {
         end ++> (end := node_a(val=i));
@@ -22,7 +22,7 @@ impl def Creator.create {
     visit [-->];
 }
 
-impl def node_a.make_something {
+impl node_a.make_something {
     i = 0;
     while i < 5 {
         print(f"wlecome to {self}");

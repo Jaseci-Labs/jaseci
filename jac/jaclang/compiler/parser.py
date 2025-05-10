@@ -59,7 +59,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             self.log_error(error_msg, node_override=catch_error)
 
         except Exception as e:
-            self.log_error(f"Internal Error: {e}")
+            raise e
 
         return uni.Module.make_stub(inject_src=ir_in)
 
@@ -495,14 +495,14 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 kid=self.cur_nodes,
             )
 
-        def architype(self, _: None) -> uni.ArchSpec | uni.Enum | uni.ImplDef:
+        def architype(self, _: None) -> uni.ArchSpec | uni.Enum:
             """Grammar rule.
 
             architype: decorators? architype_decl
                     | architype_def
                     | enum
             """
-            archspec: uni.ArchSpec | uni.Enum | uni.ImplDef | None = None
+            archspec: uni.ArchSpec | uni.Enum | None = None
 
             decorators = self.match(uni.SubNodeList)
             is_async = self.match_token(Tok.KW_ASYNC)
@@ -511,19 +511,71 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 archspec.decorators = decorators
                 archspec.add_kids_left([decorators])
             else:
-                archspec = (
-                    self.match(uni.ArchSpec)
-                    or self.match(uni.Enum)
-                    or self.consume(uni.ImplDef)
-                )
+                archspec = self.match(uni.ArchSpec) or self.consume(uni.Enum)
             if is_async and isinstance(archspec, uni.ArchSpec):
                 archspec.is_async = True
                 archspec.add_kids_left([is_async])
                 assert isinstance(archspec, uni.Architype)
-                assert (
-                    archspec.arch_type.name == Tok.KW_WALKER
-                ), f"Expected async architype to be walker, but got {archspec.arch_type.value}"
+                if archspec.arch_type.name != Tok.KW_WALKER:
+                    self.parse_ref.log_error(
+                        f"Expected async architype to be walker, but got {archspec.arch_type.value}"
+                    )
             return archspec
+
+        def impl_def(self, _: None) -> uni.ImplDef:
+            """Grammar rule.
+
+            impl_def: decorators? KW_IMPL dotted_name impl_spec? impl_tail
+            """
+            decorators = self.match(uni.SubNodeList)
+            self.consume_token(Tok.KW_IMPL)
+            target = self.consume(uni.SubNodeList)
+            spec = (
+                self.match(uni.SubNodeList)
+                or self.match(uni.FuncSignature)
+                or self.match(uni.EventSignature)
+            )
+            tail = self.match(uni.SubNodeList) or self.match(uni.FuncCall)
+            valid_tail = spec if tail is None else tail
+            valid_spec = None if tail is None else spec
+            assert isinstance(valid_tail, (uni.SubNodeList, uni.FuncCall))
+
+            impl = uni.ImplDef(
+                decorators=decorators,
+                target=target,
+                spec=valid_spec,
+                body=valid_tail,
+                kid=self.cur_nodes,
+            )
+            return impl
+
+        def impl_spec(
+            self, _: None
+        ) -> uni.SubNodeList[uni.Expr] | uni.FuncSignature | uni.EventSignature:
+            """Grammar rule.
+
+            impl_spec: inherited_archs | func_decl | event_clause
+            """
+            spec = (
+                self.match(uni.SubNodeList)  # inherited_archs
+                or self.match(uni.FuncSignature)  # func_decl
+                or self.consume(uni.EventSignature)  # event_clause
+            )
+            return spec
+
+        def impl_tail(
+            self, _: None
+        ) -> uni.SubNodeList[uni.CodeBlockStmt] | uni.FuncCall:
+            """Grammar rule.
+
+            impl_tail: enum_block | block_tail
+            """
+            tail = (
+                self.match(uni.SubNodeList)  # enum_block
+                or self.match(uni.SubNodeList)  # block_tail (code_block)
+                or self.consume(uni.FuncCall)  # block_tail (KW_BY atomic_call)
+            )
+            return tail
 
         def architype_decl(self, _: None) -> uni.ArchSpec:
             """Grammar rule.
@@ -644,10 +696,10 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 kid=self.cur_nodes,
             )
 
-        def enum_block(self, _: None) -> uni.SubNodeList[uni.Assignment]:
+        def enum_block(self, _: None) -> uni.SubNodeList[uni.EnumBlockStmt]:
             """Grammar rule.
 
-            enum_block: LBRACE assignment_list RBRACE
+            enum_block: LBRACE assignment_list (py_code_block | free_code)* RBRACE
             """
             self.consume_token(Tok.LBRACE)
             assignments = self.consume(uni.SubNodeList)
@@ -678,27 +730,16 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 is_enum_stmt=True,
             )
 
-        def ability(self, _: None) -> uni.Ability | uni.ImplDef | uni.FuncCall:
+        def ability(self, _: None) -> uni.Ability | uni.FuncCall:
             """Grammar rule.
 
             ability: decorators? KW_ASYNC? (ability_decl | function_decl)
-                   | ability_def
-                   | function_def
             """
-            ability: uni.Ability | uni.ImplDef | None = None
             decorators = self.match(uni.SubNodeList)
             is_async = self.match_token(Tok.KW_ASYNC)
 
             # Try to match ability_decl or function_decl
-            ability = self.match(uni.Ability)
-
-            if ability is None:
-                # Try to match ability_def or function_def
-                ability = self.match(uni.ImplDef)
-
-            if ability is None:
-                ability = self.consume(uni.ImplDef)
-
+            ability = self.consume(uni.Ability)
             if is_async and ability and isinstance(ability, uni.Ability):
                 ability.is_async = True
                 ability.add_kids_left([is_async])

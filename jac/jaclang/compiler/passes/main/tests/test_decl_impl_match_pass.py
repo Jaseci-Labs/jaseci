@@ -31,7 +31,7 @@ class DeclImplMatchPassTests(TestCase):
             "Parameter count mismatch for ability impl.SomeObj.foo.",
             "    8 |",
             "    9 | # Miss match parameter count.",
-            "   10 | impl def SomeObj.foo(param1: str) -> str {",
+            "   10 | impl SomeObj.foo(param1: str) -> str {",
             "      |          ^^^^^^^^^^^",
             '   11 |     return "foo";',
             "   12 | }",

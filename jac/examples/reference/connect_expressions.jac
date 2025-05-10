@@ -11,7 +11,7 @@ edge MyEdge {
     has val: int = 5;
 }
 
-impl def Creator.create {
+impl Creator.create {
     end = here;
     for i=0 to i<7 by i+=1  {
         if i % 2 == 0 {
@@ -22,7 +22,7 @@ impl def Creator.create {
     }
 }
 
-impl def Creator.travel {
+impl Creator.travel {
     for i in [->:MyEdge:val <= 6:->] {
         print(i.value);
     }

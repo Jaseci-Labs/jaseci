@@ -1,4 +1,4 @@
-impl can Player.postinit {
+impl Player.postinit {
     self._layer = PLAYER_LAYER;
     self._groups = self.game.all_sprites;
     pygame.sprite.Sprite.init(self, self._groups);
@@ -11,7 +11,7 @@ impl can Player.postinit {
 }
 # Update the player actions
 
-impl can Player.update {
+impl Player.update {
     self.movement();
     self.animate();
     self.collide_enemy();
@@ -24,7 +24,7 @@ impl can Player.update {
 }
 # Movement controls based on arrow key pushes.
 
-impl can Player.movement {
+impl Player.movement {
     keys = pygame.key.get_pressed();
     if keys[pygame.K_LEFT] {
         for sprite in self.game.all_sprites {
@@ -57,7 +57,7 @@ impl can Player.movement {
 }
 # Player death when collidong with an enemy.
 
-impl can Player.collide_enemy {
+impl Player.collide_enemy {
     hits = pygame.sprite.spritecollide(self, self.game.enemies, False);
     if hits {
         self.kill();
@@ -66,7 +66,7 @@ impl can Player.collide_enemy {
 }
 # Anminate the player character.
 
-impl can Player.animate {
+impl Player.animate {
     down_animations = [self.game.character_spritesheet.get_sprite(3, 2, self.width, self.height), self.game.character_spritesheet.get_sprite(35, 2, self.width, self.height), self.game.character_spritesheet.get_sprite(68, 2, self.width, self.height)];
     up_animations = [self.game.character_spritesheet.get_sprite(3, 34, self.width, self.height), self.game.character_spritesheet.get_sprite(35, 34, self.width, self.height), self.game.character_spritesheet.get_sprite(68, 34, self.width, self.height)];
     left_animations = [self.game.character_spritesheet.get_sprite(3, 98, self.width, self.height), self.game.character_spritesheet.get_sprite(35, 98, self.width, self.height), self.game.character_spritesheet.get_sprite(68, 98, self.width, self.height)];
@@ -118,7 +118,7 @@ impl can Player.animate {
 }
 # Ability to collide with blocks without passing through.
 
-impl def Player.collide_blocks
+impl Player.collide_blocks
 (direction: str) {
     if direction == "x" {
         hits = pygame.sprite.spritecollide(self, self.game.blocks, False);

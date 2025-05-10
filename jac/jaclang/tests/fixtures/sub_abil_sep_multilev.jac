@@ -9,7 +9,7 @@ def plan {
 
 }
 
-impl def plan.say_hi
+impl plan.say_hi
 (m: str) {
     print(m);
 }

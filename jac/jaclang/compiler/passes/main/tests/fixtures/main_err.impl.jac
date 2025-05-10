@@ -1,6 +1,6 @@
 
 
 
-impl def foo{
+impl foo{
     return 1;
 }

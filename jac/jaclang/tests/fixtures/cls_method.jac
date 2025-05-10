@@ -25,12 +25,12 @@ class MyClass2 {
     def Ability_2(cls: Type[MyClass2]) -> str;
 }
 
-impl def MyClass2.Ability_1
+impl MyClass2.Ability_1
 (self: MyClass2) -> str {
     return "Hello, World!";
 }
 
-impl can MyClass2.Ability_2 {
+impl MyClass2.Ability_2 {
     return "Hello, World22!";
 }
 

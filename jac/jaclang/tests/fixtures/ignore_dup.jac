@@ -13,14 +13,14 @@ node turn {
 }
 
 
-impl can GuessGame.start_game {
+impl GuessGame.start_game {
     for i=0 to i<10 by i+=1 {
         here ++> turn();
     }
     visit [-->];
 }
 
-impl can GuessGame2.start_game {
+impl GuessGame2.start_game {
     for i=0 to i<10 by i+=1 {
         here ++> turn();
     }
@@ -30,7 +30,7 @@ impl can GuessGame2.start_game {
     visit [-->];
 }
 
-impl can turn.check {
+impl turn.check {
     print("here", end=", ");
 }
 

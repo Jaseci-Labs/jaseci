@@ -1,9 +1,9 @@
-impl def Spritesheet.postinit
+impl Spritesheet.postinit
 (file: str) {
     self.sheet = pygame.image.load(self.file).convert();
 }
 
-impl def Spritesheet.get_sprite
+impl Spritesheet.get_sprite
 (x: int, y: int, width: int, height: int) {
     sprite = pygame.Surface([width, height]);
     sprite.blit(self.sheet, (0, 0), (x, y, width, height));

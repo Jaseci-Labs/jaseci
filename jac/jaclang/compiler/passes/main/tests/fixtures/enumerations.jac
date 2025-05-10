@@ -3,7 +3,7 @@ import from enum { unique }
 @unique
 enum Color;
 
-impl enum Color {
+impl Color {
     RED = 1,
     GREEN = 2
 }

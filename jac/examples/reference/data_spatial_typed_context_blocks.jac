@@ -8,7 +8,7 @@ node Product {
     can make with Producer entry;
 }
 
-impl can Producer.produce {
+impl Producer.produce {
     end = here;
     for i=0 to i<3 by i+=1  {
         end ++> (end := Product(number=i + 1));
@@ -16,7 +16,7 @@ impl can Producer.produce {
     visit [-->];
 }
 
-impl can Product.make {
+impl Product.make {
     print(f"Hi, I am {self} returning a String");
     visit [-->];
 }

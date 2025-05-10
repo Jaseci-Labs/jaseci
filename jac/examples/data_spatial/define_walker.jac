@@ -9,7 +9,7 @@ walker W{
     can create with `root entry;
 }
 
-impl def W.create {
+impl W.create {
     Start = A(5);
     here +>:a:+> Start;
     Start +>:a:+> A(10) +>:a:+> A(15);

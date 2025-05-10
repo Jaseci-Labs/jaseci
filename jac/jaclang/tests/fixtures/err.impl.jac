@@ -1,3 +1,3 @@
-impl def HasFault.init {
+impl HasFault.init {
     print(5 / 0);
 }

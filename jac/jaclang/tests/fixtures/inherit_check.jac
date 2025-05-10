@@ -15,11 +15,11 @@ node a {
     }
 }
 
-impl can ww.gb {
+impl ww.gb {
     print("I am in b");
 }
 
-impl can www.ggb {
+impl www.ggb {
     print("www is also in b");
 }
 

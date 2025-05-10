@@ -22,7 +22,7 @@ edge Edge_c {
     has value2: int = 30;
 }
 
-impl can creator.create {
+impl creator.create {
     for i=0 to i<2 by i+=1  {
         here +>:Edge_c:value2=30:+> (node_a(val=i + 1));
         visit [-->];

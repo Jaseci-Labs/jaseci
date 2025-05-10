@@ -16,7 +16,7 @@ node turn {
     can check with GuessGame entry;
 }
 
-impl can turn.check {
+impl turn.check {
     guess = "Guess a number between 1 and 100: " |> input;
     if |> guess.isdigit {
         guess |> int |> here.process_guess;
@@ -26,7 +26,7 @@ impl can turn.check {
     visit [-->];
 }
 
-impl can GuessGame.start_game {
+impl GuessGame.start_game {
     end: `root | turn = here;
     for i=0 to i<10 by i+=1  {
         end ++> (end := turn());
@@ -34,7 +34,7 @@ impl can GuessGame.start_game {
     visit [-->];
 }
 
-impl def GuessGame.process_guess
+impl GuessGame.process_guess
 (guess: int) {
     if guess > self.correct_number {
         "Too high!" |> print;

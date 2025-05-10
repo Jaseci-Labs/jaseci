@@ -1560,7 +1560,8 @@ class ImplDef(CodeBlockStmt, ElementStmt, ArchBlockStmt, AstSymbolNode, UniScope
         decorators: Optional[SubNodeList[Expr]],
         target: SubNodeList[NameAtom],
         spec: SubNodeList[Expr] | FuncSignature | EventSignature | None,
-        body: SubNodeList | FuncCall,
+        body: SubNodeList[CodeBlockStmt] | FuncCall,
+        kid: Sequence[UniNode],
         doc: Optional[String] = None,
         decl_link: Optional[UniNode] = None,
     ) -> None:
@@ -1570,6 +1571,7 @@ class ImplDef(CodeBlockStmt, ElementStmt, ArchBlockStmt, AstSymbolNode, UniScope
         self.body = body
         self.doc = doc
         self.decl_link = decl_link
+        UniNode.__init__(self, kid=kid)
         AstSymbolNode.__init__(
             self,
             sym_name="impl." + ".".join([x.sym_name for x in self.target.items]),

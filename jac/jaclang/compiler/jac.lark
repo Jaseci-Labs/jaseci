@@ -84,7 +84,7 @@ impl_tail: enum_block | block_tail
 
 // [Heading]: Global variables.
 global_var: (KW_LET | KW_GLOBAL) access_tag? assignment_list SEMI
-assignment_list: (assignment_list COMMA)? (assignment | NAME)
+assignment_list: (assignment_list COMMA)? (assignment | named_ref)
 
 // [Heading]: Free code.
 free_code: KW_WITH KW_ENTRY (COLON NAME)? code_block

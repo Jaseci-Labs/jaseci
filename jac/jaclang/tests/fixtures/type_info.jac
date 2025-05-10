@@ -5,11 +5,11 @@ obj ServerWrapper {
     def get_server(server_ip: str, port: int) -> pygls.server.LanguageServer;
 }
 
-impl def ServerWrapper.init
+impl ServerWrapper.init
 (file: str) {
     self.file = file;
 }
 
-impl can ServerWrapper.get_server {
+impl ServerWrapper.get_server {
     return pygls.server.LanguageServer("test_server", "1");
 }

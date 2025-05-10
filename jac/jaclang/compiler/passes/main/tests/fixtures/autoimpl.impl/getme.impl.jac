@@ -1,3 +1,3 @@
-impl def baz {
+impl baz {
     print("baz");
 }

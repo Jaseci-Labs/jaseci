@@ -1,1 +1,1 @@
-impl can gen_outline.get_highlights {}
+impl gen_outline.get_highlights {}

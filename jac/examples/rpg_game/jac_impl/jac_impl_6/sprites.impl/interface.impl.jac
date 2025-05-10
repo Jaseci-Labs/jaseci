@@ -1,4 +1,4 @@
-impl can Button.postinit {
+impl Button.postinit {
     self.font = pygame.font.Font(GENERAL_FONT, self.fontsize);
     self.image = pygame.Surface((self.width, self.height));
     self.image.fill(self.bg);
@@ -11,7 +11,7 @@ impl can Button.postinit {
 }
 # Determine if thebutton is pressed.
 
-impl def Button.is_pressed
+impl Button.is_pressed
 (pos: tuple, pressed: tuple) {
     if self.rect.collidepoint(pos) {
         if pressed[0] {

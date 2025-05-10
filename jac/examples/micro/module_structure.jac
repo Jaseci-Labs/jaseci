@@ -33,7 +33,7 @@ walker travelor {  # define a new walker
 
 #* Declarations and definitions
 can be separate in Jac *#
-impl def travelor.say_hello {
+impl travelor.say_hello {
     "Hello" |> print;  # |> is a pipe forward operator
 }
 
