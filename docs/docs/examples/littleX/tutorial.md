@@ -190,9 +190,9 @@ Now Lets create required walkers for LittleX.
             * To test the `visit_profile` function, we begin by spawning the `visit_profile` walker on the root node. Next, we filter the nodes connected to the root to identify any profile nodes. Finally, we verify whether the connected node is indeed a profile node.
             ```Jac
             test visit_profile {
-            root spawn visit_profile();
-            profile = [root --> (`?Profile)][0];
-            check isinstance(profile,Profile);
+                  root spawn visit_profile();
+                  profile = [root --> (`?Profile)][0];
+                  check isinstance(profile,Profile);
             }
             ```
             * spawn visit_profile walker on root node: ``root spawn visit_walker();``
@@ -200,188 +200,400 @@ Now Lets create required walkers for LittleX.
             * check is this node Profile or not : ``check isinstance(profile,Profile);``
 
       - **Load User Profile Walker**
-        * Loads all profiles from the database.
-        * Useful for managing or listing all users in the system.
-            ```jac
-            walker load_user_profiles {
-                  obj __specs__ {
-                        static has auth: bool = False;
-                  }
-                  can load_profiles with `root entry {
-                        self.profiles: list = [];
-
-                        for user in NodeAnchor.Collection.find({"name": "profile"}) {
-                              user_node = user.architype;
-                              self.profiles.append(
-                              {"name": user_node.username, "id": jid(user_node)}
-                              );
+        * **Implement Load User Profile Walker** 
+            * Loads all profiles from the database.
+            * Useful for managing or listing all users in the system.
+                  ```jac
+                  walker load_user_profiles {
+                        obj __specs__ {
+                              static has auth: bool = False;
                         }
-                        report self.profiles;
+                        can load_profiles with `root entry {
+                              self.profiles: list = [];
+
+                              for user in NodeAnchor.Collection.find({"name": "profile"}) {
+                                    user_node = user.architype;
+                                    self.profiles.append(
+                                    {"name": user_node.username, "id": jid(user_node)}
+                                    );
+                              }
+                              report self.profiles;
+                        }
                   }
+                  ```
+            * `static has auth: bool = False` Set disable authentication for that walker.
+            * `NodeAnchor.Collection.find({"name": "profile"})` Get list of profiles.
+            * `user.architype` Get architype of user node.
+            * `jid(user_node)` Get the unique id of an object.
+
+        * **Test Load User Profile Walker** 
+
+            * To test the `visit_profile` function, we begin by spawning the `visit_profile` walker on the root node. Next, we filter the nodes connected to the root to identify any profile nodes. Finally, we verify whether the connected node is indeed a profile node.
+            ```Jac
+            test visit_profile {
+                  root spawn visit_profile();
+                  profile = [root --> (`?Profile)][0];
+                  check isinstance(profile,Profile);
             }
             ```
-        * `static has auth: bool = False` Set disable authentication for that walker.
-        * `NodeAnchor.Collection.find({"name": "profile"})` Get list of profiles.
-        * `user.architype` Get architype of user node.
-        * `jid(user_node)` Get the unique id of an object.
+            * spawn visit_profile walker on root node: ``root spawn visit_walker();``
+            * filter profile node: ``profile = [root --> (`?Profile)][0];``
+            * check is this node Profile or not : ``check isinstance(profile,Profile);``
 
       - **Update Profile Walker**
-        * Updates a user's profile, specifically the username.
-            ```jac
-            walker update_profile :visit_profile: {
-                  has new_username: str;
+        * **Implement Update Profile Walker** 
+            * Updates a user's profile, specifically the username.
+                  ```jac
+                  walker update_profile :visit_profile: {
+                        has new_username: str;
+                  }
+                  ```
+            * First `visit_profile` walker is called and it visits to `Profile` node.
+            * `here.username = self.new_username` Update username.
+            * How `update_profile` walker spawned on `Profile` node, update the name will be discussed later.
+
+        * **Test Update Profile Walker** 
+
+            * To test this functionality, the `update_profile` walker should be spawned from the `root` node. After execution, the connected `Profile` node can be retrieved and verified to ensure that the username has been correctly updated.
+
+            ```Jac
+            test update_profile {
+                  root spawn update_profile( new_username = "test_user" );
+                  profile = [root --> (`?Profile)][0];
+                  check profile.username == "test_user";
             }
             ```
-        * First `visit_profile` walker is called and it visits to `Profile` node.
-        * `here.username = self.new_username` Update username.
-        * How `update_profile` walker spawned on `Profile` node, update the name will be discussed later.
+
+            * spawn update_profile walker on root: ``root spawn update_profile();``
+            * filter profile node : ``profile = [root --> (`?Profile)][0];``
+            * check updated username : ``check profile.username == "test_user";``
 
       - **Get Profile Walker**
-        * Retrieves profile details and logs them.
-            ```jac
-            walker get_profile :visit_profile: {
+        * **Implement Get Profile Walker** 
+            * Retrieves profile details and logs them.
+                  ```jac
+                  walker get_profile :visit_profile: {
+                  }
+                  ```
+            * First `visit_profile` walker is called and it visits to `Profile` node.
+            * How `get_profile` walker spawned on `Profile` node, get the profile detailes will be discussed later.
+
+        * **Test Get Profile Walker** 
+
+            * To test the `visit_profile` function, we begin by spawning the `visit_profile` walker on the root node. Next, we filter the nodes connected to the root to identify any profile nodes. Finally, we verify whether the connected node is indeed a profile node.
+            ```Jac
+            test visit_profile {
+                  root spawn visit_profile();
+                  profile = [root --> (`?Profile)][0];
+                  check isinstance(profile,Profile);
             }
             ```
-        * First `visit_profile` walker is called and it visits to `Profile` node.
-        * How `get_profile` walker spawned on `Profile` node, get the profile detailes will be discussed later.
+            * spawn visit_profile walker on root node: ``root spawn visit_walker();``
+            * filter profile node: ``profile = [root --> (`?Profile)][0];``
+            * check is this node Profile or not : ``check isinstance(profile,Profile);``
 
       - **Follow Request Walker**
-        * Creates a follow edge.
-            ```jac
-            walker follow_request {}
+        * **Implement Follow Request Walker** 
+            * Creates a follow edge.
+                  ```jac
+                  walker follow_request {}
+                  ```
+            * Walker `follow_request`, when spawned on the followee profile, will create a Follow edge from the follower to the followee.
+            * How it is executed will be discussed later.
+
+        * **Test Follow Request Walker** 
+
+            * To test `follow_request`, we have to create new profile and it named "Sam," is created to serve as the followee. After executing the walker, the test proceeds by navigating from the followee to confirm the presence of a Follow edge, which indicates the successful creation of the follow request. Finally, the test verifies that the username of the connected profile matches the expected followee.
+            ```Jac
+            test follow_request {
+                  followee = Profile("Sam");
+                  followee spawn follow_request();
+                  followee_profile = [root --> (`?Profile)-:Follow:->(`?Profile)][0];
+                  check followee_profile.username == "Sam";
+            }
             ```
-        * Walker `follow_request`, when spawned on the followee profile, will create a Follow edge from the follower to the followee.
-        * How it is executed will be discussed later.
+            * create followee profile : ``followee = Profile("Sam");``
+            * spawn follow_request walker on profile_node : ``followee spawn follow_request();``
+            * filter followee profile : ``followee_profile = [root --> (`?Profile)-:Follow:->(`?Profile)][0];``
+            * check followee profile username : ``check followee_profile.username == "Sam";``
 
       - **Unfollow Request Walker**
-        * Removes the follow edge.
-            ```jac
-            walker un_follow_request {}
+        * **Implement Unfollow Request Walker** 
+            * Removes the follow edge.
+                  ```jac
+                  walker un_follow_request {}
+                  ```
+            * Walker `un_follow_request` spawned on followee profile will remove the `Follow` edge from follower to followee.
+            * How it is executed will be discussed later.
+
+        * **Test Unfollow Request Walker** 
+
+            * To test the `unfollow_request` walker, a new profile named "Sam" is first created to act as the followee. A follow relationship is initially established between the root profile and "Sam" using the `follow_request` walker. Then, the `unfollow_request` walker is executed to initiate the unfollow action.
+
+            * After executing the walker, the test proceeds by navigating from the root profile to verify the removal of the `Follow` edge. The absence of this edge confirms that the unfollow request was successfully processed. Finally, the test ensures that no connection exists between the root profile and the profile previously followed.
+            
+            ```Jac
+            test un_follow_request {
+                  followee = [root --> (`?Profile)-:Follow:->(`?Profile)][0];
+                  followee spawn un_follow_request();
+                  check len([root --> (`?Profile)-:Follow:->(`?Profile)]) == 0;
+            }
             ```
-        * Walker `un_follow_request` spawned on followee profile will remove the `Follow` edge from follower to followee.
-        * How it is executed will be discussed later.
+
+            * filter profile node : ``followee = [root --> (`?Profile)-:Follow:->(`?Profile)][0];``
+            * spawn un_follow_request walker on profile_node : ``followee spawn un_follow_request();``
+            * check length of the profiles that connect within Follow edge : ```check len([root --> (`?Profile)-:Follow:->(`?Profile)]) == 0;```
 
       - **Create Tweet Walker**
-        * Creates a new tweet for a profile and adds it to the graph using a `Post` edge.
-            ```jac
-            walker create_tweet :visit_profile: {
-                  has content: str;
+        * **Implement Create Tweet Walker** 
+            * Creates a new tweet for a profile and adds it to the graph using a `Post` edge.
+                  ```jac
+                  walker create_tweet :visit_profile: {
+                        has content: str;
 
-                  can tweet with profile entry {
-                        embedding = sentence_transformer.encode(self.content).tolist();
-                        tweet_node = here +:Post:+> Tweet(content=self.content, embedding=embedding);
-                        report tweet_node;
+                        can tweet with profile entry {
+                              embedding = sentence_transformer.encode(self.content).tolist();
+                              tweet_node = here +:Post:+> Tweet(content=self.content, embedding=embedding);
+                              report tweet_node;
+                        }
                   }
+                  ```
+            * `embedding = sentence_transformer.encode(self.content).tolist()` Embedding the content.
+            * `tweet_node = here +:post:+> tweet(content=self.content, embedding=embedding)+` Create a new tweet with content, its embedding.
+            * `report tweet_node` reports the newly created tweet node.
+
+        * **Test Create Tweet Walker** 
+
+            * To perform `create_tweet` test, the `create tweet` walker is spawned on the root node. The test then checks whether there are any `tweet` nodes connected to the `profile` node. Finally, it validates that the tweet has been correctly created and linked as expected.
+            
+            ```Jac
+            test create_tweet {
+                  root spawn create_tweet( content = "test_tweet" );
+                  test1 = [root --> (`?Profile) --> (`?Tweet)][0];
+                  check test1.content == "test_tweet";
             }
             ```
-        * `embedding = sentence_transformer.encode(self.content).tolist()` Embedding the content.
-        * `tweet_node = here +:post:+> tweet(content=self.content, embedding=embedding)` Create a new tweet with content, its embedding.
-        * `report tweet_node` reports the newly created tweet node.
+
+            * spawn create_tweet walker on root: `root spawn create_tweet();`
+            * filter tweet node : ``test1 = [root --> (`?Profile) --> (`?Tweet)][0];``
+            * check tweet is correctly created : `check test1.content == "test_tweet";`
 
       - **Update Tweet Walker**
-        * Updates the content of an existing tweet by its ID.
-            ```jac
-            walker update_tweet {
-                  has updated_content: str;
+        * **Implement Update Tweet Walker** 
+            * Updates the content of an existing tweet by its ID.
+                  ```jac
+                  walker update_tweet {
+                        has updated_content: str;
+                  }
+                  ```
+            * Walker `update_tweet` spawned on tweet node, that will update the content of the tweet.
+            * How it is executed will be discussed later.
+
+        * **Test Update Tweet Walker** 
+
+            * To test the `update_tweet`,first we have to filter is there any `tweet` nodes connected with `profile`node. Then `update_tweet` walker spawn on the `tweet_node`. Finally, the test checks whether the tweet's content has been correctly updated.
+            ```Jac
+            test update_tweet {
+                  tweet1 = [root --> (`?Profile) --> (`?Tweet)][0];
+                  tweet1 spawn update_tweet( updated_content = "new_tweet" );
+                  check tweet1.content == "new_tweet";
             }
             ```
-        * Walker `update_tweet` spawned on tweet node, that will update the content of the tweet.
-        * How it is executed will be discussed later.
+            * filter is there any tweets : ``tweet1 = [root --> (`?Profile) --> (`?Tweet)][0];``
+            * spawn update_tweet walker on tweet_node : `tweet1 spawn update_tweet();`
+            * check tweet is updated : `check tweet1.content == "new_tweet";`
 
       - **Remove Tweet Walker**
-        * Deletes a tweet by removing its connection to the profile.
-            ```jac
-            walker remove_tweet {}
+        * **Implement Remove Tweet Walker** 
+            * Deletes a tweet by removing its connection to the profile.
+                  ```jac
+                  walker remove_tweet {}
+                  ```
+            * Walker `remove_tweet`, when spawned on a tweet node, will remove the tweet.
+            * How it is executed will be discussed later.
+
+        * **Test Remove Tweet Walker** 
+
+            * To test the `remove_tweet` walker, we have to check is there any tweets connected with `profile` node.Then we can spawn `remove_tweet` walker on the `tweet_node`. Finally, the test verifies that the tweet node has been successfully removed and is no longer connected to the profile.
+            ```Jac
+            test remove_tweet {
+                  tweet2 =  [root --> (`?Profile)--> (`?Tweet)][0];
+                  tweet2 spawn remove_tweet();
+                  check len([root --> (`?Profile) --> (`?Tweet)]) == 0;
+            }
             ```
-        * Walker `remove_tweet`, when spawned on a tweet node, will remove the tweet.
-        * How it is executed will be discussed later.
+            * checks is there any tweets : ``tweet2 =  [root --> (`?Profile)--> (`?Tweet)][0];``
+            * spawn remove_tweet walker on tweet_node : `tweet2 spawn remove_tweet();`
+            * check tweet is removed : ``check len([root --> (`?Profile) --> (`?Tweet)]) == 0;``
 
       - **Like Tweet Walker**
-        * Adds a like edge between a tweet and the profile liking it.
-            ```jac
-            walker like_tweet {}
+        * **Implement Like Tweet Walker** 
+            * Adds a like edge between a tweet and the profile liking it.
+                  ```jac
+                  walker like_tweet {}
+                  ```
+            * Walker `like_tweet` spawned on tweet node, that will like the tweet.
+            * How it is executed will be discussed later.
+
+        * **Test Like Tweet Walker** 
+
+            * To test `Like_tweet`,we have to start by creating a tweet from the `root` node and then navigates to the corresponding `tweet` node. The process continues by spawning the `like_tweet` walker from the `tweet1` node. Finally, it confirms that the username `"test_user"` is correctly associated with the `Like` relationship on the tweet.
+            ```Jac
+            test like_tweet {
+                  root spawn create_tweet( content = "test_like");
+                  tweet1 = [root --> (`?Profile) --> (`?Tweet)][0];
+                  tweet1 spawn like_tweet();
+                  test1 = [tweet1 -:Like:-> ][0];
+                  check test1.username == "test_user";
+            }
             ```
-        * Walker `like_tweet` spawned on tweet node, that will like the tweet.
-        * How it is executed will be discussed later.
+            * spawn like_walker walker on tweet_node : `root spawn create_tweet(0);`
+            * filter is there any tweets : ``tweet1 = [root --> (`?Profile) --> (`?Tweet)][0];``
+            * spawn walker : `tweet1 spawn like_tweet();`
+            * filter is like to tweet : `test1 = [tweet1 -:Like:-> ][0];`
+            * check liked profile username : ` check test1.username == "test_user";`
 
       - **Remove Like Walker**
-        * Removes the like edge
-            ```jac
-            walker remove_like {}
+        * **Implement Remove Like Walker** 
+            * Removes the like edge
+                  ```jac
+                  walker remove_like {}
+                  ```
+            * Walker `remove_like` spawned on tweet node, that will remove the like.
+            * How it is executed will be discussed later.
+
+        * **Test Remove Like Walker** 
+
+            * To test `remove_like`, we have to retrieves an existing tweet; if the tweet exists, it proceeds to visit the tweet node. Then, it spawns the `remove_like` walker from the `tweet` node. The function subsequently checks whether the `Like` relationship has been successfully removed by confirming that the length of the associated likes is zero.
+            ```Jac
+            test remove_like {
+                  tweet1 = [root --> (`?Profile) --> (`?Tweet)][0];
+                  tweet1 spawn remove_like();
+                  check len([tweet1 -:Like:-> ]) == 0;
+            }
             ```
-        * Walker `remove_like` spawned on tweet node, that will remove the like.
-        * How it is executed will be discussed later.
+            * check is there any liked tweets : ``tweet1 = [root --> (`?Profile) --> (`?Tweet)][0];``
+            * spawn remove_like walker on tweet_node : `tweet1 spawn remove_like();`
+            * check like is removed : `check len([tweet1 -:Like:-> ]) == 0;`
 
       - **Comment Tweet Walker**
-        * Adds a comment to a tweet by creating a comment node and connecting it to the tweet.
-            ```jac
-            walker comment_tweet {
-                  has content: str;
+        * **Implement Comment Tweet Walker** 
+            * Adds a comment to a tweet by creating a comment node and connecting it to the tweet.
+                  ```jac
+                  walker comment_tweet {
+                        has content: str;
+                  }
+                  ```
+            * Walker `comment_tweet` spawned on tweet node, that will add a comment to tweet and create a edge with author of the comment.
+            * How it is executed will be discussed later.
+
+        * **Test Comment Tweet Walker** 
+
+            * To test `comment_tweet` ,we have to begin with checking whether there is any tweet with content similar to `'test_like'`. If such a tweet exists, it proceeds to visit it. To test the `comment_tweet` functionality, the function spawns a `comment_tweet` node on the `tweet` node and filters the `comment` node connected to the tweet. Finally, it verifies whether the content of the comment matches the expected value, confirming that the comment was successfully added to the tweet.
+            ```Jac
+            test comment_tweet {
+                  tweet = [root --> (`?Profile) --> (`?Tweet)](?content == "test_like")[0];
+                  tweet spawn comment_tweet(
+                        content = "test_comment",
+                  );
+                  comment = [tweet --> (`?Comment)][0];
+                  check comment.content == "test_comment";
             }
             ```
-        * Walker `comment_tweet` spawned on tweet node, that will add a comment to tweet and create a edge with author of the comment.
-        * How it is executed will be discussed later.
-
+            * filter tweet's content : ``tweet = [root --> (`?Profile) --> (`?Tweet)](?content == "test_like")[0];``
+            * spawn comment_tweet walker on tweet_node : `tweet spawn comment_tweet();`
+            * filter commnet : ``comment = [tweet --> (`?Comment)][0];``
+            * check comment correctly added or not : `check comment.content == "test_comment";`
 
       - **Load Tweet Walker**
-        * Loads detailed information about a tweet, including its content, embedding and author.
-            ```jac
-            walker load_tweet:visit_profile: {
-                  has if_report: bool = False;
-                  has tweet_info: list[TweetInfo] = [];
+        * **Implement Load Tweet Walker** 
+            * Loads detailed information about a tweet, including its content, embedding and author.
+                  ```jac
+                  walker load_tweet:visit_profile: {
+                        has if_report: bool = False;
+                        has tweet_info: list[TweetInfo] = [];
 
-                  can go_to_tweet with Profile entry {
-                        visit [-->(`?Tweet)];
-                        if self.if_report {
-                              report self.tweet_info;
+                        can go_to_tweet with Profile entry {
+                              visit [-->(`?Tweet)];
+                              if self.if_report {
+                                    report self.tweet_info;
+                              }
                         }
                   }
+                  ```
+            * First `visit_profile` walker is called and it visits to `Profile` node.
+            * `visit [-->(`?Tweet)]` visits to each tweet and retrieve the info of tweets posted by the user.
+            * How those tweets are retrieved will be discussed later.
+            
+        * **Test Load Tweet Walker** 
+
+            * To test the `visit_profile` function, we begin by spawning the `visit_profile` walker on the root node. Next, we filter the nodes connected to the root to identify any profile nodes. Finally, we verify whether the connected node is indeed a profile node.
+            ```Jac
+            test visit_profile {
+                  root spawn visit_profile();
+                  profile = [root --> (`?Profile)][0];
+                  check isinstance(profile,Profile);
             }
             ```
-        * First `visit_profile` walker is called and it visits to `Profile` node.
-        * `visit [-->(`?Tweet)]` visits to each tweet and retrieve the info of tweets posted by the user.
-        * How those tweets are retrieved will be discussed later.
+            * spawn visit_profile walker on root node: ``root spawn visit_walker();``
+            * filter profile node: ``profile = [root --> (`?Profile)][0];``
+            * check is this node Profile or not : ``check isinstance(profile,Profile);``
 
       - **Load Feed Walker**
-        * Fetches all tweets for a profile, including their comments and likes.
-            ```jac
-            walker load_feed :visit_profile: {
-                  has search_query: str = "";
+        * **Implement Load Feed Walker** 
+            * Fetches all tweets for a profile, including their comments and likes.
+                  ```jac
+                  walker load_feed :visit_profile: {
+                        has search_query: str = "";
 
-                  can load with Profile entry {
-                        feeds: list = [];
-                        user_tweets = here spawn load_tweets();
-                        feeds.extend(user_tweets.tweet_info);
-
-                        for user_node in [-:Follow:->](`?Profile) {
-                              user_tweets = user_node spawn load_tweets();
+                        can load with Profile entry {
+                              feeds: list = [];
+                              user_tweets = here spawn load_tweets();
                               feeds.extend(user_tweets.tweet_info);
-                        }
-                        tweets = [feed.content for feed in feeds];
-                        tweet_embeddings = [numpy.array(feed.embedding) for feed in feeds];
-                        summary: str = summarize_tweets(tweets);
 
-                        # Filter tweets based on search query
-                        if (self.search_query) {
-                              filtered_results = search_tweets(
-                              self.search_query,
-                              feeds,
-                              tweet_embeddings
-                              );
-                              report {"feeds": filtered_results, "summary": summary};
-                        } else {
-                              report {"feeds": self.feeds, "summary": summary};
+                              for user_node in [-:Follow:->](`?Profile) {
+                                    user_tweets = user_node spawn load_tweets();
+                                    feeds.extend(user_tweets.tweet_info);
+                              }
+                              tweets = [feed.content for feed in feeds];
+                              tweet_embeddings = [numpy.array(feed.embedding) for feed in feeds];
+                              summary: str = summarize_tweets(tweets);
+
+                              # Filter tweets based on search query
+                              if (self.search_query) {
+                                    filtered_results = search_tweets(
+                                    self.search_query,
+                                    feeds,
+                                    tweet_embeddings
+                                    );
+                                    report {"feeds": filtered_results, "summary": summary};
+                              } else {
+                                    report {"feeds": self.feeds, "summary": summary};
+                              }
                         }
                   }
+                  ```
+            * First `visit_profile` walker is called and it visits to `Profile` node.
+            * With `Profile` entry following things are executed.
+            * `user_tweets = here spawn load_tweets();` Spawn load_tweets walker with current node.
+            * `feeds.extend(user_tweets.tweets);` Add the user's tweets to the profile's feed.
+            * `user_node = &user;` Get the user node.
+            * `self.summary: str = summarise_tweets(tweets);` Summarize the tweets.
+            * `if (self.search_query) { ... } else { ... }` If a search query is provided, filter the tweets based on the query. Otherwise, return all tweets.
+            
+        * **Test Load Feed Walker** 
+
+            * To test the `visit_profile` function, we begin by spawning the `visit_profile` walker on the root node. Next, we filter the nodes connected to the root to identify any profile nodes. Finally, we verify whether the connected node is indeed a profile node.
+            ```Jac
+            test visit_profile {
+                  root spawn visit_profile();
+                  profile = [root --> (`?Profile)][0];
+                  check isinstance(profile,Profile);
             }
             ```
-        * First `visit_profile` walker is called and it visits to `Profile` node.
-        * With `Profile` entry following things are executed.
-        * `user_tweets = here spawn load_tweets();` Spawn load_tweets walker with current node.
-        * `feeds.extend(user_tweets.tweets);` Add the user's tweets to the profile's feed.
-        * `user_node = &user;` Get the user node.
-        * `self.summary: str = summarise_tweets(tweets);` Summarize the tweets.
-        * `if (self.search_query) { ... } else { ... }` If a search query is provided, filter the tweets based on the query. Otherwise, return all tweets.
+            * spawn visit_profile walker on root node: ``root spawn visit_walker();``
+            * filter profile node: ``profile = [root --> (`?Profile)][0];``
+            * check is this node Profile or not : ``check isinstance(profile,Profile);``
 
 === "LittleX.jac Upto Now"
     ```jac linenums="1"
