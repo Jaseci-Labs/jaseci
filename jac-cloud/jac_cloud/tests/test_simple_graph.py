@@ -47,15 +47,6 @@ class SimpleGraphTest(JacCloudTest):
     def tearDownClass(cls) -> None:
         """Tear down after the last test."""
         cls.client.drop_database(cls.database)
-        cls.stop_server()
-
-    @classmethod
-    def tearDownClass(cls) -> None:
-        """Tear down after all tests."""
-        if cls._shared_state is not None:
-            cls.client.drop_database(cls.database)
-            cls.stop_server()
-            cls._shared_state = None
 
     def trigger_openapi_specs_test(self) -> None:
         """Test OpenAPI Specs."""
