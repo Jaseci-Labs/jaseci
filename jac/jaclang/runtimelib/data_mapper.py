@@ -128,9 +128,6 @@ def generate_data_mapping(
     visit_stmts: list[uni.VisitStmt], start: NodeAnchor
 ) -> dict[NodeAnchor, int]:
     """Generate data mapping."""
-    # static_analysis = VisitPredictionPass()
-    # static_info = [static_analysis.get_visit_stmt_info(visit_stmt) for visit_stmt in visit_stmts]
-    # static_info = {}
     print(type(start.architype))
     traversal_order = _traversal(start)
     dpu_node_count = [0] * NUM_DPU
