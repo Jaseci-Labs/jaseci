@@ -15,7 +15,7 @@ from jac_splice_orc.config.config_loader import ConfigLoader
 from jac_splice_orc.managers.proxy_manager import ModuleProxy, RemoteObjectProxy
 
 from jaclang.cli.cmdreg import cmd_registry
-from jaclang.runtimelib.machine import JacMachineInterface, JacMachineState, JacProgram
+from jaclang.runtimelib.machine import JacMachine, JacMachineInterface, JacProgram
 
 
 from kubernetes import client, config
@@ -560,7 +560,7 @@ class SpliceOrcPlugin:
     @staticmethod
     @hookimpl
     def jac_import(
-        mach: JacMachineState,
+        mach: JacMachine,
         target: str,
         base_path: str,
         absorb: bool,

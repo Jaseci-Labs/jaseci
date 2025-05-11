@@ -82,7 +82,7 @@ class JacAccessValidation:
     def elevate_root() -> None:
         """Elevate context root to system_root."""
         jctx = JacMachineInterface.get_context()
-        jctx.root = jctx.system_root
+        jctx.root_state = jctx.system_root
 
     @staticmethod
     def allow_root(
@@ -171,7 +171,7 @@ class JacAccessValidation:
 
         jctx = JacMachineInterface.get_context()
 
-        jroot = jctx.root
+        jroot = jctx.root_state
 
         # if current root is system_root
         # if current root id is equal to target anchor's root id
@@ -621,7 +621,7 @@ class JacBasics:
         """Set Class References."""
 
     @staticmethod
-    def get_context() -> JacMachineState:
+    def get_context() -> JacMachine:
         """Get current execution context."""
         return JacMachineInterface.py_get_jac_machine()
 
@@ -630,7 +630,7 @@ class JacBasics:
         """Purge current or target graph."""
         ctx = JacMachineInterface.get_context()
         mem = cast(ShelfStorage, ctx.mem)
-        ranchor = root.__jac__ if root else ctx.root
+        ranchor = root.__jac__ if root else ctx.root_state
 
         deleted_count = 0
         for anchor in (
@@ -651,7 +651,7 @@ class JacBasics:
     def get_object(id: str) -> Architype | None:
         """Get object given id."""
         if id == "root":
-            return JacMachineInterface.get_context().root.architype
+            return JacMachineInterface.get_context().root_state.architype
         elif obj := JacMachineInterface.get_context().mem.find_by_id(UUID(id)):
             return obj.architype
 
@@ -725,7 +725,7 @@ class JacBasics:
         return decorator
 
     @staticmethod
-    def py_get_jac_machine() -> JacMachineState:
+    def py_get_jac_machine() -> JacMachine:
         """Get jac machine from python context."""
         machine = None
         for i in inspect.stack():
@@ -753,7 +753,7 @@ class JacBasics:
         """Core Import Process."""
         machine = JacMachineInterface.py_get_jac_machine()
         if not machine:
-            machine = JacMachineState(base_path=base_path)
+            machine = JacMachine(base_path=base_path)
         return JacMachineInterface.jac_import(
             mach=machine,
             target=target,
@@ -768,7 +768,7 @@ class JacBasics:
 
     @staticmethod
     def jac_import(
-        mach: JacMachineState,
+        mach: JacMachine,
         target: str,
         base_path: str,
         absorb: bool = False,
@@ -825,7 +825,7 @@ class JacBasics:
 
     @staticmethod
     def run_test(
-        mach: JacMachineState,
+        mach: JacMachine,
         filepath: str,
         func_name: Optional[str] = None,
         filter: Optional[str] = None,
@@ -1089,7 +1089,7 @@ class JacBasics:
         jctx = JacMachineInterface.get_context()
 
         anchor.persistent = True
-        anchor.root = jctx.root.id
+        anchor.root = jctx.root_state.id
 
         jctx.mem.set(anchor.id, anchor)
 
@@ -1300,25 +1300,25 @@ class JacUtils:
     """Jac Machine Utilities."""
 
     @staticmethod
-    def attach_program(mach: JacMachineState, jac_program: JacProgram) -> None:
+    def attach_program(mach: JacMachine, jac_program: JacProgram) -> None:
         """Attach a JacProgram to the machine."""
         mach.jac_program = jac_program
 
     @staticmethod
     def load_module(
-        mach: JacMachineState, module_name: str, module: types.ModuleType
+        mach: JacMachine, module_name: str, module: types.ModuleType
     ) -> None:
         """Load a module into the machine."""
         mach.loaded_modules[module_name] = module
         sys.modules[module_name] = module  # TODO: May want to nuke this one day
 
     @staticmethod
-    def list_modules(mach: JacMachineState) -> list[str]:
+    def list_modules(mach: JacMachine) -> list[str]:
         """List all loaded modules."""
         return list(mach.loaded_modules.keys())
 
     @staticmethod
-    def list_walkers(mach: JacMachineState, module_name: str) -> list[str]:
+    def list_walkers(mach: JacMachine, module_name: str) -> list[str]:
         """List all walkers in a specific module."""
         module = mach.loaded_modules.get(module_name)
         if module:
@@ -1330,7 +1330,7 @@ class JacUtils:
         return []
 
     @staticmethod
-    def list_nodes(mach: JacMachineState, module_name: str) -> list[str]:
+    def list_nodes(mach: JacMachine, module_name: str) -> list[str]:
         """List all nodes in a specific module."""
         module = mach.loaded_modules.get(module_name)
         if module:
@@ -1342,7 +1342,7 @@ class JacUtils:
         return []
 
     @staticmethod
-    def list_edges(mach: JacMachineState, module_name: str) -> list[str]:
+    def list_edges(mach: JacMachine, module_name: str) -> list[str]:
         """List all edges in a specific module."""
         module = mach.loaded_modules.get(module_name)
         if module:
@@ -1355,7 +1355,7 @@ class JacUtils:
 
     @staticmethod
     def create_architype_from_source(
-        mach: JacMachineState,
+        mach: JacMachine,
         source_code: str,
         module_name: Optional[str] = None,
         base_path: Optional[str] = None,
@@ -1411,7 +1411,7 @@ class JacUtils:
 
     @staticmethod
     def update_walker(
-        mach: JacMachineState,
+        mach: JacMachine,
         module_name: str,
         items: Optional[dict[str, Union[str, Optional[str]]]],
     ) -> tuple[types.ModuleType, ...]:
@@ -1453,7 +1453,7 @@ class JacUtils:
 
     @staticmethod
     def spawn_node(
-        mach: JacMachineState,
+        mach: JacMachine,
         node_name: str,
         attributes: Optional[dict] = None,
         module_name: str = "__main__",
@@ -1470,7 +1470,7 @@ class JacUtils:
 
     @staticmethod
     def spawn_walker(
-        mach: JacMachineState,
+        mach: JacMachine,
         walker_name: str,
         attributes: Optional[dict] = None,
         module_name: str = "__main__",
@@ -1487,7 +1487,7 @@ class JacUtils:
 
     @staticmethod
     def get_architype(
-        mach: JacMachineState, module_name: str, architype_name: str
+        mach: JacMachine, module_name: str, architype_name: str
     ) -> Optional[Architype]:
         """Retrieve an architype class from a module."""
         module = mach.loaded_modules.get(module_name)
@@ -1515,7 +1515,7 @@ class JacMachineInterface(
     """Jac Feature."""
 
 
-class JacMachineState:
+class JacMachine(JacMachineInterface):
     """Jac Machine State."""
 
     def __init__(
@@ -1525,7 +1525,7 @@ class JacMachineState:
         root: Optional[str] = None,
         interp_mode: bool = False,
     ) -> None:
-        """Initialize JacMachineState."""
+        """Initialize JacMachine."""
         self.loaded_modules: dict[str, types.ModuleType] = {}
         if not base_path:
             base_path = os.getcwd()
@@ -1556,7 +1556,7 @@ class JacMachineState:
 
         self.system_root = system_root
 
-        self.entry_node = self.root = self.init_anchor(root, self.system_root)
+        self.entry_node = self.root_state = self.init_anchor(root, self.system_root)
 
     def init_anchor(
         self,
@@ -1572,7 +1572,7 @@ class JacMachineState:
 
     def set_entry_node(self, entry_node: str | None) -> None:
         """Override entry."""
-        self.entry_node = self.init_anchor(entry_node, self.root)
+        self.entry_node = self.init_anchor(entry_node, self.root_state)
 
     def close(self) -> None:
         """Close current ExecutionContext."""
@@ -1580,7 +1580,7 @@ class JacMachineState:
 
     def get_root(self) -> Root:
         """Get current root."""
-        return cast(Root, self.root.architype)
+        return cast(Root, self.root_state.architype)
 
     def global_system_root(self) -> NodeAnchor:
         """Get global system root."""
@@ -1588,7 +1588,7 @@ class JacMachineState:
 
 
 def call_jac_func_with_machine(  # TODO: remove this
-    mach: JacMachineState, func: Callable, *args: Any  # noqa: ANN401
+    mach: JacMachine, func: Callable, *args: Any  # noqa: ANN401
 ) -> Any:  # noqa: ANN401
     """Call Jac function with machine context in local."""
     __jac_mach__ = mach  # noqa: F841

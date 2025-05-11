@@ -6,7 +6,7 @@ import sys
 from jaclang import JacMachineInterface as Jac
 from jaclang.cli import cli
 from jaclang.compiler.program import JacProgram
-from jaclang.runtimelib.machine import JacMachineInterface, JacMachineState
+from jaclang.runtimelib.machine import JacMachineInterface, JacMachine
 from jaclang.utils.test import TestCase
 
 
@@ -15,7 +15,7 @@ class TestLoader(TestCase):
 
     def test_import_basic_python(self) -> None:
         """Test basic self loading."""
-        mach = JacMachineState(self.fixture_abs_path(__file__))
+        mach = JacMachine(self.fixture_abs_path(__file__))
         JacMachineInterface.attach_program(
             mach,
             JacProgram(),
@@ -25,7 +25,7 @@ class TestLoader(TestCase):
 
     def test_modules_correct(self) -> None:
         """Test basic self loading."""
-        mach = JacMachineState(self.fixture_abs_path(__file__))
+        mach = JacMachine(self.fixture_abs_path(__file__))
         JacMachineInterface.attach_program(
             mach,
             JacProgram(),
@@ -92,7 +92,7 @@ class TestLoader(TestCase):
         sys.stdout = captured_output
 
         try:
-            mach = JacMachineState(self.fixture_abs_path(__file__))
+            mach = JacMachine(self.fixture_abs_path(__file__))
             JacMachineInterface.attach_program(
                 mach,
                 JacProgram(),

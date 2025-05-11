@@ -1,4 +1,4 @@
-import from jaclang.runtimelib.machine {JacMachineInterface, JacMachineState}
+import from jaclang.runtimelib.machine {JacMachineInterface, JacMachine}
 import from bar {Item}
 
 node test_node {

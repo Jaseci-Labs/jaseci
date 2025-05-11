@@ -7,7 +7,7 @@ from pickle import load
 from jac_cloud.jaseci.main import FastAPI
 
 from jaclang import JacMachineInterface as Jac
-from jaclang.runtimelib.machine import JacMachineState
+from jaclang.runtimelib.machine import JacMachine
 
 if not (filename := getenv("APP_PATH")):
     raise ValueError("APP_PATH is required")
@@ -16,7 +16,7 @@ base = base if base else "./"
 mod = mod[:-4]
 
 FastAPI.enable()
-mach = JacMachineState(base)
+mach = JacMachine(base)
 if filename.endswith(".jac"):
     Jac.jac_import(
         mach=mach,

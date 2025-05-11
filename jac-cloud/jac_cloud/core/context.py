@@ -9,7 +9,7 @@ from bson import ObjectId
 
 from fastapi import Request, WebSocket
 
-from jaclang.runtimelib.machine import JacMachineState
+from jaclang.runtimelib.machine import JacMachine
 
 from .architype import (
     AccessLevel,
@@ -50,16 +50,16 @@ class ContextResponse(Generic[RT]):
         }
 
 
-class JaseciContext(JacMachineState):
+class JaseciContext(JacMachine):
     """Execution Context."""
 
     mem: MongoDB
     reports: list
     status: int
     system_root: NodeAnchor
-    root: NodeAnchor
+    root_state: NodeAnchor
     entry_node: NodeAnchor
-    base: JacMachineState | None
+    base: JacMachine | None
     connection: Request | WebSocket | None
 
     def close(self) -> None:
@@ -91,9 +91,9 @@ class JaseciContext(JacMachineState):
         ctx.system_root = system_root
 
         if connection is None:
-            ctx.root = system_root
+            ctx.root_state = system_root
         elif _root := getattr(connection, "_root", None):
-            ctx.root = _root
+            ctx.root_state = _root
             ctx.mem.set(_root.id, _root)
         else:
             if not isinstance(
@@ -105,14 +105,14 @@ class JaseciContext(JacMachineState):
                 public_root.persistent = True
                 ctx.mem.set(public_root.id, public_root)
 
-            ctx.root = public_root
+            ctx.root_state = public_root
 
         if entry:
             if not isinstance(entry_node := ctx.mem.find_by_id(entry), NodeAnchor):
                 raise ValueError(f"Invalid anchor id {entry.ref_id} !")
             ctx.entry_node = entry_node
         else:
-            ctx.entry_node = ctx.root
+            ctx.entry_node = ctx.root_state
 
         if _ctx := JASECI_CONTEXT.get(None):
             _ctx.close()
@@ -130,7 +130,7 @@ class JaseciContext(JacMachineState):
     @staticmethod
     def get_root() -> Root:  # type: ignore[override]
         """Get current root."""
-        return cast(Root, JaseciContext.get().root.architype)
+        return cast(Root, JaseciContext.get().root_state.architype)
 
     def response(self, returns: list[Any]) -> dict[str, Any]:
         """Return serialized version of reports."""

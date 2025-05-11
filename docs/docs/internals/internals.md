@@ -193,7 +193,7 @@ classDiagram
         +get()
     }
 
-    class JacMachineState {
+    class JacMachine {
         +dict loaded_modules
         +str base_path
         +str base_path_dir
@@ -203,7 +203,7 @@ classDiagram
     }
 
     class ExecutionContext {
-        +JacMachineState mach
+        +JacMachine mach
         +Memory mem
         +list reports
         +Any custom
@@ -216,12 +216,12 @@ classDiagram
         +get_root()
     }
 
-    JacMachine --> JacMachineState : uses
-    JacMachineState --> ExecutionContext : contains
-    JacMachineState --> JacProgram : contains
+    JacMachine --> JacMachine : uses
+    JacMachine --> ExecutionContext : contains
+    JacMachine --> JacProgram : contains
 
     note for JacMachine "Core runtime component"
-    note for JacMachineState "Maintains runtime state"
+    note for JacMachine "Maintains runtime state"
     note for ExecutionContext "Execution environment"
 ```
 
@@ -250,12 +250,12 @@ Key responsibilities:
 3. **Runtime API**: Provides the API for Jac features like node/edge operations, walker operations, etc.
 4. **Dynamic Updates**: Enables runtime updates to components like walkers
 
-### JacMachineState
+### JacMachine
 
-`JacMachineState` maintains the state of the Jac machine during execution. It includes loaded modules, the execution context, and the Jac program.
+`JacMachine` maintains the state of the Jac machine during execution. It includes loaded modules, the execution context, and the Jac program.
 
 ```python
-class JacMachineState:
+class JacMachine:
     """Jac Machine State."""
 
     def __init__(
@@ -265,7 +265,7 @@ class JacMachineState:
         root: Optional[str] = None,
         interp_mode: bool = False,
     ) -> None:
-        """Initialize JacMachineState."""
+        """Initialize JacMachine."""
         self.loaded_modules: dict[str, types.ModuleType] = {}
         if not base_path:
             base_path = os.getcwd()
@@ -289,7 +289,7 @@ class JacMachineState:
 class ExecutionContext:
     """Execution Context."""
 
-    mach: JacMachineState
+    mach: JacMachine
     mem: Memory
     reports: list[Any]
     custom: Any = MISSING
@@ -483,7 +483,7 @@ flowchart TD
 ```mermaid
 classDiagram
     class Importer {
-        +JacMachineState jac_machine
+        +JacMachine jac_machine
         +ImportReturn result
         +run_import()
     }
@@ -535,7 +535,7 @@ The module system uses importers to load modules:
 class Importer:
     """Abstract base class for all importers."""
 
-    def __init__(self, jac_machine: JacMachineState) -> None:
+    def __init__(self, jac_machine: JacMachine) -> None:
         """Initialize the Importer object."""
         self.jac_machine = jac_machine
         self.result: Optional[ImportReturn] = None
@@ -588,7 +588,7 @@ Walkers can be updated during runtime without reloading the entire module. This 
 ```python
 @staticmethod
 def update_walker(
-    mach: JacMachineState,
+    mach: JacMachine,
     module_name: str,
     items: Optional[dict[str, Union[str, Optional[str]]]],
 ) -> tuple[types.ModuleType, ...]:

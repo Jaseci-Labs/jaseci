@@ -6,7 +6,7 @@ from os.path import split
 from pickle import load
 from typing import Any
 
-from jaclang import JacMachineInterface as Jac, JacMachineState
+from jaclang import JacMachine, JacMachineInterface as Jac
 from jaclang.cli.cmdreg import cmd_registry
 from jaclang.runtimelib.machine import hookimpl
 
@@ -41,7 +41,7 @@ class JacCmd:
             mod = mod[:-4]
 
             FastAPI.enable()
-            mach = JacMachineState(base, interp_mode=interp_mode)
+            mach = JacMachine(base, interp_mode=interp_mode)
 
             if filename.endswith(".jac"):
                 Jac.jac_import(
@@ -80,7 +80,7 @@ class JacCmd:
             base, mod = split(filename)
             base = base if base else "./"
             mod = mod[:-4]
-            mach = JacMachineState(base)
+            mach = JacMachine(base)
 
             if filename.endswith(".jac"):
                 Jac.jac_import(

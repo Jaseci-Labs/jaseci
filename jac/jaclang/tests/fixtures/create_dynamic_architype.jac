@@ -1,4 +1,4 @@
-import from jaclang.runtimelib.machine { JacMachineInterface, JacMachineState }
+import from jaclang.runtimelib.machine { JacMachineInterface, JacMachine }
 # Dynamically create a node architype
 glob source_code = """
 node dynamic_node {

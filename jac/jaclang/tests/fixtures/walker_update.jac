@@ -1,5 +1,5 @@
 import from bar { bar_walk }
-import from jaclang.runtimelib.machine { JacMachineInterface, JacMachineState }
+import from jaclang.runtimelib.machine { JacMachineInterface, JacMachine }
 import os;
 
 def update_bar_walker {

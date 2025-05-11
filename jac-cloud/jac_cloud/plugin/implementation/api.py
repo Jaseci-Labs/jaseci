@@ -258,7 +258,7 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
                 wanch: WalkerAnchor = warch.__jac__
                 if warch.__jac_async__:
                     background_task.add_task(
-                        run_task, wanch, jctx.root, jctx.entry_node
+                        run_task, wanch, jctx.root_state, jctx.entry_node
                     )
                     resp = {"walker_id": wanch.ref_id}
                     log_exit(resp, log)

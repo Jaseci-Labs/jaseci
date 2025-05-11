@@ -8,7 +8,7 @@ import types
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes.main import CompilerMode as CMode, PyastGenPass
 from jaclang.compiler.program import JacProgram
-from jaclang.runtimelib.machine import JacMachineState
+from jaclang.runtimelib.machine import JacMachine
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
 
 
@@ -53,7 +53,7 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             sys.stdout = captured_output
             module = types.ModuleType("__main__")
             module.__dict__["__file__"] = code_gen.loc.mod_path
-            module.__dict__["__jac_mach__"] = JacMachineState()
+            module.__dict__["__jac_mach__"] = JacMachine()
             exec(prog, module.__dict__)
             sys.stdout = sys.__stdout__
             stdout_value = captured_output.getvalue()

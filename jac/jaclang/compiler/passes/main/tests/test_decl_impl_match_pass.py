@@ -4,7 +4,7 @@ import io
 import sys
 
 import jaclang.compiler.unitree as uni
-from jaclang import JacMachineInterface as Jac, JacMachineState
+from jaclang import JacMachineInterface as Jac, JacMachine
 from jaclang.cli import cli
 from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import TestCase
@@ -15,7 +15,7 @@ class DeclImplMatchPassTests(TestCase):
 
     def setUp(self) -> None:
         """Set up test."""
-        self.mach = JacMachineState(self.fixture_abs_path("./"))
+        self.mach = JacMachine(self.fixture_abs_path("./"))
         Jac.attach_program(
             self.mach,
             JacProgram(),
