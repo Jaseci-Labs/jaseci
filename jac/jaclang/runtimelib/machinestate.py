@@ -29,14 +29,6 @@ def call_jac_func_with_machine(
 class ExecutionContext:
     """Execution Context."""
 
-    mach: JacMachineState
-    mem: Memory
-    reports: list[Any]
-    custom: Any = MISSING
-    system_root: NodeAnchor
-    root: NodeAnchor
-    entry_node: NodeAnchor
-
     def __init__(
         self,
         mach: JacMachineState,
@@ -45,13 +37,14 @@ class ExecutionContext:
     ) -> None:
         """Create ExecutionContext."""
         self.mach = mach
-        self.mem = ShelfStorage(session)
-        self.reports = []
+        self.mem: Memory = ShelfStorage(session)
+        self.reports: list[Any] = []
         sr_arch = Root()
         sr_anch = sr_arch.__jac__
         sr_anch.id = UUID(Con.SUPER_ROOT_UUID)
         sr_anch.persistent = False
         self.system_root = sr_anch
+        self.custom: Any = MISSING
         if not isinstance(
             system_root := self.mem.find_by_id(UUID(Con.SUPER_ROOT_UUID)), NodeAnchor
         ):
