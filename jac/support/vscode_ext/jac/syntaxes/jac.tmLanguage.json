@@ -132,7 +132,7 @@
 			"patterns": [
 				{
 					"name": "meta.class.jac",
-					"begin": "(:g:|:global:|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:obj:|:cls:|:class:|:enum:|:c:|:can:|:d:|:def:)",
+					"begin": "(impl)",
 					"end": "(?=:|{|\\W)",
 					"beginCaptures": {
 						"1": {
@@ -160,7 +160,7 @@
 			"patterns": [
 				{
 					"name": "meta.function.jac",
-					"begin": "(?x)\\b(can|with|def)\\b(?=\\s*[[:alpha:]_]\\w*|\\s*({|;|\\(||\\n))",
+					"begin": "(?x)\\b(can|with|def|impl)\\b(?=\\s*[[:alpha:]_]\\w*|\\s*({|;|\\(||\\n))",
 					"end": "(?=\\)|{)|;",
 					"beginCaptures": {
 						"1": {
@@ -557,7 +557,7 @@
 			"patterns": [
 				{
 					"name": "storage.type.function.jac",
-					"match": "\\b((async\\s+)?\\s*(can|def))\\b"
+					"match": "\\b((async\\s+)?\\s*(can|impl|def))\\b"
 				},
 				{
 					"name": "keyword.control.flow.jac",
@@ -1285,7 +1285,7 @@
 			"patterns": [
 				{
 					"name": "meta.class.jac",
-					"begin": "(:g:|:global:|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:obj:|:cls:|:class:|:enum:|:c:|:can:|:d:|:def:)\\s*(?=\\s*[[:alpha:]_]\\w*|\\s*( |:|\\n))",
+					"begin": "(impl)\\s*(?=\\s*[[:alpha:]_]\\w*|\\s*( |:|\\n))",
 					"end": "((?=:| )|;)",
 					"beginCaptures": {
 						"1": {
