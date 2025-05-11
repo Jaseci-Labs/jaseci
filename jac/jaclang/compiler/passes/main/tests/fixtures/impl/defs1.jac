@@ -1,8 +1,8 @@
 """Defs for test"""
 
-:o:MyObject:c:foo() {
+impl MyObject.foo() {
     "hello" |> print;
 }
-:o:MyObject:c:bar() {
+impl MyObject.bar() {
     "hello" |> print;
 }

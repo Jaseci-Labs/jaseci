@@ -116,7 +116,9 @@ class JacLexer(RegexLexer):
             include("keywords"),
             include("soft-keywords"),
             (r"(static\s+can)((?:\s|\\\s)+)", bygroups(Keyword, Text), "funcname"),
+            (r"(static\s+def)((?:\s|\\\s)+)", bygroups(Keyword, Text), "funcname"),
             (r"(can)((?:\s|\\\s)+)", bygroups(Keyword, Text), "funcname"),
+            (r"(def)((?:\s|\\\s)+)", bygroups(Keyword, Text), "funcname"),
             (r"(enum)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
             (r"(class)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
             (r"(obj)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
@@ -124,11 +126,35 @@ class JacLexer(RegexLexer):
             (r"(node)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
             (r"(edge)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
             (r"(test)((?:\s|\\\s)+)", bygroups(Keyword, Text), "classname"),
-            # (r"(from)((?:\s|\\\s)+)", bygroups(Keyword.Namespace, Text), "fromimport"),
+            # Handle all import patterns directly in the root
+            # Import from with curly braces (no semicolon yet)
             (
-                r"(import|include)(:)(jac|py)((?:\s|\\\s)+)",
-                bygroups(Keyword.Namespace, Operator, Text, Text),
-                "import",
+                r"(import)(\s+)(from)(\s+)([A-Za-z][A-Za-z0-9_\.]*)",
+                bygroups(
+                    Keyword.Namespace, Text, Keyword.Namespace, Text, Name.Namespace
+                ),
+                "import_from_braces",
+            ),
+            # Standard import with semicolon
+            (
+                r"(import)(\s+)([A-Za-z][A-Za-z0-9_\.]*)(\s*)(;)",
+                bygroups(Keyword.Namespace, Text, Name.Namespace, Text, Punctuation),
+            ),
+            # Import with alias and semicolon
+            (
+                r"(import)(\s+)([A-Za-z][A-Za-z0-9_\.]*)(\s+)(as)(\s+)([A-Za-z][A-Za-z0-9_]*)(\s*)(;)",
+                bygroups(Keyword.Namespace, Text, Name.Namespace, Text, Punctuation),
+            ),
+            # Include with semicolon
+            (
+                r"(include)(\s+)([A-Za-z][A-Za-z0-9_\.]*)(\s*)(;)",
+                bygroups(Keyword.Namespace, Text, Name.Namespace, Text, Punctuation),
+            ),
+            # Fallback for any other import forms
+            (
+                r"(from)(\s+)([A-Za-z][A-Za-z0-9_\.]*)",
+                bygroups(Keyword.Namespace, Text, Name.Namespace),
+                "fromimport",
             ),
             include("expr"),
         ],
@@ -229,7 +255,7 @@ class JacLexer(RegexLexer):
                 Operator.Word,
             ),
             (
-                r"(:g:|:global:|here|here|self|self|<i>|init|<sup>|super|root|root|:w:|:walker:|:n:|:node:|:e:|:edge:|:o:|:obj:|:cls:|:class:|:enum:|:c:|:can:)",
+                r"(:g:|:global:|visitor|here|self|def|self|<i>|init|<sup>|super|root|root|impl)",
                 Operator.Word,
             ),
             (r"\?:|\?|:\+:|!=|==|<<|>>|:=|[-~+/*%=<>&^|.]", Operator),
@@ -278,7 +304,7 @@ class JacLexer(RegexLexer):
                         "else",
                         "for",
                         "if",
-                        # "lambda",
+                        "lambda",
                         "yield",
                         # "yield from",
                         # -----
@@ -304,6 +330,10 @@ class JacLexer(RegexLexer):
                         "except",
                         "finally",
                         "for",
+                        "import",
+                        "include",
+                        "def",
+                        "can",
                         "glob",
                         "if",
                         "lambda",
@@ -682,21 +712,35 @@ class JacLexer(RegexLexer):
         "classname": [
             (uni_name, Name.Class, "#pop"),
         ],
-        "import": [
-            (r"(\s+)(as)(\s+)", bygroups(Text, Keyword, Text)),
-            (r"\.", Name.Namespace),
-            (uni_name, Name.Namespace),
-            (r"(\s*)(,)(\s*)", bygroups(Text, Operator, Text)),
-            default("#pop"),  # all else: go back
-        ],
         "fromimport": [
             (r"(\s+)(import)\b", bygroups(Text, Keyword.Namespace), "#pop"),
+            (
+                r"(\s*)(;)(\s*)",
+                bygroups(Text, Punctuation, Text),
+                "#pop",
+            ),  # Handle semicolons
             (r"\.", Name.Namespace),
             # if None occurs here, it's "raise x from None", since None can
             # never be a module name
             (r"None\b", Keyword.Constant, "#pop"),
             (uni_name, Name.Namespace),
             default("#pop"),
+        ],
+        "import_from_braces": [
+            (r"(\s*)(\{)(\s*)", bygroups(Text, Punctuation, Text), "import_from_items"),
+        ],
+        "import_from_items": [
+            (r"([A-Za-z][A-Za-z0-9_]*)", Name),
+            (
+                r"(\s+)(as)(\s+)([A-Za-z][A-Za-z0-9_]*)",
+                bygroups(Text, Keyword, Text, Name),
+            ),
+            (r"(\s*)(,)(\s*)", bygroups(Text, Punctuation, Text)),
+            (
+                r"(\s*)(\})(\s*)(;?)",
+                bygroups(Text, Punctuation, Text, Punctuation),
+                "#pop:2",
+            ),  # Pop back to root
         ],
         "rfstringescape": [
             (r"\{\{", String.Escape),

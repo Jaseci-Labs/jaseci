@@ -38,7 +38,7 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
             if diff:
                 print(f"Differences found in comparison:\n{diff}")
-                raise AssertionError("Files differ after formatting.")
+                raise AssertionError("Files differ after formattinclearg.")
 
         except FileNotFoundError:
             print(f"File not found: {original_file} or {formatted_file}")
@@ -111,6 +111,7 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             self.assertFalse(diff, "AST structures differ after formatting.")
 
         except Exception as e:
+            print(f"Error in {filename}: {e}")
             print(add_line_numbers(code_gen_pure.source.code))
             print("\n+++++++++++++++++++++++++++++++++++++++\n")
             print(add_line_numbers(code_gen_format))

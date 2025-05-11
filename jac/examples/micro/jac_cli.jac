@@ -49,13 +49,13 @@ with entry {
 }
 #***Implementation***#
 
-:obj:Interface:can:register
+impl Interface.register
 (func: callable) -> callable {
     self.functions.append(func);
     return func;
 }
 
-:obj:Interface:can:create_parser() -> ArgumentParser {
+impl Interface.create_parser -> ArgumentParser {
     parser = ArgumentParser();
     parser.add_argument("base", choices=[f.__name__  for f in functions], help="The function to run");
     for func in self.functions {
@@ -73,7 +73,7 @@ with entry {
     return parser;
 }
 
-:obj:Interface:can:run_from_cli {
+impl Interface.run_from_cli {
     parser = self.create_parser();
     args = parser.parse_args();
     for f in self.functions {
@@ -86,17 +86,17 @@ with entry {
     func(**func_args);
 }
 
-:obj:Interface:can:run_shell {
+impl Interface.run_shell {
     ShellCmd(self).cmdloop();
 }
 
-:obj:ShellCmd:can:init
+impl ShellCmd.init
 (registry: Interface, *args: list, **kwargs: dict) {
     self.cmd.Cmd.__init__(*args, **kwargs);
     self.reg = registry;
 }
 
-:obj:ShellCmd:can:default
+impl ShellCmd.default
 (line: str) {
     args = line.split();
     parser = self.reg.create_parser();
@@ -115,7 +115,7 @@ with entry {
     }
 }
 
-:obj:ShellCmd:can:do_quit
+impl ShellCmd.do_quit
 (arg: str) -> bool {
     return True;
 }

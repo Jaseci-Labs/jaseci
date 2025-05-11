@@ -1,4 +1,4 @@
-:node:start_screen:can:intro_screen {
+impl start_screen.intro_screen {
     # print("Walker Entry -> Intro Screen");
     if self.game_started == False {
         self.game_started = True;
@@ -17,7 +17,7 @@
     }
 }
 
-:node:start_screen:can:exit_game {
+impl start_screen.exit_game {
     if here.g.running == False {
         pygame.quit();
         sys.exit();

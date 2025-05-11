@@ -7,7 +7,7 @@ ignore = E203, W503, ANN101, ANN102
 per-file-ignores =
     jac/jaclang/compiler/unitree.py:D102,D105,D107
     jac/jaclang/compiler/constant.py:D102,D105,D107
-    jac/jaclang/compiler/codeloc.py:D102,D105,D107
+    jac/jaclang/compiler/codeinfo.py:D102,D105,D107
     jac/jaclang/compiler/passes/main/pybc_gen_pass.py:D102,D105,D107
     jac/jaclang/compiler/passes/main/access_modifier_pass.py:D102,D105,D107
     jac/jaclang/compiler/passes/main/def_impl_match_pass.py:D102,D105,D107

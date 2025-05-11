@@ -1,3 +1,3 @@
-:can:bar {
+impl bar {
   print("bar");
 }

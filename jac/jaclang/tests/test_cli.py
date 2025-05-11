@@ -376,6 +376,15 @@ class JacCliTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertIn("Errors: 0, Warnings: 1", stdout_value)
 
+    def test_del_clean(self) -> None:
+        """Testing for print AstTool."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.check(f"{self.fixture_abs_path('del_clean.jac')}")
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("Errors: 0, Warnings: 1", stdout_value)
+
     def test_type_info(self) -> None:
         """Testing for type info inside the ast tool."""
         captured_output = io.StringIO()
@@ -383,7 +392,7 @@ class JacCliTests(TestCase):
         cli.tool("ir", ["ast", f"{self.fixture_abs_path('type_info.jac')}"])
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertEqual(stdout_value.count("type_info.ServerWrapper"), 7)
+        self.assertEqual(stdout_value.count("type_info.ServerWrapper"), 5)
         self.assertEqual(stdout_value.count("builtins.int"), 3)
         self.assertEqual(stdout_value.count("builtins.str"), 10)
         self.assertIn("Literal['test_server']", stdout_value)

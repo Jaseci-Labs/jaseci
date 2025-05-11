@@ -374,71 +374,6 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             if decorators
             else None
         )
-        if (
-            base_classes
-            and isinstance(base_classes[0], uni.Name)
-            and base_classes[0].value == "Enum"
-        ):
-            if len(base_classes) > 1:
-                raise ValueError(
-                    "Python's Enum class cannot be used with multiple inheritance."
-                )
-            arch_type.name = Tok.KW_ENUM
-            arch_type.value = "enum"
-            valid_enum_body: list[uni.EnumBlockStmt] = []
-            for class_body_stmt in node.body:
-                converted_stmt = self.convert(class_body_stmt)
-                if isinstance(converted_stmt, uni.EnumBlockStmt):
-                    if isinstance(converted_stmt, uni.Assignment):
-                        converted_stmt.is_enum_stmt = True
-                    valid_enum_body.append(converted_stmt)
-                else:
-                    if isinstance(converted_stmt, uni.ExprStmt) and isinstance(
-                        converted_stmt.expr, uni.String
-                    ):
-                        continue
-                    pintok = uni.Token(
-                        orig_src=self.orig_src,
-                        name=Tok.PYNLINE,
-                        value=py_ast.unparse(class_body_stmt),
-                        line=node.lineno,
-                        end_line=node.end_lineno if node.end_lineno else node.lineno,
-                        col_start=node.col_offset,
-                        col_end=node.col_offset + len(py_ast.unparse(class_body_stmt)),
-                        pos_start=0,
-                        pos_end=0,
-                    )
-                    valid_enum_body.append(uni.PyInlineCode(code=pintok, kid=[pintok]))
-
-            valid_enum_body2: list[uni.EnumBlockStmt] = [
-                i for i in valid_enum_body if isinstance(i, uni.EnumBlockStmt)
-            ]
-            enum_body = (
-                uni.SubNodeList[uni.EnumBlockStmt](
-                    items=valid_enum_body2, delim=Tok.COMMA, kid=valid_enum_body2
-                )
-                if valid_enum_body2
-                else None
-            )
-            if doc:
-                doc.line_no = name.line_no
-            return uni.Enum(
-                name=name,
-                access=None,
-                base_classes=None,
-                body=enum_body,
-                kid=(
-                    [doc, name, enum_body]
-                    if doc and enum_body
-                    else (
-                        [doc, name]
-                        if doc
-                        else [name, enum_body] if enum_body else [name]
-                    )
-                ),
-                doc=doc,
-                decorators=valid_decorators,
-            )
         kid = (
             [name, valid_bases, valid_body, doc]
             if doc and valid_bases
@@ -1463,7 +1398,9 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             ):
                 paths.append(
                     uni.ModulePath(
-                        path=[name.expr],
+                        path=uni.SubNodeList[uni.Name](
+                            items=[name.expr], delim=Tok.DOT, kid=[name.expr]
+                        ),
                         level=0,
                         alias=name.alias,
                         kid=[i for i in name.kid if i],
@@ -1519,11 +1456,16 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         moddots = [self.operator(Tok.DOT, ".") for _ in range(node.level)]
         modparts = moddots + modpaths
         path = uni.ModulePath(
-            path=modpaths,
+            path=(
+                uni.SubNodeList[uni.Name](items=modpaths, delim=Tok.DOT, kid=modpaths)
+                if modpaths
+                else None
+            ),
             level=node.level,
             alias=None,
             kid=modparts,
         )
+
         names = [self.convert(name) for name in node.names]
         valid_names = []
         for name in names:
