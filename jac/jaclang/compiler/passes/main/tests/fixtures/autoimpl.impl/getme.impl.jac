@@ -1,3 +1,3 @@
-:can:baz {
+impl baz {
     print("baz");
 }

@@ -41,7 +41,7 @@ class PyCollectDepsPass(UniPass):
         path: str = ""
         if isinstance(node, uni.ModulePath):
             if node.path:
-                path = ".".join([i.value for i in node.path])
+                path = ".".join([i.value for i in node.path.items])
             node.abs_path = self.ir_out.py_info.py_mod_dep_map.get(path)
             if node.abs_path and os.path.isfile(node.abs_path.replace(".pyi", ".py")):
                 node.abs_path = node.abs_path.replace(".pyi", ".py")
@@ -50,7 +50,7 @@ class PyCollectDepsPass(UniPass):
             imp = node.parent_of_type(uni.Import)
             mod_path_node = imp.get_all_sub_nodes(uni.ModulePath)[0]
             if mod_path_node.path:
-                path = ".".join([i.value for i in mod_path_node.path])
+                path = ".".join([i.value for i in mod_path_node.path.items])
             path += f".{node.name.value}"
             node.abs_path = self.ir_out.py_info.py_mod_dep_map.get(path)
             if node.abs_path and os.path.isfile(node.abs_path.replace(".pyi", ".py")):

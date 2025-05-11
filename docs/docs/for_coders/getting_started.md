@@ -2,25 +2,73 @@
 
 If you know python, there's near zero learning curve to get started.
 
+# Installation
+
+Firstly make sure that Python 3.12 or higher is installed in your environment, then simply install Jac using pip:
+
+```bash
+python -m pip install -U jaclang
+```
+
+Once you've got Jaclang installed, just give the Jac CLI a try to make sure everything's up and running smoothly.
+
+- Start the Jac CLI:
+    ```bash
+    jac
+    ```
+- Run a .jac file
+    ```bash
+    jac run <file_name>.jac
+- To test run a 'Hello World'Program
+    ```bash
+    echo "with entry { print('hello world'); }" > test.jac;
+    jac run test.jac;
+    rm test.jac;
+    ```
+> **Note**
+>
+> If these commands prints ```hello world``` you are good to go.
+
+## <span style="color: orange">Supportive Jac CLI commands
+</span>
+
+- Clean cached files (recommended after each run):
+    ```bash
+    jac clean
+    ```
+- Print the data-spatial graph to a file and visualize it using [Graphviz](https://dreampuf.github.io/GraphvizOnline/):
+    ```bash
+    jac dot <file_name>.jac
+    ```
+    - Visit [https://dreampuf.github.io/GraphvizOnline/](https://dreampuf.github.io/GraphvizOnline/) to visualize the graph.
+
+## <span style="color: orange">Installing the VS Code Extention
+</span>
+
+In addition to setting up JacLang itself, you may also want to take advantage of the JacLang language extension for Visual Studio Code (VSCode). This will give you enhanced code highlighting, autocomplete, and other useful language features within your VSCode environment.
+
+- To install just visit the VS Code marketplace and install,
+    - [Jac](https://marketplace.visualstudio.com/items?itemName=jaseci-labs.jaclang-extension)
+
 <div class="grid cards" markdown>
 
--   __Setup in a nutshell__
+-   __A Real World Example__
 
     ---
 
-    *To get you started working with Jac Lang, this guide will walk you through the process of installation, running Jac files, and importing Jac into existing Python modules.*
+    *See somthing real in Jac*
 
     <!-- [:octicons-arrow-right-24: Getting started](#) -->
 
-    [Setup Now](installation.md){ .md-button }
+    [Little X](installation.md){ .md-button }
 
--   __Jac in a FLASH__
+-   __Experience Jac in Browser__
 
     ---
 
-    *If you are already a fluent pythonista jump into learning by going through a step-by-step transformation from python to jac-lang and BEYOND!*
+    *Hit the Playground *
 
-    [Get Started](jac_in_a_flash.md){ .md-button .md-button--primary }
+    [Jac Playground](jac_in_a_flash.md){ .md-button .md-button--primary }
 
 </div>
 

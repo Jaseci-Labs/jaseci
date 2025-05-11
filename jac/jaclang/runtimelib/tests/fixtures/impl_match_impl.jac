@@ -1,3 +1,3 @@
-:obj:Check:can:run {
+impl Check.run {
     1/0;
 }

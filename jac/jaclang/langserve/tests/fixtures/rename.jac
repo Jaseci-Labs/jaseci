@@ -2,7 +2,7 @@ def foo;
 
 
 
-:can:foo{
+impl foo{
     print("foo");
 }
 
@@ -14,11 +14,11 @@ obj out{
 }
 
 
-:obj:out:can:bar{
+impl out.bar{
     print("bar");
 }
 
-:obj:out:can:baz{
+impl out.baz{
     print("baz");
 }
 

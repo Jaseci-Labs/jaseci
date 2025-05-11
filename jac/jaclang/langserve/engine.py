@@ -193,8 +193,8 @@ class JacLangServer(LanguageServer):
                     if symbol == "self":
                         is_ability_def = (
                             temp_tab.nix_owner
-                            if isinstance(temp_tab.nix_owner, uni.AbilityDef)
-                            else temp_tab.nix_owner.find_parent_of_type(uni.AbilityDef)
+                            if isinstance(temp_tab.nix_owner, uni.ImplDef)
+                            else temp_tab.nix_owner.find_parent_of_type(uni.ImplDef)
                         )
                         if not is_ability_def:
                             archi_owner = mod_tab.nix_owner.find_parent_of_type(
@@ -256,7 +256,7 @@ class JacLangServer(LanguageServer):
         else:
             if node_selected and (
                 node_selected.find_parent_of_type(uni.Architype)
-                or node_selected.find_parent_of_type(uni.AbilityDef)
+                or node_selected.find_parent_of_type(uni.ImplDef)
             ):
                 self_symbol = [
                     lspt.CompletionItem(
@@ -379,9 +379,11 @@ class JacLangServer(LanguageServer):
             if (
                 isinstance(node_selected, uni.Name)
                 and node_selected.parent
-                and isinstance(node_selected.parent, uni.ModulePath)
+                and isinstance(node_selected.parent, uni.SubNodeList)
+                and node_selected.parent.parent
+                and isinstance(node_selected.parent.parent, uni.ModulePath)
             ):
-                spec = node_selected.parent.abs_path
+                spec = node_selected.parent.parent.abs_path
                 if spec:
                     spec = spec[5:] if spec.startswith("File:") else spec
                     return lspt.Location(
@@ -421,7 +423,7 @@ class JacLangServer(LanguageServer):
                 node_selected.parent.body.target
                 if node_selected.parent
                 and isinstance(node_selected.parent, uni.AstImplNeedingNode)
-                and isinstance(node_selected.parent.body, uni.AstImplOnlyNode)
+                and isinstance(node_selected.parent.body, uni.ImplDef)
                 else (
                     node_selected.sym.decl
                     if (node_selected.sym and node_selected.sym.decl)

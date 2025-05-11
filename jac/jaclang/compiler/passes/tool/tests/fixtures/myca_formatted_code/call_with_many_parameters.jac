@@ -6,7 +6,7 @@ walker create_user {
     def spawn_user_root;
 }
 
-:walker:create_user:can:spawn_user_root {
+impl create_user.spawn_user_root {
     if self.user_info == {} {
         self.user_info = {
             "jid": "xxxx",

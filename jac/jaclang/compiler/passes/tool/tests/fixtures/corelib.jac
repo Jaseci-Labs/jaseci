@@ -127,7 +127,7 @@ obj JacPlugin {
     static def visit_node(walker_obj: Any, expr: Any) -> bool;
 }
 
-:obj:Memory:can:get_obj
+impl Memory.get_obj
 (caller_id: UUID, item_id: UUID, override: bool=False) -> Element {
     ret = item_id |> self.index.get;
     if override
@@ -136,12 +136,12 @@ obj JacPlugin {
     }
 }
 
-:obj:Memory:can:has_obj
+impl Memory.has_obj
 (item_id: UUID) -> bool {
     return item_id in self.index;
 }
 
-:obj:Memory:can:save_obj
+impl Memory.save_obj
 (caller_id: UUID, item: Element) {
     if caller_id |> item.is_writable {
         self.index[item.id] = item;
@@ -155,7 +155,7 @@ obj JacPlugin {
     }
 }
 
-:obj:Memory:can:del_obj
+impl Memory.del_obj
 (caller_id: UUID, item: Element) {
     if caller_id |> item.is_writable {
         self.index.pop(item.id);
@@ -165,7 +165,7 @@ obj JacPlugin {
     }
 }
 
-:obj:Memory:can:get_object_distribution -> dict {
+impl Memory.get_object_distribution -> dict {
     dist = {};
     for i in |> self.index.keys {
         t = self.index[i] |> type;
@@ -178,53 +178,53 @@ obj JacPlugin {
     return dist;
 }
 
-:obj:Memory:can:get_mem_size -> float {
+impl Memory.get_mem_size -> float {
     return (self.index |> sys.getsizeof) / 1024.0;
 }
 
-:obj:ExecutionContext:c:get_root() {
+impl ExecutionContext.get_root() {
     if self.master :> type == UUID {
         self.master = Master();
     }
     return self.master.root_node;
 }
 
-:obj:ExecutionContext:c:reset {
+impl ExecutionContext.reset {
     self.init();
 }
 
 """Implementation for Jac's Element Abstractions"""
-:enum:AccessMode {
+impl AccessMode {
     READ_ONLY,
     READ_WRITE,
     PRIVATE
 }
 
-:obj:Anchor:can:make_public_ro {
+impl Anchor.make_public_ro {
     self.__jinfo.access_mode = AccessMode.READ_ONLY;
 }
 
-:obj:Anchor:can:make_public_rw {
+impl Anchor.make_public_rw {
     self.__jinfo.access_mode = AccessMode.READ_WRITE;
 }
 
-:obj:Anchor:can:make_private {
+impl Anchor.make_private {
     self.__jinfo.access_mode = AccessMode.PRIVATE;
 }
 
-:obj:Anchor:can:is_public_ro -> bool {
+impl Anchor.is_public_ro -> bool {
     return self.__jinfo.access_mode == AccessMode.READ_ONLY;
 }
 
-:obj:Anchor:can:is_public_rw -> bool {
+impl Anchor.is_public_rw -> bool {
     return self.__jinfo.access_mode == AccessMode.READ_WRITE;
 }
 
-:obj:Anchor:can:is_private -> bool {
+impl Anchor.is_private -> bool {
     return self.__jinfo.access_mode == AccessMode.PRIVATE;
 }
 
-:obj:Anchor:can:is_readable
+impl Anchor.is_readable
 (caller_id: UUID) -> bool {
     return (caller_id == self.owner_id
         or |> self.is_public_read
@@ -232,14 +232,14 @@ obj JacPlugin {
         or caller_id in self.rw_access);
 }
 
-:obj:Anchor:can:is_writable
+impl Anchor.is_writable
 (caller_id: UUID) -> bool {
     return (caller_id == self.owner_id
         or |> self.is_public_write
         or caller_id in self.rw_access);
 }
 
-:obj:Anchor:can:give_access
+impl Anchor.give_access
 (caller_id: UUID, read_write: bool=False) {
     if read_write {
         caller_id |> self.rw_access.add;
@@ -248,13 +248,13 @@ obj JacPlugin {
     }
 }
 
-:obj:Anchor:can:revoke_access
+impl Anchor.revoke_access
 (caller_id: UUID) {
     caller_id |> self.ro_access.discard;
     caller_id |> self.rw_access.discard;
 }
 
-:obj:Anchor:can:on_entry
+impl Anchor.on_entry
 (cls: type, triggers: list) {
     def decorator(func: callable) -> callable {
         cls.ds_entry_funcs.append(
@@ -268,7 +268,7 @@ obj JacPlugin {
     return decorator;
 }
 
-:obj:Anchor:can:on_exit
+impl Anchor.on_exit
 (cls: type, triggers: list) {
     def decorator(func: callable) -> callable {
         cls.ds_exit_funcs.append(
@@ -282,13 +282,13 @@ obj JacPlugin {
     return decorator;
 }
 
-:obj:NodeAnchor:can:connect_node
+impl NodeAnchor.connect_node
 (nd: NodeInterface, edg: EdgeInterface) -> Node {
     edg.attach(self, nd);
     return self;
 }
 
-:obj:NodeAnchor:can:edges_to_nodes
+impl NodeAnchor.edges_to_nodes
 (dir: EdgeDir) -> list[Node] {
     ret_nodes = [];
     if dir in [EdgeDir.OUT, EdgeDir.ANY] {
@@ -303,13 +303,13 @@ obj JacPlugin {
     return ret_nodes;
 }
 
-:obj:EdgeAnchor:can:apply_dir
+impl EdgeAnchor.apply_dir
 (dir: EdgeDir) -> Edge {
     self.dir = dir;
     return self;
 }
 
-:obj:EdgeAnchor:can:attach
+impl EdgeAnchor.attach
 (src: NodeInterface, trg: NodeInterface) -> Edge {
     if self.dir == EdgeDir.IN {
         self.source = trg;
@@ -325,7 +325,7 @@ obj JacPlugin {
     return self;
 }
 
-:obj:WalkerAnchor:can:visit_node
+impl WalkerAnchor.visit_node
 (nds: list[Node] | list[Edge] | Node | Edge) {
     if isinstance(nds, list) {
         for i in nds {
@@ -339,7 +339,7 @@ obj JacPlugin {
     return len(nds) if isinstance(nds, list) else 1;
 }
 
-:obj:WalkerAnchor:can:ignore_node
+impl WalkerAnchor.ignore_node
 (nds: list[Node] | list[Edge] | Node | Edge) {
     if isinstance(nds, list) {
         for i in nds {
@@ -350,12 +350,12 @@ obj JacPlugin {
     }
 }
 
-:obj:WalkerAnchor:can:disengage_now {
+impl WalkerAnchor.disengage_now {
     self.next = [];
     self.disengaged = True;
 }
 
-:obj:NodeAnchor:can:__call__
+impl NodeAnchor.__call__
 (walk: object) {
     if not isinstance(walk.__jac__, WalkerAnchor) {
         raise TypeError("Argument must be a Walker instance");
@@ -363,7 +363,7 @@ obj JacPlugin {
     walk(self);
 }
 
-:obj:EdgeAnchor:can:__call__
+impl EdgeAnchor.__call__
 (walk: EdgeInterface) {
     if not isinstance(walk.__jac__, WalkerAnchor) {
         raise TypeError("Argument must be a Walker instance");
@@ -371,7 +371,7 @@ obj JacPlugin {
     walk(self.__jac__.target);
 }
 
-:obj:WalkerAnchor:can:__call__
+impl WalkerAnchor.__call__
 (nd: NodeInterface) {
     self.path = [];
     self.next = [nd];
@@ -415,7 +415,7 @@ obj JacPlugin {
     self.ignores = [];
 }
 
-:obj:JacPlugin:can:bind_architype
+impl JacPlugin.bind_architype
 (arch: AT, arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]) -> bool {
     match arch_type {
         case 'obj':
@@ -448,11 +448,11 @@ obj JacPlugin {
     return True;
 }
 
-:obj:JacPlugin:can:get_root() -> None {
+impl JacPlugin.get_root() -> None {
     return exec_ctx.get_root();
 }
 
-:obj:JacPlugin:can:build_edge
+impl JacPlugin.build_edge
 (edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Architype {
     if (not edge_spec[1]) {
         edg_type = GenericEdge;
@@ -464,13 +464,13 @@ obj JacPlugin {
     return edg;
 }
 
-:obj:JacPlugin:can:connect
+impl JacPlugin.connect
 (left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Architype {
     edg = JacPlugin.build_edge(edge_spec);
     left.connect_node(right.__jac__, edg.__jac__);
 }
 
-:obj:JacPlugin:can:visit_node
+impl JacPlugin.visit_node
 (walker_obj: Any, expr: Any) -> bool {
     return walker_obj.__jac__.visit_node(expr);
 }

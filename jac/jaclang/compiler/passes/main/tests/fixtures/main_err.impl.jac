@@ -1,6 +1,6 @@
 
 
 
-:can:foo{
+impl foo{
     return 1;
 }

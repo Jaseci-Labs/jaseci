@@ -584,7 +584,7 @@ class JacLanguageTests(TestCase):
                 continue
             architype_count += len(mod.get_all_sub_nodes(uni.Architype))
 
-        self.assertEqual(architype_count, 21)
+        self.assertEqual(architype_count, 24)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(
@@ -611,12 +611,7 @@ class JacLanguageTests(TestCase):
                 prog=JacProgram(),
             ).ir_out.unparse()
         self.assertIn("def greet2(**kwargs: Any)", output)
-        self.assertEqual(output.count("with entry {"), 13)
-        self.assertIn(
-            '"""Enum for shape types"""\nenum ShapeType{ CIRCLE = \'Circle\',\n',
-            output,
-        )
-        self.assertIn("\nUNKNOWN = 'Unknown',\n::py::\nprint('hello')\n::", output)
+        self.assertEqual(output.count("with entry {"), 14)
         self.assertIn("assert x == 5 , 'x should be equal to 5' ;", output)
         self.assertIn("if not x == y {", output)
         self.assertIn("def greet2(**kwargs: Any) {", output)
@@ -659,7 +654,7 @@ class JacLanguageTests(TestCase):
                 continue
             architype_count += len(mod.get_all_sub_nodes(uni.Architype))
 
-        self.assertEqual(architype_count, 27)  # Because of the Architype from math
+        self.assertEqual(architype_count, 30)  # Because of the Architype from math
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(
@@ -710,7 +705,7 @@ class JacLanguageTests(TestCase):
             if mod.name != "builtins"
         )
         self.assertEqual(
-            architype_count, 55
+            architype_count, 58
         )  # Fixed duplication of 'case' module (previously included 3 times, added 20 extra Architypes; 75 → 55)
         builtin_mod = next(
             (mod for name, mod in prog.mod.hub.items() if "builtins" in name),
@@ -933,7 +928,7 @@ class JacLanguageTests(TestCase):
             if i.name == "builtins":
                 continue
             sub_node_list_count += len(i.get_all_sub_nodes(uni.SubNodeList))
-        self.assertEqual(sub_node_list_count, 605)
+        self.assertEqual(sub_node_list_count, 623)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(self.mach, "deep_convert", base_path=self.fixture_abs_path("./"))

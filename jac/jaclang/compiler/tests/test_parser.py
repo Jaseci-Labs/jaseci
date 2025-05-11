@@ -1,8 +1,11 @@
 """Tests for Jac parser."""
 
 import inspect
+import io
 import os
+import sys
 
+from jaclang import JacMachine as Jac
 from jaclang.compiler import jac_lark as jl
 from jaclang.compiler.constant import Tokens
 from jaclang.compiler.parser import JacParser
@@ -168,6 +171,12 @@ class TestLarkParser(TestCaseMicroSuite):
         for cls in ordered_classes:
             if cls.__name__ not in exclude:
                 self.assertIn("normalize", cls.__dict__)
+
+    def test_inner_mod_impl(self) -> None:
+        """Parse micro jac file."""
+        prog = JacProgram()
+        prog.compile(self.fixture_abs_path("codegentext.jac"))
+        self.assertFalse(prog.errors_had)
 
 
 TestLarkParser.self_attach_micro_tests()

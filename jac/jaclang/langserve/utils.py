@@ -7,7 +7,7 @@ from functools import wraps
 from typing import Any, Awaitable, Callable, Coroutine, Optional, ParamSpec, TypeVar
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.codeloc import CodeLocInfo
+from jaclang.compiler.codeinfo import CodeLocInfo
 from jaclang.compiler.constant import SymbolType
 from jaclang.compiler.passes.transform import Alert
 from jaclang.compiler.unitree import Symbol, UniScopeNode
@@ -215,16 +215,16 @@ def kind_map(sub_tab: uni.UniNode) -> lspt.SymbolKind:
     """Map the symbol node to an lspt.SymbolKind."""
     return (
         lspt.SymbolKind.Function
-        if isinstance(sub_tab, (uni.Ability, uni.AbilityDef))
+        if isinstance(sub_tab, (uni.Ability, uni.ImplDef))
         else (
             lspt.SymbolKind.Class
-            if isinstance(sub_tab, (uni.Architype, uni.ArchDef))
+            if isinstance(sub_tab, (uni.Architype, uni.ImplDef))
             else (
                 lspt.SymbolKind.Module
                 if isinstance(sub_tab, uni.Module)
                 else (
                     lspt.SymbolKind.Enum
-                    if isinstance(sub_tab, (uni.Enum, uni.EnumDef))
+                    if isinstance(sub_tab, (uni.Enum, uni.ImplDef))
                     else lspt.SymbolKind.Variable
                 )
             )

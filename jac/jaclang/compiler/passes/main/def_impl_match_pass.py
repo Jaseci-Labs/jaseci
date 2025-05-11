@@ -58,11 +58,11 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
         """
         # Process all symbols in the source symbol table
         for sym in source_sym_tab.names_in_scope.values():
-            if not isinstance(sym.decl.name_of, uni.AstImplOnlyNode):
+            if not isinstance(sym.decl.name_of, uni.ImplDef):
                 continue
 
             # Extract architype references
-            arch_refs = [x[3:] for x in sym.sym_name.split(".")]
+            arch_refs = sym.sym_name.split(".")[1:]  # Remove the impl. prefix
             name_of_links: list[uni.NameAtom] = []  # to link archref names to decls
 
             # Look up the architype in the target symbol table
@@ -100,6 +100,10 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
                     break
 
             if not decl_node:
+                # self.log_error(
+                #     f"Implementation for '{sym.sym_name}' cannot be matched to any declaration.",
+                #     sym.decl.name_of,
+                # )
                 continue
             elif isinstance(decl_node, uni.Ability) and decl_node.is_abstract:
                 self.log_warning(
@@ -120,7 +124,7 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
 
             valid_decl.body = sym.decl.name_of
             sym.decl.name_of.decl_link = valid_decl
-            for idx, a in enumerate(sym.decl.name_of.target.archs):
+            for idx, a in enumerate(sym.decl.name_of.target.items):
                 if idx < len(name_of_links) and name_of_links[idx]:
                     a.name_spec.name_of = name_of_links[idx].name_of
                     a.name_spec.sym = name_of_links[idx].sym
@@ -145,13 +149,13 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
         """Validate if the parameters match."""
         if (
             isinstance(valid_decl, uni.Ability)
-            and isinstance(sym.decl.name_of, uni.AbilityDef)
+            and isinstance(sym.decl.name_of, uni.ImplDef)
             and isinstance(valid_decl.signature, uni.FuncSignature)
-            and isinstance(sym.decl.name_of.signature, uni.FuncSignature)
+            and isinstance(sym.decl.name_of.spec, uni.FuncSignature)
         ):
 
             params_decl = valid_decl.signature.params
-            params_defn = sym.decl.name_of.signature.params
+            params_defn = sym.decl.name_of.spec.params
 
             if params_decl and params_defn:
                 # Check if the parameter count is matched.

@@ -1,8 +1,8 @@
 
-:o:Test:c:init {
+impl Test.init {
     "initializing" |> print;
 }
 
-:o:Test:c:say_hi {
+impl Test.say_hi {
     "HI!" |> print;
 }

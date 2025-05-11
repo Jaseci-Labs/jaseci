@@ -3,16 +3,15 @@ site_url: https://jac-lang.org
 use_directory_urls: true
 nav:
   - Learn:
-    - "for_coders/introduction.md"
-    - "for_coders/why_jac.md"
-    - "for_coders/getting_started.md"
-    - "for_coders/installation.md"
+    - Getting Started: "for_coders/getting_started.md"
+    - Introduction: "for_coders/introduction.md"
     - Language Basics:
       - "for_coders/language_basics/basic_syntax.md"
       - "for_coders/language_basics/types.md"
       - "for_coders/language_basics/can_abilities.md"
       - "for_coders/language_basics/import.md"
       - "for_coders/language_basics/impl_docs.md"
+    - Language Reference: "for_coders/jac_ref.md"
     - Data Spatial Programming:
       # - "for_coders/data_spatial/dataspatial.md" # Why data spatial
       - "for_coders/data_spatial/nodes_and_edges.md" # Introduction to DS primitives
@@ -23,7 +22,6 @@ nav:
       - Quick FAQ: "for_coders/data_spatial/FAQ.md" # faq
     # - Python Integration:
     #   - "for_coders/python_integration.md"
-    - Full Jac Reference: "for_coders/jac_ref.md"
     - Programming with Generative AI Models:
       - "for_coders/jac-mtllm/with_llm.md"
       - Quick Start Guide: "for_coders/jac-mtllm/quickstart.md"

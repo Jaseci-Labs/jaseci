@@ -297,17 +297,9 @@ class FuseTypeInfoPass(UniPass):
         self.__collect_type_from_symbol(node)
 
     @__handle_node
-    def enter_arch_def(self, node: uni.ArchDef) -> None:
-        """Pass handler for ArchDef nodes."""
-
-    @__handle_node
     def enter_enum(self, node: uni.Enum) -> None:
         """Pass handler for Enum nodes."""
         self.__collect_type_from_symbol(node)
-
-    @__handle_node
-    def enter_enum_def(self, node: uni.EnumDef) -> None:
-        """Pass handler for EnumDef nodes."""
 
     @__handle_node
     def enter_ability(self, node: uni.Ability) -> None:
@@ -319,7 +311,7 @@ class FuseTypeInfoPass(UniPass):
             )
 
     @__handle_node
-    def enter_ability_def(self, node: uni.AbilityDef) -> None:
+    def enter_impl_def(self, node: uni.ImplDef) -> None:
         """Pass handler for AbilityDef nodes."""
         if isinstance(node.gen.mypy_ast[0], MypyNodes.FuncDef):
             node.name_spec.expr_type = (
@@ -365,7 +357,7 @@ class FuseTypeInfoPass(UniPass):
         """Pass handler for FString nodes."""
 
     @__handle_node
-    def enter_arch_ref(self, node: uni.ArchRef) -> None:
+    def enter_type_ref(self, node: uni.TypeRef) -> None:
         """Pass handler for ArchRef nodes."""
         if isinstance(node.gen.mypy_ast[0], MypyNodes.ClassDef):
             mypy_node: MypyNodes.ClassDef = node.gen.mypy_ast[0]

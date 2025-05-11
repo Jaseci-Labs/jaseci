@@ -6,7 +6,7 @@ def plan {
     print("Hello, world!");
     say_hi("I'm a ninja Myca!");
 
-    :can:say_hi
+    impl plan.say_hi
     (m: str) {
         print(m);
     }
