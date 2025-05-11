@@ -12,6 +12,7 @@ from uuid import UUID
 from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.architype import NodeAnchor, Root
+from jaclang.runtimelib.gins import GinSThread
 from jaclang.runtimelib.memory import Memory, ShelfStorage
 from jaclang.utils.log import logging
 
@@ -114,6 +115,7 @@ class JacMachineState:
             else os.path.abspath(base_path)
         )
         self.jac_program: JacProgram = JacProgram()
+        self.gins: Optional[GinSThread] = None
         self.interp_mode = interp_mode
         self.exec_ctx = ExecutionContext(session=session, root=root, mach=self)
         self.pool = ThreadPoolExecutor()
