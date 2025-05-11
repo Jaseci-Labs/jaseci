@@ -22,7 +22,7 @@ from typing import (
 
 
 from jaclang.compiler import TOKEN_MAP
-from jaclang.compiler.codeloc import CodeGenTarget, CodeLocInfo
+from jaclang.compiler.codeinfo import CodeGenTarget, CodeLocInfo
 from jaclang.compiler.constant import (
     Constants as Con,
     EdgeDir,

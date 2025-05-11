@@ -18,6 +18,7 @@ class CodeGenTarget:
 
     py: str = ""
     jac: str = ""
+    js: str = ""
     py_ast: list[ast3.AST] = field(default_factory=lambda: [])
     mypy_ast: list[MypyNode] = field(default_factory=lambda: [])
     py_bytecode: Optional[bytes] = None
@@ -26,6 +27,7 @@ class CodeGenTarget:
         """Clean code generation target."""
         self.py = ""
         self.jac = ""
+        self.js = ""
         self.py_ast = []
         self.mypy_ast = []
 
