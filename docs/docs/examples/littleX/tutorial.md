@@ -102,7 +102,7 @@ Now, let's create the required nodes for LittleX.
             ```
 === "LittleX Architecture Upto Now"
     ```jac linenums="1"
-    --8<-- "support/jac-lang.org/docs/examples/littleX/src/LittleX_step2.jac"
+    --8<-- "docs/examples/littleX/src/LittleX_step2.jac"
     ```
 For more explanation [visit](../../for_coders/data_spatial/nodes_and_edges.md)
 
@@ -147,7 +147,7 @@ Now, let's create the required edges for LittleX.
             ```
 === "LittleX.jac Upto Now"
     ```jac linenums="1"
-    --8<-- "support/jac-lang.org/docs/examples/littleX/src/LittleX_step3.jac"
+    --8<-- "docs/examples/littleX/src/LittleX_step3.jac"
     ```
 For more explanation [visit](../../for_coders/data_spatial/nodes_and_edges.md)
 
@@ -165,9 +165,9 @@ Now Lets create required walkers for LittleX.
 === "Guide"
       Walkers are graph-traversing agents that perform tasks. Here are the walkers we need to create:
 
-      - **User Initialization Walker** 
+      - **User Initialization Walker**
 
-        * **Implement User Initialization Walker** 
+        * **Implement User Initialization Walker**
             * Creates or visits a new profile node for a user.
             * Ensures profiles exist in the system for any user action.
                   ```jac
@@ -185,7 +185,7 @@ Now Lets create required walkers for LittleX.
             * `here ++> profile()` It creates a profile node and connects with current node(`root`).
             * `visit new_profile` Walker visit to that node (`profile`).
 
-        * **Test User Initialization Walker** 
+        * **Test User Initialization Walker**
 
             * To test the `visit_profile` function, we begin by spawning the `visit_profile` walker on the root node. Next, we filter the nodes connected to the root to identify any profile nodes. Finally, we verify whether the connected node is indeed a profile node.
             ```Jac
@@ -200,7 +200,7 @@ Now Lets create required walkers for LittleX.
             * check is this node Profile or not : ``check isinstance(profile,Profile);``
 
       - **Load User Profile Walker**
-        * **Implement Load User Profile Walker** 
+        * **Implement Load User Profile Walker**
             * Loads all profiles from the database.
             * Useful for managing or listing all users in the system.
                   ```jac
@@ -226,22 +226,8 @@ Now Lets create required walkers for LittleX.
             * `user.architype` Get architype of user node.
             * `jid(user_node)` Get the unique id of an object.
 
-        * **Test Load User Profile Walker** 
-
-            * To test the `visit_profile` function, we begin by spawning the `visit_profile` walker on the root node. Next, we filter the nodes connected to the root to identify any profile nodes. Finally, we verify whether the connected node is indeed a profile node.
-            ```Jac
-            test visit_profile {
-                  root spawn visit_profile();
-                  profile = [root --> (`?Profile)][0];
-                  check isinstance(profile,Profile);
-            }
-            ```
-            * spawn visit_profile walker on root node: ``root spawn visit_walker();``
-            * filter profile node: ``profile = [root --> (`?Profile)][0];``
-            * check is this node Profile or not : ``check isinstance(profile,Profile);``
-
       - **Update Profile Walker**
-        * **Implement Update Profile Walker** 
+        * **Implement Update Profile Walker**
             * Updates a user's profile, specifically the username.
                   ```jac
                   walker update_profile :visit_profile: {
@@ -252,7 +238,7 @@ Now Lets create required walkers for LittleX.
             * `here.username = self.new_username` Update username.
             * How `update_profile` walker spawned on `Profile` node, update the name will be discussed later.
 
-        * **Test Update Profile Walker** 
+        * **Test Update Profile Walker**
 
             * To test this functionality, the `update_profile` walker should be spawned from the `root` node. After execution, the connected `Profile` node can be retrieved and verified to ensure that the username has been correctly updated.
 
@@ -269,7 +255,7 @@ Now Lets create required walkers for LittleX.
             * check updated username : ``check profile.username == "test_user";``
 
       - **Get Profile Walker**
-        * **Implement Get Profile Walker** 
+        * **Implement Get Profile Walker**
             * Retrieves profile details and logs them.
                   ```jac
                   walker get_profile :visit_profile: {
@@ -278,22 +264,8 @@ Now Lets create required walkers for LittleX.
             * First `visit_profile` walker is called and it visits to `Profile` node.
             * How `get_profile` walker spawned on `Profile` node, get the profile detailes will be discussed later.
 
-        * **Test Get Profile Walker** 
-
-            * To test the `visit_profile` function, we begin by spawning the `visit_profile` walker on the root node. Next, we filter the nodes connected to the root to identify any profile nodes. Finally, we verify whether the connected node is indeed a profile node.
-            ```Jac
-            test visit_profile {
-                  root spawn visit_profile();
-                  profile = [root --> (`?Profile)][0];
-                  check isinstance(profile,Profile);
-            }
-            ```
-            * spawn visit_profile walker on root node: ``root spawn visit_walker();``
-            * filter profile node: ``profile = [root --> (`?Profile)][0];``
-            * check is this node Profile or not : ``check isinstance(profile,Profile);``
-
       - **Follow Request Walker**
-        * **Implement Follow Request Walker** 
+        * **Implement Follow Request Walker**
             * Creates a follow edge.
                   ```jac
                   walker follow_request {}
@@ -301,7 +273,7 @@ Now Lets create required walkers for LittleX.
             * Walker `follow_request`, when spawned on the followee profile, will create a Follow edge from the follower to the followee.
             * How it is executed will be discussed later.
 
-        * **Test Follow Request Walker** 
+        * **Test Follow Request Walker**
 
             * To test `follow_request`, we have to create new profile and it named "Sam," is created to serve as the followee. After executing the walker, the test proceeds by navigating from the followee to confirm the presence of a Follow edge, which indicates the successful creation of the follow request. Finally, the test verifies that the username of the connected profile matches the expected followee.
             ```Jac
@@ -318,7 +290,7 @@ Now Lets create required walkers for LittleX.
             * check followee profile username : ``check followee_profile.username == "Sam";``
 
       - **Unfollow Request Walker**
-        * **Implement Unfollow Request Walker** 
+        * **Implement Unfollow Request Walker**
             * Removes the follow edge.
                   ```jac
                   walker un_follow_request {}
@@ -326,12 +298,12 @@ Now Lets create required walkers for LittleX.
             * Walker `un_follow_request` spawned on followee profile will remove the `Follow` edge from follower to followee.
             * How it is executed will be discussed later.
 
-        * **Test Unfollow Request Walker** 
+        * **Test Unfollow Request Walker**
 
             * To test the `unfollow_request` walker, a new profile named "Sam" is first created to act as the followee. A follow relationship is initially established between the root profile and "Sam" using the `follow_request` walker. Then, the `unfollow_request` walker is executed to initiate the unfollow action.
 
             * After executing the walker, the test proceeds by navigating from the root profile to verify the removal of the `Follow` edge. The absence of this edge confirms that the unfollow request was successfully processed. Finally, the test ensures that no connection exists between the root profile and the profile previously followed.
-            
+
             ```Jac
             test un_follow_request {
                   followee = [root --> (`?Profile)-:Follow:->(`?Profile)][0];
@@ -345,7 +317,7 @@ Now Lets create required walkers for LittleX.
             * check length of the profiles that connect within Follow edge : ```check len([root --> (`?Profile)-:Follow:->(`?Profile)]) == 0;```
 
       - **Create Tweet Walker**
-        * **Implement Create Tweet Walker** 
+        * **Implement Create Tweet Walker**
             * Creates a new tweet for a profile and adds it to the graph using a `Post` edge.
                   ```jac
                   walker create_tweet :visit_profile: {
@@ -362,10 +334,10 @@ Now Lets create required walkers for LittleX.
             * `tweet_node = here +:post:+> tweet(content=self.content, embedding=embedding)+` Create a new tweet with content, its embedding.
             * `report tweet_node` reports the newly created tweet node.
 
-        * **Test Create Tweet Walker** 
+        * **Test Create Tweet Walker**
 
             * To perform `create_tweet` test, the `create tweet` walker is spawned on the root node. The test then checks whether there are any `tweet` nodes connected to the `profile` node. Finally, it validates that the tweet has been correctly created and linked as expected.
-            
+
             ```Jac
             test create_tweet {
                   root spawn create_tweet( content = "test_tweet" );
@@ -379,7 +351,7 @@ Now Lets create required walkers for LittleX.
             * check tweet is correctly created : `check test1.content == "test_tweet";`
 
       - **Update Tweet Walker**
-        * **Implement Update Tweet Walker** 
+        * **Implement Update Tweet Walker**
             * Updates the content of an existing tweet by its ID.
                   ```jac
                   walker update_tweet {
@@ -389,7 +361,7 @@ Now Lets create required walkers for LittleX.
             * Walker `update_tweet` spawned on tweet node, that will update the content of the tweet.
             * How it is executed will be discussed later.
 
-        * **Test Update Tweet Walker** 
+        * **Test Update Tweet Walker**
 
             * To test the `update_tweet`,first we have to filter is there any `tweet` nodes connected with `profile`node. Then `update_tweet` walker spawn on the `tweet_node`. Finally, the test checks whether the tweet's content has been correctly updated.
             ```Jac
@@ -404,7 +376,7 @@ Now Lets create required walkers for LittleX.
             * check tweet is updated : `check tweet1.content == "new_tweet";`
 
       - **Remove Tweet Walker**
-        * **Implement Remove Tweet Walker** 
+        * **Implement Remove Tweet Walker**
             * Deletes a tweet by removing its connection to the profile.
                   ```jac
                   walker remove_tweet {}
@@ -412,7 +384,7 @@ Now Lets create required walkers for LittleX.
             * Walker `remove_tweet`, when spawned on a tweet node, will remove the tweet.
             * How it is executed will be discussed later.
 
-        * **Test Remove Tweet Walker** 
+        * **Test Remove Tweet Walker**
 
             * To test the `remove_tweet` walker, we have to check is there any tweets connected with `profile` node.Then we can spawn `remove_tweet` walker on the `tweet_node`. Finally, the test verifies that the tweet node has been successfully removed and is no longer connected to the profile.
             ```Jac
@@ -427,7 +399,7 @@ Now Lets create required walkers for LittleX.
             * check tweet is removed : ``check len([root --> (`?Profile) --> (`?Tweet)]) == 0;``
 
       - **Like Tweet Walker**
-        * **Implement Like Tweet Walker** 
+        * **Implement Like Tweet Walker**
             * Adds a like edge between a tweet and the profile liking it.
                   ```jac
                   walker like_tweet {}
@@ -435,7 +407,7 @@ Now Lets create required walkers for LittleX.
             * Walker `like_tweet` spawned on tweet node, that will like the tweet.
             * How it is executed will be discussed later.
 
-        * **Test Like Tweet Walker** 
+        * **Test Like Tweet Walker**
 
             * To test `Like_tweet`,we have to start by creating a tweet from the `root` node and then navigates to the corresponding `tweet` node. The process continues by spawning the `like_tweet` walker from the `tweet1` node. Finally, it confirms that the username `"test_user"` is correctly associated with the `Like` relationship on the tweet.
             ```Jac
@@ -454,7 +426,7 @@ Now Lets create required walkers for LittleX.
             * check liked profile username : ` check test1.username == "test_user";`
 
       - **Remove Like Walker**
-        * **Implement Remove Like Walker** 
+        * **Implement Remove Like Walker**
             * Removes the like edge
                   ```jac
                   walker remove_like {}
@@ -462,7 +434,7 @@ Now Lets create required walkers for LittleX.
             * Walker `remove_like` spawned on tweet node, that will remove the like.
             * How it is executed will be discussed later.
 
-        * **Test Remove Like Walker** 
+        * **Test Remove Like Walker**
 
             * To test `remove_like`, we have to retrieves an existing tweet; if the tweet exists, it proceeds to visit the tweet node. Then, it spawns the `remove_like` walker from the `tweet` node. The function subsequently checks whether the `Like` relationship has been successfully removed by confirming that the length of the associated likes is zero.
             ```Jac
@@ -477,7 +449,7 @@ Now Lets create required walkers for LittleX.
             * check like is removed : `check len([tweet1 -:Like:-> ]) == 0;`
 
       - **Comment Tweet Walker**
-        * **Implement Comment Tweet Walker** 
+        * **Implement Comment Tweet Walker**
             * Adds a comment to a tweet by creating a comment node and connecting it to the tweet.
                   ```jac
                   walker comment_tweet {
@@ -487,7 +459,7 @@ Now Lets create required walkers for LittleX.
             * Walker `comment_tweet` spawned on tweet node, that will add a comment to tweet and create a edge with author of the comment.
             * How it is executed will be discussed later.
 
-        * **Test Comment Tweet Walker** 
+        * **Test Comment Tweet Walker**
 
             * To test `comment_tweet` ,we have to begin with checking whether there is any tweet with content similar to `'test_like'`. If such a tweet exists, it proceeds to visit it. To test the `comment_tweet` functionality, the function spawns a `comment_tweet` node on the `tweet` node and filters the `comment` node connected to the tweet. Finally, it verifies whether the content of the comment matches the expected value, confirming that the comment was successfully added to the tweet.
             ```Jac
@@ -506,7 +478,7 @@ Now Lets create required walkers for LittleX.
             * check comment correctly added or not : `check comment.content == "test_comment";`
 
       - **Load Tweet Walker**
-        * **Implement Load Tweet Walker** 
+        * **Implement Load Tweet Walker**
             * Loads detailed information about a tweet, including its content, embedding and author.
                   ```jac
                   walker load_tweet:visit_profile: {
@@ -524,23 +496,9 @@ Now Lets create required walkers for LittleX.
             * First `visit_profile` walker is called and it visits to `Profile` node.
             * `visit [-->(`?Tweet)]` visits to each tweet and retrieve the info of tweets posted by the user.
             * How those tweets are retrieved will be discussed later.
-            
-        * **Test Load Tweet Walker** 
-
-            * To test the `visit_profile` function, we begin by spawning the `visit_profile` walker on the root node. Next, we filter the nodes connected to the root to identify any profile nodes. Finally, we verify whether the connected node is indeed a profile node.
-            ```Jac
-            test visit_profile {
-                  root spawn visit_profile();
-                  profile = [root --> (`?Profile)][0];
-                  check isinstance(profile,Profile);
-            }
-            ```
-            * spawn visit_profile walker on root node: ``root spawn visit_walker();``
-            * filter profile node: ``profile = [root --> (`?Profile)][0];``
-            * check is this node Profile or not : ``check isinstance(profile,Profile);``
 
       - **Load Feed Walker**
-        * **Implement Load Feed Walker** 
+        * **Implement Load Feed Walker**
             * Fetches all tweets for a profile, including their comments and likes.
                   ```jac
                   walker load_feed :visit_profile: {
@@ -580,24 +538,10 @@ Now Lets create required walkers for LittleX.
             * `user_node = &user;` Get the user node.
             * `self.summary: str = summarise_tweets(tweets);` Summarize the tweets.
             * `if (self.search_query) { ... } else { ... }` If a search query is provided, filter the tweets based on the query. Otherwise, return all tweets.
-            
-        * **Test Load Feed Walker** 
-
-            * To test the `visit_profile` function, we begin by spawning the `visit_profile` walker on the root node. Next, we filter the nodes connected to the root to identify any profile nodes. Finally, we verify whether the connected node is indeed a profile node.
-            ```Jac
-            test visit_profile {
-                  root spawn visit_profile();
-                  profile = [root --> (`?Profile)][0];
-                  check isinstance(profile,Profile);
-            }
-            ```
-            * spawn visit_profile walker on root node: ``root spawn visit_walker();``
-            * filter profile node: ``profile = [root --> (`?Profile)][0];``
-            * check is this node Profile or not : ``check isinstance(profile,Profile);``
 
 === "LittleX.jac Upto Now"
     ```jac linenums="1"
-    --8<-- "support/jac-lang.org/docs/examples/littleX/src/LittleX_step4.jac"
+    --8<-- "docs/examples/littleX/src/LittleX_step4.jac"
     ```
 
 **Test functionality**
@@ -651,7 +595,7 @@ Think of your application as a personalized newsfeed or trend analyzer.
 
 === "MTLLM Example"
     ```jac linenums="1"
-    --8<-- "support/jac-lang.org/docs/examples/littleX/src/mtllm_example.jac"
+    --8<-- "docs/examples/littleX/src/mtllm_example.jac"
     ```
 
 ### **Lesson 5: Exploring Graph Security**
@@ -735,7 +679,7 @@ By default, users cannot access other users' nodes. To grant access, permission 
 
 === "LittleX.jac Upto Now"
     ```jac linenums="1"
-    --8<-- "support/jac-lang.org/docs/examples/littleX/src/LittleX_step4.jac"
+    --8<-- "docs/examples/littleX/src/LittleX_step4.jac"
     ```
 
 ### **Lesson 6: Adding node abilities**
@@ -1083,7 +1027,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
 
 === "LittleX.jac Upto Now"
     ```jac linenums="1"
-    --8<-- "support/jac-lang.org/docs/examples/littleX/src/LittleX_step6.jac"
+    --8<-- "docs/examples/littleX/src/LittleX_step6.jac"
     ```
 
 ### **Lesson 7: Integrating Jac Splice Orchestrator**
@@ -1109,5 +1053,5 @@ You leave the Living Room, and the system turns off the lights and updates its r
 
 === "kind-config.yaml"
     ```yaml linenums="1"
-    --8<-- "support/jac-lang.org/docs/examples/littleX/src/kind-config.yaml"
+    --8<-- "docs/examples/littleX/src/kind-config.yaml"
     ```
