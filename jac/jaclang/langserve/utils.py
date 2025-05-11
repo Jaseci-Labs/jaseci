@@ -7,7 +7,7 @@ from functools import wraps
 from typing import Any, Awaitable, Callable, Coroutine, Optional, ParamSpec, TypeVar
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.codeloc import CodeLocInfo
+from jaclang.compiler.codeinfo import CodeLocInfo
 from jaclang.compiler.constant import SymbolType
 from jaclang.compiler.passes.transform import Alert
 from jaclang.compiler.unitree import Symbol, UniScopeNode

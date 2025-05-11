@@ -6,7 +6,7 @@ import time
 from abc import ABC, abstractmethod
 from typing import Generic, Optional, TYPE_CHECKING, Type, TypeVar
 
-from jaclang.compiler.codeloc import CodeLocInfo
+from jaclang.compiler.codeinfo import CodeLocInfo
 from jaclang.compiler.unitree import UniNode
 from jaclang.settings import settings
 from jaclang.utils.helpers import pretty_print_source_location
