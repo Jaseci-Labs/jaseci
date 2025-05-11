@@ -284,10 +284,10 @@ Now Lets create required walkers for LittleX.
                   check followee_profile.username == "Sam";
             }
             ```
-            * create followee profile : ``followee = Profile("Sam");``
-            * spawn follow_request walker on profile_node : ``followee spawn follow_request();``
-            * filter followee profile : ``followee_profile = [root --> (`?Profile)->:Follow:->(`?Profile)][0];``
-            * check followee profile username : ``check followee_profile.username == "Sam";``
+            * create followee profile : ``followee = Profile("Sam");``.
+            * spawn follow_request walker on profile_node : ``followee spawn follow_request();``.
+            * filter followee profile : ``followee_profile = [root --> (`?Profile)->:Follow:->(`?Profile)][0];``.
+            * check followee profile username : ``check followee_profile.username == "Sam";``.
 
       - **Unfollow Request Walker**
         * **Implement Unfollow Request Walker**
