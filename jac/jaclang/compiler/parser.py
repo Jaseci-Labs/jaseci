@@ -1483,8 +1483,8 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """Grammar rule.
 
             assignment: KW_LET? (atomic_chain EQ)+ (yield_expr | expression)
-                    | atomic_chain type_tag (EQ (yield_expr | expression))?
-                    | atomic_chain aug_op (yield_expr | expression)
+                      | atomic_chain type_tag (EQ (yield_expr | expression))?
+                      | atomic_chain aug_op (yield_expr | expression)
             """
             assignees: list = []
             type_tag: uni.SubTag | None = None
