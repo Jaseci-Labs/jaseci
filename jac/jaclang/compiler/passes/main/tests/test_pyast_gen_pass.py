@@ -27,7 +27,7 @@ def ast_to_list(node: ast3.AST) -> list[ast3.AST]:
 
 class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
     """Test pass module."""
-    pass
+
     TargetPass = PyastGenPass
 
     def setUp(self) -> None:
