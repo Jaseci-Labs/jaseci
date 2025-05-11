@@ -340,12 +340,15 @@ class JacFormatPass(UniPass):
             elif i.gen.jac == ",":
                 self.emit(node, f"{i.gen.jac} ")
             else:
-                if start or (
-                    isinstance(prev_token, uni.Token)
-                    and prev_token.gen.jac.strip() == ":"
-                ):
-                    self.emit(node, i.gen.jac.strip())
+                if start:
+                    self.emit(node, i.gen.jac)
                     start = False
+                elif (
+                    isinstance(prev_token, uni.Token)
+                    and prev_token.name == Tok.COLON
+                    and not isinstance(node.parent, uni.Assignment)
+                ):
+                    self.emit(node, i.gen.jac)
                 else:
                     self.emit(node, f" {i.gen.jac}")
             prev_token = i
@@ -742,7 +745,6 @@ class JacFormatPass(UniPass):
                     and isinstance(node.right, uni.TupleVal)
                 )
             ):
-
                 self.emit(
                     node,
                     f"{node.left.gen.jac} {node.op.value} {node.right.gen.jac}",
