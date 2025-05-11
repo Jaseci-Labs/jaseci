@@ -7,7 +7,7 @@ from abc import abstractmethod
 from typing import ClassVar, Optional, override
 
 from jaclang.runtimelib.constructs import Architype, NodeArchitype, Root
-from jaclang.runtimelib.machine import JacMachine as Jac
+from jaclang.runtimelib.machine import JacMachineInterface as Jac
 
 
 # FIXME: Retname this to something common, doing this way so this doesn't break
@@ -25,7 +25,7 @@ def dotgen(
     as_json: bool = False,
 ) -> str:
     """Print the dot graph."""
-    from jaclang.runtimelib.machine import JacMachine as Jac
+    from jaclang.runtimelib.machine import JacMachineInterface as Jac
 
     if as_json:
         return _jac_graph_json()

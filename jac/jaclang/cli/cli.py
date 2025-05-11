@@ -19,7 +19,7 @@ from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.builtin import dotgen
 from jaclang.runtimelib.constructs import WalkerArchitype
 from jaclang.runtimelib.machine import (
-    JacMachine as Jac,
+    JacMachineInterface as Jac,
     JacMachineState,
     call_jac_func_with_machine,
 )

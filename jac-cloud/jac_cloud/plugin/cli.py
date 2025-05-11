@@ -6,7 +6,7 @@ from os.path import split
 from pickle import load
 from typing import Any
 
-from jaclang import JacMachine as Jac, JacMachineState
+from jaclang import JacMachineInterface as Jac, JacMachineState
 from jaclang.cli.cmdreg import cmd_registry
 from jaclang.runtimelib.machine import hookimpl
 
@@ -70,7 +70,7 @@ class JacCmd:
         def create_system_admin(
             filename: str, email: str = "", password: str = ""
         ) -> str:
-            from jaclang import JacMachine as Jac
+            from jaclang import JacMachineInterface as Jac
 
             if not getenv("DATABASE_HOST"):
                 raise NotImplementedError(

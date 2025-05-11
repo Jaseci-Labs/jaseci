@@ -14,7 +14,7 @@ from typing import (
 
 from bson import ObjectId
 
-from jaclang.runtimelib.machine import JacMachine as Jac
+from jaclang.runtimelib.machine import JacMachineInterface as Jac
 from jaclang.runtimelib.memory import Memory
 
 

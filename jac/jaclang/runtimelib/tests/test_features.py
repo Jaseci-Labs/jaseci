@@ -3,7 +3,11 @@
 import inspect
 from typing import List, Type
 
-from jaclang.runtimelib.machine import JacMachine, JacMachineImpl, JacMachineSpec
+from jaclang.runtimelib.machine import (
+    JacMachineInterface,
+    JacMachineImpl,
+    JacMachineSpec,
+)
 from jaclang.utils.test import TestCase
 
 import pluggy
@@ -37,7 +41,7 @@ class TestFeatures(TestCase):
     def test_feature_funcs_synced(self) -> None:
         """Test if JacMachine, JacMachineDefaults, and JacMachineSpec have synced methods."""
         # Get methods of each class
-        jac_feature_methods = self.get_methods(JacMachine)
+        jac_feature_methods = self.get_methods(JacMachineInterface)
         jac_feature_defaults_methods = self.get_methods(JacMachineImpl)
         jac_feature_spec_methods = self.get_methods(JacMachineSpec)
 

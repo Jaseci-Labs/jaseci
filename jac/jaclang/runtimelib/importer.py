@@ -11,7 +11,7 @@ import types
 from os import getcwd, path
 from typing import Optional, TYPE_CHECKING, Union
 
-from jaclang.runtimelib.machine import JacMachine
+from jaclang.runtimelib.machine import JacMachineInterface
 from jaclang.runtimelib.utils import sys_path_context
 from jaclang.utils.helpers import dump_traceback
 from jaclang.utils.log import logging
@@ -173,7 +173,7 @@ class Importer:
     def update_sys(self, module: types.ModuleType, spec: ImportPathSpec) -> None:
         """Update sys.modules with the newly imported module."""
         if spec.module_name not in self.jac_machine.loaded_modules:
-            JacMachine.load_module(self.jac_machine, spec.module_name, module)
+            JacMachineInterface.load_module(self.jac_machine, spec.module_name, module)
 
 
 class PythonImporter(Importer):
@@ -288,7 +288,7 @@ class JacImporter(Importer):
         module.__dict__["__jac_mach__"] = self.jac_machine
 
         if module_name not in self.jac_machine.loaded_modules:
-            JacMachine.load_module(self.jac_machine, module_name, module)
+            JacMachineInterface.load_module(self.jac_machine, module_name, module)
         return module
 
     def create_jac_py_module(
@@ -315,7 +315,7 @@ class JacImporter(Importer):
                         module_name=package_name,
                         full_mod_path=full_mod_path,
                     )
-        JacMachine.load_module(self.jac_machine, module_name, module)
+        JacMachineInterface.load_module(self.jac_machine, module_name, module)
         return module
 
     def run_import(

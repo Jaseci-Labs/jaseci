@@ -4,7 +4,7 @@ import io
 import sys
 
 import jaclang.compiler.unitree as uni
-from jaclang import JacMachine as Jac, JacMachineState
+from jaclang import JacMachineInterface as Jac, JacMachineState
 from jaclang.cli import cli
 from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import TestCase

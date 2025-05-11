@@ -6,7 +6,7 @@ from pickle import load
 
 from jac_cloud.jaseci.main import FastAPI
 
-from jaclang import JacMachine as Jac
+from jaclang import JacMachineInterface as Jac
 from jaclang.runtimelib.machine import JacMachineState
 
 if not (filename := getenv("APP_PATH")):

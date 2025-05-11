@@ -14,7 +14,7 @@ from apscheduler.util import _Undefined, undefined
 
 from fastapi.responses import JSONResponse, ORJSONResponse
 
-from jaclang.runtimelib.machine import JacMachine as Jac
+from jaclang.runtimelib.machine import JacMachineInterface as Jac
 
 from ...core.architype import (
     NodeAnchor,

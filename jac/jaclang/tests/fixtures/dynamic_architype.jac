@@ -1,4 +1,4 @@
-import from jaclang.runtimelib.machine {JacMachine, JacMachineState}
+import from jaclang.runtimelib.machine {JacMachineInterface, JacMachineState}
 import from bar {Item}
 
 node test_node {
@@ -22,9 +22,9 @@ with entry {
         root ++> test_node(value=value);
         root ++> Item(value=value);
     }
-    node_obj = JacMachine.spawn_node(JacMachine.py_get_jac_machine(), node_name='test_node', attributes={'value': 0}, module_name='__main__');
-    walker_obj = JacMachine.spawn_walker(JacMachine.py_get_jac_machine(), walker_name='child_walker', module_name='__main__');
-    external_node = JacMachine.spawn_node(JacMachine.py_get_jac_machine(), node_name='Item', attributes={'value': 0}, module_name='bar');
+    node_obj = JacMachineInterface.spawn_node(JacMachineInterface.py_get_jac_machine(), node_name='test_node', attributes={'value': 0}, module_name='__main__');
+    walker_obj = JacMachineInterface.spawn_walker(JacMachineInterface.py_get_jac_machine(), walker_name='child_walker', module_name='__main__');
+    external_node = JacMachineInterface.spawn_node(JacMachineInterface.py_get_jac_machine(), node_name='Item', attributes={'value': 0}, module_name='bar');
     root ++> external_node;
     root ++> node_obj;
     print("Spawned Node:", node_obj);
