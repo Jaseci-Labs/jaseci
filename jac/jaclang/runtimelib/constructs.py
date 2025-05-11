@@ -17,7 +17,7 @@ from .architype import (
     WalkerAnchor,
     WalkerArchitype,
 )
-from .machinestate import ExecutionContext, JacMachineState
+from .machinestate import JacMachineState
 from .memory import Memory, ShelfStorage
 from .test import JacTestCheck, JacTestResult, JacTextTestRunner
 
@@ -36,7 +36,6 @@ __all__ = [
     "DataSpatialFunction",
     "Memory",
     "ShelfStorage",
-    "ExecutionContext",
     "JacMachineState",
     "JacTestResult",
     "JacTextTestRunner",

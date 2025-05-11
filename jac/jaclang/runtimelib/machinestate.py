@@ -18,25 +18,30 @@ from jaclang.utils.log import logging
 logger = logging.getLogger(__name__)
 
 
-def call_jac_func_with_machine(
-    mach: JacMachineState, func: Callable, *args: Any  # noqa: ANN401
-) -> Any:  # noqa: ANN401
-    """Call Jac function with machine context in local."""
-    __jac_mach__ = mach  # noqa: F841
-    return func(*args)
-
-
-class ExecutionContext:
-    """Execution Context."""
+class JacMachineState:
+    """Jac Machine State."""
 
     def __init__(
         self,
-        mach: JacMachineState,
+        base_path: str = "",
         session: Optional[str] = None,
         root: Optional[str] = None,
+        interp_mode: bool = False,
     ) -> None:
-        """Create ExecutionContext."""
-        self.mach = mach
+        """Initialize JacMachineState."""
+        self.loaded_modules: dict[str, types.ModuleType] = {}
+        if not base_path:
+            base_path = os.getcwd()
+        # Ensure the base_path is a list rather than a string
+        self.base_path = base_path
+        self.base_path_dir = (
+            os.path.dirname(base_path)
+            if not os.path.isdir(base_path)
+            else os.path.abspath(base_path)
+        )
+        self.jac_program: JacProgram = JacProgram()
+        self.interp_mode = interp_mode
+        self.pool = ThreadPoolExecutor()
         self.mem: Memory = ShelfStorage(session)
         self.reports: list[Any] = []
         sr_arch = Root()
@@ -74,7 +79,7 @@ class ExecutionContext:
 
     def close(self) -> None:
         """Close current ExecutionContext."""
-        call_jac_func_with_machine(mach=self.mach, func=self.mem.close)
+        call_jac_func_with_machine(mach=self, func=self.mem.close)
 
     def get_root(self) -> Root:
         """Get current root."""
@@ -85,28 +90,9 @@ class ExecutionContext:
         return self.system_root
 
 
-class JacMachineState:
-    """Jac Machine State."""
-
-    def __init__(
-        self,
-        base_path: str = "",
-        session: Optional[str] = None,
-        root: Optional[str] = None,
-        interp_mode: bool = False,
-    ) -> None:
-        """Initialize JacMachineState."""
-        self.loaded_modules: dict[str, types.ModuleType] = {}
-        if not base_path:
-            base_path = os.getcwd()
-        # Ensure the base_path is a list rather than a string
-        self.base_path = base_path
-        self.base_path_dir = (
-            os.path.dirname(base_path)
-            if not os.path.isdir(base_path)
-            else os.path.abspath(base_path)
-        )
-        self.jac_program: JacProgram = JacProgram()
-        self.interp_mode = interp_mode
-        self.exec_ctx = ExecutionContext(session=session, root=root, mach=self)
-        self.pool = ThreadPoolExecutor()
+def call_jac_func_with_machine(  # TODO: remove this
+    mach: JacMachineState, func: Callable, *args: Any  # noqa: ANN401
+) -> Any:  # noqa: ANN401
+    """Call Jac function with machine context in local."""
+    __jac_mach__ = mach  # noqa: F841
+    return func(*args)

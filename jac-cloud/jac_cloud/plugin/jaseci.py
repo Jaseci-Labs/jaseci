@@ -25,7 +25,7 @@ from ..core.architype import (
     WalkerAnchor,
     WalkerArchitype,
 )
-from ..core.context import ExecutionContext, JaseciContext
+from ..core.context import JacMachineState, JaseciContext
 from ..jaseci.main import FastAPI
 
 
@@ -231,7 +231,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
-    def get_context() -> ExecutionContext:
+    def get_context() -> JacMachineState:
         """Get current execution context."""
         if not FastAPI.is_enabled():
             return JacMachineImpl.get_context()

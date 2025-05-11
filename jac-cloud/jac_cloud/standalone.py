@@ -34,7 +34,7 @@ elif filename.endswith(".jir"):
             override_name="__main__",
         )
 else:
-    mach.exec_ctx.close()
+    mach.close()
     raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
 app = FastAPI.get()

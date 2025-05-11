@@ -156,7 +156,7 @@ def run(
 
     else:
         print("Not a valid file!\nOnly supports `.jac` and `.jir`")
-    mach.exec_ctx.close()
+    mach.close()
 
 
 @cmd_registry.register
@@ -198,7 +198,7 @@ def get_object(filename: str, id: str, session: str = "", main: bool = True) -> 
                 override_name="__main__" if main else None,
             )
     else:
-        mach.exec_ctx.close()
+        mach.close()
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
     data = {}
@@ -208,7 +208,7 @@ def get_object(filename: str, id: str, session: str = "", main: bool = True) -> 
     else:
         print(f"Object with id {id} not found.", file=sys.stderr)
 
-    mach.exec_ctx.close()
+    mach.close()
     return data
 
 
@@ -344,7 +344,7 @@ def enter(
                 override_name="__main__" if main else None,
             )
     else:
-        mach.exec_ctx.close()
+        mach.close()
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
     if ret_module:
@@ -354,13 +354,13 @@ def enter(
         else:
             architype = getattr(loaded_mod, entrypoint)(*args)
 
-            mach.exec_ctx.set_entry_node(node)
+            mach.set_entry_node(node)
             if isinstance(architype, WalkerArchitype) and call_jac_func_with_machine(
-                mach, Jac.check_read_access, mach.exec_ctx.entry_node
+                mach, Jac.check_read_access, mach.entry_node
             ):
-                Jac.spawn(mach.exec_ctx.entry_node.architype, architype)
+                Jac.spawn(mach.entry_node.architype, architype)
 
-    mach.exec_ctx.close()
+    mach.close()
 
 
 @cmd_registry.register
@@ -410,7 +410,7 @@ def test(
         verbose=verbose,
     )
 
-    mach.exec_ctx.close()
+    mach.close()
 
     if failcount:
         raise SystemExit(f"Tests failed: {failcount}")
@@ -573,13 +573,13 @@ def dot(
             import traceback
 
             traceback.print_exc()
-            jac_machine.exec_ctx.close()
+            jac_machine.close()
             return
         file_name = saveto if saveto else f"{mod}.dot"
         with open(file_name, "w") as file:
             file.write(graph)
         print(f">>> Graph content saved to {os.path.join(os.getcwd(), file_name)}")
-        jac_machine.exec_ctx.close()
+        jac_machine.close()
     else:
         print("Not a .jac file.", file=sys.stderr)
 

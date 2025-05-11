@@ -56,7 +56,7 @@ from jaclang.runtimelib.constructs import (
     WalkerAnchor,
     WalkerArchitype,
 )
-from jaclang.runtimelib.machinestate import ExecutionContext, JacMachineState
+from jaclang.runtimelib.machinestate import JacMachineState
 from jaclang.runtimelib.memory import Shelf, ShelfStorage
 from jaclang.runtimelib.utils import (
     all_issubclass,
@@ -615,9 +615,9 @@ class JacBasics:
         """Set Class References."""
 
     @staticmethod
-    def get_context() -> ExecutionContext:
+    def get_context() -> JacMachineState:
         """Get current execution context."""
-        return JacMachine.py_get_jac_machine().exec_ctx
+        return JacMachine.py_get_jac_machine()
 
     @staticmethod
     def reset_graph(root: Optional[Root] = None) -> int:
@@ -1032,7 +1032,7 @@ class JacBasics:
     @staticmethod
     def root() -> Root:
         """Jac's root getter."""
-        return JacMachine.py_get_jac_machine().exec_ctx.get_root()
+        return JacMachine.py_get_jac_machine().get_root()
 
     @staticmethod
     def build_edge(

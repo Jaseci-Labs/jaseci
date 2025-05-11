@@ -61,11 +61,11 @@ class JacCmd:
                         override_name="__main__",
                     )
             else:
-                mach.exec_ctx.close()
+                mach.close()
                 raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
             FastAPI.start(mach=mach, host=host, port=port)
-            mach.exec_ctx.close()
+            mach.close()
 
         @cmd_registry.register
         def create_system_admin(

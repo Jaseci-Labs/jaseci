@@ -278,7 +278,7 @@ class JacMachineState:
         )
         self.jac_program: JacProgram = JacProgram()
         self.interp_mode = interp_mode
-        self.exec_ctx = ExecutionContext(session=session, root=root, mach=self)
+        self = ExecutionContext(session=session, root=root, mach=self)
 ```
 
 ### ExecutionContext
