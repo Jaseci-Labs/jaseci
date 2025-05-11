@@ -51,7 +51,7 @@ class JacMachine:
         _locals: Mapping,
     ) -> Any:  # noqa: ANN401
         """Jac's with_llm feature."""
-        from jaclang.runtimelib.machinestate import JacMachineState
+        from jaclang.runtimelib.machine import JacMachineState
 
         mod_registry = JacMachineState.get().jac_program.sem_ir
 

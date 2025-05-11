@@ -12,7 +12,7 @@ from fastapi import FastAPI as _FaststAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
 
-from jaclang.runtimelib.machinestate import JacMachineState
+from jaclang.runtimelib.machine import JacMachineState
 
 
 from uvicorn import run as _run

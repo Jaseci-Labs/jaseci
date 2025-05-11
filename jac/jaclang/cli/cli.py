@@ -18,8 +18,11 @@ from jaclang.compiler.passes.main import CompilerMode as CMode, PyastBuildPass
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.builtin import dotgen
 from jaclang.runtimelib.constructs import WalkerArchitype
-from jaclang.runtimelib.machine import JacMachine as Jac
-from jaclang.runtimelib.machinestate import JacMachineState, call_jac_func_with_machine
+from jaclang.runtimelib.machine import (
+    JacMachine as Jac,
+    JacMachineState,
+    call_jac_func_with_machine,
+)
 from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
 

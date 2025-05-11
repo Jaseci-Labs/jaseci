@@ -8,7 +8,7 @@ import types
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes.main import CompilerMode as CMode, PyastGenPass
 from jaclang.compiler.program import JacProgram
-from jaclang.runtimelib.machinestate import JacMachineState
+from jaclang.runtimelib.machine import JacMachineState
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
 
 

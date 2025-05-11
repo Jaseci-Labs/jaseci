@@ -17,7 +17,7 @@ from jaclang.utils.helpers import dump_traceback
 from jaclang.utils.log import logging
 
 if TYPE_CHECKING:
-    from jaclang.runtimelib.machinestate import JacMachineState
+    from jaclang.runtimelib.machine import JacMachineState
 
 logger = logging.getLogger(__name__)
 

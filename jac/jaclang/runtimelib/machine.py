@@ -11,8 +11,8 @@ import sys
 import tempfile
 import types
 from collections import OrderedDict
-from concurrent.futures import Future
-from dataclasses import dataclass, field
+from concurrent.futures import Future, ThreadPoolExecutor
+from dataclasses import MISSING, dataclass, field
 from functools import wraps
 from inspect import getfile
 from logging import getLogger
@@ -34,7 +34,7 @@ from uuid import UUID
 
 
 from jaclang.compiler import unitree as ast
-from jaclang.compiler.constant import EdgeDir, colors
+from jaclang.compiler.constant import Constants as Con, EdgeDir, colors
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.architype import (
@@ -56,8 +56,7 @@ from jaclang.runtimelib.constructs import (
     WalkerAnchor,
     WalkerArchitype,
 )
-from jaclang.runtimelib.machinestate import JacMachineState
-from jaclang.runtimelib.memory import Shelf, ShelfStorage
+from jaclang.runtimelib.memory import Memory, Shelf, ShelfStorage
 from jaclang.runtimelib.utils import (
     all_issubclass,
     collect_node_connections,
@@ -1501,6 +1500,86 @@ class JacMachine(
     JacUtils,
 ):
     """Jac Feature."""
+
+
+class JacMachineState:
+    """Jac Machine State."""
+
+    def __init__(
+        self,
+        base_path: str = "",
+        session: Optional[str] = None,
+        root: Optional[str] = None,
+        interp_mode: bool = False,
+    ) -> None:
+        """Initialize JacMachineState."""
+        self.loaded_modules: dict[str, types.ModuleType] = {}
+        if not base_path:
+            base_path = os.getcwd()
+        # Ensure the base_path is a list rather than a string
+        self.base_path = base_path
+        self.base_path_dir = (
+            os.path.dirname(base_path)
+            if not os.path.isdir(base_path)
+            else os.path.abspath(base_path)
+        )
+        self.jac_program: JacProgram = JacProgram()
+        self.interp_mode = interp_mode
+        self.pool = ThreadPoolExecutor()
+        self.mem: Memory = ShelfStorage(session)
+        self.reports: list[Any] = []
+        sr_arch = Root()
+        sr_anch = sr_arch.__jac__
+        sr_anch.id = UUID(Con.SUPER_ROOT_UUID)
+        sr_anch.persistent = False
+        self.system_root = sr_anch
+        self.custom: Any = MISSING
+        if not isinstance(
+            system_root := self.mem.find_by_id(UUID(Con.SUPER_ROOT_UUID)), NodeAnchor
+        ):
+            system_root = cast(NodeAnchor, Root().__jac__)  # type: ignore[attr-defined]
+            system_root.id = UUID(Con.SUPER_ROOT_UUID)
+            self.mem.set(system_root.id, system_root)
+
+        self.system_root = system_root
+
+        self.entry_node = self.root = self.init_anchor(root, self.system_root)
+
+    def init_anchor(
+        self,
+        anchor_id: str | None,
+        default: NodeAnchor,
+    ) -> NodeAnchor:
+        """Load initial anchors."""
+        if anchor_id:
+            if isinstance(anchor := self.mem.find_by_id(UUID(anchor_id)), NodeAnchor):
+                return anchor
+            raise ValueError(f"Invalid anchor id {anchor_id} !")
+        return default
+
+    def set_entry_node(self, entry_node: str | None) -> None:
+        """Override entry."""
+        self.entry_node = self.init_anchor(entry_node, self.root)
+
+    def close(self) -> None:
+        """Close current ExecutionContext."""
+        call_jac_func_with_machine(mach=self, func=self.mem.close)
+
+    def get_root(self) -> Root:
+        """Get current root."""
+        return cast(Root, self.root.architype)
+
+    def global_system_root(self) -> NodeAnchor:
+        """Get global system root."""
+        return self.system_root
+
+
+def call_jac_func_with_machine(  # TODO: remove this
+    mach: JacMachineState, func: Callable, *args: Any  # noqa: ANN401
+) -> Any:  # noqa: ANN401
+    """Call Jac function with machine context in local."""
+    __jac_mach__ = mach  # noqa: F841
+    return func(*args)
 
 
 def generate_plugin_helpers(
