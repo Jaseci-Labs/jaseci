@@ -1,6 +1,8 @@
-# Getting Started
+# Getting Started With Jac and Jaseci
 
-If you know python, there's near zero learning curve to get started.
+[Jac is a new language that supersets the semantics of Python with full interoperability with Python's ecosystem that introduces cutting edge programming models and abstractions for minimizing and hiding complexity, being AI forward, and abstracting away categories of common software systems we do manually today. The langauge is designed to be production grade and is already used in production for a number of use cases.]
+
+[Jaseci is an implementation of the Jac runtime. (think CPython for Python)]
 
 # Installation
 
@@ -14,7 +16,7 @@ Once you've got Jaclang installed, just give the Jac CLI a try to make sure ever
 
 - Start the Jac CLI:
     ```bash
-    jac
+    jac --version
     ```
 - Run a .jac file
     ```bash
@@ -29,19 +31,6 @@ Once you've got Jaclang installed, just give the Jac CLI a try to make sure ever
 >
 > If these commands prints ```hello world``` you are good to go.
 
-## <span style="color: orange">Supportive Jac CLI commands
-</span>
-
-- Clean cached files (recommended after each run):
-    ```bash
-    jac clean
-    ```
-- Print the data-spatial graph to a file and visualize it using [Graphviz](https://dreampuf.github.io/GraphvizOnline/):
-    ```bash
-    jac dot <file_name>.jac
-    ```
-    - Visit [https://dreampuf.github.io/GraphvizOnline/](https://dreampuf.github.io/GraphvizOnline/) to visualize the graph.
-
 ## <span style="color: orange">Installing the VS Code Extention
 </span>
 
@@ -50,7 +39,17 @@ In addition to setting up JacLang itself, you may also want to take advantage of
 - To install just visit the VS Code marketplace and install,
     - [Jac](https://marketplace.visualstudio.com/items?itemName=jaseci-labs.jaclang-extension)
 
+## Next Steps
+
 <div class="grid cards" markdown>
+
+-   __Jac in a Flash__
+
+    ---
+
+    *See Jac's Syntax with a Toy*
+
+    [Jac in a Flash](jac_in_a_flash.md){ .md-button .md-button--primary }
 
 -   __A Real World Example__
 
@@ -60,67 +59,15 @@ In addition to setting up JacLang itself, you may also want to take advantage of
 
     <!-- [:octicons-arrow-right-24: Getting started](#) -->
 
-    [Little X](installation.md){ .md-button }
+    [A Robust Example](examples/littleX/overview.md){ .md-button }
 
 -   __Experience Jac in Browser__
 
     ---
 
-    *Hit the Playground *
+    *Hit the Playground*
 
-    [Jac Playground](jac_in_a_flash.md){ .md-button .md-button--primary }
+    [Jac Playground](playground/index.html){ .md-button .md-button--primary }
 
 </div>
 
-## <span style="color: orange">Features in Jac-Lang</span>
-
-While Python is widely regarded for its simplicity and versatility, jac lang offers several advantages, particularly in terms of readability, flexibility, and type safety. By addressing some of the shortcomings of Python, jac lang provides developers with a more robust and scalable alternative for building modern applications.
-
-<!-- - Full-stack programming language
-    - Jaclang empowers developers to create both front-end and back-end components of their applications using a single language. This eliminates the need to switch between different programming languages and frameworks, resulting in a more cohesive and efficient development experience. -->
-
-- **Supersets Python**
-    - As TypeScript supersets JavaScript, Jac-Lang is a language which was built on top of python which all pythony goodness available to all jac-lang programmers while including the entire python ecosystem, available to use.
-
-- **Offers more readable code**
-    - By adopting a clean and intuitive syntax, Jac Lang makes it easier for developers and coders to write code that is easy to understand and maintain.
-
-- **More flexible than python, in terms of styling the code**
-    - As jac lang uses syntax where multiline comments, multiline function declerations and more, which allows the user to arrange arguments, lists, dictionaties and other list-like objects in a readable format.
-
-- **Type safe to support large codebases**
-    - Jac lang prioritizes type safety to support the development of large-scale applications. By enforcing strict type checking, jac lang helps identify potential errors at compile time, rather than runtime, leading to more robust and reliable code.
-
-- **Data Spatial Programming**
-    - Jac Lang's programming approach focuses on data-spatial constructs, enhancing the handling and visualization of data in ways traditional programming paradigms might not support.
-
-- **Programming with Large Language Models**
-    - Jac-lang has an up & coming feature which allows programmers to integrate LLMs into their programming pipeline seamlessly without the need for learning extensive libraries and complicated new syntaxes.
-<!-- ## Integrating Jac into Python Modules
-
-JacLang also provides a seamless way to import Jac into existing Python modules through library functions. Here's an example:
-
-```python
-"""CLI for jaclang."""
-from jaclang import jac_import
-
-cli = jac_import("cli")
-cmds = jac_import("cmds")
-
-cli.cmd_registry = cmds.cmd_reg  # type: ignore
-```
-
-In the above code snippet, `cli` and `cmds` are modules that are imported similar to how you'd typically import modules in Python, i.e., `import cli` or `import cmds`.
-
-Below is the actual implementation for Jac's CLI (`cli.jac`) to provide some insight into how Jac code looks:
-
-=== "cli.jac"
-    ```jac linenums="1"
-    --8<-- "jaclang/cli/cli.jac"
-    ```
-=== "cli_impl.jac"
-    ```jac linenums="1"
-    --8<-- "jaclang/cli/cli_impl.jac"
-    ```
-
-That's all you need to get started with JacLang. As you delve into this new language, you'll discover how it beautifully combines the power of Python with a modern and intuitive syntax. Happy coding! -->
