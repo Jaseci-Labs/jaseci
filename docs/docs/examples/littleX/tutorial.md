@@ -280,13 +280,13 @@ Now Lets create required walkers for LittleX.
             test follow_request {
                   followee = Profile("Sam");
                   followee spawn follow_request();
-                  followee_profile = [root --> (`?Profile)-:Follow:->(`?Profile)][0];
+                  followee_profile = [root --> (`?Profile)->:Follow:->(`?Profile)][0];
                   check followee_profile.username == "Sam";
             }
             ```
             * create followee profile : ``followee = Profile("Sam");``
             * spawn follow_request walker on profile_node : ``followee spawn follow_request();``
-            * filter followee profile : ``followee_profile = [root --> (`?Profile)-:Follow:->(`?Profile)][0];``
+            * filter followee profile : ``followee_profile = [root --> (`?Profile)->:Follow:->(`?Profile)][0];``
             * check followee profile username : ``check followee_profile.username == "Sam";``
 
       - **Unfollow Request Walker**
@@ -306,15 +306,15 @@ Now Lets create required walkers for LittleX.
 
             ```Jac
             test un_follow_request {
-                  followee = [root --> (`?Profile)-:Follow:->(`?Profile)][0];
+                  followee = [root --> (`?Profile)->:Follow:->(`?Profile)][0];
                   followee spawn un_follow_request();
-                  check len([root --> (`?Profile)-:Follow:->(`?Profile)]) == 0;
+                  check len([root --> (`?Profile)->:Follow:->(`?Profile)]) == 0;
             }
             ```
 
-            * filter profile node : ``followee = [root --> (`?Profile)-:Follow:->(`?Profile)][0];``
+            * filter profile node : ``followee = [root --> (`?Profile)->:Follow:->(`?Profile)][0];``
             * spawn un_follow_request walker on profile_node : ``followee spawn un_follow_request();``
-            * check length of the profiles that connect within Follow edge : ```check len([root --> (`?Profile)-:Follow:->(`?Profile)]) == 0;```
+            * check length of the profiles that connect within Follow edge : ```check len([root --> (`?Profile)->:Follow:->(`?Profile)]) == 0;```
 
       - **Create Tweet Walker**
         * **Implement Create Tweet Walker**
@@ -325,13 +325,13 @@ Now Lets create required walkers for LittleX.
 
                         can tweet with profile entry {
                               embedding = sentence_transformer.encode(self.content).tolist();
-                              tweet_node = here +:Post:+> Tweet(content=self.content, embedding=embedding);
+                              tweet_node = here +>:Post:+> Tweet(content=self.content, embedding=embedding);
                               report tweet_node;
                         }
                   }
                   ```
             * `embedding = sentence_transformer.encode(self.content).tolist()` Embedding the content.
-            * `tweet_node = here +:post:+> tweet(content=self.content, embedding=embedding)+` Create a new tweet with content, its embedding.
+            * `tweet_node = here +>:post:+> tweet(content=self.content, embedding=embedding)+` Create a new tweet with content, its embedding.
             * `report tweet_node` reports the newly created tweet node.
 
         * **Test Create Tweet Walker**
@@ -415,14 +415,14 @@ Now Lets create required walkers for LittleX.
                   root spawn create_tweet( content = "test_like");
                   tweet1 = [root --> (`?Profile) --> (`?Tweet)][0];
                   tweet1 spawn like_tweet();
-                  test1 = [tweet1 -:Like:-> ][0];
+                  test1 = [tweet1 ->:Like:-> ][0];
                   check test1.username == "test_user";
             }
             ```
             * spawn like_walker walker on tweet_node : `root spawn create_tweet(0);`
             * filter is there any tweets : ``tweet1 = [root --> (`?Profile) --> (`?Tweet)][0];``
             * spawn walker : `tweet1 spawn like_tweet();`
-            * filter is like to tweet : `test1 = [tweet1 -:Like:-> ][0];`
+            * filter is like to tweet : `test1 = [tweet1 ->:Like:-> ][0];`
             * check liked profile username : ` check test1.username == "test_user";`
 
       - **Remove Like Walker**
@@ -441,12 +441,12 @@ Now Lets create required walkers for LittleX.
             test remove_like {
                   tweet1 = [root --> (`?Profile) --> (`?Tweet)][0];
                   tweet1 spawn remove_like();
-                  check len([tweet1 -:Like:-> ]) == 0;
+                  check len([tweet1 ->:Like:-> ]) == 0;
             }
             ```
             * check is there any liked tweets : ``tweet1 = [root --> (`?Profile) --> (`?Tweet)][0];``
             * spawn remove_like walker on tweet_node : `tweet1 spawn remove_like();`
-            * check like is removed : `check len([tweet1 -:Like:-> ]) == 0;`
+            * check like is removed : `check len([tweet1 ->:Like:-> ]) == 0;`
 
       - **Comment Tweet Walker**
         * **Implement Comment Tweet Walker**
@@ -509,7 +509,7 @@ Now Lets create required walkers for LittleX.
                               user_tweets = here spawn load_tweets();
                               feeds.extend(user_tweets.tweet_info);
 
-                              for user_node in [-:Follow:->](`?Profile) {
+                              for user_node in [->:Follow:->](`?Profile) {
                                     user_tweets = user_node spawn load_tweets();
                                     feeds.extend(user_tweets.tweet_info);
                               }
@@ -653,7 +653,7 @@ By default, users cannot access other users' nodes. To grant access, permission 
 
                         can tweet with Profile entry {
                               embedding = sentence_transformer.encode(self.content).tolist();
-                              tweet_node = here +:Post:+> Tweet(content=self.content, embedding=embedding);
+                              tweet_node = here +>:Post:+> Tweet(content=self.content, embedding=embedding);
                               Jac.perm_grant(tweet_node[0], level="CONNECT");
                               report tweet_node;
                         }
@@ -770,7 +770,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
 
                         can follow with profile entry {
                               here.followees.append(self.profile_id);
-                              here +:follow():+> &self.profile_id;
+                              here +>:follow():+> &self.profile_id;
                               report here;
                         }
                   }
@@ -781,14 +781,14 @@ You leave the Living Room, and the system turns off the lights and updates its r
                   ```jac
                   can follow with follow_request entry {
                         current_profile = [root-->(`?Profile)];
-                        current_profile[0] +:Follow():+> self;
+                        current_profile[0] +>:Follow():+> self;
                         report self;
                   }
                   ```
         * As `follow_request` walker is spawned on `Profile`, it visits to `Profile`.
         *  With the entry of the `follow_request` walker, `Follow` edge is created and connected.
         * `[root-->(`?Profile)]` gets the current user profile.
-        * `current_profile[0] +:Follow():+> self` connects the followee with Follow edge.
+        * `current_profile[0] +>:Follow():+> self` connects the followee with Follow edge.
 
       - Unfollow profile
 
@@ -800,7 +800,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
 
                         can un_follow with profile entry {
                               here.followees.remove(self.profile_id);
-                              here del-:follow:-> &self.profile_id;
+                              here del->:follow:-> &self.profile_id;
                               report here;
                         }
                   }
@@ -811,14 +811,14 @@ You leave the Living Room, and the system turns off the lights and updates its r
                   ```jac
                   can un_follow with un_follow_request entry {
                         current_profile = [root-->(`?Profile)];
-                        current_profile[0] del-:Follow:-> self;
+                        current_profile[0] del->:Follow:-> self;
                         report self;
                   }
                   ```
         * As `un_follow_request` walker is spawned on `Profile`, it visits to `Profile`.
         *  With the entry of the `un_follow_request` walker, `Follow` edge is disconnected.
         * `[root-->(`?Profile)]` gets the current user profile.
-        * `current_profile[0] del-:Follow:-> self` disconnects the followee with Follow edge.
+        * `current_profile[0] del->:Follow:-> self` disconnects the followee with Follow edge.
 
       - Update Tweet
 
@@ -891,7 +891,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
                         can like with profile entry {
                               tweet_node = &self.tweet_id;
                               Jac.perm_grant(tweet_node, level="CONNECT");
-                              tweet_node +:like():+> here;
+                              tweet_node +>:like():+> here;
                               report tweet_node;
                         }
                   }
@@ -902,14 +902,14 @@ You leave the Living Room, and the system turns off the lights and updates its r
                   ```jac
                   can like_tweet with like_tweet entry {
                         current_profile = [root-->(`?Profile)];
-                        self +:Like():+> current_profile[0];
+                        self +>:Like():+> current_profile[0];
                         report self;
                   }
                   ```
         * As `like_tweet` walker is spawned on `Tweet`, it visits to `Tweet`.
         *  With the entry of the `like_tweet` walker, tweet is liked.
         * `[root-->(`?Profile)]` gets the current user profile.
-        * `self +:Like():+> current_profile[0]` connects the user with `Like` edge.
+        * `self +>:Like():+> current_profile[0]` connects the user with `Like` edge.
 
       - Remove Like Ability
 
@@ -921,7 +921,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
 
                         can remove_like with profile entry {
                               tweet_node = &self.tweet_id;
-                              tweet_node del-:like:-> here;
+                              tweet_node del->:like:-> here;
                               report tweet_node;
                         }
                   }
@@ -932,14 +932,14 @@ You leave the Living Room, and the system turns off the lights and updates its r
                   ```jac
                   can remove_like with remove_like entry {
                         current_profile = [root-->(`?Profile)];
-                        self del-:Like:-> current_profile[0];
+                        self del->:Like:-> current_profile[0];
                         report self;
                   }
                   ```
         * As `remove_like` walker is spawned on `Tweet`, it visits to `Tweet`.
         *  With the entry of the `remove_like` walker, like is removed.
         * `[root-->(`?Profile)]` gets the current user profile.
-        * `self del-:Like:-> current_profile[0]` disconnects the user with `Like` edge.
+        * `self del->:Like:-> current_profile[0]` disconnects the user with `Like` edge.
 
       - Comment Ability
 
@@ -1016,7 +1016,7 @@ You leave the Living Room, and the system turns off the lights and updates its r
                               id=jid(self),
                               content=self.content,
                               embedding=self.embedding,
-                              likes=[i.username for i in [self-:Like:->]],
+                              likes=[i.username for i in [self->:Like:->]],
                               comments=[{"id": jid(i), "content": i.content} for i in [self-->(`?Comment)]]
                         );
                   }
