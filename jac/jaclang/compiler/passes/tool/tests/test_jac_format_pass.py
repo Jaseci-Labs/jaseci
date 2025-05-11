@@ -121,4 +121,3 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
 
 JacFormatPassTests.self_attach_micro_tests()
-
