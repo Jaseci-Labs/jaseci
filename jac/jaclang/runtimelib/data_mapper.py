@@ -129,6 +129,7 @@ def generate_data_mapping(
 ) -> dict[NodeAnchor, int]:
     """Generate data mapping."""
     print(type(start.architype))
+
     traversal_order = _traversal(start)
     dpu_node_count = [0] * NUM_DPU
     node_assignments: dict[NodeAnchor, int] = {}
