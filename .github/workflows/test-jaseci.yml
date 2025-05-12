@@ -39,13 +39,14 @@ jobs:
         python -m pip install --upgrade pip
         pip install -e jac
         pip install -e jac-cloud
+        pip install -e jac-splice-orc
         pip install pytest
 
     - name: Set environment for testing
       run: |
         echo "TEST_ENV=true" >> $GITHUB_ENV
     - name: Run tests
-      run: pytest -x jac jac-cloud
+      run: pytest -x jac jac-cloud jac-splice-orc
     - name: Run jac-cloud tests with DB
       run: pytest -x jac-cloud
       env:
