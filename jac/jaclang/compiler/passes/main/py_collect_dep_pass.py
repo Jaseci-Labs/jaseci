@@ -55,31 +55,3 @@ class PyCollectDepsPass(UniPass):
             node.abs_path = self.ir_out.py_info.py_mod_dep_map.get(path)
             if node.abs_path and os.path.isfile(node.abs_path.replace(".pyi", ".py")):
                 node.abs_path = node.abs_path.replace(".pyi", ".py")
-
-        if len(node.gen.mypy_ast) == 0:
-            return
-
-        mypy_node = node.gen.mypy_ast[0]
-
-        if isinstance(mypy_node, MypyNodes.RefExpr) and mypy_node.node:
-            node_full_name = mypy_node.node.fullname
-            if "." in node_full_name:
-                mod_name = node_full_name[: node_full_name.rindex(".")]
-            else:
-                mod_name = node_full_name
-
-            if mod_name not in self.ir_out.py_info.py_mod_dep_map:
-                self.__debug_print(
-                    f"Can't find a python file associated with {type(node)}::{node.loc}"
-                )
-                return
-
-            mode_path = self.ir_out.py_info.py_mod_dep_map[mod_name]
-            if mode_path.endswith(".jac"):
-                return
-
-            self.prog.py_raise_map[mod_name] = mode_path
-        else:
-            self.__debug_print(
-                f"Collect python dependencies is not supported in {type(node)}::{node.loc}"
-            )

@@ -88,7 +88,7 @@ class JacCliTests(TestCase):
             stdout_value,
         )
 
-    def test_pure_circle_impl(self) -> None:
+    def test_pure_circle_impl_not_double_generated(self) -> None:
         """Basic test for pass."""
         captured_output = io.StringIO()
         sys.stdout = captured_output

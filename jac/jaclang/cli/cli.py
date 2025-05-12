@@ -5,7 +5,6 @@ import importlib
 import marshal
 import os
 import pickle
-import shutil
 import sys
 import types
 from pathlib import Path
@@ -13,7 +12,6 @@ from typing import Optional
 
 import jaclang.compiler.unitree as uni
 from jaclang.cli.cmdreg import CommandShell, cmd_registry
-from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main import CompilerMode as CMode, PyastBuildPass
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.builtin import dotgen
@@ -216,7 +214,7 @@ def get_object(filename: str, id: str, session: str = "", main: bool = True) -> 
 
 
 @cmd_registry.register
-def build(filename: str, typecheck: bool = True) -> None:
+def build(filename: str) -> None:
     """Build the specified .jac file.
 
     Compiles a Jac source file into a Jac Intermediate Representation (.jir) file,
@@ -233,14 +231,11 @@ def build(filename: str, typecheck: bool = True) -> None:
     if filename.endswith(".jac"):
         (out := JacProgram()).compile(
             file_path=filename,
-            mode=CMode.TYPECHECK if typecheck else CMode.COMPILE,
+            mode=CMode.COMPILE,
         )
         errs = len(out.errors_had)
         warnings = len(out.warnings_had)
         print(f"Errors: {errs}, Warnings: {warnings}")
-        for i in out.mod.hub.values():
-            for j in i.flatten():
-                j.gen.mypy_ast = []
         with open(filename[:-4] + ".jir", "wb") as f:
             pickle.dump(out, f)
     else:
@@ -450,30 +445,6 @@ def tool(tool: str, args: Optional[list] = None) -> None:
             raise e
     else:
         print(f"Ast tool {tool} not found.", file=sys.stderr)
-
-
-@cmd_registry.register
-def clean() -> None:
-    """Clean up Jac-generated cache and temporary files.
-
-    Removes the __jac_gen__, __pycache__, and other temporary folders created
-    during Jac compilation and execution. Helps maintain a clean project directory
-    and can resolve certain caching-related issues.
-
-    Args:
-        This command takes no parameters.
-
-    Examples:
-        jac clean
-    """
-    current_dir = os.getcwd()
-    for root, dirs, _files in os.walk(current_dir, topdown=True):
-        for folder_name in dirs[:]:
-            if folder_name in [Constants.JAC_MYPY_CACHE]:
-                folder_to_remove = os.path.join(root, folder_name)
-                shutil.rmtree(folder_to_remove)
-                print(f"Removed folder: {folder_to_remove}")
-    print("Done cleaning.")
 
 
 @cmd_registry.register

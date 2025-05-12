@@ -10,16 +10,12 @@ from typing import Optional
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes.main import (
-    AccessCheckPass,
     CFGBuildPass,
     CompilerMode,
     DeclImplMatchPass,
     DefUsePass,
-    FuseTypeInfoPass,
-    InheritancePass,
     JacAnnexPass,
     JacImportPass,
-    JacTypeCheckPass,
     PyBytecodeGenPass,
     PyCollectDepsPass,
     PyImportPass,
@@ -150,13 +146,9 @@ class JacProgram:
 
         for mod in self.mod.hub.values():
             self.schedule_runner(mod, mode=CompilerMode.COMPILE)
-
         # Check if we need to run without type checking then just return
         if mode == CompilerMode.COMPILE:
             return mod_targ
-
-        # Run TypeCheckingPass on the top module
-        JacTypeCheckPass(mod_targ, prog=self)
 
         for mod in self.mod.hub.values():
             PyCollectDepsPass(mod, prog=self)
@@ -190,13 +182,13 @@ class JacProgram:
             DeclImplMatchPass,
             DefUsePass,
             CFGBuildPass,
+            # InheritancePass,
         ]
         py_code_gen = [
             PyastGenPass,
             PyJacAstLinkPass,
             PyBytecodeGenPass,
         ]
-        type_checker_sched = [InheritancePass, FuseTypeInfoPass, AccessCheckPass]
 
         final_pass: Optional[type[Transform[uni.Module, uni.Module]]] = None
         match mode:
@@ -205,7 +197,7 @@ class JacProgram:
             case CompilerMode.COMPILE:
                 passes = [*ir_gen_sched, *py_code_gen]
             case CompilerMode.TYPECHECK:
-                passes = type_checker_sched
+                passes = []
             case _:
                 raise ValueError(f"Invalid mode: {mode}")
         for current_pass in passes:

@@ -247,7 +247,7 @@ class PyastGenPass(UniPass):
                         if not isinstance(x, uni.ImplDef)
                     ]
                 )
-                if node and isinstance(node.gen.py_ast, list)
+                if node
                 else []
             )
         )

@@ -141,7 +141,7 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
             else:
                 # Otherwise, try to find corresponding scopes by name
                 for target_scope in target_sym_tab.kid_scope:
-                    if source_scope.nix_name == target_scope.nix_name:
+                    if source_scope.scope_name == target_scope.scope_name:
                         self.connect_impls(source_scope, target_scope)
                         break
 

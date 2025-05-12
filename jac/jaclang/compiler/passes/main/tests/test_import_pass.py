@@ -3,6 +3,7 @@
 import io
 import re
 import sys
+import unittest
 
 import jaclang.compiler.unitree as uni
 from jaclang.cli import cli
@@ -62,6 +63,7 @@ class ImportPassPassTests(TestCase):
                     )
         self.assertEqual(count, 4)
 
+    @unittest.skip("TODO: Fix when we have the type checker")
     def test_py_raise_map(self) -> None:
         """Basic test for pass."""
         (build := JacProgram()).compile(
@@ -86,6 +88,7 @@ class ImportPassPassTests(TestCase):
                 p[i],
             )
 
+    @unittest.skip("TODO: Fix when we have the type checker")
     def test_py_raised_mods(self) -> None:
         """Basic test for pass."""
         (prog := JacProgram()).compile(

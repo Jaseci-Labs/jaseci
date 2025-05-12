@@ -6,8 +6,6 @@ import ast as ast3
 from dataclasses import dataclass, field
 from typing import Optional, TYPE_CHECKING
 
-from jaclang.vendor.mypy.nodes import Node as MypyNode
-
 if TYPE_CHECKING:
     from jaclang.compiler.unitree import Source, Token
 
@@ -20,7 +18,6 @@ class CodeGenTarget:
     jac: str = ""
     js: str = ""
     py_ast: list[ast3.AST] = field(default_factory=lambda: [])
-    mypy_ast: list[MypyNode] = field(default_factory=lambda: [])
     py_bytecode: Optional[bytes] = None
 
     def clean(self) -> None:
@@ -29,7 +26,6 @@ class CodeGenTarget:
         self.jac = ""
         self.js = ""
         self.py_ast = []
-        self.mypy_ast = []
 
 
 class CodeLocInfo:
