@@ -19,8 +19,10 @@ class CompilerMode(Enum):
     """Compiler modes."""
 
     PARSE = "PARSE"
-    COMPILE = "COMPILE"
     NO_CGEN = "NO_CGEN"
+    NO_CGEN_SINGLE = "NO_CGEN_SINGLE"
+    COMPILE = "COMPILE"
+    COMPILE_SINGLE = "COMPILE_SINGLE"
     TYPECHECK = "TYPECHECK"
 
 
