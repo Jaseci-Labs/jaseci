@@ -14,10 +14,10 @@ from jaclang.compiler.passes.main import (
     CompilerMode,
     DeclImplMatchPass,
     DefUsePass,
+    InheritancePass,
     JacAnnexPass,
     JacImportDepsPass,
     PyBytecodeGenPass,
-    PyCollectDepsPass,
     PyImportPass,
     PyJacAstLinkPass,
     PyastBuildPass,
@@ -147,9 +147,6 @@ class JacProgram:
         if mode == CompilerMode.COMPILE:
             return mod_targ
 
-        for mod in self.mod.hub.values():
-            PyCollectDepsPass(mod, prog=self)
-
         PyImportPass(next(iter(self.mod.hub.values())), prog=self)
 
         # Link all Jac symbol tables created after Python imports
@@ -173,7 +170,7 @@ class JacProgram:
             DeclImplMatchPass,
             DefUsePass,
             CFGBuildPass,
-            # InheritancePass,
+            InheritancePass,
         ]
         py_code_gen = [
             PyastGenPass,
