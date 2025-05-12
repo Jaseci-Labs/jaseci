@@ -1,4 +1,4 @@
-# Jac Language Development Roadmap
+# Jac and Jaseci Development Roadmap
 
 # Jac (The Language)
 * Jac JSX as drop in replacement for TSC with built in
