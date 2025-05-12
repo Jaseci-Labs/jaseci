@@ -75,7 +75,9 @@ class Transform(ABC, Generic[T, R]):
         self.prog = prog
         self.time_taken = 0.0
         self.ir_in: T = ir_in
+        self.pre_transform()
         self.ir_out: R = self.timed_transform(ir_in=ir_in)
+        self.post_transform()
 
     def timed_transform(
         self,
@@ -90,6 +92,14 @@ class Transform(ABC, Generic[T, R]):
                 f"Time taken in {self.__class__.__name__}: {self.time_taken:.4f} seconds"
             )
         return ir_out
+
+    def pre_transform(self) -> None:
+        """Pre-transform hook."""
+        pass
+
+    def post_transform(self) -> None:
+        """Post-transform hook."""
+        pass
 
     @abstractmethod
     def transform(self, ir_in: T) -> R:

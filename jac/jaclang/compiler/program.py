@@ -27,7 +27,6 @@ from jaclang.compiler.passes.main import (
 from jaclang.compiler.passes.main.sym_tab_link_pass import SymTabLinkPass
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
 from jaclang.compiler.passes.transform import Alert, Transform
-from jaclang.compiler.unitree import Module
 from jaclang.utils.log import logging
 
 
@@ -40,7 +39,6 @@ class JacProgram:
     def __init__(self, main_mod: Optional[uni.ProgramModule] = None) -> None:
         """Initialize the JacProgram object."""
         self.mod: uni.ProgramModule = main_mod if main_mod else uni.ProgramModule()
-        self.last_imported: list[Module] = []
         self.py_raise_map: dict[str, str] = {}
         self.errors_had: list[Alert] = []
         self.warnings_had: list[Alert] = []
@@ -115,7 +113,6 @@ class JacProgram:
         full_compile: bool = True,
     ) -> uni.Module:
         """Convert a Jac file to an AST."""
-        self.last_imported.append(mod_targ)
         JacAnnexPass(ir_in=mod_targ, prog=self)
         SymTabBuildPass(ir_in=mod_targ, prog=self)
         if mode == CompilerMode.PARSE:
@@ -124,9 +121,9 @@ class JacProgram:
             self.schedule_runner(mod_targ, mode=mode)
             return mod_targ
         else:
-            while len(self.last_imported) > 0:
-                mod = self.last_imported.pop()
-                JacImportPass(ir_in=mod, prog=self)
+            # Process Jac imports for the entire program
+            JacImportPass(ir_in=mod_targ, prog=self)
+
         if len(self.errors_had):
             return mod_targ
         else:
@@ -153,12 +150,9 @@ class JacProgram:
         for mod in self.mod.hub.values():
             PyCollectDepsPass(mod, prog=self)
 
-        for mod in self.mod.hub.values():
-            self.last_imported.append(mod)
-        # Run PyImportPass
-        while len(self.last_imported) > 0:
-            mod = self.last_imported.pop()
-            PyImportPass(mod, prog=self)
+        # Run PyImportPass on one of the modules - it will process all modules in the hub
+        if self.mod.hub:
+            PyImportPass(next(iter(self.mod.hub.values())), prog=self)
 
         # Link all Jac symbol tables created
         for mod in self.mod.hub.values():

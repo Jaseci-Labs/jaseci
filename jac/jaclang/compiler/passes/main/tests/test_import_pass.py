@@ -131,3 +131,9 @@ class ImportPassPassTests(TestCase):
         self.assertTrue(state.errors_had)
         self.assertEqual(len(state.errors_had), 1)
         self.assertIn("Syntax Error", state.errors_had[0].msg)
+
+    def test_circular_import(self) -> None:
+        """Test circular import."""
+        (state := JacProgram()).compile(self.fixture_abs_path("circular_import.jac"))
+        self.assertFalse(state.errors_had)
+        self.assertEqual(len(state.errors_had), 0)

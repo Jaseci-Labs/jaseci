@@ -36,11 +36,23 @@ logger = logging.getLogger(__name__)
 class JacImportPass(Transform[uni.Module, uni.Module]):
     """Jac statically imports Jac modules."""
 
+    def pre_transform(self) -> None:
+        """Initialize the JacImportPass."""
+        super().pre_transform()
+        self.last_imported: list[uni.Module] = []
+
     def transform(self, ir_in: uni.Module) -> uni.Module:
         """Run Importer."""
-        all_imports = UniPass.get_all_sub_nodes(ir_in, uni.ModulePath)
-        for i in all_imports:
-            self.process_import(i)
+        # Add the current module to last_imported to start the import process
+        self.last_imported.append(ir_in)
+
+        # Process imports until no more imported modules to process
+        while self.last_imported:
+            current_module = self.last_imported.pop(0)
+            all_imports = UniPass.get_all_sub_nodes(current_module, uni.ModulePath)
+            for i in all_imports:
+                self.process_import(i)
+
         return ir_in
 
     def process_import(self, i: uni.ModulePath) -> None:
@@ -81,11 +93,10 @@ class JacImportPass(Transform[uni.Module, uni.Module]):
                 return
             self.load_mod(self.prog.compile(file_path=target, mode=CMode.PARSE))
 
-    def load_mod(self, mod: uni.Module | None) -> None:
+    def load_mod(self, mod: uni.Module) -> None:
         """Attach a module to a node."""
-        if mod and mod.loc.mod_path not in self.prog.mod.hub:
-            self.prog.mod.hub[mod.loc.mod_path] = mod
-            self.prog.last_imported.append(mod)
+        self.prog.mod.hub[mod.loc.mod_path] = mod
+        self.last_imported.append(mod)
 
     # TODO: Refactor this to a function for impl and function for test
 
@@ -117,11 +128,26 @@ class JacImportPass(Transform[uni.Module, uni.Module]):
 class PyImportPass(JacImportPass):
     """Jac statically imports Python modules."""
 
+    def pre_transform(self) -> None:
+        """Initialize the PyImportPass."""
+        self.import_from_build_list: list[tuple[uni.Import, uni.Module]] = []
+
     def transform(self, ir_in: uni.Module) -> uni.Module:
         """Run Importer."""
         self.__load_builtins()
-        self.import_from_build_list: list[tuple[uni.Import, uni.Module]] = []
-        return super().transform(ir_in)
+        self.import_from_build_list = []
+
+        # Add all modules from the program hub to last_imported to process their imports
+        self.last_imported = list(self.prog.mod.hub.values())
+
+        # Process imports until no more imported modules to process
+        while self.last_imported:
+            current_module = self.last_imported.pop(0)
+            all_imports = UniPass.get_all_sub_nodes(current_module, uni.ModulePath)
+            for i in all_imports:
+                self.process_import(i)
+
+        return ir_in
 
     def process_import(self, i: uni.ModulePath) -> None:
         """Process an import."""
