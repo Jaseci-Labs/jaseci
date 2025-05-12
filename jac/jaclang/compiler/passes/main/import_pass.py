@@ -19,7 +19,6 @@ modules are available for subsequent passes like symbol table building and type 
 
 import ast as py_ast
 import os
-import pathlib
 from typing import Optional
 
 
@@ -265,29 +264,48 @@ class PyImportPass(JacImportPass):
             raise e
 
     def __load_builtins(self) -> None:
-        """Pyraise builtins to help with builtins auto complete."""
+        """Load Python builtins using introspection."""
+        import builtins
+        import inspect
         from jaclang.compiler.passes.main import PyastBuildPass
 
-        file_to_raise = str(
-            pathlib.Path(os.path.dirname(__file__)).parent.parent.parent
-            / "vendor"
-            / "mypy"
-            / "typeshed"
-            / "stdlib"
-            / "builtins.pyi"
-        )
-        with open(file_to_raise, "r", encoding="utf-8") as f:
-            file_source = f.read()
-            mod = PyastBuildPass(
-                ir_in=uni.PythonModuleAst(
-                    py_ast.parse(file_source),
-                    orig_src=uni.Source(file_source, file_to_raise),
-                ),
-                prog=self.prog,
-            ).ir_out
-            SymTabBuildPass(ir_in=mod, prog=self.prog)
-            self.prog.mod.hub[file_to_raise] = mod
-            mod.py_info.is_raised_from_py = True
+        # Python constants that cannot be assigned to
+        constants = {"True", "False", "None", "NotImplemented", "Ellipsis", "..."}
+
+        # Create a synthetic source with all builtins
+        builtin_items = []
+        for name in dir(builtins):
+            if name in constants:
+                # Skip constants as they're built into Python
+                continue
+
+            if not name.startswith("_") or name in ("__import__", "__build_class__"):
+                obj = getattr(builtins, name)
+                # Generate appropriate stub definitions based on obj type
+                if inspect.isclass(obj):
+                    builtin_items.append(f"class {name}: ...")
+                elif inspect.isfunction(obj) or inspect.isbuiltin(obj):
+                    # Try to get signature safely, use generic signature if it fails
+                    try:
+                        sig = inspect.signature(obj) if callable(obj) else "()"
+                        builtin_items.append(f"def {name}{sig}: ...")
+                    except (ValueError, TypeError):
+                        builtin_items.append(f"def {name}(*args, **kwargs): ...")
+                else:
+                    # For variables that are not constants
+                    builtin_items.append(f"{name} = None")
+
+        file_source = "\n".join(builtin_items)
+        mod = PyastBuildPass(
+            ir_in=uni.PythonModuleAst(
+                py_ast.parse(file_source),
+                orig_src=uni.Source(file_source, "builtins"),
+            ),
+            prog=self.prog,
+        ).ir_out
+        SymTabBuildPass(ir_in=mod, prog=self.prog)
+        self.prog.mod.hub["builtins"] = mod
+        mod.py_info.is_raised_from_py = True
 
     def annex_impl(self, node: uni.Module) -> None:
         """Annex impl and test modules."""
