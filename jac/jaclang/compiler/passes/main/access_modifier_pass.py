@@ -95,7 +95,7 @@ class AccessCheckPass(UniPass):
         access_type = "protected" if is_portect else "private"
 
         # The class we're currently in (None if we're not inside any).
-        sym_owner: uni.UniNode = node.sym.parent_tab.nix_owner
+        sym_owner: uni.UniNode = node.sym.parent_tab
 
         # If the symbol belongs to a class, we need to check if the access used properly
         # within the class and in it's inherited classes.
@@ -108,7 +108,7 @@ class AccessCheckPass(UniPass):
                     node,
                 )
 
-            if curr_class != node.sym.parent_tab.nix_owner:
+            if curr_class != node.sym.parent_tab:
                 if not is_portect:  # private member accessed in a different class.
                     return self.report_error(
                         f'Error: Invalid access of {access_type} member "{node.sym_name}".',

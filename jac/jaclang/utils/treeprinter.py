@@ -209,7 +209,7 @@ def print_ast_tree(
             else ""
         )
         sym_table_link = (
-            f"SymbolTable: {node.type_sym_tab.nix_name}"
+            f"SymbolTable: {node.type_sym_tab.scope_name}"
             if isinstance(node, AstSymbolNode) and node.type_sym_tab
             else "SymbolTable: None" if isinstance(node, AstSymbolNode) else ""
         )
@@ -385,7 +385,7 @@ def _build_symbol_tree_common(
     node: UniScopeNode, parent_node: Optional[SymbolTree] = None
 ) -> SymbolTree:
     root = SymbolTree(
-        node_name=f"SymTable::{node.nix_owner.__class__.__name__}({node.nix_name})",
+        node_name=f"SymTable::{node.__class__.__name__}({node.scope_name})",
         parent=parent_node,
     )
     symbols = SymbolTree(node_name="Symbols", parent=root)
@@ -434,12 +434,12 @@ def _build_symbol_tree_common(
             ]
 
     for k in node.kid_scope:
-        if k.nix_name == "builtins":
+        if k.scope_name == "builtins":
             continue
         _build_symbol_tree_common(k, children)
 
     for k2 in node.inherited_scope:
-        if k2.base_symbol_table.nix_name == "builtins":
+        if k2.base_symbol_table.scope_name == "builtins":
             continue
         _build_symbol_tree_common(k2.base_symbol_table, children)
     return root

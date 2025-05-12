@@ -746,9 +746,9 @@ class JacLanguageTests(TestCase):
         )
         table = None
         for i in mypass.sym_tab.kid_scope:
-            if i.nix_name == "GuessTheNumberGame":
+            if i.scope_name == "GuessTheNumberGame":
                 for j in i.kid_scope:
-                    if j.nix_name == "play":
+                    if j.scope_name == "play":
                         table = j
                         break
                 break

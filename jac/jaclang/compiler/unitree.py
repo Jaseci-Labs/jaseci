@@ -265,7 +265,7 @@ class Symbol:
         out = [self.defn[0].sym_name]
         current_tab: UniScopeNode | None = self.parent_tab
         while current_tab is not None:
-            out.append(current_tab.nix_name)
+            out.append(current_tab.scope_name)
             current_tab = current_tab.parent_scope
         out.reverse()
         return ".".join(out)
@@ -296,12 +296,10 @@ class UniScopeNode(UniNode):
     def __init__(
         self,
         name: str,
-        owner: UniNode,
         parent_scope: Optional[UniScopeNode] = None,
     ) -> None:
         """Initialize."""
-        self.nix_name = name
-        self.nix_owner = owner
+        self.scope_name = name
         self.parent_scope = parent_scope
         self.kid_scope: list[UniScopeNode] = []
         self.names_in_scope: dict[str, Symbol] = {}
@@ -309,8 +307,8 @@ class UniScopeNode(UniNode):
 
     def get_type(self) -> SymbolType:
         """Get type."""
-        if isinstance(self.nix_owner, AstSymbolNode):
-            return self.nix_owner.sym_category
+        if isinstance(self, AstSymbolNode):
+            return self.sym_category
         return SymbolType.VAR
 
     def get_parent(self) -> Optional[UniScopeNode]:
@@ -364,10 +362,10 @@ class UniScopeNode(UniNode):
     def find_scope(self, name: str) -> Optional[UniScopeNode]:
         """Find a scope in the symbol table."""
         for k in self.kid_scope:
-            if k.nix_name == name:
+            if k.scope_name == name:
                 return k
         for k2 in self.inherited_scope:
-            if k2.base_symbol_table.nix_name == name:
+            if k2.base_symbol_table.scope_name == name:
                 return k2.base_symbol_table
         return None
 
@@ -455,7 +453,7 @@ class UniScopeNode(UniNode):
                 # This is used to get the scope in case of
                 #      import math;
                 #      b = math.floor(1.7);
-                if cur_sym_tab.nix_name != i.sym_name:
+                if cur_sym_tab.scope_name != i.sym_name:
                     t = cur_sym_tab.find_scope(i.sym_name)
                     if t:
                         cur_sym_tab = t
@@ -510,7 +508,7 @@ class UniScopeNode(UniNode):
 
     def __repr__(self) -> str:
         """Repr."""
-        out = f"{self.nix_name} {super().__repr__()}:\n"
+        out = f"{self.scope_name} {super().__repr__()}:\n"
         for k, v in self.names_in_scope.items():
             out += f"    {k}: {v}\n"
         return out
@@ -947,7 +945,7 @@ class Module(AstDocNode, UniScopeNode):
 
         UniNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)
-        UniScopeNode.__init__(self, name=self.name, owner=self)
+        UniScopeNode.__init__(self, name=self.name)
 
     @property
     def annexable_by(self) -> Optional[str]:
@@ -1126,7 +1124,7 @@ class Test(AstSymbolNode, ElementStmt, UniScopeNode):
             sym_category=SymbolType.TEST,
         )
         AstDocNode.__init__(self, doc=doc)
-        UniScopeNode.__init__(self, name=self.sym_name, owner=self)
+        UniScopeNode.__init__(self, name=self.sym_name)
 
     def normalize(self, deep: bool = False) -> bool:
         res = True
@@ -1496,7 +1494,7 @@ class Architype(
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
         ArchSpec.__init__(self, decorators=decorators)
-        UniScopeNode.__init__(self, name=self.sym_name, owner=self)
+        UniScopeNode.__init__(self, name=self.sym_name)
         CodeBlockStmt.__init__(self)
 
     @property
@@ -1579,7 +1577,7 @@ class ImplDef(CodeBlockStmt, ElementStmt, ArchBlockStmt, AstSymbolNode, UniScope
             sym_category=SymbolType.IMPL,
         )
         CodeBlockStmt.__init__(self)
-        UniScopeNode.__init__(self, name=self.sym_name, owner=self)
+        UniScopeNode.__init__(self, name=self.sym_name)
 
     def create_impl_name_node(self) -> Name:
         ret = Name(
@@ -1645,7 +1643,7 @@ class Enum(ArchSpec, AstAccessNode, AstImplNeedingNode, ArchBlockStmt, UniScopeN
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
         ArchSpec.__init__(self, decorators=decorators)
-        UniScopeNode.__init__(self, name=self.sym_name, owner=self)
+        UniScopeNode.__init__(self, name=self.sym_name)
 
     def normalize(self, deep: bool = False) -> bool:
         res = True
@@ -1726,7 +1724,7 @@ class Ability(
         AstAccessNode.__init__(self, access=access)
         AstDocNode.__init__(self, doc=doc)
         AstAsyncNode.__init__(self, is_async=is_async)
-        UniScopeNode.__init__(self, name=self.sym_name, owner=self)
+        UniScopeNode.__init__(self, name=self.sym_name)
         CodeBlockStmt.__init__(self)
 
     @property
@@ -2049,7 +2047,7 @@ class TypedCtxBlock(CodeBlockStmt, UniScopeNode):
         self.type_ctx = type_ctx
         self.body = body
         UniNode.__init__(self, kid=kid)
-        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}")
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -2080,7 +2078,7 @@ class IfStmt(CodeBlockStmt, AstElseBodyNode, UniScopeNode):
         self.body = body
         UniNode.__init__(self, kid=kid)
         AstElseBodyNode.__init__(self, else_body=else_body)
-        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}")
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -2130,7 +2128,7 @@ class ElseStmt(UniScopeNode):
     ) -> None:
         self.body = body
         UniNode.__init__(self, kid=kid)
-        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}")
 
     def normalize(self, deep: bool = False) -> bool:
         res = True
@@ -2187,7 +2185,7 @@ class TryStmt(AstElseBodyNode, CodeBlockStmt, UniScopeNode):
         self.finally_body = finally_body
         UniNode.__init__(self, kid=kid)
         AstElseBodyNode.__init__(self, else_body=else_body)
-        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}")
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -2227,7 +2225,7 @@ class Except(CodeBlockStmt, UniScopeNode):
         self.name = name
         self.body = body
         UniNode.__init__(self, kid=kid)
-        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}")
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -2258,7 +2256,7 @@ class FinallyStmt(CodeBlockStmt, UniScopeNode):
     ) -> None:
         self.body = body
         UniNode.__init__(self, kid=kid)
-        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}")
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -2293,7 +2291,7 @@ class IterForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
         UniNode.__init__(self, kid=kid)
         AstAsyncNode.__init__(self, is_async=is_async)
         AstElseBodyNode.__init__(self, else_body=else_body)
-        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}")
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -2338,7 +2336,7 @@ class InForStmt(AstAsyncNode, AstElseBodyNode, CodeBlockStmt, UniScopeNode):
         UniNode.__init__(self, kid=kid)
         AstAsyncNode.__init__(self, is_async=is_async)
         AstElseBodyNode.__init__(self, else_body=else_body)
-        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}")
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -2376,7 +2374,7 @@ class WhileStmt(CodeBlockStmt, UniScopeNode):
         self.condition = condition
         self.body = body
         UniNode.__init__(self, kid=kid)
-        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}")
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -2408,7 +2406,7 @@ class WithStmt(AstAsyncNode, CodeBlockStmt, UniScopeNode):
         self.body = body
         UniNode.__init__(self, kid=kid)
         AstAsyncNode.__init__(self, is_async=is_async)
-        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}")
         CodeBlockStmt.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -2955,7 +2953,7 @@ class LambdaExpr(Expr, UniScopeNode):
         self.body = body
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
-        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}")
 
     def normalize(self, deep: bool = False) -> bool:
         res = True
@@ -3294,7 +3292,7 @@ class InnerCompr(AstAsyncNode, UniScopeNode):
         self.conditional = conditional
         UniNode.__init__(self, kid=kid)
         AstAsyncNode.__init__(self, is_async=is_async)
-        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}")
 
     def normalize(self, deep: bool = False) -> bool:
         res = True
@@ -3403,7 +3401,7 @@ class DictCompr(AtomExpr, UniScopeNode):
         UniNode.__init__(self, kid=kid)
         Expr.__init__(self)
         AstSymbolStubNode.__init__(self, sym_type=SymbolType.SEQUENCE)
-        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}")
 
     def normalize(self, deep: bool = False) -> bool:
         res = True
@@ -3906,7 +3904,7 @@ class MatchCase(UniScopeNode):
         self.guard = guard
         self.body = body
         UniNode.__init__(self, kid=kid)
-        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}", owner=self)
+        UniScopeNode.__init__(self, name=f"{self.__class__.__name__}")
 
     def normalize(self, deep: bool = False) -> bool:
         res = True

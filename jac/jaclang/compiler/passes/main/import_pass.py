@@ -254,7 +254,7 @@ class PyImportPass(JacImportPass):
                     # (thakee): This needs to be re-done after implementing path handling properly.
                     mod_name = mod.loc.mod_path.split(os.path.sep)[-2]
                     mod.name = mod_name
-                    mod.nix_name = mod_name
+                    mod.scope_name = mod_name
                 mod.py_info.is_raised_from_py = True
                 return mod
             else:

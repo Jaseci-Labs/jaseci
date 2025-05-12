@@ -148,6 +148,9 @@ class JacProgram:
 
         for mod in self.mod.hub.values():
             self.schedule_runner(mod, mode=CompilerMode.COMPILE)
+        # Check if we need to run without type checking then just return
+        if mode == CompilerMode.COMPILE:
+            return mod_targ
 
         for mod in self.mod.hub.values():
             PyCollectDepsPass(mod, prog=self)
@@ -165,10 +168,6 @@ class JacProgram:
 
         for mod in self.mod.hub.values():
             DefUsePass(mod, prog=self)
-
-        # Check if we need to run without type checking then just return
-        if mode == CompilerMode.COMPILE:
-            return mod_targ
 
         for mod in self.mod.hub.values():
             self.schedule_runner(mod, mode=CompilerMode.TYPECHECK)

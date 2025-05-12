@@ -192,14 +192,12 @@ class JacLangServer(LanguageServer):
                 for symbol in current_symbol_path:
                     if symbol == "self":
                         is_ability_def = (
-                            temp_tab.nix_owner
-                            if isinstance(temp_tab.nix_owner, uni.ImplDef)
-                            else temp_tab.nix_owner.find_parent_of_type(uni.ImplDef)
+                            temp_tab
+                            if isinstance(temp_tab, uni.ImplDef)
+                            else temp_tab.find_parent_of_type(uni.ImplDef)
                         )
                         if not is_ability_def:
-                            archi_owner = mod_tab.nix_owner.find_parent_of_type(
-                                uni.Architype
-                            )
+                            archi_owner = mod_tab.find_parent_of_type(uni.Architype)
                             temp_tab = (
                                 archi_owner.sym_tab
                                 if archi_owner and archi_owner.sym_tab
@@ -238,12 +236,9 @@ class JacLangServer(LanguageServer):
                 completion_items += collect_all_symbols_in_scope(
                     temp_tab, up_tree=False
                 )
-                if (
-                    isinstance(temp_tab.nix_owner, uni.Architype)
-                    and temp_tab.nix_owner.base_classes
-                ):
+                if isinstance(temp_tab, uni.Architype) and temp_tab.base_classes:
                     base = []
-                    for base_name in temp_tab.nix_owner.base_classes.items:
+                    for base_name in temp_tab.base_classes.items:
                         if isinstance(base_name, uni.Name) and base_name.sym:
                             base.append(base_name.sym)
                     for base_class_symbol in base:
