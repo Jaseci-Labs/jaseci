@@ -13,7 +13,6 @@ from .pybc_gen_pass import PyBytecodeGenPass  # noqa: I100
 from .py_collect_dep_pass import PyCollectDepsPass  # noqa: I100
 from .cfg_build_pass import CFGBuildPass  # noqa: I100
 from .pyjac_ast_link_pass import PyJacAstLinkPass  # noqa: I100
-from .access_modifier_pass import AccessCheckPass  # noqa: I100
 from .inheritance_pass import InheritancePass  # noqa: I100
 
 
@@ -41,6 +40,5 @@ __all__ = [
     "PyCollectDepsPass",
     "CFGBuildPass",
     "PyJacAstLinkPass",
-    "AccessCheckPass",
     "InheritancePass",
 ]

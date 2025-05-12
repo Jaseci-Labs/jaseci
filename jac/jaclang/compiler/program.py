@@ -10,12 +10,10 @@ from typing import Optional
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes.main import (
-    AccessCheckPass,
     CFGBuildPass,
     CompilerMode,
     DeclImplMatchPass,
     DefUsePass,
-    InheritancePass,
     JacAnnexPass,
     JacImportPass,
     PyBytecodeGenPass,
@@ -184,12 +182,11 @@ class JacProgram:
             DeclImplMatchPass,
             DefUsePass,
             CFGBuildPass,
+            # InheritancePass,
         ]
         py_code_gen = [
             PyastGenPass,
             PyJacAstLinkPass,
-            InheritancePass,
-            AccessCheckPass,
             PyBytecodeGenPass,
         ]
 
@@ -197,7 +194,7 @@ class JacProgram:
         match mode:
             case CompilerMode.NO_CGEN:
                 passes = ir_gen_sched
-            case CompilerMode.COMPILE:
+            case CompilerMode.COMPILE | CompilerMode.TYPECHECK:
                 passes = [*ir_gen_sched, *py_code_gen]
             case _:
                 raise ValueError(f"Invalid mode: {mode}")

@@ -22,7 +22,7 @@ class TestCFGBuildPass(TestCase):
             file_source = f.read()
 
         ir = (prog := JacProgram()).compile_from_str(
-            source_str=file_source, file_path=file_name, mode=CMode.TYPECHECK
+            source_str=file_source, file_path=file_name, mode=CMode.COMPILE
         )
 
         cfg_pass = CoalesceBBPass(
@@ -70,7 +70,7 @@ class TestCFGBuildPass(TestCase):
             file_source = f.read()
 
         ir = (prog := JacProgram()).compile_from_str(
-            source_str=file_source, file_path=file_name, mode=CMode.TYPECHECK
+            source_str=file_source, file_path=file_name, mode=CMode.COMPILE
         )
 
         cfg_pass = CoalesceBBPass(
