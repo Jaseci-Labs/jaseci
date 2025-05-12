@@ -97,6 +97,7 @@ def _traversal(
     traversal: list[list[NodeAnchor]] = []
     visited: set[NodeAnchor] = set()
     while len(queue) > 0:
+        print("running")
         node_level = queue.pop()
         traversal.append(node_level)
         next_nodes = [
@@ -118,7 +119,7 @@ def _traversal(
 
 
 NUM_DPU = 8  # TODO: You should define this appropriately
-MAX_NODE_NUM_PER_DPU = 64  # TODO: You should define this appropriately
+MAX_NODE_NUM_PER_DPU = 640  # TODO: You should define this appropriately
 
 
 def generate_data_mapping(

@@ -7,6 +7,7 @@ import fnmatch
 import html
 import inspect
 import os
+from pprint import pprint
 import sys
 import tempfile
 import types
@@ -378,7 +379,9 @@ class JacWalker:
     def graph_cut(start: NodeAnchor) -> None:
         prog = JacMachine.get_context().mach.jac_program.mod
         visits = [astNode for astNode in prog.get_all_sub_nodes(uni.VisitStmt)]
-        generate_data_mapping(visits, start)
+        data_mapping = generate_data_mapping(visits, start)
+        output = {(node.architype):mapped_dpu for node, mapped_dpu in data_mapping.items()}
+        pprint(output)
 
     @staticmethod
     def spawn(op1: Architype, op2: Architype) -> WalkerArchitype:
