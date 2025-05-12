@@ -22,7 +22,7 @@ from typing import (
 
 
 from jaclang.compiler import TOKEN_MAP
-from jaclang.compiler.codeinfo import CodeGenTarget, CodeLocInfo
+from jaclang.compiler.codeinfo import CodeGenTarget, CodeLocInfo, PyInfo
 from jaclang.compiler.constant import (
     Constants as Con,
     EdgeDir,
@@ -31,7 +31,6 @@ from jaclang.compiler.constant import (
     SymbolType,
 )
 from jaclang.compiler.constant import DELIM_MAP, SymbolAccess, Tokens as Tok
-from jaclang.compiler.py_info import PyInfo
 from jaclang.utils.treeprinter import (
     dotgen_ast_tree,
     dotgen_symtab_tree,
@@ -941,7 +940,7 @@ class Module(AstDocNode, UniScopeNode):
         self.impl_mod: list[Module] = []
         self.test_mod: list[Module] = []
         self.terminals: list[Token] = terminals
-        self.py_info: PyInfo = PyInfo()
+        self.codeinfo: PyInfo = PyInfo()
 
         UniNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)

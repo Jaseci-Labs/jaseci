@@ -223,7 +223,6 @@ class JacCliTests(TestCase):
         cli.run(f"{self.fixture_abs_path('needs_import.jir')}")
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        print(stdout_value)
         self.assertIn("Errors: 0, Warnings: 0", stdout_value)
         self.assertIn("<module 'pyfunc' from", stdout_value)
 
