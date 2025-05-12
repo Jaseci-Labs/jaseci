@@ -7,7 +7,7 @@ from typing import Callable, Optional
 
 import jaclang
 from jaclang.compiler.program import JacProgram
-from jaclang.runtimelib.machine import JacMachineState
+from jaclang.runtimelib.machine import JacMachine
 from jaclang.utils.test import TestCase
 
 
@@ -59,7 +59,7 @@ class JacReferenceTests(TestCase):
                     {
                         "__file__": filename,
                         "__name__": "__main__",
-                        "__jac_mach__": JacMachineState(),
+                        "__jac_mach__": JacMachine(),
                     },
                 )
             return f.getvalue()

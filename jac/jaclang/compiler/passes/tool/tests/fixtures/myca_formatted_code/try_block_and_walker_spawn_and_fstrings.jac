@@ -5,7 +5,7 @@ walker cycle {
     can cycle with user_root entry {
         self.jaseci_sdk = {};
         res = f"> Processing for {here.name} {here.jid}";
-        try  {
+        try {
             user_jid = here.jid;
             day_graph = self.jaseci_sdk.fetch_graph(
                 user_jid=user_jid,

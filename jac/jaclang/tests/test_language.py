@@ -7,7 +7,7 @@ import sysconfig
 import tempfile
 from unittest.mock import patch
 
-from jaclang import JacMachine as Jac, JacMachineState
+from jaclang import JacMachineInterface as Jac, JacMachine
 from jaclang.cli import cli
 from jaclang.compiler.passes.main import CompilerMode as CMode
 from jaclang.compiler.program import JacProgram
@@ -19,7 +19,7 @@ class JacLanguageTests(TestCase):
 
     def setUp(self) -> None:
         """Set up test."""
-        self.mach = JacMachineState(self.fixture_abs_path("./"))
+        self.mach = JacMachine(self.fixture_abs_path("./"))
         Jac.attach_program(
             self.mach,
             JacProgram(),
@@ -311,7 +311,7 @@ class JacLanguageTests(TestCase):
 
     def test_deep_imports_interp_mode(self) -> None:
         """Parse micro jac file."""
-        mach = JacMachineState(self.fixture_abs_path("./"), interp_mode=True)
+        mach = JacMachine(self.fixture_abs_path("./"), interp_mode=True)
         Jac.attach_program(
             mach,
             JacProgram(),
@@ -321,7 +321,7 @@ class JacLanguageTests(TestCase):
         )
         print(mach.jac_program.mod.hub.keys())
         self.assertEqual(len(mach.jac_program.mod.hub.keys()), 1)
-        mach = JacMachineState(self.fixture_abs_path("./"), interp_mode=False)
+        mach = JacMachine(self.fixture_abs_path("./"), interp_mode=False)
         Jac.attach_program(
             mach,
             JacProgram(),

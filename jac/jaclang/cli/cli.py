@@ -19,8 +19,8 @@ from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.builtin import dotgen
 from jaclang.runtimelib.constructs import WalkerArchitype
 from jaclang.runtimelib.machine import (
-    JacMachine as Jac,
-    JacMachineState,
+    JacMachine,
+    JacMachineInterface as Jac,
     call_jac_func_with_machine,
 )
 from jaclang.utils.helpers import debugger as db
@@ -88,8 +88,8 @@ def format(path: str, outfile: str = "", to_screen: bool = False) -> None:
 
 def proc_file_sess(
     filename: str, session: str, root: Optional[str] = None, interp: bool = False
-) -> tuple[str, str, JacMachineState]:
-    """Create JacMachineState and return the base path, module name, and machine state."""
+) -> tuple[str, str, JacMachine]:
+    """Create JacMachine and return the base path, module name, and machine state."""
     if session == "":
         session = (
             cmd_registry.args.session
@@ -101,7 +101,7 @@ def proc_file_sess(
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
-    mach = JacMachineState(base, session=session, root=root, interp_mode=interp)
+    mach = JacMachine(base, session=session, root=root, interp_mode=interp)
     return base, mod, mach
 
 
@@ -400,7 +400,7 @@ def test(
         jac test --xit               # Stop on first failure
         jac test --verbose           # Show detailed output
     """
-    mach = JacMachineState()
+    mach = JacMachine()
 
     failcount = Jac.run_test(
         mach=mach,

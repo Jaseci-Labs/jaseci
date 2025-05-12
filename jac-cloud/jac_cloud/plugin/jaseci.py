@@ -6,7 +6,11 @@ from typing import Callable, Type
 
 from jaclang.compiler.constant import EdgeDir
 from jaclang.runtimelib.architype import Architype
-from jaclang.runtimelib.machine import JacMachine as Jac, JacMachineImpl, hookimpl
+from jaclang.runtimelib.machine import (
+    JacMachineImpl,
+    JacMachineInterface as Jac,
+    hookimpl,
+)
 from jaclang.runtimelib.utils import all_issubclass
 
 from ..core.architype import (
@@ -25,7 +29,7 @@ from ..core.architype import (
     WalkerAnchor,
     WalkerArchitype,
 )
-from ..core.context import JacMachineState, JaseciContext
+from ..core.context import JacMachine, JaseciContext
 from ..jaseci.main import FastAPI
 
 
@@ -124,7 +128,7 @@ class JacAccessValidationPlugin:
 
         jctx = JaseciContext.get()
 
-        jroot = jctx.root
+        jroot = jctx.root_state
 
         # if current root is system_root
         # if current root id is equal to target anchor's root id
@@ -231,7 +235,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
-    def get_context() -> JacMachineState:
+    def get_context() -> JacMachine:
         """Get current execution context."""
         if not FastAPI.is_enabled():
             return JacMachineImpl.get_context()
@@ -246,7 +250,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
             return JacMachineImpl.reset_graph(root=root)  # type: ignore[arg-type]
 
         ctx = JaseciContext.get()
-        ranchor = root.__jac__ if root else ctx.root
+        ranchor = root.__jac__ if root else ctx.root_state
 
         deleted_count = 0  # noqa: SIM113
 

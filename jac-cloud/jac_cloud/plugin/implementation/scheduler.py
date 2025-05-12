@@ -14,7 +14,7 @@ from apscheduler.util import _Undefined, undefined
 
 from fastapi.responses import JSONResponse, ORJSONResponse
 
-from jaclang.runtimelib.machine import JacMachine as Jac
+from jaclang.runtimelib.machine import JacMachineInterface as Jac
 
 from ...core.architype import (
     NodeAnchor,
@@ -221,11 +221,11 @@ def run_task(
     jctx = JaseciContext.create(None, node or root)
 
     if root:
-        jctx.root = root
+        jctx.root_state = root
 
     if walker.schedule and (root_id := walker.schedule.root_id):
-        jctx.root = NodeAnchor.ref(root_id)
-        jctx.root.architype
+        jctx.root_state = NodeAnchor.ref(root_id)
+        jctx.root_state.architype
 
     warch = walker.architype
 

@@ -5,7 +5,7 @@ import io
 import os
 import sys
 
-from jaclang import JacMachine as Jac
+from jaclang import JacMachineInterface as Jac
 from jaclang.compiler import jac_lark as jl
 from jaclang.compiler.constant import Tokens
 from jaclang.compiler.parser import JacParser

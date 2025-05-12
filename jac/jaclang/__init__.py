@@ -3,7 +3,7 @@
 from jaclang.runtimelib.machine import (
     JacMachine,
     JacMachineImpl,
-    JacMachineState,
+    JacMachineInterface,
     plugin_manager,
 )
 
@@ -11,4 +11,4 @@ from jaclang.runtimelib.machine import (
 plugin_manager.register(JacMachineImpl)
 plugin_manager.load_setuptools_entrypoints("jac")
 
-__all__ = ["JacMachine", "JacMachineState"]
+__all__ = ["JacMachineInterface", "JacMachine"]
