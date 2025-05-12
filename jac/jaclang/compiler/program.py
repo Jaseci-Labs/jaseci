@@ -18,7 +18,7 @@ from jaclang.compiler.passes.main import (
     JacAnnexPass,
     JacImportDepsPass,
     PyBytecodeGenPass,
-    PyImportPass,
+    PyImportDepsPass,
     PyJacAstLinkPass,
     PyastBuildPass,
     PyastGenPass,
@@ -120,44 +120,20 @@ class JacProgram:
         if not full_compile:
             self.schedule_runner(mod_targ, mode=mode)
             return mod_targ
-        else:
-            # Process Jac imports for the entire program
-            JacImportDepsPass(ir_in=mod_targ, prog=self)
-
+        JacImportDepsPass(ir_in=mod_targ, prog=self)
         if len(self.errors_had):
             return mod_targ
-        else:
-            return self.run_whole_program_schedule(
-                mod_targ=mod_targ,
-                mode=mode,
-            )
-
-    def run_whole_program_schedule(
-        self,
-        mod_targ: uni.Module,
-        mode: CompilerMode = CompilerMode.COMPILE,
-    ) -> uni.Module:
-        """Convert a Jac file to an AST."""
-        # Link all symbol tables for modules in the program
         SymTabLinkPass(ir_in=mod_targ, prog=self)
-
         for mod in self.mod.hub.values():
             self.schedule_runner(mod, mode=CompilerMode.COMPILE)
-        # Check if we need to run without type checking then just return
         if mode == CompilerMode.COMPILE:
             return mod_targ
-
-        PyImportPass(next(iter(self.mod.hub.values())), prog=self)
-
-        # Link all Jac symbol tables created after Python imports
+        PyImportDepsPass(mod_targ, prog=self)
         SymTabLinkPass(ir_in=mod_targ, prog=self)
-
         for mod in self.mod.hub.values():
             DefUsePass(mod, prog=self)
-
         for mod in self.mod.hub.values():
             self.schedule_runner(mod, mode=CompilerMode.TYPECHECK)
-
         return mod_targ
 
     def schedule_runner(
@@ -177,8 +153,6 @@ class JacProgram:
             PyJacAstLinkPass,
             PyBytecodeGenPass,
         ]
-
-        final_pass: Optional[type[Transform[uni.Module, uni.Module]]] = None
         match mode:
             case CompilerMode.NO_CGEN:
                 passes = ir_gen_sched
@@ -188,6 +162,15 @@ class JacProgram:
                 passes = []
             case _:
                 raise ValueError(f"Invalid mode: {mode}")
+        self.run_schedule(mod, passes)
+
+    def run_schedule(
+        self,
+        mod: uni.Module,
+        passes: list[type[Transform[uni.Module, uni.Module]]],
+    ) -> None:
+        """Run the passes on the module."""
+        final_pass: Optional[type[Transform[uni.Module, uni.Module]]] = None
         for current_pass in passes:
             if current_pass == PyBytecodeGenPass:
                 final_pass = current_pass

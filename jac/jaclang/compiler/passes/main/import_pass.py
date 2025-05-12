@@ -125,7 +125,7 @@ class JacImportDepsPass(Transform[uni.Module, uni.Module]):
             )
 
 
-class PyImportPass(JacImportDepsPass):
+class PyImportDepsPass(JacImportDepsPass):
     """Jac statically imports Python modules."""
 
     def pre_transform(self) -> None:
