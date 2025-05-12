@@ -10,6 +10,7 @@ from typing import Optional
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes.main import (
+    Alert,
     CFGBuildPass,
     CompilerMode,
     DeclImplMatchPass,
@@ -23,10 +24,10 @@ from jaclang.compiler.passes.main import (
     PyastBuildPass,
     PyastGenPass,
     SymTabBuildPass,
+    SymTabLinkPass,
+    Transform,
 )
-from jaclang.compiler.passes.main.sym_tab_link_pass import SymTabLinkPass
 from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
-from jaclang.compiler.passes.transform import Alert, Transform
 from jaclang.utils.log import logging
 
 
