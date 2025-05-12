@@ -208,12 +208,12 @@ class AstTool:
                     ir = prog.compile_from_str(
                         source_str=rep.unparse(),
                         file_path=file_name[:-3] + ".jac",
-                        mode=CMode.TYPECHECK,
+                        mode=CMode.NO_CGEN,
                     )
                 except Exception as e:
                     return f"Error While Jac to Py AST conversion: {e}"
             else:
-                ir = prog.compile(file_name, mode=CMode.TYPECHECK)
+                ir = prog.compile(file_name, mode=CMode.NO_CGEN)
 
             match output:
                 case "sym":

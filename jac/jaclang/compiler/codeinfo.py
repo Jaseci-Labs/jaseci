@@ -6,8 +6,6 @@ import ast as ast3
 from dataclasses import dataclass, field
 from typing import Optional, TYPE_CHECKING
 
-from jaclang.vendor.mypy.nodes import Node as MypyNode
-
 if TYPE_CHECKING:
     from jaclang.compiler.unitree import Source, Token
 

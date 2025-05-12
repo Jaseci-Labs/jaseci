@@ -297,7 +297,7 @@ class JacLanguageTests(TestCase):
             mach, "deep_import_interp", base_path=self.fixture_abs_path("./")
         )
         print(mach.jac_program.mod.hub.keys())
-        self.assertEqual(len(mach.jac_program.mod.hub.keys()), 6)
+        self.assertEqual(len(mach.jac_program.mod.hub.keys()), 5)
 
     def test_deep_imports_mods(self) -> None:
         """Parse micro jac file."""

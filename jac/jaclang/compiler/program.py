@@ -194,8 +194,10 @@ class JacProgram:
         match mode:
             case CompilerMode.NO_CGEN:
                 passes = ir_gen_sched
-            case CompilerMode.COMPILE | CompilerMode.TYPECHECK:
+            case CompilerMode.COMPILE:
                 passes = [*ir_gen_sched, *py_code_gen]
+            case CompilerMode.TYPECHECK:
+                passes = []
             case _:
                 raise ValueError(f"Invalid mode: {mode}")
         for current_pass in passes:
