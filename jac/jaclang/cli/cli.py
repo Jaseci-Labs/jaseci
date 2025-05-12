@@ -216,7 +216,7 @@ def get_object(filename: str, id: str, session: str = "", main: bool = True) -> 
 
 
 @cmd_registry.register
-def build(filename: str, typecheck: bool = True) -> None:
+def build(filename: str) -> None:
     """Build the specified .jac file.
 
     Compiles a Jac source file into a Jac Intermediate Representation (.jir) file,
@@ -233,14 +233,11 @@ def build(filename: str, typecheck: bool = True) -> None:
     if filename.endswith(".jac"):
         (out := JacProgram()).compile(
             file_path=filename,
-            mode=CMode.TYPECHECK if typecheck else CMode.COMPILE,
+            mode=CMode.COMPILE,
         )
         errs = len(out.errors_had)
         warnings = len(out.warnings_had)
         print(f"Errors: {errs}, Warnings: {warnings}")
-        for i in out.mod.hub.values():
-            for j in i.flatten():
-                j.gen.mypy_ast = []
         with open(filename[:-4] + ".jir", "wb") as f:
             pickle.dump(out, f)
     else:

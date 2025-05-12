@@ -291,3 +291,48 @@ class JacTypeCheckTests(TestCase):
         self.assertEqual(len(mypass.errors_had), 0)
         # FIXME: Figure out what to do with warning.
         # self.assertEqual(len(mypass.warnings_had), 0)
+
+    def test_expr_types(self) -> None:
+        """Testing for print AstTool."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        cli.tool("ir", ["ast", f"{self.fixture_abs_path('expr_type.jac')}"])
+
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+
+        self.assertRegex(
+            stdout_value, r"4\:9 \- 4\:14.*BinaryExpr \- Type\: builtins.int"
+        )
+        self.assertRegex(
+            stdout_value, r"7\:9 \- 7\:17.*FuncCall \- Type\: builtins.float"
+        )
+        self.assertRegex(
+            stdout_value, r"9\:6 \- 9\:11.*CompareExpr \- Type\: builtins.bool"
+        )
+        self.assertRegex(
+            stdout_value, r"10\:6 - 10\:15.*BinaryExpr \- Type\: builtins.str"
+        )
+        self.assertRegex(
+            stdout_value, r"11\:5 \- 11\:13.*AtomTrailer \- Type\: builtins.int"
+        )
+        self.assertRegex(
+            stdout_value, r"12\:5 \- 12\:14.*UnaryExpr \- Type\: builtins.bool"
+        )
+        self.assertRegex(
+            stdout_value, r"13\:5 \- 13\:25.*IfElseExpr \- Type\: Literal\['a']\?"
+        )
+        self.assertRegex(
+            stdout_value,
+            r"14\:5 \- 14\:27.*ListCompr - \[ListCompr] \- Type\: builtins.list\[builtins.int]",
+        )
+
+    def test_type_check(self) -> None:
+        """Testing for print AstTool."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.check(f"{self.fixture_abs_path('game1.jac')}")
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("Errors: 0, Warnings: 1", stdout_value)

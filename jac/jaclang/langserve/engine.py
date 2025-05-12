@@ -341,7 +341,6 @@ class JacLangServer(LanguageServer):
                 node_info += f"\n{node.doc.value}"
             if isinstance(node, uni.Ability) and node.signature:
                 node_info += f"\n{node.signature.unparse()}"
-            self.log_py(f"mypy_node: {node.gen.mypy_ast}")
         except AttributeError as e:
             self.log_warning(f"Attribute error when accessing node attributes: {e}")
         return node_info.strip()

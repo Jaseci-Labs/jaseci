@@ -20,7 +20,6 @@ class CodeGenTarget:
     jac: str = ""
     js: str = ""
     py_ast: list[ast3.AST] = field(default_factory=lambda: [])
-    mypy_ast: list[MypyNode] = field(default_factory=lambda: [])
     py_bytecode: Optional[bytes] = None
 
     def clean(self) -> None:
@@ -29,7 +28,6 @@ class CodeGenTarget:
         self.jac = ""
         self.js = ""
         self.py_ast = []
-        self.mypy_ast = []
 
 
 class CodeLocInfo:
