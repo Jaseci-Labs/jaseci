@@ -22,19 +22,29 @@ import os
 from typing import Optional
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.passes import UniPass
+from jaclang.compiler.passes import Transform
 from jaclang.compiler.unitree import InheritedSymbolTable, UniScopeNode
 
 
-class SymTabLinkPass(UniPass):
+class SymTabLinkPass(Transform[uni.Module, uni.Module]):
     """Link the symbol table."""
 
-    def enter_module_path(self, node: uni.ModulePath) -> None:
-        """Link the symbol tables."""
+    def transform(self, ir_in: uni.Module) -> uni.Module:
+        """Link the symbol tables for all modules in the program."""
+        # Process all modules in the program hub
+        for mod in self.prog.mod.hub.values():
+            module_paths = mod.get_all_sub_nodes(uni.ModulePath)
+            for node in module_paths:
+                self.process_module_path(mod, node)
+
+        return ir_in
+
+    def process_module_path(self, mod: uni.Module, node: uni.ModulePath) -> None:
+        """Process a module path node to link symbol tables."""
         imp_node = node.parent_of_type(uni.Import)
 
         # Get path to the imported module
-        rel_path = self._get_module_path(node, imp_node)
+        rel_path = self._get_module_path(mod, node, imp_node)
         if not rel_path or rel_path not in self.prog.mod.hub:
             return
 
@@ -56,7 +66,7 @@ class SymTabLinkPass(UniPass):
             )
 
     def _get_module_path(
-        self, node: uni.ModulePath, imp_node: uni.Import
+        self, mod: uni.Module, node: uni.ModulePath, imp_node: uni.Import
     ) -> Optional[str]:
         """Get the path to the imported module."""
         if imp_node.is_jac:
@@ -79,7 +89,7 @@ class SymTabLinkPass(UniPass):
             if node.sym_name in self.prog.py_raise_map:
                 return self.prog.py_raise_map[node.sym_name]
 
-            full_path = f"{self.ir_out.get_href_path(node)}.{node.sym_name}"
+            full_path = f"{mod.get_href_path(node)}.{node.sym_name}"
             if full_path in self.prog.py_raise_map:
                 return self.prog.py_raise_map[full_path]
 

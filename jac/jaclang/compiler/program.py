@@ -15,7 +15,7 @@ from jaclang.compiler.passes.main import (
     DeclImplMatchPass,
     DefUsePass,
     JacAnnexPass,
-    JacImportPass,
+    JacImportDepsPass,
     PyBytecodeGenPass,
     PyCollectDepsPass,
     PyImportPass,
@@ -122,7 +122,7 @@ class JacProgram:
             return mod_targ
         else:
             # Process Jac imports for the entire program
-            JacImportPass(ir_in=mod_targ, prog=self)
+            JacImportDepsPass(ir_in=mod_targ, prog=self)
 
         if len(self.errors_had):
             return mod_targ
@@ -138,8 +138,8 @@ class JacProgram:
         mode: CompilerMode = CompilerMode.COMPILE,
     ) -> uni.Module:
         """Convert a Jac file to an AST."""
-        for mod in self.mod.hub.values():
-            SymTabLinkPass(ir_in=mod, prog=self)
+        # Link all symbol tables for modules in the program
+        SymTabLinkPass(ir_in=mod_targ, prog=self)
 
         for mod in self.mod.hub.values():
             self.schedule_runner(mod, mode=CompilerMode.COMPILE)
@@ -150,13 +150,10 @@ class JacProgram:
         for mod in self.mod.hub.values():
             PyCollectDepsPass(mod, prog=self)
 
-        # Run PyImportPass on one of the modules - it will process all modules in the hub
-        if self.mod.hub:
-            PyImportPass(next(iter(self.mod.hub.values())), prog=self)
+        PyImportPass(next(iter(self.mod.hub.values())), prog=self)
 
-        # Link all Jac symbol tables created
-        for mod in self.mod.hub.values():
-            SymTabLinkPass(ir_in=mod, prog=self)
+        # Link all Jac symbol tables created after Python imports
+        SymTabLinkPass(ir_in=mod_targ, prog=self)
 
         for mod in self.mod.hub.values():
             DefUsePass(mod, prog=self)

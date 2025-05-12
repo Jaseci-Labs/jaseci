@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 # TODO: This pass finds imports dependencies, parses them, and adds them to
 # JacProgram's table, then table calls again if needed, should rename
-class JacImportPass(Transform[uni.Module, uni.Module]):
+class JacImportDepsPass(Transform[uni.Module, uni.Module]):
     """Jac statically imports Jac modules."""
 
     def pre_transform(self) -> None:
@@ -125,7 +125,7 @@ class JacImportPass(Transform[uni.Module, uni.Module]):
             )
 
 
-class PyImportPass(JacImportPass):
+class PyImportPass(JacImportDepsPass):
     """Jac statically imports Python modules."""
 
     def pre_transform(self) -> None:
