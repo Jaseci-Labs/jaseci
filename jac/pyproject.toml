@@ -23,9 +23,9 @@ documentation = "https://jac-lang.org"
 python = "^3.11.0"
 # Below are vendored in using poetry export and pip download
 # lark = "^1.2.2"
-# mypy = "^1.15.0"
 # pluggy = "^1.5.0"
 # pygls = "^1.3.1"
+mypy = "^1.15.0"
 
 [tool.poetry.scripts]
 jac = "jaclang.cli.cli:start_cli"
