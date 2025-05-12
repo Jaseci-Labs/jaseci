@@ -7,7 +7,6 @@ import fnmatch
 import html
 import inspect
 import os
-from pprint import pprint
 import sys
 import tempfile
 import types
@@ -16,6 +15,7 @@ from dataclasses import dataclass, field
 from functools import wraps
 from inspect import getfile
 from logging import getLogger
+from pprint import pprint
 from typing import (
     Any,
     Callable,
@@ -63,7 +63,6 @@ from jaclang.runtimelib.utils import (
     collect_node_connections,
     traverse_graph,
 )
-import jaclang.compiler.unitree as uni
 
 import pluggy
 
@@ -377,10 +376,13 @@ class JacWalker:
 
     @staticmethod
     def graph_cut(start: NodeAnchor) -> None:
+        """Jac Pim graph cut entry point."""
         prog = JacMachine.get_context().mach.jac_program.mod
-        visits = [astNode for astNode in prog.get_all_sub_nodes(uni.VisitStmt)]
+        visits = prog.get_all_sub_nodes(ast.VisitStmt)
         data_mapping = generate_data_mapping(visits, start)
-        output = {(node.architype):mapped_dpu for node, mapped_dpu in data_mapping.items()}
+        output = {
+            (node.architype): mapped_dpu for node, mapped_dpu in data_mapping.items()
+        }
         pprint(output)
 
     @staticmethod
@@ -406,9 +408,8 @@ class JacWalker:
                 raise TypeError("Invalid target object")
         else:
             raise TypeError("Invalid walker object")
-        
+
         JacMachine.graph_cut(node)
-        
 
         walker.path = []
         walker.next = [node]
