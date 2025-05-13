@@ -30,7 +30,9 @@ Jac.setup()
 
 
 @cmd_registry.register
-def format(path: str, outfile: str = "", to_screen: bool = False) -> None:
+def format(
+    path: str, outfile: str = "", to_screen: bool = False, formatter: str = ""
+) -> None:
     """Format .jac files with improved code style.
 
     Applies consistent formatting to Jac code files to improve readability and
@@ -40,13 +42,20 @@ def format(path: str, outfile: str = "", to_screen: bool = False) -> None:
         path: Path to a .jac file or directory containing .jac files
         outfile: Optional output file path (when formatting a single file)
         to_screen: Print formatted code to stdout instead of writing to file
+        formatter: Formatter type to use ('classic' or 'prettier')
 
     Examples:
         jac format myfile.jac
         jac format myproject/
         jac format myfile.jac --outfile formatted.jac
         jac format myfile.jac --to_screen
+        jac format myfile.jac --formatter prettier
     """
+    # Set formatter type in settings if specified
+    from jaclang.settings import settings
+
+    if formatter and formatter in ["classic", "prettier"]:
+        settings.formatter_type = formatter
 
     def write_formatted_code(code: str, target_path: str) -> None:
         """Write formatted code to the appropriate destination."""

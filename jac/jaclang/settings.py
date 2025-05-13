@@ -23,6 +23,7 @@ class Settings:
 
     # Formatter configuration
     max_line_length: int = 88
+    formatter_type: str = "classic"  # "classic" or "prettier"
 
     # LSP configuration
     lsp_debug: bool = False
