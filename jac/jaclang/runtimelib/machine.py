@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast as ast3
+import asyncio
 import fnmatch
 import html
 import inspect
@@ -11,9 +12,8 @@ import sys
 import tempfile
 import types
 from collections import OrderedDict
-from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import MISSING, dataclass, field
-from functools import wraps
+from functools import partial, wraps
 from inspect import getfile
 from logging import getLogger
 from typing import (
@@ -463,7 +463,7 @@ class JacWalker:
         return warch
 
     @staticmethod
-    def spawn(op1: Architype, op2: Architype) -> WalkerArchitype | Future:
+    def spawn(op1: Architype, op2: Architype) -> WalkerArchitype | asyncio.Future:
         """Jac's spawn operator feature."""
         if isinstance(op1, WalkerArchitype):
             warch = op1
@@ -488,8 +488,10 @@ class JacWalker:
 
         if warch.__jac_async__:
             machine = JacMachineInterface.py_get_jac_machine()
-            return machine.pool.submit(
-                JacMachineInterface.spawn_call, walker=walker, node=node
+            _event_loop = machine._event_loop
+            func = partial(JacMachineInterface.spawn_call, *(walker, node))
+            return asyncio.ensure_future(
+                _event_loop.run_in_executor(None, func), loop=_event_loop
             )
         else:
             return JacMachineInterface.spawn_call(walker=walker, node=node)
@@ -1498,7 +1500,9 @@ class JacUtils:
     @staticmethod
     def await_obj(obj: Any) -> Any:  # noqa: ANN401
         """Await an object if it is a coroutine or async or future function."""
-        return obj.result()
+        machine = JacMachineInterface.py_get_jac_machine()
+        _event_loop = machine._event_loop
+        return _event_loop.run_until_complete(obj)
 
 
 class JacMachineInterface(
@@ -1538,7 +1542,7 @@ class JacMachine(JacMachineInterface):
         )
         self.jac_program: JacProgram = JacProgram()
         self.interp_mode = interp_mode
-        self.pool = ThreadPoolExecutor()
+        self._event_loop = asyncio.new_event_loop()
         self.mem: Memory = ShelfStorage(session)
         self.reports: list[Any] = []
         sr_arch = Root()
