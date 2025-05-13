@@ -75,6 +75,7 @@ nav:
       - Runtime Plugin Interface: "internals/jac_plugins.md"
     - Planning Specs and Docs:
       - Error System: "internals/planning_specs/error_system.md"
+      - Formatter System: "internals/planning_specs/formatter_system.md"
       - Native Type System:
         - Introduction: "internals/planning_specs/native_type_system/index.md"
         - Architecture: "internals/planning_specs/native_type_system/architecture.md"
