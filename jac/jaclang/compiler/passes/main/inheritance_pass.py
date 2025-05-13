@@ -111,7 +111,7 @@ class InheritancePass(Transform[uni.Module, uni.Module]):
         """Check if a Python symbol table is missing."""
         return (
             symbol_table is None
-            and symbol.defn[0].parent_of_type(uni.Module).codeinfo.is_raised_from_py
+            and symbol.defn[0].parent_of_type(uni.Module).is_raised_from_py
         )
 
     def is_index_slice_next(

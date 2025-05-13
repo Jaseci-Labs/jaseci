@@ -22,7 +22,7 @@ from typing import (
 
 
 from jaclang.compiler import TOKEN_MAP
-from jaclang.compiler.codeinfo import CodeGenTarget, CodeLocInfo, PyInfo
+from jaclang.compiler.codeinfo import CodeGenTarget, CodeLocInfo
 from jaclang.compiler.constant import (
     Constants as Con,
     EdgeDir,
@@ -940,7 +940,7 @@ class Module(AstDocNode, UniScopeNode):
         self.impl_mod: list[Module] = []
         self.test_mod: list[Module] = []
         self.terminals: list[Token] = terminals
-        self.codeinfo: PyInfo = PyInfo()
+        self.is_raised_from_py: bool = False
 
         UniNode.__init__(self, kid=kid)
         AstDocNode.__init__(self, doc=doc)

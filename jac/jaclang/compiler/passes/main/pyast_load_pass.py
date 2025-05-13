@@ -143,7 +143,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             terminals=[],
             kid=valid,
         )
-        ret.codeinfo.is_raised_from_py = True
+        ret.is_raised_from_py = True
         return self.nu(ret)
 
     def proc_function_def(

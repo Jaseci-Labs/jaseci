@@ -231,7 +231,7 @@ def print_ast_tree(
             return f"{node.__class__.__name__} - {node.value}, {access}"
         elif (
             isinstance(node, uni.Module)
-            and node.codeinfo.is_raised_from_py
+            and node.is_raised_from_py
             and not print_py_raise
         ):
             return f"{node.__class__.__name__} - PythonModuleRaised: {node.name}"
@@ -319,12 +319,12 @@ def print_ast_tree(
         tree_str = f"{root.loc}\t{markers}{__node_repr_in_tree(root)}\n"
         if (
             isinstance(root, uni.Module)
-            and root.codeinfo.is_raised_from_py
+            and root.is_raised_from_py
             and not print_py_raise
         ):
             kids: list[UniNode] = [
                 *filter(
-                    lambda x: x.codeinfo.is_raised_from_py,
+                    lambda x: x.is_raised_from_py,
                     root.get_all_sub_nodes(uni.Module),
                 )
             ]

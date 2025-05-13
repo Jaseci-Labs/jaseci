@@ -280,7 +280,7 @@ class PyImportDepsPass(JacImportDepsPass):
                     mod_name = mod.loc.mod_path.split(os.path.sep)[-2]
                     mod.name = mod_name
                     mod.scope_name = mod_name
-                mod.codeinfo.is_raised_from_py = True
+                mod.is_raised_from_py = True
                 return mod
             else:
                 raise self.ice(f"\tFailed to import python module {mod_path}")
@@ -331,7 +331,7 @@ class PyImportDepsPass(JacImportDepsPass):
         ).ir_out
         SymTabBuildPass(ir_in=mod, prog=self.prog)
         self.prog.mod.hub["builtins"] = mod
-        mod.codeinfo.is_raised_from_py = True
+        mod.is_raised_from_py = True
 
     def annex_impl(self, node: uni.Module) -> None:
         """Annex impl and test modules."""

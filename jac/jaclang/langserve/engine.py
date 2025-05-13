@@ -59,13 +59,8 @@ class JacLangServer(LanguageServer):
         self.tasks: dict[str, asyncio.Task] = {}
         self.program = JacProgram()
 
-    def update_modules(
-        self, file_path: str, build: uni.Module, refresh: bool = False
-    ) -> None:
+    def update_modules(self, file_path: str, build: uni.Module) -> None:
         """Update modules."""
-        if not isinstance(build, uni.Module):
-            self.log_error("Error with module build.")
-            return
         self.modules[file_path] = ModuleInfo(ir=build)
         for p in self.program.mod.hub.keys():
             uri = uris.from_fs_path(p)

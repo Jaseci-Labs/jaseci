@@ -96,7 +96,7 @@ class ImportPassPassTests(TestCase):
         )
         for i in list(
             filter(
-                lambda x: x.codeinfo.is_raised_from_py,
+                lambda x: x.is_raised_from_py,
                 prog.mod.hub.values(),
             )
         ):
@@ -105,7 +105,7 @@ class ImportPassPassTests(TestCase):
         module_count = len(
             list(
                 filter(
-                    lambda x: x.codeinfo.is_raised_from_py,
+                    lambda x: x.is_raised_from_py,
                     prog.mod.hub.values(),
                 )
             )
