@@ -45,26 +45,12 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         self.cur_node = node
         return node
 
-    def pp(self, node: py_ast.AST) -> None:
-        """Print python node."""
-        # print(
-        #     f"{node.__class__.__name__} - {[(k, type(v)) for k, v in vars(node).items()]}"
-        # )
-
     def convert(self, node: py_ast.AST) -> uni.UniNode:
         """Get python node type."""
-        # print(
-        #     f"working on {type(node).__name__} line {node.lineno if hasattr(node, 'lineno') else 0}"
-        # )
         if hasattr(self, f"proc_{pascal_to_snake(type(node).__name__)}"):
             ret = getattr(self, f"proc_{pascal_to_snake(type(node).__name__)}")(node)
         else:
             raise self.ice(f"Unknown node type {type(node).__name__}")
-        # print(f"finshed {type(node).__name__} ---------------------")
-        # print("normalizing", ret.__class__.__name__)
-        # ic("normalizing", ret.__class__.__name__)
-        # print(ret.unparse())
-        # ret.unparse()
         return ret
 
     def transform(self, ir_in: uni.PythonModuleAst) -> uni.Module:
@@ -187,9 +173,9 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             and isinstance(valid[0].expr, uni.String)
         ):
             self.convert_to_doc(valid[0].expr)
-            doc = valid[0]
+            doc = valid[0].expr
             valid_body = uni.SubNodeList[uni.CodeBlockStmt](
-                items=[doc] + valid[1:],
+                items=valid[1:],
                 delim=Tok.WS,
                 kid=valid[1:] + [doc],
                 left_enc=self.operator(Tok.LBRACE, "{"),
@@ -241,7 +227,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             signature=sig,
             body=valid_body,
             decorators=valid_decorators,
-            doc=None,
+            doc=doc,
             kid=kid,
         )
         return ret

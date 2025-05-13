@@ -533,6 +533,7 @@ class JacLanguageTests(TestCase):
                 ),
                 prog=JacProgram(),
             ).ir_out.unparse()
+        print(output)
         self.assertIn("def greet2(**kwargs: Any)", output)
         self.assertEqual(output.count("with entry {"), 14)
         self.assertIn("assert x == 5 , 'x should be equal to 5' ;", output)
@@ -540,7 +541,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("def greet2(**kwargs: Any) {", output)
         self.assertIn("squares_dict = {x: (x ** 2)  for x in numbers};", output)
         self.assertIn(
-            '\n\n@ my_decorator \n def say_hello() {\n\n    """Say hello""" ;', output
+            '\n\n"""Say hello"""\n@ my_decorator \n def say_hello() {\n\n', output
         )
 
     def test_pyfunc_2(self) -> None:
