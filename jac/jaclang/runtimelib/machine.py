@@ -1542,7 +1542,7 @@ class JacMachine(JacMachineInterface):
         )
         self.jac_program: JacProgram = JacProgram()
         self.interp_mode = interp_mode
-        self._event_loop = asyncio.get_event_loop()
+        self._event_loop = asyncio.new_event_loop()
         self.mem: Memory = ShelfStorage(session)
         self.reports: list[Any] = []
         sr_arch = Root()
