@@ -21,7 +21,7 @@ class JacFormatPass(UniPass):
         self.comments: list[uni.CommentToken] = []
         self.indent_size = 4
         self.indent_level = 0
-        self.MAX_LINE_LENGTH = int(float(settings.max_line_length) / 2)
+        self.MAX_LINE_LENGTH = settings.max_line_length
 
     def enter_node(self, node: uni.UniNode) -> None:
         """Enter node."""
@@ -1024,7 +1024,7 @@ class JacFormatPass(UniPass):
             elif (
                 "=" in kid.gen.jac
                 and self.is_line_break_needed(
-                    kid.gen.jac, max_line_length=self.MAX_LINE_LENGTH * 2
+                    kid.gen.jac, max_line_length=self.MAX_LINE_LENGTH
                 )
                 and "\n" not in kid.gen.jac
             ):
@@ -1033,7 +1033,7 @@ class JacFormatPass(UniPass):
                 prev_token
                 and "=" in prev_token.gen.jac
                 and self.is_line_break_needed(
-                    kid.gen.jac, max_line_length=self.MAX_LINE_LENGTH * 2
+                    kid.gen.jac, max_line_length=self.MAX_LINE_LENGTH
                 )
                 and "\n" not in kid.gen.jac
             ):
@@ -1188,7 +1188,7 @@ class JacFormatPass(UniPass):
         indented = False
         for i in node.kid:
             if isinstance(i, uni.SubNodeList):
-                line_break_needed = self.is_line_break_needed(i.gen.jac, 88)
+                line_break_needed = self.is_line_break_needed(i.gen.jac)
                 if line_break_needed:
                     self.emit_ln(node, "")
                     self.indent_level += 1
