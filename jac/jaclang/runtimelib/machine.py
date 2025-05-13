@@ -399,7 +399,7 @@ class JacWalker:
                 for i in warch._jac_entry_funcs_:
                     if (
                         i.trigger
-                        and all_issubclass(i.trigger, NodeArchitype)
+                        and all_issubclass(i.trigger, JacMachine.Node)
                         and isinstance(current_node, i.trigger)
                     ):
                         i.func(warch, current_node)
@@ -417,7 +417,7 @@ class JacWalker:
                 for i in current_node._jac_entry_funcs_:
                     if (
                         i.trigger
-                        and all_issubclass(i.trigger, WalkerArchitype)
+                        and all_issubclass(i.trigger, JacMachine.Walker)
                         and isinstance(warch, i.trigger)
                     ):
                         i.func(current_node, warch)
@@ -428,7 +428,7 @@ class JacWalker:
                 for i in current_node._jac_exit_funcs_:
                     if (
                         i.trigger
-                        and all_issubclass(i.trigger, WalkerArchitype)
+                        and all_issubclass(i.trigger, JacMachine.Walker)
                         and isinstance(warch, i.trigger)
                     ):
                         i.func(current_node, warch)
@@ -446,7 +446,7 @@ class JacWalker:
                 for i in warch._jac_exit_funcs_:
                     if (
                         i.trigger
-                        and all_issubclass(i.trigger, NodeArchitype)
+                        and all_issubclass(i.trigger, JacMachine.Node)
                         and isinstance(current_node, i.trigger)
                     ):
                         i.func(warch, current_node)
