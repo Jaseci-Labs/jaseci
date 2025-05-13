@@ -23,6 +23,10 @@ from jaclang.runtimelib.machine import (
 )
 from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
+from jaclang.compiler.passes.tool.formatter_manager import (
+    FormatterManager,
+    FormatterStyle,
+)
 
 
 Jac.create_cmd()
@@ -30,7 +34,9 @@ Jac.setup()
 
 
 @cmd_registry.register
-def format(path: str, outfile: str = "", to_screen: bool = False) -> None:
+def format(
+    path: str, outfile: str = "", to_screen: bool = False, style: str = "classic"
+) -> None:
     """Format .jac files with improved code style.
 
     Applies consistent formatting to Jac code files to improve readability and
@@ -40,13 +46,24 @@ def format(path: str, outfile: str = "", to_screen: bool = False) -> None:
         path: Path to a .jac file or directory containing .jac files
         outfile: Optional output file path (when formatting a single file)
         to_screen: Print formatted code to stdout instead of writing to file
+        style: Formatter style to use ("classic" or "prettier")
 
     Examples:
         jac format myfile.jac
         jac format myproject/
         jac format myfile.jac --outfile formatted.jac
         jac format myfile.jac --to_screen
+        jac format myfile.jac --style prettier
     """
+    # Determine formatter style
+    formatter_style = FormatterStyle.CLASSIC
+    if style.lower() == "prettier":
+        formatter_style = FormatterStyle.PRETTIER
+    elif style.lower() != "classic":
+        print(
+            f"Warning: Unknown formatter style '{style}'. Using classic formatter.",
+            file=sys.stderr,
+        )
 
     def write_formatted_code(code: str, target_path: str) -> None:
         """Write formatted code to the appropriate destination."""
@@ -66,7 +83,9 @@ def format(path: str, outfile: str = "", to_screen: bool = False) -> None:
         if not path_obj.exists():
             print(f"Error: File '{path}' does not exist.", file=sys.stderr)
             return
-        formatted_code = JacProgram.jac_file_formatter(str(path_obj))
+        formatted_code = FormatterManager.format_jac_file(
+            str(path_obj), style=formatter_style
+        )
         write_formatted_code(formatted_code, str(path_obj))
         return
 
@@ -74,7 +93,9 @@ def format(path: str, outfile: str = "", to_screen: bool = False) -> None:
     if path_obj.is_dir():
         jac_files = list(path_obj.glob("**/*.jac"))
         for jac_file in jac_files:
-            formatted_code = JacProgram.jac_file_formatter(str(jac_file))
+            formatted_code = FormatterManager.format_jac_file(
+                str(jac_file), style=formatter_style
+            )
             write_formatted_code(formatted_code, str(jac_file))
 
         print(f"Formatted {len(jac_files)} '.jac' files.", file=sys.stderr)
