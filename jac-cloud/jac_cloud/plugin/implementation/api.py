@@ -4,16 +4,7 @@ from dataclasses import Field, MISSING, fields, is_dataclass
 from enum import StrEnum
 from os import getenv
 from re import compile
-from types import NoneType
-from typing import (
-    Any,
-    Callable,
-    Type,
-    TypeAlias,
-    Union,
-    cast,
-    get_type_hints,
-)
+from typing import Any, Callable, Type, cast, get_type_hints
 
 from asyncer import syncify
 
@@ -80,6 +71,7 @@ class DefaultSpecs:
     private: bool = False
     webhook: dict | None = None
     entry_type: EntryType = EntryType.BOTH
+    response_model: Any = ContextResponse[Any]
     tags: list[str] | None = None
     status_code: int | None = None
     summary: str | None = None
@@ -141,6 +133,7 @@ def populate_apis(cls: Type[WalkerArchetype]) -> None:
         auth: bool = specs.auth or False
         webhook: dict | None = specs.webhook
         entry_type: EntryType = specs.entry_type
+        response_model: Any = specs.response_model
         tags: list[str] | None = specs.tags
         status_code: int | None = specs.status_code
         summary: str | None = specs.summary
@@ -275,7 +268,7 @@ def populate_apis(cls: Type[WalkerArchetype]) -> None:
                         )
                         return jctx.custom
 
-                    resp = jctx.response(wanch.returns)
+                    resp = jctx.response()
                     log_exit(resp, log)
 
                 jctx.close()
@@ -320,21 +313,8 @@ def populate_apis(cls: Type[WalkerArchetype]) -> None:
                         "auth": auth,
                     }
                 case _:
-                    raw_types: list[Type] = [
-                        get_type_hints(jef.func).get("return", NoneType)
-                        for jef in (*cls._jac_entry_funcs_, *cls._jac_exit_funcs_)
-                    ]
-
-                    if raw_types:
-                        if len(raw_types) > 1:
-                            ret_types: TypeAlias = Union[*raw_types]  # type: ignore[valid-type]
-                        else:
-                            ret_types = raw_types[0]  # type: ignore[misc]
-                    else:
-                        ret_types = NoneType  # type: ignore[misc]
-
                     settings: dict[str, Any] = {
-                        "response_model": ContextResponse[ret_types] | Any,
+                        "response_model": response_model,
                         "tags": default_tags if tags is None else tags,
                         "status_code": status_code,
                         "summary": summary,
@@ -367,6 +347,7 @@ def specs(
     private: bool = False,
     webhook: dict | None = None,
     entry_type: EntryType = EntryType.BOTH,
+    response_model: Any = ContextResponse[Any],  # noqa: ANN401
     tags: list[str] | None = None,
     status_code: int | None = None,
     summary: str | None = None,
@@ -390,6 +371,7 @@ def specs(
             _private = private
             _webhook = webhook
             _entry_type = entry_type
+            _response_model = response_model
             _tags = tags
             _status_code = status_code
             _summary = summary
@@ -410,6 +392,7 @@ def specs(
                 private: bool = _private
                 webhook: dict | None = _webhook
                 entry_type: EntryType = _entry_type
+                response_model: Any = _response_model
                 tags: list[str] | None = _tags
                 status_code: int | None = _status_code
                 summary: str | None = _summary

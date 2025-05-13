@@ -31,10 +31,7 @@ class SimpleGraphTest(JacCloudTest):
     def setUpClass(cls) -> None:
         """Set up once before all tests."""
         cls.directory = Path(__file__).parent
-        cls.run_server(
-            f"{cls.directory}/simple_graph.jac",
-            envs={"SHOW_ENDPOINT_RETURNS": "true"},
-        )
+        cls.run_server(f"{cls.directory}/simple_graph.jac")
 
         Collection.__client__ = None
         Collection.__database__ = None
@@ -47,6 +44,7 @@ class SimpleGraphTest(JacCloudTest):
     def tearDownClass(cls) -> None:
         """Tear down after the last test."""
         cls.client.drop_database(cls.database)
+        cls.stop_server()
 
     def trigger_openapi_specs_test(self) -> None:
         """Test OpenAPI Specs."""
@@ -94,7 +92,6 @@ class SimpleGraphTest(JacCloudTest):
         res = self.post_api("create_graph")
 
         self.assertEqual(200, res["status"])
-        self.assertEqual([None], res["returns"])
 
         root_node = res["reports"].pop(0)
         self.assertTrue(root_node["id"].startswith("n::"))
@@ -108,7 +105,6 @@ class SimpleGraphTest(JacCloudTest):
         res = self.post_api("traverse_graph")
 
         self.assertEqual(200, res["status"])
-        self.assertEqual([None, None, None, None], res["returns"])
 
         root_node = res["reports"].pop(0)
         self.assertTrue(root_node["id"].startswith("n::"))
@@ -119,7 +115,6 @@ class SimpleGraphTest(JacCloudTest):
 
             res = self.post_api(f"traverse_graph/{report["id"]}")
             self.assertEqual(200, res["status"])
-            self.assertEqual([None for i in range(idx, 3)], res["returns"])
             for _idx, report in enumerate(res["reports"]):
                 self.assertEqual({"val": idx + _idx}, report["context"])
 
@@ -128,12 +123,10 @@ class SimpleGraphTest(JacCloudTest):
         res = self.post_api("detach_node")
 
         self.assertEqual(200, res["status"])
-        self.assertEqual([None, None, True], res["returns"])
-        self.assertTrue("reports" not in res)
+        self.assertEqual([True], res["reports"])
 
         res = self.post_api("traverse_graph")
         self.assertEqual(200, res["status"])
-        self.assertEqual([None, None, None], res["returns"])
 
         root_node = res["reports"].pop(0)
         self.assertTrue(root_node["id"].startswith("n::"))
@@ -144,7 +137,6 @@ class SimpleGraphTest(JacCloudTest):
 
             res = self.post_api(f"traverse_graph/{report["id"]}")
             self.assertEqual(200, res["status"])
-            self.assertEqual([None for i in range(idx, 2)], res["returns"])
             for _idx, report in enumerate(res["reports"]):
                 self.assertEqual({"val": idx + _idx}, report["context"])
 
@@ -153,7 +145,6 @@ class SimpleGraphTest(JacCloudTest):
         res = self.post_api("update_graph")
 
         self.assertEqual(200, res["status"])
-        self.assertEqual([None, None, None], res["returns"])
 
         root_node = res["reports"].pop(0)
         self.assertTrue(root_node["id"].startswith("n::"))
@@ -165,7 +156,6 @@ class SimpleGraphTest(JacCloudTest):
         res = self.post_api("traverse_graph")
 
         self.assertEqual(200, res["status"])
-        self.assertEqual([None, None, None], res["returns"])
 
         root_node = res["reports"].pop(0)
         self.assertTrue(root_node["id"].startswith("n::"))
@@ -176,7 +166,6 @@ class SimpleGraphTest(JacCloudTest):
 
             res = self.post_api(f"traverse_graph/{report["id"]}")
             self.assertEqual(200, res["status"])
-            self.assertEqual([None for i in range(idx, 2)], res["returns"])
             for _idx, report in enumerate(res["reports"]):
                 self.assertEqual({"val": idx + _idx + 1}, report["context"])
 
@@ -204,7 +193,7 @@ class SimpleGraphTest(JacCloudTest):
                 },
                 "enum_field": "A",
             },
-            res["returns"][0]["context"],
+            res["reports"][0]["context"],
         )
 
     def trigger_update_nested_node_test(
@@ -236,18 +225,18 @@ class SimpleGraphTest(JacCloudTest):
                     },
                     "enum_field": "B",
                 },
-                res["returns"][0]["context"],
+                res["reports"][0]["context"],
             )
 
     def trigger_detach_nested_node_test(self, manual: bool = False) -> None:
         """Test detach nested node."""
         res = self.post_api(f"{'manual_' if manual else ""}detach_nested_node", user=1)
         self.assertEqual(200, res["status"])
-        self.assertEqual([True], res["returns"])
+        self.assertEqual([True], res["reports"])
 
         res = self.post_api("visit_nested_node", user=1)
         self.assertEqual(200, res["status"])
-        self.assertEqual([[]], res["returns"])
+        self.assertEqual([[]], res["reports"])
 
     def trigger_delete_nested_node_test(self, manual: bool = False) -> None:
         """Test create nested node."""
@@ -257,7 +246,7 @@ class SimpleGraphTest(JacCloudTest):
 
         res = self.post_api("visit_nested_node", user=1)
         self.assertEqual(200, res["status"])
-        self.assertEqual([[]], res["returns"])
+        self.assertEqual([[]], res["reports"])
 
     def trigger_delete_nested_edge_test(self, manual: bool = False) -> None:
         """Test create nested node."""
@@ -267,7 +256,7 @@ class SimpleGraphTest(JacCloudTest):
 
         res = self.post_api("visit_nested_node", user=1)
         self.assertEqual(200, res["status"])
-        self.assertEqual([[]], res["returns"])
+        self.assertEqual([[]], res["reports"])
 
     def trigger_access_validation_test(
         self, give_access_to_full_graph: bool, via_all: bool = False
@@ -275,7 +264,7 @@ class SimpleGraphTest(JacCloudTest):
         """Test giving access to node or full graph."""
         res = self.post_api("create_nested_node", user=1)
 
-        nested_node = res["returns"][0]
+        nested_node = res["reports"][0]
 
         allow_walker_suffix = (
             "" if give_access_to_full_graph else f'/{nested_node["id"]}'
@@ -348,7 +337,7 @@ class SimpleGraphTest(JacCloudTest):
                 },
                 "enum_field": "B",
             },
-            res["returns"][0]["context"],
+            res["reports"][0]["context"],
         )
 
         # ----------- NO UPDATE SHOULD HAPPEN ----------- #
@@ -374,7 +363,7 @@ class SimpleGraphTest(JacCloudTest):
                 },
                 "enum_field": "A",
             },
-            res["returns"][0]["context"],
+            res["reports"][0]["context"],
         )
 
         ###################################################
@@ -413,7 +402,7 @@ class SimpleGraphTest(JacCloudTest):
                 },
                 "enum_field": "B",
             },
-            res["returns"][0]["context"],
+            res["reports"][0]["context"],
         )
 
         # ------------ UPDATE SHOULD REFLECT ------------ #
@@ -439,7 +428,7 @@ class SimpleGraphTest(JacCloudTest):
                 },
                 "enum_field": "B",
             },
-            res["returns"][0]["context"],
+            res["reports"][0]["context"],
         )
 
         ###################################################
@@ -481,7 +470,6 @@ class SimpleGraphTest(JacCloudTest):
         for acceptable_code in [200, 201, 202, 203, 205, 206, 207, 208, 226]:
             res = self.post_api("custom_status_code", {"status": acceptable_code})
             self.assertEqual(acceptable_code, res["status"])
-            self.assertEqual([None], res["returns"])
 
         for error_code in [
             400,
@@ -555,7 +543,7 @@ class SimpleGraphTest(JacCloudTest):
     def trigger_custom_report(self) -> None:
         """Test custom status code."""
         res = self.post_api("custom_report")
-        self.assertEqual({"testing": 1}, res)
+        self.assertEqual({"value": 1}, res)
 
     def trigger_upload_file(self) -> None:
         """Test upload file."""
@@ -574,7 +562,6 @@ class SimpleGraphTest(JacCloudTest):
             data: dict = res.json()
 
             self.assertEqual(200, data["status"])
-            self.assertEqual([None], data["returns"])
             self.assertEqual(
                 [
                     {
@@ -607,11 +594,9 @@ class SimpleGraphTest(JacCloudTest):
         """Test custom status code."""
         res = self.post_api("populate_graph", user=2)
         self.assertEqual(200, res["status"])
-        self.assertEqual([None] * 31, res["returns"])
 
         res = self.post_api("traverse_populated_graph", user=2)
         self.assertEqual(200, res["status"])
-        self.assertEqual([None] * 63, res["returns"])
         reports = res["reports"]
 
         root = reports.pop(0)
@@ -629,17 +614,14 @@ class SimpleGraphTest(JacCloudTest):
 
         res = self.post_api("check_populated_graph", user=2)
         self.assertEqual(200, res["status"])
-        self.assertEqual([None], res["returns"])
         self.assertEqual([125], res["reports"])
 
         res = self.post_api("purge_populated_graph", user=2)
         self.assertEqual(200, res["status"])
-        self.assertEqual([None], res["returns"])
         self.assertEqual([124], res["reports"])
 
         res = self.post_api("check_populated_graph", user=2)
         self.assertEqual(200, res["status"])
-        self.assertEqual([None], res["returns"])
         self.assertEqual([1], res["reports"])
 
     def trigger_memory_sync(self) -> None:
@@ -647,7 +629,6 @@ class SimpleGraphTest(JacCloudTest):
         res = self.post_api("traverse_graph")
 
         self.assertEqual(200, res["status"])
-        self.assertEqual([None, None, None], res["returns"])
 
         a_node = res["reports"].pop(1)
         self.assertTrue(a_node["id"].startswith("n:A:"))
@@ -812,7 +793,7 @@ class SimpleGraphTest(JacCloudTest):
                 "c-6",
                 "walker exit",
             ],
-            res["returns"],
+            res["reports"],
         )
 
     def trigger_webhook_test(self) -> None:
@@ -832,22 +813,22 @@ class SimpleGraphTest(JacCloudTest):
         key = res.json()["key"]
 
         self.assertEqual(
-            {"status": 200, "reports": [True], "returns": [None]},
+            {"status": 200, "reports": [True]},
             self.post_webhook("webhook_by_header", headers={"test_key": key}),
         )
 
         self.assertEqual(
-            {"status": 200, "reports": [True], "returns": [None]},
+            {"status": 200, "reports": [True]},
             self.post_webhook(f"webhook_by_query?test_key={key}"),
         )
 
         self.assertEqual(
-            {"status": 200, "reports": [True], "returns": [None]},
+            {"status": 200, "reports": [True]},
             self.post_webhook(f"webhook_by_path/{key}"),
         )
 
         self.assertEqual(
-            {"status": 200, "reports": [True], "returns": [None]},
+            {"status": 200, "reports": [True]},
             self.post_webhook("webhook_by_body", {"test_key": key}),
         )
 
@@ -902,7 +883,6 @@ class SimpleGraphTest(JacCloudTest):
                     "Enum",
                     "Enum",
                 ],
-                "returns": [None],
             },
             res,
         )
@@ -912,7 +892,6 @@ class SimpleGraphTest(JacCloudTest):
         res = self.post_api("get_or_create_counter")
 
         self.assertEqual(200, res["status"])
-        self.assertEqual([None], res["returns"])
         self.assertEqual(1, len(res["reports"]))
 
         report = res["reports"][0]
@@ -926,7 +905,6 @@ class SimpleGraphTest(JacCloudTest):
                 res = self.post_api("trigger_counter_task")
 
                 self.assertEqual(200, res["status"])
-                self.assertEqual([None], res["returns"])
                 self.assertEqual(1, len(res["reports"]))
                 self.assertTrue(res["reports"][0].startswith("w:increment_counter:"))
 
@@ -935,7 +913,6 @@ class SimpleGraphTest(JacCloudTest):
                 res = self.post_api(f"get_or_create_counter/{task_counter}")
 
                 self.assertEqual(200, res["status"])
-                self.assertEqual([None], res["returns"])
                 self.assertEqual(1, len(res["reports"]))
 
                 report = res["reports"][0]
@@ -970,7 +947,6 @@ class SimpleGraphTest(JacCloudTest):
                             "execute_date": None,
                             "executed_date": None,
                             "http_status": 200,
-                            "returns": [None],
                             "reports": [i],
                             "custom": None,
                             "error": None,
@@ -999,7 +975,6 @@ class SimpleGraphTest(JacCloudTest):
                         "execute_date": None,
                         "executed_date": None,
                         "http_status": 200,
-                        "returns": [None],
                         "reports": [None],
                         "custom": None,
                         "error": None,
@@ -1053,8 +1028,7 @@ class SimpleGraphTest(JacCloudTest):
                     "execute_date": None,
                     "executed_date": None,
                     "http_status": 200,
-                    "returns": [None],
-                    "reports": None,
+                    "reports": [],
                     "custom": None,
                     "error": None,
                 },

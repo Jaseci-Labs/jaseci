@@ -232,7 +232,7 @@ def run_task(
     try:
         Jac.spawn(warch, jctx.entry_node.archetype)
 
-        resp = jctx.response(walker.returns)
+        resp = jctx.response()
         if jctx.custom is not MISSING:
             if isinstance(jctx.custom, JSONResponse):
                 resp["custom"] = jctx.custom.body

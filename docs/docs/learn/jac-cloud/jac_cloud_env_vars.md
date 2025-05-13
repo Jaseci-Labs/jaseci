@@ -13,7 +13,6 @@
 | SINGLE_QUERY | Every edge_ref will trigger query per anchor if not already cached instead of consolidating non cached anchor before querying. | false |
 | SESSION_MAX_TRANSACTION_RETRY | MongoDB's transactional retry | 1 |
 | DISABLE_AUTO_ENDPOINT | Disable auto convertion of walker to api. It will now require inner class __specs__ or @specs decorator. | false |
-| SHOW_ENDPOINT_RETURNS | Include per visit return on api response | false |
 | SESSION_MAX_COMMIT_RETRY | MongoDB's transaction commit retry | 1 |
 | RESTRICT_UNVERIFIED_USER | Rstrict user's login until it has verified | false |
 | TOKEN_SECRET | Random string used to encrypt token | 50 random characters |
