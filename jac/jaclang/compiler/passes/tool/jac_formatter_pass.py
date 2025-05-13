@@ -30,16 +30,12 @@ class JacFormatPass(UniPass):
 
     def token_before(self, node: uni.Token) -> Optional[uni.Token]:
         """Token before."""
-        if not isinstance(self.ir_out, uni.Module):
-            raise self.ice("IR must be module. Impossible")
         if self.ir_out.terminals.index(node) == 0:
             return None
         return self.ir_out.terminals[self.ir_out.terminals.index(node) - 1]
 
     def token_after(self, node: uni.Token) -> Optional[uni.Token]:
         """Token after."""
-        if not isinstance(self.ir_out, uni.Module):
-            raise self.ice("IR must be module. Impossible")
         if self.ir_out.terminals.index(node) == len(self.ir_out.terminals) - 1:
             return None
         return self.ir_out.terminals[self.ir_out.terminals.index(node) + 1]

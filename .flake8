@@ -20,3 +20,4 @@ per-file-ignores =
     jac/jaclang/compiler/passes/main/pyout_pass.py:D102,D105,D107
     jac/jaclang/compiler/passes/main/sym_tab_build_pass.py:D102,D105,D107
     jac/jaclang/compiler/passes/tool/jac_formatter_pass.py:D102,D105,D107
+    jac/jaclang/compiler/passes/tool/fuse_comments_pass.py:D102,D105,D107
