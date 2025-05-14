@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Optional
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.passes.main import CompilerMode as CMode
+from jaclang.compiler.passes.main import Alert, CompilerMode as CMode
 from jaclang.compiler.program import JacProgram
 from jaclang.compiler.unitree import UniScopeNode
 from jaclang.langserve.sem_manager import SemTokManager
@@ -30,6 +30,45 @@ from jaclang.vendor.pygls.server import LanguageServer
 import lsprotocol.types as lspt
 
 
+class ModuleManager:
+    """Handles Jac module and semantic manager updates."""
+
+    def __init__(self, program: JacProgram, sem_managers: dict) -> None:
+        """Initialize ModuleManager."""
+        self.program = program
+        self.sem_managers = sem_managers
+
+    def update(
+        self, file_path: str, build: uni.Module, update_annexed: bool = True
+    ) -> None:
+        """Update modules in JacProgram's hub and semantic managers."""
+        file_path = file_path.removeprefix("file://")
+        self.program.mod.hub[file_path] = build
+        self.sem_managers[file_path] = SemTokManager(ir=build)
+        if update_annexed:
+            for p, mod in self.program.mod.hub.items():
+                if p != file_path:
+                    self.sem_managers[p] = SemTokManager(ir=mod)
+
+
+class AlertManager:
+    """Handles error and warning alert management."""
+
+    def __init__(self, errors_had: list[Alert], warnings_had: list[Alert]) -> None:
+        """Initialize AlertManager."""
+        self.errors_had = errors_had
+        self.warnings_had = warnings_had
+
+    def clear_for_file(self, file_path_fs: str) -> None:
+        """Remove errors and warnings for a specific file from the lists."""
+        self.errors_had[:] = [
+            e for e in self.errors_had if e.loc.mod_path != file_path_fs
+        ]
+        self.warnings_had[:] = [
+            w for w in self.warnings_had if w.loc.mod_path != file_path_fs
+        ]
+
+
 class JacLangServer(JacProgram, LanguageServer):
     """Jac Language Server, manages JacProgram and LSP."""
 
@@ -39,33 +78,25 @@ class JacLangServer(JacProgram, LanguageServer):
         JacProgram.__init__(self)
         self.executor = ThreadPoolExecutor()
         self.tasks: dict[str, asyncio.Task] = {}
-        # sem_manager per file_path, built on demand
         self.sem_managers: dict[str, SemTokManager] = {}
+        self.module_manager = ModuleManager(self, self.sem_managers)
+        self.alert_manager = AlertManager(self.errors_had, self.warnings_had)
 
     def _clear_alerts_for_file(self, file_path_fs: str) -> None:
         """Remove errors and warnings for a specific file from the lists."""
-        self.errors_had = [
-            error for error in self.errors_had if error.loc.mod_path != file_path_fs
-        ]
-        self.warnings_had = [
-            warning for warning in self.warnings_had if warning.loc.mod_path != file_path_fs
-        ]
+        self.alert_manager.clear_for_file(file_path_fs)
 
     def get_ir(self, file_path: str) -> Optional[uni.Module]:
         """Get IR for a file path."""
         file_path = file_path.removeprefix("file://")
         return self.mod.hub.get(file_path)
 
-    def update_modules(self, file_path: str, build: uni.Module) -> None:
+    def update_modules(
+        self, file_path: str, build: uni.Module, need: bool = True
+    ) -> None:
         """Update modules in JacProgram's hub and semantic managers."""
         self.log_py(f"Updating modules for {file_path}")
-        file_path = file_path.removeprefix("file://")
-        self.mod.hub[file_path] = build
-        self.sem_managers[file_path] = SemTokManager(ir=build)
-        # Also update annexed modules
-        for p in self.mod.hub.keys():
-            if p != file_path:
-                self.sem_managers[p] = SemTokManager(ir=self.mod.hub[p])
+        self.module_manager.update(file_path, build, update_annexed=need)
 
     def quick_check(self, file_path: str) -> bool:
         """Rebuild a file (syntax only)."""
@@ -78,7 +109,7 @@ class JacLangServer(JacProgram, LanguageServer):
                 file_path=document.path,
                 mode=CMode.PARSE,
             )
-            self.update_modules(file_path_fs, build)
+            self.update_modules(file_path_fs, build, need=False)
             self.publish_diagnostics(
                 file_path,
                 gen_diagnostics(file_path, self.errors_had, self.warnings_had),
