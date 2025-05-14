@@ -1554,6 +1554,21 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 )
             return value
 
+        def concurrent_expr(self, _: None) -> uni.ConcurrentExpr:
+            """Grammar rule.
+
+            concurrent: (KW_FLOW | KW_JOIN)
+            """
+            tok = self.match_token(Tok.KW_FLOW)
+            if tok is None:
+                tok = self.match_token(Tok.KW_JOIN)
+            target = self.consume(uni.Expr)
+            return uni.ConcurrentExpr(
+                tok=tok,
+                target=target,
+                kid=self.cur_nodes,
+            )
+
         def walrus_assign(self, _: None) -> uni.Expr:
             """Grammar rule.
 

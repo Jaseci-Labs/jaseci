@@ -1277,6 +1277,52 @@ class PyastGenPass(UniPass):
             )
         ]
 
+    def exit_concurrent_expr(self, node: uni.ConcurrentExpr) -> None:
+        func = ""
+        if node.tok:
+            match node.tok.value:
+                case "flow":
+                    func = "thread_run"
+                case "join":
+                    func = "thread_wait"
+        if func:
+            lambda_ex = [
+                self.sync(
+                    ast3.Lambda(
+                        args=(
+                            self.sync(
+                                ast3.arguments(
+                                    posonlyargs=[],
+                                    args=[],
+                                    kwonlyargs=[],
+                                    kw_defaults=[],
+                                    defaults=[],
+                                )
+                            )
+                        ),
+                        body=cast(ast3.expr, node.target.gen.py_ast[0]),
+                    )
+                )
+            ]
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Call(
+                        func=self.jaclib_obj(func),
+                        args=cast(
+                            list[ast3.expr],
+                            (
+                                lambda_ex
+                                if func == "thread_run"
+                                else [node.target.gen.py_ast[0]]  # type: ignore
+                            ),
+                        ),
+                        keywords=[],
+                    )
+                )
+            ]
+        else:
+            node.gen.py_ast = node.target.gen.py_ast
+
     def exit_try_stmt(self, node: uni.TryStmt) -> None:
         node.gen.py_ast = [
             self.sync(
