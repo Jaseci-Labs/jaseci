@@ -6,8 +6,10 @@ import ast as ast3
 from dataclasses import dataclass, field
 from typing import Optional, TYPE_CHECKING
 
+
 if TYPE_CHECKING:
     from jaclang.compiler.unitree import Source, Token
+    import jaclang.compiler.passes.tool.doc_ir as doc
 
 
 @dataclass
@@ -16,6 +18,7 @@ class CodeGenTarget:
 
     py: str = ""
     jac: str = ""
+    doc_ir: list[doc.Doc] = field(default_factory=lambda: [])
     js: str = ""
     py_ast: list[ast3.AST] = field(default_factory=lambda: [])
     py_bytecode: Optional[bytes] = None
