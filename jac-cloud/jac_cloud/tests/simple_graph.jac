@@ -131,7 +131,7 @@ walker detach_node {
     }
 
     can enter_B with B entry {
-        return here del --> [-->];
+        report here del --> [-->];
     }
 }
 
@@ -175,7 +175,7 @@ walker create_nested_node {
             enum_field = Enum.A
         );
         here ++> n;
-        return n;
+        report n;
     }
 }
 
@@ -194,7 +194,7 @@ walker update_nested_node {
         nested.arr.append(1);
         nested.val = 1;
         nested.enum_field = Enum.B;
-        return nested;
+        report nested;
     }
 
     can enter_nested with Nested entry {
@@ -210,7 +210,7 @@ walker update_nested_node {
         here.arr.append(1);
         here.val = 1;
         here.enum_field = Enum.B;
-        return here;
+        report here;
     }
 }
 
@@ -448,46 +448,21 @@ walker custom_status_code {
     }
 }
 
-walker different_return {
-
-    can enter1 with `root entry {
-    }
-
-    can enter2 with A entry -> int {
-    }
-
-    can enter3 with B entry -> str {
-    }
-
-    can enter4 with C entry -> bool {
-    }
-
-    can enter5 with Nested entry -> Parent {
-    }
-
-    can enter6 with `root entry -> list | dict {
-    }
-
-    class __specs__ {
-        has auth: bool = False;
-    }
-}
-
 impl detach_nested_node.enter_root {
-    return here del--> [-->(`?Nested)];
+    report here del--> [-->(`?Nested)];
 }
 
 impl visit_nested_node.enter_root {
     nesteds = [-->(`?Nested)];
     if nesteds {
-        return [-->(`?Nested)][0];
+        report [-->(`?Nested)][0];
     } else {
-        return nesteds;
+        report nesteds;
     }
 }
 
 impl visit_nested_node.enter_nested {
-    return here;
+    report here;
 }
 
 walker manual_create_nested_node {
@@ -518,7 +493,7 @@ walker manual_create_nested_node {
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
-        return n;
+        report n;
     }
 }
 
@@ -544,7 +519,7 @@ walker manual_update_nested_node {
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
-        return nested;
+        report nested;
     }
 }
 
@@ -560,7 +535,7 @@ walker manual_detach_nested_node {
         jsrc.__mem__.clear();
         jsrc.__gc__.clear();
 
-        return detached;
+        report detached;
     }
 }
 
@@ -594,24 +569,27 @@ walker manual_delete_nested_edge {
     }
 }
 
+obj CustomResponse {
+    has value: int;
+}
+
 walker custom_report {
     can enter1 with `root entry {
         report 1;
         report 2;
         report 3;
 
-        _.report({
-            "testing": 1
-        }, True);
+        _.report(CustomResponse(value=1), True);
     }
 
     class __specs__ {
-        has auth: bool = False;
+        has auth: bool = False, response_model: Any = CustomResponse;
     }
 }
 
 walker documentation {
     class __specs__ {
+        has response_model: Any = CustomResponse;
         has tags: list[str] | None = ["Documented"];
         has entry_type: EntryType = "root";
         has status_code: int | None = "201";
@@ -880,25 +858,25 @@ node Node {
     has val: str;
 
     can entry1 with entry {
-        return f"{self.val}-2";
+        report f"{self.val}-2";
     }
 
     can entry3 with visit_sequence entry {
-        return f"{self.val}-3";
+        report f"{self.val}-3";
     }
 
     can exit1 with visit_sequence exit {
-        return f"{self.val}-4";
+        report f"{self.val}-4";
     }
 
     can exit2 with exit {
-        return f"{self.val}-5";
+        report f"{self.val}-5";
     }
 }
 
 walker visit_sequence {
     can entry1 with entry {
-        return "walker entry";
+        report "walker entry";
     }
 
     can entry2 with `root entry {
@@ -906,19 +884,19 @@ walker visit_sequence {
         here ++> Node(val = "b");
         here ++> Node(val = "c");
         visit [-->];
-        return "walker enter to root";
+        report "walker enter to root";
     }
 
     can entry3 with Node entry {
-        return f"{here.val}-1";
+        report f"{here.val}-1";
     }
 
     can exit1 with Node exit {
-        return f"{here.val}-6";
+        report f"{here.val}-6";
     }
 
     can exit2 with exit {
-        return "walker exit";
+        report "walker exit";
     }
 
     class __specs__ {

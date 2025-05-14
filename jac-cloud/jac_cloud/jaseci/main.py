@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from os import getenv
 from ssl import CERT_NONE
 from traceback import format_exception
-from typing import Any, AsyncGenerator
+from typing import Any, AsyncGenerator, TYPE_CHECKING
 
 from anyio import create_task_group
 
@@ -12,7 +12,8 @@ from fastapi import FastAPI as _FaststAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
 
-from jaclang.runtimelib.machine import JacMachine
+if TYPE_CHECKING:
+    from jaclang.runtimelib.machine import JacMachine
 
 
 from uvicorn import run as _run
@@ -34,7 +35,7 @@ class FastAPI:
 
     __app__ = None
     __is_enabled__: bool = False
-    __jac_mach__: JacMachine
+    __jac_mach__: "JacMachine"
 
     @staticmethod
     def enable() -> None:
@@ -124,14 +125,12 @@ class FastAPI:
     @classmethod
     def start(
         cls,
-        mach: JacMachine,
         host: str | None = None,
         port: int | None = None,
         emailer: type[Emailer] | None = None,
         **kwargs: Any,  # noqa ANN401
     ) -> None:
         """Run FastAPI Handler via Uvicorn."""
-        cls.__jac_mach__ = mach
         if emailer:
             emailer.start()
         _run(

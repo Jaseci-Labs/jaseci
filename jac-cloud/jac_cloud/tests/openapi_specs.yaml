@@ -131,81 +131,28 @@ components:
         - multiple
       title: Body_api_root_walker_post_with_file_post
       type: object
-    Child:
-      properties:
-        arr:
-          items:
-            type: integer
-          title: Arr
-          type: array
-        data:
-          additionalProperties:
-            type: integer
-          title: Data
-          type: object
-        enum_field:
-          $ref: '#/components/schemas/Enum'
-        val:
-          title: Val
-          type: integer
-      required:
-      - val
-      - arr
-      - data
-      - enum_field
-      title: Child
-      type: object
-    ContextResponse_NoneType_:
+    ContextResponse_Any_:
       properties:
         reports:
-          anyOf:
-            - items: {}
-              type: array
-            - type: "null"
+          items: {}
           title: Reports
-        returns:
-          anyOf:
-            - items:
-                type: "null"
-              type: array
-            - type: "null"
-          title: Returns
+          type: array
         status:
           title: Status
           type: integer
       required:
         - status
+        - reports
       title: ContextResponse
       type: object
-    ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__:
+    CustomResponse:
       properties:
-        reports:
-          anyOf:
-          - items: {}
-            type: array
-          - type: 'null'
-          title: Reports
-        returns:
-          anyOf:
-          - items:
-              anyOf:
-              - type: integer
-              - type: string
-              - type: boolean
-              - $ref: '#/components/schemas/Parent'
-              - items: {}
-                type: array
-              - type: object
-              - type: 'null'
-            type: array
-          - type: 'null'
-          title: Returns
-        status:
-          title: Status
+        value:
+          title: Value
           type: integer
       required:
-      - status
-      title: ContextResponse
+        - value
+      title: CustomResponse
       type: object
     DetachSSO:
       description: Attach SSO Request Model.
@@ -295,33 +242,6 @@ components:
       required:
         - enum_field
       title: Kid
-      type: object
-    Parent:
-      properties:
-        arr:
-          items:
-            type: integer
-          title: Arr
-          type: array
-        child:
-          $ref: '#/components/schemas/Child'
-        data:
-          additionalProperties:
-            type: integer
-          title: Data
-          type: object
-        enum_field:
-          $ref: '#/components/schemas/Enum'
-        val:
-          title: Val
-          type: integer
-      required:
-      - val
-      - arr
-      - data
-      - enum_field
-      - child
-      title: Parent
       type: object
     UserChangePassword:
       description: User Creation Request Model.
@@ -940,10 +860,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Allow Other Root Access Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -979,10 +896,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Allow Other Root Access  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -1009,10 +923,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Async Walker Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -1048,10 +959,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Async Walker  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -1078,10 +986,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Check Memory Sync Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -1117,10 +1022,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Check Memory Sync  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -1141,10 +1043,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Check Populated Graph Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -1168,10 +1067,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Check Populated Graph  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -1211,10 +1107,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Combination1 Get
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -1253,10 +1146,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Combination1 Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -1304,10 +1194,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Combination1  Node  Get
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -1354,10 +1241,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Combination1  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -1397,10 +1281,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Combination2  A  Delete
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -1439,10 +1320,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Combination2  A  Get
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -1481,10 +1359,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Combination2  A  Head
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -1517,10 +1392,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Combination2  A  Options
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -1559,10 +1431,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Combination2  A  Patch
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -1601,10 +1470,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Combination2  A  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -1643,10 +1509,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Combination2  A  Put
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -1679,10 +1542,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Combination2  A  Trace
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -1730,10 +1590,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Combination2  Node   A  Delete
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -1780,10 +1637,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Combination2  Node   A  Get
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -1830,10 +1684,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Combination2  Node   A  Head
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -1874,10 +1725,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Combination2  Node   A  Options
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -1924,10 +1772,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Combination2  Node   A  Patch
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -1974,10 +1819,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Combination2  Node   A  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -2024,10 +1866,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Combination2  Node   A  Put
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -2068,10 +1907,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Combination2  Node   A  Trace
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -2092,10 +1928,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Create Custom Object Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -2119,10 +1952,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Create Custom Object  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -2143,10 +1973,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Create Graph Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -2170,10 +1997,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Create Graph  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -2194,10 +2018,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Create Nested Node Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -2221,10 +2042,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Create Nested Node  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -2245,10 +2063,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Custom Report Post
+                $ref: "#/components/schemas/CustomResponse"
           description: Successful Response
       summary: Api Root
       tags:
@@ -2270,10 +2085,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Custom Report  Node  Post
+                $ref: "#/components/schemas/CustomResponse"
           description: Successful Response
         "422":
           content:
@@ -2298,10 +2110,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Custom Status Code Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -2337,10 +2146,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Custom Status Code  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -2367,10 +2173,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Delete Custom Object Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -2406,10 +2209,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Delete Custom Object  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -2430,10 +2230,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Delete Nested Edge Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -2457,10 +2254,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Delete Nested Edge  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -2481,10 +2275,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Delete Nested Node Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -2508,10 +2299,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Delete Nested Node  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -2532,10 +2320,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Detach Nested Node Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -2559,10 +2344,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Detach Nested Node  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -2583,10 +2365,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Detach Node Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -2610,10 +2389,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Detach Node  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -2623,53 +2399,6 @@ paths:
           description: Validation Error
       security:
         - HTTPBearer: []
-      summary: Api Entry
-      tags:
-        - Walker APIs
-  /walker/different_return:
-    post:
-      operationId: api_root_walker_different_return_post
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                anyOf:
-                - $ref: '#/components/schemas/ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__'
-                - {}
-                title: Response Api Root Walker Different Return Post
-          description: Successful Response
-      summary: Api Root
-      tags:
-        - Walker APIs
-  /walker/different_return/{node}:
-    post:
-      operationId: api_entry_walker_different_return__node__post
-      parameters:
-        - in: path
-          name: node
-          required: true
-          schema:
-            anyOf:
-              - type: string
-              - type: "null"
-            title: Node
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                anyOf:
-                - $ref: '#/components/schemas/ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__'
-                - {}
-                title: Response Api Entry Walker Different Return  Node  Post
-          description: Successful Response
-        "422":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HTTPValidationError"
-          description: Validation Error
       summary: Api Entry
       tags:
         - Walker APIs
@@ -2687,10 +2416,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Disallow Other Root Access Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -2726,10 +2452,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Disallow Other Root Access  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -2760,10 +2483,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Enter Name Here    Walker Documentation Post
+                $ref: "#/components/schemas/CustomResponse"
           description:
             Enter response description here!!! Defaults to 'Successful
             Response'
@@ -2793,10 +2513,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Get All Query Get
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -2836,10 +2553,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Get All Query  Node  Get
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -2864,10 +2578,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Get Custom Object Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -2903,10 +2614,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Get Custom Object  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -2927,10 +2635,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Get No Body Get
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -2954,10 +2659,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Get No Body  Node  Get
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -2978,10 +2680,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Get Or Create Counter Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -3005,10 +2704,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Get Or Create Counter  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3036,10 +2732,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Get With Query Get
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3075,10 +2768,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Get With Query  Node  Get
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3099,10 +2789,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Manual Create Nested Node Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -3126,10 +2813,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Manual Create Nested Node  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3150,10 +2834,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Manual Delete Nested Edge Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -3177,10 +2858,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Manual Delete Nested Edge  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3201,10 +2879,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Manual Delete Nested Node Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -3228,10 +2903,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Manual Delete Nested Node  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3252,10 +2924,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Manual Detach Nested Node Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -3279,10 +2948,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Manual Detach Nested Node  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3303,10 +2969,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Manual Update Nested Node Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -3330,10 +2993,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Manual Update Nested Node  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3360,10 +3020,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Nested Request Payload Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3399,10 +3056,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Nested Request Payload  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3423,10 +3077,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Populate Graph Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -3450,10 +3101,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Populate Graph  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3474,10 +3122,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Post All Excluded Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       summary: Api Root
       tags:
@@ -3499,10 +3144,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Post All Excluded  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3521,10 +3163,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Post No Body Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -3548,10 +3187,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Post No Body  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3578,10 +3214,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Post Partial Excluded Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3617,10 +3250,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Post Partial Excluded  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3648,10 +3278,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Post Path Var  A  Get
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3678,10 +3305,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Post Path Var  A  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3717,10 +3341,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Post Path Var  Node   A  Get
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3755,10 +3376,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Post Path Var  Node   A  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3785,10 +3403,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Post With Body Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3824,10 +3439,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Post With Body  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3854,10 +3466,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Post With Body And File Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3891,10 +3500,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Post With Body And File  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3919,10 +3525,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Post With File Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3958,10 +3561,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Post With File  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -3982,10 +3582,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Purge Populated Graph Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -4009,10 +3606,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Purge Populated Graph  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -4033,10 +3627,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Traverse Graph Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -4060,10 +3651,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Traverse Graph  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -4084,10 +3672,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Traverse Populated Graph Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -4111,10 +3696,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Traverse Populated Graph  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -4135,10 +3717,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Trigger Counter Task Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -4162,10 +3741,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Trigger Counter Task  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -4192,10 +3768,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Update Custom Object Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -4231,10 +3804,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Update Custom Object  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -4255,10 +3825,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Update Graph Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -4282,10 +3849,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Update Graph  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -4306,10 +3870,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Update Nested Node Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -4333,10 +3894,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Update Nested Node  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -4357,10 +3915,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Visit Nested Node Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - HTTPBearer: []
@@ -4384,10 +3939,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Visit Nested Node  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -4408,10 +3960,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Walker Visit Sequence Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       summary: Api Root
       tags:
@@ -4433,10 +3982,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Walker Visit Sequence  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -4558,10 +4104,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Webhook Walker Webhook By Body Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       summary: Api Root
       tags:
@@ -4583,10 +4126,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Webhook Walker Webhook By Body  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -4605,10 +4145,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Webhook Walker Webhook By Header Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - APIKeyHeader: []
@@ -4632,10 +4169,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Webhook Walker Webhook By Header  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -4665,12 +4199,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title:
-                  Response Api Entry Webhook Walker Webhook By Path  Node   Test
-                  Key  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:
@@ -4689,10 +4218,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Webhook Walker Webhook By Path  Test Key  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       summary: Api Root
       tags:
@@ -4705,10 +4231,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Root Webhook Walker Webhook By Query Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
       security:
         - APIKeyQuery: []
@@ -4732,10 +4255,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
-                  - {}
-                title: Response Api Entry Webhook Walker Webhook By Query  Node  Post
+                $ref: "#/components/schemas/ContextResponse_Any_"
           description: Successful Response
         "422":
           content:

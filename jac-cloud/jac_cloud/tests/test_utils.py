@@ -37,7 +37,6 @@ class JacCloudTest(TestCase):
     ) -> None:
         """Run server."""
         run(["fuser", "-k", f"{port}/tcp"])
-        run(["jac", "clean"])
 
         base_envs = environ.copy()
         base_envs["DATABASE_NAME"] = database
