@@ -1,15 +1,102 @@
 """JAC Splice-Orchestrator Plugin."""
 
+from itertools import islice
+from pickle import dumps, loads
 from types import ModuleType
-from typing import Optional, Union
+from typing import Any
+
+from grpc import RpcError, insecure_channel
+
+from jac_splice_orc.proxy.grpc_local import module_service_pb2
+from jac_splice_orc.proxy.grpc_local.module_service_pb2_grpc import ModuleServiceStub
 
 from jaclang.cli.cmdreg import cmd_registry
-from jaclang.runtimelib.importer import ImportPathSpec, JacImporter, PythonImporter
-from jaclang.runtimelib.machine import JacMachine, JacProgram
+from jaclang.runtimelib.machine import JacMachine, JacMachineImpl, hookimpl
 
-from pluggy import HookimplMarker
 
-hookimpl = HookimplMarker("jac")
+class ProxyObject:
+    """Proxy Object Handler."""
+
+    def __init__(self, stub: ModuleServiceStub, id: str, module: str) -> None:
+        """Override init."""
+        self.stub = stub
+        self.id = id
+        self.module = module
+
+    def __getattr__(self, attr: str) -> Any:
+        """Override getattr."""
+        try:
+            request = module_service_pb2.AttributeRequest(  # type: ignore[attr-defined]
+                id=self.id, attribute=attr
+            )
+            response = self.stub.get_attribute(request)
+            if response.type < 0:
+                value = loads(response.bytes_value)
+            elif response.type > 1:
+                value = CallableProxyObject(self.stub, response.string_value, "")
+            else:
+                value = ProxyObject(self.stub, response.string_value, "")
+
+            if response.type < 1:
+                setattr(self, attr, value)
+            return value
+
+        except RpcError:
+            raise
+
+    def __repr__(self) -> str:
+        """Override repr."""
+        request = module_service_pb2.MethodRequest(  # type: ignore[attr-defined]
+            id=self.id, method="__repr__"
+        )
+        response = self.stub.execute(request)
+        return loads(response.bytes_value)
+
+
+class CallableProxyObject(ProxyObject):
+    """Callable Proxy Object Handler."""
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        """Trigger proxy call."""
+        try:
+            arguments = [
+                (
+                    module_service_pb2.MethodArgument(  # type: ignore[attr-defined]
+                        proxy=True, string_value=arg.id
+                    )
+                    if isinstance(arg, ProxyObject)
+                    else module_service_pb2.MethodArgument(  # type: ignore[attr-defined]
+                        proxy=False, bytes_value=dumps(arg)
+                    )
+                )
+                for arg in args
+            ]
+
+            keywords = {
+                key: (
+                    module_service_pb2.MethodArgument(  # type: ignore[attr-defined]
+                        proxy=True, string_value=value.id
+                    )
+                    if isinstance(value, ProxyObject)
+                    else module_service_pb2.MethodArgument(  # type: ignore[attr-defined]
+                        proxy=False, bytes_value=dumps(value)
+                    )
+                )
+                for key, value in kwargs.items()
+            }
+
+            request = module_service_pb2.MethodRequest(  # type: ignore[attr-defined]
+                id=self.id, args=arguments, kwargs=keywords
+            )
+            response = self.stub.execute(request)
+
+            if response.type < 0:
+                return loads(response.bytes_value)
+            if response.type > 0:
+                return CallableProxyObject(self.stub, response.string_value, "")
+            return ProxyObject(self.stub, response.string_value, "")
+        except RpcError:
+            raise
 
 
 class ProxyPlugin:
@@ -28,43 +115,35 @@ class ProxyPlugin:
     @staticmethod
     @hookimpl
     def jac_import(
+        mach: JacMachine,
         target: str,
         base_path: str,
         absorb: bool,
-        cachable: bool,
-        mdl_alias: Optional[str],
-        override_name: Optional[str],
-        lng: Optional[str],
-        items: Optional[dict[str, Union[str, Optional[str]]]],
-        reload_module: Optional[bool],
-    ) -> tuple[ModuleType, ...]:
-        """Core Import Process with Kubernetes Pod Integration."""
-        spec = ImportPathSpec(
-            target,
-            base_path,
-            absorb,
-            cachable,
-            mdl_alias,
-            override_name,
-            lng,
-            items,
-        )
+        mdl_alias: str | None,
+        override_name: str | None,
+        lng: str | None,
+        items: dict[str, str | None] | None,
+        reload_module: bool | None,
+    ) -> tuple[ModuleType | ProxyObject, ...]:
+        """Core Import Process."""
+        module = target.split(".")
+        if module[0] in ["numpy"]:
+            stub = ModuleServiceStub(insecure_channel("localhost:50051"))
+            proxy = ProxyObject(stub, "", "numpy")
+            for m in islice(module, 1, None):
+                proxy = getattr(proxy, m)
+            if items:
+                return tuple(getattr(proxy, i) for i in items.keys())
+            return (proxy,)
 
-        jac_machine = JacMachine.get(base_path)
-        if not jac_machine.jac_program:
-            jac_machine.attach_program(
-                JacProgram(mod_bundle=None, bytecode=None, sem_ir=None)
-            )
-
-        if lng == "py":
-            import_result = PythonImporter(JacMachine.get()).run_import(spec)
-        else:
-            import_result = JacImporter(JacMachine.get()).run_import(
-                spec, reload_module
-            )
-
-        return (
-            (import_result.ret_mod,)
-            if absorb or not items
-            else tuple(import_result.ret_items)
+        return JacMachineImpl.jac_import(
+            mach=mach,
+            target=target,
+            base_path=base_path,
+            absorb=absorb,
+            mdl_alias=mdl_alias,
+            override_name=override_name,
+            lng=lng,
+            items=items,
+            reload_module=reload_module,
         )

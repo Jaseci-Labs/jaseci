@@ -9,7 +9,7 @@ packages = [{include = "jac_splice_orc"}]
 
 [tool.poetry.dependencies]
 python = "3.13.2"
-jaclang = "0.7.34"
+jaclang = "0.8.0"
 fastapi = "0.115.11"
 orjson = "3.10.15"
 uvicorn = {version = "0.34.0", extras = ["standard"]}

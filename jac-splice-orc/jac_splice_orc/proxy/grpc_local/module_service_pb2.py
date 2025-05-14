@@ -19,7 +19,7 @@ _sym_db = _symbol_database.Default()
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x14module_service.proto"\x9d\x01\n\rMethodRequest\x12\x0e\n\x06obj_id\x18\x01 \x01(\t\x12\x13\n\x0bmethod_name\x18\x02 \x01(\t\x12\x0c\n\x04\x61rgs\x18\x03 \x03(\t\x12*\n\x06kwargs\x18\x04 \x03(\x0b\x32\x1a.MethodRequest.KwargsEntry\x1a-\n\x0bKwargsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01"E\n\x0eMethodResponse\x12\x0e\n\x06result\x18\x01 \x01(\t\x12\x0e\n\x06obj_id\x18\x02 \x01(\t\x12\x13\n\x0bis_callable\x18\x03 \x01(\x08\x32=\n\rModuleService\x12,\n\x07\x65xecute\x12\x0e.MethodRequest\x1a\x0f.MethodResponse"\x00\x62\x06proto3'
+    b'\n\x14module_service.proto"1\n\x10\x41ttributeRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x11\n\tattribute\x18\x02 \x01(\t"J\n\x0eMethodArgument\x12\r\n\x05proxy\x18\x01 \x01(\x08\x12\x13\n\x0b\x62ytes_value\x18\x02 \x01(\x0c\x12\x14\n\x0cstring_value\x18\x03 \x01(\t"\xb6\x01\n\rMethodRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0e\n\x06method\x18\x02 \x01(\t\x12\x1d\n\x04\x61rgs\x18\x03 \x03(\x0b\x32\x0f.MethodArgument\x12*\n\x06kwargs\x18\x04 \x03(\x0b\x32\x1a.MethodRequest.KwargsEntry\x1a>\n\x0bKwargsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x1e\n\x05value\x18\x02 \x01(\x0b\x32\x0f.MethodArgument:\x02\x38\x01"H\n\rValueResponse\x12\x0c\n\x04type\x18\x01 \x01(\x05\x12\x13\n\x0b\x62ytes_value\x18\x02 \x01(\x0c\x12\x14\n\x0cstring_value\x18\x03 \x01(\t2r\n\rModuleService\x12\x34\n\rget_attribute\x12\x11.AttributeRequest\x1a\x0e.ValueResponse"\x00\x12+\n\x07\x65xecute\x12\x0e.MethodRequest\x1a\x0e.ValueResponse"\x00\x62\x06proto3'
 )
 
 _globals = globals()
@@ -29,12 +29,16 @@ if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
     _globals["_METHODREQUEST_KWARGSENTRY"]._loaded_options = None
     _globals["_METHODREQUEST_KWARGSENTRY"]._serialized_options = b"8\001"
-    _globals["_METHODREQUEST"]._serialized_start = 25
-    _globals["_METHODREQUEST"]._serialized_end = 182
-    _globals["_METHODREQUEST_KWARGSENTRY"]._serialized_start = 137
-    _globals["_METHODREQUEST_KWARGSENTRY"]._serialized_end = 182
-    _globals["_METHODRESPONSE"]._serialized_start = 184
-    _globals["_METHODRESPONSE"]._serialized_end = 253
-    _globals["_MODULESERVICE"]._serialized_start = 255
-    _globals["_MODULESERVICE"]._serialized_end = 316
+    _globals["_ATTRIBUTEREQUEST"]._serialized_start = 24
+    _globals["_ATTRIBUTEREQUEST"]._serialized_end = 73
+    _globals["_METHODARGUMENT"]._serialized_start = 75
+    _globals["_METHODARGUMENT"]._serialized_end = 149
+    _globals["_METHODREQUEST"]._serialized_start = 152
+    _globals["_METHODREQUEST"]._serialized_end = 334
+    _globals["_METHODREQUEST_KWARGSENTRY"]._serialized_start = 272
+    _globals["_METHODREQUEST_KWARGSENTRY"]._serialized_end = 334
+    _globals["_VALUERESPONSE"]._serialized_start = 336
+    _globals["_VALUERESPONSE"]._serialized_end = 408
+    _globals["_MODULESERVICE"]._serialized_start = 410
+    _globals["_MODULESERVICE"]._serialized_end = 524
 # @@protoc_insertion_point(module_scope)
