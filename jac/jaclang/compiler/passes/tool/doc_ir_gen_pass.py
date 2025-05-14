@@ -13,7 +13,7 @@ from jaclang.compiler.unitree import UniNode
 from jaclang.settings import settings
 
 
-class DocIrGenPass(UniPass):
+class DocIRGenPass(UniPass):
     """DocIrGenPass generate DocIr for Jac code."""
 
     def before_pass(self) -> None:
