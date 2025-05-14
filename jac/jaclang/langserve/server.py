@@ -27,6 +27,7 @@ async def did_open(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) ->
 async def did_save(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) -> None:
     """Check syntax on change."""
     file_path = params.text_document.uri
+    # await ls.launch_quick_check(file_path)
     await ls.launch_deep_check(file_path)
     ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH)
 

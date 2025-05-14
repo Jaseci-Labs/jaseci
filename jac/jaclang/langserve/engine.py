@@ -63,6 +63,14 @@ class JacLangServer(JacProgram, LanguageServer):
         try:
             file_path_fs = file_path.removeprefix("file://")
             document = self.workspace.get_text_document(file_path)
+            self.errors_had = [
+                error for error in self.errors_had if error.loc.mod_path != file_path_fs
+            ]
+            self.warnings_had = [
+                warning
+                for warning in self.warnings_had
+                if warning.loc.mod_path != file_path_fs
+            ]
             build = self.compile_from_str(
                 source_str=document.source,
                 file_path=document.path,
@@ -71,9 +79,7 @@ class JacLangServer(JacProgram, LanguageServer):
             self.update_modules(file_path_fs, build)
             self.publish_diagnostics(
                 file_path,
-                gen_diagnostics(
-                    file_path, self.errors_had, self.warnings_had
-                ),
+                gen_diagnostics(file_path, self.errors_had, self.warnings_had),
             )
             return len(self.errors_had) == 0
         except Exception as e:
@@ -86,14 +92,20 @@ class JacLangServer(JacProgram, LanguageServer):
             start_time = time.time()
             file_path_fs = file_path.removeprefix("file://")
             document = self.workspace.get_text_document(file_path)
+            self.errors_had = [
+                error for error in self.errors_had if error.loc.mod_path != file_path_fs
+            ]
+            self.warnings_had = [
+                warning
+                for warning in self.warnings_had
+                if warning.loc.mod_path != file_path_fs
+            ]
             build = self.compile_from_str(
                 source_str=document.source,
                 file_path=document.path,
                 mode=CMode.TYPECHECK,
             )
             self.update_modules(file_path_fs, build)
-            # Handle annexed modules
-            self.log_py(f"Annexed modules: {build.annexable_by}")
             if build.annexable_by:
                 return self.deep_check(
                     uris.from_fs_path(build.annexable_by), annex_view=file_path
@@ -137,7 +149,7 @@ class JacLangServer(JacProgram, LanguageServer):
         ) -> None:
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(self.executor, func, file_path, annex_view)
-        self.log_py(f'\n\n\ntasks:\n\n {self.tasks}\n\n')
+
         if uri in self.tasks and not self.tasks[uri].done():
             self.log_py(f"Canceling {uri} deep check...")
             self.tasks[uri].cancel()
@@ -273,7 +285,6 @@ class JacLangServer(JacProgram, LanguageServer):
     def formatted_jac(self, file_path: str) -> list[lspt.TextEdit]:
         """Return formatted jac."""
         try:
-            file_path_fs = file_path.removeprefix("file://")
             document = self.workspace.get_text_document(file_path)
             formatted_text = JacProgram.jac_str_formatter(
                 source_str=document.source, file_path=document.path
@@ -298,8 +309,6 @@ class JacLangServer(JacProgram, LanguageServer):
     ) -> Optional[lspt.Hover]:
         """Return hover information for a file."""
         file_path_fs = file_path.removeprefix("file://")
-        self.log_py(f'\n\nall modules: {self.mod.hub.keys()}')
-        self.log_py(f'\n\nall: {self.mod.hub}\n\n')
         if file_path_fs not in self.mod.hub:
             return None
         sem_mgr = self.sem_managers.get(file_path_fs)
