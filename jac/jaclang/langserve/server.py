@@ -19,7 +19,7 @@ server = JacLangServer()
 @server.feature(lspt.TEXT_DOCUMENT_DID_OPEN)
 async def did_open(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) -> None:
     """Check syntax on change."""
-    ls.deep_check(params.text_document.uri)
+    await ls.launch_deep_check(params.text_document.uri)
     ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH)
 
 
@@ -27,10 +27,8 @@ async def did_open(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) ->
 async def did_save(ls: JacLangServer, params: lspt.DidOpenTextDocumentParams) -> None:
     """Check syntax on change."""
     file_path = params.text_document.uri
-    if ls.modules[file_path].is_modified:
-        await ls.launch_deep_check(file_path)
-        ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH)
-        ls.modules[file_path].is_modified = False
+    await ls.launch_deep_check(file_path)
+    ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH)
 
 
 @server.feature(lspt.TEXT_DOCUMENT_DID_CHANGE)
@@ -38,16 +36,9 @@ async def did_change(
     ls: JacLangServer, params: lspt.DidChangeTextDocumentParams
 ) -> None:
     """Check syntax on change."""
-    module = ls.modules[params.text_document.uri]
-    module.is_modified = True
-    await ls.launch_quick_check(file_path := params.text_document.uri)
-    if file_path in ls.modules:
-        document = ls.workspace.get_text_document(file_path)
-        lines = document.source.splitlines()
-        ls.modules[file_path].sem_manager.update_sem_tokens(
-            params, ls.modules[file_path].sem_manager.sem_tokens, lines
-        )
-        ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH)
+    file_path = params.text_document.uri
+    await ls.launch_quick_check(file_path)
+    ls.lsp.send_request(lspt.WORKSPACE_SEMANTIC_TOKENS_REFRESH)
 
 
 @server.feature(lspt.TEXT_DOCUMENT_FORMATTING)
