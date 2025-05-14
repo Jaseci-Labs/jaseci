@@ -42,6 +42,15 @@ class JacLangServer(JacProgram, LanguageServer):
         # sem_manager per file_path, built on demand
         self.sem_managers: dict[str, SemTokManager] = {}
 
+    def _clear_alerts_for_file(self, file_path_fs: str) -> None:
+        """Remove errors and warnings for a specific file from the lists."""
+        self.errors_had = [
+            error for error in self.errors_had if error.loc.mod_path != file_path_fs
+        ]
+        self.warnings_had = [
+            warning for warning in self.warnings_had if warning.loc.mod_path != file_path_fs
+        ]
+
     def get_ir(self, file_path: str) -> Optional[uni.Module]:
         """Get IR for a file path."""
         file_path = file_path.removeprefix("file://")
@@ -63,14 +72,7 @@ class JacLangServer(JacProgram, LanguageServer):
         try:
             file_path_fs = file_path.removeprefix("file://")
             document = self.workspace.get_text_document(file_path)
-            self.errors_had = [
-                error for error in self.errors_had if error.loc.mod_path != file_path_fs
-            ]
-            self.warnings_had = [
-                warning
-                for warning in self.warnings_had
-                if warning.loc.mod_path != file_path_fs
-            ]
+            self._clear_alerts_for_file(file_path_fs)
             build = self.compile_from_str(
                 source_str=document.source,
                 file_path=document.path,
@@ -92,14 +94,7 @@ class JacLangServer(JacProgram, LanguageServer):
             start_time = time.time()
             file_path_fs = file_path.removeprefix("file://")
             document = self.workspace.get_text_document(file_path)
-            self.errors_had = [
-                error for error in self.errors_had if error.loc.mod_path != file_path_fs
-            ]
-            self.warnings_had = [
-                warning
-                for warning in self.warnings_had
-                if warning.loc.mod_path != file_path_fs
-            ]
+            self._clear_alerts_for_file(file_path_fs)
             build = self.compile_from_str(
                 source_str=document.source,
                 file_path=document.path,
