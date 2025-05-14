@@ -3,18 +3,29 @@
 syntax = "proto3";
 
 service ModuleService {
-    rpc execute(MethodRequest) returns (MethodResponse) {}
+    rpc get_attribute(AttributeRequest) returns (ValueResponse) {}
+    rpc execute(MethodRequest) returns (ValueResponse) {}
+}
+
+message AttributeRequest {
+    string id = 1;
+    string attribute = 2;
+}
+
+message MethodArgument {
+    bool proxy = 1;
+    bytes bytes_value = 2;
+    string string_value = 3;
 }
 
 message MethodRequest {
-    string obj_id = 1; // ID of the object instance (empty for module-level)
-    string method_name = 2;
-    repeated string args = 3; // Serialized arguments
-    map<string, string> kwargs = 4; // Serialized keyword arguments
+    string id = 1;
+    repeated MethodArgument args = 2;
+    map<string, MethodArgument> kwargs = 3;
 }
 
-message MethodResponse {
-    string result = 1; // Serialized result
-    string obj_id = 2; // Object ID if result is an object
-    bool is_callable = 3; // Indicates if the result is callable
+message ValueResponse {
+    int32 type = 1; // -1 primitive, 0 proxy value, 1 proxy callable
+    bytes bytes_value = 2;
+    string string_value = 3;
 }

@@ -1,11 +1,11 @@
 """Jac Proxy Server."""
 
 import sys
-import traceback
 from concurrent import futures
 from importlib import import_module
 from pickle import dumps, loads
 from typing import Any
+from uuid import uuid4
 
 import grpc
 
@@ -13,6 +13,13 @@ from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
 from .grpc_local import module_service_pb2, module_service_pb2_grpc
 from .utils import logger
+
+memory: dict[str, Any] = {}
+
+
+def is_primitive(value: Any) -> bool:
+    """Check if value is primitive."""
+    return isinstance(value, str | int | float | list | dict | bool)
 
 
 class ModuleService(module_service_pb2_grpc.ModuleServiceServicer):
@@ -28,28 +35,56 @@ class ModuleService(module_service_pb2_grpc.ModuleServiceServicer):
             logger.error(f"Failed to import module '{module_name}': {e}")
             raise e
 
+    def get_attribute(self, request: Any, context: Any) -> Any:  # noqa: ANN401
+        """Override execute."""
+        try:
+            if not request.id:
+                value = getattr(self.module, request.attribute)
+            else:
+                value = getattr(memory[request.id], request.attribute)
+
+            if is_primitive(value):
+                return module_service_pb2.ValueResponse(type=-1, bytes_value=dumps(value))  # type: ignore[attr-defined]
+
+            id = uuid4().hex
+            memory[id] = value
+
+            return module_service_pb2.ValueResponse(  # type: ignore[attr-defined]
+                type=1 if callable(value) else 0, string_value=id
+            )
+        except Exception as e:
+            logger.exception("Error during method get_attribute")
+            context.abort(grpc.StatusCode.INTERNAL, str(e))
+
     def execute(self, request: Any, context: Any) -> Any:  # noqa: ANN401
         """Override execute."""
         try:
-            module = self.module
-            for name in request.method_name.split("."):
-                module = getattr(module, name)
+            args = [
+                memory[arg.string_value] if arg.proxy else loads(arg.bytes_value)
+                for arg in request.args
+            ]
+            kwargs = {
+                key: (
+                    memory[value.string_value]
+                    if value.proxy
+                    else loads(value.bytes_value)
+                )
+                for key, value in request.kwargs.items()
+            }
+            value = memory[request.id](*args, **kwargs)
 
-            if callable(module):
-                result = module(*loads(request.args), **loads(request.kwargs))
-            else:
-                request = module
+            if is_primitive(value):
+                return module_service_pb2.ValueResponse(type=-1, bytes_value=dumps(value))  # type: ignore[attr-defined]
 
-            return module_service_pb2.MethodResponse(  # type: ignore[attr-defined]
-                result=dumps(result), is_callable=callable(result)
+            id = uuid4().hex
+            memory[id] = value
+
+            return module_service_pb2.ValueResponse(  # type: ignore[attr-defined]
+                type=1 if callable(value) else 0, string_value=id
             )
         except Exception as e:
-            error_msg = f"Error during method execution: {str(e)}"
-            logger.error(error_msg)
-            traceback.print_exc()
-            context.set_details(error_msg)
-            context.set_code(grpc.StatusCode.INTERNAL)
-            return module_service_pb2.MethodResponse()  # type: ignore[attr-defined]
+            logger.exception("Error during method execution")
+            context.abort(grpc.StatusCode.INTERNAL, str(e))
 
 
 def run() -> None:

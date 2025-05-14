@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-import module_service_pb2 as module__service__pb2
+from ..grpc_local import module_service_pb2 as module__service__pb2
 
 GRPC_GENERATED_VERSION = "1.71.0"
 GRPC_VERSION = grpc.__version__
@@ -37,16 +37,28 @@ class ModuleServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
+        self.get_attribute = channel.unary_unary(
+            "/ModuleService/get_attribute",
+            request_serializer=module__service__pb2.AttributeRequest.SerializeToString,
+            response_deserializer=module__service__pb2.ValueResponse.FromString,
+            _registered_method=True,
+        )
         self.execute = channel.unary_unary(
             "/ModuleService/execute",
             request_serializer=module__service__pb2.MethodRequest.SerializeToString,
-            response_deserializer=module__service__pb2.MethodResponse.FromString,
+            response_deserializer=module__service__pb2.ValueResponse.FromString,
             _registered_method=True,
         )
 
 
 class ModuleServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
+
+    def get_attribute(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
 
     def execute(self, request, context):
         """Missing associated documentation comment in .proto file."""
@@ -57,10 +69,15 @@ class ModuleServiceServicer(object):
 
 def add_ModuleServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
+        "get_attribute": grpc.unary_unary_rpc_method_handler(
+            servicer.get_attribute,
+            request_deserializer=module__service__pb2.AttributeRequest.FromString,
+            response_serializer=module__service__pb2.ValueResponse.SerializeToString,
+        ),
         "execute": grpc.unary_unary_rpc_method_handler(
             servicer.execute,
             request_deserializer=module__service__pb2.MethodRequest.FromString,
-            response_serializer=module__service__pb2.MethodResponse.SerializeToString,
+            response_serializer=module__service__pb2.ValueResponse.SerializeToString,
         ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -73,6 +90,36 @@ def add_ModuleServiceServicer_to_server(servicer, server):
 # This class is part of an EXPERIMENTAL API.
 class ModuleService(object):
     """Missing associated documentation comment in .proto file."""
+
+    @staticmethod
+    def get_attribute(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            "/ModuleService/get_attribute",
+            module__service__pb2.AttributeRequest.SerializeToString,
+            module__service__pb2.ValueResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True,
+        )
 
     @staticmethod
     def execute(
@@ -92,7 +139,7 @@ class ModuleService(object):
             target,
             "/ModuleService/execute",
             module__service__pb2.MethodRequest.SerializeToString,
-            module__service__pb2.MethodResponse.FromString,
+            module__service__pb2.ValueResponse.FromString,
             options,
             channel_credentials,
             insecure,
