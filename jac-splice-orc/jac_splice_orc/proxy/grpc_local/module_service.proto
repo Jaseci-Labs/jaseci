@@ -20,12 +20,13 @@ message MethodArgument {
 
 message MethodRequest {
     string id = 1;
-    repeated MethodArgument args = 2;
-    map<string, MethodArgument> kwargs = 3;
+    string method = 2;
+    repeated MethodArgument args = 3;
+    map<string, MethodArgument> kwargs = 4;
 }
 
 message ValueResponse {
-    int32 type = 1; // -1 primitive, 0 proxy value, 1 proxy callable
+    int32 type = 1; // -1 primitive, 0 proxy value, 1 proxy property, 2 callable
     bytes bytes_value = 2;
     string string_value = 3;
 }

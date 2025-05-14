@@ -30,12 +30,26 @@ class ProxyObject:
             )
             response = self.stub.get_attribute(request)
             if response.type < 0:
-                return loads(response.bytes_value)
-            if response.type > 0:
-                return CallableProxyObject(self.stub, response.string_value, "")
-            return ProxyObject(self.stub, response.string_value, "")
+                value = loads(response.bytes_value)
+            elif response.type > 1:
+                value = CallableProxyObject(self.stub, response.string_value, "")
+            else:
+                value = ProxyObject(self.stub, response.string_value, "")
+
+            if response.type < 1:
+                setattr(self, attr, value)
+            return value
+
         except RpcError:
             raise
+
+    def __repr__(self) -> str:
+        """Override repr."""
+        request = module_service_pb2.MethodRequest(  # type: ignore[attr-defined]
+            id=self.id, method="__repr__"
+        )
+        response = self.stub.execute(request)
+        return loads(response.bytes_value)
 
 
 class CallableProxyObject(ProxyObject):

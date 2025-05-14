@@ -38,10 +38,15 @@ class ModuleService(module_service_pb2_grpc.ModuleServiceServicer):
     def get_attribute(self, request: Any, context: Any) -> Any:  # noqa: ANN401
         """Override execute."""
         try:
-            if not request.id:
-                value = getattr(self.module, request.attribute)
-            else:
-                value = getattr(memory[request.id], request.attribute)
+            module = memory[request.id] if request.id else self.module
+            value = getattr(module, request.attribute)
+            is_property = (
+                1
+                if isinstance(
+                    getattr(module.__class__, request.attribute, None), property
+                )
+                else 2
+            )
 
             if is_primitive(value):
                 return module_service_pb2.ValueResponse(type=-1, bytes_value=dumps(value))  # type: ignore[attr-defined]
@@ -50,7 +55,7 @@ class ModuleService(module_service_pb2_grpc.ModuleServiceServicer):
             memory[id] = value
 
             return module_service_pb2.ValueResponse(  # type: ignore[attr-defined]
-                type=1 if callable(value) else 0, string_value=id
+                type=is_property if callable(value) else 0, string_value=id
             )
         except Exception as e:
             logger.exception("Error during method get_attribute")
@@ -71,7 +76,13 @@ class ModuleService(module_service_pb2_grpc.ModuleServiceServicer):
                 )
                 for key, value in request.kwargs.items()
             }
-            value = memory[request.id](*args, **kwargs)
+            func = memory[request.id]
+
+            if request.method:
+                for m in request.method.split("."):
+                    func = getattr(func, m)
+
+            value = func(*args, **kwargs)
 
             if is_primitive(value):
                 return module_service_pb2.ValueResponse(type=-1, bytes_value=dumps(value))  # type: ignore[attr-defined]
