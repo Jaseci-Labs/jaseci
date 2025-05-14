@@ -1935,6 +1935,14 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for match wildcard patterns."""
         node.gen.doc_ir = [self.text("_")]
 
+    def exit_match_star(self, node: uni.MatchStar) -> None:
+        """Generate DocIR for match star patterns (e.g., *args, **kwargs)."""
+        prefix = "*" if node.is_list else "**"
+        parts: list[doc.DocType] = [self.text(prefix)]
+        if node.name and node.name.gen.doc_ir:
+            parts.append(node.name.gen.doc_ir[0])
+        node.gen.doc_ir = [self.concat(parts)]
+
     def exit_match_k_v_pair(self, node: uni.MatchKVPair) -> None:
         """Generate DocIR for match key-value pairs."""
         parts: list[doc.DocType] = []
