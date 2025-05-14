@@ -46,7 +46,7 @@ graph TD
     D --> E[Type Evaluator]
     E --> F[Type Checker]
     F --> G[Diagnostics]
-    
+
     H[Type Model] --> E
     H --> F
     I[Type Cache] --> H
@@ -129,23 +129,23 @@ classDiagram
         +__eq__(other) bool
         +__hash__() int
     }
-    
+
     class UnknownType {
         +__str__() str
     }
-    
+
     class AnyType {
         +__str__() str
     }
-    
+
     class NoneType {
         +__str__() str
     }
-    
+
     class NeverType {
         +__str__() str
     }
-    
+
     class ClassType {
         +str name
         +str module
@@ -157,7 +157,7 @@ classDiagram
         +__hash__() int
         +__str__() str
     }
-    
+
     class InstanceType {
         +ClassType classType
         +Dict typeArguments
@@ -165,7 +165,7 @@ classDiagram
         +__hash__() int
         +__str__() str
     }
-    
+
     class CallableType {
         +List parameters
         +Type returnType
@@ -173,14 +173,14 @@ classDiagram
         +__hash__() int
         +__str__() str
     }
-    
+
     class UnionType {
         +List types
         +__eq__(other) bool
         +__hash__() int
         +__str__() str
     }
-    
+
     Type <|-- UnknownType
     Type <|-- AnyType
     Type <|-- NoneType
@@ -196,16 +196,16 @@ classDiagram
 ```python
 class Type:
     """Base class for all type objects."""
-    
+
     def __init__(self, category: TypeCategory):
         self.category = category
         self.flags = TypeFlags.NONE
-        
+
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Type):
             return False
         return self.category == other.category
-    
+
     def __hash__(self) -> int:
         return hash(self.category)
 ```
@@ -223,7 +223,7 @@ Class and instance types are fundamental to object-oriented languages like Pytho
 ```python
 class ClassType(Type):
     """Represents a class type."""
-    
+
     def __init__(self, name: str, module: Optional[str] = None):
         super().__init__(TypeCategory.CLASS)
         self.flags |= TypeFlags.CLASS
@@ -233,18 +233,18 @@ class ClassType(Type):
         self.methods: Dict[str, CallableType] = {}
         self.bases: List[ClassType] = []
         self.type_parameters: List[TypeVar] = []
-        
+
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, ClassType):
             return False
         return (
-            self.name == other.name and 
+            self.name == other.name and
             self.module == other.module
         )
-    
+
     def __hash__(self) -> int:
         return hash((self.category, self.name, self.module))
-    
+
     def __str__(self) -> str:
         if self.module:
             return f"{self.module}.{self.name}"
@@ -253,25 +253,25 @@ class ClassType(Type):
 
 class InstanceType(Type):
     """Represents an instance of a class."""
-    
+
     def __init__(self, class_type: ClassType):
         super().__init__(TypeCategory.INSTANCE)
         self.flags |= TypeFlags.INSTANCE
         self.class_type = class_type
         self.type_arguments: Dict[str, Type] = {}
-        
+
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, InstanceType):
             return False
         return self.class_type == other.class_type
-    
+
     def __hash__(self) -> int:
         return hash((self.category, self.class_type))
-    
+
     def __str__(self) -> str:
         if not self.type_arguments:
             return str(self.class_type)
-        
+
         args = ", ".join(str(arg) for arg in self.type_arguments.values())
         return f"{self.class_type}[{args}]"
 ```
@@ -296,7 +296,7 @@ graph TD
     A --> G[create instance]
     A --> H[create callable]
     A --> I[create union]
-    
+
     B --> J[TypeCache]
     C --> J
     D --> J
@@ -305,7 +305,7 @@ graph TD
     G --> J
     H --> J
     I --> J
-    
+
     J --> K[returns cached or new type]
 ```
 
@@ -317,44 +317,44 @@ class TypeFactory:
     Factory class for creating type objects. Ensures all types are created
     through the cache for memory efficiency.
     """
-    
+
     @staticmethod
     def unknown() -> UnknownType:
         return TypeCache.get_instance().unknown_type
-    
+
     @staticmethod
     def any() -> AnyType:
         return TypeCache.get_instance().any_type
-    
+
     @staticmethod
     def none() -> NoneType:
         return TypeCache.get_instance().none_type
-    
+
     @staticmethod
     def never() -> NeverType:
         return TypeCache.get_instance().never_type
-    
+
     @staticmethod
     def class_type(name: str, module: Optional[str] = None) -> ClassType:
         if module is None and name in ["int", "float", "str", "bool", "bytes", "object"]:
             return TypeCache.get_instance().get_builtin_type(name)
-        
+
         return ClassType(name, module)
-    
+
     @staticmethod
     def instance_type(class_type: ClassType) -> InstanceType:
         return InstanceType(class_type)
-    
+
     @staticmethod
     def callable(parameters: List[ParameterType], return_type: Type) -> CallableType:
         return TypeCache.get_instance().get_callable_type(parameters, return_type)
-    
+
     @staticmethod
     def union(types: List[Type]) -> Type:
         # Filter out duplicates
         unique_types = []
         seen_types = set()
-        
+
         for t in types:
             # Handle nested unions - flatten them
             if isinstance(t, UnionType):
@@ -366,18 +366,18 @@ class TypeFactory:
                 if id(t) not in seen_types:
                     unique_types.append(t)
                     seen_types.add(id(t))
-        
+
         # Special cases for union simplification
         if len(unique_types) == 0:
             return TypeFactory.never()
-        
+
         if len(unique_types) == 1:
             return unique_types[0]
-        
+
         # If Any is in the union, the result is Any
         if any(isinstance(t, AnyType) for t in unique_types):
             return TypeFactory.any()
-        
+
         # Create the union through the cache
         return TypeCache.get_instance().get_union_type(unique_types)
 ```
@@ -395,67 +395,67 @@ The TypeCache is crucial for memory efficiency, ensuring that identical types sh
 ```python
 class TypeCache:
     """
-    Centralized cache for type objects to avoid creating duplicate 
+    Centralized cache for type objects to avoid creating duplicate
     instances of the same type. This is key to memory efficiency.
     """
-    
+
     _instance = None
-    
+
     @classmethod
     def get_instance(cls) -> TypeCache:
         if cls._instance is None:
             cls._instance = TypeCache()
         return cls._instance
-    
+
     def __init__(self):
         # Cache for built-in types
         self._builtin_types: Dict[str, Type] = {}
-        
+
         # Cache for union types (using frozensets of type IDs as keys)
         self._union_types: Dict[frozenset, UnionType] = {}
-        
+
         # Cache for callable types
         self._callable_types: Dict[Tuple[Tuple, Type], CallableType] = {}
-        
+
         # Singleton types
         self.unknown_type = UnknownType()
         self.any_type = AnyType()
         self.none_type = NoneType()
         self.never_type = NeverType()
-        
+
         # Initialize common built-in types
         self._initialize_builtin_types()
-    
+
     def _initialize_builtin_types(self) -> None:
         """Initialize cache with common built-in types."""
         builtin_names = ["int", "float", "str", "bool", "bytes", "object"]
         for name in builtin_names:
             self._builtin_types[name] = ClassType(name)
-    
+
     def get_builtin_type(self, name: str) -> Type:
         """Get a cached built-in type or create a new one."""
         if name in self._builtin_types:
             return self._builtin_types[name]
-        
+
         # Create a new built-in type and cache it
         new_type = ClassType(name)
         self._builtin_types[name] = new_type
         return new_type
-    
+
     def get_union_type(self, types: List[Type]) -> UnionType:
         """Get a cached union type or create a new one."""
         # Remove duplicates and normalize
         unique_types = list(set(types))
-        
+
         # Sort by category to ensure consistent ordering
         unique_types.sort(key=lambda t: t.category.value)
-        
+
         # Create a frozenset as the cache key
         key = frozenset(id(t) for t in unique_types)
-        
+
         if key in self._union_types:
             return self._union_types[key]
-        
+
         # Create a new union type and cache it
         new_union = UnionType(unique_types)
         self._union_types[key] = new_union
@@ -476,7 +476,7 @@ Type relationships determine compatibility between types:
 graph TD
     A[TypeRelationship] --> B[is_subtype]
     A --> C[is_assignable_to]
-    
+
     B --> D{source == AnyType?}
     D -->|Yes| E[return True]
     D -->|No| F{target == AnyType?}
@@ -500,7 +500,7 @@ class TypeRelationship:
     Class that handles type relationships like subtyping, assignability, etc.
     This is a key part of Pyright's efficient type checking.
     """
-    
+
     @staticmethod
     def is_subtype(source: Type, target: Type) -> bool:
         """
@@ -510,20 +510,20 @@ class TypeRelationship:
         # Any type is compatible with any other type (both ways)
         if isinstance(source, AnyType) or isinstance(target, AnyType):
             return True
-        
+
         # Never type is a subtype of any type
         if isinstance(source, NeverType):
             return True
-        
+
         # Any type is a supertype of Never
         if isinstance(target, NeverType):
             return False
-        
+
         # None is a subtype of Optional[X]
         if isinstance(source, NoneType) and isinstance(target, UnionType):
             # Check if target is Optional[X] (i.e., a union containing None)
             return any(isinstance(t, NoneType) for t in target.types)
-        
+
         # Same type categories - delegate to specific type checks
         if source.category == target.category:
             if isinstance(source, UnionType) and isinstance(target, UnionType):
@@ -532,48 +532,48 @@ class TypeRelationship:
                     any(TypeRelationship.is_subtype(s, t) for t in target.types)
                     for s in source.types
                 )
-            
+
             if isinstance(source, ClassType) and isinstance(target, ClassType):
                 # Check class hierarchy
                 if source == target:
                     return True
-                
+
                 # Check base classes recursively
                 for base in source.bases:
                     if TypeRelationship.is_subtype(base, target):
                         return True
-                
+
                 return False
-            
+
             if isinstance(source, InstanceType) and isinstance(target, InstanceType):
                 # Delegate to class type check
                 return TypeRelationship.is_subtype(source.class_type, target.class_type)
-            
+
             if isinstance(source, CallableType) and isinstance(target, CallableType):
                 # Check callable compatibility (contravariant in args, covariant in return)
                 # Return type must be a subtype
                 if not TypeRelationship.is_subtype(source.return_type, target.return_type):
                     return False
-                
+
                 # Parameters must be compatible (contravariant)
                 # This is a simplified check, the real one would be more complex
                 if len(source.parameters) != len(target.parameters):
                     return False
-                
+
                 for s_param, t_param in zip(source.parameters, target.parameters):
                     if not TypeRelationship.is_subtype(t_param.type, s_param.type):
                         return False
-                
+
                 return True
-        
+
         # Union type as source - each component must be a subtype of target
         if isinstance(source, UnionType):
             return all(TypeRelationship.is_subtype(t, target) for t in source.types)
-        
+
         # Union type as target - source must be a subtype of at least one component
         if isinstance(target, UnionType):
             return any(TypeRelationship.is_subtype(source, t) for t in target.types)
-        
+
         # Different type categories that aren't explicitly handled are not compatible
         return False
 ```
@@ -595,7 +595,7 @@ sequenceDiagram
     participant CFG as Control Flow Graph
     participant Analyzer as Type Analyzer
     participant Narrower as Type Narrower
-    
+
     Code->>CFG: Parse into branches
     CFG->>Analyzer: Analyze each branch
     Analyzer->>Narrower: Request type narrowing
@@ -613,19 +613,19 @@ class TypeNarrower:
     Class that handles type narrowing based on control flow analysis.
     This is a key differentiator of Pyright's approach.
     """
-    
+
     @staticmethod
     def narrow_type_from_isinstance(original_type: Type, class_type: ClassType) -> Type:
         """Narrows a type based on an isinstance check."""
         # If the original type is Any, narrow to the specified class type
         if isinstance(original_type, AnyType):
             return TypeFactory.instance_type(class_type)
-            
+
         # If the original type is already the same class type, no narrowing needed
-        if (isinstance(original_type, InstanceType) and 
+        if (isinstance(original_type, InstanceType) and
             original_type.class_type == class_type):
             return original_type
-        
+
         # If the original type is a union, filter the union
         if isinstance(original_type, UnionType):
             # Keep only types that are subtypes of the specified class
@@ -633,45 +633,45 @@ class TypeNarrower:
             for t in original_type.types:
                 if TypeRelationship.is_subtype(t, TypeFactory.instance_type(class_type)):
                     narrowed_types.append(t)
-            
+
             if not narrowed_types:
                 # No compatible types in the union, should be impossible
                 return TypeFactory.never()
-            
+
             return TypeFactory.union(narrowed_types)
-        
+
         # Check if the original type is compatible with the class type
         if TypeRelationship.is_subtype(original_type, TypeFactory.instance_type(class_type)):
             return original_type
-        
+
         # If not compatible, this branch is unreachable
         return TypeFactory.never()
-    
+
     @staticmethod
     def narrow_type_from_truth(original_type: Type, is_truthy: bool) -> Type:
         """Narrows a type based on a truthiness check."""
         # If the original type is Any, no narrowing possible based just on truthiness
         if isinstance(original_type, AnyType):
             return original_type
-        
+
         # If the original type is a union containing None, remove None when truthy
         if isinstance(original_type, UnionType) and is_truthy:
             # Filter out None from the union
             narrowed_types = [t for t in original_type.types if not isinstance(t, NoneType)]
-            
+
             if not narrowed_types:
                 # If nothing is left, this should be impossible
                 return TypeFactory.never()
-            
+
             return TypeFactory.union(narrowed_types)
-        
+
         # If checking for falsy and the type is a union, we might be able to narrow
         if isinstance(original_type, UnionType) and not is_truthy:
             # This could be complex in real implementation
             # In a full implementation, we would look at types that can be falsy
             # For simplicity, we're just returning the original type
             return original_type
-        
+
         return original_type
 ```
 
@@ -694,7 +694,7 @@ graph TB
     C --> D[Evaluate Types]
     D --> E[Check Type Compatibility]
     E --> F[Generate Diagnostics]
-    
+
     G[Type Model] --> D
     G --> E
     H[Symbol Table] --> C
@@ -708,14 +708,14 @@ class Analyzer:
     """
     Main analyzer class that orchestrates the type checking process.
     """
-    
+
     def __init__(self, config_options: ConfigOptions):
         self.config_options = config_options
         self.file_system = FileSystem()
         self.diagnostics = DiagnosticCollection()
         self.symbol_table = SymbolTable()
         self.type_cache = TypeCache.get_instance()
-        
+
     def analyze_file(self, file_path: str) -> List[Diagnostic]:
         """Analyze a single file and return diagnostics."""
         # Read the file
@@ -726,7 +726,7 @@ class Analyzer:
                 Diagnostic(f"Could not read file: {str(e)}", DiagnosticSeverity.ERROR)
             )
             return self.diagnostics.get_diagnostics()
-        
+
         # Parse the file
         parser = Parser()
         try:
@@ -736,30 +736,30 @@ class Analyzer:
                 Diagnostic(f"Could not parse file: {str(e)}", DiagnosticSeverity.ERROR)
             )
             return self.diagnostics.get_diagnostics()
-        
+
         # Bind names
         binder = Binder(self.symbol_table)
         binder.bind_ast(ast)
-        
+
         # Evaluate types
         evaluator = TypeEvaluator(self.symbol_table, self.type_cache)
         evaluator.evaluate_ast(ast)
-        
+
         # Check types
         checker = Checker(self.symbol_table, self.diagnostics, self.config_options)
         checker.check_ast(ast)
-        
+
         return self.diagnostics.get_diagnostics()
-    
+
     def analyze_project(self, project_root: str) -> Dict[str, List[Diagnostic]]:
         """Analyze all Python files in a project."""
         python_files = self.file_system.find_files(project_root, "*.py")
-        
+
         results = {}
         for file_path in python_files:
             diagnostics = self.analyze_file(file_path)
             results[file_path] = diagnostics
-        
+
         return results
 ```
 
@@ -784,7 +784,7 @@ from typing import Dict, List, Optional, Any
 
 class Parser:
     """Parser that uses Python's built-in ast module."""
-    
+
     def parse(self, source_code: str) -> ast.Module:
         """Parse Python source code into an AST."""
         try:
@@ -798,7 +798,7 @@ class Parser:
                 column=e.offset,
                 source=e.text
             )
-    
+
     def parse_file(self, file_path: str) -> ast.Module:
         """Parse a Python file into an AST."""
         with open(file_path, "r", encoding="utf-8") as f:
@@ -815,31 +815,31 @@ class TypeEvaluator:
     """
     Evaluates the types of expressions in Python code.
     """
-    
+
     def __init__(self, symbol_table: SymbolTable, type_cache: TypeCache):
         self.symbol_table = symbol_table
         self.type_cache = type_cache
         self.type_factory = TypeFactory
         self.current_scope = None
         self.type_narrower = TypeNarrower()
-    
+
     def evaluate_ast(self, node: ast.AST) -> None:
         """Evaluate types for an entire AST."""
         # Visit the AST
         self.visit(node)
-    
+
     def visit(self, node: ast.AST) -> Optional[Type]:
         """Visit an AST node and determine its type."""
         # Dispatch to the appropriate method based on node type
         method_name = f"visit_{type(node).__name__}"
         visitor = getattr(self, method_name, self.visit_unknown)
         return visitor(node)
-    
+
     def visit_unknown(self, node: ast.AST) -> Type:
         """Handle unknown node types."""
         # Default to Any for unknown nodes
         return self.type_factory.any()
-    
+
     def visit_Name(self, node: ast.Name) -> Type:
         """Determine the type of a name."""
         # Look up the name in the symbol table
@@ -847,65 +847,65 @@ class TypeEvaluator:
         if not symbol:
             # If the name isn't found, return Unknown
             return self.type_factory.unknown()
-        
+
         return symbol.type
-    
+
     def visit_Call(self, node: ast.Call) -> Type:
         """Determine the type of a function call."""
         # Evaluate the type of the function being called
         func_type = self.visit(node.func)
-        
+
         # If it's not a callable, return Any
         if not isinstance(func_type, CallableType):
             return self.type_factory.any()
-        
+
         # Evaluate the types of the arguments
         arg_types = [self.visit(arg) for arg in node.args]
-        
+
         # Check if the arguments match the parameters
         # (This would be more complex in a real implementation)
-        
+
         # Return the return type of the function
         return func_type.return_type
-    
+
     def visit_BinOp(self, node: ast.BinOp) -> Type:
         """Determine the type of a binary operation."""
         # Evaluate the types of the left and right operands
         left_type = self.visit(node.left)
         right_type = self.visit(node.right)
-        
+
         # Determine the result type based on the operation and operand types
         # (This would be more complex in a real implementation)
-        
+
         # For simplicity, just return Any for now
         return self.type_factory.any()
-    
+
     def visit_If(self, node: ast.If) -> None:
         """Evaluate types in an if statement, with narrowing."""
         # Evaluate the condition
         _ = self.visit(node.test)
-        
+
         # Create a new scope for the true branch
         true_scope = Scope(parent=self.current_scope)
         old_scope = self.current_scope
         self.current_scope = true_scope
-        
+
         # Apply type narrowing based on the condition
         # (This would involve analyzing the condition to determine what types can be narrowed)
-        
+
         # Visit the true branch
         for stmt in node.body:
             self.visit(stmt)
-        
+
         # Restore the scope and create a new one for the false branch
         self.current_scope = old_scope
         false_scope = Scope(parent=self.current_scope)
         self.current_scope = false_scope
-        
+
         # Visit the false branch
         for stmt in node.orelse:
             self.visit(stmt)
-        
+
         # Restore the original scope
         self.current_scope = old_scope
 ```
@@ -925,35 +925,35 @@ Protocols are a key feature of Python's typing system, allowing for structural t
 ```python
 class ProtocolType(ClassType):
     """Represents a Protocol type for structural typing."""
-    
+
     def __init__(self, name: str, module: Optional[str] = None):
         super().__init__(name, module)
         self.flags |= TypeFlags.PROTOCOL
-    
+
     def is_compatible_with(self, other: Type) -> bool:
         """Check if another type is compatible with this protocol."""
         # If the other type is Any, it's compatible
         if isinstance(other, AnyType):
             return True
-        
+
         # If the other type is a class, check if it implements all required methods
         if isinstance(other, ClassType) or isinstance(other, InstanceType):
             class_type = other if isinstance(other, ClassType) else other.class_type
-            
+
             # Check all methods in the protocol
             for method_name, protocol_method in self.methods.items():
                 # If the class doesn't have the method, it's not compatible
                 if method_name not in class_type.methods:
                     return False
-                
+
                 # If the method signatures aren't compatible, it's not compatible
                 class_method = class_type.methods[method_name]
                 if not TypeRelationship.is_subtype(class_method, protocol_method):
                     return False
-            
+
             # All methods are compatible
             return True
-        
+
         return False
 ```
 
@@ -964,10 +964,10 @@ Type guards are functions that perform runtime type checking:
 ```python
 class TypeGuard:
     """Analyzes and applies type guards."""
-    
+
     @staticmethod
     def analyze_isinstance_check(
-        node: ast.Call, 
+        node: ast.Call,
         symbol_table: SymbolTable,
         current_scope: Scope
     ) -> Optional[Tuple[str, Type]]:
@@ -978,40 +978,40 @@ class TypeGuard:
         """
         # Check if this is an isinstance call
         if not (
-            isinstance(node.func, ast.Name) and 
-            node.func.id == "isinstance" and 
+            isinstance(node.func, ast.Name) and
+            node.func.id == "isinstance" and
             len(node.args) == 2
         ):
             return None
-        
+
         # Get the variable name
         if not isinstance(node.args[0], ast.Name):
             return None
-        
+
         var_name = node.args[0].id
-        
+
         # Get the type being checked against
         type_arg = node.args[1]
-        
+
         # Handle simple class checks
         if isinstance(type_arg, ast.Name):
             class_name = type_arg.id
             class_symbol = symbol_table.lookup(class_name, current_scope)
-            
+
             if class_symbol and isinstance(class_symbol.type, ClassType):
                 # Look up the variable's current type
                 var_symbol = symbol_table.lookup(var_name, current_scope)
                 if not var_symbol:
                     return None
-                
+
                 # Narrow the type
                 narrowed_type = TypeNarrower.narrow_type_from_isinstance(
-                    var_symbol.type, 
+                    var_symbol.type,
                     class_symbol.type
                 )
-                
+
                 return (var_name, narrowed_type)
-        
+
         return None
 ```
 
@@ -1022,11 +1022,11 @@ Inferring the types of functions without annotations:
 ```python
 class FunctionInferrer:
     """Infers types for functions without complete annotations."""
-    
+
     def __init__(self, symbol_table: SymbolTable, type_factory: TypeFactory):
         self.symbol_table = symbol_table
         self.type_factory = type_factory
-    
+
     def infer_function_type(self, node: ast.FunctionDef, scope: Scope) -> CallableType:
         """Infer the type of a function based on its body and usage."""
         # Start with parameters from annotations
@@ -1034,42 +1034,42 @@ class FunctionInferrer:
         for arg in node.args.args:
             param_name = arg.arg
             param_type = self.type_factory.any()
-            
+
             # Check for annotation
             if arg.annotation:
                 # Evaluate the annotation
                 param_type = self.evaluate_annotation(arg.annotation, scope)
-            
+
             parameters.append(ParameterType(param_name, param_type))
-        
+
         # Check for return annotation
         return_type = self.type_factory.any()
         if node.returns:
             return_type = self.evaluate_annotation(node.returns, scope)
-        
+
         # Create a basic callable type
         callable_type = self.type_factory.callable(parameters, return_type)
-        
+
         # Refine based on function body (more complex in real implementation)
         # This would involve analyzing the function body to infer return types
-        
+
         return callable_type
-    
+
     def evaluate_annotation(self, annotation: ast.expr, scope: Scope) -> Type:
         """Evaluate a type annotation."""
         # Handle simple name annotations
         if isinstance(annotation, ast.Name):
             annotation_name = annotation.id
             symbol = self.symbol_table.lookup(annotation_name, scope)
-            
+
             if symbol and isinstance(symbol.type, ClassType):
                 return self.type_factory.instance_type(symbol.type)
-        
+
         # Handle subscripts like List[int]
         if isinstance(annotation, ast.Subscript):
             # This would be more complex in a real implementation
             pass
-        
+
         # Default to Any for unknown annotations
         return self.type_factory.any()
 ```
@@ -1102,38 +1102,38 @@ def is_subtype(source: Type, target: Type, visited: Set[Tuple[Type, Type]] = Non
     """
     if visited is None:
         visited = set()
-    
+
     # Check for cycles in recursive types
     pair = (id(source), id(target))
     if pair in visited:
         return True  # Assume true for recursive types
-    
+
     visited.add(pair)
-    
+
     try:
         # Any type is compatible with any other type
         if isinstance(source, AnyType) or isinstance(target, AnyType):
             return True
-        
+
         # Never type is a subtype of any type
         if isinstance(source, NeverType):
             return True
-        
+
         # Any type is a supertype of Never
         if isinstance(target, NeverType):
             return False
-        
+
         # Same type categories
         if source.category == target.category:
             # Handle specific type category checks
             # ...
-        
+
         # Type categories don't match, but special cases might apply
         # ...
-        
+
         # Default to false for incompatible types
         return False
-    
+
     finally:
         # Clean up the visited set
         visited.remove(pair)
@@ -1143,31 +1143,31 @@ def is_subtype(source: Type, target: Type, visited: Set[Tuple[Type, Type]] = Non
 
 ```python
 def narrow_types_in_condition(
-    condition: ast.expr, 
+    condition: ast.expr,
     original_types: Dict[str, Type],
     true_branch: bool
 ) -> Dict[str, Type]:
     """Narrow types based on a condition expression."""
     narrowed_types = original_types.copy()
-    
+
     # Check for isinstance() calls
-    if (isinstance(condition, ast.Call) and 
-        isinstance(condition.func, ast.Name) and 
-        condition.func.id == "isinstance" and 
+    if (isinstance(condition, ast.Call) and
+        isinstance(condition.func, ast.Name) and
+        condition.func.id == "isinstance" and
         len(condition.args) == 2):
-        
+
         # Get the variable name
         if isinstance(condition.args[0], ast.Name):
             var_name = condition.args[0].id
-            
+
             # Only narrow if we know the variable's type
             if var_name in narrowed_types:
                 original_type = narrowed_types[var_name]
-                
+
                 # Get the class being checked against
                 # (This would be more complex in reality)
                 class_type = None  # Determine from condition.args[1]
-                
+
                 if class_type:
                     # Apply narrowing
                     if true_branch:
@@ -1177,20 +1177,20 @@ def narrow_types_in_condition(
                     else:
                         # Negative narrowing is more complex
                         pass
-    
+
     # Check for truthiness checks
     if isinstance(condition, ast.Name):
         var_name = condition.id
-        
+
         # Only narrow if we know the variable's type
         if var_name in narrowed_types:
             original_type = narrowed_types[var_name]
-            
+
             # Apply truthiness narrowing
             narrowed_types[var_name] = TypeNarrower.narrow_type_from_truth(
                 original_type, is_truthy=true_branch
             )
-    
+
     return narrowed_types
 ```
 
@@ -1208,19 +1208,19 @@ def test_type_narrowing():
     # Create a factory and narrower
     factory = TypeFactory
     narrower = TypeNarrower()
-    
+
     # Create test types
     int_class = factory.class_type("int")
     str_class = factory.class_type("str")
     int_instance = factory.instance_type(int_class)
     str_instance = factory.instance_type(str_class)
-    
+
     # Create a union type
     union_type = factory.union([int_instance, str_instance])
-    
+
     # Test narrowing with isinstance
     narrowed_type = narrower.narrow_type_from_isinstance(union_type, int_class)
-    
+
     # Check that the type was narrowed correctly
     assert isinstance(narrowed_type, InstanceType)
     assert narrowed_type.class_type == int_class

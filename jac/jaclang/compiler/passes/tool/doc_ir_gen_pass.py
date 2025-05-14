@@ -3,13 +3,11 @@
 This is a pass for generating DocIr for Jac code.
 """
 
-import re
-from typing import Optional, Union, List
-import jaclang.compiler.unitree as uni
-from jaclang.compiler.constant import Tokens as Tok
-from jaclang.compiler.passes import UniPass
+from typing import List, Optional, Union
+
 import jaclang.compiler.passes.tool.doc_ir as doc
-from jaclang.compiler.unitree import UniNode
+import jaclang.compiler.unitree as uni
+from jaclang.compiler.passes import UniPass
 from jaclang.settings import settings
 
 
@@ -1255,9 +1253,8 @@ class DocIRGenPass(UniPass):
 
         # Body
         parts.append(self.text(" : "))
-        if node.body and node.body.gen.doc_ir:
-            if node.body.gen.doc_ir:
-                parts.append(node.body.gen.doc_ir[0])
+        if node.body and node.body.gen.doc_ir and node.body.gen.doc_ir:
+            parts.append(node.body.gen.doc_ir[0])
 
         node.gen.doc_ir = [self.group(parts)]
 
@@ -1537,7 +1534,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
 
         if (
-            node.body and node.body.gen.doc_ir and node.body.gen.doc_ir
+            node.body and node.body.gen.doc_ir
         ):  # check node.body.gen.doc_ir is not empty
             parts.append(node.body.gen.doc_ir[0])
 

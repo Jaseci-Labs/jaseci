@@ -177,7 +177,10 @@ class AstTool:
 
     def ir(self, args: List[str]) -> str:
         """Generate a AST, SymbolTable tree for .jac file, or Python AST for .py file."""
-        error = "Usage: ir <choose one of (sym / sym. / ast / ast. / docir / pyast / py / unparse)> <.py or .jac file_path>"
+        error = (
+            "Usage: ir <choose one of (sym / sym. / ast / ast. / docir / "
+            "pyast / py / unparse)> <.py or .jac file_path>"
+        )
         if len(args) != 2:
             return error
 
