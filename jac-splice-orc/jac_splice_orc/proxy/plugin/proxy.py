@@ -1,5 +1,6 @@
 """JAC Splice-Orchestrator Plugin."""
 
+from itertools import islice
 from pickle import dumps, loads
 from types import ModuleType
 from typing import Any
@@ -128,8 +129,12 @@ class ProxyPlugin:
         module = target.split(".")
         if module[0] in ["numpy"]:
             stub = ModuleServiceStub(insecure_channel("localhost:50051"))
-            po = ProxyObject(stub, "", "numpy")
-            return (po,)
+            proxy = ProxyObject(stub, "", "numpy")
+            for m in islice(module, 1, None):
+                proxy = getattr(proxy, m)
+            if items:
+                return tuple(getattr(proxy, i) for i in items.keys())
+            return (proxy,)
 
         return JacMachineImpl.jac_import(
             mach=mach,

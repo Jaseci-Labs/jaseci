@@ -76,13 +76,14 @@ class ModuleService(module_service_pb2_grpc.ModuleServiceServicer):
                 )
                 for key, value in request.kwargs.items()
             }
-            func = memory[request.id]
+            func = memory[request.id] if request.id else self.module
 
             if request.method:
                 for m in request.method.split("."):
                     func = getattr(func, m)
 
-            value = func(*args, **kwargs)
+            # allow throwing of error
+            value = func(*args, **kwargs)  # type: ignore[operator]
 
             if is_primitive(value):
                 return module_service_pb2.ValueResponse(type=-1, bytes_value=dumps(value))  # type: ignore[attr-defined]
