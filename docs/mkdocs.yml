@@ -85,9 +85,6 @@ nav:
         - Type Inference: "internals/planning_specs/native_type_system/type_inference.md"
         - Compiler Integration: "internals/planning_specs/native_type_system/compiler_integration.md"
 
-    - Research:
-      - Deep Diving TorchDynamo: "internals/research/breaking_dynamo.md"
-
   - Community Hub:
     - Roadmap: "communityhub/roadmap.md"
     - Breaking Changes: "communityhub/breaking_changes.md"
