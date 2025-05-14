@@ -1,4 +1,4 @@
-exclude: '(_v1|vendor|larkparse|jac/examples|tests|support|setup.py|jac-mtllm|langserve/tests|pygame_mock)'
+exclude: '(_v1|vendor|larkparse|jac/examples|tests|support|setup.py|jac-mtllm|langserve/tests|pygame_mock|docs/docs/playground)'
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v2.3.0
