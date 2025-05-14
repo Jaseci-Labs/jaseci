@@ -1,0 +1,35 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-json
+      - id: trailing-whitespace
+  - repo: https://github.com/psf/black
+    rev: 25.1.0
+    hooks:
+      - id: black
+        exclude: "venv|vendor|__jac_gen__"
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.1.2
+    hooks:
+      - id: flake8
+        args: ["--config=./jac-splice-orc/.flake8"]
+        exclude: jac-splice-orc/_v1|jac-splice-orc/jac_splice_orc/proxy/grpc_local/module_service_pb2*
+        additional_dependencies:
+          [
+            pep8-naming,
+            flake8_import_order,
+            flake8_docstrings,
+            flake8_comprehensions,
+            flake8_bugbear,
+            flake8_annotations,
+            flake8_simplify,
+          ]
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.15.0
+    hooks:
+      - id: mypy
+        args: ["--config-file=./jac-splice-orc/mypy.ini"]
+        exclude: jac-splice-orc/_v1|jac-splice-orc/jac_splice_orc/proxy/grpc_local/module_service_pb2*
