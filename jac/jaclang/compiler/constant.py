@@ -175,7 +175,7 @@ class Tokens(str, Enum):
     KW_ASYNC = "KW_ASYNC"
     KW_AWAIT = "KW_AWAIT"
     KW_FLOW = "KW_FLOW"
-    KW_JOIN = "KW_JOIN"
+    KW_WAIT = "KW_WAIT"
     KW_TEST = "KW_TEST"
     KW_ASSERT = "KW_ASSERT"
     KW_CHECK = "KW_CHECK"

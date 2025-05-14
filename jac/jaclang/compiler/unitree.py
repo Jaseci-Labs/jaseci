@@ -2869,8 +2869,8 @@ class ConcurrentExpr(Expr):
             match self.tok:
                 case Tok.KW_FLOW:
                     new_kid.append(self.gen_token(Tok.KW_FLOW))
-                case Tok.KW_JOIN:
-                    new_kid.append(self.gen_token(Tok.KW_JOIN))
+                case Tok.KW_WAIT:
+                    new_kid.append(self.gen_token(Tok.KW_WAIT))
         new_kid.append(self.target)
         self.set_kids(nodes=new_kid)
         return res

@@ -1283,7 +1283,7 @@ class PyastGenPass(UniPass):
             match node.tok.value:
                 case "flow":
                     func = "thread_run"
-                case "join":
+                case "wait":
                     func = "thread_wait"
         if func:
             lambda_ex = [

@@ -1557,11 +1557,11 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def concurrent_expr(self, _: None) -> uni.ConcurrentExpr:
             """Grammar rule.
 
-            concurrent: (KW_FLOW | KW_JOIN)
+            concurrent: (KW_FLOW | KW_WAIT)
             """
             tok = self.match_token(Tok.KW_FLOW)
             if tok is None:
-                tok = self.match_token(Tok.KW_JOIN)
+                tok = self.match_token(Tok.KW_WAIT)
             target = self.consume(uni.Expr)
             return uni.ConcurrentExpr(
                 tok=tok,

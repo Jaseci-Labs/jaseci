@@ -264,7 +264,7 @@ expression: concurrent_expr (KW_IF expression KW_ELSE expression)?
           | lambda_expr
 
 // [Heading]: Concurrent expressions.
-concurrent_expr: (KW_FLOW | KW_JOIN)? walrus_assign
+concurrent_expr: (KW_FLOW | KW_WAIT)? walrus_assign
 
 // [Heading]: Walrus assignments.
 walrus_assign: (named_ref WALRUS_EQ)? pipe
@@ -526,7 +526,7 @@ KW_WALKER: "walker"
 KW_ASYNC: "async"
 KW_AWAIT: "await"
 KW_FLOW: "flow"
-KW_JOIN: "join"
+KW_WAIT: "wait"
 KW_TEST: "test"
 KW_IMPL: "impl"
 KW_ASSERT: "assert"
