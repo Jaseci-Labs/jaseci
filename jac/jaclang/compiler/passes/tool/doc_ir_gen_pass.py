@@ -4,7 +4,7 @@ This is a pass for generating DocIr for Jac code.
 """
 
 import re
-from typing import Optional, Union, List, 
+from typing import Optional, Union, List
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes import UniPass

@@ -8,13 +8,10 @@ import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes.tool import DocIrGenPass
 from jaclang.compiler.program import JacProgram
 from jaclang.utils.helpers import add_line_numbers
-from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
+from jaclang.utils.test import AstSyncTestMixin, TestCase
 
 
-class DocIrGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
+class DocIrGenPassTests(TestCase, AstSyncTestMixin):
     """Test pass module."""
 
     TargetPass = DocIrGenPass
-
-
-DocIrGenPassTests.self_attach_micro_tests()
