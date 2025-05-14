@@ -104,7 +104,7 @@ class DocIRGenPass(UniPass):
 
     def exit_module(self, node: uni.Module) -> None:
         """Exit module."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         # Process docstrings
         if node.kid and isinstance(node.kid[0], uni.String):
@@ -115,7 +115,7 @@ class DocIRGenPass(UniPass):
             )
 
         # Process imports
-        import_parts = []
+        import_parts: list[doc.DocType] = []
         for item in node.body:
             if isinstance(item, uni.Import) and item.gen.doc_ir:
                 import_parts.append(
@@ -128,7 +128,7 @@ class DocIRGenPass(UniPass):
             parts.append(self.hard_line())
 
         # Process other top-level elements
-        other_parts = []
+        other_parts: list[doc.DocType] = []
         for item in node.body:
             if not isinstance(item, uni.Import) and item.gen.doc_ir:
                 other_parts.append(
@@ -146,11 +146,11 @@ class DocIRGenPass(UniPass):
 
     def exit_import(self, node: uni.Import) -> None:
         """Generate DocIR for import statements."""
-        parts = [self.text("import ")]
+        parts: list[doc.DocType] = [self.text("import ")]
 
         if node.items:
-            item_parts = []
-            for item in node.items:
+            item_parts: list[doc.DocType] = []
+            for item in node.items.items:
                 if item.gen.doc_ir and item.gen.doc_ir:
                     item_parts.append(item.gen.doc_ir[0])
 
@@ -177,42 +177,49 @@ class DocIRGenPass(UniPass):
 
     def exit_module_path(self, node: uni.ModulePath) -> None:
         """Generate DocIR for module paths."""
-        parts = [self.text(node.dot_path_str)]
+        parts: list[doc.DocType] = []
 
-        if node.alias:
-            parts.append(self.text(" as "))
-            parts.append(self.text(node.alias.value))
+        for i, path_item in enumerate(node.items):
+            if path_item.gen.doc_ir:
+                parts.append(
+                    path_item.gen.doc_ir[0]
+                    if isinstance(path_item.gen.doc_ir, list)
+                    else path_item.gen.doc_ir
+                )
+                if i < len(node.items) - 1:
+                    parts.append(self.text("."))
 
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = [self.group(parts)]
 
     def exit_architype(self, node: uni.Architype) -> None:
         """Generate DocIR for architypes."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         # Handle decorators
-        for decorator in node.decorators:
-            if decorator.gen.doc_ir and decorator.gen.doc_ir:
-                parts.append(decorator.gen.doc_ir[0])
-                parts.append(self.hard_line())
+        if node.decorators:
+            for decorator in node.decorators.items:
+                if decorator.gen.doc_ir:
+                    parts.append(decorator.gen.doc_ir[0])
+                    parts.append(self.hard_line())
 
         # Type declaration
-        header_parts = [self.text(node.type.value)]
+        header_parts: list[doc.DocType] = [self.text(node.arch_type.value)]
         if node.name:
             header_parts.append(self.text(" "))
             header_parts.append(self.text(node.name.value))
 
         # Inheritance
-        if node.inheritance and node.inheritance.gen.doc_ir:
+        if node.base_classes and node.base_classes.gen.doc_ir:
             header_parts.append(self.text(": "))
-            header_parts.append(node.inheritance.gen.doc_ir[0])
+            header_parts.append(node.base_classes.gen.doc_ir[0])
 
         parts.append(self.group(header_parts))
 
         # Handle body
         if node.body:
-            body_parts = []
-            for item in node.body:
-                if item.gen.doc_ir and item.gen.doc_ir:
+            body_parts: list[doc.DocType] = []
+            for item in node.body.items:
+                if item.gen.doc_ir:
                     body_parts.append(item.gen.doc_ir[0])
                     body_parts.append(self.hard_line())
 
@@ -230,25 +237,29 @@ class DocIRGenPass(UniPass):
 
     def exit_ability(self, node: uni.Ability) -> None:
         """Generate DocIR for abilities."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         # Handle decorators
-        for decorator in node.decorators:
-            if decorator.gen.doc_ir and decorator.gen.doc_ir:
-                parts.append(decorator.gen.doc_ir[0])
-                parts.append(self.hard_line())
+        if node.decorators:
+            for decorator in node.decorators.items:
+                if decorator.gen.doc_ir:
+                    parts.append(decorator.gen.doc_ir[0])
+                    parts.append(self.hard_line())
 
         # Static keyword
         if node.is_static:
             parts.append(self.text("static "))
 
         # Type (can/def)
-        parts.append(self.text(node.type.value))
+        if node.is_def:
+            parts.append(self.text("def"))
+        else:
+            parts.append(self.text("can"))
         parts.append(self.text(" "))
 
         # Name and signature
-        if node.name:
-            parts.append(self.text(node.name.value))
+        if node.name_ref:
+            parts.append(self.text(node.name_ref.value))
 
         if node.signature and node.signature.gen.doc_ir:
             parts.append(node.signature.gen.doc_ir[0])
@@ -270,14 +281,14 @@ class DocIRGenPass(UniPass):
 
     def exit_func_signature(self, node: uni.FuncSignature) -> None:
         """Generate DocIR for function signatures."""
-        parts = [self.text("(")]
+        parts: list[doc.DocType] = [self.text("(")]
 
         # Parameters
         if node.params:
-            param_parts = []
+            param_parts: list[doc.DocType] = []
             for param in node.params.items:
                 if param.gen.doc_ir:
-                    param_parts.append(param.gen.doc_ir)
+                    param_parts.append(param.gen.doc_ir[0])
 
             param_group = self.group(self.join(self.text(", "), param_parts))
 
@@ -315,68 +326,77 @@ class DocIRGenPass(UniPass):
 
     def exit_param_var(self, node: uni.ParamVar) -> None:
         """Generate DocIR for parameter variables."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         if node.name:
             parts.append(self.text(node.name.value))
 
         if node.type_tag and node.type_tag.gen.doc_ir:
             parts.append(self.text(": "))
-            parts.append(node.type_tag.gen.doc_ir)
+            parts.append(
+                node.type_tag.tag.gen.doc_ir[0]
+                if isinstance(node.type_tag.tag.gen.doc_ir, list)
+                else node.type_tag.tag.gen.doc_ir
+            )
 
-        if node.default and node.default.gen.doc_ir:
+        if node.value and node.value.gen.doc_ir:
             parts.append(self.text(" = "))
-            parts.append(node.default.gen.doc_ir)
+            parts.append(
+                node.value.gen.doc_ir[0]
+                if isinstance(node.value.gen.doc_ir, list)
+                else node.value.gen.doc_ir
+            )
 
-        node.gen.doc_ir = self.group(parts)
+        node.gen.doc_ir = [self.group(parts)]
 
     def exit_type_ref(self, node: uni.TypeRef) -> None:
         """Generate DocIR for type references."""
-        parts = []
+        parts: list[doc.DocType] = []
 
-        if node.name:
-            parts.append(self.text(node.name.value))
+        if node.target and node.target.gen.doc_ir:
+            parts.append(
+                node.target.gen.doc_ir[0]
+                if isinstance(node.target.gen.doc_ir, list)
+                else node.target.gen.doc_ir
+            )
 
-        if node.params:
-            parts.append(self.text("["))
-            param_parts = []
-            for param in node.params:
-                if param.gen.doc_ir:
-                    param_parts.append(param.gen.doc_ir)
-            parts.append(self.join(self.text(", "), param_parts))
-            parts.append(self.text("]"))
-
-        node.gen.doc_ir = self.group(parts)
+        node.gen.doc_ir = [self.group(parts)]
 
     def exit_assignment(self, node: uni.Assignment) -> None:
         """Generate DocIR for assignments."""
-        parts = []
-
-        # let keyword
-        if node.is_let:
-            parts.append(self.text("let "))
+        parts: list[doc.DocType] = []
 
         # Left side
         if node.target and node.target.gen.doc_ir:
-            parts.append(node.target.gen.doc_ir)
+            parts.append(
+                node.target.gen.doc_ir[0]
+                if isinstance(node.target.gen.doc_ir, list)
+                else node.target.gen.doc_ir
+            )
 
         # Type annotation
         if node.type_tag and node.type_tag.gen.doc_ir:
             parts.append(self.text(": "))
-            parts.append(node.type_tag.gen.doc_ir)
+            parts.append(
+                node.type_tag.gen.doc_ir[0]
+                if isinstance(node.type_tag.gen.doc_ir, list)
+                else node.type_tag.gen.doc_ir
+            )
 
         # Assignment operator
-        parts.append(self.text(" "))
-        parts.append(self.text(node.op.value))
-        parts.append(self.text(" "))
+        parts.append(self.text(" = "))
 
         # Right side
         if node.value and node.value.gen.doc_ir:
-            parts.append(node.value.gen.doc_ir)
+            parts.append(
+                node.value.gen.doc_ir[0]
+                if isinstance(node.value.gen.doc_ir, list)
+                else node.value.gen.doc_ir
+            )
 
         parts.append(self.text(";"))
 
-        node.gen.doc_ir = self.group(parts)
+        node.gen.doc_ir = [self.group(parts)]
 
     def exit_if_stmt(self, node: uni.IfStmt) -> None:
         """Generate DocIR for if statements."""
@@ -418,30 +438,41 @@ class DocIRGenPass(UniPass):
 
     def exit_else_if(self, node: uni.ElseIf) -> None:
         """Generate DocIR for else if statements."""
-        parts = [self.text("elif ")]
+        parts: list[doc.DocType] = [self.text("elif ")]
 
         # Condition
         if node.condition and node.condition.gen.doc_ir:
-            parts.append(node.condition.gen.doc_ir)
+            parts.append(
+                node.condition.gen.doc_ir[0]
+                if isinstance(node.condition.gen.doc_ir, list)
+                else node.condition.gen.doc_ir
+            )
 
         # Body
         parts.append(self.text(" "))
         parts.append(self.text("{"))
 
         if node.body and node.body.gen.doc_ir:
-            parts.append(
-                self.indent(self.concat([self.hard_line(), node.body.gen.doc_ir]))
+            body_content = (
+                node.body.gen.doc_ir[0]
+                if isinstance(node.body.gen.doc_ir, list)
+                else node.body.gen.doc_ir
             )
+            parts.append(self.indent(self.concat([self.hard_line(), body_content])))
             parts.append(self.hard_line())
 
         parts.append(self.text("}"))
 
         # Else or ElseIf
-        if node.else_stmt and node.else_stmt.gen.doc_ir:
+        if node.else_body and node.else_body.gen.doc_ir:
             parts.append(self.text(" "))
-            parts.append(node.else_stmt.gen.doc_ir)
+            parts.append(
+                node.else_body.gen.doc_ir[0]
+                if isinstance(node.else_body.gen.doc_ir, list)
+                else node.else_body.gen.doc_ir
+            )
 
-        node.gen.doc_ir = self.group(parts)
+        node.gen.doc_ir = [self.group(parts)]
 
     def exit_else_stmt(self, node: uni.ElseStmt) -> None:
         """Generate DocIR for else statements."""
@@ -465,7 +496,7 @@ class DocIRGenPass(UniPass):
 
     def exit_binary_expr(self, node: uni.BinaryExpr) -> None:
         """Generate DocIR for binary expressions."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         # Left operand
         if node.left and node.left.gen.doc_ir:
@@ -491,7 +522,7 @@ class DocIRGenPass(UniPass):
 
     def exit_expr_stmt(self, node: uni.ExprStmt) -> None:
         """Generate DocIR for expression statements."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         if node.expr and node.expr.gen.doc_ir:
             parts.append(
@@ -516,22 +547,22 @@ class DocIRGenPass(UniPass):
 
     def exit_func_call(self, node: uni.FuncCall) -> None:
         """Generate DocIR for function calls."""
-        parts = []
+        parts: list[doc.DocType] = []
 
-        # Name or callable expression
-        if node.callable and node.callable.gen.doc_ir:
+        # Name or callable expression (target in FuncCall)
+        if node.target and node.target.gen.doc_ir:
             parts.append(
-                node.callable.gen.doc_ir[0]
-                if isinstance(node.callable.gen.doc_ir, list)
-                else node.callable.gen.doc_ir
+                node.target.gen.doc_ir[0]
+                if isinstance(node.target.gen.doc_ir, list)
+                else node.target.gen.doc_ir
             )
 
         # Parameters
         parts.append(self.text("("))
 
-        if node.args:
-            param_parts = []
-            for param in node.args:
+        if node.params and node.params.items:
+            param_parts: list[doc.DocType] = []
+            for param in node.params.items:
                 if param.gen.doc_ir:
                     param_parts.append(
                         param.gen.doc_ir[0]
@@ -574,23 +605,28 @@ class DocIRGenPass(UniPass):
 
     def exit_atom_trailer(self, node: uni.AtomTrailer) -> None:
         """Generate DocIR for atom trailers."""
-        parts = []
+        parts: list[doc.DocType] = []
 
-        if node.atom and node.atom.gen.doc_ir:
+        if node.target and node.target.gen.doc_ir:
             parts.append(
-                node.atom.gen.doc_ir[0]
-                if isinstance(node.atom.gen.doc_ir, list)
-                else node.atom.gen.doc_ir
+                node.target.gen.doc_ir[0]
+                if isinstance(node.target.gen.doc_ir, list)
+                else node.target.gen.doc_ir
             )
 
-        if node.trailers:
-            for trailer in node.trailers:
-                if trailer.gen.doc_ir:
-                    parts.append(
-                        trailer.gen.doc_ir[0]
-                        if isinstance(trailer.gen.doc_ir, list)
-                        else trailer.gen.doc_ir
-                    )
+        # Null-safe operator
+        if node.is_null_ok:
+            parts.append(self.text("?."))
+        # Dot operator for attribute access
+        elif node.is_attr:
+            parts.append(self.text("."))
+
+        if node.right and node.right.gen.doc_ir:
+            parts.append(
+                node.right.gen.doc_ir[0]
+                if isinstance(node.right.gen.doc_ir, list)
+                else node.right.gen.doc_ir
+            )
 
         node.gen.doc_ir = [self.group(parts)]
 
@@ -629,7 +665,7 @@ class DocIRGenPass(UniPass):
         parts = [self.text("[")]
 
         if node.values:
-            value_parts = []
+            value_parts: list[doc.DocType] = []
             for value in node.values.items:
                 if value.gen.doc_ir:
                     value_parts.append(
@@ -672,9 +708,9 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for dictionary values."""
         parts = [self.text("{")]
 
-        if node.items:
-            pair_parts = []
-            for pair in node.items:
+        if node.kv_pairs:
+            pair_parts: list[doc.DocType] = []
+            for pair in node.kv_pairs:
                 if pair.gen.doc_ir:
                     pair_parts.append(
                         pair.gen.doc_ir[0]
@@ -714,7 +750,7 @@ class DocIRGenPass(UniPass):
 
     def exit_k_v_pair(self, node: uni.KVPair) -> None:
         """Generate DocIR for key-value pairs."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         if node.key and node.key.gen.doc_ir:
             parts.append(
@@ -763,7 +799,7 @@ class DocIRGenPass(UniPass):
             parts.append(self.text("static "))
 
         if node.var_list:
-            var_parts = []
+            var_parts: list[doc.DocType] = []
             for var in node.var_list.items:
                 if var.gen.doc_ir:
                     var_parts.append(var.gen.doc_ir)
@@ -814,11 +850,11 @@ class DocIRGenPass(UniPass):
 
         parts.append(self.text(" in "))
 
-        if node.iter and node.iter.gen.doc_ir:
+        if node.collection and node.collection.gen.doc_ir:
             parts.append(
-                node.iter.gen.doc_ir[0]
-                if isinstance(node.iter.gen.doc_ir, list)
-                else node.iter.gen.doc_ir
+                node.collection.gen.doc_ir[0]
+                if isinstance(node.collection.gen.doc_ir, list)
+                else node.collection.gen.doc_ir
             )
 
         parts.append(self.text(" "))
@@ -842,32 +878,47 @@ class DocIRGenPass(UniPass):
         parts = [self.text("for ")]
 
         if node.iter and node.iter.gen.doc_ir:
-            parts.append(node.iter.gen.doc_ir)
+            parts.append(
+                node.iter.gen.doc_ir[0]
+                if isinstance(node.iter.gen.doc_ir, list)
+                else node.iter.gen.doc_ir
+            )
             parts.append(self.text("; "))
         else:
             parts.append(self.text("; "))
 
         if node.condition and node.condition.gen.doc_ir:
-            parts.append(node.condition.gen.doc_ir)
+            parts.append(
+                node.condition.gen.doc_ir[0]
+                if isinstance(node.condition.gen.doc_ir, list)
+                else node.condition.gen.doc_ir
+            )
             parts.append(self.text("; "))
         else:
             parts.append(self.text("; "))
 
         if node.count_by and node.count_by.gen.doc_ir:
-            parts.append(node.count_by.gen.doc_ir)
+            parts.append(
+                node.count_by.gen.doc_ir[0]
+                if isinstance(node.count_by.gen.doc_ir, list)
+                else node.count_by.gen.doc_ir
+            )
 
         parts.append(self.text(" "))
         parts.append(self.text("{"))
 
         if node.body and node.body.gen.doc_ir:
-            parts.append(
-                self.indent(self.concat([self.hard_line(), node.body.gen.doc_ir]))
+            body_content = (
+                node.body.gen.doc_ir[0]
+                if isinstance(node.body.gen.doc_ir, list)
+                else node.body.gen.doc_ir
             )
+            parts.append(self.indent(self.concat([self.hard_line(), body_content])))
             parts.append(self.hard_line())
 
         parts.append(self.text("}"))
 
-        node.gen.doc_ir = self.group(parts)
+        node.gen.doc_ir = [self.group(parts)]
 
     def exit_try_stmt(self, node: uni.TryStmt) -> None:
         """Generate DocIR for try statements."""
@@ -945,76 +996,90 @@ class DocIRGenPass(UniPass):
 
     def exit_finally_stmt(self, node: uni.FinallyStmt) -> None:
         """Generate DocIR for finally statements."""
-        parts = [self.text("finally ")]
+        parts: list[doc.DocType] = [self.text("finally ")]
         parts.append(self.text("{"))
 
         if node.body and node.body.gen.doc_ir:
-            parts.append(
-                self.indent(self.concat([self.hard_line(), node.body.gen.doc_ir]))
+            body_content = (
+                node.body.gen.doc_ir[0]
+                if isinstance(node.body.gen.doc_ir, list)
+                else node.body.gen.doc_ir
             )
+            parts.append(self.indent(self.concat([self.hard_line(), body_content])))
             parts.append(self.hard_line())
 
         parts.append(self.text("}"))
 
-        node.gen.doc_ir = self.group(parts)
+        node.gen.doc_ir = [self.group(parts)]
 
     def exit_tuple_val(self, node: uni.TupleVal) -> None:
         """Generate DocIR for tuple values."""
-        parts = [self.text("(")]
+        parts: list[doc.DocType] = [self.text("(")]
 
         if node.values:
-            value_parts = []
+            value_parts: list[doc.DocType] = []
             for value in node.values.items:
                 if value.gen.doc_ir:
-                    value_parts.append(value.gen.doc_ir)
+                    value_parts.append(
+                        value.gen.doc_ir[0]
+                        if isinstance(value.gen.doc_ir, list)
+                        else value.gen.doc_ir
+                    )
 
             # Check if tuple should be broken into multiple lines
-            parts.append(
-                self.if_break(
-                    self.concat(
-                        [
-                            self.indent(
-                                self.concat(
-                                    [
-                                        self.hard_line(),
-                                        self.join(
-                                            self.concat([self.text(","), self.line()]),
-                                            value_parts,
-                                        ),
-                                    ]
-                                )
-                            ),
-                            self.hard_line(),
-                        ]
-                    ),
-                    self.join(self.text(", "), value_parts),
+            if value_parts:
+                parts.append(
+                    self.if_break(
+                        self.concat(
+                            [
+                                self.indent(
+                                    self.concat(
+                                        [
+                                            self.hard_line(),
+                                            self.join(
+                                                self.concat(
+                                                    [self.text(","), self.line()]
+                                                ),
+                                                value_parts,
+                                            ),
+                                        ]
+                                    )
+                                ),
+                                self.hard_line(),
+                            ]
+                        ),
+                        self.join(self.text(", "), value_parts),
+                    )
                 )
-            )
 
         parts.append(self.text(")"))
 
-        node.gen.doc_ir = self.group(parts)
+        node.gen.doc_ir = [self.group(parts)]
 
     def exit_multi_string(self, node: uni.MultiString) -> None:
         """Generate DocIR for multiline strings."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         for string in node.strings:
             if string.gen.doc_ir:
-                parts.append(string.gen.doc_ir)
+                parts.append(
+                    string.gen.doc_ir[0]
+                    if isinstance(string.gen.doc_ir, list)
+                    else string.gen.doc_ir
+                )
                 parts.append(self.hard_line())
 
         if parts and isinstance(parts[-1], doc.Line):
             parts.pop()  # Remove trailing line
 
-        node.gen.doc_ir = self.group(parts)
+        node.gen.doc_ir = [self.group(parts)]
 
     def exit_set_val(self, node: uni.SetVal) -> None:
         """Generate DocIR for set values."""
         parts = [self.text("{")]
 
         if node.values:
-            value_parts = []
+            value_parts: list[doc.DocType] = []
             for value in node.values.items:
                 if value.gen.doc_ir:
                     value_parts.append(value.gen.doc_ir)
@@ -1068,7 +1133,7 @@ class DocIRGenPass(UniPass):
 
         # Handle expressions
         if node.exprs:
-            expr_parts = []
+            expr_parts: list[doc.DocType] = []
             for expr in node.exprs.items:
                 if expr.gen.doc_ir:
                     expr_parts.append(
@@ -1119,7 +1184,7 @@ class DocIRGenPass(UniPass):
 
     def exit_inner_compr(self, node: uni.InnerCompr) -> None:
         """Generate DocIR for inner comprehension clauses."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         if node.is_async:
             parts.append(self.text("async "))
@@ -1163,7 +1228,7 @@ class DocIRGenPass(UniPass):
 
     def exit_if_else_expr(self, node: uni.IfElseExpr) -> None:
         """Generate DocIR for conditional expressions."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         if node.value and node.value.gen.doc_ir:
             parts.append(
@@ -1194,7 +1259,7 @@ class DocIRGenPass(UniPass):
 
     def exit_bool_expr(self, node: uni.BoolExpr) -> None:
         """Generate DocIR for boolean expressions (and/or)."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         for i, value in enumerate(node.values):
             if value.gen.doc_ir:
@@ -1212,7 +1277,7 @@ class DocIRGenPass(UniPass):
 
     def exit_unary_expr(self, node: uni.UnaryExpr) -> None:
         """Generate DocIR for unary expressions."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         if node.op.value in ["-", "~", "+"]:
             # No space for these operators
@@ -1239,7 +1304,7 @@ class DocIRGenPass(UniPass):
 
         # Parameters
         if node.signature and node.signature.params:
-            param_parts = []
+            param_parts: list[doc.DocType] = []
             for param in node.signature.params.items:
                 if param.gen.doc_ir:
                     param_parts.append(param.gen.doc_ir)
@@ -1263,7 +1328,7 @@ class DocIRGenPass(UniPass):
 
     def exit_edge_ref_trailer(self, node: uni.EdgeRefTrailer) -> None:
         """Generate DocIR for edge reference trailers."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         for kid in node.kid:
             if kid.gen.doc_ir:
@@ -1273,7 +1338,7 @@ class DocIRGenPass(UniPass):
 
     def exit_edge_op_ref(self, node: uni.EdgeOpRef) -> None:
         """Generate DocIR for edge operation references."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         for kid in node.kid:
             if kid.gen.doc_ir:
@@ -1285,22 +1350,53 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for index slices."""
         parts = [self.text("[")]
 
-        if node.start and node.start.gen.doc_ir:
-            parts.append(node.start.gen.doc_ir)
+        if node.slices and len(node.slices) > 0:
+            slice_parts: list[doc.DocType] = []
 
-        parts.append(self.text(":"))
+            for slice_item in node.slices:
+                item_parts: list[doc.DocType] = []
 
-        if node.stop and node.stop.gen.doc_ir:
-            parts.append(node.stop.gen.doc_ir)
+                # Start
+                if slice_item.start and slice_item.start.gen.doc_ir:
+                    item_parts.append(
+                        slice_item.start.gen.doc_ir[0]
+                        if isinstance(slice_item.start.gen.doc_ir, list)
+                        else slice_item.start.gen.doc_ir
+                    )
 
-        if node.step:
-            parts.append(self.text(":"))
-            if node.step.gen.doc_ir:
-                parts.append(node.step.gen.doc_ir)
+                # Only add colon for range slices
+                if node.is_range:
+                    item_parts.append(self.text(":"))
+
+                    # Stop
+                    if slice_item.stop and slice_item.stop.gen.doc_ir:
+                        item_parts.append(
+                            slice_item.stop.gen.doc_ir[0]
+                            if isinstance(slice_item.stop.gen.doc_ir, list)
+                            else slice_item.stop.gen.doc_ir
+                        )
+
+                    # Step
+                    if slice_item.step:
+                        item_parts.append(self.text(":"))
+                        if slice_item.step.gen.doc_ir:
+                            item_parts.append(
+                                slice_item.step.gen.doc_ir[0]
+                                if isinstance(slice_item.step.gen.doc_ir, list)
+                                else slice_item.step.gen.doc_ir
+                            )
+
+                slice_parts.append(self.concat(item_parts))
+
+            # Join multiple slices with commas
+            if len(slice_parts) > 1:
+                parts.append(self.join(self.text(", "), slice_parts))
+            else:
+                parts.append(slice_parts[0])
 
         parts.append(self.text("]"))
 
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = [self.concat(parts)]
 
     def exit_gen_compr(self, node: uni.GenCompr) -> None:
         """Generate DocIR for generator comprehensions."""
@@ -1370,7 +1466,7 @@ class DocIRGenPass(UniPass):
 
     def exit_k_w_pair(self, node: uni.KWPair) -> None:
         """Generate DocIR for keyword arguments."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         if node.key:
             parts.append(self.text(node.key.gen.jac))
@@ -1479,52 +1575,108 @@ class DocIRGenPass(UniPass):
 
         node.gen.doc_ir = self.concat(parts)
 
+    def exit_global_vars(self, node: uni.GlobalVars) -> None:
+        """Generate DocIR for global variables."""
+        parts: list[doc.DocType] = []
+
+        # Keyword (let or global)
+        if node.is_frozen:
+            parts.append(self.text("let "))
+        else:
+            parts.append(self.text("global "))
+
+        # Access specification
+        if node.access and node.access.gen.doc_ir:
+            parts.append(
+                node.access.gen.doc_ir[0]
+                if isinstance(node.access.gen.doc_ir, list)
+                else node.access.gen.doc_ir
+            )
+            parts.append(self.text(" "))
+
+        # Assignments
+        if node.assignments and node.assignments.gen.doc_ir:
+            parts.append(
+                node.assignments.gen.doc_ir[0]
+                if isinstance(node.assignments.gen.doc_ir, list)
+                else node.assignments.gen.doc_ir
+            )
+
+        parts.append(self.text(";"))
+
+        node.gen.doc_ir = [self.group(parts)]
+
+    def exit_module_code(self, node: uni.ModuleCode) -> None:
+        """Generate DocIR for module code."""
+        parts: list[doc.DocType] = []
+
+        if node.body and node.body.gen.doc_ir:
+            parts.append(node.body.gen.doc_ir)
+
+        node.gen.doc_ir = self.concat(parts)
+
     def exit_global_stmt(self, node: uni.GlobalStmt) -> None:
         """Generate DocIR for global statements."""
         parts = [self.text("global ")]
 
-        if node.names:
-            name_parts = []
-            for name in node.names:
+        if node.target:
+            name_parts: list[doc.DocType] = []
+            for name in node.target.items:
                 if name.gen.doc_ir:
-                    name_parts.append(name.gen.doc_ir)
+                    name_parts.append(
+                        name.gen.doc_ir[0]
+                        if isinstance(name.gen.doc_ir, list)
+                        else name.gen.doc_ir
+                    )
 
             parts.append(self.join(self.text(", "), name_parts))
 
         parts.append(self.text(";"))
 
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = [self.concat(parts)]
 
     def exit_non_local_stmt(self, node: uni.NonLocalStmt) -> None:
         """Generate DocIR for nonlocal statements."""
         parts = [self.text("nonlocal ")]
 
-        if node.names:
-            name_parts = []
-            for name in node.names:
+        if node.target:
+            name_parts: list[doc.DocType] = []
+            for name in node.target.items:
                 if name.gen.doc_ir:
-                    name_parts.append(name.gen.doc_ir)
+                    name_parts.append(
+                        name.gen.doc_ir[0]
+                        if isinstance(name.gen.doc_ir, list)
+                        else name.gen.doc_ir
+                    )
 
             parts.append(self.join(self.text(", "), name_parts))
 
         parts.append(self.text(";"))
 
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = [self.concat(parts)]
 
     def exit_visit_stmt(self, node: uni.VisitStmt) -> None:
         """Generate DocIR for visit statements."""
         parts = [self.text("visit ")]
 
         if node.target and node.target.gen.doc_ir:
-            parts.append(node.target.gen.doc_ir)
+            parts.append(
+                node.target.gen.doc_ir[0]
+                if isinstance(node.target.gen.doc_ir, list)
+                else node.target.gen.doc_ir
+            )
 
-        if node.else_stmt and node.else_stmt.gen.doc_ir:
+        if node.else_body and node.else_body.gen.doc_ir:
             parts.append(self.text(" "))
-            parts.append(node.else_stmt.gen.doc_ir)
+            parts.append(
+                node.else_body.gen.doc_ir[0]
+                if isinstance(node.else_body.gen.doc_ir, list)
+                else node.else_body.gen.doc_ir
+            )
 
         parts.append(self.text(";"))
 
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = [self.concat(parts)]
 
     def exit_ignore_stmt(self, node: uni.IgnoreStmt) -> None:
         """Generate DocIR for ignore statements."""
@@ -1532,47 +1684,45 @@ class DocIRGenPass(UniPass):
 
         if node.target and node.target.gen.doc_ir:
             parts.append(self.text(" "))
-            parts.append(node.target.gen.doc_ir)
+            parts.append(
+                node.target.gen.doc_ir[0]
+                if isinstance(node.target.gen.doc_ir, list)
+                else node.target.gen.doc_ir
+            )
 
         parts.append(self.text(";"))
 
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = [self.concat(parts)]
 
     def exit_connect_op(self, node: uni.ConnectOp) -> None:
         """Generate DocIR for connect operator."""
-        parts = []
+        parts: list[doc.DocType] = []
 
-        if node.dir == uni.EdgeDir.OUT:
+        if node.edge_dir == uni.EdgeDir.OUT:
             parts.append(self.text("-->"))
-        elif node.dir == uni.EdgeDir.IN:
+        elif node.edge_dir == uni.EdgeDir.IN:
             parts.append(self.text("<--"))
-        elif node.dir == uni.EdgeDir.BI:
+        elif node.edge_dir == uni.EdgeDir.BI:
             parts.append(self.text("<-->"))
 
-        if node.is_async:
-            parts.append(self.text("@"))
-
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = [self.concat(parts)]
 
     def exit_disconnect_op(self, node: uni.DisconnectOp) -> None:
         """Generate DocIR for disconnect operator."""
-        parts = []
+        parts: list[doc.DocType] = []
 
-        if node.dir == uni.EdgeDir.OUT:
+        if node.edge_spec and node.edge_spec.edge_dir == uni.EdgeDir.OUT:
             parts.append(self.text("-/>"))
-        elif node.dir == uni.EdgeDir.IN:
+        elif node.edge_spec and node.edge_spec.edge_dir == uni.EdgeDir.IN:
             parts.append(self.text("</-"))
-        elif node.dir == uni.EdgeDir.BI:
+        elif node.edge_spec and node.edge_spec.edge_dir == uni.EdgeDir.BI:
             parts.append(self.text("</>"))
 
-        if node.is_async:
-            parts.append(self.text("@"))
-
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = [self.concat(parts)]
 
     def exit_compare_expr(self, node: uni.CompareExpr) -> None:
         """Generate DocIR for comparison expressions."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         # Left operand
         if node.left and node.left.gen.doc_ir:
@@ -1600,48 +1750,68 @@ class DocIRGenPass(UniPass):
         parts = [self.text("(")]
 
         if node.value and node.value.gen.doc_ir:
-            parts.append(node.value.gen.doc_ir)
+            parts.append(
+                node.value.gen.doc_ir[0]
+                if isinstance(node.value.gen.doc_ir, list)
+                else node.value.gen.doc_ir
+            )
 
         parts.append(self.text(")"))
 
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = [self.concat(parts)]
 
     def exit_expr_as_item(self, node: uni.ExprAsItem) -> None:
         """Generate DocIR for expression as item nodes."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         if node.expr and node.expr.gen.doc_ir:
-            parts.append(node.expr.gen.doc_ir)
+            parts.append(
+                node.expr.gen.doc_ir[0]
+                if isinstance(node.expr.gen.doc_ir, list)
+                else node.expr.gen.doc_ir
+            )
 
-        if node.alias:
+        if node.alias and node.alias.gen.doc_ir:
             parts.append(self.text(" as "))
-            parts.append(self.text(node.alias.value))
+            parts.append(
+                node.alias.gen.doc_ir[0]
+                if isinstance(node.alias.gen.doc_ir, list)
+                else node.alias.gen.doc_ir
+            )
 
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = [self.group(parts)]
 
     def exit_filter_compr(self, node: uni.FilterCompr) -> None:
         """Generate DocIR for filter comprehensions."""
-        parts = []
+        parts: list[doc.DocType] = []
 
-        if node.filter and node.filter.gen.doc_ir:
+        if node.f_type and node.f_type.gen.doc_ir:
             parts.append(self.text("filter "))
-            parts.append(node.filter.gen.doc_ir)
+            parts.append(
+                node.f_type.gen.doc_ir[0]
+                if isinstance(node.f_type.gen.doc_ir, list)
+                else node.f_type.gen.doc_ir
+            )
 
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = [self.concat(parts)]
 
     def exit_assign_compr(self, node: uni.AssignCompr) -> None:
         """Generate DocIR for assignment comprehensions."""
-        parts = []
+        parts: list[doc.DocType] = []
 
-        if node.target and node.target.gen.doc_ir:
+        if node.assigns:
             parts.append(self.text("with "))
-            parts.append(node.target.gen.doc_ir)
-            parts.append(self.text(" = "))
+            assign_parts: list[doc.DocType] = []
+            for assign in node.assigns.items:
+                if assign.gen.doc_ir:
+                    assign_parts.append(
+                        assign.gen.doc_ir[0]
+                        if isinstance(assign.gen.doc_ir, list)
+                        else assign.gen.doc_ir
+                    )
+            parts.append(self.join(self.text(", "), assign_parts))
 
-        if node.value and node.value.gen.doc_ir:
-            parts.append(node.value.gen.doc_ir)
-
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = [self.concat(parts)]
 
     def exit_builtin_type(self, node: uni.BuiltinType) -> None:
         """Generate DocIR for builtin type nodes."""
@@ -1657,7 +1827,7 @@ class DocIRGenPass(UniPass):
             self.text("::py::"),
         ]
 
-        node.gen.doc_ir = self.group(parts)
+        node.gen.doc_ir = [self.group(parts)]
 
     def exit_test(self, node: uni.Test) -> None:
         """Generate DocIR for test nodes."""
@@ -1671,42 +1841,57 @@ class DocIRGenPass(UniPass):
         parts.append(self.text("{"))
 
         if node.body and node.body.gen.doc_ir:
-            parts.append(
-                self.indent(self.concat([self.hard_line(), node.body.gen.doc_ir]))
+            body_content = (
+                node.body.gen.doc_ir[0]
+                if isinstance(node.body.gen.doc_ir, list)
+                else node.body.gen.doc_ir
             )
+            parts.append(self.indent(self.concat([self.hard_line(), body_content])))
             parts.append(self.hard_line())
 
         parts.append(self.text("}"))
         parts.append(self.text(";"))
 
-        node.gen.doc_ir = self.group(parts)
+        node.gen.doc_ir = [self.group(parts)]
 
     def exit_check_stmt(self, node: uni.CheckStmt) -> None:
         """Generate DocIR for check statements."""
         parts = [self.text("check ")]
 
-        if node.expr and node.expr.gen.doc_ir:
-            parts.append(node.expr.gen.doc_ir)
+        if node.target and node.target.gen.doc_ir:
+            parts.append(
+                node.target.gen.doc_ir[0]
+                if isinstance(node.target.gen.doc_ir, list)
+                else node.target.gen.doc_ir
+            )
 
         parts.append(self.text(";"))
 
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = [self.concat(parts)]
 
     def exit_match_stmt(self, node: uni.MatchStmt) -> None:
         """Generate DocIR for match statements."""
         parts = [self.text("match ")]
 
-        if node.subject and node.subject.gen.doc_ir:
-            parts.append(node.subject.gen.doc_ir)
+        if node.target and node.target.gen.doc_ir:
+            parts.append(
+                node.target.gen.doc_ir[0]
+                if isinstance(node.target.gen.doc_ir, list)
+                else node.target.gen.doc_ir
+            )
 
         parts.append(self.text(" "))
         parts.append(self.text("{"))
 
         if node.cases:
-            case_parts = []
+            case_parts: list[doc.DocType] = []
             for case in node.cases:
                 if case.gen.doc_ir:
-                    case_parts.append(case.gen.doc_ir)
+                    case_parts.append(
+                        case.gen.doc_ir[0]
+                        if isinstance(case.gen.doc_ir, list)
+                        else case.gen.doc_ir
+                    )
                     case_parts.append(self.hard_line())
 
             parts.append(
@@ -1716,118 +1901,154 @@ class DocIRGenPass(UniPass):
 
         parts.append(self.text("}"))
 
-        node.gen.doc_ir = self.group(parts)
+        node.gen.doc_ir = [self.group(parts)]
 
     def exit_match_case(self, node: uni.MatchCase) -> None:
         """Generate DocIR for match cases."""
         parts = [self.text("case ")]
 
         if node.pattern and node.pattern.gen.doc_ir:
-            parts.append(node.pattern.gen.doc_ir)
+            parts.append(
+                node.pattern.gen.doc_ir[0]
+                if isinstance(node.pattern.gen.doc_ir, list)
+                else node.pattern.gen.doc_ir
+            )
 
         if node.guard and node.guard.gen.doc_ir:
             parts.append(self.text(" if "))
-            parts.append(node.guard.gen.doc_ir)
+            parts.append(
+                node.guard.gen.doc_ir[0]
+                if isinstance(node.guard.gen.doc_ir, list)
+                else node.guard.gen.doc_ir
+            )
 
         parts.append(self.text(":"))
 
-        if node.body and node.body.gen.doc_ir:
+        if node.body:
+            body_content: list[doc.DocType] = []
+            for stmt in node.body:
+                if stmt.gen.doc_ir:
+                    body_content.append(
+                        stmt.gen.doc_ir[0]
+                        if isinstance(stmt.gen.doc_ir, list)
+                        else stmt.gen.doc_ir
+                    )
+                    body_content.append(self.hard_line())
+
             parts.append(
-                self.indent(self.concat([self.hard_line(), node.body.gen.doc_ir]))
+                self.indent(self.concat([self.hard_line(), self.concat(body_content)]))
             )
 
-        node.gen.doc_ir = self.group(parts)
+        node.gen.doc_ir = [self.group(parts)]
 
     def exit_match_value(self, node: uni.MatchValue) -> None:
         """Generate DocIR for match value patterns."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         if node.value and node.value.gen.doc_ir:
-            parts.append(node.value.gen.doc_ir)
+            parts.append(
+                node.value.gen.doc_ir[0]
+                if isinstance(node.value.gen.doc_ir, list)
+                else node.value.gen.doc_ir
+            )
 
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = [self.concat(parts)]
 
     def exit_match_singleton(self, node: uni.MatchSingleton) -> None:
         """Generate DocIR for match singleton patterns."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         if node.value and node.value.gen.doc_ir:
-            parts.append(node.value.gen.doc_ir)
+            parts.append(
+                node.value.gen.doc_ir[0]
+                if isinstance(node.value.gen.doc_ir, list)
+                else node.value.gen.doc_ir
+            )
 
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = [self.concat(parts)]
 
     def exit_match_sequence(self, node: uni.MatchSequence) -> None:
         """Generate DocIR for match sequence patterns."""
         parts = [self.text("[")]
 
-        if node.patterns:
-            pattern_parts = []
-            for pattern in node.patterns:
+        if node.values:
+            pattern_parts: list[doc.DocType] = []
+            for pattern in node.values:
                 if pattern.gen.doc_ir:
-                    pattern_parts.append(pattern.gen.doc_ir)
+                    pattern_parts.append(
+                        pattern.gen.doc_ir[0]
+                        if isinstance(pattern.gen.doc_ir, list)
+                        else pattern.gen.doc_ir
+                    )
 
             parts.append(self.join(self.text(", "), pattern_parts))
 
         parts.append(self.text("]"))
 
-        node.gen.doc_ir = self.group(parts)
+        node.gen.doc_ir = [self.group(parts)]
 
     def exit_match_mapping(self, node: uni.MatchMapping) -> None:
         """Generate DocIR for match mapping patterns."""
         parts = [self.text("{")]
 
-        if node.items:
-            item_parts = []
-            for item in node.items:
+        if node.values:
+            item_parts: list[doc.DocType] = []
+            for item in node.values:
                 if item.gen.doc_ir:
-                    item_parts.append(item.gen.doc_ir)
+                    item_parts.append(
+                        item.gen.doc_ir[0]
+                        if isinstance(item.gen.doc_ir, list)
+                        else item.gen.doc_ir
+                    )
 
             parts.append(self.join(self.text(", "), item_parts))
 
-        if node.rest and node.rest.gen.doc_ir:
-            if node.items:
-                parts.append(self.text(", "))
-            parts.append(self.text("**"))
-            parts.append(node.rest.gen.doc_ir)
-
         parts.append(self.text("}"))
 
-        node.gen.doc_ir = self.group(parts)
+        node.gen.doc_ir = [self.group(parts)]
 
     def exit_match_or(self, node: uni.MatchOr) -> None:
         """Generate DocIR for match OR patterns."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         if node.patterns:
-            pattern_parts = []
+            pattern_parts: list[doc.DocType] = []
             for pattern in node.patterns:
                 if pattern.gen.doc_ir:
-                    pattern_parts.append(pattern.gen.doc_ir)
+                    pattern_parts.append(
+                        pattern.gen.doc_ir[0]
+                        if isinstance(pattern.gen.doc_ir, list)
+                        else pattern.gen.doc_ir
+                    )
 
             parts.append(self.join(self.text(" | "), pattern_parts))
 
-        node.gen.doc_ir = self.group(parts)
+        node.gen.doc_ir = [self.group(parts)]
 
     def exit_match_as(self, node: uni.MatchAs) -> None:
         """Generate DocIR for match AS patterns."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         if node.pattern and node.pattern.gen.doc_ir:
-            parts.append(node.pattern.gen.doc_ir)
+            parts.append(
+                node.pattern.gen.doc_ir[0]
+                if isinstance(node.pattern.gen.doc_ir, list)
+                else node.pattern.gen.doc_ir
+            )
 
         if node.name:
             parts.append(self.text(" as "))
             parts.append(self.text(node.name.value))
 
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = [self.concat(parts)]
 
     def exit_match_wild(self, node: uni.MatchWild) -> None:
         """Generate DocIR for match wildcard patterns."""
-        node.gen.doc_ir = self.text("_")
+        node.gen.doc_ir = [self.text("_")]
 
     def exit_match_star(self, node: uni.MatchStar) -> None:
         """Generate DocIR for match star patterns."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         if node.is_list:
             parts.append(self.text("*"))
@@ -1835,54 +2056,93 @@ class DocIRGenPass(UniPass):
             parts.append(self.text("**"))
 
         if node.name and node.name.gen.doc_ir:
-            parts.append(node.name.gen.doc_ir)
+            parts.append(
+                node.name.gen.doc_ir[0]
+                if isinstance(node.name.gen.doc_ir, list)
+                else node.name.gen.doc_ir
+            )
 
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = [self.concat(parts)]
 
     def exit_match_k_v_pair(self, node: uni.MatchKVPair) -> None:
         """Generate DocIR for match key-value pairs."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         if node.key and node.key.gen.doc_ir:
-            parts.append(node.key.gen.doc_ir)
+            parts.append(
+                node.key.gen.doc_ir[0]
+                if isinstance(node.key.gen.doc_ir, list)
+                else node.key.gen.doc_ir
+            )
 
         parts.append(self.text(": "))
 
         if node.value and node.value.gen.doc_ir:
-            parts.append(node.value.gen.doc_ir)
+            parts.append(
+                node.value.gen.doc_ir[0]
+                if isinstance(node.value.gen.doc_ir, list)
+                else node.value.gen.doc_ir
+            )
 
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = [self.concat(parts)]
 
     def exit_match_arch(self, node: uni.MatchArch) -> None:
         """Generate DocIR for match architecture patterns."""
-        parts = []
+        parts: list[doc.DocType] = []
 
-        if node.arch_type and node.arch_type.gen.doc_ir:
-            parts.append(node.arch_type.gen.doc_ir)
+        if node.name and node.name.gen.doc_ir:
+            parts.append(
+                node.name.gen.doc_ir[0]
+                if isinstance(node.name.gen.doc_ir, list)
+                else node.name.gen.doc_ir
+            )
 
         parts.append(self.text("("))
 
-        if node.fields:
-            field_parts = []
-            for field in node.fields:
-                if field.gen.doc_ir:
-                    field_parts.append(field.gen.doc_ir)
+        if node.arg_patterns:
+            arg_parts: list[doc.DocType] = []
+            for arg in node.arg_patterns.items:
+                if arg.gen.doc_ir:
+                    arg_parts.append(
+                        arg.gen.doc_ir[0]
+                        if isinstance(arg.gen.doc_ir, list)
+                        else arg.gen.doc_ir
+                    )
 
-            parts.append(self.join(self.text(", "), field_parts))
+            parts.append(self.join(self.text(", "), arg_parts))
+
+        if node.kw_patterns:
+            if node.arg_patterns:
+                parts.append(self.text(", "))
+
+            kw_parts: list[doc.DocType] = []
+            for kw in node.kw_patterns.items:
+                if kw.gen.doc_ir:
+                    kw_parts.append(
+                        kw.gen.doc_ir[0]
+                        if isinstance(kw.gen.doc_ir, list)
+                        else kw.gen.doc_ir
+                    )
+
+            parts.append(self.join(self.text(", "), kw_parts))
 
         parts.append(self.text(")"))
 
-        node.gen.doc_ir = self.group(parts)
+        node.gen.doc_ir = [self.group(parts)]
 
     def exit_enum(self, node: uni.Enum) -> None:
         """Generate DocIR for enum declarations."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         # Handle decorators
         if node.decorators:
-            for decorator in node.decorators:
+            for decorator in node.decorators.items:
                 if decorator.gen.doc_ir:
-                    parts.append(decorator.gen.doc_ir)
+                    parts.append(
+                        decorator.gen.doc_ir[0]
+                        if isinstance(decorator.gen.doc_ir, list)
+                        else decorator.gen.doc_ir
+                    )
                     parts.append(self.hard_line())
 
         # Enum declaration
@@ -1891,18 +2151,26 @@ class DocIRGenPass(UniPass):
             parts.append(self.text(node.name.value))
 
         # Inheritance
-        if node.inheritance and node.inheritance.gen.doc_ir:
+        if node.base_classes and node.base_classes.gen.doc_ir:
             parts.append(self.text(": "))
-            parts.append(node.inheritance.gen.doc_ir)
+            parts.append(
+                node.base_classes.gen.doc_ir[0]
+                if isinstance(node.base_classes.gen.doc_ir, list)
+                else node.base_classes.gen.doc_ir
+            )
 
         # Body
         parts.append(self.text(" {"))
 
-        if node.members:
-            member_parts = []
-            for member in node.members:
+        if node.body:
+            member_parts: list[doc.DocType] = []
+            for member in node.body.items:
                 if member.gen.doc_ir:
-                    member_parts.append(member.gen.doc_ir)
+                    member_parts.append(
+                        member.gen.doc_ir[0]
+                        if isinstance(member.gen.doc_ir, list)
+                        else member.gen.doc_ir
+                    )
                     member_parts.append(self.hard_line())
 
             parts.append(
@@ -1912,111 +2180,112 @@ class DocIRGenPass(UniPass):
 
         parts.append(self.text("};"))
 
-        node.gen.doc_ir = self.group(parts)
+        node.gen.doc_ir = [self.group(parts)]
 
     def exit_sub_tag(self, node: uni.SubTag) -> None:
         """Generate DocIR for sub-tag nodes."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         if node.tag and node.tag.gen.doc_ir:
-            parts.append(node.tag.gen.doc_ir)
+            parts.append(
+                node.tag.gen.doc_ir[0]
+                if isinstance(node.tag.gen.doc_ir, list)
+                else node.tag.gen.doc_ir
+            )
 
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = [self.concat(parts)]
 
     def exit_sub_node_list(self, node: uni.SubNodeList) -> None:
         """Generate DocIR for sub-node lists."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         if node.items:
-            item_parts = []
+            item_parts: list[doc.DocType] = []
             for item in node.items:
                 if item.gen.doc_ir:
-                    item_parts.append(item.gen.doc_ir)
+                    item_parts.append(
+                        item.gen.doc_ir[0]
+                        if isinstance(item.gen.doc_ir, list)
+                        else item.gen.doc_ir
+                    )
 
             parts.append(self.join(self.text(", "), item_parts))
 
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = [self.concat(parts)]
 
-    def exit_global_vars(self, node: uni.GlobalVars) -> None:
-        """Generate DocIR for global variables."""
-        parts = []
+    def exit_token(self, node: uni.Token) -> None:
+        """Generate DocIR for tokens."""
+        node.gen.doc_ir = [self.text(node.value)]
 
-        if node.is_static:
-            parts.append(self.text("static "))
+    def exit_semi(self, node: uni.Semi) -> None:
+        """Generate DocIR for semicolons."""
+        node.gen.doc_ir = [self.text(node.value)]
 
-        if node.name:
-            parts.append(self.text(node.name.value))
-
-        if node.type_tag and node.type_tag.gen.doc_ir:
-            parts.append(self.text(": "))
-            parts.append(node.type_tag.gen.doc_ir)
-
-        if node.value:
-            parts.append(self.text(" = "))
-            parts.append(node.value.gen.doc_ir)
-
-        node.gen.doc_ir = self.concat(parts)
-
-    def exit_module_code(self, node: uni.ModuleCode) -> None:
-        """Generate DocIR for module code."""
-        parts = []
-
-        if node.body and node.body.gen.doc_ir:
-            parts.append(node.body.gen.doc_ir)
-
-        node.gen.doc_ir = self.concat(parts)
-
-    def exit_module_path(self, node: uni.ModulePath) -> None:
-        """Generate DocIR for module paths."""
-        parts = []
-
-        if node.module:
-            parts.append(self.text(node.module.value))
-
-        if node.path:
-            parts.append(self.text("."))
-            parts.append(self.text(node.path.value))
-
-        node.gen.doc_ir = self.concat(parts)
+    def exit_comment_token(self, node: uni.CommentToken) -> None:
+        """Generate DocIR for comment tokens."""
+        if node.is_inline:
+            node.gen.doc_ir = [self.text(node.value)]
+        else:
+            node.gen.doc_ir = [self.group([self.text(node.value), self.hard_line()])]
 
     def exit_impl_def(self, node: uni.ImplDef) -> None:
         """Generate DocIR for implementation definitions."""
-        parts = []
+        parts: list[doc.DocType] = []
 
-        if node.name:
-            parts.append(self.text(node.name.value))
-
-        if node.inheritance and node.inheritance.gen.doc_ir:
-            parts.append(self.text(": "))
-            parts.append(node.inheritance.gen.doc_ir)
+        if node.type and node.type.gen.doc_ir:
+            parts.append(
+                node.type.gen.doc_ir[0]
+                if isinstance(node.type.gen.doc_ir, list)
+                else node.type.gen.doc_ir
+            )
 
         parts.append(self.text(" {"))
 
         if node.body and node.body.gen.doc_ir:
-            parts.append(node.body.gen.doc_ir)
+            body_content = (
+                node.body.gen.doc_ir[0]
+                if isinstance(node.body.gen.doc_ir, list)
+                else node.body.gen.doc_ir
+            )
+            parts.append(self.indent(self.concat([self.hard_line(), body_content])))
+            parts.append(self.hard_line())
 
         parts.append(self.text("}"))
 
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = [self.group(parts)]
 
     def exit_event_signature(self, node: uni.EventSignature) -> None:
         """Generate DocIR for event signatures."""
-        parts = []
+        parts: list[doc.DocType] = []
 
-        if node.name:
-            parts.append(self.text(node.name.value))
+        if node.event_type and node.event_type.gen.doc_ir:
+            parts.append(
+                node.event_type.gen.doc_ir[0]
+                if isinstance(node.event_type.gen.doc_ir, list)
+                else node.event_type.gen.doc_ir
+            )
 
-        if node.params:
-            param_parts = []
-            for param in node.params:
+        parts.append(self.text("("))
+
+        if node.param_list and node.param_list.items:
+            param_parts: list[doc.DocType] = []
+            for param in node.param_list.items:
                 if param.gen.doc_ir:
-                    param_parts.append(param.gen.doc_ir)
+                    param_parts.append(
+                        param.gen.doc_ir[0]
+                        if isinstance(param.gen.doc_ir, list)
+                        else param.gen.doc_ir
+                    )
 
-        node.gen.doc_ir = self.concat(parts)
+            parts.append(self.join(self.text(", "), param_parts))
+
+        parts.append(self.text(")"))
+
+        node.gen.doc_ir = [self.group(parts)]
 
     def exit_typed_ctx_block(self, node: uni.TypedCtxBlock) -> None:
         """Generate DocIR for typed context blocks."""
-        parts = []
+        parts: list[doc.DocType] = []
 
         if hasattr(node, "name") and node.name:
             parts.append(self.text(node.name.value))
@@ -2043,18 +2312,3 @@ class DocIRGenPass(UniPass):
         parts.append(self.text("}"))
 
         node.gen.doc_ir = [self.group(parts)]
-
-    def exit_token(self, node: uni.Token) -> None:
-        """Generate DocIR for tokens."""
-        node.gen.doc_ir = [self.text(node.value)]
-
-    def exit_semi(self, node: uni.Semi) -> None:
-        """Generate DocIR for semicolons."""
-        node.gen.doc_ir = [self.text(node.value)]
-
-    def exit_comment_token(self, node: uni.CommentToken) -> None:
-        """Generate DocIR for comment tokens."""
-        if node.is_inline:
-            node.gen.doc_ir = [self.text(node.value)]
-        else:
-            node.gen.doc_ir = [self.group([self.text(node.value), self.hard_line()])]
