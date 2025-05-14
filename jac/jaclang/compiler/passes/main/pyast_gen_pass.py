@@ -1320,9 +1320,7 @@ class PyastGenPass(UniPass):
                     )
                 )
             ]
-        else:
-            node.gen.py_ast = node.target.gen.py_ast
-
+            
     def exit_try_stmt(self, node: uni.TryStmt) -> None:
         node.gen.py_ast = [
             self.sync(
