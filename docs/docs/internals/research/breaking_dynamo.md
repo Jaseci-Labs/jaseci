@@ -11,3 +11,24 @@ In this document we explore the TorchDynamo frontend compiler and how it genarat
 ## Into the Deep End
 
 We will now go though the pipline of genarating the fx-graph through TorchDynamo using the (pytorch codebase)[https://github.com/pytorch/pytorch] and many other resorces.
+
+The compilation process starts with ```torch.compile``` call for a defined function. In the following example we show this in action.
+
+```python
+class Model(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        y = torch.sin(x)
+        z = torch.cos(x)
+
+        # Combine and return
+        return y**2 + z**2
+
+model = Model()
+compiled = torch.compile(model)
+```
+
+When this compiled model is called with input values it will produce fx-graph IR for the foward function.
+
