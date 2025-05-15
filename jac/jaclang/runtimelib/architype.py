@@ -225,6 +225,8 @@ class WalkerAnchor(Anchor):
     path: list[NodeAnchor] = field(default_factory=list)
     next: list[NodeAnchor] = field(default_factory=list)
     ignores: list[NodeAnchor] = field(default_factory=list)
+    parent: WalkerAnchor | None = None
+    child: list[WalkerAnchor] = field(default_factory=list)
     disengaged: bool = False
 
 
