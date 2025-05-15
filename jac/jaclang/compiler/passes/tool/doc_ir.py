@@ -6,7 +6,6 @@ from typing import Optional, Union
 
 # Define DocType for self-referential typing
 DocType = Union["Doc", "Text", "Line", "Group", "Indent", "Concat", "IfBreak", "Align"]
-DocContent = Union[DocType, list[DocType]]
 
 
 class Doc:
@@ -76,12 +75,12 @@ class Group(Doc):
 
     def __init__(
         self,
-        contents: DocContent,
+        contents: DocType,
         break_contiguous: bool = False,
         id: Optional[str] = None,
     ) -> None:
         """Initialize a Group object."""
-        self.contents: DocContent = contents
+        self.contents: DocType = contents
         self.break_contiguous: bool = break_contiguous
         self.id: Optional[str] = id
 
@@ -94,21 +93,16 @@ class Group(Doc):
         header = (
             f"{indent}Group(id={self.id}, break_contiguous={self.break_contiguous}):"
         )
-        children_repr: list[str] = []
-        if isinstance(self.contents, list):
-            for item in self.contents:
-                children_repr.append(item.treeprint(level + 1))
-        else:
-            children_repr.append(self.contents.treeprint(level + 1))
+        children_repr: list[str] = [self.contents.treeprint(level + 1)]
         return f"{header}\n" + "\n".join(children_repr)
 
 
 class Indent(Doc):
     """Indented content."""
 
-    def __init__(self, contents: DocContent) -> None:
+    def __init__(self, contents: DocType) -> None:
         """Initialize an Indent object."""
-        self.contents: DocContent = contents
+        self.contents: DocType = contents
 
     def __str__(self) -> str:
         """Return a string representation of the Indent object."""
@@ -117,12 +111,7 @@ class Indent(Doc):
     def treeprint(self, level: int = 0) -> str:
         indent = "  " * level
         header = f"{indent}Indent:"
-        children_repr: list[str] = []
-        if isinstance(self.contents, list):
-            for item in self.contents:
-                children_repr.append(item.treeprint(level + 1))
-        else:
-            children_repr.append(self.contents.treeprint(level + 1))
+        children_repr: list[str] = [self.contents.treeprint(level + 1)]
         return f"{header}\n" + "\n".join(children_repr)
 
 
@@ -147,10 +136,10 @@ class Concat(Doc):
 class IfBreak(Doc):
     """Content that differs based on whether the parent group is broken."""
 
-    def __init__(self, break_contents: DocContent, flat_contents: DocContent) -> None:
+    def __init__(self, break_contents: DocType, flat_contents: DocType) -> None:
         """Initialize an IfBreak object."""
-        self.break_contents: DocContent = break_contents
-        self.flat_contents: DocContent = flat_contents
+        self.break_contents: DocType = break_contents
+        self.flat_contents: DocType = flat_contents
 
     def __str__(self) -> str:
         """Return a string representation of the IfBreak object."""
@@ -160,18 +149,10 @@ class IfBreak(Doc):
         indent = "  " * level
         header = f"{indent}IfBreak:"
         break_repr: list[str] = [f"{indent}  break_contents:"]
-        if isinstance(self.break_contents, list):
-            for item in self.break_contents:
-                break_repr.append(item.treeprint(level + 2))
-        else:
-            break_repr.append(self.break_contents.treeprint(level + 2))
+        break_repr.append(self.break_contents.treeprint(level + 2))
 
         flat_repr: list[str] = [f"{indent}  flat_contents:"]
-        if isinstance(self.flat_contents, list):
-            for item in self.flat_contents:
-                flat_repr.append(item.treeprint(level + 2))
-        else:
-            flat_repr.append(self.flat_contents.treeprint(level + 2))
+        flat_repr.append(self.flat_contents.treeprint(level + 2))
 
         return f"{header}\n" + "\n".join(break_repr) + "\n" + "\n".join(flat_repr)
 
@@ -179,9 +160,9 @@ class IfBreak(Doc):
 class Align(Doc):
     """Alignment relative to the current indentation level."""
 
-    def __init__(self, contents: DocContent, n: Optional[int] = None) -> None:
+    def __init__(self, contents: DocType, n: Optional[int] = None) -> None:
         """Initialize an Align object."""
-        self.contents: DocContent = contents
+        self.contents: DocType = contents
         self.n: Optional[int] = (
             n  # Number of spaces, or null to use current indentation level
         )
@@ -193,10 +174,5 @@ class Align(Doc):
     def treeprint(self, level: int = 0) -> str:
         indent = "  " * level
         header = f"{indent}Align(n={self.n}):"
-        children_repr: list[str] = []
-        if isinstance(self.contents, list):
-            for item in self.contents:
-                children_repr.append(item.treeprint(level + 1))
-        else:
-            children_repr.append(self.contents.treeprint(level + 1))
+        children_repr: list[str] = [self.contents.treeprint(level + 1)]
         return f"{header}\n" + "\n".join(children_repr)
