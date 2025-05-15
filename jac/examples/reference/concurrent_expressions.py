@@ -2,9 +2,9 @@ from __future__ import annotations
 from jaclang.runtimelib.builtin import *
 from jaclang import JacMachineInterface as _
 if _.TYPE_CHECKING:
-    from time import sleep, time
+    from time import sleep
 else:
-    sleep, time = _.py_jac_import('time', __file__, lng='py', items={'sleep': None, 'time': None})
+    sleep, = _.py_jac_import('time', __file__, lng='py', items={'sleep': None})
 
 class A(_.Node):
     val: int = 0
@@ -24,8 +24,7 @@ def add(x: int, y: int) -> int:
     sleep(2)
     print(x)
     return z
-start = time()
-t1 = _.thread_run(lambda: _.spawn(A(), B('Thami')))
+t1 = _.thread_run(lambda: _.spawn(A(), B('Hi')))
 task1 = _.thread_run(lambda: add(1, 10))
 task2 = _.thread_run(lambda: add(2, 11))
 print('All are started')
@@ -34,4 +33,3 @@ res2 = _.thread_wait(task2)
 print('All are done')
 print(res1)
 print(res2)
-print(time() - start)
