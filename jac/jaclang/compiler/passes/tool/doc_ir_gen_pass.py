@@ -657,6 +657,17 @@ class DocIRGenPass(UniPass):
 
         node.gen.doc_ir = [self.group(parts)]
 
+    def exit_concurrent_expr(self, node: uni.ConcurrentExpr) -> None:
+        """Generate DocIR for concurrent expressions."""
+        parts: list[doc.DocType] = []
+
+        if node.target and node.target.gen.doc_ir:
+            parts.append(node.target.gen.doc_ir[0])
+
+        parts.append(self.text(";"))
+
+        node.gen.doc_ir = [self.group(parts)]
+
     def exit_return_stmt(self, node: uni.ReturnStmt) -> None:
         """Generate DocIR for return statements."""
         parts: list[doc.DocType] = [self.text("return")]

@@ -148,7 +148,6 @@ class AstSyncTestMixin:
                 "name_atom",
                 "arch_spec",
                 "match_pattern",
-                "concurrent_expr",
             ]
         ]
         pygen_func_names = []
