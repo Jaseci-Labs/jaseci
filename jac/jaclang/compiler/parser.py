@@ -160,31 +160,6 @@ class JacParser(Transform[uni.Source, uni.Module]):
             if len(kid) > 1:
                 if (
                     isinstance(kid[0], uni.Expr)
-                    and (isinstance(kid[1], uni.Token) and kid[1].name == Tok.KW_JACGO)
-                    and (isinstance(kid[2], uni.Token) and kid[2].name == Tok.KW_SPAWN)
-                    and isinstance(kid[3], uni.Expr)
-                ):
-                    return uni.SpawnExpr(
-                        left=kid[0],
-                        is_jacgo=True,
-                        op=kid[2],
-                        right=kid[3],
-                        kid=kid,
-                    )
-                elif (
-                    isinstance(kid[0], uni.Expr)
-                    and (isinstance(kid[1], uni.Token) and kid[1].name == Tok.KW_SPAWN)
-                    and isinstance(kid[2], uni.Expr)
-                ):
-                    return uni.SpawnExpr(
-                        left=kid[0],
-                        is_jacgo=False,
-                        op=kid[1],
-                        right=kid[2],
-                        kid=kid,
-                    )
-                elif (
-                    isinstance(kid[0], uni.Expr)
                     and isinstance(
                         kid[1],
                         (uni.Token, uni.DisconnectOp, uni.ConnectOp),
@@ -1536,14 +1511,8 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def visit_stmt(self, _: None) -> uni.VisitStmt:
             """Grammar rule.
 
-            visit_stmt: (atomic_chain type_tag? EQ )? KW_JACGO?
-                        KW_VISIT (inherited_archs)? expression (else_stmt | SEMI)
+            visit_stmt: KW_VISIT (inherited_archs)? expression (else_stmt | SEMI)
             """
-            store_target = self.match(uni.Expr)
-            type_tag = self.match(uni.SubTag)
-            if store_target:
-                self.consume_token(Tok.EQ)
-            tok_jacgo = self.match_token(Tok.KW_JACGO)
             self.consume_token(Tok.KW_VISIT)
             sub_name = self.match(uni.SubNodeList)
             target = self.consume(uni.Expr)
@@ -1552,11 +1521,8 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 self.consume_token(Tok.SEMI)
             return uni.VisitStmt(
                 vis_type=sub_name,
-                store_target=store_target,
-                type_tag=type_tag,
                 target=target,
                 else_body=else_body,
-                is_jacgo=tok_jacgo is not None,
                 kid=self.cur_nodes,
             )
 

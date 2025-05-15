@@ -2848,19 +2848,13 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
     def __init__(
         self,
         vis_type: Optional[SubNodeList[Expr]],
-        store_target: Optional[Expr],
-        type_tag: Optional[SubTag[Expr]],
         target: Expr,
         else_body: Optional[ElseStmt],
-        is_jacgo: bool,
         kid: Sequence[UniNode],
     ) -> None:
         """Initialize visit statement node."""
         self.vis_type = vis_type
-        self.store_target = store_target
-        self.type_tag = type_tag
         self.target = target
-        self.is_jacgo = is_jacgo
         UniNode.__init__(self, kid=kid)
         WalkerStmtOnlyNode.__init__(self)
         AstElseBodyNode.__init__(self, else_body=else_body)
@@ -2870,21 +2864,9 @@ class VisitStmt(WalkerStmtOnlyNode, AstElseBodyNode, CodeBlockStmt):
         res = True
         if deep:
             res = self.vis_type.normalize(deep) if self.vis_type else res
-            res = (
-                res and self.store_target.normalize(deep) if self.store_target else res
-            )
-            res = res and self.type_tag.normalize(deep) if self.type_tag else res
             res = self.target.normalize(deep)
             res = res and self.else_body.normalize(deep) if self.else_body else res
         new_kid: list[UniNode] = []
-        if self.store_target:
-            new_kid.append(self.store_target)
-        if self.type_tag:
-            new_kid.append(self.gen_token(Tok.COLON))
-        if self.store_target:
-            new_kid.append(self.gen_token(Tok.EQ))
-        if self.is_jacgo:
-            new_kid.append(self.gen_token(Tok.KW_JACGO))
         new_kid.append(self.gen_token(Tok.KW_VISIT))
         if self.vis_type:
             new_kid.append(self.gen_token(Tok.COLON))
@@ -3107,38 +3089,6 @@ class BinaryExpr(Expr):
             self.right,
             self.gen_token(Tok.RPAREN),
         ]
-        self.set_kids(nodes=new_kid)
-        return res
-
-
-class SpawnExpr(BinaryExpr):
-    """Spawn node type for Jac Ast."""
-
-    def __init__(
-        self,
-        left: Expr,
-        right: Expr,
-        op: Token,
-        is_jacgo: bool,
-        kid: Sequence[UniNode],
-    ) -> None:
-        """Initialize spawn expression node."""
-        super().__init__(left=left, right=right, op=op, kid=kid)
-        self.is_jacgo = is_jacgo
-
-    def normalize(self, deep: bool = False) -> bool:
-        """Normalize spawn expression node."""
-        res = True
-        if deep:
-            res = self.left.normalize(deep)
-            res = res and self.right.normalize(deep) if self.right else res
-            res = res and self.op.normalize(deep) if self.op else res
-        tok_async = [self.gen_token(Tok.KW_JACGO)] if self.is_jacgo else []
-        new_kid: list[UniNode] = (
-            [self.gen_token(Tok.LPAREN), self.left]
-            + tok_async
-            + [self.op, self.right, self.gen_token(Tok.RPAREN)]
-        )
         self.set_kids(nodes=new_kid)
         return res
 

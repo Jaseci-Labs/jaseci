@@ -137,24 +137,6 @@ class PyastGenPass(UniPass):
         )
         self.already_added.append(self.needs_enum.__name__)
 
-    def needs_jacgo(self) -> None:
-        """Check if jacgo runtime library is needed."""
-        if self.needs_jacgo.__name__ in self.already_added:
-            return
-        self.preamble.append(
-            self.sync(
-                ast3.ImportFrom(
-                    module="jaclang.runtimelib.jacgo",
-                    names=[
-                        self.sync(ast3.alias(name="jacgo_spawn", asname=None)),
-                    ],
-                    level=0,
-                ),
-                jac_node=self.ir_out,
-            )
-        )
-        self.already_added.append(self.needs_jacgo.__name__)
-
     def flatten(self, body: list[T | list[T] | None]) -> list[T]:
         """Flatten ast list."""
         new_body = []
@@ -2015,78 +1997,24 @@ class PyastGenPass(UniPass):
         """Sub objects.
 
         vis_type: Optional[SubNodeList[AtomType]],
-        store_target: Optional[ExprType],
-        type_tag: Optional[SubTag[ExprType]],
         target: ExprType,
         else_body: Optional[ElseStmt],
-        is_jacgo: bool,
         """
-        if node.is_jacgo:
-            self.needs_jacgo()
         loc = self.sync(
             ast3.Name(id="self", ctx=ast3.Load())
             if node.from_walker
             else ast3.Name(id=Con.HERE.value, ctx=ast3.Load())
         )
-
         visit_call = self.sync(
             ast3.Call(
                 func=self.jaclib_obj("visit"),
-                args=cast(
-                    list[ast3.expr],
-                    [
-                        loc,
-                        node.target.gen.py_ast[0],
-                        self.sync(ast3.Constant(value=node.is_jacgo)),
-                    ],
-                ),
+                args=cast(list[ast3.expr], [loc, node.target.gen.py_ast[0]]),
                 keywords=[],
             )
         )
-        if node.store_target and node.else_body:
-            if isinstance(node.store_target.gen.py_ast[0], ast3.Name):
-                node.store_target.gen.py_ast[0].ctx = ast3.Store()
-            visit_stmt: ast3.Assign | ast3.NamedExpr = self.sync(
-                ast3.NamedExpr(
-                    target=cast(ast3.Name, node.store_target.gen.py_ast[0]),
-                    value=visit_call,
-                )
-            )
 
-        if node.store_target and node.else_body:
-            node.gen.py_ast = [
-                self.sync(
-                    ast3.If(
-                        test=self.sync(
-                            ast3.UnaryOp(
-                                op=self.sync(ast3.Not()),
-                                operand=cast(ast3.expr, visit_stmt),
-                            )
-                        ),
-                        body=cast(list[ast3.stmt], node.else_body.gen.py_ast),
-                        orelse=[],
-                    )
-                )
-            ]
-
-        elif node.store_target:
-            if isinstance(node.store_target.gen.py_ast[0], ast3.Name):
-                node.store_target.gen.py_ast[0].ctx = ast3.Store()
-            node.gen.py_ast = [
-                self.sync(
-                    ast3.Assign(
-                        targets=cast(list[ast3.expr], node.store_target.gen.py_ast),
-                        value=(
-                            cast(ast3.expr, visit_call)
-                            if isinstance(visit_call, ast3.expr)
-                            else self.sync(ast3.Constant(value=None))
-                        ),
-                    )
-                )
-            ]
-
-        elif node.else_body:
-            node.gen.py_ast = [
+        node.gen.py_ast = [
+            (
                 self.sync(
                     ast3.If(
                         test=self.sync(
@@ -2099,19 +2027,10 @@ class PyastGenPass(UniPass):
                         orelse=[],
                     )
                 )
-            ]
-        else:
-            node.gen.py_ast = [
-                self.sync(
-                    ast3.Expr(
-                        value=(
-                            visit_call
-                            if isinstance(visit_call, ast3.expr)
-                            else self.sync(ast3.Constant(value=None))
-                        )
-                    )
-                )
-            ]
+                if node.else_body
+                else self.sync(ast3.Expr(value=visit_call))
+            )
+        ]
 
     def exit_revisit_stmt(self, node: uni.RevisitStmt) -> None:
         """Sub objects.
@@ -2402,75 +2321,6 @@ class PyastGenPass(UniPass):
             ]
         else:
             node.gen.py_ast = self.translate_jac_bin_op(node)
-
-    def exit_spawn_expr(self, node: uni.SpawnExpr) -> None:
-        """Sub objects.
-
-        left: ExprType,
-        right: ExprType,
-        op: Token,
-        is_jacgo: bool,
-        """
-        if node.is_jacgo:
-            self.needs_jacgo()
-            node.gen.py_ast = [
-                self.sync(
-                    ast3.Call(
-                        func=self.sync(ast3.Name(id="jacgo_spawn", ctx=ast3.Load())),
-                        args=[],
-                        keywords=[
-                            self.sync(
-                                ast3.keyword(
-                                    arg="func",
-                                    value=self.sync(
-                                        ast3.Attribute(
-                                            value=self.sync(
-                                                ast3.Name(id="_", ctx=ast3.Load())
-                                            ),
-                                            attr="spawn",
-                                            ctx=ast3.Load(),
-                                        )
-                                    ),
-                                )
-                            ),
-                            self.sync(
-                                ast3.keyword(
-                                    arg="args",
-                                    value=self.sync(
-                                        ast3.Tuple(
-                                            elts=[
-                                                cast(
-                                                    ast3.expr, node.left.gen.py_ast[0]
-                                                ),
-                                                cast(
-                                                    ast3.expr, node.right.gen.py_ast[0]
-                                                ),
-                                            ],
-                                            ctx=ast3.Load(),
-                                        )
-                                    ),
-                                )
-                            ),
-                        ],
-                    )
-                )
-            ]
-        else:
-            node.gen.py_ast = [
-                self.sync(
-                    ast3.Call(
-                        func=self.jaclib_obj("spawn"),
-                        args=cast(
-                            list[ast3.expr],
-                            [
-                                node.left.gen.py_ast[0],
-                                node.right.gen.py_ast[0],
-                            ],
-                        ),
-                        keywords=[],
-                    )
-                )
-            ]
 
     def translate_jac_bin_op(self, node: uni.BinaryExpr) -> list[ast3.AST]:
         """Translate jac binary op."""

@@ -1480,29 +1480,3 @@ class JacLanguageTests(TestCase):
 
             stdout_value = captured_output.getvalue()
             self.assertIn("JACPATH module loaded!", stdout_value)
-
-    def test_concurrency_spawn(self) -> None:  # need to updated
-        """Test concurrency spawn call."""
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-        Jac.jac_import(
-            self.mach, "concurrency_spawn", base_path=self.fixture_abs_path("./")
-        )
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue().split("\n")
-        self.assertIn("action", stdout_value[0])
-        # self.assertNotIn("W Exit action  A(val=6)", stdout_value[-3])
-        # self.assertIn("Walker W spawned W(num=8)", stdout_value[-2])
-
-    def test_concurrency_visit(self) -> None:  # need to updated
-        """Test concurrency visit."""
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-        Jac.jac_import(
-            self.mach, "concurrency_visit", base_path=self.fixture_abs_path("./")
-        )
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue().split("\n")
-        self.assertIn("action", stdout_value[0])
-        # self.assertNotIn("W Exit action  A(val=6)", stdout_value[-3])
-        # self.assertIn("Walker W spawned W(num=8)", stdout_value[-2])

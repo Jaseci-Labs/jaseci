@@ -164,7 +164,6 @@ class Tokens(str, Enum):
     KW_VISIT = "KW_VISIT"
     KW_REVISIT = "KW_REVISIT"
     KW_SPAWN = "KW_SPAWN"
-    KW_JACGO = "KW_JACGO"
     KW_WITH = "KW_WITH"
     KW_ENTRY = "KW_ENTRY"
     KW_EXIT = "KW_EXIT"
