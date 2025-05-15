@@ -2845,6 +2845,37 @@ class Assignment(AstTypedVarNode, EnumBlockStmt, CodeBlockStmt):
         return res
 
 
+class ConcurrentExpr(Expr):
+    """ConcurrentExpr node type for Jac Ast."""
+
+    def __init__(
+        self,
+        tok: Optional[Token],
+        target: Expr,
+        kid: Sequence[UniNode],
+    ) -> None:
+        UniNode.__init__(self, kid=kid)
+        Expr.__init__(self)
+        self.tok = tok
+        self.target = target
+
+    def normalize(self, deep: bool = True) -> bool:
+        res = True
+        if deep:
+            res = self.target.normalize(deep)
+            res = res and self.target.normalize(deep) if self.target else res
+        new_kid: list[UniNode] = []
+        if self.tok:
+            match self.tok:
+                case Tok.KW_FLOW:
+                    new_kid.append(self.gen_token(Tok.KW_FLOW))
+                case Tok.KW_WAIT:
+                    new_kid.append(self.gen_token(Tok.KW_WAIT))
+        new_kid.append(self.target)
+        self.set_kids(nodes=new_kid)
+        return res
+
+
 class BinaryExpr(Expr):
     """BinaryExpr node type for Jac Ast."""
 

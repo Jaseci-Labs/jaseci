@@ -260,8 +260,11 @@ aug_op: RSHIFT_EQ
        | STAR_POW_EQ
 
 // [Heading]: Expressions.
-expression: walrus_assign (KW_IF expression KW_ELSE expression)?
+expression: concurrent_expr (KW_IF expression KW_ELSE expression)?
           | lambda_expr
+
+// [Heading]: Concurrent expressions.
+concurrent_expr: (KW_FLOW | KW_WAIT)? walrus_assign
 
 // [Heading]: Walrus assignments.
 walrus_assign: (named_ref WALRUS_EQ)? pipe
@@ -522,6 +525,8 @@ KW_EDGE: "edge"
 KW_WALKER: "walker"
 KW_ASYNC: "async"
 KW_AWAIT: "await"
+KW_FLOW: "flow"
+KW_WAIT: "wait"
 KW_TEST: "test"
 KW_IMPL: "impl"
 KW_ASSERT: "assert"

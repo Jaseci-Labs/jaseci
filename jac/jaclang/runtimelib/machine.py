@@ -12,6 +12,7 @@ import sys
 import tempfile
 import types
 from collections import OrderedDict
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import MISSING, dataclass, field
 from functools import partial, wraps
 from inspect import getfile
@@ -1504,6 +1505,18 @@ class JacUtils:
         _event_loop = machine._event_loop
         return _event_loop.run_until_complete(obj)
 
+    @staticmethod
+    def thread_run(func: Callable, *args: object) -> Future:  # noqa: ANN401
+        """Run a function in a thread."""
+        machine = JacMachine.py_get_jac_machine()
+        _executor = machine.pool
+        return _executor.submit(func, *args)
+
+    @staticmethod
+    def thread_wait(future: Any) -> None:  # noqa: ANN401
+        """Wait for a thread to finish."""
+        return future.result()
+
 
 class JacMachineInterface(
     JacClassReferences,
@@ -1542,6 +1555,7 @@ class JacMachine(JacMachineInterface):
         )
         self.jac_program: JacProgram = JacProgram()
         self.interp_mode = interp_mode
+        self.pool = ThreadPoolExecutor()
         self._event_loop = asyncio.new_event_loop()
         self.mem: Memory = ShelfStorage(session)
         self.reports: list[Any] = []
