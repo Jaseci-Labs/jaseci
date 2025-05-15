@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Optional
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.passes.main import Alert, CompilerMode as CMode
+from jaclang.compiler.passes.main import CompilerMode as CMode
 from jaclang.compiler.program import JacProgram
 from jaclang.compiler.unitree import UniScopeNode
 from jaclang.langserve.sem_manager import SemTokManager
@@ -31,7 +31,7 @@ import lsprotocol.types as lspt
 
 
 class ModuleManager:
-    """Handles Jac module and semantic manager updates."""
+    """Handles Jac module, semantic manager, and alert management."""
 
     def __init__(self, program: JacProgram, sem_managers: dict) -> None:
         """Initialize ModuleManager."""
@@ -50,22 +50,13 @@ class ModuleManager:
                 if p != file_path:
                     self.sem_managers[p] = SemTokManager(ir=mod)
 
-
-class AlertManager:
-    """Handles error and warning alert management."""
-
-    def __init__(self, errors_had: list[Alert], warnings_had: list[Alert]) -> None:
-        """Initialize AlertManager."""
-        self.errors_had = errors_had
-        self.warnings_had = warnings_had
-
-    def clear_for_file(self, file_path_fs: str) -> None:
+    def clear_alerts_for_file(self, file_path_fs: str) -> None:
         """Remove errors and warnings for a specific file from the lists."""
-        self.errors_had[:] = [
-            e for e in self.errors_had if e.loc.mod_path != file_path_fs
+        self.program.errors_had[:] = [
+            e for e in self.program.errors_had if e.loc.mod_path != file_path_fs
         ]
-        self.warnings_had[:] = [
-            w for w in self.warnings_had if w.loc.mod_path != file_path_fs
+        self.program.warnings_had[:] = [
+            w for w in self.program.warnings_had if w.loc.mod_path != file_path_fs
         ]
 
 
@@ -80,11 +71,10 @@ class JacLangServer(JacProgram, LanguageServer):
         self.tasks: dict[str, asyncio.Task] = {}
         self.sem_managers: dict[str, SemTokManager] = {}
         self.module_manager = ModuleManager(self, self.sem_managers)
-        self.alert_manager = AlertManager(self.errors_had, self.warnings_had)
 
     def _clear_alerts_for_file(self, file_path_fs: str) -> None:
         """Remove errors and warnings for a specific file from the lists."""
-        self.alert_manager.clear_for_file(file_path_fs)
+        self.module_manager.clear_alerts_for_file(file_path_fs)
 
     def get_ir(self, file_path: str) -> Optional[uni.Module]:
         """Get IR for a file path."""
