@@ -967,7 +967,7 @@ class TypeCheckPass(UniPass):
         self.type_factory = TypeFactory # Static methods, no instance needed typically
         # config_options could hold type system strictness flags, etc.
         self.config_options = config_options or {}
-        self.type_evaluator = TypeEvaluator(self.sym_tab, self.type_cache)
+        self.type_evaluator = TypeEvaluator(self.sym_tab, self.type_cache, self.diag, self.type_factory)
         self.type_checker_core = TypeCheckerCore(self.sym_tab, self.diag, self.type_cache, self.type_factory, self.config_options)
 
     def enter_node(self, node: AstNode):
