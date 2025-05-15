@@ -18,9 +18,9 @@ class Doc:
 
     def __repr__(self) -> str:
         """Return a string representation of the Doc object."""
-        return self.pretty()
+        return self.treeprint()
 
-    def pretty(self, level: int = 0) -> str:
+    def treeprint(self, level: int = 0) -> str:
         """Return an indented string representation of the Doc object."""
         indent = "  " * level
         return f"{indent}{self.__class__.__name__}"
@@ -37,7 +37,7 @@ class Text(Doc):
         """Return a string representation of the Text object."""
         return f'Text("{self.text}")'
 
-    def pretty(self, level: int = 0) -> str:
+    def treeprint(self, level: int = 0) -> str:
         indent = "  " * level
         return f'{indent}Text("{self.text}")'
 
@@ -61,7 +61,7 @@ class Line(Doc):
             attrs.append("literal")
         return f"Line({', '.join(attrs)})"
 
-    def pretty(self, level: int = 0) -> str:
+    def treeprint(self, level: int = 0) -> str:
         indent = "  " * level
         attrs: list[str] = []
         if self.hard:
@@ -89,7 +89,7 @@ class Group(Doc):
         """Return a string representation of the Group object."""
         return f"Group({self.contents})"
 
-    def pretty(self, level: int = 0) -> str:
+    def treeprint(self, level: int = 0) -> str:
         indent = "  " * level
         header = (
             f"{indent}Group(id={self.id}, break_contiguous={self.break_contiguous}):"
@@ -97,9 +97,9 @@ class Group(Doc):
         children_repr: list[str] = []
         if isinstance(self.contents, list):
             for item in self.contents:
-                children_repr.append(item.pretty(level + 1))
+                children_repr.append(item.treeprint(level + 1))
         else:
-            children_repr.append(self.contents.pretty(level + 1))
+            children_repr.append(self.contents.treeprint(level + 1))
         return f"{header}\n" + "\n".join(children_repr)
 
 
@@ -114,15 +114,15 @@ class Indent(Doc):
         """Return a string representation of the Indent object."""
         return f"Indent({self.contents})"
 
-    def pretty(self, level: int = 0) -> str:
+    def treeprint(self, level: int = 0) -> str:
         indent = "  " * level
         header = f"{indent}Indent:"
         children_repr: list[str] = []
         if isinstance(self.contents, list):
             for item in self.contents:
-                children_repr.append(item.pretty(level + 1))
+                children_repr.append(item.treeprint(level + 1))
         else:
-            children_repr.append(self.contents.pretty(level + 1))
+            children_repr.append(self.contents.treeprint(level + 1))
         return f"{header}\n" + "\n".join(children_repr)
 
 
@@ -137,10 +137,10 @@ class Concat(Doc):
         """Return a string representation of the Concat object."""
         return f"Concat({self.parts})"
 
-    def pretty(self, level: int = 0) -> str:
+    def treeprint(self, level: int = 0) -> str:
         indent = "  " * level
         header = f"{indent}Concat:"
-        children_repr = [part.pretty(level + 1) for part in self.parts]
+        children_repr = [part.treeprint(level + 1) for part in self.parts]
         return f"{header}\n" + "\n".join(children_repr)
 
 
@@ -156,22 +156,22 @@ class IfBreak(Doc):
         """Return a string representation of the IfBreak object."""
         return f"IfBreak({self.break_contents}, {self.flat_contents})"
 
-    def pretty(self, level: int = 0) -> str:
+    def treeprint(self, level: int = 0) -> str:
         indent = "  " * level
         header = f"{indent}IfBreak:"
         break_repr: list[str] = [f"{indent}  break_contents:"]
         if isinstance(self.break_contents, list):
             for item in self.break_contents:
-                break_repr.append(item.pretty(level + 2))
+                break_repr.append(item.treeprint(level + 2))
         else:
-            break_repr.append(self.break_contents.pretty(level + 2))
+            break_repr.append(self.break_contents.treeprint(level + 2))
 
         flat_repr: list[str] = [f"{indent}  flat_contents:"]
         if isinstance(self.flat_contents, list):
             for item in self.flat_contents:
-                flat_repr.append(item.pretty(level + 2))
+                flat_repr.append(item.treeprint(level + 2))
         else:
-            flat_repr.append(self.flat_contents.pretty(level + 2))
+            flat_repr.append(self.flat_contents.treeprint(level + 2))
 
         return f"{header}\n" + "\n".join(break_repr) + "\n" + "\n".join(flat_repr)
 
@@ -190,13 +190,13 @@ class Align(Doc):
         """Return a string representation of the Align object."""
         return f"Align({self.n}, {self.contents})"
 
-    def pretty(self, level: int = 0) -> str:
+    def treeprint(self, level: int = 0) -> str:
         indent = "  " * level
         header = f"{indent}Align(n={self.n}):"
         children_repr: list[str] = []
         if isinstance(self.contents, list):
             for item in self.contents:
-                children_repr.append(item.pretty(level + 1))
+                children_repr.append(item.treeprint(level + 1))
         else:
-            children_repr.append(self.contents.pretty(level + 1))
+            children_repr.append(self.contents.treeprint(level + 1))
         return f"{header}\n" + "\n".join(children_repr)
