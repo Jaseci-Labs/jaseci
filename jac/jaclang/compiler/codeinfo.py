@@ -27,6 +27,7 @@ class CodeGenTarget:
         """Clean code generation target."""
         self.py = ""
         self.jac = ""
+        self.doc_ir = []
         self.js = ""
         self.py_ast = []
 
