@@ -130,7 +130,7 @@ Now, let's create the required nodes for LittleX.
             ```
                   * `follwers = [...`] creates a list of dictionaries containing `id` and `username` for each connected `Profile` node (followers).
                   * `jid(i)` retrieves the unique Jac ID of each follower node.
-                  * `[self-->(?Profile)]`collects all Profile nodes connected via outgoing edges from self.
+                  * `[self-->(?Profile)]`collects all Profile nodes connected via outgoing edges from current Profile.
                   * `report {"user": self, "followers": follwers}` returns the current `Profile` node and its list of followers in a structured format.
             * ###### **Follow Ability**
             ```jac
@@ -141,7 +141,7 @@ Now, let's create the required nodes for LittleX.
             }
             ```
                   * `current_profile = [root-->(?Profile)]` retrieves all Profile nodes directly connected from the root node.
-                  * `current_profile[0] +:Follow():+> self` creates a `Follow` edge from the first profile node to self, establishing the follow relationship.
+                  * `current_profile[0] +:Follow():+> self` creates a `Follow` edge from the first profile node to current Profile, establishing the follow relationship.
                   * `report self` returns the followed `Profile` node as the response.
             * ###### **Unfollow Ability**
             ```jac
@@ -153,7 +153,7 @@ Now, let's create the required nodes for LittleX.
             }
             ```
                   * `current_profile = [root-->(?Profile)]` retrieves all Profile nodes connected from the root node.
-                  * `follow_edge = :e:[ current_profile[0] -:Follow:-> self]` finds the existing `Follow` edge from the current user to `self`.
+                  * `follow_edge = :e:[ current_profile[0] -:Follow:-> self]` finds the existing `Follow` edge from the current user to first Profiles.
                   * `Jac.destroy(follow_edge[0])` removes the first matched Follow edge, effectively unfollowing the user.
                   * `report self` returns the unfollowed `Profile` node as the response.
 
