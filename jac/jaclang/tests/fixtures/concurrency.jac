@@ -33,6 +33,7 @@ with entry {
     res1 = wait task1 ;
     res2 = wait task2 ;
     print("All are done");
+    print(wait t1);
     print(res1);
     print(res2);
 }

@@ -1210,3 +1210,17 @@ class JacLanguageTests(TestCase):
         self.assertIn("Hello", stdout_value[0])
         self.assertIn("Hello", stdout_value[1])
         self.assertIn("World!", stdout_value[2])
+
+    def test_concurrency(self) -> None:
+        """Test concurrency in jaclang."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(
+            self.mach, "concurrency", base_path=self.fixture_abs_path("./")
+        )
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("Started", stdout_value[0])
+        self.assertIn("B(name='Hi')", stdout_value[8])
+        self.assertIn("11", stdout_value[9])
+        self.assertIn("13", stdout_value[10])
