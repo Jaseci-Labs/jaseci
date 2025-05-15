@@ -8,6 +8,7 @@ from typing import List, Optional, Type
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes.main import CompilerMode as CMode, PyastBuildPass
+from jaclang.compiler.passes.tool.doc_ir_gen_pass import DocIRGenPass
 from jaclang.compiler.program import JacProgram
 from jaclang.compiler.unitree import UniScopeNode
 from jaclang.utils.helpers import auto_generate_refs, pascal_to_snake
@@ -176,7 +177,10 @@ class AstTool:
 
     def ir(self, args: List[str]) -> str:
         """Generate a AST, SymbolTable tree for .jac file, or Python AST for .py file."""
-        error = "Usage: ir <choose one of (sym / sym. / ast / ast. / pyast / py / unparse)> <.py or .jac file_path>"
+        error = (
+            "Usage: ir <choose one of (sym / sym. / ast / ast. / docir / "
+            "pyast / py / unparse)> <.py or .jac file_path>"
+        )
         if len(args) != 2:
             return error
 
@@ -246,6 +250,8 @@ class AstTool:
                         if isinstance(ir.gen.py_ast[0], py_ast.AST)
                         else "Compile failed."
                     )
+                case "docir":
+                    return DocIRGenPass(ir, prog).print_jac()
                 case "py":
                     return (
                         f"\n{ir.gen.py}"
