@@ -29,7 +29,7 @@ To get started with building **LittleX**, ensure you have the following:
 - **About 15 minutes**: Time required to set up and explore the basics.
 - **A favorite text editor or IDE**: Any development environment you are comfortable with.
 - **Python 3.12 or later**: Ensure that Python 3.12 or higher is installed in your environment.
-- **Install required libraries**: Jaclang, Jac-Cloud, MTLLM, and Jac-Splice-Orc.
+- **Install required libraries**: Jaclang, Jac-Cloud, and MTLLM.
 - **Node.js (optional)**: If you plan to integrate a frontend in future steps.
 
 ## **LittleX Architecture**
@@ -45,7 +45,7 @@ LittleX’s graph-based architecture uses nodes for entities like users and post
 
 ### **Set Up Jaseci**
 ```bash
-pip install jaclang jac-cloud mtllm jac-splice-orc
+pip install jac-cloud mtllm
 ```
 
 ### **Lesson 1: Creating Nodes**
