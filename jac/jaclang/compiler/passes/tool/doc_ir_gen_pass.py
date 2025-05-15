@@ -129,10 +129,8 @@ class DocIRGenPass(UniPass):
         """Exit import node."""
         parts: List[doc.DocType] = []
         if node.doc:
-            doc_gen_ir = node.doc.gen.doc_ir
-            if doc_gen_ir:
-                parts.append(doc_gen_ir)
-                parts.append(self.hard_line())
+            parts.append(node.doc.gen.doc_ir)
+            parts.append(self.hard_line())
         if node.is_absorb:
             parts.append(self.text("include"))
         else:
@@ -159,7 +157,7 @@ class DocIRGenPass(UniPass):
                             self.concat(
                                 [
                                     self.line(),  # Soft line, becomes space or newline
-                                    actual_items_doc,  # This is now a DocType
+                                    actual_items_doc,
                                 ]
                             )
                         ),
@@ -861,7 +859,7 @@ class DocIRGenPass(UniPass):
 
     def exit_has_var(self, node: uni.HasVar) -> None:
         """Generate DocIR for has variable declarations."""
-        parts: list[doc.DocType] = [self.text("has ")]
+        parts: list[doc.DocType] = []
 
         if node.name:
             parts.append(self.text(node.name.value))
@@ -874,14 +872,16 @@ class DocIRGenPass(UniPass):
             parts.append(self.text(" = "))
             parts.append(node.value.gen.doc_ir)
 
-        parts.append(self.text(";"))
-
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_arch_has(self, node: uni.ArchHas) -> None:
         """Generate DocIR for architecture has declarations."""
-        parts: list[doc.DocType] = [self.text("has ")]
+        parts: list[doc.DocType] = []
 
+        if node.doc:
+            parts.insert(0, node.doc.gen.doc_ir)
+            parts.append(self.hard_line())
+        parts.append(self.text("has "))
         if node.is_static:
             parts.append(self.text("static "))
 
@@ -891,9 +891,14 @@ class DocIRGenPass(UniPass):
                 if var.gen.doc_ir:
                     var_parts.append(var.gen.doc_ir)
 
-            parts.append(self.join(self.text(", "), var_parts))
+            parts.append(
+                self.align(
+                    self.join(self.concat([self.text(", "), self.line()]), var_parts)
+                )
+            )
 
         parts.append(self.text(";"))
+        parts.append(self.hard_line())
 
         node.gen.doc_ir = self.group(self.concat(parts))
 
