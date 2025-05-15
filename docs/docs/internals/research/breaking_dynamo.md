@@ -1,19 +1,19 @@
-# 🧠 TorchDynamo FX Graphs: A Deep Dive
+# 🔥 TorchDynamo FX Graphs: A Deep Dive
 > _Exploring the internals of FX graph tracing — and the places it goes south._
 
-Pytorch 2.0 introduced a novel framework for lowering pytorch models into accelarator hardware. The main two components of this framework is Torch Dynamo (frontend compiler) and Torch Inductor (backend compiler). On a high level, the torch dynamo genarates an fx-graph from python bytecode, which is an intermediat representation of code than can be compiled for accelarator hardware which is the compiled using the TorchInducter to produce Triton code.
+PyTorch 2.0 introduced a novel framework for lowering PyTorch models into accelerator hardware. The main two components of this framework are TorchDynamo (frontend compiler) and TorchInductor (backend compiler). On a high level, TorchDynamo generates an FX-graph from Python bytecode, which is an intermediate representation of code that can be compiled for accelerator hardware, which is then compiled using TorchInductor to produce Triton code.
 
-In this document we explore the TorchDynamo frontend compiler and how it genarate fx-graph IR from bytecode. Some of the main research questions that we strive top answer from this exploration are,
+In this document, we explore the TorchDynamo frontend compiler and how it generates FX-graph IR from bytecode. Some of the main research questions that we strive to answer from this exploration are:
 
-1. How torch Dynamo decide what to compile?
-2. Where graph breaks are applied in Dynamo?
+1. How does TorchDynamo decide what to compile?
+2. Where are graph breaks applied in Dynamo?
 3. Are each of these graph breaks always necessary?
 
 ## Into the Deep End
 
-We will now go though the pipline of genarating the fx-graph through TorchDynamo using the (pytorch codebase)[https://github.com/pytorch/pytorch] and many other resorces.
+We will now go through the pipeline of generating the FX-graph through TorchDynamo using the [PyTorch codebase](https://github.com/pytorch/pytorch) and many other resources.
 
-The compilation process starts with ```torch.compile``` call for a defined function. In the following example we show this in action.
+The compilation process starts with a `torch.compile` call for a defined function. In the following example, we show this in action.
 
 ```python linenums="1"
 class Model(nn.Module):
@@ -31,27 +31,27 @@ model = Model()
 compiled = torch.compile(model)
 ```
 
-When this compiled model is called with input values it will produce fx-graph IR for the foward function. The fx graph is can be defined as dataflow in a forward function for op-to-op. This flow help the backend compiler to identify paralaizable operaations and schedule the operations accordingly. The genarated fx-graph looks like below.
+When this compiled model is called with input values, it will produce FX-graph IR for the forward function. The FX graph can be defined as dataflow in a forward function for op-to-op. This flow helps the backend compiler to identify parallelizable operations and schedule the operations accordingly. The generated FX-graph looks like below.
 
 ![FX Graph Example](assets/main_count(1)_77.svg)
 
-How ever, this graph genaration can be interrupted by adding an unsupported operation such as a python ```print``` statement. Here the goal would be to identify where exactly such breaks can occur.
+However, this graph generation can be interrupted by adding an unsupported operation such as a Python `print` statement. Here, the goal would be to identify where exactly such breaks can occur.
 
-## How torch Dynamo decide what to compile?
+## How does TorchDynamo decide what to compile?
 
-When tracing the codebase from the ```torch.compile``` one interesting find was the way how torch dynamo decides which function to compile. This is importent when an object gets passed into ```torch.compile```, Dynamo need to decide which methods needs to be compiled. When ```torch.compile``` is called, it fetches the python stack frames and use a set of criterion on which frame needs compiling. Following are the criteria for skiping compilation on a given stack.
+When tracing the codebase from the `torch.compile` call, one interesting finding was the way TorchDynamo decides which function to compile. This is important when an object gets passed into `torch.compile`; Dynamo needs to decide which methods need to be compiled. When `torch.compile` is called, it fetches the Python stack frames and uses a set of criteria to determine which frame needs compiling. Following are the criteria for skipping compilation on a given stack:
 
 1. If the frame is already compiled.
 2. When debugging a specific function.
 3. Skips generator expressions in specific utility files to reduce noise in error stats.
-4. Avoids the complexity of compiling attribute setters (```__setattr__```), which can be tricky to handle generally.
-5. Skips intitialization methods (```__init__```).
-6. Avoids frames created by ```exec()``` calls, which can propagate globals unexpectedly.
+4. Avoids the complexity of compiling attribute setters (`__setattr__`), which can be tricky to handle generally.
+5. Skips initialization methods (`__init__`).
+6. Avoids frames created by `exec()` calls, which can propagate globals unexpectedly.
 7. Skips namedtuple subclass constructors that have empty builtins.
 8. Generators cannot be compiled directly and will raise an error.
 9. Skips frames that don't contain tensor operations.
 
-These skips can be observed in the pytorch codebase.
+These skips can be observed in the PyTorch codebase.
 
 
 === "torch/_dynamo/convert_frame.py"
@@ -118,4 +118,4 @@ These skips can be observed in the pytorch codebase.
                 return ConvertFrameReturn()
 
     ```
-
+The skips are signified in this code as prematured return statements in the `__call__` method where the last method call is a the compilation method for which the frame object is passed into.
