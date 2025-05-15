@@ -4,10 +4,10 @@ from os import getenv
 from os.path import split
 from pickle import load
 
-from jac_cloud import FastAPI
+from jac_cloud.jaseci.main import FastAPI
 
-from jaclang import JacMachine as Jac
-from jaclang.runtimelib.machine import JacMachineState
+from jaclang import JacMachineInterface as Jac
+from jaclang.runtimelib.machine import JacMachine
 
 if not (filename := getenv("APP_PATH")):
     raise ValueError("APP_PATH is required")
@@ -16,7 +16,7 @@ base = base if base else "./"
 mod = mod[:-4]
 
 FastAPI.enable()
-mach = JacMachineState(base)
+mach = JacMachine(base)
 if filename.endswith(".jac"):
     Jac.jac_import(
         mach=mach,
@@ -34,7 +34,7 @@ elif filename.endswith(".jir"):
             override_name="__main__",
         )
 else:
-    mach.exec_ctx.close()
+    mach.close()
     raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
 app = FastAPI.get()

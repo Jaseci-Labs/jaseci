@@ -72,22 +72,21 @@ class InheritancePass(Transform[uni.Module, uni.Module]):
     ) -> None:
         """Handle inheritance from an attribute access chain."""
         current_sym_table = node.sym_tab.parent_scope
-        assert current_sym_table is not None
-
-        for name in item.as_attr_list:
-            sym = self.lookup_symbol(name.sym_name, current_sym_table)
-            if sym is None:
-                return
-            current_sym_table = sym.fetch_sym_tab
-            # Handle Python base classes or index slice expressions
-            if self.is_missing_py_symbol_table(sym, current_sym_table):
-                return
-            if self.is_index_slice_next(item, name):
-                # "Base class depends on the type of an Index slice expression, this is not supported yet"
-                return
-            assert current_sym_table is not None
-        assert current_sym_table is not None
-        node.sym_tab.inherit_sym_tab(current_sym_table)
+        if current_sym_table:
+            for name in item.as_attr_list:
+                sym = self.lookup_symbol(name.sym_name, current_sym_table)
+                if sym is None:
+                    return
+                current_sym_table = sym.fetch_sym_tab
+                # Handle Python base classes or index slice expressions
+                if self.is_missing_py_symbol_table(sym, current_sym_table):
+                    return
+                if self.is_index_slice_next(item, name):
+                    # "Base class depends on the type of an Index slice expression, this is not supported yet"
+                    return
+                if current_sym_table is None:
+                    return
+            node.sym_tab.inherit_sym_tab(current_sym_table)
 
     def lookup_symbol(self, name: str, sym_table: UniScopeNode) -> Optional[Symbol]:
         """Look up a symbol in the symbol table or in builtins."""
@@ -112,7 +111,7 @@ class InheritancePass(Transform[uni.Module, uni.Module]):
         """Check if a Python symbol table is missing."""
         return (
             symbol_table is None
-            and symbol.defn[0].parent_of_type(uni.Module).py_info.is_raised_from_py
+            and symbol.defn[0].parent_of_type(uni.Module).is_raised_from_py
         )
 
     def is_index_slice_next(

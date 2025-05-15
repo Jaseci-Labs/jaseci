@@ -6,7 +6,43 @@ This page documents significant breaking changes in Jac and Jaseci that may affe
 
 ### Version 0.8.0 (Main branch since 5/5/2025)
 
-#### 1. Inheritance base classes specification syntax changed
+#### 1. `impl` keyword introduced to simplify Implementation
+
+The new `impl` keyword provides a simpler and more explicit way to implement abilities and methods for objects, nodes, edges, and other types. This replaces the previous more complex colon-based syntax for implementation.
+
+**Before (v0.7.x):**
+```jac
+:obj:Circle:def:area -> float {
+    return math.pi * self.radius * self.radius;
+}
+
+:node:Person:can:greet with Room entry {
+    print("Hello, I am " + self.name);
+}
+
+:def:calculate_distance(x: float, y: float) -> float {
+    return math.sqrt(x*x + y*y);
+}
+```
+
+**After (v0.8.0+):**
+```jac
+impl Circle.area -> float {
+    return math.pi * self.radius * self.radius;
+}
+
+impl Person.greet with Room entry {
+    return "Hello, I am " + self.name;
+}
+
+impl calculate_distance(x: float, y: float) -> float {
+    return math.sqrt(x*x + y*y);
+}
+```
+
+This change makes the implementation syntax more readable, eliminates ambiguity, and better aligns with object-oriented programming conventions by using the familiar dot notation to indicate which type a method belongs to.
+
+#### 2. Inheritance base classes specification syntax changed
 
 The syntax for specifying inheritance has been updated from using colons to using parentheses, which better aligns with common object-oriented programming languages.
 
@@ -50,7 +86,7 @@ node AdminUser(BaseUser) {
 
 This change makes the inheritance syntax more intuitive and consistent with languages like Python, making it easier for developers to understand class hierarchies at a glance.
 
-#### 2. `def` keyword introduced
+#### 3. `def` keyword introduced
 
 Instead of using `can` keyword for all functions and abilities, `can` statements are only used for data spatial abilities and `def` keyword must be used for traditional python like functions and methods.
 
@@ -102,7 +138,7 @@ node Person {
 }
 ```
 
-#### 3. `visitor` keyword introduced
+#### 4. `visitor` keyword introduced
 
 Instead of using `here` keyword to represent the other object context while `self` is the self referencial context. Now `here` can only be used in walker abilities to reference a node or edge, and `visitor` must be used in nodes/edges to reference the walker context.
 
@@ -161,7 +197,7 @@ This change makes the code more intuitive by clearly distinguishing between:
 - `visitor`: The walker interacting with a node/edge
 - `here`: Used only in walker abilities to reference the current node/edge being visited
 
-#### 4. Changes to lambda syntax and `lambda` instroduced
+#### 5. Changes to lambda syntax and `lambda` instroduced
 
 Instead of using the `with x: int can x;` type syntax the updated lambda syntax now replaces `with` and `can` with `lambda` and `:` repsectively.
 
@@ -183,7 +219,7 @@ with entry {
 
 This change brings Jac's lambda syntax closer to Python's familiar `lambda parameter: expression` pattern, making it more intuitive for developers coming from Python backgrounds while maintaining Jac's type annotations.
 
-#### 5. Data spatial arrow notation updated
+#### 6. Data spatial arrow notation updated
 
 The syntax for typed arrow notations are updated as `-:MyEdge:->` and `+:MyEdge:+>` is now `->:MyEdge:->` and `+>:MyEdge:+> for reference and creations.
 
@@ -201,7 +237,7 @@ alice <+:Friendship:strength=0.9:<+ bob;
 
 This change was made to eliminate syntax conflicts with Python-style list slicing operations (e.g., `my_list[:-1]` was forced to be written `my_list[: -1]`). The new arrow notation provides clearer directional indication while ensuring that data spatial operations don't conflict with the token parsing for common list operations.
 
-#### 6. Import `from` syntax updated for clarity
+#### 7. Import `from` syntax updated for clarity
 
 The syntax for importing specific modules or components from a package has been updated to use curly braces for better readability and to align with modern language conventions.
 
@@ -219,7 +255,7 @@ import from utils { helper, math_utils, string_formatter };
 
 This new syntax using curly braces makes it clearer which modules are being imported from which package, especially when importing multiple items from different packages.
 
-#### 7. Import statement are auto resolved (no language hints needed)
+#### 8. Import statement are auto resolved (no language hints needed)
 
 The language-specific import syntax has been simplified by removing the explicit language annotations (`:py` and `:jac`). The compiler now automatically resolves imports based on context and file extensions.
 
@@ -239,7 +275,7 @@ import json, os, sys;
 
 This change simplifies the import syntax, making code cleaner while still maintaining the ability to import from both Python and Jac modules. The Jac compiler now intelligently determines the appropriate language context for each import.
 
-#### 8. `restrict` and `unrestrict` Interfaces to Jac Machine now `perm_grant` and `perm_revoke`
+#### 9. `restrict` and `unrestrict` Interfaces to Jac Machine now `perm_grant` and `perm_revoke`
 
 The permission management API has been renamed to better reflect its purpose and functionality.
 

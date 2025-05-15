@@ -1,4 +1,4 @@
-from jaclang import JacMachine as _
+from jaclang import JacMachineInterface as _
 
 
 class Point(_.Obj):

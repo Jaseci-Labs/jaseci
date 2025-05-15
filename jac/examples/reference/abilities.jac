@@ -19,7 +19,7 @@ obj Substractor(Calculator) {
     }
 }
 
-:obj:Calculator:can:add
+impl Calculator.add
 (number: float, *a: tuple) -> float {
     return (number * sum(a));
 }

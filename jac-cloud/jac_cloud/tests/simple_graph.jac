@@ -473,11 +473,11 @@ walker different_return {
     }
 }
 
-:walker:detach_nested_node:can:enter_root {
+impl detach_nested_node.enter_root {
     return here del--> [-->(`?Nested)];
 }
 
-:walker:visit_nested_node:can:enter_root {
+impl visit_nested_node.enter_root {
     nesteds = [-->(`?Nested)];
     if nesteds {
         return [-->(`?Nested)][0];
@@ -486,7 +486,7 @@ walker different_return {
     }
 }
 
-:walker:visit_nested_node:can:enter_nested {
+impl visit_nested_node.enter_nested {
     return here;
 }
 
@@ -1087,6 +1087,25 @@ walker walker_cron {
             "save": True,
             "second": "*",
         };
+    }
+}
+
+# ------------------------------------------------------------- #
+#################################################################
+
+#################################################################
+#                          ASYNC WALKER                         #
+# ------------------------------------------------------------- #
+
+async walker async_walker {
+    has arg1: int;
+    has arg2: str;
+    has kwarg1: int = 3;
+    has kwarg2: str = "4";
+    has done: bool = False;
+
+    can enter with `root entry {
+        self.done = True;
     }
 }
 

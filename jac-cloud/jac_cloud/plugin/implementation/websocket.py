@@ -15,7 +15,7 @@ from broadcaster import Broadcast
 
 from fastapi import APIRouter, WebSocket
 
-from jaclang.runtimelib.machine import JacMachine as Jac
+from jaclang.runtimelib.machine import JacMachineInterface as Jac
 
 from orjson import dumps, loads
 

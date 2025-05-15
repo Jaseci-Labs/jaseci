@@ -1,4 +1,4 @@
-import from jaclang.runtimelib.machine {JacMachine as Jac}
+import from jaclang.runtimelib.machine {JacMachineInterface as Jac}
 
 node A {
     has id: int;

@@ -19,7 +19,6 @@ modules are available for subsequent passes like symbol table building and type 
 
 import ast as py_ast
 import os
-import pathlib
 from typing import Optional
 
 
@@ -34,14 +33,26 @@ logger = logging.getLogger(__name__)
 
 # TODO: This pass finds imports dependencies, parses them, and adds them to
 # JacProgram's table, then table calls again if needed, should rename
-class JacImportPass(Transform[uni.Module, uni.Module]):
+class JacImportDepsPass(Transform[uni.Module, uni.Module]):
     """Jac statically imports Jac modules."""
+
+    def pre_transform(self) -> None:
+        """Initialize the JacImportPass."""
+        super().pre_transform()
+        self.last_imported: list[uni.Module] = []
 
     def transform(self, ir_in: uni.Module) -> uni.Module:
         """Run Importer."""
-        all_imports = UniPass.get_all_sub_nodes(ir_in, uni.ModulePath)
-        for i in all_imports:
-            self.process_import(i)
+        # Add the current module to last_imported to start the import process
+        self.last_imported.append(ir_in)
+
+        # Process imports until no more imported modules to process
+        while self.last_imported:
+            current_module = self.last_imported.pop(0)
+            all_imports = UniPass.get_all_sub_nodes(current_module, uni.ModulePath)
+            for i in all_imports:
+                self.process_import(i)
+
         return ir_in
 
     def process_import(self, i: uni.ModulePath) -> None:
@@ -82,11 +93,10 @@ class JacImportPass(Transform[uni.Module, uni.Module]):
                 return
             self.load_mod(self.prog.compile(file_path=target, mode=CMode.PARSE))
 
-    def load_mod(self, mod: uni.Module | None) -> None:
+    def load_mod(self, mod: uni.Module) -> None:
         """Attach a module to a node."""
-        if mod and mod.loc.mod_path not in self.prog.mod.hub:
-            self.prog.mod.hub[mod.loc.mod_path] = mod
-            self.prog.last_imported.append(mod)
+        self.prog.mod.hub[mod.loc.mod_path] = mod
+        self.last_imported.append(mod)
 
     # TODO: Refactor this to a function for impl and function for test
 
@@ -115,14 +125,29 @@ class JacImportPass(Transform[uni.Module, uni.Module]):
             )
 
 
-class PyImportPass(JacImportPass):
+class PyImportDepsPass(JacImportDepsPass):
     """Jac statically imports Python modules."""
+
+    def pre_transform(self) -> None:
+        """Initialize the PyImportPass."""
+        self.import_from_build_list: list[tuple[uni.Import, uni.Module]] = []
 
     def transform(self, ir_in: uni.Module) -> uni.Module:
         """Run Importer."""
         self.__load_builtins()
-        self.import_from_build_list: list[tuple[uni.Import, uni.Module]] = []
-        return super().transform(ir_in)
+        self.import_from_build_list = []
+
+        # Add all modules from the program hub to last_imported to process their imports
+        self.last_imported = list(self.prog.mod.hub.values())
+
+        # Process imports until no more imported modules to process
+        while self.last_imported:
+            current_module = self.last_imported.pop(0)
+            all_imports = UniPass.get_all_sub_nodes(current_module, uni.ModulePath)
+            for i in all_imports:
+                self.process_import(i)
+
+        return ir_in
 
     def process_import(self, i: uni.ModulePath) -> None:
         """Process an import."""
@@ -254,8 +279,8 @@ class PyImportPass(JacImportPass):
                     # (thakee): This needs to be re-done after implementing path handling properly.
                     mod_name = mod.loc.mod_path.split(os.path.sep)[-2]
                     mod.name = mod_name
-                    mod.nix_name = mod_name
-                mod.py_info.is_raised_from_py = True
+                    mod.scope_name = mod_name
+                mod.is_raised_from_py = True
                 return mod
             else:
                 raise self.ice(f"\tFailed to import python module {mod_path}")
@@ -265,29 +290,48 @@ class PyImportPass(JacImportPass):
             raise e
 
     def __load_builtins(self) -> None:
-        """Pyraise builtins to help with builtins auto complete."""
+        """Load Python builtins using introspection."""
+        import builtins
+        import inspect
         from jaclang.compiler.passes.main import PyastBuildPass
 
-        file_to_raise = str(
-            pathlib.Path(os.path.dirname(__file__)).parent.parent.parent
-            / "vendor"
-            / "mypy"
-            / "typeshed"
-            / "stdlib"
-            / "builtins.pyi"
-        )
-        with open(file_to_raise, "r", encoding="utf-8") as f:
-            file_source = f.read()
-            mod = PyastBuildPass(
-                ir_in=uni.PythonModuleAst(
-                    py_ast.parse(file_source),
-                    orig_src=uni.Source(file_source, file_to_raise),
-                ),
-                prog=self.prog,
-            ).ir_out
-            SymTabBuildPass(ir_in=mod, prog=self.prog)
-            self.prog.mod.hub[file_to_raise] = mod
-            mod.py_info.is_raised_from_py = True
+        # Python constants that cannot be assigned to
+        constants = {"True", "False", "None", "NotImplemented", "Ellipsis", "..."}
+
+        # Create a synthetic source with all builtins
+        builtin_items = []
+        for name in dir(builtins):
+            if name in constants:
+                # Skip constants as they're built into Python
+                continue
+
+            if not name.startswith("_") or name in ("__import__", "__build_class__"):
+                obj = getattr(builtins, name)
+                # Generate appropriate stub definitions based on obj type
+                if inspect.isclass(obj):
+                    builtin_items.append(f"class {name}: ...")
+                elif inspect.isfunction(obj) or inspect.isbuiltin(obj):
+                    # Try to get signature safely, use generic signature if it fails
+                    try:
+                        sig = inspect.signature(obj) if callable(obj) else "()"
+                        builtin_items.append(f"def {name}{sig}: ...")
+                    except (ValueError, TypeError):
+                        builtin_items.append(f"def {name}(*args, **kwargs): ...")
+                else:
+                    # For variables that are not constants
+                    builtin_items.append(f"{name} = None")
+
+        file_source = "\n".join(builtin_items)
+        mod = PyastBuildPass(
+            ir_in=uni.PythonModuleAst(
+                py_ast.parse(file_source),
+                orig_src=uni.Source(file_source, "builtins"),
+            ),
+            prog=self.prog,
+        ).ir_out
+        SymTabBuildPass(ir_in=mod, prog=self.prog)
+        self.prog.mod.hub["builtins"] = mod
+        mod.is_raised_from_py = True
 
     def annex_impl(self, node: uni.Module) -> None:
         """Annex impl and test modules."""

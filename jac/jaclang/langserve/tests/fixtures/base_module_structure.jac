@@ -34,7 +34,7 @@ obj Colour1 {
     def get_color1 -> Colorenum;
 }
 
-:obj:Colour1:can:get_color1 -> Colorenum {
+impl Colour1.get_color1 -> Colorenum {
 
     return self.color1;
 }

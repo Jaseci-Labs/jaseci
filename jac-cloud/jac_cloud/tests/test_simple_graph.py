@@ -9,6 +9,9 @@ from bson import ObjectId
 
 from httpx import get, post
 
+from pymongo.collection import Collection as PCollection
+from pymongo.mongo_client import MongoClient
+
 from yaml import safe_load
 
 from .test_utils import JacCloudTest
@@ -18,63 +21,32 @@ from ..jaseci.datasources import Collection
 class SimpleGraphTest(JacCloudTest):
     """JacLang Jaseci Feature Tests."""
 
-    # Class variables to store shared state
-    _shared_state = None
+    directory: Path
+    client: MongoClient
+    q_node: PCollection
+    q_edge: PCollection
+    q_walker: PCollection
 
-    def setUp(self) -> None:
+    @classmethod
+    def setUpClass(cls) -> None:
         """Set up once before all tests."""
-        # If this is the first test, initialize the shared state
-        if SimpleGraphTest._shared_state is None:
-            # Initialize the test
-            self.directory = Path(__file__).parent
-            self.run_server(
-                f"{self.directory}/simple_graph.jac",
-                envs={"SHOW_ENDPOINT_RETURNS": "true"},
-            )
+        cls.directory = Path(__file__).parent
+        cls.run_server(
+            f"{cls.directory}/simple_graph.jac",
+            envs={"SHOW_ENDPOINT_RETURNS": "true"},
+        )
 
-            Collection.__client__ = None
-            Collection.__database__ = None
-            self.client = Collection.get_client()
-            self.q_node = Collection.get_collection("node")
-            self.q_edge = Collection.get_collection("edge")
-            self.q_walker = Collection.get_collection("walker")
-
-            # Store all instance variables in shared state
-            SimpleGraphTest._shared_state = {
-                "directory": self.directory,
-                "host": self.host,
-                "database": self.database,
-                "users": self.users,
-                "client": self.client,
-                "q_node": self.q_node,
-                "q_edge": self.q_edge,
-                "q_walker": self.q_walker,
-                "root_id_prefix": self.root_id_prefix,
-                "server": self.server,
-            }
-        else:
-            # Copy shared state to this instance
-            for key, value in SimpleGraphTest._shared_state.items():
-                setattr(self, key, value)
-
-    def tearDown(self) -> None:
-        """Tear down after the last test."""
-        # Only run teardown after the last test
-        if (
-            self._testMethodName == "test_17_task_creation_and_scheduled_walker"
-            and SimpleGraphTest._shared_state is not None
-        ):
-            self.client.drop_database(self.database)
-            self.stop_server()
-            SimpleGraphTest._shared_state = None
+        Collection.__client__ = None
+        Collection.__database__ = None
+        cls.client = Collection.get_client()
+        cls.q_node = Collection.get_collection("node")
+        cls.q_edge = Collection.get_collection("edge")
+        cls.q_walker = Collection.get_collection("walker")
 
     @classmethod
     def tearDownClass(cls) -> None:
-        """Tear down after all tests."""
-        if cls._shared_state is not None:
-            cls.client.drop_database(cls.database)
-            cls.stop_server()
-            cls._shared_state = None
+        """Tear down after the last test."""
+        cls.client.drop_database(cls.database)
 
     def trigger_openapi_specs_test(self) -> None:
         """Test OpenAPI Specs."""
@@ -993,6 +965,7 @@ class SimpleGraphTest(JacCloudTest):
                         },
                         "schedule": {
                             "status": "COMPLETED",
+                            "root_id": None,
                             "node_id": None,
                             "execute_date": None,
                             "executed_date": None,
@@ -1021,6 +994,7 @@ class SimpleGraphTest(JacCloudTest):
                     "architype": {"arg1": 1, "arg2": "2", "kwarg1": 30, "kwarg2": "40"},
                     "schedule": {
                         "status": "COMPLETED",
+                        "root_id": None,
                         "node_id": None,
                         "execute_date": None,
                         "executed_date": None,
@@ -1033,6 +1007,59 @@ class SimpleGraphTest(JacCloudTest):
                 },
                 walker,
             )
+
+    def trigger_async_walker_test(self) -> None:
+        """Test async walker api call."""
+        res = self.post_api(
+            "async_walker",
+            json={
+                "arg1": 0,
+                "arg2": "string",
+                "kwarg1": 3,
+                "kwarg2": "4",
+                "done": False,
+            },
+        )
+
+        self.assertTrue(res["walker_id"].startswith("w:async_walker:"))
+        walker_id = res["walker_id"].removeprefix("w:async_walker:")
+
+        for _i in range(3):
+            sleep(0.5)
+            walker = self.q_walker.find_one(
+                {"name": "async_walker"}, sort=[("_id", -1)]
+            )
+            if walker:
+                break
+        self.assertIsNotNone(walker)
+        self.assertEqual(
+            walker,
+            {
+                "_id": ObjectId(walker_id),
+                "name": "async_walker",
+                "root": ObjectId(self.users[0]["user"]["root_id"]),
+                "access": {"all": "NO_ACCESS", "roots": {"anchors": {}}},
+                "architype": {
+                    "arg1": 0,
+                    "arg2": "string",
+                    "kwarg1": 3,
+                    "kwarg2": "4",
+                    "done": True,
+                },
+                "schedule": {
+                    "status": "COMPLETED",
+                    "node_id": None,
+                    "root_id": None,
+                    "execute_date": None,
+                    "executed_date": None,
+                    "http_status": 200,
+                    "returns": [None],
+                    "reports": None,
+                    "custom": None,
+                    "error": None,
+                },
+            },
+        )
 
     # Individual test methods for each feature
 
@@ -1160,3 +1187,7 @@ class SimpleGraphTest(JacCloudTest):
     def test_17_task_creation_and_scheduled_walker(self) -> None:
         """Test task creation and scheduled walker."""
         self.trigger_task_creation_and_scheduled_walker()
+
+    def test_18_async_walker(self) -> None:
+        """Test async walker api call."""
+        self.trigger_async_walker_test()

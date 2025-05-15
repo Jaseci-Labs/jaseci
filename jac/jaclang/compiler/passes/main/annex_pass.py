@@ -65,7 +65,7 @@ class JacAnnexPass(Transform[uni.Module, uni.Module]):
                 or os.path.dirname(path) == self.impl_folder
             ):
                 mod = jac_program.compile(
-                    file_path=path, full_compile=False, mode=CompilerMode.NO_CGEN
+                    file_path=path, mode=CompilerMode.NO_CGEN_SINGLE
                 )
                 if mod:
                     node.impl_mod.append(mod)
@@ -79,7 +79,7 @@ class JacAnnexPass(Transform[uni.Module, uni.Module]):
                 )
             ):
                 mod = jac_program.compile(
-                    file_path=path, full_compile=False, mode=CompilerMode.NO_CGEN
+                    file_path=path, mode=CompilerMode.NO_CGEN_SINGLE
                 )
                 if mod:
                     node.test_mod.append(mod)

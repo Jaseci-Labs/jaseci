@@ -29,7 +29,7 @@ setup(
         "requests~=2.32.3",
         "python-dotenv~=1.0.1",
         "numpy~=2.0.1",
-        "jaclang~=0.7.27",
+        "jaclang",
     ],
     entry_points={
         "jac": [

@@ -1,11 +1,16 @@
 """Jac Language Features."""
 
+from concurrent.futures import Future
 from contextlib import suppress
 from typing import Callable, Type
 
 from jaclang.compiler.constant import EdgeDir
 from jaclang.runtimelib.architype import Architype
-from jaclang.runtimelib.machine import JacMachine as Jac, JacMachineImpl, hookimpl
+from jaclang.runtimelib.machine import (
+    JacMachineImpl,
+    JacMachineInterface as Jac,
+    hookimpl,
+)
 from jaclang.runtimelib.utils import all_issubclass
 
 from ..core.architype import (
@@ -24,8 +29,8 @@ from ..core.architype import (
     WalkerAnchor,
     WalkerArchitype,
 )
-from ..core.context import ExecutionContext, JaseciContext
-from ..jaseci import FastAPI
+from ..core.context import JacMachine, JaseciContext
+from ..jaseci.main import FastAPI
 
 
 class JacAccessValidationPlugin:
@@ -123,7 +128,7 @@ class JacAccessValidationPlugin:
 
         jctx = JaseciContext.get()
 
-        jroot = jctx.root
+        jroot = jctx.root_state
 
         # if current root is system_root
         # if current root id is equal to target anchor's root id
@@ -230,7 +235,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
-    def get_context() -> ExecutionContext:
+    def get_context() -> JacMachine:
         """Get current execution context."""
         if not FastAPI.is_enabled():
             return JacMachineImpl.get_context()
@@ -245,7 +250,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
             return JacMachineImpl.reset_graph(root=root)  # type: ignore[arg-type]
 
         ctx = JaseciContext.get()
-        ranchor = root.__jac__ if root else ctx.root
+        ranchor = root.__jac__ if root else ctx.root_state
 
         deleted_count = 0  # noqa: SIM113
 
@@ -349,32 +354,12 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
-    def spawn(op1: Architype, op2: Architype) -> WalkerArchitype:
+    def spawn_call(walker: WalkerAnchor, node: NodeAnchor) -> WalkerArchitype:
         """Invoke data spatial call."""
         if not FastAPI.is_enabled():
-            return JacMachineImpl.spawn(op1=op1, op2=op2)  # type:ignore[return-value]
+            return JacMachineImpl.spawn_call(walker=walker, node=node)
 
-        if isinstance(op1, WalkerArchitype):
-            warch = op1
-            walker = op1.__jac__
-            if isinstance(op2, NodeArchitype):
-                node = op2.__jac__
-            elif isinstance(op2, EdgeArchitype):
-                node = op2.__jac__.target
-            else:
-                raise TypeError("Invalid target object")
-        elif isinstance(op2, WalkerArchitype):
-            warch = op2
-            walker = op2.__jac__
-            if isinstance(op1, NodeArchitype):
-                node = op1.__jac__
-            elif isinstance(op1, EdgeArchitype):
-                node = op1.__jac__.target
-            else:
-                raise TypeError("Invalid target object")
-        else:
-            raise TypeError("Invalid walker object")
-
+        warch = walker.architype
         walker.path = []
         walker.next = [node]
         walker.returns = []
@@ -458,12 +443,40 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
+    def spawn(op1: Architype, op2: Architype) -> WalkerArchitype | Future:
+        """Jac's spawn operator feature."""
+        if not FastAPI.is_enabled():
+            return JacMachineImpl.spawn(op1=op1, op2=op2)
+
+        if isinstance(op1, WalkerArchitype):
+            walker = op1.__jac__
+            if isinstance(op2, NodeArchitype):
+                node = op2.__jac__
+            elif isinstance(op2, EdgeArchitype):
+                node = op2.__jac__.target
+            else:
+                raise TypeError("Invalid target object")
+        elif isinstance(op2, WalkerArchitype):
+            walker = op2.__jac__
+            if isinstance(op1, NodeArchitype):
+                node = op1.__jac__
+            elif isinstance(op1, EdgeArchitype):
+                node = op1.__jac__.target
+            else:
+                raise TypeError("Invalid target object")
+        else:
+            raise TypeError("Invalid walker object")
+
+        return Jac.spawn_call(walker=walker, node=node)  # type: ignore[return-value]
+
+    @staticmethod
+    @hookimpl
     def destroy(
         objs: Architype | Anchor | BaseAnchor | list[Architype | Anchor | BaseAnchor],
     ) -> None:
         """Destroy object."""
         if not FastAPI.is_enabled():
-            return JacMachineImpl.destroy(objs=objs)  # type:ignore[arg-type]
+            return JacMachineImpl.destroy(objs=objs)
         obj_list = objs if isinstance(objs, list) else [objs]
         for obj in obj_list:
             if not isinstance(obj, (Architype, Anchor)):

@@ -45,7 +45,7 @@ from jaclang.runtimelib.architype import (
     WalkerAnchor as _WalkerAnchor,
     WalkerArchitype as _WalkerArchitype,
 )
-from jaclang.runtimelib.machine import JacMachine as Jac
+from jaclang.runtimelib.machine import JacMachineInterface as Jac
 from jaclang.runtimelib.utils import is_instance
 
 from orjson import dumps
@@ -182,6 +182,7 @@ class Schedule:
 
     status: ScheduleStatus = ScheduleStatus.PENDING
     node_id: str | None = None
+    root_id: str | None = None
     execute_date: datetime | None = None
     executed_date: datetime | None = None
     http_status: int | None = None

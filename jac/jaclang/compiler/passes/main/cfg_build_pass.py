@@ -233,6 +233,8 @@ class CoalesceBBPass(UniPass):
                 elif isinstance(bbs, uni.Ability):
                     cfg[key]["bb_stmts"][i] = (
                         "can " + bbs.name_ref.unparse() + bbs.signature.unparse()
+                        if bbs.signature
+                        else ""
                     )
                 elif isinstance(bbs, (uni.InForStmt, uni.IterForStmt)):
                     cfg[key]["bb_stmts"][i] = (
