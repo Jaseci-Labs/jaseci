@@ -2859,18 +2859,16 @@ class ConcurrentExpr(Expr):
         self.tok = tok
         self.target = target
 
-    def normalize(self, deep: bool = True) -> bool:
+    def normalize(self, deep: bool = False) -> bool:
         res = True
         if deep:
             res = self.target.normalize(deep)
             res = res and self.target.normalize(deep) if self.target else res
         new_kid: list[UniNode] = []
-        if self.tok:
-            match self.tok:
-                case Tok.KW_FLOW:
-                    new_kid.append(self.gen_token(Tok.KW_FLOW))
-                case Tok.KW_WAIT:
-                    new_kid.append(self.gen_token(Tok.KW_WAIT))
+        if isinstance(self.tok, Token) and self.tok.value == "flow":
+            new_kid.append(self.gen_token(Tok.KW_FLOW))
+        elif isinstance(self.tok, Token) and self.tok.value == "wait":
+            new_kid.append(self.gen_token(Tok.KW_WAIT))
         new_kid.append(self.target)
         self.set_kids(nodes=new_kid)
         return res

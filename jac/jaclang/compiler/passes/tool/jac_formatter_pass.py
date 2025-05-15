@@ -913,9 +913,12 @@ class JacFormatPass(UniPass):
             node.kid[-1], (uni.Semi, uni.CommentToken)
         ):  # and not node.gen.jac.endswith("\n"):
             self.emit_ln(node, "")
-    
+
     def exit_concurrent_expr(self, node: uni.ConcurrentExpr) -> None:
-        self.emit(node, f"{node.tok.gen.jac} {node.target.gen.jac} ")
+        if isinstance(node.tok, uni.Token) and node.tok.value == "flow":
+            self.emit(node, f"flow {node.target.gen.jac} ")
+        elif isinstance(node.tok, uni.Token) and node.tok.value == "wait":
+            self.emit(node, f"wait {node.target.gen.jac} ")
 
     def exit_finally_stmt(self, node: uni.FinallyStmt) -> None:
         self.emit(node, " finally")
