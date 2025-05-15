@@ -37,6 +37,10 @@ class DocIRGenPass(UniPass):
         """Create a hard line break."""
         return doc.Line(hard=True)
 
+    def tight_line(self) -> doc.Line:
+        """Create a tight line break."""
+        return doc.Line(tight=True)
+
     def literal_line(self) -> doc.Line:
         """Create a literal line break."""
         return doc.Line(literal=True)
@@ -358,14 +362,6 @@ class DocIRGenPass(UniPass):
                 else:  # Empty body {}
                     parts.append(self.line())  # allow break for empty body like { \n }
                 parts.append(self.text("}"))
-                if (
-                    not node.is_abstract
-                ):  # Abstract abilities are `def name() abstract;` vs `def name() {};`
-                    parts.append(
-                        self.text(";")
-                    )  # Semicolon for non-abstract block abilities like `def foo() {};`
-            # ImplDef case for body is not standard for Ability from grammar, usually for Arch/Enum
-
         elif node.is_abstract:  # abstract ability: def name() abstract;
             parts.append(self.text(" abstract;"))
         else:  # No body and not abstract, e.g. forward decl for event: can event_name with func_sig;
@@ -394,14 +390,13 @@ class DocIRGenPass(UniPass):
                     self.indent(
                         self.concat(
                             [
-                                self.line(),  # soft line, becomes space or newline
+                                self.tight_line(),  # soft line, becomes space or newline
                                 params_doc,
                             ]
                         )
                     )
                 )
-                parts.append(self.line())  # soft line before closing ')'
-
+                parts.append(self.tight_line())  # soft line before closing ')'
         parts.append(self.text(")"))
 
         # Return type
@@ -725,9 +720,11 @@ class DocIRGenPass(UniPass):
 
             if not is_empty_concat:
                 parts.append(
-                    self.indent(self.concat([self.line(), params_doc]))  # soft line
+                    self.indent(
+                        self.concat([self.tight_line(), params_doc])
+                    )  # soft line
                 )
-                parts.append(self.line())  # soft line before closing ')'
+                parts.append(self.tight_line())  # soft line before closing ')'
 
         parts.append(self.text(")"))
 
@@ -1163,24 +1160,19 @@ class DocIRGenPass(UniPass):
 
         if node.values and node.values.items and node.values.gen.doc_ir:
             processed_values_doc = node.values.gen.doc_ir
-            # Check if it's not an empty concat (which is what exit_sub_node_list returns for no items)
             if not (
                 isinstance(processed_values_doc, doc.Concat)
                 and not processed_values_doc.parts
             ):
                 parts.append(
-                    self.indent(self.concat([self.line(), processed_values_doc]))
+                    self.indent(self.concat([self.tight_line(), processed_values_doc]))
                 )
 
                 # Handle trailing comma for single-element tuple
                 if len(node.values.items) == 1:
-                    # Ensure `processed_values_doc` itself doesn't end with a line,
-                    # before appending comma, to avoid double line breaks.
-                    # This might require `processed_values_doc` to be just `item_doc`.
-                    # The current `exit_sub_node_list` for a single item returns `item_doc`.
                     parts.append(self.text(","))
 
-                parts.append(self.line())  # soft line before closing ')'
+                parts.append(self.tight_line())  # soft line before closing ')'
 
         parts.append(self.text(")"))
         node.gen.doc_ir = self.group(self.concat(parts))
@@ -1215,23 +1207,13 @@ class DocIRGenPass(UniPass):
                     self.indent(self.concat([self.line(), values_doc]))  # soft line
                 )
                 parts.append(self.line())  # soft line before closing '}'
-        # Note: Jac { } is an empty dictionary. An empty set is `set()`.
-        # If node.values is None or empty, this currently generates {}.
-        # If the grammar guarantees SetVal always has items or if Jac syntax for empty set is `set()`,
-        # this might need adjustment for empty cases to output `self.text("set()")`.
-        # For now, following the structure of {} for potentially empty SetVal from parser.
 
         parts.append(self.text("}"))
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_special_var_ref(self, node: uni.SpecialVarRef) -> None:
         """Generate DocIR for special variable references."""
-        parts: list[doc.DocType] = []
-
-        if node.orig and node.orig.gen.doc_ir:
-            parts.append(node.orig.gen.doc_ir)
-
-        node.gen.doc_ir = self.group(self.concat(parts))
+        node.gen.doc_ir = self.text(node.value)
 
     def exit_bool(self, node: uni.Bool) -> None:
         """Generate DocIR for boolean values."""
@@ -2233,7 +2215,9 @@ class DocIRGenPass(UniPass):
             if not (
                 isinstance(arg_patterns_doc, doc.Concat) and not arg_patterns_doc.parts
             ):
-                parts.append(self.indent(self.concat([self.line(), arg_patterns_doc])))
+                parts.append(
+                    self.indent(self.concat([self.tight_line(), arg_patterns_doc]))
+                )
                 arg_docs_present = True
 
         # Keyword patterns (SubNodeList[MatchKVPair])
@@ -2258,14 +2242,14 @@ class DocIRGenPass(UniPass):
                 # For now, assume SubNodeList's output is already suitable for direct inclusion within the indent block.
                 if not arg_docs_present:  # Need to start indent if args were not there
                     parts.append(
-                        self.indent(self.concat([self.line(), kw_patterns_doc]))
+                        self.indent(self.concat([self.tight_line(), kw_patterns_doc]))
                     )
                 else:  # Already in an indent potentially, just append
                     parts.append(kw_patterns_doc)
                 arg_docs_present = True  # update flag as we now have content
 
         if arg_docs_present:
-            parts.append(self.line())  # soft line before closing ')'
+            parts.append(self.tight_line())  # soft line before closing ')'
 
         parts.append(self.text(")"))
         node.gen.doc_ir = self.group(self.concat(parts))
@@ -2389,11 +2373,7 @@ class DocIRGenPass(UniPass):
         item_docs: list[doc.DocType] = []
         if node.items:
             for item in node.items:
-                if item.gen.doc_ir:
-                    # gen.doc_ir can be a list of DocType or a single DocType
-                    doc_item = item.gen.doc_ir
-                    if doc_item:  # Ensure it's not None
-                        item_docs.append(doc_item)
+                item_docs.append(item.gen.doc_ir)
 
         if not item_docs:
             node.gen.doc_ir = self.concat([])  # Empty sequence
@@ -2401,25 +2381,17 @@ class DocIRGenPass(UniPass):
 
         separator: doc.DocType
         if node.delim == uni.Tok.COMMA:
-            # For comma-separated lists, use ", " in flat mode, and ",\n" in break mode.
-            # self.line() becomes a space if flat, or nothing if break_contents is chosen.
-            # self.if_break is better handled by the parent.
-            # This join will produce "item, line item, line item"
             separator = self.concat([self.text(","), self.line()])
         elif node.delim == uni.Tok.DOT:
-            separator = self.text(".")
+            separator = self.concat([self.text("."), self.line()])
         elif node.delim is None:
-            # If no delimiter, default to a breakable line.
-            # This is suitable for sequences of items that might go on separate lines.
-            # For lists of statements, the parent usually iterates and adds hard_lines.
-            # This default is for generic SubNodeLists where items follow each other.
             separator = self.line()
         else:
             # Try to use the delimiter's token value if it's a known token
             try:
                 # Assuming DELIM_MAP or node.delim.value gives the string for the token
                 delim_text = uni.DELIM_MAP.get(node.delim, node.delim.value)
-                separator = self.text(delim_text)
+                separator = self.concat([self.text(delim_text), self.line()])
             except AttributeError:
                 # Fallback if delim is not a simple token with a value
                 separator = self.line()  # Default to a space or break
@@ -2542,6 +2514,8 @@ class DocIRGenPass(UniPass):
                 return "\n" + " " * (indent_level * self.indent_size)
             elif doc_node.literal:  # literal soft line
                 return "\n"
+            elif doc_node.tight:
+                return ""
             else:  # soft line, not broken
                 return " "
 

@@ -44,12 +44,13 @@ class Text(Doc):
 class Line(Doc):
     """Represents a line break that can be preserved or flattened."""
 
-    def __init__(self, hard: bool = False, literal: bool = False) -> None:
+    def __init__(
+        self, hard: bool = False, literal: bool = False, tight: bool = False
+    ) -> None:
         """Initialize a Line object."""
         self.hard: bool = hard  # If True, always break
-        self.literal: bool = (
-            literal  # If True, includes the literal newline in flattened output
-        )
+        self.literal: bool = literal  # includes the literal newline in flattened output
+        self.tight: bool = tight  # If True, no space is added
 
     def __str__(self) -> str:
         """Return a string representation of the Line object."""
