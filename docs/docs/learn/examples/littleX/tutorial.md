@@ -128,6 +128,10 @@ Now, let's create the required nodes for LittleX.
                   report {"user": self, "followers": follwers};
             }
             ```
+                  * `follwers = [...`] creates a list of dictionaries containing `id` and `username` for each connected `Profile` node (followers).
+                  * `jid(i)` retrieves the unique Jac ID of each follower node.
+                  * `[self-->(?Profile)]`collects all Profile nodes connected via outgoing edges from self.
+                  * `report {"user": self, "followers": follwers}` returns the current `Profile` node and its list of followers in a structured format.
             * ###### **Follow Ability**
             ```jac
             :node:Profile:can:follow{
@@ -136,6 +140,9 @@ Now, let's create the required nodes for LittleX.
                   report self;
             }
             ```
+                  * `current_profile = [root-->(?Profile)]` retrieves all Profile nodes directly connected from the root node.
+                  * `current_profile[0] +:Follow():+> self` creates a `Follow` edge from the first profile node to self, establishing the follow relationship.
+                  * `report self` returns the followed `Profile` node as the response.
             * ###### **Unfollow Ability**
             ```jac
             :node:Profile:can:un_follow {
@@ -145,6 +152,10 @@ Now, let's create the required nodes for LittleX.
                   report self;
             }
             ```
+                  * `current_profile = [root-->(?Profile)]` retrieves all Profile nodes connected from the root node.
+                  * `follow_edge = :e:[ current_profile[0] -:Follow:-> self]` finds the existing `Follow` edge from the current user to `self`.
+                  * `Jac.destroy(follow_edge[0])` removes the first matched Follow edge, effectively unfollowing the user.
+                  * `report self` returns the unfollowed `Profile` node as the response.
 
       - #### **Implement Tweet Node**
         * Represents an individual tweet.
@@ -179,6 +190,8 @@ Now, let's create the required nodes for LittleX.
                   report self;
             }
             ```
+                  * `self.content = here.updated_content` updates the `content` attribute of the `Tweet` node with the new content provided by the walker (here).
+                  * `report self` returns the updated `Tweet` node as the response.
 
             * ###### **Delete Ability**
             ```jac
@@ -186,6 +199,7 @@ Now, let's create the required nodes for LittleX.
                   Jac.destroy(self);
             }
             ```
+                  * `Jac.destroy(self)` deletes the current `Tweet` node (`self`) from the graph.
 
             * ###### **Like Tweet Ability**
             ```jac
@@ -195,6 +209,9 @@ Now, let's create the required nodes for LittleX.
                   report self;
             }
             ```
+                  * `current_profile = [root-->(?Profile)]` fetches the current user's Profile node from the root.
+                  * `self +:Like():+> current_profile[0]` creates a `Like` edge from the `Tweet` node (`self`) to the current user's `Profile` node.
+                  * `report self` returns the `Tweet` node after the like operation.
 
             * ###### **Remove Like Tweet Ability**
             ```jac
@@ -205,6 +222,10 @@ Now, let's create the required nodes for LittleX.
                   report self;
             }
             ```
+                  * `current_profile = [root-->(?Profile)]` gets the current user's Profile node.
+                  * `like_edge = :e:[ self -:Like:-> current_profile[0]]` finds the `Like` edge from the `Tweet` node (`self`) to the current user's profile.
+                  * `Jac.destroy(like_edge[0])` deletes the found `Like` edge
+                  * `report self` returns the `Tweet` node after removing the like.
 
             * ###### **Comment Ability**
             ```jac
@@ -216,7 +237,15 @@ Now, let's create the required nodes for LittleX.
                   report comment_node[0];
             }
             ```
+                  * `current_profile = [root-->(?Profile)]` fetches the current user's Profile node.
 
+                  * `comment_node = current_profile[0] ++> Comment(content=here.content) `creates a `Comment` node with the given content, connected from the user's profile.
+
+                  * `Jac.unrestrict(comment_node[0], level="CONNECT")` grants connection permissions to the newly created `Comment` node.
+
+                  * `self ++> comment_node[0]` links the `Comment` node to the `Tweet` node (self).
+
+                  * `report comment_node[0]` returns the created `Comment` node as the response.
             * ###### **Get Tweet Information Method**
             ```jac
             :node:Tweet:can:get_info {
@@ -230,7 +259,12 @@ Now, let's create the required nodes for LittleX.
                   );
             }
             ```
-
+                  * `username=[self<-:Post:-][0].username` retrieves the username of the profile that posted the tweet.
+                  * `id=jid(self)` gets the unique `jid` of the tweet node.
+                  * `content=self.content` returns the content of the tweet.
+                  * `embedding=self.embedding` returns the embedding associated with the tweet (if any).
+                  * `likes=[i.username for i in [self-:Like:->]]` collects the usernames of profiles who liked the tweet.
+                  * `comments=[{"username": [i<--(?Profile)][0].username, "id": jid(i)`, `"content": i.content} for i in [self-->(?Comment)]]` collects comments on the tweet along with the commenter's username, comment ID, and content.
             * ###### **Get Tweet Ability**
             ```jac
             :node:Tweet:can:get {
@@ -239,6 +273,11 @@ Now, let's create the required nodes for LittleX.
                   here.results.append({"Tweet_Info": tweet_info, "similarity": similarity});
             }
             ```
+                  * `tweet_info = self.get_info()` retrieves detailed information of the tweet using the `get_info` ability.
+
+                  * `similarity = search_tweets(here.search_query, tweet_info.content)` computes the similarity between the tweet content and the provided search query.
+
+                  * `here.results.append({"Tweet_Info": tweet_info, "similarity": similarity})` appends the tweet info and its similarity score to the walker's results.
       - #### **Implement Comment Node**
         * Represents comments for the tweets.
         * Fields: content.
@@ -260,14 +299,15 @@ Now, let's create the required nodes for LittleX.
                   report self;
             }
             ```
-
+                  * `self.content = here.updated_content` updates the content of the `Comment` node with the value provided by the walker.
+                  * `report self`returns the updated `Comment` node as the response.
             * ###### **Delete Ability**
             ```jac
             :node:Comment:can:delete {
                   Jac.destroy(self);
             }
             ```
-
+                  * `Jac.destroy(self)` deletes the current `Comment` node from the graph.
 === "LittleX Architecture Upto Now"
     ```jac linenums="1"
     --8<-- "docs/learn/examples/littleX/src/LittleX_step2.jac"
