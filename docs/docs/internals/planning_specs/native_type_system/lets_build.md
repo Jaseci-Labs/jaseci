@@ -1,4 +1,4 @@
-# Python Type Checker Architecture: A Pyright-Inspired Approach
+# Jac Type Checker Architecture: A Pyright-Inspired Approach
 
 ## Table of Contents
 
@@ -11,9 +11,9 @@
   - [Type Relationships](#type-relationships)
   - [Type Narrowing](#type-narrowing)
 - [Flow and Integration](#flow-and-integration)
-  - [Type Checking Process](#type-checking-process)
-  - [Parser Integration](#parser-integration)
-  - [Performance Optimizations](#performance-optimizations)
+  - [Type Checking Process for Jac](#type-checking-process-for-jac)
+  - [Parser Integration for Jac](#parser-integration-for-jac)
+  - [Type Evaluator Implementation for Jac](#type-evaluator-implementation-for-jac)
 - [Advanced Features](#advanced-features)
   - [Protocol Support](#protocol-support)
   - [Type Guards](#type-guards)
@@ -27,14 +27,14 @@
 
 ## Introduction
 
-This document outlines the architecture and implementation details for a Python type checker that adopts Pyright's efficient approach to type checking, while being implemented in Python. Pyright, originally written in TypeScript, is known for its performance and scalability with large codebases. This architecture aims to bring those benefits to a pure Python implementation.
+This document outlines the architecture and implementation details for a Jac type checker that adopts Pyright's efficient approach to type checking, while being implemented in Python (as the Jac compiler itself is). Pyright, originally written in TypeScript, is known for its performance and scalability with large codebases. This architecture aims to bring those benefits to a Jac implementation.
 
 The key innovations of this approach include:
 
 1. An efficient type representation system with aggressive caching
-2. Sophisticated type narrowing based on control flow analysis
+2. Sophisticated type narrowing based on control flow analysis (adapted for Jac's control flow constructs)
 3. High-performance algorithms for type compatibility checking
-4. Memory-efficient data structures for representing the type system
+4. Memory-efficient data structures for representing the type system for Jac
 
 ## System Overview
 
@@ -55,71 +55,59 @@ graph TD
     L[Config Options] --> F
 ```
 
-The system follows a pipeline architecture where source code flows through various stages of analysis, with the type model serving as the foundation for all type-related operations.
+The system follows a pipeline architecture where Jac source code flows through various stages of analysis, with the type model serving as the foundation for all type-related operations.
 
 ## Project Structure
 
-The project is organized into the following directory structure:
+The type checker components will be integrated into the existing Jac compiler structure, primarily within the `jaclang/compiler/` directory. New modules will be added, and existing ones might be augmented. Here's a proposed structure for the type checking additions:
 
 ```
-python-typecheck/
-├── src/
+jaclang/
+├── compiler/
 │   ├── __init__.py
-│   ├── main.py                    # Entry point for the type checker
-│   ├── analyzer/                  # Core analysis components
+│   ├── jac.lark                 # Jac grammar
+│   ├── parser.py                # Existing parser
+│   ├── ...                      # Other existing compiler files
+│   ├── typemodel/               # NEW: Type system model (inspired by Pyright)
 │   │   ├── __init__.py
-│   │   ├── analyzer.py            # Main analyzer
-│   │   ├── binding.py             # Name binding
-│   │   ├── symbolTable.py         # Symbol table
-│   │   ├── typeEvaluator.py       # Type evaluation
-│   │   ├── typeGuard.py           # Type guard analysis
-│   │   └── typeNarrowing.py       # Type narrowing
-│   ├── core/                      # Core infrastructure
+│   │   ├── types.py             # Core type classes for Jac (ArchitypeType, InstanceType, CallableType, etc.)
+│   │   ├── type_factory.py      # Type creation factory
+│   │   ├── type_cache.py        # Type caching
+│   │   ├── type_relations.py    # Subtyping, assignability, etc.
+│   │   └── builtin_types.py     # Definitions for Jac's built-in types
+│   ├── passes/
 │   │   ├── __init__.py
-│   │   ├── configOptions.py       # Configuration
-│   │   ├── diagnostics.py         # Error reporting
-│   │   ├── fileSystem.py          # File system abstraction
-│   │   └── host.py                # Host environment interface
-│   ├── parser/                    # Parsing components
+│   │   ├── ...                  # Existing passes
+│   │   ├── type_check_pass.py   # NEW: Main pass for type checking
+│   │   ├── sym_tab_pass.py      # Possible existing or new pass for symbol table construction
+│   │   └── ...
+│   ├── analysis/                # NEW or Augmented: For deeper semantic analysis
 │   │   ├── __init__.py
-│   │   ├── parser.py              # Python parser
-│   │   ├── tokenizer.py           # Tokenizer
-│   │   └── astBuilder.py          # AST construction
-│   ├── typechecker/               # Type checking
-│   │   ├── __init__.py
-│   │   ├── checker.py             # Type checking logic
-│   │   ├── assignmentChecker.py   # Assignment validation
-│   │   ├── callChecker.py         # Function call checking
-│   │   ├── unionChecker.py        # Union type handling
-│   │   └── protocolChecker.py     # Protocol checking
-│   ├── typemodel/                 # Type system model
-│   │   ├── __init__.py
-│   │   ├── types.py               # Core type classes
-│   │   ├── typeFactory.py         # Type creation factory
-│   │   ├── typeCache.py           # Type caching
-│   │   ├── typeUnion.py           # Union type implementation
-│   │   ├── typeIntersection.py    # Intersection type
-│   │   ├── callable.py            # Callable type
-│   │   └── subtypeRelation.py     # Subtyping relationships
-│   └── commands/                  # Commands
+│   │   ├── symbol_table.py      # Symbol table (might exist or be enhanced)
+│   │   ├── type_evaluator.py    # Type evaluation for Jac expressions
+│   │   ├── type_narrower.py     # Type narrowing logic for Jac
+│   │   └── ...
+│   └── utils/                   # Utility functions
 │       ├── __init__.py
-│       ├── commandProcessor.py    # Command processing
-│       └── lspServer.py           # LSP implementation
-├── tests/                         # Test suite
+│       ├── diagnostics.py       # Error and warning reporting (might exist or be enhanced)
+│       └── ...
+└── ...
+tests/
+├── compiler/
 │   ├── __init__.py
-│   ├── test_typecheck.py
-│   ├── test_narrowing.py
-│   └── samples/                   # Test code samples
-└── scripts/                       # Utility scripts
-    ├── build.py
-    └── benchmark.py
+│   ├── test_type_checker.py   # NEW: Tests for the type checker
+│   ├── test_type_narrowing.py # NEW: Tests for type narrowing
+│   └── samples/               # Jac code samples for testing
+    └── ...
 ```
+
+This structure aims to integrate the type checker smoothly into the Jac compiler's pass-based architecture.
 
 ## Core Components
 
 ### Type Model
 
-The type model is the foundation of the entire type checker. It defines how types are represented, compared, and manipulated.
+The type model is the foundation of the entire type checker. It defines how Jac types are represented, compared, and manipulated.
 
 ```mermaid
 classDiagram
@@ -138,7 +126,7 @@ classDiagram
         +__str__() str
     }
 
-    class NoneType {
+    class NoneType { // Represents Jac's null
         +__str__() str
     }
 
@@ -146,29 +134,40 @@ classDiagram
         +__str__() str
     }
 
-    class ClassType {
+    class ArchitypeType { // Represents Jac architypes: object, node, edge, walker, class
+        +str name
+        +str module
+        +ArchitypeKind kind // object, node, edge, walker, class
+        +Dict members // For 'has' variables
+        +Dict abilities // For 'can' abilities/methods
+        +List bases // Inherited architypes
+        +List typeParameters // For potential future generic support
+        +__eq__(other) bool
+        +__hash__() int
+        +__str__() str
+    }
+
+    class ArchitypeInstanceType {
+        +ArchitypeType architypeType
+        +Dict typeArguments // For potential future generic support
+        +__eq__(other) bool
+        +__hash__() int
+        +__str__() str
+    }
+
+    class CallableType { // Represents Jac abilities and functions
+        +List parameters
+        +Type returnType
+        +bool is_ability // Differentiates from plain functions if needed
+        +__eq__(other) bool
+        +__hash__() int
+        +__str__() str
+    }
+
+    class EnumType { // Represents Jac enums
         +str name
         +str module
         +Dict members
-        +Dict methods
-        +List bases
-        +List typeParameters
-        +__eq__(other) bool
-        +__hash__() int
-        +__str__() str
-    }
-
-    class InstanceType {
-        +ClassType classType
-        +Dict typeArguments
-        +__eq__(other) bool
-        +__hash__() int
-        +__str__() str
-    }
-
-    class CallableType {
-        +List parameters
-        +Type returnType
         +__eq__(other) bool
         +__hash__() int
         +__str__() str
@@ -185,21 +184,45 @@ classDiagram
     Type <|-- AnyType
     Type <|-- NoneType
     Type <|-- NeverType
-    Type <|-- ClassType
-    Type <|-- InstanceType
+    Type <|-- ArchitypeType
+    Type <|-- ArchitypeInstanceType
     Type <|-- CallableType
+    Type <|-- EnumType
     Type <|-- UnionType
 ```
 
 #### Implementation of the Base Type Class
 
 ```python
+from enum import Enum, auto
+from typing import Dict, List, Optional, Set, Tuple # Assuming these are needed
+
+class TypeCategory(Enum):
+    UNKNOWN = auto()
+    ANY = auto()
+    NONE = auto() # For Jac's null
+    NEVER = auto()
+    ARCHITYPE = auto() # For Jac architypes
+    ARCHITYPE_INSTANCE = auto()
+    CALLABLE = auto() # For Jac abilities/functions
+    ENUM = auto()
+    UNION = auto()
+    # ... other categories as needed
+
+class TypeFlags(Enum): # Using Enum for flags for clarity, can be bitflags too
+    NONE = 0
+    # Example flags, to be defined based on Jac's needs
+    IS_ABSTRACT = auto()
+    IS_STATIC = auto()
+    IS_READONLY = auto()
+    # ... other flags
+
 class Type:
-    """Base class for all type objects."""
+    """Base class for all Jac type objects."""
 
     def __init__(self, category: TypeCategory):
         self.category = category
-        self.flags = TypeFlags.NONE
+        self.flags: Set[TypeFlags] = {TypeFlags.NONE} # Using a set for flags
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Type):
@@ -212,90 +235,114 @@ class Type:
 
 The `Type` class serves as the base for all type representations. It includes:
 
-- A `category` field that identifies the kind of type (class, instance, union, etc.)
-- A `flags` field for additional type properties
+- A `category` field that identifies the kind of type (architype, instance, union, enum, etc.)
+- A `flags` field for additional type properties (e.g., static, abstract - needs Jac-specific definition)
 - Equality and hash methods for efficient comparisons and storage in collections
 
-#### Implementation of Class and Instance Types
+#### Implementation of Architype and Instance Types
 
-Class and instance types are fundamental to object-oriented languages like Python:
+Architype and instance types are fundamental to Jac's object-oriented and agent-based features:
 
 ```python
-class ClassType(Type):
-    """Represents a class type."""
+class ArchitypeKind(Enum):
+    OBJECT = auto()
+    NODE = auto()
+    EDGE = auto()
+    WALKER = auto()
+    CLASS = auto() # Generic class-like architype
+    ENUM_CLASS = auto() # The class for an Enum
 
-    def __init__(self, name: str, module: Optional[str] = None):
-        super().__init__(TypeCategory.CLASS)
-        self.flags |= TypeFlags.CLASS
+class ArchitypeType(Type):
+    """Represents a Jac architype (object, node, edge, walker, class)."""
+
+    def __init__(self, name: str, kind: ArchitypeKind, module: Optional[str] = None):
+        super().__init__(TypeCategory.ARCHITYPE)
         self.name = name
+        self.kind = kind
         self.module = module
-        self.members: Dict[str, Type] = {}
-        self.methods: Dict[str, CallableType] = {}
-        self.bases: List[ClassType] = []
-        self.type_parameters: List[TypeVar] = []
+        self.members: Dict[str, Type] = {} # For 'has' variables
+        self.abilities: Dict[str, CallableType] = {} # For 'can' abilities/methods
+        self.bases: List[ArchitypeType] = []
+        self.type_parameters: List[Type] = [] # Placeholder for future generics
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, ClassType):
+        if not isinstance(other, ArchitypeType):
             return False
         return (
+            super().__eq__(other) and # Check base category
             self.name == other.name and
+            self.kind == other.kind and
             self.module == other.module
         )
 
     def __hash__(self) -> int:
-        return hash((self.category, self.name, self.module))
+        return hash((self.category, self.name, self.kind, self.module))
 
     def __str__(self) -> str:
+        prefix = self.kind.name.lower()
         if self.module:
-            return f"{self.module}.{self.name}"
-        return self.name
+            return f"{self.module}.{prefix}::{self.name}"
+        return f"{prefix}::{self.name}"
 
 
-class InstanceType(Type):
-    """Represents an instance of a class."""
+class ArchitypeInstanceType(Type):
+    """Represents an instance of a Jac architype."""
 
-    def __init__(self, class_type: ClassType):
-        super().__init__(TypeCategory.INSTANCE)
-        self.flags |= TypeFlags.INSTANCE
-        self.class_type = class_type
-        self.type_arguments: Dict[str, Type] = {}
+    def __init__(self, architype_type: ArchitypeType):
+        super().__init__(TypeCategory.ARCHITYPE_INSTANCE)
+        self.architype_type = architype_type
+        self.type_arguments: Dict[str, Type] = {} # Placeholder for future generics
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, InstanceType):
+        if not isinstance(other, ArchitypeInstanceType):
             return False
-        return self.class_type == other.class_type
+        return super().__eq__(other) and self.architype_type == other.architype_type # Compare architype_type for equality
 
     def __hash__(self) -> int:
-        return hash((self.category, self.class_type))
+        return hash((self.category, self.architype_type))
 
     def __str__(self) -> str:
         if not self.type_arguments:
-            return str(self.class_type)
+            return str(self.architype_type)
 
         args = ", ".join(str(arg) for arg in self.type_arguments.values())
-        return f"{self.class_type}[{args}]"
+        # Jac might not have generic syntax yet, this is forward-looking
+        return f"{self.architype_type}[{args}]"
+
+# Placeholder for EnumType, which could inherit from `ArchitypeType` or be distinct
+class EnumType(ArchitypeType): # Enums can be thought of as a special kind of architype
+    """Represents a Jac enumeration type."""
+    def __init__(self, name: str, module: Optional[str] = None):
+        super().__init__(name, ArchitypeKind.ENUM_CLASS, module)
+        self.category = TypeCategory.ENUM # Override category
+        self.enum_members: Dict[str, Type] = {} # Enum members often have an implicit or explicit value type
+
+    # __eq__, __hash__, __str__ would be inherited or specialized if needed
 ```
 
 Key points:
-- `ClassType` represents the type of a class itself
-- `InstanceType` represents an instance of a class
-- Both implement proper equality and hash methods for efficient comparison
-- Type arguments for generic types are stored in the `type_arguments` dictionary
+- `ArchitypeType` represents the type of an architype itself (object, node, etc.)
+- `ArchitypeInstanceType` represents an instance of an architype.
+- Both implement proper equality and hash methods for efficient comparison.
+- `ArchitypeKind` distinguishes between different kinds of architypes.
+- Placeholder for `EnumType`, which could inherit from `ArchitypeType` or be distinct.
+- Type arguments for generic types are included as a placeholder for future Jac features.
 
 ### Type Factory
 
-The TypeFactory implements the Factory pattern for creating type objects, ensuring consistent creation and caching:
+The TypeFactory implements the Factory pattern for creating Jac type objects, ensuring consistent creation and caching:
 
 ```mermaid
 graph TD
     A[TypeFactory] --> B[create unknown]
     A --> C[create any]
-    A --> D[create none]
+    A --> D[create none] // For Jac's null
     A --> E[create never]
-    A --> F[create class]
-    A --> G[create instance]
-    A --> H[create callable]
+    A --> F[create architype]
+    A --> G[create architype_instance]
+    A --> H[create callable] // For Jac abilities/functions
     A --> I[create union]
+    A --> L[create enum]
 
     B --> J[TypeCache]
     C --> J
@@ -305,6 +352,7 @@ graph TD
     G --> J
     H --> J
     I --> J
+    L --> J
 
     J --> K[returns cached or new type]
 ```
@@ -314,7 +362,7 @@ graph TD
 ```python
 class TypeFactory:
     """
-    Factory class for creating type objects. Ensures all types are created
+    Factory class for creating Jac type objects. Ensures all types are created
     through the cache for memory efficiency.
     """
 
@@ -327,7 +375,7 @@ class TypeFactory:
         return TypeCache.get_instance().any_type
 
     @staticmethod
-    def none() -> NoneType:
+    def none() -> NoneType: # Corresponds to Jac's 'null'
         return TypeCache.get_instance().none_type
 
     @staticmethod
@@ -335,30 +383,44 @@ class TypeFactory:
         return TypeCache.get_instance().never_type
 
     @staticmethod
-    def class_type(name: str, module: Optional[str] = None) -> ClassType:
-        if module is None and name in ["int", "float", "str", "bool", "bytes", "object"]:
-            return TypeCache.get_instance().get_builtin_type(name)
+    def architype_type(name: str, kind: ArchitypeKind, module: Optional[str] = None) -> ArchitypeType:
+        # Jac's core built-in types (int, float, str, bool, bytes) might be handled here
+        # or treated as special architypes if they have methods/abilities.
+        # For example, if "str" is a built-in architype:
+        if module is None and name in ["int", "float", "str", "bool", "bytes", "object"]: # TODO: Define Jac built-ins
+            # This assumes built-ins are cached as ArchitypeTypes
+            cached_builtin = TypeCache.get_instance().get_builtin_architype(name)
+            if cached_builtin: # Ensure it has the correct kind, or handle appropriately
+                return cached_builtin
 
-        return ClassType(name, module)
+        return ArchitypeType(name, kind, module)
 
     @staticmethod
-    def instance_type(class_type: ClassType) -> InstanceType:
-        return InstanceType(class_type)
+    def architype_instance_type(architype_type: ArchitypeType) -> ArchitypeInstanceType:
+        return ArchitypeInstanceType(architype_type)
 
     @staticmethod
-    def callable(parameters: List[ParameterType], return_type: Type) -> CallableType:
-        return TypeCache.get_instance().get_callable_type(parameters, return_type)
+    def enum_type(name: str, module: Optional[str] = None) -> EnumType:
+        # Enums might also be cached if they are frequently reused or have a predefined structure
+        return EnumType(name, module)
+
+    @staticmethod
+    def callable_type(parameters: List[Tuple[str, Type]], return_type: Type, is_ability: bool = False) -> CallableType:
+        # Parameters could be a list of (name, type) tuples or more complex Parameter objects
+        # The TypeCache would handle caching of callable types based on signature
+        return TypeCache.get_instance().get_callable_type(parameters, return_type, is_ability)
 
     @staticmethod
     def union(types: List[Type]) -> Type:
         # Filter out duplicates
         unique_types = []
-        seen_types = set()
+        seen_types: Set[int] = set() # Use set of ids for seen types
 
         for t in types:
             # Handle nested unions - flatten them
             if isinstance(t, UnionType):
                 for nested_type in t.types:
+                    # Using id() for seen_types check to handle object identity directly
                     if id(nested_type) not in seen_types:
                         unique_types.append(nested_type)
                         seen_types.add(id(nested_type))
@@ -378,104 +440,173 @@ class TypeFactory:
         if any(isinstance(t, AnyType) for t in unique_types):
             return TypeFactory.any()
 
+        # If NoneType (Jac null) is present, and other non-None types, it forms an Optional-like union.
+        # Further simplification rules can be added (e.g., int | int = int)
+
         # Create the union through the cache
         return TypeCache.get_instance().get_union_type(unique_types)
 ```
 
 Key features:
-- Provides static methods for creating all types
-- Delegates to TypeCache for efficient storage
-- Implements special case handling for types like unions
-- Performs normalization (e.g., flattening nested unions)
+- Provides static methods for creating all fundamental Jac types.
+- Delegates to `TypeCache` for efficient storage and reuse of type objects.
+- Implements special case handling for types like unions (e.g., flattening, Any propagation).
+- Performs normalization (e.g., flattening nested unions).
+- `architype_type` can handle creation of both user-defined and potentially built-in architypes.
+- `callable_type` adapted for Jac's abilities/functions.
 
 ### Type Cache
 
-The TypeCache is crucial for memory efficiency, ensuring that identical types share the same object:
+The TypeCache is crucial for memory efficiency, ensuring that identical Jac types share the same object instance:
 
 ```python
 class TypeCache:
     """
-    Centralized cache for type objects to avoid creating duplicate
+    Centralized cache for Jac type objects to avoid creating duplicate
     instances of the same type. This is key to memory efficiency.
     """
 
     _instance = None
 
     @classmethod
-    def get_instance(cls) -> TypeCache:
+    def get_instance(cls) -> 'TypeCache': # Forward reference for TypeCache
         if cls._instance is None:
             cls._instance = TypeCache()
         return cls._instance
 
     def __init__(self):
-        # Cache for built-in types
-        self._builtin_types: Dict[str, Type] = {}
+        if TypeCache._instance is not None:
+            raise RuntimeError("TypeCache is a singleton, use get_instance()")
+        # Cache for built-in architype-like types (int, str, etc.)
+        self._builtin_architypes: Dict[str, ArchitypeType] = {}
+
+        # Cache for user-defined ArchitypeTypes (keyed by module and name)
+        self._architype_types: Dict[Tuple[Optional[str], str], ArchitypeType] = {}
+
+        # Cache for EnumTypes (keyed by module and name)
+        self._enum_types: Dict[Tuple[Optional[str], str], EnumType] = {}
 
         # Cache for union types (using frozensets of type IDs as keys)
-        self._union_types: Dict[frozenset, UnionType] = {}
+        self._union_types: Dict[frozenset[int], UnionType] = {}
 
-        # Cache for callable types
-        self._callable_types: Dict[Tuple[Tuple, Type], CallableType] = {}
+        # Cache for callable types (keyed by a tuple representing their signature)
+        # Signature: (param_types_tuple, return_type_id, is_ability_bool)
+        self._callable_types: Dict[Tuple[Tuple[int, ...], int, bool], CallableType] = {}
 
         # Singleton types
         self.unknown_type = UnknownType()
         self.any_type = AnyType()
-        self.none_type = NoneType()
+        self.none_type = NoneType() # Jac's null
         self.never_type = NeverType()
 
-        # Initialize common built-in types
-        self._initialize_builtin_types()
+        # Initialize common built-in types for Jac
+        self._initialize_builtin_jac_types()
 
-    def _initialize_builtin_types(self) -> None:
-        """Initialize cache with common built-in types."""
-        builtin_names = ["int", "float", "str", "bool", "bytes", "object"]
-        for name in builtin_names:
-            self._builtin_types[name] = ClassType(name)
+    def _initialize_builtin_jac_types(self) -> None:
+        """Initialize cache with common Jac built-in types."""
+        # Jac's primitive types. These are often represented as architypes.
+        # The ArchitypeKind for these would be specific, e.g., ArchitypeKind.BUILTIN_PRIMITIVE
+        # or they can use existing kinds if they behave like them (e.g. ArchitypeKind.CLASS for string methods)
+        builtin_names_kinds = {
+            "int": ArchitypeKind.CLASS, # Assuming int has some 'class-like' properties or for consistency
+            "float": ArchitypeKind.CLASS,
+            "str": ArchitypeKind.CLASS,
+            "bool": ArchitypeKind.CLASS,
+            "bytes": ArchitypeKind.CLASS,
+            "list": ArchitypeKind.CLASS, # If list is a built-in generic type
+            "dict": ArchitypeKind.CLASS, # If dict is a built-in generic type
+            "type": ArchitypeKind.CLASS, # The type of types themselves
+            "object": ArchitypeKind.CLASS # A potential base object type for Jac architypes
+        }
+        for name, kind in builtin_names_kinds.items():
+            # Create as ArchitypeType for now. Details of their members/abilities would be defined elsewhere.
+            self._builtin_architypes[name] = ArchitypeType(name, kind, module="builtin")
 
-    def get_builtin_type(self, name: str) -> Type:
-        """Get a cached built-in type or create a new one."""
-        if name in self._builtin_types:
-            return self._builtin_types[name]
+        # `null` is represented by NoneType, `any` by AnyType, etc.
 
-        # Create a new built-in type and cache it
-        new_type = ClassType(name)
-        self._builtin_types[name] = new_type
-        return new_type
+    def get_builtin_architype(self, name: str) -> Optional[ArchitypeType]:
+        """Get a cached built-in Jac architype-like type."""
+        return self._builtin_architypes.get(name)
+
+    def get_architype_type(self, name: str, kind: ArchitypeKind, module: Optional[str] = None) -> ArchitypeType:
+        key = (module, name)
+        if key in self._architype_types:
+            # TODO: Add consistency check for 'kind' if an architype is re-requested with a different kind
+            return self._architype_types[key]
+
+        new_arch_type = ArchitypeType(name, kind, module)
+        self._architype_types[key] = new_arch_type
+        return new_arch_type
+
+    def get_enum_type(self, name: str, module: Optional[str] = None) -> EnumType:
+        key = (module, name)
+        if key in self._enum_types:
+            return self._enum_types[key]
+
+        new_enum_type = EnumType(name, module)
+        self._enum_types[key] = new_enum_type
+        return new_enum_type
 
     def get_union_type(self, types: List[Type]) -> UnionType:
         """Get a cached union type or create a new one."""
-        # Remove duplicates and normalize
-        unique_types = list(set(types))
+        # Remove duplicates and normalize (e.g. Any | T = Any, T | Never = T)
+        # Simplified: Actual implementation would handle more cases
+        unique_types_list = list(dict.fromkeys(types)) # Preserves order, removes duplicates
 
-        # Sort by category to ensure consistent ordering
-        unique_types.sort(key=lambda t: t.category.value)
+        if not unique_types_list:
+            return self.never_type # Or handle as error
+        if len(unique_types_list) == 1:
+            # This step was in TypeFactory.union, ensure it's consistent or primarily here.
+            # return unique_types_list[0] # This line might be problematic if factory handles it.
+            pass # Let the factory decide if it returns the single type or a UnionType of one
 
-        # Create a frozenset as the cache key
-        key = frozenset(id(t) for t in unique_types)
+        # Sort by category and then by a stable attribute (e.g., hash or string form) to ensure consistent key ordering
+        # This is crucial for cache key stability.
+        unique_types_list.sort(key=lambda t: (t.category.value, str(t))) # Example sorting
+
+        # Create a frozenset of type IDs as the cache key
+        # Using id() assumes type objects are immutable once created and cached for this to be safe
+        key = frozenset(id(t) for t in unique_types_list)
 
         if key in self._union_types:
             return self._union_types[key]
 
-        # Create a new union type and cache it
-        new_union = UnionType(unique_types)
+        new_union = UnionType(unique_types_list)
         self._union_types[key] = new_union
         return new_union
+
+    def get_callable_type(self, parameters: List[Tuple[str, Type]], return_type: Type, is_ability: bool) -> CallableType:
+        """Get a cached callable type or create a new one."""
+        # Create a stable cache key. Parameter names usually don't affect signature for caching.
+        # Param types are important, their order, and the return type.
+        param_type_ids = tuple(id(ptype) for _, ptype in parameters)
+        key = (param_type_ids, id(return_type), is_ability)
+
+        if key in self._callable_types:
+            return self._callable_types[key]
+
+        # Create ParameterType objects if your CallableType expects them
+        # For now, assuming CallableType constructor can handle List[Tuple[str, Type]] or similar
+        new_callable = CallableType(parameters, return_type, is_ability=is_ability)
+        self._callable_types[key] = new_callable
+        return new_callable
 ```
 
 Key points:
-- Implements the Singleton pattern to ensure a single cache instance
-- Maintains separate caches for different type categories
-- Uses ID-based caching for complex types like unions
-- Pre-initializes common built-in types for efficiency
+- Implements the Singleton pattern to ensure a single cache instance for all Jac types.
+- Maintains separate caches for different Jac type categories (built-ins, architypes, enums, unions, callables).
+- Uses ID-based caching for complex types like unions and callables to ensure canonical representation.
+- Pre-initializes common built-in Jac types (like `int`, `str`, `bool`, `null` via `NoneType`) for efficiency.
+- Provides getter methods that first check the cache before creating a new type instance.
 
 ### Type Relationships
 
-Type relationships determine compatibility between types:
+Type relationships determine compatibility between Jac types. Key operations include checking for subtyping (`is_subtype`) and assignability (`is_assignable_to`).
 
 ```mermaid
 graph TD
     A[TypeRelationship] --> B[is_subtype]
-    A --> C[is_assignable_to]
+    A --> C[is_assignable_to] // Often similar to is_subtype but can have nuances
 
     B --> D{source == AnyType?}
     D -->|Yes| E[return True]
@@ -484,28 +615,30 @@ graph TD
     F -->|No| G{source == NeverType?}
     G -->|Yes| E
     G -->|No| H{source and target same category?}
-    H -->|Yes| I[handle specific category]
+    H -->|Yes| I[handle specific Jac category (Architype, Enum, Callable)]
     H -->|No| J{source == UnionType?}
-    J -->|Yes| K[check all source types]
+    J -->|Yes| K[check all source types against target]
     J -->|No| L{target == UnionType?}
-    L -->|Yes| M[check any target type]
-    L -->|No| N[return False]
+    L -->|Yes| M[check source against any target type]
+    L -->|No| N[Handle NoneType (Jac null) assignability, e.g., to Optional-like unions]
+    N --> O[return False] // Default
 ```
 
-#### Implementation of Type Relationships
+#### Implementation of Type Relationships for Jac
 
 ```python
 class TypeRelationship:
     """
-    Class that handles type relationships like subtyping, assignability, etc.
-    This is a key part of Pyright's efficient type checking.
+    Class that handles Jac type relationships like subtyping, assignability, etc.
+    This is a key part of an efficient type checking system.
     """
 
     @staticmethod
     def is_subtype(source: Type, target: Type) -> bool:
         """
-        Determines if source is a subtype of target.
-        This is a simplified version of the actual implementation.
+        Determines if source is a subtype of target in Jac.
+        This is a foundational version; a full implementation would be more complex,
+        especially with generics, protocols, etc.
         """
         # Any type is compatible with any other type (both ways)
         if isinstance(source, AnyType) or isinstance(target, AnyType):
@@ -515,563 +648,534 @@ class TypeRelationship:
         if isinstance(source, NeverType):
             return True
 
-        # Any type is a supertype of Never
+        # Nothing is a subtype of Never (except Never itself, handled above)
         if isinstance(target, NeverType):
             return False
 
-        # None is a subtype of Optional[X]
-        if isinstance(source, NoneType) and isinstance(target, UnionType):
-            # Check if target is Optional[X] (i.e., a union containing None)
-            return any(isinstance(t, NoneType) for t in target.types)
+        # Jac's null (NoneType) handling
+        if isinstance(source, NoneType):
+            if isinstance(target, NoneType): # null is a subtype of null
+                return True
+            if isinstance(target, UnionType): # null is a subtype of Union{T, null}
+                return any(isinstance(t, NoneType) for t in target.types)
+            # Add rules if specific architypes are inherently nullable in Jac
+            # Otherwise, null is not a subtype of a non-union, non-NoneType type.
+            return False
 
-        # Same type categories - delegate to specific type checks
+        # Same type categories - delegate to specific Jac type checks
         if source.category == target.category:
-            if isinstance(source, UnionType) and isinstance(target, UnionType):
-                # Every type in source must be a subtype of target
-                return all(
-                    any(TypeRelationship.is_subtype(s, t) for t in target.types)
-                    for s in source.types
-                )
+            if isinstance(source, UnionType) and isinstance(target, UnionType): # Should be handled by Union specific rules or below
+                # Every type in source union must be a subtype of at least one type in target union (more complex check needed)
+                # Simplified: For S = U(s1,s2), T = U(t1,t2), is_subtype(S,T) if for all si, exists tj such that is_subtype(si, tj)
+                # This is not quite right. is_subtype(A|B, C|D) iff is_subtype(A,C|D) and is_subtype(B,C|D)
+                # For now, defer to general union rules below.
+                pass # Fall through to general union handling
 
-            if isinstance(source, ClassType) and isinstance(target, ClassType):
-                # Check class hierarchy
-                if source == target:
+            if isinstance(source, ArchitypeType) and isinstance(target, ArchitypeType):
+                # Check architype hierarchy (including kind compatibility if relevant in Jac)
+                if source == target: # Same architype definition
                     return True
 
-                # Check base classes recursively
+                # Check base architypes recursively
+                # This needs a cycle detection mechanism for robust implementation
+                # For now, simple recursive check:
                 for base in source.bases:
                     if TypeRelationship.is_subtype(base, target):
                         return True
-
+                # TODO: Consider Jac-specific rules for ArchitypeKind compatibility (e.g. node vs object)
                 return False
 
-            if isinstance(source, InstanceType) and isinstance(target, InstanceType):
-                # Delegate to class type check
-                return TypeRelationship.is_subtype(source.class_type, target.class_type)
+            if isinstance(source, ArchitypeInstanceType) and isinstance(target, ArchitypeInstanceType):
+                # Delegate to ArchitypeType check, ignoring generics for now
+                # With generics, type arguments would need to be checked based on variance
+                return TypeRelationship.is_subtype(source.architype_type, target.architype_type)
+
+            if isinstance(source, EnumType) and isinstance(target, EnumType):
+                return source == target # Enums are typically subtypes of themselves only
 
             if isinstance(source, CallableType) and isinstance(target, CallableType):
-                # Check callable compatibility (contravariant in args, covariant in return)
-                # Return type must be a subtype
+                # Check Jac callable compatibility (contravariant in args, covariant in return)
+                # Differentiate between abilities and functions if their subtyping rules differ
+                if source.is_ability != target.is_ability: # Assuming abilities and functions are not directly interchangeable unless specified
+                    # This rule might be too strict; depends on Jac semantics
+                    pass # For now, allow if signatures match, further Jac rules might apply
+
+                # Return type must be a subtype (covariant)
                 if not TypeRelationship.is_subtype(source.return_type, target.return_type):
                     return False
 
                 # Parameters must be compatible (contravariant)
-                # This is a simplified check, the real one would be more complex
                 if len(source.parameters) != len(target.parameters):
-                    return False
+                    return False # Arity mismatch
 
                 for s_param, t_param in zip(source.parameters, target.parameters):
-                    if not TypeRelationship.is_subtype(t_param.type, s_param.type):
+                    # Jac param representation: (_, s_param_type) = s_param ; (_, t_param_type) = t_param
+                    s_param_type = s_param[1] # Assuming (name, type) tuple
+                    t_param_type = t_param[1] # Assuming (name, type) tuple
+                    if not TypeRelationship.is_subtype(t_param_type, s_param_type): # Contravariance
                         return False
-
                 return True
 
-        # Union type as source - each component must be a subtype of target
+        # Union type as source - each component of source must be a subtype of target
         if isinstance(source, UnionType):
             return all(TypeRelationship.is_subtype(t, target) for t in source.types)
 
-        # Union type as target - source must be a subtype of at least one component
+        # Union type as target - source must be a subtype of at least one component of target
         if isinstance(target, UnionType):
             return any(TypeRelationship.is_subtype(source, t) for t in target.types)
 
         # Different type categories that aren't explicitly handled are not compatible
+        # e.g. ArchitypeInstanceType is not a subtype of CallableType unless special rules apply
+        return False
+
+    @staticmethod
+    def is_assignable_to(source: Type, target: Type) -> bool:
+        """
+        Determines if a value of 'source' type can be assigned to a variable of 'target' type in Jac.
+        Often, this is the same as is_subtype, but can differ (e.g. with variance, or specific language rules).
+        For now, let's assume it's largely similar to is_subtype for Jac.
+        """
+        # Basic assignability is often subtyping
+        if TypeRelationship.is_subtype(source, target):
+            return True
+
+        # Special assignability rules for Jac could be added here
+        # e.g. assigning an int literal to a float variable might be allowed even if int is not strictly a subtype of float
+        # For now, no additional rules beyond subtyping.
+
         return False
 ```
 
-Key principles:
-- `Any` type is compatible with everything
-- `Never` type is a subtype of everything
-- Union types follow logical set operations
-- Class types follow inheritance hierarchies
-- Callable types follow the standard variance rules (contravariant in parameters, covariant in return types)
+Key principles for Jac type relationships:
+- `Any` type is compatible with everything.
+- `Never` type is a subtype of everything.
+- `NoneType` (Jac `null`) handling for unions (representing optional types) and direct nullability.
+- Union types follow logical set operations for subtyping.
+- `ArchitypeType`s follow inheritance hierarchies defined by `bases`. Compatibility between different `ArchitypeKind`s needs definition based on Jac semantics.
+- `CallableType`s (Jac abilities/functions) follow standard variance rules: contravariant in parameters, covariant in return types.
+- `EnumType`s are generally only compatible with themselves.
+- `is_assignable_to` can extend `is_subtype` with Jac-specific assignment rules if needed.
 
 ### Type Narrowing
 
-Type narrowing is one of Pyright's most powerful features, allowing the type checker to refine types based on control flow:
+Type narrowing is a powerful feature, allowing the Jac type checker to refine types based on control flow analysis. This is particularly important for Jac's `match` statements and conditional logic.
 
 ```mermaid
 sequenceDiagram
-    participant Code as Python Code
+    participant JacCode as Jac Code
     participant CFG as Control Flow Graph
     participant Analyzer as Type Analyzer
     participant Narrower as Type Narrower
 
-    Code->>CFG: Parse into branches
+    JacCode->>CFG: Parse into branches (e.g., if/else, match cases)
     CFG->>Analyzer: Analyze each branch
-    Analyzer->>Narrower: Request type narrowing
-    Note over Narrower: Analyze conditions
-    Note over Narrower: Apply narrowing rules
-    Narrower-->>Analyzer: Return narrowed type
-    Analyzer->>CFG: Update type in branch
+    Analyzer->>Narrower: Request type narrowing for variables
+    Note over Narrower: Analyze conditions (e.g., `check x is type`, `match x with pattern`, `if x != null`)
+    Note over Narrower: Apply Jac-specific narrowing rules
+    Narrower-->>Analyzer: Return narrowed type(s) for variables in the current scope
+    Analyzer->>CFG: Update type information within the specific branch/scope
 ```
 
-#### Implementation of Type Narrowing
+#### Implementation of Type Narrowing for Jac
 
 ```python
 class TypeNarrower:
     """
-    Class that handles type narrowing based on control flow analysis.
-    This is a key differentiator of Pyright's approach.
+    Class that handles type narrowing for Jac based on control flow analysis.
+    This will be crucial for Jac features like `match` statements and `check` expressions.
     """
 
     @staticmethod
-    def narrow_type_from_isinstance(original_type: Type, class_type: ClassType) -> Type:
-        """Narrows a type based on an isinstance check."""
-        # If the original type is Any, narrow to the specified class type
+    def narrow_type_from_check(original_type: Type, asserted_type: Type, is_positive_check: bool = True) -> Type:
+        """Narrows a type based on a Jac `check expr is type_expr` or similar assertion.
+        `is_positive_check` is True if the assertion is `expr is type`, False if `expr is not type` (or equivalent).
+        """
+        # If the original type is Any, narrow to the asserted type if positive check
         if isinstance(original_type, AnyType):
-            return TypeFactory.instance_type(class_type)
+            return asserted_type if is_positive_check else TypeFactory.any() # Or a more refined 'not asserted_type' if possible
 
-        # If the original type is already the same class type, no narrowing needed
-        if (isinstance(original_type, InstanceType) and
-            original_type.class_type == class_type):
-            return original_type
+        if is_positive_check:
+            # If original_type is already a subtype of asserted_type, no change (or return original_type)
+            if TypeRelationship.is_subtype(original_type, asserted_type):
+                return original_type # Or potentially asserted_type if it's more specific and a subtype
 
-        # If the original type is a union, filter the union
-        if isinstance(original_type, UnionType):
-            # Keep only types that are subtypes of the specified class
-            narrowed_types = []
-            for t in original_type.types:
-                if TypeRelationship.is_subtype(t, TypeFactory.instance_type(class_type)):
-                    narrowed_types.append(t)
+            # If asserted_type is a subtype of original_type, then the new type is asserted_type
+            if TypeRelationship.is_subtype(asserted_type, original_type):
+                return asserted_type
 
-            if not narrowed_types:
-                # No compatible types in the union, should be impossible
+            # If original_type is a union, filter the union
+            if isinstance(original_type, UnionType):
+                narrowed_types = [t for t in original_type.types if TypeRelationship.is_subtype(t, asserted_type)]
+                if not narrowed_types:
+                    return TypeFactory.never() # This branch is unreachable if assertion holds
+                return TypeFactory.union(narrowed_types)
+
+            # If no direct subtype relation but they could overlap (e.g. protocol check)
+            # This needs more sophisticated logic, potentially an intersection type or just asserted_type if valid
+            # For now, if they are not related by subtyping, a positive check might mean this path is dead (Never) or it's the asserted_type.
+            # This depends on Jac's exact semantics for `check`.
+            # A safe bet if original and asserted are compatible might be asserted_type.
+            if TypeRelationship.is_subtype(original_type, asserted_type) or TypeRelationship.is_subtype(asserted_type, original_type): # Simplified check for some relation
+                return asserted_type
+            return TypeFactory.never() # If no clear path to reconcile, assume check makes path unreachable or type is asserted_type
+
+        else: # Negative check (e.g., expr is not TypeX)
+            if isinstance(original_type, UnionType):
+                # Remove types that are subtypes of asserted_type from the union
+                narrowed_types = [t for t in original_type.types if not TypeRelationship.is_subtype(t, asserted_type)]
+                if not narrowed_types:
+                    return TypeFactory.never()
+                return TypeFactory.union(narrowed_types)
+
+            # If original_type is a subtype of asserted_type, then this path means it's Never
+            if TypeRelationship.is_subtype(original_type, asserted_type):
                 return TypeFactory.never()
 
-            return TypeFactory.union(narrowed_types)
-
-        # Check if the original type is compatible with the class type
-        if TypeRelationship.is_subtype(original_type, TypeFactory.instance_type(class_type)):
-            return original_type
-
-        # If not compatible, this branch is unreachable
-        return TypeFactory.never()
+            return original_type # Cannot narrow further with this negative check
 
     @staticmethod
-    def narrow_type_from_truth(original_type: Type, is_truthy: bool) -> Type:
-        """Narrows a type based on a truthiness check."""
-        # If the original type is Any, no narrowing possible based just on truthiness
+    def narrow_type_from_truthiness(original_type: Type, is_truthy_branch: bool) -> Type:
+        """Narrows a type based on a truthiness check in Jac (e.g., in an `if some_var:` context)."""
         if isinstance(original_type, AnyType):
-            return original_type
+            return original_type # Cannot narrow Any based on truthiness alone
 
-        # If the original type is a union containing None, remove None when truthy
-        if isinstance(original_type, UnionType) and is_truthy:
-            # Filter out None from the union
-            narrowed_types = [t for t in original_type.types if not isinstance(t, NoneType)]
+        if isinstance(original_type, UnionType):
+            if is_truthy_branch:
+                # Remove NoneType (Jac null) and other falsy types if defined for Jac (e.g. empty string, 0 for numbers)
+                # For simplicity, just removing NoneType here.
+                narrowed_types = [t for t in original_type.types if not isinstance(t, NoneType)]
+                # TODO: Add rules for other Jac-specific falsy types (e.g. empty collections if they are falsy)
+                if not narrowed_types:
+                    return TypeFactory.never() # e.g. if original_type was just NoneType
+                return TypeFactory.union(narrowed_types)
+            else: # is_falsy_branch
+                # If original type could be NoneType, and we are in falsy branch, it *could* be NoneType
+                # Or it could be another falsy value (empty string, 0, etc.)
+                # A full implementation would identify all types in the union that *can* be falsy.
+                # If NoneType is the only falsy type in the union, narrow to NoneType.
+                has_none = any(isinstance(t, NoneType) for t in original_type.types)
+                # This is a simplification: if null is possible, and it's a falsy branch, what remains?
+                # It could be *only* null, or other falsy values. If only null, narrow to null.
+                # If other types in union could also be falsy (e.g. int 0, empty str), it's more complex.
+                # For now, if None is present, and it's a falsy branch, we can't definitively say it *is* None unless other types are guaranteed truthy.
+                # A safe bet is to return the original type unless more specific rules can apply.
+                if has_none and all(not isinstance(t, NoneType) or True for t in original_type.types): # Simplified: if None is one of options.
+                    # If we want to narrow to NoneType, we need to ensure other parts of union are not falsy.
+                    # Example: Union[int, NoneType]. If false, could be 0 or None. Not just None.
+                    # If only NoneType makes it falsy, then it is NoneType.
+                    potential_falsy = [t for t in original_type.types if isinstance(t, NoneType) or TypeRelationship.is_subtype(t,TypeFactory.architype_instance_type(TypeFactory.architype_type("int",ArchitypeKind.CLASS))) ] # placeholder for actual falsy check
+                    if len(potential_falsy) == 1 and isinstance(potential_falsy[0], NoneType): # if None is the only way it can be false from the union members
+                        return TypeFactory.none()
+                return original_type # Return original, too complex to simplify generally here
 
-            if not narrowed_types:
-                # If nothing is left, this should be impossible
-                return TypeFactory.never()
-
-            return TypeFactory.union(narrowed_types)
-
-        # If checking for falsy and the type is a union, we might be able to narrow
-        if isinstance(original_type, UnionType) and not is_truthy:
-            # This could be complex in real implementation
-            # In a full implementation, we would look at types that can be falsy
-            # For simplicity, we're just returning the original type
-            return original_type
+        # Single type (not union)
+        if not is_truthy_branch: # Falsy branch
+            # If original_type itself can be falsy (e.g. int, str, bool which can be 0, "", False)
+            # or if it's NoneType
+            if isinstance(original_type, NoneType): # if it is None, and branch is falsy, it remains None.
+                return original_type
+            # If it is bool and it's False. This is tricky without knowing if it *is* bool.
+            # Jac needs defined truthy/falsy rules for its types.
+            # For now, if it is not a union and in a falsy branch, we cannot easily narrow it further to Never unless the type is always truthy.
+            # Example: if `obj: MyObject` and `if not obj:`, if MyObject instances are always truthy, then this is Never.
+            pass # Needs more rules
 
         return original_type
+
+    @staticmethod
+    def narrow_type_from_null_check(original_type: Type, is_null: bool) -> Type:
+        """Narrows a type based on a null check (e.g., `if var is null` or `if var is not null`)."""
+        if isinstance(original_type, AnyType):
+            return TypeFactory.none() if is_null else TypeFactory.any() # If any is null, it becomes null. If not null, remains any.
+
+        if isinstance(original_type, UnionType):
+            if is_null: # Variable is null
+                if any(isinstance(t, NoneType) for t in original_type.types):
+                    return TypeFactory.none() # If null is a possibility, it must be null
+                else:
+                    return TypeFactory.never() # Original type couldn't be null, so this path is dead
+            else: # Variable is not null
+                narrowed_types = [t for t in original_type.types if not isinstance(t, NoneType)]
+                if not narrowed_types:
+                    return TypeFactory.never() # Should not happen if original union was valid (e.g. not just NoneType)
+                return TypeFactory.union(narrowed_types)
+        else: # Not a UnionType
+            if is_null: # Variable is null
+                return TypeFactory.none() if isinstance(original_type, NoneType) or TypeRelationship.is_subtype(TypeFactory.none(), original_type) else TypeFactory.never()
+            else: # Variable is not null
+                return TypeFactory.never() if isinstance(original_type, NoneType) else original_type
 ```
 
-Key narrowing strategies:
-- Type narrowing based on `isinstance` checks
-- Type narrowing based on truthiness checks
-- Narrowing union types by filtering components
-- Identifying unreachable code branches with `Never` type
+Key Jac narrowing strategies:
+- Type narrowing based on Jac's `check expression is type_expression` (or equivalent assertion/matching mechanism).
+- Type narrowing based on truthiness checks in conditional statements (`if`, `while`, etc.), considering Jac's definition of truthy/falsy values.
+- Type narrowing based on `null` checks (e.g., `if var is null` or `if var is not null`).
+- Narrowing union types by filtering components based on the condition.
+- Identifying unreachable code branches by narrowing a type to `Never`.
+- **Match statement narrowing**: Jac's `match` statement will be a primary driver for type narrowing. Each `case` pattern will provide strong type information for the matched variable within that case's scope.
 
 ## Flow and Integration
 
-### Type Checking Process
+### Type Checking Process for Jac
 
-The overall type checking process involves several stages:
+The overall type checking process for Jac will integrate into its existing compiler passes. It involves several stages:
 
 ```mermaid
 graph TB
-    A[Parse Source Code] --> B[Build AST]
-    B --> C[Perform Binding]
-    C --> D[Evaluate Types]
-    D --> E[Check Type Compatibility]
+    A[Parse Jac Source Code] --> B[Build Jac AST]
+    B --> C[Symbol Table Construction (Sema Pass)]
+    C --> D[Evaluate Types (within TypeCheckPass or separate pass)]
+    D --> E[Check Type Compatibility & Rules (TypeCheckPass)]
     E --> F[Generate Diagnostics]
 
-    G[Type Model] --> D
+    G[Jac Type Model] --> D
     G --> E
     H[Symbol Table] --> C
     H --> D
+    H --> E
 ```
 
-#### Implementation of the Main Analyzer
+#### Implementation of the Main Type Checking Pass for Jac
+
+In Jac, the main analyzer will likely be implemented as a compiler pass (e.g., `TypeCheckPass`) that runs after parsing and symbol table construction.
 
 ```python
-class Analyzer:
+# Example structure for a Jac TypeCheckPass
+# This would reside in jaclang/compiler/passes/type_check_pass.py
+
+from jaclang.compiler.passes.uni_pass import UniPass
+# Assume other necessary imports for Jac AST nodes, SymbolTable, Type Model, Diagnostics, etc.
+# from jaclang.compiler.absyntree import AstNode (or specific node types)
+# from ..analysis.symbol_table import SymbolTable
+# from ..typemodel.types import Type, ArchitypeType, CallableType # etc.
+# from ..typemodel.type_factory import TypeFactory
+# from ..analysis.type_evaluator import TypeEvaluator
+# from ..analysis.type_narrower import TypeNarrower
+# from ..utils.diagnostics import Diagnostic, DiagnosticSeverity, DiagnosticCollection
+
+class TypeCheckPass(UniPass):
     """
-    Main analyzer class that orchestrates the type checking process.
+    Jac Type Checker Pass. Relies on a symbol table already being populated
+    (e.g., by a preceding SymTabPass or during the same pass if integrated).
     """
 
-    def __init__(self, config_options: ConfigOptions):
-        self.config_options = config_options
-        self.file_system = FileSystem()
-        self.diagnostics = DiagnosticCollection()
-        self.symbol_table = SymbolTable()
+    def __init__(self, ir: AstNode, sym_tab: SymbolTable, diag: DiagnosticCollection, config_options=None):
+        super().__init__(ir=ir) # Initialize UniPass, ir is the AST root
+        self.sym_tab = sym_tab
+        self.diag = diag
         self.type_cache = TypeCache.get_instance()
-
-    def analyze_file(self, file_path: str) -> List[Diagnostic]:
-        """Analyze a single file and return diagnostics."""
-        # Read the file
-        try:
-            file_content = self.file_system.read_file(file_path)
-        except Exception as e:
-            self.diagnostics.add(
-                Diagnostic(f"Could not read file: {str(e)}", DiagnosticSeverity.ERROR)
-            )
-            return self.diagnostics.get_diagnostics()
-
-        # Parse the file
-        parser = Parser()
-        try:
-            ast = parser.parse(file_content)
-        except Exception as e:
-            self.diagnostics.add(
-                Diagnostic(f"Could not parse file: {str(e)}", DiagnosticSeverity.ERROR)
-            )
-            return self.diagnostics.get_diagnostics()
-
-        # Bind names
-        binder = Binder(self.symbol_table)
-        binder.bind_ast(ast)
-
-        # Evaluate types
-        evaluator = TypeEvaluator(self.symbol_table, self.type_cache)
-        evaluator.evaluate_ast(ast)
-
-        # Check types
-        checker = Checker(self.symbol_table, self.diagnostics, self.config_options)
-        checker.check_ast(ast)
-
-        return self.diagnostics.get_diagnostics()
-
-    def analyze_project(self, project_root: str) -> Dict[str, List[Diagnostic]]:
-        """Analyze all Python files in a project."""
-        python_files = self.file_system.find_files(project_root, "*.py")
-
-        results = {}
-        for file_path in python_files:
-            diagnostics = self.analyze_file(file_path)
-            results[file_path] = diagnostics
-
-        return results
-```
-
-The `Analyzer` class:
-- Initializes the necessary components
-- Provides methods for analyzing individual files or entire projects
-- Orchestrates the flow through parsing, binding, evaluation, and checking
-- Collects and returns diagnostics
-
-### Parser Integration
-
-For parsing Python code, you have two main options:
-
-1. Use Python's built-in `ast` module
-2. Use a more powerful parser like `libcst` or `parso`
-
-Using Python's built-in `ast` module:
-
-```python
-import ast
-from typing import Dict, List, Optional, Any
-
-class Parser:
-    """Parser that uses Python's built-in ast module."""
-
-    def parse(self, source_code: str) -> ast.Module:
-        """Parse Python source code into an AST."""
-        try:
-            tree = ast.parse(source_code)
-            return tree
-        except SyntaxError as e:
-            # Convert Python's SyntaxError into our own error format
-            raise ParseError(
-                message=str(e),
-                line=e.lineno,
-                column=e.offset,
-                source=e.text
-            )
-
-    def parse_file(self, file_path: str) -> ast.Module:
-        """Parse a Python file into an AST."""
-        with open(file_path, "r", encoding="utf-8") as f:
-            source_code = f.read()
-        return self.parse(source_code)
-```
-
-### Type Evaluator Implementation
-
-The type evaluator determines the types of expressions in Python code:
-
-```python
-class TypeEvaluator:
-    """
-    Evaluates the types of expressions in Python code.
-    """
-
-    def __init__(self, symbol_table: SymbolTable, type_cache: TypeCache):
-        self.symbol_table = symbol_table
-        self.type_cache = type_cache
-        self.type_factory = TypeFactory
-        self.current_scope = None
-        self.type_narrower = TypeNarrower()
-
-    def evaluate_ast(self, node: ast.AST) -> None:
-        """Evaluate types for an entire AST."""
-        # Visit the AST
-        self.visit(node)
-
-    def visit(self, node: ast.AST) -> Optional[Type]:
-        """Visit an AST node and determine its type."""
-        # Dispatch to the appropriate method based on node type
-        method_name = f"visit_{type(node).__name__}"
-        visitor = getattr(self, method_name, self.visit_unknown)
-        return visitor(node)
-
-    def visit_unknown(self, node: ast.AST) -> Type:
-        """Handle unknown node types."""
-        # Default to Any for unknown nodes
-        return self.type_factory.any()
-
-    def visit_Name(self, node: ast.Name) -> Type:
-        """Determine the type of a name."""
-        # Look up the name in the symbol table
-        symbol = self.symbol_table.lookup(node.id, self.current_scope)
-        if not symbol:
-            # If the name isn't found, return Unknown
-            return self.type_factory.unknown()
-
-        return symbol.type
-
-    def visit_Call(self, node: ast.Call) -> Type:
-        """Determine the type of a function call."""
-        # Evaluate the type of the function being called
-        func_type = self.visit(node.func)
-
-        # If it's not a callable, return Any
-        if not isinstance(func_type, CallableType):
-            return self.type_factory.any()
-
-        # Evaluate the types of the arguments
-        arg_types = [self.visit(arg) for arg in node.args]
-
-        # Check if the arguments match the parameters
-        # (This would be more complex in a real implementation)
-
-        # Return the return type of the function
-        return func_type.return_type
-
-    def visit_BinOp(self, node: ast.BinOp) -> Type:
-        """Determine the type of a binary operation."""
-        # Evaluate the types of the left and right operands
-        left_type = self.visit(node.left)
-        right_type = self.visit(node.right)
-
-        # Determine the result type based on the operation and operand types
-        # (This would be more complex in a real implementation)
-
-        # For simplicity, just return Any for now
-        return self.type_factory.any()
-
-    def visit_If(self, node: ast.If) -> None:
-        """Evaluate types in an if statement, with narrowing."""
-        # Evaluate the condition
-        _ = self.visit(node.test)
-
-        # Create a new scope for the true branch
-        true_scope = Scope(parent=self.current_scope)
-        old_scope = self.current_scope
-        self.current_scope = true_scope
-
-        # Apply type narrowing based on the condition
-        # (This would involve analyzing the condition to determine what types can be narrowed)
-
-        # Visit the true branch
-        for stmt in node.body:
-            self.visit(stmt)
-
-        # Restore the scope and create a new one for the false branch
-        self.current_scope = old_scope
-        false_scope = Scope(parent=self.current_scope)
-        self.current_scope = false_scope
-
-        # Visit the false branch
-        for stmt in node.orelse:
-            self.visit(stmt)
-
-        # Restore the original scope
-        self.current_scope = old_scope
-```
-
-The `TypeEvaluator` class:
-- Traverses the AST to determine types
-- Uses the visitor pattern to handle different node types
-- Manages scope for variables
-- Applies type narrowing in conditional branches
-
-## Advanced Features
-
-### Protocol Support
-
-Protocols are a key feature of Python's typing system, allowing for structural typing:
-
-```python
-class ProtocolType(ClassType):
-    """Represents a Protocol type for structural typing."""
-
-    def __init__(self, name: str, module: Optional[str] = None):
-        super().__init__(name, module)
-        self.flags |= TypeFlags.PROTOCOL
-
-    def is_compatible_with(self, other: Type) -> bool:
-        """Check if another type is compatible with this protocol."""
-        # If the other type is Any, it's compatible
-        if isinstance(other, AnyType):
-            return True
-
-        # If the other type is a class, check if it implements all required methods
-        if isinstance(other, ClassType) or isinstance(other, InstanceType):
-            class_type = other if isinstance(other, ClassType) else other.class_type
-
-            # Check all methods in the protocol
-            for method_name, protocol_method in self.methods.items():
-                # If the class doesn't have the method, it's not compatible
-                if method_name not in class_type.methods:
-                    return False
-
-                # If the method signatures aren't compatible, it's not compatible
-                class_method = class_type.methods[method_name]
-                if not TypeRelationship.is_subtype(class_method, protocol_method):
-                    return False
-
-            # All methods are compatible
-            return True
-
-        return False
-```
-
-### Type Guards
-
-Type guards are functions that perform runtime type checking:
-
-```python
-class TypeGuard:
-    """Analyzes and applies type guards."""
-
-    @staticmethod
-    def analyze_isinstance_check(
-        node: ast.Call,
-        symbol_table: SymbolTable,
-        current_scope: Scope
-    ) -> Optional[Tuple[str, Type]]:
-        """
-        Analyze an isinstance check and return the narrowed type.
-        Returns a tuple of (variable_name, narrowed_type) if successful,
-        or None if not an isinstance check.
-        """
-        # Check if this is an isinstance call
-        if not (
-            isinstance(node.func, ast.Name) and
-            node.func.id == "isinstance" and
-            len(node.args) == 2
-        ):
-            return None
-
-        # Get the variable name
-        if not isinstance(node.args[0], ast.Name):
-            return None
-
-        var_name = node.args[0].id
-
-        # Get the type being checked against
-        type_arg = node.args[1]
-
-        # Handle simple class checks
-        if isinstance(type_arg, ast.Name):
-            class_name = type_arg.id
-            class_symbol = symbol_table.lookup(class_name, current_scope)
-
-            if class_symbol and isinstance(class_symbol.type, ClassType):
-                # Look up the variable's current type
-                var_symbol = symbol_table.lookup(var_name, current_scope)
-                if not var_symbol:
-                    return None
-
-                # Narrow the type
-                narrowed_type = TypeNarrower.narrow_type_from_isinstance(
-                    var_symbol.type,
-                    class_symbol.type
-                )
-
-                return (var_name, narrowed_type)
-
-        return None
-```
-
-### Function Type Inference
-
-Inferring the types of functions without annotations:
-
-```python
-class FunctionInferrer:
-    """Infers types for functions without complete annotations."""
-
-    def __init__(self, symbol_table: SymbolTable, type_factory: TypeFactory):
-        self.symbol_table = symbol_table
-        self.type_factory = type_factory
-
-    def infer_function_type(self, node: ast.FunctionDef, scope: Scope) -> CallableType:
-        """Infer the type of a function based on its body and usage."""
-        # Start with parameters from annotations
-        parameters = []
-        for arg in node.args.args:
-            param_name = arg.arg
-            param_type = self.type_factory.any()
-
-            # Check for annotation
-            if arg.annotation:
-                # Evaluate the annotation
-                param_type = self.evaluate_annotation(arg.annotation, scope)
-
-            parameters.append(ParameterType(param_name, param_type))
-
-        # Check for return annotation
-        return_type = self.type_factory.any()
-        if node.returns:
-            return_type = self.evaluate_annotation(node.returns, scope)
-
-        # Create a basic callable type
-        callable_type = self.type_factory.callable(parameters, return_type)
-
-        # Refine based on function body (more complex in real implementation)
-        # This would involve analyzing the function body to infer return types
-
-        return callable_type
-
-    def evaluate_annotation(self, annotation: ast.expr, scope: Scope) -> Type:
-        """Evaluate a type annotation."""
-        # Handle simple name annotations
-        if isinstance(annotation, ast.Name):
-            annotation_name = annotation.id
-            symbol = self.symbol_table.lookup(annotation_name, scope)
-
-            if symbol and isinstance(symbol.type, ClassType):
-                return self.type_factory.instance_type(symbol.type)
-
-        # Handle subscripts like List[int]
-        if isinstance(annotation, ast.Subscript):
-            # This would be more complex in a real implementation
+        self.type_factory = TypeFactory # Static methods, no instance needed typically
+        # config_options could hold type system strictness flags, etc.
+        self.config_options = config_options or {}
+        self.type_evaluator = TypeEvaluator(self.sym_tab, self.type_cache)
+        self.type_checker_core = TypeCheckerCore(self.sym_tab, self.diag, self.type_cache, self.type_factory, self.config_options)
+
+    def enter_node(self, node: AstNode):
+        # Entry point for visiting each node if using a visitor pattern inherited from UniPass
+        # Type evaluation and checking can happen on specific nodes or primarily on exit
+        pass
+
+    def exit_node(self, node: AstNode):
+        # Main logic for type checking often happens on node exit, after children are processed.
+        # This depends on the specific AST node type.
+
+        # Example: Check assignment statements
+        if isinstance(node, AssignmentStmt): # Replace with actual Jac AST node for assignment
+            target_type = self.type_evaluator.get_type(node.target) # Get type of assignment target
+            value_type = self.type_evaluator.get_type(node.value)   # Get type of assigned value
+            self.type_checker_core.check_assignment(value_type, target_type, node) # Pass node for error reporting location
+
+        # Example: Check function/ability calls
+        elif isinstance(node, CallExpr): # Replace with actual Jac AST node for calls
+            # ... logic to get callable type and argument types ...
+            # self.type_checker_core.check_call(callable_type, arg_types, node)
             pass
 
-        # Default to Any for unknown annotations
-        return self.type_factory.any()
+        # Example: Check function/ability definitions for return type consistency
+        elif isinstance(node, FunctionDef): # Replace with actual Jac AST node for function/ability def
+            # declared_return_type = self.type_evaluator.get_type_from_annotation(node.return_annotation)
+            # inferred_return_type = self.type_evaluator.infer_return_type_from_body(node.body)
+            # self.type_checker_core.check_return_types(inferred_return_type, declared_return_type, node)
+            pass
+
+        # ... other checks for various Jac AST nodes ...
+
+    # The `run` method might be inherited from UniPass or overridden.
+    # def run(self) -> AstNode:
+    #     self.traverse(self.ir) # UniPass might provide traverse
+    #     return self.ir
+
+# Placeholder for TypeCheckerCore which would contain the actual checking logic (e.g. check_assignment)
+class TypeCheckerCore:
+    def __init__(self, sym_tab, diag, type_cache, type_factory, config_options):
+        self.sym_tab = sym_tab
+        self.diag = diag
+        self.type_cache = type_cache
+        self.type_factory = type_factory
+        self.config_options = config_options
+
+    def check_assignment(self, value_type: Type, target_type: Type, error_node: AstNode) -> None:
+        if not TypeRelationship.is_assignable_to(value_type, target_type):
+            self.diag.add(
+                Diagnostic(f"Cannot assign type '{value_type}' to '{target_type}'.",
+                           DiagnosticSeverity.ERROR, error_node.loc)
+            )
+    # ... other checking methods: check_call, check_binary_op, etc.
+
+
+# The Analyzer class from the original doc is effectively distributed into:
+# 1. The Jac Parser (already exists)
+# 2. SymbolTable pass/logic (may exist or need enhancement)
+# 3. TypeCheckPass (this class)
+# 4. TypeEvaluator (called by TypeCheckPass)
+```
+
+The `TypeCheckPass` would:
+- Traverse the Jac AST.
+- Use the `SymbolTable` to resolve names to their declarations and types.
+- Use the `TypeEvaluator` to determine the types of expressions.
+- Use the `TypeCheckerCore` (or similar helper) with `TypeRelationship` to validate type compatibility for assignments, operations, calls, etc.
+- Generate `Diagnostics` (errors/warnings) for type mismatches.
+
+### Parser Integration for Jac
+
+Jac already has its own parser (defined by `jac.lark` and implemented in `jaclang.compiler.parser`). The type checker will consume the AST generated by this existing parser. No new parser needs to be built for type checking itself, but the AST structure must be understood by the type checking passes.
+
+```python
+# This section is informational, as Jac's parser is pre-existing.
+# Example of how Jac parsing might be invoked (conceptual):
+# from jaclang.compiler.parser import JacParser
+# from jaclang.compiler.absyntree import AstNode
+
+# source_code = \"\"
+# walker my_walker {
+#     has name: str = \"Jacy\";
+#     can greet with entry {
+#         std.out(f\"Hello, {self.name}\");
+#     }
+# }
+# \"\"\"
+#
+# def parse_jac_code(source_code: str, file_path: Optional[str] = None) -> Optional[AstNode]:
+#     parser_instance = JacParser(mod_path="", input_file="", source_string=source_code)
+#     ast_root = parser_instance.ir # Access the intermediate representation (AST)
+#     if parser_instance.errors:
+#         for error in parser_instance.errors:
+#             print(f"Parse Error: {error}") # Handle errors appropriately
+#         return None
+#     return ast_root
+
+# The type checker would receive `ast_root` after this stage.
+```
+
+### Jac Type Evaluator Implementation
+
+The type evaluator is responsible for determining the types of expressions and other AST nodes within the Jac code. It will heavily rely on the `SymbolTable`.
+
+```python
+# Resides in jaclang/compiler/analysis/type_evaluator.py
+
+# from jaclang.compiler.absyntree import AstNode # Base AST node
+# from .symbol_table import SymbolTable, Symbol
+# from ..typemodel.types import Type, CallableType, ArchitypeType, ArchitypeInstanceType, AnyType, UnknownType, NoneType
+# from ..typemodel.type_factory import TypeFactory
+# from ..typemodel.type_cache import TypeCache
+# from ..utils.diagnostics import DiagnosticCollection
+# from .type_narrower import TypeNarrower
+
+class TypeEvaluator:
+    """
+    Evaluates the types of expressions and other relevant nodes in Jac code.
+    Operates in conjunction with a SymbolTable and TypeNarrower.
+    """
+
+    def __init__(self, sym_tab: SymbolTable, type_cache: TypeCache, diag: DiagnosticCollection, type_factory: TypeFactory):
+        self.sym_tab = sym_tab
+        self.type_cache = type_cache
+        self.diag = diag # For reporting errors during type evaluation if necessary
+        self.type_factory = type_factory
+        self.type_narrower = TypeNarrower() # Can be used for context-sensitive type evaluation
+        self.current_scope_uid: Optional[str] = None # UID of the current symbol table scope
+
+    def get_type(self, node: AstNode) -> Type:
+        """Main method to get the type of an AST node."""
+        # Dispatch to specific visitor methods based on Jac AST node type
+        # This would use a visitor pattern, e.g., self.visit(node)
+        # For simplicity, a direct mapping or if/isinstance chain:
+
+        if isinstance(node, NameAtom): # Example: Jac variable name or architype name
+            return self._visit_name(node)
+        elif isinstance(node, LiteralAtom): # Example: Jac int, float, str, bool, null literals
+            return self._visit_literal(node)
+        elif isinstance(node, BinaryExpr): # Example: +, -, *, /, and, or, etc.
+            return self._visit_binary_expr(node)
+        elif isinstance(node, CallExpr): # Example: func_call(), ability_call()
+            return self._visit_call_expr(node)
+        elif isinstance(node, AtomTrailer): # Example: x.y, x[y]
+             return self._visit_atom_trailer(node)
+        # ... many other Jac expression types ...
+
+        # For nodes whose type isn't directly evaluated or is complex (e.g., statements)
+        # this method might return a placeholder or raise an error.
+        # It might be better to have evaluate_expression_type(node) instead of a generic get_type.
+        self.diag.add_warning(f"Type evaluation not implemented for Jac AST node: {type(node).__name__}", node.loc)
+        return self.type_factory.unknown() # Default to Unknown or Any for unhandled nodes
+
+    def _visit_name(self, node: NameAtom) -> Type: # Replace NameAtom with Jac's AST name node
+        """Determine the type of a name (variable, architype, etc.)."""
+        name_str = node.value # Assuming node has a .value or .name attribute
+        symbol = self.sym_tab.lookup(name_str, scope_uid=self.current_scope_uid)
+        if not symbol:
+            self.diag.add_error(f"Name '{name_str}' not found.", node.loc)
+            return self.type_factory.unknown()
+
+        # TODO: Type narrowing might influence the symbol's perceived type here
+        # narrowed_type = self.type_narrower.get_narrowed_type(symbol, self.current_control_flow_context)
+        # if narrowed_type: return narrowed_type
+
+        return symbol.type if symbol.type else self.type_factory.unknown() # Symbol should have a type
+
+    def _visit_literal(self, node: LiteralAtom) -> Type: # Replace LiteralAtom with Jac's literal node
+        # Based on Jac token types (INT, FLOAT, STRING, BOOL_TRUE/FALSE, NULL)
+        if node.is_int: return self.type_factory.architype_instance_type(self.type_cache.get_builtin_architype("int"))
+        if node.is_float: return self.type_factory.architype_instance_type(self.type_cache.get_builtin_architype("float"))
+        if node.is_string: return self.type_factory.architype_instance_type(self.type_cache.get_builtin_architype("str"))
+        if node.is_bool: return self.type_factory.architype_instance_type(self.type_cache.get_builtin_architype("bool"))
+        if node.is_null: return self.type_factory.none()
+        # if node.is_bytes: return self.type_factory.architype_instance_type(self.type_cache.get_builtin_architype("bytes"))
+        return self.type_factory.unknown()
+
+    def _visit_binary_expr(self, node: BinaryExpr) -> Type:
+        left_type = self.get_type(node.left)
+        right_type = self.get_type(node.right)
+        op = node.op.value # Assuming op has a value like '+', '-', 'and'
+
+        # TODO: Implement operator type resolution based on Jac's rules
+        # This would involve checking for overloaded operators (dunder methods if Jac has them) or predefined operator rules.
+        # e.g., int + int -> int; str + str -> str; int + float -> float
+        # For now, a placeholder:
+        if isinstance(left_type, AnyType) or isinstance(right_type, AnyType):
+            return self.type_factory.any()
+        if op == '+':
+            if TypeRelationship.is_subtype(left_type, self.type_cache.get_builtin_architype("int")) and \
+               TypeRelationship.is_subtype(right_type, self.type_cache.get_builtin_architype("int")):\n                return self.type_cache.get_builtin_architype("int")
+            # ... other + rules
+        # ... other operators ...
+        self.diag.add_error(f"Operator '{op}' not supported for types '{left_type}' and '{right_type}'.", node.loc)
+        return self.type_factory.unknown()
+
+    def _visit_call_expr(self, node: CallExpr) -> Type:
+        # Callee could be a name, or something more complex like obj.method
+        callee_type = self.get_type(node.callee)
+
+        if not isinstance(callee_type, CallableType):
+            # Could be an architype instantiation (constructor call)
+            if isinstance(callee_type, ArchitypeType):
+                # This is an architype constructor call, e.g. Node(), MyObject()
+                # Type check constructor arguments against __init__ if defined, or member initializers
+                # For now, return an instance of the architype
+                return self.type_factory.architype_instance_type(callee_type)
+
 ```
 
 ## Implementation Guide
@@ -1243,7 +1347,7 @@ This table compares our type checker with existing Python type checkers:
 
 ## Conclusion
 
-This document outlines the architecture and implementation details for a Python type checker inspired by Pyright's efficient approach. By adopting Pyright's type representation system, aggressive caching, and sophisticated type narrowing, but implementing it in Python, we can create a type checker that combines the performance advantages of Pyright with the ease of development and integration that comes from using Python.
+This document outlines the architecture and implementation details for a Jac type checker inspired by Pyright's efficient approach. By adopting Pyright's type representation system, aggressive caching, and sophisticated type narrowing, but implementing it in Python, we can create a type checker that combines the performance advantages of Pyright with the ease of development and integration that comes from using Python.
 
 The key innovations in this approach include:
 
@@ -1254,3 +1358,226 @@ The key innovations in this approach include:
 5. Context-aware type inference
 
 Next steps for implementation would involve developing the core type model, followed by the parser integration, symbol table, type evaluator, and checker components. With proper attention to performance optimization techniques in Python, this architecture can provide an excellent foundation for a high-performance Python type checker.
+
+## Advanced Features
+
+### Protocol Support (Structural Typing) for Jac
+
+While Jac may not have an explicit `protocol` keyword like Python, its type system can still support structural typing. This means an architype could be considered compatible with an expected structure if it possesses the necessary members (`has` variables) and abilities (`can` declarations) with compatible signatures, regardless of nominal inheritance.
+
+```python
+# This is a conceptual adaptation. Jac might not have a separate ProtocolType.
+# Instead, structural compatibility can be checked directly against ArchitypeType or an ad-hoc structure.
+
+class HypotheticalJacProtocol:
+    """Represents a structural interface for Jac type checking."""
+    def __init__(self, name: str, required_members: Dict[str, Type], required_abilities: Dict[str, CallableType]):
+        self.name = name
+        self.required_members = required_members
+        self.required_abilities = required_abilities
+
+    def is_structurally_compatible(self, arch_instance_type: ArchitypeInstanceType) -> bool:
+        """Check if an architype instance structurally conforms to this protocol."""
+        arch_type = arch_instance_type.architype_type
+
+        # Check required members (variables from 'has' statements)
+        for member_name, expected_member_type in self.required_members.items():
+            if member_name not in arch_type.members:
+                return False # Missing required member
+            actual_member_type = arch_type.members[member_name]
+            if not TypeRelationship.is_subtype(actual_member_type, expected_member_type):
+                return False # Member type mismatch
+
+        # Check required abilities (from 'can' statements)
+        for ability_name, expected_ability_type in self.required_abilities.items():
+            if ability_name not in arch_type.abilities:
+                return False # Missing required ability
+            actual_ability_type = arch_type.abilities[ability_name]
+            # Callable subtyping checks if signatures are compatible
+            if not TypeRelationship.is_subtype(actual_ability_type, expected_ability_type):
+                return False # Ability signature mismatch
+
+        return True
+
+# In practice, instead of a HypotheticalJacProtocol class, the TypeRelationship.is_subtype
+# or is_assignable_to could be augmented to perform these structural checks when a
+# target type is, for example, an abstract architype with only ability signatures.
+```
+
+Jac's `KW_ABSTRACT` modifier for abilities/architypes could define implicit protocols. An architype with abstract abilities would require implementers to provide concrete versions, forming a structural contract.
+
+### Type Guards in Jac
+
+Jac can leverage several mechanisms for type guards, which inform the type checker about type refinements within specific code blocks:
+
+1.  **`check <expression> is <type_expression>`:** (Assuming `check` serves this role or a similar construct exists) This directly asserts the type of an expression, allowing the `TypeNarrower` to refine the type in the subsequent scope if the check passes.
+
+    ```jac
+    obj: SomeArchitype | OtherArchitype | null;
+
+    check obj is SomeArchitype; // Type of obj is narrowed to SomeArchitype here
+    // obj.some_arch_method(); // Safe to call
+
+    if check obj is not null {
+        // obj is narrowed to SomeArchitype | OtherArchitype here
+    }
+    ```
+
+2.  **`match` statements:** Jac's `match` statement with patterns is a powerful form of type guard. Each `case` branch that successfully matches a pattern will narrow the type of the matched variable(s) according to the pattern.
+
+    ```jac
+    message: Any;
+    match message {
+        case str_val: str => {
+            // Here, str_val is known to be of type 'str'
+            std.out(str_val.to_upper());
+        }
+        case int_val: int => {
+            // Here, int_val is known to be of type 'int'
+            std.out(int_val + 5);
+        }
+        case my_node: MyNodeArchitype => {
+            // Here, my_node is known to be of type MyNodeArchitype
+            my_node.node_specific_ability();
+        }
+    }
+    ```
+
+3.  **Null checks:** Explicit checks for `null` (e.g., `if item is null` or `if item is not null`) will narrow types by removing or confirming `NoneType` from unions.
+
+```python
+# Adapting the TypeGuard class concept for Jac
+# Much of this logic would be integrated into TypeNarrower and TypeEvaluator when processing
+# Jac's `check` statements, `match` patterns, or conditional expressions.
+
+class JacTypeGuardAnalyzer:
+    """Analyzes Jac constructs that act as type guards."""
+
+    @staticmethod
+    def analyze_check_statement(
+        check_node: CheckStmt, # Hypothetical Jac AST node for 'check ... is ...'
+        type_evaluator: TypeEvaluator,
+        current_scope_uid: str # For symbol lookup
+    ) -> Optional[Tuple[Symbol, Type]]: # (Symbol being narrowed, narrowed_type)
+        """
+        Analyzes a Jac 'check target_expr is type_expr' statement.
+        Returns the symbol for target_expr and its narrowed type if successful.
+        """
+        # 1. Get the symbol for target_expr (e.g., if it's a simple Name)
+        target_expr_node = check_node.target_expr
+        target_symbol = None
+        original_type = None
+
+        if isinstance(target_expr_node, NameAtom): # Jac's name node
+            target_symbol = type_evaluator.sym_tab.lookup(target_expr_node.value, scope_uid=current_scope_uid)
+            if not target_symbol or not target_symbol.type:
+                return None # Cannot analyze if symbol or its type is unknown
+            original_type = target_symbol.type
+        else:
+            # If target_expr is more complex, its type needs to be evaluated first.
+            # Narrowing might only apply if target_expr is a simple variable name.
+            original_type = type_evaluator.get_type(target_expr_node)
+            # For complex expressions, narrowing might not directly update a symbol but affect temporary type info.
+            # This example focuses on simple variable narrowing.
+            return None # Simplification: only narrowing simple names for now
+
+        # 2. Evaluate the type_expr to a Type object
+        asserted_type_node = check_node.type_expr
+        asserted_type = type_evaluator.get_type_from_annotation(asserted_type_node) # Assumes a method to resolve type expr to Type
+
+        if isinstance(asserted_type, UnknownType) or isinstance(asserted_type, AnyType):
+            return None # Cannot meaningfully narrow with Any/Unknown
+
+        # 3. Use TypeNarrower to get the refined type
+        # Assume check_node has a flag like `is_positive_check` (for `is` vs `is not`)
+        is_positive = not check_node.is_negated # Hypothetical attribute
+        narrowed_type = TypeNarrower.narrow_type_from_check(original_type, asserted_type, is_positive_check=is_positive)
+
+        if narrowed_type and not isinstance(narrowed_type, NeverType):
+            # The symbol's type can be considered `narrowed_type` in the subsequent scope.
+            # The actual update of the symbol's type for scope management is handled by the calling pass.
+            return (target_symbol, narrowed_type)
+
+        return None
+
+    # Similar analysis methods could be designed for `match` statement patterns.
+```
+
+### Jac Ability/Function Type Inference
+
+Inferring types for Jac abilities and functions without complete type annotations is a valuable feature for developer convenience. The inferrer would analyze the body of the callable to deduce parameter and return types.
+
+```python
+# Resides in jaclang/compiler/analysis/type_inferrer.py (or similar)
+
+class JacCallableInferrer:
+    """Infers types for Jac abilities and functions if annotations are missing or partial."""
+
+    def __init__(self, type_evaluator: TypeEvaluator, type_factory: TypeFactory, sym_tab: SymbolTable):
+        self.type_evaluator = type_evaluator
+        self.type_factory = type_factory
+        self.sym_tab = sym_tab # Needed for context
+
+    def infer_callable_type(self, callable_node: AbilityOrFunctionDefNode, current_scope_uid: str) -> CallableType:
+        """Infers the type of a Jac ability or function based on its signature annotations and body."""
+        # callable_node would be Jac's AST node for `can ...` or `def ...`
+
+        # 1. Start with types from annotations (if any)
+        parameters = []
+        for param_node in callable_node.signature.params: # Hypothetical AST structure
+            param_name = param_node.name.value
+            param_type = self.type_factory.any() # Default if no annotation
+            if param_node.type_tag:
+                # Evaluate the type from the Jac type annotation
+                param_type = self.type_evaluator.get_type_from_annotation(param_node.type_tag.tag, current_scope_uid)
+            parameters.append((param_name, param_type))
+
+        declared_return_type = self.type_factory.any()
+        if callable_node.signature.return_type_tag:
+            declared_return_type = self.type_evaluator.get_type_from_annotation(callable_node.signature.return_type_tag.tag, current_scope_uid)
+
+        # 2. Infer return type from body if no return annotation (or to verify annotation)
+        # This requires evaluating all return statements within the callable's body.
+        # Create a new scope for the callable's body for inference.
+        # callable_scope_uid = self.sym_tab.get_scope_for_node(callable_node).uid
+
+        # For simplicity, assume type_evaluator has a method for this.
+        # This is a complex process involving control flow analysis.
+        # inferred_return_type = self.type_evaluator.infer_return_type_from_body(callable_node.body, callable_scope_uid)
+
+        # For now, we prioritize the declared return type if present.
+        # A full implementation might create a union of all returned types if no annotation.
+        final_return_type = declared_return_type # Simplification
+        # if isinstance(declared_return_type, AnyType) and not isinstance(inferred_return_type, AnyType):
+        #    final_return_type = inferred_return_type
+
+        # 3. Infer parameter types based on usage within the body (very advanced)
+        # E.g., if `param + 1` is seen, `param` might be inferred as `int` or `float`.
+        # This is often iterative and complex. For now, we rely on annotations or default to Any.
+
+        is_ability = callable_node.is_ability_decl # Hypothetical flag on AST node
+        return self.type_factory.callable_type(parameters, final_return_type, is_ability=is_ability)
+
+    # `get_type_from_annotation` would be part of TypeEvaluator or a shared utility
+    # def evaluate_jac_annotation(self, annotation_node: AstNode, current_scope_uid: str) -> Type:
+    #     # ... logic to convert Jac AST type expression (e.g., NameAtom like 'str',
+    #     # ArchitypeTypeNode, or future ListType[ElementType]) into a Type object ...
+    #     # This would use sym_tab.lookup for names, and type_factory.
+    #     if isinstance(annotation_node, NameAtom):
+    #         type_name = annotation_node.value
+    #         # Check built-ins first
+    #         builtin_arch = self.type_evaluator.type_cache.get_builtin_architype(type_name)
+    #         if builtin_arch:
+    #             return self.type_factory.architype_instance_type(builtin_arch) # e.g., str -> instance of str architype
+    #
+    #         # Look up in symbol table (for user-defined architypes, enums)
+    #         symbol = self.sym_tab.lookup(type_name, scope_uid=current_scope_uid)
+    #         if symbol and isinstance(symbol.type, (ArchitypeType, EnumType)):
+    #             if isinstance(symbol.type, ArchitypeType):
+    #                 return self.type_factory.architype_instance_type(symbol.type) # User-defined architype
+    #             return symbol.type # EnumType
+    #         return self.type_factory.unknown() # Or Any, or error
+    #     # TODO: Handle more complex annotations if Jac supports them (e.g. generics, unions in syntax)
+    #     return self.type_factory.unknown()
+
+```
