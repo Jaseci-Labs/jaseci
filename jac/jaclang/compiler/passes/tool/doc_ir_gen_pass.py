@@ -21,6 +21,10 @@ class DocIRGenPass(UniPass):
         self.indent_size = 4
         self.MAX_LINE_LENGTH = settings.max_line_length
 
+    def after_pass(self) -> None:
+        """After pass."""
+        self.ir_out.gen.jac = self.print_jac()
+
     def enter_node(self, node: uni.UniNode) -> None:
         """Enter node."""
         node.gen.doc_ir = []
@@ -123,20 +127,55 @@ class DocIRGenPass(UniPass):
         node.gen.doc_ir = [self.group(parts)]
 
     def exit_import(self, node: uni.Import) -> None:
-        """Generate DocIR for import statements."""
-        parts: list[doc.DocType] = [self.text("import ")]
+        """Exit import node."""
+        parts: List[doc.DocType] = []
+        if node.doc:
+            doc_gen_ir = node.doc.gen.doc_ir
+            if doc_gen_ir:
+                parts.append(doc_gen_ir[0])
+                parts.append(self.hard_line())
+        if node.is_absorb:
+            parts.append(self.text("include"))
+        else:
+            parts.append(self.text("import"))
+        parts.append(self.text(" "))
+        if node.from_loc:
+            parts.append(self.text("from "))
+            from_loc_gen_ir = node.from_loc.gen.doc_ir
+            if from_loc_gen_ir:
+                parts.append(from_loc_gen_ir[0])
+            parts.append(self.text(" "))  # Space before {
 
-        if node.items:
-            item_parts: list[doc.DocType] = []
-            for item in node.items.items:
-                if item.gen.doc_ir and item.gen.doc_ir:
-                    item_parts.append(item.gen.doc_ir[0])
+            items_gen_ir = node.items.gen.doc_ir
+            actual_items_doc: doc.DocType = self.concat([])  # Default to empty concat
+            if items_gen_ir:
+                actual_items_doc = items_gen_ir[0]
 
-            if item_parts:
-                parts.append(self.join(self.text(", "), item_parts))
-
-        parts.append(self.text(";"))
-        node.gen.doc_ir = [self.group(parts)]
+            # Group the braced items to allow single-line or multi-line formatting
+            braced_items = self.group(
+                self.concat(
+                    [
+                        self.text("{"),
+                        self.indent(
+                            self.concat(
+                                [
+                                    self.line(),  # Soft line, becomes space or newline
+                                    actual_items_doc,  # This is now a DocType
+                                ]
+                            )
+                        ),
+                        self.line(),  # Soft line
+                        self.text("}"),
+                    ]
+                )
+            )
+            parts.append(braced_items)
+        else:
+            items_gen_ir = node.items.gen.doc_ir
+            if items_gen_ir:
+                parts.append(items_gen_ir[0])
+            parts.append(self.text(";"))
+        node.gen.doc_ir = [self.concat(parts)]
 
     def exit_module_item(self, node: uni.ModuleItem) -> None:
         """Generate DocIR for module items."""
@@ -231,14 +270,7 @@ class DocIRGenPass(UniPass):
                     body_content_parts[-1], doc.Line
                 ):  # Remove last hard_line
                     body_content_parts.pop()
-            elif (
-                isinstance(node.body, uni.ImplDef) and node.body.gen.doc_ir
-            ):  # Should not happen based on grammar for Architype
-                # This case might indicate an ImplDef as the body, which is unusual for Architype directly.
-                # Jac grammar: architype: DOC_STRING? decorators? arch_type access_tag? NAME inheritance? (body | SEMI)
-                # body: LBRACE arch_body? RBRACE | EQ KW_DEFAULT SEMI
-                # arch_body: (arch_has | ability | module_code | py_inline_code | SEMI)+
-                # An ImplDef is not directly an arch_body_item. If it were, it would come from node.body.gen.doc_ir[0]
+            elif isinstance(node.body, uni.ImplDef) and node.body.gen.doc_ir:
                 impl_def_doc = node.body.gen.doc_ir[0]
                 if impl_def_doc:
                     body_content_parts.append(impl_def_doc)

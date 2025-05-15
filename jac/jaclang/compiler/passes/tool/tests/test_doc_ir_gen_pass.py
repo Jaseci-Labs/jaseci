@@ -15,3 +15,10 @@ class DocIrGenPassTests(TestCase, AstSyncTestMixin):
     """Test pass module."""
 
     TargetPass = DocIRGenPass
+
+    def test_corelib_fmt(self) -> None:
+        """Parse micro jac file."""
+        code_gen_format = JacProgram.jac_file_formatter(
+            self.fixture_abs_path("corelib.jac"), docir=True
+        )
+        print(code_gen_format)

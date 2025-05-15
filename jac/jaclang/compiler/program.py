@@ -27,7 +27,11 @@ from jaclang.compiler.passes.main import (
     SymTabLinkPass,
     Transform,
 )
-from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
+from jaclang.compiler.passes.tool import (
+    DocIRGenPass,
+    FuseCommentsPass,
+    JacFormatPass,
+)
 from jaclang.utils.log import logging
 
 
@@ -174,16 +178,14 @@ class JacProgram:
             final_pass(mod, prog=self)
 
     @staticmethod
-    def jac_file_formatter(file_path: str) -> str:
+    def jac_file_formatter(file_path: str, docir: bool = False) -> str:
         """Convert a Jac file to an AST."""
-        target = JacFormatPass
         prog = JacProgram()
         with open(file_path) as file:
             source = uni.Source(file.read(), mod_path=file_path)
             prse: Transform = JacParser(root_ir=source, prog=prog)
-        for i in [FuseCommentsPass, JacFormatPass]:
+        for i in [FuseCommentsPass, JacFormatPass] if not docir else [DocIRGenPass]:
             prse = i(ir_in=prse.ir_out, prog=prog)
-        prse = target(ir_in=prse.ir_out, prog=prog)
         prse.errors_had = prog.errors_had
         prse.warnings_had = prog.warnings_had
         return prse.ir_out.gen.jac
