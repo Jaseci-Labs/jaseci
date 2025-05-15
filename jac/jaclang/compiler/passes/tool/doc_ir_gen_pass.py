@@ -116,9 +116,7 @@ class DocIRGenPass(UniPass):
         import_parts: list[doc.DocType] = []
         for item in node.body:
             if isinstance(item, uni.Import) and item.gen.doc_ir:
-                import_parts.append(
-                    item.gen.doc_ir[0] if item.gen.doc_ir else self.text("")
-                )
+                import_parts.append(item.gen.doc_ir[0])
                 import_parts.append(self.hard_line())
 
         if import_parts:
@@ -129,11 +127,7 @@ class DocIRGenPass(UniPass):
         other_parts: list[doc.DocType] = []
         for item in node.body:
             if not isinstance(item, uni.Import) and item.gen.doc_ir:
-                other_parts.append(
-                    item.gen.doc_ir[0]
-                    if isinstance(item.gen.doc_ir, list)
-                    else item.gen.doc_ir
-                )
+                other_parts.append(item.gen.doc_ir[0])
                 other_parts.append(self.hard_line())
                 other_parts.append(self.hard_line())
 
@@ -184,11 +178,7 @@ class DocIRGenPass(UniPass):
         ):  # Check if node.path and node.path.items are not None
             for i, path_item in enumerate(node.path.items):
                 if path_item.gen.doc_ir:
-                    parts.append(
-                        path_item.gen.doc_ir[0]
-                        if isinstance(path_item.gen.doc_ir, list)
-                        else path_item.gen.doc_ir
-                    )
+                    parts.append(path_item.gen.doc_ir[0])
                     if i < len(node.path.items) - 1:
                         parts.append(self.text("."))
 
@@ -199,133 +189,224 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
 
         # Handle decorators
-        if node.decorators:
-            for decorator in node.decorators.items:
-                if decorator.gen.doc_ir:
-                    parts.append(decorator.gen.doc_ir[0])
-                    parts.append(self.hard_line())
+        if node.decorators and node.decorators.items:
+            # Assuming decorators.gen.doc_ir[0] is a Concat of individual decorator docs, each needing a hard_line
+            # Or, decorators themselves are handled by exit_sub_node_list to be joined by lines,
+            # and we want hard_lines *between* them.
+            # Let's assume each decorator from decorators.items should be on its own line.
+            decorator_docs: list[doc.DocType] = []
+            for decorator_node in node.decorators.items:
+                if decorator_node.gen.doc_ir:
+                    decorator_doc = decorator_node.gen.doc_ir[0]
+                    if decorator_doc:
+                        decorator_docs.append(decorator_doc)
+                        decorator_docs.append(self.hard_line())
+            if decorator_docs:
+                parts.extend(decorator_docs)
 
-        # Type declaration
+        # Type declaration: arch_type <name>
         header_parts: list[doc.DocType] = [self.text(node.arch_type.value)]
-        if node.name:
+        if (
+            node.name and node.name.gen.doc_ir
+        ):  # name is Name, gen.doc_ir[0] will be text
             header_parts.append(self.text(" "))
-            header_parts.append(self.text(node.name.value))
+            name_doc = node.name.gen.doc_ir[0]
+            if name_doc:
+                header_parts.append(name_doc)
 
-        # Inheritance
-        if node.base_classes and node.base_classes.gen.doc_ir:
-            header_parts.append(self.text(": "))
-            header_parts.append(node.base_classes.gen.doc_ir[0])
+        # Inheritance: : base1, base2
+        if (
+            node.base_classes
+            and node.base_classes.items
+            and node.base_classes.gen.doc_ir
+        ):
+            base_classes_doc = node.base_classes.gen.doc_ir[0]
+            if not (
+                isinstance(base_classes_doc, doc.Concat) and not base_classes_doc.parts
+            ):
+                header_parts.append(self.text(": "))
+                # The base_classes_doc might need its own group/indent if it's long
+                # For now, assume it's simple enough or handled by its own SubNodeList formatting.
+                header_parts.append(base_classes_doc)
 
-        parts.append(self.group(header_parts))
+        parts.append(self.group(self.concat(header_parts)))  # Group the header part
 
-        # Handle body
+        # Handle body: { ... }
         if node.body:
-            body_parts: list[doc.DocType] = []
-            for item in node.body.items:
-                if item.gen.doc_ir:
-                    body_parts.append(item.gen.doc_ir[0])
-                    body_parts.append(self.hard_line())
-
             parts.append(self.text(" {"))
-            parts.append(
-                self.indent(self.concat([self.hard_line(), self.group(body_parts)]))
-            )
-            parts.append(self.hard_line())
-            parts.append(self.text("}"))
-        else:
-            parts.append(self.text(" {}"))
+            body_content_parts: list[doc.DocType] = []
+            if isinstance(node.body, uni.SubNodeList) and node.body.items:
+                # Iterate through items of SubNodeList and add hard_line after each
+                for item in node.body.items:
+                    if item.gen.doc_ir:
+                        item_doc = item.gen.doc_ir[0]
+                        if item_doc:
+                            body_content_parts.append(item_doc)
+                            body_content_parts.append(self.hard_line())
+                if body_content_parts and isinstance(
+                    body_content_parts[-1], doc.Line
+                ):  # Remove last hard_line
+                    body_content_parts.pop()
+            elif (
+                isinstance(node.body, uni.ImplDef) and node.body.gen.doc_ir
+            ):  # Should not happen based on grammar for Architype
+                # This case might indicate an ImplDef as the body, which is unusual for Architype directly.
+                # Jac grammar: architype: DOC_STRING? decorators? arch_type access_tag? NAME inheritance? (body | SEMI)
+                # body: LBRACE arch_body? RBRACE | EQ KW_DEFAULT SEMI
+                # arch_body: (arch_has | ability | module_code | py_inline_code | SEMI)+
+                # An ImplDef is not directly an arch_body_item. If it were, it would come from node.body.gen.doc_ir[0]
+                impl_def_doc = node.body.gen.doc_ir[0]
+                if impl_def_doc:
+                    body_content_parts.append(impl_def_doc)
 
-        parts.append(self.text(";"))
-        node.gen.doc_ir = [self.group(parts)]
+            if body_content_parts:
+                parts.append(
+                    self.indent(
+                        self.concat([self.hard_line(), self.concat(body_content_parts)])
+                    )
+                )
+                parts.append(self.hard_line())  # Line before closing brace
+            else:  # Empty body {} vs {\n}
+                parts.append(self.line())  # allow break for empty body like { \n }
+
+            parts.append(self.text("}"))
+        else:  # No body, e.g., forward declaration with SEMI
+            parts.append(self.text(";"))  # From grammar: arch_type ... (body | SEMI)
+
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_ability(self, node: uni.Ability) -> None:
         """Generate DocIR for abilities."""
         parts: list[doc.DocType] = []
 
         # Handle decorators
-        if node.decorators:
-            for decorator in node.decorators.items:
-                if decorator.gen.doc_ir:
-                    parts.append(decorator.gen.doc_ir[0])
-                    parts.append(self.hard_line())
+        if node.decorators and node.decorators.items:
+            decorator_docs: list[doc.DocType] = []
+            for decorator_node in node.decorators.items:
+                if decorator_node.gen.doc_ir:
+                    decorator_doc = decorator_node.gen.doc_ir[0]
+                    if decorator_doc:
+                        decorator_docs.append(decorator_doc)
+                        decorator_docs.append(self.hard_line())
+            if decorator_docs:
+                parts.extend(decorator_docs)
 
+        header_parts: list[doc.DocType] = []
         # Static keyword
         if node.is_static:
-            parts.append(self.text("static "))
+            header_parts.append(self.text("static "))
 
         # Type (can/def)
         if node.is_def:
-            parts.append(self.text("def"))
+            header_parts.append(self.text("def"))
         else:
-            parts.append(self.text("can"))
-        parts.append(self.text(" "))
+            header_parts.append(self.text("can"))
 
         # Name and signature
-        if node.name_ref:
-            parts.append(self.text(node.name_ref.unparse()))
+        if node.name_ref and node.name_ref.gen.doc_ir:
+            name_ref_doc = node.name_ref.gen.doc_ir[0]
+            if name_ref_doc:
+                header_parts.append(self.text(" "))
+                header_parts.append(name_ref_doc)
 
         if node.signature and node.signature.gen.doc_ir:
-            parts.append(node.signature.gen.doc_ir[0])
+            sig_doc = node.signature.gen.doc_ir[0]
+            if sig_doc:
+                header_parts.append(sig_doc)
+
+        parts.append(self.group(self.concat(header_parts)))  # Group the header
 
         # Handle body
-        if node.body and node.body.gen.doc_ir:
-            parts.append(self.text(" "))
-            parts.append(self.text("{"))
-            parts.append(
-                self.indent(self.concat([self.hard_line(), node.body.gen.doc_ir[0]]))
-            )
-            parts.append(self.hard_line())
-            parts.append(self.text("}"))
-        else:
-            parts.append(self.text(" {}"))
+        if node.body:  # body is SubNodeList[CodeBlockStmt] or ImplDef or FuncCall
+            parts.append(self.text(" "))  # Space before {
+            if isinstance(node.body, uni.FuncCall):  # GenAI ability: by func_call;
+                parts.append(self.text("by "))
+                if node.body.gen.doc_ir:
+                    body_doc = node.body.gen.doc_ir[0]
+                    if body_doc:
+                        parts.append(body_doc)
+                parts.append(self.text(";"))
+            elif isinstance(node.body, uni.SubNodeList):  # Regular ability with a block
+                parts.append(self.text("{"))
+                body_content_parts: list[doc.DocType] = []
+                if node.body.items:
+                    for item in node.body.items:
+                        if item.gen.doc_ir:
+                            item_doc = item.gen.doc_ir[0]
+                            if item_doc:
+                                body_content_parts.append(item_doc)
+                                body_content_parts.append(self.hard_line())
+                    if body_content_parts and isinstance(
+                        body_content_parts[-1], doc.Line
+                    ):
+                        body_content_parts.pop()  # remove last hard_line
 
-        parts.append(self.text(";"))
-        node.gen.doc_ir = [self.group(parts)]
+                if body_content_parts:
+                    parts.append(
+                        self.indent(
+                            self.concat(
+                                [self.hard_line(), self.concat(body_content_parts)]
+                            )
+                        )
+                    )
+                    parts.append(self.hard_line())  # Line before closing brace
+                else:  # Empty body {}
+                    parts.append(self.line())  # allow break for empty body like { \n }
+                parts.append(self.text("}"))
+                if (
+                    not node.is_abstract
+                ):  # Abstract abilities are `def name() abstract;` vs `def name() {};`
+                    parts.append(
+                        self.text(";")
+                    )  # Semicolon for non-abstract block abilities like `def foo() {};`
+            # ImplDef case for body is not standard for Ability from grammar, usually for Arch/Enum
+
+        elif node.is_abstract:  # abstract ability: def name() abstract;
+            parts.append(self.text(" abstract;"))
+        else:  # No body and not abstract, e.g. forward decl for event: can event_name with func_sig;
+            parts.append(self.text(";"))
+
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_func_signature(self, node: uni.FuncSignature) -> None:
         """Generate DocIR for function signatures."""
         parts: list[doc.DocType] = [self.text("(")]
 
-        # Parameters
-        if node.params:
-            param_parts: list[doc.DocType] = []
-            for param in node.params.items:
-                if param.gen.doc_ir:
-                    param_parts.append(param.gen.doc_ir[0])
+        if node.params and node.params.gen.doc_ir:
+            # node.params.gen.doc_ir[0] should now be the DocIR for the joined parameter list
+            # as produced by the updated exit_sub_node_list
+            params_doc = node.params.gen.doc_ir[0]
 
-            param_group = self.group(self.join(self.text(", "), param_parts))
-
-            # Check if parameters should be broken into multiple lines
-            parts.append(
-                self.if_break(
-                    self.concat(
-                        [
-                            self.indent(
-                                self.concat(
-                                    [
-                                        self.hard_line(),
-                                        self.join(
-                                            self.concat([self.text(","), self.line()]),
-                                            param_parts,
-                                        ),
-                                    ]
-                                )
-                            ),
-                            self.hard_line(),
-                        ]
-                    ),
-                    param_group,
-                )
+            # Only add content if params_doc is not empty (e.g., not an empty self.concat([]))
+            # We need a way to check if a DocType is "empty". For now, assume it might be non-empty.
+            # A more robust check would be if params_doc is a Concat with no parts.
+            is_empty_concat = (
+                isinstance(params_doc, doc.Concat) and not params_doc.parts
             )
+
+            if not is_empty_concat:
+                parts.append(
+                    self.indent(
+                        self.concat(
+                            [
+                                self.line(),  # soft line, becomes space or newline
+                                params_doc,
+                            ]
+                        )
+                    )
+                )
+                parts.append(self.line())  # soft line before closing ')'
 
         parts.append(self.text(")"))
 
         # Return type
         if node.return_type and node.return_type.gen.doc_ir:
-            parts.append(self.text(" -> "))
-            parts.append(node.return_type.gen.doc_ir[0])
+            return_type_doc = node.return_type.gen.doc_ir[0]
+            if return_type_doc:
+                parts.append(self.text(" -> "))
+                parts.append(return_type_doc)
 
-        node.gen.doc_ir = [self.group(parts)]
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_param_var(self, node: uni.ParamVar) -> None:
         """Generate DocIR for parameter variables."""
@@ -336,19 +417,11 @@ class DocIRGenPass(UniPass):
 
         if node.type_tag and node.type_tag.gen.doc_ir:
             parts.append(self.text(": "))
-            parts.append(
-                node.type_tag.tag.gen.doc_ir[0]
-                if isinstance(node.type_tag.tag.gen.doc_ir, list)
-                else node.type_tag.tag.gen.doc_ir
-            )
+            parts.append(node.type_tag.tag.gen.doc_ir[0])
 
         if node.value and node.value.gen.doc_ir:
             parts.append(self.text(" = "))
-            parts.append(
-                node.value.gen.doc_ir[0]
-                if isinstance(node.value.gen.doc_ir, list)
-                else node.value.gen.doc_ir
-            )
+            parts.append(node.value.gen.doc_ir[0])
 
         node.gen.doc_ir = [self.group(parts)]
 
@@ -365,27 +438,58 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for assignments."""
         parts: list[doc.DocType] = []
 
-        # Left side
-        if node.target and node.target.gen.doc_ir:
+        # Left side (target)
+        if node.target and node.target.gen.doc_ir:  # target is SubNodeList[Expr]
+            # Assuming node.target.gen.doc_ir[0] is the processed doc for targets
+            # If multiple targets (e.g. a,b = 1,2), SubNodeList should have handled joining them (e.g. with ", ")
             target_doc = node.target.gen.doc_ir[0]
-            if target_doc:
+            if target_doc and not (
+                isinstance(target_doc, doc.Concat) and not target_doc.parts
+            ):
                 parts.append(target_doc)
 
         # Type annotation
         if node.type_tag and node.type_tag.gen.doc_ir:
-            parts.append(self.text(": "))
-            parts.append(node.type_tag.gen.doc_ir[0])
+            type_tag_doc = node.type_tag.gen.doc_ir[0]
+            if type_tag_doc:
+                parts.append(
+                    self.text(": ")
+                )  # unitree has SubTag for type_tag, which adds ':'
+                # but here it's direct, so add ': '
+                parts.append(type_tag_doc)
 
         # Assignment operator
-        parts.append(self.text(" = "))
+        op_str = node.aug_op.value if node.aug_op else "="
+        parts.append(self.text(f" {op_str} "))
 
-        # Right side
+        # Right side (value)
         if node.value and node.value.gen.doc_ir:
-            parts.append(node.value.gen.doc_ir[0])
+            value_doc = node.value.gen.doc_ir[0]
+            if value_doc:
+                # Potentially breakable if the value is long
+                parts.append(
+                    self.group(self.indent(self.concat([self.line(), value_doc])))
+                )
 
-        parts.append(self.text(";"))
+        # Semicolon, unless it's an Enum statement or inside specific for-loop parts
+        # or inside GlobalVars (handled by GlobalVars exit)
+        is_global_var_item = False
+        if (
+            node.parent
+            and isinstance(node.parent, uni.SubNodeList)
+            and node.parent.parent
+            and isinstance(node.parent.parent, uni.GlobalVars)
+        ):
+            is_global_var_item = True
 
-        node.gen.doc_ir = [self.group(parts)]
+        if (
+            not node.is_enum_stmt
+            and not isinstance(node.parent, uni.IterForStmt)
+            and not is_global_var_item
+        ):
+            parts.append(self.text(";"))
+
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_if_stmt(self, node: uni.IfStmt) -> None:
         """Generate DocIR for if statements."""
@@ -393,87 +497,120 @@ class DocIRGenPass(UniPass):
 
         # Condition
         if node.condition and node.condition.gen.doc_ir:
-            parts.append(node.condition.gen.doc_ir[0])
+            cond_doc = node.condition.gen.doc_ir[0]
+            if cond_doc:
+                # Group condition to allow breaking if it's very long
+                parts.append(self.group(cond_doc))
 
-        # Body
-        parts.append(self.text(" "))
-        parts.append(self.text("{"))
+        # Body: { ... }
+        parts.append(self.text(" {"))  # Space before {
+        body_content_parts: list[doc.DocType] = []
+        if node.body and node.body.items:  # body is SubNodeList[CodeBlockStmt]
+            for item in node.body.items:
+                if item.gen.doc_ir:
+                    item_doc = item.gen.doc_ir[0]
+                    if item_doc:
+                        body_content_parts.append(item_doc)
+                        body_content_parts.append(self.hard_line())
+            if body_content_parts and isinstance(
+                body_content_parts[-1], doc.Line
+            ):  # remove last hard_line
+                body_content_parts.pop()
 
-        if node.body and node.body.gen.doc_ir:
-            body_content = (
-                node.body.gen.doc_ir[0]
-                if isinstance(node.body.gen.doc_ir, list)
-                else node.body.gen.doc_ir
+        if body_content_parts:
+            parts.append(
+                self.indent(
+                    self.concat([self.hard_line(), self.concat(body_content_parts)])
+                )
             )
-            parts.append(self.indent(self.concat([self.hard_line(), body_content])))
-            parts.append(self.hard_line())
-
+            parts.append(self.hard_line())  # Line before closing brace
+        else:  # Empty body {}
+            parts.append(self.line())  # allow break for empty body like { \n }
         parts.append(self.text("}"))
 
         # Else or ElseIf
         if node.else_body and node.else_body.gen.doc_ir:
-            parts.append(self.text(" "))
-            parts.append(
-                node.else_body.gen.doc_ir[0]
-                if isinstance(node.else_body.gen.doc_ir, list)
-                else node.else_body.gen.doc_ir
-            )
+            # else_body could be ElseIf or ElseStmt. Their gen.doc_ir[0] is the full construct.
+            else_doc = node.else_body.gen.doc_ir[0]
+            if else_doc:
+                parts.append(self.text(" "))  # Space before else/elif
+                parts.append(else_doc)
 
-        node.gen.doc_ir = [self.group(parts)]
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_else_if(self, node: uni.ElseIf) -> None:
         """Generate DocIR for else if statements."""
+        # uni.ElseIf inherits from uni.IfStmt, structure is similar: elif cond { body } else_chain?
         parts: list[doc.DocType] = [self.text("elif ")]
 
         # Condition
         if node.condition and node.condition.gen.doc_ir:
-            parts.append(node.condition.gen.doc_ir[0])
+            cond_doc = node.condition.gen.doc_ir[0]
+            if cond_doc:
+                parts.append(self.group(cond_doc))
 
-        # Body
-        parts.append(self.text(" "))
-        parts.append(self.text("{"))
+        # Body: { ... }
+        parts.append(self.text(" {"))
+        body_content_parts: list[doc.DocType] = []
+        if node.body and node.body.items:  # body is SubNodeList[CodeBlockStmt]
+            for item in node.body.items:
+                if item.gen.doc_ir:
+                    item_doc = item.gen.doc_ir[0]
+                    if item_doc:
+                        body_content_parts.append(item_doc)
+                        body_content_parts.append(self.hard_line())
+            if body_content_parts and isinstance(body_content_parts[-1], doc.Line):
+                body_content_parts.pop()
 
-        if node.body and node.body.gen.doc_ir:
-            body_content = (
-                node.body.gen.doc_ir[0]
-                if isinstance(node.body.gen.doc_ir, list)
-                else node.body.gen.doc_ir
+        if body_content_parts:
+            parts.append(
+                self.indent(
+                    self.concat([self.hard_line(), self.concat(body_content_parts)])
+                )
             )
-            parts.append(self.indent(self.concat([self.hard_line(), body_content])))
             parts.append(self.hard_line())
-
+        else:
+            parts.append(self.line())
         parts.append(self.text("}"))
 
-        # Else or ElseIf
+        # Else or ElseIf chain
         if node.else_body and node.else_body.gen.doc_ir:
-            parts.append(self.text(" "))
-            parts.append(
-                node.else_body.gen.doc_ir[0]
-                if isinstance(node.else_body.gen.doc_ir, list)
-                else node.else_body.gen.doc_ir
-            )
+            else_doc = node.else_body.gen.doc_ir[0]
+            if else_doc:
+                parts.append(self.text(" "))
+                parts.append(else_doc)
 
-        node.gen.doc_ir = [self.group(parts)]
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_else_stmt(self, node: uni.ElseStmt) -> None:
         """Generate DocIR for else statements."""
-        parts: list[doc.DocType] = [self.text("else ")]
+        parts: list[doc.DocType] = [self.text("else")]
 
-        # Body
-        parts.append(self.text("{"))
+        # Body: { ... }
+        parts.append(self.text(" {"))
+        body_content_parts: list[doc.DocType] = []
+        if node.body and node.body.items:  # body is SubNodeList[CodeBlockStmt]
+            for item in node.body.items:
+                if item.gen.doc_ir:
+                    item_doc = item.gen.doc_ir[0]
+                    if item_doc:
+                        body_content_parts.append(item_doc)
+                        body_content_parts.append(self.hard_line())
+            if body_content_parts and isinstance(body_content_parts[-1], doc.Line):
+                body_content_parts.pop()
 
-        if node.body and node.body.gen.doc_ir:
-            body_content = (
-                node.body.gen.doc_ir[0]
-                if isinstance(node.body.gen.doc_ir, list)
-                else node.body.gen.doc_ir
+        if body_content_parts:
+            parts.append(
+                self.indent(
+                    self.concat([self.hard_line(), self.concat(body_content_parts)])
+                )
             )
-            parts.append(self.indent(self.concat([self.hard_line(), body_content])))
             parts.append(self.hard_line())
-
+        else:
+            parts.append(self.line())
         parts.append(self.text("}"))
 
-        node.gen.doc_ir = [self.group(parts)]
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_binary_expr(self, node: uni.BinaryExpr) -> None:
         """Generate DocIR for binary expressions."""
@@ -481,21 +618,49 @@ class DocIRGenPass(UniPass):
 
         # Left operand
         if node.left and node.left.gen.doc_ir:
-            parts.append(node.left.gen.doc_ir[0])
+            left_doc = node.left.gen.doc_ir[0]
+            if left_doc:
+                parts.append(left_doc)
 
-        # Operator
-        parts.append(self.text(" "))
+        # Operator - with a potential line break before it
+        op_str = ""
         if isinstance(node.op, uni.Token):
-            parts.append(self.text(node.op.value))
-        elif node.op.gen.doc_ir:
-            parts.append(node.op.gen.doc_ir[0])
-        parts.append(self.text(" "))
+            op_str = node.op.value
+        elif node.op and node.op.gen.doc_ir:  # For ConnectOp/DisconnectOp as op
+            op_doc = node.op.gen.doc_ir[0]
+            if op_doc and isinstance(
+                op_doc, doc.Text
+            ):  # Assuming these ops become simple text
+                op_str = op_doc.text
+            elif op_doc:  # If it's a more complex DocType for an op
+                parts.append(self.line())  # space or newline
+                parts.append(op_doc)
+                parts.append(self.text(" "))  # space after op
+                op_str = "complex_op_handled"  # Flag to skip default op handling
+
+        if op_str and op_str != "complex_op_handled":
+            # Decide if operator needs spaces around it based on Jac style (e.g., `a+b` vs `a + b`)
+            # Common style is spaces around binary ops, except maybe for `**`.
+            # For now, always add spaces.
+            parts.append(
+                self.line()
+            )  # Soft line before operator (becomes space or newline)
+            parts.append(self.text(op_str))
+            parts.append(
+                self.text(" ")
+            )  # Ensure space after operator if it doesn't break
 
         # Right operand
         if node.right and node.right.gen.doc_ir:
-            parts.append(node.right.gen.doc_ir[0])
+            right_doc = node.right.gen.doc_ir[0]
+            if right_doc:
+                parts.append(right_doc)
 
-        node.gen.doc_ir = [self.group(parts)]
+        # The whole binary expression is a group. If it breaks, it tries to break at self.line().
+        # Parentheses are not added by default by this formatter,
+        # relying on parser to create AtomUnit (parenthesized expr) if original code had them
+        # or if needed for precedence by other transformation passes.
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_expr_stmt(self, node: uni.ExprStmt) -> None:
         """Generate DocIR for expression statements."""
@@ -526,53 +691,31 @@ class DocIRGenPass(UniPass):
 
         # Name or callable expression (target in FuncCall)
         if node.target and node.target.gen.doc_ir:
-            parts.append(node.target.gen.doc_ir[0])
+            target_doc = node.target.gen.doc_ir[0]
+            if target_doc:
+                parts.append(target_doc)
 
         # Parameters
         parts.append(self.text("("))
 
-        if node.params and node.params.items:
-            param_parts: list[doc.DocType] = []
-            for param in node.params.items:
-                if param.gen.doc_ir:
-                    param_parts.append(
-                        param.gen.doc_ir[0]
-                        if isinstance(param.gen.doc_ir, list)
-                        else param.gen.doc_ir
-                    )
+        if (
+            node.params and node.params.items and node.params.gen.doc_ir
+        ):  # Check items for non-empty list
+            # node.params.gen.doc_ir[0] is the DocIR for the joined parameter list
+            params_doc = node.params.gen.doc_ir[0]
+            is_empty_concat = (
+                isinstance(params_doc, doc.Concat) and not params_doc.parts
+            )
 
-            # Check if parameters should be broken into multiple lines
-            if param_parts:
-                param_group = self.group(self.join(self.text(", "), param_parts))
-
-                # Advanced layout with conditional line breaks
+            if not is_empty_concat:
                 parts.append(
-                    self.if_break(
-                        self.concat(
-                            [
-                                self.indent(
-                                    self.concat(
-                                        [
-                                            self.hard_line(),
-                                            self.join(
-                                                self.concat(
-                                                    [self.text(","), self.line()]
-                                                ),
-                                                param_parts,
-                                            ),
-                                        ]
-                                    )
-                                ),
-                                self.hard_line(),
-                            ]
-                        ),
-                        param_group,
-                    )
+                    self.indent(self.concat([self.line(), params_doc]))  # soft line
                 )
+                parts.append(self.line())  # soft line before closing ')'
 
         parts.append(self.text(")"))
 
-        node.gen.doc_ir = [self.group(parts)]
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_atom_trailer(self, node: uni.AtomTrailer) -> None:
         """Generate DocIR for atom trailers."""
@@ -627,89 +770,63 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for list values."""
         parts: list[doc.DocType] = [self.text("[")]
 
-        if node.values:
-            value_parts: list[doc.DocType] = []
-            for value in node.values.items:
-                if value.gen.doc_ir:
-                    value_parts.append(
-                        value.gen.doc_ir[0]
-                        if isinstance(value.gen.doc_ir, list)
-                        else value.gen.doc_ir
-                    )
-
-            if value_parts:
-                # Check if list should be broken into multiple lines
+        if (
+            node.values and node.values.items and node.values.gen.doc_ir
+        ):  # Check items for non-empty list
+            # node.values.gen.doc_ir[0] is the DocIR for the joined value list
+            values_doc = node.values.gen.doc_ir[0]
+            if not (isinstance(values_doc, doc.Concat) and not values_doc.parts):
                 parts.append(
-                    self.if_break(
-                        self.concat(
-                            [
-                                self.indent(
-                                    self.concat(
-                                        [
-                                            self.hard_line(),
-                                            self.join(
-                                                self.concat(
-                                                    [self.text(","), self.line()]
-                                                ),
-                                                value_parts,
-                                            ),
-                                        ]
-                                    )
-                                ),
-                                self.hard_line(),
-                            ]
-                        ),
-                        self.join(self.text(", "), value_parts),
-                    )
+                    self.indent(self.concat([self.line(), values_doc]))  # soft line
                 )
+                parts.append(self.line())  # soft line before closing ']'
+            # Python {} is an empty dict, set() is an empty set.
+            # Jac {a,b} is a set. If node.values is empty, it should be set().
+            # This pass currently generates {} for empty set if node.values is None/empty.
+            # This might need adjustment if Jac syntax for empty set is different or needs explicit set().
+            # For now, assuming {} is acceptable if the parser produces SetVal with no items.
+            # If it must be `set()`, then this logic needs to change for empty `node.values`.
+            # Based on unitree.SetVal.normalize, it produces {} for empty set.
 
         parts.append(self.text("]"))
 
-        node.gen.doc_ir = [self.group(parts)]
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_dict_val(self, node: uni.DictVal) -> None:
         """Generate DocIR for dictionary values."""
         parts: list[doc.DocType] = [self.text("{")]
 
+        # node.kv_pairs is a Python list of KVPair, not a SubNodeList here.
+        # We need to get the doc_ir from each KVPair and join them.
         if node.kv_pairs:
-            pair_parts: list[doc.DocType] = []
-            for pair in node.kv_pairs:
-                if pair.gen.doc_ir:
-                    pair_parts.append(
-                        pair.gen.doc_ir[0]
-                        if isinstance(pair.gen.doc_ir, list)
-                        else pair.gen.doc_ir
-                    )
+            pair_docs: list[doc.DocType] = []
+            for pair_node in node.kv_pairs:
+                if pair_node.gen.doc_ir:
+                    pair_doc = pair_node.gen.doc_ir[0]
+                    if pair_doc:
+                        pair_docs.append(pair_doc)
 
-            if pair_parts:
-                # Check if dict should be broken into multiple lines
-                parts.append(
-                    self.if_break(
-                        self.concat(
-                            [
-                                self.indent(
-                                    self.concat(
-                                        [
-                                            self.hard_line(),
-                                            self.join(
-                                                self.concat(
-                                                    [self.text(","), self.line()]
-                                                ),
-                                                pair_parts,
-                                            ),
-                                        ]
-                                    )
-                                ),
-                                self.hard_line(),
-                            ]
-                        ),
-                        self.join(self.text(", "), pair_parts),
-                    )
+            if pair_docs:
+                # Join the KVPair docs with "," and a line break opportunity
+                joined_kv_pairs = self.join(
+                    self.concat([self.text(","), self.line()]), pair_docs
                 )
+                is_empty_concat = (
+                    isinstance(joined_kv_pairs, doc.Concat)
+                    and not joined_kv_pairs.parts
+                )
+
+                if not is_empty_concat:
+                    parts.append(
+                        self.indent(
+                            self.concat([self.line(), joined_kv_pairs])  # soft line
+                        )
+                    )
+                    parts.append(self.line())  # soft line before closing '}'
 
         parts.append(self.text("}"))
 
-        node.gen.doc_ir = [self.group(parts)]
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_k_v_pair(self, node: uni.KVPair) -> None:
         """Generate DocIR for key-value pairs."""
@@ -767,214 +884,283 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = [self.text("while ")]
 
         if node.condition and node.condition.gen.doc_ir:
-            parts.append(node.condition.gen.doc_ir[0])
+            cond_doc = node.condition.gen.doc_ir[0]
+            if cond_doc:
+                parts.append(self.group(cond_doc))
 
-        parts.append(self.text(" "))
-        parts.append(self.text("{"))
+        parts.append(self.text(" {"))
+        body_content_parts: list[doc.DocType] = []
+        if node.body and node.body.items:  # body is SubNodeList[CodeBlockStmt]
+            for item in node.body.items:
+                if item.gen.doc_ir:
+                    item_doc = item.gen.doc_ir[0]
+                    if item_doc:
+                        body_content_parts.append(item_doc)
+                        body_content_parts.append(self.hard_line())
+            if body_content_parts and isinstance(body_content_parts[-1], doc.Line):
+                body_content_parts.pop()
 
-        if node.body and node.body.gen.doc_ir:
-            body_content = (
-                node.body.gen.doc_ir[0]
-                if isinstance(node.body.gen.doc_ir, list)
-                else node.body.gen.doc_ir
+        if body_content_parts:
+            parts.append(
+                self.indent(
+                    self.concat([self.hard_line(), self.concat(body_content_parts)])
+                )
             )
-            parts.append(self.indent(self.concat([self.hard_line(), body_content])))
             parts.append(self.hard_line())
-
+        else:
+            parts.append(self.line())
         parts.append(self.text("}"))
 
-        node.gen.doc_ir = [self.group(parts)]
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_in_for_stmt(self, node: uni.InForStmt) -> None:
         """Generate DocIR for for-in statements."""
         parts: list[doc.DocType] = [self.text("for ")]
 
         if node.target and node.target.gen.doc_ir:
-            parts.append(node.target.gen.doc_ir[0])
+            target_doc = node.target.gen.doc_ir[0]
+            if target_doc:
+                parts.append(self.group(target_doc))  # Target can be complex
 
         parts.append(self.text(" in "))
 
         if node.collection and node.collection.gen.doc_ir:
-            parts.append(node.collection.gen.doc_ir[0])
+            coll_doc = node.collection.gen.doc_ir[0]
+            if coll_doc:
+                parts.append(self.group(coll_doc))  # Collection can be complex
 
-        parts.append(self.text(" "))
-        parts.append(self.text("{"))
+        parts.append(self.text(" {"))
+        body_content_parts: list[doc.DocType] = []
+        if node.body and node.body.items:  # body is SubNodeList[CodeBlockStmt]
+            for item in node.body.items:
+                if item.gen.doc_ir:
+                    item_doc = item.gen.doc_ir[0]
+                    if item_doc:
+                        body_content_parts.append(item_doc)
+                        body_content_parts.append(self.hard_line())
+            if body_content_parts and isinstance(body_content_parts[-1], doc.Line):
+                body_content_parts.pop()
 
-        if node.body and node.body.gen.doc_ir:
-            body_content = (
-                node.body.gen.doc_ir[0]
-                if isinstance(node.body.gen.doc_ir, list)
-                else node.body.gen.doc_ir
+        if body_content_parts:
+            parts.append(
+                self.indent(
+                    self.concat([self.hard_line(), self.concat(body_content_parts)])
+                )
             )
-            parts.append(self.indent(self.concat([self.hard_line(), body_content])))
             parts.append(self.hard_line())
-
+        else:
+            parts.append(self.line())
         parts.append(self.text("}"))
 
-        node.gen.doc_ir = [self.group(parts)]
+        # Jac for...in doesn't have an else clause in unitree.py
+
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_iter_for_stmt(self, node: uni.IterForStmt) -> None:
         """Generate DocIR for iterative for statements."""
         parts: list[doc.DocType] = [self.text("for ")]
 
+        # iter, condition, count_by are all potentially complex and groupable
         if node.iter and node.iter.gen.doc_ir:
-            parts.append(node.iter.gen.doc_ir[0])
-            parts.append(self.text("; "))
-        else:
-            parts.append(self.text("; "))
+            iter_doc = node.iter.gen.doc_ir[0]
+            if iter_doc:
+                parts.append(self.group(iter_doc))
+        # SEMI is added by Assignment node itself if it's a full statement.
+        # Here, it's part of for, so explicit semicolon if not an aug_assign which is not allowed here by grammar.
+        # The Assignment node in IterForStmt will not add its own semicolon due to parent context.
+        parts.append(self.text("; "))
 
         if node.condition and node.condition.gen.doc_ir:
-            parts.append(node.condition.gen.doc_ir[0])
-            parts.append(self.text("; "))
-        else:
-            parts.append(self.text("; "))
+            cond_doc = node.condition.gen.doc_ir[0]
+            if cond_doc:
+                parts.append(self.group(cond_doc))
+        parts.append(self.text("; "))
 
         if node.count_by and node.count_by.gen.doc_ir:
-            parts.append(node.count_by.gen.doc_ir[0])
+            count_doc = node.count_by.gen.doc_ir[0]
+            if count_doc:
+                parts.append(self.group(count_doc))
+        # No final semicolon for the header part of for loop.
 
-        parts.append(self.text(" "))
-        parts.append(self.text("{"))
+        parts.append(self.text(" {"))
+        body_content_parts: list[doc.DocType] = []
+        if node.body and node.body.items:  # body is SubNodeList[CodeBlockStmt]
+            for item in node.body.items:
+                if item.gen.doc_ir:
+                    item_doc = item.gen.doc_ir[0]
+                    if item_doc:
+                        body_content_parts.append(item_doc)
+                        body_content_parts.append(self.hard_line())
+            if body_content_parts and isinstance(body_content_parts[-1], doc.Line):
+                body_content_parts.pop()
 
-        if node.body and node.body.gen.doc_ir:
-            body_content = (
-                node.body.gen.doc_ir[0]
-                if isinstance(node.body.gen.doc_ir, list)
-                else node.body.gen.doc_ir
+        if body_content_parts:
+            parts.append(
+                self.indent(
+                    self.concat([self.hard_line(), self.concat(body_content_parts)])
+                )
             )
-            parts.append(self.indent(self.concat([self.hard_line(), body_content])))
             parts.append(self.hard_line())
-
+        else:
+            parts.append(self.line())
         parts.append(self.text("}"))
 
-        node.gen.doc_ir = [self.group(parts)]
+        # Jac iter_for_stmt doesn't have an else clause in unitree.py
+
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_try_stmt(self, node: uni.TryStmt) -> None:
         """Generate DocIR for try statements."""
-        parts: list[doc.DocType] = [self.text("try ")]
-        parts.append(self.text("{"))
+        parts: list[doc.DocType] = [self.text("try")]
 
-        if node.body and node.body.gen.doc_ir:
-            body_content = (
-                node.body.gen.doc_ir[0]
-                if isinstance(node.body.gen.doc_ir, list)
-                else node.body.gen.doc_ir
+        # Try Body
+        parts.append(self.text(" {"))
+        try_body_content_parts: list[doc.DocType] = []
+        if node.body and node.body.items:  # body is SubNodeList[CodeBlockStmt]
+            for item in node.body.items:
+                if item.gen.doc_ir:
+                    item_doc = item.gen.doc_ir[0]
+                    if item_doc:
+                        try_body_content_parts.append(item_doc)
+                        try_body_content_parts.append(self.hard_line())
+            if try_body_content_parts and isinstance(
+                try_body_content_parts[-1], doc.Line
+            ):
+                try_body_content_parts.pop()
+
+        if try_body_content_parts:
+            parts.append(
+                self.indent(
+                    self.concat([self.hard_line(), self.concat(try_body_content_parts)])
+                )
             )
-            parts.append(self.indent(self.concat([self.hard_line(), body_content])))
             parts.append(self.hard_line())
-
+        else:
+            parts.append(self.line())
         parts.append(self.text("}"))
 
-        # Handle except clauses
-        if node.excepts and node.excepts.items:  # Added .items
-            for except_clause in node.excepts.items:
-                if except_clause.gen.doc_ir:
-                    parts.append(self.text(" "))
-                    parts.append(
-                        except_clause.gen.doc_ir[0]
-                        if isinstance(except_clause.gen.doc_ir, list)
-                        else except_clause.gen.doc_ir
-                    )
+        # Handle except clauses (SubNodeList[Except])
+        if node.excepts and node.excepts.items:
+            for (
+                except_clause_node
+            ) in node.excepts.items:  # Iterate through uni.Except nodes
+                if except_clause_node.gen.doc_ir:
+                    except_doc = except_clause_node.gen.doc_ir[0]
+                    if except_doc:
+                        parts.append(self.text(" "))  # Space before except
+                        parts.append(except_doc)
 
-        # Handle finally clause
+        # Else body (if TryStmt supports it - uni.TryStmt has else_body: Optional[ElseStmt])
+        # Jac grammar for try_stmt doesn't show an `else` block directly, python does.
+        # Assuming no `else` for now for Jac `try` based on common Jac patterns.
+        # If `node.else_body` exists and is relevant for Jac, it would be handled like `finally`.
+
+        # Handle finally clause (FinallyStmt)
         if node.finally_body and node.finally_body.gen.doc_ir:
-            parts.append(self.text(" "))
-            parts.append(
-                node.finally_body.gen.doc_ir[0]
-                if isinstance(node.finally_body.gen.doc_ir, list)
-                else node.finally_body.gen.doc_ir
-            )
+            finally_doc = node.finally_body.gen.doc_ir[0]
+            if finally_doc:
+                parts.append(self.text(" "))  # Space before finally
+                parts.append(finally_doc)
 
-        node.gen.doc_ir = [self.group(parts)]
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_except(self, node: uni.Except) -> None:
         """Generate DocIR for except clauses."""
         parts: list[doc.DocType] = [self.text("except")]
 
         if node.ex_type and node.ex_type.gen.doc_ir:
-            parts.append(self.text(" "))
-            parts.append(node.ex_type.gen.doc_ir[0])
+            ex_type_doc = node.ex_type.gen.doc_ir[0]
+            if ex_type_doc:
+                parts.append(self.text(" "))
+                parts.append(self.group(ex_type_doc))  # Exception type can be complex
 
-        if node.name and node.name.gen.doc_ir:
-            parts.append(self.text(" as "))
-            parts.append(node.name.gen.doc_ir[0])
+        if node.name and node.name.gen.doc_ir:  # name is Name
+            name_doc = node.name.gen.doc_ir[0]
+            if name_doc:
+                parts.append(self.text(" as "))
+                parts.append(name_doc)
 
-        parts.append(self.text(" "))
-        parts.append(self.text("{"))
+        parts.append(self.text(" {"))
+        body_content_parts: list[doc.DocType] = []
+        if node.body and node.body.items:  # body is SubNodeList[CodeBlockStmt]
+            for item in node.body.items:
+                if item.gen.doc_ir:
+                    item_doc = item.gen.doc_ir[0]
+                    if item_doc:
+                        body_content_parts.append(item_doc)
+                        body_content_parts.append(self.hard_line())
+            if body_content_parts and isinstance(body_content_parts[-1], doc.Line):
+                body_content_parts.pop()
 
-        if node.body and node.body.gen.doc_ir:
-            body_content = (
-                node.body.gen.doc_ir[0]
-                if isinstance(node.body.gen.doc_ir, list)
-                else node.body.gen.doc_ir
+        if body_content_parts:
+            parts.append(
+                self.indent(
+                    self.concat([self.hard_line(), self.concat(body_content_parts)])
+                )
             )
-            parts.append(self.indent(self.concat([self.hard_line(), body_content])))
             parts.append(self.hard_line())
-
+        else:
+            parts.append(self.line())
         parts.append(self.text("}"))
 
-        node.gen.doc_ir = [self.group(parts)]
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_finally_stmt(self, node: uni.FinallyStmt) -> None:
         """Generate DocIR for finally statements."""
-        parts: list[doc.DocType] = [self.text("finally ")]
-        parts.append(self.text("{"))
+        parts: list[doc.DocType] = [self.text("finally")]
 
-        if node.body and node.body.gen.doc_ir:
-            body_content = (
-                node.body.gen.doc_ir[0]
-                if isinstance(node.body.gen.doc_ir, list)
-                else node.body.gen.doc_ir
+        parts.append(self.text(" {"))
+        body_content_parts: list[doc.DocType] = []
+        if node.body and node.body.items:  # body is SubNodeList[CodeBlockStmt]
+            for item in node.body.items:
+                if item.gen.doc_ir:
+                    item_doc = item.gen.doc_ir[0]
+                    if item_doc:
+                        body_content_parts.append(item_doc)
+                        body_content_parts.append(self.hard_line())
+            if body_content_parts and isinstance(body_content_parts[-1], doc.Line):
+                body_content_parts.pop()
+
+        if body_content_parts:
+            parts.append(
+                self.indent(
+                    self.concat([self.hard_line(), self.concat(body_content_parts)])
+                )
             )
-            parts.append(self.indent(self.concat([self.hard_line(), body_content])))
             parts.append(self.hard_line())
-
+        else:
+            parts.append(self.line())
         parts.append(self.text("}"))
 
-        node.gen.doc_ir = [self.group(parts)]
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_tuple_val(self, node: uni.TupleVal) -> None:
         """Generate DocIR for tuple values."""
         parts: list[doc.DocType] = [self.text("(")]
 
-        if node.values:
-            value_parts: list[doc.DocType] = []
-            for value in node.values.items:
-                if value.gen.doc_ir:
-                    value_parts.append(
-                        value.gen.doc_ir[0]
-                        if isinstance(value.gen.doc_ir, list)
-                        else value.gen.doc_ir
-                    )
-
-            # Check if tuple should be broken into multiple lines
-            if value_parts:
+        if node.values and node.values.items and node.values.gen.doc_ir:
+            processed_values_doc = node.values.gen.doc_ir[0]
+            # Check if it's not an empty concat (which is what exit_sub_node_list returns for no items)
+            if not (
+                isinstance(processed_values_doc, doc.Concat)
+                and not processed_values_doc.parts
+            ):
                 parts.append(
-                    self.if_break(
-                        self.concat(
-                            [
-                                self.indent(
-                                    self.concat(
-                                        [
-                                            self.hard_line(),
-                                            self.join(
-                                                self.concat(
-                                                    [self.text(","), self.line()]
-                                                ),
-                                                value_parts,
-                                            ),
-                                        ]
-                                    )
-                                ),
-                                self.hard_line(),
-                            ]
-                        ),
-                        self.join(self.text(", "), value_parts),
-                    )
+                    self.indent(self.concat([self.line(), processed_values_doc]))
                 )
 
-        parts.append(self.text(")"))
+                # Handle trailing comma for single-element tuple
+                if len(node.values.items) == 1:
+                    # Ensure `processed_values_doc` itself doesn't end with a line,
+                    # before appending comma, to avoid double line breaks.
+                    # This might require `processed_values_doc` to be just `item_doc`.
+                    # The current `exit_sub_node_list` for a single item returns `item_doc`.
+                    parts.append(self.text(","))
 
-        node.gen.doc_ir = [self.group(parts)]
+                parts.append(self.line())  # soft line before closing ')'
+
+        parts.append(self.text(")"))
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_multi_string(self, node: uni.MultiString) -> None:
         """Generate DocIR for multiline strings."""
@@ -994,38 +1180,26 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for set values."""
         parts: list[doc.DocType] = [self.text("{")]
 
-        if node.values:
-            value_parts: list[doc.DocType] = []
-            for value in node.values.items:
-                if value.gen.doc_ir:
-                    value_parts.append(value.gen.doc_ir[0])
-
-            # Check if set should be broken into multiple lines
-            parts.append(
-                self.if_break(
-                    self.concat(
-                        [
-                            self.indent(
-                                self.concat(
-                                    [
-                                        self.hard_line(),
-                                        self.join(
-                                            self.concat([self.text(","), self.line()]),
-                                            value_parts,
-                                        ),
-                                    ]
-                                )
-                            ),
-                            self.hard_line(),
-                        ]
-                    ),
-                    self.join(self.text(", "), value_parts),
+        if (
+            node.values
+            and node.values.items
+            and hasattr(node.values, "gen")
+            and node.values.gen.doc_ir
+        ):
+            values_doc = node.values.gen.doc_ir[0]
+            if not (isinstance(values_doc, doc.Concat) and not values_doc.parts):
+                parts.append(
+                    self.indent(self.concat([self.line(), values_doc]))  # soft line
                 )
-            )
+                parts.append(self.line())  # soft line before closing '}'
+        # Note: Jac { } is an empty dictionary. An empty set is `set()`.
+        # If node.values is None or empty, this currently generates {}.
+        # If the grammar guarantees SetVal always has items or if Jac syntax for empty set is `set()`,
+        # this might need adjustment for empty cases to output `self.text("set()")`.
+        # For now, following the structure of {} for potentially empty SetVal from parser.
 
         parts.append(self.text("}"))
-
-        node.gen.doc_ir = [self.group(parts)]
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_special_var_ref(self, node: uni.SpecialVarRef) -> None:
         """Generate DocIR for special variable references."""
@@ -1057,11 +1231,7 @@ class DocIRGenPass(UniPass):
             expr_parts: list[doc.DocType] = []
             for expr in node.exprs.items:
                 if expr.gen.doc_ir:
-                    expr_parts.append(
-                        expr.gen.doc_ir[0]
-                        if isinstance(expr.gen.doc_ir, list)
-                        else expr.gen.doc_ir
-                    )
+                    expr_parts.append(expr.gen.doc_ir[0])
             parts.append(self.join(self.text(", "), expr_parts))
 
         # Body
@@ -1069,11 +1239,7 @@ class DocIRGenPass(UniPass):
         parts.append(self.text("{"))
 
         if node.body and node.body.gen.doc_ir:
-            body_content = (
-                node.body.gen.doc_ir[0]
-                if isinstance(node.body.gen.doc_ir, list)
-                else node.body.gen.doc_ir
-            )
+            body_content = node.body.gen.doc_ir[0]
             parts.append(self.indent(self.concat([self.hard_line(), body_content])))
             parts.append(self.hard_line())
 
@@ -1152,111 +1318,105 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
 
         if node.value and node.value.gen.doc_ir:
-            parts.append(node.value.gen.doc_ir[0])
+            val_doc = node.value.gen.doc_ir[0]
+            if val_doc:
+                parts.append(val_doc)
 
-        parts.append(self.text(" if "))
+        parts.append(self.line())  # Potential break
+        parts.append(self.text("if"))
+        parts.append(self.text(" "))
 
         if node.condition and node.condition.gen.doc_ir:
-            parts.append(node.condition.gen.doc_ir[0])
+            cond_doc = node.condition.gen.doc_ir[0]
+            if cond_doc:
+                parts.append(cond_doc)
 
-        parts.append(self.text(" else "))
+        parts.append(self.line())  # Potential break
+        parts.append(self.text("else"))
+        parts.append(self.text(" "))
 
         if node.else_value and node.else_value.gen.doc_ir:
-            parts.append(node.else_value.gen.doc_ir[0])
+            else_val_doc = node.else_value.gen.doc_ir[0]
+            if else_val_doc:
+                parts.append(else_val_doc)
 
-        node.gen.doc_ir = [self.group(parts)]
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_bool_expr(self, node: uni.BoolExpr) -> None:
         """Generate DocIR for boolean expressions (and/or)."""
         parts: list[doc.DocType] = []
+        op_str = node.op.value  # op is Token (KW_AND or KW_OR)
 
-        for i, value in enumerate(node.values):
-            if value.gen.doc_ir:
-                parts.append(value.gen.doc_ir[0])
+        for i, value_node in enumerate(node.values):
+            if value_node.gen.doc_ir:
+                value_doc = value_node.gen.doc_ir[0]
+                if value_doc:
+                    parts.append(value_doc)
 
-                # Add operator between items, but not after the last one
-                if i < len(node.values) - 1 and node.op:
-                    parts.append(self.text(f" {node.op.value} "))
+            if i < len(node.values) - 1:
+                parts.append(self.line())  # Potential break + space
+                parts.append(self.text(op_str))
+                parts.append(self.text(" "))  # Space after operator
 
-        node.gen.doc_ir = [self.group(parts)]
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_unary_expr(self, node: uni.UnaryExpr) -> None:
         """Generate DocIR for unary expressions."""
         parts: list[doc.DocType] = []
+        op_val = node.op.value  # op is Token
 
-        if node.op.value in ["-", "~", "+"]:
-            # No space for these operators
-            parts.append(self.text(node.op.value))
+        if op_val in ["-", "~", "+"]:  # Typically no space after these
+            parts.append(self.text(op_val))
             if node.operand and node.operand.gen.doc_ir:
-                parts.append(node.operand.gen.doc_ir[0])
-        elif node.op.value == "not":
-            # Space after 'not'
-            parts.append(self.text("not "))
+                operand_doc = node.operand.gen.doc_ir[0]
+                if operand_doc:
+                    parts.append(operand_doc)
+        elif op_val == "not":  # Space after "not"
+            parts.append(self.text("not"))
             if node.operand and node.operand.gen.doc_ir:
-                parts.append(node.operand.gen.doc_ir[0])
-        else:
-            # Default case
-            parts.append(self.text(node.op.value))
+                operand_doc = node.operand.gen.doc_ir[0]
+                if operand_doc:
+                    parts.append(self.text(" "))  # Space before operand
+                    parts.append(operand_doc)
+        else:  # Default case, might include other unary ops like `await` (handled separately) or custom ones
+            parts.append(self.text(op_val))
             if node.operand and node.operand.gen.doc_ir:
-                parts.append(self.text(" "))
-                parts.append(node.operand.gen.doc_ir[0])
+                operand_doc = node.operand.gen.doc_ir[0]
+                if operand_doc:
+                    parts.append(self.text(" "))  # Space before operand
+                    parts.append(operand_doc)
 
-        node.gen.doc_ir = [self.group(parts)]
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_lambda_expr(self, node: uni.LambdaExpr) -> None:
         """Generate DocIR for lambda expressions."""
-        parts: list[doc.DocType] = [self.text("lambda ")]
+        parts: list[doc.DocType] = [self.text("lambda")]
 
-        # Parameters
-        if node.signature and node.signature.params:
-            param_parts: list[doc.DocType] = []
-            for param in node.signature.params.items:
-                if param.gen.doc_ir:
-                    param_parts.append(param.gen.doc_ir[0])
+        # Signature (params and/or return type)
+        if node.signature and node.signature.gen.doc_ir:
+            sig_doc = node.signature.gen.doc_ir[0]
+            if sig_doc:
+                if not (
+                    isinstance(sig_doc, doc.Text) and sig_doc.text == "()"
+                ):  # Avoid space for lambda () -> ...
+                    parts.append(self.text(" "))
+                parts.append(sig_doc)
 
-            param_group = self.group(self.join(self.text(", "), param_parts))
+        # Colon before body
+        # The colon should be separated from the signature by a space,
+        # and from the body by a space, or a break if the body is multiline.
+        parts.append(self.text(":"))
 
-            # Check if parameters should be broken into multiple lines
-            parts.append(
-                self.if_break(
-                    self.concat(
-                        [
-                            self.indent(
-                                self.concat(
-                                    [
-                                        self.hard_line(),
-                                        self.join(
-                                            self.concat([self.text(","), self.line()]),
-                                            param_parts,
-                                        ),
-                                    ]
-                                )
-                            ),
-                            self.hard_line(),
-                        ]
-                    ),
-                    param_group,
-                )
-            )
+        # Body of the lambda
+        if node.body and node.body.gen.doc_ir:
+            body_doc = node.body.gen.doc_ir[0]
+            if body_doc:
+                # Indent the body if it breaks. Break before the body.
+                parts.append(self.indent(self.concat([self.line(), body_doc])))
 
-        parts.append(self.text(")"))
+        parts.append(self.text(";"))
 
-        # Return type
-        if (
-            node.signature
-            and node.signature.return_type
-            and node.signature.return_type.gen.doc_ir
-        ):
-            parts.append(self.text(" -> "))
-            if node.signature.return_type.gen.doc_ir:
-                parts.append(node.signature.return_type.gen.doc_ir[0])
-
-        # Body
-        parts.append(self.text(" : "))
-        if node.body and node.body.gen.doc_ir and node.body.gen.doc_ir:
-            parts.append(node.body.gen.doc_ir[0])
-
-        node.gen.doc_ir = [self.group(parts)]
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_edge_ref_trailer(self, node: uni.EdgeRefTrailer) -> None:
         """Generate DocIR for edge reference trailers."""
@@ -1290,11 +1450,7 @@ class DocIRGenPass(UniPass):
 
                 # Start
                 if slice_item.start and slice_item.start.gen.doc_ir:
-                    item_parts.append(
-                        slice_item.start.gen.doc_ir[0]
-                        if isinstance(slice_item.start.gen.doc_ir, list)
-                        else slice_item.start.gen.doc_ir
-                    )
+                    item_parts.append(slice_item.start.gen.doc_ir[0])
 
                 # Only add colon for range slices
                 if node.is_range:
@@ -1302,21 +1458,13 @@ class DocIRGenPass(UniPass):
 
                     # Stop
                     if slice_item.stop and slice_item.stop.gen.doc_ir:
-                        item_parts.append(
-                            slice_item.stop.gen.doc_ir[0]
-                            if isinstance(slice_item.stop.gen.doc_ir, list)
-                            else slice_item.stop.gen.doc_ir
-                        )
+                        item_parts.append(slice_item.stop.gen.doc_ir[0])
 
                     # Step
                     if slice_item.step:
                         item_parts.append(self.text(":"))
                         if slice_item.step.gen.doc_ir:
-                            item_parts.append(
-                                slice_item.step.gen.doc_ir[0]
-                                if isinstance(slice_item.step.gen.doc_ir, list)
-                                else slice_item.step.gen.doc_ir
-                            )
+                            item_parts.append(slice_item.step.gen.doc_ir[0])
 
                 slice_parts.append(self.concat(item_parts))
 
@@ -1510,20 +1658,12 @@ class DocIRGenPass(UniPass):
 
         # Access specification
         if node.access and node.access.gen.doc_ir:
-            parts.append(
-                node.access.gen.doc_ir[0]
-                if isinstance(node.access.gen.doc_ir, list)
-                else node.access.gen.doc_ir
-            )
+            parts.append(node.access.gen.doc_ir[0])
             parts.append(self.text(" "))
 
         # Assignments
         if node.assignments and node.assignments.gen.doc_ir:
-            parts.append(
-                node.assignments.gen.doc_ir[0]
-                if isinstance(node.assignments.gen.doc_ir, list)
-                else node.assignments.gen.doc_ir
-            )
+            parts.append(node.assignments.gen.doc_ir[0])
 
         parts.append(self.text(";"))
 
@@ -1548,11 +1688,7 @@ class DocIRGenPass(UniPass):
             name_parts: list[doc.DocType] = []
             for name in node.target.items:
                 if name.gen.doc_ir:
-                    name_parts.append(
-                        name.gen.doc_ir[0]
-                        if isinstance(name.gen.doc_ir, list)
-                        else name.gen.doc_ir
-                    )
+                    name_parts.append(name.gen.doc_ir[0])
 
             parts.append(self.join(self.text(", "), name_parts))
 
@@ -1568,11 +1704,7 @@ class DocIRGenPass(UniPass):
             name_parts: list[doc.DocType] = []
             for name in node.target.items:
                 if name.gen.doc_ir:
-                    name_parts.append(
-                        name.gen.doc_ir[0]
-                        if isinstance(name.gen.doc_ir, list)
-                        else name.gen.doc_ir
-                    )
+                    name_parts.append(name.gen.doc_ir[0])
 
             parts.append(self.join(self.text(", "), name_parts))
 
@@ -1589,11 +1721,7 @@ class DocIRGenPass(UniPass):
 
         if node.else_body and node.else_body.gen.doc_ir:
             parts.append(self.text(" "))
-            parts.append(
-                node.else_body.gen.doc_ir[0]
-                if isinstance(node.else_body.gen.doc_ir, list)
-                else node.else_body.gen.doc_ir
-            )
+            parts.append(node.else_body.gen.doc_ir[0])
 
         parts.append(self.text(";"))
 
@@ -1643,22 +1771,24 @@ class DocIRGenPass(UniPass):
 
         # Left operand
         if node.left and node.left.gen.doc_ir:
-            parts.append(
-                node.left.gen.doc_ir[0] if node.left.gen.doc_ir else self.text("")
-            )
+            left_doc = node.left.gen.doc_ir[0]
+            if left_doc:
+                parts.append(left_doc)
 
-        # Add operators and right operands
-        for i, right in enumerate(node.rights):
-            if i < len(node.ops):
-                parts.append(self.text(f" {node.ops[i].value} "))
-            if right.gen.doc_ir:
-                parts.append(
-                    right.gen.doc_ir[0]
-                    if isinstance(right.gen.doc_ir, list)
-                    else right.gen.doc_ir
-                )
+        # Add operators and right operands, allowing breaks before each operator
+        for i, right_operand_node in enumerate(node.rights):
+            if i < len(node.ops) and node.ops[i]:  # node.ops[i] is Token
+                op_str = node.ops[i].value
+                parts.append(self.line())  # Potential break + space
+                parts.append(self.text(op_str))
+                parts.append(self.text(" "))  # Space after operator
 
-        node.gen.doc_ir = [self.group(parts)]
+            if right_operand_node.gen.doc_ir:
+                right_doc = right_operand_node.gen.doc_ir[0]
+                if right_doc:
+                    parts.append(right_doc)
+
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_atom_unit(self, node: uni.AtomUnit) -> None:
         """Generate DocIR for atom units (parenthesized expressions)."""
@@ -1676,19 +1806,11 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
 
         if node.expr and node.expr.gen.doc_ir:
-            parts.append(
-                node.expr.gen.doc_ir[0]
-                if isinstance(node.expr.gen.doc_ir, list)
-                else node.expr.gen.doc_ir
-            )
+            parts.append(node.expr.gen.doc_ir[0])
 
         if node.alias and node.alias.gen.doc_ir:
             parts.append(self.text(" as "))
-            parts.append(
-                node.alias.gen.doc_ir[0]
-                if isinstance(node.alias.gen.doc_ir, list)
-                else node.alias.gen.doc_ir
-            )
+            parts.append(node.alias.gen.doc_ir[0])
 
         node.gen.doc_ir = [self.group(parts)]
 
@@ -1696,8 +1818,11 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for filter comprehensions."""
         parts: list[doc.DocType] = []
 
-        if node.f_type and node.f_type.gen.doc_ir:
+        if (
+            node.f_type and node.f_type.gen.doc_ir
+        ):  # node.f_type is Expr, gen.doc_ir is list[DocType]
             parts.append(self.text("filter "))
+            # Ensure we are appending the DocType element, not the list
             parts.append(node.f_type.gen.doc_ir[0])
 
         node.gen.doc_ir = [self.concat(parts)]
@@ -1711,11 +1836,7 @@ class DocIRGenPass(UniPass):
             assign_parts: list[doc.DocType] = []
             for assign in node.assigns.items:
                 if assign.gen.doc_ir:
-                    assign_parts.append(
-                        assign.gen.doc_ir[0]
-                        if isinstance(assign.gen.doc_ir, list)
-                        else assign.gen.doc_ir
-                    )
+                    assign_parts.append(assign.gen.doc_ir[0])
             parts.append(self.join(self.text(", "), assign_parts))
 
         node.gen.doc_ir = [self.concat(parts)]
@@ -1777,159 +1898,245 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = [self.text("match ")]
 
         if node.target and node.target.gen.doc_ir:
-            target_doc = node.target.gen.doc_ir[0]
+            target_doc = (
+                node.target.gen.doc_ir[0]
+                if isinstance(node.target.gen.doc_ir, list)
+                else node.target.gen.doc_ir
+            )
             if target_doc:
-                parts.append(target_doc)
+                parts.append(self.group(target_doc))  # Target can be complex
 
-        parts.append(self.text(" "))
-        parts.append(self.text("{"))
+        parts.append(self.text(" {"))
+        case_content_parts: list[doc.DocType] = []
+        if node.cases:  # node.cases is list[MatchCase]
+            for case_node in node.cases:
+                if case_node.gen.doc_ir:
+                    case_doc = (
+                        case_node.gen.doc_ir[0]
+                        if isinstance(case_node.gen.doc_ir, list)
+                        else case_node.gen.doc_ir
+                    )
+                    if case_doc:
+                        case_content_parts.append(case_doc)
+                        # MatchCase nodes should already include their own hard_line breaks if they are multiline.
+                        # Here, we ensure each case is on a new line relative to the previous one.
+                        case_content_parts.append(self.hard_line())
+            if case_content_parts and isinstance(
+                case_content_parts[-1], doc.Line
+            ):  # remove last hard_line
+                case_content_parts.pop()
 
-        if node.cases:
-            case_docs: list[doc.DocType] = []
-            for case in node.cases:
-                if case.gen.doc_ir:
-                    case_doc_item = case.gen.doc_ir[0]
-                    if case_doc_item:
-                        case_docs.append(case_doc_item)
-            if case_docs:
-                parts.append(
-                    self.indent(self.concat([self.hard_line(), self.concat(case_docs)]))
+        if case_content_parts:
+            parts.append(
+                self.indent(
+                    self.concat([self.hard_line(), self.concat(case_content_parts)])
                 )
-
+            )
+            parts.append(self.hard_line())
+        else:
+            parts.append(self.line())
         parts.append(self.text("}"))
 
-        node.gen.doc_ir = [self.group(parts)]
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_match_case(self, node: uni.MatchCase) -> None:
         """Generate DocIR for match cases."""
         parts: list[doc.DocType] = [self.text("case ")]
 
         if node.pattern and node.pattern.gen.doc_ir:
-            parts.append(node.pattern.gen.doc_ir[0])
+            pattern_doc = (
+                node.pattern.gen.doc_ir[0]
+                if isinstance(node.pattern.gen.doc_ir, list)
+                else node.pattern.gen.doc_ir
+            )
+            if pattern_doc:
+                parts.append(self.group(pattern_doc))
 
         if node.guard and node.guard.gen.doc_ir:
-            parts.append(self.text(" if "))
-            parts.append(node.guard.gen.doc_ir[0])
+            guard_doc = (
+                node.guard.gen.doc_ir[0]
+                if isinstance(node.guard.gen.doc_ir, list)
+                else node.guard.gen.doc_ir
+            )
+            if guard_doc:
+                parts.append(self.text(" if "))
+                parts.append(self.group(guard_doc))
 
         parts.append(self.text(":"))
 
-        if node.body:
-            body_content: list[doc.DocType] = []
+        body_stmt_docs: list[doc.DocType] = []
+        if node.body:  # node.body is list[CodeBlockStmt]
             for stmt in node.body:
                 if stmt.gen.doc_ir:
-                    body_content.append(
+                    doc_for_stmt = (
                         stmt.gen.doc_ir[0]
                         if isinstance(stmt.gen.doc_ir, list)
                         else stmt.gen.doc_ir
                     )
-                    body_content.append(self.hard_line())
+                    if doc_for_stmt:
+                        body_stmt_docs.append(doc_for_stmt)
+                        # Each statement in a block usually implies a newline for formatting,
+                        # but the statement itself (e.g. ExprStmt) should end with its own ; and newline if appropriate.
+                        # Here we ensure separation if multiple statements.
+                        body_stmt_docs.append(self.hard_line())
+            if body_stmt_docs and isinstance(body_stmt_docs[-1], doc.Line):
+                body_stmt_docs.pop()  # Remove trailing hard_line from the last statement
 
+        if body_stmt_docs:
             parts.append(
-                self.indent(self.concat([self.hard_line(), self.concat(body_content)]))
+                self.indent(
+                    self.concat([self.hard_line(), self.concat(body_stmt_docs)])
+                )
             )
+            # No final hard_line here; that's for between MatchCase elements if handled by parent (MatchStmt)
+        elif not node.body:  # No body elements at all means `case foo:`
+            # Potentially allow a break after colon for empty body `case foo: \n` vs `case foo:`
+            # This is subtle. If Jac requires a `pass` or `break` for empty cases, parser should provide it.
+            # If it's just `case x:`, adding an indented hard_line might look odd.
+            # `self.line()` might be too little. `self.hard_line()` might be too much if followed by another case.
+            # Let's assume for now empty body means nothing after colon for this line.
+            pass
 
-        node.gen.doc_ir = [self.group(parts)]
+        # Each MatchCase is a group. If it's complex, it will break across lines.
+        # The MatchStmt itself will put hard_lines between MatchCase DocIRs.
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_match_value(self, node: uni.MatchValue) -> None:
         """Generate DocIR for match value patterns."""
-        parts: list[doc.DocType] = []
-
         if node.value and node.value.gen.doc_ir:
-            parts.append(
+            # MatchValue's value is an Expr. It should be groupable if complex.
+            val_doc = (
                 node.value.gen.doc_ir[0]
                 if isinstance(node.value.gen.doc_ir, list)
                 else node.value.gen.doc_ir
             )
-
-        node.gen.doc_ir = [self.concat(parts)]
+            node.gen.doc_ir = [self.group(val_doc)] if val_doc else [self.text("")]
+        else:
+            node.gen.doc_ir = [self.text("")]
 
     def exit_match_singleton(self, node: uni.MatchSingleton) -> None:
         """Generate DocIR for match singleton patterns."""
-        parts: list[doc.DocType] = []
-
-        if node.value and node.value.gen.doc_ir:
-            parts.append(
+        if (
+            node.value and node.value.gen.doc_ir
+        ):  # value is Bool or Null (which are Tokens)
+            val_doc = (
                 node.value.gen.doc_ir[0]
                 if isinstance(node.value.gen.doc_ir, list)
                 else node.value.gen.doc_ir
             )
-
-        node.gen.doc_ir = [self.concat(parts)]
+            node.gen.doc_ir = [val_doc] if val_doc else [self.text("")]
+        else:
+            node.gen.doc_ir = [self.text("")]
 
     def exit_match_sequence(self, node: uni.MatchSequence) -> None:
         """Generate DocIR for match sequence patterns."""
         parts: list[doc.DocType] = [self.text("[")]
 
-        if node.values:
-            pattern_parts: list[doc.DocType] = []
-            for pattern in node.values:
-                if pattern.gen.doc_ir:
-                    pattern_parts.append(
-                        pattern.gen.doc_ir[0]
-                        if isinstance(pattern.gen.doc_ir, list)
-                        else pattern.gen.doc_ir
+        if node.values:  # node.values is list[MatchPattern]
+            pattern_docs: list[doc.DocType] = []
+            for pattern_node in node.values:
+                if pattern_node.gen.doc_ir:
+                    p_doc = (
+                        pattern_node.gen.doc_ir[0]
+                        if isinstance(pattern_node.gen.doc_ir, list)
+                        else pattern_node.gen.doc_ir
                     )
+                    if p_doc:
+                        pattern_docs.append(p_doc)
 
-            parts.append(self.join(self.text(", "), pattern_parts))
+            if pattern_docs:
+                joined_patterns = self.join(
+                    self.concat([self.text(","), self.line()]), pattern_docs
+                )
+                if not (
+                    isinstance(joined_patterns, doc.Concat)
+                    and not joined_patterns.parts
+                ):
+                    parts.append(
+                        self.indent(self.concat([self.line(), joined_patterns]))
+                    )
+                    parts.append(self.line())  # soft line before closing ']'
 
         parts.append(self.text("]"))
-
-        node.gen.doc_ir = [self.group(parts)]
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_match_mapping(self, node: uni.MatchMapping) -> None:
         """Generate DocIR for match mapping patterns."""
         parts: list[doc.DocType] = [self.text("{")]
 
-        if node.values:
-            item_parts: list[doc.DocType] = []
-            for item in node.values:
-                if item.gen.doc_ir:
-                    item_parts.append(
-                        item.gen.doc_ir[0]
-                        if isinstance(item.gen.doc_ir, list)
-                        else item.gen.doc_ir
+        if node.values:  # node.values is list[MatchKVPair | MatchStar]
+            item_docs: list[doc.DocType] = []
+            for item_node in node.values:
+                if item_node.gen.doc_ir:
+                    i_doc = (
+                        item_node.gen.doc_ir[0]
+                        if isinstance(item_node.gen.doc_ir, list)
+                        else item_node.gen.doc_ir
                     )
+                    if i_doc:
+                        item_docs.append(i_doc)
 
-            parts.append(self.join(self.text(", "), item_parts))
+            if item_docs:
+                joined_items = self.join(
+                    self.concat([self.text(","), self.line()]), item_docs
+                )
+                if not (
+                    isinstance(joined_items, doc.Concat) and not joined_items.parts
+                ):
+                    parts.append(self.indent(self.concat([self.line(), joined_items])))
+                    parts.append(self.line())  # soft line before closing '}'
 
         parts.append(self.text("}"))
-
-        node.gen.doc_ir = [self.group(parts)]
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_match_or(self, node: uni.MatchOr) -> None:
         """Generate DocIR for match OR patterns."""
-        parts: list[doc.DocType] = []
-
-        if node.patterns:
-            pattern_parts: list[doc.DocType] = []
-            for pattern in node.patterns:
-                if pattern.gen.doc_ir:
-                    pattern_parts.append(
-                        pattern.gen.doc_ir[0]
-                        if isinstance(pattern.gen.doc_ir, list)
-                        else pattern.gen.doc_ir
+        pattern_docs: list[doc.DocType] = []
+        if node.patterns:  # list[MatchPattern]
+            for pattern_node in node.patterns:
+                if pattern_node.gen.doc_ir:
+                    p_doc = (
+                        pattern_node.gen.doc_ir[0]
+                        if isinstance(pattern_node.gen.doc_ir, list)
+                        else pattern_node.gen.doc_ir
                     )
+                    if p_doc:
+                        pattern_docs.append(
+                            self.group(p_doc)
+                        )  # Each pattern can be complex
 
-            parts.append(self.join(self.text(" | "), pattern_parts))
-
-        node.gen.doc_ir = [self.group(parts)]
+        if pattern_docs:
+            # Join with " | " allowing breaks before |
+            # self.line() will be a space if flat, newline if breaks.
+            separator = self.concat([self.text(" "), self.line(), self.text("| ")])
+            node.gen.doc_ir = [self.group(self.join(separator, pattern_docs))]
+        else:
+            node.gen.doc_ir = [self.text("")]
 
     def exit_match_as(self, node: uni.MatchAs) -> None:
         """Generate DocIR for match AS patterns."""
         parts: list[doc.DocType] = []
 
+        pattern_doc_present = False
         if node.pattern and node.pattern.gen.doc_ir:
-            parts.append(
-                node.pattern.gen.doc_ir[0]
-                if isinstance(node.pattern.gen.doc_ir, list)
-                else node.pattern.gen.doc_ir
+            pattern_doc = node.pattern.gen.doc_ir[0]
+            if pattern_doc:
+                parts.append(self.group(pattern_doc))  # Pattern can be complex
+                pattern_doc_present = True
+
+        if node.name and node.name.sym_name:  # name is NameAtom (Token)
+            if pattern_doc_present:
+                parts.append(self.text(" as "))
+            # node.name.gen.doc_ir should exist if sym_name exists and exit_name was called
+            name_doc = (
+                node.name.gen.doc_ir[0]
+                if node.name.gen.doc_ir
+                else self.text(node.name.sym_name)
             )
+            if name_doc:
+                parts.append(name_doc)
 
-        if node.name:
-            parts.append(self.text(" as "))
-            parts.append(self.text(node.name.sym_name))
-
-        node.gen.doc_ir = [self.concat(parts)]
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_match_wild(self, node: uni.MatchWild) -> None:
         """Generate DocIR for match wildcard patterns."""
@@ -1939,118 +2146,215 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for match star patterns (e.g., *args, **kwargs)."""
         prefix = "*" if node.is_list else "**"
         parts: list[doc.DocType] = [self.text(prefix)]
-        if node.name and node.name.gen.doc_ir:
-            parts.append(node.name.gen.doc_ir[0])
-        node.gen.doc_ir = [self.concat(parts)]
+        if node.name and node.name.gen.doc_ir:  # name is NameAtom
+            name_doc = node.name.gen.doc_ir[0]
+            if name_doc:
+                parts.append(name_doc)
+        node.gen.doc_ir = [
+            self.concat(parts)
+        ]  # Not grouping here, as it's usually small
 
     def exit_match_k_v_pair(self, node: uni.MatchKVPair) -> None:
         """Generate DocIR for match key-value pairs."""
         parts: list[doc.DocType] = []
 
-        if node.key and node.key.gen.doc_ir:
-            parts.append(
+        if (
+            node.key and node.key.gen.doc_ir
+        ):  # key is MatchPattern | NameAtom | AtomExpr
+            key_doc = (
                 node.key.gen.doc_ir[0]
                 if isinstance(node.key.gen.doc_ir, list)
                 else node.key.gen.doc_ir
             )
+            if key_doc:
+                parts.append(key_doc)  # Key itself could be a group
 
-        parts.append(self.text(": "))
+        parts.append(self.text(": "))  # Space after colon
 
-        if node.value and node.value.gen.doc_ir:
-            parts.append(
+        if node.value and node.value.gen.doc_ir:  # value is MatchPattern
+            value_doc = (
                 node.value.gen.doc_ir[0]
                 if isinstance(node.value.gen.doc_ir, list)
                 else node.value.gen.doc_ir
             )
+            if value_doc:
+                # Value pattern could be complex, group it and allow indent if it breaks
+                parts.append(
+                    self.group(self.indent(self.concat([self.line(), value_doc])))
+                )
 
-        node.gen.doc_ir = [self.concat(parts)]
+        node.gen.doc_ir = [self.group(self.concat(parts))]  # The KVPair is a group
 
     def exit_match_arch(self, node: uni.MatchArch) -> None:
         """Generate DocIR for match architecture patterns."""
         parts: list[doc.DocType] = []
 
-        if node.name and node.name.gen.doc_ir:
-            parts.append(
+        if node.name and node.name.gen.doc_ir:  # name is AtomTrailer | NameAtom
+            name_doc = (
                 node.name.gen.doc_ir[0]
                 if isinstance(node.name.gen.doc_ir, list)
                 else node.name.gen.doc_ir
             )
+            if name_doc:
+                parts.append(name_doc)
 
         parts.append(self.text("("))
 
-        if node.arg_patterns:
-            arg_parts: list[doc.DocType] = []
-            for arg in node.arg_patterns.items:
-                if arg.gen.doc_ir:
-                    arg_parts.append(
-                        arg.gen.doc_ir[0]
-                        if isinstance(arg.gen.doc_ir, list)
-                        else arg.gen.doc_ir
+        arg_docs_present = False
+        # Arg patterns (SubNodeList[MatchPattern])
+        if (
+            node.arg_patterns
+            and node.arg_patterns.items
+            and hasattr(node.arg_patterns, "gen")
+            and node.arg_patterns.gen.doc_ir
+        ):
+            arg_patterns_doc = node.arg_patterns.gen.doc_ir[
+                0
+            ]  # From SubNodeList, joined with "," and line
+            if not (
+                isinstance(arg_patterns_doc, doc.Concat) and not arg_patterns_doc.parts
+            ):
+                parts.append(self.indent(self.concat([self.line(), arg_patterns_doc])))
+                arg_docs_present = True
+
+        # Keyword patterns (SubNodeList[MatchKVPair])
+        if (
+            node.kw_patterns
+            and node.kw_patterns.items
+            and hasattr(node.kw_patterns, "gen")
+            and node.kw_patterns.gen.doc_ir
+        ):
+            kw_patterns_doc = node.kw_patterns.gen.doc_ir[
+                0
+            ]  # From SubNodeList, joined with "," and line
+            if not (
+                isinstance(kw_patterns_doc, doc.Concat) and not kw_patterns_doc.parts
+            ):
+                if arg_docs_present:  # Add comma if args were also present
+                    # This comma should be part of the indented block if args broke
+                    # If args didn't break, it should be ", kw..."
+                    # This is tricky. Simplest for now: always add comma before kw_patterns if args existed.
+                    parts.append(self.text(","))
+                    parts.append(self.line())  # allow break after comma
+
+                # Check if kw_patterns_doc itself needs indenting (if it contains multiple items that could break)
+                # For now, assume SubNodeList's output is already suitable for direct inclusion within the indent block.
+                if not arg_docs_present:  # Need to start indent if args were not there
+                    parts.append(
+                        self.indent(self.concat([self.line(), kw_patterns_doc]))
                     )
+                else:  # Already in an indent potentially, just append
+                    parts.append(kw_patterns_doc)
+                arg_docs_present = True  # update flag as we now have content
 
-            parts.append(self.join(self.text(", "), arg_parts))
-
-        if node.kw_patterns:
-            if node.arg_patterns:
-                parts.append(self.text(", "))
-
-            kw_parts: list[doc.DocType] = []
-            for kw in node.kw_patterns.items:
-                if kw.gen.doc_ir:
-                    kw_parts.append(
-                        kw.gen.doc_ir[0]
-                        if isinstance(kw.gen.doc_ir, list)
-                        else kw.gen.doc_ir
-                    )
-
-            parts.append(self.join(self.text(", "), kw_parts))
+        if arg_docs_present:
+            parts.append(self.line())  # soft line before closing ')'
 
         parts.append(self.text(")"))
-
-        node.gen.doc_ir = [self.group(parts)]
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_enum(self, node: uni.Enum) -> None:
         """Generate DocIR for enum declarations."""
         parts: list[doc.DocType] = []
 
         # Handle decorators
-        if node.decorators:
-            for decorator in node.decorators.items:
-                if decorator.gen.doc_ir:
-                    parts.append(decorator.gen.doc_ir[0])
-                    parts.append(self.hard_line())
-
-        # Enum declaration
-        parts.append(self.text("enum "))
-        if node.name:
-            parts.append(self.text(node.name.value))
-
-        # Inheritance
-        if node.base_classes and node.base_classes.gen.doc_ir:
-            parts.append(self.text(": "))
-            parts.append(node.base_classes.gen.doc_ir[0])
-
-        parts.append(self.text(" {"))
-
-        if node.body:
-            member_parts: list[doc.DocType] = []
-            for member in node.body.items:
-                if member.gen.doc_ir:
-                    member_parts.append(
-                        member.gen.doc_ir[0]
-                        if isinstance(member.gen.doc_ir, list)
-                        else member.gen.doc_ir
+        if node.decorators and node.decorators.items:
+            decorator_docs: list[doc.DocType] = []
+            for decorator_node in node.decorators.items:
+                if decorator_node.gen.doc_ir:
+                    decorator_doc = (
+                        decorator_node.gen.doc_ir[0]
+                        if isinstance(decorator_node.gen.doc_ir, list)
+                        else decorator_node.gen.doc_ir
                     )
-                    member_parts.append(self.hard_line())
+                    if decorator_doc:
+                        decorator_docs.append(decorator_doc)
+                        decorator_docs.append(self.hard_line())
+            if decorator_docs:
+                parts.extend(decorator_docs)
 
-            parts.append(
-                self.indent(self.concat([self.hard_line(), self.concat(member_parts)]))
+        # Enum declaration: enum <name>
+        header_parts: list[doc.DocType] = [self.text("enum")]
+        if node.name and node.name.gen.doc_ir:
+            header_parts.append(self.text(" "))
+            name_doc = (
+                node.name.gen.doc_ir[0]
+                if isinstance(node.name.gen.doc_ir, list)
+                else node.name.gen.doc_ir
             )
-            parts.append(self.hard_line())
+            if name_doc:
+                header_parts.append(name_doc)
 
-        parts.append(self.text("};"))
+        # Inheritance: : base1, base2 (Note: unitree.Enum.normalize shows : base_classes :)
+        # My current exit_architype uses just ": base_classes". Let's be consistent for now.
+        if (
+            node.base_classes
+            and node.base_classes.items
+            and hasattr(node.base_classes, "gen")
+            and node.base_classes.gen.doc_ir
+        ):
+            base_classes_doc = node.base_classes.gen.doc_ir[0]
+            if not (
+                isinstance(base_classes_doc, doc.Concat) and not base_classes_doc.parts
+            ):
+                header_parts.append(self.text(": "))
+                header_parts.append(base_classes_doc)
+                # unitree.Enum.normalize has a second colon after base_classes if present.
+                # header_parts.append(self.text(" :")) # If strictly following that normalize
 
-        node.gen.doc_ir = [self.group(parts)]
+        parts.append(self.group(self.concat(header_parts)))
+
+        # Handle body: { members... } or ; for impl
+        if node.body:  # body is SubNodeList[Assignment] | ImplDef
+            if isinstance(
+                node.body, uni.ImplDef
+            ):  # Forward declared enum with later impl
+                parts.append(self.text(";"))  # enum MyEnum; (impl later)
+                # The ImplDef itself will be formatted separately when visited.
+            elif isinstance(
+                node.body, uni.SubNodeList
+            ):  # Assumed to be SubNodeList[Assignment]
+                parts.append(self.text(" {"))
+                member_content_parts: list[doc.DocType] = []
+                if node.body.items:
+                    for item_node in node.body.items:  # item_node should be Assignment
+                        if item_node.gen.doc_ir:
+                            item_doc = (
+                                item_node.gen.doc_ir[0]
+                                if isinstance(item_node.gen.doc_ir, list)
+                                else item_node.gen.doc_ir
+                            )
+                            if item_doc:
+                                member_content_parts.append(item_doc)
+                                # Enum members in Jac are typically one per line, like Python.
+                                # Assignment node (if is_enum_stmt=True) won't add a semicolon.
+                                # Python enum members can have trailing commas. Jac style TBD.
+                                # For now, just hard_line after each member.
+                                member_content_parts.append(self.hard_line())
+                    if member_content_parts and isinstance(
+                        member_content_parts[-1], doc.Line
+                    ):
+                        member_content_parts.pop()  # remove last hard_line
+
+                if member_content_parts:
+                    parts.append(
+                        self.indent(
+                            self.concat(
+                                [self.hard_line(), self.concat(member_content_parts)]
+                            )
+                        )
+                    )
+                    parts.append(self.hard_line())
+                else:
+                    parts.append(self.line())
+                parts.append(self.text("}"))
+                parts.append(
+                    self.text(";")
+                )  # Enums defined with {} also end with ; in Jac
+        else:  # No body, e.g., enum MyEnum;
+            parts.append(self.text(";"))
+
+        node.gen.doc_ir = [self.group(self.concat(parts))]
 
     def exit_sub_tag(self, node: uni.SubTag) -> None:
         """Generate DocIR for sub-tag nodes."""
@@ -2066,22 +2370,57 @@ class DocIRGenPass(UniPass):
         node.gen.doc_ir = [self.concat(parts)]
 
     def exit_sub_node_list(self, node: uni.SubNodeList) -> None:
-        """Generate DocIR for sub-node lists."""
-        parts: list[doc.DocType] = []
+        """Generate DocIR for a SubNodeList.
 
+        It joins the DocIR of its items using the specified delimiter if present.
+        The result is a single DocType (usually a Concat).
+        Enclosing brackets/parentheses and overall list indentation are typically
+        handled by the parent node consuming this SubNodeList's DocIR.
+        """
+        item_docs: list[doc.DocType] = []
         if node.items:
-            item_parts: list[doc.DocType] = []
             for item in node.items:
                 if item.gen.doc_ir:
-                    item_parts.append(
+                    # gen.doc_ir can be a list of DocType or a single DocType
+                    doc_item = (
                         item.gen.doc_ir[0]
                         if isinstance(item.gen.doc_ir, list)
                         else item.gen.doc_ir
                     )
+                    if doc_item:  # Ensure it's not None
+                        item_docs.append(doc_item)
 
-            parts.append(self.join(self.text(", "), item_parts))
+        if not item_docs:
+            node.gen.doc_ir = [self.concat([])]  # Empty sequence
+            return
 
-        node.gen.doc_ir = [self.concat(parts)]
+        separator: doc.DocType
+        if node.delim == uni.Tok.COMMA:
+            # For comma-separated lists, use ", " in flat mode, and ",\n" in break mode.
+            # self.line() becomes a space if flat, or nothing if break_contents is chosen.
+            # self.if_break is better handled by the parent.
+            # This join will produce "item, line item, line item"
+            separator = self.concat([self.text(","), self.line()])
+        elif node.delim == uni.Tok.DOT:
+            separator = self.text(".")
+        elif node.delim is None:
+            # If no delimiter, default to a breakable line.
+            # This is suitable for sequences of items that might go on separate lines.
+            # For lists of statements, the parent usually iterates and adds hard_lines.
+            # This default is for generic SubNodeLists where items follow each other.
+            separator = self.line()
+        else:
+            # Try to use the delimiter's token value if it's a known token
+            try:
+                # Assuming DELIM_MAP or node.delim.value gives the string for the token
+                delim_text = uni.DELIM_MAP.get(node.delim, node.delim.value)
+                separator = self.text(delim_text)
+            except AttributeError:
+                # Fallback if delim is not a simple token with a value
+                separator = self.line()  # Default to a space or break
+
+        joined_items = self.join(separator, item_docs)
+        node.gen.doc_ir = [joined_items]
 
     def exit_token(self, node: uni.Token) -> None:
         """Generate DocIR for tokens."""
