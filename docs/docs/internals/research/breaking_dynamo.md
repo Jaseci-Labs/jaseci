@@ -119,3 +119,55 @@ These skips can be observed in the PyTorch codebase.
 
     ```
 The skips are signified in this code as prematured return statements in the `__call__` method where the last method call is a the compilation method for which the frame object is passed into.
+
+### Dynamo Compilation: pyFrameObject → fx-graph
+
+After selecting which frame to compile, the compilation process begins by invoking the `run` method of the `InstructionTranslatorBase` object, which start the symbolic tracing process.
+
+=== "torch/_dynamo/convert_frame.py"
+    ```python linenums="1"
+    class InstructionTranslatorBase(...):
+    ...
+    def run(self):
+        ...
+        try:
+            self.output.push_tx(self)
+            self.start_point = self.instruction_pointer
+            while self.step():
+                pass
+        ...
+        finally:
+            self.output.pop_tx()
+            if isinstance(self, InstructionTranslator):
+                self.output.cleanup()
+    ...
+
+    def step(self):
+        ...
+        if (
+            not self.stack
+            and self.should_compile_partial_graph()
+            and self.is_non_empty_graph()
+        ):
+            self.current_speculation = self.speculate()
+            if self.current_speculation.failed:
+                return self.step_graph_break(inst)
+        ...
+        try:
+            self.dispatch_table[inst.opcode](self, inst)
+            return not self.output.should_exit
+        ...
+        except Unsupported:
+            if self.current_speculation is None:
+                log.debug("empty checkpoint")
+                raise
+            log.debug("step triggered compile", exc_info=True)
+
+    ```
+In this code, after initializing the first instruction in the bytecode, the `self.step()` method on line 6 steps through each bytecode instruction and tries to symbolically execute each. If all bytecode instructions are torch traceable, this will run from end to end, outputting one FX-graph for the frame.
+
+The way Dynamo handles partial graph generation is that when an uncompilable bytecode instruction is encountered, it raises an `Unsupported` exception. This triggers a rerun of the compilation process that starts from the first bytecode instruction. However, when raising the `Unsupported` exception, the bytecode is flagged to be a graph break, which is detected in the next compilation pass and handled accordingly. This process is repeated until the last bytecode is reached, which produces the partial graph, or halted if too many breaks are encountered (too many retries of compilation).
+
+
+
+
