@@ -10,7 +10,8 @@ This type is used for both standalone functions and methods on classes.
 
 from __future__ import annotations
 from typing import List
-from jaclang.compiler.types import JType, JFuncArgument
+from jaclang.compiler.jtyping.types.jtype import JType
+from jaclang.compiler.jtyping.types.jfuncargtype import JFuncArgument
 
 
 class JFunctionType(JType):

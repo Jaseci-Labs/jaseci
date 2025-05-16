@@ -2,7 +2,7 @@ import os
 import json
 from pathlib import Path
 from typing import Dict
-from jaclang.compiler.types import JClassType, JType
+from jaclang.compiler.jtyping import JClassType, JType
 
 
 BUILTIN_PATH = Path(os.path.dirname(__file__)) / "builtins.json"
@@ -72,5 +72,6 @@ class JTypeRegistry:
                     is_abstract=False,
                     instance_members={},
                     class_members={},
+                    assignable_from=type_info.get("assignable_from", [])
                 )
                 self.register(class_type)

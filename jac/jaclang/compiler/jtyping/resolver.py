@@ -2,9 +2,9 @@
 
 from typing import Optional, Type
 
-import jaclang.compiler.types as jtype
+import jaclang.compiler.jtyping as jtype
 import jaclang.compiler.unitree as ast
-from jaclang.compiler.types.registery import JTypeRegistry
+from jaclang.compiler.jtyping.registery import JTypeRegistry
 from jaclang.settings import settings
 from jaclang.utils.helpers import pascal_to_snake
 

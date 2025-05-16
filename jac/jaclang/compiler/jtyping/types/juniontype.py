@@ -8,7 +8,8 @@ and situations where values may conform to one of several types.
 
 from typing import Iterable
 
-from jaclang.compiler.types import JType, JClassMember
+from jaclang.compiler.jtyping.types.jtype import JType
+from jaclang.compiler.jtyping.types.jclassmember import JClassMember
 
 
 class JUnionType(JType):

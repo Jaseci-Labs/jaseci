@@ -7,7 +7,9 @@ where the generic logic is defined in the base `JClassType` and specialized
 with type arguments at the call site.
 """
 
-from jaclang.compiler.types import JType, JClassType, JClassMember
+from jaclang.compiler.jtyping.types.jtype import JType
+from jaclang.compiler.jtyping.types.jclasstype import JClassType
+from jaclang.compiler.jtyping.types.jclassmember import JClassMember
 
 
 class JGenericType(JType):

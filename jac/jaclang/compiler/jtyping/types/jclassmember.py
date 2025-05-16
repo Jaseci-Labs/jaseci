@@ -9,7 +9,7 @@ metadata describing their behavior.
 from __future__ import annotations
 from enum import Enum
 
-from jaclang.compiler.types import JType
+from jaclang.compiler.jtyping.types.jtype import JType
 
 
 class MemberKind(Enum):

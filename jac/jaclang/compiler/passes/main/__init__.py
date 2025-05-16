@@ -17,6 +17,7 @@ from .fuse_typeinfo_pass import FuseTypeInfoPass  # noqa: I100
 from .access_modifier_pass import AccessCheckPass  # noqa: I100
 from .inheritance_pass import InheritancePass  # noqa: I100
 from .type_annotation_pass import JTypeAnnotatePass  # noqa: I100
+from .jtype_check_pass import JTypeCheckPass  # noqa: I100
 
 
 class CompilerMode(Enum):
@@ -46,5 +47,6 @@ __all__ = [
     "FuseTypeInfoPass",
     "AccessCheckPass",
     "InheritancePass",
-    "JTypeAnnotatePass"
+    "JTypeAnnotatePass",
+    "JTypeCheckPass"
 ]

@@ -8,7 +8,7 @@ It is assignable to and from any type, and allows all operations without error.
 This supports gradual typing, flexible inference, and integration with dynamic code.
 """
 
-from jaclang.compiler.types import JType
+from jaclang.compiler.jtyping.types.jtype import JType
 
 
 class JAnyType(JType):

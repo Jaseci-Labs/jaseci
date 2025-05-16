@@ -7,8 +7,7 @@ This structure is used within `JFunctionType` to model callable signatures
 and validate function calls.
 """
 
-from typing import Optional
-from jaclang.compiler.types import JType
+from jaclang.compiler.jtyping.types.jtype import JType
 
 
 class JFuncArgument:

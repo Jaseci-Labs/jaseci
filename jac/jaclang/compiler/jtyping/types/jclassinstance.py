@@ -6,8 +6,9 @@ or primitive classes in the Jac type system.
 
 This type wraps a `JClassType` and provides instance-level behavior.
 """
-
-from jaclang.compiler.types import JType, JClassType, JClassMember
+from jaclang.compiler.jtyping.types.jtype import JType
+from jaclang.compiler.jtyping.types.jclasstype import JClassType
+from jaclang.compiler.jtyping.types.jclassmember import JClassMember
 
 
 class JClassInstanceType(JType):

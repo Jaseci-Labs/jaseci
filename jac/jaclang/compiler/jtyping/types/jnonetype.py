@@ -2,7 +2,7 @@
 Defines `JNoneType`, representing the singleton `None` type in the Jac type system.
 """
 
-from jaclang.compiler.types import JType
+from jaclang.compiler.jtyping.types.jtype import JType
 
 
 class JNoneType(JType):

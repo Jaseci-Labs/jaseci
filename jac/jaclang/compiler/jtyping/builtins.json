@@ -1,0 +1,6 @@
+{
+    "int": {"methods": [], "assignable_from": ["builtins.int"]},
+    "float": {"methods": [], "assignable_from": ["builtins.int", "builtins.float"]},
+    "str": {"methods": [], "assignable_from": ["builtins.str"]},
+    "bool": {"methods": [], "assignable_from": ["builtins.bool"]}
+}

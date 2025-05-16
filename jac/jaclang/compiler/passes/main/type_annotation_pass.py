@@ -5,7 +5,8 @@ using type annotations in the code.
 
 from typing import Any, Optional
 
-import jaclang.compiler.types as jtype
+import jaclang.compiler.jtyping as jtype
+# from jaclang.compiler.jtyping.constraint import JTypeConstraint
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes import UniPass
 from jaclang.settings import settings
@@ -14,6 +15,9 @@ from jaclang.settings import settings
 class JTypeAnnotatePass(UniPass):
     """Populate type annotations to symbols."""
 
+    def __debug_print(self, msg: str) -> None:
+        if settings.debug_jac_typing:
+            print("[JTypeAnnotatePass]", msg)
 
     def before_pass(self) -> None:
         """Do setup pass vars."""  # noqa D403, D401
@@ -24,13 +28,11 @@ class JTypeAnnotatePass(UniPass):
 
     def enter_assignment(self, node: uni.Assignment) -> None:
         """Propagate type annotations for variable declarations."""
-        # Resolve the declared type from the annotation, or default to no type
-        type_annotation = (
-            self.prog.type_resolver.get_type(node.type_tag.tag)
-            if node.type_tag
-            else jtype.JAnyType()
-        )
-
+        # Resolve the declared type from the annotation
+        if not node.type_tag:
+            return
+        
+        type_annotation = self.prog.type_resolver.get_type(node.type_tag.tag)
 
         # Iterate over each target in the assignment (e.g., `x` in `x: int = 5`)
         for target in node.target.items:
@@ -47,7 +49,7 @@ class JTypeAnnotatePass(UniPass):
 
             # If the target is not a simple name and a type annotation is present, error
             elif not isinstance(type_annotation, jtype.JAnyType):
-                self.log_error(f"Type annotations is not supported for '{target.unparse()}' expression")
+                self.log_error(f"Type annotations is not supported for '{target.unparse()}' expression")                
 
     def enter_ability(self, node: uni.Ability) -> None:
         """Process a function/ability definition.

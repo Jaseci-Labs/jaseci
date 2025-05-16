@@ -12,7 +12,9 @@ from __future__ import annotations
 from typing import Optional
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.types import JType, JClassMember, JFunctionType
+from jaclang.compiler.jtyping.types.jtype import JType
+from jaclang.compiler.jtyping.types.jclassmember import JClassMember
+from jaclang.compiler.jtyping.types.jfunctionttype import JFunctionType
 
 
 class JClassType(JType):
@@ -30,6 +32,7 @@ class JClassType(JType):
         is_abstract (bool): Whether this class is abstract and cannot be instantiated.
         instance_members (dict[str, JClassMember]): Members available on instances of this class.
         class_members (dict[str, JClassMember]): Members available on the class object itself.
+        assignable_from (list[str]): Fully qualified names of types assignable to this one.
     """
 
     def __init__(
@@ -41,6 +44,7 @@ class JClassType(JType):
         is_abstract: bool = False,
         instance_members: Optional[dict[str, JClassMember]] = None,
         class_members: Optional[dict[str, JClassMember]] = None,
+        assignable_from: list[str] = []
     ):
         """
         Initializes a new JClassType instance.
@@ -53,6 +57,7 @@ class JClassType(JType):
             is_abstract (bool): Whether the class is abstract.
             instance_members (Optional[dict[str, JClassMember]]): Members on instances.
             class_members (Optional[dict[str, JClassMember]]): Members on the class object.
+            assignable_from (list[str]): Fully qualified names of types assignable to this one.
         """
         super().__init__(name, module)
         self.full_name: str = full_name
@@ -60,6 +65,7 @@ class JClassType(JType):
         self.is_abstract: bool = is_abstract
         self.instance_members: dict[str, JClassMember] = instance_members or {}
         self.class_members: dict[str, JClassMember] = class_members or {}
+        self.assignable_from: list[str] = assignable_from
 
     def is_instantiable(self) -> bool:
         """
@@ -83,7 +89,10 @@ class JClassType(JType):
         """
         Checks whether a value of `other` type can be assigned to this class type.
 
-        Supports nominal typing and inheritance-based assignability.
+        This includes:
+        - Nominal equality (matching name and module),
+        - Any explicitly listed type in `assignable_from`,
+        - Inheritance relationships via `bases`.
 
         Args:
             other (JType): The type to check against.
@@ -93,7 +102,9 @@ class JClassType(JType):
         """
         if not isinstance(other, JClassType):
             return False
-        if self.name == other.name and self.module == other.module:
+        if self.full_name == other.full_name:
+            return True
+        if other.full_name in self.assignable_from:
             return True
         return any(base.can_assign_from(other) for base in self.bases)
 
