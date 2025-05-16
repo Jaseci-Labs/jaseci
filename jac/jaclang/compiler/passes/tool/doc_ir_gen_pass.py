@@ -304,9 +304,11 @@ class DocIRGenPass(UniPass):
                 parts.append(
                     self.indent(self.concat([self.tight_line(), i.gen.doc_ir]))
                 )
+                parts.append(self.tight_line())
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.text(" "))
+        parts.pop()
         node.gen.doc_ir = self.concat(parts)
 
     def exit_param_var(self, node: uni.ParamVar) -> None:
@@ -338,58 +340,12 @@ class DocIRGenPass(UniPass):
     def exit_assignment(self, node: uni.Assignment) -> None:
         """Generate DocIR for assignments."""
         parts: list[doc.DocType] = []
-
-        # Left side (target)
-        if node.target and node.target.gen.doc_ir:  # target is SubNodeList[Expr]
-            # Assuming node.target.gen.doc_ir is the processed doc for targets
-            # If multiple targets (e.g. a,b = 1,2), SubNodeList should have handled joining them (e.g. with ", ")
-            target_doc = node.target.gen.doc_ir
-            if target_doc and not (
-                isinstance(target_doc, doc.Concat) and not target_doc.parts
-            ):
-                parts.append(target_doc)
-
-        # Type annotation
-        if node.type_tag and node.type_tag.gen.doc_ir:
-            type_tag_doc = node.type_tag.gen.doc_ir
-            if type_tag_doc:
-                parts.append(
-                    self.text(": ")
-                )  # unitree has SubTag for type_tag, which adds ':'
-                # but here it's direct, so add ': '
-                parts.append(type_tag_doc)
-
-        # Assignment operator
-        op_str = node.aug_op.value if node.aug_op else "="
-        parts.append(self.text(f" {op_str} "))
-
-        # Right side (value)
-        if node.value and node.value.gen.doc_ir:
-            value_doc = node.value.gen.doc_ir
-            if value_doc:
-                # Potentially breakable if the value is long
-                parts.append(
-                    self.group(self.indent(self.concat([self.line(), value_doc])))
-                )
-
-        # Semicolon, unless it's an Enum statement or inside specific for-loop parts
-        # or inside GlobalVars (handled by GlobalVars exit)
-        is_global_var_item = False
-        if (
-            node.parent
-            and isinstance(node.parent, uni.SubNodeList)
-            and node.parent.parent
-            and isinstance(node.parent.parent, uni.GlobalVars)
-        ):
-            is_global_var_item = True
-
-        if (
-            not node.is_enum_stmt
-            and not isinstance(node.parent, uni.IterForStmt)
-            and not is_global_var_item
-        ):
-            parts.append(self.text(";"))
-
+        for i in node.kid:
+            if False:
+                pass
+            else:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.text(" "))
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_if_stmt(self, node: uni.IfStmt) -> None:
@@ -2271,11 +2227,14 @@ class DocIRGenPass(UniPass):
                 and node.delim
                 and i.name == node.delim.name
                 and i.name not in [Tok.DOT]
+                and node.delim.name != Tok.WS
             ):
                 indent_parts.append(i.gen.doc_ir)
                 indent_parts.append(self.line())
             else:
                 indent_parts.append(i.gen.doc_ir)
+                if node.delim and node.delim.name == Tok.WS:
+                    indent_parts.append(self.hard_line())
         node.gen.doc_ir = self.concat(parts) if parts else self.concat(indent_parts)
 
     def exit_token(self, node: uni.Token) -> None:

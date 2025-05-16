@@ -42,6 +42,7 @@ def format(
         path: Path to a .jac file or directory containing .jac files
         outfile: Optional output file path (when formatting a single file)
         to_screen: Print formatted code to stdout instead of writing to file
+        new: Use new docir format (default: False)
 
     Examples:
         jac format myfile.jac
