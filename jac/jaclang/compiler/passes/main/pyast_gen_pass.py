@@ -1740,7 +1740,7 @@ class PyastGenPass(UniPass):
             if node.from_walker
             else ast3.Name(id=Con.HERE.value, ctx=ast3.Load())
         )
-        
+
         visit_call = self.sync(
             ast3.Call(
                 func=self.jaclib_obj("visit"),
