@@ -30,7 +30,9 @@ Jac.setup()
 
 
 @cmd_registry.register
-def format(path: str, outfile: str = "", to_screen: bool = False) -> None:
+def format(
+    path: str, outfile: str = "", to_screen: bool = False, new: bool = True
+) -> None:
     """Format .jac files with improved code style.
 
     Applies consistent formatting to Jac code files to improve readability and
@@ -66,7 +68,7 @@ def format(path: str, outfile: str = "", to_screen: bool = False) -> None:
         if not path_obj.exists():
             print(f"Error: File '{path}' does not exist.", file=sys.stderr)
             return
-        formatted_code = JacProgram.jac_file_formatter(str(path_obj))
+        formatted_code = JacProgram.jac_file_formatter(str(path_obj), docir=new)
         write_formatted_code(formatted_code, str(path_obj))
         return
 
