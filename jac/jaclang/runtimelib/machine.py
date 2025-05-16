@@ -916,6 +916,38 @@ class JacBasics:
     @staticmethod
     def refs(path: DataSpatialPath) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's apply_dir stmt feature."""
+        ret_edges: list[NodeArchitype] = []
+
+        origin = path.origin
+        while path.destinations:
+            dest = path.destinations.pop(0)
+            nodes: list[NodeArchitype] = []
+            for node in origin:
+                nanch = node.__jac__
+                for anchor in nanch.edges:
+                    if (
+                        (source := anchor.source)
+                        and (target := anchor.target)
+                        and dest.edge(anchor.architype)
+                        and source.architype
+                        and target.architype
+                    ):
+                        if (
+                            dir in [EdgeDir.OUT, EdgeDir.ANY]
+                            and nanch == source
+                            and dest.node(target.architype)
+                            and JacMachineInterface.check_read_access(target)
+                        ):
+                            nodes.append(target.architype)
+                        if (
+                            dir in [EdgeDir.IN, EdgeDir.ANY]
+                            and nanch == target
+                            and dest.node(source.architype)
+                            and JacMachineInterface.check_read_access(source)
+                        ):
+                            nodes.append(source.architype)
+            origin = nodes
+        return ret_edges
         # if isinstance(sources, NodeArchitype):
         #     sources = [sources]
         # targ_obj_set: Optional[list[NodeArchitype]] = (

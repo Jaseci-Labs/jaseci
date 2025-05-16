@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
 from dataclasses import asdict, dataclass, field, fields, is_dataclass
 from enum import IntEnum
 from functools import cached_property
@@ -70,9 +69,10 @@ class AnchorReport:
     context: dict[str, Any]
 
 
-DataSpatialFilter: TypeAlias = (
+DataSpatialFilterArg: TypeAlias = (
     Callable[["Architype"], bool] | "Architype" | list["Architype"] | None
 )
+DataSpatialFilter: TypeAlias = Callable[["Architype"], bool]
 
 
 @dataclass(eq=False, repr=False)
@@ -80,8 +80,8 @@ class DataSpatialDestination:
     """Data Spatial Destination."""
 
     direction: EdgeDir
-    edge: DataSpatialFilter = None
-    node: DataSpatialFilter = None
+    edge: DataSpatialFilter
+    node: DataSpatialFilter
 
 
 @dataclass(eq=False, repr=False)
@@ -102,9 +102,11 @@ class DataSpatialPath:
 
     def convert(
         self,
-        filter: DataSpatialFilter,
+        filter: DataSpatialFilterArg,
     ) -> DataSpatialFilter:
         """Convert filter."""
+        if not filter:
+            return lambda i: True
         if callable(filter):
             return filter
         elif isinstance(filter, list):
@@ -114,26 +116,30 @@ class DataSpatialPath:
     def append(
         self,
         direction: EdgeDir,
-        edge: DataSpatialFilter,
-        node: DataSpatialFilter,
+        edge: DataSpatialFilterArg,
+        node: DataSpatialFilterArg,
     ) -> DataSpatialPath:
         """Append destination."""
-        if edge:
-            edge = self.convert(edge)
-        if node:
-            node = self.convert(node)
+        edge = self.convert(edge)
+        node = self.convert(node)
         self.destinations.append(DataSpatialDestination(direction, edge, node))
         return self
 
-    def _out(self, edge: DataSpatialFilter, node: DataSpatialFilter) -> DataSpatialPath:
+    def _out(
+        self, edge: DataSpatialFilterArg, node: DataSpatialFilterArg
+    ) -> DataSpatialPath:
         """Override greater than function."""
         return self.append(EdgeDir.OUT, edge, node)
 
-    def _in(self, edge: DataSpatialFilter, node: DataSpatialFilter) -> DataSpatialPath:
+    def _in(
+        self, edge: DataSpatialFilterArg, node: DataSpatialFilterArg
+    ) -> DataSpatialPath:
         """Override greater than function."""
         return self.append(EdgeDir.IN, edge, node)
 
-    def _any(self, edge: DataSpatialFilter, node: DataSpatialFilter) -> DataSpatialPath:
+    def _any(
+        self, edge: DataSpatialFilterArg, node: DataSpatialFilterArg
+    ) -> DataSpatialPath:
         """Override greater than function."""
         return self.append(EdgeDir.ANY, edge, node)
 
