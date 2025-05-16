@@ -1,13 +1,13 @@
 test visit_profile {
     root spawn visit_profile();
     profile = [root --> (`?Profile)][0];
-    check isinstance(profile,Profile); 
+    check isinstance(profile,Profile);
 }
 
 test update_profile {
     root spawn update_profile(
         new_username = "test_user",
-    ); 
+    );
     profile = [root --> (`?Profile)][0];
     check profile.username == "test_user";
 }
@@ -20,7 +20,7 @@ test follow_request {
 }
 
 test un_follow_request {
-    followee = [root --> (`?Profile)-:Follow:->(`?Profile)][0]; 
+    followee = [root --> (`?Profile)-:Follow:->(`?Profile)][0];
     followee spawn un_follow_request();
     check len([root --> (`?Profile)-:Follow:->(`?Profile)]) == 0;
 }
@@ -28,7 +28,7 @@ test un_follow_request {
 test create_tweet {
     root spawn create_tweet(
         content = "test_tweet",
-    ); 
+    );
     test1 = [root --> (`?Profile) --> (`?Tweet)][0];
     check test1.content == "test_tweet";
 }

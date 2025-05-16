@@ -5,7 +5,7 @@
     similarity = cosine_similarity(query_embedding, tweet_embeddings)[0];
     return similarity;
 }
- 
+
 :node:Profile:can:update {
     self.username = here.new_username;
     report self;
@@ -95,7 +95,7 @@
 
 :walker:load_user_profiles:can:load_profiles {
         self.profiles: list = [];
-        
+
         for user in NodeAnchor.Collection.find({"name": "Profile"}) {
             user_node = user.architype;
             self.profiles.append(

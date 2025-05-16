@@ -458,7 +458,7 @@ Now Lets create required walkers for LittleX.
             ```jac
             :walker:load_user_profiles:can:load_profiles {
                   self.profiles: list = [];
-                  
+
                   for user in NodeAnchor.Collection.find({"name": "Profile"}) {
                         user_node = user.architype;
                         self.profiles.append(
