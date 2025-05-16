@@ -2219,15 +2219,18 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for a SubNodeList."""
         parts: list[doc.DocType] = []
         indent_parts: list[doc.DocType] = []
+        in_codeblock = node.delim and node.delim.name == Tok.WS
+        is_assignment = node.delim and node.delim.name == Tok.EQ
         for i in node.kid:
             if i == node.left_enc:
                 parts.append(i.gen.doc_ir)
                 indent_parts.append(self.line())
             elif i == node.right_enc:
-                indent_parts.append(self.line())
+                if in_codeblock:
+                    indent_parts.pop()
                 parts.append(self.indent(self.concat(indent_parts)))
-                parts.append(i.gen.doc_ir)
                 parts.append(self.line())
+                parts.append(i.gen.doc_ir)
             elif (
                 isinstance(i, uni.Token)
                 and node.delim
@@ -2235,13 +2238,12 @@ class DocIRGenPass(UniPass):
                 and i.name not in [Tok.DOT]
             ):
                 indent_parts.append(i.gen.doc_ir)
-                if node.delim.name != Tok.EQ:
-                    indent_parts.append(self.line())
+                indent_parts.append(self.tight_line() if is_assignment else self.line())
             else:
                 indent_parts.append(i.gen.doc_ir)
-                if node.delim and node.delim.name == Tok.WS:
+                if in_codeblock:
                     indent_parts.append(self.hard_line())
-                elif node.delim and node.delim.name == Tok.EQ:
+                elif is_assignment:
                     indent_parts.append(self.text(" "))
         node.gen.doc_ir = self.concat(parts) if parts else self.concat(indent_parts)
 
@@ -2279,7 +2281,6 @@ class DocIRGenPass(UniPass):
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.text(" "))
-
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_event_signature(self, node: uni.EventSignature) -> None:

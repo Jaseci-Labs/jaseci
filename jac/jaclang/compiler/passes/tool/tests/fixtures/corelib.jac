@@ -16,6 +16,13 @@ impl Memory.get_obj(caller_id: UUID, item_id: UUID, override: bool=False, doc: b
     }
 }
 
+def func_name(name: str) -> str {
+    def inner_func(name: str) -> str {
+        print(name);
+        return name;
+    }
+    return inner_func(name);
+}
 obj Memory {
     has index: dict[UUID, Element] = {},
         save_queue: list[Element] = [];
@@ -97,6 +104,7 @@ obj WalkerAnchor(Anchor) {
     def disengage_now;
     def __call__(nd: Node);
 }
+
 
 obj Root(AbsRootHook) {
     has __jac__: NodeAnchor | None = None;
