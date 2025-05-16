@@ -2,21 +2,24 @@
 
 from __future__ import annotations
 
-import inspect
 from dataclasses import asdict, dataclass, field, fields, is_dataclass
 from enum import IntEnum
 from functools import cached_property
+from inspect import _empty, signature
 from logging import getLogger
 from pickle import dumps
 from types import UnionType
-from typing import Any, Callable, ClassVar, Optional, TypeVar
+from typing import Any, Callable, ClassVar, Optional, TypeAlias, TypeVar
 from uuid import UUID, uuid4
+
+from ..compiler.constant import EdgeDir
 
 
 logger = getLogger(__name__)
 
 TARCH = TypeVar("TARCH", bound="Archetype")
 TANCH = TypeVar("TANCH", bound="Anchor")
+T = TypeVar("T")
 
 
 class AccessLevel(IntEnum):
@@ -64,6 +67,118 @@ class AnchorReport:
 
     id: str
     context: dict[str, Any]
+
+
+DataSpatialFilter: TypeAlias = (
+    Callable[["Archetype"], bool] | "Archetype" | list["Archetype"] | None
+)
+
+
+@dataclass(eq=False, repr=False)
+class DataSpatialDestination:
+    """Data Spatial Destination."""
+
+    direction: EdgeDir
+    edge: Callable[["Archetype"], bool] | None = None
+    node: Callable[["Archetype"], bool] | None = None
+
+    def edge_filter(self, arch: Archetype) -> bool:
+        """Filter edge."""
+        return not self.edge or self.edge(arch)
+
+    def node_filter(self, arch: Archetype) -> bool:
+        """Filter node."""
+        return not self.node or self.node(arch)
+
+
+@dataclass(eq=False, repr=False)
+class DataSpatialPath:
+    """Data Spatial Path."""
+
+    origin: list[NodeArchetype]
+    destinations: list[DataSpatialDestination]
+    edge_only: bool
+
+    def __init__(
+        self,
+        origin: NodeArchetype | list[NodeArchetype],
+        destinations: list[DataSpatialDestination] | None = None,
+    ) -> None:
+        """Override Init."""
+        if not isinstance(origin, list):
+            origin = [origin]
+        self.origin = origin
+        self.destinations = [] if destinations is None else destinations
+        self.edge_only = False
+
+    def convert(
+        self,
+        filter: DataSpatialFilter,
+    ) -> Callable[["Archetype"], bool] | None:
+        """Convert filter."""
+        if not filter:
+            return None
+        if callable(filter):
+            return filter
+        elif isinstance(filter, list):
+            return lambda i: i in filter
+        return lambda i: i == filter
+
+    def append(
+        self,
+        direction: EdgeDir,
+        edge: DataSpatialFilter,
+        node: DataSpatialFilter,
+    ) -> DataSpatialPath:
+        """Append destination."""
+        self.destinations.append(
+            DataSpatialDestination(direction, self.convert(edge), self.convert(node))
+        )
+        return self
+
+    def _out(
+        self, edge: DataSpatialFilter = None, node: DataSpatialFilter = None
+    ) -> DataSpatialPath:
+        """Override greater than function."""
+        return self.append(EdgeDir.OUT, edge, node)
+
+    def _in(
+        self, edge: DataSpatialFilter = None, node: DataSpatialFilter = None
+    ) -> DataSpatialPath:
+        """Override greater than function."""
+        return self.append(EdgeDir.IN, edge, node)
+
+    def _any(
+        self, edge: DataSpatialFilter = None, node: DataSpatialFilter = None
+    ) -> DataSpatialPath:
+        """Override greater than function."""
+        return self.append(EdgeDir.ANY, edge, node)
+
+    def edge(self) -> DataSpatialPath:
+        """Set edge only."""
+        self.edge_only = True
+        return self
+
+    def repr_builder(self, repr: str, dest: DataSpatialDestination, mark: str) -> str:
+        """Repr builder."""
+        repr += mark
+        repr += f' (edge{" filter" if dest.edge else ""}) '
+        repr += mark
+        repr += f' (node{" filter" if dest.node else ""}) '
+        return repr
+
+    def __repr__(self) -> str:
+        """Override repr."""
+        repr = "nodes "
+        for dest in self.destinations:
+            match dest.direction:
+                case EdgeDir.IN:
+                    repr = self.repr_builder(repr, dest, "<<")
+                case EdgeDir.OUT:
+                    repr = self.repr_builder(repr, dest, ">>")
+                case _:
+                    repr = self.repr_builder(repr, dest, "--")
+        return repr.strip()
 
 
 @dataclass(eq=False, repr=False, kw_only=True)
@@ -337,9 +452,9 @@ class DataSpatialFunction:
     @cached_property
     def trigger(self) -> type | UnionType | tuple[type | UnionType, ...] | None:
         """Get function parameter annotations."""
-        parameters = inspect.signature(self.func, eval_str=True).parameters
+        parameters = signature(self.func, eval_str=True).parameters
         if len(parameters) >= 2:
             second_param = list(parameters.values())[1]
             ty = second_param.annotation
-            return ty if ty != inspect._empty else None
+            return ty if ty != _empty else None
         return None

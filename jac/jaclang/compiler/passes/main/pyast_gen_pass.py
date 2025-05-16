@@ -2723,63 +2723,88 @@ class PyastGenPass(UniPass):
             ]
 
     def exit_edge_ref_trailer(self, node: uni.EdgeRefTrailer) -> None:
-        pynode = node.chain[0].gen.py_ast[0]
-        chomp = [*node.chain]
-        last_edge = None
-        if node.edges_only:
-            for i in node.chain:
-                if isinstance(i, uni.EdgeOpRef):
-                    last_edge = i
-        while len(chomp):
-            cur = chomp[0]
-            chomp = chomp[1:]
-            if len(chomp) == len(node.chain) - 1 and not isinstance(cur, uni.EdgeOpRef):
-                continue
-            next_i = chomp[0] if chomp else None
-            if isinstance(cur, uni.EdgeOpRef) and (
-                not next_i or not isinstance(next_i, uni.EdgeOpRef)
-            ):
-                pynode = self.translate_edge_op_ref(
-                    loc=pynode,
-                    node=cur,
-                    targ=(
-                        next_i.gen.py_ast[0]
-                        if next_i and not isinstance(next_i, uni.FilterCompr)
-                        else None
-                    ),
-                    edges_only=node.edges_only and cur == last_edge,
-                )
-                if next_i and isinstance(next_i, uni.FilterCompr):
-                    pynode = self.sync(
-                        ast3.Call(
-                            func=self.jaclib_obj("filter"),
-                            args=[],
-                            keywords=[
-                                self.sync(
-                                    ast3.keyword(
-                                        arg="items",
-                                        value=cast(ast3.expr, pynode),
-                                    )
-                                ),
-                                self.sync(
-                                    ast3.keyword(
-                                        arg="func",
-                                        value=cast(ast3.expr, next_i.gen.py_ast[0]),
-                                    )
-                                ),
-                            ],
+        origin = None
+        cur = node.chain[0]
+        chomp = [*node.chain[1:]]
+
+        if not isinstance(cur, uni.EdgeOpRef):
+            origin = cur.gen.py_ast[0]
+            cur = cast(uni.EdgeOpRef, chomp.pop(0))
+
+        pynode = self.sync(
+            ast3.Call(
+                func=self.jaclib_obj("Path"),
+                args=[cast(ast3.expr, origin or cur.gen.py_ast[0])],
+                keywords=[],
+            )
+        )
+
+        while True:
+            keywords = []
+            if cur.filter_cond:
+                keywords.append(
+                    self.sync(
+                        ast3.keyword(
+                            arg="edge",
+                            value=cast(
+                                ast3.expr, self.sync(cur.filter_cond.gen.py_ast[0])
+                            ),
                         )
                     )
-                chomp = chomp[1:] if next_i else chomp
-            elif isinstance(cur, uni.EdgeOpRef) and isinstance(next_i, uni.EdgeOpRef):
-                pynode = self.translate_edge_op_ref(
-                    pynode,
-                    cur,
-                    targ=None,
-                    edges_only=node.edges_only and cur == last_edge,
                 )
+
+            if chomp and not isinstance(chomp[0], uni.EdgeOpRef):
+                filt = chomp.pop(0)
+                keywords.append(
+                    self.sync(
+                        ast3.keyword(
+                            arg="node",
+                            value=cast(ast3.expr, self.sync(filt.gen.py_ast[0])),
+                        )
+                    )
+                )
+
+            pynode = self.sync(
+                ast3.Call(
+                    func=self.sync(
+                        ast3.Attribute(
+                            value=pynode,
+                            attr=f"_{cur.edge_dir.name.lower()}",
+                            ctx=ast3.Load(),
+                        )
+                    ),
+                    args=[],
+                    keywords=keywords,
+                )
+            )
+
+            if chomp:
+                cur = cast(uni.EdgeOpRef, chomp.pop(0))
             else:
-                raise self.ice("Invalid edge ref trailer")
+                break
+
+        if node.edges_only:
+            pynode = self.sync(
+                ast3.Call(
+                    func=self.sync(
+                        ast3.Attribute(
+                            value=pynode,
+                            attr="edge",
+                            ctx=ast3.Load(),
+                        )
+                    ),
+                    args=[],
+                    keywords=[],
+                )
+            )
+
+        pynode = self.sync(
+            ast3.Call(
+                func=self.jaclib_obj("refs"),
+                args=[pynode],
+                keywords=[],
+            )
+        )
 
         node.gen.py_ast = [pynode]
 

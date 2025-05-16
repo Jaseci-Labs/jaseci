@@ -34,10 +34,10 @@ class Creator(_.Walker):
     )
     def travel(self, here: _.Root | node_a) -> None:
         for i in _.refs(
-            here, filter=lambda item: isinstance(item, MyEdge) and item.val <= 6
+            _.Path(here)._out(edge=lambda i: isinstance(i, MyEdge) and i.val <= 6)
         ):
             print(i.value)
-        _.visit(self, _.refs(here))
+        _.visit(self, _.refs(_.Path(here)))
 
 
 class MyEdge(_.Edge):

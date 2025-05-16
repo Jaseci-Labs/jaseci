@@ -39,7 +39,9 @@ from jaclang.compiler.constant import Constants as Con, EdgeDir, colors
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.archetype import (
+    DataSpatialDestination,
     DataSpatialFunction,
+    DataSpatialPath,
     GenericEdge as _GenericEdge,
     Root as _Root,
 )
@@ -233,69 +235,67 @@ class JacNode:
 
     @staticmethod
     def get_edges(
-        node: NodeAnchor,
-        dir: EdgeDir,
-        filter: Callable[[EdgeArchetype], bool] | None,
-        target_obj: list[NodeArchetype] | None,
+        origin: list[NodeArchetype], destination: DataSpatialDestination
     ) -> list[EdgeArchetype]:
         """Get edges connected to this node."""
-        ret_edges: list[EdgeArchetype] = []
-        for anchor in node.edges:
-            if (
-                (source := anchor.source)
-                and (target := anchor.target)
-                and (not filter or filter(anchor.archetype))
-                and source.archetype
-                and target.archetype
-            ):
+        edges: OrderedDict[EdgeAnchor, EdgeArchetype] = OrderedDict()
+        for node in origin:
+            nanch = node.__jac__
+            for anchor in nanch.edges:
                 if (
-                    dir in [EdgeDir.OUT, EdgeDir.ANY]
-                    and node == source
-                    and (not target_obj or target.archetype in target_obj)
-                    and JacMachineInterface.check_read_access(target)
+                    (source := anchor.source)
+                    and (target := anchor.target)
+                    and destination.edge_filter(anchor.archetype)
+                    and source.archetype
+                    and target.archetype
                 ):
-                    ret_edges.append(anchor.archetype)
-                if (
-                    dir in [EdgeDir.IN, EdgeDir.ANY]
-                    and node == target
-                    and (not target_obj or source.archetype in target_obj)
-                    and JacMachineInterface.check_read_access(source)
-                ):
-                    ret_edges.append(anchor.archetype)
-        return ret_edges
+                    if (
+                        destination.direction in [EdgeDir.OUT, EdgeDir.ANY]
+                        and nanch == source
+                        and destination.node_filter(target.archetype)
+                        and JacMachineInterface.check_read_access(target)
+                    ):
+                        edges[anchor] = anchor.archetype
+                    if (
+                        destination.direction in [EdgeDir.IN, EdgeDir.ANY]
+                        and nanch == target
+                        and destination.node_filter(source.archetype)
+                        and JacMachineInterface.check_read_access(source)
+                    ):
+                        edges[anchor] = anchor.archetype
+        return list(edges.values())
 
     @staticmethod
     def edges_to_nodes(
-        node: NodeAnchor,
-        dir: EdgeDir,
-        filter: Callable[[EdgeArchetype], bool] | None,
-        target_obj: list[NodeArchetype] | None,
+        origin: list[NodeArchetype], destination: DataSpatialDestination
     ) -> list[NodeArchetype]:
         """Get set of nodes connected to this node."""
-        ret_edges: list[NodeArchetype] = []
-        for anchor in node.edges:
-            if (
-                (source := anchor.source)
-                and (target := anchor.target)
-                and (not filter or filter(anchor.archetype))
-                and source.archetype
-                and target.archetype
-            ):
+        nodes: OrderedDict[NodeAnchor, NodeArchetype] = OrderedDict()
+        for node in origin:
+            nanch = node.__jac__
+            for anchor in nanch.edges:
                 if (
-                    dir in [EdgeDir.OUT, EdgeDir.ANY]
-                    and node == source
-                    and (not target_obj or target.archetype in target_obj)
-                    and JacMachineInterface.check_read_access(target)
+                    (source := anchor.source)
+                    and (target := anchor.target)
+                    and destination.edge_filter(anchor.archetype)
+                    and source.archetype
+                    and target.archetype
                 ):
-                    ret_edges.append(target.archetype)
-                if (
-                    dir in [EdgeDir.IN, EdgeDir.ANY]
-                    and node == target
-                    and (not target_obj or source.archetype in target_obj)
-                    and JacMachineInterface.check_read_access(source)
-                ):
-                    ret_edges.append(source.archetype)
-        return ret_edges
+                    if (
+                        destination.direction in [EdgeDir.OUT, EdgeDir.ANY]
+                        and nanch == source
+                        and destination.node_filter(target.archetype)
+                        and JacMachineInterface.check_read_access(target)
+                    ):
+                        nodes[target] = target.archetype
+                    if (
+                        destination.direction in [EdgeDir.IN, EdgeDir.ANY]
+                        and nanch == target
+                        and destination.node_filter(source.archetype)
+                        and JacMachineInterface.check_read_access(source)
+                    ):
+                        nodes[source] = source.archetype
+        return list(nodes.values())
 
     @staticmethod
     def remove_edge(node: NodeAnchor, edge: EdgeAnchor) -> None:
@@ -519,6 +519,8 @@ class JacClassReferences:
 
     Root: TypeAlias = _Root
     GenericEdge: TypeAlias = _GenericEdge
+
+    Path: TypeAlias = DataSpatialPath
 
 
 class JacBuiltin:
@@ -919,40 +921,26 @@ class JacBasics:
 
     @staticmethod
     def refs(
-        sources: NodeArchetype | list[NodeArchetype],
-        targets: NodeArchetype | list[NodeArchetype] | None = None,
-        dir: EdgeDir = EdgeDir.OUT,
-        filter: Callable[[EdgeArchetype], bool] | None = None,
-        edges_only: bool = False,
+        path: DataSpatialPath | NodeArchetype | list[NodeArchetype],
     ) -> list[NodeArchetype] | list[EdgeArchetype]:
         """Jac's apply_dir stmt feature."""
-        if isinstance(sources, NodeArchetype):
-            sources = [sources]
-        targ_obj_set: Optional[list[NodeArchetype]] = (
-            [targets]
-            if isinstance(targets, NodeArchetype)
-            else targets if targets else None
-        )
-        if edges_only:
-            connected_edges: list[EdgeArchetype] = []
-            for node in sources:
-                edges = JacMachineInterface.get_edges(
-                    node.__jac__, dir, filter, target_obj=targ_obj_set
-                )
-                connected_edges.extend(
-                    edge for edge in edges if edge not in connected_edges
-                )
-            return connected_edges
+        if not isinstance(path, DataSpatialPath):
+            path = DataSpatialPath(path, [DataSpatialDestination(EdgeDir.OUT)])
+
+        origin = path.origin
+
+        if path.edge_only:
+            destinations = path.destinations[:-1]
         else:
-            connected_nodes: list[NodeArchetype] = []
-            for node in sources:
-                nodes = JacMachineInterface.edges_to_nodes(
-                    node.__jac__, dir, filter, target_obj=targ_obj_set
-                )
-                connected_nodes.extend(
-                    node for node in nodes if node not in connected_nodes
-                )
-            return connected_nodes
+            destinations = path.destinations
+        while destinations:
+            dest = path.destinations.pop(0)
+            origin = JacMachineInterface.edges_to_nodes(origin, dest)
+
+        if path.edge_only:
+            return JacMachineInterface.get_edges(origin, path.destinations[-1])
+
+        return origin
 
     @staticmethod
     def filter(
