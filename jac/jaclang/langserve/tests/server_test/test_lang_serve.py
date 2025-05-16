@@ -1,6 +1,7 @@
 import os
 import asyncio
 import pytest
+import contextlib
 
 from lsprotocol.types import (
     DidOpenTextDocumentParams,
@@ -52,19 +53,59 @@ async def test_did_open_and_semantic_tokens():
     # Directly call the `did_open` feature handler
     await did_open(ls, params)
 
-    # Wait for diagnostics and semantic token processing
-    await asyncio.sleep(1)
-
     # Validate diagnostics
     diagnostics = ls.diagnostics.get(uri, [])
     print("Diagnostics:", diagnostics)
     assert isinstance(diagnostics, list)
+    assert len(diagnostics) == 0
 
     # Validate semantic tokens
     sem_tokens = ls.get_semantic_tokens(uri)
     print("Semantic Tokens:", sem_tokens)
     assert hasattr(sem_tokens, "data")
     assert isinstance(sem_tokens.data, list)
+
+@contextlib.contextmanager
+def patch_file(filepath, new_content):
+    """Temporarily replace file content for testing."""
+    with open(filepath, "r") as f:
+        original = f.read()
+    try:
+        with open(filepath, "w") as f:
+            f.write(new_content)
+        yield
+    finally:
+        with open(filepath, "w") as f:
+            f.write(original)
+
+@pytest.mark.asyncio
+async def test_did_open_and_simple_syntax_error():
+    ls = JacLangServer()
+    uri = from_fs_path(JAC_FILE)
+    ls.lsp._workspace = Workspace(os.path.dirname(JAC_FILE), ls)
+
+    from jaclang.langserve.tests.server_test.code_test import get_code
+    broken_code = get_code("error")
+
+    with patch_file(JAC_FILE, broken_code):
+        params = DidOpenTextDocumentParams(
+            text_document=TextDocumentItem(
+                uri=uri,
+                language_id="jac",
+                version=1,
+                text=broken_code,
+            )
+        )
+        await did_open(ls, params)
+        diagnostics = ls.diagnostics.get(uri, [])
+        print("Diagnostics:", diagnostics)
+        assert isinstance(diagnostics, list)
+        assert len(diagnostics) == 1
+
+        sem_tokens = ls.get_semantic_tokens(uri)
+        print("Semantic Tokens:", sem_tokens)
+        assert hasattr(sem_tokens, "data")
+        assert isinstance(sem_tokens.data, list)
 
 @pytest.mark.asyncio
 async def test_did_save():
