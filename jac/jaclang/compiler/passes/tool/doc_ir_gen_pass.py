@@ -715,17 +715,19 @@ class DocIRGenPass(UniPass):
     def exit_has_var(self, node: uni.HasVar) -> None:
         """Generate DocIR for has variable declarations."""
         parts: list[doc.DocType] = []
-
-        if node.name:
-            parts.append(self.text(node.name.value))
-
-        if node.type_tag and node.type_tag.gen.doc_ir:
-            parts.append(self.text(": "))
-            parts.append(node.type_tag.gen.doc_ir)
-
-        if node.value and node.value.gen.doc_ir:
-            parts.append(self.text(" = "))
-            parts.append(node.value.gen.doc_ir)
+        for i in node.kid:
+            if i == node.name:
+                parts.append(self.text(node.name.value))
+            elif i == node.type_tag:
+                parts.append(self.text(": "))
+                parts.append(node.type_tag.gen.doc_ir)
+            elif i == node.value:
+                parts.append(node.value.gen.doc_ir)
+            elif isinstance(i,uni.Token) and i.name == Tok.EQ:
+                parts.append(self.text(" = "))
+            else:
+                parts.append(self.text(" "))
+                parts.append(i.gen.doc_ir)
 
         node.gen.doc_ir = self.group(self.concat(parts))
 
@@ -746,6 +748,8 @@ class DocIRGenPass(UniPass):
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.text(" "))
+            if isinstance(i.gen.doc_ir, doc.Concat):
+                print(i.gen.doc_ir.parts)
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_while_stmt(self, node: uni.WhileStmt) -> None:
