@@ -341,8 +341,9 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for assignments."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            if False:
-                pass
+            if isinstance(i, uni.Token) and i.name == Tok.SEMI:
+                parts.pop()
+                parts.append(i.gen.doc_ir)
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.text(" "))
@@ -2227,14 +2228,16 @@ class DocIRGenPass(UniPass):
                 and node.delim
                 and i.name == node.delim.name
                 and i.name not in [Tok.DOT]
-                and node.delim.name != Tok.WS
             ):
                 indent_parts.append(i.gen.doc_ir)
-                indent_parts.append(self.line())
+                if node.delim.name != Tok.EQ:
+                    indent_parts.append(self.line())
             else:
                 indent_parts.append(i.gen.doc_ir)
                 if node.delim and node.delim.name == Tok.WS:
                     indent_parts.append(self.hard_line())
+                elif node.delim and node.delim.name == Tok.EQ:
+                    indent_parts.append(self.text(" "))
         node.gen.doc_ir = self.concat(parts) if parts else self.concat(indent_parts)
 
     def exit_token(self, node: uni.Token) -> None:
