@@ -92,7 +92,7 @@ When someone exits a room:
 
 You leave the Living Room, and the system turns off the lights and updates its records to show the room is vacant.
 
-For more explanation [visit](../../data_spatial/nodes_and_edges.md)
+For more details on nodes [see the Nodes and Edges documentation](../../data_spatial/nodes_and_edges.md)
 
 Now, let's create the required nodes for LittleX.
 
@@ -333,7 +333,6 @@ Now, let's create the required nodes for LittleX.
 **Edges**
 
 Edge represents the connections or relationships between nodes. Edges can be unidirectional or bidirectional.
-![Image title](images/Family.jpg)
 
 First, create an edge named Relation with the attribute 'since'.
 ```jac
@@ -347,7 +346,7 @@ edge Relation {
 * `int` is used for integer values (years).
 * `str` is used for string values (names).
 
-For more explanation [visit](../../data_spatial/nodes_and_edges.md)
+For more details on edges [see the Nodes and Edges documentation](../../data_spatial/nodes_and_edges.md)
 
 Now, let's create the required edges for LittleX.
 
@@ -387,13 +386,17 @@ Now, let's create the required edges for LittleX.
 ### <span style="color: orange">**Lesson 3: Creating Walkers**
 Walkers are graph-traversing agents in Jaclang that perform tasks without requiring initialization and can define abilities for various node types. The Jaseci stack automatically converts walkers into RESTful API endpoints.
 
-First, create a walker named Relation with the attribute 'since'.
+First, create a walker named Relation with the attribute 'name'.
 ```jac
 walker Agent {
       has name: str;
 }
 ```
-For more explanation [visit](../../data_spatial/walkers.md)
+As we already mentioned walkers can have abilities that can be executed on entry/exit of specific walker or entry to / exit from a specific node.
+
+For more explanation on abilities [see Lesson 1: Creating Nodes](#lesson-1-creating-nodes)
+
+For more explanation on walkers [see the Walkers documentation](../../data_spatial/walkers.md)
 
 Now Lets create required walkers for LittleX.
 
@@ -917,7 +920,7 @@ By default, users cannot access other users' nodes. To grant access, permission 
     --8<-- "docs/learn/examples/littleX/src/littleX.test.jac:1:88"
     ```
 
-### <span style="color: orange">**Lesson 6: Adding node abilities**
+### <span style="color: orange">**Lesson 6: Abilities in Jaclang**
 Nodes in Jaclang can have abilities defined to perform specific tasks. These abilities are structured as entry and exit points.
 
 Imagine a smart home system where each room is represented as a node. Walkers traverse these nodes, performing tasks like turning lights on or off, adjusting temperature, or sending alerts when entering or exiting a room.
