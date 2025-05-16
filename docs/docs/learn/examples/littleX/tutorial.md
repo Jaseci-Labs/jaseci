@@ -308,9 +308,17 @@ Now, let's create the required nodes for LittleX.
             }
             ```
                   * `Jac.destroy(self)` deletes the current `Comment` node from the graph.
-=== "LittleX Architecture Upto Now"
+=== "littleX.jac Upto Now"
     ```jac linenums="1"
-    --8<-- "docs/learn/examples/littleX/src/LittleX_step2.jac"
+    --8<-- "docs/learn/examples/littleX/src/littleX.jac:17:64"
+    ```
+=== "littleX.impl.jac Upto Now"
+    ```jac linenums="1"
+    --8<-- "docs/learn/examples/littleX/src/littleX.impl.jac:9:86"
+    ```
+=== "littleX.test.jac Upto Now"
+    ```jac linenums="1"
+    --8<-- "docs/learn/examples/littleX/src/littleX.test.jac:0:0"
     ```
 For more explanation [visit](../../for_coders/data_spatial/nodes_and_edges.md)
 
@@ -353,9 +361,17 @@ Now, let's create the required edges for LittleX.
             ```jac
             edge Post {}
             ```
-=== "LittleX.jac Upto Now"
+=== "littleX.jac Upto Now"
     ```jac linenums="1"
-    --8<-- "docs/learn/examples/littleX/src/LittleX_step3.jac"
+    --8<-- "docs/learn/examples/littleX/src/littleX.jac:17:70"
+    ```
+=== "littleX.impl.jac Upto Now"
+    ```jac linenums="1"
+    --8<-- "docs/learn/examples/littleX/src/littleX.impl.jac:9:86"
+    ```
+=== "littleX.test.jac Upto Now"
+    ```jac linenums="1"
+    --8<-- "docs/learn/examples/littleX/src/littleX.test.jac:0:0"
     ```
 For more explanation [visit](../../for_coders/data_spatial/nodes_and_edges.md)
 
@@ -747,9 +763,17 @@ Now Lets create required walkers for LittleX.
             * `self.summary: str = summarise_tweets(tweets);` Summarize the tweets.
             * `if (self.search_query) { ... } else { ... }` If a search query is provided, filter the tweets based on the query. Otherwise, return all tweets.
 
-=== "LittleX.jac Upto Now"
+=== "littleX.jac Upto Now"
     ```jac linenums="1"
-    --8<-- "docs/learn/examples/littleX/src/LittleX_step4.jac"
+    --8<-- "docs/learn/examples/littleX/src/littleX.jac:17:125"
+    ```
+=== "littleX.impl.jac Upto Now"
+    ```jac linenums="1"
+    --8<-- "docs/learn/examples/littleX/src/littleX.impl.jac:9:121"
+    ```
+=== "littleX.test.jac Upto Now"
+    ```jac linenums="1"
+    --8<-- "docs/learn/examples/littleX/src/littleX.test.jac:1:88"
     ```
 
 **Test functionality**
