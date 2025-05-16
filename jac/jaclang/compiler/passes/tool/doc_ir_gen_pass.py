@@ -95,7 +95,7 @@ class DocIRGenPass(UniPass):
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
-                parts.append(self.hard_line())
+
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_import(self, node: uni.Import) -> None:
@@ -103,7 +103,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             if isinstance(i, uni.SubNodeList) and i.items:
-                parts.append(self.indent(i.gen.doc_ir))
+                parts.append(self.indent(self.concat([self.line(), i.gen.doc_ir])))
                 parts.append(self.line())
             elif isinstance(i, uni.Token) and i.name == Tok.SEMI:
                 parts.pop()
@@ -297,42 +297,17 @@ class DocIRGenPass(UniPass):
 
     def exit_func_signature(self, node: uni.FuncSignature) -> None:
         """Generate DocIR for function signatures."""
-        parts: list[doc.DocType] = [self.text("(")]
-
-        if node.params and node.params.gen.doc_ir:
-            # node.params.gen.doc_ir should now be the DocIR for the joined parameter list
-            # as produced by the updated exit_sub_node_list
-            params_doc = node.params.gen.doc_ir
-
-            # Only add content if params_doc is not empty (e.g., not an empty self.concat([]))
-            # We need a way to check if a DocType is "empty". For now, assume it might be non-empty.
-            # A more robust check would be if params_doc is a Concat with no parts.
-            is_empty_concat = (
-                isinstance(params_doc, doc.Concat) and not params_doc.parts
-            )
-
-            if not is_empty_concat:
+        parts: list[doc.DocType] = []
+        for i in node.kid:
+            if i == node.params:
+                parts.pop()
                 parts.append(
-                    self.indent(
-                        self.concat(
-                            [
-                                self.tight_line(),  # soft line, becomes space or newline
-                                params_doc,
-                            ]
-                        )
-                    )
+                    self.indent(self.concat([self.tight_line(), i.gen.doc_ir]))
                 )
-                parts.append(self.tight_line())  # soft line before closing ')'
-        parts.append(self.text(")"))
-
-        # Return type
-        if node.return_type and node.return_type.gen.doc_ir:
-            return_type_doc = node.return_type.gen.doc_ir
-            if return_type_doc:
-                parts.append(self.text(" -> "))
-                parts.append(return_type_doc)
-
-        node.gen.doc_ir = self.group(self.concat(parts))
+            else:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.text(" "))
+        node.gen.doc_ir = self.concat(parts)
 
     def exit_param_var(self, node: uni.ParamVar) -> None:
         """Generate DocIR for parameter variables."""
@@ -2283,10 +2258,10 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         indent_parts: list[doc.DocType] = []
         for i in node.kid:
-            if isinstance(i, uni.Token) and i == node.left_enc:
+            if i == node.left_enc:
                 parts.append(i.gen.doc_ir)
                 indent_parts.append(self.line())
-            elif isinstance(i, uni.Token) and i == node.right_enc:
+            elif i == node.right_enc:
                 indent_parts.append(self.line())
                 parts.append(self.indent(self.concat(indent_parts)))
                 parts.append(i.gen.doc_ir)
@@ -2302,9 +2277,7 @@ class DocIRGenPass(UniPass):
             else:
                 indent_parts.append(i.gen.doc_ir)
         node.gen.doc_ir = (
-            self.group(self.concat(parts))
-            if parts
-            else self.group(self.concat([self.tight_line()] + indent_parts))
+            self.group(self.concat(parts)) if parts else self.concat(indent_parts)
         )
 
     def exit_token(self, node: uni.Token) -> None:
@@ -2332,28 +2305,15 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for implementation definitions."""
         parts: list[doc.DocType] = []
 
-        if node.target and node.target.items:
-            # Assuming the first item in target is the relevant one for now
-            target_item = node.target.items[0]
-            if target_item.gen.doc_ir:
-                parts.append(
-                    target_item.gen.doc_ir
-                    if isinstance(target_item.gen.doc_ir, list)
-                    else target_item.gen.doc_ir
-                )
-
-        parts.append(self.text(" {"))
-
-        if node.body and node.body.gen.doc_ir:
-            body_content = (
-                node.body.gen.doc_ir
-                if isinstance(node.body.gen.doc_ir, list)
-                else node.body.gen.doc_ir
-            )
-            parts.append(self.indent(self.concat([self.hard_line(), body_content])))
-            parts.append(self.hard_line())
-
-        parts.append(self.text("}"))
+        for i in node.kid:
+            if i == node.doc:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.hard_line())
+            elif i == node.target:
+                parts.append(i.gen.doc_ir)
+            else:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.text(" "))
 
         node.gen.doc_ir = self.group(self.concat(parts))
 

@@ -8,6 +8,14 @@ import jaclang.compiler.constant;
 
 enum AccessMode;
 
+"I'm a doc"
+impl Memory.get_obj(caller_id: UUID, item_id: UUID, override: bool=False, doc: bool=False) -> Element {
+    ret = item_id |> self.index.get;
+    if override or (ret is not None and caller_id |> ret.__is_readable) {
+        return ret;
+    }
+}
+
 obj Memory {
     has index: dict[UUID, Element] = {},
         save_queue: list[Element] = [];
