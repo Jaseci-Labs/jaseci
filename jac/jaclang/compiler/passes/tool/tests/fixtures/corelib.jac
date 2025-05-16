@@ -1,7 +1,7 @@
 """Jac's Key Elemental Abstractions"""
 
-import from datetime { datetime }
-import from uuid { UUID, uuid4 }
+import #* what abou this *# from datetime { datetime }
+import from uuid { UUID, uuid4 } # This is a comment
 import from jaclang.compiler.constant { EdgeDir }
 import from jaclang.plugin { Architype, ArchitypeProtocol, DSFunc, AbsRootHook, hookimpl }
 import jaclang.compiler.constant;
@@ -131,8 +131,7 @@ obj JacPlugin {
 impl Memory.get_obj
 (caller_id: UUID, item_id: UUID, override: bool=False) -> Element {
     ret = item_id |> self.index.get;
-    if override
-        or (ret is not None and caller_id |> ret.__is_readable) {
+    if override or (ret is not None and caller_id |> ret.__is_readable) {
         return ret;
     }
 }
@@ -235,9 +234,7 @@ impl Anchor.is_readable
 
 impl Anchor.is_writable
 (caller_id: UUID) -> bool {
-    return (caller_id == self.owner_id
-        or |> self.is_public_write
-        or caller_id in self.rw_access);
+    return (caller_id == self.owner_id or |> self.is_public_write or caller_id in self.rw_access);
 }
 
 impl Anchor.give_access

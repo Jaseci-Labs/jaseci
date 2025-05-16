@@ -184,7 +184,11 @@ class JacProgram:
         with open(file_path) as file:
             source = uni.Source(file.read(), mod_path=file_path)
             prse: Transform = JacParser(root_ir=source, prog=prog)
-        for i in [FuseCommentsPass, JacFormatPass] if not docir else [DocIRGenPass]:
+        for i in (
+            [FuseCommentsPass, JacFormatPass]
+            if not docir
+            else [FuseCommentsPass, DocIRGenPass]
+        ):
             prse = i(ir_in=prse.ir_out, prog=prog)
         prse.errors_had = prog.errors_had
         prse.warnings_had = prog.warnings_had

@@ -131,52 +131,11 @@ class DocIRGenPass(UniPass):
 
     def exit_import(self, node: uni.Import) -> None:
         """Exit import node."""
-        parts: List[doc.DocType] = []
-        if node.doc:
-            parts.append(node.doc.gen.doc_ir)
-            parts.append(self.hard_line())
-        if node.is_absorb:
-            parts.append(self.text("include"))
-        else:
-            parts.append(self.text("import"))
-        parts.append(self.text(" "))
-        if node.from_loc:
-            parts.append(self.text("from "))
-            from_loc_gen_ir = node.from_loc.gen.doc_ir
-            if from_loc_gen_ir:
-                parts.append(from_loc_gen_ir)
-            parts.append(self.text(" "))  # Space before {
-
-            items_gen_ir = node.items.gen.doc_ir
-            actual_items_doc: doc.DocType = self.concat([])  # Default to empty concat
-            if items_gen_ir:
-                actual_items_doc = items_gen_ir
-
-            # Group the braced items to allow single-line or multi-line formatting
-            braced_items = self.group(
-                self.concat(
-                    [
-                        self.text("{"),
-                        self.indent(
-                            self.concat(
-                                [
-                                    self.line(),  # Soft line, becomes space or newline
-                                    actual_items_doc,
-                                ]
-                            )
-                        ),
-                        self.line(),  # Soft line
-                        self.text("}"),
-                    ]
-                )
-            )
-            parts.append(braced_items)
-        else:
-            items_gen_ir = node.items.gen.doc_ir
-            if items_gen_ir:
-                parts.append(items_gen_ir)
-            parts.append(self.text(";"))
-        node.gen.doc_ir = self.concat(parts)
+        parts: list[doc.DocType] = []
+        for i in node.kid:
+            parts.append(i.gen.doc_ir)
+            parts.append(self.text(" "))
+        node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_module_item(self, node: uni.ModuleItem) -> None:
         """Generate DocIR for module items."""
@@ -2410,7 +2369,11 @@ class DocIRGenPass(UniPass):
     def exit_comment_token(self, node: uni.CommentToken) -> None:
         """Generate DocIR for comment tokens."""
         if node.is_inline:
-            node.gen.doc_ir = self.text(node.value)
+            node.gen.doc_ir = self.group(
+                self.concat(
+                    [self.tight_line(), self.text(node.value), self.tight_line()]
+                )
+            )
         else:
             node.gen.doc_ir = self.group(
                 self.concat([self.text(node.value), self.hard_line()])
