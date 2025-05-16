@@ -34,10 +34,11 @@ To get started with building **LittleX**, ensure you have the following:
 
 ## **LittleX Architecture**
 
-=== "Single user"
-      ![Image title](images/single-user.jpg)
 === "Multiple user"
-      ![Image title](images/multi-user.jpg)
+      ![Image title](images/multiple_user.png)
+=== "Single user"
+      ![Image title](images/single_user.png)
+
 
 LittleX’s graph-based architecture uses nodes for entities like users and posts and edges for relationships like following or reacting. Nodes store attributes and behaviors, while edges capture properties like timestamps. Walkers traverse the graph, enabling dynamic actions and interactions. This design ensures efficient relationship handling, scalability, and extensibility for social media-like features.
 
@@ -48,11 +49,13 @@ LittleX’s graph-based architecture uses nodes for entities like users and post
 pip install jac-cloud mtllm
 ```
 
-### **Lesson 1: Creating Nodes**
+### <span style="color: orange">**Lesson 1: Creating Nodes**
 
 **Jaclang**, language used in Jaseci stack, organizes data as interconnected nodes within a spatial or graph-like structure. It focuses on the **relationships** between data points, rather than processing them **step-by-step**.
 
-**Node**: A node is the fundamental unit of the Jaseci stack. Each node represents an object, entity, or a piece of data.
+**Nodes**
+
+A node is the fundamental unit of the Jaseci stack. Each node represents an object, entity, or a piece of data.
 
 First create a node with name Person and attributes name, age.
 ```jac
@@ -89,6 +92,7 @@ When someone exits a room:
 
 You leave the Living Room, and the system turns off the lights and updates its records to show the room is vacant.
 
+For more explanation [visit](../../data_spatial/nodes_and_edges.md)
 
 Now, let's create the required nodes for LittleX.
 
@@ -98,6 +102,7 @@ Now, let's create the required nodes for LittleX.
       - #### **Implement Profile Node**
         * Represents the user.
         * Fields: username
+        * Profile node should have the abilities to be updated, retrieved, followed, and unfollowed.
             ```jac
             node Profile {
                   has username: str = "";
@@ -111,28 +116,28 @@ Now, let's create the required nodes for LittleX.
                   can un_follow with un_follow_request entry;
             }
             ```
-        * ##### **Implement Profile Node Abilities**
-            * ###### **Update Ability**
+      - #### **Implement Profile Node Abilities**
+        * ##### **Update Ability**
             ```jac
             :node:Profile:can:update {
                   self.username = here.new_username;
                   report self;
             }
             ```
-                  * `self.username = here.new_username` updates the username of `Profile` node using new_username attribute of walker(here).
-                  * `report self` outputs `Profile` node as response.
-            * ###### **Get Ability**
+            * `self.username = here.new_username` updates the username of `Profile` node using new_username attribute of walker(here).
+            * `report self` outputs `Profile` node as response.
+        * ##### **Get Ability**
             ```jac
             :node:Profile:can:get {
                   follwers=[{"id": jid(i), "username": i.username} for i in [self-->(`?Profile)]];
                   report {"user": self, "followers": follwers};
             }
             ```
-                  * `follwers = [...`] creates a list of dictionaries containing `id` and `username` for each connected `Profile` node (followers).
-                  * `jid(i)` retrieves the unique Jac ID of each follower node.
-                  * `[self-->(?Profile)]`collects all Profile nodes connected via outgoing edges from current Profile.
-                  * `report {"user": self, "followers": follwers}` returns the current `Profile` node and its list of followers in a structured format.
-            * ###### **Follow Ability**
+            * `follwers = [...`] creates a list of dictionaries containing `id` and `username` for each connected `Profile` node (followers).
+            * `jid(i)` retrieves the unique Jac ID of each follower node.
+            * `[self-->(?Profile)]`collects all Profile nodes connected via outgoing edges from current Profile.
+            * `report {"user": self, "followers": follwers}` returns the current `Profile` node and its list of followers in a structured format.
+        * ##### **Follow Ability**
             ```jac
             :node:Profile:can:follow{
                   current_profile = [root-->(`?Profile)];
@@ -140,10 +145,10 @@ Now, let's create the required nodes for LittleX.
                   report self;
             }
             ```
-                  * `current_profile = [root-->(?Profile)]` retrieves all Profile nodes directly connected from the root node.
-                  * `current_profile[0] +:Follow():+> self` creates a `Follow` edge from the first profile node to current Profile, establishing the follow relationship.
-                  * `report self` returns the followed `Profile` node as the response.
-            * ###### **Unfollow Ability**
+            * `current_profile = [root-->(?Profile)]` retrieves all Profile nodes directly connected from the root node.
+            * `current_profile[0] +:Follow():+> self` creates a `Follow` edge from the first profile node to current Profile, establishing the follow relationship.
+            * `report self` returns the followed `Profile` node as the response.
+        * ##### **Unfollow Ability**
             ```jac
             :node:Profile:can:un_follow {
                   current_profile = [root-->(`?Profile)];
@@ -152,14 +157,15 @@ Now, let's create the required nodes for LittleX.
                   report self;
             }
             ```
-                  * `current_profile = [root-->(?Profile)]` retrieves all Profile nodes connected from the root node.
-                  * `follow_edge = :e:[ current_profile[0] -:Follow:-> self]` finds the existing `Follow` edge from the current user to first Profiles.
-                  * `Jac.destroy(follow_edge[0])` removes the first matched Follow edge, effectively unfollowing the user.
-                  * `report self` returns the unfollowed `Profile` node as the response.
+            * `current_profile = [root-->(?Profile)]` retrieves all Profile nodes connected from the root node.
+            * `follow_edge = :e:[ current_profile[0] -:Follow:-> self]` finds the existing `Follow` edge from the current user to first Profiles.
+            * `Jac.destroy(follow_edge[0])` removes the first matched Follow edge, effectively unfollowing the user.
+            * `report self` returns the unfollowed `Profile` node as the response.
 
       - #### **Implement Tweet Node**
         * Represents an individual tweet.
         * Fields: content, embedding, created_at (timestamp)
+        * Tweet node should have the abilities to be updated, removed, liked, unliked, commented.
             ```jac
             node Tweet {
                   has content: str;
@@ -176,32 +182,32 @@ Now, let's create the required nodes for LittleX.
 
                   can comment with comment_tweet entry;
 
-                  can get_info()-> TweetInfo;
+                  def get_info()-> TweetInfo;
 
                   can get with load_feed entry;
             }
             ```
 
-        * ##### **Implement Tweet Node Abilities**
-            * ###### **Update Ability**
+      - #### **Implement Tweet Node Abilities**
+        * ##### **Update Ability**
             ```jac
             :node:Tweet:can:update {
                   self.content = here.updated_content;
                   report self;
             }
             ```
-                  * `self.content = here.updated_content` updates the `content` attribute of the `Tweet` node with the new content provided by the walker (here).
-                  * `report self` returns the updated `Tweet` node as the response.
+            * `self.content = here.updated_content` updates the `content` attribute of the `Tweet` node with the new content provided by the walker (here).
+            * `report self` returns the updated `Tweet` node as the response.
 
-            * ###### **Delete Ability**
+        * ##### **Delete Ability**
             ```jac
             :node:Tweet:can:delete {
                   Jac.destroy(self);
             }
             ```
-                  * `Jac.destroy(self)` deletes the current `Tweet` node (`self`) from the graph.
+            * `Jac.destroy(self)` deletes the current `Tweet` node (`self`) from the graph.
 
-            * ###### **Like Tweet Ability**
+        * ##### **Like Tweet Ability**
             ```jac
             :node:Tweet:can:like_tweet {
                   current_profile = [root-->(`?Profile)];
@@ -209,11 +215,11 @@ Now, let's create the required nodes for LittleX.
                   report self;
             }
             ```
-                  * `current_profile = [root-->(?Profile)]` fetches the current user's Profile node from the root.
-                  * `self +:Like():+> current_profile[0]` creates a `Like` edge from the `Tweet` node (`self`) to the current user's `Profile` node.
-                  * `report self` returns the `Tweet` node after the like operation.
+            * `current_profile = [root-->(?Profile)]` fetches the current user's Profile node from the root.
+            * `self +:Like():+> current_profile[0]` creates a `Like` edge from the `Tweet` node (`self`) to the current user's `Profile` node.
+            * `report self` returns the `Tweet` node after the like operation.
 
-            * ###### **Remove Like Tweet Ability**
+        * ##### **Remove Like Tweet Ability**
             ```jac
             :node:Tweet:can:remove_like {
                   current_profile = [root-->(`?Profile)];
@@ -222,12 +228,12 @@ Now, let's create the required nodes for LittleX.
                   report self;
             }
             ```
-                  * `current_profile = [root-->(?Profile)]` gets the current user's Profile node.
-                  * `like_edge = :e:[ self -:Like:-> current_profile[0]]` finds the `Like` edge from the `Tweet` node (`self`) to the current user's profile.
-                  * `Jac.destroy(like_edge[0])` deletes the found `Like` edge
-                  * `report self` returns the `Tweet` node after removing the like.
+            * `current_profile = [root-->(?Profile)]` gets the current user's Profile node.
+            * `like_edge = :e:[ self -:Like:-> current_profile[0]]` finds the `Like` edge from the `Tweet` node (`self`) to the current user's profile.
+            * `Jac.destroy(like_edge[0])` deletes the found `Like` edge
+            * `report self` returns the `Tweet` node after removing the like.
 
-            * ###### **Comment Ability**
+        * ##### **Comment Ability**
             ```jac
             :node:Tweet:can:comment {
                   current_profile = [root-->(`?Profile)];
@@ -237,18 +243,18 @@ Now, let's create the required nodes for LittleX.
                   report comment_node[0];
             }
             ```
-                  * `current_profile = [root-->(?Profile)]` fetches the current user's Profile node.
+            * `current_profile = [root-->(?Profile)]` fetches the current user's Profile node.
 
-                  * `comment_node = current_profile[0] ++> Comment(content=here.content) `creates a `Comment` node with the given content, connected from the user's profile.
+            * `comment_node = current_profile[0] ++> Comment(content=here.content) `creates a `Comment` node with the given content, connected from the user's profile.
 
-                  * `Jac.unrestrict(comment_node[0], level="CONNECT")` grants connection permissions to the newly created `Comment` node.
+            * `Jac.unrestrict(comment_node[0], level="CONNECT")` grants connection permissions to the newly created `Comment` node.
 
-                  * `self ++> comment_node[0]` links the `Comment` node to the `Tweet` node (self).
+            * `self ++> comment_node[0]` links the `Comment` node to the `Tweet` node (self).
 
-                  * `report comment_node[0]` returns the created `Comment` node as the response.
-            * ###### **Get Tweet Information Method**
+            * `report comment_node[0]` returns the created `Comment` node as the response.
+        * ##### **Get Tweet Information Method**
             ```jac
-            :node:Tweet:can:get_info {
+            :node:Tweet:def:get_info {
                   return TweetInfo(
                         username=[self<-:Post:-][0].username,
                         id=jid(self),
@@ -259,13 +265,13 @@ Now, let's create the required nodes for LittleX.
                   );
             }
             ```
-                  * `username=[self<-:Post:-][0].username` retrieves the username of the profile that posted the tweet.
-                  * `id=jid(self)` gets the unique `jid` of the tweet node.
-                  * `content=self.content` returns the content of the tweet.
-                  * `embedding=self.embedding` returns the embedding associated with the tweet (if any).
-                  * `likes=[i.username for i in [self-:Like:->]]` collects the usernames of profiles who liked the tweet.
-                  * `comments=[{"username": [i<--(?Profile)][0].username, "id": jid(i)`, `"content": i.content} for i in [self-->(?Comment)]]` collects comments on the tweet along with the commenter's username, comment ID, and content.
-            * ###### **Get Tweet Ability**
+            * `username=[self<-:Post:-][0].username` retrieves the username of the profile that posted the tweet.
+            * `id=jid(self)` gets the unique `jid` of the tweet node.
+            * `content=self.content` returns the content of the tweet.
+            * `embedding=self.embedding` returns the embedding associated with the tweet (if any).
+            * `likes=[i.username for i in [self-:Like:->]]` collects the usernames of profiles who liked the tweet.
+            * `comments=[{"username": [i<--(?Profile)][0].username, "id": jid(i)`, `"content": i.content} for i in [self-->(?Comment)]]` collects comments on the tweet along with the commenter's username, comment ID, and content.
+        * ##### **Get Tweet Ability**
             ```jac
             :node:Tweet:can:get {
                   tweet_info = self.get_info();
@@ -273,11 +279,12 @@ Now, let's create the required nodes for LittleX.
                   here.results.append({"Tweet_Info": tweet_info, "similarity": similarity});
             }
             ```
-                  * `tweet_info = self.get_info()` retrieves detailed information of the tweet using the `get_info` ability.
+            * `tweet_info = self.get_info()` retrieves detailed information of the tweet using the `get_info` ability.
 
-                  * `similarity = search_tweets(here.search_query, tweet_info.content)` computes the similarity between the tweet content and the provided search query.
+            * `similarity = search_tweets(here.search_query, tweet_info.content)` computes the similarity between the tweet content and the provided search query.
 
-                  * `here.results.append({"Tweet_Info": tweet_info, "similarity": similarity})` appends the tweet info and its similarity score to the walker's results.
+            * `here.results.append({"Tweet_Info": tweet_info, "similarity": similarity})` appends the tweet info and its similarity score to the walker's results.
+
       - #### **Implement Comment Node**
         * Represents comments for the tweets.
         * Fields: content.
@@ -291,23 +298,23 @@ Now, let's create the required nodes for LittleX.
             }
             ```
 
-        * ##### **Implement Comment Node Abilities**
-            * ###### **Update Ability**
+      - #### **Implement Comment Node Abilities**
+        * ##### **Update Ability**
             ```jac
             :node:Comment:can:update {
                   self.content = here.updated_content;
                   report self;
             }
             ```
-                  * `self.content = here.updated_content` updates the content of the `Comment` node with the value provided by the walker.
-                  * `report self`returns the updated `Comment` node as the response.
-            * ###### **Delete Ability**
+            * `self.content = here.updated_content` updates the content of the `Comment` node with the value provided by the walker.
+            * `report self`returns the updated `Comment` node as the response.
+        * ##### **Delete Ability**
             ```jac
             :node:Comment:can:delete {
                   Jac.destroy(self);
             }
             ```
-                  * `Jac.destroy(self)` deletes the current `Comment` node from the graph.
+            * `Jac.destroy(self)` deletes the current `Comment` node from the graph.
 === "littleX.jac Upto Now"
     ```jac linenums="1"
     --8<-- "docs/learn/examples/littleX/src/littleX.jac:17:64"
@@ -320,11 +327,12 @@ Now, let's create the required nodes for LittleX.
     ```jac linenums="1"
     --8<-- "docs/learn/examples/littleX/src/littleX.test.jac:0:0"
     ```
-For more explanation [visit](../../for_coders/data_spatial/nodes_and_edges.md)
 
-### **Lesson 2: Creating Edges**
+### <span style="color: orange">**Lesson 2: Creating Edges**
 
-**Edge**: Edge represents the connections or relationships between nodes. Edges can be unidirectional or bidirectional.
+**Edges**
+
+Edge represents the connections or relationships between nodes. Edges can be unidirectional or bidirectional.
 ![Image title](images/Family.jpg)
 
 First, create an edge named Relation with the attribute 'since'.
@@ -338,6 +346,8 @@ edge Relation {
 * The `has` keyword specifies the attributes of the edge.
 * `int` is used for integer values (years).
 * `str` is used for string values (names).
+
+For more explanation [visit](../../data_spatial/nodes_and_edges.md)
 
 Now, let's create the required edges for LittleX.
 
@@ -373,9 +383,8 @@ Now, let's create the required edges for LittleX.
     ```jac linenums="1"
     --8<-- "docs/learn/examples/littleX/src/littleX.test.jac:0:0"
     ```
-For more explanation [visit](../../for_coders/data_spatial/nodes_and_edges.md)
 
-### **Lesson 3: Creating Walkers**
+### <span style="color: orange">**Lesson 3: Creating Walkers**
 Walkers are graph-traversing agents in Jaclang that perform tasks without requiring initialization and can define abilities for various node types. The Jaseci stack automatically converts walkers into RESTful API endpoints.
 
 First, create a walker named Relation with the attribute 'since'.
@@ -384,6 +393,8 @@ walker Agent {
       has name: str;
 }
 ```
+For more explanation [visit](../../data_spatial/walkers.md)
+
 Now Lets create required walkers for LittleX.
 
 === "Guide"
@@ -396,18 +407,24 @@ Now Lets create required walkers for LittleX.
             * Ensures profiles exist in the system for any user action.
                   ```jac
                   walker visit_profile {
-                        can visit_profile with `root entry {
-                              visit [-->(`?Profile)] else {
-                                    new_profile = here ++> Profile();
-                                    visit new_profile;
-                              }
-                        }
+                        can visit_profile with `root entry;
                   }
                   ```
-            * If current walker enter via `root`, `visit_profile` ability will be executed.
-            * `visit [-->(``?profile)] else {}` Checks whether profile node exist from root, if yes, visit to that profile node. Otherwise execute to else part.
-            * `here ++> profile()` It creates a profile node and connects with current node(`root`).
-            * `visit new_profile` Walker visit to that node (`profile`).
+        * ##### **Implement User Initialization Walker Abilities**
+            * ###### **Visit Profile Ability**
+            ```jac
+            :walker:visit_profile:can:visit_profile {
+                  visit [-->(`?Profile)] else {
+                        new_profile = here ++> Profile();
+                        Jac.unrestrict(new_profile[0], level="CONNECT");
+                        visit new_profile;
+                  }
+            }
+            ```
+                  * If current walker enter via `root`, `visit_profile` ability will be executed.
+                  * `visit [-->(``?profile)] else {}` Checks whether profile node exist from root, if yes, visit to that profile node. Otherwise execute to else part.
+                  * `here ++> profile()` It creates a profile node and connects with current node(`root`).
+                  * `visit new_profile` Walker visit to that node (`profile`).
 
         * ##### **Test User Initialization Walker**
 
@@ -432,23 +449,29 @@ Now Lets create required walkers for LittleX.
                         obj __specs__ {
                               static has auth: bool = False;
                         }
-                        can load_profiles with `root entry {
-                              self.profiles: list = [];
-
-                              for user in NodeAnchor.Collection.find({"name": "profile"}) {
-                                    user_node = user.architype;
-                                    self.profiles.append(
-                                    {"name": user_node.username, "id": jid(user_node)}
-                                    );
-                              }
-                              report self.profiles;
-                        }
+                        can load_profiles with `root entry;
                   }
                   ```
-            * `static has auth: bool = False` Set disable authentication for that walker.
-            * `NodeAnchor.Collection.find({"name": "profile"})` Get list of profiles.
-            * `user.architype` Get architype of user node.
-            * `jid(user_node)` Get the unique id of an object.
+
+        * ##### **Implement Load User Profile Walker Abilities**
+            * ###### **Load Profiles Ability**
+            ```jac
+            :walker:load_user_profiles:can:load_profiles {
+                  self.profiles: list = [];
+                  
+                  for user in NodeAnchor.Collection.find({"name": "Profile"}) {
+                        user_node = user.architype;
+                        self.profiles.append(
+                        {"name": user_node.username, "id": jid(user_node)}
+                        );
+                  }
+                  report self.profiles;
+            }
+            ```
+                  * `static has auth: bool = False` Set disable authentication for that walker.
+                  * `NodeAnchor.Collection.find({"name": "profile"})` Get list of profiles.
+                  * `user.architype` Get architype of user node.
+                  * `jid(user_node)` Get the unique id of an object.
 
       - #### **Update Profile Walker**
         * ##### **Implement Update Profile Walker**
@@ -517,9 +540,9 @@ Now Lets create required walkers for LittleX.
         * ##### **Implement Unfollow Request Walker**
             * Removes the follow edge.
                   ```jac
-                  walker un_follow_request {}
+                  walker unfollow_request {}
                   ```
-            * Walker `un_follow_request` spawned on followee profile will remove the `Follow` edge from follower to followee.
+            * Walker `unfollow_request` spawned on followee profile will remove the `Follow` edge from follower to followee.
             * How it is executed will be discussed later.
 
         * ##### **Test Unfollow Request Walker**
@@ -529,15 +552,15 @@ Now Lets create required walkers for LittleX.
             * After executing the walker, the test proceeds by navigating from the root profile to verify the removal of the `Follow` edge. The absence of this edge confirms that the unfollow request was successfully processed. Finally, the test ensures that no connection exists between the root profile and the profile previously followed.
 
             ```Jac
-            test un_follow_request {
+            test unfollow_request {
                   followee = [root --> (`?Profile)->:Follow:->(`?Profile)][0];
-                  followee spawn un_follow_request();
+                  followee spawn unfollow_request();
                   check len([root --> (`?Profile)->:Follow:->(`?Profile)]) == 0;
             }
             ```
 
             * filter profile node : ``followee = [root --> (`?Profile)->:Follow:->(`?Profile)][0];``
-            * spawn un_follow_request walker on profile_node : ``followee spawn un_follow_request();``
+            * spawn unfollow_request walker on profile_node : ``followee spawn unfollow_request();``
             * check length of the profiles that connect within Follow edge : ```check len([root --> (`?Profile)->:Follow:->(`?Profile)]) == 0;```
 
       - #### **Create Tweet Walker**
@@ -547,16 +570,23 @@ Now Lets create required walkers for LittleX.
                   walker create_tweet :visit_profile: {
                         has content: str;
 
-                        can tweet with profile entry {
-                              embedding = sentence_transformer.encode(self.content).tolist();
-                              tweet_node = here +>:Post:+> Tweet(content=self.content, embedding=embedding);
-                              report tweet_node;
-                        }
+                        can tweet with profile entry;
                   }
                   ```
-            * `embedding = sentence_transformer.encode(self.content).tolist()` Embedding the content.
-            * `tweet_node = here +>:post:+> tweet(content=self.content, embedding=embedding)+` Create a new tweet with content, its embedding.
-            * `report tweet_node` reports the newly created tweet node.
+
+        * ##### **Implement Create Tweet Walker Abilities**
+            * ###### **Create Tweet Ability**
+            ```jac
+            :walker:create_tweet:can:tweet {
+                  embedding = sentence_transformer.encode(self.content).tolist();
+                  tweet_node = here +:Post:+> Tweet(content=self.content, embedding=embedding);
+                  Jac.unrestrict(tweet_node[0], level="CONNECT");
+                  report tweet_node;
+            }
+            ```
+                  * `embedding = sentence_transformer.encode(self.content).tolist()` Embedding the content.
+                  * `tweet_node = here +>:post:+> tweet(content=self.content, embedding=embedding)+` Create a new tweet with content, its embedding.
+                  * `report tweet_node` reports the newly created tweet node.
 
         * ##### **Test Create Tweet Walker**
 
@@ -701,26 +731,6 @@ Now Lets create required walkers for LittleX.
             * filter commnet : ``comment = [tweet --> (`?Comment)][0];``
             * check comment correctly added or not : `check comment.content == "test_comment";`
 
-      - #### **Load Tweet Walker**
-        * ##### **Implement Load Tweet Walker**
-            * Loads detailed information about a tweet, including its content, embedding and author.
-                  ```jac
-                  walker load_tweet:visit_profile: {
-                        has if_report: bool = False;
-                        has tweet_info: list[TweetInfo] = [];
-
-                        can go_to_tweet with Profile entry {
-                              visit [-->(`?Tweet)];
-                              if self.if_report {
-                                    report self.tweet_info;
-                              }
-                        }
-                  }
-                  ```
-            * First `visit_profile` walker is called and it visits to `Profile` node.
-            * `visit [-->(`?Tweet)]` visits to each tweet and retrieve the info of tweets posted by the user.
-            * How those tweets are retrieved will be discussed later.
-
       - #### **Load Feed Walker**
         * ##### **Implement Load Feed Walker**
             * Fetches all tweets for a profile, including their comments and likes.
@@ -728,40 +738,24 @@ Now Lets create required walkers for LittleX.
                   walker load_feed :visit_profile: {
                         has search_query: str = "";
 
-                        can load with Profile entry {
-                              feeds: list = [];
-                              user_tweets = here spawn load_tweets();
-                              feeds.extend(user_tweets.tweet_info);
-
-                              for user_node in [->:Follow:->](`?Profile) {
-                                    user_tweets = user_node spawn load_tweets();
-                                    feeds.extend(user_tweets.tweet_info);
-                              }
-                              tweets = [feed.content for feed in feeds];
-                              tweet_embeddings = [numpy.array(feed.embedding) for feed in feeds];
-                              summary: str = summarize_tweets(tweets);
-
-                              # Filter tweets based on search query
-                              if (self.search_query) {
-                                    filtered_results = search_tweets(
-                                    self.search_query,
-                                    feeds,
-                                    tweet_embeddings
-                                    );
-                                    report {"feeds": filtered_results, "summary": summary};
-                              } else {
-                                    report {"feeds": self.feeds, "summary": summary};
-                              }
-                        }
+                        can load with Profile entry;
                   }
                   ```
-            * First `visit_profile` walker is called and it visits to `Profile` node.
-            * With `Profile` entry following things are executed.
-            * `user_tweets = here spawn load_tweets();` Spawn load_tweets walker with current node.
-            * `feeds.extend(user_tweets.tweets);` Add the user's tweets to the profile's feed.
-            * `user_node = &user;` Get the user node.
-            * `self.summary: str = summarise_tweets(tweets);` Summarize the tweets.
-            * `if (self.search_query) { ... } else { ... }` If a search query is provided, filter the tweets based on the query. Otherwise, return all tweets.
+
+        * ##### **Implement Load Feed Walker Abilities**
+            * ###### **Load Ability**
+            ```jac
+            :walker:load_feed:can:load {
+                  visit [-->(`?Tweet)];
+                  for user_node in [-:Follow:->(`?Profile)] {
+                        visit [user_node-->(`?Tweet)];
+                  }
+                  report self.results;
+            }
+            ```
+                  * `embedding = sentence_transformer.encode(self.content).tolist()` Embedding the content.
+                  * `tweet_node = here +>:post:+> tweet(content=self.content, embedding=embedding)+` Create a new tweet with content, its embedding.
+                  * `report tweet_node` reports the newly created tweet node.
 
 === "littleX.jac Upto Now"
     ```jac linenums="1"
@@ -793,7 +787,7 @@ Open your browser and navigate to http://localhost:8000/docs
       - Click "Execute" to send the request.
       - View the response (status code, headers, and JSON response body).
 
-### **Lesson 4: Let's add some AI magic to our application using the power of MTLLM:**
+### <span style="color: orange">**Lesson 4: Let's add some AI magic to our application using the power of MTLLM:**
 
 In this lesson, we'll explore how to leverage AI to enhance your application. MTLLM supports easy integration of multiple LLM models, and for this tutorial, we are using Llama. If you need more details on integrating different models, please check the [MTLLM documentation](../../for_coders/jac-mtllm/quickstart.md). (You can also explore OpenAI’s LittleX for additional insights.)
 Using Llama, you can summarize tweets to quickly understand trends, major events, and notable interactions in just one line.
@@ -830,7 +824,7 @@ Think of your application as a personalized newsfeed or trend analyzer.
     --8<-- "docs/learn/examples/littleX/src/mtllm_example.jac"
     ```
 
-### **Lesson 5: Exploring Graph Security**
+### <span style="color: orange">**Lesson 5: Exploring Graph Security**
 
 Up until this point, you’ve successfully created a single-user social media application where a user can post tweets, like them, and interact with comments.
 
@@ -909,12 +903,20 @@ By default, users cannot access other users' nodes. To grant access, permission 
                   ```
         * `Jac.perm_grant(tweet_node, level="CONNECT")` perm_grant the tweet node to connect level.
 
-=== "LittleX.jac Upto Now"
+=== "littleX.jac Upto Now"
     ```jac linenums="1"
-    --8<-- "docs/learn/examples/littleX/src/LittleX_step4.jac"
+    --8<-- "docs/learn/examples/littleX/src/littleX.jac:17:125"
+    ```
+=== "littleX.impl.jac Upto Now"
+    ```jac linenums="1"
+    --8<-- "docs/learn/examples/littleX/src/littleX.impl.jac:9:121"
+    ```
+=== "littleX.test.jac Upto Now"
+    ```jac linenums="1"
+    --8<-- "docs/learn/examples/littleX/src/littleX.test.jac:1:88"
     ```
 
-### **Lesson 6: Adding node abilities**
+### <span style="color: orange">**Lesson 6: Adding node abilities**
 Nodes in Jaclang can have abilities defined to perform specific tasks. These abilities are structured as entry and exit points.
 
 Imagine a smart home system where each room is represented as a node. Walkers traverse these nodes, performing tasks like turning lights on or off, adjusting temperature, or sending alerts when entering or exiting a room.
@@ -1257,12 +1259,20 @@ You leave the Living Room, and the system turns off the lights and updates its r
                   * `id=jid(self)`retrieves the unique jac identifier (jid) of the current `Tweet` node.
                   * This assigns the `content` property of the current `Tweet` object to the `content` field of the `TweetInfo` object that has variables id, content, embedding, likes, comments.
 
-=== "LittleX.jac Upto Now"
+=== "littleX.jac Upto Now"
     ```jac linenums="1"
-    --8<-- "docs/learn/examples/littleX/src/LittleX_step6.jac"
+    --8<-- "docs/learn/examples/littleX/src/littleX.jac:17:125"
+    ```
+=== "littleX.impl.jac Upto Now"
+    ```jac linenums="1"
+    --8<-- "docs/learn/examples/littleX/src/littleX.impl.jac:9:121"
+    ```
+=== "littleX.test.jac Upto Now"
+    ```jac linenums="1"
+    --8<-- "docs/learn/examples/littleX/src/littleX.test.jac:1:88"
     ```
 
-### **Lesson 7: Integrating Jac Splice Orchestrator**
+<!-- ### <span style="color: orange">**Lesson 7: Integrating Jac Splice Orchestrator**
 
 **JAC Cloud Orchestrator (jac-splice-orc)** transforms Python modules into scalable, cloud-based microservices. By deploying them as Kubernetes Pods and exposing them via gRPC, it empowers developers to seamlessly integrate dynamic, distributed services into their applications.
 
@@ -1286,4 +1296,4 @@ You leave the Living Room, and the system turns off the lights and updates its r
 === "kind-config.yaml"
     ```yaml linenums="1"
     --8<-- "docs/learn/examples/littleX/src/kind-config.yaml"
-    ```
+    ``` -->
