@@ -120,6 +120,9 @@ class JTypeResolver:
 
         raise AssertionError()
 
+    def _get_special_var_ref_expr_type(self, node: ast.SpecialVarRef) -> jtype.JType:
+        return self._get_name_expr_type(node)
+
     def _set_name_expr_type(self, node: ast.Name, expr_type: jtype.JType) -> None:
         assert node.name_spec.sym is not None
         node.name_spec.sym.jtype = expr_type
@@ -129,3 +132,8 @@ class JTypeResolver:
     ) -> None:
         assert node.sym is not None
         node.sym.jtype = expr_type
+
+    def _set_special_var_ref_expr_type(
+        self, node: ast.SpecialVarRef, expr_type: jtype.JType
+    ) -> None:
+        self._set_name_expr_type(node, expr_type)

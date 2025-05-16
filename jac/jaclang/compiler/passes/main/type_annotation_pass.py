@@ -160,6 +160,13 @@ class JTypeAnnotatePass(UniPass):
                 visibility=jtype.jtypes.jclassmember.Visibility.PUBLIC,
                 is_method=True,
             )
+        else:
+            assert isinstance(
+                class_type.instance_members["__init__"].type, jtype.JFunctionType
+            )
+            class_type.instance_members["__init__"].type.return_type = (
+                jtype.JClassInstanceType(class_type)
+            )
 
         self.prog.type_registry.register(class_type)
         self.prog.type_resolver.set_type(node.name_spec, class_type)
