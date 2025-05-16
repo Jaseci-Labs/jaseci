@@ -841,11 +841,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 return uni.FuncSignature(
                     params=params,
                     return_type=return_spec,
-                    kid=(
-                        self.cur_nodes
-                        if len(self.cur_nodes)
-                        else [uni.EmptyToken(uni.Source("", self.parse_ref.mod_path))]
-                    ),
+                    kid=self.cur_nodes,
                 )
 
         def func_decl_params(self, _: None) -> uni.SubNodeList[uni.ParamVar]:

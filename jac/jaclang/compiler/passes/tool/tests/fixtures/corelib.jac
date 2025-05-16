@@ -9,20 +9,29 @@ import jaclang.compiler.constant;
 enum AccessMode;
 
 "I'm a doc"
-impl Memory.get_obj(caller_id: UUID, item_id: UUID, override: bool=False, doc: bool=False) -> Element {
+impl Memory.get_obj
+(caller_id: UUID, item_id: UUID, override: bool=False, doc: bool=False) -> Element {
     ret = item_id |> self.index.get;
     if override or (ret is not None and caller_id |> ret.__is_readable) {
         return ret;
     }
 }
 
-def func_name(name: str) -> str {
-    def #* This is a comment *# inner_func(name: str) -> str {
-        print(name); # This is a comment
+def func_name(name: str) -> str { #* blah*#
+
+def #* This is a comment *# inner_func(name: str) -> str {
+    print(name); # This is a comment
+    if (True) {
+        return name;
+    } elif (True) {
+        return name;
+    } else {
         return name;
     }
-    return inner_func(name);
 }
+return inner_func(name);
+}
+
 obj Memory {
     has index: dict[UUID, Element] = {},
         save_queue: list[Element] = [];
@@ -104,7 +113,6 @@ obj WalkerAnchor(Anchor) {
     def disengage_now;
     def __call__(nd: Node);
 }
-
 
 obj Root(AbsRootHook) {
     has __jac__: NodeAnchor | None = None;
