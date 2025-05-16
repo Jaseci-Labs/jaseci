@@ -314,8 +314,7 @@ atomic_pipe: (atomic_pipe A_PIPE_FWD)? atomic_pipe_back
 atomic_pipe_back: (atomic_pipe_back A_PIPE_BKWD)? ds_spawn
 
 // [Heading]: Data spatial spawn expressions.
-ds_spawn: (ds_spawn KW_JACGO? KW_SPAWN)? unpack
-ds_spawn: (ds_spawn KW_JACGO? KW_SPAWN)? unpack
+ds_spawn: (ds_spawn KW_SPAWN)? unpack
 
 // [Heading]: Unpack expressions.
 unpack: STAR_MUL? ref
@@ -324,8 +323,7 @@ unpack: STAR_MUL? ref
 ref: BW_AND? pipe_call
 
 // [Heading]: Data spatial calls.
-pipe_call: (PIPE_FWD | A_PIPE_FWD | KW_JACGO? KW_SPAWN | KW_AWAIT)? atomic_chain
-pipe_call: (PIPE_FWD | A_PIPE_FWD | KW_JACGO? KW_SPAWN | KW_AWAIT)? atomic_chain
+pipe_call: (PIPE_FWD | A_PIPE_FWD | KW_SPAWN | KW_AWAIT)? atomic_chain
 
 // [Heading]: Subscripted and dotted expressions.
 atomic_chain: atomic_chain NULL_OK? (filter_compr | assign_compr | index_slice)
@@ -512,8 +510,6 @@ KW_NODE: "node"
 KW_IGNORE: "ignore"
 KW_VISIT: "visit"
 KW_SPAWN: "spawn"
-KW_JACGO: "jacgo"
-KW_JACGO: "jacgo"
 KW_WITH: "with"
 KW_LAMBDA: "lambda"
 KW_ENTRY: "entry"
