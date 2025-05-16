@@ -89,13 +89,20 @@ class DocIRGenPass(UniPass):
     def exit_module(self, node: uni.Module) -> None:
         """Exit module."""
         parts: list[doc.DocType] = []
+        prev_kid = None
+        first_kid = True
         for i in node.kid:
-            if False:
-                pass
-            else:
+            if isinstance(i, uni.Import) and isinstance(prev_kid, uni.Import):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
-
+            else:
+                if not first_kid:
+                    parts.append(self.hard_line())
+                    parts.append(self.hard_line())
+                parts.append(i.gen.doc_ir)
+                parts.append(self.hard_line())
+            prev_kid = i
+            first_kid = False
         node.gen.doc_ir = self.concat(parts)
 
     def exit_import(self, node: uni.Import) -> None:
@@ -137,77 +144,13 @@ class DocIRGenPass(UniPass):
     def exit_architype(self, node: uni.Architype) -> None:
         """Generate DocIR for architypes."""
         parts: list[doc.DocType] = []
-
-        # Handle decorators
-        if node.decorators and node.decorators.items:
-            decorator_docs: list[doc.DocType] = []
-            for decorator_node in node.decorators.items:
-                if decorator_node.gen.doc_ir:
-                    decorator_doc = decorator_node.gen.doc_ir
-                    if decorator_doc:
-                        decorator_docs.append(decorator_doc)
-                        decorator_docs.append(self.hard_line())
-            if decorator_docs:
-                parts.extend(decorator_docs)
-
-        # Type declaration: arch_type <name>
-        header_parts: list[doc.DocType] = [self.text(node.arch_type.value)]
-        if node.name and node.name.gen.doc_ir:  # name is Name, gen.doc_ir will be text
-            header_parts.append(self.text(" "))
-            name_doc = node.name.gen.doc_ir
-            if name_doc:
-                header_parts.append(name_doc)
-
-        # Inheritance: : base1, base2
-        if (
-            node.base_classes
-            and node.base_classes.items
-            and node.base_classes.gen.doc_ir
-        ):
-            base_classes_doc = node.base_classes.gen.doc_ir
-            if not (
-                isinstance(base_classes_doc, doc.Concat) and not base_classes_doc.parts
-            ):
-                header_parts.append(self.text(": "))
-                header_parts.append(base_classes_doc)
-
-        parts.append(self.group(self.concat(header_parts)))  # Group the header part
-
-        # Handle body: { ... }
-        if node.body:
-            parts.append(self.text(" {"))
-            body_content_parts: list[doc.DocType] = []
-            if isinstance(node.body, uni.SubNodeList) and node.body.items:
-                # Iterate through items of SubNodeList and add hard_line after each
-                for item in node.body.items:
-                    if item.gen.doc_ir:
-                        item_doc = item.gen.doc_ir
-                        if item_doc:
-                            body_content_parts.append(item_doc)
-                            body_content_parts.append(self.hard_line())
-                if body_content_parts and isinstance(
-                    body_content_parts[-1], doc.Line
-                ):  # Remove last hard_line
-                    body_content_parts.pop()
-            elif isinstance(node.body, uni.ImplDef) and node.body.gen.doc_ir:
-                impl_def_doc = node.body.gen.doc_ir
-                if impl_def_doc:
-                    body_content_parts.append(impl_def_doc)
-
-            if body_content_parts:
-                parts.append(
-                    self.indent(
-                        self.concat([self.hard_line(), self.concat(body_content_parts)])
-                    )
-                )
-                parts.append(self.hard_line())  # Line before closing brace
-            else:  # Empty body {} vs {\n}
-                parts.append(self.line())  # allow break for empty body like { \n }
-
-            parts.append(self.text("}"))
-        else:  # No body, e.g., forward declaration with SEMI
-            parts.append(self.text(";"))  # From grammar: arch_type ... (body | SEMI)
-
+        for i in node.kid:
+            if i == node.doc:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.hard_line())
+            else:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.text(" "))
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_ability(self, node: uni.Ability) -> None:
@@ -648,13 +591,9 @@ class DocIRGenPass(UniPass):
             if (
                 isinstance(i, uni.SubNodeList)
                 and i == node.vars
-                and isinstance(i.gen.doc_ir, doc.Group)
-                and isinstance(i.gen.doc_ir.contents, doc.Concat)
+                and isinstance(i.gen.doc_ir, doc.Concat)
             ):
-                i.gen.doc_ir.contents.parts[0] = self.text("")
-                parts.append(
-                    self.align(i.gen.doc_ir.contents)
-                )  # align the first part of the concat
+                parts.append(self.align(i.gen.doc_ir))
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.text(" "))
@@ -1327,7 +1266,6 @@ class DocIRGenPass(UniPass):
 
     def exit_ctrl_stmt(self, node: uni.CtrlStmt) -> None:
         """Generate DocIR for control statements (break, continue, skip)."""
-        # node.kid is [ctrl_keyword_token, SEMI_token] due to statement parsing
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
@@ -1346,7 +1284,6 @@ class DocIRGenPass(UniPass):
 
     def exit_disengage_stmt(self, node: uni.DisengageStmt) -> None:
         """Generate DocIR for disengage statements."""
-        # node.kid is [KW_DISENGAGE_token, SEMI_token]
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
