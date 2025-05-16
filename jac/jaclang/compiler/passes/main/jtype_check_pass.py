@@ -1,7 +1,5 @@
 """Semantic analysis for Jac language."""
 
-from typing import Any, Optional
-
 import jaclang.compiler.jtyping as jtype
 import jaclang.compiler.unitree as ast
 from jaclang.compiler.passes import UniPass
@@ -41,20 +39,43 @@ class JTypeCheckPass(UniPass):
         sig_ret_type = sig_ret_type.return_type
 
         if return_type and isinstance(sig_ret_type, jtype.JNoneType):
-            self.log_warning("Ability has a return type however it's defined as None type")
-        
+            self.log_warning(
+                "Ability has a return type however it's defined as None type"
+            )
+
         elif not sig_ret_type.can_assign_from(return_type):
-            self.log_error(f"Ability have a return type {sig_ret_type} but got assigned a type {return_type}")
+            self.log_error(
+                f"Ability have a return type {sig_ret_type} but got assigned a type {return_type}"
+            )
 
     #################
     # Ability calls #
     #################
     def exit_func_call(self, node: ast.FuncCall) -> None:
         """Check the vars used as actual parameters across the formal parameters."""
-        
-        assert isinstance(node.target, ast.NameAtom)
-        assert node.target.name_spec.sym is not None
-        assert isinstance(node.target.name_spec.sym.jtype, jtype.JFunctionType)
+        assert isinstance(node.target, (ast.NameAtom, ast.AtomTrailer))
+
+        if isinstance(node.target, ast.AtomTrailer):
+            self.__debug_print(
+                f"Ignoring function call {node.unparse()}, atom trailer isn't supported yet"
+            )
+            return
+
+        if node.target.name_spec.sym is None:
+            self.__debug_print(
+                f"Ignoring function call {node.unparse()}, no symbol linked to it"
+            )
+            return
+
+        assert isinstance(
+            node.target.name_spec.sym.jtype, (jtype.JFunctionType, jtype.JClassType)
+        )
+
+        if isinstance(node.target.name_spec.sym.jtype, jtype.JClassType):
+            self.__debug_print(
+                f"Ignoring {node.unparse()}, JClassType aren't properly supported yet"
+            )
+            return
 
         callable_type = node.target.name_spec.sym.jtype
         func_params = {a.name: a.type for a in callable_type.parameters}
@@ -64,26 +85,27 @@ class JTypeCheckPass(UniPass):
 
         kw_args_seen = False
         arg_count = 0
-        
+
         for actual, formal in zip(actual_items, func_params.values()):
-            arg_name = ""       
-            
+            arg_name = ""
+
             if isinstance(actual, ast.Expr):
-                assert kw_args_seen == False
+                assert kw_args_seen is False
                 actual_type = self.prog.type_resolver.get_type(actual)
                 arg_name = list(func_params.keys())[arg_count]
                 arg_count += 1
-            
+
             elif isinstance(actual, ast.KWPair):
                 kw_args_seen = True
                 actual_type = self.prog.type_resolver.get_type(actual.value)
                 assert actual.key is not None
                 arg_name = actual.key.sym_name
                 formal = func_params[arg_name]
-            
-            if not formal.can_assign_from(actual_type):
-                self.log_error(f"Error: Can't assign a value {actual_type} to a parameter '{arg_name}' of type {formal}")
 
+            if not formal.can_assign_from(actual_type):
+                self.log_error(
+                    f"Error: Can't assign a value {actual_type} to a parameter '{arg_name}' of type {formal}"
+                )
 
     ##################################
     # Assignments & Var delcarations #
@@ -95,19 +117,23 @@ class JTypeCheckPass(UniPass):
         # if no value is assigned then no need to do type check
         if not value:
             return
-        
+
         value_type = self.prog.type_resolver.get_type(value)
         # handle multiple assignment targets
         for target in node.target.items:
 
             # check target expression types
             if isinstance(target, ast.FuncCall):
-                self.log_error(f"Expression '{target.unparse()}' can't be assigned (not a valid ltype)")
+                self.log_error(
+                    f"Expression '{target.unparse()}' can't be assigned (not a valid ltype)"
+                )
                 continue
 
             sym_type = self.prog.type_resolver.get_type(target)
             if not sym_type.can_assign_from(value_type):
-                self.log_error(f"Error: Can't assign a value {value_type} to a {sym_type} object")
+                self.log_error(
+                    f"Error: Can't assign a value {value_type} to a {sym_type} object"
+                )
 
     # # The goal here is to fix the AtomTrailer symbols after the type annotations
     # # of first nodes in the atom trailers

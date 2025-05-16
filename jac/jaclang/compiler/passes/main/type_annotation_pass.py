@@ -1,12 +1,10 @@
 """JType collect pass.
+
 This pass is resbponsible for annotating jtype object
 using type annotations in the code.
 """
 
-from typing import Any, Optional
-
 import jaclang.compiler.jtyping as jtype
-# from jaclang.compiler.jtyping.constraint import JTypeConstraint
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.passes import UniPass
 from jaclang.settings import settings
@@ -31,7 +29,7 @@ class JTypeAnnotatePass(UniPass):
         # Resolve the declared type from the annotation
         if not node.type_tag:
             return
-        
+
         type_annotation = self.prog.type_resolver.get_type(node.type_tag.tag)
 
         # Iterate over each target in the assignment (e.g., `x` in `x: int = 5`)
@@ -40,26 +38,39 @@ class JTypeAnnotatePass(UniPass):
                 assert target.sym is not None
 
                 # If the current type is unknown or compatible with the declared one, set it
-                if isinstance(target.sym.jtype, (type(type_annotation), jtype.JAnyType)):
+                if isinstance(
+                    target.sym.jtype, (type(type_annotation), jtype.JAnyType)
+                ):
                     self.prog.type_resolver.set_type(target, type_annotation)
 
                 # If there’s a type mismatch, issue a redefinition warning
                 elif not isinstance(type_annotation, jtype.JAnyType):
-                    self.log_warning(f"Can't redefine {target.sym_name} to be {type_annotation}")
+                    self.log_warning(
+                        f"Can't redefine {target.sym_name} to be {type_annotation}"
+                    )
 
             # If the target is not a simple name and a type annotation is present, error
             elif not isinstance(type_annotation, jtype.JAnyType):
-                self.log_error(f"Type annotations is not supported for '{target.unparse()}' expression")                
+                self.log_error(
+                    f"Type annotations is not supported for '{target.unparse()}' expression"
+                )
 
     def enter_ability(self, node: uni.Ability) -> None:
         """Process a function/ability definition.
+
         - Sets the return type
-            - convert JClassType return type to JClassInstanceType
-            - TODO: Need to check how to support returning the actual class
+        - convert JClassType return type to JClassInstanceType
+        - TODO: Need to check how to support returning the actual class
         - Validates presence of return statements when required
         - Sets parameter types based on annotations
         """
         # Get and set the declared return type of the ability
+        if node.signature is None:
+            self.prog.type_resolver.set_type(
+                node.name_spec,
+                jtype.JFunctionType(parameters=[], return_type=jtype.JNoneType()),
+            )
+            return
         ret_type = self.prog.type_resolver.get_type(node.signature.return_type)
 
         # If the function has a non-None return type but no return statements, report error
@@ -82,41 +93,41 @@ class JTypeAnnotatePass(UniPass):
                     )
                 else:
                     type_annotation = jtype.JAnyType()
-                
+
                 self.prog.type_resolver.set_type(param.name, type_annotation)
-                params.append(jtype.JFuncArgument(
-                    name=param.name.sym_name,
-                    type=type_annotation
-                ))
+                params.append(
+                    jtype.JFuncArgument(name=param.name.sym_name, type=type_annotation)
+                )
 
         # set ability type to be JCallableType
         self.prog.type_resolver.set_type(
-            node.name_spec,
-            jtype.JFunctionType(parameters=params, return_type=ret_type)
+            node.name_spec, jtype.JFunctionType(parameters=params, return_type=ret_type)
         )
 
     def enter_architype(self, node: uni.Architype) -> None:
         """Register the type of an architype type annotation pass.
+
         This assigns a JClassType to the architype's name based on its symbol table,
         enabling type checking for later references to the architype.
         """
         self.prog.type_resolver.set_type(
-            node.name_spec, 
+            node.name_spec,
             jtype.JClassType(
                 name=node.sym_name,
                 full_name=f"{self.prog.mod.main.get_href_path(node)}.{node.sym_name}",
                 module=node.parent_of_type(uni.Module),
                 is_abstract=node.is_abstract,
-                instance_members={},    #TODO: Pass this correctly
-                class_members={}        #TODO: Pass this correctly
-            ))
+                instance_members={},  # TODO: Pass this correctly
+                class_members={},  # TODO: Pass this correctly
+            ),
+        )
 
     def enter_has_var(self, node: uni.HasVar) -> None:
         """Analyze a `has` variable declaration and populates its type.
+
         Ensures that each declared variable has an associated type, and checks for redefinitions.
         Raises an error if a variable is declared more than once.
         """
-
         assert node.type_tag is not None  # QA: why type_tag is optional?
         type_annotation = self.prog.type_resolver.get_type(node.type_tag.tag)
 
