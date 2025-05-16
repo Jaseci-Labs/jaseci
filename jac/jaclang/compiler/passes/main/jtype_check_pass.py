@@ -29,12 +29,9 @@ class JTypeCheckPass(UniPass):
         """Check the return var type across the annotated return type."""
         return_type = self.prog.type_resolver.get_type(node.expr)
 
-        # if the ret_type is a JClass type then we need to convert it to a JClassInstance
-        if isinstance(return_type, jtype.JClassType):
-            return_type = jtype.JClassInstanceType(return_type)
-
         func_decl = node.parent_of_type(ast.Ability)
         sig_ret_type = self.prog.type_resolver.get_type(func_decl.name_spec)
+
         assert isinstance(sig_ret_type, jtype.JFunctionType)
         sig_ret_type = sig_ret_type.return_type
 
@@ -72,12 +69,10 @@ class JTypeCheckPass(UniPass):
         )
 
         if isinstance(node.target.name_spec.sym.jtype, jtype.JClassType):
-            self.__debug_print(
-                f"Ignoring {node.unparse()}, JClassType aren't properly supported yet"
-            )
-            return
+            callable_type = node.target.name_spec.sym.jtype.get_constrcutor()
+        else:
+            callable_type = node.target.name_spec.sym.jtype
 
-        callable_type = node.target.name_spec.sym.jtype
         func_params = {a.name: a.type for a in callable_type.parameters}
 
         actual_params = node.params

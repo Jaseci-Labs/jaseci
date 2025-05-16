@@ -6,8 +6,16 @@ using type annotations in the code.
 
 import jaclang.compiler.jtyping as jtype
 import jaclang.compiler.unitree as uni
+from jaclang.compiler.constant import SymbolAccess, SymbolType
 from jaclang.compiler.passes import UniPass
 from jaclang.settings import settings
+
+
+symbol_type_to_visibility = {
+    SymbolAccess.PUBLIC: jtype.jtypes.jclassmember.Visibility.PUBLIC,
+    SymbolAccess.PRIVATE: jtype.jtypes.jclassmember.Visibility.PRIVATE,
+    SymbolAccess.PROTECTED: jtype.jtypes.jclassmember.Visibility.PROTECTED,
+}
 
 
 class JTypeAnnotatePass(UniPass):
@@ -24,7 +32,7 @@ class JTypeAnnotatePass(UniPass):
         if self.ir_in.name == "builtins":
             self.terminate()
 
-    def enter_assignment(self, node: uni.Assignment) -> None:
+    def exit_assignment(self, node: uni.Assignment) -> None:
         """Propagate type annotations for variable declarations."""
         # Resolve the declared type from the annotation
         if not node.type_tag:
@@ -41,6 +49,8 @@ class JTypeAnnotatePass(UniPass):
                 if isinstance(
                     target.sym.jtype, (type(type_annotation), jtype.JAnyType)
                 ):
+                    if isinstance(type_annotation, jtype.JClassType):
+                        type_annotation = jtype.JClassInstanceType(type_annotation)
                     self.prog.type_resolver.set_type(target, type_annotation)
 
                 # If there’s a type mismatch, issue a redefinition warning
@@ -55,7 +65,7 @@ class JTypeAnnotatePass(UniPass):
                     f"Type annotations is not supported for '{target.unparse()}' expression"
                 )
 
-    def enter_ability(self, node: uni.Ability) -> None:
+    def exit_ability(self, node: uni.Ability) -> None:
         """Process a function/ability definition.
 
         - Sets the return type
@@ -71,7 +81,10 @@ class JTypeAnnotatePass(UniPass):
                 jtype.JFunctionType(parameters=[], return_type=jtype.JNoneType()),
             )
             return
+
         ret_type = self.prog.type_resolver.get_type(node.signature.return_type)
+        if isinstance(ret_type, jtype.JClassType):
+            ret_type = jtype.JClassInstanceType(ret_type)
 
         # If the function has a non-None return type but no return statements, report error
         has_return_stmts = len(node.get_all_sub_nodes(uni.ReturnStmt)) > 0
@@ -104,25 +117,54 @@ class JTypeAnnotatePass(UniPass):
             node.name_spec, jtype.JFunctionType(parameters=params, return_type=ret_type)
         )
 
-    def enter_architype(self, node: uni.Architype) -> None:
+    def exit_architype(self, node: uni.Architype) -> None:
         """Register the type of an architype type annotation pass.
 
         This assigns a JClassType to the architype's name based on its symbol table,
         enabling type checking for later references to the architype.
         """
-        self.prog.type_resolver.set_type(
-            node.name_spec,
-            jtype.JClassType(
-                name=node.sym_name,
-                full_name=f"{self.prog.mod.main.get_href_path(node)}.{node.sym_name}",
-                module=node.parent_of_type(uni.Module),
-                is_abstract=node.is_abstract,
-                instance_members={},  # TODO: Pass this correctly
-                class_members={},  # TODO: Pass this correctly
-            ),
+        type_full_name = self.prog.mod.main.get_href_path(node)
+        instance_members: dict[str, jtype.JClassMember] = {}
+        for sym in node.sym_tab.names_in_scope.values():
+            instance_members[sym.sym_name] = jtype.JClassMember(
+                name=sym.sym_name,
+                type=sym.jtype,
+                kind=jtype.jtypes.jclassmember.MemberKind.INSTANCE,
+                visibility=symbol_type_to_visibility[sym.access],
+                is_method=sym.sym_type == SymbolType.METHOD,
+            )
+
+        class_type = jtype.JClassType(
+            name=node.sym_name,
+            full_name=type_full_name,
+            module=node.parent_of_type(uni.Module),
+            is_abstract=node.is_abstract,
+            instance_members=instance_members,  # TODO: Pass this correctly
+            class_members={},  # TODO: Pass this correctly
         )
 
-    def enter_has_var(self, node: uni.HasVar) -> None:
+        if "__init__" not in instance_members:
+            attributes = list(
+                filter(lambda x: not x.is_method, list(instance_members.values()))
+            )
+            constructor = jtype.JFunctionType(
+                parameters=[
+                    jtype.JFuncArgument(attr.name, attr.type) for attr in attributes
+                ],
+                return_type=jtype.JClassInstanceType(class_type),
+            )
+            class_type.instance_members["__init__"] = jtype.JClassMember(
+                name="__init__",
+                type=constructor,
+                kind=jtype.jtypes.jclassmember.MemberKind.INSTANCE,
+                visibility=jtype.jtypes.jclassmember.Visibility.PUBLIC,
+                is_method=True,
+            )
+
+        self.prog.type_registry.register(class_type)
+        self.prog.type_resolver.set_type(node.name_spec, class_type)
+
+    def exit_has_var(self, node: uni.HasVar) -> None:
         """Analyze a `has` variable declaration and populates its type.
 
         Ensures that each declared variable has an associated type, and checks for redefinitions.

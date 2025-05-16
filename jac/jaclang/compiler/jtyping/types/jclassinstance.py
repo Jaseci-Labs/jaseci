@@ -1,14 +1,11 @@
-"""
-class_instance_type.py
-
-Defines `JClassInstanceType`, representing the type of instances of user-defined
-or primitive classes in the Jac type system.
+"""Defines `JClassInstanceType`, representing the type of instances of user-defined or primitive classes in the Jac type system.
 
 This type wraps a `JClassType` and provides instance-level behavior.
 """
-from jaclang.compiler.jtyping.types.jtype import JType
-from jaclang.compiler.jtyping.types.jclasstype import JClassType
+
 from jaclang.compiler.jtyping.types.jclassmember import JClassMember
+from jaclang.compiler.jtyping.types.jclasstype import JClassType
+from jaclang.compiler.jtyping.types.jtype import JType
 
 
 class JClassInstanceType(JType):
@@ -24,19 +21,19 @@ class JClassInstanceType(JType):
         class_type (JClassType): The class this instance belongs to.
     """
 
-    def __init__(self, class_type: JClassType):
-        """
-        Initialize a JClassInstanceType from a class type.
+    def __init__(self, class_type: JClassType) -> None:
+        """Initialize a JClassInstanceType from a class type.
 
         Args:
             class_type (JClassType): The originating class type.
         """
         self.class_type = class_type
-        super().__init__(name=f"instance of {class_type.name}", module=class_type.module)
+        super().__init__(
+            name=f"instance of {class_type.name}", module=class_type.module
+        )
 
     def is_instantiable(self) -> bool:
-        """
-        Indicates whether the instance can be created directly.
+        """Indicate whether the instance can be created directly.
 
         Returns:
             bool: Always True — an instance is already instantiated.
@@ -44,8 +41,7 @@ class JClassInstanceType(JType):
         return True
 
     def can_assign_from(self, other: JType) -> bool:
-        """
-        Check if another instance type can be assigned to this one.
+        """Check if another instance type can be assigned to this one.
 
         Delegates to the assignability of their respective class types.
 
@@ -60,8 +56,7 @@ class JClassInstanceType(JType):
         return self.class_type.can_assign_from(other.class_type)
 
     def get_members(self) -> dict[str, JClassMember]:
-        """
-        Get members accessible on the instance.
+        """Get members accessible on the instance.
 
         Delegates to the instance members of the class type.
 
@@ -70,10 +65,9 @@ class JClassInstanceType(JType):
         """
         return self.class_type.get_members()
 
-    #TODO: Check this when it comes to support binary operations
+    # TODO: Check this when it comes to support binary operations
     def supports_binary_op(self, op: str) -> bool:
-        """
-        Check whether the instance supports a binary operator.
+        """Check whether the instance supports a binary operator.
 
         Delegates to the class's instance-level member list.
 
@@ -84,12 +78,15 @@ class JClassInstanceType(JType):
             bool: True if a corresponding method like `__add__` exists.
         """
         return False
-    
+
     def is_callable(self) -> bool:
-        """
-        Indicates whether the instance can be called like a function.
+        """Indicate whether the instance can be called like a function.
 
         Returns:
             bool: Always False for class instances.
         """
         return False
+
+    def __repr__(self) -> str:
+        """Get string representation of the object."""
+        return f"'{self.class_type.full_name}'"

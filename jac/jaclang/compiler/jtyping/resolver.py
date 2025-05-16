@@ -1,6 +1,6 @@
 """extracting/setting JType from Jac expressions."""
 
-from typing import Optional, Type
+from typing import Optional
 
 import jaclang.compiler.jtyping as jtype
 import jaclang.compiler.unitree as ast
@@ -24,10 +24,10 @@ class JTypeResolver:
         """Get type from any jac expression."""
         if node is None:
             return jtype.JNoneType()
-        
+
         name = pascal_to_snake(node.__class__.__name__)
         func_name = f"_get_{name}_expr_type"
-        
+
         if hasattr(self, func_name):
             return getattr(self, func_name)(node)
         else:
@@ -38,9 +38,11 @@ class JTypeResolver:
         """Set type from any jac expression based."""
         name = pascal_to_snake(node.__class__.__name__)
         func_name = f"_set_{name}_expr_type"
-        
+
         if hasattr(self, func_name):
-            self.__debug_print(f"Setting type '{expr_type}' to {node.loc.mod_path}:{node.loc}")
+            self.__debug_print(
+                f"Setting type '{expr_type}' to {node.loc.mod_path}:{node.loc}"
+            )
             return getattr(self, func_name)(node, expr_type)
         else:
             self.__debug_print(f"{func_name} is not implemented yet")
@@ -74,7 +76,7 @@ class JTypeResolver:
         t = self.type_registry.get("builtins.str")
         assert isinstance(t, jtype.JClassType)
         return jtype.JClassInstanceType(t)
-    
+
     def _get_null_expr_type(self, node: ast.Null) -> jtype.JType:
         return jtype.JNoneType()
 
@@ -91,19 +93,32 @@ class JTypeResolver:
         return jtype.JClassInstanceType(t)
 
     def _get_func_call_expr_type(self, node: ast.FuncCall) -> jtype.JType:
+        assert isinstance(node.target, (ast.NameAtom, ast.AtomTrailer))
+
+        if isinstance(node.target, ast.AtomTrailer):
+            self.__debug_print(
+                f"Ignoring function call {node.unparse()}, atom trailer isn't supported yet"
+            )
+            return jtype.JAnyType()
+
+        if node.target.name_spec.sym is None:
+            self.__debug_print(
+                f"Ignoring function call {node.unparse()}, no symbol linked to it"
+            )
+            return jtype.JAnyType()
+
         func_type = self.get_type(node.target)
         assert isinstance(func_type, (jtype.JFunctionType, jtype.JClassType))
-        
+
         # In case of normal functions
         if isinstance(func_type, jtype.JFunctionType):
             return func_type.return_type
-        
-        # In case of class constructor
-        elif isinstance(func_type, jtype.JClassInstanceType):
-            return func_type
-        
-        return jtype.JAnyType()
 
+        # In case of class constructor
+        elif isinstance(func_type, jtype.JClassType):
+            return jtype.JClassInstanceType(func_type)
+
+        raise AssertionError()
 
     def _set_name_expr_type(self, node: ast.Name, expr_type: jtype.JType) -> None:
         assert node.name_spec.sym is not None

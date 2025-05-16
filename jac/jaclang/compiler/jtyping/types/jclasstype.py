@@ -1,6 +1,4 @@
-"""
-Defines the JClassType class, which represents both user-defined classes and built-in
-primitive types in the Jac type system.
+"""Defines the JClassType class, which represents both user-defined classes and built-in primitive types in the Jac type system.
 
 This class supports type instantiation, inheritance, callable semantics (via constructors),
 and member access resolution. It also implements assignability checks based on nominal
@@ -12,9 +10,9 @@ from __future__ import annotations
 from typing import Optional
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.jtyping.types.jtype import JType
 from jaclang.compiler.jtyping.types.jclassmember import JClassMember
 from jaclang.compiler.jtyping.types.jfunctionttype import JFunctionType
+from jaclang.compiler.jtyping.types.jtype import JType
 
 
 class JClassType(JType):
@@ -44,10 +42,10 @@ class JClassType(JType):
         is_abstract: bool = False,
         instance_members: Optional[dict[str, JClassMember]] = None,
         class_members: Optional[dict[str, JClassMember]] = None,
-        assignable_from: list[str] = []
-    ):
+        assignable_from: list[str] = list(),
+    ) -> None:
         """
-        Initializes a new JClassType instance.
+        Initialize a new JClassType instance.
 
         Args:
             name (str): The name of the class.
@@ -69,16 +67,16 @@ class JClassType(JType):
 
     def is_instantiable(self) -> bool:
         """
-        Returns whether this class can be directly instantiated.
+        Return whether this class can be directly instantiated.
 
         Returns:
             bool: False if the class is abstract; True otherwise.
         """
         return not self.is_abstract
-    
+
     def is_callable(self) -> bool:
         """
-        Indicates that classes are callable (i.e., can be instantiated via `Class()`).
+        Indicate that classes are callable (i.e., can be instantiated via `Class()`).
 
         Returns:
             bool: Always True for class types.
@@ -87,7 +85,7 @@ class JClassType(JType):
 
     def can_assign_from(self, other: JType) -> bool:
         """
-        Checks whether a value of `other` type can be assigned to this class type.
+        Check whether a value of `other` type can be assigned to this class type.
 
         This includes:
         - Nominal equality (matching name and module),
@@ -110,7 +108,7 @@ class JClassType(JType):
 
     def get_members(self) -> dict[str, JClassMember]:
         """
-        Returns all accessible instance-level members, including inherited ones.
+        Return all accessible instance-level members, including inherited ones.
 
         Returns:
             dict[str, JClassMember]: A dictionary of member names to member definitions.
@@ -119,10 +117,32 @@ class JClassType(JType):
         for base in self.bases:
             all_members.update(base.get_members())
         return all_members
-    
+
+    def get_member(self, name: str) -> Optional[JClassMember]:
+        """
+        Retrieve a single accessible instance-level member by name, including those inherited from base classes.
+
+        Args:
+            name (str): The name of the member.
+
+        Returns:
+            Optional[JClassMember] : The corresponding member if found, else None.
+        """
+        # Check if the member exists in the current class
+        if name in self.instance_members:
+            return self.instance_members[name]
+
+        # Recursively check base classes
+        for base in self.bases:
+            member = base.get_member(name)
+            if member is not None:
+                return member
+
+        return None
+
     def get_callable_signature(self) -> JFunctionType:
         """
-        Returns the callable signature for this class (i.e., its constructor).
+        Return the callable signature for this class (i.e., its constructor).
 
         Looks for an `__init__` method among instance members. If not found,
         assumes a default constructor with no parameters.
@@ -134,10 +154,10 @@ class JClassType(JType):
         if init and isinstance(init.type, JFunctionType):
             return init.type
         return JFunctionType([], self)
-    
-    def supports_binary_op(self, op):
+
+    def supports_binary_op(self, op: str) -> bool:
         """
-        Checks whether a binary operator is supported by this class type.
+        Check whether a binary operator is supported by this class type.
 
         Delegates to the class-level member list to find an appropriate method.
 
@@ -148,3 +168,18 @@ class JClassType(JType):
             bool: True if a corresponding method exists; False otherwise.
         """
         return op in self.class_members
+
+    def get_constrcutor(self) -> JFunctionType:
+        """
+        Retrieve the constructor (__init__) of the class.
+
+        If the class has no explicit __init__, returns a default constructor type
+        that takes no arguments and returns None.
+
+        Returns:
+            JFunctionType: The type of the constructor.
+        """
+        constructor = self.get_member("__init__")
+        assert constructor is not None
+        assert isinstance(constructor.type, JFunctionType)
+        return constructor.type
