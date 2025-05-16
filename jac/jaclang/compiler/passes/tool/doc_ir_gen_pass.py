@@ -510,11 +510,13 @@ class DocIRGenPass(UniPass):
     def exit_list_val(self, node: uni.ListVal) -> None:
         """Generate DocIR for list values."""
         parts: list[doc.DocType] = [self.text("[")]
+        parts.append(self.if_break(self.line(), self.text(" ")))
         if node.values:
             parts.append(node.values.gen.doc_ir)
+        parts.append(self.if_break(self.line(), self.text(" ")))
         parts.append(self.text("]"))
 
-        node.gen.doc_ir = self.group(self.concat(parts))
+        node.gen.doc_ir = self.concat(parts)
 
     def exit_dict_val(self, node: uni.DictVal) -> None:
         """Generate DocIR for dictionary values."""
@@ -858,9 +860,10 @@ class DocIRGenPass(UniPass):
     def exit_tuple_val(self, node: uni.TupleVal) -> None:
         """Generate DocIR for tuple values."""
         parts: list[doc.DocType] = [self.text("(")]
-
+        parts.append(self.if_break(self.line(), self.text(" ")))
         if node.values:
             parts.append(node.values.gen.doc_ir)
+        parts.append(self.if_break(self.line(), self.text(" ")))
         parts.append(self.text(")"))
         node.gen.doc_ir = self.group(self.concat(parts))
 
@@ -881,10 +884,10 @@ class DocIRGenPass(UniPass):
     def exit_set_val(self, node: uni.SetVal) -> None:
         """Generate DocIR for set values."""
         parts: list[doc.DocType] = [self.text("{")]
-
+        parts.append(self.if_break(self.line(), self.text(" ")))
         if node.values:
             parts.append(node.values.gen.doc_ir)
-
+        parts.append(self.if_break(self.line(), self.text(" ")))
         parts.append(self.text("}"))
         node.gen.doc_ir = self.group(self.concat(parts))
 
