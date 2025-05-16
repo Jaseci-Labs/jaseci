@@ -1,15 +1,15 @@
 obj mainObject;
 
-:obj:mainObject{
-    can greet;
+impl mainObject{
+    def greet;
     obj subObject;
 }
-can foo{
+def foo{
      obj ObjInsideFunction;
      return ObjInsideFunction();
 }
-:can:foo:obj:ObjInsideFunction{
-    can bar{
+impl foo.ObjInsideFunction{
+    def bar{
         print("Hello,from bar in kk");
     }
 }
@@ -17,30 +17,29 @@ can foo{
 with entry{
     foo().bar();
 }
-:obj:mainObject:can:greet{
+impl mainObject.greet{
     print("Greeting: Hello, World!");
 }
 
-:obj:mainObject:obj:subObject{
-    can displayMessage;
-    can shortMessage{
+impl mainObject.subObject{
+    def displayMessage;
+    def shortMessage{
         print("Hello, World!");
     }
     obj nestedObject;
 }
-:obj:mainObject:obj:subObject:can:displayMessage{
+impl mainObject.subObject.displayMessage{
     print("Repeated: Hello!");
 }
 
-:obj:mainObject:obj:subObject:obj:nestedObject{
-    can lastMessage;
-    can finalMessage{
+impl mainObject.subObject.nestedObject{
+    def lastMessage;
+    def finalMessage{
         print("Final message:!");
     }
 }
 
-:obj:mainObject:obj:subObject:obj:nestedObject:can:lastMessage{
-# impl mainObject.subObject.nestedObject{  # TODO
+impl mainObject.subObject.nestedObject.lastMessage{
         print("Last message:!");
 
 }

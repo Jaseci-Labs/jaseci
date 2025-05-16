@@ -4,12 +4,12 @@ obj rson {
     has age: int,
         name: str;
 
-    can init(name: str, age: int) -> None {
+    def init(name: str, age: int) -> None {
         here.name = name;
         here.age = age;
     }
 
-    can greet() -> None {
+    def greet() -> None {
         print("Hello, my name is ", here.name, " and I'm ", here.age, " years old.");
     }
 }

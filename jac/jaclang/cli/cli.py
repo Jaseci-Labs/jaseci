@@ -5,7 +5,6 @@ import importlib
 import marshal
 import os
 import pickle
-import shutil
 import sys
 import types
 from pathlib import Path
@@ -13,13 +12,15 @@ from typing import Optional
 
 import jaclang.compiler.unitree as uni
 from jaclang.cli.cmdreg import CommandShell, cmd_registry
-from jaclang.compiler.constant import Constants
 from jaclang.compiler.passes.main import CompilerMode as CMode, PyastBuildPass
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.builtin import dotgen
 from jaclang.runtimelib.constructs import WalkerArchitype
-from jaclang.runtimelib.machine import JacMachine as Jac
-from jaclang.runtimelib.machinestate import JacMachineState, call_jac_func_with_machine
+from jaclang.runtimelib.machine import (
+    JacMachine,
+    JacMachineInterface as Jac,
+    call_jac_func_with_machine,
+)
 from jaclang.utils.helpers import debugger as db
 from jaclang.utils.lang_tools import AstTool
 
@@ -85,8 +86,8 @@ def format(path: str, outfile: str = "", to_screen: bool = False) -> None:
 
 def proc_file_sess(
     filename: str, session: str, root: Optional[str] = None, interp: bool = False
-) -> tuple[str, str, JacMachineState]:
-    """Create JacMachineState and return the base path, module name, and machine state."""
+) -> tuple[str, str, JacMachine]:
+    """Create JacMachine and return the base path, module name, and machine state."""
     if session == "":
         session = (
             cmd_registry.args.session
@@ -98,7 +99,7 @@ def proc_file_sess(
     base, mod = os.path.split(filename)
     base = base if base else "./"
     mod = mod[:-4]
-    mach = JacMachineState(base, session=session, root=root, interp_mode=interp)
+    mach = JacMachine(base, session=session, root=root, interp_mode=interp)
     return base, mod, mach
 
 
@@ -156,7 +157,7 @@ def run(
 
     else:
         print("Not a valid file!\nOnly supports `.jac` and `.jir`")
-    mach.exec_ctx.close()
+    mach.close()
 
 
 @cmd_registry.register
@@ -198,7 +199,7 @@ def get_object(filename: str, id: str, session: str = "", main: bool = True) -> 
                 override_name="__main__" if main else None,
             )
     else:
-        mach.exec_ctx.close()
+        mach.close()
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
     data = {}
@@ -208,12 +209,12 @@ def get_object(filename: str, id: str, session: str = "", main: bool = True) -> 
     else:
         print(f"Object with id {id} not found.", file=sys.stderr)
 
-    mach.exec_ctx.close()
+    mach.close()
     return data
 
 
 @cmd_registry.register
-def build(filename: str, typecheck: bool = True) -> None:
+def build(filename: str) -> None:
     """Build the specified .jac file.
 
     Compiles a Jac source file into a Jac Intermediate Representation (.jir) file,
@@ -230,14 +231,11 @@ def build(filename: str, typecheck: bool = True) -> None:
     if filename.endswith(".jac"):
         (out := JacProgram()).compile(
             file_path=filename,
-            mode=CMode.TYPECHECK if typecheck else CMode.COMPILE,
+            mode=CMode.COMPILE,
         )
         errs = len(out.errors_had)
         warnings = len(out.warnings_had)
         print(f"Errors: {errs}, Warnings: {warnings}")
-        for i in out.mod.hub.values():
-            for j in i.flatten():
-                j.gen.mypy_ast = []
         with open(filename[:-4] + ".jir", "wb") as f:
             pickle.dump(out, f)
     else:
@@ -344,7 +342,7 @@ def enter(
                 override_name="__main__" if main else None,
             )
     else:
-        mach.exec_ctx.close()
+        mach.close()
         raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
     if ret_module:
@@ -354,13 +352,13 @@ def enter(
         else:
             architype = getattr(loaded_mod, entrypoint)(*args)
 
-            mach.exec_ctx.set_entry_node(node)
+            mach.set_entry_node(node)
             if isinstance(architype, WalkerArchitype) and call_jac_func_with_machine(
-                mach, Jac.check_read_access, mach.exec_ctx.entry_node
+                mach, Jac.check_read_access, mach.entry_node
             ):
-                Jac.spawn(mach.exec_ctx.entry_node.architype, architype)
+                Jac.spawn(mach.entry_node.architype, architype)
 
-    mach.exec_ctx.close()
+    mach.close()
 
 
 @cmd_registry.register
@@ -397,7 +395,7 @@ def test(
         jac test --xit               # Stop on first failure
         jac test --verbose           # Show detailed output
     """
-    mach = JacMachineState()
+    mach = JacMachine()
 
     failcount = Jac.run_test(
         mach=mach,
@@ -410,7 +408,7 @@ def test(
         verbose=verbose,
     )
 
-    mach.exec_ctx.close()
+    mach.close()
 
     if failcount:
         raise SystemExit(f"Tests failed: {failcount}")
@@ -447,30 +445,6 @@ def tool(tool: str, args: Optional[list] = None) -> None:
             raise e
     else:
         print(f"Ast tool {tool} not found.", file=sys.stderr)
-
-
-@cmd_registry.register
-def clean() -> None:
-    """Clean up Jac-generated cache and temporary files.
-
-    Removes the __jac_gen__, __pycache__, and other temporary folders created
-    during Jac compilation and execution. Helps maintain a clean project directory
-    and can resolve certain caching-related issues.
-
-    Args:
-        This command takes no parameters.
-
-    Examples:
-        jac clean
-    """
-    current_dir = os.getcwd()
-    for root, dirs, _files in os.walk(current_dir, topdown=True):
-        for folder_name in dirs[:]:
-            if folder_name in [Constants.JAC_MYPY_CACHE]:
-                folder_to_remove = os.path.join(root, folder_name)
-                shutil.rmtree(folder_to_remove)
-                print(f"Removed folder: {folder_to_remove}")
-    print("Done cleaning.")
 
 
 @cmd_registry.register
@@ -573,13 +547,13 @@ def dot(
             import traceback
 
             traceback.print_exc()
-            jac_machine.exec_ctx.close()
+            jac_machine.close()
             return
         file_name = saveto if saveto else f"{mod}.dot"
         with open(file_name, "w") as file:
             file.write(graph)
         print(f">>> Graph content saved to {os.path.join(os.getcwd(), file_name)}")
-        jac_machine.exec_ctx.close()
+        jac_machine.close()
     else:
         print("Not a .jac file.", file=sys.stderr)
 

@@ -1,7 +1,7 @@
-import:py os;
-import:py datetime as dt;
+import os;
+import datetime as dt;
 import from math { sqrt as square_root, log }
-import:jac from base_module_structure { add }
+import from base_module_structure { add }
 import from base_module_structure { subtract }
 include global_variables;
 

@@ -9,8 +9,8 @@ These are doc strings and can be used as comments
 Use them to document your code
 """
 
-import:jac stuff;
-import:py from .activity, Activity as Actvy;
+import stuff;
+import from .activity { Activity as Actvy }
 
 node location {
     has x: int,
@@ -54,14 +54,14 @@ walker tourist {
         report here.activities;
     }
 
-    can do_something(app: int=Actvy) -> Actvy {
+    def do_something(app: int=Actvy) -> Actvy {
         app.do_something();
     }
 
-    can do_something(app: int=Actvy, other: float=Actvy) -> Actvy {
+    def do_something(app: int=Actvy, other: float=Actvy) -> Actvy {
         return app?.do_something(other);
     }
-    can outside_func() -> None;
+    def outside_func() -> None;
 }
 
-:walker:tourist:can:outside_func {}
+impl tourist.outside_func {}

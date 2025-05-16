@@ -9,7 +9,7 @@ Let's first make sure you can set up your language model. MTLLM support clients 
 In this section, we will go through the process of setting up a OpenAI's `GPT-4o` language model client. For that first makesure that you have installed the necessary dependancies by running `pip install mtllm[openai]`.
 
 ```python
-import:py from mtllm.llms.openai, OpenAI;
+import from mtllm.llms.openai, OpenAI;
 
 my_llm = OpenAI(model_name="gpt-4o");
 ```
@@ -57,7 +57,7 @@ new_object = MyClass(arg1: str by llm());
 You can enable the verbose mode to see the internal workings of the LM.
 
 ```python
-import:py from mtllm.llms, OpenAI;
+import from mtllm.llms, OpenAI;
 
 my_llm = OpenAI(model_name="gpt-4o", verbose=True);
 ```
@@ -86,7 +86,7 @@ llm = mtllm.llms.{provider_listed_below}(model_name="your model", verbose=True/F
 Initiate a ollama server by following this tutorial [here](https://github.com/ollama/ollama). Then you can use it as follows:
 
 ```python
-import:py from mtllm.llms.ollama, Ollama;
+import from mtllm.llms.ollama, Ollama;
 
 llm = Ollama(host="ip:port of the ollama server", model_name="llama3", verbose=True/False);
 ```
@@ -96,7 +96,7 @@ llm = Ollama(host="ip:port of the ollama server", model_name="llama3", verbose=T
 You can use any of the HuggingFace's language models as well. [models](https://huggingface.co/models?pipeline_tag=text-generation)
 
 ```python
-import:py from mtllm.llms.huggingface, HuggingFace;
+import from mtllm.llms.huggingface, HuggingFace;
 
 llm = HuggingFace(model_name="microsoft/Phi-3-mini-4k-instruct", verbose=True/False);
 ```

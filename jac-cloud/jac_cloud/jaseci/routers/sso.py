@@ -202,7 +202,7 @@ def login(platform: str, open_id: OpenID) -> Response:
 
 def register(platform: str, open_id: OpenID) -> Response:
     """Register user method."""
-    from jaclang import Root
+    from ...core.architype import Root
 
     if user := User.Collection.find_one(
         {

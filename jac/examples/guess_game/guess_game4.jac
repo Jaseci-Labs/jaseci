@@ -1,6 +1,6 @@
 """A Number Guessing Game"""
 
-import:py random;
+import random;
 
 """
 A generic Game base class.
@@ -13,34 +13,34 @@ obj Game {
     has attempts: int,
         won: bool = False;
 
-    can play;
+    def play;
 }
 
 """
 A number guessing game. The player must guess a number between 1 and 100.
 
 """
-obj GuessTheNumberGame :Game: {
+obj GuessTheNumberGame(Game) {
     has correct_number: int = (1, 100) |> random.randint;
 
-    can init;
-    override can play;
-    can process_guess(guess: int);
+    def init;
+    override def play;
+    def process_guess(guess: int);
 }
 
 """
 The init method sets the number of attempts to 10.
-:ob:Game:can:play method is implemented to run the game. This another way in jaclang to add methods to a existing class.
+Game.play method is implemented to run the game. This another way in jaclang to add methods to a existing class.
 """
-:obj:Game:can:play {
+impl Game.play {
     raise "Subclasses must implement this method." |> NotImplementedError;
 }
 
-:obj:GuessTheNumberGame:can:init {
+impl GuessTheNumberGame.init {
     self.attempts = 10;
 }
 
-:obj:GuessTheNumberGame:can:play {
+impl GuessTheNumberGame.play {
     while self.attempts > 0 {
         guess = "Guess a number between 1 and 100: " |> input;
         if |> guess.isdigit {
@@ -54,7 +54,7 @@ The init method sets the number of attempts to 10.
     }
 }
 
-:obj:GuessTheNumberGame:can:process_guess
+impl GuessTheNumberGame.process_guess
 (guess: int) {
     if guess > self.correct_number {
         "Too high!" |> print;

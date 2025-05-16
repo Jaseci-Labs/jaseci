@@ -1,11 +1,11 @@
 #=Object=Abilities ===================================================
 
-:obj:Game:can:postinit {
+impl Game.postinit {
         pygame.<>init();
         self.font: pygame.font.Font = pygame.font.Font(GENERAL_FONT, 32);
 }
 
-:obj:Game:can:createTilemap {
+impl Game.createTilemap {
     for (i, row) in enumerate(self.GameMap.map){
         for (j, column) in enumerate(row){
             Ground(self,j,i);
@@ -23,7 +23,7 @@
 }
 
 # Start a new game
-:obj:Game:can:new{
+impl Game.new{
     self.playing = True;
     self.won = False;
     self.all_sprites = pygame.sprite.LayeredUpdates();
@@ -34,7 +34,7 @@
 }
 
 # Update pygame events to check if the game is quitted or attacked.
-:obj:Game:can:events{
+impl Game.events{
     for events in pygame.event.get() {
         if events.type == pygame.QUIT {
             self.playing = False;
@@ -59,12 +59,12 @@
 }
 # Update all sprites
 
-:obj:Game:can:update {
+impl Game.update {
     self.all_sprites.update();
 }
 # Display the game
 
-:obj:Game:can:draw {
+impl Game.draw {
     self.screen.fill(BLACK);
     self.all_sprites.draw(self.screen);
     self.clock.tick(FPS);
@@ -72,7 +72,7 @@
 }
 # Game runtime
 
-:obj:Game:can:main {
+impl Game.main {
     while self.playing {
         self.events();
         self.update();
@@ -85,7 +85,7 @@
 }
 # Game over screen
 
-:obj:Game:can:game_over() {
+impl Game.game_over {
     self.score -= 2;
     text = self.font.render('GaMe OvEr', True, RED);
     text_rect = text.get_rect(center = (WIN_WIDTH/2, WIN_HEIGHT/2));
@@ -115,7 +115,7 @@
 }
 # Introduction Screen
 
-:obj:Game:can:intro_screen {
+impl Game.intro_screen {
     intro = True;
     title = self.font.render('Spud-nik : SOLO', True, BLUE);
     title_rect = title.get_rect(x=WIN_WIDTH/2-100,y=100);
@@ -141,7 +141,7 @@
 }
 # Game won
 
-:obj:Game:can:game_won {
+impl Game.game_won {
     self.score += 5;
     text = self.font.render('YOU WON!', True, BLUE);
     text_rect = text.get_rect(center = (WIN_WIDTH/2, WIN_HEIGHT/2));

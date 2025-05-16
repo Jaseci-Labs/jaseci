@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jac-cloud"
-version = "0.1.20"
+version = "0.1.21"
 description = ""
 authors = ["Jason Mars <jason@jaseci.org>"]
 readme = "README.md"
@@ -8,7 +8,7 @@ packages = [{include = "jac_cloud"}]
 
 [tool.poetry.dependencies]
 python = "^3.12.0"
-jaclang = "0.7.34"
+jaclang = "0.8.0"
 fastapi = "0.115.11"
 orjson = "3.10.15"
 uvicorn = {version = "0.34.0", extras = ["standard"]}
@@ -31,6 +31,7 @@ httpx = "0.28.1"
 fastapi-sso = "0.17.0"
 google-auth = "2.38.0"
 ecs-logging = "2.2.0"
+apscheduler = "3.11.0"
 
 [tool.poetry.group.dev.dependencies]
 python-dotenv = "1.0.1"
@@ -55,3 +56,6 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.plugins."jac"]
 jac = "jac_cloud.plugin.cli:JacCmd"
 serve = "jac_cloud.plugin.jaseci:JacPlugin"
+
+[tool.poetry.scripts]
+standalone = "jac_cloud.runner:run"

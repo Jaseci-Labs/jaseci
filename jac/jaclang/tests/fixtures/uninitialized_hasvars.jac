@@ -20,7 +20,7 @@ obj Test3 {
     has var3: int by postinit;  # <-- This is fine.
     has var4: int;  # <-- This should be syntax error.
 
-    can postinit() {
+    def postinit() {
         self.var3 = 3;
     }
 }

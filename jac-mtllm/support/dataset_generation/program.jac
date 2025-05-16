@@ -1,6 +1,6 @@
-import:py from mtllm.llms { OpenAI }
-import:py json;
-import:py os;
+import from mtllm.llms { OpenAI }
+import json;
+import os;
 
 glob llm = OpenAI(verbose=True, model_name="gpt-4o");
 
@@ -39,9 +39,9 @@ obj LevelManager {
         prev_levels: list[Level] = [],
         prev_level_maps: list[Map] = [];
 
-    can create_next_level(last_levels: list[Level], difficulty: int, level_width: int, level_height: int) -> Level by llm(temperature=1.0);
+    def create_next_level(last_levels: list[Level], difficulty: int, level_width: int, level_height: int) -> Level by llm(temperature=1.0);
     '''Get the Next Level'''
-    can get_next_level -> tuple(Level, Map) {
+    def get_next_level -> tuple(Level, Map) {
         self.current_level += 1;
 
         # Keeping Only the Last 2 Levels
@@ -69,7 +69,7 @@ obj LevelManager {
 }
 
 '''Get the map of the level'''
-can get_map(map: Map) -> str {
+def get_map(map: Map) -> str {
     map_tiles = [['.' for _ in range(map.level.width)] for _ in range(map.level.height)];
 
     for wall in map.walls {

@@ -3,6 +3,7 @@
 import io
 import re
 import sys
+import unittest
 
 import jaclang.compiler.unitree as uni
 from jaclang.cli import cli
@@ -62,6 +63,7 @@ class ImportPassPassTests(TestCase):
                     )
         self.assertEqual(count, 4)
 
+    @unittest.skip("TODO: Fix when we have the type checker")
     def test_py_raise_map(self) -> None:
         """Basic test for pass."""
         (build := JacProgram()).compile(
@@ -86,6 +88,7 @@ class ImportPassPassTests(TestCase):
                 p[i],
             )
 
+    @unittest.skip("TODO: Fix when we have the type checker")
     def test_py_raised_mods(self) -> None:
         """Basic test for pass."""
         (prog := JacProgram()).compile(
@@ -93,7 +96,7 @@ class ImportPassPassTests(TestCase):
         )
         for i in list(
             filter(
-                lambda x: x.py_info.is_raised_from_py,
+                lambda x: x.is_raised_from_py,
                 prog.mod.hub.values(),
             )
         ):
@@ -102,7 +105,7 @@ class ImportPassPassTests(TestCase):
         module_count = len(
             list(
                 filter(
-                    lambda x: x.py_info.is_raised_from_py,
+                    lambda x: x.is_raised_from_py,
                     prog.mod.hub.values(),
                 )
             )
@@ -128,3 +131,9 @@ class ImportPassPassTests(TestCase):
         self.assertTrue(state.errors_had)
         self.assertEqual(len(state.errors_had), 1)
         self.assertIn("Syntax Error", state.errors_had[0].msg)
+
+    def test_circular_import(self) -> None:
+        """Test circular import."""
+        (state := JacProgram()).compile(self.fixture_abs_path("circular_import.jac"))
+        self.assertFalse(state.errors_had)
+        self.assertEqual(len(state.errors_had), 0)

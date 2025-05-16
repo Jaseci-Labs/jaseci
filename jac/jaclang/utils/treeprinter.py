@@ -141,7 +141,6 @@ def dotgen_ast_tree(
     dot_lines: Optional[list[str]] = None,
 ) -> str:
     """Recursively generate ast tree in dot format."""
-    global id_bag, id_used
     starting_call = False
     if dot_lines is None:
         starting_call = True
@@ -149,7 +148,7 @@ def dotgen_ast_tree(
 
     def gen_node_id(node: uni.UniNode) -> int:
         """Generate number for each nodes."""
-        global id_bag, id_used
+        global id_used
         if id(node) not in id_bag:
             id_bag[id(node)] = id_used
             id_used += 1
@@ -210,7 +209,7 @@ def print_ast_tree(
             else ""
         )
         sym_table_link = (
-            f"SymbolTable: {node.type_sym_tab.nix_name}"
+            f"SymbolTable: {node.type_sym_tab.scope_name}"
             if isinstance(node, AstSymbolNode) and node.type_sym_tab
             else "SymbolTable: None" if isinstance(node, AstSymbolNode) else ""
         )
@@ -232,7 +231,7 @@ def print_ast_tree(
             return f"{node.__class__.__name__} - {node.value}, {access}"
         elif (
             isinstance(node, uni.Module)
-            and node.py_info.is_raised_from_py
+            and node.is_raised_from_py
             and not print_py_raise
         ):
             return f"{node.__class__.__name__} - PythonModuleRaised: {node.name}"
@@ -320,12 +319,12 @@ def print_ast_tree(
         tree_str = f"{root.loc}\t{markers}{__node_repr_in_tree(root)}\n"
         if (
             isinstance(root, uni.Module)
-            and root.py_info.is_raised_from_py
+            and root.is_raised_from_py
             and not print_py_raise
         ):
             kids: list[UniNode] = [
                 *filter(
-                    lambda x: x.py_info.is_raised_from_py,
+                    lambda x: x.is_raised_from_py,
                     root.get_all_sub_nodes(uni.Module),
                 )
             ]
@@ -386,7 +385,7 @@ def _build_symbol_tree_common(
     node: UniScopeNode, parent_node: Optional[SymbolTree] = None
 ) -> SymbolTree:
     root = SymbolTree(
-        node_name=f"SymTable::{node.nix_owner.__class__.__name__}({node.nix_name})",
+        node_name=f"SymTable::{node.__class__.__name__}({node.scope_name})",
         parent=parent_node,
     )
     symbols = SymbolTree(node_name="Symbols", parent=root)
@@ -435,12 +434,12 @@ def _build_symbol_tree_common(
             ]
 
     for k in node.kid_scope:
-        if k.nix_name == "builtins":
+        if k.scope_name == "builtins":
             continue
         _build_symbol_tree_common(k, children)
 
     for k2 in node.inherited_scope:
-        if k2.base_symbol_table.nix_name == "builtins":
+        if k2.base_symbol_table.scope_name == "builtins":
             continue
         _build_symbol_tree_common(k2.base_symbol_table, children)
     return root
@@ -525,7 +524,6 @@ def dotgen_symtab_tree(node: UniScopeNode) -> str:
         return f"[label={label}]"
 
     def gen_dot_graph(node: SymbolTree) -> None:
-        nonlocal dot_lines
         dot_lines.append(f"{gen_node_id(node)} {gen_node_parameters(node)};")
         for kid_node in node.kid:
             if kid_node:

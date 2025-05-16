@@ -1,24 +1,24 @@
-can foo;
+def foo;
 
 
 
-:can:foo{
+impl foo{
     print("foo");
 }
 
 
 obj out{
     has cnt :int;
-    can bar;
-    can baz;
+    def bar;
+    def baz;
 }
 
 
-:obj:out:can:bar{
+impl out.bar{
     print("bar");
 }
 
-:obj:out:can:baz{
+impl out.baz{
     print("baz");
 }
 

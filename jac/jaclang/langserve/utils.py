@@ -7,7 +7,7 @@ from functools import wraps
 from typing import Any, Awaitable, Callable, Coroutine, Optional, ParamSpec, TypeVar
 
 import jaclang.compiler.unitree as uni
-from jaclang.compiler.codeloc import CodeLocInfo
+from jaclang.compiler.codeinfo import CodeLocInfo
 from jaclang.compiler.constant import SymbolType
 from jaclang.compiler.passes.transform import Alert
 from jaclang.compiler.unitree import Symbol, UniScopeNode
@@ -74,10 +74,7 @@ def sym_tab_list(sym_tab: UniScopeNode, file_path: str) -> list[UniScopeNode]:
     """Iterate through symbol table."""
     sym_tabs = (
         [sym_tab]
-        if not (
-            isinstance(sym_tab.nix_owner, uni.Module)
-            and sym_tab.nix_owner.loc.mod_path != file_path
-        )
+        if not (isinstance(sym_tab, uni.Module) and sym_tab.loc.mod_path != file_path)
         else []
     )
     for i in sym_tab.kid_scope:
@@ -152,7 +149,7 @@ def get_symbols_for_outline(node: UniScopeNode) -> list[lspt.DocumentSymbol]:
         if (
             key in dir(builtins)
             or item in [owner_sym(tab) for tab in node.kid_scope]
-            or item.decl.loc.mod_path != node.nix_owner.loc.mod_path
+            or item.decl.loc.mod_path != node.loc.mod_path
         ):
             continue
         pos = create_range(item.decl.loc)
@@ -165,22 +162,18 @@ def get_symbols_for_outline(node: UniScopeNode) -> list[lspt.DocumentSymbol]:
         )
         symbols.append(symbol)
 
-    for sub_tab in [
-        i
-        for i in node.kid_scope
-        if i.nix_owner.loc.mod_path == node.nix_owner.loc.mod_path
-    ]:
+    for sub_tab in [i for i in node.kid_scope if i.loc.mod_path == node.loc.mod_path]:
         sub_symbols = get_symbols_for_outline(sub_tab)
         if isinstance(
-            sub_tab.nix_owner,
+            sub_tab,
             (uni.IfStmt, uni.ElseStmt, uni.WhileStmt, uni.IterForStmt, uni.InForStmt),
         ):
             symbols.extend(sub_symbols)
         else:
-            sub_pos = create_range(sub_tab.nix_owner.loc)
+            sub_pos = create_range(sub_tab.loc)
             symbol = lspt.DocumentSymbol(
-                name=sub_tab.nix_name,
-                kind=kind_map(sub_tab.nix_owner),
+                name=sub_tab.scope_name,
+                kind=kind_map(sub_tab),
                 range=sub_pos,
                 selection_range=sub_pos,
                 children=sub_symbols,
@@ -192,8 +185,8 @@ def get_symbols_for_outline(node: UniScopeNode) -> list[lspt.DocumentSymbol]:
 
 def owner_sym(table: UniScopeNode) -> Optional[Symbol]:
     """Get owner sym."""
-    if table.parent_scope and isinstance(table.nix_owner, uni.AstSymbolNode):
-        return table.parent_scope.lookup(table.nix_owner.sym_name)
+    if table.parent_scope and isinstance(table, uni.AstSymbolNode):
+        return table.parent_scope.lookup(table.sym_name)
     return None
 
 
@@ -215,16 +208,16 @@ def kind_map(sub_tab: uni.UniNode) -> lspt.SymbolKind:
     """Map the symbol node to an lspt.SymbolKind."""
     return (
         lspt.SymbolKind.Function
-        if isinstance(sub_tab, (uni.Ability, uni.AbilityDef))
+        if isinstance(sub_tab, (uni.Ability, uni.ImplDef))
         else (
             lspt.SymbolKind.Class
-            if isinstance(sub_tab, (uni.Architype, uni.ArchDef))
+            if isinstance(sub_tab, (uni.Architype, uni.ImplDef))
             else (
                 lspt.SymbolKind.Module
                 if isinstance(sub_tab, uni.Module)
                 else (
                     lspt.SymbolKind.Enum
-                    if isinstance(sub_tab, (uni.Enum, uni.EnumDef))
+                    if isinstance(sub_tab, (uni.Enum, uni.ImplDef))
                     else lspt.SymbolKind.Variable
                 )
             )
@@ -304,9 +297,11 @@ def collect_child_tabs(sym_tab: UniScopeNode) -> list[lspt.CompletionItem]:
     """Return all child tab's as completion items."""
     symbols: list[lspt.CompletionItem] = []
     for tab in sym_tab.kid_scope:
-        if tab.nix_name not in [i.label for i in symbols]:
+        if tab.scope_name not in [i.label for i in symbols]:
             symbols.append(
-                lspt.CompletionItem(label=tab.nix_name, kind=label_map(tab.get_type()))
+                lspt.CompletionItem(
+                    label=tab.scope_name, kind=label_map(tab.get_type())
+                )
             )
     return symbols
 

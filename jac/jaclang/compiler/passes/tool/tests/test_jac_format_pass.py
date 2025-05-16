@@ -2,8 +2,6 @@
 
 import ast as ast3
 import os
-import shutil
-from contextlib import suppress
 from difflib import unified_diff
 
 import jaclang.compiler.unitree as uni
@@ -40,7 +38,7 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
 
             if diff:
                 print(f"Differences found in comparison:\n{diff}")
-                raise AssertionError("Files differ after formatting.")
+                raise AssertionError("Files differ after formattinclearg.")
 
         except FileNotFoundError:
             print(f"File not found: {original_file} or {formatted_file}")
@@ -48,20 +46,6 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         except Exception as e:
             print(f"Error comparing files: {e}")
             raise
-
-    def setUp(self) -> None:
-        """Set up test."""
-        root_dir = self.fixture_abs_path("")
-        directories_to_clean = [
-            os.path.join(root_dir, "myca_formatted_code", "__jac_gen__"),
-            os.path.join(root_dir, "genai", "__jac_gen__"),
-        ]
-
-        for directory in directories_to_clean:
-            with suppress(Exception):
-                if os.path.exists(directory):
-                    shutil.rmtree(directory)
-        return super().setUp()
 
     def test_jac_file_compr(self) -> None:
         """Tests if the file matches a particular format."""
@@ -79,17 +63,6 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
     def test_compare_myca_fixtures(self) -> None:
         """Tests if files in the myca fixtures directory do not change after being formatted."""
         fixtures_dir = os.path.join(self.fixture_abs_path(""), "myca_formatted_code")
-        fixture_files = os.listdir(fixtures_dir)
-        for file_name in fixture_files:
-            if file_name == "__jac_gen__":
-                continue
-            with self.subTest(file=file_name):
-                file_path = os.path.join(fixtures_dir, file_name)
-                self.compare_files(file_path)
-
-    def test_compare_genai_fixtures(self) -> None:
-        """Tests if files in the genai fixtures directory do not change after being formatted."""
-        fixtures_dir = os.path.join(self.fixture_abs_path(""), "genai")
         fixture_files = os.listdir(fixtures_dir)
         for file_name in fixture_files:
             if file_name == "__jac_gen__":
@@ -126,17 +99,19 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             self.assertEqual(num_test, 3)
             return
         try:
+            before = ast3.dump(code_gen_pure.gen.py_ast[0], indent=2)
+            after = ast3.dump(code_gen_jac.gen.py_ast[0], indent=2)
             self.assertTrue(
                 isinstance(code_gen_pure, uni.Module)
                 and isinstance(code_gen_jac, uni.Module),
                 "Parsed objects are not modules.",
             )
-            before = ast3.dump(code_gen_pure.gen.py_ast[0], indent=2)
-            after = ast3.dump(code_gen_jac.gen.py_ast[0], indent=2)
+
             diff = "\n".join(unified_diff(before.splitlines(), after.splitlines()))
             self.assertFalse(diff, "AST structures differ after formatting.")
 
         except Exception as e:
+            print(f"Error in {filename}: {e}")
             print(add_line_numbers(code_gen_pure.source.code))
             print("\n+++++++++++++++++++++++++++++++++++++++\n")
             print(add_line_numbers(code_gen_format))

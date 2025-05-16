@@ -1,7 +1,21 @@
-"""Jac Blue pass for Jaseci Ast.
+"""Python AST Generation Pass for the Jac compiler.
 
-At the end of this pass a meta['py_code'] is present with pure python code
-in each node. Module nodes contain the entire module code.
+This pass transforms the Jac AST into equivalent Python AST by:
+
+1. Traversing the Jac AST and generating corresponding Python AST nodes
+2. Handling all Jac language constructs and translating them to Python equivalents:
+   - Classes, functions, and methods
+   - Control flow statements (if/else, loops, try/except)
+   - Data structures (lists, dictionaries, sets)
+   - Special Jac features (walkers, abilities, architypes)
+   - Data spatial operations (node/edge connections)
+
+3. Managing imports and dependencies between modules
+4. Preserving source location information for error reporting
+5. Generating appropriate Python code for Jac-specific constructs
+
+The output of this pass is a complete Python AST representation that can be
+compiled to Python bytecode or serialized to Python source code.
 """
 
 import ast as ast3
@@ -22,6 +36,8 @@ class PyastGenPass(UniPass):
     """Jac blue transpilation to python pass."""
 
     def before_pass(self) -> None:
+        for i in self.ir_in.impl_mod + self.ir_in.test_mod:
+            PyastGenPass(ir_in=i, prog=self.prog)
         self.debuginfo: dict[str, list[str]] = {"jac_mods": []}
         self.already_added: list[str] = []
         self.preamble: list[ast3.AST] = [
@@ -57,7 +73,7 @@ class PyastGenPass(UniPass):
                         names=[
                             self.sync(
                                 ast3.alias(
-                                    name="JacMachine",
+                                    name="JacMachineInterface",
                                     asname=settings.pyout_jaclib_alias,
                                 )
                             ),
@@ -136,6 +152,24 @@ class PyastGenPass(UniPass):
         )
         self.already_added.append(self.needs_enum.__name__)
 
+    def needs_future(self) -> None:
+        """Check if enum is needed."""
+        if self.needs_future.__name__ in self.already_added:
+            return
+        self.preamble.append(
+            self.sync(
+                ast3.ImportFrom(
+                    module="concurrent.futures",
+                    names=[
+                        self.sync(ast3.alias(name="Future", asname=None)),
+                    ],
+                    level=0,
+                ),
+                jac_node=self.ir_out,
+            )
+        )
+        self.already_added.append(self.needs_future.__name__)
+
     def flatten(self, body: list[T | list[T] | None]) -> list[T]:
         new_body = []
         for i in body:
@@ -210,10 +244,10 @@ class PyastGenPass(UniPass):
                     [
                         x.gen.py_ast
                         for x in valid_stmts
-                        if not isinstance(x, uni.AstImplOnlyNode)
+                        if not isinstance(x, uni.ImplDef)
                     ]
                 )
-                if node and isinstance(node.gen.py_ast, list)
+                if node
                 else []
             )
         )
@@ -257,7 +291,7 @@ class PyastGenPass(UniPass):
         node.gen.py_ast = self.flatten([i.gen.py_ast for i in node.items])
 
     def exit_module(self, node: uni.Module) -> None:
-        clean_body = [i for i in node.body if not isinstance(i, uni.AstImplOnlyNode)]
+        clean_body = [i for i in node.body if not isinstance(i, uni.ImplDef)]
         pre_body: list[uni.UniNode] = []
         for pbody in node.impl_mod:
             pre_body = [*pre_body, *pbody.body]
@@ -371,9 +405,7 @@ class PyastGenPass(UniPass):
                                 ),
                                 ops=[self.sync(ast3.Eq())],
                                 comparators=[
-                                    self.sync(
-                                        ast3.Constant(value=node.name.tag.sym_name)
-                                    )
+                                    self.sync(ast3.Constant(value=node.name.sym_name))
                                 ],
                             )
                         ),
@@ -758,14 +790,33 @@ class PyastGenPass(UniPass):
         ]
 
     def enter_architype(self, node: uni.Architype) -> None:
-        if isinstance(node.body, uni.AstImplOnlyNode):
+        if isinstance(node.body, uni.ImplDef):
             self.traverse(node.body)
 
     def exit_architype(self, node: uni.Architype) -> None:
         body = self.resolve_stmt_block(
-            node.body.body if isinstance(node.body, uni.ArchDef) else node.body,
+            (
+                node.body.body
+                if isinstance(node.body, uni.ImplDef)
+                and isinstance(node.body.body, uni.SubNodeList)
+                else node.body if isinstance(node.body, uni.SubNodeList) else None
+            ),
             doc=node.doc,
         )
+
+        if node.is_async:
+            body.insert(
+                0,
+                self.sync(
+                    ast3.Assign(
+                        targets=[
+                            self.sync(ast3.Name(id="__jac_async__", ctx=ast3.Store()))
+                        ],
+                        value=self.sync(ast3.Constant(value=node.is_async)),
+                    )
+                ),
+            )
+
         decorators = (
             node.decorators.gen.py_ast
             if isinstance(node.decorators, uni.SubNodeList)
@@ -775,6 +826,7 @@ class PyastGenPass(UniPass):
         base_classes = node.base_classes.gen.py_ast if node.base_classes else []
         if node.arch_type.name != Tok.KW_CLASS:
             base_classes.append(self.jaclib_obj(node.arch_type.value.capitalize()))
+
         node.gen.py_ast = [
             self.sync(
                 ast3.ClassDef(
@@ -788,17 +840,19 @@ class PyastGenPass(UniPass):
             )
         ]
 
-    def exit_arch_def(self, node: uni.ArchDef) -> None:
-        pass
-
     def enter_enum(self, node: uni.Enum) -> None:
-        if isinstance(node.body, uni.AstImplOnlyNode):
+        if isinstance(node.body, uni.ImplDef):
             self.traverse(node.body)
 
     def exit_enum(self, node: uni.Enum) -> None:
         self.needs_enum()
         body = self.resolve_stmt_block(
-            node.body.body if isinstance(node.body, uni.EnumDef) else node.body,
+            (
+                node.body.body
+                if isinstance(node.body, uni.ImplDef)
+                and isinstance(node.body.body, uni.SubNodeList)
+                else node.body if isinstance(node.body, uni.SubNodeList) else None
+            ),
             doc=node.doc,
         )
         decorators = (
@@ -824,25 +878,24 @@ class PyastGenPass(UniPass):
             )
         ]
 
-    def exit_enum_def(self, node: uni.EnumDef) -> None:
-        pass
-
     def enter_ability(self, node: uni.Ability) -> None:
-        if isinstance(node.body, uni.AstImplOnlyNode):
+        if isinstance(node.body, uni.ImplDef):
             self.traverse(node.body)
 
     def gen_llm_body(self, node: uni.Ability) -> list[ast3.AST]:
         """Generate the by LLM body."""
         # to Avoid circular import
-        from jaclang.runtimelib.machine import JacMachine
+        from jaclang.runtimelib.machine import JacMachineInterface
 
-        return JacMachine.gen_llm_body(self, node)
+        return JacMachineInterface.gen_llm_body(self, node)
 
     def exit_ability(self, node: uni.Ability) -> None:
         func_type = ast3.AsyncFunctionDef if node.is_async else ast3.FunctionDef
         body = (
             self.gen_llm_body(node)
             if isinstance(node.body, uni.FuncCall)
+            or isinstance(node.body, uni.ImplDef)
+            and isinstance(node.body.body, uni.FuncCall)
             else (
                 [
                     self.sync(
@@ -858,7 +911,8 @@ class PyastGenPass(UniPass):
                     else self.resolve_stmt_block(
                         (
                             node.body.body
-                            if isinstance(node.body, uni.AbilityDef)
+                            if isinstance(node.body, uni.ImplDef)
+                            and isinstance(node.body.body, uni.SubNodeList)
                             else node.body
                         ),
                         doc=node.doc,
@@ -879,7 +933,7 @@ class PyastGenPass(UniPass):
                 )
             )
 
-        if isinstance(node.body, uni.AstImplOnlyNode):
+        if isinstance(node.body, uni.ImplDef):
             decorator_list.append(
                 self.sync(
                     ast3.Call(
@@ -912,14 +966,20 @@ class PyastGenPass(UniPass):
                     args=(
                         cast(ast3.arguments, node.signature.gen.py_ast[0])
                         if node.signature
-                        else ast3.arguments(
-                            posonlyargs=[],
-                            args=[],
-                            vararg=None,
-                            kwonlyargs=[],
-                            kw_defaults=[],
-                            kwarg=None,
-                            defaults=[],
+                        else self.sync(
+                            ast3.arguments(
+                                posonlyargs=[],
+                                args=(
+                                    [self.sync(ast3.arg(arg="self", annotation=None))]
+                                    if node.is_method
+                                    else []
+                                ),
+                                vararg=None,
+                                kwonlyargs=[],
+                                kw_defaults=[],
+                                kwarg=None,
+                                defaults=[],
+                            )
                         )
                     ),
                     body=[cast(ast3.stmt, i) for i in body],
@@ -934,13 +994,16 @@ class PyastGenPass(UniPass):
             )
         ]
 
-    def exit_ability_def(self, node: uni.AbilityDef) -> None:
+    def exit_impl_def(self, node: uni.ImplDef) -> None:
         pass
 
     def exit_func_signature(self, node: uni.FuncSignature) -> None:
         params = (
             [self.sync(ast3.arg(arg="self", annotation=None))]
-            if node.is_method and not node.is_static and not node.is_in_py_class
+            if (abl := node.find_parent_of_type(uni.Ability))
+            and abl.is_method
+            and not node.is_static
+            and not node.is_in_py_class
             else []
         )
         vararg = None
@@ -994,7 +1057,8 @@ class PyastGenPass(UniPass):
                     posonlyargs=[],
                     args=(
                         [self.sync(ast3.arg(arg="self", annotation=None)), here]
-                        if node.is_method
+                        if (abl := node.find_parent_of_type(uni.Ability))
+                        and abl.is_method
                         else [here]
                     ),
                     kwonlyargs=[],
@@ -1006,47 +1070,23 @@ class PyastGenPass(UniPass):
             )
         ]
 
-    def exit_arch_ref(self, node: uni.ArchRef) -> None:
-        if node.arch_type.name == Tok.TYPE_OP:
-            if (
-                isinstance(node.arch_name, uni.SpecialVarRef)
-                and node.arch_name.orig.name == Tok.KW_ROOT
-            ):
-                node.gen.py_ast = [self.jaclib_obj("Root")]
-            else:
-                self.needs_typing()
-                node.gen.py_ast = [
-                    self.sync(
-                        ast3.Attribute(
-                            value=self.sync(ast3.Name(id="typing", ctx=ast3.Load())),
-                            attr=node.arch_name.sym_name,
-                            ctx=ast3.Load(),
-                        )
-                    )
-                ]
+    def exit_type_ref(self, node: uni.TypeRef) -> None:
+        if (
+            isinstance(node.target, uni.SpecialVarRef)
+            and node.target.orig.name == Tok.KW_ROOT
+        ):
+            node.gen.py_ast = [self.jaclib_obj("Root")]
         else:
-            node.gen.py_ast = node.arch_name.gen.py_ast
-
-    def exit_arch_ref_chain(self, node: uni.ArchRefChain) -> None:
-
-        def make_attr_chain(arch: list[uni.ArchRef]) -> list[ast3.AST]:
-            """Make attr chain."""
-            if len(arch) == 0:
-                return []
-            if len(arch) == 1 and isinstance(arch[0].gen.py_ast, ast3.AST):
-                return arch[0].gen.py_ast
-            cur = arch[-1]
-            attr = self.sync(
-                ast3.Attribute(
-                    value=cast(ast3.expr, make_attr_chain(arch[:-1])),
-                    attr=cur.arch_name.sym_name,
-                    ctx=ast3.Load(),
-                ),
-                jac_node=cur,
-            )
-            return [attr]
-
-        node.gen.py_ast = make_attr_chain(node.archs)
+            self.needs_typing()
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Attribute(
+                        value=self.sync(ast3.Name(id="typing", ctx=ast3.Load())),
+                        attr=node.target.sym_name,
+                        ctx=ast3.Load(),
+                    )
+                )
+            ]
 
     def exit_param_var(self, node: uni.ParamVar) -> None:
         node.gen.py_ast = [
@@ -1236,6 +1276,50 @@ class PyastGenPass(UniPass):
                 )
             )
         ]
+
+    def exit_concurrent_expr(self, node: uni.ConcurrentExpr) -> None:
+        func = ""
+        if node.tok:
+            match node.tok.value:
+                case "flow":
+                    func = "thread_run"
+                case "wait":
+                    func = "thread_wait"
+        if func:
+            lambda_ex = [
+                self.sync(
+                    ast3.Lambda(
+                        args=(
+                            self.sync(
+                                ast3.arguments(
+                                    posonlyargs=[],
+                                    args=[],
+                                    kwonlyargs=[],
+                                    kw_defaults=[],
+                                    defaults=[],
+                                )
+                            )
+                        ),
+                        body=cast(ast3.expr, node.target.gen.py_ast[0]),
+                    )
+                )
+            ]
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Call(
+                        func=self.jaclib_obj(func),
+                        args=cast(
+                            list[ast3.expr],
+                            (
+                                lambda_ex
+                                if func == "thread_run"
+                                else [node.target.gen.py_ast[0]]  # type: ignore
+                            ),
+                        ),
+                        keywords=[],
+                    )
+                )
+            ]
 
     def exit_try_stmt(self, node: uni.TryStmt) -> None:
         node.gen.py_ast = [
@@ -1728,12 +1812,6 @@ class PyastGenPass(UniPass):
             )
         ]
 
-    def exit_revisit_stmt(self, node: uni.RevisitStmt) -> None:
-        self.log_warning("Revisit not used in Jac", node)
-        node.gen.py_ast = [
-            self.sync(ast3.Expr(value=self.sync(ast3.Constant(value=None))))
-        ]
-
     def exit_disengage_stmt(self, node: uni.DisengageStmt) -> None:
         loc = self.sync(
             ast3.Name(id="self", ctx=ast3.Load())
@@ -1756,9 +1834,25 @@ class PyastGenPass(UniPass):
         ]
 
     def exit_await_expr(self, node: uni.AwaitExpr) -> None:
-        node.gen.py_ast = [
-            self.sync(ast3.Await(value=cast(ast3.expr, node.target.gen.py_ast[0])))
-        ]
+        parent_node = node.parent
+        while parent_node and (parent_node := parent_node.parent):
+            if hasattr(parent_node, "is_async") and parent_node.is_async:
+                node.gen.py_ast = [
+                    self.sync(
+                        ast3.Await(value=cast(ast3.expr, node.target.gen.py_ast[0]))
+                    )
+                ]
+                break
+        else:
+            node.gen.py_ast = [
+                self.sync(
+                    ast3.Call(
+                        func=self.jaclib_obj("await_obj"),
+                        args=[cast(ast3.expr, node.target.gen.py_ast[0])],
+                        keywords=[],
+                    )
+                )
+            ]
 
     def exit_global_stmt(self, node: uni.GlobalStmt) -> None:
         py_nodes = []
@@ -2495,9 +2589,9 @@ class PyastGenPass(UniPass):
     ) -> ast3.Call:
         """Return the LLM Call, e.g. _Jac.with_llm()."""
         # to avoid circular import
-        from jaclang.runtimelib.machine import JacMachine
+        from jaclang.runtimelib.machine import JacMachineInterface
 
-        return JacMachine.by_llm_call(
+        return JacMachineInterface.by_llm_call(
             self,
             model,
             model_params,
@@ -2512,9 +2606,9 @@ class PyastGenPass(UniPass):
     def get_by_llm_call_args(self, node: uni.FuncCall) -> dict:
         """Get the arguments for the by_llm_call."""
         # to avoid circular import
-        from jaclang.runtimelib.machine import JacMachine
+        from jaclang.runtimelib.machine import JacMachineInterface
 
-        return JacMachine.get_by_llm_call_args(self, node)
+        return JacMachineInterface.get_by_llm_call_args(self, node)
 
     def exit_func_call(self, node: uni.FuncCall) -> None:
         func = node.target.gen.py_ast[0]

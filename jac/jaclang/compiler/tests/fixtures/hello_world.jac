@@ -1,5 +1,5 @@
 """ Basic Hello World function """
 
-can hello() {
+def hello() {
     return "Hello World!";
 }

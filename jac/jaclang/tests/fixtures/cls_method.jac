@@ -1,12 +1,12 @@
 """Test file for class method."""
 
 class MyClass {
-    can simple_method() -> str {
+    def simple_method() -> str {
         return "Hello, World1!";
     }
 
     @classmethod
-    can my_method(cls: Type[MyClass]) -> str {
+    def my_method(cls: Type[MyClass]) -> str {
         x = cls.__name__;
         print(x);
         return "Hello, World2!";
@@ -20,17 +20,17 @@ with entry {
 }
 
 class MyClass2 {
-    can Ability_1(self: MyClass2) -> str;
+    def Ability_1(self: MyClass2) -> str;
     @classmethod
-    can Ability_2(cls: Type[MyClass2]) -> str;
+    def Ability_2(cls: Type[MyClass2]) -> str;
 }
 
-:obj:MyClass2:can:Ability_1
+impl MyClass2.Ability_1
 (self: MyClass2) -> str {
     return "Hello, World!";
 }
 
-:obj:MyClass2:can:Ability_2 {
+impl MyClass2.Ability_2 {
     return "Hello, World22!";
 }
 

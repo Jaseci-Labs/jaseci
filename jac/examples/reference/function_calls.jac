@@ -1,4 +1,4 @@
-can foo(x: int, y: int, z: int) {
+def foo(x: int, y: int, z: int) {
     return (x * y, y * z);
 }
 

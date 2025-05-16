@@ -1,9 +1,20 @@
-"""Connect Decls and Defs in AST.
+"""Declaration-Implementation Matching Pass for the Jac compiler.
 
-This pass creates links in the ast between Decls of Architypes and Abilities
-that are separate from their implementations (Defs). This pass creates a link
-in the ast between the Decls and Defs of Architypes and Abilities through the
-body field.
+This pass connects declarations (Decls) of Architypes and Abilities with their separate
+implementations (Defs) in the AST. It:
+
+1. Establishes links between declarations in the main module and their implementations
+   in separate .impl.jac files
+2. Validates parameter matching between ability declarations and their implementations
+3. Ensures proper inheritance of symbol tables between declarations and implementations
+4. Performs validation checks on architypes, including:
+   - Proper ordering of default and non-default attributes
+   - Presence of required postinit methods for deferred attributes
+   - Abstract ability implementation validation
+
+This pass is essential for Jac's separation of interface and implementation, allowing
+developers to define architype and ability interfaces in one file while implementing
+their behavior in separate files.
 """
 
 import jaclang.compiler.unitree as uni
@@ -47,11 +58,11 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
         """
         # Process all symbols in the source symbol table
         for sym in source_sym_tab.names_in_scope.values():
-            if not isinstance(sym.decl.name_of, uni.AstImplOnlyNode):
+            if not isinstance(sym.decl.name_of, uni.ImplDef):
                 continue
 
             # Extract architype references
-            arch_refs = [x[3:] for x in sym.sym_name.split(".")]
+            arch_refs = sym.sym_name.split(".")[1:]  # Remove the impl. prefix
             name_of_links: list[uni.NameAtom] = []  # to link archref names to decls
 
             # Look up the architype in the target symbol table
@@ -89,6 +100,10 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
                     break
 
             if not decl_node:
+                # self.log_error(
+                #     f"Implementation for '{sym.sym_name}' cannot be matched to any declaration.",
+                #     sym.decl.name_of,
+                # )
                 continue
             elif isinstance(decl_node, uni.Ability) and decl_node.is_abstract:
                 self.log_warning(
@@ -109,7 +124,7 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
 
             valid_decl.body = sym.decl.name_of
             sym.decl.name_of.decl_link = valid_decl
-            for idx, a in enumerate(sym.decl.name_of.target.archs):
+            for idx, a in enumerate(sym.decl.name_of.target.items):
                 if idx < len(name_of_links) and name_of_links[idx]:
                     a.name_spec.name_of = name_of_links[idx].name_of
                     a.name_spec.sym = name_of_links[idx].sym
@@ -126,7 +141,7 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
             else:
                 # Otherwise, try to find corresponding scopes by name
                 for target_scope in target_sym_tab.kid_scope:
-                    if source_scope.nix_name == target_scope.nix_name:
+                    if source_scope.scope_name == target_scope.scope_name:
                         self.connect_impls(source_scope, target_scope)
                         break
 
@@ -134,13 +149,13 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
         """Validate if the parameters match."""
         if (
             isinstance(valid_decl, uni.Ability)
-            and isinstance(sym.decl.name_of, uni.AbilityDef)
+            and isinstance(sym.decl.name_of, uni.ImplDef)
             and isinstance(valid_decl.signature, uni.FuncSignature)
-            and isinstance(sym.decl.name_of.signature, uni.FuncSignature)
+            and isinstance(sym.decl.name_of.spec, uni.FuncSignature)
         ):
 
             params_decl = valid_decl.signature.params
-            params_defn = sym.decl.name_of.signature.params
+            params_defn = sym.decl.name_of.spec.params
 
             if params_decl and params_defn:
                 # Check if the parameter count is matched.

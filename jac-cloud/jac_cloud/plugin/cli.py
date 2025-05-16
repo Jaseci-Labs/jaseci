@@ -6,15 +6,16 @@ from os.path import split
 from pickle import load
 from typing import Any
 
+from jaclang import JacMachine, JacMachineInterface as Jac
 from jaclang.cli.cmdreg import cmd_registry
 from jaclang.runtimelib.machine import hookimpl
-from jaclang.runtimelib.machinestate import JacMachineState
 
 from pymongo.errors import ConnectionFailure, OperationFailure
 
 from ..core.architype import BulkWrite, NodeAnchor
 from ..core.context import PUBLIC_ROOT_ID, SUPER_ROOT_ID
 from ..jaseci.datasources import Collection
+from ..jaseci.main import FastAPI
 from ..jaseci.models import User as BaseUser
 from ..jaseci.utils import logger
 
@@ -34,16 +35,13 @@ class JacCmd:
             port: int = 8000,
             interp_mode: bool = False,
         ) -> None:
-            from jaclang import JacMachine as Jac
-            from jac_cloud import FastAPI
-
             """Serve the jac application."""
             base, mod = split(filename)
             base = base if base else "./"
             mod = mod[:-4]
 
             FastAPI.enable()
-            mach = JacMachineState(base, interp_mode=interp_mode)
+            mach = JacMachine(base, interp_mode=interp_mode)
 
             if filename.endswith(".jac"):
                 Jac.jac_import(
@@ -62,17 +60,17 @@ class JacCmd:
                         override_name="__main__",
                     )
             else:
-                mach.exec_ctx.close()
+                mach.close()
                 raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
-            FastAPI.start(host=host, port=port)
-            mach.exec_ctx.close()
+            FastAPI.start(mach=mach, host=host, port=port)
+            mach.close()
 
         @cmd_registry.register
         def create_system_admin(
             filename: str, email: str = "", password: str = ""
         ) -> str:
-            from jaclang import JacMachine as Jac
+            from jaclang import JacMachineInterface as Jac
 
             if not getenv("DATABASE_HOST"):
                 raise NotImplementedError(
@@ -82,7 +80,7 @@ class JacCmd:
             base, mod = split(filename)
             base = base if base else "./"
             mod = mod[:-4]
-            mach = JacMachineState(base)
+            mach = JacMachine(base)
 
             if filename.endswith(".jac"):
                 Jac.jac_import(

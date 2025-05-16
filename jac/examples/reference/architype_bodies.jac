@@ -4,11 +4,11 @@ obj Car {
         year: int;
     static has wheels: int = 4;
 
-    can display_car_info {
+    def display_car_info {
         print(f"Car Info: {self.year} {self.make} {self.model}");
     }
 
-    static can get_wheels -> int {
+    static def get_wheels -> int {
         return Car.wheels;
     }
 }

@@ -1,4 +1,4 @@
-can factorial(n: int) -> str {
+def factorial(n: int) -> str {
     if n == 0 {
         return 1;
     } else {

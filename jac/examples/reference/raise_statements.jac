@@ -1,4 +1,4 @@
-can foo(value: int) {
+def foo(value: int) {
     if value < 0 {
         raise ValueError("Value must be non-negative");
     }

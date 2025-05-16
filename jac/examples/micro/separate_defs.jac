@@ -3,14 +3,14 @@
 obj MyObj {
     has : protect a: int;
 
-    can : priv init(a: int) -> None;
-    can : pub set_a(val: int) -> None;
+    def : priv init(a: int) -> None;
+    def : pub set_a(val: int) -> None;
 }
 
-:o:MyObj:c:init {
+impl MyObj.init {
     here.a = a;
 }
 
-:o:MyObj:c:set_a {
+impl MyObj.set_a {
     here.a = val;
 }

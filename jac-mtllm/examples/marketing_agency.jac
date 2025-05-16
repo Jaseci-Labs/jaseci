@@ -1,10 +1,10 @@
-import:py from mtllm.llms { OpenAI }
-import:py from mtllm.tools.wikipedia_utils { wikipedia_summary }
-import:py from mtllm.tools.serper { search, scrape }
+import from mtllm.llms { OpenAI }
+import from mtllm.tools.wikipedia_utils { wikipedia_summary }
+import from mtllm.tools.serper { search, scrape }
 
 glob llm = OpenAI(verbose=True, model_name="gpt-4o-mini");
 
-can save_output_as_md(output: str, filename: str) -> None {
+def save_output_as_md(output: str, filename: str) -> None {
     with open(filename, 'w') as f {
         f.write(output);
     }

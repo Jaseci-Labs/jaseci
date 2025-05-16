@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: pluggy
 Version: 1.5.0
 Summary: plugin and hook calling mechanisms for python
@@ -31,11 +31,12 @@ Requires-Python: >=3.8
 Description-Content-Type: text/x-rst
 License-File: LICENSE
 Provides-Extra: dev
-Requires-Dist: pre-commit ; extra == 'dev'
-Requires-Dist: tox ; extra == 'dev'
+Requires-Dist: pre-commit; extra == "dev"
+Requires-Dist: tox; extra == "dev"
 Provides-Extra: testing
-Requires-Dist: pytest ; extra == 'testing'
-Requires-Dist: pytest-benchmark ; extra == 'testing'
+Requires-Dist: pytest; extra == "testing"
+Requires-Dist: pytest-benchmark; extra == "testing"
+Dynamic: license-file
 
 ====================================================
 pluggy - A minimalist production ready plugin system

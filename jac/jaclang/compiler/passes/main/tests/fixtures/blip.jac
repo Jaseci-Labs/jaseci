@@ -1,2 +1,2 @@
-can apple {
+def apple {
 }

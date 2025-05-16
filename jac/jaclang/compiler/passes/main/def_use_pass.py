@@ -1,12 +1,25 @@
-"""Ast build pass for Jaseci Ast.
+"""Definition-Use Analysis Pass for the Jac compiler.
 
-This pass adds a more complete set of symbols from the AST to the
-symbol table. This includes assignments, parameters, arch ref chains,
-and more. This pass also links the symbols in the AST to their corresponding
-sybmols in the symbol table (including uses).
+This pass performs comprehensive symbol resolution by:
+1. Populating symbol tables with additional symbols from various AST constructs:
+   - Variable assignments and declarations
+   - Function/ability parameters
+   - Architype reference chains
+   - Loop variables and comprehension targets
+   - With-statement variables
+
+2. Establishing bidirectional links between:
+   - Symbol definitions in the symbol table
+   - Symbol uses throughout the AST
+
+3. Handling special cases:
+   - Inheriting symbol tables from base classes for architypes
+   - Setting appropriate context for symbols in different operations (e.g., delete statements)
+   - Marking walker-specific statements (visit, ignore, disengage) when in walker context
+
+This pass is crucial for type checking, access control validation, and code generation as it
+creates the complete symbol resolution map for the program.
 """
-
-import ast as ast3
 
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Tokens as Tok
@@ -31,17 +44,14 @@ class DefUsePass(UniPass):
         if node.arch_type.name == Tok.KW_WALKER:
             inform_from_walker(node)
             for i in self.get_all_sub_nodes(node, uni.Ability):
-                if isinstance(i.body, uni.AbilityDef):
+                if isinstance(i.body, uni.ImplDef):
                     inform_from_walker(i.body)
 
     def enter_enum(self, node: uni.Enum) -> None:
         node.sym_tab.inherit_baseclasses_sym(node)
 
-    def enter_arch_ref(self, node: uni.ArchRef) -> None:
+    def enter_type_ref(self, node: uni.TypeRef) -> None:
         node.sym_tab.use_lookup(node)
-
-    def enter_arch_ref_chain(self, node: uni.ArchRefChain) -> None:
-        node.sym_tab.chain_use_lookup(node.archs)
 
     def enter_param_var(self, node: uni.ParamVar) -> None:
         node.sym_tab.def_insert(node)
@@ -70,6 +80,7 @@ class DefUsePass(UniPass):
     def enter_inner_compr(self, node: uni.InnerCompr) -> None:
         if isinstance(node.target, uni.AtomTrailer):
             node.target.sym_tab.chain_def_insert(node.target.as_attr_list)
+
         elif isinstance(node.target, uni.AstSymbolNode):
             node.target.sym_tab.def_insert(node.target)
         else:
@@ -108,15 +119,6 @@ class DefUsePass(UniPass):
             node.target.sym_tab.def_insert(node.target)
         else:
             self.log_error("For loop assignment target not valid")
-
-    def enter_delete_stmt(self, node: uni.DeleteStmt) -> None:
-        for i in node.py_ast_targets:
-            if isinstance(i, uni.AtomTrailer):
-                i.as_attr_list[-1].name_spec.py_ctx_func = ast3.Del
-            elif isinstance(i, uni.AstSymbolNode):
-                i.name_spec.py_ctx_func = ast3.Del
-            else:
-                self.log_error("Delete target not valid")
 
     def enter_expr_as_item(self, node: uni.ExprAsItem) -> None:
         if node.alias:

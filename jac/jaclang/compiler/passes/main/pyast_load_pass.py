@@ -1,4 +1,16 @@
-"""Lark parser for Jac Lang."""
+"""Python AST to Jac AST Conversion Pass for the Jac compiler.
+
+This pass transforms Python AST nodes into equivalent Jac AST nodes by:
+
+1. Converting Python modules, classes, functions, and expressions to their Jac equivalents
+2. Preserving source location information and symbol relationships
+3. Handling Python-specific constructs and adapting them to Jac's object model
+4. Supporting both standard Python modules and type stub (.pyi) files
+5. Creating appropriate symbol tables and scopes for the converted nodes
+
+This pass is crucial for Python interoperability, allowing Python code to be imported
+and used within Jac programs while maintaining type information and semantic relationships.
+"""
 
 from __future__ import annotations
 
@@ -33,26 +45,12 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         self.cur_node = node
         return node
 
-    def pp(self, node: py_ast.AST) -> None:
-        """Print python node."""
-        # print(
-        #     f"{node.__class__.__name__} - {[(k, type(v)) for k, v in vars(node).items()]}"
-        # )
-
     def convert(self, node: py_ast.AST) -> uni.UniNode:
         """Get python node type."""
-        # print(
-        #     f"working on {type(node).__name__} line {node.lineno if hasattr(node, 'lineno') else 0}"
-        # )
         if hasattr(self, f"proc_{pascal_to_snake(type(node).__name__)}"):
             ret = getattr(self, f"proc_{pascal_to_snake(type(node).__name__)}")(node)
         else:
             raise self.ice(f"Unknown node type {type(node).__name__}")
-        # print(f"finshed {type(node).__name__} ---------------------")
-        # print("normalizing", ret.__class__.__name__)
-        # ic("normalizing", ret.__class__.__name__)
-        # print(ret.unparse())
-        # ret.unparse()
         return ret
 
     def transform(self, ir_in: uni.PythonModuleAst) -> uni.Module:
@@ -131,7 +129,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             terminals=[],
             kid=valid,
         )
-        ret.py_info.is_raised_from_py = True
+        ret.is_raised_from_py = True
         return self.nu(ret)
 
     def proc_function_def(
@@ -175,9 +173,9 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             and isinstance(valid[0].expr, uni.String)
         ):
             self.convert_to_doc(valid[0].expr)
-            doc = valid[0]
+            doc = valid[0].expr
             valid_body = uni.SubNodeList[uni.CodeBlockStmt](
-                items=[doc] + valid[1:],
+                items=valid[1:],
                 delim=Tok.WS,
                 kid=valid[1:] + [doc],
                 left_enc=self.operator(Tok.LBRACE, "{"),
@@ -229,7 +227,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             signature=sig,
             body=valid_body,
             decorators=valid_decorators,
-            doc=None,
+            doc=doc,
             kid=kid,
         )
         return ret
@@ -362,71 +360,6 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             if decorators
             else None
         )
-        if (
-            base_classes
-            and isinstance(base_classes[0], uni.Name)
-            and base_classes[0].value == "Enum"
-        ):
-            if len(base_classes) > 1:
-                raise ValueError(
-                    "Python's Enum class cannot be used with multiple inheritance."
-                )
-            arch_type.name = Tok.KW_ENUM
-            arch_type.value = "enum"
-            valid_enum_body: list[uni.EnumBlockStmt] = []
-            for class_body_stmt in node.body:
-                converted_stmt = self.convert(class_body_stmt)
-                if isinstance(converted_stmt, uni.EnumBlockStmt):
-                    if isinstance(converted_stmt, uni.Assignment):
-                        converted_stmt.is_enum_stmt = True
-                    valid_enum_body.append(converted_stmt)
-                else:
-                    if isinstance(converted_stmt, uni.ExprStmt) and isinstance(
-                        converted_stmt.expr, uni.String
-                    ):
-                        continue
-                    pintok = uni.Token(
-                        orig_src=self.orig_src,
-                        name=Tok.PYNLINE,
-                        value=py_ast.unparse(class_body_stmt),
-                        line=node.lineno,
-                        end_line=node.end_lineno if node.end_lineno else node.lineno,
-                        col_start=node.col_offset,
-                        col_end=node.col_offset + len(py_ast.unparse(class_body_stmt)),
-                        pos_start=0,
-                        pos_end=0,
-                    )
-                    valid_enum_body.append(uni.PyInlineCode(code=pintok, kid=[pintok]))
-
-            valid_enum_body2: list[uni.EnumBlockStmt] = [
-                i for i in valid_enum_body if isinstance(i, uni.EnumBlockStmt)
-            ]
-            enum_body = (
-                uni.SubNodeList[uni.EnumBlockStmt](
-                    items=valid_enum_body2, delim=Tok.COMMA, kid=valid_enum_body2
-                )
-                if valid_enum_body2
-                else None
-            )
-            if doc:
-                doc.line_no = name.line_no
-            return uni.Enum(
-                name=name,
-                access=None,
-                base_classes=None,
-                body=enum_body,
-                kid=(
-                    [doc, name, enum_body]
-                    if doc and enum_body
-                    else (
-                        [doc, name]
-                        if doc
-                        else [name, enum_body] if enum_body else [name]
-                    )
-                ),
-                doc=doc,
-                decorators=valid_decorators,
-            )
         kid = (
             [name, valid_bases, valid_body, doc]
             if doc and valid_bases
@@ -1451,7 +1384,9 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             ):
                 paths.append(
                     uni.ModulePath(
-                        path=[name.expr],
+                        path=uni.SubNodeList[uni.Name](
+                            items=[name.expr], delim=Tok.DOT, kid=[name.expr]
+                        ),
                         level=0,
                         alias=name.alias,
                         kid=[i for i in name.kid if i],
@@ -1460,25 +1395,12 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             # Need to unravel atom trailers
             else:
                 raise self.ice()
-        lang = uni.Name(
-            orig_src=self.orig_src,
-            name=Tok.NAME,
-            value="py",
-            line=node.lineno,
-            end_line=node.end_lineno if node.end_lineno else node.lineno,
-            col_start=node.col_offset,
-            col_end=0,
-            pos_start=0,
-            pos_end=0,
-        )
-        pytag = uni.SubTag[uni.Name](tag=lang, kid=[lang])
         items = uni.SubNodeList[uni.ModulePath](items=paths, delim=Tok.COMMA, kid=paths)
         ret = uni.Import(
-            hint=pytag,
             from_loc=None,
             items=items,
             is_absorb=False,
-            kid=[pytag, items],
+            kid=[items],
         )
         return ret
 
@@ -1520,11 +1442,16 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         moddots = [self.operator(Tok.DOT, ".") for _ in range(node.level)]
         modparts = moddots + modpaths
         path = uni.ModulePath(
-            path=modpaths,
+            path=(
+                uni.SubNodeList[uni.Name](items=modpaths, delim=Tok.DOT, kid=modpaths)
+                if modpaths
+                else None
+            ),
             level=node.level,
             alias=None,
             kid=modparts,
         )
+
         names = [self.convert(name) for name in node.names]
         valid_names = []
         for name in names:
@@ -1557,7 +1484,6 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                 items=[path], delim=Tok.COMMA, kid=[path]
             )
             ret = uni.Import(
-                hint=pytag,
                 from_loc=None,
                 items=path_in,
                 is_absorb=True,
@@ -1565,7 +1491,6 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             )
             return ret
         ret = uni.Import(
-            hint=pytag,
             from_loc=path,
             items=items,
             is_absorb=False,

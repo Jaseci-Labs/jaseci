@@ -1,4 +1,4 @@
-can foo(first: int, second: int) -> None {
+def foo(first: int, second: int) -> None {
     print(first, second);
 }
 

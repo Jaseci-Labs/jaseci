@@ -8,12 +8,12 @@ node node_1 {
     can func_1 with Creator entry;
 }
 
-:node:node_1:can:func_1 {
+impl node_1.func_1 {
     print("visiting ", self);
     visit [-->];
 }
 
-:walker:Creator:can:func2 {
+impl Creator.func2 {
     end = here;
     for i=0 to i<5 by i+=1  {
         end ++> (end := node_1(val=i + 1));

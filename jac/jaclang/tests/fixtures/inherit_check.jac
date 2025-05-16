@@ -4,7 +4,7 @@ walker ww {
     can gb with b entry;
 }
 
-walker www :ww: {
+walker www(ww) {
     can ggb with b entry;
 }
 
@@ -15,11 +15,11 @@ node a {
     }
 }
 
-:walker:ww:can:gb {
+impl ww.gb {
     print("I am in b");
 }
 
-:walker:www:can:ggb {
+impl www.ggb {
     print("www is also in b");
 }
 

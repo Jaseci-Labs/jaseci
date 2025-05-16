@@ -1,12 +1,12 @@
 """This is an RPG game built using Jaclang"""
 
 # This game is built using the pygame module which is imported here
-import:py pygame;
+import pygame;
 
 # Including Jac codebase
-include:jac sprites;
-include:jac settings.config;
-include:jac settings.map;
+import sprites;
+import settings.config;
+import settings.map;
 
 """
 The Game base class
@@ -26,15 +26,15 @@ obj Game {
         go_background:pygame.surface.Surface = pygame.image.load('../img/gameover.png'),
         GameMap:Map = Map();
 
-    can postinit;
-    can createTilemap;
-    can new;
-    can events;
-    can update;
-    can draw;
-    can main;
-    can intro_screen;
-    can game_won;
-    can game_over;
+    def postinit;
+    def createTilemap;
+    def new;
+    def events;
+    def update;
+    def draw;
+    def main;
+    def intro_screen;
+    def game_won;
+    def game_over;
 
 }

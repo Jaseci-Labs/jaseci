@@ -1,6 +1,6 @@
 #test.impl.jac
-import:py from math, sqrt;
+import from math { sqrt }
 
-:can:math {
+impl math {
     return sqrt(4);
 }

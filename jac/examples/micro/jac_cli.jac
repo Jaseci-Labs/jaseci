@@ -4,43 +4,43 @@ Jac languages. It's built with the Jac language V2 via bootstraping and
 represents the first such production Jac program.
 """
 
-import:py inspect;
-import:py from argparse, ArgumentParser, ArgumentError;
-import:py cmd;
-import:py from typing, Any, Callable;
+import inspect;
+import from argparse { ArgumentParser, ArgumentError }
+import cmd;
+import from typing { Any, Callable }
 
 obj Interface {
     has functions: list[callable] = [];
 
-    can register(func: callable) -> callable;
-    can create_parser -> ArgumentParser;
-    can run_from_cli;
-    can run_shell;
+    def register(func: callable) -> callable;
+    def create_parser -> ArgumentParser;
+    def run_from_cli;
+    def run_shell;
 }
 
-obj ShellCmd :cmd.Cmd: {
+obj ShellCmd(cmd.Cmd) {
     has reg: Interface,
         prompt: str = "> ";
 
-    can init(registry: Interface, *args: list, **kwargs: dict);
-    can default(line: str);
-    can do_quit(arg: str) -> bool;
+    def init(registry: Interface, *args: list, **kwargs: dict);
+    def default(line: str);
+    def do_quit(arg: str) -> bool;
 }
 
 with entry {
     interface = Interface();
     @interface.register
-    can function_one(a: int, b: str, c: bool=False) {
+    def function_one(a: int, b: str, c: bool=False) {
         print(f"Function One -> a: {a}, b: {b}, c: {c}");
     }
 
     @interface.register
-    can function_two(x: float, y: float) {
+    def function_two(x: float, y: float) {
         print(f"Function Two -> x: {x}, y: {y}");
     }
 
     @interface.register
-    can function_three(name: str, age: int, country: str='Unknown') {
+    def function_three(name: str, age: int, country: str='Unknown') {
         print(f"Function Three -> name: {name}, age: {age}, country: {country}");
     }
     # Run CLI or Shell mode
@@ -49,13 +49,13 @@ with entry {
 }
 #***Implementation***#
 
-:obj:Interface:can:register
+impl Interface.register
 (func: callable) -> callable {
     self.functions.append(func);
     return func;
 }
 
-:obj:Interface:can:create_parser() -> ArgumentParser {
+impl Interface.create_parser -> ArgumentParser {
     parser = ArgumentParser();
     parser.add_argument("base", choices=[f.__name__  for f in functions], help="The function to run");
     for func in self.functions {
@@ -73,7 +73,7 @@ with entry {
     return parser;
 }
 
-:obj:Interface:can:run_from_cli {
+impl Interface.run_from_cli {
     parser = self.create_parser();
     args = parser.parse_args();
     for f in self.functions {
@@ -86,17 +86,17 @@ with entry {
     func(**func_args);
 }
 
-:obj:Interface:can:run_shell {
+impl Interface.run_shell {
     ShellCmd(self).cmdloop();
 }
 
-:obj:ShellCmd:can:init
+impl ShellCmd.init
 (registry: Interface, *args: list, **kwargs: dict) {
     self.cmd.Cmd.__init__(*args, **kwargs);
     self.reg = registry;
 }
 
-:obj:ShellCmd:can:default
+impl ShellCmd.default
 (line: str) {
     args = line.split();
     parser = self.reg.create_parser();
@@ -115,7 +115,7 @@ with entry {
     }
 }
 
-:obj:ShellCmd:can:do_quit
+impl ShellCmd.do_quit
 (arg: str) -> bool {
     return True;
 }

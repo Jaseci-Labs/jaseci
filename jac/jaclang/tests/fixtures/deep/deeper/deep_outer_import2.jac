@@ -1,6 +1,6 @@
-# import:jac from ., snd_lev;
-#import:jac from .., one_lev_dup;
-#import:jac from ..., needs_import_dup;
+# import from ., snd_lev;
+#import from .., one_lev_dup;
+#import from ..., needs_import_dup;
 
 with entry {
     # print(snd_lev.slprint());

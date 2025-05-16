@@ -1,4 +1,4 @@
-can combine_via_func(a: int, b: int, c: int, d: int) -> int {
+def combine_via_func(a: int, b: int, c: int, d: int) -> int {
     return a + b + c + d;
 }
 

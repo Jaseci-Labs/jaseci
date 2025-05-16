@@ -1,4 +1,4 @@
-can math;
+def math;
 
 with entry {
     notmath = math();

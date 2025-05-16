@@ -34,6 +34,7 @@ class JacUnparseTests(TestCaseMicroSuite):
         )
         before = ast3.dump(code_gen_pure.gen.py_ast[0], indent=2)
         x = code_gen_pure.unparse()
+        print(x)
 
         code_gen_jac = JacProgram().compile_from_str(
             source_str=x,
