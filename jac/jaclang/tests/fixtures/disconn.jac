@@ -20,7 +20,8 @@ with entry{
     y++>z;
     apple: int;
     # print(x ->:aaa:-> );
-    print([x-->y-->z]);
+    print([x-->(`?b)-->(`?b)]);
+    print([x-->y-->](`?b));
     print([x -->]);
     print(x del--> y);
     print([x -->]);

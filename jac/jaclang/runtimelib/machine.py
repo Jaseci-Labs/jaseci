@@ -40,6 +40,7 @@ from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.architype import (
     DataSpatialFunction,
+    DataSpatialPath,
     GenericEdge as _GenericEdge,
     Root as _Root,
 )
@@ -913,41 +914,36 @@ class JacBasics:
             ctx.reports.append(expr)
 
     @staticmethod
-    def refs(
-        sources: NodeArchitype | list[NodeArchitype],
-        targets: NodeArchitype | list[NodeArchitype] | None = None,
-        dir: EdgeDir = EdgeDir.OUT,
-        filter: Callable[[EdgeArchitype], bool] | None = None,
-        edges_only: bool = False,
-    ) -> list[NodeArchitype] | list[EdgeArchitype]:
+    def refs(path: DataSpatialPath) -> list[NodeArchitype] | list[EdgeArchitype]:
         """Jac's apply_dir stmt feature."""
-        if isinstance(sources, NodeArchitype):
-            sources = [sources]
-        targ_obj_set: Optional[list[NodeArchitype]] = (
-            [targets]
-            if isinstance(targets, NodeArchitype)
-            else targets if targets else None
-        )
-        if edges_only:
-            connected_edges: list[EdgeArchitype] = []
-            for node in sources:
-                edges = JacMachineInterface.get_edges(
-                    node.__jac__, dir, filter, target_obj=targ_obj_set
-                )
-                connected_edges.extend(
-                    edge for edge in edges if edge not in connected_edges
-                )
-            return connected_edges
-        else:
-            connected_nodes: list[NodeArchitype] = []
-            for node in sources:
-                nodes = JacMachineInterface.edges_to_nodes(
-                    node.__jac__, dir, filter, target_obj=targ_obj_set
-                )
-                connected_nodes.extend(
-                    node for node in nodes if node not in connected_nodes
-                )
-            return connected_nodes
+        # if isinstance(sources, NodeArchitype):
+        #     sources = [sources]
+        # targ_obj_set: Optional[list[NodeArchitype]] = (
+        #     [targets]
+        #     if isinstance(targets, NodeArchitype)
+        #     else targets if targets else None
+        # )
+        # if edges_only:
+        #     connected_edges: list[EdgeArchitype] = []
+        #     for node in sources:
+        #         edges = JacMachineInterface.get_edges(
+        #             node.__jac__, dir, filter, target_obj=targ_obj_set
+        #         )
+        #         connected_edges.extend(
+        #             edge for edge in edges if edge not in connected_edges
+        #         )
+        #     return connected_edges
+        # else:
+        #     connected_nodes: list[NodeArchitype] = []
+        #     for node in sources:
+        #         nodes = JacMachineInterface.edges_to_nodes(
+        #             node.__jac__, dir, filter, target_obj=targ_obj_set
+        #         )
+        #         connected_nodes.extend(
+        #             node for node in nodes if node not in connected_nodes
+        #         )
+        #     return connected_nodes
+        return []
 
     @staticmethod
     def filter(
