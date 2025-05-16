@@ -72,6 +72,15 @@ class JacLangServer(JacProgram, LanguageServer):
         self.sem_managers: dict[str, SemTokManager] = {}
         self.module_manager = ModuleManager(self, self.sem_managers)
 
+    @property
+    def diagnostics(self) -> dict[str, list]:
+        """Return diagnostics for all files as a dict {uri: diagnostics}."""
+        result = {}
+        for file_path in self.mod.hub:
+            uri = uris.from_fs_path(file_path)
+            result[uri] = gen_diagnostics(uri, self.errors_had, self.warnings_had)
+        return result
+
     def _clear_alerts_for_file(self, file_path_fs: str) -> None:
         """Remove errors and warnings for a specific file from the lists."""
         self.module_manager.clear_alerts_for_file(file_path_fs)
