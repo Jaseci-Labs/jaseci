@@ -9,7 +9,7 @@ import from sklearn.metrics.pairwise { cosine_similarity }
 # glob llm_ollama = Ollama(host="http://127.0.0.1:11434", model_name="llama3.2:1b");
 glob sentence_transformer = SentenceTransformer('all-MiniLM-L6-v2');
 
-can search_tweets(query: str, tweet:str) -> int;
+def search_tweets(query: str, tweet:str) -> int;
 
 # can 'Extract and summarize trending themes, major highlights, and key interactions from recent tweets in one concise sentence.'
 # summarize_tweets(tweets: list[str]) -> 'Summarization': str by llm_open_ai();
@@ -50,7 +50,7 @@ node Tweet {
 
     can comment with comment_tweet entry;
 
-    can get_info()-> TweetInfo;
+    def get_info()-> TweetInfo;
 
     can get with load_feed entry;
 }
@@ -73,11 +73,11 @@ walker visit_profile {
     can visit_profile with `root entry;
 }
 
-walker update_profile:visit_profile: {
+walker update_profile(visit_profile) {
     has new_username: str;
 }
 
-walker get_profile:visit_profile: {}
+walker get_profile(visit_profile) {}
 
 walker load_user_profiles {
     obj __specs__ {
@@ -90,7 +90,7 @@ walker follow_request {}
 
 walker un_follow_request {}
 
-walker create_tweet:visit_profile: {
+walker create_tweet(visit_profile) {
     has content: str;
 
     can tweet with Profile entry;
@@ -116,7 +116,7 @@ walker update_comment {
 
 walker remove_comment {}
 
-walker load_feed:visit_profile: {
+walker load_feed(visit_profile) {
     has search_query: str = "";
     has results: list = [];
 
