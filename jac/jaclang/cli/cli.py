@@ -31,7 +31,7 @@ Jac.setup()
 
 @cmd_registry.register
 def format(
-    path: str, outfile: str = "", to_screen: bool = False, new: bool = True
+    path: str, outfile: str = "", to_screen: bool = False, new: bool = False
 ) -> None:
     """Format .jac files with improved code style.
 
