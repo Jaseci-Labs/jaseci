@@ -757,7 +757,7 @@ Now Lets create required walkers for LittleX.
             }
             ```
                   * `visit [-->(`?Tweet)]` Load feed walker will visit to all the Tweet nodes connected to root and execute the Tweet node abilities that can be triggered by the entry or exit of load feed walker.
-                  * `[-:Follow:->(`?Profile)]` get all the follwee profile nodes from user and `visit [user_node-->(`?Tweet)]` visit followee's tweets. 
+                  * `[-:Follow:->(`?Profile)]` get all the follwee profile nodes from user and `visit [user_node-->(`?Tweet)]` visit followee's tweets.
                   * `load_feed` walker will execute the abilities that can be triggered with its entry or exit.
                   * All the tweets from followee, user will be saved into results and it will be reported.
 
