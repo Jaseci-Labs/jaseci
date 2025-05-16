@@ -658,7 +658,7 @@ class DocIRGenPass(UniPass):
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.text(" "))
-            
+
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_while_stmt(self, node: uni.WhileStmt) -> None:
@@ -943,18 +943,8 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for set values."""
         parts: list[doc.DocType] = [self.text("{")]
 
-        if (
-            node.values
-            and node.values.items
-            and hasattr(node.values, "gen")
-            and node.values.gen.doc_ir
-        ):
-            values_doc = node.values.gen.doc_ir
-            if not (isinstance(values_doc, doc.Concat) and not values_doc.parts):
-                parts.append(
-                    self.indent(self.concat([self.line(), values_doc]))  # soft line
-                )
-                parts.append(self.line())  # soft line before closing '}'
+        if node.values:
+            parts.append(node.values.gen.doc_ir)
 
         parts.append(self.text("}"))
         node.gen.doc_ir = self.group(self.concat(parts))
