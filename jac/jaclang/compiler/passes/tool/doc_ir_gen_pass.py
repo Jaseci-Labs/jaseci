@@ -213,86 +213,13 @@ class DocIRGenPass(UniPass):
     def exit_ability(self, node: uni.Ability) -> None:
         """Generate DocIR for abilities."""
         parts: list[doc.DocType] = []
-
-        # Handle decorators
-        if node.decorators and node.decorators.items:
-            decorator_docs: list[doc.DocType] = []
-            for decorator_node in node.decorators.items:
-                if decorator_node.gen.doc_ir:
-                    decorator_doc = decorator_node.gen.doc_ir
-                    if decorator_doc:
-                        decorator_docs.append(decorator_doc)
-                        decorator_docs.append(self.hard_line())
-            if decorator_docs:
-                parts.extend(decorator_docs)
-
-        header_parts: list[doc.DocType] = []
-        # Static keyword
-        if node.is_static:
-            header_parts.append(self.text("static "))
-
-        # Type (can/def)
-        if node.is_def:
-            header_parts.append(self.text("def"))
-        else:
-            header_parts.append(self.text("can"))
-
-        # Name and signature
-        if node.name_ref and node.name_ref.gen.doc_ir:
-            name_ref_doc = node.name_ref.gen.doc_ir
-            if name_ref_doc:
-                header_parts.append(self.text(" "))
-                header_parts.append(name_ref_doc)
-
-        if node.signature and node.signature.gen.doc_ir:
-            sig_doc = node.signature.gen.doc_ir
-            if sig_doc:
-                header_parts.append(sig_doc)
-
-        parts.append(self.group(self.concat(header_parts)))  # Group the header
-
-        # Handle body
-        if node.body:  # body is SubNodeList[CodeBlockStmt] or ImplDef or FuncCall
-            parts.append(self.text(" "))  # Space before {
-            if isinstance(node.body, uni.FuncCall):  # GenAI ability: by func_call;
-                parts.append(self.text("by "))
-                if node.body.gen.doc_ir:
-                    body_doc = node.body.gen.doc_ir
-                    if body_doc:
-                        parts.append(body_doc)
-                parts.append(self.text(";"))
-            elif isinstance(node.body, uni.SubNodeList):  # Regular ability with a block
-                parts.append(self.text("{"))
-                body_content_parts: list[doc.DocType] = []
-                if node.body.items:
-                    for item in node.body.items:
-                        if item.gen.doc_ir:
-                            item_doc = item.gen.doc_ir
-                            if item_doc:
-                                body_content_parts.append(item_doc)
-                                body_content_parts.append(self.hard_line())
-                    if body_content_parts and isinstance(
-                        body_content_parts[-1], doc.Line
-                    ):
-                        body_content_parts.pop()  # remove last hard_line
-
-                if body_content_parts:
-                    parts.append(
-                        self.indent(
-                            self.concat(
-                                [self.hard_line(), self.concat(body_content_parts)]
-                            )
-                        )
-                    )
-                    parts.append(self.hard_line())  # Line before closing brace
-                else:  # Empty body {}
-                    parts.append(self.line())  # allow break for empty body like { \n }
-                parts.append(self.text("}"))
-        elif node.is_abstract:  # abstract ability: def name() abstract;
-            parts.append(self.text(" abstract;"))
-        else:  # No body and not abstract, e.g. forward decl for event: can event_name with func_sig;
-            parts.append(self.text(";"))
-
+        for i in node.kid:
+            if i == node.doc:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.hard_line())
+            else:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.text(" "))
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_func_signature(self, node: uni.FuncSignature) -> None:
@@ -309,7 +236,7 @@ class DocIRGenPass(UniPass):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.text(" "))
         parts.pop()
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_param_var(self, node: uni.ParamVar) -> None:
         """Generate DocIR for parameter variables."""
@@ -2269,7 +2196,6 @@ class DocIRGenPass(UniPass):
     def exit_impl_def(self, node: uni.ImplDef) -> None:
         """Generate DocIR for implementation definitions."""
         parts: list[doc.DocType] = []
-
         for i in node.kid:
             if i == node.doc:
                 parts.append(i.gen.doc_ir)
