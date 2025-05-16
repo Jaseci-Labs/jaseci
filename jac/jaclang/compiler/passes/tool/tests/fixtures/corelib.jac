@@ -3,7 +3,7 @@
 import #* what abou this *# from datetime { datetime }
 import from uuid { UUID, uuid4 } # This is a comment
 import from jaclang.compiler.constant { EdgeDir }
-import from jaclang.plugin { Architype, ArchitypeProtocol, DSFunc, AbsRootHook, hookimpl }
+import from jaclang.plugin { Architype, ArchitypeProtocol, ArchitypeProtocol3 as MyArch, DSFunc, ArchitypeProtocol, ArchitypeProtocol3, DSFunc, AbsRootHook, hookimpl }
 import jaclang.compiler.constant;
 
 enum AccessMode;

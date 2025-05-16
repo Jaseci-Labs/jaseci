@@ -7,6 +7,7 @@ from typing import List, Optional
 
 import jaclang.compiler.passes.tool.doc_ir as doc
 import jaclang.compiler.unitree as uni
+from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes import UniPass
 from jaclang.settings import settings
 
@@ -133,38 +134,36 @@ class DocIRGenPass(UniPass):
         """Exit import node."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.text(" "))
+            if isinstance(i, uni.SubNodeList) and i.items:
+                parts.append(self.indent(i.gen.doc_ir))
+                parts.append(self.line())
+            elif isinstance(i, uni.Token) and i.name == Tok.SEMI:
+                parts.pop()
+                parts.append(i.gen.doc_ir)
+            else:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.text(" "))
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_module_item(self, node: uni.ModuleItem) -> None:
         """Generate DocIR for module items."""
-        if node.alias:
-            doc_ir: doc.DocType = self.concat(
-                [
-                    self.text(node.name.value),
-                    self.text(" as "),
-                    self.text(node.alias.value),
-                ]
-            )
-        else:
-            doc_ir = self.text(node.name.value)
+        parts: list[doc.DocType] = []
 
-        node.gen.doc_ir = doc_ir
+        for i in node.kid:
+            if isinstance(i, uni.Token) and i.name == Tok.KW_AS:
+                parts.append(self.text(" "))
+                parts.append(i.gen.doc_ir)
+                parts.append(self.text(" "))
+            else:
+                parts.append(i.gen.doc_ir)
+
+        node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_module_path(self, node: uni.ModulePath) -> None:
         """Generate DocIR for module paths."""
         parts: list[doc.DocType] = []
-
-        if (
-            node.path and node.path.items
-        ):  # Check if node.path and node.path.items are not None
-            for i, path_item in enumerate(node.path.items):
-                if path_item.gen.doc_ir:
-                    parts.append(path_item.gen.doc_ir)
-                    if i < len(node.path.items) - 1:
-                        parts.append(self.text("."))
-
+        for i in node.kid:
+            parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_architype(self, node: uni.Architype) -> None:
@@ -2322,41 +2321,33 @@ class DocIRGenPass(UniPass):
         node.gen.doc_ir = self.concat(parts)
 
     def exit_sub_node_list(self, node: uni.SubNodeList) -> None:
-        """Generate DocIR for a SubNodeList.
-
-        It joins the DocIR of its items using the specified delimiter if present.
-        The result is a single DocType (usually a Concat).
-        Enclosing brackets/parentheses and overall list indentation are typically
-        handled by the parent node consuming this SubNodeList's DocIR.
-        """
-        item_docs: list[doc.DocType] = []
-        if node.items:
-            for item in node.items:
-                item_docs.append(item.gen.doc_ir)
-
-        if not item_docs:
-            node.gen.doc_ir = self.concat([])  # Empty sequence
-            return
-
-        separator: doc.DocType
-        if node.delim == uni.Tok.COMMA:
-            separator = self.concat([self.text(","), self.line()])
-        elif node.delim == uni.Tok.DOT:
-            separator = self.concat([self.text("."), self.line()])
-        elif node.delim is None:
-            separator = self.line()
-        else:
-            # Try to use the delimiter's token value if it's a known token
-            try:
-                # Assuming DELIM_MAP or node.delim.value gives the string for the token
-                delim_text = uni.DELIM_MAP.get(node.delim, node.delim.value)
-                separator = self.concat([self.text(delim_text), self.line()])
-            except AttributeError:
-                # Fallback if delim is not a simple token with a value
-                separator = self.line()  # Default to a space or break
-
-        joined_items = self.join(separator, item_docs)
-        node.gen.doc_ir = joined_items
+        """Generate DocIR for a SubNodeList."""
+        parts: list[doc.DocType] = []
+        indent_parts: list[doc.DocType] = []
+        for i in node.kid:
+            if isinstance(i, uni.Token) and i == node.left_enc:
+                parts.append(i.gen.doc_ir)
+                indent_parts.append(self.line())
+            elif isinstance(i, uni.Token) and i == node.right_enc:
+                indent_parts.append(self.line())
+                parts.append(self.indent(self.concat(indent_parts)))
+                parts.append(i.gen.doc_ir)
+                parts.append(self.line())
+            elif (
+                isinstance(i, uni.Token)
+                and node.delim
+                and i.name == node.delim.name
+                and i.name not in [Tok.DOT]
+            ):
+                indent_parts.append(i.gen.doc_ir)
+                indent_parts.append(self.line())
+            else:
+                indent_parts.append(i.gen.doc_ir)
+        node.gen.doc_ir = (
+            self.group(self.concat(parts))
+            if parts
+            else self.group(self.concat([self.tight_line()] + indent_parts))
+        )
 
     def exit_token(self, node: uni.Token) -> None:
         """Generate DocIR for tokens."""

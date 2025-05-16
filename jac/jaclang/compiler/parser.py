@@ -2402,7 +2402,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             def name_to_assign(name_consume: uni.NameAtom) -> uni.Assignment:
                 target = uni.SubNodeList[uni.Expr](
-                    items=[name_consume], delim=None, kid=[name_consume]
+                    items=[name_consume], delim=Tok.EQ, kid=[name_consume]
                 )
                 return uni.Assignment(
                     target=target, value=None, type_tag=None, kid=[target]
