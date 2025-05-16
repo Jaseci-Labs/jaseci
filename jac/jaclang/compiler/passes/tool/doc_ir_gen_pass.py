@@ -1533,13 +1533,14 @@ class DocIRGenPass(UniPass):
     def exit_module_code(self, node: uni.ModuleCode) -> None:
         """Generate DocIR for module code."""
         parts: list[doc.DocType] = []
+        for i in node.kid:
+            if isinstance(i, uni.Token):
+                parts.append(i.gen.doc_ir)
+                parts.append(self.text(" "))
+            else:
+                parts.append(self.indent(self.concat([i.gen.doc_ir])))
 
-        if (
-            node.body and node.body.gen.doc_ir
-        ):  # check node.body.gen.doc_ir is not empty
-            parts.append(node.body.gen.doc_ir)
-
-        node.gen.doc_ir = self.concat(parts)
+        node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_global_stmt(self, node: uni.GlobalStmt) -> None:
         """Generate DocIR for global statements."""
