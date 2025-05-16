@@ -723,7 +723,7 @@ class DocIRGenPass(UniPass):
                 parts.append(node.type_tag.gen.doc_ir)
             elif i == node.value:
                 parts.append(node.value.gen.doc_ir)
-            elif isinstance(i,uni.Token) and i.name == Tok.EQ:
+            elif isinstance(i, uni.Token) and i.name == Tok.EQ:
                 parts.append(self.text(" = "))
             else:
                 parts.append(self.text(" "))
@@ -748,8 +748,6 @@ class DocIRGenPass(UniPass):
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.text(" "))
-            if isinstance(i.gen.doc_ir, doc.Concat):
-                print(i.gen.doc_ir.parts)
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_while_stmt(self, node: uni.WhileStmt) -> None:
