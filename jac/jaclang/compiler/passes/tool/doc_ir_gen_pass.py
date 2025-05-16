@@ -89,45 +89,13 @@ class DocIRGenPass(UniPass):
     def exit_module(self, node: uni.Module) -> None:
         """Exit module."""
         parts: list[doc.DocType] = []
-
-        # Process docstrings
-        if node.kid and isinstance(node.kid[0], uni.String):
-            parts.append(
-                self.group(
-                    self.concat(
-                        [
-                            self.text(node.kid[0].value),
-                            self.hard_line(),
-                            self.hard_line(),
-                        ]
-                    )
-                )
-            )
-
-        # Process imports
-        import_parts: list[doc.DocType] = []
-        for item in node.body:
-            if isinstance(item, uni.Import) and item.gen.doc_ir:
-                import_parts.append(item.gen.doc_ir)
-                import_parts.append(self.hard_line())
-
-        if import_parts:
-            parts.append(self.group(self.concat(import_parts)))
-            parts.append(self.hard_line())
-
-        # Process other top-level elements
-        other_parts: list[doc.DocType] = []
-        for item in node.body:
-            if not isinstance(item, uni.Import) and item.gen.doc_ir:
-                other_parts.append(item.gen.doc_ir)
-                other_parts.append(self.hard_line())
-                other_parts.append(self.hard_line())
-
-        if other_parts and isinstance(other_parts[-1], doc.Line):
-            other_parts.pop()  # Remove trailing line
-
-        parts.append(self.group(self.concat(other_parts)))
-
+        for i in node.kid:
+            if False:
+                pass
+            else:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.hard_line())
+                parts.append(self.hard_line())
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_import(self, node: uni.Import) -> None:
@@ -832,29 +800,20 @@ class DocIRGenPass(UniPass):
     def exit_arch_has(self, node: uni.ArchHas) -> None:
         """Generate DocIR for architecture has declarations."""
         parts: list[doc.DocType] = []
-
-        if node.doc:
-            parts.insert(0, node.doc.gen.doc_ir)
-            parts.append(self.hard_line())
-        parts.append(self.text("has "))
-        if node.is_static:
-            parts.append(self.text("static "))
-
-        if node.vars:
-            var_parts: list[doc.DocType] = []
-            for var in node.vars.items:
-                if var.gen.doc_ir:
-                    var_parts.append(var.gen.doc_ir)
-
-            parts.append(
-                self.align(
-                    self.join(self.concat([self.text(", "), self.line()]), var_parts)
-                )
-            )
-
-        parts.append(self.text(";"))
-        parts.append(self.hard_line())
-
+        for i in node.kid:
+            if (
+                isinstance(i, uni.SubNodeList)
+                and i == node.vars
+                and isinstance(i.gen.doc_ir, doc.Group)
+                and isinstance(i.gen.doc_ir.contents, doc.Concat)
+            ):
+                i.gen.doc_ir.contents.parts[0] = self.text("")
+                parts.append(
+                    self.align(i.gen.doc_ir.contents)
+                )  # align the first part of the concat
+            else:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.text(" "))
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_while_stmt(self, node: uni.WhileStmt) -> None:
