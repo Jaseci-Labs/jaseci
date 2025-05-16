@@ -567,25 +567,8 @@ class DocIRGenPass(UniPass):
     def exit_list_val(self, node: uni.ListVal) -> None:
         """Generate DocIR for list values."""
         parts: list[doc.DocType] = [self.text("[")]
-
-        if (
-            node.values and node.values.items and node.values.gen.doc_ir
-        ):  # Check items for non-empty list
-            # node.values.gen.doc_ir is the DocIR for the joined value list
-            values_doc = node.values.gen.doc_ir
-            if not (isinstance(values_doc, doc.Concat) and not values_doc.parts):
-                parts.append(
-                    self.indent(self.concat([self.line(), values_doc]))  # soft line
-                )
-                parts.append(self.line())  # soft line before closing ']'
-            # Python {} is an empty dict, set() is an empty set.
-            # Jac {a,b} is a set. If node.values is empty, it should be set().
-            # This pass currently generates {} for empty set if node.values is None/empty.
-            # This might need adjustment if Jac syntax for empty set is different or needs explicit set().
-            # For now, assuming {} is acceptable if the parser produces SetVal with no items.
-            # If it must be `set()`, then this logic needs to change for empty `node.values`.
-            # Based on unitree.SetVal.normalize, it produces {} for empty set.
-
+        if node.values:
+            parts.append(node.values.gen.doc_ir)
         parts.append(self.text("]"))
 
         node.gen.doc_ir = self.group(self.concat(parts))
@@ -656,7 +639,7 @@ class DocIRGenPass(UniPass):
                 parts.append(self.text(" "))
                 parts.append(i.gen.doc_ir)
 
-        node.gen.doc_ir = self.group(self.concat(parts))
+        node.gen.doc_ir = self.concat(parts)
 
     def exit_arch_has(self, node: uni.ArchHas) -> None:
         """Generate DocIR for architecture has declarations."""
@@ -675,6 +658,7 @@ class DocIRGenPass(UniPass):
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.text(" "))
+            
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_while_stmt(self, node: uni.WhileStmt) -> None:
@@ -936,22 +920,8 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for tuple values."""
         parts: list[doc.DocType] = [self.text("(")]
 
-        if node.values and node.values.items and node.values.gen.doc_ir:
-            processed_values_doc = node.values.gen.doc_ir
-            if not (
-                isinstance(processed_values_doc, doc.Concat)
-                and not processed_values_doc.parts
-            ):
-                parts.append(
-                    self.indent(self.concat([self.tight_line(), processed_values_doc]))
-                )
-
-                # Handle trailing comma for single-element tuple
-                if len(node.values.items) == 1:
-                    parts.append(self.text(","))
-
-                parts.append(self.tight_line())  # soft line before closing ')'
-
+        if node.values:
+            parts.append(node.values.gen.doc_ir)
         parts.append(self.text(")"))
         node.gen.doc_ir = self.group(self.concat(parts))
 
