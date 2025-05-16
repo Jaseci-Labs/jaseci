@@ -1505,9 +1505,12 @@ class DocIRGenPass(UniPass):
         node.gen.doc_ir = self.concat(parts)
 
     def exit_ctrl_stmt(self, node: uni.CtrlStmt) -> None:
-        """Generate DocIR for control statements (break, continue)."""
-        # CtrlStmt does not have an expr attribute as per unitree.py
-        node.gen.doc_ir = self.text(f"{node.ctrl.value};")
+        """Generate DocIR for control statements (break, continue, skip)."""
+        # node.kid is [ctrl_keyword_token, SEMI_token] due to statement parsing
+        parts: list[doc.DocType] = []
+        for i in node.kid:
+            parts.append(i.gen.doc_ir)
+        node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_delete_stmt(self, node: uni.DeleteStmt) -> None:
         """Generate DocIR for delete statements."""
@@ -1522,7 +1525,11 @@ class DocIRGenPass(UniPass):
 
     def exit_disengage_stmt(self, node: uni.DisengageStmt) -> None:
         """Generate DocIR for disengage statements."""
-        node.gen.doc_ir = self.text("disengage;")
+        # node.kid is [KW_DISENGAGE_token, SEMI_token]
+        parts: list[doc.DocType] = []
+        for i in node.kid:
+            parts.append(i.gen.doc_ir)
+        node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_report_stmt(self, node: uni.ReportStmt) -> None:
         """Generate DocIR for report statements."""
@@ -1604,19 +1611,11 @@ class DocIRGenPass(UniPass):
 
     def exit_global_stmt(self, node: uni.GlobalStmt) -> None:
         """Generate DocIR for global statements."""
-        parts: list[doc.DocType] = [self.text("global ")]
-
-        if node.target:
-            name_parts: list[doc.DocType] = []
-            for name in node.target.items:
-                if name.gen.doc_ir:
-                    name_parts.append(name.gen.doc_ir)
-
-            parts.append(self.join(self.text(", "), name_parts))
-
-        parts.append(self.text(";"))
-
-        node.gen.doc_ir = self.concat(parts)
+        # node.kid is [GLOBAL_OP_token, name_list_SubNodeList, SEMI_token]
+        parts: list[doc.DocType] = []
+        for i in node.kid:
+            parts.append(i.gen.doc_ir)
+        node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_non_local_stmt(self, node: uni.NonLocalStmt) -> None:
         """Generate DocIR for nonlocal statements."""
