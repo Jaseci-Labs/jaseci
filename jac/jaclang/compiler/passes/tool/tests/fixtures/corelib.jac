@@ -17,8 +17,8 @@ impl Memory.get_obj(caller_id: UUID, item_id: UUID, override: bool=False, doc: b
 }
 
 def func_name(name: str) -> str {
-    def inner_func(name: str,name: str,name: str,name: str,name: str,name: str,name: str,name: str,name: str) -> str {
-        print(name);
+    def #* This is a comment *# inner_func(name: str) -> str {
+        print(name); # This is a comment
         return name;
     }
     return inner_func(name);
