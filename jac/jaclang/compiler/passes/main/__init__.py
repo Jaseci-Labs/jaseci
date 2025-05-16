@@ -15,6 +15,8 @@ from .pybc_gen_pass import PyBytecodeGenPass  # noqa: I100
 from .cfg_build_pass import CFGBuildPass  # noqa: I100
 from .pyjac_ast_link_pass import PyJacAstLinkPass  # noqa: I100
 from .inheritance_pass import InheritancePass  # noqa: I100
+from .type_annotation_pass import JTypeAnnotatePass  # noqa: I100
+from .jtype_check_pass import JTypeCheckPass  # noqa: I100
 
 
 class CompilerMode(Enum):
@@ -26,6 +28,7 @@ class CompilerMode(Enum):
     COMPILE = "COMPILE"
     COMPILE_SINGLE = "COMPILE_SINGLE"
     TYPECHECK = "TYPECHECK"
+    QUICKCHECK = "QUICKCHECK"
 
 
 __all__ = [
@@ -46,4 +49,6 @@ __all__ = [
     "CFGBuildPass",
     "PyJacAstLinkPass",
     "InheritancePass",
+    "JTypeAnnotatePass",
+    "JTypeCheckPass",
 ]

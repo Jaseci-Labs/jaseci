@@ -62,3 +62,6 @@ out.txt
 *.dat
 *.dir
 *.log
+
+# Jaclang files
+/*.jac

@@ -8,6 +8,8 @@ import types
 from typing import Optional
 
 import jaclang.compiler.unitree as uni
+from jaclang.compiler.jtyping.registery import JTypeRegistry
+from jaclang.compiler.jtyping.resolver import JTypeResolver
 from jaclang.compiler.parser import JacParser
 from jaclang.compiler.passes.main import (
     Alert,
@@ -16,6 +18,8 @@ from jaclang.compiler.passes.main import (
     DeclImplMatchPass,
     DefUsePass,
     InheritancePass,
+    JTypeAnnotatePass,
+    JTypeCheckPass,
     JacAnnexPass,
     JacImportDepsPass,
     PyBytecodeGenPass,
@@ -34,6 +38,8 @@ from jaclang.compiler.passes.tool import (
 )
 from jaclang.utils.log import logging
 
+# from jaclang.compiler.jtyping.solver.typeenv import JTypeEnv
+
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +53,10 @@ class JacProgram:
         self.py_raise_map: dict[str, str] = {}
         self.errors_had: list[Alert] = []
         self.warnings_had: list[Alert] = []
+
+        self.type_registry = JTypeRegistry()
+        self.type_resolver = JTypeResolver(self.type_registry)
+        # self.type_env = JTypeEnv()
 
     def get_bytecode(
         self, full_target: str, full_compile: bool = True
@@ -157,7 +167,7 @@ class JacProgram:
             case CompilerMode.COMPILE | CompilerMode.COMPILE_SINGLE:
                 passes = [*ir_gen_sched, *py_code_gen]
             case CompilerMode.TYPECHECK:
-                passes = []
+                passes = [JTypeAnnotatePass, JTypeCheckPass]
             case _:
                 raise ValueError(f"Invalid mode: {mode}")
         self.run_schedule(mod, passes)
