@@ -96,7 +96,7 @@ class DocIRGenPass(UniPass):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
 
-        node.gen.doc_ir = self.group(self.concat(parts))
+        node.gen.doc_ir = self.concat(parts)
 
     def exit_import(self, node: uni.Import) -> None:
         """Exit import node."""
@@ -125,14 +125,14 @@ class DocIRGenPass(UniPass):
             else:
                 parts.append(i.gen.doc_ir)
 
-        node.gen.doc_ir = self.group(self.concat(parts))
+        node.gen.doc_ir = self.concat(parts)
 
     def exit_module_path(self, node: uni.ModulePath) -> None:
         """Generate DocIR for module paths."""
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
-        node.gen.doc_ir = self.group(self.concat(parts))
+        node.gen.doc_ir = self.concat(parts)
 
     def exit_architype(self, node: uni.Architype) -> None:
         """Generate DocIR for architypes."""
@@ -2276,9 +2276,7 @@ class DocIRGenPass(UniPass):
                 indent_parts.append(self.line())
             else:
                 indent_parts.append(i.gen.doc_ir)
-        node.gen.doc_ir = (
-            self.group(self.concat(parts)) if parts else self.concat(indent_parts)
-        )
+        node.gen.doc_ir = self.concat(parts) if parts else self.concat(indent_parts)
 
     def exit_token(self, node: uni.Token) -> None:
         """Generate DocIR for tokens."""
