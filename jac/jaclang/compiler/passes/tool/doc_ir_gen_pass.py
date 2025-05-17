@@ -882,6 +882,10 @@ class DocIRGenPass(UniPass):
             if i == node.doc:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
+            elif i == node.name and isinstance(i, uni.Name):
+                if not i.value.startswith("_jac_gen_"):
+                    parts.append(i.gen.doc_ir)
+                    parts.append(self.space())
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
@@ -1150,7 +1154,9 @@ class DocIRGenPass(UniPass):
             node.gen.doc_ir = self.group(self.concat([self.text(node.value)]))
         elif node.left_node and node.left_node.loc.last_line == node.loc.first_line:
             node.gen.doc_ir = self.group(
-                self.concat([self.tight_line(), self.text(node.value)])
+                self.concat(
+                    [self.tight_line(), self.text(node.value), self.hard_line()]
+                )
             )
         else:
             node.gen.doc_ir = self.group(
