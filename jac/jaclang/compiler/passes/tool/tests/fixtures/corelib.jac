@@ -31,6 +31,17 @@ def #* This is a comment *# inner_func(name: str) -> str {
 }
 return inner_func(name);
 }
+with entry {
+        name = '90';
+        enum age { days = 12  } 
+        print(f'{name}');
+        print(f"hello {f'{name.upper()}'} {name}");
+        print(f"hello{{escaped curly brace}}  {f'{age.days.to_bytes()}'} {name}");
+        print(f'{name}');
+        print(f'{name}');
+        print(f"hello{{escaped curly brace}}  {f'{name}'} {name}");
+    }
+
 
 obj Memory {
     has index: dict[UUID, Element] = {},
