@@ -1135,8 +1135,20 @@ class DocIRGenPass(UniPass):
                 )
             )
         else:
+            if node.parent:
+                idx = node.parent.kid.index(node)
+                prev_is_comment = (
+                    isinstance(node.parent.kid[idx + 1], uni.CommentToken)
+                    if idx + 1 < len(node.parent.kid)
+                    else False
+                )
+            else:
+                prev_is_comment = False
+
             node.gen.doc_ir = self.group(
-                self.concat([self.space(), self.text(node.value), self.hard_line()])
+                self.concat([self.text(node.value)])
+                if prev_is_comment
+                else self.concat([self.hard_line(), self.text(node.value)])
             )
 
     def exit_name(self, node: uni.Name) -> None:
