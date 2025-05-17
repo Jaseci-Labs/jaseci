@@ -149,7 +149,7 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for archetypes."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            if i == node.doc:
+            if i in [node.doc, node.decorators]:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
             elif isinstance(i, uni.Token) and i.name == Tok.SEMI:
@@ -165,7 +165,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         prev_item: Optional[uni.UniNode] = None
         for i in node.kid:
-            if i == node.doc:
+            if i in [node.doc, node.decorators]:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
             elif i == node.name_ref:
@@ -989,7 +989,7 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for enum declarations."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            if i == node.doc:
+            if i in [node.doc, node.decorators]:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
             elif isinstance(i, uni.Token) and i.name == Tok.SEMI:
@@ -1031,7 +1031,7 @@ class DocIRGenPass(UniPass):
                 isinstance(i, uni.Token)
                 and node.delim
                 and i.name == node.delim.name
-                and i.name not in [Tok.DOT]
+                and i.name not in [Tok.DOT, Tok.DECOR_OP]
             ):
                 indent_parts.append(i.gen.doc_ir)
                 indent_parts.append(self.tight_line() if is_assignment else self.line())
@@ -1047,7 +1047,7 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for implementation definitions."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            if i == node.doc:
+            if i in [node.doc, node.decorators]:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
             elif i == node.target:

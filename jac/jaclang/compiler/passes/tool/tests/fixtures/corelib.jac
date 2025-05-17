@@ -18,6 +18,7 @@ impl Memory.get_obj
     }
 }
 
+@deco
 def func_name(name: str) -> str { #* blah*#
 
 def #* This is a comment *# inner_func(name: str) -> str {
