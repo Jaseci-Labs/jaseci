@@ -101,7 +101,7 @@ class ShelfStorage(Memory[UUID, Anchor]):
 
     def sync_mem_to_db(self, keys: Iterable[UUID]) -> None:
         """Manually sync memory to db."""
-        from jaclang.plugin.feature import JacFeature as Jac
+        from jaclang.runtimelib.machine import JacMachineInterface as Jac
 
         if isinstance(self.__shelf__, Shelf):
             for key in keys:

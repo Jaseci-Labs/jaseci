@@ -1,6 +1,7 @@
 """Monty Implementations."""
 
-from typing import Any
+from contextvars import ContextVar
+from typing import Any, Mapping, Sequence
 
 from montydb import MontyClient as _MontyClient, set_storage  # type: ignore[import-untyped]
 from montydb.collection import MontyCollection as _MontyCollection  # type: ignore[import-untyped]
@@ -8,7 +9,15 @@ from montydb.database import MontyDatabase as _MontyDatabase  # type: ignore[imp
 
 from pymongo import DeleteMany, DeleteOne, InsertOne, UpdateMany, UpdateOne
 from pymongo.cursor import Cursor
-from pymongo.results import BulkWriteResult, InsertManyResult, InsertOneResult
+from pymongo.results import (
+    BulkWriteResult,
+    DeleteResult,
+    InsertManyResult,
+    InsertOneResult,
+    UpdateResult,
+)
+
+MONTY_CLIENT = ContextVar[_MontyClient | None]("MONTY_CLIENT", default=None)
 
 
 class MontyClientSession:
@@ -61,6 +70,26 @@ class MontyCollection(_MontyCollection):
         """Override insert_many."""
         return super().insert_many(documents, **kwargs)
 
+    def update_one(
+        self,
+        filter: Mapping[str, Any],
+        update: Mapping[str, Any] | Sequence[Any],
+        session: MontyClientSession | None = None,
+        **kwargs: Any,  # noqa: ANN401
+    ) -> UpdateResult:
+        """Override update_one."""
+        return super().update_one(filter, update, **kwargs)
+
+    def update_many(
+        self,
+        filter: Mapping[str, Any],
+        update: Mapping[str, Any] | Sequence[Any],
+        session: MontyClientSession | None = None,
+        **kwargs: Any,  # noqa: ANN401
+    ) -> UpdateResult:
+        """Override update_many."""
+        return super().update_many(filter, update, **kwargs)
+
     def find(
         self,
         filter: dict | None = None,
@@ -80,6 +109,24 @@ class MontyCollection(_MontyCollection):
     ) -> Any | None:
         """Override find_one."""
         return super().find_one(filter, **kwargs)
+
+    def delete_many(
+        self,
+        filter: Mapping[str, Any],
+        session: MontyClientSession | None = None,
+        **kwargs: Any,  # noqa: ANN401
+    ) -> DeleteResult:
+        """Delete document/s via filter and return how many documents are deleted."""
+        return super().delete_many(filter)
+
+    def delete_one(
+        self,
+        filter: Mapping[str, Any],
+        session: MontyClientSession | None = None,
+        **kwargs: Any,  # noqa: ANN401
+    ) -> DeleteResult:
+        """Delete single document via filter and return if it's deleted or not."""
+        return super().delete_one(filter)
 
     def count_documents(
         self,
@@ -151,9 +198,19 @@ class MontyDatabase(_MontyDatabase):
 class MontyClient(_MontyClient):
     """Monty Client."""
 
+    def __init__(
+        self, repository: str, *args: Any, **kwargs: Any  # noqa: ANN401
+    ) -> None:
+        """Initialize MontyClient Mock."""
+        self.repository = repository
+        super().__init__(repository, *args, **kwargs)
+
     def get_database(self, name: str) -> MontyDatabase:
         """Get local database."""
-        return MontyDatabase(super().get_database(name))
+        if not (client := MONTY_CLIENT.get()):
+            MONTY_CLIENT.set(client := _MontyClient(self.repository))
+
+        return MontyDatabase(client.get_database(name))
 
     def start_session(self) -> MontyClientSession:
         """Start session."""

@@ -9,18 +9,18 @@ node node_a {
     can add with Adder entry;
 }
 
-:walker:Adder:can:do {
+impl Adder.do {
     here ++> node_a();
     visit [-->];
 }
 
-:node:node_a:can:add {
+impl node_a.add {
     self.x = 550;
     self.y = 450;
     print(int(self.x) + int(self.y));
 }
 
 with entry {
-# spawn will iniiate the walker Adder from root node
-Adder() spawn root;
+    # spawn will iniiate the walker Adder from root node
+    Adder() spawn root;
 }

@@ -7,8 +7,8 @@ For MTLLM to have actual neurosymbolic powers, it needs to be able to handle mul
 MTLLM can handle images as inputs. You can provide an image as input to the MTLLM Function or Method using the `Image` format of mtllm. Here is an example of how you can provide an image as input to the MTLLM Function or Method:
 
 ```python
-import:py from mtllm.llms, OpenAI;
-import:py from mtllm, Image;
+import from mtllm.llms, OpenAI;
+import from mtllm, Image;
 
 glob llm = OpenAI(model_name="gpt-4o");
 
@@ -48,8 +48,8 @@ In the above example, we have provided an image of a person ("Albert Einstein") 
 Similarly, MTLLM can handle videos as inputs. You can provide a video as input to the MTLLM Function or Method using the `Video` format of mtllm. Here is an example of how you can provide a video as input to the MTLLM Function or Method:
 
 ```python
-import:py from mtllm.llms, OpenAI;
-import:py from mtllm, Video;
+import from mtllm.llms, OpenAI;
+import from mtllm, Video;
 
 glob llm = OpenAI(model_name="gpt-4o");
 

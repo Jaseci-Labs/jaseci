@@ -1,6 +1,6 @@
 {
   "name": "jaclang-extension",
-  "version": "2024.8.14",
+  "version": "2025.5.10",
   "displayName": "%extension.displayName%",
   "description": "%extension.description%",
   "publisher": "jaseci-labs",
@@ -9,7 +9,7 @@
   "homepage": "https://www.jac-lang.org/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Jaseci-Labs/jaclang/support/vscode_ext/jac"
+    "url": "https://github.com/Jaseci-Labs/jaseci/tree/main/jac/support/vscode_ext/jac"
   },
   "galleryBanner": {
     "color": "#1e415e",
@@ -25,7 +25,7 @@
     "Machine Learning"
   ],
   "engines": {
-    "vscode": "^1.89.0"
+    "vscode": "^1.96.0"
   },
   "contributes": {
 
@@ -46,7 +46,52 @@
 
       }
     ],
-
+    "commands": [
+      {
+        "command": "jac.visualize",
+        "title": "jacvis: Visualize Jaclang Graph"
+      },
+      {
+        "command": "jaclang-extension.selectEnv",
+        "title": "Jaclang: Select Environment"
+      },
+      {
+        "command": "jaclang-extension.runCurrentFile",
+        "title": "Jac: Run",
+        "icon": "$(play)"
+      },
+      {
+        "command": "jaclang-extension.checkCurrentFile",
+        "title": "Jac: Check",
+        "icon": "$(shield)"
+      },
+      {
+        "command": "jaclang-extension.serveCurrentFile",
+        "title": "Jac: Serve",
+        "icon": "$(cloud)"
+      }
+    ],
+    "menus": {
+      "editor/title/run": [
+        {
+          "command": "jaclang-extension.runCurrentFile",
+          "group": "navigation@0",
+          "when": "resourceLangId == jac"
+        },
+        {
+          "command": "jaclang-extension.checkCurrentFile",
+          "group": "navigation@1",
+          "when": "resourceLangId == jac"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "jaclang-extension.serveCurrentFile",
+          "group": "navigation@99",
+          "when": "resourceLangId == jac"
+        }
+      ]
+    },
     "languages": [
       {
         "id": "jac",
@@ -89,7 +134,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.14.1",
-    "@types/vscode": "^1.89.0",
+    "@types/vscode": "^1.96.0",
     "@vscode/vsce": "^2.27.0",
     "typescript": "^5.4.5"
   }

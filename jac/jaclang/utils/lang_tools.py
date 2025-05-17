@@ -6,12 +6,11 @@ import os
 import sys
 from typing import List, Optional, Type
 
-import jaclang.compiler.absyntree as ast
-from jaclang.compiler.compile import jac_file_to_pass
-from jaclang.compiler.passes.main.pyast_load_pass import PyastBuildPass
-from jaclang.compiler.passes.main.schedules import py_code_gen, type_checker_sched
-from jaclang.compiler.passes.main.schedules import py_code_gen_typed
-from jaclang.compiler.symtable import SymbolTable
+import jaclang.compiler.unitree as uni
+from jaclang.compiler.passes.main import CompilerMode as CMode, PyastBuildPass
+from jaclang.compiler.passes.tool.doc_ir_gen_pass import DocIRGenPass
+from jaclang.compiler.program import JacProgram
+from jaclang.compiler.unitree import UniScopeNode
 from jaclang.utils.helpers import auto_generate_refs, pascal_to_snake
 
 
@@ -25,7 +24,7 @@ class AstKidInfo:
         self.default = default
 
 
-class AstNodeInfo:
+class UniNodeInfo:
     """Meta data about AST nodes."""
 
     type_map: dict[str, type] = {}
@@ -35,11 +34,11 @@ class AstNodeInfo:
         self.cls = cls
         self.process(cls)
 
-    def process(self, cls: Type[ast.AstNode]) -> None:
-        """Process AstNode class."""
+    def process(self, cls: Type[uni.UniNode]) -> None:
+        """Process UniNode class."""
         self.name = cls.__name__
         self.doc = cls.__doc__
-        AstNodeInfo.type_map[self.name] = cls
+        UniNodeInfo.type_map[self.name] = cls
         self.class_name_snake = pascal_to_snake(cls.__name__)
         self.init_sig = inspect.signature(cls.__init__)
         self.kids: list[AstKidInfo] = []
@@ -67,25 +66,29 @@ class AstTool:
 
     def __init__(self) -> None:
         """Initialize."""
-        module = sys.modules[ast.__name__]
+        module = sys.modules[uni.__name__]
         source_code = inspect.getsource(module)
         classes = inspect.getmembers(module, inspect.isclass)
-        ast_node_classes = [
-            AstNodeInfo(cls)
+        uni_node_classes = [
+            UniNodeInfo(cls)
             for _, cls in classes
-            if issubclass(cls, ast.AstNode)
+            if issubclass(cls, uni.UniNode)
             and cls.__name__
             not in [
-                "AstNode",
+                "UniNode",
+                "UniScopeNode",
+                "UniCFGNode",
+                "ProgramModule",
                 "OOPAccessNode",
                 "WalkerStmtOnlyNode",
-                "JacSource",
+                "Source",
                 "EmptyToken",
                 "AstSymbolNode",
                 "AstSymbolStubNode",
                 "AstAccessNode",
                 "Literal",
                 "AstDocNode",
+                "AstImplNeedingNode",
                 "AstSemStrNode",
                 "PythonModuleAst",
                 "AstAsyncNode",
@@ -105,14 +108,14 @@ class AstTool:
         ]
 
         self.ast_classes = sorted(
-            ast_node_classes,
+            uni_node_classes,
             key=lambda cls: source_code.find(f"class {cls.name}"),
         )
 
     def pass_template(self) -> str:
         """Generate pass template."""
         output = (
-            "import jaclang.compiler.absyntree as ast\n"
+            "import jaclang.compiler.unitree as ast\n"
             "from jaclang.compiler.passes import Pass\n\n"
             "class SomePass(Pass):\n"
         )
@@ -135,7 +138,7 @@ class AstTool:
 
             emit('    """\n')
         output = (
-            output.replace("jaclang.compiler.absyntree.", "")
+            output.replace("jaclang.compiler.unitree.", "")
             .replace("typing.", "")
             .replace("<enum '", "")
             .replace("'>", "")
@@ -145,7 +148,7 @@ class AstTool:
         )
         return output
 
-    def py_ast_nodes(self) -> str:
+    def py_uni_nodes(self) -> str:
         """List python ast nodes."""
         from jaclang.compiler.passes.main import PyastBuildPass
 
@@ -162,7 +165,7 @@ class AstTool:
         for i in node_names:
             nd = pascal_to_snake(i)
             this_func = (
-                f"def proc_{nd}(self, node: py_ast.{i}) -> ast.AstNode:\n"
+                f"def proc_{nd}(self, node: py_ast.{i}) -> ast.UniNode:\n"
                 + '    """Process python node."""\n\n'
             )
             if nd not in pass_func_names:
@@ -172,8 +175,96 @@ class AstTool:
             output += f"# missing: \n{i}\n"
         return output
 
-    def md_doc(self) -> str:
-        """Generate mermaid markdown doc."""
+    def ir(self, args: List[str]) -> str:
+        """Generate a AST, SymbolTable tree for .jac file, or Python AST for .py file."""
+        error = (
+            "Usage: ir <choose one of (sym / sym. / ast / ast. / docir / "
+            "pyast / py / unparse)> <.py or .jac file_path>"
+        )
+        if len(args) != 2:
+            return error
+
+        output, file_name = args
+        prog = JacProgram()
+        if not os.path.isfile(file_name):
+            return f"Error: {file_name} not found"
+
+        if file_name.endswith((".jac", ".py")):
+            [base, mod] = os.path.split(file_name)
+            base = base if base else "./"
+
+            if file_name.endswith(".py"):
+                with open(file_name, "r") as f:
+                    file_source = f.read()
+                    parsed_ast = py_ast.parse(file_source)
+                if output == "pyast":
+                    return f"\n{py_ast.dump(parsed_ast, indent=2)}"
+                try:
+                    rep = PyastBuildPass(
+                        ir_in=uni.PythonModuleAst(
+                            parsed_ast,
+                            orig_src=uni.Source(file_source, file_name),
+                        ),
+                        prog=prog,
+                    ).ir_out
+                    print(rep.unparse())
+
+                    ir = prog.compile_from_str(
+                        source_str=rep.unparse(),
+                        file_path=file_name[:-3] + ".jac",
+                        mode=CMode.NO_CGEN,
+                    )
+                except Exception as e:
+                    return f"Error While Jac to Py AST conversion: {e}"
+            else:
+                ir = prog.compile(file_name, mode=CMode.NO_CGEN)
+
+            match output:
+                case "sym":
+                    out = ""
+                    for module_ in prog.mod.hub.values():
+                        mod_name = module_.name
+                        t = "#" * len(mod_name)
+                        out += f"##{t}##\n# {mod_name} #\n##{t}##\n{module_.sym_tab.sym_pp()}\n"
+                    return out
+                case "sym.":
+                    return (
+                        ir.sym_tab.sym_dotgen()
+                        if isinstance(ir.sym_tab, UniScopeNode)
+                        else "Sym_tab is None."
+                    )
+                case "ast":
+                    out = ""
+                    for module_ in prog.mod.hub.values():
+                        mod_name = module_.name
+                        t = "#" * len(mod_name)
+                        out += f"##{t}##\n# {mod_name} #\n##{t}##\n{module_.pp()}\n"
+                    return out
+                case "ast.":
+                    return ir.dotgen()
+                case "unparse":
+                    return ir.unparse()
+                case "pyast":
+                    return (
+                        f"\n{py_ast.dump(ir.gen.py_ast[0], indent=2)}"
+                        if isinstance(ir.gen.py_ast[0], py_ast.AST)
+                        else "Compile failed."
+                    )
+                case "docir":
+                    return DocIRGenPass(ir, prog).print_jac()
+                case "py":
+                    return (
+                        f"\n{ir.gen.py}"
+                        if isinstance(ir.gen.py[0], str)
+                        else "Compile failed."
+                    )
+                case _:
+                    return f"Invalid key: {error}"
+        else:
+            return "Not a .jac or .py file, or invalid command for file type."
+
+    def autodoc_uninode(self) -> str:
+        """Generate mermaid markdown doc for uninodes."""
         output = ""
         for cls in self.ast_classes:
             if not len(cls.kids):
@@ -198,90 +289,9 @@ class AstTool:
             output += f"{cls.doc} \n\n"
         return output
 
-    def ir(self, args: List[str]) -> str:
-        """Generate a AST, SymbolTable tree for .jac file, or Python AST for .py file."""
-        error = "Usage: ir <choose one of (sym / sym. / ast / ast. / pyast / py / unparse)> <.py or .jac file_path>"
-        if len(args) != 2:
-            return error
-
-        output, file_name = args
-
-        if not os.path.isfile(file_name):
-            return f"Error: {file_name} not found"
-
-        if file_name.endswith((".jac", ".py")):
-            [base, mod] = os.path.split(file_name)
-            base = base if base else "./"
-
-            if file_name.endswith(".py"):
-                with open(file_name, "r") as f:
-                    file_source = f.read()
-                    parsed_ast = py_ast.parse(file_source)
-                if output == "pyast":
-                    return f"\n{py_ast.dump(parsed_ast, indent=2)}"
-                try:
-                    rep = PyastBuildPass(
-                        input_ir=ast.PythonModuleAst(
-                            parsed_ast,
-                            orig_src=ast.JacSource(file_source, file_name),
-                        ),
-                    ).ir
-
-                    schedule = py_code_gen_typed
-                    target = schedule[-1]
-                    for i in schedule:
-                        if i == target:
-                            break
-                        ast_ret = i(input_ir=rep, prior=None)
-                    ast_ret = target(input_ir=rep, prior=None)
-                    ir = ast_ret.ir
-                except Exception as e:
-                    return f"Error While Jac to Py AST conversion: {e}"
-            else:
-                ir = jac_file_to_pass(
-                    file_name, schedule=[*(py_code_gen[:-1]), *type_checker_sched]
-                ).ir
-
-            match output:
-                case "sym":
-                    return (
-                        ir.sym_tab.pp()
-                        if isinstance(ir.sym_tab, SymbolTable)
-                        else "Sym_tab is None."
-                    )
-                case "sym.":
-                    return (
-                        ir.sym_tab.dotgen()
-                        if isinstance(ir.sym_tab, SymbolTable)
-                        else "Sym_tab is None."
-                    )
-                case "ast":
-                    return ir.pp()
-                case "ast.":
-                    return ir.dotgen()
-                case "unparse":
-                    return ir.unparse()
-                case "pyast":
-                    return (
-                        f"\n{py_ast.dump(ir.gen.py_ast[0], indent=2)}"
-                        if isinstance(ir.gen.py_ast[0], py_ast.AST)
-                        else "Compile failed."
-                    )
-                case "py":
-                    return (
-                        f"\n{ir.gen.py}"
-                        if isinstance(ir.gen.py[0], str)
-                        else "Compile failed."
-                    )
-                case _:
-                    return f"Invalid key: {error}"
-        else:
-            return "Not a .jac or .py file, or invalid command for file type."
-
     def automate_ref(self) -> str:
         """Automate the reference guide generation."""
-        auto_generate_refs()
-        return "References generated."
+        return auto_generate_refs()
 
     def gen_parser(self) -> str:
         """Generate static parser."""

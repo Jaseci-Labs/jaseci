@@ -1,4 +1,4 @@
-can foo() {
+def foo -> int{
     a = 42;
     return a;
 }

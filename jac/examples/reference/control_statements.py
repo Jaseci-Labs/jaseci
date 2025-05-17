@@ -3,7 +3,8 @@ for i in range(9):
         print("loop is stopped!!")
         break
     print(i)
-for i in "WIN":
-    if i == "W":
+
+for j in "WIN":
+    if j == "W":
         continue
-    print(i)
+    print(j)

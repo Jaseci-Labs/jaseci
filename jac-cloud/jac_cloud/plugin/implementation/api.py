@@ -19,6 +19,7 @@ from asyncer import syncify
 
 from fastapi import (
     APIRouter,
+    BackgroundTasks,
     Depends,
     File,
     HTTPException,
@@ -28,7 +29,7 @@ from fastapi import (
 )
 from fastapi.responses import ORJSONResponse
 
-from jaclang.plugin.feature import JacFeature as Jac
+from jaclang.runtimelib.machine import JacMachineInterface as Jac
 
 from orjson import loads
 
@@ -36,6 +37,7 @@ from pydantic import BaseModel, Field as pyField, ValidationError, create_model
 
 from starlette.datastructures import UploadFile as BaseUploadFile
 
+from .scheduler import run_task, schedule_walker
 from .websocket import websocket_events
 from ...core.architype import NodeAnchor, WalkerAnchor, WalkerArchitype
 from ...core.context import ContextResponse, JaseciContext
@@ -87,6 +89,7 @@ class DefaultSpecs:
     deprecated: bool | None = None
     name: str | None = None
     openapi_extra: dict[str, Any] | None = None
+    schedule: dict[str, Any] | None = None
 
 
 def get_specs(cls: type) -> Type["DefaultSpecs"] | None:
@@ -108,7 +111,14 @@ def gen_model_field(cls: type, field: Field, is_file: bool = False) -> tuple[typ
     if field.default is not MISSING:
         consts = (cls, pyField(default=field.default))
     elif callable(field.default_factory):
-        consts = (cls, pyField(default_factory=field.default_factory))
+        consts = (
+            cls,
+            (
+                field.default_factory()
+                if is_file
+                else pyField(default_factory=field.default_factory)
+            ),
+        )
     else:
         consts = (cls, File(...) if is_file else ...)
 
@@ -117,7 +127,13 @@ def gen_model_field(cls: type, field: Field, is_file: bool = False) -> tuple[typ
 
 def populate_apis(cls: Type[WalkerArchitype]) -> None:
     """Generate FastAPI endpoint based on WalkerArchitype class."""
-    if (specs := get_specs(cls)) and not specs.private:
+    if not (specs := get_specs(cls)):
+        return
+
+    if schedule := specs.schedule:
+        schedule_walker(**schedule)(cls)
+
+    if not specs.private:
         path: str = specs.path or ""
         methods: list = specs.methods or []
         as_query: str | list[str] = specs.as_query or []
@@ -207,6 +223,7 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
 
         def api_entry(
             request: Request,
+            background_task: BackgroundTasks,
             node: str | None,
             payload: payload_model = Depends(),  # type: ignore # noqa: B008
         ) -> ORJSONResponse:
@@ -237,16 +254,31 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
             validate_request(request, cls.__name__, jctx.entry_node.name or "root")
 
             if Jac.check_read_access(jctx.entry_node):
-                wlk: WalkerAnchor = cls(**body, **query, **files).__jac__
-                Jac.spawn_call(wlk.architype, jctx.entry_node.architype)
+                warch = cls(**body, **query, **files)
+                wanch: WalkerAnchor = warch.__jac__
+                if warch.__jac_async__:
+                    background_task.add_task(
+                        run_task, wanch, jctx.root_state, jctx.entry_node
+                    )
+                    resp = {"walker_id": wanch.ref_id}
+                    log_exit(resp, log)
+                else:
+                    Jac.spawn(warch, jctx.entry_node.architype)
+                    if jctx.custom is not MISSING:
+                        log_exit(
+                            (
+                                {"custom": jctx.custom.body}
+                                if isinstance(jctx.custom, Response)
+                                else jctx.custom
+                            ),
+                            log,
+                        )
+                        return jctx.custom
+
+                    resp = jctx.response(wanch.returns)
+                    log_exit(resp, log)
+
                 jctx.close()
-
-                if jctx.custom is not MISSING:
-                    return jctx.custom
-
-                resp = jctx.response(wlk.returns)
-                log_exit(resp, log)
-
                 return ORJSONResponse(resp, jctx.status)
             else:
                 error = {
@@ -259,9 +291,10 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
 
         def api_root(
             request: Request,
+            background_task: BackgroundTasks,
             payload: payload_model = Depends(),  # type: ignore # noqa: B008
         ) -> Response:
-            return api_entry(request, None, payload)
+            return api_entry(request, background_task, None, payload)
 
         if webhook is None:
             target_authenticator = authenticator
@@ -343,6 +376,7 @@ def specs(
     deprecated: bool | None = None,
     name: str | None = None,
     openapi_extra: dict[str, Any] | None = None,
+    schedule: dict[str, Any] | None = None,
 ) -> Callable:
     """Walker Decorator."""
 
@@ -365,6 +399,7 @@ def specs(
             _deprecated = deprecated
             _name = name
             _openapi_extra = openapi_extra
+            _schedule = schedule
 
             class __specs__(DefaultSpecs):  # noqa: N801
                 path: str = _path
@@ -384,6 +419,7 @@ def specs(
                 deprecated: bool | None = _deprecated
                 name: str | None = _name
                 openapi_extra: dict[str, Any] | None = _openapi_extra
+                schedule: dict[str, Any] | None = _schedule
 
             cls.__specs__ = __specs__  # type: ignore[attr-defined]
 

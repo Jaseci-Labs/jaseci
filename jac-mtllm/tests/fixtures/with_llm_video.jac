@@ -1,13 +1,13 @@
-import:py from mtllm.llms { BaseLLM }
-import:py from mtllm { Video }
-import:py os;
+import from mtllm.llms { BaseLLM }
+import from mtllm { Video }
+import os;
 
-obj model :BaseLLM: {
-    can init {
+obj model(BaseLLM) {
+    def init {
         super.__init__();
     }
 
-    can __infer__(meaning_in: str, **kwargs: dict) {
+    def __infer__(meaning_in: str, **kwargs: dict) {
         print(kwargs);
         print(meaning_in);
         return "[Output] Something";
@@ -16,7 +16,7 @@ obj model :BaseLLM: {
 
 glob llm = model();
 
-can is_aligned(video: Video, text: str) -> bool by llm(
+def is_aligned(video: Video, text: str) -> bool by llm(
     method="Chain-of-Thoughts",
     context="Mugen is the moving character"
 );

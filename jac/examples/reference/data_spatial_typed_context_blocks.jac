@@ -8,15 +8,15 @@ node Product {
     can make with Producer entry;
 }
 
-:walker:Producer:can:produce {
+impl Producer.produce {
     end = here;
-    for i=0 to i<=2 by i+=1  {
+    for i=0 to i<3 by i+=1  {
         end ++> (end := Product(number=i + 1));
     }
     visit [-->];
 }
 
-:node:Product:can:make -> str {
+impl Product.make {
     print(f"Hi, I am {self} returning a String");
     visit [-->];
 }

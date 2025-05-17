@@ -1,4 +1,4 @@
-can square(x: int) -> int {
+def square(x: int) -> int {
     return (x ** 2);
 }
 

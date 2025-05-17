@@ -8,12 +8,10 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Optional
 
-import jaclang.compiler.absyntree as ast
-from jaclang.compiler.compile import jac_str_to_pass
-from jaclang.compiler.parser import JacParser
-from jaclang.compiler.passes import Pass
-from jaclang.compiler.passes.main.schedules import py_code_gen_typed
-from jaclang.compiler.passes.tool import FuseCommentsPass, JacFormatPass
+import jaclang.compiler.unitree as uni
+from jaclang.compiler.passes.main import CompilerMode as CMode
+from jaclang.compiler.program import JacProgram
+from jaclang.compiler.unitree import UniScopeNode
 from jaclang.langserve.sem_manager import SemTokManager
 from jaclang.langserve.utils import (
     add_unique_text_edit,
@@ -23,7 +21,6 @@ from jaclang.langserve.utils import (
     find_deepest_symbol_node_at_pos,
     find_index,
     gen_diagnostics,
-    get_location_range,
     get_symbols_for_outline,
     parse_symbol_path,
 )
@@ -33,99 +30,108 @@ from jaclang.vendor.pygls.server import LanguageServer
 import lsprotocol.types as lspt
 
 
-class ModuleInfo:
-    """Module IR and Stats."""
+class ModuleManager:
+    """Handles Jac module, semantic manager, and alert management."""
 
-    def __init__(
-        self,
-        ir: ast.Module,
-        impl_parent: Optional[ModuleInfo] = None,
+    def __init__(self, program: JacProgram, sem_managers: dict) -> None:
+        """Initialize ModuleManager."""
+        self.program = program
+        self.sem_managers = sem_managers
+
+    def update(
+        self, file_path: str, build: uni.Module, update_annexed: bool = True
     ) -> None:
-        """Initialize module info."""
-        self.ir = ir
-        self.impl_parent: Optional[ModuleInfo] = impl_parent
-        self.sem_manager = SemTokManager(ir=ir)
-        self.is_modified: bool = False
+        """Update modules in JacProgram's hub and semantic managers."""
+        file_path = file_path.removeprefix("file://")
+        self.program.mod.hub[file_path] = build
+        self.sem_managers[file_path] = SemTokManager(ir=build)
+        if update_annexed:
+            for p, mod in self.program.mod.hub.items():
+                if p != file_path:
+                    self.sem_managers[p] = SemTokManager(ir=mod)
 
-    @property
-    def uri(self) -> str:
-        """Return uri."""
-        return uris.from_fs_path(self.ir.loc.mod_path)
+    def clear_alerts_for_file(self, file_path_fs: str) -> None:
+        """Remove errors and warnings for a specific file from the lists."""
+        self.program.errors_had[:] = [
+            e for e in self.program.errors_had if e.loc.mod_path != file_path_fs
+        ]
+        self.program.warnings_had[:] = [
+            w for w in self.program.warnings_had if w.loc.mod_path != file_path_fs
+        ]
 
 
-class JacLangServer(LanguageServer):
-    """Class for managing workspace."""
+class JacLangServer(JacProgram, LanguageServer):
+    """Jac Language Server, manages JacProgram and LSP."""
 
     def __init__(self) -> None:
-        """Initialize workspace."""
-        super().__init__("jac-lsp", "v0.1")
-        self.modules: dict[str, ModuleInfo] = {}
+        """Initialize JacLangServer."""
+        LanguageServer.__init__(self, "jac-lsp", "v0.1")
+        JacProgram.__init__(self)
         self.executor = ThreadPoolExecutor()
         self.tasks: dict[str, asyncio.Task] = {}
+        self.sem_managers: dict[str, SemTokManager] = {}
+        self.module_manager = ModuleManager(self, self.sem_managers)
+
+    def _clear_alerts_for_file(self, file_path_fs: str) -> None:
+        """Remove errors and warnings for a specific file from the lists."""
+        self.module_manager.clear_alerts_for_file(file_path_fs)
+
+    def get_ir(self, file_path: str) -> Optional[uni.Module]:
+        """Get IR for a file path."""
+        file_path = file_path.removeprefix("file://")
+        return self.mod.hub.get(file_path)
 
     def update_modules(
-        self, file_path: str, build: Pass, refresh: bool = False
+        self, file_path: str, build: uni.Module, need: bool = True
     ) -> None:
-        """Update modules."""
-        if not isinstance(build.ir, ast.Module):
-            self.log_error("Error with module build.")
-            return
-        keep_parent = (
-            self.modules[file_path].impl_parent if file_path in self.modules else None
-        )
-        self.modules[file_path] = ModuleInfo(ir=build.ir, impl_parent=keep_parent)
-        for p in build.ir.mod_deps.keys():
-            uri = uris.from_fs_path(p)
-            if file_path != uri:
-                self.modules[uri] = ModuleInfo(
-                    ir=build.ir.mod_deps[p],
-                    impl_parent=self.modules[file_path],
-                )
+        """Update modules in JacProgram's hub and semantic managers."""
+        self.log_py(f"Updating modules for {file_path}")
+        self.module_manager.update(file_path, build, update_annexed=need)
 
     def quick_check(self, file_path: str) -> bool:
-        """Rebuild a file."""
+        """Rebuild a file (syntax only)."""
         try:
+            file_path_fs = file_path.removeprefix("file://")
             document = self.workspace.get_text_document(file_path)
-            build = jac_str_to_pass(
-                jac_str=document.source, file_path=document.path, schedule=[]
+            self._clear_alerts_for_file(file_path_fs)
+            build = self.compile_from_str(
+                source_str=document.source,
+                file_path=document.path,
+                mode=CMode.PARSE,
             )
+            self.update_modules(file_path_fs, build, need=False)
             self.publish_diagnostics(
                 file_path,
-                gen_diagnostics(file_path, build.errors_had, build.warnings_had),
+                gen_diagnostics(file_path, self.errors_had, self.warnings_had),
             )
-            return len(build.errors_had) == 0
+            return len(self.errors_had) == 0
         except Exception as e:
             self.log_error(f"Error during syntax check: {e}")
             return False
 
     def deep_check(self, file_path: str, annex_view: Optional[str] = None) -> bool:
-        """Rebuild a file and its dependencies."""
+        """Rebuild a file and its dependencies (typecheck)."""
         try:
             start_time = time.time()
+            file_path_fs = file_path.removeprefix("file://")
             document = self.workspace.get_text_document(file_path)
-            if file_path in self.modules and (
-                parent := self.modules[file_path].impl_parent
-            ):
-                return self.deep_check(
-                    uris.from_fs_path(parent.ir.loc.mod_path), annex_view=file_path
-                )
-            build = jac_str_to_pass(
-                jac_str=document.source,
+            self._clear_alerts_for_file(file_path_fs)
+            build = self.compile_from_str(
+                source_str=document.source,
                 file_path=document.path,
-                schedule=py_code_gen_typed,
+                mode=CMode.TYPECHECK,
             )
-            self.update_modules(file_path, build)
-            if discover := self.modules[file_path].ir.annexable_by:
+            self.update_modules(file_path_fs, build)
+            if build.annexable_by:
                 return self.deep_check(
-                    uris.from_fs_path(discover), annex_view=file_path
+                    uris.from_fs_path(build.annexable_by), annex_view=file_path
                 )
-
             self.publish_diagnostics(
                 annex_view if annex_view else file_path,
                 gen_diagnostics(
                     annex_view if annex_view else file_path,
-                    build.errors_had,
-                    build.warnings_had,
+                    self.errors_had,
+                    self.warnings_had,
                 ),
             )
             if annex_view:
@@ -133,12 +139,12 @@ class JacLangServer(LanguageServer):
                     file_path,
                     gen_diagnostics(
                         file_path,
-                        build.errors_had,
-                        build.warnings_had,
+                        self.errors_had,
+                        self.warnings_had,
                     ),
                 )
             self.log_py(f"PROFILE: Deep check took {time.time() - start_time} seconds.")
-            return len(build.errors_had) == 0
+            return len(self.errors_had) == 0
         except Exception as e:
             self.log_error(f"Error during deep check: {e}")
             return False
@@ -174,11 +180,17 @@ class JacLangServer(LanguageServer):
     ) -> lspt.CompletionList:
         """Return completion for a file."""
         document = self.workspace.get_text_document(file_path)
-        mod_ir = self.modules[file_path].ir
+        mod_ir = self.get_ir(file_path)
+        if not mod_ir:
+            return lspt.CompletionList(is_incomplete=False, items=[])
         current_line = document.lines[position.line]
         current_pos = position.character
         current_symbol_path = parse_symbol_path(current_line, current_pos)
-        builtin_tab = mod_ir.sym_tab.kid[-1]
+        builtin_mod = next(
+            mod for name, mod in self.mod.hub.items() if "builtins" in name
+        )
+        builtin_tab = builtin_mod.sym_tab
+        assert isinstance(builtin_tab, UniScopeNode)
         completion_items = []
 
         node_selected = find_deepest_symbol_node_at_pos(
@@ -195,17 +207,15 @@ class JacLangServer(LanguageServer):
                 for symbol in current_symbol_path:
                     if symbol == "self":
                         is_ability_def = (
-                            temp_tab.owner
-                            if isinstance(temp_tab.owner, ast.AbilityDef)
-                            else temp_tab.owner.find_parent_of_type(ast.AbilityDef)
+                            temp_tab
+                            if isinstance(temp_tab, uni.ImplDef)
+                            else temp_tab.find_parent_of_type(uni.ImplDef)
                         )
                         if not is_ability_def:
-                            archi_owner = mod_tab.owner.find_parent_of_type(
-                                ast.Architype
-                            )
+                            archi_owner = mod_tab.find_parent_of_type(uni.Architype)
                             temp_tab = (
-                                archi_owner._sym_tab
-                                if archi_owner and archi_owner._sym_tab
+                                archi_owner.sym_tab
+                                if archi_owner and archi_owner.sym_tab
                                 else mod_tab
                             )
                             continue
@@ -213,7 +223,7 @@ class JacLangServer(LanguageServer):
                             archi_owner = (
                                 (
                                     is_ability_def.decl_link.find_parent_of_type(
-                                        ast.Architype
+                                        uni.Architype
                                     )
                                 )
                                 if is_ability_def.decl_link
@@ -241,13 +251,10 @@ class JacLangServer(LanguageServer):
                 completion_items += collect_all_symbols_in_scope(
                     temp_tab, up_tree=False
                 )
-                if (
-                    isinstance(temp_tab.owner, ast.Architype)
-                    and temp_tab.owner.base_classes
-                ):
+                if isinstance(temp_tab, uni.Architype) and temp_tab.base_classes:
                     base = []
-                    for base_name in temp_tab.owner.base_classes.items:
-                        if isinstance(base_name, ast.Name) and base_name.sym:
+                    for base_name in temp_tab.base_classes.items:
+                        if isinstance(base_name, uni.Name) and base_name.sym:
                             base.append(base_name.sym)
                     for base_class_symbol in base:
                         if base_class_symbol.fetch_sym_tab:
@@ -258,8 +265,8 @@ class JacLangServer(LanguageServer):
 
         else:
             if node_selected and (
-                node_selected.find_parent_of_type(ast.Architype)
-                or node_selected.find_parent_of_type(ast.AbilityDef)
+                node_selected.find_parent_of_type(uni.Architype)
+                or node_selected.find_parent_of_type(uni.ImplDef)
             ):
                 self_symbol = [
                     lspt.CompletionItem(
@@ -278,29 +285,25 @@ class JacLangServer(LanguageServer):
 
     def rename_module(self, old_path: str, new_path: str) -> None:
         """Rename module."""
-        if old_path in self.modules and new_path != old_path:
-            self.modules[new_path] = self.modules[old_path]
-            del self.modules[old_path]
+        if old_path in self.mod.hub and new_path != old_path:
+            self.mod.hub[new_path] = self.mod.hub[old_path]
+            self.sem_managers[new_path] = self.sem_managers[old_path]
+            del self.mod.hub[old_path]
+            del self.sem_managers[old_path]
 
     def delete_module(self, uri: str) -> None:
         """Delete module."""
-        if uri in self.modules:
-            del self.modules[uri]
+        if uri in self.mod.hub:
+            del self.mod.hub[uri]
+        if uri in self.sem_managers:
+            del self.sem_managers[uri]
 
     def formatted_jac(self, file_path: str) -> list[lspt.TextEdit]:
         """Return formatted jac."""
         try:
             document = self.workspace.get_text_document(file_path)
-            format = jac_str_to_pass(
-                jac_str=document.source,
-                file_path=document.path,
-                target=JacFormatPass,
-                schedule=[FuseCommentsPass, JacFormatPass],
-            )
-            formatted_text = (
-                format.ir.gen.jac
-                if JacParser not in [e.from_pass for e in format.errors_had]
-                else document.source
+            formatted_text = JacProgram.jac_str_formatter(
+                source_str=document.source, file_path=document.path
             )
         except Exception as e:
             self.log_error(f"Error during formatting: {e}")
@@ -321,18 +324,20 @@ class JacLangServer(LanguageServer):
         self, file_path: str, position: lspt.Position
     ) -> Optional[lspt.Hover]:
         """Return hover information for a file."""
-        if file_path not in self.modules:
+        file_path_fs = file_path.removeprefix("file://")
+        if file_path_fs not in self.mod.hub:
+            return None
+        sem_mgr = self.sem_managers.get(file_path_fs)
+        if not sem_mgr:
             return None
         token_index = find_index(
-            self.modules[file_path].sem_manager.sem_tokens,
+            sem_mgr.sem_tokens,
             position.line,
             position.character,
         )
         if token_index is None:
             return None
-        node_selected = self.modules[file_path].sem_manager.static_sem_tokens[
-            token_index
-        ][3]
+        node_selected = sem_mgr.static_sem_tokens[token_index][3]
         value = self.get_node_info(node_selected) if node_selected else None
         if value:
             return lspt.Hover(
@@ -342,10 +347,10 @@ class JacLangServer(LanguageServer):
             )
         return None
 
-    def get_node_info(self, node: ast.AstSymbolNode) -> Optional[str]:
+    def get_node_info(self, node: uni.AstSymbolNode) -> Optional[str]:
         """Extract meaningful information from the AST node."""
         try:
-            if isinstance(node, ast.NameAtom):
+            if isinstance(node, uni.NameAtom):
                 node = node.name_of
             access = node.sym.access.value + " " if node.sym else None
             node_info = (
@@ -353,21 +358,19 @@ class JacLangServer(LanguageServer):
             )
             if node.name_spec.clean_type:
                 node_info += f": {node.name_spec.clean_type}"
-            if isinstance(node, ast.AstSemStrNode) and node.semstr:
-                node_info += f"\n{node.semstr.value}"
-            if isinstance(node, ast.AstDocNode) and node.doc:
+            if isinstance(node, uni.AstDocNode) and node.doc:
                 node_info += f"\n{node.doc.value}"
-            if isinstance(node, ast.Ability) and node.signature:
+            if isinstance(node, uni.Ability) and node.signature:
                 node_info += f"\n{node.signature.unparse()}"
-            self.log_py(f"mypy_node: {node.gen.mypy_ast}")
         except AttributeError as e:
             self.log_warning(f"Attribute error when accessing node attributes: {e}")
         return node_info.strip()
 
     def get_outline(self, file_path: str) -> list[lspt.DocumentSymbol]:
         """Return document symbols for a file."""
-        if file_path in self.modules and (
-            root_node := self.modules[file_path].ir._sym_tab
+        file_path_fs = file_path.removeprefix("file://")
+        if file_path_fs in self.mod.hub and (
+            root_node := self.mod.hub[file_path_fs].sym_tab
         ):
             return get_symbols_for_outline(root_node)
         return []
@@ -376,25 +379,29 @@ class JacLangServer(LanguageServer):
         self, file_path: str, position: lspt.Position
     ) -> Optional[lspt.Location]:
         """Return definition location for a file."""
-        if file_path not in self.modules:
+        file_path_fs = file_path.removeprefix("file://")
+        if file_path_fs not in self.mod.hub:
+            return None
+        sem_mgr = self.sem_managers.get(file_path_fs)
+        if not sem_mgr:
             return None
         token_index = find_index(
-            self.modules[file_path].sem_manager.sem_tokens,
+            sem_mgr.sem_tokens,
             position.line,
             position.character,
         )
         if token_index is None:
             return None
-        node_selected = self.modules[file_path].sem_manager.static_sem_tokens[
-            token_index
-        ][3]
+        node_selected = sem_mgr.static_sem_tokens[token_index][3]
         if node_selected:
             if (
-                isinstance(node_selected, ast.Name)
+                isinstance(node_selected, uni.Name)
                 and node_selected.parent
-                and isinstance(node_selected.parent, ast.ModulePath)
+                and isinstance(node_selected.parent, uni.SubNodeList)
+                and node_selected.parent.parent
+                and isinstance(node_selected.parent.parent, uni.ModulePath)
             ):
-                spec = node_selected.parent.abs_path
+                spec = node_selected.parent.parent.abs_path
                 if spec:
                     spec = spec[5:] if spec.startswith("File:") else spec
                     return lspt.Location(
@@ -407,19 +414,13 @@ class JacLangServer(LanguageServer):
                 else:
                     return None
             elif node_selected.parent and isinstance(
-                node_selected.parent, ast.ModuleItem
+                node_selected.parent, uni.ModuleItem
             ):
                 path = (
                     node_selected.parent.abs_path
                     or node_selected.parent.from_mod_path.abs_path
                 )
-                try:  # TODO: Get rid of this when 'from' import is fixed
-                    loc_range = tuple(
-                        loc - 1 if loc > 0 else loc
-                        for loc in get_location_range(node_selected.parent)
-                    )
-                except ValueError:
-                    loc_range = (0, 0, 0, 0)
+                loc_range = (0, 0, 0, 0)
 
                 if path and loc_range:
                     path = path[5:] if path.startswith("File:") else path
@@ -434,13 +435,13 @@ class JacLangServer(LanguageServer):
                             ),
                         ),
                     )
-            elif isinstance(node_selected, ast.ElementStmt):
+            elif isinstance(node_selected, uni.ElementStmt):
                 return None
             decl_node = (
                 node_selected.parent.body.target
                 if node_selected.parent
-                and isinstance(node_selected.parent, ast.AstImplNeedingNode)
-                and isinstance(node_selected.parent.body, ast.AstImplOnlyNode)
+                and isinstance(node_selected.parent, uni.AstImplNeedingNode)
+                and isinstance(node_selected.parent.body, uni.ImplDef)
                 else (
                     node_selected.sym.decl
                     if (node_selected.sym and node_selected.sym.decl)
@@ -465,16 +466,20 @@ class JacLangServer(LanguageServer):
         self, file_path: str, position: lspt.Position
     ) -> list[lspt.Location]:
         """Return references for a file."""
-        if file_path not in self.modules:
+        file_path_fs = file_path.removeprefix("file://")
+        if file_path_fs not in self.mod.hub:
+            return []
+        sem_mgr = self.sem_managers.get(file_path_fs)
+        if not sem_mgr:
             return []
         index1 = find_index(
-            self.modules[file_path].sem_manager.sem_tokens,
+            sem_mgr.sem_tokens,
             position.line,
             position.character,
         )
         if index1 is None:
             return []
-        node_selected = self.modules[file_path].sem_manager.static_sem_tokens[index1][3]
+        node_selected = sem_mgr.static_sem_tokens[index1][3]
         if node_selected and node_selected.sym:
             list_of_references: list[lspt.Location] = [
                 lspt.Location(
@@ -490,16 +495,20 @@ class JacLangServer(LanguageServer):
         self, file_path: str, position: lspt.Position, new_name: str
     ) -> Optional[lspt.WorkspaceEdit]:
         """Rename a symbol in a file."""
-        if file_path not in self.modules:
+        file_path_fs = file_path.removeprefix("file://")
+        if file_path_fs not in self.mod.hub:
+            return None
+        sem_mgr = self.sem_managers.get(file_path_fs)
+        if not sem_mgr:
             return None
         index1 = find_index(
-            self.modules[file_path].sem_manager.sem_tokens,
+            sem_mgr.sem_tokens,
             position.line,
             position.character,
         )
         if index1 is None:
             return None
-        node_selected = self.modules[file_path].sem_manager.static_sem_tokens[index1][3]
+        node_selected = sem_mgr.static_sem_tokens[index1][3]
         if node_selected and node_selected.sym:
             changes: dict[str, list[lspt.TextEdit]] = {}
             for node in [
@@ -517,9 +526,11 @@ class JacLangServer(LanguageServer):
 
     def get_semantic_tokens(self, file_path: str) -> lspt.SemanticTokens:
         """Return semantic tokens for a file."""
-        if file_path not in self.modules:
+        file_path_fs = file_path.removeprefix("file://")
+        sem_mgr = self.sem_managers.get(file_path_fs)
+        if not sem_mgr:
             return lspt.SemanticTokens(data=[])
-        return lspt.SemanticTokens(data=self.modules[file_path].sem_manager.sem_tokens)
+        return lspt.SemanticTokens(data=sem_mgr.sem_tokens)
 
     def log_error(self, message: str) -> None:
         """Log an error message."""

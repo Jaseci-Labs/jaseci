@@ -1,0 +1,24 @@
+:root>* {
+    /* --md-code-bg-color: #ececec; */
+    --md-code-hl-operator-color: #b68500;
+}
+
+
+.md-typeset .admonition.question,
+.md-typeset details.question {
+    border-color: #ffab40;
+}
+
+.md-typeset .question > .admonition-title,
+.md-typeset .question > summary {
+    background-color: rgba(255, 171, 64, 0.1);
+}
+
+.md-typeset .question > .admonition-title::before,
+.md-typeset .question > summary::before {
+    background-color: #ffab40;
+}
+
+.md-typeset details > summary:after {
+    color: #ffab40 !important;
+}

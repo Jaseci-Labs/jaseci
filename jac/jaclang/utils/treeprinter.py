@@ -7,52 +7,164 @@ import builtins
 import html
 from typing import Optional, TYPE_CHECKING
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as uni
 from jaclang.settings import settings
 
 if TYPE_CHECKING:
-    from jaclang.compiler.absyntree import AstNode, SymbolTable
+    from jaclang.compiler.unitree import UniNode, UniScopeNode
 
 id_bag: dict = {}
 id_used: int = 0
 CLASS_COLOR_MAP: dict[str, str] = {
-    "Architype": "red",
-    "Ability": "green",
-    "ArchDef": "blue",
-    "AbilityDef": "yellow",
+    "Expr": "#fbeb93",
+    "AtomExpr": "#fbeb93",
+    "ElementStmt": "#d8f3dc",
+    "ArchBlockStmt": "#a8dadc",
+    "EnumBlockStmt": "#89c6b3",
+    "CodeBlockStmt": "#ffc596",
+    "AstImplOnlyNode": "#a8dadc",
+    "AstImplNeedingNode": "#a3d3f0",
+    "NameAtom": "#cafafa",
+    "ArchSpec": "#a3d3f0",
+    "MatchPattern": "#a0d8b3",
+    "SubTag": "#cafafa",
+    "SubNodeList": "#dbbfe5",
+    "Module": "#D1FFE2  ",
+    "GlobalVars": "#e1d1ff",
+    "Test": "#e1d1ff",
+    "ModuleCode": "#e1d1ff",
+    "PyInlineCode": "#e1d1ff",
+    "Import": "#e1d1ff",
+    "ModulePath": "#e1d1ff",
+    "ModuleItem": "#e1d1ff",
+    "Architype": "#a8dadc",
+    "ArchDef": "#a3d3f0",
+    "Enum": "#89c6b3",
+    "EnumDef": "#89c6b3",
+    "Ability": "#f9d69e",
+    "AbilityDef": "#f9d69e",
+    "FuncSignature": "#f9d69e",
+    "EventSignature": "#f9d69e",
+    "ArchRefChain": "#a3d3f0",
+    "ParamVar": "#ffc596",
+    "ArchHas": "#a8dadc",
+    "HasVar": "#a3d3f0",
+    "TypedCtxBlock": "#ffc596",
+    "IfStmt": "#ccee9b",
+    "ElseIf": "#ccee9b",
+    "ElseStmt": "#ccee9b",
+    "ExprStmt": "#d8f3dc",
+    "TryStmt": "#ccee9b",
+    "Except": "#d8f3dc",
+    "FinallyStmt": "#d8f3dc",
+    "IterForStmt": "#ccee9b",
+    "InForStmt": "#ccee9b",
+    "WhileStmt": "#ccee9b",
+    "WithStmt": "#ccee9b",
+    "ExprAsItem": "#ffc596",
+    "RaiseStmt": "#d8f3dc",
+    "AssertStmt": "#d8f3dc",
+    "CheckStmt": "#d8f3dc",
+    "CtrlStmt": "#d8f3dc",
+    "DeleteStmt": "#d8f3dc",
+    "ReportStmt": "#d8f3dc",
+    "ReturnStmt": "#d8f3dc",
+    "IgnoreStmt": "#d8f3dc",
+    "VisitStmt": "#d8f3dc",
+    "RevisitStmt": "#d8f3dc",
+    "DisengageStmt": "#d8f3dc",
+    "AwaitExpr": "#fbeb93",
+    "GlobalStmt": "#ffc596",
+    "NonLocalStmt": "#ffc596",
+    "Assignment": "#ffc596",
+    "BinaryExpr": "#fbeb93",
+    "CompareExpr": "#fbeb93",
+    "BoolExpr": "#fbeb93",
+    "LambdaExpr": "#fbeb93",
+    "UnaryExpr": "#fbeb93",
+    "IfElseExpr": "#fbeb93",
+    "MultiString": "#fccca4",
+    "FString": "#ffc596",
+    "ListVal": "#ffc596",
+    "SetVal": "#ffc596",
+    "TupleVal": "#ffc596",
+    "DictVal": "#ffc596",
+    "KVPair": "#ffc596",
+    "KWPair": "#ffc596",
+    "InnerCompr": "#fdc4df",
+    "ListCompr": "#fdc4df",
+    "GenCompr": "#ffc1de",
+    "SetCompr": "#fdc4df",
+    "DictCompr": "#fdc4df",
+    "AtomTrailer": "#ffc596",
+    "AtomUnit": "#ffc596",
+    "YieldExpr": "#fbeb93",
+    "FuncCall": "#fbeb93",
+    "IndexSlice": "#fbeb93",
+    "ArchRef": "#a8dadc",
+    "EdgeRefTrailer": "#fbeb93",
+    "EdgeOpRef": "#fbeb93",
+    "DisconnectOp": "#fbeb93",
+    "ConnectOp": "#fbeb93",
+    "FilterCompr": "#fdc4df",
+    "AssignCompr": "#fdc4df",
+    "MatchStmt": "#a0d8b3",
+    "MatchCase": "#a0d8b3",
+    "MatchOr": "#a0d8b3",
+    "MatchAs": "#a0d8b3",
+    "MatchWild": "#a0d8b3",
+    "MatchValue": "#a0d8b3",
+    "MatchSingleton": "#a0d8b3",
+    "MatchSequence": "#a0d8b3",
+    "MatchMapping": "#a0d8b3",
+    "MatchKVPair": "#a0d8b3",
+    "MatchStar": "#a0d8b3",
+    "MatchArch": "#a0d8b3",
+    "Token": "#f0efef",
+    "Name": "#cafafa",
+    "SpecialVarRef": "#cafafa",
+    "Literal": "#f1cfc4",
+    "BuiltinType": "#f1cfc4",
+    "Float": "#f1cfc4",
+    "Int": "#f1cfc4",
+    "String": "#f1cfc4",
+    "Bool": "#f1cfc4",
+    "Null": "#f1cfc4",
+    "Ellipsis": "#f1cfc4",
+    "EmptyToken": "#f1cfc4",
+    "Semi": "#f1cfc4",
 }
 
 
 def dotgen_ast_tree(
-    root: AstNode,
+    root: UniNode,
     dot_lines: Optional[list[str]] = None,
 ) -> str:
     """Recursively generate ast tree in dot format."""
-    global id_bag, id_used
     starting_call = False
     if dot_lines is None:
         starting_call = True
         dot_lines = []
 
-    def gen_node_id(node: ast.AstNode) -> int:
+    def gen_node_id(node: uni.UniNode) -> int:
         """Generate number for each nodes."""
-        global id_bag, id_used
+        global id_used
         if id(node) not in id_bag:
             id_bag[id(node)] = id_used
             id_used += 1
         return id_bag[id(node)]
 
-    def gen_node_parameters(node: ast.AstNode) -> str:
+    def gen_node_parameters(node: uni.UniNode) -> str:
         shape = ""
         fillcolor = ""
         style = ""
-        _class__ = str(node.__class__)[35:-2]
+        _class__ = str(node.__class__)[33:-2]
         if _class__ in CLASS_COLOR_MAP:
-            shape = 'shape="box"'
+            shape = 'shape="oval"'
             style = 'style="filled"'
             fillcolor = f'fillcolor="{CLASS_COLOR_MAP[_class__]}"'
         info1: list[tuple[str, str, str]] = []
-        if isinstance(node, ast.Token):
+        if isinstance(node, uni.Token):
             """ "Only tokens and some declared types are box(others are oval )"""
             shape = 'shape="box"'
             info1.append(("name", "=", node.name))
@@ -74,30 +186,30 @@ def dotgen_ast_tree(
         dot_lines.append(f"{gen_node_id(root)}  -> {gen_node_id(i)};")
         dotgen_ast_tree(i, dot_lines)
     if starting_call:
-        return "\ndigraph graph1 {" + "\n".join(list(set(dot_lines))) + "}"
+        return "\ndigraph graph1 {\n" + "\n".join(list(set(dot_lines))) + "\n}"
     return " "
 
 
 def print_ast_tree(
-    root: AstNode | ast3.AST,
+    root: UniNode | ast3.AST,
     marker: str = "+-- ",
     level_markers: Optional[list[bool]] = None,
     output_file: Optional[str] = None,
     max_depth: Optional[int] = None,
 ) -> str:
     """Recursively print ast tree."""
-    from jaclang.compiler.absyntree import AstSymbolNode, Token
+    from jaclang.compiler.unitree import AstSymbolNode, Token
 
     print_py_raise: bool = settings.print_py_raised_ast
 
-    def __node_repr_in_tree(node: AstNode) -> str:
+    def __node_repr_in_tree(node: UniNode) -> str:
         access = (
             f"Access: {node.access.tag.value} ,"
-            if isinstance(node, ast.AstAccessNode) and node.access is not None
+            if isinstance(node, uni.AstAccessNode) and node.access is not None
             else ""
         )
         sym_table_link = (
-            f"SymbolTable: {node.type_sym_tab.name}"
+            f"SymbolTable: {node.type_sym_tab.scope_name}"
             if isinstance(node, AstSymbolNode) and node.type_sym_tab
             else "SymbolTable: None" if isinstance(node, AstSymbolNode) else ""
         )
@@ -118,12 +230,12 @@ def print_ast_tree(
         elif isinstance(node, Token):
             return f"{node.__class__.__name__} - {node.value}, {access}"
         elif (
-            isinstance(node, ast.Module)
-            and node.py_info.is_raised_from_py
+            isinstance(node, uni.Module)
+            and node.is_raised_from_py
             and not print_py_raise
         ):
             return f"{node.__class__.__name__} - PythonModuleRaised: {node.name}"
-        elif isinstance(node, (ast.ModuleItem, ast.ModulePath)):
+        elif isinstance(node, (uni.ModuleItem, uni.ModulePath)):
             out = (
                 f"{node.__class__.__name__} - {node.sym_name} - "
                 f"abs_path: {node.abs_path}"
@@ -143,7 +255,7 @@ def print_ast_tree(
                 )
                 out += f" SymbolPath: {symbol}"
             return out
-        elif isinstance(node, ast.Expr):
+        elif isinstance(node, uni.Expr):
             return f"{node.__class__.__name__} - Type: {node.expr_type}"
         else:
             return f"{node.__class__.__name__}, {access}"
@@ -174,7 +286,12 @@ def print_ast_tree(
             return f"{node.__class__.__name__}"
 
     def get_location_info(node: ast3.AST) -> str:
-        if hasattr(node, "lineno"):
+        if (
+            hasattr(node, "lineno")
+            and hasattr(node, "col_offset")
+            and hasattr(node, "end_lineno")
+            and hasattr(node, "end_col_offset")
+        ):
             start_pos = f"{node.lineno}:{node.col_offset + 1}"
             end_pos = f"{node.end_lineno}:{node.end_col_offset + 1 if node.end_col_offset else node.col_offset}"
             prefix = f"{start_pos} - {end_pos}"
@@ -198,17 +315,17 @@ def print_ast_tree(
     markers = "".join(map(mapper, level_markers[:-1]))
     markers += marker if level > 0 else ""
 
-    if isinstance(root, ast.AstNode):
+    if isinstance(root, uni.UniNode):
         tree_str = f"{root.loc}\t{markers}{__node_repr_in_tree(root)}\n"
         if (
-            isinstance(root, ast.Module)
-            and root.py_info.is_raised_from_py
+            isinstance(root, uni.Module)
+            and root.is_raised_from_py
             and not print_py_raise
         ):
-            kids: list[AstNode] = [
+            kids: list[UniNode] = [
                 *filter(
-                    lambda x: x.py_info.is_raised_from_py,
-                    root.get_all_sub_nodes(ast.Module),
+                    lambda x: x.is_raised_from_py,
+                    root.get_all_sub_nodes(uni.Module),
                 )
             ]
         else:
@@ -265,16 +382,32 @@ class SymbolTree:
 
 
 def _build_symbol_tree_common(
-    node: SymbolTable, parent_node: Optional[SymbolTree] = None
+    node: UniScopeNode, parent_node: Optional[SymbolTree] = None
 ) -> SymbolTree:
     root = SymbolTree(
-        node_name=f"SymTable::{node.owner.__class__.__name__}({node.name})",
+        node_name=f"SymTable::{node.__class__.__name__}({node.scope_name})",
         parent=parent_node,
     )
     symbols = SymbolTree(node_name="Symbols", parent=root)
     children = SymbolTree(node_name="Sub Tables", parent=root)
 
-    for sym in node.tab.values():
+    syms_to_iterate = set(node.names_in_scope.values())
+    for inhrited_symtab in node.inherited_scope:
+        for inhrited_sym in inhrited_symtab.symbols:
+            sym = inhrited_symtab.lookup(inhrited_sym)
+            assert sym is not None
+            syms_to_iterate.add(sym)
+
+    for stab in node.inherited_scope:
+        if stab.load_all_symbols:
+            syms_to_iterate.update(list(stab.base_symbol_table.names_in_scope.values()))
+        else:
+            for sname in stab.symbols:
+                sym = stab.base_symbol_table.lookup(sname)
+                assert sym is not None
+                syms_to_iterate.add(sym)
+
+    for sym in syms_to_iterate:
         symbol_node = SymbolTree(node_name=f"{sym.sym_name}", parent=symbols)
         SymbolTree(node_name=f"{sym.access} {sym.sym_type}", parent=symbol_node)
 
@@ -300,15 +433,20 @@ def _build_symbol_tree_common(
                 for n in sym.uses
             ]
 
-    for k in node.kid:
-        if k.name == "builtins":
+    for k in node.kid_scope:
+        if k.scope_name == "builtins":
             continue
         _build_symbol_tree_common(k, children)
+
+    for k2 in node.inherited_scope:
+        if k2.base_symbol_table.scope_name == "builtins":
+            continue
+        _build_symbol_tree_common(k2.base_symbol_table, children)
     return root
 
 
 def print_symtab_tree(
-    root: SymbolTable,
+    root: UniScopeNode,
     marker: str = "+-- ",
     level_markers: Optional[list[bool]] = None,
     output_file: Optional[str] = None,
@@ -364,7 +502,7 @@ def get_symtab_tree_str(
     )
 
 
-def dotgen_symtab_tree(node: SymbolTable) -> str:
+def dotgen_symtab_tree(node: UniScopeNode) -> str:
     """Generate DOT graph representation of a symbol table tree."""
     dot_lines = []
     id_map = {}
@@ -386,7 +524,6 @@ def dotgen_symtab_tree(node: SymbolTable) -> str:
         return f"[label={label}]"
 
     def gen_dot_graph(node: SymbolTree) -> None:
-        nonlocal dot_lines
         dot_lines.append(f"{gen_node_id(node)} {gen_node_parameters(node)};")
         for kid_node in node.kid:
             if kid_node:
@@ -397,6 +534,6 @@ def dotgen_symtab_tree(node: SymbolTable) -> str:
 
     gen_dot_graph(_build_symbol_tree_common(node))
 
-    dot_str = "digraph graph1 {" + "\n".join(dot_lines) + "}"
+    dot_str = "digraph graph1 {\n" + "\n".join(dot_lines) + "\n}"
 
     return dot_str

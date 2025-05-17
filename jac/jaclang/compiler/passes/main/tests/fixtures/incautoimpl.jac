@@ -1,4 +1,4 @@
-include:jac autoimpl;
+import autoimpl;
 
 with entry {
     foo();

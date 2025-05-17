@@ -1,8 +1,7 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.3
 Name: pygls
 Version: 1.3.1
 Summary: A pythonic generic language server (pronounced like 'pie glass')
-Home-page: https://github.com/openlawlibrary/pygls
 License: Apache-2.0
 Author: Open Law Library
 Author-email: info@openlawlib.org
@@ -16,6 +15,7 @@ Classifier: Programming Language :: Python :: 3.9
 Classifier: Programming Language :: Python :: 3.10
 Classifier: Programming Language :: Python :: 3.11
 Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
 Provides-Extra: ws
 Requires-Dist: cattrs (>=23.1.2)
 Requires-Dist: lsprotocol (==2023.0.1)

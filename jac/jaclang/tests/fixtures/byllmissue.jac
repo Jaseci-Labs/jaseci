@@ -2,7 +2,7 @@ class Foo {
     '''
     a doc string
     '''
-    can bar() {
+    def bar() {
         return 1;
     }
 }

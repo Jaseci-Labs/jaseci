@@ -1,5 +1,5 @@
 import from mtllm.llms.base { BaseLLM }
-import:py from PIL { Image }
+import from PIL { Image }
 import torch;
 import from transformers { AutoModelForCausalLM, AutoProcessor }
 
@@ -20,11 +20,11 @@ glob PROMPT_TEMPLATE: str = """
 {action}
 """;  # [Context] will not be appear in the prompt
 
-obj Florence :BaseLLM: {
+obj Florence(BaseLLM) {
     with entry {
         MTLLM_PROMPT = PROMPT_TEMPLATE;
     }
-    can init(model_id: str) {
+    def init(model_id: str) {
         self.verbose = True;
         self.max_tries = 0;
         self.type_check = False;
@@ -38,8 +38,8 @@ obj Florence :BaseLLM: {
         );
     }
 
-    can __infer__(meaning: str, image: Image, **kwargs: tuple) -> str {
-        can run_example(task_prompt: str, image: Image) -> str {
+    def __infer__(meaning: str, image: Image, **kwargs: tuple) -> str {
+        def run_example(task_prompt: str, image: Image) -> str {
             prompt = task_prompt;
             inputs = self.processor(
                 text=prompt,
@@ -74,7 +74,7 @@ obj Florence :BaseLLM: {
         return str(next(iter(result.values())));
     }
 
-    can __call__(meaning: str, media: list, **kwargs: tuple) {
+    def __call__(meaning: str, media: list, **kwargs: tuple) {
         if self.verbose {
             print(f'MEANING_IN:\n{meaning}');
             print('MEDIA:\n', media);

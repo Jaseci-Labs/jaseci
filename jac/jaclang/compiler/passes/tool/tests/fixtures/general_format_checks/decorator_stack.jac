@@ -1,5 +1,5 @@
-can star(func: Any) {
-    can inner(x: Any) {
+def star(func: Any) {
+    def inner(x: Any) {
         print(("*" * 30));
         func(x);
         print(("*" * 30));
@@ -7,8 +7,8 @@ can star(func: Any) {
     return inner;
 }
 
-can percent(func: Any) {
-    can inner(y: Any) {
+def percent(func: Any) {
+    def inner(y: Any) {
         print(("%" * 30));
         func(y);
         print(("%" * 30));
@@ -16,8 +16,8 @@ can percent(func: Any) {
     return inner;
 }
 
-can percent2(func: Any) {
-    can inner(y: Any) {
+def percent2(func: Any) {
+    def inner(y: Any) {
         print(("-" * 30));
         func(y);
         print(("+" * 30));
@@ -28,7 +28,7 @@ can percent2(func: Any) {
 @star
 @percent
 @percent2
-can printer(msg: Any) {
+def printer(msg: Any) {
     print(msg);
 }
 

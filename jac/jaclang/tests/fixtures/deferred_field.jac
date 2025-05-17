@@ -2,7 +2,7 @@ obj SomeObj {
     has a: int = 5,
         b: int by postinit;
 
-    can postinit {
+    def postinit {
         self.b = self.a * 3;
     }
 }

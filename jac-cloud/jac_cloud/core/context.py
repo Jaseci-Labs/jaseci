@@ -9,7 +9,7 @@ from bson import ObjectId
 
 from fastapi import Request, WebSocket
 
-from jaclang.runtimelib.context import EXECUTION_CONTEXT, ExecutionContext
+from jaclang.runtimelib.machine import JacMachine
 
 from .architype import (
     AccessLevel,
@@ -19,7 +19,7 @@ from .architype import (
     Root,
     asdict,
 )
-from .memory import MongoDB
+from .memory import MongoDB  # type: ignore[attr-defined]
 
 
 SHOW_ENDPOINT_RETURNS = getenv("SHOW_ENDPOINT_RETURNS") == "true"
@@ -50,17 +50,17 @@ class ContextResponse(Generic[RT]):
         }
 
 
-class JaseciContext(ExecutionContext):
+class JaseciContext(JacMachine):
     """Execution Context."""
 
     mem: MongoDB
     reports: list
     status: int
     system_root: NodeAnchor
-    root: NodeAnchor
+    root_state: NodeAnchor
     entry_node: NodeAnchor
-    base: ExecutionContext | None
-    connection: Request | WebSocket
+    base: JacMachine | None
+    connection: Request | WebSocket | None
 
     def close(self) -> None:
         """Clean up context."""
@@ -68,20 +68,18 @@ class JaseciContext(ExecutionContext):
 
     @staticmethod
     def create(  # type: ignore[override]
-        connection: Request | WebSocket, entry: NodeAnchor | None = None
+        connection: Request | WebSocket | None, entry: NodeAnchor | None = None
     ) -> "JaseciContext":
         """Create JacContext."""
-        from jaclang import Root
-
         ctx = JaseciContext()
-        ctx.base = EXECUTION_CONTEXT.get(None)
         ctx.connection = connection
         ctx.mem = MongoDB()
         ctx.reports = []
         ctx.status = 200
 
         system_root: NodeAnchor | None = None
-        if not isinstance(system_root := ctx.mem.find_by_id(SUPER_ROOT), NodeAnchor):
+        system_root = ctx.mem.find_by_id(SUPER_ROOT)
+        if not isinstance(system_root, NodeAnchor):
             system_root = Root().__jac__  # type: ignore[attr-defined]
             system_root.id = SUPER_ROOT_ID
             system_root.state.connected = True
@@ -92,8 +90,10 @@ class JaseciContext(ExecutionContext):
 
         ctx.system_root = system_root
 
-        if _root := getattr(connection, "_root", None):
-            ctx.root = _root
+        if connection is None:
+            ctx.root_state = system_root
+        elif _root := getattr(connection, "_root", None):
+            ctx.root_state = _root
             ctx.mem.set(_root.id, _root)
         else:
             if not isinstance(
@@ -105,14 +105,14 @@ class JaseciContext(ExecutionContext):
                 public_root.persistent = True
                 ctx.mem.set(public_root.id, public_root)
 
-            ctx.root = public_root
+            ctx.root_state = public_root
 
         if entry:
             if not isinstance(entry_node := ctx.mem.find_by_id(entry), NodeAnchor):
                 raise ValueError(f"Invalid anchor id {entry.ref_id} !")
             ctx.entry_node = entry_node
         else:
-            ctx.entry_node = ctx.root
+            ctx.entry_node = ctx.root_state
 
         if _ctx := JASECI_CONTEXT.get(None):
             _ctx.close()
@@ -130,7 +130,7 @@ class JaseciContext(ExecutionContext):
     @staticmethod
     def get_root() -> Root:  # type: ignore[override]
         """Get current root."""
-        return cast(Root, JaseciContext.get().root.architype)
+        return cast(Root, JaseciContext.get().root_state.architype)
 
     def response(self, returns: list[Any]) -> dict[str, Any]:
         """Return serialized version of reports."""

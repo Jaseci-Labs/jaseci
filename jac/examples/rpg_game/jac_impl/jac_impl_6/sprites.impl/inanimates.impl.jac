@@ -1,4 +1,4 @@
-:obj:Block:can:postinit {
+impl Block.postinit {
     self._groups = (self.game.all_sprites, self.game.blocks);
     pygame.sprite.Sprite.init(self, self._groups);
     self.x*=TILESIZE;
@@ -9,7 +9,7 @@
     self.rect.y = self.y;
 }
 
-:obj:Ground:can:postinit
+impl Ground.postinit
 (game: None, x: int, y: int) {
     self._groups = self.game.all_sprites;
     pygame.sprite.Sprite.init(self, self._groups);

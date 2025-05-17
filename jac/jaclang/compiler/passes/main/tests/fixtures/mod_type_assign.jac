@@ -1,4 +1,4 @@
-import:jac blip;
+import blip;
 
 
 with entry{

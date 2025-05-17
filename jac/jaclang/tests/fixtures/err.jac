@@ -1,7 +1,7 @@
 obj HasFault {
-    can init;
+    def init;
 }
 
-can speak {
+def speak {
     HasFault();
 }

@@ -6,16 +6,16 @@ from os.path import split
 from pickle import load
 from typing import Any
 
+from jaclang import JacMachine, JacMachineInterface as Jac
 from jaclang.cli.cmdreg import cmd_registry
-from jaclang.plugin.default import hookimpl
-from jaclang.runtimelib.context import ExecutionContext
-from jaclang.runtimelib.machine import JacMachine, JacProgram
+from jaclang.runtimelib.machine import hookimpl
 
 from pymongo.errors import ConnectionFailure, OperationFailure
 
 from ..core.architype import BulkWrite, NodeAnchor
 from ..core.context import PUBLIC_ROOT_ID, SUPER_ROOT_ID
 from ..jaseci.datasources import Collection
+from ..jaseci.main import FastAPI
 from ..jaseci.models import User as BaseUser
 from ..jaseci.utils import logger
 
@@ -29,51 +29,48 @@ class JacCmd:
         """Create Jac CLI cmds."""
 
         @cmd_registry.register
-        def serve(filename: str, host: str = "0.0.0.0", port: int = 8000) -> None:
-            from jaclang import jac_import
-            from jac_cloud import FastAPI
-
+        def serve(
+            filename: str,
+            host: str = "0.0.0.0",
+            port: int = 8000,
+            interp_mode: bool = False,
+        ) -> None:
             """Serve the jac application."""
             base, mod = split(filename)
             base = base if base else "./"
             mod = mod[:-4]
 
             FastAPI.enable()
-            jctx = ExecutionContext.create()
+            mach = JacMachine(base, interp_mode=interp_mode)
 
             if filename.endswith(".jac"):
-                jac_import(
+                Jac.jac_import(
+                    mach=mach,
                     target=mod,
                     base_path=base,
-                    cachable=True,
                     override_name="__main__",
                 )
             elif filename.endswith(".jir"):
                 with open(filename, "rb") as f:
-                    JacMachine(base).attach_program(
-                        JacProgram(mod_bundle=load(f), bytecode=None, sem_ir=None)
-                    )
-                    jac_import(
+                    Jac.attach_program(mach, load(f))
+                    Jac.jac_import(
+                        mach=mach,
                         target=mod,
                         base_path=base,
-                        cachable=True,
                         override_name="__main__",
                     )
             else:
-                jctx.close()
-                JacMachine.detach()
+                mach.close()
                 raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
-            FastAPI.start(host=host, port=port)
-
-            jctx.close()
-            JacMachine.detach()
+            FastAPI.start(mach=mach, host=host, port=port)
+            mach.close()
 
         @cmd_registry.register
         def create_system_admin(
             filename: str, email: str = "", password: str = ""
         ) -> str:
-            from jaclang import jac_import
+            from jaclang import JacMachineInterface as Jac
 
             if not getenv("DATABASE_HOST"):
                 raise NotImplementedError(
@@ -83,23 +80,22 @@ class JacCmd:
             base, mod = split(filename)
             base = base if base else "./"
             mod = mod[:-4]
+            mach = JacMachine(base)
 
             if filename.endswith(".jac"):
-                jac_import(
+                Jac.jac_import(
+                    mach=mach,
                     target=mod,
                     base_path=base,
-                    cachable=True,
                     override_name="__main__",
                 )
             elif filename.endswith(".jir"):
                 with open(filename, "rb") as f:
-                    JacMachine(base).attach_program(
-                        JacProgram(mod_bundle=load(f), bytecode=None, sem_ir=None)
-                    )
-                    jac_import(
+                    Jac.attach_program(mach, load(f))
+                    Jac.jac_import(
+                        mach=mach,
                         target=mod,
                         base_path=base,
-                        cachable=True,
                         override_name="__main__",
                     )
 

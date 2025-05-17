@@ -12,21 +12,21 @@ edge connector {
     has value: int = 10;
 }
 
-:walker:Creator:can:create {
+impl Creator.create {
     end = here;
     for i=0 to i<3 by i+=1  {
         end ++> (end := node_a(val=i));
     }
-    end +:connector:value=i:+> (end := node_a(val=i + 10));
-    root <+:connector:value=i:+ (end := node_a(val=i + 10));
+    end +>:connector:value=i:+> (end := node_a(val=i + 10));
+    root <+:connector:value=i:<+ (end := node_a(val=i + 10));
     visit [-->];
 }
 
-:node:node_a:can:make_something {
+impl node_a.make_something {
     i = 0;
     while i < 5 {
         print(f"wlecome to {self}");
-        i+=1;
+        i += 1;
     }
 }
 

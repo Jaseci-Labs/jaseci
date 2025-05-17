@@ -8,7 +8,10 @@ from dataclasses import (
     fields,
     is_dataclass,
 )
-from enum import Enum
+from datetime import datetime
+from enum import Enum, StrEnum
+from functools import cached_property
+from itertools import islice
 from os import getenv
 from pickle import dumps as pdumps
 from re import IGNORECASE, compile
@@ -27,7 +30,6 @@ from typing import (
 
 from bson import ObjectId
 
-from jaclang.plugin.feature import JacFeature as Jac
 from jaclang.runtimelib.architype import (
     Access as _Access,
     AccessLevel,
@@ -43,6 +45,7 @@ from jaclang.runtimelib.architype import (
     WalkerAnchor as _WalkerAnchor,
     WalkerArchitype as _WalkerArchitype,
 )
+from jaclang.runtimelib.machine import JacMachineInterface as Jac
 from jaclang.runtimelib.utils import is_instance
 
 from orjson import dumps
@@ -51,7 +54,7 @@ from pymongo import ASCENDING, DeleteMany, DeleteOne, InsertOne, UpdateMany, Upd
 from pymongo.client_session import ClientSession
 from pymongo.errors import ConnectionFailure, OperationFailure
 
-from ..jaseci.datasources import Collection as BaseCollection
+from ..jaseci.datasources import Collection as BaseCollection, ScheduleRedis
 from ..jaseci.utils import logger
 
 MANUAL_SAVE = getenv("MANUAL_SAVE")
@@ -136,18 +139,21 @@ def _to_dataclass(cls: type[T], data: dict[str, Any]) -> None:
         for attr in fields(cls):
             if target := data.get(attr.name):
                 hint = hintings[attr.name]
-                if is_dataclass(hint):
+                if is_dataclass(hint) and isinstance(hint, type):
                     data[attr.name] = to_dataclass(hint, target)
                 else:
                     origin = get_origin(hint)
                     if origin == dict and isinstance(target, dict):
-                        if is_dataclass(inner_cls := get_args(hint)[-1]):
+                        if is_dataclass(inner_cls := get_args(hint)[-1]) and isinstance(
+                            inner_cls, type
+                        ):
                             for key, value in target.items():
                                 target[key] = to_dataclass(inner_cls, value)
                     elif (
                         origin == list
                         and isinstance(target, list)
                         and is_dataclass(inner_cls := get_args(hint)[-1])
+                        and isinstance(inner_cls, type)
                     ):
                         for key, value in enumerate(target):
                             target[key] = to_dataclass(inner_cls, value)
@@ -159,6 +165,31 @@ def _to_dataclass(cls: type[T], data: dict[str, Any]) -> None:
                         and (enum := hint.__members__.get(target))
                     ):
                         data[attr.name] = enum
+
+
+class ScheduleStatus(StrEnum):
+    """Schedule Status."""
+
+    PENDING = "PENDING"
+    STARTED = "STARTED"
+    COMPLETED = "COMPLETED"
+    ERROR = "ERROR"
+
+
+@dataclass(eq=False)
+class Schedule:
+    """Schedule."""
+
+    status: ScheduleStatus = ScheduleStatus.PENDING
+    node_id: str | None = None
+    root_id: str | None = None
+    execute_date: datetime | None = None
+    executed_date: datetime | None = None
+    http_status: int | None = None
+    returns: list[Any] | None = None
+    reports: list[Any] | None = None
+    custom: Any = None
+    error: list[str] | None = None
 
 
 @dataclass
@@ -183,6 +214,7 @@ class BulkWrite:
             ObjectAnchor: [],
         }
     )
+    schedules: list["WalkerAnchor"] = field(default_factory=list)
 
     del_ops_nodes: list[ObjectId] = field(default_factory=list)
     del_ops_edges: list[ObjectId] = field(default_factory=list)
@@ -271,6 +303,21 @@ class BulkWrite:
                 if object_operation := self.operations[ObjectAnchor]:
                     ObjectAnchor.Collection.bulk_write(object_operation, False, session)
                 self.commit(session)
+
+                if self.schedules:
+                    ScheduleRedis.rpush(
+                        "scheduled",
+                        *(
+                            {
+                                "walker_id": w.ref_id,
+                                "execute_date": w.schedule.execute_date,
+                                "node_id": w.schedule.node_id,
+                                "root_id": f"n::{w.root}",
+                            }
+                            for w in self.schedules
+                            if w.schedule
+                        ),
+                    )
                 break
             except (ConnectionFailure, OperationFailure) as ex:
                 if (
@@ -339,6 +386,13 @@ class AnchorState:
     context_hashes: dict[str, int] = field(default_factory=dict)
     deleted: bool | None = None
     connected: bool = False
+
+
+@dataclass
+class WalkerAnchorState(AnchorState):
+    """Anchor state handler."""
+
+    schedule_hashes: dict[str, int] = field(default_factory=dict)
 
 
 @dataclass(eq=False, repr=False, kw_only=True)
@@ -464,7 +518,7 @@ class BaseAnchor:
         if self.is_populated():
             unloaded = object.__new__(self.__class__)
             # this will be refactored on abstraction
-            unloaded.name = self.name  # type: ignore[attr-defined]
+            unloaded.name = self.name  # type: ignore[union-attr]
             unloaded.id = self.id  # type: ignore[attr-defined]
             return unloaded  # type: ignore[return-value]
         return self
@@ -535,7 +589,7 @@ class BaseAnchor:
         ############################################################
 
         if Jac.check_write_access(self):  # type: ignore[arg-type]
-            set_architype = changes.pop("$set", {})
+            set_query = changes.pop("$set", {})
             if is_dataclass(architype := self.architype) and not isinstance(
                 architype, type
             ):
@@ -547,64 +601,79 @@ class BaseAnchor:
                 ):
                     if (h := hash(dumps(val))) != self.state.context_hashes.get(key):
                         self.state.context_hashes[key] = h
-                        set_architype[f"architype.{key}"] = val
-            if set_architype:
-                changes["$set"] = set_architype
+                        set_query[f"architype.{key}"] = val
+            if set_query:
+                changes["$set"] = set_query
         else:
             changes.pop("$set", None)
             changes.pop("$unset", None)
 
         # -------------------------------------------------------- #
+        match self:
+            case WalkerAnchor():
+                if is_dataclass(schedule := self.schedule) and not isinstance(
+                    schedule, type
+                ):
+                    for key, val in asdict(schedule).items():
+                        if (h := hash(dumps(val))) != self.state.schedule_hashes.get(
+                            key
+                        ):
+                            self.state.schedule_hashes[key] = h
+                            set_query[f"schedule.{key}"] = val
 
-        if isinstance(self, NodeAnchor):
-            ############################################################
-            #                   POPULATE ADDED EDGES                   #
-            ############################################################
-            added_edges: set[BaseAnchor] = (
-                changes.get("$addToSet", {}).get("edges", {}).get("$each", [])
-            )
-            if added_edges:
-                _added_edges = []
-                for anchor in added_edges:
-                    if propagate:
-                        anchor.build_query(bulk_write)  # type: ignore[operator]
-                    _added_edges.append(anchor.ref_id)
-                changes["$addToSet"]["edges"]["$each"] = _added_edges
-            else:
-                changes.pop("$addToSet", None)
-
-            # -------------------------------------------------------- #
-
-            ############################################################
-            #                  POPULATE REMOVED EDGES                  #
-            ############################################################
-            pulled_edges: set[BaseAnchor] = (
-                changes.get("$pull", {}).get("edges", {}).get("$in", [])
-            )
-            if pulled_edges:
-                _pulled_edges = []
-                for anchor in pulled_edges:
-                    # will be refactored on abstraction
-                    if propagate and anchor.state.deleted is not True:  # type: ignore[attr-defined]
-                        anchor.state.deleted = True  # type: ignore[attr-defined]
-                        bulk_write.del_edge(anchor.id)  # type: ignore[attr-defined, arg-type]
-                    _pulled_edges.append(anchor.ref_id)
-
+                if self.schedule and self.schedule.status == ScheduleStatus.PENDING:
+                    bulk_write.schedules.append(self)
+            case NodeAnchor():
+                ############################################################
+                #                   POPULATE ADDED EDGES                   #
+                ############################################################
+                added_edges: set[BaseAnchor] = (
+                    changes.get("$addToSet", {}).get("edges", {}).get("$each", [])
+                )
                 if added_edges:
-                    # Isolate pull to avoid conflict with addToSet
-                    changes.pop("$pull", None)
-                    operations.append(
-                        UpdateOne(
-                            operation_filter,
-                            {"$pull": {"edges": {"$in": _pulled_edges}}},
-                        )
-                    )
+                    _added_edges = []
+                    for anchor in added_edges:
+                        if propagate:
+                            anchor.build_query(bulk_write)  # type: ignore[operator]
+                        _added_edges.append(anchor.ref_id)
+                    changes["$addToSet"]["edges"]["$each"] = _added_edges
                 else:
-                    changes["$pull"]["edges"]["$in"] = _pulled_edges
-            else:
-                changes.pop("$pull", None)
+                    changes.pop("$addToSet", None)
 
-            # -------------------------------------------------------- #
+                # -------------------------------------------------------- #
+
+                ############################################################
+                #                  POPULATE REMOVED EDGES                  #
+                ############################################################
+                pulled_edges: set[BaseAnchor] = (
+                    changes.get("$pull", {}).get("edges", {}).get("$in", [])
+                )
+                if pulled_edges:
+                    _pulled_edges = []
+                    for anchor in pulled_edges:
+                        # will be refactored on abstraction
+                        if propagate and anchor.state.deleted is not True:  # type: ignore[attr-defined]
+                            anchor.state.deleted = True  # type: ignore[attr-defined]
+                            bulk_write.del_edge(anchor.id)  # type: ignore[attr-defined, arg-type]
+                        _pulled_edges.append(anchor.ref_id)
+
+                    if added_edges:
+                        # Isolate pull to avoid conflict with addToSet
+                        changes.pop("$pull", None)
+                        operations.append(
+                            UpdateOne(
+                                operation_filter,
+                                {"$pull": {"edges": {"$in": _pulled_edges}}},
+                            )
+                        )
+                    else:
+                        changes["$pull"]["edges"]["$in"] = _pulled_edges
+                else:
+                    changes.pop("$pull", None)
+
+                # -------------------------------------------------------- #
+            case _:
+                pass
 
         if changes:
             operations.append(UpdateOne(operation_filter, changes))
@@ -628,7 +697,7 @@ class BaseAnchor:
                 key: hash(val if isinstance(val, bytes) else dumps(val))
                 for key, val in architype.__serialize__().items()  # type:ignore[attr-defined] # mypy issue
             }
-            self.state.full_hash = hash(pdumps(self.serialize()))
+        self.state.full_hash = hash(pdumps(self.serialize()))
 
     # ---------------------------------------------------------------------- #
 
@@ -831,18 +900,28 @@ class WalkerAnchor(BaseAnchor, _WalkerAnchor):  # type: ignore[misc]
     """Walker Anchor."""
 
     architype: "WalkerArchitype"
+    state: WalkerAnchorState
     path: list[NodeAnchor] = field(default_factory=list)  # type: ignore[assignment]
     next: list[NodeAnchor] = field(default_factory=list)  # type: ignore[assignment]
     returns: list[Any] = field(default_factory=list)
     ignores: list[NodeAnchor] = field(default_factory=list)  # type: ignore[assignment]
     disengaged: bool = False
+    schedule: Schedule | None = None
 
     class Collection(BaseCollection["WalkerAnchor"]):
         """WalkerAnchor collection interface."""
 
         __collection__: str | None = "walker"
         __default_indexes__: list[dict] = [
-            {"keys": [("_id", ASCENDING), ("name", ASCENDING), ("root", ASCENDING)]}
+            {"keys": [("_id", ASCENDING), ("name", ASCENDING), ("root", ASCENDING)]},
+            {
+                "keys": [
+                    ("_id", ASCENDING),
+                    ("name", ASCENDING),
+                    ("root", ASCENDING),
+                    ("schedule.status", ASCENDING),
+                ]
+            },
         ]
 
         @classmethod
@@ -853,12 +932,21 @@ class WalkerAnchor(BaseAnchor, _WalkerAnchor):  # type: ignore[misc]
                 WalkerArchitype.__get_class__(doc.get("name") or ""),
                 doc.pop("architype"),
             )
+
+            if next := doc.pop("next", []):
+                next = [NodeAnchor.ref(n) for n in next]
+
+            if schedule := doc.pop("schedule"):
+                schedule = Schedule(ScheduleStatus(schedule.pop("status")), **schedule)
+
             anchor = WalkerAnchor(
                 architype=architype,
                 id=doc.pop("_id"),
                 access=Permission.deserialize(doc.pop("access")),
-                state=AnchorState(connected=True),
+                state=WalkerAnchorState(connected=True),
                 persistent=True,
+                next=next,
+                schedule=schedule,
                 **doc,
             )
             architype.__jac__ = anchor
@@ -882,9 +970,34 @@ class WalkerAnchor(BaseAnchor, _WalkerAnchor):  # type: ignore[misc]
         """Append Insert Query."""
         bulk_write.operations[WalkerAnchor].append(InsertOne(self.serialize()))
 
+        if self.schedule and self.schedule.status == ScheduleStatus.PENDING:
+            bulk_write.schedules.append(self)
+
     def delete(self, bulk_write: BulkWrite) -> None:
         """Append Delete Query."""
         bulk_write.del_walker(self.id)
+
+    def sync_hash(self) -> None:
+        """Sync current serialization hash."""
+        if is_dataclass(architype := self.architype) and not isinstance(
+            architype, type
+        ):
+            self.state.context_hashes = {
+                key: hash(val if isinstance(val, bytes) else dumps(val))
+                for key, val in architype.__serialize__().items()
+            }
+
+        if is_dataclass(schedule := self.schedule) and not isinstance(schedule, type):
+            self.state.schedule_hashes = {
+                key: hash(val if isinstance(val, bytes) else dumps(val))
+                for key, val in asdict(schedule).items()
+            }
+
+        self.state.full_hash = hash(pdumps(self.serialize()))
+
+    def serialize(self) -> dict[str, object]:
+        """Serialize Node Anchor."""
+        return {**super().serialize(), "schedule": asdict(self.schedule)}
 
 
 @dataclass(eq=False, repr=False, kw_only=True)
@@ -969,18 +1082,10 @@ class BaseArchitype:
     def __set_classes__(cls) -> dict[str, Any]:
         """Initialize Jac Classes."""
         jac_classes = {}
-        sub_cls = cls.__subclasses__()
-        for sub in sub_cls[-1].__subclasses__():
+        for sub in cls.__subclasses__():
             sub.__jac_hintings__ = get_type_hints(sub)
             jac_classes[sub.__name__] = sub
-
-        if len(sub_cls) > 1:
-            sub = sub_cls[0].__subclasses__()[0]
-            sub.__jac_hintings__ = get_type_hints(sub)
-            jac_classes[""] = sub
-
         cls.__jac_classes__ = jac_classes
-
         return jac_classes
 
     @classmethod
@@ -1001,11 +1106,12 @@ class BaseArchitype:
 class NodeArchitype(BaseArchitype, _NodeArchitype):
     """Node Architype Protocol."""
 
-    __jac__: NodeAnchor
+    __jac_base__: ClassVar[bool] = True
 
-    def __init__(self) -> None:
-        """Create node architype."""
-        self.__jac__ = NodeAnchor(
+    @cached_property
+    def __jac__(self) -> NodeAnchor:  # type: ignore[override]
+        """Create default anchor."""
+        return NodeAnchor(
             architype=self,
             name=self.__class__.__name__,
             edges=[],
@@ -1018,10 +1124,25 @@ class NodeArchitype(BaseArchitype, _NodeArchitype):
         """Get class naming."""
         return f"n:{cls.__name__}"
 
+    @classmethod
+    def __set_classes__(cls) -> dict[str, Any]:
+        """Initialize Jac Classes."""
+        jac_classes: dict[str, type[BaseArchitype]] = {}
+
+        for sub in islice(cls.__subclasses__(), 1, None):
+            sub.__jac_hintings__ = get_type_hints(sub)
+            jac_classes[sub.__name__] = sub
+
+        Root.__jac_hintings__ = get_type_hints(Root)
+        jac_classes[""] = Root
+        cls.__jac_classes__ = jac_classes
+        return jac_classes
+
 
 class EdgeArchitype(BaseArchitype, _EdgeArchitype):
     """Edge Architype Protocol."""
 
+    __jac_base__: ClassVar[bool] = True
     __jac__: EdgeAnchor
 
     @classmethod
@@ -1029,19 +1150,34 @@ class EdgeArchitype(BaseArchitype, _EdgeArchitype):
         """Get class naming."""
         return f"e:{cls.__name__}"
 
+    @classmethod
+    def __set_classes__(cls) -> dict[str, Any]:
+        """Initialize Jac Classes."""
+        jac_classes: dict[str, type[BaseArchitype]] = {}
+
+        for sub in islice(cls.__subclasses__(), 1, None):
+            sub.__jac_hintings__ = get_type_hints(sub)
+            jac_classes[sub.__name__] = sub
+
+        GenericEdge.__jac_hintings__ = get_type_hints(GenericEdge)
+        jac_classes[""] = GenericEdge
+        cls.__jac_classes__ = jac_classes
+        return jac_classes
+
 
 class WalkerArchitype(BaseArchitype, _WalkerArchitype):
     """Walker Architype Protocol."""
 
-    __jac__: WalkerAnchor
+    __jac_base__: ClassVar[bool] = True
 
-    def __init__(self) -> None:
-        """Create walker architype."""
-        self.__jac__ = WalkerAnchor(
+    @cached_property
+    def __jac__(self) -> WalkerAnchor:  # type: ignore[override]
+        """Create default anchor."""
+        return WalkerAnchor(
             architype=self,
             name=self.__class__.__name__,
             access=Permission(),
-            state=AnchorState(),
+            state=WalkerAnchorState(),
         )
 
     @classmethod
@@ -1049,15 +1185,24 @@ class WalkerArchitype(BaseArchitype, _WalkerArchitype):
         """Get class naming."""
         return f"w:{cls.__name__}"
 
+    def __init_subclass__(cls) -> None:
+        """Configure subclasses."""
+        if not cls.__dict__.get("__jac_base__", False):
+            from jac_cloud.plugin.implementation.api import populate_apis
+
+            Jac.make_architype(cls)
+            populate_apis(cls)
+
 
 class ObjectArchitype(BaseArchitype, _ObjectArchitype):
     """Object Architype Protocol."""
 
-    __jac__: ObjectAnchor
+    __jac_base__: ClassVar[bool] = True
 
-    def __init__(self) -> None:
-        """Create default architype."""
-        self.__jac__ = ObjectAnchor(
+    @cached_property
+    def __jac__(self) -> ObjectAnchor:  # type: ignore[override]
+        """Create default anchor."""
+        return ObjectAnchor(
             architype=self,
             name=self.__class__.__name__,
             access=Permission(),
@@ -1065,10 +1210,12 @@ class ObjectArchitype(BaseArchitype, _ObjectArchitype):
         )
 
 
+@dataclass(eq=False)
 class GenericEdge(EdgeArchitype):
     """Generic Root Node."""
 
 
+@dataclass(eq=False)
 class Root(NodeArchitype):
     """Generic Root Node."""
 

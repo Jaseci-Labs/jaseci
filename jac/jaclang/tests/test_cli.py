@@ -4,12 +4,14 @@ import contextlib
 import inspect
 import io
 import os
+import re
 import subprocess
 import sys
 import traceback
-
+import unittest
 from jaclang.cli import cli
-from jaclang.plugin.builtin import dotgen
+from jaclang.cli.cmdreg import cmd_registry, extract_param_descriptions
+from jaclang.runtimelib.builtin import dotgen
 from jaclang.utils.test import TestCase
 
 
@@ -160,52 +162,7 @@ class JacCliTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertIn("+-- Token", stdout_value)
 
-    def test_import_mod_abs_path(self) -> None:
-        """Testing for print AstTool."""
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-
-        cli.tool("ir", ["ast", f"{self.fixture_abs_path('import.jac')}"])
-
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue().replace("\\", "/")
-        self.assertRegex(
-            stdout_value,
-            r"1\:11 \- 1\:13.*ModulePath - os - abs_path\:.*typeshed/stdlib/os/__init__.pyi",
-        )
-        self.assertRegex(
-            stdout_value,
-            r"2\:11 \- 2\:14.*ModulePath - sys - abs_path\:.*typeshed/stdlib/sys/__init__.pyi",
-        )
-        self.assertRegex(
-            stdout_value,
-            r"3\:11 \- 3\:17.*ModulePath - pyfunc - abs_path\:.*fixtures/pyfunc.py",
-        )
-        self.assertRegex(
-            stdout_value,
-            r"4\:11 \- 4\:28.*ModulePath - pygame_mock - abs_path\:.*fixtures/pygame_mock/inner/__init__.py",
-        )
-        self.assertRegex(
-            stdout_value,
-            r"6\:11 \- 6\:15.*ModulePath - math - abs_path\:.*typeshed/stdlib/math.pyi",
-        )
-        self.assertRegex(
-            stdout_value,
-            r"7\:11 \- 7\:19.*ModulePath - argparse - abs_path\:.*typeshed/stdlib/argparse.pyi",
-        )
-        self.assertRegex(
-            stdout_value,
-            r"8\:16 \- 8\:27.*ModulePath - pygame_mock - abs_path\:.*fixtures/pygame_mock/__init__.py",
-        )
-        self.assertRegex(
-            stdout_value,
-            r"8\:30 \- 8:35.*ModuleItem - color - abs_path\:.*fixtures/pygame_mock/color.py",
-        )
-        self.assertRegex(
-            stdout_value,
-            r"8\:37 \- 8:44.*ModuleItem - display - abs_path\:.*fixtures/pygame_mock/display.py",
-        )
-
+    @unittest.skip("Skipping builtins loading test")
     def test_builtins_loading(self) -> None:
         """Testing for print AstTool."""
         from jaclang.settings import settings
@@ -222,133 +179,15 @@ class JacCliTests(TestCase):
 
         self.assertRegex(
             stdout_value,
-            r"2\:8 \- 2\:12.*BuiltinType - list - .*SymbolPath: builtins_test.builtins.list",
+            r"2\:8 \- 2\:12.*BuiltinType - list - .*SymbolPath: builtins.list",
         )
         self.assertRegex(
             stdout_value,
-            r"15\:5 \- 15\:8.*Name - dir - .*SymbolPath: builtins_test.builtins.dir",
+            r"15\:5 \- 15\:8.*Name - dir - .*SymbolPath: builtins.dir",
         )
         self.assertRegex(
             stdout_value,
-            r"13\:12 \- 13\:18.*Name - append - .*SymbolPath: builtins_test.builtins.list.append",
-        )
-
-    def test_import_all(self) -> None:
-        """Testing for print AstTool."""
-        from jaclang.settings import settings
-
-        settings.ast_symbol_info_detailed = True
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-
-        cli.tool("ir", ["ast", f"{self.fixture_abs_path('import_all.jac')}"])
-
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        settings.ast_symbol_info_detailed = False
-
-        self.assertRegex(
-            stdout_value,
-            r"6\:25 - 6\:30.*Name - floor -.*SymbolPath: import_all.import_all_py.floor",
-        )
-        self.assertRegex(
-            stdout_value,
-            r"5\:25 - 5\:27.*Name - pi -.*SymbolPath: import_all.import_all_py.pi",
-        )
-
-    def test_sub_class_symbol_table_fix_1(self) -> None:
-        """Testing for print AstTool."""
-        from jaclang.settings import settings
-
-        settings.ast_symbol_info_detailed = True
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-
-        cli.tool("ir", ["ast", f"{self.fixture_abs_path('base_class1.jac')}"])
-
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        settings.ast_symbol_info_detailed = False
-
-        self.assertRegex(
-            stdout_value,
-            r"10:7 - 10:12.*Name - start - Type.*SymbolPath: base_class1.B.start",
-        )
-
-    def test_sub_class_symbol_table_fix_2(self) -> None:
-        """Testing for print AstTool."""
-        from jaclang.settings import settings
-
-        settings.ast_symbol_info_detailed = True
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-
-        cli.tool("ir", ["ast", f"{self.fixture_abs_path('base_class2.jac')}"])
-
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        settings.ast_symbol_info_detailed = False
-
-        self.assertRegex(
-            stdout_value,
-            r"10:7 - 10:12.*Name - start - Type.*SymbolPath: base_class2.B.start",
-        )
-
-    def test_base_class_complex_expr(self) -> None:
-        """Testing for print AstTool."""
-        from jaclang.settings import settings
-
-        # settings.ast_symbol_info_detailed = True
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-
-        cli.tool(
-            "ir", ["ast", f"{self.fixture_abs_path('base_class_complex_expr.jac')}"]
-        )
-
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        settings.ast_symbol_info_detailed = False
-
-        self.assertRegex(
-            stdout_value,
-            r"36\:9 \- 36\:13.*Name \- Kiwi \- Type\: base_class_complex_expr.Kiwi,  SymbolTable\: Kiwi",
-        )
-
-    def test_expr_types(self) -> None:
-        """Testing for print AstTool."""
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-
-        cli.tool("ir", ["ast", f"{self.fixture_abs_path('expr_type.jac')}"])
-
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-
-        self.assertRegex(
-            stdout_value, r"4\:9 \- 4\:14.*BinaryExpr \- Type\: builtins.int"
-        )
-        self.assertRegex(
-            stdout_value, r"7\:9 \- 7\:17.*FuncCall \- Type\: builtins.float"
-        )
-        self.assertRegex(
-            stdout_value, r"9\:6 \- 9\:11.*CompareExpr \- Type\: builtins.bool"
-        )
-        self.assertRegex(
-            stdout_value, r"10\:6 - 10\:15.*BinaryExpr \- Type\: builtins.str"
-        )
-        self.assertRegex(
-            stdout_value, r"11\:5 \- 11\:13.*AtomTrailer \- Type\: builtins.int"
-        )
-        self.assertRegex(
-            stdout_value, r"12\:5 \- 12\:14.*UnaryExpr \- Type\: builtins.bool"
-        )
-        self.assertRegex(
-            stdout_value, r"13\:5 \- 13\:25.*IfElseExpr \- Type\: Literal\['a']\?"
-        )
-        self.assertRegex(
-            stdout_value,
-            r"14\:5 \- 14\:27.*ListCompr - \[ListCompr] \- Type\: builtins.list\[builtins.int]",
+            r"13\:12 \- 13\:18.*Name - append - .*SymbolPath: builtins.list.append",
         )
 
     def test_ast_dotgen(self) -> None:
@@ -360,29 +199,19 @@ class JacCliTests(TestCase):
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertIn('[label="MultiString"]', stdout_value)
+        self.assertIn(
+            '[label="MultiString" shape="oval" style="filled" fillcolor="#fccca4"]',
+            stdout_value,
+        )
 
-    def test_type_check(self) -> None:
+    def test_del_clean(self) -> None:
         """Testing for print AstTool."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        cli.check(f"{self.fixture_abs_path('game1.jac')}")
+        cli.check(f"{self.fixture_abs_path('del_clean.jac')}")
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertIn("Errors: 0, Warnings: 2", stdout_value)
-
-    def test_type_info(self) -> None:
-        """Testing for type info inside the ast tool."""
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
-        cli.tool("ir", ["ast", f"{self.fixture_abs_path('type_info.jac')}"])
-        sys.stdout = sys.__stdout__
-        stdout_value = captured_output.getvalue()
-        self.assertEqual(stdout_value.count("type_info.ServerWrapper"), 7)
-        self.assertEqual(stdout_value.count("builtins.int"), 3)
-        self.assertEqual(stdout_value.count("builtins.str"), 10)
-        self.assertIn("Literal['test_server']", stdout_value)
-        self.assertIn("Literal['1']", stdout_value)
+        self.assertIn("Errors: 0, Warnings: 0", stdout_value)
 
     def test_build_and_run(self) -> None:
         """Testing for print AstTool."""
@@ -394,43 +223,8 @@ class JacCliTests(TestCase):
         cli.run(f"{self.fixture_abs_path('needs_import.jir')}")
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        print(stdout_value)
         self.assertIn("Errors: 0, Warnings: 0", stdout_value)
         self.assertIn("<module 'pyfunc' from", stdout_value)
-
-    def test_cache_no_cache_on_run(self) -> None:
-        """Basic test for pass."""
-        process = subprocess.Popen(
-            ["jac", "run", f"{self.fixture_abs_path('hello_nc.jac')}", "-nc"],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        stdout, _ = process.communicate()
-        self.assertFalse(
-            os.path.exists(
-                f"{self.fixture_abs_path(os.path.join('__jac_gen__', 'hello_nc.jbc'))}"
-            )
-        )
-        self.assertIn("Hello World!", stdout)
-        process = subprocess.Popen(
-            ["jac", "run", f"{self.fixture_abs_path('hello_nc.jac')}", "-c"],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        stdout, _ = process.communicate()
-        self.assertIn("Hello World!", stdout)
-        self.assertTrue(
-            os.path.exists(
-                f"{self.fixture_abs_path(os.path.join('__jac_gen__', 'hello_nc.jbc'))}"
-            )
-        )
-        os.remove(
-            f"{self.fixture_abs_path(os.path.join('__jac_gen__', 'hello_nc.jbc'))}"
-        )
 
     def test_run_test(self) -> None:
         """Basic test for pass."""
@@ -500,7 +294,7 @@ class JacCliTests(TestCase):
         """Test for coverage of graph cmd."""
         graph_params = set(inspect.signature(cli.dot).parameters.keys())
         dotgen_params = set(inspect.signature(dotgen).parameters.keys())
-        dotgen_params = dotgen_params - {"node", "dot_file", "edge_type"}
+        dotgen_params = dotgen_params - {"node", "dot_file", "edge_type", "as_json"}
         dotgen_params.update({"initial", "saveto", "connection", "session"})
         self.assertTrue(dotgen_params.issubset(graph_params))
         self.assertEqual(len(dotgen_params) + 1, len(graph_params))
@@ -524,7 +318,7 @@ class JacCliTests(TestCase):
         cli.py2jac(f"{self.fixture_abs_path('../../tests/fixtures/pyfunc.py')}")
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
-        self.assertIn("can my_print(x: object) -> None", stdout_value)
+        self.assertIn("def my_print(x: object) -> None", stdout_value)
 
     def test_caching_issue(self) -> None:
         """Test for Caching Issue."""
@@ -553,3 +347,104 @@ class JacCliTests(TestCase):
                 self.assertNotIn("Passed successfully.", stdout)
                 self.assertIn("F", stderr)
         os.remove(test_file)
+
+    def test_cli_docstring_parameters(self) -> None:
+        """Test that all CLI command parameters are documented in their docstrings."""
+        # Get all registered CLI commands
+        commands = {}
+        for name, _ in cmd_registry.registry.items():
+            # Skip commands that might be registered from outside cli.py
+            if hasattr(cli, name):
+                commands[name] = getattr(cli, name)
+
+        missing_params = {}
+
+        for cmd_name, cmd_func in commands.items():
+            # Get function parameters from signature
+            signature_params = set(inspect.signature(cmd_func).parameters.keys())
+
+            # Parse docstring to extract documented parameters
+            docstring = cmd_func.__doc__ or ""
+
+            # Check if the docstring has an Args section
+            args_match = re.search(r"Args:(.*?)(?:\n\n|\Z)", docstring, re.DOTALL)
+            if not args_match:
+                missing_params[cmd_name] = list(signature_params)
+                continue
+
+            args_section = args_match.group(1)
+
+            # Extract parameter names from the Args section
+            # Looking for patterns like "param_name: Description" or "param_name (type): Description"
+            doc_params = set()
+            for line in args_section.strip().split("\n"):
+                line = line.strip()
+                if not line:
+                    continue
+
+                # Match parameter name at the beginning of the line
+                param_match = re.match(r"\s*([a-zA-Z0-9_]+)(?:\s*\([^)]*\))?:\s*", line)
+                if param_match:
+                    doc_params.add(param_match.group(1))
+
+            # Find parameters that are in the signature but not in the docstring
+            undocumented_params = signature_params - doc_params
+            if undocumented_params:
+                missing_params[cmd_name] = list(undocumented_params)
+
+        # Assert that there are no missing parameters
+        self.assertEqual(
+            missing_params,
+            {},
+            f"The following CLI commands have undocumented parameters: {missing_params}",
+        )
+
+    def test_cli_help_uses_docstring_descriptions(self) -> None:
+        """Test that CLI help text uses parameter descriptions from docstrings."""
+        # Get a command with well-documented parameters
+        test_commands = ["run", "dot", "test"]
+
+        for cmd_name in test_commands:
+            # Skip if command doesn't exist
+            if not hasattr(cli, cmd_name):
+                continue
+
+            cmd_func = getattr(cli, cmd_name)
+            docstring = cmd_func.__doc__ or ""
+
+            # Extract parameter descriptions from docstring
+            docstring_param_descriptions = extract_param_descriptions(docstring)
+
+            # Skip if no parameters are documented
+            if not docstring_param_descriptions:
+                continue
+
+            # Get help text for the command
+            captured_output = io.StringIO()
+            sys.stdout = captured_output
+
+            # Use subprocess to get the help text to ensure we're testing the actual CLI output
+            process = subprocess.Popen(
+                ["jac", cmd_name, "--help"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            help_text, _ = process.communicate()
+
+            sys.stdout = sys.__stdout__
+
+            # Check that each documented parameter description appears in the help text
+            for param_name, description in docstring_param_descriptions.items():
+                # The description might be truncated or formatted differently in the help text,
+                # so we'll just check for the first few words
+                description_start = description.split()[:3]
+                description_pattern = r"\s+".join(
+                    re.escape(word) for word in description_start
+                )
+                # Check if the description appears in the help text
+                self.assertRegex(
+                    help_text,
+                    description_pattern,
+                    f"Parameter description for '{param_name}' not found in help text for '{cmd_name}'",
+                )

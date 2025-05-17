@@ -1,4 +1,4 @@
-import:py re;
+import re;
 
 glob a: int = 5;
 

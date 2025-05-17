@@ -8,16 +8,17 @@ from jaclang.utils.lang_tools import AstTool
 from jaclang.utils.test import TestCase
 
 
-class JacFormatPassTests(TestCase):
+class JacAstToolTests(TestCase):
     """Test pass module."""
 
     def setUp(self) -> None:
         """Set up test."""
+        self.tool = AstTool()
         return super().setUp()
 
     def test_pass_template(self) -> None:
         """Basic test for pass."""
-        out = AstTool().pass_template()
+        out = self.tool.pass_template()
         self.assertIn("target: Expr,", out)
         self.assertIn("self, node: ast.ReturnStmt", out)
         self.assertIn("exprs: SubNodeList[ExprAsItem],", out)
@@ -30,7 +31,7 @@ class JacFormatPassTests(TestCase):
         jac_file_path = os.path.join(
             os.path.dirname(jaclang.__file__), "../examples/reference/edges_walk.jac"
         )
-        out = AstTool().ir(["ast.", jac_file_path])
+        out = self.tool.ir(["ast.", jac_file_path])
         forbidden_strings = ["<<", ">>", "init", "super"]
         for i in forbidden_strings:
             self.assertNotIn(i, out)
@@ -42,7 +43,7 @@ class JacFormatPassTests(TestCase):
             "../examples/reference/names_and_references.jac",
         )
         msg = "error in " + jac_file
-        out = AstTool().ir(["ast", jac_file])
+        out = self.tool.ir(["ast", jac_file])
         self.assertIn("+-- Token", out, msg)
         self.assertIsNotNone(out, msg=msg)
 
@@ -59,7 +60,7 @@ class JacFormatPassTests(TestCase):
 
         for file in jac_py_files:
             msg = "error in " + file
-            out = AstTool().ir(["pyast", jac_py_directory + file])
+            out = self.tool.ir(["pyast", jac_py_directory + file])
             if file.endswith(".jac"):
                 self.assertIn("Module(", out, msg)
                 self.assertIsNotNone(out, msg=msg)
@@ -97,13 +98,14 @@ class JacFormatPassTests(TestCase):
             for file in all_reference_files
             if file not in created_files
         ]
+        print(other_reference_files)
         self.assertEqual(len(other_reference_files), 0)
 
     def test_py_jac_mode(self) -> None:
         """Testing for py_jac_mode support."""
         file = self.fixture_abs_path("../../../tests/fixtures/pyfunc.py")
-        out = AstTool().ir(["unparse", file])
-        self.assertIn("can my_print(x: object) -> None", out)
+        out = self.tool.ir(["unparse", file])
+        self.assertIn("def my_print(x: object) -> None", out)
 
     def test_sym_sym_dot(self) -> None:
         """Testing for sym, sym. AstTool."""
@@ -112,14 +114,37 @@ class JacFormatPassTests(TestCase):
                 os.path.dirname(jaclang.__file__), "../examples/reference/atom.jac"
             )
         )
-        out = AstTool().ir(["sym", jac_file])
+        out = self.tool.ir(["sym", jac_file])
         self.assertNotIn(
             "\n|   +-- ConnectionAbortedError\n|   |   +-- public var\n|   +-- ConnectionError\n|",
             out,
         )
-        self.assertTrue(
-            out.startswith("SymTable::Module(atom)\n+-- Symbols\n|   +-- (e)x\n|")
-        )
-        out = AstTool().ir(["sym.", jac_file])
-        self.assertEqual('2 [label="(e)x"];', out.split("\n")[4])
+        check_list = [
+            "########",
+            "# atom #",
+            "########",
+            "SymTable::Module(atom)",
+            "|   +-- list1",
+            "|   +-- x",
+            "|   +-- impl.x",
+            "|   +-- c",
+            "|   +-- d",
+            "|   +-- a",
+            "|   +-- b",
+            "+-- SymTable::ImplDef(impl.x)",
+            " SymTable::Enum(x)",
+            "+-- line 19, col 13",
+        ]
+        for i in check_list:
+            self.assertIn(i, out)
+        out = self.tool.ir(["sym.", jac_file])
+        self.assertIn('[label="impl.x"];', out)
         self.assertNotIn('[label="str"];', out)
+
+    def test_uninode_doc(self) -> None:
+        """Testing for Autodoc for Uninodes."""
+        auto_uni = self.tool.autodoc_uninode()
+        self.assertIn(
+            "## LambdaExpr\n```mermaid\nflowchart LR\nLambdaExpr -->|Expr| body",
+            auto_uni,
+        )

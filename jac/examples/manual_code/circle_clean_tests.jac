@@ -1,4 +1,4 @@
-include:jac circle_clean;
+import circle_clean;
 
 glob expected_area = 78.53981633974483;
 

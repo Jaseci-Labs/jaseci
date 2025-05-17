@@ -1,18 +1,18 @@
-can foo();
+def foo -> str;
 
 obj vehicle;
 
 enum Size; #implementations
 
-:can:foo() {
+impl foo -> str {
     return ("Hello");
 }
 
-:obj:vehicle  {
+impl vehicle  {
     has name: str = "Car";
 }
 
-:enum:Size {
+impl Size {
     Small=1,
     Medium=2,
     Large=3

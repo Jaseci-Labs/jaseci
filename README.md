@@ -23,14 +23,23 @@ Welcome to the Jaseci project.
 This is a collection of libraries and frameworks in the Jaseci Ecosystem.
 
 - [`jaclang`](jac/): The Jac programming language, a drop-in replacement for and supersets Python.
-- [`mtllm`](jac-mtllm/): Integrate LLM into your existing application with minimal effort.
 - [`jac-cloud`](jac-cloud/): The cloud-native library for Jac programs. `jac-cloud` automatically converts your local application to a production-ready server stack.
-- [`jac-streamlit`](tool_plugins/streamlit): Quickly build UI with Jac and Streamlit.
 - [`jac VSCE`](jac/support/vscode_ext): Official VSCode Extension for the Jac programming language.
+- [`mtllm`](jac-mtllm/): Integrate LLM into your existing application with minimal effort.
 
-## Showcase Projects
- - [`Visit_Zoo`](https://github.com/Thamirawaran/Visit_Zoo): An interactive zoo simulation where players explore various zoo sections through clickable buttons, images, and videos.
- - [`littleX`](https://github.com/Thamirawaran/littleX): A minimalistic social media platform prototype developed using the Jac programming language.
+## Awesome Jaseci Projects 🚀
+
+Explore these impressive projects built with Jaseci! These innovative applications showcase the power and versatility of the Jaseci ecosystem. Consider supporting these projects or getting inspired to build your own.
+
+| Project | Description | Link |
+|---------|-------------|------|
+| **Jivas** | An Agentic Framework for rapidly prototyping and deploying graph-based, AI solutions | [GitHub](https://github.com/TrueSelph/jivas) |
+| **Tobu** | Your AI-powered memory keeper that captures the stories behind your photos and videos | [Website](https://tobu.life/) |
+| **TrueSelph** | A Platform Built on Jivas for building Production-grade Scalable Agentic Conversational AI solutions | [Website](https://trueselph.com/) |
+| **Myca** | An AI-powered productivity tool designed for high-performing individuals | [Website](https://www.myca.ai/) |
+| **Pocketnest Birdy AI** | A Commercial Financial AI Empowered by Your Own Financial Journey | [Website](https://www.pocketnest.com/) |
+| **LittleX** | A lightweight social media application inspired by X, developed using the Jaseci Stack | [GitHub](https://github.com/Jaseci-Labs/littleX) |
+| **Visit_Zoo** | An interactive zoo simulation with clickable sections, images, and videos | [GitHub](https://github.com/Thamirawaran/Visit_Zoo) |
 
 ## Contributing
 

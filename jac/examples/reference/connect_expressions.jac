@@ -11,19 +11,19 @@ edge MyEdge {
     has val: int = 5;
 }
 
-:walker:Creator:can:create {
+impl Creator.create {
     end = here;
     for i=0 to i<7 by i+=1  {
         if i % 2 == 0 {
             end ++> (end := node_a(value=i));
         } else {
-            end +:MyEdge:val=i:+> (end := node_a(value=i + 10));
+            end +>:MyEdge:val=i:+> (end := node_a(value=i + 10));
         }
     }
 }
 
-:walker:Creator:can:travel {
-    for i in [-:MyEdge:val <= 6:->] {
+impl Creator.travel {
+    for i in [->:MyEdge:val <= 6:->] {
         print(i.value);
     }
     visit [-->];

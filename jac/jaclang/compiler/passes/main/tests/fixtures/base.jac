@@ -1,11 +1,11 @@
 """Test for base classes."""
 
-import:jac from impl.imps, test_glob as mine;
-include:jac impl.imps;
+import from impl.imps { test_glob as mine }
+# import impl.imps;
 
 obj Test {
-    can init;
-    can say_hi;
+    def init;
+    def say_hi;
 }
 
 with entry {

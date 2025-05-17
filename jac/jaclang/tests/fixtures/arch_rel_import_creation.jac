@@ -1,4 +1,4 @@
-import:py from jaclang.runtimelib.machine { JacMachine }
+import from jaclang.runtimelib.machine { JacMachineInterface, JacMachine }
 
 glob dynamic_module_source = """
 import from .arch_create_util {UtilityNode}
@@ -10,18 +10,18 @@ here ++> UtilityNode(data=42);
 visit [-->](`?UtilityNode);
 }
 
-can UtilityNode {
+def UtilityNode {
 here.display_data();
 }
 }
 """;
 
 with entry {
-    node_arch = JacMachine.get().create_architype_from_source(
+    node_arch = JacMachineInterface.create_architype_from_source(JacMachineInterface.py_get_jac_machine(),
         dynamic_module_source,
         module_name="dynamic_module"
     );
-    walker_obj = JacMachine.get().spawn_walker(
+    walker_obj = JacMachineInterface.spawn_walker(JacMachineInterface.py_get_jac_machine(),
         'DynamicWalker',
         module_name="dynamic_module",
 

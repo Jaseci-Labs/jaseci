@@ -2,11 +2,19 @@
 
 from dataclasses import dataclass
 from os import getenv
-from typing import Callable, Generator, Iterable, TypeVar, cast
+from typing import (
+    Callable,
+    Generator,
+    Iterable,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 from bson import ObjectId
 
-from jaclang.plugin.feature import JacFeature as Jac
+from jaclang.runtimelib.machine import JacMachineInterface as Jac
 from jaclang.runtimelib.memory import Memory
 
 
@@ -14,13 +22,13 @@ from pymongo import InsertOne
 from pymongo.client_session import ClientSession
 
 from .architype import (
-    Anchor,
     BaseAnchor,
     BulkWrite,
     EdgeAnchor,
     NodeAnchor,
     ObjectAnchor,
     Root,
+    ScheduleStatus,
     WalkerAnchor,
 )
 from ..jaseci.datasources import Collection
@@ -31,8 +39,9 @@ IDS = ObjectId | Iterable[ObjectId]
 BA = TypeVar("BA", bound="BaseAnchor")
 
 
+# mypy: disable-error-code="type-var"
 @dataclass
-class MongoDB(Memory[ObjectId, BaseAnchor | Anchor]):
+class MongoDB(Memory[ObjectId, BaseAnchor]):
     """Shelf Handler."""
 
     __session__: ClientSession | None = None
@@ -51,7 +60,7 @@ class MongoDB(Memory[ObjectId, BaseAnchor | Anchor]):
     def find(  # type: ignore[override]
         self,
         anchors: BA | Iterable[BA],
-        filter: Callable[[Anchor], Anchor] | None = None,
+        filter: Callable[[BaseAnchor], BaseAnchor] | None = None,
         session: ClientSession | None = None,
     ) -> Generator[BA, None, None]:
         """Find anchors from datasource by ids with filter."""
@@ -74,33 +83,52 @@ class MongoDB(Memory[ObjectId, BaseAnchor | Anchor]):
                 },
                 session=session or self.__session__,
             ):
-                self.__mem__[anch_db.id] = anch_db
+                self.__mem__[anch_db.id] = anch_db  # type: ignore[assignment]
 
         for anchor in anchors:
             if (
                 anchor not in self.__gc__
                 and (anch_mem := self.__mem__.get(anchor.id))
-                and (not filter or filter(anch_mem))  # type: ignore[arg-type]
+                and (not filter or filter(anch_mem))
             ):
                 yield cast(BA, anch_mem)
 
     def find_one(  # type: ignore[override]
         self,
         anchors: BA | Iterable[BA],
-        filter: Callable[[Anchor], Anchor] | None = None,
+        filter: Callable[[BaseAnchor], BaseAnchor] | None = None,
         session: ClientSession | None = None,
     ) -> BA | None:
         """Find one anchor from memory by ids with filter."""
         return next(self.find(anchors, filter, session), None)
 
-    def find_by_id(self, anchor: BA) -> BA | None:
+    @overload
+    def find_by_id(self, id_or_anchor: BA) -> BA | None:  # type: ignore[override]
+        ...
+
+    @overload
+    def find_by_id(self, id_or_anchor: ObjectId) -> BaseAnchor | None:  # type: ignore[override]
+        ...
+
+    def find_by_id(self, id_or_anchor: Union[ObjectId, BA]) -> Union[BaseAnchor, BA, None]:  # type: ignore[override]
         """Find one by id."""
-        data = super().find_by_id(anchor.id)
-
-        if not data and (data := anchor.Collection.find_by_id(anchor.id)):
-            self.__mem__[data.id] = data
-
-        return data
+        if isinstance(id_or_anchor, ObjectId):
+            return super().find_by_id(id_or_anchor)  # type: ignore[arg-type]
+        elif hasattr(id_or_anchor, "id"):
+            data = super().find_by_id(id_or_anchor.id)  # type: ignore[arg-type]
+            if (
+                not data
+                and hasattr(id_or_anchor, "Collection")
+                and hasattr(id_or_anchor.Collection, "find_by_id")
+            ):
+                data_from_collection = id_or_anchor.Collection.find_by_id(
+                    id_or_anchor.id
+                )
+                if data_from_collection:
+                    self.__mem__[data_from_collection.id] = data_from_collection  # type: ignore[assignment]
+                    return cast(BA, data_from_collection)
+            return cast(BA, data)
+        return None
 
     def close(self) -> None:
         """Close memory handler."""
@@ -118,47 +146,73 @@ class MongoDB(Memory[ObjectId, BaseAnchor | Anchor]):
     def sync_mem_to_db(self, bulk_write: BulkWrite, keys: Iterable[ObjectId]) -> None:
         """Manually sync memory to db."""
         for key in keys:
+            anchor = self.__mem__.get(key)
             if (
-                (anchor := self.__mem__.get(key))
+                anchor
+                and hasattr(anchor, "architype")
                 and anchor.architype
+                and hasattr(anchor, "persistent")
                 and anchor.persistent
             ):
-                if not anchor.state.connected:
-                    anchor.state.connected = True
-                    anchor.sync_hash()
-                    bulk_write.operations[anchor.__class__].append(
-                        InsertOne(anchor.serialize())
-                    )
-                elif (new_hash := anchor.has_changed()) and Jac.check_connect_access(
-                    anchor  # type: ignore[arg-type]
+                if (
+                    hasattr(anchor, "state")
+                    and hasattr(anchor.state, "connected")
+                    and not anchor.state.connected
                 ):
-                    anchor.state.full_hash = new_hash
+                    anchor.state.connected = True
+                    if hasattr(anchor, "sync_hash"):
+                        anchor.sync_hash()  # type: ignore[operator]
+                    if (
+                        hasattr(anchor, "__class__")
+                        and hasattr(bulk_write, "operations")
+                        and isinstance(
+                            anchor,
+                            (NodeAnchor, EdgeAnchor, WalkerAnchor, ObjectAnchor),
+                        )
+                        and hasattr(anchor, "serialize")
+                    ):
+                        bulk_write.operations[anchor.__class__].append(  # type: ignore[index]
+                            InsertOne(anchor.serialize())  # type: ignore[operator]
+                        )
+                        if (
+                            isinstance(anchor, WalkerAnchor)
+                            and hasattr(anchor, "schedule")
+                            and anchor.schedule
+                            and hasattr(anchor.schedule, "status")
+                            and anchor.schedule.status == ScheduleStatus.PENDING
+                        ):
+                            bulk_write.schedules.append(anchor)
+                elif (
+                    hasattr(anchor, "has_changed")
+                    and (new_hash := anchor.has_changed())  # type: ignore[operator]
+                    and Jac.check_connect_access(anchor)  # type: ignore[arg-type]
+                ):
+                    if hasattr(anchor, "state") and hasattr(anchor.state, "full_hash"):
+                        anchor.state.full_hash = new_hash
                     if (
                         not DISABLE_AUTO_CLEANUP
                         and isinstance(anchor, NodeAnchor)
                         and not isinstance(anchor.architype, Root)
+                        and hasattr(anchor, "edges")
                         and not anchor.edges
                     ):
                         bulk_write.del_node(anchor.id)
-                    else:
-                        anchor.update(bulk_write)
+                    elif hasattr(anchor, "update"):
+                        anchor.update(bulk_write)  # type: ignore[operator]
 
     def get_bulk_write(self) -> BulkWrite:
         """Sync memory to database."""
         bulk_write = BulkWrite()
 
         for anchor in self.__gc__:
-            match anchor:
-                case NodeAnchor():
-                    bulk_write.del_node(anchor.id)
-                case EdgeAnchor():
-                    bulk_write.del_edge(anchor.id)
-                case WalkerAnchor():
-                    bulk_write.del_walker(anchor.id)
-                case ObjectAnchor():
-                    bulk_write.del_object(anchor.id)
-                case _:
-                    pass
+            if isinstance(anchor, NodeAnchor):
+                bulk_write.del_node(anchor.id)
+            elif isinstance(anchor, EdgeAnchor):
+                bulk_write.del_edge(anchor.id)
+            elif isinstance(anchor, WalkerAnchor):
+                bulk_write.del_walker(anchor.id)
+            elif isinstance(anchor, ObjectAnchor):
+                bulk_write.del_object(anchor.id)
 
         keys = set(self.__mem__.keys())
 
@@ -169,3 +223,6 @@ class MongoDB(Memory[ObjectId, BaseAnchor | Anchor]):
         self.sync_mem_to_db(bulk_write, set(self.__mem__.keys() - keys))
 
         return bulk_write
+
+
+__all__ = ["MongoDB"]

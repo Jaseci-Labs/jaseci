@@ -1,4 +1,4 @@
-can do_nothing () {
+def do_nothing () {
     ;
 }
 

@@ -6,17 +6,17 @@ import re
 from functools import wraps
 from typing import Any, Awaitable, Callable, Coroutine, Optional, ParamSpec, TypeVar
 
-import jaclang.compiler.absyntree as ast
-from jaclang.compiler.codeloc import CodeLocInfo
+import jaclang.compiler.unitree as uni
+from jaclang.compiler.codeinfo import CodeLocInfo
 from jaclang.compiler.constant import SymbolType
 from jaclang.compiler.passes.transform import Alert
-from jaclang.compiler.symtable import Symbol, SymbolTable
+from jaclang.compiler.unitree import Symbol, UniScopeNode
 from jaclang.vendor.pygls import uris
 
 import lsprotocol.types as lspt
 
-T = TypeVar("T", bound=Callable[..., Coroutine[Any, Any, Any]])
 P = ParamSpec("P")
+T = TypeVar("T", bound=Callable[P, Coroutine[Any, Any, Any]])
 
 
 def gen_diagnostics(
@@ -45,7 +45,7 @@ def gen_diagnostics(
 def debounce(wait: float) -> Callable[[T], Callable[..., Awaitable[None]]]:
     """Debounce decorator for async functions."""
 
-    def decorator(fn: T) -> Callable[..., Awaitable[None]]:
+    def decorator(fn: T) -> Callable[P, Awaitable[None]]:
         @wraps(fn)
         async def debounced(*args: P.args, **kwargs: P.kwargs) -> None:
             async def call_it() -> None:
@@ -70,29 +70,26 @@ def debounce(wait: float) -> Callable[[T], Callable[..., Awaitable[None]]]:
     return decorator
 
 
-def sym_tab_list(sym_tab: SymbolTable, file_path: str) -> list[SymbolTable]:
+def sym_tab_list(sym_tab: UniScopeNode, file_path: str) -> list[UniScopeNode]:
     """Iterate through symbol table."""
     sym_tabs = (
         [sym_tab]
-        if not (
-            isinstance(sym_tab.owner, ast.Module)
-            and sym_tab.owner.loc.mod_path != file_path
-        )
+        if not (isinstance(sym_tab, uni.Module) and sym_tab.loc.mod_path != file_path)
         else []
     )
-    for i in sym_tab.kid:
+    for i in sym_tab.kid_scope:
         sym_tabs += sym_tab_list(i, file_path=file_path)
     return sym_tabs
 
 
 def find_deepest_symbol_node_at_pos(
-    node: ast.AstNode, line: int, character: int
-) -> Optional[ast.AstSymbolNode]:
+    node: uni.UniNode, line: int, character: int
+) -> Optional[uni.AstSymbolNode]:
     """Return the deepest symbol node that contains the given position."""
     last_symbol_node = None
 
     if position_within_node(node, line, character):
-        if isinstance(node, ast.AstSymbolNode):
+        if isinstance(node, uni.AstSymbolNode):
             last_symbol_node = node
 
         for child in [i for i in node.kid if i.loc.mod_path == node.loc.mod_path]:
@@ -104,7 +101,7 @@ def find_deepest_symbol_node_at_pos(
     return last_symbol_node
 
 
-def position_within_node(node: ast.AstNode, line: int, character: int) -> bool:
+def position_within_node(node: uni.UniNode, line: int, character: int) -> bool:
     """Check if the position falls within the node's location."""
     if node.loc.first_line < line + 1 < node.loc.last_line:
         return True
@@ -145,14 +142,14 @@ def find_index(
     return index
 
 
-def get_symbols_for_outline(node: SymbolTable) -> list[lspt.DocumentSymbol]:
+def get_symbols_for_outline(node: UniScopeNode) -> list[lspt.DocumentSymbol]:
     """Recursively collect symbols from the AST."""
     symbols = []
-    for key, item in node.tab.items():
+    for key, item in node.names_in_scope.items():
         if (
             key in dir(builtins)
-            or item in [owner_sym(tab) for tab in node.kid]
-            or item.decl.loc.mod_path != node.owner.loc.mod_path
+            or item in [owner_sym(tab) for tab in node.kid_scope]
+            or item.decl.loc.mod_path != node.loc.mod_path
         ):
             continue
         pos = create_range(item.decl.loc)
@@ -165,20 +162,18 @@ def get_symbols_for_outline(node: SymbolTable) -> list[lspt.DocumentSymbol]:
         )
         symbols.append(symbol)
 
-    for sub_tab in [
-        i for i in node.kid if i.owner.loc.mod_path == node.owner.loc.mod_path
-    ]:
+    for sub_tab in [i for i in node.kid_scope if i.loc.mod_path == node.loc.mod_path]:
         sub_symbols = get_symbols_for_outline(sub_tab)
         if isinstance(
-            sub_tab.owner,
-            (ast.IfStmt, ast.ElseStmt, ast.WhileStmt, ast.IterForStmt, ast.InForStmt),
+            sub_tab,
+            (uni.IfStmt, uni.ElseStmt, uni.WhileStmt, uni.IterForStmt, uni.InForStmt),
         ):
             symbols.extend(sub_symbols)
         else:
-            sub_pos = create_range(sub_tab.owner.loc)
+            sub_pos = create_range(sub_tab.loc)
             symbol = lspt.DocumentSymbol(
-                name=sub_tab.name,
-                kind=kind_map(sub_tab.owner),
+                name=sub_tab.scope_name,
+                kind=kind_map(sub_tab),
                 range=sub_pos,
                 selection_range=sub_pos,
                 children=sub_symbols,
@@ -188,10 +183,10 @@ def get_symbols_for_outline(node: SymbolTable) -> list[lspt.DocumentSymbol]:
     return symbols
 
 
-def owner_sym(table: SymbolTable) -> Optional[Symbol]:
+def owner_sym(table: UniScopeNode) -> Optional[Symbol]:
     """Get owner sym."""
-    if table.parent and isinstance(table.owner, ast.AstSymbolNode):
-        return table.parent.lookup(table.owner.sym_name)
+    if table.parent_scope and isinstance(table, uni.AstSymbolNode):
+        return table.parent_scope.lookup(table.sym_name)
     return None
 
 
@@ -209,31 +204,20 @@ def create_range(loc: CodeLocInfo) -> lspt.Range:
     )
 
 
-def get_location_range(mod_item: ast.ModuleItem) -> tuple[int, int, int, int]:
-    """Get location range."""
-    if not mod_item.from_mod_path.sub_module:
-        raise ValueError("Module items should have module path. Not Possible.")
-    lookup = mod_item.from_mod_path.sub_module.sym_tab.lookup(mod_item.name.value)
-    if not lookup:
-        raise ValueError("Module items should have a symbol table entry. Not Possible.")
-    loc = lookup.decl.loc
-    return loc.first_line, loc.col_start, loc.last_line, loc.col_end
-
-
-def kind_map(sub_tab: ast.AstNode) -> lspt.SymbolKind:
+def kind_map(sub_tab: uni.UniNode) -> lspt.SymbolKind:
     """Map the symbol node to an lspt.SymbolKind."""
     return (
         lspt.SymbolKind.Function
-        if isinstance(sub_tab, (ast.Ability, ast.AbilityDef))
+        if isinstance(sub_tab, (uni.Ability, uni.ImplDef))
         else (
             lspt.SymbolKind.Class
-            if isinstance(sub_tab, (ast.Architype, ast.ArchDef))
+            if isinstance(sub_tab, (uni.Architype, uni.ImplDef))
             else (
                 lspt.SymbolKind.Module
-                if isinstance(sub_tab, ast.Module)
+                if isinstance(sub_tab, uni.Module)
                 else (
                     lspt.SymbolKind.Enum
-                    if isinstance(sub_tab, (ast.Enum, ast.EnumDef))
+                    if isinstance(sub_tab, (uni.Enum, uni.ImplDef))
                     else lspt.SymbolKind.Variable
                 )
             )
@@ -285,33 +269,39 @@ def label_map(sub_tab: SymbolType) -> lspt.CompletionItemKind:
 
 
 def collect_all_symbols_in_scope(
-    sym_tab: SymbolTable, up_tree: bool = True
+    sym_tab: UniScopeNode, up_tree: bool = True
 ) -> list[lspt.CompletionItem]:
     """Return all symbols in scope."""
     symbols = []
     visited = set()
-    current_tab: Optional[SymbolTable] = sym_tab
+    current_tab: Optional[UniScopeNode] = sym_tab
 
     while current_tab is not None and current_tab not in visited:
         visited.add(current_tab)
-        for name, symbol in current_tab.tab.items():
+        for name, symbol in current_tab.names_in_scope.items():
             if name not in dir(builtins) and symbol.sym_type != SymbolType.IMPL:
                 symbols.append(
                     lspt.CompletionItem(label=name, kind=label_map(symbol.sym_type))
                 )
         if not up_tree:
             return symbols
-        current_tab = current_tab.parent if current_tab.parent != current_tab else None
+        current_tab = (
+            current_tab.parent_scope
+            if current_tab.parent_scope != current_tab
+            else None
+        )
     return symbols
 
 
-def collect_child_tabs(sym_tab: SymbolTable) -> list[lspt.CompletionItem]:
+def collect_child_tabs(sym_tab: UniScopeNode) -> list[lspt.CompletionItem]:
     """Return all child tab's as completion items."""
     symbols: list[lspt.CompletionItem] = []
-    for tab in sym_tab.kid:
-        if tab.name not in [i.label for i in symbols]:
+    for tab in sym_tab.kid_scope:
+        if tab.scope_name not in [i.label for i in symbols]:
             symbols.append(
-                lspt.CompletionItem(label=tab.name, kind=label_map(tab.get_type()))
+                lspt.CompletionItem(
+                    label=tab.scope_name, kind=label_map(tab.get_type())
+                )
             )
     return symbols
 

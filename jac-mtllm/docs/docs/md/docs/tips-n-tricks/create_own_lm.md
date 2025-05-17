@@ -29,7 +29,7 @@ class MyLLM(BaseLLM):
 
 In Jaclang,
 ```python | my_llm.jac
-import:py from mtlm.llms.base, BaseLLM;
+import from mtlm.llms.base, BaseLLM;
 
 class MyLLM:BaseLLM: {
     can init(verbose:bool=false, max_tries:int=10, **kwargs: dict) -> None {
@@ -50,8 +50,8 @@ class MyLLM:BaseLLM: {
 2. Initialize your model with the required parameters.
 
 ```python | app.jac
-import:jac from my_llm, MyLLM; # For Jaclang
-import:py from my_llm, MyLLM; # For Python
+import from my_llm, MyLLM; # For Jaclang
+import from my_llm, MyLLM; # For Python
 
 llm = MyLLM();
 ```

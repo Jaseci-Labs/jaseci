@@ -4,23 +4,23 @@ components:
       properties:
         arr:
           items:
-            $ref: '#/components/schemas/Kid'
+            $ref: "#/components/schemas/Kid"
           title: Arr
           type: array
         data:
           additionalProperties:
-            $ref: '#/components/schemas/Kid'
+            $ref: "#/components/schemas/Kid"
           title: Data
           type: object
         enum_field:
-          $ref: '#/components/schemas/Enum'
+          $ref: "#/components/schemas/Enum"
         kid:
-          $ref: '#/components/schemas/Kid'
+          $ref: "#/components/schemas/Kid"
       required:
-      - enum_field
-      - kid
-      - arr
-      - data
+        - enum_field
+        - kid
+        - arr
+        - data
       title: Adult
       type: object
     AttachSSO:
@@ -36,9 +36,9 @@ components:
           title: Platform
           type: string
       required:
-      - platform
-      - id
-      - email
+        - platform
+        - id
+        - email
       title: AttachSSO
       type: object
     Body_api_entry_walker_post_with_body_and_file__node__post:
@@ -58,9 +58,9 @@ components:
           title: Single
           type: string
       required:
-      - body
-      - single
-      - multiple
+        - body
+        - single
+        - multiple
       title: Body_api_entry_walker_post_with_body_and_file__node__post
       type: object
     Body_api_entry_walker_post_with_file__node__post:
@@ -77,13 +77,13 @@ components:
           type: string
         singleOptional:
           anyOf:
-          - format: binary
-            type: string
-          - type: 'null'
+            - format: binary
+              type: string
+            - type: "null"
           title: Singleoptional
       required:
-      - single
-      - multiple
+        - single
+        - multiple
       title: Body_api_entry_walker_post_with_file__node__post
       type: object
     Body_api_root_walker_post_with_body_and_file_post:
@@ -103,9 +103,9 @@ components:
           title: Single
           type: string
       required:
-      - body
-      - single
-      - multiple
+        - body
+        - single
+        - multiple
       title: Body_api_root_walker_post_with_body_and_file_post
       type: object
     Body_api_root_walker_post_with_file_post:
@@ -122,16 +122,62 @@ components:
           type: string
         singleOptional:
           anyOf:
-          - format: binary
-            type: string
-          - type: 'null'
+            - format: binary
+              type: string
+            - type: "null"
           title: Singleoptional
       required:
-      - single
-      - multiple
+        - single
+        - multiple
       title: Body_api_root_walker_post_with_file_post
       type: object
+    Child:
+      properties:
+        arr:
+          items:
+            type: integer
+          title: Arr
+          type: array
+        data:
+          additionalProperties:
+            type: integer
+          title: Data
+          type: object
+        enum_field:
+          $ref: '#/components/schemas/Enum'
+        val:
+          title: Val
+          type: integer
+      required:
+      - val
+      - arr
+      - data
+      - enum_field
+      title: Child
+      type: object
     ContextResponse_NoneType_:
+      properties:
+        reports:
+          anyOf:
+            - items: {}
+              type: array
+            - type: "null"
+          title: Reports
+        returns:
+          anyOf:
+            - items:
+                type: "null"
+              type: array
+            - type: "null"
+          title: Returns
+        status:
+          title: Status
+          type: integer
+      required:
+        - status
+      title: ContextResponse
+      type: object
+    ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__:
       properties:
         reports:
           anyOf:
@@ -142,7 +188,15 @@ components:
         returns:
           anyOf:
           - items:
-              type: 'null'
+              anyOf:
+              - type: integer
+              - type: string
+              - type: boolean
+              - $ref: '#/components/schemas/Parent'
+              - items: {}
+                type: array
+              - type: object
+              - type: 'null'
             type: array
           - type: 'null'
           title: Returns
@@ -160,14 +214,14 @@ components:
           title: Platform
           type: string
       required:
-      - platform
+        - platform
       title: DetachSSO
       type: object
     Enum:
       enum:
-      - a
-      - b
-      - c
+        - a
+        - b
+        - c
       title: Enum
       type: string
     Expiration:
@@ -181,10 +235,10 @@ components:
         interval:
           default: days
           enum:
-          - seconds
-          - minutes
-          - hours
-          - days
+            - seconds
+            - minutes
+            - hours
+            - days
           title: Interval
           type: string
       title: Expiration
@@ -193,7 +247,7 @@ components:
       description: User Creation Request Model.
       properties:
         expiration:
-          $ref: '#/components/schemas/Expiration'
+          $ref: "#/components/schemas/Expiration"
         name:
           minLength: 1
           title: Name
@@ -209,14 +263,14 @@ components:
           title: Walkers
           type: array
       required:
-      - name
+        - name
       title: GenerateKey
       type: object
     HTTPValidationError:
       properties:
         detail:
           items:
-            $ref: '#/components/schemas/ValidationError'
+            $ref: "#/components/schemas/ValidationError"
           title: Detail
           type: array
       title: HTTPValidationError
@@ -231,16 +285,43 @@ components:
           title: Ids
           type: array
       required:
-      - ids
+        - ids
       title: KeyIDs
       type: object
     Kid:
       properties:
         enum_field:
-          $ref: '#/components/schemas/Enum'
+          $ref: "#/components/schemas/Enum"
       required:
-      - enum_field
+        - enum_field
       title: Kid
+      type: object
+    Parent:
+      properties:
+        arr:
+          items:
+            type: integer
+          title: Arr
+          type: array
+        child:
+          $ref: '#/components/schemas/Child'
+        data:
+          additionalProperties:
+            type: integer
+          title: Data
+          type: object
+        enum_field:
+          $ref: '#/components/schemas/Enum'
+        val:
+          title: Val
+          type: integer
+      required:
+      - val
+      - arr
+      - data
+      - enum_field
+      - child
+      title: Parent
       type: object
     UserChangePassword:
       description: User Creation Request Model.
@@ -252,8 +333,8 @@ components:
           title: Old Password
           type: string
       required:
-      - old_password
-      - new_password
+        - old_password
+        - new_password
       title: UserChangePassword
       type: object
     UserForgotPassword:
@@ -264,7 +345,7 @@ components:
           title: Email
           type: string
       required:
-      - email
+        - email
       title: UserForgotPassword
       type: object
     UserRegister:
@@ -280,9 +361,9 @@ components:
           title: Password
           type: string
       required:
-      - email
-      - password
-      - name
+        - email
+        - password
+        - name
       title: UserRegister
       type: object
     UserRequest:
@@ -296,8 +377,8 @@ components:
           title: Password
           type: string
       required:
-      - email
-      - password
+        - email
+        - password
       title: UserRequest
       type: object
     UserResetPassword:
@@ -310,8 +391,8 @@ components:
           title: Password
           type: string
       required:
-      - code
-      - password
+        - code
+        - password
       title: UserResetPassword
       type: object
     UserVerification:
@@ -321,7 +402,7 @@ components:
           title: Code
           type: string
       required:
-      - code
+        - code
       title: UserVerification
       type: object
     ValidationError:
@@ -329,8 +410,8 @@ components:
         loc:
           items:
             anyOf:
-            - type: string
-            - type: integer
+              - type: string
+              - type: integer
           title: Location
           type: array
         msg:
@@ -340,27 +421,54 @@ components:
           title: Error Type
           type: string
       required:
-      - loc
-      - msg
-      - type
+        - loc
+        - msg
+        - type
       title: ValidationError
       type: object
     allow_other_root_access_body_model:
       properties:
         level:
           anyOf:
-          - type: integer
-          - type: string
+            - type: integer
+            - type: string
+          default: 0
           title: Level
         root_id:
           title: Root Id
           type: string
         via_all:
+          default: false
           title: Via All
           type: boolean
       required:
-      - root_id
+        - root_id
       title: allow_other_root_access_body_model
+      type: object
+    async_walker_body_model:
+      properties:
+        arg1:
+          title: Arg1
+          type: integer
+        arg2:
+          title: Arg2
+          type: string
+        done:
+          default: false
+          title: Done
+          type: boolean
+        kwarg1:
+          default: 3
+          title: Kwarg1
+          type: integer
+        kwarg2:
+          default: "4"
+          title: Kwarg2
+          type: string
+      required:
+        - arg1
+        - arg2
+      title: async_walker_body_model
       type: object
     check_memory_sync_body_model:
       properties:
@@ -368,7 +476,7 @@ components:
           title: Other Node Id
           type: string
       required:
-      - other_node_id
+        - other_node_id
       title: check_memory_sync_body_model
       type: object
     combination1_body_model:
@@ -377,7 +485,7 @@ components:
           title: C
           type: string
       required:
-      - c
+        - c
       title: combination1_body_model
       type: object
     combination2_body_model:
@@ -386,7 +494,7 @@ components:
           title: C
           type: string
       required:
-      - c
+        - c
       title: combination2_body_model
       type: object
     custom_status_code_body_model:
@@ -395,7 +503,7 @@ components:
           title: Status
           type: integer
       required:
-      - status
+        - status
       title: custom_status_code_body_model
       type: object
     delete_custom_object_body_model:
@@ -404,7 +512,7 @@ components:
           title: Object Id
           type: string
       required:
-      - object_id
+        - object_id
       title: delete_custom_object_body_model
       type: object
     disallow_other_root_access_body_model:
@@ -413,10 +521,11 @@ components:
           title: Root Id
           type: string
         via_all:
+          default: false
           title: Via All
           type: boolean
       required:
-      - root_id
+        - root_id
       title: disallow_other_root_access_body_model
       type: object
     get_custom_object_body_model:
@@ -425,30 +534,30 @@ components:
           title: Object Id
           type: string
       required:
-      - object_id
+        - object_id
       title: get_custom_object_body_model
       type: object
     nested_request_payload_body_model:
       properties:
         adult:
-          $ref: '#/components/schemas/Adult'
+          $ref: "#/components/schemas/Adult"
         arr:
           items:
-            $ref: '#/components/schemas/Adult'
+            $ref: "#/components/schemas/Adult"
           title: Arr
           type: array
         data:
           additionalProperties:
-            $ref: '#/components/schemas/Adult'
+            $ref: "#/components/schemas/Adult"
           title: Data
           type: object
         enum_field:
-          $ref: '#/components/schemas/Enum'
+          $ref: "#/components/schemas/Enum"
       required:
-      - adult
-      - arr
-      - data
-      - enum_field
+        - adult
+        - arr
+        - data
+        - enum_field
       title: nested_request_payload_body_model
       type: object
     post_partial_excluded_body_model:
@@ -457,7 +566,7 @@ components:
           title: A
           type: string
       required:
-      - a
+        - a
       title: post_partial_excluded_body_model
       type: object
     post_with_body_body_model:
@@ -466,7 +575,7 @@ components:
           title: A
           type: string
       required:
-      - a
+        - a
       title: post_with_body_body_model
       type: object
     update_custom_object_body_model:
@@ -475,7 +584,7 @@ components:
           title: Object Id
           type: string
       required:
-      - object_id
+        - object_id
       title: update_custom_object_body_model
       type: object
   securitySchemes:
@@ -500,14 +609,14 @@ paths:
       description: Healthz API.
       operationId: healthz_healthz_get
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema: {}
           description: Successful Response
       summary: Healthz
       tags:
-      - Monitoring APIs
+        - Monitoring APIs
   /sso/attach:
     post:
       description: Generate token from user.
@@ -516,25 +625,25 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AttachSSO'
+              $ref: "#/components/schemas/AttachSSO"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema: {}
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Sso Attach
       tags:
-      - SSO APIs
+        - SSO APIs
   /sso/detach:
     delete:
       description: Generate token from user.
@@ -543,113 +652,113 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DetachSSO'
+              $ref: "#/components/schemas/DetachSSO"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema: {}
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Sso Detach
       tags:
-      - SSO APIs
+        - SSO APIs
   /sso/{platform}/{operation}:
     get:
       description: SSO Login API.
       operationId: sso_operation_sso__platform___operation__get
       parameters:
-      - in: path
-        name: platform
-        required: true
-        schema:
-          title: Platform
-          type: string
-      - in: path
-        name: operation
-        required: true
-        schema:
-          title: Operation
-          type: string
-      - in: query
-        name: redirect_uri
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Redirect Uri
-      - in: query
-        name: state
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: State
+        - in: path
+          name: platform
+          required: true
+          schema:
+            title: Platform
+            type: string
+        - in: path
+          name: operation
+          required: true
+          schema:
+            title: Operation
+            type: string
+        - in: query
+          name: redirect_uri
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Redirect Uri
+        - in: query
+          name: state
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: State
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema: {}
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       summary: Sso Operation
       tags:
-      - SSO APIs
+        - SSO APIs
   /sso/{platform}/{operation}/callback:
     get:
       description: SSO Login API.
       operationId: sso_callback_sso__platform___operation__callback_get
       parameters:
-      - in: path
-        name: platform
-        required: true
-        schema:
-          title: Platform
-          type: string
-      - in: path
-        name: operation
-        required: true
-        schema:
-          title: Operation
-          type: string
-      - in: query
-        name: redirect_uri
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Redirect Uri
+        - in: path
+          name: platform
+          required: true
+          schema:
+            title: Platform
+            type: string
+        - in: path
+          name: operation
+          required: true
+          schema:
+            title: Operation
+            type: string
+        - in: query
+          name: redirect_uri
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Redirect Uri
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema: {}
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       summary: Sso Callback
       tags:
-      - SSO APIs
+        - SSO APIs
   /user/change_password:
     post:
       description: Register user API.
@@ -658,25 +767,25 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserChangePassword'
+              $ref: "#/components/schemas/UserChangePassword"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema: {}
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Change Password
       tags:
-      - User APIs
+        - User APIs
   /user/forgot_password:
     post:
       description: Forgot password API.
@@ -685,23 +794,23 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserForgotPassword'
+              $ref: "#/components/schemas/UserForgotPassword"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema: {}
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       summary: Forgot Password
       tags:
-      - User APIs
+        - User APIs
   /user/login:
     post:
       description: Login user API.
@@ -710,23 +819,23 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserRequest'
+              $ref: "#/components/schemas/UserRequest"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema: {}
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       summary: Login
       tags:
-      - User APIs
+        - User APIs
   /user/register:
     post:
       description: Register user API.
@@ -735,23 +844,23 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserRegister'
+              $ref: "#/components/schemas/UserRegister"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema: {}
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       summary: Register
       tags:
-      - User APIs
+        - User APIs
   /user/reset_password:
     post:
       description: Reset password API.
@@ -760,38 +869,38 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserResetPassword'
+              $ref: "#/components/schemas/UserResetPassword"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema: {}
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       summary: Reset Password
       tags:
-      - User APIs
+        - User APIs
   /user/send-verification-code:
     post:
       description: Verify user API.
       operationId: send_verification_code_user_send_verification_code_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema: {}
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Send Verification Code
       tags:
-      - User APIs
+        - User APIs
   /user/verify:
     post:
       description: Verify user API.
@@ -800,74 +909,23 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserVerification'
+              $ref: "#/components/schemas/UserVerification"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema: {}
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       summary: Verify
       tags:
-      - User APIs
-  /walker/Walker:
-    post:
-      operationId: api_root_walker_Walker_post
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
-                title: Response Api Root Walker Walker Post
-          description: Successful Response
-      security:
-      - HTTPBearer: []
-      summary: Api Root
-      tags:
-      - Walker APIs
-  /walker/Walker/{node}:
-    post:
-      operationId: api_entry_walker_Walker__node__post
-      parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
-                title: Response Api Entry Walker Walker  Node  Post
-          description: Successful Response
-        '422':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
-      security:
-      - HTTPBearer: []
-      summary: Api Entry
-      tags:
-      - Walker APIs
+        - User APIs
   /walker/allow_other_root_access:
     post:
       operationId: api_root_walker_allow_other_root_access_post
@@ -875,68 +933,137 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/allow_other_root_access_body_model'
+              $ref: "#/components/schemas/allow_other_root_access_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Allow Other Root Access Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/allow_other_root_access/{node}:
     post:
       operationId: api_entry_walker_allow_other_root_access__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/allow_other_root_access_body_model'
+              $ref: "#/components/schemas/allow_other_root_access_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Allow Other Root Access  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
+  /walker/async_walker:
+    post:
+      operationId: api_root_walker_async_walker_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/async_walker_body_model"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
+                title: Response Api Root Walker Async Walker Post
+          description: Successful Response
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+        - HTTPBearer: []
+      summary: Api Root
+      tags:
+        - Walker APIs
+  /walker/async_walker/{node}:
+    post:
+      operationId: api_entry_walker_async_walker__node__post
+      parameters:
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/async_walker_body_model"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
+                title: Response Api Entry Walker Async Walker  Node  Post
+          description: Successful Response
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+        - HTTPBearer: []
+      summary: Api Entry
+      tags:
+        - Walker APIs
   /walker/check_memory_sync:
     post:
       operationId: api_root_walker_check_memory_sync_post
@@ -944,1219 +1071,1219 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/check_memory_sync_body_model'
+              $ref: "#/components/schemas/check_memory_sync_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Check Memory Sync Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/check_memory_sync/{node}:
     post:
       operationId: api_entry_walker_check_memory_sync__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/check_memory_sync_body_model'
+              $ref: "#/components/schemas/check_memory_sync_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Check Memory Sync  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/check_populated_graph:
     post:
       operationId: api_root_walker_check_populated_graph_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Check Populated Graph Post
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/check_populated_graph/{node}:
     post:
       operationId: api_entry_walker_check_populated_graph__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Check Populated Graph  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/combination1:
     get:
       operationId: api_root_walker_combination1_get
       parameters:
-      - in: query
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
-      - in: query
-        name: b
-        required: true
-        schema:
-          title: B
-          type: string
+        - in: query
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
+        - in: query
+          name: b
+          required: true
+          schema:
+            title: B
+            type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/combination1_body_model'
+              $ref: "#/components/schemas/combination1_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Combination1 Get
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
     post:
       operationId: api_root_walker_combination1_post
       parameters:
-      - in: query
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
-      - in: query
-        name: b
-        required: true
-        schema:
-          title: B
-          type: string
+        - in: query
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
+        - in: query
+          name: b
+          required: true
+          schema:
+            title: B
+            type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/combination1_body_model'
+              $ref: "#/components/schemas/combination1_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Combination1 Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/combination1/{node}:
     get:
       operationId: api_entry_walker_combination1__node__get
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
-      - in: query
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
-      - in: query
-        name: b
-        required: true
-        schema:
-          title: B
-          type: string
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
+        - in: query
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
+        - in: query
+          name: b
+          required: true
+          schema:
+            title: B
+            type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/combination1_body_model'
+              $ref: "#/components/schemas/combination1_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Combination1  Node  Get
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
     post:
       operationId: api_entry_walker_combination1__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
-      - in: query
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
-      - in: query
-        name: b
-        required: true
-        schema:
-          title: B
-          type: string
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
+        - in: query
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
+        - in: query
+          name: b
+          required: true
+          schema:
+            title: B
+            type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/combination1_body_model'
+              $ref: "#/components/schemas/combination1_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Combination1  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/combination2/{a}:
     delete:
       operationId: api_root_walker_combination2__a__delete
       parameters:
-      - in: path
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
-      - in: query
-        name: b
-        required: true
-        schema:
-          title: B
-          type: string
+        - in: path
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
+        - in: query
+          name: b
+          required: true
+          schema:
+            title: B
+            type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/combination2_body_model'
+              $ref: "#/components/schemas/combination2_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Combination2  A  Delete
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
     get:
       operationId: api_root_walker_combination2__a__get
       parameters:
-      - in: path
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
-      - in: query
-        name: b
-        required: true
-        schema:
-          title: B
-          type: string
+        - in: path
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
+        - in: query
+          name: b
+          required: true
+          schema:
+            title: B
+            type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/combination2_body_model'
+              $ref: "#/components/schemas/combination2_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Combination2  A  Get
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
     head:
       operationId: api_root_walker_combination2__a__head
       parameters:
-      - in: path
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
-      - in: query
-        name: b
-        required: true
-        schema:
-          title: B
-          type: string
+        - in: path
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
+        - in: query
+          name: b
+          required: true
+          schema:
+            title: B
+            type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/combination2_body_model'
+              $ref: "#/components/schemas/combination2_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Combination2  A  Head
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
     options:
       operationId: api_root_walker_combination2__a__options
       parameters:
-      - in: path
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
-      - in: query
-        name: b
-        required: true
-        schema:
-          title: B
-          type: string
+        - in: path
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
+        - in: query
+          name: b
+          required: true
+          schema:
+            title: B
+            type: string
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Combination2  A  Options
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
     patch:
       operationId: api_root_walker_combination2__a__patch
       parameters:
-      - in: path
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
-      - in: query
-        name: b
-        required: true
-        schema:
-          title: B
-          type: string
+        - in: path
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
+        - in: query
+          name: b
+          required: true
+          schema:
+            title: B
+            type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/combination2_body_model'
+              $ref: "#/components/schemas/combination2_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Combination2  A  Patch
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
     post:
       operationId: api_root_walker_combination2__a__post
       parameters:
-      - in: path
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
-      - in: query
-        name: b
-        required: true
-        schema:
-          title: B
-          type: string
+        - in: path
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
+        - in: query
+          name: b
+          required: true
+          schema:
+            title: B
+            type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/combination2_body_model'
+              $ref: "#/components/schemas/combination2_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Combination2  A  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
     put:
       operationId: api_root_walker_combination2__a__put
       parameters:
-      - in: path
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
-      - in: query
-        name: b
-        required: true
-        schema:
-          title: B
-          type: string
+        - in: path
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
+        - in: query
+          name: b
+          required: true
+          schema:
+            title: B
+            type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/combination2_body_model'
+              $ref: "#/components/schemas/combination2_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Combination2  A  Put
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
     trace:
       operationId: api_root_walker_combination2__a__trace
       parameters:
-      - in: path
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
-      - in: query
-        name: b
-        required: true
-        schema:
-          title: B
-          type: string
+        - in: path
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
+        - in: query
+          name: b
+          required: true
+          schema:
+            title: B
+            type: string
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Combination2  A  Trace
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/combination2/{node}/{a}:
     delete:
       operationId: api_entry_walker_combination2__node___a__delete
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
-      - in: path
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
-      - in: query
-        name: b
-        required: true
-        schema:
-          title: B
-          type: string
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
+        - in: path
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
+        - in: query
+          name: b
+          required: true
+          schema:
+            title: B
+            type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/combination2_body_model'
+              $ref: "#/components/schemas/combination2_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Combination2  Node   A  Delete
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
     get:
       operationId: api_entry_walker_combination2__node___a__get
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
-      - in: path
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
-      - in: query
-        name: b
-        required: true
-        schema:
-          title: B
-          type: string
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
+        - in: path
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
+        - in: query
+          name: b
+          required: true
+          schema:
+            title: B
+            type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/combination2_body_model'
+              $ref: "#/components/schemas/combination2_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Combination2  Node   A  Get
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
     head:
       operationId: api_entry_walker_combination2__node___a__head
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
-      - in: path
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
-      - in: query
-        name: b
-        required: true
-        schema:
-          title: B
-          type: string
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
+        - in: path
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
+        - in: query
+          name: b
+          required: true
+          schema:
+            title: B
+            type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/combination2_body_model'
+              $ref: "#/components/schemas/combination2_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Combination2  Node   A  Head
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
     options:
       operationId: api_entry_walker_combination2__node___a__options
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
-      - in: path
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
-      - in: query
-        name: b
-        required: true
-        schema:
-          title: B
-          type: string
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
+        - in: path
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
+        - in: query
+          name: b
+          required: true
+          schema:
+            title: B
+            type: string
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Combination2  Node   A  Options
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
     patch:
       operationId: api_entry_walker_combination2__node___a__patch
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
-      - in: path
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
-      - in: query
-        name: b
-        required: true
-        schema:
-          title: B
-          type: string
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
+        - in: path
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
+        - in: query
+          name: b
+          required: true
+          schema:
+            title: B
+            type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/combination2_body_model'
+              $ref: "#/components/schemas/combination2_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Combination2  Node   A  Patch
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
     post:
       operationId: api_entry_walker_combination2__node___a__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
-      - in: path
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
-      - in: query
-        name: b
-        required: true
-        schema:
-          title: B
-          type: string
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
+        - in: path
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
+        - in: query
+          name: b
+          required: true
+          schema:
+            title: B
+            type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/combination2_body_model'
+              $ref: "#/components/schemas/combination2_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Combination2  Node   A  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
     put:
       operationId: api_entry_walker_combination2__node___a__put
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
-      - in: path
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
-      - in: query
-        name: b
-        required: true
-        schema:
-          title: B
-          type: string
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
+        - in: path
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
+        - in: query
+          name: b
+          required: true
+          schema:
+            title: B
+            type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/combination2_body_model'
+              $ref: "#/components/schemas/combination2_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Combination2  Node   A  Put
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
     trace:
       operationId: api_entry_walker_combination2__node___a__trace
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
-      - in: path
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
-      - in: query
-        name: b
-        required: true
-        schema:
-          title: B
-          type: string
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
+        - in: path
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
+        - in: query
+          name: b
+          required: true
+          schema:
+            title: B
+            type: string
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Combination2  Node   A  Trace
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/create_custom_object:
     post:
       operationId: api_root_walker_create_custom_object_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Create Custom Object Post
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/create_custom_object/{node}:
     post:
       operationId: api_entry_walker_create_custom_object__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Create Custom Object  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/create_graph:
     post:
       operationId: api_root_walker_create_graph_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Create Graph Post
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/create_graph/{node}:
     post:
       operationId: api_entry_walker_create_graph__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Create Graph  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/create_nested_node:
     post:
       operationId: api_root_walker_create_nested_node_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Create Nested Node Post
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/create_nested_node/{node}:
     post:
       operationId: api_entry_walker_create_nested_node__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Create Nested Node  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/custom_report:
     post:
       operationId: api_root_walker_custom_report_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Custom Report Post
           description: Successful Response
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/custom_report/{node}:
     post:
       operationId: api_entry_walker_custom_report__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Custom Report  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/custom_status_code:
     post:
       operationId: api_root_walker_custom_status_code_post
@@ -2164,68 +2291,68 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/custom_status_code_body_model'
+              $ref: "#/components/schemas/custom_status_code_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Custom Status Code Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/custom_status_code/{node}:
     post:
       operationId: api_entry_walker_custom_status_code__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/custom_status_code_body_model'
+              $ref: "#/components/schemas/custom_status_code_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Custom Status Code  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/delete_custom_object:
     post:
       operationId: api_root_walker_delete_custom_object_post
@@ -2233,319 +2360,319 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/delete_custom_object_body_model'
+              $ref: "#/components/schemas/delete_custom_object_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Delete Custom Object Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/delete_custom_object/{node}:
     post:
       operationId: api_entry_walker_delete_custom_object__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/delete_custom_object_body_model'
+              $ref: "#/components/schemas/delete_custom_object_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Delete Custom Object  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/delete_nested_edge:
     post:
       operationId: api_root_walker_delete_nested_edge_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Delete Nested Edge Post
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/delete_nested_edge/{node}:
     post:
       operationId: api_entry_walker_delete_nested_edge__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Delete Nested Edge  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/delete_nested_node:
     post:
       operationId: api_root_walker_delete_nested_node_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Delete Nested Node Post
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/delete_nested_node/{node}:
     post:
       operationId: api_entry_walker_delete_nested_node__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Delete Nested Node  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/detach_nested_node:
     post:
       operationId: api_root_walker_detach_nested_node_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Detach Nested Node Post
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/detach_nested_node/{node}:
     post:
       operationId: api_entry_walker_detach_nested_node__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Detach Nested Node  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/detach_node:
     post:
       operationId: api_root_walker_detach_node_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Detach Node Post
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/detach_node/{node}:
     post:
       operationId: api_entry_walker_detach_node__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Detach Node  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/different_return:
     post:
       operationId: api_root_walker_different_return_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - $ref: '#/components/schemas/ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__'
                 - {}
                 title: Response Api Root Walker Different Return Post
           description: Successful Response
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/different_return/{node}:
     post:
       operationId: api_entry_walker_different_return__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
+                - $ref: '#/components/schemas/ContextResponse_Union_NoneType__int__str__bool__Parent__list__dict__'
                 - {}
                 title: Response Api Entry Walker Different Return  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/disallow_other_root_access:
     post:
       operationId: api_root_walker_disallow_other_root_access_post
@@ -2553,68 +2680,68 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/disallow_other_root_access_body_model'
+              $ref: "#/components/schemas/disallow_other_root_access_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Disallow Other Root Access Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/disallow_other_root_access/{node}:
     post:
       operationId: api_entry_walker_disallow_other_root_access__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/disallow_other_root_access_body_model'
+              $ref: "#/components/schemas/disallow_other_root_access_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Disallow Other Root Access  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/documentation:
     post:
       addons: true
@@ -2622,106 +2749,107 @@ paths:
       description: Enter description here!!!
       operationId: Enter_name_here____walker_documentation_post
       responses:
-        '200':
+        "200":
           content:
             application/json: {}
           description: Enter response description for http status 200!!!
           links:
             sample_link:
               description: Enter link description here!!!
-        '201':
+        "201":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Enter Name Here    Walker Documentation Post
-          description: Enter response description here!!! Defaults to 'Successful
+          description:
+            Enter response description here!!! Defaults to 'Successful
             Response'
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Enter summary here!!!
       tags:
-      - Documented
+        - Documented
   /walker/get_all_query:
     get:
       operationId: api_root_walker_get_all_query_get
       parameters:
-      - in: query
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
-      - in: query
-        name: b
-        required: true
-        schema:
-          title: B
-          type: string
+        - in: query
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
+        - in: query
+          name: b
+          required: true
+          schema:
+            title: B
+            type: string
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Get All Query Get
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/get_all_query/{node}:
     get:
       operationId: api_entry_walker_get_all_query__node__get
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
-      - in: query
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
-      - in: query
-        name: b
-        required: true
-        schema:
-          title: B
-          type: string
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
+        - in: query
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
+        - in: query
+          name: b
+          required: true
+          schema:
+            title: B
+            type: string
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Get All Query  Node  Get
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/get_custom_object:
     post:
       operationId: api_root_walker_get_custom_object_post
@@ -2729,444 +2857,495 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/get_custom_object_body_model'
+              $ref: "#/components/schemas/get_custom_object_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Get Custom Object Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/get_custom_object/{node}:
     post:
       operationId: api_entry_walker_get_custom_object__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/get_custom_object_body_model'
+              $ref: "#/components/schemas/get_custom_object_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Get Custom Object  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/get_no_body:
     get:
       operationId: api_root_walker_get_no_body_get
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Get No Body Get
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/get_no_body/{node}:
     get:
       operationId: api_entry_walker_get_no_body__node__get
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Get No Body  Node  Get
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
+  /walker/get_or_create_counter:
+    post:
+      operationId: api_root_walker_get_or_create_counter_post
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
+                title: Response Api Root Walker Get Or Create Counter Post
+          description: Successful Response
+      security:
+        - HTTPBearer: []
+      summary: Api Root
+      tags:
+        - Walker APIs
+  /walker/get_or_create_counter/{node}:
+    post:
+      operationId: api_entry_walker_get_or_create_counter__node__post
+      parameters:
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
+                title: Response Api Entry Walker Get Or Create Counter  Node  Post
+          description: Successful Response
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+        - HTTPBearer: []
+      summary: Api Entry
+      tags:
+        - Walker APIs
   /walker/get_with_query:
     get:
       operationId: api_root_walker_get_with_query_get
       parameters:
-      - in: query
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
+        - in: query
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Get With Query Get
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/get_with_query/{node}:
     get:
       operationId: api_entry_walker_get_with_query__node__get
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
-      - in: query
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
+        - in: query
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Get With Query  Node  Get
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/manual_create_nested_node:
     post:
       operationId: api_root_walker_manual_create_nested_node_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Manual Create Nested Node Post
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/manual_create_nested_node/{node}:
     post:
       operationId: api_entry_walker_manual_create_nested_node__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Manual Create Nested Node  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/manual_delete_nested_edge:
     post:
       operationId: api_root_walker_manual_delete_nested_edge_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Manual Delete Nested Edge Post
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/manual_delete_nested_edge/{node}:
     post:
       operationId: api_entry_walker_manual_delete_nested_edge__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Manual Delete Nested Edge  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/manual_delete_nested_node:
     post:
       operationId: api_root_walker_manual_delete_nested_node_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Manual Delete Nested Node Post
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/manual_delete_nested_node/{node}:
     post:
       operationId: api_entry_walker_manual_delete_nested_node__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Manual Delete Nested Node  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/manual_detach_nested_node:
     post:
       operationId: api_root_walker_manual_detach_nested_node_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Manual Detach Nested Node Post
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/manual_detach_nested_node/{node}:
     post:
       operationId: api_entry_walker_manual_detach_nested_node__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Manual Detach Nested Node  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/manual_update_nested_node:
     post:
       operationId: api_root_walker_manual_update_nested_node_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Manual Update Nested Node Post
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/manual_update_nested_node/{node}:
     post:
       operationId: api_entry_walker_manual_update_nested_node__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Manual Update Nested Node  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/nested_request_payload:
     post:
       operationId: api_root_walker_nested_request_payload_post
@@ -3174,217 +3353,217 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/nested_request_payload_body_model'
+              $ref: "#/components/schemas/nested_request_payload_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Nested Request Payload Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/nested_request_payload/{node}:
     post:
       operationId: api_entry_walker_nested_request_payload__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/nested_request_payload_body_model'
+              $ref: "#/components/schemas/nested_request_payload_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Nested Request Payload  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/populate_graph:
     post:
       operationId: api_root_walker_populate_graph_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Populate Graph Post
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/populate_graph/{node}:
     post:
       operationId: api_entry_walker_populate_graph__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Populate Graph  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/post_all_excluded:
     post:
       operationId: api_root_walker_post_all_excluded_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Post All Excluded Post
           description: Successful Response
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/post_all_excluded/{node}:
     post:
       operationId: api_entry_walker_post_all_excluded__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Post All Excluded  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/post_no_body:
     post:
       operationId: api_root_walker_post_no_body_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Post No Body Post
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/post_no_body/{node}:
     post:
       operationId: api_entry_walker_post_no_body__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Post No Body  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/post_partial_excluded:
     post:
       operationId: api_root_walker_post_partial_excluded_post
@@ -3392,206 +3571,206 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/post_partial_excluded_body_model'
+              $ref: "#/components/schemas/post_partial_excluded_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Post Partial Excluded Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/post_partial_excluded/{node}:
     post:
       operationId: api_entry_walker_post_partial_excluded__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/post_partial_excluded_body_model'
+              $ref: "#/components/schemas/post_partial_excluded_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Post Partial Excluded  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/post_path_var/{a}:
     get:
       operationId: api_root_walker_post_path_var__a__get
       parameters:
-      - in: path
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
+        - in: path
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Post Path Var  A  Get
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
     post:
       operationId: api_root_walker_post_path_var__a__post
       parameters:
-      - in: path
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
+        - in: path
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Post Path Var  A  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/post_path_var/{node}/{a}:
     get:
       operationId: api_entry_walker_post_path_var__node___a__get
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
-      - in: path
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
+        - in: path
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Post Path Var  Node   A  Get
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
     post:
       operationId: api_entry_walker_post_path_var__node___a__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
-      - in: path
-        name: a
-        required: true
-        schema:
-          title: A
-          type: string
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
+        - in: path
+          name: a
+          required: true
+          schema:
+            title: A
+            type: string
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Post Path Var  Node   A  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/post_with_body:
     post:
       operationId: api_root_walker_post_with_body_post
@@ -3599,68 +3778,68 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/post_with_body_body_model'
+              $ref: "#/components/schemas/post_with_body_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Post With Body Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/post_with_body/{node}:
     post:
       operationId: api_entry_walker_post_with_body__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/post_with_body_body_model'
+              $ref: "#/components/schemas/post_with_body_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Post With Body  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/post_with_body_and_file:
     post:
       operationId: api_root_walker_post_with_body_and_file_post
@@ -3668,64 +3847,64 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Body_api_root_walker_post_with_body_and_file_post'
+              $ref: "#/components/schemas/Body_api_root_walker_post_with_body_and_file_post"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Post With Body And File Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/post_with_body_and_file/{node}:
     post:
       operationId: api_entry_walker_post_with_body_and_file__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       requestBody:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Body_api_entry_walker_post_with_body_and_file__node__post'
+              $ref: "#/components/schemas/Body_api_entry_walker_post_with_body_and_file__node__post"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Post With Body And File  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/post_with_file:
     post:
       operationId: api_root_walker_post_with_file_post
@@ -3733,221 +3912,272 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Body_api_root_walker_post_with_file_post'
+              $ref: "#/components/schemas/Body_api_root_walker_post_with_file_post"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Post With File Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/post_with_file/{node}:
     post:
       operationId: api_entry_walker_post_with_file__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       requestBody:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Body_api_entry_walker_post_with_file__node__post'
+              $ref: "#/components/schemas/Body_api_entry_walker_post_with_file__node__post"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Post With File  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/purge_populated_graph:
     post:
       operationId: api_root_walker_purge_populated_graph_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Purge Populated Graph Post
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/purge_populated_graph/{node}:
     post:
       operationId: api_entry_walker_purge_populated_graph__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Purge Populated Graph  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/traverse_graph:
     post:
       operationId: api_root_walker_traverse_graph_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Traverse Graph Post
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/traverse_graph/{node}:
     post:
       operationId: api_entry_walker_traverse_graph__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Traverse Graph  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/traverse_populated_graph:
     post:
       operationId: api_root_walker_traverse_populated_graph_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Traverse Populated Graph Post
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/traverse_populated_graph/{node}:
     post:
       operationId: api_entry_walker_traverse_populated_graph__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Traverse Populated Graph  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
+  /walker/trigger_counter_task:
+    post:
+      operationId: api_root_walker_trigger_counter_task_post
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
+                title: Response Api Root Walker Trigger Counter Task Post
+          description: Successful Response
+      security:
+        - HTTPBearer: []
+      summary: Api Root
+      tags:
+        - Walker APIs
+  /walker/trigger_counter_task/{node}:
+    post:
+      operationId: api_entry_walker_trigger_counter_task__node__post
+      parameters:
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
+                title: Response Api Entry Walker Trigger Counter Task  Node  Post
+          description: Successful Response
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+        - HTTPBearer: []
+      summary: Api Entry
+      tags:
+        - Walker APIs
   /walker/update_custom_object:
     post:
       operationId: api_root_walker_update_custom_object_post
@@ -3955,283 +4185,283 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/update_custom_object_body_model'
+              $ref: "#/components/schemas/update_custom_object_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Update Custom Object Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/update_custom_object/{node}:
     post:
       operationId: api_entry_walker_update_custom_object__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/update_custom_object_body_model'
+              $ref: "#/components/schemas/update_custom_object_body_model"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Update Custom Object  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/update_graph:
     post:
       operationId: api_root_walker_update_graph_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Update Graph Post
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/update_graph/{node}:
     post:
       operationId: api_entry_walker_update_graph__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Update Graph  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/update_nested_node:
     post:
       operationId: api_root_walker_update_nested_node_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Update Nested Node Post
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/update_nested_node/{node}:
     post:
       operationId: api_entry_walker_update_nested_node__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Update Nested Node  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/visit_nested_node:
     post:
       operationId: api_root_walker_visit_nested_node_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Visit Nested Node Post
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/visit_nested_node/{node}:
     post:
       operationId: api_entry_walker_visit_nested_node__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Visit Nested Node  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/visit_sequence:
     post:
       operationId: api_root_walker_visit_sequence_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Walker Visit Sequence Post
           description: Successful Response
       summary: Api Root
       tags:
-      - Walker APIs
+        - Walker APIs
   /walker/visit_sequence/{node}:
     post:
       operationId: api_entry_walker_visit_sequence__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Walker Visit Sequence  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       summary: Api Entry
       tags:
-      - Walker APIs
+        - Walker APIs
   /webhook:
     get:
       description: Get keys API.
       operationId: get_webhook_get
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema: {}
           description: Successful Response
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Get
       tags:
-      - Webhook APIs
+        - Webhook APIs
   /webhook/delete:
     delete:
       description: Delete keys API.
@@ -4240,59 +4470,59 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/KeyIDs'
+              $ref: "#/components/schemas/KeyIDs"
         required: true
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema: {}
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Delete
       tags:
-      - Webhook APIs
+        - Webhook APIs
   /webhook/extend/{id}:
     patch:
       description: Generate key API.
       operationId: extend_webhook_extend__id__patch
       parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          title: Id
-          type: string
+        - in: path
+          name: id
+          required: true
+          schema:
+            title: Id
+            type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Expiration'
+              $ref: "#/components/schemas/Expiration"
         required: true
       responses:
-        '201':
+        "201":
           content:
             application/json:
               schema: {}
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Extend
       tags:
-      - Webhook APIs
+        - Webhook APIs
   /webhook/generate-key:
     post:
       description: Generate key API.
@@ -4301,219 +4531,220 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GenerateKey'
+              $ref: "#/components/schemas/GenerateKey"
         required: true
       responses:
-        '201':
+        "201":
           content:
             application/json:
               schema: {}
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - HTTPBearer: []
+        - HTTPBearer: []
       summary: Generate Key
       tags:
-      - Webhook APIs
+        - Webhook APIs
   /webhook/walker/webhook_by_body:
     post:
       operationId: api_root_webhook_walker_webhook_by_body_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Webhook Walker Webhook By Body Post
           description: Successful Response
       summary: Api Root
       tags:
-      - Webhook Walker APIs
+        - Webhook Walker APIs
   /webhook/walker/webhook_by_body/{node}:
     post:
       operationId: api_entry_webhook_walker_webhook_by_body__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Webhook Walker Webhook By Body  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       summary: Api Entry
       tags:
-      - Webhook Walker APIs
+        - Webhook Walker APIs
   /webhook/walker/webhook_by_header:
     post:
       operationId: api_root_webhook_walker_webhook_by_header_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Webhook Walker Webhook By Header Post
           description: Successful Response
       security:
-      - APIKeyHeader: []
+        - APIKeyHeader: []
       summary: Api Root
       tags:
-      - Webhook Walker APIs
+        - Webhook Walker APIs
   /webhook/walker/webhook_by_header/{node}:
     post:
       operationId: api_entry_webhook_walker_webhook_by_header__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Webhook Walker Webhook By Header  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - APIKeyHeader: []
+        - APIKeyHeader: []
       summary: Api Entry
       tags:
-      - Webhook Walker APIs
+        - Webhook Walker APIs
   /webhook/walker/webhook_by_path/{node}/{test_key}:
     post:
       operationId: api_entry_webhook_walker_webhook_by_path__node___test_key__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
-                title: Response Api Entry Webhook Walker Webhook By Path  Node   Test
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
+                title:
+                  Response Api Entry Webhook Walker Webhook By Path  Node   Test
                   Key  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       summary: Api Entry
       tags:
-      - Webhook Walker APIs
+        - Webhook Walker APIs
   /webhook/walker/webhook_by_path/{test_key}:
     post:
       operationId: api_root_webhook_walker_webhook_by_path__test_key__post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Webhook Walker Webhook By Path  Test Key  Post
           description: Successful Response
       summary: Api Root
       tags:
-      - Webhook Walker APIs
+        - Webhook Walker APIs
   /webhook/walker/webhook_by_query:
     post:
       operationId: api_root_webhook_walker_webhook_by_query_post
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Root Webhook Walker Webhook By Query Post
           description: Successful Response
       security:
-      - APIKeyQuery: []
+        - APIKeyQuery: []
       summary: Api Root
       tags:
-      - Webhook Walker APIs
+        - Webhook Walker APIs
   /webhook/walker/webhook_by_query/{node}:
     post:
       operationId: api_entry_webhook_walker_webhook_by_query__node__post
       parameters:
-      - in: path
-        name: node
-        required: true
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Node
+        - in: path
+          name: node
+          required: true
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Node
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 anyOf:
-                - $ref: '#/components/schemas/ContextResponse_NoneType_'
-                - {}
+                  - $ref: "#/components/schemas/ContextResponse_NoneType_"
+                  - {}
                 title: Response Api Entry Webhook Walker Webhook By Query  Node  Post
           description: Successful Response
-        '422':
+        "422":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: "#/components/schemas/HTTPValidationError"
           description: Validation Error
       security:
-      - APIKeyQuery: []
+        - APIKeyQuery: []
       summary: Api Entry
       tags:
-      - Webhook Walker APIs
+        - Webhook Walker APIs

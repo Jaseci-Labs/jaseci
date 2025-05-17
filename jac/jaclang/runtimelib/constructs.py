@@ -7,7 +7,7 @@ from .architype import (
     AccessLevel,
     Anchor,
     Architype,
-    DSFunc,
+    DataSpatialFunction,
     EdgeAnchor,
     EdgeArchitype,
     GenericEdge,
@@ -17,7 +17,6 @@ from .architype import (
     WalkerAnchor,
     WalkerArchitype,
 )
-from .context import ExecutionContext
 from .memory import Memory, ShelfStorage
 from .test import JacTestCheck, JacTestResult, JacTextTestRunner
 
@@ -33,10 +32,9 @@ __all__ = [
     "WalkerArchitype",
     "GenericEdge",
     "Root",
-    "DSFunc",
+    "DataSpatialFunction",
     "Memory",
     "ShelfStorage",
-    "ExecutionContext",
     "JacTestResult",
     "JacTextTestRunner",
     "JacTestCheck",

@@ -31,7 +31,6 @@ class SymbolType(Enum):
     UNKNOWN = "unknown"  # LSP: Unknown
 
     def __str__(self) -> str:
-        """Stringify."""
         return self.value
 
 
@@ -63,7 +62,6 @@ class JacSemTokenType(IntEnum):
 
     @staticmethod
     def as_str_list() -> list[str]:
-        """Return the string representation of the token."""
         return [i.name.lower() for i in JacSemTokenType]
 
 
@@ -90,30 +88,12 @@ class JacSemTokenModifier(IntFlag):
 class Constants(StrEnum):
     """Token constants for Jac."""
 
-    JAC_LANG_IMP = "jac"
-    HERE = "here"  # "_jac_here_"
+    HERE = "here"
+    ROOT = "root"
+    VISITOR = "visitor"
     JAC_CHECK = "_check"
-    JAC_FEATURE = "Jac"  # "_Jac"
-    ROOT = f"{JAC_FEATURE}.get_root()"
-    EDGES_TO_NODE = "__jac__.edges_to_nodes"
-    EDGE_REF = "__jac__.edge_ref"
-    CONNECT_NODE = "__jac__.connect_node"
-    DISCONNECT_NODE = "__jac__.disconnect_node"
-    WALKER_VISIT = "__jac__.visit_node"
-    WALKER_IGNORE = "__jac__.ignore_node"
-    DISENGAGE = "__jac__.disengage_now"
-    OBJECT_CLASS = "_jac_Object_"
-    NODE_CLASS = "_jac_Node_"
-    EDGE_CLASS = "_jac_Edge_"
-    WALKER_CLASS = "_jac_Walker_"
-    WITH_DIR = "__jac__.apply_dir"
-    EDGE_DIR = "_jac_Edge_Dir"
-    ON_ENTRY = "_jac_ds_.on_entry"
-    ON_EXIT = "_jac_ds_.on_exit"
-
-    PYNLINE = "::py::"
-    JAC_GEN_DIR = "__jac_gen__"
     JAC_MYPY_CACHE = ".jac_mypy_cache"
+    SUPER_ROOT_UUID = "00000000-0000-0000-0000-000000000000"
 
     def __str__(self) -> str:
         """Return the string representation of the token."""
@@ -181,9 +161,9 @@ class Tokens(str, Enum):
     KW_NODE = "KW_NODE"
     KW_IGNORE = "KW_IGNORE"
     KW_VISIT = "KW_VISIT"
-    KW_REVISIT = "KW_REVISIT"
     KW_SPAWN = "KW_SPAWN"
     KW_WITH = "KW_WITH"
+    KW_LAMBDA = "KW_LAMBDA"
     KW_ENTRY = "KW_ENTRY"
     KW_EXIT = "KW_EXIT"
     KW_IMPORT = "KW_IMPORT"
@@ -194,6 +174,8 @@ class Tokens(str, Enum):
     KW_WALKER = "KW_WALKER"
     KW_ASYNC = "KW_ASYNC"
     KW_AWAIT = "KW_AWAIT"
+    KW_FLOW = "KW_FLOW"
+    KW_WAIT = "KW_WAIT"
     KW_TEST = "KW_TEST"
     KW_ASSERT = "KW_ASSERT"
     KW_CHECK = "KW_CHECK"
@@ -262,6 +244,7 @@ class Tokens(str, Enum):
     KW_GLOBAL = "KW_GLOBAL"
     COMMA = "COMMA"
     KW_CAN = "KW_CAN"
+    KW_DEF = "KW_DEF"
     KW_STATIC = "KW_STATIC"
     KW_OVERRIDE = "KW_OVERRIDE"
     KW_MATCH = "KW_MATCH"
@@ -300,19 +283,14 @@ class Tokens(str, Enum):
     GLOBAL_OP = "GLOBAL_OP"
     NONLOCAL_OP = "NONLOCAL_OP"
     KW_HERE = "KW_HERE"
+    KW_VISITOR = "KW_VISITOR"
     KW_SELF = "KW_SELF"
     KW_INIT = "KW_INIT"
     KW_SUPER = "KW_SUPER"
     KW_ROOT = "KW_ROOT"
     KW_POST_INIT = "KW_POST_INIT"
-    WALKER_OP = "WALKER_OP"
-    NODE_OP = "NODE_OP"
-    EDGE_OP = "EDGE_OP"
-    CLASS_OP = "CLASS_OP"
-    OBJECT_OP = "OBJECT_OP"
+    KW_IMPL = "KW_IMPL"
     TYPE_OP = "TYPE_OP"
-    ENUM_OP = "ENUM_OP"
-    ABILITY_OP = "ABILITY_OP"
     A_PIPE_FWD = "A_PIPE_FWD"
     A_PIPE_BKWD = "A_PIPE_BKWD"
     RETURN_HINT = "RETURN_HINT"
@@ -329,7 +307,6 @@ class Tokens(str, Enum):
     WS = "WS"
 
     def __str__(self) -> str:
-        """Return the string representation of the token."""
         return self.value
 
 

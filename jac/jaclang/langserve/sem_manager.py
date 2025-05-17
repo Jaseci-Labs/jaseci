@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import List, Optional, Tuple
 
-import jaclang.compiler.absyntree as ast
+import jaclang.compiler.unitree as uni
 from jaclang.langserve.utils import (
     find_surrounding_tokens,
     get_line_of_code,
@@ -17,19 +17,19 @@ import lsprotocol.types as lspt
 class SemTokManager:
     """Semantic Token Manager class."""
 
-    def __init__(self, ir: ast.Module) -> None:
+    def __init__(self, ir: uni.Module) -> None:
         """Initialize semantic token manager."""
         self.sem_tokens: List[int] = self.gen_sem_tokens(ir)
         self.static_sem_tokens: List[
-            Tuple[lspt.Position, int, int, ast.AstSymbolNode]
+            Tuple[lspt.Position, int, int, uni.AstSymbolNode]
         ] = self.gen_sem_tok_node(ir)
 
-    def gen_sem_tokens(self, ir: ast.Module) -> list[int]:
+    def gen_sem_tokens(self, ir: uni.Module) -> list[int]:
         """Return semantic tokens."""
         tokens = []
         prev_line, prev_col = 0, 0
         for node in ir._in_mod_nodes:
-            if isinstance(node, ast.NameAtom) and node.sem_token:
+            if isinstance(node, uni.NameAtom) and node.sem_token:
                 line, col_start, col_end = (
                     node.loc.first_line - 1,
                     node.loc.col_start - 1,
@@ -46,12 +46,12 @@ class SemTokManager:
         return tokens
 
     def gen_sem_tok_node(
-        self, ir: ast.Module
-    ) -> List[Tuple[lspt.Position, int, int, ast.AstSymbolNode]]:
+        self, ir: uni.Module
+    ) -> List[Tuple[lspt.Position, int, int, uni.AstSymbolNode]]:
         """Return semantic tokens."""
-        tokens: List[Tuple[lspt.Position, int, int, ast.AstSymbolNode]] = []
+        tokens: List[Tuple[lspt.Position, int, int, uni.AstSymbolNode]] = []
         for node in ir._in_mod_nodes:
-            if isinstance(node, ast.NameAtom) and node.sem_token:
+            if isinstance(node, uni.NameAtom) and node.sem_token:
                 line, col_start, col_end = (
                     node.loc.first_line - 1,
                     node.loc.col_start - 1,
@@ -254,7 +254,7 @@ class SemTokManager:
         change_end_line: int,
     ) -> list[int]:
         """Handle single line deletion between tokens."""
-        if is_next_token_same_line:
+        if is_next_token_same_line and change.range_length:
             sem_tokens[next_token_index + 1] -= change.range_length
 
         else:
@@ -270,6 +270,7 @@ class SemTokManager:
         change: lspt.TextDocumentContentChangeEvent_Type1,
     ) -> list[int]:
         """Handle single line deletion."""
+        assert change.range_length is not None
         sem_tokens[prev_token_index + 2] -= change.range_length
         if is_next_token_same_line:
             sem_tokens[next_token_index + 1] -= change.range_length
