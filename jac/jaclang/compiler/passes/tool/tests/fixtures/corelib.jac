@@ -523,3 +523,127 @@ test a3 {
     c = Circle(RAD);
     check assertEqual(c.shape_type, ShapeType.CIRCLE);
 }
+with entry{
+
+    # try and finally stmt
+    try{
+        print("try block");
+    }finally{
+        print("finally block");
+    }
+
+
+
+    #  try except else finally
+    '''Docstring for the try block''';
+    try{
+        print("try block");
+    }
+    # except{
+    #     print("except block");
+    # }
+
+    # except_def: KW_EXCEPT expression (KW_AS NAME)? code_block
+    # is there any intention why here we compulsorily need to write type of exception in
+
+    except exception{
+        print("Hi from except block");
+        print("Hello from except block");
+    }
+    else{
+        print("Hi from else block");
+        print("Hello from else block");
+    }
+    finally{
+        print("Hi from finally block");
+        print("Hello finally block");
+    }
+
+
+}
+
+with entry{
+    root spawn W();
+    print([root-->-->(`?A)]);
+    print([root--> --> -->(`?A)]);
+}
+
+"""
+Object instantiation and method invocation occur within the with entry { ... } block.
+"""
+with entry {
+    game = GuessTheNumberGame();
+    game.play();
+}
+
+
+Kugesan
+  8:30 AM
+    def exit_module_code(self, node: uni.ModuleCode) -> None:
+        """Generate DocIR for module code."""
+        parts: list[doc.DocType] = []
+        for i in node.kid:
+            if i == node.doc:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.hard_line())
+            elif isinstance(i, uni.Token):
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
+            else:
+                parts.append(self.concat([i.gen.doc_ir]))
+
+        node.gen.doc_ir = self.group(self.concat(parts))
+8:30
+
+with entry{
+
+    # try and finally stmt
+    try{
+        print("try block");
+    }finally{
+        print("finally block");
+    }
+
+
+
+    #  try except else finally
+    '''Doc string of try except else finally.''';
+    try{
+        print("try block");
+    }
+    # except{
+    #     print("except block");
+    # }
+
+    # except_def: KW_EXCEPT expression (KW_AS NAME)? code_block
+    # is there any intention why here we compulsorily need to write type of exception in
+
+    except exception{
+        ;
+        ;
+    }
+    else{
+        ;
+        ;
+    }
+    finally{
+        ;
+        ;
+    }
+
+
+}
+
+with entry{
+    root spawn W();
+    print([root-->-->(`?A)]);
+    print([root--> --> -->(`?A)]);
+}
+
+"""
+Object instantiation and method invocation occur within the with entry { ... } block.
+"""
+with entry {
+    game = GuessTheNumberGame();
+    game.play();
+}

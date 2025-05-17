@@ -683,11 +683,14 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for module code."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            if isinstance(i, uni.Token):
+            if i == node.doc:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.hard_line())
+            elif isinstance(i, uni.Token):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
             else:
-                parts.append(self.indent(self.concat([i.gen.doc_ir])))
+                parts.append(self.concat([i.gen.doc_ir]))
 
         node.gen.doc_ir = self.group(self.concat(parts))
 
