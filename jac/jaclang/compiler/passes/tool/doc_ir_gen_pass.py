@@ -864,8 +864,10 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for Python inline code blocks."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            if i == node.doc or isinstance(i, uni.Token) and i.name == Tok.PYNLINE:
+            if i == node.doc or (isinstance(i, uni.Token) and i.name == Tok.PYNLINE):
+                parts.append(self.text("::py::"))
                 parts.append(i.gen.doc_ir)
+                parts.append(self.text("::py::"))
                 parts.append(self.hard_line())
             else:
                 parts.append(i.gen.doc_ir)
