@@ -88,23 +88,36 @@ class DocIRGenPass(UniPass):
 
         return self.concat(result)
 
+    def is_one_line(self, node: uni.UniNode) -> bool:
+        """Check if the node is a one line node."""
+        return node.loc.first_line == node.loc.last_line
+
+    def has_gap(self, prev_kid: uni.UniNode, curr_kid: uni.UniNode) -> bool:
+        """Check if there is a gap between the previous and current node."""
+        return prev_kid.loc.last_line + 1 < curr_kid.loc.first_line
+
     def exit_module(self, node: uni.Module) -> None:
         """Exit module."""
         parts: list[doc.DocType] = []
         prev_kid = None
         first_kid = True
         for i in node.kid:
-            if isinstance(i, uni.Import) and isinstance(prev_kid, uni.Import):
-                if prev_kid and i.loc.first_line - prev_kid.loc.last_line > 1:
+            if (isinstance(i, uni.Import) and isinstance(prev_kid, uni.Import)) or (
+                isinstance(i, uni.GlobalVars) and isinstance(prev_kid, uni.GlobalVars)
+            ):
+                if prev_kid and self.has_gap(prev_kid, i):
                     parts.append(self.hard_line())
                 parts.append(i.gen.doc_ir)
-                parts.append(self.hard_line())
             else:
-                if not first_kid:
+                if not first_kid and not (
+                    prev_kid
+                    and self.is_one_line(prev_kid)
+                    and not self.has_gap(prev_kid, i)
+                ):
                     parts.append(self.hard_line())
                     parts.append(self.hard_line())
                 parts.append(i.gen.doc_ir)
-                parts.append(self.hard_line())
+            parts.append(self.hard_line())
             prev_kid = i
             first_kid = False
         node.gen.doc_ir = self.concat(parts)

@@ -3,11 +3,17 @@
 import #* what abou this *# from datetime { datetime }
 import from uuid { UUID, uuid4 } # This is a comment
 import from jaclang.compiler.constant { EdgeDir }
-import from jaclang.plugin { Archetype, ArchetypeProtocol, ArchetypeProtocol3 as MyArch, DSFunc, ArchetypeProtocol, ArchetypeProtocol3, DSFunc, AbsRootHook, hookimpl }
 
+
+
+import from jaclang.plugin { Archetype, ArchetypeProtocol, ArchetypeProtocol3 as MyArch, DSFunc, ArchetypeProtocol, ArchetypeProtocol3, DSFunc, AbsRootHook, hookimpl }
 import jaclang.compiler.constant;
 
+import jaclang.compiler;
+
 enum AccessMode;
+def DoSomething(name: str) -> str;
+
 
 "I'm a doc"
 impl Memory.get_obj
@@ -69,6 +75,7 @@ obj ExecutionContext {
 
 "Global Execution Context, should be monkey patched by the user."
 glob exec_ctx = ExecutionContext();
+glob exec_ctx2 = ExecutionContext();
 
 obj Anchor(ArchetypeProtocol) {
     has ob: object,
