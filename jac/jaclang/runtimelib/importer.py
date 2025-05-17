@@ -8,7 +8,7 @@ import os
 import site
 import sys
 import types
-from os import getcwd, path
+from os import path
 from typing import Optional, TYPE_CHECKING, Union
 
 from jaclang.runtimelib.machine import JacMachineInterface
@@ -32,8 +32,8 @@ class ImportPathSpec:
         absorb: bool,
         mdl_alias: Optional[str],
         override_name: Optional[str],
-        lng: Optional[str],
-        items: Optional[dict[str, Union[str, Optional[str]]]],
+        lng: Optional[str] = None,  # Kept for backward compatibility but not used
+        items: Optional[dict[str, Union[str, Optional[str]]]] = None,
     ) -> None:
         """Initialize the ImportPathSpec object."""
         self.target = target
@@ -41,7 +41,6 @@ class ImportPathSpec:
         self.absorb = absorb
         self.mdl_alias = mdl_alias
         self.override_name = override_name
-        self.language = lng
         self.items = items
         self.dir_path, self.file_name = path.split(path.join(*(target.split("."))))
         self.module_name = path.splitext(self.file_name)[0]
@@ -51,19 +50,9 @@ class ImportPathSpec:
 
     def get_caller_dir(self) -> str:
         """Get the directory of the caller."""
-        caller_dir = (
-            self.base_path
-            if path.isdir(self.base_path)
-            else path.dirname(self.base_path)
-        )
-        caller_dir = caller_dir if caller_dir else getcwd()
-        chomp_target = self.target
-        if chomp_target.startswith("."):
-            chomp_target = chomp_target[1:]
-            while chomp_target.startswith("."):
-                caller_dir = path.dirname(caller_dir)
-                chomp_target = chomp_target[1:]
-        return path.join(caller_dir, self.dir_path)
+        from jaclang.utils.path_resolver import PathResolver
+
+        return PathResolver.get_caller_dir(target=self.target, base_path=self.base_path)
 
 
 class ImportReturn:
@@ -260,21 +249,11 @@ class JacImporter(Importer):
 
     def get_sys_mod_name(self, full_target: str) -> str:
         """Generate proper module names from file paths."""
-        full_target = os.path.abspath(full_target)
+        from jaclang.utils.path_resolver import PathResolver
 
-        # If the file is located within a site-packages directory, strip that prefix.
-        sp_index = full_target.find("site-packages")
-        if sp_index != -1:
-            # Remove the site-packages part and any leading separator.
-            rel = full_target[sp_index + len("site-packages") :]
-            rel = rel.lstrip(os.sep)
-        else:
-            rel = path.relpath(full_target, start=self.jac_machine.base_path_dir)
-        rel = os.path.splitext(rel)[0]
-        if os.path.basename(rel) == "__init__":
-            rel = os.path.dirname(rel)
-        mod_name = rel.replace(os.sep, ".").strip(".")
-        return mod_name
+        return PathResolver.get_module_name(
+            file_path=full_target, base_dir=self.jac_machine.base_path_dir
+        )
 
     def handle_directory(
         self, module_name: str, full_mod_path: str
@@ -373,7 +352,11 @@ class JacImporter(Importer):
             if os.path.isdir(spec.full_target):
                 module = self.handle_directory(spec.module_name, spec.full_target)
             else:
-                spec.full_target += ".jac" if spec.language == "jac" else ".py"
+                from jaclang.utils.path_resolver import PathResolver
+
+                spec.full_target, language = PathResolver.get_file_with_extension(
+                    spec.full_target
+                )
                 module = self.create_jac_py_module(
                     module_name,
                     spec.package_path,
@@ -396,10 +379,15 @@ class JacImporter(Importer):
                     logger.error(dump_traceback(e))
                     raise e
 
+        from jaclang.utils.path_resolver import PathResolver
+
+        # Infer the language from the file extension
+        inferred_language = PathResolver.infer_language(spec.full_target)
+
         import_return = ImportReturn(module, unique_loaded_items, self)
         if spec.items:
             import_return.process_items(
-                module=module, items=spec.items, lang=spec.language
+                module=module, items=spec.items, lang=inferred_language
             )
         self.result = import_return
         return self.result

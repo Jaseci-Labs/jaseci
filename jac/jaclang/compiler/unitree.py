@@ -5,7 +5,6 @@ from __future__ import annotations
 import ast as ast3
 import builtins
 import os
-import site
 from copy import copy
 from dataclasses import dataclass
 from hashlib import md5
@@ -1018,6 +1017,8 @@ class Module(AstDocNode, UniScopeNode):
     @staticmethod
     def get_href_path(node: UniNode) -> str:
         """Return the full path of the module that contains this node."""
+        from jaclang.utils.path_resolver import PathResolver
+
         parent = node.find_parent_of_type(Module)
         mod_list: list[Module | Archetype] = []
         if isinstance(node, (Module, Archetype)):
@@ -1026,8 +1027,13 @@ class Module(AstDocNode, UniScopeNode):
             mod_list.append(parent)
             parent = parent.find_parent_of_type(Module)
         mod_list.reverse()
-        return ".".join(
+
+        module_parts = [
             p.name if isinstance(p, Module) else p.name.sym_name for p in mod_list
+        ]
+        return PathResolver.get_module_path(
+            node_path=node.loc.mod_path if hasattr(node.loc, "mod_path") else "",
+            module_parts=module_parts,
         )
 
 
@@ -1352,43 +1358,17 @@ class ModulePath(AstSymbolNode):
 
     def resolve_relative_path(self, target_item: Optional[str] = None) -> str:
         """Convert an import target string into a relative file path."""
-        # Build the target module name
-        target = self.dot_path_str + (f".{target_item}" if target_item else "")
-        site_packages = site.getsitepackages()[0]
+        from jaclang.utils.path_resolver import PathResolver
 
-        # Split the target into parts and determine how many levels to traverse.
-        parts = target.split(".")
-        traversal_levels = max(self.level - 1, 0)
-        actual_parts = parts[traversal_levels:]
-
-        def candidate_from(base: str) -> str:
-            candidate = os.path.join(base, *actual_parts)
-            candidate_jac = candidate + ".jac"
-            return candidate_jac if os.path.exists(candidate_jac) else candidate
-
-        # 1. Try resolving using the first site-packages directory.
-        candidate = candidate_from(site_packages)
-        if os.path.exists(candidate):
-            return candidate
-
-        # 2. Adjust the base path by moving up for each traversal level.
-        base_path = (
-            os.getenv("JACPATH") or os.path.dirname(self.loc.mod_path) or os.getcwd()
-        )
-        for _ in range(traversal_levels):
-            base_path = os.path.dirname(base_path)
-        candidate = candidate_from(base_path)
-
-        # 3. If candidate doesn't exist and JACPATH is provided, search recursively.
+        base_path = os.path.dirname(self.loc.mod_path) or os.getcwd()
         jacpath = os.getenv("JACPATH")
-        if not os.path.exists(candidate) and jacpath:
-            target_filename = actual_parts[-1] + ".jac"
-            for root, _, files in os.walk(jacpath):
-                if target_filename in files:
-                    candidate = os.path.join(root, target_filename)
-                    break
 
-        return candidate
+        return PathResolver.resolve_relative_path(
+            target=self.dot_path_str,
+            base_path=base_path,
+            target_item=target_item,
+            jacpath=jacpath,
+        )
 
 
 class ModuleItem(AstSymbolNode):
