@@ -8,7 +8,7 @@ A walker can be spawned at any point on the graph with the ```spawn``` keyword.
 
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/data_spatial/define_walker.jac"
+    --8<-- "jac/examples/data_spatial/define_walker.jac"
     ```
 ??? example "Graph"
     ![Image](assets/define_walker.png)
@@ -58,7 +58,7 @@ By using these principles, walkers can efficiently traverse and interact with gr
 ### Example:
 === "Jac"
     ```jac linenums="1"
-    --8<-- "examples/data_spatial/ds_entry_exit.jac"
+    --8<-- "jac/examples/data_spatial/ds_entry_exit.jac"
     ```
 ??? tip "Output"
     ```txt

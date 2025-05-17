@@ -1,0 +1,121 @@
+
+impl search_tweets {
+    query_embedding = sentence_transformer.encode([query]);
+    tweet_embeddings = sentence_transformer.encode([tweet]);
+    similarity = cosine_similarity(query_embedding, tweet_embeddings)[0];
+    return similarity;
+}
+
+impl Profile.update {
+    self.username = here.new_username;
+    report self;
+}
+
+impl Profile.get {
+        follwers=[{"id": jid(i), "username": i.username} for i in [self-->(`?Profile)]];
+        report {"user": self, "followers": follwers};
+    }
+
+impl Profile.follow{
+        current_profile = [root-->(`?Profile)];
+        current_profile[0] +>:Follow():+> self;
+        report self;
+    }
+
+impl Profile.un_follow {
+        current_profile = [root-->(`?Profile)];
+        follow_edge = [edge current_profile[0] ->:Follow:-> self];
+        del follow_edge[0];
+        report self;
+    }
+
+impl Tweet.update {
+        self.content = here.updated_content;
+        report self;
+    }
+
+impl Tweet.delete {
+        del self;
+    }
+
+impl Tweet.like_tweet {
+        current_profile = [root-->(`?Profile)];
+        self +>:Like():+> current_profile[0];
+        report self;
+    }
+
+impl Tweet.remove_like {
+        current_profile = [root-->(`?Profile)];
+        like_edge = [edge self ->:Like:-> current_profile[0]];
+        del like_edge[0];
+        report self;
+    }
+
+impl Tweet.comment {
+        current_profile = [root-->(`?Profile)];
+        comment_node = current_profile[0] ++> Comment(content=here.content);
+        _.perm_grant(comment_node[0], level="CONNECT");
+        self ++> comment_node[0];
+        report comment_node[0];
+    }
+
+impl Tweet.get_info {
+        return TweetInfo(
+            username=[self<-:Post:<-][0].username,
+            id=jid(self),
+            content=self.content,
+            embedding=self.embedding,
+            likes=[i.username for i in [self->:Like:->]],
+            comments=[{"username": [i<--(`?Profile)][0].username, "id": jid(i), "content": i.content} for i in [self-->(`?Comment)]]
+        );
+    }
+
+impl Tweet.get {
+        tweet_info = self.get_info();
+        similarity = search_tweets(here.search_query, tweet_info.content);
+        here.results.append({"Tweet_Info": tweet_info, "similarity": similarity});
+    }
+
+impl Comment.update {
+        self.content = here.updated_content;
+        report self;
+    }
+
+impl Comment.delete {
+        del self;
+    }
+
+impl visit_profile.visit_profile {
+        visit [-->(`?Profile)] else {
+            new_profile = here ++> Profile();
+            _.perm_grant(new_profile[0], level="CONNECT");
+            visit new_profile;
+        }
+    }
+
+impl load_user_profiles.load_profiles {
+        self.profiles: list = [];
+
+        for user in NodeAnchor.Collection.find({"name": "Profile"}) {
+            user_node = user.architype;
+            self.profiles.append(
+                {"name": user_node.username, "id": jid(user_node)}
+            );
+        }
+        report self.profiles;
+    }
+
+impl create_tweet.tweet {
+        embedding = sentence_transformer.encode(self.content).tolist();
+        tweet_node = here +>:Post:+> Tweet(content=self.content, embedding=embedding);
+        _.perm_grant(tweet_node[0], level="CONNECT");
+        report tweet_node;
+    }
+
+impl load_feed.load {
+        visit [-->(`?Tweet)];
+        for user_node in [->:Follow:->(`?Profile)] {
+            visit [user_node-->(`?Tweet)];
+        }
+        report self.results;
+    }
