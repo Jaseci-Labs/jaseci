@@ -262,9 +262,18 @@ class DocIRGenPass(UniPass):
     def exit_expr_stmt(self, node: uni.ExprStmt) -> None:
         """Generate DocIR for expression statements."""
         parts: list[doc.DocType] = []
+        is_fstring = (
+            node.parent
+            and isinstance(node.parent, uni.SubNodeList)
+            and node.parent.parent
+            and isinstance(node.parent.parent, uni.FString)
+        )
         for i in node.kid:
+            if is_fstring:
+                parts.append(self.text("{"))
             parts.append(i.gen.doc_ir)
-            parts.append(self.space())
+            if is_fstring:
+                parts.append(self.text("}"))
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_concurrent_expr(self, node: uni.ConcurrentExpr) -> None:
@@ -288,7 +297,6 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
-            parts.append(self.space())
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_atom_trailer(self, node: uni.AtomTrailer) -> None:
@@ -404,7 +412,6 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
-            parts.append(self.space())
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_set_val(self, node: uni.SetVal) -> None:
@@ -449,7 +456,6 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
-            parts.append(self.space())
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_if_else_expr(self, node: uni.IfElseExpr) -> None:
@@ -1005,16 +1011,31 @@ class DocIRGenPass(UniPass):
 
     def exit_string(self, node: uni.String) -> None:
         """Generate DocIR for strings."""
-        # Handle multiline strings
+        # Check if this is an escaped curly brace in an f-string context
+        is_escaped_curly = (
+            node.lit_value in ["{", "}"]
+            and node.parent
+            and isinstance(node.parent, uni.SubNodeList)
+            and node.parent.parent
+            and isinstance(node.parent.parent, uni.FString)
+        )
+
         if "\n" in node.value:
             lines = node.value.split("\n")
             parts: list[doc.DocType] = [self.text(lines[0])]
-
             for line in lines[1:]:
                 parts.append(self.hard_line())
                 parts.append(self.text(line))
-
             node.gen.doc_ir = self.group(self.concat(parts))
+            return
+        if is_escaped_curly:
+            node.gen.doc_ir = self.concat(
+                [self.text(node.value), self.text(node.value)]
+            )
+            return
+
+        # Regular string
+        node.gen.doc_ir = self.text(node.value)
 
     def exit_special_var_ref(self, node: uni.SpecialVarRef) -> None:
         """Generate DocIR for special variable references."""
