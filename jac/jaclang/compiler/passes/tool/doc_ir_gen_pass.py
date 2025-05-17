@@ -163,6 +163,7 @@ class DocIRGenPass(UniPass):
     def exit_ability(self, node: uni.Ability) -> None:
         """Generate DocIR for abilities."""
         parts: list[doc.DocType] = []
+        prev_item: Optional[uni.UniNode] = None
         for i in node.kid:
             if i == node.doc:
                 parts.append(i.gen.doc_ir)
@@ -171,12 +172,13 @@ class DocIRGenPass(UniPass):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
             elif isinstance(i, uni.Token) and i.name == Tok.SEMI:
-                if parts[-1] == self.space():
+                if prev_item != node.name_ref:
                     parts.pop()
                 parts.append(i.gen.doc_ir)
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
+            prev_item = i
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_func_signature(self, node: uni.FuncSignature) -> None:
@@ -224,9 +226,11 @@ class DocIRGenPass(UniPass):
             if isinstance(i, uni.Token) and i.name == Tok.SEMI:
                 parts.pop()
                 parts.append(i.gen.doc_ir)
+                parts.append(self.space())
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_if_stmt(self, node: uni.IfStmt) -> None:
@@ -701,6 +705,10 @@ class DocIRGenPass(UniPass):
             if i == node.doc:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
+            elif isinstance(i, uni.Token) and i.name == Tok.SEMI:
+                parts.pop()
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
@@ -998,11 +1006,9 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for sub-tag nodes."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            if isinstance(i, uni.Token) and i.name == Tok.COLON:
-                parts.append(i.gen.doc_ir)
-                parts.append(self.space())
-            else:
-                parts.append(i.gen.doc_ir)
+            parts.append(i.gen.doc_ir)
+            parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_sub_node_list(self, node: uni.SubNodeList) -> None:
