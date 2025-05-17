@@ -89,11 +89,12 @@ obj Anchor(ArchetypeProtocol) {
         ro_access: set = :> set,
         owner_id: UUID = exec_ctx.master,
         mem: Memory = exec_ctx.memory;
-
     static def on_entry(cls: type, triggers: list[type]);
     static def on_exit(cls: type, triggers: list[type]);
     def make_public_ro;
     def make_public_rw;
+
+
     def make_private;
     def is_public_ro -> bool;
     def is_public_rw -> bool;
