@@ -93,7 +93,9 @@ class DocIRGenPass(UniPass):
         first_kid = True
         for i in node.kid:
             if (isinstance(i, uni.Import) and isinstance(prev_kid, uni.Import)) or (
-                isinstance(i, uni.GlobalVars) and isinstance(prev_kid, uni.GlobalVars)
+                isinstance(i, uni.GlobalVars)
+                and isinstance(prev_kid, uni.GlobalVars)
+                or prev_kid == node.doc
             ):
                 if prev_kid and self.has_gap(prev_kid, i):
                     parts.append(self.hard_line())
