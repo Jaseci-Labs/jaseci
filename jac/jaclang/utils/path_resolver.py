@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 import site
 from os import getcwd, path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 
 class PathResolver:
@@ -166,3 +166,50 @@ class PathResolver:
         # Extract directory path from the target
         dir_path = os.path.dirname(os.path.join(*(target.split("."))))
         return path.join(caller_dir, dir_path)
+
+    @staticmethod
+    def infer_language(file_path: str) -> str:
+        """Infer the language of a file based on its extension.
+
+        Args:
+            file_path: The path to the file
+
+        Returns:
+            The language of the file ('jac' or 'py')
+        """
+        if file_path.endswith(".jac"):
+            return "jac"
+        elif file_path.endswith(".py"):
+            return "py"
+
+        # If the file doesn't have an extension, check if both .jac and .py versions exist
+        if os.path.exists(file_path + ".jac"):
+            return "jac"
+        elif os.path.exists(file_path + ".py"):
+            return "py"
+
+        # If we can't determine the language, default to 'jac'
+        return "jac"
+
+    @staticmethod
+    def get_file_with_extension(file_path: str) -> Tuple[str, str]:
+        """Get the file path with the appropriate extension and the language.
+
+        Args:
+            file_path: The path to the file, with or without extension
+
+        Returns:
+            A tuple containing (file_path_with_extension, language)
+        """
+        # If the file already has an extension, return it with the inferred language
+        if file_path.endswith(".jac") or file_path.endswith(".py"):
+            return file_path, PathResolver.infer_language(file_path)
+
+        # Check if .jac or .py versions exist
+        if os.path.exists(file_path + ".jac"):
+            return file_path + ".jac", "jac"
+        elif os.path.exists(file_path + ".py"):
+            return file_path + ".py", "py"
+
+        # If neither exists, default to .jac
+        return file_path + ".jac", "jac"

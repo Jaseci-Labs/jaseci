@@ -32,8 +32,8 @@ class ImportPathSpec:
         absorb: bool,
         mdl_alias: Optional[str],
         override_name: Optional[str],
-        lng: Optional[str],
-        items: Optional[dict[str, Union[str, Optional[str]]]],
+        lng: Optional[str] = None,  # Kept for backward compatibility but not used
+        items: Optional[dict[str, Union[str, Optional[str]]]] = None,
     ) -> None:
         """Initialize the ImportPathSpec object."""
         self.target = target
@@ -41,7 +41,6 @@ class ImportPathSpec:
         self.absorb = absorb
         self.mdl_alias = mdl_alias
         self.override_name = override_name
-        self.language = lng
         self.items = items
         self.dir_path, self.file_name = path.split(path.join(*(target.split("."))))
         self.module_name = path.splitext(self.file_name)[0]
@@ -353,7 +352,11 @@ class JacImporter(Importer):
             if os.path.isdir(spec.full_target):
                 module = self.handle_directory(spec.module_name, spec.full_target)
             else:
-                spec.full_target += ".jac" if spec.language == "jac" else ".py"
+                from jaclang.utils.path_resolver import PathResolver
+
+                spec.full_target, language = PathResolver.get_file_with_extension(
+                    spec.full_target
+                )
                 module = self.create_jac_py_module(
                     module_name,
                     spec.package_path,
@@ -376,10 +379,15 @@ class JacImporter(Importer):
                     logger.error(dump_traceback(e))
                     raise e
 
+        from jaclang.utils.path_resolver import PathResolver
+
+        # Infer the language from the file extension
+        inferred_language = PathResolver.infer_language(spec.full_target)
+
         import_return = ImportReturn(module, unique_loaded_items, self)
         if spec.items:
             import_return.process_items(
-                module=module, items=spec.items, lang=spec.language
+                module=module, items=spec.items, lang=inferred_language
             )
         self.result = import_return
         return self.result
