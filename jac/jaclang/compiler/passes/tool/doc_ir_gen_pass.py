@@ -17,8 +17,6 @@ class DocIRGenPass(UniPass):
 
     def before_pass(self) -> None:
         """Initialize pass."""
-        # Options for DocIr generation
-        self.comments = self.ir_in.source.comments
         self.indent_size = 4
         self.MAX_LINE_LENGTH = settings.max_line_length
 
@@ -97,6 +95,8 @@ class DocIRGenPass(UniPass):
         first_kid = True
         for i in node.kid:
             if isinstance(i, uni.Import) and isinstance(prev_kid, uni.Import):
+                if prev_kid and i.loc.first_line - prev_kid.loc.last_line > 1:
+                    parts.append(self.hard_line())
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
             else:
@@ -114,7 +114,9 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             if isinstance(i, uni.SubNodeList) and i.items:
-                parts.append(self.indent(self.concat([self.line(), i.gen.doc_ir])))
+                parts.append(
+                    self.indent(self.concat([self.tight_line(), i.gen.doc_ir]))
+                )
                 parts.append(self.line())
             elif isinstance(i, uni.Token) and i.name == Tok.SEMI:
                 parts.pop()
@@ -127,7 +129,6 @@ class DocIRGenPass(UniPass):
     def exit_module_item(self, node: uni.ModuleItem) -> None:
         """Generate DocIR for module items."""
         parts: list[doc.DocType] = []
-
         for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.KW_AS:
                 parts.append(self.space())
@@ -135,7 +136,6 @@ class DocIRGenPass(UniPass):
                 parts.append(self.space())
             else:
                 parts.append(i.gen.doc_ir)
-
         node.gen.doc_ir = self.concat(parts)
 
     def exit_module_path(self, node: uni.ModulePath) -> None:
@@ -1004,7 +1004,7 @@ class DocIRGenPass(UniPass):
             )
         else:
             node.gen.doc_ir = self.group(
-                self.concat([self.text(node.value), self.hard_line()])
+                self.concat([self.space(), self.text(node.value), self.hard_line()])
             )
 
     def exit_name(self, node: uni.Name) -> None:
