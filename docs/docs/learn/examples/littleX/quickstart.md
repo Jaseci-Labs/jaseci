@@ -10,37 +10,14 @@ cd littlex
 ```
 ### 2. Install Dependencies
 ```bash
-pip install -r requirements.txt
-```
-### 3. Create Cluster
-```bash
-kind create cluster --name littlex --config kind-config.yaml
-```
-### 4. Initialize Jac-splice-orc
-```bash
-jac orc_initialize littlex
-```
-### 5. Set OpenAI API Key
-
-- For linux
-```bash
-export OPENAI_API_KEY='your-open-api-key'
-```
-- For Windows
-```bash
-set OPENAI_API_KEY='your-open-api-key'
+pip install -r littleX_BE/requirements.txt
 ```
 
-### 6. Start the Backend Server
-- Run littleX_mini
+### 3. Start the Backend Server
 ```bash
-jac serve littleX_BE/littleX_mini.jac
+jac serve littleX_BE/littleX.jac
 ```
-- Run littleX_full
-```bash
-jac serve littleX_BE/littleX_full.jac
-```
-### 7. Run the Frontend Server
+### 4. Run the Frontend Server
 Open another command line
 ```bash
 cd littleX_FE

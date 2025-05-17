@@ -32,19 +32,19 @@ We start this journey top down. Lets look at a simple but complete program in Py
 
 === "Python (circle.py)"
     ```python linenums="1"
-    --8<-- "examples/manual_code/circle.py"
+    --8<-- "jac/examples/manual_code/circle.py"
     ```
 === "Jac (circle.jac)"
     ```jac linenums="1"
-    --8<-- "examples/manual_code/circle.jac"
+    --8<-- "jac/examples/manual_code/circle.jac"
     ```
 === "circle_clean.jac"
     ```jac linenums="1"
-    --8<-- "examples/manual_code/circle_clean.jac"
+    --8<-- "jac/examples/manual_code/circle_clean.jac"
     ```
 === "circle_clean_impl.jac"
     ```jac linenums="1"
-    --8<-- "examples/manual_code/circle_clean_impl.jac"
+    --8<-- "jac/examples/manual_code/circle_clean.impl.jac"
     ```
 
 Now lets break it down!
@@ -53,11 +53,11 @@ Now lets break it down!
 
 === "circle.jac"
     ```jac linenums="1"
-    --8<-- "examples/manual_code/circle.jac::8"
+    --8<-- "jac/examples/manual_code/circle.jac::8"
     ```
 === "circle.py"
     ```python linenums="1"
-    --8<-- "examples/manual_code/circle.py::11"
+    --8<-- "jac/examples/manual_code/circle.py::11"
     ```
 
 In this segment we observe a docstring, imports, and a global variable. In Jac docstrings look exactly like python docstrings, however docstrings can only be used as docstrings (not as comments). That means there are a limited number of places you can place them, these places are at the top of a module, and *before* the declaration of functions, methods, classes (archetypes), global variable statements, module level code blocks (i.e., `with entry {}` style blocks, more on this later), and enumerations.
@@ -81,11 +81,11 @@ The rationale for this change is purely aesthetic as when reading a file with ma
 
 === "circle.jac"
     ```jac linenums="10"
-    --8<-- "examples/manual_code/circle.jac:10:13"
+    --8<-- "jac/examples/manual_code/circle.jac:10:13"
     ```
 === "circle.py"
     ```python linenums="13"
-    --8<-- "examples/manual_code/circle.py:14:16"
+    --8<-- "jac/examples/manual_code/circle.py:14:16"
     ```
 
 A nomenclature introduced with  Jac is to refer to functions (and the soon described data spatial code blocks) as abilities. More on data spatial programming later, but for this example the functions in python and jac are very similar except the `def` keyword is replaced with `can.` Also type-hints are manditory in Jac for function signatures (parameters and returns). Any function that doesn't include it's return signature (i.e., `-> TYPE`) is implicitly assumed to be `-> None`.
@@ -96,11 +96,11 @@ Also note that the docstring appears *before* the function call. This choice was
 
 === "circle.jac"
     ```jac linenums="15"
-    --8<-- "examples/manual_code/circle.jac:15:18"
+    --8<-- "jac/examples/manual_code/circle.jac:15:18"
     ```
 === "circle.py"
     ```python linenums="18"
-    --8<-- "examples/manual_code/circle.py:19:23"
+    --8<-- "jac/examples/manual_code/circle.py:19:23"
     ```
 
 As Jac does not allow docstrings to be used as comments, Jac provides an elegant way to specify multiline comments. Any text between `#*` and `*#` is treated as a multi line comment (and is delightfully pythontic).
@@ -109,11 +109,11 @@ As Jac does not allow docstrings to be used as comments, Jac provides an elegant
 
 === "circle.jac"
     ```jac linenums="20"
-    --8<-- "examples/manual_code/circle.jac:20:24"
+    --8<-- "jac/examples/manual_code/circle.jac:20:24"
     ```
 === "circle.py"
     ```python linenums="25"
-    --8<-- "examples/manual_code/circle.py:26:30"
+    --8<-- "jac/examples/manual_code/circle.py:26:30"
     ```
 
 Jac includes enums as a language feature, the semantics of this enum is simple currently however will evolve over time. Of course you can import Enum to leverage pythons path if needed. However its important to note you'll have to use Jac's keyword escape feature to avoid a syntax error when referring to the enum package.
@@ -133,11 +133,11 @@ This is the way to import from enum. Any language level keyword can be escaped b
 
 === "circle.jac"
     ```jac linenums="26"
-    --8<-- "examples/manual_code/circle.jac:26:32"
+    --8<-- "jac/examples/manual_code/circle.jac:26:32"
     ```
 === "circle.py"
     ```python linenums="32"
-    --8<-- "examples/manual_code/circle.py:33:42"
+    --8<-- "jac/examples/manual_code/circle.py:33:42"
     ```
 
 This is an example of a Shape class in Jac. A couple things to note here.
@@ -146,48 +146,48 @@ This is an example of a Shape class in Jac. A couple things to note here.
 
 === "circle.jac"
     ```jac linenums="34"
-    --8<-- "examples/manual_code/circle.jac:34:45"
+    --8<-- "jac/examples/manual_code/circle.jac:34:45"
     ```
 === "circle.py"
     ```python linenums="43"
-    --8<-- "examples/manual_code/circle.py:45:54"
+    --8<-- "jac/examples/manual_code/circle.py:45:54"
     ```
 
 ### Script handling
 
 === "circle.jac"
     ```jac linenums="47"
-    --8<-- "examples/manual_code/circle.jac:47:53"
+    --8<-- "jac/examples/manual_code/circle.jac:47:53"
     ```
 === "circle.py"
     ```python linenums="55"
-    --8<-- "examples/manual_code/circle.py:57:65"
+    --8<-- "jac/examples/manual_code/circle.py:57:65"
     ```
 
 ### Tests
 
 === "circle.jac"
     ```jac linenums="55"
-    --8<-- "examples/manual_code/circle.jac:55:59"
+    --8<-- "jac/examples/manual_code/circle.jac:55:59"
     ```
 === "circle.py"
     ```python linenums="66"
-    --8<-- "examples/manual_code/circle.py:68:81"
+    --8<-- "jac/examples/manual_code/circle.py:68:81"
     ```
 
 ### Clean Approach
 
 === "circle_clean.jac"
     ```jac linenums="1"
-    --8<-- "examples/manual_code/circle_clean.jac"
+    --8<-- "jac/examples/manual_code/circle_clean.jac"
     ```
 === "circle_clean_impl.jac"
     ```jac linenums="1"
-    --8<-- "examples/manual_code/circle_clean_impl.jac"
+    --8<-- "jac/examples/manual_code/circle_clean.impl.jac"
     ```
 === "circle_clean_tests.jac"
     ```jac linenums="1"
-    --8<-- "examples/manual_code/circle_clean_tests.jac"
+    --8<-- "jac/examples/manual_code/circle_clean_tests.jac"
     ```
 
 
@@ -200,7 +200,7 @@ Additionally, Jac is the first language to implement the data spatial object par
 ### Whitespace doesn't matter
 
 ```jac linenums="1"
---8<-- "examples/micro/whitespace.jac"
+--8<-- "jac/examples/micro/whitespace.jac"
 ```
 
 Unlike Python, where indentation is crucial for defining code blocks, Jac does not consider whitespace for this purpose. This gives programmers more flexibility in formatting their code, although maintaining a consistent style is still recommended for readability. With more flexibility in how code can be laid out, more beautiful formatting styles are possible.
@@ -208,7 +208,7 @@ Unlike Python, where indentation is crucial for defining code blocks, Jac does n
 ### Types hints are required
 
 ```jac linenums="1"
---8<-- "examples/micro/type_hints.jac"
+--8<-- "jac/examples/micro/type_hints.jac"
 ```
 In Jac, type hints are mandatory for certain variable declarations and function signatures. This enforces type safety and makes the code more self-documenting, aiding in debugging and maintaining the codebase.
 
@@ -219,19 +219,19 @@ Jac has a built-in typing system, similar to Python's typing library, but it's i
 
 === "Ability"
     ```jac linenums="1"
-    --8<-- "examples/micro/decl_defs.jac:3:12"
+    --8<-- "jac/examples/micro/decl_defs.jac:3:12"
     ```
 === "Class Method"
     ```jac linenums="1"
-    --8<-- "examples/micro/decl_defs.jac:14:25"
+    --8<-- "jac/examples/micro/decl_defs.jac:14:25"
     ```
 === "Another"
     ```jac linenums="1"
-    --8<-- "examples/micro/separate_defs.jac"
+    --8<-- "jac/examples/micro/separate_defs.jac"
     ```
 === "Traditional"
     ```jac linenums="1"
-    --8<-- "examples/micro/decl_defs.jac:27:41"
+    --8<-- "jac/examples/micro/decl_defs.jac:27:41"
     ```
 
 
@@ -241,11 +241,11 @@ In Jac, separating the declaration of functions or variables from their definiti
 
 === "decl_defs_main.jac"
     ```jac linenums="1"
-    --8<-- "examples/micro/decl_defs_main.jac"
+    --8<-- "jac/examples/micro/decl_defs_main.jac"
     ```
 === "decl_defs_impl.jac"
     ```jac linenums="1"
-    --8<-- "examples/micro/decl_defs_impl.jac"
+    --8<-- "jac/examples/micro/decl_defs_main.impl.jac"
     ```
 
 Jac supports separating definitions from implementations across multiple files. This feature enhances modularity and maintainability, as it allows developers to organize their codebase more effectively. Definitions can be placed in one file (e.g., for interfaces or abstract declarations), while their corresponding implementations can reside in separate files. This separation not only makes the codebase easier to manage, especially for large-scale projects, but also facilitates team collaboration. Different team members can work on different aspects of the implementation concurrently without conflicts, as the interface remains consistent and shared across the team. Moreover, this structure aids in clear version control and change tracking, making the development process more efficient and less error-prone.
@@ -253,7 +253,7 @@ Jac supports separating definitions from implementations across multiple files. 
 ### Proper access control
 
 ```jac linenums="1"
---8<-- "examples/micro/access_info.jac"
+--8<-- "jac/examples/micro/access_info.jac"
 ```
 
 In Jac, access control is more granular and explicit compared to Python. Jac introduces access modifiers similar to those found in languages like Java or C#, allowing for `public`, `private`, and `protected` access levels. This feature enhances encapsulation and allows developers to define the scope of class members more clearly. By controlling access to the internals of a class, programmers can prevent unintended interactions with the class's methods and attributes, leading to more robust and maintainable code.
@@ -261,7 +261,7 @@ In Jac, access control is more granular and explicit compared to Python. Jac int
 ### Proper abstract classes/methods
 
 ```jac linenums="1"
---8<-- "examples/micro/class_multi_inherit.jac"
+--8<-- "jac/examples/micro/class_multi_inherit.jac"
 ```
 Jac provides built-in support for abstract classes and methods, a feature that is handled through the `abc` module in Python. In Jac, an abstract class can be defined more intuitively, and any methods that are meant to be abstract can be declared as such directly. This enforces a contract for the derived classes to implement the abstract methods, ensuring consistency and predictability in class hierarchies. The introduction of proper abstract classes and methods in Jac makes it easier to design and work with complex object-oriented systems, as it provides a clear framework for how classes should be structured and interacted with.
 
