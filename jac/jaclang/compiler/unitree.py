@@ -4596,6 +4596,21 @@ class CommentToken(Token):
 
         UniNode.__init__(self, kid=kid)
 
+    @property
+    def left_node(self) -> Optional[UniNode]:
+        if self.parent and (idx := self.parent.kid.index(self)) > 0:
+            return self.parent.kid[idx - 1]
+        return None
+
+    @property
+    def right_node(self) -> Optional[UniNode]:
+        if (
+            self.parent
+            and (idx := self.parent.kid.index(self)) < len(self.parent.kid) - 1
+        ):
+            return self.parent.kid[idx + 1]
+        return None
+
 
 # ----------------
 class Source(EmptyToken):

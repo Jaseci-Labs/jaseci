@@ -393,7 +393,7 @@ class DocIRGenPass(UniPass):
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
-
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_while_stmt(self, node: uni.WhileStmt) -> None:
@@ -1126,19 +1126,6 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for semicolons."""
         node.gen.doc_ir = self.text(node.value)
 
-    def exit_comment_token(self, node: uni.CommentToken) -> None:
-        """Generate DocIR for comment tokens."""
-        if node.is_inline:
-            node.gen.doc_ir = self.group(
-                self.concat(
-                    [self.tight_line(), self.text(node.value), self.tight_line()]
-                )
-            )
-        else:
-            node.gen.doc_ir = self.group(
-                self.concat([self.space(), self.text(node.value), self.hard_line()])
-            )
-
     def exit_name(self, node: uni.Name) -> None:
         """Generate DocIR for names."""
         if node.is_kwesc:
@@ -1201,6 +1188,17 @@ class DocIRGenPass(UniPass):
     def exit_ellipsis(self, node: uni.Ellipsis) -> None:
         """Generate DocIR for ellipsis."""
         node.gen.doc_ir = self.text(node.value)
+
+    def exit_comment_token(self, node: uni.CommentToken) -> None:
+        """Generate DocIR for comment tokens."""
+        if node.left_node and node.left_node.loc.last_line == node.loc.first_line:
+            node.gen.doc_ir = self.group(
+                self.concat([self.tight_line(), self.text(node.value)])
+            )
+        else:
+            node.gen.doc_ir = self.group(
+                self.concat([self.hard_line(), self.text(node.value)])
+            )
 
     def print_jac(
         self,
