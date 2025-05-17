@@ -250,7 +250,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         ability.is_async = True
         return ability
 
-    def proc_class_def(self, node: py_ast.ClassDef) -> uni.Architype | uni.Enum:
+    def proc_class_def(self, node: py_ast.ClassDef) -> uni.Archetype | uni.Enum:
         """Process python node.
 
         class ClassDef(stmt):
@@ -369,7 +369,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                 else [name, valid_body, doc] if doc else [name, valid_body]
             )
         )
-        return uni.Architype(
+        return uni.Archetype(
             arch_type=arch_type,
             name=name,
             access=None,

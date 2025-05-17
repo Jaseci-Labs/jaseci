@@ -16,10 +16,10 @@
 					"include": "#global"
 				},
 				{
-					"include": "#architype"
+					"include": "#archetype"
 				},
 				{
-					"include": "#architype_refdef"
+					"include": "#archetype_refdef"
 				},
 				{
 					"include": "#has"
@@ -101,7 +101,7 @@
 				}
 			]
 		},
-		"architype": {
+		"archetype": {
 			"patterns": [
 				{
 					"name": "meta.class.jac",
@@ -128,7 +128,7 @@
 				}
 			]
 		},
-		"architype_refdef": {
+		"archetype_refdef": {
 			"patterns": [
 				{
 					"name": "meta.class.jac",
@@ -193,7 +193,7 @@
 							"include": "#string"
 						},
 						{
-							"include": "#architype_refdef"
+							"include": "#archetype_refdef"
 						},
 						{
 							"include": "#arch-reference"

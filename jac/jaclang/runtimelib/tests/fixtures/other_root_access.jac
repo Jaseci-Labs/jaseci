@@ -1,5 +1,5 @@
 import from jaclang.runtimelib.machine {JacMachineInterface as Jac}
-import from jaclang.runtimelib.architype {Anchor}
+import from jaclang.runtimelib.archetype {Anchor}
 import from uuid {UUID}
 
 node A {

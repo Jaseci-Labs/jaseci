@@ -21,7 +21,7 @@ from jaclang.runtimelib.memory import Memory
 from pymongo import InsertOne
 from pymongo.client_session import ClientSession
 
-from .architype import (
+from .archetype import (
     BaseAnchor,
     BulkWrite,
     EdgeAnchor,
@@ -149,8 +149,8 @@ class MongoDB(Memory[ObjectId, BaseAnchor]):
             anchor = self.__mem__.get(key)
             if (
                 anchor
-                and hasattr(anchor, "architype")
-                and anchor.architype
+                and hasattr(anchor, "archetype")
+                and anchor.archetype
                 and hasattr(anchor, "persistent")
                 and anchor.persistent
             ):
@@ -192,7 +192,7 @@ class MongoDB(Memory[ObjectId, BaseAnchor]):
                     if (
                         not DISABLE_AUTO_CLEANUP
                         and isinstance(anchor, NodeAnchor)
-                        and not isinstance(anchor.architype, Root)
+                        and not isinstance(anchor.archetype, Root)
                         and hasattr(anchor, "edges")
                         and not anchor.edges
                     ):

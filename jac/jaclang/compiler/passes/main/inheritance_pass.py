@@ -1,8 +1,8 @@
 """Inheritance Resolution Pass for the Jac compiler.
 
-This pass handles the inheritance relationships between architypes by:
+This pass handles the inheritance relationships between archetypes by:
 
-1. Identifying base classes for each architype in the program
+1. Identifying base classes for each archetype in the program
 2. Resolving the inheritance hierarchy, including multi-level inheritance
 3. Populating derived class symbol tables with symbols from their base classes
 4. Handling special cases like Python base classes and index slice expressions
@@ -26,16 +26,16 @@ class InheritancePass(Transform[uni.Module, uni.Module]):
 
     def transform(self, ir_in: uni.Module) -> uni.Module:
         """Entry point for the inheritance pass."""
-        self.process_architypes(ir_in)
+        self.process_archetypes(ir_in)
         return ir_in
 
-    def process_architypes(self, module: uni.Module) -> None:
-        """Process all architypes in the module."""
-        for node in module.get_all_sub_nodes(uni.Architype):
-            self.process_architype_inheritance(node)
+    def process_archetypes(self, module: uni.Module) -> None:
+        """Process all archetypes in the module."""
+        for node in module.get_all_sub_nodes(uni.Archetype):
+            self.process_archetype_inheritance(node)
 
-    def process_architype_inheritance(self, node: uni.Architype) -> None:
-        """Fill architype symbol tables with abilities from parent architypes."""
+    def process_archetype_inheritance(self, node: uni.Archetype) -> None:
+        """Fill archetype symbol tables with abilities from parent archetypes."""
         if node.base_classes is None:
             return
 
@@ -52,7 +52,7 @@ class InheritancePass(Transform[uni.Module, uni.Module]):
                     "expression, this is not supported yet"
                 )
 
-    def inherit_from_name(self, node: uni.Architype, item: uni.Name) -> None:
+    def inherit_from_name(self, node: uni.Archetype, item: uni.Name) -> None:
         """Handle inheritance from a simple name reference."""
         assert node.sym_tab.parent_scope is not None
         base_class_symbol = self.lookup_symbol(item.sym_name, node.sym_tab.parent_scope)
@@ -68,7 +68,7 @@ class InheritancePass(Transform[uni.Module, uni.Module]):
         node.sym_tab.inherit_sym_tab(base_class_symbol_table)
 
     def inherit_from_atom_trailer(
-        self, node: uni.Architype, item: uni.AtomTrailer
+        self, node: uni.Archetype, item: uni.AtomTrailer
     ) -> None:
         """Handle inheritance from an attribute access chain."""
         current_sym_table = node.sym_tab.parent_scope

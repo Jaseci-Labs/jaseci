@@ -212,7 +212,7 @@ Now Lets create required walkers for LittleX.
                               self.profiles: list = [];
 
                               for user in NodeAnchor.Collection.find({"name": "profile"}) {
-                                    user_node = user.architype;
+                                    user_node = user.archetype;
                                     self.profiles.append(
                                     {"name": user_node.username, "id": jid(user_node)}
                                     );
@@ -223,7 +223,7 @@ Now Lets create required walkers for LittleX.
                   ```
             * `static has auth: bool = False` Set disable authentication for that walker.
             * `NodeAnchor.Collection.find({"name": "profile"})` Get list of profiles.
-            * `user.architype` Get architype of user node.
+            * `user.archetype` Get archetype of user node.
             * `jid(user_node)` Get the unique id of an object.
 
       - **Update Profile Walker**

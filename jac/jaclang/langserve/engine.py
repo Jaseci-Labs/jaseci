@@ -212,7 +212,7 @@ class JacLangServer(JacProgram, LanguageServer):
                             else temp_tab.find_parent_of_type(uni.ImplDef)
                         )
                         if not is_ability_def:
-                            archi_owner = mod_tab.find_parent_of_type(uni.Architype)
+                            archi_owner = mod_tab.find_parent_of_type(uni.Archetype)
                             temp_tab = (
                                 archi_owner.sym_tab
                                 if archi_owner and archi_owner.sym_tab
@@ -223,7 +223,7 @@ class JacLangServer(JacProgram, LanguageServer):
                             archi_owner = (
                                 (
                                     is_ability_def.decl_link.find_parent_of_type(
-                                        uni.Architype
+                                        uni.Archetype
                                     )
                                 )
                                 if is_ability_def.decl_link
@@ -251,7 +251,7 @@ class JacLangServer(JacProgram, LanguageServer):
                 completion_items += collect_all_symbols_in_scope(
                     temp_tab, up_tree=False
                 )
-                if isinstance(temp_tab, uni.Architype) and temp_tab.base_classes:
+                if isinstance(temp_tab, uni.Archetype) and temp_tab.base_classes:
                     base = []
                     for base_name in temp_tab.base_classes.items:
                         if isinstance(base_name, uni.Name) and base_name.sym:
@@ -265,7 +265,7 @@ class JacLangServer(JacProgram, LanguageServer):
 
         else:
             if node_selected and (
-                node_selected.find_parent_of_type(uni.Architype)
+                node_selected.find_parent_of_type(uni.Archetype)
                 or node_selected.find_parent_of_type(uni.ImplDef)
             ):
                 self_symbol = [

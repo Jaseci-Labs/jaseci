@@ -3,7 +3,7 @@
 import #* what abou this *# from datetime { datetime }
 import from uuid { UUID, uuid4 } # This is a comment
 import from jaclang.compiler.constant { EdgeDir }
-import from jaclang.plugin { Architype, ArchitypeProtocol, ArchitypeProtocol3 as MyArch, DSFunc, ArchitypeProtocol, ArchitypeProtocol3, DSFunc, AbsRootHook, hookimpl }
+import from jaclang.plugin { Archetype, ArchetypeProtocol, ArchetypeProtocol3 as MyArch, DSFunc, ArchetypeProtocol, ArchetypeProtocol3, DSFunc, AbsRootHook, hookimpl }
 
 import jaclang.compiler.constant;
 
@@ -63,13 +63,13 @@ obj ExecutionContext {
         memory: Memory = Memory();
 
     def reset;
-    def get_root() -> Architype;
+    def get_root() -> Archetype;
 }
 
 "Global Execution Context, should be monkey patched by the user."
 glob exec_ctx = ExecutionContext();
 
-obj Anchor(ArchitypeProtocol) {
+obj Anchor(ArchetypeProtocol) {
     has ob: object,
         ds_entry_funcs: list[DSFunc],
         ds_exit_funcs: list[DSFunc],
@@ -134,7 +134,7 @@ obj Root(AbsRootHook) {
     }
 }
 
-obj GenericEdge(ArchitypeProtocol) {
+obj GenericEdge(ArchetypeProtocol) {
     has __jac__: EdgeAnchor | None = None;
 
     def postinit {
@@ -153,13 +153,13 @@ obj Master {
 
 obj JacPlugin {
     @hookimpl
-    static def bind_architype(arch: AT, arch_type: str, on_entry: list[str], on_exit: list[str]) -> bool;
+    static def bind_archetype(arch: AT, arch_type: str, on_entry: list[str], on_exit: list[str]) -> bool;
     @hookimpl
-    static def get_root() -> Architype;
+    static def get_root() -> Archetype;
     @hookimpl
-    static def build_edge(edge_spec: tuple[int, Optional[tuple], Optional[tuple]]) -> Architype;
+    static def build_edge(edge_spec: tuple[int, Optional[tuple], Optional[tuple]]) -> Archetype;
     @hookimpl
-    static def connect(left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Architype;
+    static def connect(left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Archetype;
     @hookimpl
     static def visit_node(walker_obj: Any, expr: Any) -> bool;
 }
@@ -449,7 +449,7 @@ impl WalkerAnchor.__call__
     self.ignores = [];
 }
 
-impl JacPlugin.bind_architype
+impl JacPlugin.bind_archetype
 (arch: AT, arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]) -> bool {
     match arch_type {
         case 'obj':
@@ -487,7 +487,7 @@ impl JacPlugin.get_root() -> None {
 }
 
 impl JacPlugin.build_edge
-(edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Architype {
+(edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Archetype {
     if (not edge_spec[1]) {
         edg_type = GenericEdge;
     } else {
@@ -499,7 +499,7 @@ impl JacPlugin.build_edge
 }
 
 impl JacPlugin.connect
-(left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Architype {
+(left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Archetype {
     edg = JacPlugin.build_edge(edge_spec);
     left.connect_node(right.__jac__, edg.__jac__);
 }

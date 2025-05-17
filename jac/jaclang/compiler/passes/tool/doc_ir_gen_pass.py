@@ -145,8 +145,8 @@ class DocIRGenPass(UniPass):
             parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.concat(parts)
 
-    def exit_architype(self, node: uni.Architype) -> None:
-        """Generate DocIR for architypes."""
+    def exit_archetype(self, node: uni.Archetype) -> None:
+        """Generate DocIR for archetypes."""
         parts: list[doc.DocType] = []
         for i in node.kid:
             if i == node.doc:

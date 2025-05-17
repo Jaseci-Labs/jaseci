@@ -152,7 +152,7 @@ class TestJaseciPlugin(TestCase):
         ]
         self.assertEqual(len(node_objs), 2)
         self.assertEqual(
-            {obj["architype"].tag for obj in node_objs}, {"first", "second"}
+            {obj["archetype"].tag for obj in node_objs}, {"first", "second"}
         )
         self._del_session(session)
 

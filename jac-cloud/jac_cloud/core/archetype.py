@@ -30,20 +30,20 @@ from typing import (
 
 from bson import ObjectId
 
-from jaclang.runtimelib.architype import (
+from jaclang.runtimelib.archetype import (
     Access as _Access,
     AccessLevel,
     Anchor,
     EdgeAnchor as _EdgeAnchor,
-    EdgeArchitype as _EdgeArchitype,
+    EdgeArchetype as _EdgeArchetype,
     NodeAnchor as _NodeAnchor,
-    NodeArchitype as _NodeArchitype,
+    NodeArchetype as _NodeArchetype,
     ObjectAnchor as _ObjectAnchor,
-    ObjectArchitype as _ObjectArchitype,
+    ObjectArchetype as _ObjectArchetype,
     Permission as _Permission,
     TANCH,
     WalkerAnchor as _WalkerAnchor,
-    WalkerArchitype as _WalkerArchitype,
+    WalkerArchetype as _WalkerArchetype,
 )
 from jaclang.runtimelib.machine import JacMachineInterface as Jac
 from jaclang.runtimelib.utils import is_instance
@@ -64,7 +64,7 @@ EDGE_ID_REGEX = compile(r"^e:([^:]*):([a-f\d]{24})$", IGNORECASE)
 WALKER_ID_REGEX = compile(r"^w:([^:]*):([a-f\d]{24})$", IGNORECASE)
 OBJECT_ID_REGEX = compile(r"^o:([^:]*):([a-f\d]{24})$", IGNORECASE)
 T = TypeVar("T")
-TBA = TypeVar("TBA", bound="BaseArchitype")
+TBA = TypeVar("TBA", bound="BaseArchetype")
 
 
 def asdict_factory(data: Iterable[tuple]) -> dict[str, Any]:
@@ -85,20 +85,20 @@ def asdict(obj: object) -> dict[str, Any]:
     raise ValueError("Object is not a dataclass!")
 
 
-def architype_to_dataclass(cls: type[T], data: dict[str, Any], **kwargs: object) -> T:
-    """Parse dict to architype."""
+def archetype_to_dataclass(cls: type[T], data: dict[str, Any], **kwargs: object) -> T:
+    """Parse dict to archetype."""
     _to_dataclass(cls, data)
-    architype = object.__new__(cls)
+    archetype = object.__new__(cls)
     hintings = get_type_hints(cls)
     if is_dataclass(cls):
         for attr in fields(cls):
             if (val := data.pop(attr.name, MISSING)) is MISSING:
                 if attr.default is not MISSING:
-                    setattr(architype, attr.name, attr.default)
+                    setattr(archetype, attr.name, attr.default)
                 elif attr.default_factory is not MISSING and callable(
                     attr.default_factory
                 ):
-                    setattr(architype, attr.name, attr.default_factory())
+                    setattr(archetype, attr.name, attr.default_factory())
                 else:
                     raise ValueError(
                         f"{cls.__name__} requires {attr.name} field with type {hintings[attr.name]}"
@@ -107,23 +107,23 @@ def architype_to_dataclass(cls: type[T], data: dict[str, Any], **kwargs: object)
                 hinter = hintings[attr.name]
                 origin = get_origin(hinter)
                 if hinter == Any:
-                    setattr(architype, attr.name, val)
+                    setattr(archetype, attr.name, val)
                     continue
                 elif origin == UnionType or origin is None:
                     if is_instance(val, hinter):
-                        setattr(architype, attr.name, val)
+                        setattr(archetype, attr.name, val)
                         continue
                 elif origin and is_instance(val, origin):
-                    setattr(architype, attr.name, val)
+                    setattr(archetype, attr.name, val)
                     continue
                 raise ValueError(
                     f"Data from datasource has type {val.__class__.__name__}"
                     f" but {cls.__name__}.{attr.name} requires {hinter}."
                 )
 
-    architype.__dict__.update(data)
-    architype.__dict__.update(kwargs)
-    return architype
+    archetype.__dict__.update(data)
+    archetype.__dict__.update(kwargs)
+    return archetype
 
 
 def to_dataclass(cls: type[T], data: dict[str, Any], **kwargs: object) -> T:
@@ -399,7 +399,7 @@ class WalkerAnchorState(AnchorState):
 class BaseAnchor:
     """Base Anchor."""
 
-    architype: "BaseArchitype"
+    archetype: "BaseArchetype"
     name: str = ""
     id: ObjectId = field(default_factory=ObjectId)
     root: ObjectId | None = None
@@ -511,7 +511,7 @@ class BaseAnchor:
 
     def is_populated(self) -> bool:
         """Check if populated."""
-        return "architype" in self.__dict__
+        return "archetype" in self.__dict__
 
     def make_stub(self: "BaseAnchor | TANCH") -> "BaseAnchor | TANCH":
         """Return unsynced copy of anchor."""
@@ -524,7 +524,7 @@ class BaseAnchor:
         return self
 
     def populate(self) -> None:
-        """Retrieve the Architype from db and return."""
+        """Retrieve the Archetype from db and return."""
         from .context import JaseciContext
 
         jsrc = JaseciContext.get().mem
@@ -590,18 +590,18 @@ class BaseAnchor:
 
         if Jac.check_write_access(self):  # type: ignore[arg-type]
             set_query = changes.pop("$set", {})
-            if is_dataclass(architype := self.architype) and not isinstance(
-                architype, type
+            if is_dataclass(archetype := self.archetype) and not isinstance(
+                archetype, type
             ):
                 for (
                     key,
                     val,
                 ) in (
-                    architype.__serialize__().items()  # type:ignore[attr-defined] # mypy issue
+                    archetype.__serialize__().items()  # type:ignore[attr-defined] # mypy issue
                 ):
                     if (h := hash(dumps(val))) != self.state.context_hashes.get(key):
                         self.state.context_hashes[key] = h
-                        set_query[f"architype.{key}"] = val
+                        set_query[f"archetype.{key}"] = val
             if set_query:
                 changes["$set"] = set_query
         else:
@@ -690,12 +690,12 @@ class BaseAnchor:
 
     def sync_hash(self) -> None:
         """Sync current serialization hash."""
-        if is_dataclass(architype := self.architype) and not isinstance(
-            architype, type
+        if is_dataclass(archetype := self.archetype) and not isinstance(
+            archetype, type
         ):
             self.state.context_hashes = {
                 key: hash(val if isinstance(val, bytes) else dumps(val))
-                for key, val in architype.__serialize__().items()  # type:ignore[attr-defined] # mypy issue
+                for key, val in archetype.__serialize__().items()  # type:ignore[attr-defined] # mypy issue
             }
         self.state.full_hash = hash(pdumps(self.serialize()))
 
@@ -706,8 +706,8 @@ class BaseAnchor:
         return {
             "id": self.ref_id,
             "context": (
-                self.architype.__serialize__()  # type:ignore[attr-defined] # mypy issue
-                if is_dataclass(self.architype) and not isinstance(self.architype, type)
+                self.archetype.__serialize__()  # type:ignore[attr-defined] # mypy issue
+                if is_dataclass(self.archetype) and not isinstance(self.archetype, type)
                 else {}
             ),
         }
@@ -719,9 +719,9 @@ class BaseAnchor:
             "name": self.name,
             "root": self.root,
             "access": self.access.serialize(),
-            "architype": (
-                self.architype.__serialize__()  # type:ignore[attr-defined] # mypy issue
-                if is_dataclass(self.architype) and not isinstance(self.architype, type)
+            "archetype": (
+                self.archetype.__serialize__()  # type:ignore[attr-defined] # mypy issue
+                if is_dataclass(self.archetype) and not isinstance(self.archetype, type)
                 else {}
             ),
         }
@@ -744,7 +744,7 @@ class BaseAnchor:
 class NodeAnchor(BaseAnchor, _NodeAnchor):  # type: ignore[misc]
     """Node Anchor."""
 
-    architype: "NodeArchitype"
+    archetype: "NodeArchetype"
     edges: list["EdgeAnchor"]  # type: ignore[assignment]
 
     class Collection(BaseCollection["NodeAnchor"]):
@@ -760,12 +760,12 @@ class NodeAnchor(BaseAnchor, _NodeAnchor):  # type: ignore[misc]
             """Parse document to NodeAnchor."""
             doc = cast(dict, doc)
 
-            architype = architype_to_dataclass(
-                NodeArchitype.__get_class__(doc.get("name") or ""),
-                doc.pop("architype"),
+            archetype = archetype_to_dataclass(
+                NodeArchetype.__get_class__(doc.get("name") or ""),
+                doc.pop("archetype"),
             )
             anchor = NodeAnchor(
-                architype=architype,
+                archetype=archetype,
                 id=doc.pop("_id"),
                 edges=[e for edge in doc.pop("edges") if (e := EdgeAnchor.ref(edge))],
                 access=Permission.deserialize(doc.pop("access")),
@@ -773,7 +773,7 @@ class NodeAnchor(BaseAnchor, _NodeAnchor):  # type: ignore[misc]
                 persistent=True,
                 **doc,
             )
-            architype.__jac__ = anchor
+            archetype.__jac__ = anchor
             anchor.sync_hash()
             return anchor
 
@@ -820,7 +820,7 @@ class NodeAnchor(BaseAnchor, _NodeAnchor):  # type: ignore[misc]
 class EdgeAnchor(BaseAnchor, _EdgeAnchor):  # type: ignore[misc]
     """Edge Anchor."""
 
-    architype: "EdgeArchitype"
+    archetype: "EdgeArchetype"
     source: NodeAnchor
     target: NodeAnchor
     is_undirected: bool
@@ -837,12 +837,12 @@ class EdgeAnchor(BaseAnchor, _EdgeAnchor):  # type: ignore[misc]
         def __document__(cls, doc: Mapping[str, Any]) -> "EdgeAnchor":
             """Parse document to EdgeAnchor."""
             doc = cast(dict, doc)
-            architype = architype_to_dataclass(
-                EdgeArchitype.__get_class__(doc.get("name") or ""),
-                doc.pop("architype"),
+            archetype = archetype_to_dataclass(
+                EdgeArchetype.__get_class__(doc.get("name") or ""),
+                doc.pop("archetype"),
             )
             anchor = EdgeAnchor(
-                architype=architype,
+                archetype=archetype,
                 id=doc.pop("_id"),
                 source=NodeAnchor.ref(doc.pop("source")),
                 target=NodeAnchor.ref(doc.pop("target")),
@@ -851,7 +851,7 @@ class EdgeAnchor(BaseAnchor, _EdgeAnchor):  # type: ignore[misc]
                 persistent=True,
                 **doc,
             )
-            architype.__jac__ = anchor
+            archetype.__jac__ = anchor
             anchor.sync_hash()
             return anchor
 
@@ -899,7 +899,7 @@ class EdgeAnchor(BaseAnchor, _EdgeAnchor):  # type: ignore[misc]
 class WalkerAnchor(BaseAnchor, _WalkerAnchor):  # type: ignore[misc]
     """Walker Anchor."""
 
-    architype: "WalkerArchitype"
+    archetype: "WalkerArchetype"
     state: WalkerAnchorState
     path: list[NodeAnchor] = field(default_factory=list)  # type: ignore[assignment]
     next: list[NodeAnchor] = field(default_factory=list)  # type: ignore[assignment]
@@ -928,9 +928,9 @@ class WalkerAnchor(BaseAnchor, _WalkerAnchor):  # type: ignore[misc]
         def __document__(cls, doc: Mapping[str, Any]) -> "WalkerAnchor":
             """Parse document to WalkerAnchor."""
             doc = cast(dict, doc)
-            architype = architype_to_dataclass(
-                WalkerArchitype.__get_class__(doc.get("name") or ""),
-                doc.pop("architype"),
+            archetype = archetype_to_dataclass(
+                WalkerArchetype.__get_class__(doc.get("name") or ""),
+                doc.pop("archetype"),
             )
 
             if next := doc.pop("next", []):
@@ -940,7 +940,7 @@ class WalkerAnchor(BaseAnchor, _WalkerAnchor):  # type: ignore[misc]
                 schedule = Schedule(ScheduleStatus(schedule.pop("status")), **schedule)
 
             anchor = WalkerAnchor(
-                architype=architype,
+                archetype=archetype,
                 id=doc.pop("_id"),
                 access=Permission.deserialize(doc.pop("access")),
                 state=WalkerAnchorState(connected=True),
@@ -949,7 +949,7 @@ class WalkerAnchor(BaseAnchor, _WalkerAnchor):  # type: ignore[misc]
                 schedule=schedule,
                 **doc,
             )
-            architype.__jac__ = anchor
+            archetype.__jac__ = anchor
             anchor.sync_hash()
             return anchor
 
@@ -979,12 +979,12 @@ class WalkerAnchor(BaseAnchor, _WalkerAnchor):  # type: ignore[misc]
 
     def sync_hash(self) -> None:
         """Sync current serialization hash."""
-        if is_dataclass(architype := self.architype) and not isinstance(
-            architype, type
+        if is_dataclass(archetype := self.archetype) and not isinstance(
+            archetype, type
         ):
             self.state.context_hashes = {
                 key: hash(val if isinstance(val, bytes) else dumps(val))
-                for key, val in architype.__serialize__().items()
+                for key, val in archetype.__serialize__().items()
             }
 
         if is_dataclass(schedule := self.schedule) and not isinstance(schedule, type):
@@ -1004,7 +1004,7 @@ class WalkerAnchor(BaseAnchor, _WalkerAnchor):  # type: ignore[misc]
 class ObjectAnchor(BaseAnchor, _ObjectAnchor):  # type: ignore[misc]
     """Object Anchor."""
 
-    architype: "ObjectArchitype"
+    archetype: "ObjectArchetype"
 
     class Collection(BaseCollection["ObjectAnchor"]):
         """ObjectAnchor collection interface."""
@@ -1019,19 +1019,19 @@ class ObjectAnchor(BaseAnchor, _ObjectAnchor):  # type: ignore[misc]
             """Parse document to NodeAnchor."""
             doc = cast(dict, doc)
 
-            architype = architype_to_dataclass(
-                ObjectArchitype.__get_class__(doc.get("name") or "Root"),
-                doc.pop("architype"),
+            archetype = archetype_to_dataclass(
+                ObjectArchetype.__get_class__(doc.get("name") or "Root"),
+                doc.pop("archetype"),
             )
             anchor = ObjectAnchor(
-                architype=architype,
+                archetype=archetype,
                 id=doc.pop("_id"),
                 access=Permission.deserialize(doc.pop("access")),
                 state=AnchorState(connected=True),
                 persistent=True,
                 **doc,
             )
-            architype.__jac__ = anchor
+            archetype.__jac__ = anchor
             anchor.sync_hash()
             return anchor
 
@@ -1057,10 +1057,10 @@ class ObjectAnchor(BaseAnchor, _ObjectAnchor):  # type: ignore[misc]
         bulk_write.del_node(self.id)
 
 
-class BaseArchitype:
-    """Architype Protocol."""
+class BaseArchetype:
+    """Archetype Protocol."""
 
-    __jac_classes__: dict[str, type["BaseArchitype"]]
+    __jac_classes__: dict[str, type["BaseArchetype"]]
     __jac_hintings__: dict[str, type]
 
     __jac__: Anchor
@@ -1103,8 +1103,8 @@ class BaseArchitype:
         return jac_class
 
 
-class NodeArchitype(BaseArchitype, _NodeArchitype):
-    """Node Architype Protocol."""
+class NodeArchetype(BaseArchetype, _NodeArchetype):
+    """Node Archetype Protocol."""
 
     __jac_base__: ClassVar[bool] = True
 
@@ -1112,7 +1112,7 @@ class NodeArchitype(BaseArchitype, _NodeArchitype):
     def __jac__(self) -> NodeAnchor:  # type: ignore[override]
         """Create default anchor."""
         return NodeAnchor(
-            architype=self,
+            archetype=self,
             name=self.__class__.__name__,
             edges=[],
             access=Permission(),
@@ -1127,7 +1127,7 @@ class NodeArchitype(BaseArchitype, _NodeArchitype):
     @classmethod
     def __set_classes__(cls) -> dict[str, Any]:
         """Initialize Jac Classes."""
-        jac_classes: dict[str, type[BaseArchitype]] = {}
+        jac_classes: dict[str, type[BaseArchetype]] = {}
 
         for sub in islice(cls.__subclasses__(), 1, None):
             sub.__jac_hintings__ = get_type_hints(sub)
@@ -1139,8 +1139,8 @@ class NodeArchitype(BaseArchitype, _NodeArchitype):
         return jac_classes
 
 
-class EdgeArchitype(BaseArchitype, _EdgeArchitype):
-    """Edge Architype Protocol."""
+class EdgeArchetype(BaseArchetype, _EdgeArchetype):
+    """Edge Archetype Protocol."""
 
     __jac_base__: ClassVar[bool] = True
     __jac__: EdgeAnchor
@@ -1153,7 +1153,7 @@ class EdgeArchitype(BaseArchitype, _EdgeArchitype):
     @classmethod
     def __set_classes__(cls) -> dict[str, Any]:
         """Initialize Jac Classes."""
-        jac_classes: dict[str, type[BaseArchitype]] = {}
+        jac_classes: dict[str, type[BaseArchetype]] = {}
 
         for sub in islice(cls.__subclasses__(), 1, None):
             sub.__jac_hintings__ = get_type_hints(sub)
@@ -1165,8 +1165,8 @@ class EdgeArchitype(BaseArchitype, _EdgeArchitype):
         return jac_classes
 
 
-class WalkerArchitype(BaseArchitype, _WalkerArchitype):
-    """Walker Architype Protocol."""
+class WalkerArchetype(BaseArchetype, _WalkerArchetype):
+    """Walker Archetype Protocol."""
 
     __jac_base__: ClassVar[bool] = True
 
@@ -1174,7 +1174,7 @@ class WalkerArchitype(BaseArchitype, _WalkerArchitype):
     def __jac__(self) -> WalkerAnchor:  # type: ignore[override]
         """Create default anchor."""
         return WalkerAnchor(
-            architype=self,
+            archetype=self,
             name=self.__class__.__name__,
             access=Permission(),
             state=WalkerAnchorState(),
@@ -1190,12 +1190,12 @@ class WalkerArchitype(BaseArchitype, _WalkerArchitype):
         if not cls.__dict__.get("__jac_base__", False):
             from jac_cloud.plugin.implementation.api import populate_apis
 
-            Jac.make_architype(cls)
+            Jac.make_archetype(cls)
             populate_apis(cls)
 
 
-class ObjectArchitype(BaseArchitype, _ObjectArchitype):
-    """Object Architype Protocol."""
+class ObjectArchetype(BaseArchetype, _ObjectArchetype):
+    """Object Archetype Protocol."""
 
     __jac_base__: ClassVar[bool] = True
 
@@ -1203,7 +1203,7 @@ class ObjectArchitype(BaseArchitype, _ObjectArchitype):
     def __jac__(self) -> ObjectAnchor:  # type: ignore[override]
         """Create default anchor."""
         return ObjectAnchor(
-            architype=self,
+            archetype=self,
             name=self.__class__.__name__,
             access=Permission(),
             state=AnchorState(),
@@ -1211,18 +1211,18 @@ class ObjectArchitype(BaseArchitype, _ObjectArchitype):
 
 
 @dataclass(eq=False)
-class GenericEdge(EdgeArchitype):
+class GenericEdge(EdgeArchetype):
     """Generic Root Node."""
 
 
 @dataclass(eq=False)
-class Root(NodeArchitype):
+class Root(NodeArchetype):
     """Generic Root Node."""
 
     def __init__(self) -> None:
-        """Create node architype."""
+        """Create node archetype."""
         self.__jac__ = NodeAnchor(
-            architype=self,
+            archetype=self,
             edges=[],
             access=Permission(),
             state=AnchorState(),

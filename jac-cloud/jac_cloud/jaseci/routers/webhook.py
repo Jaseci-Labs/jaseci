@@ -14,7 +14,7 @@ from ..dtos import Expiration, GenerateKey, KeyIDs
 from ..models import Webhook
 from ..security import authenticator
 from ..utils import logger, random_string, utc_datetime, utc_timestamp
-from ...core.architype import BulkWrite
+from ...core.archetype import BulkWrite
 
 router = APIRouter(prefix="/webhook", tags=["Webhook APIs"])
 
