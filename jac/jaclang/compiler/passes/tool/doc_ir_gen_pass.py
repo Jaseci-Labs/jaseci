@@ -374,6 +374,9 @@ class DocIRGenPass(UniPass):
                 parts.append(self.space())
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
+            elif isinstance(i, uni.Token) and i.name in [Tok.KW_BY, Tok.KW_POST_INIT]:
+                parts.append(self.space())
+                parts.append(i.gen.doc_ir)
             else:
                 parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.group(self.concat(parts))
@@ -1201,7 +1204,7 @@ class DocIRGenPass(UniPass):
 
     def exit_special_var_ref(self, node: uni.SpecialVarRef) -> None:
         """Generate DocIR for special variable references."""
-        node.gen.doc_ir = self.text(node.value)
+        node.gen.doc_ir = self.text(node.value.replace("_", ""))
 
     def exit_bool(self, node: uni.Bool) -> None:
         """Generate DocIR for boolean values."""
