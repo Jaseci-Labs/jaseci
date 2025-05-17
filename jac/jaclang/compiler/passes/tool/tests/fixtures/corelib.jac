@@ -28,6 +28,7 @@ impl Memory.get_obj
 def func_name(name: str) -> str { #* blah*#
 
 def #* This is a comment *# inner_func(name: str) -> str {
+    x = y = 5; 
     print(name); # This is a comment
     if (True) {
         return name;

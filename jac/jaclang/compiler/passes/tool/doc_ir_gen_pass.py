@@ -1061,7 +1061,7 @@ class DocIRGenPass(UniPass):
                 and i.name not in [Tok.DOT, Tok.DECOR_OP]
             ):
                 indent_parts.append(i.gen.doc_ir)
-                indent_parts.append(self.tight_line() if is_assignment else self.line())
+                indent_parts.append(self.line())
             else:
                 if (
                     in_codeblock
@@ -1089,6 +1089,8 @@ class DocIRGenPass(UniPass):
                 elif is_assignment:
                     indent_parts.append(self.space())
             prev_item = i
+        if is_assignment:
+            indent_parts.pop()
         node.gen.doc_ir = self.concat(parts) if parts else self.concat(indent_parts)
 
     def exit_impl_def(self, node: uni.ImplDef) -> None:
