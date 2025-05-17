@@ -184,8 +184,9 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for function signatures."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            if i == node.params:
-                parts.pop()
+            if isinstance(i, uni.Token) and i.name == Tok.LPAREN:
+                parts.append(i.gen.doc_ir)
+            elif i == node.params:
                 parts.append(
                     self.indent(self.concat([self.tight_line(), i.gen.doc_ir]))
                 )
@@ -295,7 +296,11 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for return statements."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
+            if isinstance(i, uni.Token) and i.name == Tok.SEMI:
+                parts.pop()
+                parts.append(i.gen.doc_ir)
+            else:
+                parts.append(i.gen.doc_ir)
             parts.append(self.space())
         parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
@@ -704,8 +709,12 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for global variables."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
+            if i == node.doc:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.hard_line())
+            else:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
         parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
@@ -789,9 +798,23 @@ class DocIRGenPass(UniPass):
     def exit_atom_unit(self, node: uni.AtomUnit) -> None:
         """Generate DocIR for atom units (parenthesized expressions)."""
         parts: list[doc.DocType] = []
+        prev_item: Optional[uni.UniNode] = None
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
+            if isinstance(i, uni.Token) and i.name == Tok.LPAREN:
+                parts.append(i.gen.doc_ir)
+            elif isinstance(i, uni.Token) and i.name == Tok.RPAREN:
+                if not (
+                    prev_item
+                    and isinstance(prev_item, uni.Token)
+                    and prev_item.name == Tok.LPAREN
+                ):
+                    parts.pop()
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
+            else:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
+            prev_item = i
         parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
@@ -826,8 +849,12 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for Python inline code blocks."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
+            if i == node.doc or isinstance(i, uni.Token) and i.name == Tok.PYNLINE:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.hard_line())
+            else:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
         parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
@@ -835,8 +862,12 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for test nodes."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
+            if i == node.doc:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.hard_line())
+            else:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
         parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
@@ -961,12 +992,17 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for enum declarations."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            if isinstance(i, uni.Token) and i.name == Tok.SEMI:
+            if i == node.doc:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.hard_line())
+            elif isinstance(i, uni.Token) and i.name == Tok.SEMI:
                 parts.pop()
                 parts.append(i.gen.doc_ir)
+                parts.append(self.space())
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_sub_tag(self, node: uni.SubTag) -> None:
@@ -1024,6 +1060,7 @@ class DocIRGenPass(UniPass):
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
+        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_event_signature(self, node: uni.EventSignature) -> None:
