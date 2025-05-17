@@ -1190,7 +1190,7 @@ class DocIRGenPass(UniPass):
             parts: list[doc.DocType] = [self.text(lines[0])]
             for line in lines[1:]:
                 parts.append(self.hard_line())
-                parts.append(self.text(line))
+                parts.append(self.text(line.lstrip()))
             node.gen.doc_ir = self.group(self.concat(parts))
             return
         if is_escaped_curly:
