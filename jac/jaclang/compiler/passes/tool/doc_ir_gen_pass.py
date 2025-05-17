@@ -155,8 +155,6 @@ class DocIRGenPass(UniPass):
             elif isinstance(i, uni.Token) and i.name == Tok.SEMI:
                 parts.pop()
                 parts.append(i.gen.doc_ir)
-            elif i == node.name:
-                parts.append(i.gen.doc_ir)
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
@@ -171,6 +169,7 @@ class DocIRGenPass(UniPass):
                 parts.append(self.hard_line())
             elif i == node.name_ref:
                 parts.append(i.gen.doc_ir)
+                parts.append(self.space())
             elif isinstance(i, uni.Token) and i.name == Tok.SEMI:
                 if parts[-1] == self.space():
                     parts.pop()
@@ -537,21 +536,18 @@ class DocIRGenPass(UniPass):
 
     def exit_lambda_expr(self, node: uni.LambdaExpr) -> None:
         """Generate DocIR for lambda expressions."""
-        parts: list[doc.DocType] = [self.text("lambda")]
+        parts: list[doc.DocType] = []
         for i in node.kid:
             if isinstance(i, uni.Token):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
             elif isinstance(i, uni.Expr):
-                pass
-                # parts.append(
-                #     self.if_break(
-                #         self.indent(
-                #             self.concat([self.line(), self.text(i.gen.doc_ir)])
-                #         ),
-                #         self.text(i.gen.doc_ir),
-                #     )
-                # )
+                parts.append(
+                    self.if_break(
+                        self.indent(self.concat([self.line(), i.gen.doc_ir])),
+                        i.gen.doc_ir,
+                    )
+                )
             elif isinstance(i, uni.FuncSignature):
                 if isinstance(i.gen.doc_ir, doc.Text) and i.gen.doc_ir.text == "()":
                     parts.append(i.gen.doc_ir)
@@ -560,13 +556,6 @@ class DocIRGenPass(UniPass):
                     parts.append(i.gen.doc_ir)
             else:
                 parts.append(i.gen.doc_ir)
-
-        # Body of the lambda
-        if node.body and node.body.gen.doc_ir:
-            body_doc = node.body.gen.doc_ir
-            if body_doc:
-                # Indent the body if it breaks. Break before the body.
-                parts.append(self.indent(self.concat([self.line(), body_doc])))
 
         node.gen.doc_ir = self.group(self.concat(parts))
 
@@ -1025,7 +1014,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             if i == node.left_enc:
                 parts.append(i.gen.doc_ir)
-                indent_parts.append(self.line())
+                indent_parts.append(self.hard_line())
             elif i == node.right_enc:
                 if in_codeblock:
                     indent_parts.pop()
