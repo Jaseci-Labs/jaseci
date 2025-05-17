@@ -261,7 +261,7 @@ walker allow_other_root_access {
         if self.via_all {
             _.perm_grant(here, self.level);
         } else {
-            import from jac_cloud.core.architype {BaseAnchor}
+            import from jac_cloud.core.archetype {BaseAnchor}
             _.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
         }
     }
@@ -270,7 +270,7 @@ walker allow_other_root_access {
         if self.via_all {
             _.perm_grant(here, self.level);
         } else {
-            import from jac_cloud.core.architype {BaseAnchor}
+            import from jac_cloud.core.archetype {BaseAnchor}
             _.allow_root(here, BaseAnchor.ref(self.root_id), self.level);
         }
     }
@@ -283,7 +283,7 @@ walker disallow_other_root_access {
         if self.via_all {
             _.perm_revoke(here);
         } else {
-            import from jac_cloud.core.architype {BaseAnchor}
+            import from jac_cloud.core.archetype {BaseAnchor}
             _.disallow_root(here, BaseAnchor.ref(self.root_id));
         }
     }
@@ -292,7 +292,7 @@ walker disallow_other_root_access {
         if self.via_all {
             _.perm_revoke(here);
         } else {
-            import from jac_cloud.core.architype {BaseAnchor}
+            import from jac_cloud.core.archetype {BaseAnchor}
             _.disallow_root(here, BaseAnchor.ref(self.root_id));
         }
     }
@@ -736,7 +736,7 @@ walker purge_populated_graph {
 
 walker check_populated_graph {
     can enter with `root entry {
-        import from jac_cloud.core.architype {NodeAnchor, EdgeAnchor, WalkerAnchor}
+        import from jac_cloud.core.archetype {NodeAnchor, EdgeAnchor, WalkerAnchor}
 
         id = here.__jac__.id;
         count = NodeAnchor.Collection.count({"$or": [{"_id": id}, {"root": id}]});
@@ -750,7 +750,7 @@ walker check_populated_graph {
 walker check_memory_sync {
     has other_node_id: str;
     can enter with `root entry {
-        import from jac_cloud.core.architype {NodeAnchor}
+        import from jac_cloud.core.archetype {NodeAnchor}
         n = &(self.other_node_id);
         n.val = 4;
         report n;
@@ -830,7 +830,7 @@ walker delete_custom_object {
     has object_id: str;
 
     can enter1 with `root entry {
-        import from jac_cloud.core.architype {BaseAnchor}
+        import from jac_cloud.core.archetype {BaseAnchor}
         _.destroy(&(self.object_id));
 
         # This is similar to
@@ -1062,14 +1062,14 @@ walker walker_cron {
     has kwarg2: str = "4";
 
     can enter with `root entry {
-        import from jac_cloud.core.architype {NodeAnchor}
+        import from jac_cloud.core.archetype {NodeAnchor}
 
         n = NodeAnchor.Collection.find_one({
             "name": "TaskCounter"
         });
 
         if n {
-            report n.architype.val;
+            report n.archetype.val;
         } else {
             report None;
         }

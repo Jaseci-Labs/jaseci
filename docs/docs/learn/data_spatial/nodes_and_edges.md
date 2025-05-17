@@ -1,7 +1,7 @@
 # <span style="color: orange">Nodes and Edges</span>
 
 ## Nodes
-Nodes are architypes forming part of a graph, holding properties. They can be compared to custom classes in object-oriented programming (OOP).
+Nodes are archetypes forming part of a graph, holding properties. They can be compared to custom classes in object-oriented programming (OOP).
 
 ```jac linenums="1"
       node node_name{

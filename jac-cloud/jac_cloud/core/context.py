@@ -11,10 +11,10 @@ from fastapi import Request, WebSocket
 
 from jaclang.runtimelib.machine import JacMachine
 
-from .architype import (
+from .archetype import (
     AccessLevel,
     Anchor,
-    BaseArchitype,
+    BaseArchetype,
     NodeAnchor,
     Root,
     asdict,
@@ -130,7 +130,7 @@ class JaseciContext(JacMachine):
     @staticmethod
     def get_root() -> Root:  # type: ignore[override]
         """Get current root."""
-        return cast(Root, JaseciContext.get().root_state.architype)
+        return cast(Root, JaseciContext.get().root_state.archetype)
 
     def response(self, returns: list[Any]) -> dict[str, Any]:
         """Return serialized version of reports."""
@@ -162,7 +162,7 @@ class JaseciContext(JacMachine):
                     self.clean_response(key, dval, val)
             case Anchor():
                 cast(dict, obj)[key] = val.report()
-            case BaseArchitype():
+            case BaseArchetype():
                 cast(dict, obj)[key] = val.__jac__.report()
             case val if is_dataclass(val) and not isinstance(val, type):
                 cast(dict, obj)[key] = asdict(val)

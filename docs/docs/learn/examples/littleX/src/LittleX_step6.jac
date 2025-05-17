@@ -1,5 +1,5 @@
 import datetime;
-import from jac_cloud.core.architype { NodeAnchor }
+import from jac_cloud.core.archetype { NodeAnchor }
 import from mtllm.llms { Ollama }
 import numpy;
 import from sentence_transformers { SentenceTransformer }
@@ -130,7 +130,7 @@ walker load_user_profiles {
         self.profiles: list = [];
 
         for user in NodeAnchor.Collection.find({"name": "Profile"}) {
-            user_node = user.architype;
+            user_node = user.archetype;
             self.profiles.append(
                 {"name": user_node.username, "id": jid(user_node)}
             );

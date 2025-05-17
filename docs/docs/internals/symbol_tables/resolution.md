@@ -73,7 +73,7 @@ node Person {
 Resolution steps for `self.name`:
 1. Look up `self` in the `greet` method's scope
 2. Find it in `names_in_scope` as an implicit parameter
-3. Get the symbol table associated with `self` (the `Person` architype's symbol table)
+3. Get the symbol table associated with `self` (the `Person` archetype's symbol table)
 4. Look up `name` in the `Person` symbol table
 5. Find it in `names_in_scope` as a "has" variable
 6. Record this use of `name`
@@ -188,7 +188,7 @@ node Car:Vehicle {
 Resolution steps for `super.drive()` in `Car.drive`:
 1. Look up `super` in the `Car.drive` method's scope
 2. Find it in `names_in_scope` as an implicit variable
-3. Get the symbol table associated with `super` (the `Vehicle` architype's symbol table)
+3. Get the symbol table associated with `super` (the `Vehicle` archetype's symbol table)
 4. Look up `drive` in the `Vehicle` symbol table
 5. Find it in `names_in_scope` as a method
 6. Record this use of `drive`
@@ -196,7 +196,7 @@ Resolution steps for `super.drive()` in `Car.drive`:
 Resolution steps for `self.brand` in `Car.drive`:
 1. Look up `self` in the `Car.drive` method's scope
 2. Find it in `names_in_scope` as an implicit parameter
-3. Get the symbol table associated with `self` (the `Car` architype's symbol table)
+3. Get the symbol table associated with `self` (the `Car` archetype's symbol table)
 4. Look up `brand` in the `Car` symbol table
 5. Find it in `names_in_scope` as a "has" variable
 6. Record this use of `brand`
@@ -241,7 +241,7 @@ node Person {
 Resolution steps for `self.addr.city`:
 1. Look up `self` in the `print_city` method's scope
 2. Find it in `names_in_scope` as an implicit parameter
-3. Get the symbol table associated with `self` (the `Person` architype's symbol table)
+3. Get the symbol table associated with `self` (the `Person` archetype's symbol table)
 4. Look up `addr` in the `Person` symbol table
 5. Find it in `names_in_scope` as a "has" variable
 6. Determine the type of `addr` is `Address`
@@ -273,7 +273,7 @@ node Derived:Base {
 Resolution steps for `self.method()` in `test`:
 1. Look up `self` in the `test` method's scope
 2. Find it in `names_in_scope` as an implicit parameter
-3. Get the symbol table associated with `self` (the `Derived` architype's symbol table)
+3. Get the symbol table associated with `self` (the `Derived` archetype's symbol table)
 4. Look up `method` in the `Derived` symbol table
 5. Not found in `names_in_scope`
 6. Inherited from `Base`, find it in base class
@@ -363,7 +363,7 @@ flowchart TD
     Main[main.jac Module]
     Utils[utils.jac Module]
 
-    Main --> Person[Person Architype]
+    Main --> Person[Person Archetype]
     Main --> CreatePerson[create_person Function]
     Main --> MainFunc[main Function]
 

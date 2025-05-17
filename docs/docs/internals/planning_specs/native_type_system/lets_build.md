@@ -70,7 +70,7 @@ jaclang/
 │   ├── ...                      # Other existing compiler files
 │   ├── typemodel/               # NEW: Type system model (inspired by Pyright)
 │   │   ├── __init__.py
-│   │   ├── types.py             # Core type classes for Jac (ArchitypeType, InstanceType, CallableType, etc.)
+│   │   ├── types.py             # Core type classes for Jac (ArchetypeType, InstanceType, CallableType, etc.)
 │   │   ├── type_factory.py      # Type creation factory
 │   │   ├── type_cache.py        # Type caching
 │   │   ├── type_relations.py    # Subtyping, assignability, etc.
@@ -134,21 +134,21 @@ classDiagram
         +__str__() str
     }
 
-    class ArchitypeType { // Represents Jac architypes: object, node, edge, walker, class
+    class ArchetypeType { // Represents Jac archetypes: object, node, edge, walker, class
         +str name
         +str module
-        +ArchitypeKind kind // object, node, edge, walker, class
+        +ArchetypeKind kind // object, node, edge, walker, class
         +Dict members // For 'has' variables
         +Dict abilities // For 'can' abilities/methods
-        +List bases // Inherited architypes
+        +List bases // Inherited archetypes
         +List typeParameters // For potential future generic support
         +__eq__(other) bool
         +__hash__() int
         +__str__() str
     }
 
-    class ArchitypeInstanceType {
-        +ArchitypeType architypeType
+    class ArchetypeInstanceType {
+        +ArchetypeType archetypeType
         +Dict typeArguments // For potential future generic support
         +__eq__(other) bool
         +__hash__() int
@@ -184,8 +184,8 @@ classDiagram
     Type <|-- AnyType
     Type <|-- NoneType
     Type <|-- NeverType
-    Type <|-- ArchitypeType
-    Type <|-- ArchitypeInstanceType
+    Type <|-- ArchetypeType
+    Type <|-- ArchetypeInstanceType
     Type <|-- CallableType
     Type <|-- EnumType
     Type <|-- UnionType
@@ -202,8 +202,8 @@ class TypeCategory(Enum):
     ANY = auto()
     NONE = auto() # For Jac's null
     NEVER = auto()
-    ARCHITYPE = auto() # For Jac architypes
-    ARCHITYPE_INSTANCE = auto()
+    Archetype = auto() # For Jac archetypes
+    Archetype_INSTANCE = auto()
     CALLABLE = auto() # For Jac abilities/functions
     ENUM = auto()
     UNION = auto()
@@ -235,38 +235,38 @@ class Type:
 
 The `Type` class serves as the base for all type representations. It includes:
 
-- A `category` field that identifies the kind of type (architype, instance, union, enum, etc.)
+- A `category` field that identifies the kind of type (archetype, instance, union, enum, etc.)
 - A `flags` field for additional type properties (e.g., static, abstract - needs Jac-specific definition)
 - Equality and hash methods for efficient comparisons and storage in collections
 
-#### Implementation of Architype and Instance Types
+#### Implementation of Archetype and Instance Types
 
-Architype and instance types are fundamental to Jac's object-oriented and agent-based features:
+Archetype and instance types are fundamental to Jac's object-oriented and agent-based features:
 
 ```python
-class ArchitypeKind(Enum):
+class ArchetypeKind(Enum):
     OBJECT = auto()
     NODE = auto()
     EDGE = auto()
     WALKER = auto()
-    CLASS = auto() # Generic class-like architype
+    CLASS = auto() # Generic class-like archetype
     ENUM_CLASS = auto() # The class for an Enum
 
-class ArchitypeType(Type):
-    """Represents a Jac architype (object, node, edge, walker, class)."""
+class ArchetypeType(Type):
+    """Represents a Jac archetype (object, node, edge, walker, class)."""
 
-    def __init__(self, name: str, kind: ArchitypeKind, module: Optional[str] = None):
-        super().__init__(TypeCategory.ARCHITYPE)
+    def __init__(self, name: str, kind: ArchetypeKind, module: Optional[str] = None):
+        super().__init__(TypeCategory.Archetype)
         self.name = name
         self.kind = kind
         self.module = module
         self.members: Dict[str, Type] = {} # For 'has' variables
         self.abilities: Dict[str, CallableType] = {} # For 'can' abilities/methods
-        self.bases: List[ArchitypeType] = []
+        self.bases: List[ArchetypeType] = []
         self.type_parameters: List[Type] = [] # Placeholder for future generics
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, ArchitypeType):
+        if not isinstance(other, ArchetypeType):
             return False
         return (
             super().__eq__(other) and # Check base category
@@ -285,35 +285,35 @@ class ArchitypeType(Type):
         return f"{prefix}::{self.name}"
 
 
-class ArchitypeInstanceType(Type):
-    """Represents an instance of a Jac architype."""
+class ArchetypeInstanceType(Type):
+    """Represents an instance of a Jac archetype."""
 
-    def __init__(self, architype_type: ArchitypeType):
-        super().__init__(TypeCategory.ARCHITYPE_INSTANCE)
-        self.architype_type = architype_type
+    def __init__(self, archetype_type: ArchetypeType):
+        super().__init__(TypeCategory.Archetype_INSTANCE)
+        self.archetype_type = archetype_type
         self.type_arguments: Dict[str, Type] = {} # Placeholder for future generics
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, ArchitypeInstanceType):
+        if not isinstance(other, ArchetypeInstanceType):
             return False
-        return super().__eq__(other) and self.architype_type == other.architype_type # Compare architype_type for equality
+        return super().__eq__(other) and self.archetype_type == other.archetype_type # Compare archetype_type for equality
 
     def __hash__(self) -> int:
-        return hash((self.category, self.architype_type))
+        return hash((self.category, self.archetype_type))
 
     def __str__(self) -> str:
         if not self.type_arguments:
-            return str(self.architype_type)
+            return str(self.archetype_type)
 
         args = ", ".join(str(arg) for arg in self.type_arguments.values())
         # Jac might not have generic syntax yet, this is forward-looking
-        return f"{self.architype_type}[{args}]"
+        return f"{self.archetype_type}[{args}]"
 
-# Placeholder for EnumType, which could inherit from `ArchitypeType` or be distinct
-class EnumType(ArchitypeType): # Enums can be thought of as a special kind of architype
+# Placeholder for EnumType, which could inherit from `ArchetypeType` or be distinct
+class EnumType(ArchetypeType): # Enums can be thought of as a special kind of archetype
     """Represents a Jac enumeration type."""
     def __init__(self, name: str, module: Optional[str] = None):
-        super().__init__(name, ArchitypeKind.ENUM_CLASS, module)
+        super().__init__(name, ArchetypeKind.ENUM_CLASS, module)
         self.category = TypeCategory.ENUM # Override category
         self.enum_members: Dict[str, Type] = {} # Enum members often have an implicit or explicit value type
 
@@ -321,11 +321,11 @@ class EnumType(ArchitypeType): # Enums can be thought of as a special kind of ar
 ```
 
 Key points:
-- `ArchitypeType` represents the type of an architype itself (object, node, etc.)
-- `ArchitypeInstanceType` represents an instance of an architype.
+- `ArchetypeType` represents the type of an archetype itself (object, node, etc.)
+- `ArchetypeInstanceType` represents an instance of an archetype.
 - Both implement proper equality and hash methods for efficient comparison.
-- `ArchitypeKind` distinguishes between different kinds of architypes.
-- Placeholder for `EnumType`, which could inherit from `ArchitypeType` or be distinct.
+- `ArchetypeKind` distinguishes between different kinds of archetypes.
+- Placeholder for `EnumType`, which could inherit from `ArchetypeType` or be distinct.
 - Type arguments for generic types are included as a placeholder for future Jac features.
 
 ### Type Factory
@@ -338,8 +338,8 @@ graph TD
     A --> C[create any]
     A --> D[create none] // For Jac's null
     A --> E[create never]
-    A --> F[create architype]
-    A --> G[create architype_instance]
+    A --> F[create archetype]
+    A --> G[create archetype_instance]
     A --> H[create callable] // For Jac abilities/functions
     A --> I[create union]
     A --> L[create enum]
@@ -383,21 +383,21 @@ class TypeFactory:
         return TypeCache.get_instance().never_type
 
     @staticmethod
-    def architype_type(name: str, kind: ArchitypeKind, module: Optional[str] = None) -> ArchitypeType:
+    def archetype_type(name: str, kind: ArchetypeKind, module: Optional[str] = None) -> ArchetypeType:
         # Jac's core built-in types (int, float, str, bool, bytes) might be handled here
-        # or treated as special architypes if they have methods/abilities.
-        # For example, if "str" is a built-in architype:
+        # or treated as special archetypes if they have methods/abilities.
+        # For example, if "str" is a built-in archetype:
         if module is None and name in ["int", "float", "str", "bool", "bytes", "object"]: # TODO: Define Jac built-ins
-            # This assumes built-ins are cached as ArchitypeTypes
-            cached_builtin = TypeCache.get_instance().get_builtin_architype(name)
+            # This assumes built-ins are cached as ArchetypeTypes
+            cached_builtin = TypeCache.get_instance().get_builtin_archetype(name)
             if cached_builtin: # Ensure it has the correct kind, or handle appropriately
                 return cached_builtin
 
-        return ArchitypeType(name, kind, module)
+        return ArchetypeType(name, kind, module)
 
     @staticmethod
-    def architype_instance_type(architype_type: ArchitypeType) -> ArchitypeInstanceType:
-        return ArchitypeInstanceType(architype_type)
+    def archetype_instance_type(archetype_type: ArchetypeType) -> ArchetypeInstanceType:
+        return ArchetypeInstanceType(archetype_type)
 
     @staticmethod
     def enum_type(name: str, module: Optional[str] = None) -> EnumType:
@@ -452,7 +452,7 @@ Key features:
 - Delegates to `TypeCache` for efficient storage and reuse of type objects.
 - Implements special case handling for types like unions (e.g., flattening, Any propagation).
 - Performs normalization (e.g., flattening nested unions).
-- `architype_type` can handle creation of both user-defined and potentially built-in architypes.
+- `archetype_type` can handle creation of both user-defined and potentially built-in archetypes.
 - `callable_type` adapted for Jac's abilities/functions.
 
 ### Type Cache
@@ -477,11 +477,11 @@ class TypeCache:
     def __init__(self):
         if TypeCache._instance is not None:
             raise RuntimeError("TypeCache is a singleton, use get_instance()")
-        # Cache for built-in architype-like types (int, str, etc.)
-        self._builtin_architypes: Dict[str, ArchitypeType] = {}
+        # Cache for built-in archetype-like types (int, str, etc.)
+        self._builtin_archetypes: Dict[str, ArchetypeType] = {}
 
-        # Cache for user-defined ArchitypeTypes (keyed by module and name)
-        self._architype_types: Dict[Tuple[Optional[str], str], ArchitypeType] = {}
+        # Cache for user-defined ArchetypeTypes (keyed by module and name)
+        self._archetype_types: Dict[Tuple[Optional[str], str], ArchetypeType] = {}
 
         # Cache for EnumTypes (keyed by module and name)
         self._enum_types: Dict[Tuple[Optional[str], str], EnumType] = {}
@@ -504,38 +504,38 @@ class TypeCache:
 
     def _initialize_builtin_jac_types(self) -> None:
         """Initialize cache with common Jac built-in types."""
-        # Jac's primitive types. These are often represented as architypes.
-        # The ArchitypeKind for these would be specific, e.g., ArchitypeKind.BUILTIN_PRIMITIVE
-        # or they can use existing kinds if they behave like them (e.g. ArchitypeKind.CLASS for string methods)
+        # Jac's primitive types. These are often represented as archetypes.
+        # The ArchetypeKind for these would be specific, e.g., ArchetypeKind.BUILTIN_PRIMITIVE
+        # or they can use existing kinds if they behave like them (e.g. ArchetypeKind.CLASS for string methods)
         builtin_names_kinds = {
-            "int": ArchitypeKind.CLASS, # Assuming int has some 'class-like' properties or for consistency
-            "float": ArchitypeKind.CLASS,
-            "str": ArchitypeKind.CLASS,
-            "bool": ArchitypeKind.CLASS,
-            "bytes": ArchitypeKind.CLASS,
-            "list": ArchitypeKind.CLASS, # If list is a built-in generic type
-            "dict": ArchitypeKind.CLASS, # If dict is a built-in generic type
-            "type": ArchitypeKind.CLASS, # The type of types themselves
-            "object": ArchitypeKind.CLASS # A potential base object type for Jac architypes
+            "int": ArchetypeKind.CLASS, # Assuming int has some 'class-like' properties or for consistency
+            "float": ArchetypeKind.CLASS,
+            "str": ArchetypeKind.CLASS,
+            "bool": ArchetypeKind.CLASS,
+            "bytes": ArchetypeKind.CLASS,
+            "list": ArchetypeKind.CLASS, # If list is a built-in generic type
+            "dict": ArchetypeKind.CLASS, # If dict is a built-in generic type
+            "type": ArchetypeKind.CLASS, # The type of types themselves
+            "object": ArchetypeKind.CLASS # A potential base object type for Jac archetypes
         }
         for name, kind in builtin_names_kinds.items():
-            # Create as ArchitypeType for now. Details of their members/abilities would be defined elsewhere.
-            self._builtin_architypes[name] = ArchitypeType(name, kind, module="builtin")
+            # Create as ArchetypeType for now. Details of their members/abilities would be defined elsewhere.
+            self._builtin_archetypes[name] = ArchetypeType(name, kind, module="builtin")
 
         # `null` is represented by NoneType, `any` by AnyType, etc.
 
-    def get_builtin_architype(self, name: str) -> Optional[ArchitypeType]:
-        """Get a cached built-in Jac architype-like type."""
-        return self._builtin_architypes.get(name)
+    def get_builtin_archetype(self, name: str) -> Optional[ArchetypeType]:
+        """Get a cached built-in Jac archetype-like type."""
+        return self._builtin_archetypes.get(name)
 
-    def get_architype_type(self, name: str, kind: ArchitypeKind, module: Optional[str] = None) -> ArchitypeType:
+    def get_archetype_type(self, name: str, kind: ArchetypeKind, module: Optional[str] = None) -> ArchetypeType:
         key = (module, name)
-        if key in self._architype_types:
-            # TODO: Add consistency check for 'kind' if an architype is re-requested with a different kind
-            return self._architype_types[key]
+        if key in self._archetype_types:
+            # TODO: Add consistency check for 'kind' if an archetype is re-requested with a different kind
+            return self._archetype_types[key]
 
-        new_arch_type = ArchitypeType(name, kind, module)
-        self._architype_types[key] = new_arch_type
+        new_arch_type = ArchetypeType(name, kind, module)
+        self._archetype_types[key] = new_arch_type
         return new_arch_type
 
     def get_enum_type(self, name: str, module: Optional[str] = None) -> EnumType:
@@ -594,7 +594,7 @@ class TypeCache:
 
 Key points:
 - Implements the Singleton pattern to ensure a single cache instance for all Jac types.
-- Maintains separate caches for different Jac type categories (built-ins, architypes, enums, unions, callables).
+- Maintains separate caches for different Jac type categories (built-ins, archetypes, enums, unions, callables).
 - Uses ID-based caching for complex types like unions and callables to ensure canonical representation.
 - Pre-initializes common built-in Jac types (like `int`, `str`, `bool`, `null` via `NoneType`) for efficiency.
 - Provides getter methods that first check the cache before creating a new type instance.
@@ -615,7 +615,7 @@ graph TD
     F -->|No| G{source == NeverType?}
     G -->|Yes| E
     G -->|No| H{source and target same category?}
-    H -->|Yes| I[handle specific Jac category (Architype, Enum, Callable)]
+    H -->|Yes| I[handle specific Jac category (Archetype, Enum, Callable)]
     H -->|No| J{source == UnionType?}
     J -->|Yes| K[check all source types against target]
     J -->|No| L{target == UnionType?}
@@ -658,7 +658,7 @@ class TypeRelationship:
                 return True
             if isinstance(target, UnionType): # null is a subtype of Union{T, null}
                 return any(isinstance(t, NoneType) for t in target.types)
-            # Add rules if specific architypes are inherently nullable in Jac
+            # Add rules if specific archetypes are inherently nullable in Jac
             # Otherwise, null is not a subtype of a non-union, non-NoneType type.
             return False
 
@@ -671,24 +671,24 @@ class TypeRelationship:
                 # For now, defer to general union rules below.
                 pass # Fall through to general union handling
 
-            if isinstance(source, ArchitypeType) and isinstance(target, ArchitypeType):
-                # Check architype hierarchy (including kind compatibility if relevant in Jac)
-                if source == target: # Same architype definition
+            if isinstance(source, ArchetypeType) and isinstance(target, ArchetypeType):
+                # Check archetype hierarchy (including kind compatibility if relevant in Jac)
+                if source == target: # Same archetype definition
                     return True
 
-                # Check base architypes recursively
+                # Check base archetypes recursively
                 # This needs a cycle detection mechanism for robust implementation
                 # For now, simple recursive check:
                 for base in source.bases:
                     if TypeRelationship.is_subtype(base, target):
                         return True
-                # TODO: Consider Jac-specific rules for ArchitypeKind compatibility (e.g. node vs object)
+                # TODO: Consider Jac-specific rules for ArchetypeKind compatibility (e.g. node vs object)
                 return False
 
-            if isinstance(source, ArchitypeInstanceType) and isinstance(target, ArchitypeInstanceType):
-                # Delegate to ArchitypeType check, ignoring generics for now
+            if isinstance(source, ArchetypeInstanceType) and isinstance(target, ArchetypeInstanceType):
+                # Delegate to ArchetypeType check, ignoring generics for now
                 # With generics, type arguments would need to be checked based on variance
-                return TypeRelationship.is_subtype(source.architype_type, target.architype_type)
+                return TypeRelationship.is_subtype(source.archetype_type, target.archetype_type)
 
             if isinstance(source, EnumType) and isinstance(target, EnumType):
                 return source == target # Enums are typically subtypes of themselves only
@@ -725,7 +725,7 @@ class TypeRelationship:
             return any(TypeRelationship.is_subtype(source, t) for t in target.types)
 
         # Different type categories that aren't explicitly handled are not compatible
-        # e.g. ArchitypeInstanceType is not a subtype of CallableType unless special rules apply
+        # e.g. ArchetypeInstanceType is not a subtype of CallableType unless special rules apply
         return False
 
     @staticmethod
@@ -751,7 +751,7 @@ Key principles for Jac type relationships:
 - `Never` type is a subtype of everything.
 - `NoneType` (Jac `null`) handling for unions (representing optional types) and direct nullability.
 - Union types follow logical set operations for subtyping.
-- `ArchitypeType`s follow inheritance hierarchies defined by `bases`. Compatibility between different `ArchitypeKind`s needs definition based on Jac semantics.
+- `ArchetypeType`s follow inheritance hierarchies defined by `bases`. Compatibility between different `ArchetypeKind`s needs definition based on Jac semantics.
 - `CallableType`s (Jac abilities/functions) follow standard variance rules: contravariant in parameters, covariant in return types.
 - `EnumType`s are generally only compatible with themselves.
 - `is_assignable_to` can extend `is_subtype` with Jac-specific assignment rules if needed.
@@ -863,7 +863,7 @@ class TypeNarrower:
                     # If we want to narrow to NoneType, we need to ensure other parts of union are not falsy.
                     # Example: Union[int, NoneType]. If false, could be 0 or None. Not just None.
                     # If only NoneType makes it falsy, then it is NoneType.
-                    potential_falsy = [t for t in original_type.types if isinstance(t, NoneType) or TypeRelationship.is_subtype(t,TypeFactory.architype_instance_type(TypeFactory.architype_type("int",ArchitypeKind.CLASS))) ] # placeholder for actual falsy check
+                    potential_falsy = [t for t in original_type.types if isinstance(t, NoneType) or TypeRelationship.is_subtype(t,TypeFactory.archetype_instance_type(TypeFactory.archetype_type("int",ArchetypeKind.CLASS))) ] # placeholder for actual falsy check
                     if len(potential_falsy) == 1 and isinstance(potential_falsy[0], NoneType): # if None is the only way it can be false from the union members
                         return TypeFactory.none()
                 return original_type # Return original, too complex to simplify generally here
@@ -947,7 +947,7 @@ from jaclang.compiler.passes.uni_pass import UniPass
 # Assume other necessary imports for Jac AST nodes, SymbolTable, Type Model, Diagnostics, etc.
 # from jaclang.compiler.absyntree import AstNode (or specific node types)
 # from ..analysis.symbol_table import SymbolTable
-# from ..typemodel.types import Type, ArchitypeType, CallableType # etc.
+# from ..typemodel.types import Type, ArchetypeType, CallableType # etc.
 # from ..typemodel.type_factory import TypeFactory
 # from ..analysis.type_evaluator import TypeEvaluator
 # from ..analysis.type_narrower import TypeNarrower
@@ -1077,7 +1077,7 @@ The type evaluator is responsible for determining the types of expressions and o
 
 # from jaclang.compiler.absyntree import AstNode # Base AST node
 # from .symbol_table import SymbolTable, Symbol
-# from ..typemodel.types import Type, CallableType, ArchitypeType, ArchitypeInstanceType, AnyType, UnknownType, NoneType
+# from ..typemodel.types import Type, CallableType, ArchetypeType, ArchetypeInstanceType, AnyType, UnknownType, NoneType
 # from ..typemodel.type_factory import TypeFactory
 # from ..typemodel.type_cache import TypeCache
 # from ..utils.diagnostics import DiagnosticCollection
@@ -1103,7 +1103,7 @@ class TypeEvaluator:
         # This would use a visitor pattern, e.g., self.visit(node)
         # For simplicity, a direct mapping or if/isinstance chain:
 
-        if isinstance(node, NameAtom): # Example: Jac variable name or architype name
+        if isinstance(node, NameAtom): # Example: Jac variable name or archetype name
             return self._visit_name(node)
         elif isinstance(node, LiteralAtom): # Example: Jac int, float, str, bool, null literals
             return self._visit_literal(node)
@@ -1122,7 +1122,7 @@ class TypeEvaluator:
         return self.type_factory.unknown() # Default to Unknown or Any for unhandled nodes
 
     def _visit_name(self, node: NameAtom) -> Type: # Replace NameAtom with Jac's AST name node
-        """Determine the type of a name (variable, architype, etc.)."""
+        """Determine the type of a name (variable, archetype, etc.)."""
         name_str = node.value # Assuming node has a .value or .name attribute
         symbol = self.sym_tab.lookup(name_str, scope_uid=self.current_scope_uid)
         if not symbol:
@@ -1137,12 +1137,12 @@ class TypeEvaluator:
 
     def _visit_literal(self, node: LiteralAtom) -> Type: # Replace LiteralAtom with Jac's literal node
         # Based on Jac token types (INT, FLOAT, STRING, BOOL_TRUE/FALSE, NULL)
-        if node.is_int: return self.type_factory.architype_instance_type(self.type_cache.get_builtin_architype("int"))
-        if node.is_float: return self.type_factory.architype_instance_type(self.type_cache.get_builtin_architype("float"))
-        if node.is_string: return self.type_factory.architype_instance_type(self.type_cache.get_builtin_architype("str"))
-        if node.is_bool: return self.type_factory.architype_instance_type(self.type_cache.get_builtin_architype("bool"))
+        if node.is_int: return self.type_factory.archetype_instance_type(self.type_cache.get_builtin_archetype("int"))
+        if node.is_float: return self.type_factory.archetype_instance_type(self.type_cache.get_builtin_archetype("float"))
+        if node.is_string: return self.type_factory.archetype_instance_type(self.type_cache.get_builtin_archetype("str"))
+        if node.is_bool: return self.type_factory.archetype_instance_type(self.type_cache.get_builtin_archetype("bool"))
         if node.is_null: return self.type_factory.none()
-        # if node.is_bytes: return self.type_factory.architype_instance_type(self.type_cache.get_builtin_architype("bytes"))
+        # if node.is_bytes: return self.type_factory.archetype_instance_type(self.type_cache.get_builtin_archetype("bytes"))
         return self.type_factory.unknown()
 
     def _visit_binary_expr(self, node: BinaryExpr) -> Type:
@@ -1157,8 +1157,8 @@ class TypeEvaluator:
         if isinstance(left_type, AnyType) or isinstance(right_type, AnyType):
             return self.type_factory.any()
         if op == '+':
-            if TypeRelationship.is_subtype(left_type, self.type_cache.get_builtin_architype("int")) and \
-               TypeRelationship.is_subtype(right_type, self.type_cache.get_builtin_architype("int")):\n                return self.type_cache.get_builtin_architype("int")
+            if TypeRelationship.is_subtype(left_type, self.type_cache.get_builtin_archetype("int")) and \
+               TypeRelationship.is_subtype(right_type, self.type_cache.get_builtin_archetype("int")):\n                return self.type_cache.get_builtin_archetype("int")
             # ... other + rules
         # ... other operators ...
         self.diag.add_error(f"Operator '{op}' not supported for types '{left_type}' and '{right_type}'.", node.loc)
@@ -1169,12 +1169,12 @@ class TypeEvaluator:
         callee_type = self.get_type(node.callee)
 
         if not isinstance(callee_type, CallableType):
-            # Could be an architype instantiation (constructor call)
-            if isinstance(callee_type, ArchitypeType):
-                # This is an architype constructor call, e.g. Node(), MyObject()
+            # Could be an archetype instantiation (constructor call)
+            if isinstance(callee_type, ArchetypeType):
+                # This is an archetype constructor call, e.g. Node(), MyObject()
                 # Type check constructor arguments against __init__ if defined, or member initializers
-                # For now, return an instance of the architype
-                return self.type_factory.architype_instance_type(callee_type)
+                # For now, return an instance of the archetype
+                return self.type_factory.archetype_instance_type(callee_type)
 
 ```
 
@@ -1363,11 +1363,11 @@ Next steps for implementation would involve developing the core type model, foll
 
 ### Protocol Support (Structural Typing) for Jac
 
-While Jac may not have an explicit `protocol` keyword like Python, its type system can still support structural typing. This means an architype could be considered compatible with an expected structure if it possesses the necessary members (`has` variables) and abilities (`can` declarations) with compatible signatures, regardless of nominal inheritance.
+While Jac may not have an explicit `protocol` keyword like Python, its type system can still support structural typing. This means an archetype could be considered compatible with an expected structure if it possesses the necessary members (`has` variables) and abilities (`can` declarations) with compatible signatures, regardless of nominal inheritance.
 
 ```python
 # This is a conceptual adaptation. Jac might not have a separate ProtocolType.
-# Instead, structural compatibility can be checked directly against ArchitypeType or an ad-hoc structure.
+# Instead, structural compatibility can be checked directly against ArchetypeType or an ad-hoc structure.
 
 class HypotheticalJacProtocol:
     """Represents a structural interface for Jac type checking."""
@@ -1376,9 +1376,9 @@ class HypotheticalJacProtocol:
         self.required_members = required_members
         self.required_abilities = required_abilities
 
-    def is_structurally_compatible(self, arch_instance_type: ArchitypeInstanceType) -> bool:
-        """Check if an architype instance structurally conforms to this protocol."""
-        arch_type = arch_instance_type.architype_type
+    def is_structurally_compatible(self, arch_instance_type: ArchetypeInstanceType) -> bool:
+        """Check if an archetype instance structurally conforms to this protocol."""
+        arch_type = arch_instance_type.archetype_type
 
         # Check required members (variables from 'has' statements)
         for member_name, expected_member_type in self.required_members.items():
@@ -1401,10 +1401,10 @@ class HypotheticalJacProtocol:
 
 # In practice, instead of a HypotheticalJacProtocol class, the TypeRelationship.is_subtype
 # or is_assignable_to could be augmented to perform these structural checks when a
-# target type is, for example, an abstract architype with only ability signatures.
+# target type is, for example, an abstract archetype with only ability signatures.
 ```
 
-Jac's `KW_ABSTRACT` modifier for abilities/architypes could define implicit protocols. An architype with abstract abilities would require implementers to provide concrete versions, forming a structural contract.
+Jac's `KW_ABSTRACT` modifier for abilities/archetypes could define implicit protocols. An archetype with abstract abilities would require implementers to provide concrete versions, forming a structural contract.
 
 ### Type Guards in Jac
 
@@ -1413,13 +1413,13 @@ Jac can leverage several mechanisms for type guards, which inform the type check
 1.  **`check <expression> is <type_expression>`:** (Assuming `check` serves this role or a similar construct exists) This directly asserts the type of an expression, allowing the `TypeNarrower` to refine the type in the subsequent scope if the check passes.
 
     ```jac
-    obj: SomeArchitype | OtherArchitype | null;
+    obj: SomeArchetype | OtherArchetype | null;
 
-    check obj is SomeArchitype; // Type of obj is narrowed to SomeArchitype here
+    check obj is SomeArchetype; // Type of obj is narrowed to SomeArchetype here
     // obj.some_arch_method(); // Safe to call
 
     if check obj is not null {
-        // obj is narrowed to SomeArchitype | OtherArchitype here
+        // obj is narrowed to SomeArchetype | OtherArchetype here
     }
     ```
 
@@ -1436,8 +1436,8 @@ Jac can leverage several mechanisms for type guards, which inform the type check
             // Here, int_val is known to be of type 'int'
             std.out(int_val + 5);
         }
-        case my_node: MyNodeArchitype => {
-            // Here, my_node is known to be of type MyNodeArchitype
+        case my_node: MyNodeArchetype => {
+            // Here, my_node is known to be of type MyNodeArchetype
             my_node.node_specific_ability();
         }
     }
@@ -1561,20 +1561,20 @@ class JacCallableInferrer:
     # `get_type_from_annotation` would be part of TypeEvaluator or a shared utility
     # def evaluate_jac_annotation(self, annotation_node: AstNode, current_scope_uid: str) -> Type:
     #     # ... logic to convert Jac AST type expression (e.g., NameAtom like 'str',
-    #     # ArchitypeTypeNode, or future ListType[ElementType]) into a Type object ...
+    #     # ArchetypeTypeNode, or future ListType[ElementType]) into a Type object ...
     #     # This would use sym_tab.lookup for names, and type_factory.
     #     if isinstance(annotation_node, NameAtom):
     #         type_name = annotation_node.value
     #         # Check built-ins first
-    #         builtin_arch = self.type_evaluator.type_cache.get_builtin_architype(type_name)
+    #         builtin_arch = self.type_evaluator.type_cache.get_builtin_archetype(type_name)
     #         if builtin_arch:
-    #             return self.type_factory.architype_instance_type(builtin_arch) # e.g., str -> instance of str architype
+    #             return self.type_factory.archetype_instance_type(builtin_arch) # e.g., str -> instance of str archetype
     #
-    #         # Look up in symbol table (for user-defined architypes, enums)
+    #         # Look up in symbol table (for user-defined archetypes, enums)
     #         symbol = self.sym_tab.lookup(type_name, scope_uid=current_scope_uid)
-    #         if symbol and isinstance(symbol.type, (ArchitypeType, EnumType)):
-    #             if isinstance(symbol.type, ArchitypeType):
-    #                 return self.type_factory.architype_instance_type(symbol.type) # User-defined architype
+    #         if symbol and isinstance(symbol.type, (ArchetypeType, EnumType)):
+    #             if isinstance(symbol.type, ArchetypeType):
+    #                 return self.type_factory.archetype_instance_type(symbol.type) # User-defined archetype
     #             return symbol.type # EnumType
     #         return self.type_factory.unknown() # Or Any, or error
     #     # TODO: Handle more complex annotations if Jac supports them (e.g. generics, unions in syntax)

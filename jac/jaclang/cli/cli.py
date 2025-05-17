@@ -15,7 +15,7 @@ from jaclang.cli.cmdreg import CommandShell, cmd_registry
 from jaclang.compiler.passes.main import CompilerMode as CMode, PyastBuildPass
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.builtin import dotgen
-from jaclang.runtimelib.constructs import WalkerArchitype
+from jaclang.runtimelib.constructs import WalkerArchetype
 from jaclang.runtimelib.machine import (
     JacMachine,
     JacMachineInterface as Jac,
@@ -353,13 +353,13 @@ def enter(
         if not loaded_mod:
             print("Errors occurred while importing the module.", file=sys.stderr)
         else:
-            architype = getattr(loaded_mod, entrypoint)(*args)
+            archetype = getattr(loaded_mod, entrypoint)(*args)
 
             mach.set_entry_node(node)
-            if isinstance(architype, WalkerArchitype) and call_jac_func_with_machine(
+            if isinstance(archetype, WalkerArchetype) and call_jac_func_with_machine(
                 mach, Jac.check_read_access, mach.entry_node
             ):
-                Jac.spawn(mach.entry_node.architype, architype)
+                Jac.spawn(mach.entry_node.archetype, archetype)
 
     mach.close()
 

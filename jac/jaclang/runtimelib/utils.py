@@ -11,7 +11,7 @@ from typing import Callable, Iterator, TYPE_CHECKING
 import jaclang.compiler.unitree as uni
 
 if TYPE_CHECKING:
-    from jaclang.runtimelib.constructs import NodeAnchor, NodeArchitype
+    from jaclang.runtimelib.constructs import NodeAnchor, NodeArchetype
 
 
 @contextmanager
@@ -41,8 +41,8 @@ def collect_node_connections(
             if target:
                 connections.add(
                     (
-                        current_node.architype,
-                        target.architype,
+                        current_node.archetype,
+                        target.archetype,
                         edge_.__class__.__name__,
                     )
                 )
@@ -50,13 +50,13 @@ def collect_node_connections(
 
 
 def traverse_graph(
-    node: NodeArchitype,
+    node: NodeArchetype,
     cur_depth: int,
     depth: int,
     edge_type: list[str],
     traverse: bool,
     connections: list,
-    node_depths: dict[NodeArchitype, int],
+    node_depths: dict[NodeArchetype, int],
     visited_nodes: list,
     queue: list,
     bfs: bool,
@@ -68,17 +68,17 @@ def traverse_graph(
     for edge in node.__jac__.edges:
         is_self_loop = id(edge.source) == id(edge.target)
         is_in_edge = edge.target == node.__jac__
-        if (traverse and is_in_edge) or edge.architype.__class__.__name__ in edge_type:
+        if (traverse and is_in_edge) or edge.archetype.__class__.__name__ in edge_type:
             continue
         if is_self_loop:
             continue  # lets skip self loop for a while, need to handle it later
         elif (other_nda := edge.target if not is_in_edge else edge.source) and (
-            other_nd := other_nda.architype
+            other_nd := other_nda.archetype
         ):
             new_con = (
-                (node, other_nd, edge.architype)
+                (node, other_nd, edge.archetype)
                 if not is_in_edge
-                else (other_nd, node, edge.architype)
+                else (other_nd, node, edge.archetype)
             )
             if node in node_depths and node_depths[node] is not None:
                 if other_nd in node_depths:

@@ -86,22 +86,22 @@ flowchart TB
 
 Scopes are created for:
 - Modules
-- Architypes (object, node, edge, walker)
+- Archetypes (object, node, edge, walker)
 - Abilities (methods and functions)
 - Control structures (if, for, while, etc.)
 - Block statements
 - Lambda expressions
 - Comprehensions
 
-For example, here's how scopes are created for architypes:
+For example, here's how scopes are created for archetypes:
 
 ```python
-def enter_architype(self, node: uni.Architype) -> None:
+def enter_archetype(self, node: uni.Archetype) -> None:
     self.push_scope_and_link(node)
     assert node.parent_scope is not None
-    node.parent_scope.def_insert(node, access_spec=node, single_decl="architype")
+    node.parent_scope.def_insert(node, access_spec=node, single_decl="archetype")
 
-def exit_architype(self, node: uni.Architype) -> None:
+def exit_archetype(self, node: uni.Archetype) -> None:
     self.pop_scope()
 ```
 
@@ -132,7 +132,7 @@ sequenceDiagram
 Symbols are inserted for:
 - Global variables
 - Import statements
-- Architype declarations
+- Archetype declarations
 - Ability (method and function) declarations
 - Parameters
 - Has variables
@@ -254,7 +254,7 @@ The resulting symbol table structure:
 ```mermaid
 flowchart TD
     ModuleTable["Module SymTable
-    - Person: Symbol(ARCHITYPE)
+    - Person: Symbol(Archetype)
     - say_hi: Symbol(ABILITY)"]
 
     ModuleTable --> PersonTable["Person SymTable

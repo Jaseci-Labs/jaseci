@@ -481,7 +481,7 @@ class UniScopeNode(UniNode):
 
             fix(node)
 
-    def inherit_baseclasses_sym(self, node: Architype | Enum) -> None:
+    def inherit_baseclasses_sym(self, node: Archetype | Enum) -> None:
         """Inherit base classes symbol tables."""
         if node.base_classes:
             for base_cls in node.base_classes.items:
@@ -821,7 +821,7 @@ class NameAtom(AtomExpr, EnumBlockStmt):
         )
         if isinstance(name_of, ModulePath):
             return SemTokType.NAMESPACE, SemTokMod.DEFINITION
-        if isinstance(name_of, Architype):
+        if isinstance(name_of, Archetype):
             return SemTokType.CLASS, SemTokMod.DECLARATION
         if isinstance(name_of, Enum):
             return SemTokType.ENUM, SemTokMod.DECLARATION
@@ -1019,8 +1019,8 @@ class Module(AstDocNode, UniScopeNode):
     def get_href_path(node: UniNode) -> str:
         """Return the full path of the module that contains this node."""
         parent = node.find_parent_of_type(Module)
-        mod_list: list[Module | Architype] = []
-        if isinstance(node, (Module, Architype)):
+        mod_list: list[Module | Archetype] = []
+        if isinstance(node, (Module, Archetype)):
             mod_list.append(node)
         while parent is not None:
             mod_list.append(parent)
@@ -1442,7 +1442,7 @@ class ModuleItem(AstSymbolNode):
         return res
 
 
-class Architype(
+class Archetype(
     ArchSpec,
     AstAccessNode,
     ArchBlockStmt,
@@ -1735,19 +1735,19 @@ class Ability(
         return not self.signature or isinstance(self.signature, FuncSignature)
 
     @property
-    def method_owner(self) -> Optional[Architype | Enum]:
+    def method_owner(self) -> Optional[Archetype | Enum]:
         found = (
             self.parent.parent
             if self.parent
             and self.parent.parent
-            and isinstance(self.parent.parent, (Architype, Enum))
+            and isinstance(self.parent.parent, (Archetype, Enum))
             else None
         ) or (
             self.parent.parent.decl_link
             if self.parent
             and self.parent.parent
             and isinstance(self.parent.parent, ImplDef)
-            and isinstance(self.parent.parent.decl_link, Architype)
+            and isinstance(self.parent.parent.decl_link, Archetype)
             else None
         )
         return found
@@ -1851,7 +1851,7 @@ class FuncSignature(UniNode):
 
     @property
     def is_in_py_class(self) -> bool:
-        is_archi = self.find_parent_of_type(Architype)
+        is_archi = self.find_parent_of_type(Archetype)
         is_class = is_archi is not None and is_archi.arch_type.name == Tok.KW_CLASS
 
         return (

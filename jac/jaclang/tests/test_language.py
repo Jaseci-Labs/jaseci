@@ -883,11 +883,11 @@ class JacLanguageTests(TestCase):
             with open(bar_file_path, "w") as bar_file:
                 bar_file.write(original_content)
 
-    def test_dynamic_spawn_architype(self) -> None:
+    def test_dynamic_spawn_archetype(self) -> None:
         """Test that the walker and node can be spawned and behaves as expected."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        cli.run(self.fixture_abs_path("dynamic_architype.jac"))
+        cli.run(self.fixture_abs_path("dynamic_archetype.jac"))
 
         output = captured_output.getvalue().strip()
         output_lines = output.split("\n")
@@ -923,11 +923,11 @@ class JacLanguageTests(TestCase):
                 f"Expected '{val}' to appear 2 times, but found {len(occurrences)}.",
             )
 
-    def test_dynamic_architype_creation(self) -> None:
+    def test_dynamic_archetype_creation(self) -> None:
         """Test that the walker and node can be created dynamically."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        cli.run(self.fixture_abs_path("create_dynamic_architype.jac"))
+        cli.run(self.fixture_abs_path("create_dynamic_archetype.jac"))
 
         output = captured_output.getvalue().strip()
         # Expected outputs for spawned entities
@@ -939,7 +939,7 @@ class JacLanguageTests(TestCase):
             f"Expected '{expected_spawned_walker}' in output.",
         )
 
-    def test_dynamic_architype_creation_rel_import(self) -> None:
+    def test_dynamic_archetype_creation_rel_import(self) -> None:
         """Test that the walker and node can be created dynamically, with relative import."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
@@ -1012,12 +1012,12 @@ class JacLanguageTests(TestCase):
         self.assertIn("Hello World !", stdout_value[0])
         self.assertIn("Welcome to Jaseci!", stdout_value[1])
 
-    def test_architype_def(self) -> None:
-        """Test architype definition bug."""
+    def test_archetype_def(self) -> None:
+        """Test archetype definition bug."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(
-            self.mach, "architype_def_bug", base_path=self.fixture_abs_path("./")
+            self.mach, "archetype_def_bug", base_path=self.fixture_abs_path("./")
         )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
@@ -1215,9 +1215,7 @@ class JacLanguageTests(TestCase):
         """Test concurrency in jaclang."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        Jac.jac_import(
-            self.mach, "concurrency", base_path=self.fixture_abs_path("./")
-        )
+        Jac.jac_import(self.mach, "concurrency", base_path=self.fixture_abs_path("./"))
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
         self.assertIn("Started", stdout_value[0])

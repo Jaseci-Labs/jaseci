@@ -136,8 +136,8 @@ class JacFormatPass(UniPass):
                 self.emit_ln(node, i.gen.jac)
             else:
                 if last_element and (
-                    isinstance(i, uni.Architype)
-                    and isinstance(last_element, uni.Architype)
+                    isinstance(i, uni.Archetype)
+                    and isinstance(last_element, uni.Archetype)
                     and i.loc.first_line - last_element.loc.last_line == 2
                     and not node.gen.jac.endswith("\n\n")
                 ):
@@ -1052,7 +1052,7 @@ class JacFormatPass(UniPass):
         ) and not node.gen.jac.endswith("\n"):
             self.emit_ln(node, "")
 
-    def exit_architype(self, node: uni.Architype) -> None:
+    def exit_archetype(self, node: uni.Archetype) -> None:
         start = True
         prev_token = None
         for i in node.kid:
