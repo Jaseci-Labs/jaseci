@@ -147,7 +147,12 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for module paths."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
+            if isinstance(i, uni.Token) and i.name == Tok.KW_AS:
+                parts.append(self.space())
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
+            else:
+                parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.concat(parts)
 
     def exit_archetype(self, node: uni.Archetype) -> None:
