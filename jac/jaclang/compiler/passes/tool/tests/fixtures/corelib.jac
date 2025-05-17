@@ -577,23 +577,7 @@ with entry {
 }
 
 
-Kugesan
-  8:30 AM
-    def exit_module_code(self, node: uni.ModuleCode) -> None:
-        """Generate DocIR for module code."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            if i == node.doc:
-                parts.append(i.gen.doc_ir)
-                parts.append(self.hard_line())
-            elif isinstance(i, uni.Token):
-                parts.append(i.gen.doc_ir)
-                parts.append(self.space())
-            else:
-                parts.append(self.concat([i.gen.doc_ir]))
 
-        node.gen.doc_ir = self.group(self.concat(parts))
-8:30
 
 with entry{
 
