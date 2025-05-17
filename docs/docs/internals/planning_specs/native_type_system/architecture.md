@@ -32,7 +32,7 @@ At the core of the system is a hierarchy of classes representing Jac types. Inst
 ```mermaid
 classDiagram
     JacType <|-- PrimitiveType
-    JacType <|-- ArchitypeType
+    JacType <|-- ArchetypeType
     JacType <|-- CallableType
     JacType <|-- ContainerType
     JacType <|-- UnionType
@@ -53,10 +53,10 @@ classDiagram
         +name str
     }
 
-    class ArchitypeType {
+    class ArchetypeType {
         +name str
         +sym_tab UniScopeNode
-        +arch_node Architype
+        +arch_node Archetype
     }
 ```
 
@@ -66,7 +66,7 @@ The Type Environment manages the typing context as the compiler processes the co
 
 - Tracks variable types within lexical scopes
 - Maintains the hierarchy of scopes
-- Holds contextual information (current architype, return type expectations)
+- Holds contextual information (current archetype, return type expectations)
 - Caches type resolutions for performance
 
 ```mermaid
@@ -76,7 +76,7 @@ classDiagram
 
     class TypeEnvironment {
         +scope_stack List~Scope~
-        +current_architype ArchitypeType
+        +current_archetype ArchetypeType
         +current_callable_ret_type JacType
         +inheritance_cache Dict
         +node_to_type_map Dict

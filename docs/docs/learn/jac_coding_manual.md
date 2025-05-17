@@ -60,7 +60,7 @@ Now lets break it down!
     --8<-- "jac/examples/manual_code/circle.py::11"
     ```
 
-In this segment we observe a docstring, imports, and a global variable. In Jac docstrings look exactly like python docstrings, however docstrings can only be used as docstrings (not as comments). That means there are a limited number of places you can place them, these places are at the top of a module, and *before* the declaration of functions, methods, classes (architypes), global variable statements, module level code blocks (i.e., `with entry {}` style blocks, more on this later), and enumerations.
+In this segment we observe a docstring, imports, and a global variable. In Jac docstrings look exactly like python docstrings, however docstrings can only be used as docstrings (not as comments). That means there are a limited number of places you can place them, these places are at the top of a module, and *before* the declaration of functions, methods, classes (archetypes), global variable statements, module level code blocks (i.e., `with entry {}` style blocks, more on this later), and enumerations.
 
 Import statements are very similar to python, note that you have to denote if you are importing a python module with `import` or jac with `import`. Module paths and such are pretty much identical.
 

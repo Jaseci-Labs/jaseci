@@ -63,7 +63,7 @@ flowchart TD
     B -- No --> D{Is it a type variable?}
     D -- Yes --> E[Return TypeVariable]
     D -- No --> F{Is it in symbol table?}
-    F -- Yes --> G[Return ArchitypeType]
+    F -- Yes --> G[Return ArchetypeType]
     F -- No --> H[Report error, return Any]
 ```
 
@@ -82,9 +82,9 @@ def _resolve_name_type(self, name_node: uni.Name, env: TypeEnvironment) -> JacTy
 
     # Look up in symbol table
     sym_tab_entry = env.current_scope.sym_tab_scope.lookup(name_str)
-    if sym_tab_entry and sym_tab_entry.decl.name_of and isinstance(sym_tab_entry.decl.name_of, uni.Architype):
+    if sym_tab_entry and sym_tab_entry.decl.name_of and isinstance(sym_tab_entry.decl.name_of, uni.Archetype):
         arch_node = sym_tab_entry.decl.name_of
-        return ArchitypeType(name_str, arch_node.sym_tab, arch_node)
+        return ArchetypeType(name_str, arch_node.sym_tab, arch_node)
 
     # Not found, report error
     self.error_reporter(JacErrorCode.TYPE_ERROR_NAME_NOT_FOUND,
@@ -146,19 +146,19 @@ if isinstance(ast_node, uni.AbilityTypeHint):
     return CallableType(param_types, return_type)
 ```
 
-## Handling Architypes
+## Handling Archetypes
 
-Jac's architypes (node, edge, object, walker) require special handling:
+Jac's archetypes (node, edge, object, walker) require special handling:
 
-1. **Resolving the Architype Definition**:
-   - Locate the architype's definition in the symbol table
-   - Create an ArchitypeType with references to the symbol table and AST node
+1. **Resolving the Archetype Definition**:
+   - Locate the archetype's definition in the symbol table
+   - Create an ArchetypeType with references to the symbol table and AST node
 
 2. **Member Access Type Resolution**:
-   - When resolving expressions like `obj.field`, use the architype's symbol table
+   - When resolving expressions like `obj.field`, use the archetype's symbol table
 
 3. **Method Resolution**:
-   - When resolving method calls, find abilities in the architype's symbol table
+   - When resolving method calls, find abilities in the archetype's symbol table
 
 ## Qualified Name Resolution
 
@@ -171,7 +171,7 @@ flowchart TD
     C -- Yes --> D[Look up 'Type' in module's symbol table]
     C -- No --> E[Report error]
     D --> F{Found type?}
-    F -- Yes --> G[Return ArchitypeType]
+    F -- Yes --> G[Return ArchetypeType]
     F -- No --> H[Report error]
 ```
 
@@ -237,8 +237,8 @@ sequenceDiagram
     Resolver->>Env: get_type_variable("MyClass")
     Env-->>Resolver: Not a type variable
     Resolver->>SymTab: lookup("MyClass")
-    SymTab-->>Resolver: Symbol for MyClass (Architype)
-    Resolver->>Resolver: Create ArchitypeType for MyClass
+    SymTab-->>Resolver: Symbol for MyClass (Archetype)
+    Resolver->>Resolver: Create ArchetypeType for MyClass
     Resolver->>Resolver: Create ListType with MyClass element type
-    Resolver-->>Compiler: ListType(element_type=ArchitypeType("MyClass"))
+    Resolver-->>Compiler: ListType(element_type=ArchetypeType("MyClass"))
 ```

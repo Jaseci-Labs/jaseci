@@ -1,12 +1,55 @@
 """Jac's Key Elemental Abstractions"""
 
-import from datetime { datetime }
-import from uuid { UUID, uuid4 }
+import #* what abou this *# from datetime { datetime }
+import from uuid { UUID, uuid4 } # This is a comment
 import from jaclang.compiler.constant { EdgeDir }
-import from jaclang.plugin { Architype, ArchitypeProtocol, DSFunc, AbsRootHook, hookimpl }
+
+
+
+import from jaclang.plugin { Archetype, ArchetypeProtocol, ArchetypeProtocol3 as MyArch, DSFunc, ArchetypeProtocol, ArchetypeProtocol3, DSFunc, AbsRootHook, hookimpl }
 import jaclang.compiler.constant;
 
+import jaclang.compiler;
+
 enum AccessMode;
+def DoSomething(name: str) -> str;
+
+
+"I'm a doc"
+impl Memory.get_obj
+(caller_id: UUID, item_id: UUID, override: bool=False, doc: bool=False) -> Element {
+    ret = item_id |> self.index.get;
+    if override or (ret is not None and caller_id |> ret.__is_readable) {
+        return ret;
+    }
+}
+
+@deco
+def func_name(name: str) -> str { #* blah*#
+
+def #* This is a comment *# inner_func(name: str) -> str {
+    print(name); # This is a comment
+    if (True) {
+        return name;
+    } elif (True) {
+        return name;
+    } else {
+        return name;
+    }
+}
+return inner_func(name);
+}
+with entry {
+        name = '90';
+        enum age { days = 12  } 
+        print(f'{name}');
+        print(f"hello {f'{name.upper()}'} {name}");
+        print(f"hello{{escaped curly brace}}  {f'{age.days.to_bytes()}'} {name}");
+        print(f'{name}');
+        print(f'{name}');
+        print(f"hello{{escaped curly brace}}  {f'{name}'} {name}");
+    }
+
 
 obj Memory {
     has index: dict[UUID, Element] = {},
@@ -27,13 +70,14 @@ obj ExecutionContext {
         memory: Memory = Memory();
 
     def reset;
-    def get_root() -> Architype;
+    def get_root() -> Archetype;
 }
 
 "Global Execution Context, should be monkey patched by the user."
 glob exec_ctx = ExecutionContext();
+glob exec_ctx2 = ExecutionContext();
 
-obj Anchor(ArchitypeProtocol) {
+obj Anchor(ArchetypeProtocol) {
     has ob: object,
         ds_entry_funcs: list[DSFunc],
         ds_exit_funcs: list[DSFunc],
@@ -45,11 +89,12 @@ obj Anchor(ArchitypeProtocol) {
         ro_access: set = :> set,
         owner_id: UUID = exec_ctx.master,
         mem: Memory = exec_ctx.memory;
-
     static def on_entry(cls: type, triggers: list[type]);
     static def on_exit(cls: type, triggers: list[type]);
     def make_public_ro;
     def make_public_rw;
+
+
     def make_private;
     def is_public_ro -> bool;
     def is_public_rw -> bool;
@@ -98,7 +143,7 @@ obj Root(AbsRootHook) {
     }
 }
 
-obj GenericEdge(ArchitypeProtocol) {
+obj GenericEdge(ArchetypeProtocol) {
     has __jac__: EdgeAnchor | None = None;
 
     def postinit {
@@ -117,13 +162,13 @@ obj Master {
 
 obj JacPlugin {
     @hookimpl
-    static def bind_architype(arch: AT, arch_type: str, on_entry: list[str], on_exit: list[str]) -> bool;
+    static def bind_archetype(arch: AT, arch_type: str, on_entry: list[str], on_exit: list[str]) -> bool;
     @hookimpl
-    static def get_root() -> Architype;
+    static def get_root() -> Archetype;
     @hookimpl
-    static def build_edge(edge_spec: tuple[int, Optional[tuple], Optional[tuple]]) -> Architype;
+    static def build_edge(edge_spec: tuple[int, Optional[tuple], Optional[tuple]]) -> Archetype;
     @hookimpl
-    static def connect(left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Architype;
+    static def connect(left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Archetype;
     @hookimpl
     static def visit_node(walker_obj: Any, expr: Any) -> bool;
 }
@@ -131,8 +176,7 @@ obj JacPlugin {
 impl Memory.get_obj
 (caller_id: UUID, item_id: UUID, override: bool=False) -> Element {
     ret = item_id |> self.index.get;
-    if override
-        or (ret is not None and caller_id |> ret.__is_readable) {
+    if override or (ret is not None and caller_id |> ret.__is_readable) {
         return ret;
     }
 }
@@ -235,9 +279,7 @@ impl Anchor.is_readable
 
 impl Anchor.is_writable
 (caller_id: UUID) -> bool {
-    return (caller_id == self.owner_id
-        or |> self.is_public_write
-        or caller_id in self.rw_access);
+    return (caller_id == self.owner_id or |> self.is_public_write or caller_id in self.rw_access);
 }
 
 impl Anchor.give_access
@@ -416,7 +458,7 @@ impl WalkerAnchor.__call__
     self.ignores = [];
 }
 
-impl JacPlugin.bind_architype
+impl JacPlugin.bind_archetype
 (arch: AT, arch_type: str, on_entry: list[DSFunc], on_exit: list[DSFunc]) -> bool {
     match arch_type {
         case 'obj':
@@ -454,7 +496,7 @@ impl JacPlugin.get_root() -> None {
 }
 
 impl JacPlugin.build_edge
-(edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Architype {
+(edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Archetype {
     if (not edge_spec[1]) {
         edg_type = GenericEdge;
     } else {
@@ -466,7 +508,7 @@ impl JacPlugin.build_edge
 }
 
 impl JacPlugin.connect
-(left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Architype {
+(left: T, right: T, edge_spec: tuple[int, Optional[type], Optional[tuple]]) -> Archetype {
     edg = JacPlugin.build_edge(edge_spec);
     left.connect_node(right.__jac__, edg.__jac__);
 }
@@ -490,4 +532,112 @@ test a2 {
 test a3 {
     c = Circle(RAD);
     check assertEqual(c.shape_type, ShapeType.CIRCLE);
+}
+with entry{
+
+    # try and finally stmt
+    try{
+        print("try block");
+    }finally{
+        print("finally block");
+    }
+
+
+
+    #  try except else finally
+    '''Docstring for the try block''';
+    try{
+        print("try block");
+    }
+    # except{
+    #     print("except block");
+    # }
+
+    # except_def: KW_EXCEPT expression (KW_AS NAME)? code_block
+    # is there any intention why here we compulsorily need to write type of exception in
+
+    except exception{
+        print("Hi from except block");
+        print("Hello from except block");
+    }
+    else{
+        print("Hi from else block");
+        print("Hello from else block");
+    }
+    finally{
+        print("Hi from finally block");
+        print("Hello finally block");
+    }
+
+
+}
+
+with entry{
+    root spawn W();
+    print([root-->-->(`?A)]);
+    print([root--> --> -->(`?A)]);
+}
+
+"""
+Object instantiation and method invocation occur within the with entry { ... } block.
+"""
+with entry {
+    game = GuessTheNumberGame();
+    game.play();
+}
+
+
+
+
+with entry{
+
+    # try and finally stmt
+    try{
+        print("try block");
+    }finally{
+        print("finally block");
+    }
+
+
+
+    #  try except else finally
+    '''Doc string of try except else finally.''';
+    try{
+        print("try block");
+    }
+    # except{
+    #     print("except block");
+    # }
+
+    # except_def: KW_EXCEPT expression (KW_AS NAME)? code_block
+    # is there any intention why here we compulsorily need to write type of exception in
+
+    except exception{
+        ;
+        ;
+    }
+    else{
+        ;
+        ;
+    }
+    finally{
+        ;
+        ;
+    }
+
+
+}
+
+with entry{
+    root spawn W();
+    print([root-->-->(`?A)]);
+    print([root--> --> -->(`?A)]);
+}
+
+"""
+Object instantiation and method invocation occur within the with entry { ... } block.
+"""
+with entry {
+    game = GuessTheNumberGame();
+    game.play();
 }

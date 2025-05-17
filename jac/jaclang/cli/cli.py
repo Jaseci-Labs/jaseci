@@ -15,7 +15,7 @@ from jaclang.cli.cmdreg import CommandShell, cmd_registry
 from jaclang.compiler.passes.main import CompilerMode as CMode, PyastBuildPass
 from jaclang.compiler.program import JacProgram
 from jaclang.runtimelib.builtin import dotgen
-from jaclang.runtimelib.constructs import WalkerArchitype
+from jaclang.runtimelib.constructs import WalkerArchetype
 from jaclang.runtimelib.machine import (
     JacMachine,
     JacMachineInterface as Jac,
@@ -30,7 +30,9 @@ Jac.setup()
 
 
 @cmd_registry.register
-def format(path: str, outfile: str = "", to_screen: bool = False) -> None:
+def format(
+    path: str, outfile: str = "", to_screen: bool = False, new: bool = False
+) -> None:
     """Format .jac files with improved code style.
 
     Applies consistent formatting to Jac code files to improve readability and
@@ -40,6 +42,7 @@ def format(path: str, outfile: str = "", to_screen: bool = False) -> None:
         path: Path to a .jac file or directory containing .jac files
         outfile: Optional output file path (when formatting a single file)
         to_screen: Print formatted code to stdout instead of writing to file
+        new: Use new docir format (default: False)
 
     Examples:
         jac format myfile.jac
@@ -66,7 +69,7 @@ def format(path: str, outfile: str = "", to_screen: bool = False) -> None:
         if not path_obj.exists():
             print(f"Error: File '{path}' does not exist.", file=sys.stderr)
             return
-        formatted_code = JacProgram.jac_file_formatter(str(path_obj))
+        formatted_code = JacProgram.jac_file_formatter(str(path_obj), docir=new)
         write_formatted_code(formatted_code, str(path_obj))
         return
 
@@ -350,13 +353,13 @@ def enter(
         if not loaded_mod:
             print("Errors occurred while importing the module.", file=sys.stderr)
         else:
-            architype = getattr(loaded_mod, entrypoint)(*args)
+            archetype = getattr(loaded_mod, entrypoint)(*args)
 
             mach.set_entry_node(node)
-            if isinstance(architype, WalkerArchitype) and call_jac_func_with_machine(
+            if isinstance(archetype, WalkerArchetype) and call_jac_func_with_machine(
                 mach, Jac.check_read_access, mach.entry_node
             ):
-                Jac.spawn(mach.entry_node.architype, architype)
+                Jac.spawn(mach.entry_node.archetype, archetype)
 
     mach.close()
 

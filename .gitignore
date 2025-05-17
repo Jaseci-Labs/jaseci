@@ -47,6 +47,7 @@ codegen_output*
 node_modules
 out.dot
 out.txt
+demo.jac
 
 # Mypy files #
 .mypy_cache*

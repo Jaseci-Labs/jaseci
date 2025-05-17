@@ -277,7 +277,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             """Grammar rule.
 
             toplevel_stmt: import_stmt
-                | architype
+                | archetype
                 | ability
                 | global_var
                 | free_code
@@ -495,11 +495,11 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 kid=self.cur_nodes,
             )
 
-        def architype(self, _: None) -> uni.ArchSpec | uni.Enum:
+        def archetype(self, _: None) -> uni.ArchSpec | uni.Enum:
             """Grammar rule.
 
-            architype: decorators? architype_decl
-                    | architype_def
+            archetype: decorators? archetype_decl
+                    | archetype_def
                     | enum
             """
             archspec: uni.ArchSpec | uni.Enum | None = None
@@ -515,10 +515,10 @@ class JacParser(Transform[uni.Source, uni.Module]):
             if is_async and isinstance(archspec, uni.ArchSpec):
                 archspec.is_async = True
                 archspec.add_kids_left([is_async])
-                assert isinstance(archspec, uni.Architype)
+                assert isinstance(archspec, uni.Archetype)
                 if archspec.arch_type.name != Tok.KW_WALKER:
                     self.parse_ref.log_error(
-                        f"Expected async architype to be walker, but got {archspec.arch_type.value}"
+                        f"Expected async archetype to be walker, but got {archspec.arch_type.value}"
                     )
             return archspec
 
@@ -577,10 +577,10 @@ class JacParser(Transform[uni.Source, uni.Module]):
             )
             return tail
 
-        def architype_decl(self, _: None) -> uni.ArchSpec:
+        def archetype_decl(self, _: None) -> uni.ArchSpec:
             """Grammar rule.
 
-            architype_decl: arch_type access_tag? NAME inherited_archs? (member_block | SEMI)
+            archetype_decl: arch_type access_tag? NAME inherited_archs? (member_block | SEMI)
             """
             arch_type = self.consume(uni.Token)
             access = self.match(uni.SubTag)
@@ -594,7 +594,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     sub_list2 or sub_list1
                 )  # if sub_list2 is None then body is sub_list1
                 inh = sub_list2 and sub_list1  # if sub_list2 is None then inh is None.
-            return uni.Architype(
+            return uni.Archetype(
                 arch_type=arch_type,
                 name=name,
                 access=access,
@@ -841,11 +841,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
                 return uni.FuncSignature(
                     params=params,
                     return_type=return_spec,
-                    kid=(
-                        self.cur_nodes
-                        if len(self.cur_nodes)
-                        else [uni.EmptyToken(uni.Source("", self.parse_ref.mod_path))]
-                    ),
+                    kid=self.cur_nodes,
                 )
 
         def func_decl_params(self, _: None) -> uni.SubNodeList[uni.ParamVar]:
@@ -900,7 +896,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def member_stmt(self, _: None) -> uni.ArchBlockStmt:
             """Grammar rule.
 
-            member_stmt: STRING? (py_code_block | ability | architype | impl_def | has_stmt | free_code)
+            member_stmt: STRING? (py_code_block | ability | archetype | impl_def | has_stmt | free_code)
             """
             doc = self.match(uni.String)
             ret = self.consume(uni.ArchBlockStmt)
@@ -1038,7 +1034,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             statement: import_stmt
                     | ability
-                    | architype
+                    | archetype
                     | if_stmt
                     | while_stmt
                     | for_stmt
@@ -2402,7 +2398,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
 
             def name_to_assign(name_consume: uni.NameAtom) -> uni.Assignment:
                 target = uni.SubNodeList[uni.Expr](
-                    items=[name_consume], delim=None, kid=[name_consume]
+                    items=[name_consume], delim=Tok.EQ, kid=[name_consume]
                 )
                 return uni.Assignment(
                     target=target, value=None, type_tag=None, kid=[target]

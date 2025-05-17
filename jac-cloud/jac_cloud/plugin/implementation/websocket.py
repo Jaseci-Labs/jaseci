@@ -23,7 +23,7 @@ from pydantic import ValidationError
 
 from starlette.websockets import WebSocketDisconnect, WebSocketState
 
-from ...core.architype import NodeAnchor, NodeArchitype, WalkerAnchor
+from ...core.archetype import NodeAnchor, NodeArchetype, WalkerAnchor
 from ...core.context import JaseciContext, PUBLIC_ROOT
 from ...jaseci.dtos import (
     ChangeUserEvent,
@@ -192,7 +192,7 @@ class WebSocketManager:
                     ).model_dump_json(),
                 )
 
-    def notify_users(self, roots: Iterable[NodeArchitype], data: dict) -> None:
+    def notify_users(self, roots: Iterable[NodeArchetype], data: dict) -> None:
         """Notify clients associated with target root."""
         if roots:
             root_ids: list[str] = []
@@ -251,7 +251,7 @@ def walker_execution(websocket: WebSocket, event: WalkerEvent) -> dict:
 
         wlk: WalkerAnchor = walker(**payload).__jac__
         if Jac.check_read_access(jctx.entry_node):
-            Jac.spawn(wlk.architype, jctx.entry_node.architype)
+            Jac.spawn(wlk.archetype, jctx.entry_node.archetype)
             jctx.close()
 
             if jctx.custom is not MISSING:

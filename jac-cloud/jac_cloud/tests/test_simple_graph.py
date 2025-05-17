@@ -957,7 +957,7 @@ class SimpleGraphTest(JacCloudTest):
                         "name": "walker_cron",
                         "root": ObjectId("000000000000000000000000"),
                         "access": {"all": "NO_ACCESS", "roots": {"anchors": {}}},
-                        "architype": {
+                        "archetype": {
                             "arg1": 1,
                             "arg2": "2",
                             "kwarg1": 30,
@@ -991,7 +991,7 @@ class SimpleGraphTest(JacCloudTest):
                     "name": "walker_cron",
                     "root": ObjectId("000000000000000000000000"),
                     "access": {"all": "NO_ACCESS", "roots": {"anchors": {}}},
-                    "architype": {"arg1": 1, "arg2": "2", "kwarg1": 30, "kwarg2": "40"},
+                    "archetype": {"arg1": 1, "arg2": "2", "kwarg1": 30, "kwarg2": "40"},
                     "schedule": {
                         "status": "COMPLETED",
                         "root_id": None,
@@ -1039,7 +1039,7 @@ class SimpleGraphTest(JacCloudTest):
                 "name": "async_walker",
                 "root": ObjectId(self.users[0]["user"]["root_id"]),
                 "access": {"all": "NO_ACCESS", "roots": {"anchors": {}}},
-                "architype": {
+                "archetype": {
                     "arg1": 0,
                     "arg2": "string",
                     "kwarg1": 3,
