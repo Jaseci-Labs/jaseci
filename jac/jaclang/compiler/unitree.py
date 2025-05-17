@@ -868,7 +868,7 @@ class SubTag(UniNode, Generic[T]):
         tag: T,
         kid: Sequence[UniNode],
     ) -> None:
-        self.tag = tag
+        self.tag: T = tag
         UniNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -892,7 +892,7 @@ class SubNodeList(UniNode, Generic[T]):
         left_enc: Optional[Token] = None,
         right_enc: Optional[Token] = None,
     ) -> None:
-        self.items = items
+        self.items: list[T] = items
         self.delim = delim
         self.left_enc = left_enc
         self.right_enc = right_enc
