@@ -895,13 +895,25 @@ class DocIRGenPass(UniPass):
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_match_stmt(self, node: uni.MatchStmt) -> None:
-        """Generate DocIR for match statements."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        parts.pop()
-        node.gen.doc_ir = self.group(self.concat(parts))
+            """Generate DocIR for match statements."""
+            parts: list[doc.DocType] = []
+            match_parts: list[doc.DocType] = [self.hard_line()]
+            for i in node.kid:
+                if i == node.target:
+                    parts.append(i.gen.doc_ir)
+                    parts.append(self.space())
+                elif isinstance(i, uni.MatchCase):
+                    match_parts.append(i.gen.doc_ir)
+                    match_parts.append(self.hard_line())
+                elif isinstance(i, uni.Token) and i.name == Tok.RBRACE:
+                    parts.append(self.indent(self.concat(match_parts)))
+                    parts.append(i.gen.doc_ir)
+                    parts.append(self.space())
+                else:
+                    parts.append(i.gen.doc_ir)
+                    parts.append(self.space())
+            parts.pop()
+            node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_match_case(self, node: uni.MatchCase) -> None:
         """Generate DocIR for match cases."""
