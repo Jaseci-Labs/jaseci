@@ -991,10 +991,12 @@ class Module(AstDocNode, UniScopeNode):
 
     def format(self) -> str:
         """Get all sub nodes of type."""
-        from jaclang.compiler.passes.tool import JacFormatPass
+        from jaclang.compiler.passes.tool import DocIRGenPass, JacFormatPass
         from jaclang.compiler.program import JacProgram
 
-        return JacFormatPass(ir_in=self, prog=JacProgram()).ir_out.gen.jac
+        return JacFormatPass(
+            DocIRGenPass(ir_in=self, prog=JacProgram()).ir_out, prog=JacProgram()
+        ).ir_out.gen.jac
 
     def unparse(self) -> str:
         super().unparse()
