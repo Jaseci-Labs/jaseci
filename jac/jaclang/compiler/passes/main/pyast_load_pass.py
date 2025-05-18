@@ -1837,7 +1837,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         )
         return ret
 
-    def proc_named_expr(self, node: py_ast.NamedExpr) -> uni.BinaryExpr:
+    def proc_named_expr(self, node: py_ast.NamedExpr) -> uni.AtomUnit:
         """Process python node.
 
         class NamedExpr(expr):
@@ -1847,11 +1847,20 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         target = self.convert(node.target)
         value = self.convert(node.value)
         if isinstance(value, uni.Expr) and isinstance(target, uni.Name):
-            return uni.BinaryExpr(
+            op = self.operator(Tok.WALRUS_EQ, ":=")
+            expr = uni.BinaryExpr(
                 left=target,
-                op=self.operator(Tok.WALRUS_EQ, ":="),
+                op=op,
                 right=value,
-                kid=[target, value],
+                kid=[target, op, value],
+            )
+            return uni.AtomUnit(
+                value=expr,
+                kid=[
+                    self.operator(Tok.RPAREN, "("),
+                    expr,
+                    self.operator(Tok.LPAREN, ")"),
+                ],
             )
         else:
             raise self.ice()
