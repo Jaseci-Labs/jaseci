@@ -183,9 +183,6 @@ class DocIRGenPass(UniPass):
             if i in [node.doc, node.decorators]:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
-            elif i == node.name:
-                parts.append(i.gen.doc_ir)
-                parts.append(self.space())
             elif isinstance(i, uni.Token) and i.name == Tok.SEMI:
                 parts.pop()
                 parts.append(i.gen.doc_ir)
@@ -516,9 +513,6 @@ class DocIRGenPass(UniPass):
             if isinstance(i, uni.Expr):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.line())  # Potential break
-            elif isinstance(i, uni.Token):
-                parts.append(i.gen.doc_ir)
-                parts.append(self.space())
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
@@ -706,11 +700,9 @@ class DocIRGenPass(UniPass):
             if i == node.doc:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
-            elif isinstance(i, uni.Token) and i.name == Tok.SEMI:
-                parts.pop()
-                parts.append(i.gen.doc_ir)
-                parts.append(self.space())
             else:
+                if isinstance(i, uni.Token) and i.name == Tok.SEMI:
+                    parts.pop()
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
         node.gen.doc_ir = self.finalize(parts)
@@ -752,11 +744,8 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             if isinstance(i, uni.Token) and i.name == Tok.SEMI:
                 parts.pop()
-                parts.append(i.gen.doc_ir)
-                parts.append(self.space())
-            else:
-                parts.append(i.gen.doc_ir)
-                parts.append(self.space())
+            parts.append(i.gen.doc_ir)
+            parts.append(self.space())
         node.gen.doc_ir = self.finalize(parts)
 
     def exit_ignore_stmt(self, node: uni.IgnoreStmt) -> None:
