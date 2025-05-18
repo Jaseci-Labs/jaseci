@@ -1832,13 +1832,15 @@ class FuncSignature(UniNode):
 
     def normalize(self, deep: bool = False) -> bool:
         res = True
+        is_lambda = self.parent and isinstance(self.parent, LambdaExpr)
         if deep:
             res = self.params.normalize(deep) if self.params else res
             res = res and self.return_type.normalize(deep) if self.return_type else res
-        new_kid: list[UniNode] = [self.gen_token(Tok.LPAREN)]
+        new_kid: list[UniNode] = [self.gen_token(Tok.LPAREN)] if not is_lambda else []
         if self.params:
             new_kid.append(self.params)
-        new_kid.append(self.gen_token(Tok.RPAREN))
+        if not is_lambda:
+            new_kid.append(self.gen_token(Tok.RPAREN))
         if self.return_type:
             new_kid.append(self.gen_token(Tok.RETURN_HINT))
             new_kid.append(self.return_type)
@@ -2422,10 +2424,7 @@ class WithStmt(AstAsyncNode, CodeBlockStmt, UniScopeNode):
             new_kid.append(self.gen_token(Tok.KW_ASYNC))
         new_kid.append(self.gen_token(Tok.KW_WITH))
         new_kid.append(self.exprs)
-        new_kid.append(self.gen_token(Tok.LBRACE))
         new_kid.append(self.body)
-        new_kid.append(self.gen_token(Tok.RBRACE))
-
         self.set_kids(nodes=new_kid)
         return res
 
@@ -2995,11 +2994,7 @@ class LambdaExpr(Expr, UniScopeNode):
         new_kid: list[UniNode] = [self.gen_token(Tok.KW_LAMBDA)]
         if self.signature:
             new_kid.append(self.signature)
-        new_kid += [
-            self.gen_token(Tok.COLON),
-            self.body,
-            self.gen_token(Tok.SEMI),
-        ]
+        new_kid += [self.gen_token(Tok.COLON), self.body]
         self.set_kids(nodes=new_kid)
         return res
 
