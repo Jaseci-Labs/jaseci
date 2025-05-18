@@ -841,13 +841,13 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for Python inline code blocks."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            if i == node.doc:
-                parts.append(i.gen.doc_ir)
-                parts.append(self.hard_line())
-            elif isinstance(i, uni.Token) and i.name == Tok.PYNLINE:
-                parts.append(self.text("::py::"))
-                parts.append(i.gen.doc_ir)
-                parts.append(self.text("::py::"))
+            if i == node.doc or isinstance(i, uni.Token) and i.name == Tok.PYNLINE:
+                if isinstance(i, uni.Token):
+                    parts.extend(
+                        [self.text("::py::"), i.gen.doc_ir, self.text("::py::")]
+                    )
+                else:
+                    parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
             else:
                 parts.append(i.gen.doc_ir)
