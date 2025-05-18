@@ -32,6 +32,14 @@ y = 20;
 print(x + y);
 ```
 
+<code-block>
+with entry {
+    x = 10;
+    y = 20;
+    print(x + y);
+}
+</code-block>
+
 ## Control Structures
 
 Control structures in Jac are defined using curly braces `{}` and not indentation.

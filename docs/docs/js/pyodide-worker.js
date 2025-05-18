@@ -14,7 +14,7 @@ await micropip.install("jaclang==0.7.0")
         self.postMessage({ type: "ready" });
     }
 
-    if (type === "run" && pyodide) {
+    if (pyodide) {
         try {
             const jacCode = JSON.stringify(code);
             const output = await pyodide.runPythonAsync(`
