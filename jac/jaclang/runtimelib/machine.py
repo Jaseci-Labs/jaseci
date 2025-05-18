@@ -790,7 +790,7 @@ class JacBasics:
                 return lang
             target_jac = actual_parts[-1] + ".jac"
             target_py = actual_parts[-1] + ".py"
-            for root_dir, _, files in os.walk(jacpath):
+            for _, _, files in os.walk(jacpath):
                 if target_jac in files:
                     return "jac"
                 if target_py in files:
