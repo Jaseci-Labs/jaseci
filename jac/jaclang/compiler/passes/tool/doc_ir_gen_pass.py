@@ -230,8 +230,6 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_assignment(self, node: uni.Assignment) -> None:
@@ -586,8 +584,6 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_edge_op_ref(self, node: uni.EdgeOpRef) -> None:
@@ -595,8 +591,6 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_index_slice(self, node: uni.IndexSlice) -> None:
@@ -667,8 +661,6 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_delete_stmt(self, node: uni.DeleteStmt) -> None:
@@ -685,8 +677,6 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_report_stmt(self, node: uni.ReportStmt) -> None:
@@ -769,8 +759,13 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for visit statements."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
+            if isinstance(i, uni.Token) and i.name == Tok.SEMI:
+                parts.pop()
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
+            else:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
         parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
@@ -1067,7 +1062,8 @@ class DocIRGenPass(UniPass):
                 if in_codeblock:
                     indent_parts.pop()
                 parts.append(self.indent(self.concat(indent_parts)))
-                parts.append(self.line())
+                if prev_item != node.left_enc:
+                    parts.append(self.line())
                 parts.append(i.gen.doc_ir)
             elif (
                 isinstance(i, uni.Token)
