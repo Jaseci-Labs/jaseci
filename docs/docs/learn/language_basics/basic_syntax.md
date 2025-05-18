@@ -15,6 +15,13 @@ Every statement in Jac ends with a semicolon `;`.
 print("Hello, Jac!");
 ```
 
+<code-block>
+with entry {
+    print("Hello, Jac!");
+}
+</code-block>
+
+
 ## Variables
 
 Variable declaration and assignment remain identical to Python though its not the line break that signifies the end of a statement, it's the semicolon.
