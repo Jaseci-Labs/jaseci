@@ -1229,3 +1229,21 @@ class JacLanguageTests(TestCase):
             "Value: -1\nValue: 0\nValue: 1\nValue: 2\nValue: 3\nValue: 4"
             "\nValue: 5\nValue: 6\nValue: 7\nFinal Value: 8\nDone walking.\n",
         )
+
+    def test_py_namedexpr(self) -> None:
+        """Ensure NamedExpr nodes are converted to AtomUnit."""
+        from jaclang.compiler.passes.main import PyastBuildPass
+        import jaclang.compiler.unitree as uni
+        import ast as py_ast
+
+        py_out_path = os.path.join(self.fixture_abs_path("./"), "py_namedexpr.py")
+        with open(py_out_path) as f:
+            file_source = f.read()
+            output = PyastBuildPass(
+                ir_in=uni.PythonModuleAst(
+                    py_ast.parse(file_source),
+                    orig_src=uni.Source(file_source, py_out_path),
+                ),
+                prog=JacProgram(),
+            ).ir_out.unparse()
+        self.assertIn("(x := 10)", output)
