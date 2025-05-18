@@ -81,7 +81,7 @@ class DocIRGenPass(UniPass):
     def is_one_line(self, node: uni.UniNode) -> bool:
         """Check if the node is a one line node."""
         kid = [i for i in node.kid if not isinstance(i, uni.CommentToken)]
-        return kid[0].loc.first_line == kid[-1].loc.last_line
+        return bool(kid) and kid[0].loc.first_line == kid[-1].loc.last_line
 
     def has_gap(self, prev_kid: uni.UniNode, curr_kid: uni.UniNode) -> bool:
         """Check if there is a gap between the previous and current node."""
@@ -185,7 +185,8 @@ class DocIRGenPass(UniPass):
                 parts.append(self.hard_line())
             elif i == node.name_ref:
                 parts.append(i.gen.doc_ir)
-                parts.append(self.space())
+                if not node.signature:
+                    parts.append(self.space())
             elif isinstance(i, uni.Token) and i.name == Tok.SEMI:
                 parts.pop()
                 parts.append(i.gen.doc_ir)
@@ -891,6 +892,8 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for check statements."""
         parts: list[doc.DocType] = []
         for i in node.kid:
+            if isinstance(i, uni.Token) and i.name == Tok.SEMI:
+                parts.pop()
             parts.append(i.gen.doc_ir)
             parts.append(self.space())
         parts.pop()
