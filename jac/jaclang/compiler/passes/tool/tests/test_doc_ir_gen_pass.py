@@ -19,13 +19,11 @@ class DocIrGenPassTests(TestCase, AstSyncTestMixin):
     def test_corelib_fmt(self) -> None:
         """Parse micro jac file."""
         code_gen_format = JacProgram.jac_file_formatter(
-            self.fixture_abs_path("corelib.jac"), docir=True
-        )
+            self.fixture_abs_path("corelib.jac"))
         print(code_gen_format)
 
     def test_circle_fmt(self) -> None:
         """Parse micro jac file."""
         code_gen_format = JacProgram.jac_file_formatter(
-            self.examples_abs_path("manual_code/circle.jac"), docir=True
-        )
+            self.examples_abs_path("manual_code/circle.jac"))
         print(code_gen_format)

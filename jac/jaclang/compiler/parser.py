@@ -738,8 +738,17 @@ class JacParser(Transform[uni.Source, uni.Module]):
                         and dec.sym_name == "staticmethod"
                         and isinstance(ability, (uni.Ability))
                     ):
-                        ability.is_static = True
+                        static_kw = ability.gen_token(Tok.KW_STATIC)
+                        static_kw.line_no = dec.loc.first_line
+                        static_kw.c_start = dec.loc.col_start
+                        static_kw.c_end = static_kw.c_start + len(static_kw.name)
                         decorators.items.remove(dec)  # noqa: B038
+                        if not ability.is_static:
+                            ability.is_static = True
+                            if not ability.is_override:
+                                ability.add_kids_left([static_kw])
+                            else:
+                                ability.insert_kids_at_pos([static_kw], 1)
                         break
                 if decorators.items:
                     ability.decorators = decorators

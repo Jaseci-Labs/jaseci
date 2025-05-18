@@ -539,9 +539,9 @@ class JacLanguageTests(TestCase):
         self.assertIn("assert x == 5 , 'x should be equal to 5' ;", output)
         self.assertIn("if not x == y {", output)
         self.assertIn("def greet2(**kwargs: Any) {", output)
-        self.assertIn("squares_dict = {x: (x ** 2)  for x in numbers};", output)
+        self.assertIn("squares_dict = { x : (x ** 2) for x in numbers };", output)
         self.assertIn(
-            '\n\n"""Say hello"""\n@ my_decorator \n def say_hello() {\n\n', output
+            '\n\n"""Say hello"""\n@ my_decorator\n\n def say_hello() {', output
         )
 
     def test_pyfunc_2(self) -> None:
@@ -560,10 +560,12 @@ class JacLanguageTests(TestCase):
                 ),
                 prog=JacProgram(),
             ).ir_out.unparse()
-        self.assertIn("class X {\n    with entry {\n\n        a_b = 67;", output)
+        self.assertIn(
+            "class X {\n    \n    with entry {\n        \n        a_b = 67;", output
+        )
         self.assertIn("br = b'Hello\\\\\\\\nWorld'", output)
-        self.assertIn("class Circle {\n    def init(radius: float", output)
-        self.assertIn("<>node = 90;    \n    print(<>node) ;\n}\n", output)
+        self.assertIn("class Circle {\n    \n    def init(radius: float", output)
+        self.assertIn("<>node = 90;\n    \n\n    print(<>node);\n", output)
 
     def test_pyfunc_3(self) -> None:
         """Test py ast to Jac ast conversion."""
@@ -581,10 +583,10 @@ class JacLanguageTests(TestCase):
                 ),
                 prog=JacProgram(),
             ).ir_out.unparse()
-        self.assertIn("if 0 <= x<= 5 {", output)
+        self.assertIn("if 0 <= x <= 5 {", output)
         self.assertIn("  case _:\n", output)
-        self.assertIn(" case Point(x = int(a), y = 0):\n", output)
-        self.assertIn("class Sample {\n    def init", output)
+        self.assertIn(" case Point ( x = int ( a ), y = 0 ):\n", output)
+        self.assertIn("class Sample {\n    \n    def init", output)
 
     def test_py2jac(self) -> None:
         """Test py ast to Jac ast conversion."""
@@ -602,9 +604,9 @@ class JacLanguageTests(TestCase):
                 ),
                 prog=None,
             ).ir_out.unparse()
-        self.assertIn("match Container(inner=Inner(x=a, y=b)){\n", output)
-        self.assertIn("case Container(inner = Inner(x = a, y = 0)):\n", output)
-        self.assertIn("case Container(inner = Inner(x = a, y = b)):\n", output)
+        self.assertIn("match Container(inner=Inner(x=a, y=b)) { \n", output)
+        self.assertIn("case Container ( inner = Inner ( x = a, y = 0 ) ):\n", output)
+        self.assertIn("case Container ( inner = Inner ( x = a, y = b ) ):\n", output)
         self.assertIn("case _:\n", output)
 
     def test_refs_target(self) -> None:

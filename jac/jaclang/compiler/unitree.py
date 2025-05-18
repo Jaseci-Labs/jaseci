@@ -939,7 +939,7 @@ class Module(AstDocNode, UniScopeNode):
         self.stub_only = stub_only
         self.impl_mod: list[Module] = []
         self.test_mod: list[Module] = []
-        self.terminals: list[Token] = terminals
+        self.src_terminals: list[Token] = terminals
         self.is_raised_from_py: bool = False
 
         UniNode.__init__(self, kid=kid)
@@ -991,10 +991,16 @@ class Module(AstDocNode, UniScopeNode):
 
     def format(self) -> str:
         """Get all sub nodes of type."""
-        from jaclang.compiler.passes.tool import JacFormatPass
+        from jaclang.compiler.passes.tool import DocIRGenPass, JacFormatPass
         from jaclang.compiler.program import JacProgram
 
-        return JacFormatPass(ir_in=self, prog=JacProgram()).ir_out.gen.jac
+        return JacFormatPass(
+            ir_in=DocIRGenPass(
+                ir_in=self,
+                prog=JacProgram(),
+            ).ir_out,
+            prog=JacProgram(),
+        ).ir_out.gen.jac
 
     def unparse(self) -> str:
         super().unparse()
@@ -1197,9 +1203,7 @@ class PyInlineCode(ElementStmt, ArchBlockStmt, EnumBlockStmt, CodeBlockStmt):
         new_kid: list[UniNode] = []
         if self.doc:
             new_kid.append(self.doc)
-        new_kid.append(self.gen_token(Tok.PYNLINE))
         new_kid.append(self.code)
-        new_kid.append(self.gen_token(Tok.PYNLINE))
         self.set_kids(nodes=new_kid)
         return res
 
@@ -1828,13 +1832,15 @@ class FuncSignature(UniNode):
 
     def normalize(self, deep: bool = False) -> bool:
         res = True
+        is_lambda = self.parent and isinstance(self.parent, LambdaExpr)
         if deep:
             res = self.params.normalize(deep) if self.params else res
             res = res and self.return_type.normalize(deep) if self.return_type else res
-        new_kid: list[UniNode] = [self.gen_token(Tok.LPAREN)]
+        new_kid: list[UniNode] = [self.gen_token(Tok.LPAREN)] if not is_lambda else []
         if self.params:
             new_kid.append(self.params)
-        new_kid.append(self.gen_token(Tok.RPAREN))
+        if not is_lambda:
+            new_kid.append(self.gen_token(Tok.RPAREN))
         if self.return_type:
             new_kid.append(self.gen_token(Tok.RETURN_HINT))
             new_kid.append(self.return_type)
@@ -2418,10 +2424,7 @@ class WithStmt(AstAsyncNode, CodeBlockStmt, UniScopeNode):
             new_kid.append(self.gen_token(Tok.KW_ASYNC))
         new_kid.append(self.gen_token(Tok.KW_WITH))
         new_kid.append(self.exprs)
-        new_kid.append(self.gen_token(Tok.LBRACE))
         new_kid.append(self.body)
-        new_kid.append(self.gen_token(Tok.RBRACE))
-
         self.set_kids(nodes=new_kid)
         return res
 
@@ -2896,13 +2899,7 @@ class BinaryExpr(Expr):
             res = self.left.normalize(deep)
             res = res and self.right.normalize(deep) if self.right else res
             res = res and self.op.normalize(deep) if self.op else res
-        new_kid: list[UniNode] = [
-            self.gen_token(Tok.LPAREN),
-            self.left,
-            self.op,
-            self.right,
-            self.gen_token(Tok.RPAREN),
-        ]
+        new_kid: list[UniNode] = [self.left, self.op, self.right]
         self.set_kids(nodes=new_kid)
         return res
 
@@ -2991,11 +2988,7 @@ class LambdaExpr(Expr, UniScopeNode):
         new_kid: list[UniNode] = [self.gen_token(Tok.KW_LAMBDA)]
         if self.signature:
             new_kid.append(self.signature)
-        new_kid += [
-            self.gen_token(Tok.COLON),
-            self.body,
-            self.gen_token(Tok.SEMI),
-        ]
+        new_kid += [self.gen_token(Tok.COLON), self.body]
         self.set_kids(nodes=new_kid)
         return res
 
@@ -3299,6 +3292,8 @@ class KWPair(UniNode):
         if self.key:
             new_kid.append(self.key)
             new_kid.append(self.gen_token(Tok.EQ))
+        else:
+            new_kid.append(self.gen_token(Tok.STAR_POW))
         new_kid.append(self.value)
         self.set_kids(nodes=new_kid)
         return res
@@ -4229,6 +4224,9 @@ class Token(UniNode):
         self.pos_start = pos_start
         self.pos_end = pos_end
         UniNode.__init__(self, kid=[])
+
+    def __repr__(self) -> str:
+        return f"Token({self.name}, {self.value}, {self.loc})"
 
     def normalize(self, deep: bool = True) -> bool:
         return bool(self.value and self.name)
