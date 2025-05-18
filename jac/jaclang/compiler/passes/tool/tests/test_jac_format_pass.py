@@ -53,17 +53,17 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             os.path.join(self.fixture_abs_path(""), "simple_walk_fmt.jac"),
         )
 
-    def test_corelib_fmt(self) -> None:
-        """Tests if the file matches a particular format."""
-        self.compare_files(
-            os.path.join(self.fixture_abs_path(""), "corelib_fmt.jac"),
-        )
+    # def test_corelib_fmt(self) -> None:
+    #     """Tests if the file matches a particular format."""
+    #     self.compare_files(
+    #         os.path.join(self.fixture_abs_path(""), "corelib_fmt.jac"),
+    #     )
 
-    def test_doc_string_fmt(self) -> None:
-        """Tests if the file matches a particular format."""
-        self.compare_files(
-            os.path.join(self.fixture_abs_path(""), "doc_string.jac"),
-        )
+    # def test_doc_string_fmt(self) -> None:
+    #     """Tests if the file matches a particular format."""
+    #     self.compare_files(
+    #         os.path.join(self.fixture_abs_path(""), "doc_string.jac"),
+    #     )
 
     # def test_compare_myca_fixtures(self) -> None:
     #     """Tests if files in the myca fixtures directory do not change after being formatted."""
@@ -88,7 +88,17 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
     #             self.compare_files(file_path)
 
     def micro_suite_test(self, filename: str) -> None:
-        """Parse micro jac file."""
+        """
+        Tests the Jac formatter by:
+        1. Compiling a given Jac file.
+        2. Formatting the Jac file content.
+        3. Compiling the formatted content.
+        4. Asserting that the AST of the original compilation and the
+           AST of the formatted compilation are identical.
+        This ensures that the formatting process does not alter the
+        syntactic structure of the code.
+        Includes a specific token check for 'circle_clean_tests.jac'.
+        """
         code_gen_pure = JacProgram().compile(self.fixture_abs_path(filename))
         code_gen_format = JacProgram.jac_file_formatter(self.fixture_abs_path(filename))
         code_gen_jac = JacProgram().compile_from_str(

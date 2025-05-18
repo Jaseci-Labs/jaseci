@@ -70,21 +70,41 @@ class FuseCommentsPass(UniPass):
 
     def _insert_comments_in_ast(self, merged_tokens: list[uni.Token]) -> None:
         """Insert comment tokens into the appropriate places in the AST."""
-        for i, token in enumerate(merged_tokens):
+        i = 0
+        while i < len(merged_tokens):
+            token = merged_tokens[i]
             if not isinstance(token, uni.CommentToken):
+                i += 1
                 continue
-            if i == len(merged_tokens) - 1:
-                # Last token - add to end of tree
-                self.ir_out.add_kids_right([token])
+
+            # Start collecting consecutive comments
+            comment_batch = [token]
+            next_idx = i + 1
+
+            # Gather consecutive comments
+            while next_idx < len(merged_tokens) and isinstance(
+                (next_cmt := merged_tokens[next_idx]), uni.CommentToken
+            ):
+                comment_batch.append(next_cmt)
+                next_idx += 1
+
+            if next_idx >= len(merged_tokens):
+                # Last tokens are comments - add batch to end of tree
+                self.ir_out.add_kids_right(comment_batch)
             else:
-                # Insert before the next token in its parent's children
-                next_token = merged_tokens[i + 1]
+                # Insert before the next non-comment token in its parent's children
+                next_token = merged_tokens[next_idx]
                 if next_token.parent is None:
-                    raise self.ice("Token without parent in AST")
-                parent_kids = next_token.parent.kid
-                insert_index = parent_kids.index(next_token)
-                parent_kids.insert(insert_index, token)
-                next_token.parent.set_kids(parent_kids)
+                    raise self.ice(
+                        f"Token {next_token.pp()} without parent in AST while"
+                        f" inserting comments batch"
+                    )
+                parent_node = next_token.parent
+                insert_index = parent_node.kid.index(next_token)
+                parent_node.insert_kids_at_pos(comment_batch, insert_index)
+
+            # Skip past all the comments we just processed
+            i = next_idx
 
 
 def _is_before(comment: uni.CommentToken, code: uni.Token) -> bool:
