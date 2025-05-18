@@ -211,7 +211,8 @@ class DocIRGenPass(UniPass):
                 parts.append(i.gen.doc_ir)
             else:
                 parts.append(i.gen.doc_ir)
-                parts.append(self.space())
+                if not isinstance(i, uni.CommentToken):
+                    parts.append(self.space())
         node.gen.doc_ir = self.finalize(parts)
 
     def exit_func_signature(self, node: uni.FuncSignature) -> None:
