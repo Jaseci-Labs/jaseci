@@ -35,14 +35,14 @@ class TestCFGBuildPass(TestCase):
         expected_dot = (
             "digraph G {\n"
             '  0 [label="BB0\\nx = 5 ;\\ny = 3 ;\\nif x > 3", shape=box];\n'
-            '  1 [label="BB1\\nz = ( x + y ) ;", shape=box];\n'  # Note double backslash
+            '  1 [label="BB1\\nz = x + y ;", shape=box];\n'  # Note double backslash
             '  2 [label="BB2\\nelif x == 0", shape=box];\n'
             '  3 [label="BB3\\nz = y ;", shape=box];\n'
-            '  4 [label="BB4\\nz = ( x - y ) ;", shape=box];\n'
+            '  4 [label="BB4\\nz = x - y ;", shape=box];\n'
             '  5 [label="BB5\\nfor i in range ( 0 , 10 )", shape=box];\n'
-            '  6 [label="BB6\\nz = ( z + 1 ) ;", shape=box];\n'
-            '  7 [label="BB7\\nwhile z < 10\\nz = ( z + 2 ) ;", shape=box];\n'
-            '  8 [label="BB8\\nz = ( z + 2 ) ;", shape=box];\n'
+            '  6 [label="BB6\\nz = z + 1 ;", shape=box];\n'
+            '  7 [label="BB7\\nwhile z < 10\\nz = z + 2 ;", shape=box];\n'
+            '  8 [label="BB8\\nz = z + 2 ;", shape=box];\n'
             "  0 -> 1;\n"
             "  0 -> 2;\n"
             "  1 -> 5;\n"
@@ -85,8 +85,8 @@ class TestCFGBuildPass(TestCase):
             '  0 [label="BB0\\nobj math_mod", shape=box];\n'
             '  1 [label="BB1\\ncan divide( x : int , y : int )\\nif y == 0", shape=box];\n'
             '  2 [label="BB2\\nreturn 0 ;", shape=box];\n'
-            '  3 [label="BB3\\nreturn ( x / y ) ;", shape=box];\n'
-            '  4 [label="BB4\\ncan multiply( x : int , y : int )\\nreturn ( x * y ) ;", shape=box];\n'
+            '  3 [label="BB3\\nreturn x / y ;", shape=box];\n'
+            '  4 [label="BB4\\ncan multiply( x : int , y : int )\\nreturn x * y ;", shape=box];\n'
             '  5 [label="BB5\\nx = 5 ;\\ny = 0 ;\\nmath = math_mod ( ) ;\\nz = math . divide ( x , y ) '
             ';\\nprint ( z ) ;", shape=box];\n'
             "  0 -> 1;\n"
