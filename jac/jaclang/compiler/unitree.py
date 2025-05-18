@@ -1199,9 +1199,7 @@ class PyInlineCode(ElementStmt, ArchBlockStmt, EnumBlockStmt, CodeBlockStmt):
         new_kid: list[UniNode] = []
         if self.doc:
             new_kid.append(self.doc)
-        new_kid.append(self.gen_token(Tok.PYNLINE))
         new_kid.append(self.code)
-        new_kid.append(self.gen_token(Tok.PYNLINE))
         self.set_kids(nodes=new_kid)
         return res
 
