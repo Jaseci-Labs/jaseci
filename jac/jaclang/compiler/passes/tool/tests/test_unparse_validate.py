@@ -34,8 +34,6 @@ class JacUnparseTests(TestCaseMicroSuite):
         )
         before = ast3.dump(code_gen_pure.gen.py_ast[0], indent=2)
         x = code_gen_pure.unparse()
-        print(x)
-
         code_gen_jac = JacProgram().compile_from_str(
             source_str=x,
             file_path=filename,
@@ -55,10 +53,20 @@ class JacUnparseTests(TestCaseMicroSuite):
                 5,
             )
         else:
-            self.assertEqual(
-                len("\n".join(unified_diff(before.splitlines(), after.splitlines()))),
-                0,
-            )
+            try:
+                self.assertEqual(
+                    len(
+                        "\n".join(unified_diff(before.splitlines(), after.splitlines()))
+                    ),
+                    0,
+                )
+            except Exception as e:
+                print(
+                    "\n".join(
+                        unified_diff(before.splitlines(), after.splitlines(), n=10)
+                    )
+                )
+                raise e
 
 
 JacUnparseTests.self_attach_micro_tests()

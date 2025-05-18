@@ -542,9 +542,9 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for unary expressions."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            if (isinstance(i, uni.Token) and i.value in ["-", "~", "+"]) or isinstance(
-                i, uni.Expr
-            ):
+            if (
+                isinstance(i, uni.Token) and i.value in ["-", "~", "+", "*"]
+            ) or isinstance(i, uni.Expr):
                 parts.append(i.gen.doc_ir)
             else:
                 parts.append(i.gen.doc_ir)
@@ -623,8 +623,11 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for dictionary comprehensions."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
+            if isinstance(i, uni.Token) and i.name in [Tok.STAR_POW, Tok.STAR_MUL]:
+                parts.append(i.gen.doc_ir)
+            else:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
         node.gen.doc_ir = self.finalize(parts)
 
     def exit_k_w_pair(self, node: uni.KWPair) -> None:
@@ -632,7 +635,6 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
-            parts.append(self.space())
         node.gen.doc_ir = self.finalize(parts)
 
     def exit_await_expr(self, node: uni.AwaitExpr) -> None:
@@ -971,8 +973,11 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for match key-value pairs."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
+            if isinstance(i, uni.Token) and i.name in [Tok.STAR_POW, Tok.STAR_MUL]:
+                parts.append(i.gen.doc_ir)
+            else:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
         node.gen.doc_ir = self.finalize(parts)
 
     def exit_match_arch(self, node: uni.MatchArch) -> None:

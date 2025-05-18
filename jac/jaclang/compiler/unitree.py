@@ -939,7 +939,7 @@ class Module(AstDocNode, UniScopeNode):
         self.stub_only = stub_only
         self.impl_mod: list[Module] = []
         self.test_mod: list[Module] = []
-        self.terminals: list[Token] = terminals
+        self.src_terminals: list[Token] = terminals
         self.is_raised_from_py: bool = False
 
         UniNode.__init__(self, kid=kid)
@@ -995,7 +995,11 @@ class Module(AstDocNode, UniScopeNode):
         from jaclang.compiler.program import JacProgram
 
         return JacFormatPass(
-            DocIRGenPass(ir_in=self, prog=JacProgram()).ir_out, prog=JacProgram()
+            ir_in=DocIRGenPass(
+                ir_in=self,
+                prog=JacProgram(),
+            ).ir_out,
+            prog=JacProgram(),
         ).ir_out.gen.jac
 
     def unparse(self) -> str:
@@ -3299,6 +3303,8 @@ class KWPair(UniNode):
         if self.key:
             new_kid.append(self.key)
             new_kid.append(self.gen_token(Tok.EQ))
+        else:
+            new_kid.append(self.gen_token(Tok.STAR_POW))
         new_kid.append(self.value)
         self.set_kids(nodes=new_kid)
         return res
@@ -4229,6 +4235,9 @@ class Token(UniNode):
         self.pos_start = pos_start
         self.pos_end = pos_end
         UniNode.__init__(self, kid=[])
+
+    def __repr__(self) -> str:
+        return f"Token({self.name}, {self.value}, {self.loc})"
 
     def normalize(self, deep: bool = True) -> bool:
         return bool(self.value and self.name)
