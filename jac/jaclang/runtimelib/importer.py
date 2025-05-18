@@ -5,7 +5,6 @@ from __future__ import annotations
 import importlib
 import importlib.util
 import os
-import site
 import sys
 import types
 from os import getcwd, path
@@ -324,43 +323,14 @@ class JacImporter(Importer):
         """Run the import process for Jac modules."""
         unique_loaded_items: list[types.ModuleType] = []
         module = None
-        # Gather all possible search paths
-        jacpaths = os.environ.get("JACPATH", "")
-        search_paths = [spec.caller_dir]
-        for site_dir in site.getsitepackages():
-            if site_dir and site_dir not in search_paths:
-                search_paths.append(site_dir)
-        user_site = getattr(site, "getusersitepackages", None)
-        if user_site:
-            user_dir = site.getusersitepackages()
-            if user_dir and user_dir not in search_paths:
-                search_paths.append(user_dir)
-        if jacpaths:
-            for p in jacpaths.split(":"):
-                p = p.strip()
-                if p and p not in search_paths:
-                    search_paths.append(p)
+        from jaclang.utils import resolve_module_path
 
-        found_path = None
-        target_path_components = spec.target.split(".")
-        for search_path in search_paths:
-            candidate = os.path.join(search_path, "/".join(target_path_components))
-            # Check if the candidate is a directory or a .jac file
-            if (os.path.isdir(candidate)) or (os.path.isfile(candidate + ".jac")):
-                found_path = candidate
-                break
-
-        # If a suitable path was found, update spec.full_target; otherwise, raise an error
-        if found_path:
-            spec.full_target = os.path.abspath(found_path)
-        elif os.path.exists(spec.full_target) or os.path.exists(
-            spec.full_target + ".jac"
-        ):
-            pass
-        else:
+        try:
+            spec.full_target = resolve_module_path(spec.target, spec.base_path)
+        except Exception as e:
             raise ImportError(
-                f"Unable to locate module '{spec.target}' in {search_paths}"
-            )
+                f"Unable to locate module '{spec.target}'"
+            ) from e
         if os.path.isfile(spec.full_target + ".jac"):
             module_name = self.get_sys_mod_name(spec.full_target + ".jac")
             module_name = spec.override_name if spec.override_name else module_name

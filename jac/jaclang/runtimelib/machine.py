@@ -63,6 +63,7 @@ from jaclang.runtimelib.utils import (
     collect_node_connections,
     traverse_graph,
 )
+from jaclang.utils import infer_language
 
 import pluggy
 
@@ -747,56 +748,6 @@ class JacBasics:
                 break
         return machine
 
-    @staticmethod
-    def infer_language(target: str, base_path: str) -> str:
-        """Infer import language by checking for Jac or Python modules."""
-        import site
-
-        parts = target.split(".")
-        level = 0
-        while level < len(parts) and parts[level] == "":
-            level += 1
-        actual_parts = parts[level:]
-
-        def candidate_from(base: str) -> Optional[str]:
-            candidate = os.path.join(base, *actual_parts)
-            if os.path.isdir(candidate):
-                if os.path.isfile(os.path.join(candidate, "__init__.jac")):
-                    return "jac"
-                if os.path.isfile(os.path.join(candidate, "__init__.py")):
-                    return "py"
-            if os.path.isfile(candidate + ".jac"):
-                return "jac"
-            if os.path.isfile(candidate + ".py"):
-                return "py"
-            return None
-
-        for sp in site.getsitepackages():
-            lang = candidate_from(sp)
-            if lang:
-                return lang
-
-        base_dir = base_path if os.path.isdir(base_path) else os.path.dirname(base_path)
-        for _ in range(max(level - 1, 0)):
-            base_dir = os.path.dirname(base_dir)
-        lang = candidate_from(base_dir)
-        if lang:
-            return lang
-
-        jacpath = os.getenv("JACPATH")
-        if jacpath:
-            lang = candidate_from(jacpath)
-            if lang:
-                return lang
-            target_jac = actual_parts[-1] + ".jac"
-            target_py = actual_parts[-1] + ".py"
-            for _, _, files in os.walk(jacpath):
-                if target_jac in files:
-                    return "jac"
-                if target_py in files:
-                    return "py"
-
-        return "py"
 
     @staticmethod
     def py_jac_import(
@@ -842,7 +793,7 @@ class JacBasics:
             PythonImporter,
         )
 
-        lng = JacBasics.infer_language(target, base_path)
+        lng = infer_language(target, base_path)
 
         spec = ImportPathSpec(
             target,
