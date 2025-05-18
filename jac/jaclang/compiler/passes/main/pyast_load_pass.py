@@ -46,12 +46,11 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         return node
 
     def convert(self, node: py_ast.AST) -> uni.UniNode:
-        """Get python node type."""
-        if hasattr(self, f"proc_{pascal_to_snake(type(node).__name__)}"):
-            ret = getattr(self, f"proc_{pascal_to_snake(type(node).__name__)}")(node)
-        else:
+        """Convert Python node to Jac node."""
+        handler = getattr(self, f"proc_{pascal_to_snake(type(node).__name__)}", None)
+        if not handler:
             raise self.ice(f"Unknown node type {type(node).__name__}")
-        return ret
+        return handler(node)
 
     def transform(self, ir_in: uni.PythonModuleAst) -> uni.Module:
         """Transform input IR."""
@@ -79,22 +78,19 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             )
 
         extracted: list[T | uni.ModuleCode] = []
-        with_entry_body: list[uni.CodeBlockStmt] = []
-        for i in body:
-            if isinstance(i, exclude_types):
-                if len(with_entry_body):
-                    extracted.append(gen_mod_code(with_entry_body))
-                    with_entry_body = []
-                extracted.append(i)
-            elif isinstance(i, uni.CodeBlockStmt):
-                if isinstance(i, uni.ExprStmt) and isinstance(i.expr, uni.String):
-                    self.convert_to_doc(i.expr)
-                with_entry_body.append(i)
-            else:
-                continue  # FIXME: check this
-                # self.ice("Invalid type for with entry body")
-        if len(with_entry_body):
-            extracted.append(gen_mod_code(with_entry_body))
+        pending: list[uni.CodeBlockStmt] = []
+        for item in body:
+            if isinstance(item, exclude_types):
+                if pending:
+                    extracted.append(gen_mod_code(pending))
+                    pending.clear()
+                extracted.append(item)
+            elif isinstance(item, uni.CodeBlockStmt):
+                if isinstance(item, uni.ExprStmt) and isinstance(item.expr, uni.String):
+                    self.convert_to_doc(item.expr)
+                pending.append(item)
+        if pending:
+            extracted.append(gen_mod_code(pending))
         return extracted
 
     def proc_module(self, node: py_ast.Module) -> uni.Module:
@@ -105,29 +101,22 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             body: list[stmt]
             type_ignores: list[TypeIgnore]
         """
-        elements: list[uni.UniNode] = [self.convert(i) for i in node.body]
-        elements[0] = (
-            elements[0].expr
-            if isinstance(elements[0], uni.ExprStmt)
-            and isinstance(elements[0].expr, uni.String)
-            else elements[0]
-        )
-        doc_str_list = [elements[0]] if isinstance(elements[0], uni.String) else []
-        valid = (
-            (doc_str_list)
-            + self.extract_with_entry(elements[1:], (uni.ElementStmt, uni.EmptyToken))
-            if doc_str_list
-            else self.extract_with_entry(elements[:], (uni.ElementStmt, uni.EmptyToken))
-        )
+        elements = [self.convert(i) for i in node.body]
+        if elements and isinstance(elements[0], uni.ExprStmt) and isinstance(elements[0].expr, uni.String):
+            elements[0] = elements[0].expr
         doc_str = elements[0] if isinstance(elements[0], uni.String) else None
-        self.convert_to_doc(doc_str) if doc_str else None
+        body = elements[1:] if doc_str else elements
+        body = self.extract_with_entry(body, (uni.ElementStmt, uni.EmptyToken))
+        if doc_str:
+            self.convert_to_doc(doc_str)
+            body.insert(0, doc_str)
         ret = uni.Module(
             name=self.mod_path.split(os.path.sep)[-1].split(".")[0],
             source=uni.Source("", mod_path=self.mod_path),
             doc=doc_str,
-            body=valid[1:] if valid and isinstance(valid[0], uni.String) else valid,
+            body=body[1:] if doc_str else body,
             terminals=[],
-            kid=valid,
+            kid=body,
         )
         ret.is_raised_from_py = True
         return self.nu(ret)
@@ -163,33 +152,26 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             pos_end=0,
         )
         body = [self.convert(i) for i in node.body]
-        valid = [i for i in body if isinstance(i, (uni.CodeBlockStmt))]
+        valid = [i for i in body if isinstance(i, uni.CodeBlockStmt)]
         if len(valid) != len(body):
             raise self.ice("Length mismatch in function body")
 
-        if (
-            len(valid)
-            and isinstance(valid[0], uni.ExprStmt)
-            and isinstance(valid[0].expr, uni.String)
-        ):
+        if valid and isinstance(valid[0], uni.ExprStmt) and isinstance(valid[0].expr, uni.String):
             self.convert_to_doc(valid[0].expr)
             doc = valid[0].expr
-            valid_body = uni.SubNodeList[uni.CodeBlockStmt](
-                items=valid[1:],
-                delim=Tok.WS,
-                kid=valid[1:] + [doc],
-                left_enc=self.operator(Tok.LBRACE, "{"),
-                right_enc=self.operator(Tok.RBRACE, "}"),
-            )
+            items = valid[1:]
+            kid = valid[1:] + [doc]
         else:
             doc = None
-            valid_body = uni.SubNodeList[uni.CodeBlockStmt](
-                items=valid,
-                delim=Tok.WS,
-                kid=valid,
-                left_enc=self.operator(Tok.LBRACE, "{"),
-                right_enc=self.operator(Tok.RBRACE, "}"),
-            )
+            items = valid
+            kid = valid
+        valid_body = uni.SubNodeList[uni.CodeBlockStmt](
+            items=items,
+            delim=Tok.WS,
+            kid=kid,
+            left_enc=self.operator(Tok.LBRACE, "{"),
+            right_enc=self.operator(Tok.RBRACE, "}"),
+        )
         decorators = [self.convert(i) for i in node.decorator_list]
         valid_dec = [i for i in decorators if isinstance(i, uni.Expr)]
         if len(valid_dec) != len(decorators):
@@ -198,13 +180,11 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             uni.SubNodeList[uni.Expr](
                 items=valid_dec, delim=Tok.DECOR_OP, kid=decorators
             )
-            if len(valid_dec)
+            if valid_dec
             else None
         )
         res = self.convert(node.args)
-        sig: Optional[uni.FuncSignature] = (
-            res if isinstance(res, uni.FuncSignature) else None
-        )
+        sig: Optional[uni.FuncSignature] = res if isinstance(res, uni.FuncSignature) else None
         ret_sig = self.convert(node.returns) if node.returns else None
         if isinstance(ret_sig, uni.Expr):
             if not sig:
@@ -2587,9 +2567,9 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         string.value = f'"""{string.value[1:-1]}"""'
 
     def aug_op_map(self, tok_dict: dict, op: uni.Token) -> str:
-        """aug_mapper."""
+        """Map augmented operator token."""
         op.value += "="
-        for _key, value in tok_dict.items():
+        for key, value in tok_dict.items():
             if value == op.value:
-                break
-        return _key
+                return key
+        raise self.ice("Unknown augmented operator")
