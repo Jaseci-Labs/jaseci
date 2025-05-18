@@ -581,9 +581,11 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for edge reference trailers."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            if isinstance(i, uni.Token) and i.name == Tok.KW_EDGE:
+            if isinstance(i, uni.Token) and i.name in [Tok.KW_EDGE, Tok.KW_NODE]:
+                parts.append(i.gen.doc_ir)
                 parts.append(self.space())
+            else:
+                parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_edge_op_ref(self, node: uni.EdgeOpRef) -> None:

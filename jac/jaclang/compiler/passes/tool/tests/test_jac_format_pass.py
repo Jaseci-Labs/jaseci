@@ -11,10 +11,8 @@ from jaclang.utils.helpers import add_line_numbers
 from jaclang.utils.test import AstSyncTestMixin, TestCaseMicroSuite
 
 
-class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
+class JacFormatPassTests(TestCaseMicroSuite):
     """Test pass module."""
-
-    TargetPass = JacFormatPass
 
     def compare_files(self, original_file: str, formatted_file: str = None) -> None:
         """Compare the original file with a provided formatted file or a new formatted version."""
