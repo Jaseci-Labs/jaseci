@@ -73,18 +73,18 @@ class FuseCommentsPass(UniPass):
         for i, token in enumerate(merged_tokens):
             if not isinstance(token, uni.CommentToken):
                 continue
-            if i == 0:
-                # First token - add to beginning of tree
-                self.ir_out.add_kids_left([token])
+            if i == len(merged_tokens) - 1:
+                # Last token - add to end of tree
+                self.ir_out.add_kids_right([token])
             else:
-                # Insert after the previous token in its parent's children
-                prev_token = merged_tokens[i - 1]
-                if prev_token.parent is None:
+                # Insert before the next token in its parent's children
+                next_token = merged_tokens[i + 1]
+                if next_token.parent is None:
                     raise self.ice("Token without parent in AST")
-                parent_kids = prev_token.parent.kid
-                insert_index = parent_kids.index(prev_token) + 1
+                parent_kids = next_token.parent.kid
+                insert_index = parent_kids.index(next_token)
                 parent_kids.insert(insert_index, token)
-                prev_token.parent.set_kids(parent_kids)
+                next_token.parent.set_kids(parent_kids)
 
 
 def _is_before(comment: uni.CommentToken, code: uni.Token) -> bool:

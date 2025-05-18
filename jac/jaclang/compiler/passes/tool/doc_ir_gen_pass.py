@@ -80,7 +80,8 @@ class DocIRGenPass(UniPass):
 
     def is_one_line(self, node: uni.UniNode) -> bool:
         """Check if the node is a one line node."""
-        return node.loc.first_line == node.loc.last_line
+        kid = [i for i in node.kid if not isinstance(i, uni.CommentToken)]
+        return kid[0].loc.first_line == kid[-1].loc.last_line
 
     def has_gap(self, prev_kid: uni.UniNode, curr_kid: uni.UniNode) -> bool:
         """Check if there is a gap between the previous and current node."""
@@ -178,7 +179,6 @@ class DocIRGenPass(UniPass):
     def exit_ability(self, node: uni.Ability) -> None:
         """Generate DocIR for abilities."""
         parts: list[doc.DocType] = []
-        prev_item: Optional[uni.UniNode] = None
         for i in node.kid:
             if i in [node.doc, node.decorators]:
                 parts.append(i.gen.doc_ir)
@@ -187,13 +187,13 @@ class DocIRGenPass(UniPass):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
             elif isinstance(i, uni.Token) and i.name == Tok.SEMI:
-                if prev_item != node.name_ref:
-                    parts.pop()
+                parts.pop()
                 parts.append(i.gen.doc_ir)
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
-            prev_item = i
+            if isinstance(i, uni.CommentToken):
+                parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_func_signature(self, node: uni.FuncSignature) -> None:
@@ -1144,21 +1144,6 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for semicolons."""
         node.gen.doc_ir = self.text(node.value)
 
-    def exit_comment_token(self, node: uni.CommentToken) -> None:
-        """Generate DocIR for comment tokens."""
-        if isinstance(node.left_node, uni.CommentToken):
-            node.gen.doc_ir = self.group(self.concat([self.text(node.value)]))
-        elif node.left_node and node.left_node.loc.last_line == node.loc.first_line:
-            node.gen.doc_ir = self.group(
-                self.concat(
-                    [self.tight_line(), self.text(node.value), self.hard_line()]
-                )
-            )
-        else:
-            node.gen.doc_ir = self.group(
-                self.concat([self.hard_line(), self.text(node.value)])
-            )
-
     def exit_name(self, node: uni.Name) -> None:
         """Generate DocIR for names."""
         if node.is_kwesc:
@@ -1221,3 +1206,18 @@ class DocIRGenPass(UniPass):
     def exit_ellipsis(self, node: uni.Ellipsis) -> None:
         """Generate DocIR for ellipsis."""
         node.gen.doc_ir = self.text(node.value)
+
+    def exit_comment_token(self, node: uni.CommentToken) -> None:
+        """Generate DocIR for comment tokens."""
+        if isinstance(node.left_node, uni.CommentToken):
+            node.gen.doc_ir = self.group(self.concat([self.text(node.value)]))
+        elif node.left_node and node.left_node.loc.last_line == node.loc.first_line:
+            node.gen.doc_ir = self.group(
+                self.concat(
+                    [self.tight_line(), self.text(node.value), self.hard_line()]
+                )
+            )
+        else:
+            node.gen.doc_ir = self.group(
+                self.concat([self.text(node.value), self.hard_line()])
+            )

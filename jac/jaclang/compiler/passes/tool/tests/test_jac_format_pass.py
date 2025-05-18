@@ -47,15 +47,20 @@ class JacFormatPassTests(TestCaseMicroSuite, AstSyncTestMixin):
             print(f"Error comparing files: {e}")
             raise
 
-    def test_jac_file_compr(self) -> None:
+    def test_simple_walk_fmt(self) -> None:
         """Tests if the file matches a particular format."""
         self.compare_files(
             os.path.join(self.fixture_abs_path(""), "simple_walk_fmt.jac"),
         )
 
+    def test_corelib_fmt(self) -> None:
+        """Tests if the file matches a particular format."""
         self.compare_files(
             os.path.join(self.fixture_abs_path(""), "corelib_fmt.jac"),
         )
+
+    def test_doc_string_fmt(self) -> None:
+        """Tests if the file matches a particular format."""
         self.compare_files(
             os.path.join(self.fixture_abs_path(""), "doc_string.jac"),
         )
