@@ -2899,13 +2899,7 @@ class BinaryExpr(Expr):
             res = self.left.normalize(deep)
             res = res and self.right.normalize(deep) if self.right else res
             res = res and self.op.normalize(deep) if self.op else res
-        new_kid: list[UniNode] = [
-            self.gen_token(Tok.LPAREN),
-            self.left,
-            self.op,
-            self.right,
-            self.gen_token(Tok.RPAREN),
-        ]
+        new_kid: list[UniNode] = [self.left, self.op, self.right]
         self.set_kids(nodes=new_kid)
         return res
 

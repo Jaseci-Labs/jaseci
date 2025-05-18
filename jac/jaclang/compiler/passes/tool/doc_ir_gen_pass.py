@@ -841,7 +841,10 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for Python inline code blocks."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            if i == node.doc or (isinstance(i, uni.Token) and i.name == Tok.PYNLINE):
+            if i == node.doc:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.hard_line())
+            elif isinstance(i, uni.Token) and i.name == Tok.PYNLINE:
                 parts.append(self.text("::py::"))
                 parts.append(i.gen.doc_ir)
                 parts.append(self.text("::py::"))
@@ -900,9 +903,18 @@ class DocIRGenPass(UniPass):
     def exit_match_case(self, node: uni.MatchCase) -> None:
         """Generate DocIR for match cases."""
         parts: list[doc.DocType] = []
+        indent_parts: list[doc.DocType] = []
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
+            if isinstance(i, uni.Token) and i.name == Tok.COLON:
+                parts.pop()
+                parts.append(i.gen.doc_ir)
+            elif i in node.body:
+                indent_parts.append(i.gen.doc_ir)
+                indent_parts.append(self.hard_line())
+            else:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
+        parts.append(self.indent(self.concat([self.hard_line()] + indent_parts)))
         node.gen.doc_ir = self.finalize(parts)
 
     def exit_match_value(self, node: uni.MatchValue) -> None:
