@@ -9,20 +9,10 @@ import jaclang.compiler.passes.tool.doc_ir as doc
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes import UniPass
-from jaclang.settings import settings
 
 
 class DocIRGenPass(UniPass):
     """DocIrGenPass generate DocIr for Jac code."""
-
-    def before_pass(self) -> None:
-        """Initialize pass."""
-        self.indent_size = 4
-        self.MAX_LINE_LENGTH = settings.max_line_length
-
-    def after_pass(self) -> None:
-        """After pass."""
-        self.ir_out.gen.jac = self.print_jac()
 
     def text(self, text: str) -> doc.Text:
         """Create a Text node."""
@@ -103,7 +93,9 @@ class DocIRGenPass(UniPass):
         first_kid = True
         for i in node.kid:
             if (isinstance(i, uni.Import) and isinstance(prev_kid, uni.Import)) or (
-                isinstance(i, uni.GlobalVars) and isinstance(prev_kid, uni.GlobalVars)
+                isinstance(i, uni.GlobalVars)
+                and isinstance(prev_kid, uni.GlobalVars)
+                or prev_kid == node.doc
             ):
                 if prev_kid and self.has_gap(prev_kid, i):
                     parts.append(self.hard_line())
@@ -155,7 +147,12 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for module paths."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
+            if isinstance(i, uni.Token) and i.name == Tok.KW_AS:
+                parts.append(self.space())
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
+            else:
+                parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.concat(parts)
 
     def exit_archetype(self, node: uni.Archetype) -> None:
@@ -167,6 +164,7 @@ class DocIRGenPass(UniPass):
                 parts.append(self.hard_line())
             elif i == node.name:
                 parts.append(i.gen.doc_ir)
+                parts.append(self.space())
             elif isinstance(i, uni.Token) and i.name == Tok.SEMI:
                 parts.pop()
                 parts.append(i.gen.doc_ir)
@@ -232,8 +230,6 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_assignment(self, node: uni.Assignment) -> None:
@@ -376,6 +372,9 @@ class DocIRGenPass(UniPass):
                 parts.append(self.space())
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
+            elif isinstance(i, uni.Token) and i.name in [Tok.KW_BY, Tok.KW_POST_INIT]:
+                parts.append(self.space())
+                parts.append(i.gen.doc_ir)
             else:
                 parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.group(self.concat(parts))
@@ -585,8 +584,6 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_edge_op_ref(self, node: uni.EdgeOpRef) -> None:
@@ -594,8 +591,6 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_index_slice(self, node: uni.IndexSlice) -> None:
@@ -666,8 +661,6 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_delete_stmt(self, node: uni.DeleteStmt) -> None:
@@ -684,8 +677,6 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_report_stmt(self, node: uni.ReportStmt) -> None:
@@ -768,8 +759,13 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for visit statements."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
+            if isinstance(i, uni.Token) and i.name == Tok.SEMI:
+                parts.pop()
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
+            else:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
         parts.pop()
         node.gen.doc_ir = self.group(self.concat(parts))
 
@@ -863,8 +859,10 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for Python inline code blocks."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            if i == node.doc or isinstance(i, uni.Token) and i.name == Tok.PYNLINE:
+            if i == node.doc or (isinstance(i, uni.Token) and i.name == Tok.PYNLINE):
+                parts.append(self.text("::py::"))
                 parts.append(i.gen.doc_ir)
+                parts.append(self.text("::py::"))
                 parts.append(self.hard_line())
             else:
                 parts.append(i.gen.doc_ir)
@@ -879,6 +877,10 @@ class DocIRGenPass(UniPass):
             if i == node.doc:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
+            elif i == node.name and isinstance(i, uni.Name):
+                if not i.value.startswith("_jac_gen_"):
+                    parts.append(i.gen.doc_ir)
+                    parts.append(self.space())
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
@@ -1060,7 +1062,8 @@ class DocIRGenPass(UniPass):
                 if in_codeblock:
                     indent_parts.pop()
                 parts.append(self.indent(self.concat(indent_parts)))
-                parts.append(self.line())
+                if prev_item != node.left_enc:
+                    parts.append(self.line())
                 parts.append(i.gen.doc_ir)
             elif (
                 isinstance(i, uni.Token)
@@ -1069,7 +1072,7 @@ class DocIRGenPass(UniPass):
                 and i.name not in [Tok.DOT, Tok.DECOR_OP]
             ):
                 indent_parts.append(i.gen.doc_ir)
-                indent_parts.append(self.tight_line() if is_assignment else self.line())
+                indent_parts.append(self.line())
             else:
                 if (
                     in_codeblock
@@ -1097,6 +1100,8 @@ class DocIRGenPass(UniPass):
                 elif is_assignment:
                     indent_parts.append(self.space())
             prev_item = i
+        if is_assignment:
+            indent_parts.pop()
         node.gen.doc_ir = self.concat(parts) if parts else self.concat(indent_parts)
 
     def exit_impl_def(self, node: uni.ImplDef) -> None:
@@ -1108,6 +1113,7 @@ class DocIRGenPass(UniPass):
                 parts.append(self.hard_line())
             elif i == node.target:
                 parts.append(i.gen.doc_ir)
+                parts.append(self.space())
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
@@ -1144,7 +1150,9 @@ class DocIRGenPass(UniPass):
             node.gen.doc_ir = self.group(self.concat([self.text(node.value)]))
         elif node.left_node and node.left_node.loc.last_line == node.loc.first_line:
             node.gen.doc_ir = self.group(
-                self.concat([self.tight_line(), self.text(node.value)])
+                self.concat(
+                    [self.tight_line(), self.text(node.value), self.hard_line()]
+                )
             )
         else:
             node.gen.doc_ir = self.group(
@@ -1186,7 +1194,7 @@ class DocIRGenPass(UniPass):
             parts: list[doc.DocType] = [self.text(lines[0])]
             for line in lines[1:]:
                 parts.append(self.hard_line())
-                parts.append(self.text(line))
+                parts.append(self.text(line.lstrip()))
             node.gen.doc_ir = self.group(self.concat(parts))
             return
         if is_escaped_curly:
@@ -1200,7 +1208,7 @@ class DocIRGenPass(UniPass):
 
     def exit_special_var_ref(self, node: uni.SpecialVarRef) -> None:
         """Generate DocIR for special variable references."""
-        node.gen.doc_ir = self.text(node.value)
+        node.gen.doc_ir = self.text(node.value.replace("_", ""))
 
     def exit_bool(self, node: uni.Bool) -> None:
         """Generate DocIR for boolean values."""
@@ -1213,142 +1221,3 @@ class DocIRGenPass(UniPass):
     def exit_ellipsis(self, node: uni.Ellipsis) -> None:
         """Generate DocIR for ellipsis."""
         node.gen.doc_ir = self.text(node.value)
-
-    def print_jac(
-        self,
-        doc_node: Optional[doc.DocType] = None,
-        indent_level: int = 0,
-        width_remaining: Optional[int] = None,
-        is_broken: bool = False,
-    ) -> str:
-        """Recursively print a Doc node or a list of Doc nodes."""
-        if doc_node is None:
-            doc_node = self.ir_in.gen.doc_ir
-
-        if width_remaining is None:
-            width_remaining = self.MAX_LINE_LENGTH
-
-        if isinstance(
-            doc_node, list
-        ):  # This case should ideally not be hit if IR is consistent
-            return self.print_jac(
-                self.concat(doc_node),
-                indent_level,
-                width_remaining,
-                is_broken,  # Use self.concat
-            )
-        if isinstance(doc_node, doc.Text):
-            return doc_node.text
-
-        elif isinstance(doc_node, doc.Line):
-            if is_broken or doc_node.hard:
-                return "\n" + " " * (indent_level * self.indent_size)
-            elif doc_node.literal:  # literal soft line
-                return "\n"
-            elif doc_node.tight:
-                return ""
-            else:  # soft line, not broken
-                return " "
-
-        elif isinstance(doc_node, doc.Group):
-            # Try to print flat first. For this attempt, the group itself isn't forced to break.
-            flat_contents_str = self.print_jac(
-                doc_node.contents, indent_level, width_remaining, is_broken=False
-            )
-            if (
-                "\n" not in flat_contents_str
-                and len(flat_contents_str) <= width_remaining
-            ):
-                return flat_contents_str
-            else:
-                full_width_for_broken_content = self.MAX_LINE_LENGTH - (
-                    indent_level * self.indent_size
-                )
-                return self.print_jac(
-                    doc_node.contents,
-                    indent_level,
-                    full_width_for_broken_content,
-                    is_broken=True,
-                )
-
-        elif isinstance(doc_node, doc.Indent):
-            new_indent_level = indent_level + 1
-
-            width_for_indented_content = self.MAX_LINE_LENGTH - (
-                new_indent_level * self.indent_size
-            )
-            return self.print_jac(
-                doc_node.contents,
-                new_indent_level,
-                width_for_indented_content,  # Budget for lines within indent
-                is_broken,  # is_broken state propagates
-            )
-
-        elif isinstance(doc_node, doc.Concat):
-            result = ""
-            # current_line_budget is the space left on the current line for the current part.
-            current_line_budget = width_remaining
-
-            for part in doc_node.parts:
-                part_str = self.print_jac(
-                    part, indent_level, current_line_budget, is_broken
-                )
-                result += part_str
-
-                if "\n" in part_str:
-                    # part_str created a newline. The next part starts on a new line.
-                    # Its budget is the full width available at this indent level.
-                    current_line_budget = self.MAX_LINE_LENGTH - (
-                        indent_level * self.indent_size
-                    )
-                    # Subtract what the *last line* of part_str consumed from this budget.
-                    # The characters on the last line after the indent string.
-                    indent_str_len = indent_level * self.indent_size
-                    last_line_of_part = part_str.splitlines()[-1]
-
-                    content_on_last_line = 0
-                    if last_line_of_part.startswith(" " * indent_str_len):
-                        content_on_last_line = len(last_line_of_part) - indent_str_len
-                    else:  # It was a line not starting with the full indent (e.g. literal \n)
-                        content_on_last_line = len(last_line_of_part)
-
-                    current_line_budget -= content_on_last_line
-                else:
-                    # part_str stayed on the same line. Reduce budget for next part on this line.
-                    current_line_budget -= len(part_str)
-
-                if current_line_budget < 0:  # Ensure budget isn't negative
-                    current_line_budget = 0
-            return result
-
-        elif isinstance(doc_node, doc.IfBreak):
-            if is_broken:
-                return self.print_jac(
-                    doc_node.break_contents, indent_level, width_remaining, is_broken
-                )
-            else:
-                return self.print_jac(
-                    doc_node.flat_contents, indent_level, width_remaining, is_broken
-                )
-
-        elif isinstance(doc_node, doc.Align):
-            align_spaces = doc_node.n if doc_node.n is not None else self.indent_size
-            # effective_total_indent_spaces_for_children = (
-            #     indent_level * self.indent_size
-            # ) + align_spaces
-            child_indent_level_for_align = indent_level + (
-                align_spaces // self.indent_size
-            )
-
-            child_width_budget = width_remaining - align_spaces
-            if child_width_budget < 0:
-                child_width_budget = 0
-
-            return self.print_jac(
-                doc_node.contents,
-                child_indent_level_for_align,  # Approximated level for Lines inside
-                child_width_budget,  # Budget for content on first line
-                is_broken,
-            )
-        else:
-            raise ValueError(f"Unknown DocType: {type(doc_node)}")

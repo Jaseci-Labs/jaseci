@@ -251,7 +251,7 @@ class AstTool:
                         else "Compile failed."
                     )
                 case "docir":
-                    return DocIRGenPass(ir, prog).print_jac()
+                    return str(DocIRGenPass(ir, prog).ir_out.gen.doc_ir)
                 case "py":
                     return (
                         f"\n{ir.gen.py}"

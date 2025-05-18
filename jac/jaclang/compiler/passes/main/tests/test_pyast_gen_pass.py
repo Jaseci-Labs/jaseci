@@ -92,7 +92,6 @@ class PyastGenPassTests(TestCaseMicroSuite, AstSyncTestMixin):
         for i in ast3.walk(from_jac):
             try:
                 if not isinstance(i, (ast3.Load, ast3.Store, ast3.Del)):
-                    print(i)
                     self.assertTrue(hasattr(i, "jac_link"))
             except Exception as e:
                 print(filename, ast3.dump(i, indent=2))
