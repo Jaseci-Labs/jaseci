@@ -471,9 +471,9 @@ class DocIRGenPass(UniPass):
             if isinstance(i, uni.Token):
                 parts.append(i.gen.doc_ir)
             elif isinstance(i, uni.SubNodeList):
-                parts.append(self.if_break(self.line(), self.text(" ")))
+                parts.append(self.if_break(self.line(), self.space()))
                 parts.append(i.gen.doc_ir)
-                parts.append(self.if_break(self.line(), self.text(" ")))
+                parts.append(self.if_break(self.line(), self.space()))
 
         node.gen.doc_ir = self.group(self.concat(parts))
 
