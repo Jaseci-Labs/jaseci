@@ -17,7 +17,7 @@ walker Creator {
         if self.count < 10 {
             visit [-->];
         }
-    } 
+    }
 }
 
 
@@ -27,7 +27,7 @@ walker Walk {
     
     can skip_root with `root entry {
         visit [-->];
-    } 
+    }
     
     can step with Item entry {
         here.value = self.count;
@@ -38,14 +38,14 @@ walker Walk {
             disengage;
         }
         f"Value: {here.value - 1}" |> print;
-    } 
+    }
 }
 
 
 def test_run {
     root spawn Creator();
     Walk() spawn root;
-} 
+}
 
 
 with entry {
