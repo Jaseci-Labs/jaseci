@@ -551,11 +551,9 @@ class JacLanguageTests(TestCase):
                 ),
                 prog=JacProgram(),
             ).ir_out.unparse()
-        self.assertIn(
-            "class X {\n    \n    with entry {\n        \n        a_b = 67;", output
-        )
+        self.assertIn("class X {\n    with entry {\n        a_b = 67;", output)
         self.assertIn("br = b'Hello\\\\\\\\nWorld'", output)
-        self.assertIn("class Circle {\n    \n    def init(radius: float", output)
+        self.assertIn("class Circle {\n    def init(radius: float", output)
         self.assertIn("<>node = 90;\n    \n\n    print(<>node);\n", output)
 
     def test_pyfunc_3(self) -> None:
@@ -577,7 +575,7 @@ class JacLanguageTests(TestCase):
         self.assertIn("if 0 <= x <= 5 {", output)
         self.assertIn("  case _:\n", output)
         self.assertIn(" case Point ( x = int ( a ), y = 0 ):\n", output)
-        self.assertIn("class Sample {\n    \n    def init", output)
+        self.assertIn("class Sample {\n    def init", output)
 
     def test_py2jac(self) -> None:
         """Test py ast to Jac ast conversion."""

@@ -392,7 +392,10 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for architecture has declarations."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            if (
+            if i == node.doc:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.hard_line())
+            elif (
                 isinstance(i, uni.SubNodeList)
                 and i == node.vars
                 and isinstance(i.gen.doc_ir, doc.Concat)
@@ -1061,6 +1064,7 @@ class DocIRGenPass(UniPass):
                     in_codeblock
                     and prev_item
                     and self.has_gap(prev_item, i)
+                    and isinstance(i, uni.CommentToken)
                     and (
                         not in_archetype
                         or not prev_item
