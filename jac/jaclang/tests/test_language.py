@@ -1220,7 +1220,7 @@ class JacLanguageTests(TestCase):
         """Parse micro jac file."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        import fixtures.jac_from_py
+        from .fixtures import jac_from_py
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
