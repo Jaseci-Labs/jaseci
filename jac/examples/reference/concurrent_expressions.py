@@ -4,7 +4,7 @@ from jaclang import JacMachineInterface as _
 if _.TYPE_CHECKING:
     from time import sleep
 else:
-    sleep, = _.py_jac_import('time', __file__, lng='py', items={'sleep': None})
+    sleep, = _.py_jac_import('time', __file__, items={'sleep': None})
 
 class A(_.Node):
     val: int = 0
