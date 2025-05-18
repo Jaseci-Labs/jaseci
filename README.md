@@ -17,8 +17,9 @@
 
 # Jaseci Ecosystem
 
-Welcome to the Jaseci project. This repository houses the core libraries and tooling for building
-agentic AI applications with the Jac programming language.
+Welcome to the Jaseci project. This repository houses the core libraries and tooling for building next generation applications with the Jac programming language. Jac is an innovative programming language that extends Python's semantics while maintaining full interoperability with the Python ecosystem. It introduces cutting-edge programming models and abstractions specifically designed to minimize and hide complexity, embrace AI-forward development, and automate categories of common software systems that typically require manual implementation. Despite being relatively new, Jac has already proven its production-grade capabilities, currently powering several real-world applications across various use cases.
+
+Jaseci serves as the implementation of the Jac runtime, functioning in a relationship similar to how CPython serves as the reference implementation for Python. This runtime environment enables Jac code to execute with its enhanced features while maintaining the seamless Python interoperability that makes the language particularly accessible to Python developers.
 
 The project brings together a set of components that work seamlessly together:
 
@@ -66,11 +67,3 @@ within with various other licenses that are very permissive.
 
 See [LICENSE-MIT](.github/LICENSE) for details.
 
-## Trademark
-
-[Jaseci Labs, LLC][jaseci] owns and protects the Jaseci and Jac trademarks and logos.
-If you would like to use these names or brands, please reach out for approval.
-
-[jaseci]: https://jaseci.org/
-
-The Jaseci open-source software (OSS) is maintained by [Jaseci Labs, LLC][jaseci] for which the following University of Michigan employees have either an ownership or advisory interest in Jaseci Labs, LLC: Prof. Jason Mars, Prof. Lingjia Tang, and Dr. Yiping Kang.
