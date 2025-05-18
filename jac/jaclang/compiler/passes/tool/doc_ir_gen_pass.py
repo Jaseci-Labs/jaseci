@@ -1167,7 +1167,9 @@ class DocIRGenPass(UniPass):
     def exit_comment_token(self, node: uni.CommentToken) -> None:
         """Generate DocIR for comment tokens."""
         if isinstance(node.left_node, uni.CommentToken):
-            node.gen.doc_ir = self.group(self.concat([self.text(node.value)]))
+            node.gen.doc_ir = self.group(
+                self.concat([self.text(node.value), self.hard_line()])
+            )
         elif node.left_node and node.left_node.loc.last_line == node.loc.first_line:
             node.gen.doc_ir = self.group(
                 self.concat(
