@@ -180,6 +180,8 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for abilities."""
         parts: list[doc.DocType] = []
         for i in node.kid:
+            if i == node.signature and parts[-1] == self.space():
+                parts.pop()
             if i in [node.doc, node.decorators]:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
