@@ -81,7 +81,11 @@ class DocIRGenPass(UniPass):
     def _strip_trailing_ws(self, part: doc.DocType) -> doc.DocType:
         """Recursively strip trailing whitespace from a Doc node."""
         if isinstance(part, doc.Concat) and part.parts:
-            while part.parts and isinstance(part.parts[-1], doc.Text) and getattr(part.parts[-1], "text", "") == " ":
+            while (
+                part.parts
+                and isinstance(part.parts[-1], doc.Text)
+                and getattr(part.parts[-1], "text", "") == " "
+            ):
                 part.parts.pop()
             if part.parts:
                 part.parts[-1] = self._strip_trailing_ws(part.parts[-1])
@@ -208,8 +212,6 @@ class DocIRGenPass(UniPass):
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
-            if isinstance(i, uni.CommentToken):
-                parts.pop()
         node.gen.doc_ir = self.finalize(parts)
 
     def exit_func_signature(self, node: uni.FuncSignature) -> None:
