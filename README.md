@@ -2,30 +2,45 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://www.jac-lang.org//assets/logo.png">
     <source media="(prefers-color-scheme: light)" srcset="https://www.jac-lang.org//assets/logo.png">
-    <img alt="Jaclang Programming Language: Unique and Powerful programming language that runs on top of Python"
-         src="https://www.jac-lang.org//assets/logo.png"
-         width="20%">
+    <img alt="Jaclang logo" src="https://www.jac-lang.org//assets/logo.png" width="20%">
   </picture>
 
-[Jac Website] | [Getting started] | [Learn] | [Documentation] | [Contributing]
+  [Jac Website] | [Getting started] | [Learn] | [Documentation] | [Contributing]
 
-[Jac]: https://www.jac-lang.org/
-[Jac Website]: https://www.jac-lang.org/
-[Getting Started]: https://www.jac-lang.org//start/
-[Learn]: https://www.jac-lang.org//learn
-[Documentation]: https://www.jac-lang.org//learn/guide/
-[Contributing]: .github/CONTRIBUTING.md
-
+  [Jac]: https://www.jac-lang.org/
+  [Jac Website]: https://www.jac-lang.org/
+  [Getting Started]: https://www.jac-lang.org//start/
+  [Learn]: https://www.jac-lang.org//learn
+  [Documentation]: https://www.jac-lang.org//learn/guide/
+  [Contributing]: .github/CONTRIBUTING.md
 </div>
 
-Welcome to the Jaseci project.
+# Jaseci Ecosystem
 
-This is a collection of libraries and frameworks in the Jaseci Ecosystem.
+Welcome to the Jaseci project. This repository houses the core libraries and tooling for building next generation applications with the Jac programming language. Jac is an innovative programming language that extends Python's semantics while maintaining full interoperability with the Python ecosystem. It introduces cutting-edge programming models and abstractions specifically designed to minimize and hide complexity, embrace AI-forward development, and automate categories of common software systems that typically require manual implementation. Despite being relatively new, Jac has already proven its production-grade capabilities, currently powering several real-world applications across various use cases.
 
-- [`jaclang`](jac/): The Jac programming language, a drop-in replacement for and supersets Python.
-- [`jac-cloud`](jac-cloud/): The cloud-native library for Jac programs. `jac-cloud` automatically converts your local application to a production-ready server stack.
-- [`jac VSCE`](jac/support/vscode_ext): Official VSCode Extension for the Jac programming language.
-- [`mtllm`](jac-mtllm/): Integrate LLM into your existing application with minimal effort.
+Jaseci serves as the implementation of the Jac runtime, functioning in a relationship similar to how CPython serves as the reference implementation for Python. This runtime environment enables Jac code to execute with its enhanced features while maintaining the seamless Python interoperability that makes the language particularly accessible to Python developers.
+
+The project brings together a set of components that work seamlessly together:
+
+- **[`jaclang`](jac/):** The Jac programming language, a drop‑in replacement for and superset of Python.
+- **[`jac-cloud`](jac-cloud/):** Cloud‑native utilities that automatically turn a Jac application into a production-ready server stack.
+- **[`jac VSCE`](jac/support/vscode_ext):** The official VS Code extension for Jac.
+- **[`mtllm`](jac-mtllm/):** Easy integration of large language models into your applications.
+
+## Quick Start
+
+Install the language and tools directly from PyPI:
+
+```bash
+pip install jaclang jac-cloud mtllm
+```
+
+After installation run `jac --help` to explore the available commands.
+
+## Documentation
+
+Comprehensive guides and API references are available at the [official documentation site][Documentation].
 
 ## Awesome Jaseci Projects 🚀
 
@@ -50,16 +65,5 @@ See [CONTRIBUTING.md](.github/CONTRIBUTING.md).
 All Jaseci open source software is distributed under the terms of both the MIT license with a few other open source projects vendored
 within with various other licenses that are very permissive.
 
-See [LICENSE-MIT](.guthub/LICENSE), and
-[COPYRIGHT](COPYRIGHT) for details.
+See [LICENSE-MIT](.github/LICENSE) for details.
 
-## Trademark
-
-[Jaseci Labs, LLC][jaseci] owns and protects the Jaseci and Jac trademarks and logos.
-If you would like to use these names or brands, please reach out for approval.
-
-[jaseci]: https://jaseci.org/
-
-The Jaseci open-source software (OSS) is maintained by [Jaseci Labs, LLC][jaseci] for which the following University of Michigan employees have either an ownership or advisory interest in Jaseci Labs, LLC: Prof. Jason Mars, Prof. Lingjia Tang, and Dr. Yiping Kang.
-
-[jaseci]: https://jaseci.org/
