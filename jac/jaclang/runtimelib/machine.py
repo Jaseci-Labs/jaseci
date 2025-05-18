@@ -730,6 +730,14 @@ class JacBasics:
     @staticmethod
     def py_get_jac_machine() -> JacMachine:
         """Get jac machine from python context."""
+        machine = JacBasics.py_find_jac_machine()
+        if not machine:
+            raise RuntimeError("Jac machine not found in python context. ")
+        return machine
+
+    @staticmethod
+    def py_find_jac_machine() -> Optional[JacMachine]:
+        """Get jac machine from python context."""
         machine = None
         for i in inspect.stack():
             machine = i.frame.f_globals.get("__jac_mach__") or i.frame.f_locals.get(
@@ -737,8 +745,6 @@ class JacBasics:
             )
             if machine:
                 break
-        if not machine:
-            raise RuntimeError("Jac machine not found in python context. ")
         return machine
 
     @staticmethod
@@ -754,7 +760,7 @@ class JacBasics:
         reload_module: Optional[bool] = False,
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
-        machine = JacMachineInterface.py_get_jac_machine()
+        machine = JacBasics.py_find_jac_machine()
         if not machine:
             machine = JacMachine(base_path=base_path)
         return JacMachineInterface.jac_import(

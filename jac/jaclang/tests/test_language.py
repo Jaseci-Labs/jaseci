@@ -69,7 +69,10 @@ class JacLanguageTests(TestCase):
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(
-            self.mach, "micro.simple_walk", base_path=self.examples_abs_path("")
+            self.mach,
+            "micro.simple_walk",
+            base_path=self.examples_abs_path(""),
+            override_name="__main__",
         )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -343,18 +346,6 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue()
         self.assertIn("one level deeperslHello World!", stdout_value)
         self.assertIn("module 'pyfunc' from ", stdout_value)
-
-    # def test_second_deep_outer_imports(self) -> None:
-    #     """Parse micro jac file."""
-    #     captured_output = io.StringIO()
-    #     sys.stdout = captured_output
-    #     Jac.jac_import(self.mach,
-    #         "deep.deeper.deep_outer_import2", base_path=self.fixture_abs_path("./")
-    #     )
-    #     sys.stdout = sys.__stdout__
-    #     stdout_value = captured_output.getvalue()
-    #     self.assertIn("one level deeperslHello World!", stdout_value)
-    #     self.assertIn("module 'pyfunc' from ", stdout_value)
 
     def test_has_lambda_goodness(self) -> None:
         """Test has lambda_goodness."""
@@ -1224,3 +1215,17 @@ class JacLanguageTests(TestCase):
         self.assertIn("B(name='Hi')", stdout_value[8])
         self.assertIn("11", stdout_value[9])
         self.assertIn("13", stdout_value[10])
+
+    def test_import_jac_from_py(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        import fixtures.jac_from_py
+
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(
+            stdout_value,
+            "Value: -1\nValue: 0\nValue: 1\nValue: 2\nValue: 3\nValue: 4"
+            "\nValue: 5\nValue: 6\nValue: 7\nFinal Value: 8\nDone walking.\n",
+        )
