@@ -26,6 +26,7 @@ from .archetype import (
     BulkWrite,
     EdgeAnchor,
     NodeAnchor,
+    NodeArchetype,
     ObjectAnchor,
     Root,
     ScheduleStatus,
@@ -46,16 +47,17 @@ class MongoDB(Memory[ObjectId, BaseAnchor]):
 
     __session__: ClientSession | None = None
 
-    def populate_data(self, edges: Iterable[EdgeAnchor]) -> None:
+    def populate_data(self, nodes: Iterable[NodeArchetype]) -> None:
         """Populate data to avoid multiple query."""
         if not SINGLE_QUERY:
-            nodes: set[NodeAnchor] = set()
+            edges = (edge for node in nodes for edge in node.__jac__.edges)
+            cnodes: set[NodeAnchor] = set()
             for edge in self.find(edges):
                 if edge.source:
-                    nodes.add(edge.source)
+                    cnodes.add(edge.source)
                 if edge.target:
-                    nodes.add(edge.target)
-            self.find(nodes)
+                    cnodes.add(edge.target)
+            self.find(cnodes)
 
     def find(  # type: ignore[override]
         self,
