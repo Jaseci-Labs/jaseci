@@ -20,6 +20,7 @@ from jaclang.compiler.passes.main import (
     InheritancePass,
     JTypeAnnotatePass,
     JTypeCheckPass,
+    JTypeCollectPass,
     JacAnnexPass,
     JacImportDepsPass,
     PyBytecodeGenPass,
@@ -169,7 +170,7 @@ class JacProgram:
             case CompilerMode.COMPILE | CompilerMode.COMPILE_SINGLE:
                 passes = [*ir_gen_sched, *py_code_gen]
             case CompilerMode.TYPECHECK:
-                passes = [JTypeAnnotatePass, JTypeCheckPass]
+                passes = [JTypeCollectPass, JTypeAnnotatePass, JTypeCheckPass]
             case _:
                 raise ValueError(f"Invalid mode: {mode}")
         self.run_schedule(mod, passes)

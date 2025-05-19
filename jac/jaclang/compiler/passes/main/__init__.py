@@ -17,6 +17,7 @@ from .pyjac_ast_link_pass import PyJacAstLinkPass  # noqa: I100
 from .inheritance_pass import InheritancePass  # noqa: I100
 from .jtype_annotation_pass import JTypeAnnotatePass  # noqa: I100
 from .jtype_check_pass import JTypeCheckPass  # noqa: I100
+from .jtype_collect_pass import JTypeCollectPass  # noqa: I100
 
 
 class CompilerMode(Enum):
@@ -51,4 +52,5 @@ __all__ = [
     "InheritancePass",
     "JTypeAnnotatePass",
     "JTypeCheckPass",
+    "JTypeCollectPass",
 ]

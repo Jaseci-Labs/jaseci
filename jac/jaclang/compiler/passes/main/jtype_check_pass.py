@@ -52,26 +52,18 @@ class JTypeCheckPass(UniPass):
         """Check the vars used as actual parameters across the formal parameters."""
         assert isinstance(node.target, (ast.NameAtom, ast.AtomTrailer))
 
-        if isinstance(node.target, ast.AtomTrailer):
-            self.__debug_print(
-                f"Ignoring function call {node.unparse()}, atom trailer isn't supported yet"
-            )
-            return
-
-        if node.target.name_spec.sym is None:
+        if isinstance(node.target, ast.NameAtom) and node.target.name_spec.sym is None:
             self.__debug_print(
                 f"Ignoring function call {node.unparse()}, no symbol linked to it"
             )
             return
 
-        assert isinstance(
-            node.target.name_spec.sym.jtype, (jtype.JFunctionType, jtype.JClassType)
-        )
+        callable_type = self.prog.type_resolver.get_type(node.target)
 
-        if isinstance(node.target.name_spec.sym.jtype, jtype.JClassType):
-            callable_type = node.target.name_spec.sym.jtype.get_constrcutor()
-        else:
-            callable_type = node.target.name_spec.sym.jtype
+        assert isinstance(callable_type, (jtype.JFunctionType, jtype.JClassType))
+
+        if isinstance(callable_type, jtype.JClassType):
+            callable_type = callable_type.get_constrcutor()
 
         func_params = {a.name: a.type for a in callable_type.parameters}
 
