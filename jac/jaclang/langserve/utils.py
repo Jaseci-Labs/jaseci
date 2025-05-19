@@ -211,7 +211,7 @@ def kind_map(sub_tab: uni.UniNode) -> lspt.SymbolKind:
         if isinstance(sub_tab, (uni.Ability, uni.ImplDef))
         else (
             lspt.SymbolKind.Class
-            if isinstance(sub_tab, (uni.Architype, uni.ImplDef))
+            if isinstance(sub_tab, (uni.Archetype, uni.ImplDef))
             else (
                 lspt.SymbolKind.Module
                 if isinstance(sub_tab, uni.Module)

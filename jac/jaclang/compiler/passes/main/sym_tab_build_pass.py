@@ -2,11 +2,11 @@
 
 This pass builds the hierarchical symbol table structure for the entire program by:
 
-1. Creating symbol tables for each scope in the program (modules, architypes, abilities, blocks)
+1. Creating symbol tables for each scope in the program (modules, archetypes, abilities, blocks)
 2. Establishing parent-child relationships between nested scopes
 3. Registering symbols for various language constructs:
    - Global variables and imports
-   - Architypes (objects, nodes, edges, walkers) and their members
+   - Archetypes (objects, nodes, edges, walkers) and their members
    - Abilities (methods and functions) and their parameters
    - Enums and their values
    - Local variables in various block scopes
@@ -84,12 +84,12 @@ class SymTabBuildPass(UniPass):
         else:
             pass  # Need to support pythonic import symbols with dots in it
 
-    def enter_architype(self, node: uni.Architype) -> None:
+    def enter_archetype(self, node: uni.Archetype) -> None:
         self.push_scope_and_link(node)
         assert node.parent_scope is not None
-        node.parent_scope.def_insert(node, access_spec=node, single_decl="architype")
+        node.parent_scope.def_insert(node, access_spec=node, single_decl="archetype")
 
-    def exit_architype(self, node: uni.Architype) -> None:
+    def exit_archetype(self, node: uni.Archetype) -> None:
         self.pop_scope()
 
     def enter_ability(self, node: uni.Ability) -> None:

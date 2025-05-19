@@ -1,4 +1,4 @@
-In Jac, a module is analogous to a Python module, serving as a container for various elements such as functions, classes (referred to as "architypes" later in this document), global variables, and other constructs that facilitate code organization and reusability. Each module begins with an optional module-level docstring, which provides a high-level overview of the module's purpose and functionality. This docstring, if present, is positioned at the very start of the module, before any other elements.
+In Jac, a module is analogous to a Python module, serving as a container for various elements such as functions, classes (referred to as "archetypes" later in this document), global variables, and other constructs that facilitate code organization and reusability. Each module begins with an optional module-level docstring, which provides a high-level overview of the module's purpose and functionality. This docstring, if present, is positioned at the very start of the module, before any other elements.
 
 ???+ Note "Docstrings"
 
@@ -11,7 +11,7 @@ Elements within a Jac module encompass familiar constructs from Python, includin
 | Module Item           | Description       |
 |----------------|-------------------|
 | [**Import Statements**](#importinclude-statements)    |   Same as python with slightly different syntax, works with both `.jac` and `.py` files (in addition to packages)                |
-| [**Architypes**](#architypes)       |    Includes traditional python `class` construct with equiviant semantics, and additionaly introduces a number of new class-like constructs including `obj`, `node`, `edge`, and `walker` to enable the data spatial programming paradigmn               |
+| [**Archetypes**](#archetypes)       |    Includes traditional python `class` construct with equiviant semantics, and additionaly introduces a number of new class-like constructs including `obj`, `node`, `edge`, and `walker` to enable the data spatial programming paradigmn               |
 | [**Function Abilities**](#abilities) | Equivalent to traditional python function semantics with change of keyword `def` to `can`. Type hints are required in parameters and returns |
 | [**Data Spatial Abilities**](#abilities)         |  A function like construct that is triggered by types of `node`s or `walker`s in the data spatial paradigm            |
 | [**Free Floating Code**](#free-code)      |  Construct (`with entry {...}`) to express presence of free floating code within a module that is not part of a function or class-like object. Primarily for code cleanliness, readability, and maintainability.    |

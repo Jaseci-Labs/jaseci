@@ -34,7 +34,7 @@ The `DefUsePass` identifies and processes additional symbol definitions that wer
 - Loop variables in for loops
 - Member variables in attribute chains
 - Variables in destructuring operations
-- Has variables in architypes
+- Has variables in archetypes
 
 For example, here's how assignments are handled:
 
@@ -165,12 +165,12 @@ graph TD
 
 ## Handling Special Cases
 
-### Architype Inheritance
+### Archetype Inheritance
 
-The `DefUsePass` also handles architype inheritance by adding inherited symbols to the architype's symbol table:
+The `DefUsePass` also handles archetype inheritance by adding inherited symbols to the archetype's symbol table:
 
 ```python
-def enter_architype(self, node: uni.Architype) -> None:
+def enter_archetype(self, node: uni.Archetype) -> None:
     node.sym_tab.inherit_baseclasses_sym(node)
 
     def inform_from_walker(node: uni.UniNode) -> None:

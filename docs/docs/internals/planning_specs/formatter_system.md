@@ -588,7 +588,7 @@ gantt
     FuncCall              :p3, 2023-06-11, 5d
     section Phase 2
     IfStmt                :p4, 2023-06-16, 5d
-    Architype             :p5, 2023-06-21, 5d
+    Archetype             :p5, 2023-06-21, 5d
     HasVar                :p6, 2023-06-26, 5d
     section Phase 3
     ImportStmt            :p7, 2023-07-01, 5d

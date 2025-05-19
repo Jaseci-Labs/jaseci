@@ -16,7 +16,7 @@ module: (toplevel_stmt (tl_stmt_with_doc | toplevel_stmt)*)?
 // Statements that are only valid at the toplevel.
 tl_stmt_with_doc: STRING toplevel_stmt
 toplevel_stmt: import_stmt
-       | architype
+       | archetype
        | impl_def
        | ability
        | global_var
@@ -37,11 +37,11 @@ import_items: (import_item COMMA)* import_item COMMA?
 import_item: named_ref (KW_AS NAME)?
 dotted_name: named_ref (DOT named_ref)*
 
-// [Heading]: Architypes.
-architype: decorators? KW_ASYNC? architype_decl
+// [Heading]: Archetypes.
+archetype: decorators? KW_ASYNC? archetype_decl
          | enum
 
-architype_decl: arch_type access_tag? NAME inherited_archs? (member_block | SEMI)
+archetype_decl: arch_type access_tag? NAME inherited_archs? (member_block | SEMI)
 decorators: (DECOR_OP atomic_chain)+
 access_tag: COLON ( KW_PROT | KW_PUB | KW_PRIV )
 inherited_archs: LPAREN (atomic_chain COMMA)* atomic_chain RPAREN
@@ -53,9 +53,9 @@ arch_type: KW_WALKER
           | KW_NODE
           | KW_CLASS
 
-// [Heading]: Architype bodies.
+// [Heading]: Archetype bodies.
 member_block: LBRACE member_stmt* RBRACE
-member_stmt: STRING? (py_code_block | ability | architype | impl_def | has_stmt | free_code)
+member_stmt: STRING? (py_code_block | ability | archetype | impl_def | has_stmt | free_code)
 has_stmt: KW_STATIC? (KW_LET | KW_HAS) access_tag? has_assign_list SEMI
 has_assign_list: (has_assign_list COMMA)? typed_has_clause
 typed_has_clause: named_ref type_tag (EQ expression | KW_BY KW_POST_INIT)?
@@ -104,7 +104,7 @@ code_block: LBRACE statement* RBRACE
 statement: import_stmt
        | ability
        | has_stmt
-       | architype
+       | archetype
        | impl_def
        | if_stmt
        | while_stmt

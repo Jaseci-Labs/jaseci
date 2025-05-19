@@ -3,19 +3,19 @@
 from __future__ import annotations
 
 
-from .architype import (
+from .archetype import (
     AccessLevel,
     Anchor,
-    Architype,
+    Archetype,
     DataSpatialFunction,
     EdgeAnchor,
-    EdgeArchitype,
+    EdgeArchetype,
     GenericEdge,
     NodeAnchor,
-    NodeArchitype,
+    NodeArchetype,
     Root,
     WalkerAnchor,
-    WalkerArchitype,
+    WalkerArchetype,
 )
 from .memory import Memory, ShelfStorage
 from .test import JacTestCheck, JacTestResult, JacTextTestRunner
@@ -26,10 +26,10 @@ __all__ = [
     "NodeAnchor",
     "EdgeAnchor",
     "WalkerAnchor",
-    "Architype",
-    "NodeArchitype",
-    "EdgeArchitype",
-    "WalkerArchitype",
+    "Archetype",
+    "NodeArchetype",
+    "EdgeArchetype",
+    "WalkerArchetype",
     "GenericEdge",
     "Root",
     "DataSpatialFunction",
