@@ -125,6 +125,7 @@ class JTypeAnnotatePass(UniPass):
         """
         type_full_name = self.prog.mod.main.get_href_path(node)
         instance_members: dict[str, jtype.JClassMember] = {}
+        class_members: dict[str, jtype.JClassMember] = {}
         for sym in node.sym_tab.names_in_scope.values():
             instance_members[sym.sym_name] = jtype.JClassMember(
                 name=sym.sym_name,
@@ -135,14 +136,10 @@ class JTypeAnnotatePass(UniPass):
                 decl=sym,
             )
 
-        class_type = jtype.JClassType(
-            name=node.sym_name,
-            full_name=type_full_name,
-            module=node.parent_of_type(uni.Module),
-            is_abstract=node.is_abstract,
-            instance_members=instance_members,  # TODO: Pass this correctly
-            class_members={},  # TODO: Pass this correctly
-        )
+        class_type = self.prog.type_registry.get(type_full_name)
+        assert isinstance(class_type, jtype.JClassType)
+        class_type.instance_members = instance_members
+        class_type.class_members = class_members
 
         if "__init__" not in instance_members:
             attributes = list(
@@ -169,7 +166,6 @@ class JTypeAnnotatePass(UniPass):
                 jtype.JClassInstanceType(class_type)
             )
 
-        self.prog.type_registry.register(class_type)
         self.prog.type_resolver.set_type(node.name_spec, class_type)
 
     def exit_has_var(self, node: uni.HasVar) -> None:
