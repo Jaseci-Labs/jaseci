@@ -830,7 +830,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
-            parts.append(self.space())
+            # parts.append(self.space())
         node.gen.doc_ir = self.finalize(parts)
 
     def exit_assign_compr(self, node: uni.AssignCompr) -> None:
