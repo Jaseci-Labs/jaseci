@@ -1,29 +1,25 @@
-import contextlib
+"""Unit test utilities for JacLangServer."""
 import os
+import tempfile
+
+from jaclang.langserve.engine import JacLangServer
+from jaclang.vendor.pygls.uris import from_fs_path
+from jaclang.vendor.pygls.workspace import Workspace
 
 from textwrap import dedent
-
-@contextlib.contextmanager
-def patch_file(filepath: str, new_content: str):
-    """
-    Context manager to temporarily replace file content for testing.
-    Restores the original content after the block.
-    """
-    with open(filepath, "r") as f:
-        original = f.read()
-    try:
-        with open(filepath, "w") as f:
-            f.write(new_content)
-        yield
-    finally:
-        with open(filepath, "w") as f:
-            f.write(original)
 
 def get_jac_file_path():
     """Return the absolute path to the sample Jac file used for testing."""
     return os.path.abspath(
         os.path.join(os.path.dirname(__file__), "../../../../examples/manual_code/circle.jac")
     )
+
+def create_temp_jac_file(initial_content: str = "") -> str:
+    """Create a temporary Jac file with optional initial content and return its path."""
+    temp = tempfile.NamedTemporaryFile(delete=False, suffix=".jac", mode="w", encoding="utf-8")
+    temp.write(initial_content)
+    temp.close()
+    return temp.name
 
 def get_code(code: str) -> str:
     """Generate a sample Jac code snippet with optional test code injected."""
@@ -110,3 +106,10 @@ def get_code(code: str) -> str:
     }}
 ''')
     return jac_code
+
+def create_ls_with_workspace(file_path: str):
+    """Create JacLangServer and workspace for a given file path, return (uri, ls)."""
+    ls = JacLangServer()
+    uri = from_fs_path(file_path)
+    ls.lsp._workspace = Workspace(os.path.dirname(file_path), ls)
+    return uri, ls
