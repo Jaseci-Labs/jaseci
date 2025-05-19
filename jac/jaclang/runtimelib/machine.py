@@ -753,7 +753,6 @@ class JacBasics:
         target: str,
         base_path: str,
         absorb: bool = False,
-        cachable: bool = True,
         mdl_alias: Optional[str] = None,
         override_name: Optional[str] = None,
         items: Optional[dict[str, Union[str, Optional[str]]]] = None,
