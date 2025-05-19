@@ -15,7 +15,7 @@ from uuid import UUID, uuid4
 
 logger = getLogger(__name__)
 
-TARCH = TypeVar("TARCH", bound="Architype")
+TARCH = TypeVar("TARCH", bound="Archetype")
 TANCH = TypeVar("TANCH", bound="Anchor")
 
 
@@ -70,7 +70,7 @@ class AnchorReport:
 class Anchor:
     """Object Anchor."""
 
-    architype: Architype
+    archetype: Archetype
     id: UUID = field(default_factory=uuid4)
     root: Optional[UUID] = None
     access: Permission = field(default_factory=Permission)
@@ -79,7 +79,7 @@ class Anchor:
 
     def is_populated(self) -> bool:
         """Check if state."""
-        return "architype" in self.__dict__
+        return "archetype" in self.__dict__
 
     def make_stub(self: TANCH) -> TANCH:
         """Return unsynced copy of anchor."""
@@ -90,7 +90,7 @@ class Anchor:
         return self
 
     def populate(self) -> None:
-        """Retrieve the Architype from db and return."""
+        """Retrieve the Archetype from db and return."""
         from jaclang.runtimelib.machine import JacMachineInterface as Jac
 
         jsrc = Jac.get_context().mem
@@ -117,13 +117,13 @@ class Anchor:
     def __getstate__(self) -> dict[str, Any]:  # NOTE: May be better type hinting
         """Serialize Anchor."""
         if self.is_populated():
-            unlinked = object.__new__(self.architype.__class__)
-            unlinked.__dict__.update(self.architype.__dict__)
+            unlinked = object.__new__(self.archetype.__class__)
+            unlinked.__dict__.update(self.archetype.__dict__)
             unlinked.__dict__.pop("__jac__", None)
 
             return {
                 "id": self.id,
-                "architype": unlinked,
+                "archetype": unlinked,
                 "root": self.root,
                 "access": self.access,
                 "persistent": self.persistent,
@@ -135,8 +135,8 @@ class Anchor:
         """Deserialize Anchor."""
         self.__dict__.update(state)
 
-        if self.is_populated() and self.architype:
-            self.architype.__jac__ = self
+        if self.is_populated() and self.archetype:
+            self.archetype.__jac__ = self
             self.hash = hash(dumps(self))
 
     def __repr__(self) -> str:
@@ -157,8 +157,8 @@ class Anchor:
         return AnchorReport(
             id=self.id.hex,
             context=(
-                asdict(self.architype)
-                if is_dataclass(self.architype) and not isinstance(self.architype, type)
+                asdict(self.archetype)
+                if is_dataclass(self.archetype) and not isinstance(self.archetype, type)
                 else {}
             ),
         )
@@ -179,7 +179,7 @@ class Anchor:
 class NodeAnchor(Anchor):
     """Node Anchor."""
 
-    architype: NodeArchitype
+    archetype: NodeArchetype
     edges: list[EdgeAnchor]
 
     def __getstate__(self) -> dict[str, object]:
@@ -196,7 +196,7 @@ class NodeAnchor(Anchor):
 class EdgeAnchor(Anchor):
     """Edge Anchor."""
 
-    architype: EdgeArchitype
+    archetype: EdgeArchetype
     source: NodeAnchor
     target: NodeAnchor
     is_undirected: bool
@@ -221,7 +221,7 @@ class EdgeAnchor(Anchor):
 class WalkerAnchor(Anchor):
     """Walker Anchor."""
 
-    architype: WalkerArchitype
+    archetype: WalkerArchetype
     path: list[NodeAnchor] = field(default_factory=list)
     next: list[NodeAnchor] = field(default_factory=list)
     ignores: list[NodeAnchor] = field(default_factory=list)
@@ -232,12 +232,12 @@ class WalkerAnchor(Anchor):
 class ObjectAnchor(Anchor):
     """Edge Anchor."""
 
-    architype: ObjectArchitype
+    archetype: ObjectArchetype
 
 
 @dataclass(eq=False, repr=False, kw_only=True)
-class Architype:
-    """Architype Protocol."""
+class Archetype:
+    """Archetype Protocol."""
 
     _jac_entry_funcs_: ClassVar[list[DataSpatialFunction]] = []
     _jac_exit_funcs_: ClassVar[list[DataSpatialFunction]] = []
@@ -245,40 +245,40 @@ class Architype:
     @cached_property
     def __jac__(self) -> Anchor:
         """Create default anchor."""
-        return Anchor(architype=self)
+        return Anchor(archetype=self)
 
     def __init_subclass__(cls) -> None:
         """Configure subclasses."""
         if not cls.__dict__.get("__jac_base__", False):
             from jaclang import JacMachineInterface as _
 
-            _.make_architype(cls)
+            _.make_archetype(cls)
 
     def __repr__(self) -> str:
-        """Override repr for architype."""
+        """Override repr for archetype."""
         return f"{self.__class__.__name__}"
 
 
-class NodeArchitype(Architype):
-    """Node Architype Protocol."""
+class NodeArchetype(Archetype):
+    """Node Archetype Protocol."""
 
     __jac_base__: ClassVar[bool] = True
 
     @cached_property
     def __jac__(self) -> NodeAnchor:
         """Create default anchor."""
-        return NodeAnchor(architype=self, edges=[])
+        return NodeAnchor(archetype=self, edges=[])
 
 
-class EdgeArchitype(Architype):
-    """Edge Architype Protocol."""
+class EdgeArchetype(Archetype):
+    """Edge Archetype Protocol."""
 
     __jac_base__: ClassVar[bool] = True
     __jac__: EdgeAnchor
 
 
-class WalkerArchitype(Architype):
-    """Walker Architype Protocol."""
+class WalkerArchetype(Archetype):
+    """Walker Archetype Protocol."""
 
     __jac_async__: ClassVar[bool] = False
     __jac_base__: ClassVar[bool] = True
@@ -286,33 +286,33 @@ class WalkerArchitype(Architype):
     @cached_property
     def __jac__(self) -> WalkerAnchor:
         """Create default anchor."""
-        return WalkerAnchor(architype=self)
+        return WalkerAnchor(archetype=self)
 
 
-class ObjectArchitype(Architype):
-    """Walker Architype Protocol."""
+class ObjectArchetype(Archetype):
+    """Walker Archetype Protocol."""
 
     __jac_base__: ClassVar[bool] = True
 
     @cached_property
     def __jac__(self) -> ObjectAnchor:
         """Create default anchor."""
-        return ObjectAnchor(architype=self)
+        return ObjectAnchor(archetype=self)
 
 
 @dataclass(eq=False)
-class GenericEdge(EdgeArchitype):
+class GenericEdge(EdgeArchetype):
     """Generic Edge."""
 
     __jac_base__: ClassVar[bool] = True
 
     def __repr__(self) -> str:
-        """Override repr for architype."""
+        """Override repr for archetype."""
         return f"{self.__class__.__name__}()"
 
 
 @dataclass(eq=False)
-class Root(NodeArchitype):
+class Root(NodeArchetype):
     """Generic Root Node."""
 
     __jac_base__: ClassVar[bool] = True
@@ -320,10 +320,10 @@ class Root(NodeArchitype):
     @cached_property
     def __jac__(self) -> NodeAnchor:
         """Create default anchor."""
-        return NodeAnchor(architype=self, persistent=True, edges=[])
+        return NodeAnchor(archetype=self, persistent=True, edges=[])
 
     def __repr__(self) -> str:
-        """Override repr for architype."""
+        """Override repr for archetype."""
         return f"{self.__class__.__name__}()"
 
 

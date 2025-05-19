@@ -23,9 +23,9 @@ for (let c of ["node", "edge", "walker"]) {
             rename = { "edge": "edges" };
 
         if (!row.context) {
-            set["architype"] = {};
+            set["archetype"] = {};
         } else {
-            rename["context"] = "architype";
+            rename["context"] = "archetype";
         }
 
         for (let root of row.access.roots[0]) {

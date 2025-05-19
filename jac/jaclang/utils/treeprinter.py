@@ -37,7 +37,7 @@ CLASS_COLOR_MAP: dict[str, str] = {
     "Import": "#e1d1ff",
     "ModulePath": "#e1d1ff",
     "ModuleItem": "#e1d1ff",
-    "Architype": "#a8dadc",
+    "Archetype": "#a8dadc",
     "ArchDef": "#a3d3f0",
     "Enum": "#89c6b3",
     "EnumDef": "#89c6b3",

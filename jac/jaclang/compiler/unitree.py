@@ -5,7 +5,6 @@ from __future__ import annotations
 import ast as ast3
 import builtins
 import os
-import site
 from copy import copy
 from dataclasses import dataclass
 from hashlib import md5
@@ -31,6 +30,7 @@ from jaclang.compiler.constant import (
     SymbolType,
 )
 from jaclang.compiler.constant import DELIM_MAP, SymbolAccess, Tokens as Tok
+from jaclang.utils import resolve_relative_path
 from jaclang.utils.treeprinter import (
     dotgen_ast_tree,
     dotgen_symtab_tree,
@@ -481,7 +481,7 @@ class UniScopeNode(UniNode):
 
             fix(node)
 
-    def inherit_baseclasses_sym(self, node: Architype | Enum) -> None:
+    def inherit_baseclasses_sym(self, node: Archetype | Enum) -> None:
         """Inherit base classes symbol tables."""
         if node.base_classes:
             for base_cls in node.base_classes.items:
@@ -821,7 +821,7 @@ class NameAtom(AtomExpr, EnumBlockStmt):
         )
         if isinstance(name_of, ModulePath):
             return SemTokType.NAMESPACE, SemTokMod.DEFINITION
-        if isinstance(name_of, Architype):
+        if isinstance(name_of, Archetype):
             return SemTokType.CLASS, SemTokMod.DECLARATION
         if isinstance(name_of, Enum):
             return SemTokType.ENUM, SemTokMod.DECLARATION
@@ -868,7 +868,7 @@ class SubTag(UniNode, Generic[T]):
         tag: T,
         kid: Sequence[UniNode],
     ) -> None:
-        self.tag = tag
+        self.tag: T = tag
         UniNode.__init__(self, kid=kid)
 
     def normalize(self, deep: bool = False) -> bool:
@@ -892,7 +892,7 @@ class SubNodeList(UniNode, Generic[T]):
         left_enc: Optional[Token] = None,
         right_enc: Optional[Token] = None,
     ) -> None:
-        self.items = items
+        self.items: list[T] = items
         self.delim = delim
         self.left_enc = left_enc
         self.right_enc = right_enc
@@ -939,7 +939,7 @@ class Module(AstDocNode, UniScopeNode):
         self.stub_only = stub_only
         self.impl_mod: list[Module] = []
         self.test_mod: list[Module] = []
-        self.terminals: list[Token] = terminals
+        self.src_terminals: list[Token] = terminals
         self.is_raised_from_py: bool = False
 
         UniNode.__init__(self, kid=kid)
@@ -991,10 +991,16 @@ class Module(AstDocNode, UniScopeNode):
 
     def format(self) -> str:
         """Get all sub nodes of type."""
-        from jaclang.compiler.passes.tool import JacFormatPass
+        from jaclang.compiler.passes.tool import DocIRGenPass, JacFormatPass
         from jaclang.compiler.program import JacProgram
 
-        return JacFormatPass(ir_in=self, prog=JacProgram()).ir_out.gen.jac
+        return JacFormatPass(
+            ir_in=DocIRGenPass(
+                ir_in=self,
+                prog=JacProgram(),
+            ).ir_out,
+            prog=JacProgram(),
+        ).ir_out.gen.jac
 
     def unparse(self) -> str:
         super().unparse()
@@ -1019,8 +1025,8 @@ class Module(AstDocNode, UniScopeNode):
     def get_href_path(node: UniNode) -> str:
         """Return the full path of the module that contains this node."""
         parent = node.find_parent_of_type(Module)
-        mod_list: list[Module | Architype] = []
-        if isinstance(node, (Module, Architype)):
+        mod_list: list[Module | Archetype] = []
+        if isinstance(node, (Module, Archetype)):
             mod_list.append(node)
         while parent is not None:
             mod_list.append(parent)
@@ -1197,9 +1203,7 @@ class PyInlineCode(ElementStmt, ArchBlockStmt, EnumBlockStmt, CodeBlockStmt):
         new_kid: list[UniNode] = []
         if self.doc:
             new_kid.append(self.doc)
-        new_kid.append(self.gen_token(Tok.PYNLINE))
         new_kid.append(self.code)
-        new_kid.append(self.gen_token(Tok.PYNLINE))
         self.set_kids(nodes=new_kid)
         return res
 
@@ -1352,43 +1356,8 @@ class ModulePath(AstSymbolNode):
 
     def resolve_relative_path(self, target_item: Optional[str] = None) -> str:
         """Convert an import target string into a relative file path."""
-        # Build the target module name
         target = self.dot_path_str + (f".{target_item}" if target_item else "")
-        site_packages = site.getsitepackages()[0]
-
-        # Split the target into parts and determine how many levels to traverse.
-        parts = target.split(".")
-        traversal_levels = max(self.level - 1, 0)
-        actual_parts = parts[traversal_levels:]
-
-        def candidate_from(base: str) -> str:
-            candidate = os.path.join(base, *actual_parts)
-            candidate_jac = candidate + ".jac"
-            return candidate_jac if os.path.exists(candidate_jac) else candidate
-
-        # 1. Try resolving using the first site-packages directory.
-        candidate = candidate_from(site_packages)
-        if os.path.exists(candidate):
-            return candidate
-
-        # 2. Adjust the base path by moving up for each traversal level.
-        base_path = (
-            os.getenv("JACPATH") or os.path.dirname(self.loc.mod_path) or os.getcwd()
-        )
-        for _ in range(traversal_levels):
-            base_path = os.path.dirname(base_path)
-        candidate = candidate_from(base_path)
-
-        # 3. If candidate doesn't exist and JACPATH is provided, search recursively.
-        jacpath = os.getenv("JACPATH")
-        if not os.path.exists(candidate) and jacpath:
-            target_filename = actual_parts[-1] + ".jac"
-            for root, _, files in os.walk(jacpath):
-                if target_filename in files:
-                    candidate = os.path.join(root, target_filename)
-                    break
-
-        return candidate
+        return resolve_relative_path(target, self.loc.mod_path)
 
 
 class ModuleItem(AstSymbolNode):
@@ -1442,7 +1411,7 @@ class ModuleItem(AstSymbolNode):
         return res
 
 
-class Architype(
+class Archetype(
     ArchSpec,
     AstAccessNode,
     ArchBlockStmt,
@@ -1735,19 +1704,19 @@ class Ability(
         return not self.signature or isinstance(self.signature, FuncSignature)
 
     @property
-    def method_owner(self) -> Optional[Architype | Enum]:
+    def method_owner(self) -> Optional[Archetype | Enum]:
         found = (
             self.parent.parent
             if self.parent
             and self.parent.parent
-            and isinstance(self.parent.parent, (Architype, Enum))
+            and isinstance(self.parent.parent, (Archetype, Enum))
             else None
         ) or (
             self.parent.parent.decl_link
             if self.parent
             and self.parent.parent
             and isinstance(self.parent.parent, ImplDef)
-            and isinstance(self.parent.parent.decl_link, Architype)
+            and isinstance(self.parent.parent.decl_link, Archetype)
             else None
         )
         return found
@@ -1828,13 +1797,15 @@ class FuncSignature(UniNode):
 
     def normalize(self, deep: bool = False) -> bool:
         res = True
+        is_lambda = self.parent and isinstance(self.parent, LambdaExpr)
         if deep:
             res = self.params.normalize(deep) if self.params else res
             res = res and self.return_type.normalize(deep) if self.return_type else res
-        new_kid: list[UniNode] = [self.gen_token(Tok.LPAREN)]
+        new_kid: list[UniNode] = [self.gen_token(Tok.LPAREN)] if not is_lambda else []
         if self.params:
             new_kid.append(self.params)
-        new_kid.append(self.gen_token(Tok.RPAREN))
+        if not is_lambda:
+            new_kid.append(self.gen_token(Tok.RPAREN))
         if self.return_type:
             new_kid.append(self.gen_token(Tok.RETURN_HINT))
             new_kid.append(self.return_type)
@@ -1851,7 +1822,7 @@ class FuncSignature(UniNode):
 
     @property
     def is_in_py_class(self) -> bool:
-        is_archi = self.find_parent_of_type(Architype)
+        is_archi = self.find_parent_of_type(Archetype)
         is_class = is_archi is not None and is_archi.arch_type.name == Tok.KW_CLASS
 
         return (
@@ -2418,10 +2389,7 @@ class WithStmt(AstAsyncNode, CodeBlockStmt, UniScopeNode):
             new_kid.append(self.gen_token(Tok.KW_ASYNC))
         new_kid.append(self.gen_token(Tok.KW_WITH))
         new_kid.append(self.exprs)
-        new_kid.append(self.gen_token(Tok.LBRACE))
         new_kid.append(self.body)
-        new_kid.append(self.gen_token(Tok.RBRACE))
-
         self.set_kids(nodes=new_kid)
         return res
 
@@ -2896,13 +2864,7 @@ class BinaryExpr(Expr):
             res = self.left.normalize(deep)
             res = res and self.right.normalize(deep) if self.right else res
             res = res and self.op.normalize(deep) if self.op else res
-        new_kid: list[UniNode] = [
-            self.gen_token(Tok.LPAREN),
-            self.left,
-            self.op,
-            self.right,
-            self.gen_token(Tok.RPAREN),
-        ]
+        new_kid: list[UniNode] = [self.left, self.op, self.right]
         self.set_kids(nodes=new_kid)
         return res
 
@@ -2991,11 +2953,7 @@ class LambdaExpr(Expr, UniScopeNode):
         new_kid: list[UniNode] = [self.gen_token(Tok.KW_LAMBDA)]
         if self.signature:
             new_kid.append(self.signature)
-        new_kid += [
-            self.gen_token(Tok.COLON),
-            self.body,
-            self.gen_token(Tok.SEMI),
-        ]
+        new_kid += [self.gen_token(Tok.COLON), self.body]
         self.set_kids(nodes=new_kid)
         return res
 
@@ -3299,6 +3257,8 @@ class KWPair(UniNode):
         if self.key:
             new_kid.append(self.key)
             new_kid.append(self.gen_token(Tok.EQ))
+        else:
+            new_kid.append(self.gen_token(Tok.STAR_POW))
         new_kid.append(self.value)
         self.set_kids(nodes=new_kid)
         return res
@@ -4230,6 +4190,9 @@ class Token(UniNode):
         self.pos_end = pos_end
         UniNode.__init__(self, kid=[])
 
+    def __repr__(self) -> str:
+        return f"Token({self.name}, {self.value}, {self.loc})"
+
     def normalize(self, deep: bool = True) -> bool:
         return bool(self.value and self.name)
 
@@ -4595,6 +4558,21 @@ class CommentToken(Token):
         )
 
         UniNode.__init__(self, kid=kid)
+
+    @property
+    def left_node(self) -> Optional[UniNode]:
+        if self.parent and (idx := self.parent.kid.index(self)) > 0:
+            return self.parent.kid[idx - 1]
+        return None
+
+    @property
+    def right_node(self) -> Optional[UniNode]:
+        if (
+            self.parent
+            and (idx := self.parent.kid.index(self)) < len(self.parent.kid) - 1
+        ):
+            return self.parent.kid[idx + 1]
+        return None
 
 
 # ----------------

@@ -366,19 +366,19 @@ In the dynamic landscape of programming languages, the advent of Jac introduces 
 
 Utilizing Semstrings in Various Cases
 
-- [Architype Declaration](#architype-declaration).
+- [Archetype Declaration](#archetype-declaration).
 - [Enum and Enum Items Declaration](#enum-declaration)
 - [Global variables Declaration](#global-variables-declaration)
 - [Ability/Method Declaration](#ability-method-declaration)
 - [Ability/Method Parameter Declaration](#ability-method-parameter-declaration)
-- [Attributes of Architypes](#attributes-of-architypes)
+- [Attributes of Archetypes](#attributes-of-archetypes)
 - [Return Type Specification](#return-type-specification)
 
 
 <span style="color:orange;">
 </span>
 
-<h3 id="architype-declaration">Architype Declaration</h3>
+<h3 id="archetype-declaration">Archetype Declaration</h3>
 
 ```jac linenums="1"
 obj 'A collection of dad jokes with punchlines'
@@ -387,7 +387,7 @@ JokeList {
 }
 ```
 
-In this architype(Object) declaration, the semstring <span style="color:orange;"> "A collection of dad jokes with punchlines"</span> provides a clear and concise description of the purpose of the JokeList architype. It guide the LLM that this JpkeList is designed to store a collection of dad jokes, each consisting of a joke and its corresponding punchline.
+In this archetype(Object) declaration, the semstring <span style="color:orange;"> "A collection of dad jokes with punchlines"</span> provides a clear and concise description of the purpose of the JokeList archetype. It guide the LLM that this JpkeList is designed to store a collection of dad jokes, each consisting of a joke and its corresponding punchline.
 
 
 <h3 id="enum-declaration">Enum and Enum Items Declaration</h3>
@@ -434,9 +434,9 @@ get_answer(question: 'Question' str, choices: 'Answer Choices': dict) -> 'Answer
 ```
 In this instance, the semstrings for parameters (<span style="color:orange;">'Question'</span> and <span style="color:orange;">'Answer Choices'</span>) act as informative labels, offering a clear understanding of what each parameter represents. The labels provide context to LLM, guiding it to interpret and respond to the function's inputs appropriately.
 
-<h3 id="attributes-of-architypes">Attributes of Architypes</h3>
+<h3 id="attributes-of-archetypes">Attributes of Archetypes</h3>
 
-Semstrings play a vital role in describing attributes within architypes, providing a succinct and clear explanation of the purpose and nature of each attribute. This practice makes it easier to convey the respective meanings to prompts.
+Semstrings play a vital role in describing attributes within archetypes, providing a succinct and clear explanation of the purpose and nature of each attribute. This practice makes it easier to convey the respective meanings to prompts.
 ```jac linenums="1"
 obj 'Singer'
 Singer {
@@ -445,7 +445,7 @@ Singer {
         top_songs: "His/Her's Top 2 Songs": list[str];
 }
 ```
-In this architype example, the semstrings associated with attributes (<span style="color:orange;">'Name of the Singer'</span>, <span style="color:orange;">'Age,'</span> and <span style="color:orange;">"His/Her's Top 2 Songs"</span>) serve as concise descriptors. These semstrings effectively communicate the significance of each attribute, facilitating a more straightforward understanding of the architype's structure.
+In this archetype example, the semstrings associated with attributes (<span style="color:orange;">'Name of the Singer'</span>, <span style="color:orange;">'Age,'</span> and <span style="color:orange;">"His/Her's Top 2 Songs"</span>) serve as concise descriptors. These semstrings effectively communicate the significance of each attribute, facilitating a more straightforward understanding of the archetype's structure.
 
 <h3 id="return-type-specification">Return Type Specification</h3>
 

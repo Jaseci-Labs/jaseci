@@ -12,7 +12,7 @@ from jaclang.runtimelib.machine import hookimpl
 
 from pymongo.errors import ConnectionFailure, OperationFailure
 
-from ..core.architype import BulkWrite, NodeAnchor
+from ..core.archetype import BulkWrite, NodeAnchor
 from ..core.context import PUBLIC_ROOT_ID, SUPER_ROOT_ID
 from ..jaseci.datasources import Collection
 from ..jaseci.main import FastAPI
@@ -143,7 +143,7 @@ class JacCmd:
                                 "all": "NO_ACCESS",
                                 "roots": {"anchors": {}},
                             },
-                            "architype": {},
+                            "archetype": {},
                             "edges": [],
                         }
 

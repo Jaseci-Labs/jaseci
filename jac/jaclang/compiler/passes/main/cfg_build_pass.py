@@ -74,7 +74,7 @@ class CFGBuildPass(UniPass):
                 ]
                 if (
                     node.parent.parent
-                    and isinstance(node.parent.parent, uni.Architype)
+                    and isinstance(node.parent.parent, uni.Archetype)
                     # and isinstance(node.parent.parent, uni.BasicBlockStmt)
                 ):
                     parent_obj = node.parent.parent
@@ -228,7 +228,7 @@ class CoalesceBBPass(UniPass):
                     cfg[key]["bb_stmts"][i] = "if " + bbs.condition.unparse()
                 elif isinstance(bbs, uni.ElseStmt):
                     cfg[key]["bb_stmts"][i] = "else"
-                elif isinstance(bbs, uni.Architype):
+                elif isinstance(bbs, uni.Archetype):
                     cfg[key]["bb_stmts"][i] = "obj " + bbs.name.unparse()
                 elif isinstance(bbs, uni.Ability):
                     cfg[key]["bb_stmts"][i] = (

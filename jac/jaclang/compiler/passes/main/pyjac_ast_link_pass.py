@@ -7,7 +7,7 @@ Jac AST nodes by:
 2. Handling special cases like abilities/functions where the structure differs between languages
 3. Ensuring proper name resolution across the AST boundary
 4. Maintaining parameter correspondence between declarations and implementations
-5. Supporting complex language constructs like architypes, enums, and abilities
+5. Supporting complex language constructs like archetypes, enums, and abilities
 
 These links are essential for error reporting, debugging, and maintaining semantic
 relationships between the two AST representations throughout the compilation process.
@@ -35,7 +35,7 @@ class PyJacAstLinkPass(UniPass):
         if node.alias:
             self.link_jac_py_nodes(jac_node=node.alias, py_nodes=node.gen.py_ast)
 
-    def exit_architype(self, node: uni.Architype) -> None:
+    def exit_archetype(self, node: uni.Archetype) -> None:
         self.link_jac_py_nodes(jac_node=node.name, py_nodes=node.gen.py_ast)
         if isinstance(node.body, uni.ImplDef):
             self.link_jac_py_nodes(jac_node=node.body, py_nodes=node.gen.py_ast)

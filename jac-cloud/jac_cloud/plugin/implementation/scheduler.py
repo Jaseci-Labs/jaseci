@@ -16,13 +16,13 @@ from fastapi.responses import JSONResponse, ORJSONResponse
 
 from jaclang.runtimelib.machine import JacMachineInterface as Jac
 
-from ...core.architype import (
+from ...core.archetype import (
     NodeAnchor,
-    NodeArchitype,
+    NodeArchetype,
     Schedule,
     ScheduleStatus,
     WalkerAnchor,
-    WalkerArchitype,
+    WalkerArchetype,
 )
 from ...core.context import JaseciContext
 from ...jaseci.datasources.localdb import MONTY_CLIENT
@@ -128,7 +128,7 @@ def schedule_walker(
 ) -> Callable:
     """Override schedule_job to trigger it once across workers and replicas."""
 
-    def wrapper(walker: type[WalkerArchitype]) -> None:
+    def wrapper(walker: type[WalkerArchetype]) -> None:
         @scheduler.scheduled_job(
             trigger=trigger,
             args=args,
@@ -191,7 +191,7 @@ def repopulate_tasks() -> None:
 
 
 def create_task(
-    walker: WalkerArchitype, node: NodeArchitype, date: datetime | None = None
+    walker: WalkerArchetype, node: NodeArchetype, date: datetime | None = None
 ) -> str:
     """Create task."""
     root_id: str = Jac.object_ref(Jac.root())
@@ -225,12 +225,12 @@ def run_task(
 
     if walker.schedule and (root_id := walker.schedule.root_id):
         jctx.root_state = NodeAnchor.ref(root_id)
-        jctx.root_state.architype
+        jctx.root_state.archetype
 
-    warch = walker.architype
+    warch = walker.archetype
 
     try:
-        Jac.spawn(warch, jctx.entry_node.architype)
+        Jac.spawn(warch, jctx.entry_node.archetype)
 
         resp = jctx.response(walker.returns)
         if jctx.custom is not MISSING:

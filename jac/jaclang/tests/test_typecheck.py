@@ -93,13 +93,13 @@ class JacTypeCheckTests(TestCase):
             mode=CMode.TYPECHECK,
         )
 
-        architype_count = 0
+        archetype_count = 0
         for mod in prog.mod.hub.values():
             if mod.name == "builtins":
                 continue
-            architype_count += len(mod.get_all_sub_nodes(uni.Architype))
+            archetype_count += len(mod.get_all_sub_nodes(uni.Archetype))
 
-        self.assertEqual(architype_count, 24)
+        self.assertEqual(archetype_count, 24)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(
@@ -137,13 +137,13 @@ class JacTypeCheckTests(TestCase):
                 mode=CMode.TYPECHECK,
             )
 
-        architype_count = 0
+        archetype_count = 0
         for mod in prog.mod.hub.values():
             if mod.name == "builtins":
                 continue
-            architype_count += len(mod.get_all_sub_nodes(uni.Architype))
+            archetype_count += len(mod.get_all_sub_nodes(uni.Archetype))
 
-        self.assertEqual(architype_count, 30)  # Because of the Architype from math
+        self.assertEqual(archetype_count, 30)  # Because of the Archetype from math
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(
@@ -167,19 +167,19 @@ class JacTypeCheckTests(TestCase):
             source_str=file_source, file_path=file_name, mode=CMode.TYPECHECK
         )
 
-        architype_count = sum(
-            len(mod.get_all_sub_nodes(uni.Architype))
+        archetype_count = sum(
+            len(mod.get_all_sub_nodes(uni.Archetype))
             for mod in prog.mod.hub.values()
             if mod.name != "builtins"
         )
         self.assertEqual(
-            architype_count, 58
-        )  # Fixed duplication of 'case' module (previously included 3 times, added 20 extra Architypes; 75 → 55)
+            archetype_count, 58
+        )  # Fixed duplication of 'case' module (previously included 3 times, added 20 extra Archetypes; 75 → 55)
         builtin_mod = next(
             (mod for name, mod in prog.mod.hub.items() if "builtins" in name),
             None,
         )
-        self.assertEqual(len(builtin_mod.get_all_sub_nodes(uni.Architype)), 109)
+        self.assertEqual(len(builtin_mod.get_all_sub_nodes(uni.Archetype)), 109)
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(
@@ -392,7 +392,7 @@ class JacTypeCheckTests(TestCase):
         )
         self.assertRegex(
             out,
-            r"129:22 - 129:26.*SpecialVarRef - root \- Type\: jaclang.runtimelib.architype.Root",
+            r"129:22 - 129:26.*SpecialVarRef - root \- Type\: jaclang.runtimelib.archetype.Root",
         )
         self.assertRegex(out, r"129:11 - 129:27.*FuncCall \- Type\: builtins\.str")
         self.assertRegex(
@@ -403,12 +403,12 @@ class JacTypeCheckTests(TestCase):
         self.assertRegex(
             out,
             r"128:5 - 128:25.*BinaryExpr \- Type\: "
-            + r"Union\[jaclang.runtimelib.architype.WalkerArchitype, concurrent.futures._base.Future\[Any\]\]",
+            + r"Union\[jaclang.runtimelib.archetype.WalkerArchetype, concurrent.futures._base.Future\[Any\]\]",
         )
 
         self.assertRegex(
             out,
-            r"48:11 - 48:28.*EdgeRefTrailer \- Type\: builtins.list\[jaclang.runtimelib.architype.Architype\]",
+            r"48:11 - 48:28.*EdgeRefTrailer \- Type\: builtins.list\[jaclang.runtimelib.archetype.Archetype\]",
         )
 
         self.assertRegex(out, r"24:5 - 24:25.*BinaryExpr \- Type\: builtins.bool", out)

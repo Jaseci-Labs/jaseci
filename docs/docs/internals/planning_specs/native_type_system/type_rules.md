@@ -168,7 +168,7 @@ A function call is valid if each argument's type is a subtype of the correspondi
 
 ## Jac-Specific Rules
 
-### Architypes and Inheritance
+### Archetypes and Inheritance
 
 ```
 A inherits from B    B inherits from C
@@ -193,7 +193,7 @@ W is a walker    N is a node
 ### Node/Edge Creation
 
 ```
-N is a node architype    Γ ⊢ args match N.init parameters
+N is a node archetype    Γ ⊢ args match N.init parameters
 ------------------------------------------------------
 Γ ⊢ spawn N(args) : N
 ```

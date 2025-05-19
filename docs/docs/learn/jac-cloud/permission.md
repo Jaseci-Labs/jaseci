@@ -1,19 +1,19 @@
 # Permission Management
 
-This document provides a guide on managing graph-based access permissions on the cloud using a structure of architypes. Each user has their own root graph, and access between users' architypes is restricted by default.
+This document provides a guide on managing graph-based access permissions on the cloud using a structure of archetypes. Each user has their own root graph, and access between users' archetypes is restricted by default.
 
-# Anchors vs Architypes
-- Architypes are Jaclang class representation
+# Anchors vs Archetypes
+- Archetypes are Jaclang class representation
 - Anchors are database class representation
 
-| type | Anchors | Architypes |
+| type | Anchors | Archetypes |
 | ---- | ---- | ---- |
-| Node | NodeAnchor | NodeArchitype |
-| Edge | EdgeAnchor | EdgeArchitype |
-| Walker | WalkerAnchor | WalkerArchitype |
-| Object | ObjectAnchor | ObjectArchitype |
-| Root | NodeAnchor | Root(NodeArchitype) |
-| GenericEdge | EdgeAnchor | GenericEdge(EdgeArchitype) |
+| Node | NodeAnchor | NodeArchetype |
+| Edge | EdgeAnchor | EdgeArchetype |
+| Walker | WalkerAnchor | WalkerArchetype |
+| Object | ObjectAnchor | ObjectArchetype |
+| Root | NodeAnchor | Root(NodeArchetype) |
+| GenericEdge | EdgeAnchor | GenericEdge(EdgeArchetype) |
 
 ```python
 node Human {
@@ -28,8 +28,8 @@ node Human {
     access: { all: 'NO_ACCESS', roots: { anchors: {} } },
     edges: [ 'e::6735b60656e82d6799dc9775', 'e:Friend:6735b60656e82d6799dc9776' ],
 
-    # the actual NodeArchitype and it's context or `has attributes`
-    architype: {
+    # the actual NodeArchetype and it's context or `has attributes`
+    archetype: {
         gender: "boy"
     },
 }
@@ -48,21 +48,21 @@ edge Friend {
     target: 'n:C:6735b60656e82d6799dc9772',
     is_undirected: false
 
-    # the actual EdgeArchitype and it's context or `has attributes`
-    architype: {
+    # the actual EdgeArchetype and it's context or `has attributes`
+    archetype: {
         best: true
     },
   }
 ```
 
 ## Access Levels
-* `NO_ACCESS`: No other user can access current architype.
-* `READ`: Other user have Read-Only access to current architype.
+* `NO_ACCESS`: No other user can access current archetype.
+* `READ`: Other user have Read-Only access to current archetype.
 * `CONNECT`: Other user's node can connect to current node.
-* `WRITE`: Other user can do anything to current architype.
+* `WRITE`: Other user can do anything to current archetype.
 
 ## Default User Graph Structure
-In this setup, each user's architype (node, edge, walker) is isolated with default permissions as follows:
+In this setup, each user's archetype (node, edge, walker) is isolated with default permissions as follows:
 ```python
 {
     "all": "NO_ACCESS",
@@ -101,7 +101,7 @@ By default, `User2` cannot access `Node1` owns by `Root1`. To allow `User2` acce
 ## Example of Granting Access
 To grant `READ` access to `User2` for `Node1` owns by `Root1`, we modify Node1’s access permissions:
 ```python
-# Node1 is the architype
+# Node1 is the archetype
 # Node1.__jac__ is the anchor
 
 Node1.__jac__.access = {
@@ -113,7 +113,7 @@ Node1.__jac__.access = {
 ```
 If `User1` wants to give only `READ` access to `User2`, we set permissions as follows:
 ```python
-# Node1 is the architype
+# Node1 is the archetype
 # Node1.__jac__ is the anchor
 
 Node1.__jac__.access = {
@@ -249,7 +249,7 @@ In some cases, you may need to manually verify, filter, or update access permiss
 To manually check access levels on a collection of nodes, you can use the following code. This script filters nodes by type and checks for `READ`, `WRITE`, and `CONNECT` access permissions.
 
 ```python
-for nodeanchor in NodeArchitype.Collection.find(
+for nodeanchor in NodeArchetype.Collection.find(
     {
         "type": "<type of the node>",
         "context.public": true
@@ -272,7 +272,7 @@ for nodeanchor in NodeArchitype.Collection.find(
 To retrieve a specific node based on its type, use the following code snippet. This will find a node of the specified type that is also public in context.
 
 ```python
-node = NodeArchitype.Collection.find_one(
+node = NodeArchetype.Collection.find_one(
     {
         "type": "<type of the node>",
         "context.public": true
@@ -283,7 +283,7 @@ node = NodeArchitype.Collection.find_one(
 ### Updating Access Permissions Manually
 To manually update access permissions for multiple nodes, use the following code. This example sets the `access.all` permission to `CONNECT` for all nodes of a specific type that are publicly accessible.
 ```python
-NodeArchitype.Collection.update_many(
+NodeArchetype.Collection.update_many(
     {
         "type": "<type of the node>",
         "context.public": true

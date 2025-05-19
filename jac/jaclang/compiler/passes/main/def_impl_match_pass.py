@@ -1,19 +1,19 @@
 """Declaration-Implementation Matching Pass for the Jac compiler.
 
-This pass connects declarations (Decls) of Architypes and Abilities with their separate
+This pass connects declarations (Decls) of Archetypes and Abilities with their separate
 implementations (Defs) in the AST. It:
 
 1. Establishes links between declarations in the main module and their implementations
    in separate .impl.jac files
 2. Validates parameter matching between ability declarations and their implementations
 3. Ensures proper inheritance of symbol tables between declarations and implementations
-4. Performs validation checks on architypes, including:
+4. Performs validation checks on archetypes, including:
    - Proper ordering of default and non-default attributes
    - Presence of required postinit methods for deferred attributes
    - Abstract ability implementation validation
 
 This pass is essential for Jac's separation of interface and implementation, allowing
-developers to define architype and ability interfaces in one file while implementing
+developers to define archetype and ability interfaces in one file while implementing
 their behavior in separate files.
 """
 
@@ -34,7 +34,7 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
         for impl_module in ir_in.impl_mod:
             self.connect_impls(impl_module.sym_tab, ir_in.sym_tab)
 
-        self.check_architypes(ir_in)
+        self.check_archetypes(ir_in)
         return ir_in
 
     def defn_lookup(self, lookup: Symbol) -> uni.NameAtom | None:
@@ -61,11 +61,11 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
             if not isinstance(sym.decl.name_of, uni.ImplDef):
                 continue
 
-            # Extract architype references
+            # Extract archetype references
             arch_refs = sym.sym_name.split(".")[1:]  # Remove the impl. prefix
             name_of_links: list[uni.NameAtom] = []  # to link archref names to decls
 
-            # Look up the architype in the target symbol table
+            # Look up the archetype in the target symbol table
             lookup = target_sym_tab.lookup(arch_refs[0])
 
             # Skip over local import name collisions
@@ -175,13 +175,13 @@ class DeclImplMatchPass(Transform[uni.Module, uni.Module]):
                     for idx in range(len(params_defn.kid)):
                         params_decl.kid[idx] = params_defn.kid[idx]
 
-    def check_architypes(self, ir_in: uni.Module) -> None:
-        """Check all architypes for issues with attributes and methods."""
-        for node in ir_in.get_all_sub_nodes(uni.Architype):
-            self.check_architype(node)
+    def check_archetypes(self, ir_in: uni.Module) -> None:
+        """Check all archetypes for issues with attributes and methods."""
+        for node in ir_in.get_all_sub_nodes(uni.Archetype):
+            self.check_archetype(node)
 
-    def check_architype(self, node: uni.Architype) -> None:
-        """Check a single architype for issues."""
+    def check_archetype(self, node: uni.Archetype) -> None:
+        """Check a single archetype for issues."""
         if node.arch_type.name == Tok.KW_OBJECT and isinstance(
             node.body, uni.SubNodeList
         ):

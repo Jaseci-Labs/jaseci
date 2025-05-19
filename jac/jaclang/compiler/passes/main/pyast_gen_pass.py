@@ -7,7 +7,7 @@ This pass transforms the Jac AST into equivalent Python AST by:
    - Classes, functions, and methods
    - Control flow statements (if/else, loops, try/except)
    - Data structures (lists, dictionaries, sets)
-   - Special Jac features (walkers, abilities, architypes)
+   - Special Jac features (walkers, abilities, archetypes)
    - Data spatial operations (node/edge connections)
 
 3. Managing imports and dependencies between modules
@@ -514,19 +514,6 @@ class PyastGenPass(UniPass):
                     )
                 )
 
-            if node.is_py:
-                keywords.append(
-                    self.sync(
-                        ast3.keyword(
-                            arg="lng",
-                            value=self.sync(
-                                ast3.Constant(value="py"),
-                                node.hint,
-                            ),
-                        )
-                    )
-                )
-
             if item_keys and item_values:
                 keywords.append(
                     self.sync(
@@ -789,11 +776,11 @@ class PyastGenPass(UniPass):
             )
         ]
 
-    def enter_architype(self, node: uni.Architype) -> None:
+    def enter_archetype(self, node: uni.Archetype) -> None:
         if isinstance(node.body, uni.ImplDef):
             self.traverse(node.body)
 
-    def exit_architype(self, node: uni.Architype) -> None:
+    def exit_archetype(self, node: uni.Archetype) -> None:
         body = self.resolve_stmt_block(
             (
                 node.body.body
@@ -1131,12 +1118,12 @@ class PyastGenPass(UniPass):
             and node.parent.parent.parent
             and (
                 (
-                    isinstance(node.parent.parent.parent, uni.Architype)
+                    isinstance(node.parent.parent.parent, uni.Archetype)
                     and node.parent.parent.parent.arch_type.name == Tok.KW_CLASS
                 )
                 or (
                     node.parent.parent.parent.parent
-                    and isinstance(node.parent.parent.parent.parent, uni.Architype)
+                    and isinstance(node.parent.parent.parent.parent, uni.Archetype)
                     and node.parent.parent.parent.parent.arch_type.name == Tok.KW_CLASS
                 )
             )

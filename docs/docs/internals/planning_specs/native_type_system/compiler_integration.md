@@ -204,14 +204,14 @@ graph TD
     F --> G[Symbol Table Scope]
     F --> H[Variable Type Map]
 
-    I[ArchitypeType] --> J[Symbol Table of Architype]
+    I[ArchetypeType] --> J[Symbol Table of Archetype]
 ```
 
 Key integration points:
 1. **Symbol Table Linking**: The Symbol Table helps the type system locate definitions for type names
 2. **Type Storage**: Types are stored both on AST nodes and in Symbol Table entries
 3. **Scope Navigation**: The TypeEnvironment uses Symbol Table scopes to resolve names
-4. **Member Lookup**: ArchitypeType instances maintain links to their Symbol Tables for member lookup
+4. **Member Lookup**: ArchetypeType instances maintain links to their Symbol Tables for member lookup
 
 ## Replacing MyPy Integration
 

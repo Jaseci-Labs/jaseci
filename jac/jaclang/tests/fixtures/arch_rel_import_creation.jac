@@ -17,7 +17,7 @@ here.display_data();
 """;
 
 with entry {
-    node_arch = JacMachineInterface.create_architype_from_source(JacMachineInterface.py_get_jac_machine(),
+    node_arch = JacMachineInterface.create_archetype_from_source(JacMachineInterface.py_get_jac_machine(),
         dynamic_module_source,
         module_name="dynamic_module"
     );

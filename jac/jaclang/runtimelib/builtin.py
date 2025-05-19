@@ -6,7 +6,7 @@ import json
 from abc import abstractmethod
 from typing import ClassVar, Optional, override
 
-from jaclang.runtimelib.constructs import Architype, NodeArchitype, Root
+from jaclang.runtimelib.constructs import Archetype, NodeArchetype, Root
 from jaclang.runtimelib.machine import JacMachineInterface as Jac
 
 
@@ -14,7 +14,7 @@ from jaclang.runtimelib.machine import JacMachineInterface as Jac
 # the existing code. Currently it can return the jac graph in both dot and json format.
 # So the name shuouldn't be dotgen but something more generic.
 def dotgen(
-    node: Optional[NodeArchitype] = None,
+    node: Optional[NodeArchetype] = None,
     depth: int = -1,
     traverse: bool = False,
     edge_type: Optional[list[str]] = None,
@@ -42,19 +42,19 @@ def dotgen(
     )
 
 
-def jid(obj: Architype) -> str:
+def jid(obj: Archetype) -> str:
     """Get the id of the object."""
     return Jac.object_ref(obj)
 
 
-def jobj(id: str) -> Architype | None:
+def jobj(id: str) -> Archetype | None:
     """Get the object from the id."""
     return Jac.get_object(id)
 
 
 def _jac_graph_json() -> str:
     """Get the graph in json string."""
-    processed: list[Root | NodeArchitype] = []
+    processed: list[Root | NodeArchetype] = []
     nodes: list[dict] = []
     edges: list[dict] = []
     working_set: list[tuple] = []

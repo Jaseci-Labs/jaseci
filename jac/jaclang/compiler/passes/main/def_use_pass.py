@@ -4,7 +4,7 @@ This pass performs comprehensive symbol resolution by:
 1. Populating symbol tables with additional symbols from various AST constructs:
    - Variable assignments and declarations
    - Function/ability parameters
-   - Architype reference chains
+   - Archetype reference chains
    - Loop variables and comprehension targets
    - With-statement variables
 
@@ -13,7 +13,7 @@ This pass performs comprehensive symbol resolution by:
    - Symbol uses throughout the AST
 
 3. Handling special cases:
-   - Inheriting symbol tables from base classes for architypes
+   - Inheriting symbol tables from base classes for archetypes
    - Setting appropriate context for symbols in different operations (e.g., delete statements)
    - Marking walker-specific statements (visit, ignore, disengage) when in walker context
 
@@ -29,7 +29,7 @@ from jaclang.compiler.passes import UniPass
 class DefUsePass(UniPass):
     """Jac Ast build pass."""
 
-    def enter_architype(self, node: uni.Architype) -> None:
+    def enter_archetype(self, node: uni.Archetype) -> None:
         node.sym_tab.inherit_baseclasses_sym(node)
 
         def inform_from_walker(node: uni.UniNode) -> None:

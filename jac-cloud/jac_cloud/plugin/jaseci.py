@@ -5,7 +5,7 @@ from contextlib import suppress
 from typing import Callable, Type
 
 from jaclang.compiler.constant import EdgeDir
-from jaclang.runtimelib.architype import Architype
+from jaclang.runtimelib.archetype import Archetype
 from jaclang.runtimelib.machine import (
     JacMachineImpl,
     JacMachineInterface as Jac,
@@ -13,21 +13,21 @@ from jaclang.runtimelib.machine import (
 )
 from jaclang.runtimelib.utils import all_issubclass
 
-from ..core.architype import (
+from ..core.archetype import (
     AccessLevel,
     Anchor,
     AnchorState,
     BaseAnchor,
     EdgeAnchor,
-    EdgeArchitype,
+    EdgeArchetype,
     GenericEdge,
     NodeAnchor,
-    NodeArchitype,
-    ObjectArchitype,
+    NodeArchetype,
+    ObjectArchetype,
     Permission,
     Root,
     WalkerAnchor,
-    WalkerArchitype,
+    WalkerArchetype,
 )
 from ..core.context import JacMachine, JaseciContext
 from ..jaseci.main import FastAPI
@@ -39,16 +39,16 @@ class JacAccessValidationPlugin:
     @staticmethod
     @hookimpl
     def allow_root(
-        architype: Architype, root_id: BaseAnchor, level: AccessLevel | int | str
+        archetype: Archetype, root_id: BaseAnchor, level: AccessLevel | int | str
     ) -> None:
-        """Allow all access from target root graph to current Architype."""
+        """Allow all access from target root graph to current Archetype."""
         if not FastAPI.is_enabled():
             JacMachineImpl.allow_root(
-                architype=architype, root_id=root_id, level=level  # type: ignore[arg-type]
+                archetype=archetype, root_id=root_id, level=level  # type: ignore[arg-type]
             )
             return
 
-        anchor = architype.__jac__
+        anchor = archetype.__jac__
 
         level = AccessLevel.cast(level)
         access = anchor.access.roots
@@ -64,16 +64,16 @@ class JacAccessValidationPlugin:
     @staticmethod
     @hookimpl
     def disallow_root(
-        architype: Architype, root_id: BaseAnchor, level: AccessLevel | int | str
+        archetype: Archetype, root_id: BaseAnchor, level: AccessLevel | int | str
     ) -> None:
-        """Disallow all access from target root graph to current Architype."""
+        """Disallow all access from target root graph to current Archetype."""
         if not FastAPI.is_enabled():
             JacMachineImpl.disallow_root(
-                architype=architype, root_id=root_id, level=level  # type: ignore[arg-type]
+                archetype=archetype, root_id=root_id, level=level  # type: ignore[arg-type]
             )
             return
 
-        anchor = architype.__jac__
+        anchor = archetype.__jac__
 
         level = AccessLevel.cast(level)
         access = anchor.access.roots
@@ -87,13 +87,13 @@ class JacAccessValidationPlugin:
 
     @staticmethod
     @hookimpl
-    def perm_grant(architype: Architype, level: AccessLevel | int | str) -> None:
-        """Allow everyone to access current Architype."""
+    def perm_grant(archetype: Archetype, level: AccessLevel | int | str) -> None:
+        """Allow everyone to access current Archetype."""
         if not FastAPI.is_enabled():
-            JacMachineImpl.perm_grant(architype=architype, level=level)
+            JacMachineImpl.perm_grant(archetype=archetype, level=level)
             return
 
-        anchor = architype.__jac__
+        anchor = archetype.__jac__
 
         level = AccessLevel.cast(level)
         if isinstance(anchor, BaseAnchor) and level != anchor.access.all:
@@ -102,13 +102,13 @@ class JacAccessValidationPlugin:
 
     @staticmethod
     @hookimpl
-    def perm_revoke(architype: Architype) -> None:
-        """Disallow others to access current Architype."""
+    def perm_revoke(archetype: Archetype) -> None:
+        """Disallow others to access current Archetype."""
         if not FastAPI.is_enabled():
-            JacMachineImpl.perm_revoke(architype=architype)
+            JacMachineImpl.perm_revoke(archetype=archetype)
             return
 
-        anchor = architype.__jac__
+        anchor = archetype.__jac__
 
         if isinstance(anchor, BaseAnchor) and anchor.access.all > AccessLevel.NO_ACCESS:
             anchor.access.all = AccessLevel.NO_ACCESS
@@ -169,9 +169,9 @@ class JacNodePlugin:
     def get_edges(
         node: NodeAnchor,
         dir: EdgeDir,
-        filter: Callable[[EdgeArchitype], bool] | None,
-        target_obj: list[NodeArchitype] | None,
-    ) -> list[EdgeArchitype]:
+        filter: Callable[[EdgeArchetype], bool] | None,
+        target_obj: list[NodeArchetype] | None,
+    ) -> list[EdgeArchetype]:
         """Get edges connected to this node."""
         if FastAPI.is_enabled():
             JaseciContext.get().mem.populate_data(node.edges)
@@ -185,9 +185,9 @@ class JacNodePlugin:
     def edges_to_nodes(
         node: NodeAnchor,
         dir: EdgeDir,
-        filter: Callable[[EdgeArchitype], bool] | None,
-        target_obj: list[NodeArchitype] | None,
-    ) -> list[NodeArchitype]:
+        filter: Callable[[EdgeArchetype], bool] | None,
+        target_obj: list[NodeArchetype] | None,
+    ) -> list[NodeArchetype]:
         """Get set of nodes connected to this node."""
         if FastAPI.is_enabled():
             JaseciContext.get().mem.populate_data(node.edges)
@@ -225,10 +225,10 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
         if not FastAPI.is_enabled():
             return JacMachineImpl.setup()
 
-        Jac.Obj = ObjectArchitype
-        Jac.Node = NodeArchitype
-        Jac.Edge = EdgeArchitype
-        Jac.Walker = WalkerArchitype
+        Jac.Obj = ObjectArchetype
+        Jac.Node = NodeArchetype
+        Jac.Edge = EdgeArchetype
+        Jac.Walker = WalkerArchetype
 
         Jac.Root = Root  # type: ignore[assignment]
         Jac.GenericEdge = GenericEdge  # type: ignore[assignment]
@@ -286,9 +286,9 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
     @hookimpl
     def build_edge(
         is_undirected: bool,
-        conn_type: Type[EdgeArchitype] | EdgeArchitype | None,
+        conn_type: Type[EdgeArchetype] | EdgeArchetype | None,
         conn_assign: tuple[tuple, tuple] | None,
-    ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchitype]:
+    ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchetype]:
         """Jac's root getter."""
         if not FastAPI.is_enabled():
             return JacMachineImpl.build_edge(  # type:ignore[return-value]
@@ -301,11 +301,11 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
         def builder(
             source: NodeAnchor, target: NodeAnchor
-        ) -> EdgeArchitype | GenericEdge:
+        ) -> EdgeArchetype | GenericEdge:
             edge = ct() if isinstance(ct, type) else ct
 
             eanch = edge.__jac__ = EdgeAnchor(
-                architype=edge,  # type: ignore[arg-type] # bug on mypy!!
+                archetype=edge,  # type: ignore[arg-type] # bug on mypy!!
                 name=("" if isinstance(edge, GenericEdge) else edge.__class__.__name__),
                 source=source,
                 target=target,
@@ -332,20 +332,20 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
-    def get_object(id: str) -> Architype | None:
+    def get_object(id: str) -> Archetype | None:
         """Get object by id."""
         if not FastAPI.is_enabled():
             return JacMachineImpl.get_object(id=id)
 
         with suppress(ValueError):
-            if isinstance(architype := BaseAnchor.ref(id).architype, Architype):
-                return architype
+            if isinstance(archetype := BaseAnchor.ref(id).archetype, Archetype):
+                return archetype
 
         return None
 
     @staticmethod
     @hookimpl
-    def object_ref(obj: Architype) -> str:
+    def object_ref(obj: Archetype) -> str:
         """Get object reference id."""
         if not FastAPI.is_enabled():
             return JacMachineImpl.object_ref(obj=obj)
@@ -354,16 +354,16 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
-    def spawn_call(walker: WalkerAnchor, node: NodeAnchor) -> WalkerArchitype:
+    def spawn_call(walker: WalkerAnchor, node: NodeAnchor) -> WalkerArchetype:
         """Invoke data spatial call."""
         if not FastAPI.is_enabled():
             return JacMachineImpl.spawn_call(walker=walker, node=node)
 
-        warch = walker.architype
+        warch = walker.archetype
         walker.path = []
         walker.next = [node]
         walker.returns = []
-        current_node = node.architype
+        current_node = node.archetype
 
         # walker entry
         for i in warch._jac_entry_funcs_:
@@ -373,12 +373,12 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                 return warch
 
         while len(walker.next):
-            if current_node := walker.next.pop(0).architype:
+            if current_node := walker.next.pop(0).archetype:
                 # walker entry with
                 for i in warch._jac_entry_funcs_:
                     if (
                         i.trigger
-                        and all_issubclass(i.trigger, NodeArchitype)
+                        and all_issubclass(i.trigger, NodeArchetype)
                         and isinstance(current_node, i.trigger)
                     ):
                         walker.returns.append(i.func(warch, current_node))
@@ -396,7 +396,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                 for i in current_node._jac_entry_funcs_:
                     if (
                         i.trigger
-                        and all_issubclass(i.trigger, WalkerArchitype)
+                        and all_issubclass(i.trigger, WalkerArchetype)
                         and isinstance(warch, i.trigger)
                     ):
                         walker.returns.append(i.func(current_node, warch))
@@ -407,7 +407,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                 for i in current_node._jac_exit_funcs_:
                     if (
                         i.trigger
-                        and all_issubclass(i.trigger, WalkerArchitype)
+                        and all_issubclass(i.trigger, WalkerArchetype)
                         and isinstance(warch, i.trigger)
                     ):
                         walker.returns.append(i.func(current_node, warch))
@@ -425,7 +425,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
                 for i in warch._jac_exit_funcs_:
                     if (
                         i.trigger
-                        and all_issubclass(i.trigger, NodeArchitype)
+                        and all_issubclass(i.trigger, NodeArchetype)
                         and isinstance(current_node, i.trigger)
                     ):
                         walker.returns.append(i.func(warch, current_node))
@@ -443,24 +443,24 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
 
     @staticmethod
     @hookimpl
-    def spawn(op1: Architype, op2: Architype) -> WalkerArchitype | Future:
+    def spawn(op1: Archetype, op2: Archetype) -> WalkerArchetype | Future:
         """Jac's spawn operator feature."""
         if not FastAPI.is_enabled():
             return JacMachineImpl.spawn(op1=op1, op2=op2)
 
-        if isinstance(op1, WalkerArchitype):
+        if isinstance(op1, WalkerArchetype):
             walker = op1.__jac__
-            if isinstance(op2, NodeArchitype):
+            if isinstance(op2, NodeArchetype):
                 node = op2.__jac__
-            elif isinstance(op2, EdgeArchitype):
+            elif isinstance(op2, EdgeArchetype):
                 node = op2.__jac__.target
             else:
                 raise TypeError("Invalid target object")
-        elif isinstance(op2, WalkerArchitype):
+        elif isinstance(op2, WalkerArchetype):
             walker = op2.__jac__
-            if isinstance(op1, NodeArchitype):
+            if isinstance(op1, NodeArchetype):
                 node = op1.__jac__
-            elif isinstance(op1, EdgeArchitype):
+            elif isinstance(op1, EdgeArchetype):
                 node = op1.__jac__.target
             else:
                 raise TypeError("Invalid target object")
@@ -472,16 +472,16 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
     @staticmethod
     @hookimpl
     def destroy(
-        objs: Architype | Anchor | BaseAnchor | list[Architype | Anchor | BaseAnchor],
+        objs: Archetype | Anchor | BaseAnchor | list[Archetype | Anchor | BaseAnchor],
     ) -> None:
         """Destroy object."""
         if not FastAPI.is_enabled():
             return JacMachineImpl.destroy(objs=objs)
         obj_list = objs if isinstance(objs, list) else [objs]
         for obj in obj_list:
-            if not isinstance(obj, (Architype, Anchor)):
+            if not isinstance(obj, (Archetype, Anchor)):
                 return
-            anchor = obj.__jac__ if isinstance(obj, Architype) else obj
+            anchor = obj.__jac__ if isinstance(obj, Archetype) else obj
 
             if (
                 isinstance(anchor, BaseAnchor)

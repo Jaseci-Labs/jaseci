@@ -132,19 +132,19 @@ Symbol tables are organized hierarchically to reflect the scope structure of the
 ```mermaid
 graph TD
     Module["Module SymTable"] --> GlobalScope["Global Scope"]
-    Module --> Architype1["Architype SymTable"]
-    Module --> Architype2["Architype SymTable"]
+    Module --> Archetype1["Archetype SymTable"]
+    Module --> Archetype2["Archetype SymTable"]
     Module --> Function["Function SymTable"]
-    Architype1 --> Method1["Method SymTable"]
-    Architype1 --> Method2["Method SymTable"]
+    Archetype1 --> Method1["Method SymTable"]
+    Archetype1 --> Method2["Method SymTable"]
     Function --> Block["Block SymTable"]
     Block --> IfBlock["If Block SymTable"]
     Block --> ForLoop["For Loop SymTable"]
 
     style Module fill:#3182ce,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
     style GlobalScope fill:#4fd1c5,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
-    style Architype1 fill:#805ad5,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
-    style Architype2 fill:#805ad5,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style Archetype1 fill:#805ad5,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
+    style Archetype2 fill:#805ad5,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
     style Function fill:#38a169,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
     style Method1 fill:#4fd1c5,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
     style Method2 fill:#4fd1c5,stroke:#e2e8f0,stroke-width:2px,color:#e2e8f0
@@ -154,7 +154,7 @@ graph TD
 ```
 
 - The module symbol table is at the top level
-- Each architype (object, node, edge, walker) has its own symbol table
+- Each archetype (object, node, edge, walker) has its own symbol table
 - Functions, methods, and blocks have their own nested symbol tables
 - Control structures like if statements and loops have their own symbol tables
 
@@ -215,7 +215,7 @@ class SymbolType(IntEnum):
     GLOBAL = 1
     HAS = 2
     PARAM = 3
-    ARCHITYPE = 4
+    Archetype = 4
     ABILITY = 5
     ENUM = 6
     ENUM_VAL = 7
@@ -250,8 +250,8 @@ The symbol table structure would look like:
 ```mermaid
 flowchart TD
     ModuleTable["Module SymTable
-    - Person: Symbol(ARCHITYPE)
-    - PersonVisitor: Symbol(ARCHITYPE)"]
+    - Person: Symbol(Archetype)
+    - PersonVisitor: Symbol(Archetype)"]
 
     ModuleTable --> PersonTable["Person SymTable
     - name: Symbol(HAS)
