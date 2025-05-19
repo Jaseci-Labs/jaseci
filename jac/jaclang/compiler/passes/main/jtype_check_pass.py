@@ -130,53 +130,60 @@ class JTypeCheckPass(UniPass):
                     f"Error: Can't assign a value {value_type} to a {sym_type} object"
                 )
 
-    # # The goal here is to fix the AtomTrailer symbols after the type annotations
-    # # of first nodes in the atom trailers
-    # def enter_atom_trailer(self, node: ast.AtomTrailer) -> None:
-    #     """Fix missing symbols."""
-    #     self.prune()
-    #     # Get the symbol table where the node exists
-    #     node_href = self.prog.mod.main.get_href_path(node).split(("."))[1:]
-    #     current_symtab = self.prog.mod.main.sym_tab
-    #     for i in node_href:
-    #         current_symtab = current_symtab.find_scope(i)
-    #         assert current_symtab is not None
+    #####################
+    ### Atom Trailers ###
+    #####################
+    def enter_atom_trailer(self, node: ast.AtomTrailer) -> None:
+        """
+        Resolve and validates chaine attribute accesses (e.g., a.b.c) in the AST.
 
-    #     # Get the symbol table of the object that contains the needed field
-    #     last_node: Optional[ast.AstSymbolNode] = None
-    #     for atom_t_node in node.as_attr_list[:-1]:
-    #         assert atom_t_node.sym is not None
-    #         atom_t_node_jtype = self.prog.expr_type_handler.get_type(atom_t_node)
-    #         if not isinstance(
-    #             atom_t_node_jtype, (jtype.JClassInstanceType, jtype.JClassType)
-    #         ):
-    #             self.report_error(
-    #                 JacSemanticMessages.FIELD_ACCESS_FROM_INVALID_TYPE,
-    #                 expr=atom_t_node.unparse(),
-    #                 expr_type=atom_t_node_jtype,
-    #             )
-    #             return
+        This method performs static analysis on a sequence of attribute accesses by:
+        1. Resolving the type of the base expression.
+        2. Walking through each attribute in the chain.
+        3. Verifying that each attribute exists on the current type.
+        4. Updating the AST with the resolved symbol information for each attribute.
 
-    #         atom_t_node_jtype_name = atom_t_node_jtype.name
-    #         current_symtab = current_symtab.find_scope(atom_t_node_jtype_name)
-    #         if current_symtab is None and last_node is not None:
-    #             self.report_error(
-    #                 JacSemanticMessages.FIELD_NOT_FOUND,
-    #                 field_name=atom_t_node.sym_name,
-    #                 expr=last_node.unparse(),
-    #                 expr_type=last_node.sym.jtype,
-    #             )
-    #             return
-    #         last_node = atom_t_node
+        Args:
+            node (ast.AtomTrailer): The AST node representing a chain of attribute accesses.
 
-    #     needed_sym = current_symtab.lookup(node.as_attr_list[-1].sym_name)
-    #     if needed_sym is None:
-    #         self.report_error(
-    #             JacSemanticMessages.FIELD_NOT_FOUND,
-    #             field_name=node.as_attr_list[-1].sym_name,
-    #             expr=node.as_attr_list[-2].unparse(),
-    #             expr_type=self.prog.expr_type_handler.get_type(node.as_attr_list[-2]),
-    #         )
-    #         return
-    #     else:
-    #         node.as_attr_list[-1].sym = needed_sym
+        Logs errors if:
+            - Any intermediate type in the chain is not a class or instance type.
+            - A requested attribute does not exist on the current type.
+        """
+        self.prune()  # prune the traversal into the atom trailer.
+
+        nodes = node.as_attr_list
+        first_item_type = self.prog.type_resolver.get_type(
+            nodes[0]
+        )  # Resolve type of base object.
+
+        last_node_type: jtype.JClassInstanceType | jtype.JClassType
+        next_type: jtype.JType = first_item_type
+
+        # Iterate through each attribute in the chain (excluding the first base object).
+        for n in nodes[1:]:
+            # Ensure the current type can have members.
+            if not isinstance(next_type, (jtype.JClassInstanceType, jtype.JClassType)):
+                self.log_error(
+                    f"Can't access a field from an object of type {first_item_type}"
+                )
+                return
+            else:
+                last_node_type = next_type
+
+            node_name = n.sym_name
+            member = last_node_type.get_member(
+                node_name
+            )  # Try to fetch the member from the current type.
+
+            if member is None:
+                # Attribute doesn't exist; log an error with context.
+                self.log_error(
+                    f"No member called '{node_name}' in {last_node_type} object",
+                    node_override=n,
+                )
+                break
+            else:
+                # Update type for the next iteration and store the resolved symbol.
+                next_type = member.type
+                n.name_spec.sym = member.decl

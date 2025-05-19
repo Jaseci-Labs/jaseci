@@ -117,11 +117,11 @@ class JTypeAnnotatePass(UniPass):
             node.name_spec, jtype.JFunctionType(parameters=params, return_type=ret_type)
         )
 
-    def exit_architype(self, node: uni.Architype) -> None:
-        """Register the type of an architype type annotation pass.
+    def exit_archetype(self, node: uni.Archetype) -> None:
+        """Register the type of an archetype type annotation pass.
 
-        This assigns a JClassType to the architype's name based on its symbol table,
-        enabling type checking for later references to the architype.
+        This assigns a JClassType to the archetype's name based on its symbol table,
+        enabling type checking for later references to the archetype.
         """
         type_full_name = self.prog.mod.main.get_href_path(node)
         instance_members: dict[str, jtype.JClassMember] = {}
@@ -132,6 +132,7 @@ class JTypeAnnotatePass(UniPass):
                 kind=jtype.jtypes.jclassmember.MemberKind.INSTANCE,
                 visibility=symbol_type_to_visibility[sym.access],
                 is_method=sym.sym_type == SymbolType.METHOD,
+                decl=sym,
             )
 
         class_type = jtype.JClassType(

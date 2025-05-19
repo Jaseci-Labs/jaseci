@@ -3,6 +3,8 @@
 This type wraps a `JClassType` and provides instance-level behavior.
 """
 
+from typing import Optional
+
 from jaclang.compiler.jtyping.types.jclassmember import JClassMember
 from jaclang.compiler.jtyping.types.jclasstype import JClassType
 from jaclang.compiler.jtyping.types.jtype import JType
@@ -64,6 +66,19 @@ class JClassInstanceType(JType):
             dict[str, JClassMember]: Instance-level member dictionary.
         """
         return self.class_type.get_members()
+
+    def get_member(self, name: str) -> Optional[JClassMember]:
+        """
+        Retrieve a single accessible instance-level member by name, including those inherited from base classes.
+
+        Args:
+            name (str): The name of the member.
+
+        Returns:
+            Optional[JClassMember] : The corresponding member if found, else None.
+        """
+        # Check if the member exists in the current class
+        return self.class_type.get_member(name)
 
     # TODO: Check this when it comes to support binary operations
     def supports_binary_op(self, op: str) -> bool:

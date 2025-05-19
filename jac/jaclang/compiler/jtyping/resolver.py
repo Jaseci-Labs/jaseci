@@ -120,7 +120,16 @@ class JTypeResolver:
 
         raise AssertionError()
 
+    def _get_atom_trailer_expr_type(self, node: ast.AtomTrailer) -> jtype.JType:
+        last_node = node.as_attr_list[-1]
+        assert isinstance(last_node, ast.Expr)
+        return self.get_type(last_node)
+
     def _get_special_var_ref_expr_type(self, node: ast.SpecialVarRef) -> jtype.JType:
+        if node.sym_name == "here":
+            archetype_node = node.parent_of_type(ast.Archetype)
+            if archetype_node.sym:
+                return archetype_node.sym.jtype
         return self._get_name_expr_type(node)
 
     def _set_name_expr_type(self, node: ast.Name, expr_type: jtype.JType) -> None:
