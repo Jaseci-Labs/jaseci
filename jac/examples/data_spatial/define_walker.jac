@@ -1,13 +1,15 @@
-node A{
-    has val:int =0;
+node A {
+    has val: int = 0;
 }
 
-edge a{
-}
 
-walker W{
+edge a {}
+
+
+walker W {
     can create with `root entry;
 }
+
 
 impl W.create {
     Start = A(5);
@@ -17,9 +19,8 @@ impl W.create {
 }
 
 
-
-with entry{
+with entry {
     root spawn W();
-    print([root-->-->(`?A)]);
+    print([root--> -->(`?A)]);
     print([root--> --> -->(`?A)]);
 }

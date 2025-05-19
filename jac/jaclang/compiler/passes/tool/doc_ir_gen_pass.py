@@ -493,7 +493,11 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for list comprehensions."""
         parts: list[doc.DocType] = []
         for i in node.kid:
+            if isinstance(i, uni.Token) and i.name == Tok.RSQUARE:
+                parts.pop()
             parts.append(i.gen.doc_ir)
+            if isinstance(i, uni.Token) and i.name == Tok.LSQUARE:
+                continue
             parts.append(self.space())
         node.gen.doc_ir = self.finalize(parts)
 
@@ -584,12 +588,13 @@ class DocIRGenPass(UniPass):
     def exit_edge_ref_trailer(self, node: uni.EdgeRefTrailer) -> None:
         """Generate DocIR for edge reference trailers."""
         parts: list[doc.DocType] = []
+        prev_tok = None
         for i in node.kid:
-            if isinstance(i, uni.Token) and i.name in [Tok.KW_EDGE, Tok.KW_NODE]:
-                parts.append(i.gen.doc_ir)
+            # if prev_tok and isinstance(prev_tok, (uni.SpecialVarRef,uni.EdgeOpRef)) and isinstance(i, uni.EdgeOpRef):
+            if prev_tok and isinstance(prev_tok, uni.EdgeOpRef) and isinstance(i, uni.EdgeOpRef):
                 parts.append(self.space())
-            else:
-                parts.append(i.gen.doc_ir)
+            parts.append(i.gen.doc_ir)
+            prev_tok = i
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_edge_op_ref(self, node: uni.EdgeOpRef) -> None:
@@ -668,7 +673,11 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for delete statements."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
+            if isinstance(i, uni.Token) and i.name == Tok.SEMI:
+                parts.pop()
+                parts.append(i.gen.doc_ir)
+            else:
+                parts.append(i.gen.doc_ir)
             parts.append(self.space())
         node.gen.doc_ir = self.finalize(parts)
 
@@ -683,7 +692,11 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for report statements."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
+            if isinstance(i, uni.Token) and i.name == Tok.SEMI:
+                parts.pop()
+                parts.append(i.gen.doc_ir)
+            else:
+                parts.append(i.gen.doc_ir)
             parts.append(self.space())
         node.gen.doc_ir = self.finalize(parts)
 
@@ -691,7 +704,11 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for assert statements."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
+            if isinstance(i, uni.Token) and i.name == Tok.SEMI:
+                parts.pop()
+                parts.append(i.gen.doc_ir)
+            else:
+                parts.append(i.gen.doc_ir)
             parts.append(self.space())
         node.gen.doc_ir = self.finalize(parts)
 
@@ -699,7 +716,11 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for raise statements."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
+            if isinstance(i, uni.Token) and i.name == Tok.SEMI:
+                parts.pop()
+                parts.append(i.gen.doc_ir)
+            else:
+                parts.append(i.gen.doc_ir)
             parts.append(self.space())
         node.gen.doc_ir = self.finalize(parts)
 
@@ -746,7 +767,11 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for nonlocal statements."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
+            if isinstance(i, uni.Token) and i.name == Tok.SEMI:
+                parts.pop()
+                parts.append(i.gen.doc_ir)
+            else:
+                parts.append(i.gen.doc_ir)
             parts.append(self.space())
         node.gen.doc_ir = self.finalize(parts)
 
@@ -776,7 +801,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
-            parts.append(self.space())
+            # parts.append(self.space())
         node.gen.doc_ir = self.finalize(parts)
 
     def exit_disconnect_op(self, node: uni.DisconnectOp) -> None:
