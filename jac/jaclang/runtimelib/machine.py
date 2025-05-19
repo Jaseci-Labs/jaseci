@@ -63,6 +63,7 @@ from jaclang.runtimelib.utils import (
     collect_node_connections,
     traverse_graph,
 )
+from jaclang.utils import infer_language
 
 import pluggy
 
@@ -755,7 +756,6 @@ class JacBasics:
         cachable: bool = True,
         mdl_alias: Optional[str] = None,
         override_name: Optional[str] = None,
-        lng: Optional[str] = "jac",
         items: Optional[dict[str, Union[str, Optional[str]]]] = None,
         reload_module: Optional[bool] = False,
     ) -> tuple[types.ModuleType, ...]:
@@ -770,7 +770,6 @@ class JacBasics:
             absorb=absorb,
             mdl_alias=mdl_alias,
             override_name=override_name,
-            lng=lng,
             items=items,
             reload_module=reload_module,
         )
@@ -783,7 +782,6 @@ class JacBasics:
         absorb: bool = False,
         mdl_alias: Optional[str] = None,
         override_name: Optional[str] = None,
-        lng: Optional[str] = "jac",
         items: Optional[dict[str, Union[str, Optional[str]]]] = None,
         reload_module: Optional[bool] = False,
     ) -> tuple[types.ModuleType, ...]:
@@ -793,6 +791,8 @@ class JacBasics:
             JacImporter,
             PythonImporter,
         )
+
+        lng = infer_language(target, base_path)
 
         spec = ImportPathSpec(
             target,

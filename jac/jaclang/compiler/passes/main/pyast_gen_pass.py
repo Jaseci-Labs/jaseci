@@ -514,19 +514,6 @@ class PyastGenPass(UniPass):
                     )
                 )
 
-            if node.is_py:
-                keywords.append(
-                    self.sync(
-                        ast3.keyword(
-                            arg="lng",
-                            value=self.sync(
-                                ast3.Constant(value="py"),
-                                node.hint,
-                            ),
-                        )
-                    )
-                )
-
             if item_keys and item_values:
                 keywords.append(
                     self.sync(
