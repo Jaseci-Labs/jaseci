@@ -18,7 +18,7 @@ function initPyodideWorker() {
     return pyodideInitPromise;
 }
 
-function runJacCodeInWorker(code, outputBlock) {
+function runJacCodeInWorker(code) {
     return new Promise(async (resolve, reject) => {
         await initPyodideWorker();
         const handleMessage = (event) => {
@@ -49,10 +49,10 @@ class CodeBlock extends HTMLElement {
         link.href = "/extra.css";
         shadow.appendChild(link);
 
-        const code = this.textContent.trim() || "print('Hello, Jac!')";
+        const code = this.textContent.trim() || "with entry{\n    print('Hello, Jac!');\n}";
 
         container.innerHTML = `
-            <pre>${code}</pre>
+            <pre><code class="jac-code" contenteditable="true" spellcheck="false" style="display:block; min-height:80px; padding: 5px;">${code}</code></pre>
             <button class="md-button md-button--primary run-code-btn">Run</button>
             <pre class="code-output" style="display:none;"></pre>
         `;
@@ -61,6 +61,7 @@ class CodeBlock extends HTMLElement {
 
         container.querySelector(".run-code-btn").addEventListener("click", async () => {
             const outputBlock = container.querySelector(".code-output");
+            const codeElem = container.querySelector(".jac-code");
             outputBlock.style.display = "block";
             if (!pyodideReady) {
                 outputBlock.textContent = "Loading Jac runner (Pyodide)...";
@@ -68,7 +69,8 @@ class CodeBlock extends HTMLElement {
             }
             outputBlock.textContent = "Running...";
             try {
-                const result = await runJacCodeInWorker(code, outputBlock);
+                const codeToRun = codeElem.textContent.trim();
+                const result = await runJacCodeInWorker(codeToRun, outputBlock);
                 outputBlock.textContent = `Output:\n${result}`;
             } catch (error) {
                 outputBlock.textContent = `Error:\n${error}`;
@@ -81,49 +83,6 @@ class CodeBlock extends HTMLElement {
 customElements.define("code-block", CodeBlock);
 
 
-function attachRunCodeListeners() {
-    document.querySelectorAll(".run-code-btn").forEach((button) => {
-        if (!button.dataset.listenerAttached) {
-            button.dataset.listenerAttached = true; // Prevent duplicate listeners
-            button.addEventListener("click", async (e) => {
-                console.log("Run code button clicked!");
-                const container = e.target.closest(".code-container");
-                const codeBlock = container.querySelector("pre");
-                const outputBlock = container.querySelector(".code-output");
-
-                if (!codeBlock || !outputBlock) {
-                    console.error("Code block or output block not found!");
-                    return;
-                }
-
-                const code = codeBlock.textContent.trim();
-                try {
-                    const result = await runJacCodeInWorker(code, outputBlock);
-                    outputBlock.textContent = `Output:\n${result}`;
-                } catch (error) {
-                    outputBlock.textContent = `Error:\n${error}`;
-                }
-            });
-        }
-    });
-}
-
-
-function observeDOMChanges() {
-    const observer = new MutationObserver(() => {
-        attachRunCodeListeners();
-    });
-
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true,
-    });
-}
-
-
 document.addEventListener("DOMContentLoaded", () => {
-    attachRunCodeListeners();
-    observeDOMChanges();
-    // Preload Pyodide in the background as soon as the site loads
     initPyodideWorker();
 });
