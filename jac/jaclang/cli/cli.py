@@ -2,6 +2,7 @@
 
 import ast as ast3
 import importlib
+import json
 import marshal
 import os
 import pickle
@@ -289,6 +290,64 @@ def lsp() -> None:
     from jaclang.langserve.server import run_lang_server
 
     run_lang_server()
+
+
+@cmd_registry.register
+def jackernel() -> None:
+    """Install jac kernel."""
+    # TODO: Move this to a separate function, maybe report_error or something.
+    ansi_red = "\033[91m"
+    ansi_green = "\033[92m"
+    ansi_cyan = "\033[96m"
+    ansi_reset = "\033[0m"
+
+    # NOTE: We can also run 'pip install jupyter' to give the user an out of the box experience.
+    if not shutil.which("jupyter"):
+        print(
+            f"{ansi_red}Error{ansi_reset}: 'jupyter' is not installed. Please install it first.\n"
+            f"       you can do this by running {ansi_cyan}'pip install jupyter'{ansi_reset} or "
+            f"{ansi_cyan}'conda install jupyter'{ansi_reset}.",
+            file=sys.stderr,
+        )
+        return
+
+    try:
+        import ipykernel  # noqa: F401
+    except ImportError:
+        print(
+            f"{ansi_red}Error{ansi_reset}: 'ipykernel' is not installed. Please install it first.\n"
+            f"       you can do this by running {ansi_cyan}'pip install ipykernel'{ansi_reset} or "
+            f"{ansi_cyan}'conda install ipykernel'{ansi_reset}.",
+            file=sys.stderr,
+        )
+        return
+
+    from ipykernel.kernelspec import install as install_kernel
+
+    conf_dir = install_kernel(user=True, kernel_name="jaclang", display_name="Jaclang")
+    conf_file = os.path.join(conf_dir, "kernel.json")
+
+    # We can make this as a module, the standard way and users needs to install
+    # the module set -m kernel_module instead of this file
+    this_dir = os.path.dirname(__file__)
+    kernel_main = os.path.join(this_dir, "../../support/jackernel/jackernel.py")
+    kernel_main = os.path.abspath(kernel_main)
+
+    with open(conf_file, "r") as kernel_file:
+        kernel_json = json.load(kernel_file)
+        kernel_json["metadata"]["debugger"] = False
+        python = kernel_json["argv"][0]
+        kernel_json["argv"] = [
+            python,
+            kernel_main,
+            "-f",
+            "{connection_file}",
+        ]
+
+    with open(conf_file, "w") as kernel_file:
+        kernel_file.write(json.dumps(kernel_json, indent=2))
+
+    print(f"{ansi_green}Success{ansi_reset}: Jac kernel installed at {conf_file}")
 
 
 @cmd_registry.register
