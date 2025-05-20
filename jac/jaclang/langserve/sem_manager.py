@@ -5,13 +5,11 @@ from __future__ import annotations
 from typing import List, Optional, Tuple
 
 import jaclang.compiler.unitree as uni
-from jaclang.langserve.utils import (
-    find_surrounding_tokens,
-    get_line_of_code,
-    get_token_start,
-)
+from jaclang import JacMachineInterface as Jac
 
 import lsprotocol.types as lspt
+
+(utils,) = Jac.py_jac_import(".utils", base_path=__file__)
 
 
 class SemTokManager:
@@ -81,7 +79,7 @@ class SemTokManager:
 
             is_delete = change.text == ""
             prev_token_index, next_token_index, insert_inside_token = (
-                find_surrounding_tokens(
+                utils.find_surrounding_tokens(
                     change_start_line,
                     change_start_char,
                     change_end_line,
@@ -89,9 +87,11 @@ class SemTokManager:
                     sem_tokens,
                 )
             )
-            prev_tok_pos = get_token_start(prev_token_index, sem_tokens)
-            nxt_tok_pos = get_token_start(next_token_index, sem_tokens)
-            changing_line_text = get_line_of_code(change_start_line, document_lines)
+            prev_tok_pos = utils.get_token_start(prev_token_index, sem_tokens)
+            nxt_tok_pos = utils.get_token_start(next_token_index, sem_tokens)
+            changing_line_text = utils.get_line_of_code(
+                change_start_line, document_lines
+            )
             if not changing_line_text:
                 return sem_tokens
             is_edit_between_tokens = bool(
@@ -134,7 +134,7 @@ class SemTokManager:
                 )
                 if next_token_index is None:
                     return sem_tokens
-                nxt_tok_pos = get_token_start(next_token_index, sem_tokens)
+                nxt_tok_pos = utils.get_token_start(next_token_index, sem_tokens)
                 is_single_line_change = change_end_line == change_start_line
                 is_next_token_same_line = change_end_line == nxt_tok_pos[0]
                 if (
@@ -365,7 +365,7 @@ class SemTokManager:
                 else:
                     is_token_boundary_edit = True
                     next_token_index = prev_token_index + 5
-                    nxt_tok_pos = get_token_start(next_token_index, sem_tokens)
+                    nxt_tok_pos = utils.get_token_start(next_token_index, sem_tokens)
                     break
         if not is_token_boundary_edit:
             selected_region = change_end_char - change_start_char
@@ -373,7 +373,10 @@ class SemTokManager:
             sem_tokens[prev_token_index + index_offset] += (
                 len(change.text) - selected_region
             )
-            if prev_tok_pos[0] == get_token_start(prev_token_index + 5, sem_tokens)[0]:
+            if (
+                prev_tok_pos[0]
+                == utils.get_token_start(prev_token_index + 5, sem_tokens)[0]
+            ):
                 sem_tokens[prev_token_index + index_offset + 4] += (
                     len(change.text) - selected_region
                 )
