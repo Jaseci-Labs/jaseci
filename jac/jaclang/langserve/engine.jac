@@ -3,17 +3,17 @@
 import asyncio;
 import logging;
 import time;
-import from concurrent.futures { ThreadPoolExecutor } 
-import from typing { Callable, Optional } 
+import from concurrent.futures { ThreadPoolExecutor }
+import from typing { Callable, Optional }
 
 import jaclang.compiler.unitree as uni;
-import from jaclang { JacMachineInterface as Jac } 
-import from jaclang.compiler.passes.main { CompilerMode as CMode } 
-import from jaclang.compiler.program { JacProgram } 
-import from jaclang.compiler.unitree { UniScopeNode } 
-import from jaclang.langserve.sem_manager { SemTokManager } 
-import from jaclang.vendor.pygls { uris } 
-import from jaclang.vendor.pygls.server { LanguageServer } 
+import from jaclang { JacMachineInterface as Jac }
+import from jaclang.compiler.passes.main { CompilerMode as CMode }
+import from jaclang.compiler.program { JacProgram }
+import from jaclang.compiler.unitree { UniScopeNode }
+import from jaclang.langserve.sem_manager { SemTokManager }
+import from jaclang.vendor.pygls { uris }
+import from jaclang.vendor.pygls.server { LanguageServer }
 
 import lsprotocol.types as lspt;
 
@@ -26,11 +26,11 @@ with entry {
 """Handles Jac module, semantic manager, and alert management."""
 class ModuleManager {
     """Initialize ModuleManager."""
-    def init(self:JacLangServer,program: JacProgram, sem_managers: <>dict) -> None {
+    def init(self:ModuleManager, program: JacProgram, sem_managers: <>dict) -> None {
         self.program = program;
         self.sem_managers = sem_managers;
     }
-    
+
     """Update modules in JacProgram's hub and semantic managers."""
     def update(self:ModuleManager, file_path: str, build: uni.Module, update_annexed: bool = True) -> None {
         file_path = file_path.removeprefix('file://');
@@ -44,7 +44,7 @@ class ModuleManager {
             }
         }
     }
-    
+
     """Remove errors and warnings for a specific file from the lists."""
     def clear_alerts_for_file(self:ModuleManager, file_path_fs: str) -> None {
         self.program.errors_had[ : ] = [ e for e in self.program.errors_had if e.loc.mod_path != file_path_fs ];
@@ -56,7 +56,7 @@ class ModuleManager {
 """Jac Language Server, manages JacProgram and LSP."""
 class JacLangServer (JacProgram,LanguageServer) {
     """Initialize JacLangServer."""
-    def init(self:LanguageServer) -> None {
+    def init(self:JacLangServer) -> None {
         LanguageServer.init(self, 'jac-lsp', 'v0.1');
         JacProgram.init(self);
         self.executor = ThreadPoolExecutor();
@@ -64,7 +64,7 @@ class JacLangServer (JacProgram,LanguageServer) {
         self.sem_managers : <>dict[(str, SemTokManager)] = {};
         self.module_manager = ModuleManager(self, self.sem_managers);
     }
-    
+
     """Return diagnostics for all files as a dict {uri: diagnostics}."""
     @property
     def diagnostics(self:JacLangServer, ) -> <>dict[str, <>list] {
@@ -75,24 +75,24 @@ class JacLangServer (JacProgram,LanguageServer) {
         }
         return result;
     }
-    
+
     """Remove errors and warnings for a specific file from the lists."""
     def _clear_alerts_for_file(self:JacLangServer, file_path_fs: str) -> None {
         self.module_manager.clear_alerts_for_file(file_path_fs);
     }
-    
+
     """Get IR for a file path."""
     def get_ir(self:JacLangServer, file_path: str) -> Optional[uni.Module] {
         file_path = file_path.removeprefix('file://');
         return self.mod.hub.get(file_path);
     }
-    
+
     """Update modules in JacProgram's hub and semantic managers."""
     def update_modules(self:JacLangServer, file_path: str, build: uni.Module, need: bool = True) -> None {
         self.log_py(f"'Updating modules for '{file_path}");
         self.module_manager.update(file_path, build, update_annexed=need);
     }
-    
+
     """Rebuild a file (syntax only)."""
     def quick_check(self:JacLangServer, file_path: str) -> bool {
         try {
@@ -110,9 +110,9 @@ class JacLangServer (JacProgram,LanguageServer) {
             self.log_error(f"'Error during syntax check: '{e}");
             return False;
         }
-        
+
     }
-    
+
     """Rebuild a file and its dependencies (typecheck)."""
     def deep_check(self:JacLangServer, file_path: str, annex_view: Optional[str] = None) -> bool {
         try {
@@ -142,16 +142,16 @@ class JacLangServer (JacProgram,LanguageServer) {
             self.log_error(f"'Error during deep check: '{e}");
             return False;
         }
-        
+
     }
-    
+
     """Analyze and publish diagnostics."""
     async def launch_quick_check(self:JacLangServer, uri: str) -> None {
         await asyncio.get_event_loop().run_in_executor(self.executor,
         self.quick_check,
         uri);
     }
-    
+
     """Analyze and publish diagnostics."""
     async def launch_deep_check(self:JacLangServer, uri: str) -> None {
         async def run_in_executor(
@@ -172,10 +172,10 @@ class JacLangServer (JacProgram,LanguageServer) {
         self.tasks[uri] = task;
         await task;
     }
-    
+
     """Return completion for a file."""
     def get_completion(
-        self:JacLangServer, 
+        self:JacLangServer,
         file_path: str,
         position: lspt.Position,
         completion_trigger: Optional[str]
@@ -190,7 +190,7 @@ class JacLangServer (JacProgram,LanguageServer) {
         current_symbol_path = utils.parse_symbol_path(current_line, current_pos);
         builtin_mod = next(( mod for (name, mod) in self.mod.hub.items() if 'builtins' in name ));
         builtin_tab = builtin_mod.sym_tab;
-        assert isinstance(builtin_tab, UniScopeNode) ;
+        assert isinstance(builtin_tab, UniScopeNode);
         completion_items = [];
         node_selected = utils.find_deepest_symbol_node_at_pos(mod_ir,
         position.line,
@@ -209,19 +209,16 @@ class JacLangServer (JacProgram,LanguageServer) {
                         if not is_ability_def {
                             archi_owner = mod_tab.find_parent_of_type(uni.Archetype);
                             temp_tab = archi_owner.sym_tab
-                            if archi_owner and archi_owner.sym_tab 
-                            else mod_tab
-                            ;
+                            if archi_owner and archi_owner.sym_tab
+                            else mod_tab;
                             continue;
                         } else {
                             archi_owner = is_ability_def.decl_link.find_parent_of_type(uni.Archetype)
                             if is_ability_def.decl_link
-                            else None
-                            ;
+                            else None;
                             temp_tab = archi_owner.sym_tab
-                            if archi_owner and archi_owner.sym_tab 
-                            else temp_tab
-                            ;
+                            if archi_owner and archi_owner.sym_tab
+                            else temp_tab;
                             continue;
                         }
                     }
@@ -257,7 +254,7 @@ class JacLangServer (JacProgram,LanguageServer) {
                     }
                 }
             }
-        } elif node_selected and node_selected.find_parent_of_type(uni.Archetype) 
+        } elif node_selected and node_selected.find_parent_of_type(uni.Archetype)
         or node_selected.find_parent_of_type(uni.ImplDef)
          {
             self_symbol = [lspt.CompletionItem(label='self', kind=lspt.CompletionItemKind.Variable)];
@@ -266,7 +263,7 @@ class JacLangServer (JacProgram,LanguageServer) {
         }
         return lspt.CompletionList(is_incomplete=False, items=completion_items);
     }
-    
+
     """Rename module."""
     def rename_module(self:JacLangServer, old_path: str, new_path: str) -> None {
         if old_path in self.mod.hub and new_path != old_path  {
@@ -276,7 +273,7 @@ class JacLangServer (JacProgram,LanguageServer) {
             del (self.sem_managers[old_path], ) ;
         }
     }
-    
+
     """Delete module."""
     def delete_module(self:JacLangServer, uri: str) -> None {
         if uri in self.mod.hub {
@@ -286,7 +283,7 @@ class JacLangServer (JacProgram,LanguageServer) {
             del (self.sem_managers[uri], ) ;
         }
     }
-    
+
     """Return formatted jac."""
     def formatted_jac(self:JacLangServer, file_path: str) -> <>list[lspt.TextEdit] {
         try {
@@ -297,12 +294,12 @@ class JacLangServer (JacProgram,LanguageServer) {
             self.log_error(f"'Error during formatting: '{e}");
             formatted_text = document.source;
         }
-        
+
         return [lspt.TextEdit(range=lspt.Range(start=lspt.Position(line=0, character=0),
         end=lspt.Position(line=(len(document.source.splitlines()) + 1), character=0)),
         new_text=formatted_text)];
     }
-    
+
     """Return hover information for a file."""
     def get_hover_info(self:JacLangServer, file_path: str, position: lspt.Position) -> Optional[lspt.Hover] {
         file_path_fs = file_path.removeprefix('file://');
@@ -327,7 +324,7 @@ class JacLangServer (JacProgram,LanguageServer) {
         }
         return None;
     }
-    
+
     """Extract meaningful information from the AST node."""
     def get_node_info(self:JacLangServer, <>node: uni.AstSymbolNode) -> Optional[str] {
         try {
@@ -348,10 +345,10 @@ class JacLangServer (JacProgram,LanguageServer) {
         } except AttributeError as e {
             self.log_warning(f"'Attribute error when accessing node attributes: '{e}");
         }
-        
+
         return node_info.strip();
     }
-    
+
     """Return document symbols for a file."""
     def get_outline(self:JacLangServer, file_path: str) -> <>list[lspt.DocumentSymbol] {
         file_path_fs = file_path.removeprefix('file://');
@@ -362,10 +359,10 @@ class JacLangServer (JacProgram,LanguageServer) {
         }
         return [];
     }
-    
+
     """Return definition location for a file."""
     def get_definition(
-        self:JacLangServer, 
+        self:JacLangServer,
         file_path: str,
         position: lspt.Position
     ) -> Optional[lspt.Location] {
@@ -420,11 +417,11 @@ class JacLangServer (JacProgram,LanguageServer) {
             if node_selected.parent
             and isinstance(node_selected.parent, uni.AstImplNeedingNode)
             and isinstance(node_selected.parent.body, uni.ImplDef)
-            
+
             else node_selected.sym.decl
-            if node_selected.sym and node_selected.sym.decl 
+            if node_selected.sym and node_selected.sym.decl
             else node_selected
-            
+
             ;
             decl_uri = uris.from_fs_path(decl_node.loc.mod_path);
             try {
@@ -432,14 +429,14 @@ class JacLangServer (JacProgram,LanguageServer) {
             } except ValueError {
                 return None;
             }
-            
+
             decl_location = lspt.Location(uri=decl_uri, range=decl_range);
             return decl_location;
         } else {
             return None;
         }
     }
-    
+
     """Return references for a file."""
     def get_references(self:JacLangServer, file_path: str, position: lspt.Position) -> <>list[lspt.Location] {
         file_path_fs = file_path.removeprefix('file://');
@@ -462,10 +459,10 @@ class JacLangServer (JacProgram,LanguageServer) {
         }
         return [];
     }
-    
+
     """Rename a symbol in a file."""
     def rename_symbol(
-        self:JacLangServer, 
+        self:JacLangServer,
         file_path: str,
         position: lspt.Position,
         new_name: str
@@ -495,7 +492,7 @@ class JacLangServer (JacProgram,LanguageServer) {
         }
         return None;
     }
-    
+
     """Return semantic tokens for a file."""
     def get_semantic_tokens(self:JacLangServer, file_path: str) -> lspt.SemanticTokens {
         file_path_fs = file_path.removeprefix('file://');
@@ -505,25 +502,25 @@ class JacLangServer (JacProgram,LanguageServer) {
         }
         return lspt.SemanticTokens(data=sem_mgr.sem_tokens);
     }
-    
+
     """Log an error message."""
     def log_error(self:JacLangServer, message: str) -> None {
         self.show_message_log(message, lspt.MessageType.Error);
         self.show_message(message, lspt.MessageType.Error);
     }
-    
+
     """Log a warning message."""
     def log_warning(self:JacLangServer, message: str) -> None {
         self.show_message_log(message, lspt.MessageType.Warning);
         self.show_message(message, lspt.MessageType.Warning);
     }
-    
+
     """Log an info message."""
     def log_info(self:JacLangServer, message: str) -> None {
         self.show_message_log(message, lspt.MessageType.Info);
         self.show_message(message, lspt.MessageType.Info);
     }
-    
+
     """Log a message."""
     def log_py(self:JacLangServer, message: str) -> None {
         logging.info(message);
