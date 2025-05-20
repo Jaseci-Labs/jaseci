@@ -553,7 +553,7 @@ class JacLanguageTests(TestCase):
             ).ir_out.unparse()
         self.assertIn("class X {\n    with entry {\n        a_b = 67;", output)
         self.assertIn("br = b'Hello\\\\\\\\nWorld'", output)
-        self.assertIn("class Circle {\n    def init(radius: float", output)
+        self.assertIn("class Circle {\n    def init(self: Circle, radius: float", output)
         self.assertIn("<>node = 90;\n    \n\n    print(<>node);\n", output)
 
     def test_pyfunc_3(self) -> None:
