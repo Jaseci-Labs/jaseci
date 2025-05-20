@@ -1,3 +1,5 @@
+"""A Number Guessing Game"""
+
 import random
 
 
