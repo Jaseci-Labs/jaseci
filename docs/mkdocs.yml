@@ -40,6 +40,7 @@ nav:
       - "learn/language_basics/types.md"
       - "learn/language_basics/can_abilities.md"
       - "learn/language_basics/import.md"
+      - "learn/language_basics/Jaclang_package.md"
       - "learn/language_basics/impl_docs.md"
       - "learn/tools/testing.md"
       - Language Reference: "learn/jac_ref.md"
