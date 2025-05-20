@@ -18,8 +18,6 @@ import ast as py_ast
 import os
 from typing import Optional, Sequence, TYPE_CHECKING, TypeAlias, TypeVar
 
-# from icecream import ic
-
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes.uni_pass import Transform
@@ -953,7 +951,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         else:
             raise self.ice()
 
-    def proc_bool_op(self, node: py_ast.BoolOp) -> uni.BoolExpr:
+    def proc_bool_op(self, node: py_ast.BoolOp) -> uni.AtomUnit:
         """Process python node.
 
         class BoolOp(expr): a and b and c
@@ -967,7 +965,15 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             items=valid, delim=Tok.COMMA, kid=values
         )
         if isinstance(op, uni.Token) and len(valid) == len(values):
-            return uni.BoolExpr(op=op, values=valid, kid=[op, valid_values])
+            expr = uni.BoolExpr(op=op, values=valid, kid=[op, valid_values])
+            return uni.AtomUnit(
+                value=expr,
+                kid=[
+                    self.operator(Tok.RPAREN, "("),
+                    expr,
+                    self.operator(Tok.LPAREN, ")"),
+                ],
+            )
         else:
             raise self.ice()
 
@@ -1023,7 +1029,7 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
         else:
             raise self.ice()
 
-    def proc_compare(self, node: py_ast.Compare) -> uni.CompareExpr:
+    def proc_compare(self, node: py_ast.Compare) -> uni.AtomUnit:
         """Process python node.
 
         class Compare(expr):
@@ -1051,8 +1057,16 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
             and len(ops) == len(valid_ops)
             and len(comparators) == len(valid_comparators)
         ):
-            return uni.CompareExpr(
+            expr = uni.CompareExpr(
                 left=left, rights=valid_comparators, ops=valid_ops, kid=kids
+            )
+            return uni.AtomUnit(
+                value=expr,
+                kid=[
+                    self.operator(Tok.RPAREN, "("),
+                    expr,
+                    self.operator(Tok.LPAREN, ")"),
+                ],
             )
         else:
             raise self.ice()
