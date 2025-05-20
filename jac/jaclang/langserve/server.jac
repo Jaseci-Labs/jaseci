@@ -7,7 +7,7 @@ import from jaclang.compiler.constant {
     JacSemTokenType as SemTokType
 }
 
-import from jaclang.langserve.engine { JacLangServer }
+import from engine { JacLangServer }
 import from jaclang.settings { settings }
 
 import lsprotocol.types as lspt;
@@ -160,7 +160,5 @@ def run_lang_server() -> None {
 
 
 with entry {
-    if __name__ == '__main__' {
-        run_lang_server();
-    }
+    run_lang_server();
 }
