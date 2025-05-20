@@ -55,4 +55,8 @@ jobs:
         REDIS_HOST: redis://localhost
         TASK_CONSUMER_CRON_SECOND: "*"
     - name: Run littleX tests
-      run: jac test jac/examples/littleX/littleX.jac
+      run: |
+        pip uninstall jac-splice-orc -y
+        pip install numpy
+        pip install scikit-learn
+        jac test jac/examples/littleX/littleX.jac
