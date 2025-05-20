@@ -244,16 +244,25 @@ class JacParser(Transform[uni.Source, uni.Module]):
         def module(self, _: None) -> uni.Module:
             """Grammar rule.
 
-            module: (toplevel_stmt (tl_stmt_with_doc | toplevel_stmt)*)?
-                | STRING (tl_stmt_with_doc | toplevel_stmt)*
+            module: ((STRING | toplevel_stmt) (STRING? toplevel_stmt)*)?
             """
-            doc = self.match(uni.String)
-            body = self.match_many(uni.ElementStmt)
-            mod = uni.Module(
+            module_doc = self.match(ast.String)
+            tl_stmts: list[ast.ElementStmt] = []
+            while True:
+                doc = self.match(ast.String)
+                if tl_stmt := self.match(ast.ElementStmt):
+                    tl_stmts.append(tl_stmt)
+                    if doc:
+                        tl_stmt.doc = doc
+                        tl_stmt.add_kids_left([doc])
+                else:
+                    break
+            mod = ast.Module(
                 name=self.parse_ref.mod_path.split(os.path.sep)[-1].rstrip(".jac"),
-                source=self.parse_ref.ir_in,
-                doc=doc,
-                body=body,
+                source=self.parse_ref.source,
+                doc=module_doc,
+                body=tl_stmts,
+                is_imported=False,
                 terminals=self.terminals,
                 kid=(
                     self.cur_nodes
@@ -262,18 +271,7 @@ class JacParser(Transform[uni.Source, uni.Module]):
             )
             return mod
 
-        def tl_stmt_with_doc(self, _: None) -> uni.ElementStmt:
-            """Grammar rule.
-
-            tl_stmt_with_doc: STRING toplevel_stmt
-            """
-            doc = self.consume(uni.String)
-            element = self.consume(uni.ElementStmt)
-            element.doc = doc
-            element.add_kids_left([doc])
-            return element
-
-        def toplevel_stmt(self, _: None) -> uni.ElementStmt:
+        def toplevel_stmt(self, _: None) -> ast.ElementStmt:
             """Grammar rule.
 
             toplevel_stmt: import_stmt
