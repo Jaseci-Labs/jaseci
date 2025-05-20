@@ -1,7 +1,7 @@
 
 impl search_tweets {
-    query_embedding = sentence_transformer.encode([query]);
-    tweet_embeddings = sentence_transformer.encode([tweet]);
+    query_embedding = vectorizer.fit_transform([query]);
+    tweet_embeddings = vectorizer.fit_transform([tweet]);
     similarity = cosine_similarity(query_embedding, tweet_embeddings)[0];
     return similarity;
 }
@@ -106,7 +106,7 @@ impl load_user_profiles.load_profiles {
     }
 
 impl create_tweet.tweet {
-        embedding = sentence_transformer.encode(self.content).tolist();
+        embedding = vectorizer.fit_transform([self.content]).toarray().tolist();
         tweet_node = here +>:Post:+> Tweet(content=self.content, embedding=embedding);
         _.perm_grant(tweet_node[0], level="CONNECT");
         report tweet_node;

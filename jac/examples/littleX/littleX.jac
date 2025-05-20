@@ -2,12 +2,12 @@ import datetime;
 import from jac_cloud.core.archetype { NodeAnchor }
 #import from mtllm.llms { Ollama, OpenAI }
 import numpy;
-# import from sentence_transformers { SentenceTransformer }
+import from sklearn.feature_extraction.text { TfidfVectorizer }
 import from sklearn.metrics.pairwise { cosine_similarity }
 
 # glob llm_open_ai = OpenAI(model_name="gpt-4o");
 # glob llm_ollama = Ollama(host="http://127.0.0.1:11434", model_name="llama3.2:1b");
-# glob sentence_transformer = SentenceTransformer('all-MiniLM-L6-v2');
+glob vectorizer = TfidfVectorizer();
 
 def search_tweets(query: str, tweet:str) -> int;
 
