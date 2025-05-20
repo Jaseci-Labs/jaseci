@@ -9,25 +9,17 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Optional
 
 import jaclang.compiler.unitree as uni
+from jaclang import JacMachineInterface as Jac
 from jaclang.compiler.passes.main import CompilerMode as CMode
 from jaclang.compiler.program import JacProgram
 from jaclang.compiler.unitree import UniScopeNode
 from jaclang.langserve.sem_manager import SemTokManager
-from jaclang.langserve.utils import (
-    add_unique_text_edit,
-    collect_all_symbols_in_scope,
-    collect_child_tabs,
-    create_range,
-    find_deepest_symbol_node_at_pos,
-    find_index,
-    gen_diagnostics,
-    get_symbols_for_outline,
-    parse_symbol_path,
-)
 from jaclang.vendor.pygls import uris
 from jaclang.vendor.pygls.server import LanguageServer
 
 import lsprotocol.types as lspt
+
+(utils,) = Jac.py_jac_import(".utils", base_path=__file__)
 
 
 class ModuleManager:
@@ -78,7 +70,7 @@ class JacLangServer(JacProgram, LanguageServer):
         result = {}
         for file_path in self.mod.hub:
             uri = uris.from_fs_path(file_path)
-            result[uri] = gen_diagnostics(uri, self.errors_had, self.warnings_had)
+            result[uri] = utils.gen_diagnostics(uri, self.errors_had, self.warnings_had)
         return result
 
     def _clear_alerts_for_file(self, file_path_fs: str) -> None:
@@ -111,7 +103,7 @@ class JacLangServer(JacProgram, LanguageServer):
             self.update_modules(file_path_fs, build, need=False)
             self.publish_diagnostics(
                 file_path,
-                gen_diagnostics(file_path, self.errors_had, self.warnings_had),
+                utils.gen_diagnostics(file_path, self.errors_had, self.warnings_had),
             )
             return len(self.errors_had) == 0
         except Exception as e:
@@ -137,7 +129,7 @@ class JacLangServer(JacProgram, LanguageServer):
                 )
             self.publish_diagnostics(
                 annex_view if annex_view else file_path,
-                gen_diagnostics(
+                utils.gen_diagnostics(
                     annex_view if annex_view else file_path,
                     self.errors_had,
                     self.warnings_had,
@@ -146,7 +138,7 @@ class JacLangServer(JacProgram, LanguageServer):
             if annex_view:
                 self.publish_diagnostics(
                     file_path,
-                    gen_diagnostics(
+                    utils.gen_diagnostics(
                         file_path,
                         self.errors_had,
                         self.warnings_had,
@@ -194,7 +186,7 @@ class JacLangServer(JacProgram, LanguageServer):
             return lspt.CompletionList(is_incomplete=False, items=[])
         current_line = document.lines[position.line]
         current_pos = position.character
-        current_symbol_path = parse_symbol_path(current_line, current_pos)
+        current_symbol_path = utils.parse_symbol_path(current_line, current_pos)
         builtin_mod = next(
             mod for name, mod in self.mod.hub.items() if "builtins" in name
         )
@@ -202,7 +194,7 @@ class JacLangServer(JacProgram, LanguageServer):
         assert isinstance(builtin_tab, UniScopeNode)
         completion_items = []
 
-        node_selected = find_deepest_symbol_node_at_pos(
+        node_selected = utils.find_deepest_symbol_node_at_pos(
             mod_ir,
             position.line,
             position.character - 2,
@@ -257,7 +249,7 @@ class JacLangServer(JacProgram, LanguageServer):
                             )
                     else:
                         break
-                completion_items += collect_all_symbols_in_scope(
+                completion_items += utils.collect_all_symbols_in_scope(
                     temp_tab, up_tree=False
                 )
                 if isinstance(temp_tab, uni.Archetype) and temp_tab.base_classes:
@@ -267,7 +259,7 @@ class JacLangServer(JacProgram, LanguageServer):
                             base.append(base_name.sym)
                     for base_class_symbol in base:
                         if base_class_symbol.fetch_sym_tab:
-                            completion_items += collect_all_symbols_in_scope(
+                            completion_items += utils.collect_all_symbols_in_scope(
                                 base_class_symbol.fetch_sym_tab,
                                 up_tree=False,
                             )
@@ -286,9 +278,9 @@ class JacLangServer(JacProgram, LanguageServer):
                 self_symbol = []
 
             completion_items += (
-                collect_all_symbols_in_scope(current_symbol_table)
+                utils.collect_all_symbols_in_scope(current_symbol_table)
                 + self_symbol
-                + collect_child_tabs(builtin_tab)
+                + utils.collect_child_tabs(builtin_tab)
             )
         return lspt.CompletionList(is_incomplete=False, items=completion_items)
 
@@ -339,7 +331,7 @@ class JacLangServer(JacProgram, LanguageServer):
         sem_mgr = self.sem_managers.get(file_path_fs)
         if not sem_mgr:
             return None
-        token_index = find_index(
+        token_index = utils.find_index(
             sem_mgr.sem_tokens,
             position.line,
             position.character,
@@ -381,7 +373,7 @@ class JacLangServer(JacProgram, LanguageServer):
         if file_path_fs in self.mod.hub and (
             root_node := self.mod.hub[file_path_fs].sym_tab
         ):
-            return get_symbols_for_outline(root_node)
+            return utils.get_symbols_for_outline(root_node)
         return []
 
     def get_definition(
@@ -394,7 +386,7 @@ class JacLangServer(JacProgram, LanguageServer):
         sem_mgr = self.sem_managers.get(file_path_fs)
         if not sem_mgr:
             return None
-        token_index = find_index(
+        token_index = utils.find_index(
             sem_mgr.sem_tokens,
             position.line,
             position.character,
@@ -459,7 +451,7 @@ class JacLangServer(JacProgram, LanguageServer):
             )
             decl_uri = uris.from_fs_path(decl_node.loc.mod_path)
             try:
-                decl_range = create_range(decl_node.loc)
+                decl_range = utils.create_range(decl_node.loc)
             except ValueError:
                 return None
             decl_location = lspt.Location(
@@ -481,7 +473,7 @@ class JacLangServer(JacProgram, LanguageServer):
         sem_mgr = self.sem_managers.get(file_path_fs)
         if not sem_mgr:
             return []
-        index1 = find_index(
+        index1 = utils.find_index(
             sem_mgr.sem_tokens,
             position.line,
             position.character,
@@ -493,7 +485,7 @@ class JacLangServer(JacProgram, LanguageServer):
             list_of_references: list[lspt.Location] = [
                 lspt.Location(
                     uri=uris.from_fs_path(node.loc.mod_path),
-                    range=create_range(node.loc),
+                    range=utils.create_range(node.loc),
                 )
                 for node in node_selected.sym.uses
             ]
@@ -510,7 +502,7 @@ class JacLangServer(JacProgram, LanguageServer):
         sem_mgr = self.sem_managers.get(file_path_fs)
         if not sem_mgr:
             return None
-        index1 = find_index(
+        index1 = utils.find_index(
             sem_mgr.sem_tokens,
             position.line,
             position.character,
@@ -526,10 +518,10 @@ class JacLangServer(JacProgram, LanguageServer):
             ]:
                 key = uris.from_fs_path(node.loc.mod_path)
                 new_edit = lspt.TextEdit(
-                    range=create_range(node.loc),
+                    range=utils.create_range(node.loc),
                     new_text=new_name,
                 )
-                add_unique_text_edit(changes, key, new_edit)
+                utils.add_unique_text_edit(changes, key, new_edit)
             return lspt.WorkspaceEdit(changes=changes)
         return None
 
