@@ -54,3 +54,9 @@ jobs:
         DATABASE_HOST: mongodb://localhost/?retryWrites=true&w=majority
         REDIS_HOST: redis://localhost
         TASK_CONSUMER_CRON_SECOND: "*"
+    - name: Run littleX tests
+      run: |
+        pip uninstall jac-splice-orc -y
+        pip install numpy
+        pip install scikit-learn
+        jac test jac/examples/littleX/littleX.jac
