@@ -10,6 +10,20 @@ import pytest
 
 class TestJacLangServer(TestCase):
 
+    def _run_check_and_capture_logs(self, file_path, check_method):
+        file_uri = uris.from_fs_path(self.fixture_abs_path(file_path))
+        import logging
+        import io
+
+        log_capture = io.StringIO()
+        handler = logging.StreamHandler(log_capture)
+        logger = logging.getLogger()
+        logger.addHandler(handler)
+        logger.setLevel(logging.DEBUG)
+        status = check_method(file_uri)
+        log_output = log_capture.getvalue()
+        return status, log_output
+
     def test_formatting(self) -> None:
         with LspSession() as s:
             s.initialize()
@@ -587,3 +601,38 @@ class TestJacLangServer(TestCase):
             )
             for expected in expected_refs:
                 self.assertIn(expected, references)
+
+    def test_syntax_diagnosis(self) -> None:
+        """Test that the server shows an error if there is a syntax error in impl."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        status, log_output = self._run_check_and_capture_logs(
+            "circle_pure_syntax_err.impl.jac", lsp.quick_check
+        )
+        self.assertEqual(False, status)
+        self.assertIn(
+            "message=\"Syntax Error: Unexpected token Token('KW_RETURN', 'return'",
+            log_output,
+        )
+        self.assertIn("diagnostics=[Diagnostic(range=10:4-10:5", log_output)
+
+    def test_impl_syntax_diagnosis(self) -> None:
+        """Test that the server shows an error if there is a syntax error."""
+        lsp = JacLangServer()
+        workspace_path = self.fixture_abs_path("")
+        workspace = Workspace(workspace_path, lsp)
+        lsp.lsp._workspace = workspace
+        status, log_output = self._run_check_and_capture_logs(
+            "circle_pure_syntax_err.jac", lsp.deep_check
+        )
+        self.assertEqual(False, status)
+        self.assertIn(
+            "circle_pure_syntax_err.jac, line 10, col 1: Ability has no body. ",
+            log_output,
+        )
+        self.assertIn(
+            "/circle_pure_syntax_err.impl.jac, line 11, col 5: Syntax Error:",
+            log_output,
+        )
