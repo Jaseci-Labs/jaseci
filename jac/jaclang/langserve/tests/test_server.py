@@ -137,8 +137,8 @@ class TestJacLangServer(TestCase):
         )
         lsp.deep_check(guess_game_file)
         self.assertIn(
-            "guess_game4.jac:27:8-27:21",
-            str(lsp.get_definition(guess_game_file, lspt.Position(46, 45))),
+            "guess_game4.jac:16:8-16:21",
+            str(lsp.get_definition(guess_game_file, lspt.Position(34, 45))),
         )
 
     def test_go_to_definition_method_manual_impl(self) -> None:
