@@ -10,14 +10,19 @@ self.onmessage = async (event) => {
         await pyodide.runPythonAsync(`
 import micropip
 await micropip.install("jaclang==0.7.0")
+from jaclang.cli.cli import run
         `);
         self.postMessage({ type: "ready" });
+        return;
     }
 
-    if (pyodide) {
-        try {
-            const jacCode = JSON.stringify(code);
-            const output = await pyodide.runPythonAsync(`
+    if (!pyodide) {
+        return;
+    }
+
+    try {
+        const jacCode = JSON.stringify(code);
+        const output = await pyodide.runPythonAsync(`
 from jaclang.cli.cli import run
 import sys
 from io import StringIO
@@ -34,10 +39,9 @@ run("/tmp/temp.jac")
 sys.stdout = sys.__stdout__
 sys.stderr = sys.__stderr__
 captured_output.getvalue()
-            `);
-            self.postMessage({ type: "result", output });
-        } catch (error) {
-            self.postMessage({ type: "error", error: error.toString() });
-        }
+        `);
+        self.postMessage({ type: "result", output });
+    } catch (error) {
+        self.postMessage({ type: "error", error: error.toString() });
     }
 };

@@ -67,12 +67,15 @@ class CodeBlock extends HTMLElement {
                 outputBlock.textContent = "Loading Jac runner (Pyodide)...";
                 await initPyodideWorker();
             }
+            // Ensure Pyodide is ready before running code
             outputBlock.textContent = "Running...";
             try {
                 const codeToRun = codeElem.textContent.trim();
-                const result = await runJacCodeInWorker(codeToRun, outputBlock);
+                const result = await runJacCodeInWorker(codeToRun);
+                console.log(result);
                 outputBlock.textContent = `Output:\n${result}`;
             } catch (error) {
+                console.log(error);
                 outputBlock.textContent = `Error:\n${error}`;
             }
         });
