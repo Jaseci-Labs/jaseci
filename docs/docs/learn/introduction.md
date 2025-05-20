@@ -10,17 +10,26 @@
 
 # Better Organized and Well Typed Codebases
 
-<h2 style="color: orange; font-weight: bold; text-align: center;">Roadmap (Coming Soon)</h2>
 
-## One Language for Frontend (JS) and Backend (PY)
+<div class="grid cards" markdown>
 
-## Zero to Native Code as fast as Rust
+-   __In The Works__
 
-<h2 style="color: orange; font-weight: bold; text-align: center;">In Research (Coming Later)</h2>
+    ---
 
-## Data Spatial Programming Makes Pytorch/Triton Look Slow
+    *Roadmap Items*
 
-## Data Spatial Programming Make PIM General Purpose
+    [In The Roadmap](bigfeatures.md){ .md-button .md-button--primary }
 
-## Data Spatial Programming Makes Database Schema's A Dynamic Optimization IR
+-   __In The Future__
+
+    ---
+
+    *Research in Jac/Jaseci*
+
+
+    [In Research](research.md){ .md-button }
+
+
+</div>
 
