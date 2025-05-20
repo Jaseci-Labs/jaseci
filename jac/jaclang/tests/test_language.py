@@ -1245,3 +1245,25 @@ class JacLanguageTests(TestCase):
                 prog=JacProgram(),
             ).ir_out.unparse()
         self.assertIn("(x := 10)", output)
+
+    def test_py_bool_parentheses(self) -> None:
+        """Ensure boolean expressions preserve parentheses during conversion."""
+        from jaclang.compiler.passes.main import PyastBuildPass
+        import jaclang.compiler.unitree as uni
+        import ast as py_ast
+
+        py_out_path = os.path.join(self.fixture_abs_path("./"), "py_bool_expr.py")
+        with open(py_out_path) as f:
+            file_source = f.read()
+            output = PyastBuildPass(
+                ir_in=uni.PythonModuleAst(
+                    py_ast.parse(file_source),
+                    orig_src=uni.Source(file_source, py_out_path),
+                ),
+                prog=JacProgram(),
+            ).ir_out.unparse()
+        self.assertIn("(prev_token_index is None)", output)
+        self.assertIn("(next_token_index is None)", output)
+        self.assertIn("(tok[ 0 ] > change_end_line)", output)
+        self.assertIn("(tok[ 0 ] == change_end_line)", output)
+        self.assertIn("(tok[ 1 ] > change_end_char)", output)
