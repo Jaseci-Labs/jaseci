@@ -5,6 +5,7 @@ nav:
   - Learn:
     - Getting Started: "learn/getting_started.md"
     - Tour of Jac/Jaseci: "learn/introduction.md"
+    - Jac in a Flash: "learn/jac_in_a_flash.md"
     - A Robust Example:
       - LittleX (your own twitter):
         - "learn/examples/littleX/overview.md"

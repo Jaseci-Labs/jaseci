@@ -66,6 +66,10 @@ separation keeps the interface clean and helps organise larger codebases.
     ```jac linenums="1"
     --8<-- "jac/examples/guess_game/guess_game4.jac"
     ```
+=== "guess_game4.impl.jac"
+    ```jac linenums="1"
+    --8<-- "jac/examples/guess_game/guess_game4.impl.jac"
+    ```
 
 ## Step&nbsp;5 – Walking the graph
 
@@ -78,6 +82,10 @@ This example shows how conventional logic can become graph traversal.
 === "guess_game5.jac"
     ```jac linenums="1"
     --8<-- "jac/examples/guess_game/guess_game5.jac"
+    ```
+=== "guess_game5.impl.jac"
+    ```jac linenums="1"
+    --8<-- "jac/examples/guess_game/guess_game5.impl.jac"
     ```
 
 Happy code deconstructing!
