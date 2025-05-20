@@ -24,10 +24,8 @@ import from jaclang.vendor.pygls { uris }
 import lsprotocol.types as lspt;
 
 
-with entry {
-    P = ParamSpec('P');
-    T = TypeVar('T', bound=Callable[(P, Coroutine[(Any, Any, Any)])]);
-}
+glob P = ParamSpec('P');
+glob T = TypeVar('T', bound=Callable[(P, Coroutine[(Any, Any, Any)])]);
 
 
 """Return diagnostics."""
