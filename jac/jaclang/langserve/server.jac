@@ -1,14 +1,14 @@
 """Jaclang Language Server."""
 
-import from typing { Optional } 
+import from typing { Optional }
 
-import from jaclang.compiler.constant { 
+import from jaclang.compiler.constant {
     JacSemTokenModifier as SemTokMod,
     JacSemTokenType as SemTokType
-} 
+}
 
-import from jaclang.langserve.engine { JacLangServer } 
-import from jaclang.settings { settings } 
+import from jaclang.langserve.engine { JacLangServer }
+import from jaclang.settings { settings }
 
 import lsprotocol.types as lspt;
 
