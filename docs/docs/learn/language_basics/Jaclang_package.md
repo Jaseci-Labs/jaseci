@@ -80,7 +80,7 @@ Absolute imports specify the complete path to a module starting from the root of
 
 ```Jac linenums="1"
 import from .tools { tool_func }
-import from ..library { sub } 
+import from ..library { sub }
 ```
 
 Relative imports use dots `(. or ..)` to indicate location relative to the current file.
