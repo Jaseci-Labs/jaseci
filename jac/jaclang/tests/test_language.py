@@ -527,8 +527,8 @@ class JacLanguageTests(TestCase):
         print(output)
         self.assertIn("def greet2(**kwargs: Any)", output)
         self.assertEqual(output.count("with entry {"), 14)
-        self.assertIn("assert x == 5 , 'x should be equal to 5' ;", output)
-        self.assertIn("if not x == y {", output)
+        self.assertIn("assert (x == 5) , 'x should be equal to 5' ;", output)
+        self.assertIn("if not (x == y) {", output)
         self.assertIn("def greet2(**kwargs: Any) {", output)
         self.assertIn("squares_dict = { x : (x ** 2) for x in numbers };", output)
         self.assertIn(
@@ -572,7 +572,7 @@ class JacLanguageTests(TestCase):
                 ),
                 prog=JacProgram(),
             ).ir_out.unparse()
-        self.assertIn("if 0 <= x <= 5 {", output)
+        self.assertIn("if (0 <= x <= 5) {", output)
         self.assertIn("  case _:\n", output)
         self.assertIn(" case Point ( x = int ( a ), y = 0 ):\n", output)
         self.assertIn("class Sample {\n    def init", output)

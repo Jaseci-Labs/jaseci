@@ -18,8 +18,6 @@ import ast as py_ast
 import os
 from typing import Optional, Sequence, TYPE_CHECKING, TypeAlias, TypeVar
 
-# from icecream import ic
-
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Tokens as Tok
 from jaclang.compiler.passes.uni_pass import Transform
