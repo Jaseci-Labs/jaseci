@@ -31,6 +31,7 @@ nav:
       - "learn/jac-cloud/jac_cloud_logging.md"
       - "learn/jac-cloud/jac_cloud_env_vars.md"
       - "learn/jac-cloud/jac_cloud_scheduler.md"
+      - "learn/jac-cloud/jac_cloud_async_walker.md"
       - "learn/jac-cloud/jac_cloud_webhook.md"
       - "learn/jac-cloud/jac_cloud_websocket.md"
       - "learn/jac-cloud/cloud-orc-integration.md"
