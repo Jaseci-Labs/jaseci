@@ -34,11 +34,11 @@ def gen_diagnostics(
     errors: <>list[Alert],
     warnings: <>list[Alert]
 ) -> <>list[lspt.Diagnostic] {
-    return ([ lspt.Diagnostic(range=create_range(error.loc),
+    return [ lspt.Diagnostic(range=create_range(error.loc),
     message=error.msg,
     severity=lspt.DiagnosticSeverity.Error) for error in errors if error.loc.mod_path == uris.to_fs_path(from_path) ] + [ lspt.Diagnostic(range=create_range(warning.loc),
     message=warning.msg,
-    severity=lspt.DiagnosticSeverity.Warning) for warning in warnings if warning.loc.mod_path == uris.to_fs_path(from_path) ]);
+    severity=lspt.DiagnosticSeverity.Warning) for warning in warnings if warning.loc.mod_path == uris.to_fs_path(from_path) ];
 }
 
 
