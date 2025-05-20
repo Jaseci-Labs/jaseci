@@ -13,6 +13,8 @@ from jaclang.compiler.passes.main import CompilerMode as CMode
 from jaclang.compiler.program import JacProgram
 from jaclang.utils.test import TestCase
 
+from jaclang.settings import settings
+
 
 class JacLanguageTests(TestCase):
     """Test pass module."""
@@ -819,6 +821,8 @@ class JacLanguageTests(TestCase):
 
     def test_walker_dynamic_update(self) -> None:
         """Test dynamic update of a walker during runtime."""
+        old_setting = settings.enable_jac_semantics
+        settings.enable_jac_semantics = False
         session = self.fixture_abs_path("bar_walk.session")
         bar_file_path = self.fixture_abs_path("bar.jac")
         update_file_path = self.fixture_abs_path("walker_update.jac")
@@ -873,6 +877,8 @@ class JacLanguageTests(TestCase):
             # Restore the original content of bar.jac
             with open(bar_file_path, "w") as bar_file:
                 bar_file.write(original_content)
+        
+        settings.enable_jac_semantics = old_setting
 
     def test_dynamic_spawn_archetype(self) -> None:
         """Test that the walker and node can be spawned and behaves as expected."""

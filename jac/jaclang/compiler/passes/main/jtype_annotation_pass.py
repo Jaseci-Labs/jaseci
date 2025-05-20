@@ -97,7 +97,12 @@ class JTypeAnnotatePass(UniPass):
 
         # Set types for parameters (if any)
         params: list[jtype.JFuncArgument] = []
-        assert isinstance(node.signature, uni.FuncSignature)
+        assert isinstance(node.signature, (uni.FuncSignature | uni.EventSignature))
+
+        if isinstance(node.signature, uni.EventSignature):
+            self.__debug_print("Event signeatures aren't supported yet")
+            return
+
         if node.signature.params:
             for param in node.signature.params.items:
                 if param.type_tag:

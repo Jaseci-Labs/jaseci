@@ -188,9 +188,13 @@ class JTypeResolver:
             "TYP_BOOL": "builtins.bool",
         }
 
-        t = self.type_registry.get(type_map[node.name])
-        assert isinstance(t, jtype.JClassType)
-        return jtype.JClassInstanceType(t)
+        if node.name in type_map:
+            t = self.type_registry.get(type_map[node.name])
+            assert isinstance(t, jtype.JClassType)
+            return jtype.JClassInstanceType(t)
+        else:
+            self.__debug_print(f"builtins of type {node.name} is not supported yet")
+            return jtype.JAnyType()
 
     def _get_func_call_expr_type(self, node: ast.FuncCall) -> jtype.JType:
         """

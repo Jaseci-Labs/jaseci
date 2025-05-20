@@ -60,6 +60,10 @@ class JTypeCheckPass(UniPass):
 
         callable_type = self.prog.type_resolver.get_type(node.target)
 
+        if isinstance(callable_type, jtype.JAnyType):
+            self.__debug_print("AnyType target func call!!!")
+            return
+
         assert isinstance(callable_type, (jtype.JFunctionType, jtype.JClassType))
 
         if isinstance(callable_type, jtype.JClassType):
@@ -121,6 +125,15 @@ class JTypeCheckPass(UniPass):
                 self.log_error(
                     f"Error: Can't assign a value {value_type} to a {sym_type} object"
                 )
+
+            # if the variable has no annotation and this is the first assignment for it
+            # then set the var type to the val type
+            if (
+                isinstance(sym_type, jtype.JAnyType)
+                and isinstance(target, ast.Name)
+                and target.name_spec is target
+            ):
+                self.prog.type_resolver.set_type(target, value_type)
 
     #####################
     ### Atom Trailers ###
