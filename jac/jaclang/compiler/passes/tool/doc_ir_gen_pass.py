@@ -590,8 +590,16 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         prev_tok = None
         for i in node.kid:
+            if isinstance(i, uni.Token) and i.name in [Tok.KW_EDGE, Tok.KW_NODE]:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
+                continue
             # if prev_tok and isinstance(prev_tok, (uni.SpecialVarRef,uni.EdgeOpRef)) and isinstance(i, uni.EdgeOpRef):
-            if prev_tok and isinstance(prev_tok, uni.EdgeOpRef) and isinstance(i, uni.EdgeOpRef):
+            if (
+                prev_tok
+                and isinstance(prev_tok, uni.EdgeOpRef)
+                and isinstance(i, uni.EdgeOpRef)
+            ):
                 parts.append(self.space())
             parts.append(i.gen.doc_ir)
             prev_tok = i

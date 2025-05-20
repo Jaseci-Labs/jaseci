@@ -78,14 +78,23 @@ class JacFormatPassTests(TestCaseMicroSuite):
     #             file_path = os.path.join(fixtures_dir, file_name)
     #             self.compare_files(file_path)
 
-    # def test_data_spatial_examples(self) -> None:
+    # def test_general_format_fixtures(self) -> None:
     #     """Tests if files in the general fixtures directory do not change after being formatted."""
-    #     fixtures_dir = os.path.join(self.examples_abs_path(""), "data_spatial")
+    #     fixtures_dir = os.path.join(self.fixture_abs_path(""), "general_format_checks")
     #     fixture_files = os.listdir(fixtures_dir)
     #     for file_name in fixture_files:
     #         with self.subTest(file=file_name):
     #             file_path = os.path.join(fixtures_dir, file_name)
     #             self.compare_files(file_path)
+
+    def test_data_spatial_examples(self) -> None:
+        """Tests if files in the general fixtures directory do not change after being formatted."""
+        fixtures_dir = os.path.join(self.examples_abs_path(""), "data_spatial")
+        fixture_files = os.listdir(fixtures_dir)
+        for file_name in fixture_files:
+            with self.subTest(file=file_name):
+                file_path = os.path.join(fixtures_dir, file_name)
+                self.compare_files(file_path)
 
     def micro_suite_test(self, filename: str) -> None:
         """
