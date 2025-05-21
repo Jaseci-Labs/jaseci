@@ -1,89 +1,95 @@
-<h1 style="color: orange; font-weight: bold; text-align: center;">Welcome to Jac</h1>
+<h1 style="color: orange; font-weight: bold; text-align: center;">Tour to Jac</h1>
 
-**Jac** combines the power and flexibility of Python's ecosystem and 'pythonic' coding style with a unique 'jactastic' approach to programming. It draws inspiration from a variety of programming languages to improve upon Python to create an engaging, productive, and intuitive coding experience, giving the coder all of python's power, plus superpowers. Additionally, Jac introduces a keystone innovation that may prove to be a monumental advancement in programming languages called the **Data Spatial Programming Model**.
+# All of Python Plus More Phylosophy
+Jac is a drop-in replacement for Python and supersets Python, much like Typescript supersets Javascript or C++ supersets C. It extends Python's semantics while maintaining full interoperability with the Python ecosystem, introducing cutting-edge abstractions designed to minimize complexity and embrace AI-forward development【F:docs/docs/learn/getting_started.md†L1-L4】【F:docs/docs/index.md†L26-L28】.
 
-Just as Object-Oriented Programming (OOP) brought a higher level of abstraction to C and Fortran's functions offered a new way to manage assembly code, Jac introduces Data Spatial Programming constructs expanding on the concept of OOP. This new model is a higher-level abstraction that lets programmers rethink how they interact with data structures, and enable new ways of thinking and being productive.
+```jac
+def add(x: int, y: int) -> int {
+    return x + y;
+}
 
-That being said, Jac was meticulously designed to provide a seamless gradient of expressiveness allowing coders to code in a familiar pythonic style, while using as much or as little data spatial semantics as they'd like.
-
-Join us on this exciting journey. Let's make code art with Jac.
-
-# Why Jac
-
-The journey of Jac began with the first version of a project called **Jaseci**. In its first incantation, Jac did not superset Python and only exposed the data spatial paradigm. This prior version of Jac, along with Jaseci, was used to create multiple software stacks a few of which became commercial products in production today. It was loved by the small group of coders who had the opportunity to use it and build with it. However, this prior Jac/Jaseci stack represented a separate ecosystem distinct from Python and only allowed expressing strictly Data Spatial programs with the small ecosystem of libraries and tools around it.
-
-Over the three years of this first manifestation of Jac, we learned a lot within this small community. We've understood more about what works and what doesn't, what coders love, and what they need. The fruits of this learning are being reincarnated in this new, ambitious, and what is the full realization of the Jac vision.
-The scope of this iteration of Jac is indeed massive, but with discipline and hard work it will be realized. It's designed to be a production ready programming option for coders everywhere.
-
-Jac builds upon Python much like Typescript or Elm builds upon Javascript. However, Jac includes a large scope of what we believe to be good ideas to add to Python and programming in general. These includes a number of constructs from other cutting edge languages, constructs for the AI era, and the beloved data spatial programming constructs introduced with the original Jac. Jac's target is pure Python bytecode, so there is very little risk for coming on board. If you want to eject a Jac program to pure python with calls to a library that implements Jac semantics, you can!
-
-## <span style="color: orange;">A Love Letter to Python, and Beyond</span>
-Jac's design encapsulates a love for the world of programming, computers, and code. It captures the spirit of what makes coding joyful while expanding upon the foundation laid by the beloved language - Python. At its core, Jac is a love letter to Python and modern coding. It inherits the clean syntax, flexibility, and broad applicability that makes Python one of the most popular programming languages in the world while being designed to give us coders new (and old) superpowers.
-
-## <span style="color: orange;">A New Home Lagugae</span>
-
-The goal of Jac is to serve as a home language for a coders lifestyle. Jac is built for us, folks who love python, see coding as beauty, and are serious hackers aiming to launch everything they do to the world. It is the language that I've always wanted and one that I believe you will enjoy too. We are looking forward to seeing what you will create with Jac, and how you will add to its evolving story.
-
-
-## Where Are We today
-
-Jac is supported and maintained by a very passionate group that spans the global and researchers at University of Michigan.
-
-We're very open and welcoming of anyone who might be open to catching the Jac bug. If you're interested in being part of this project and learn more, please feel free to reach out. We'd love to hear from you. We have quite a journey ahead of us, but with dedication and collaboration, we're confident we can make Jac a beloved part of every coder's toolkit.
-
-## About Jac's Creator
-
-Jac was originally created by Jason Mars, the creator and BDFL (for now at least) of Jac and it's data spatial programming model. Since it's creation many brilliant minds have contributed code and ideas to Jac.
-
-## <span style="color: orange">Features in Jac-Lang</span>
-
-While Python is widely regarded for its simplicity and versatility, jac lang offers several advantages, particularly in terms of readability, flexibility, and type safety. By addressing some of the shortcomings of Python, jac lang provides developers with a more robust and scalable alternative for building modern applications.
-
-<!-- - Full-stack programming language
-    - Jaclang empowers developers to create both front-end and back-end components of their applications using a single language. This eliminates the need to switch between different programming languages and frameworks, resulting in a more cohesive and efficient development experience. -->
-
-- **Supersets Python**
-    - As TypeScript supersets JavaScript, Jac-Lang is a language which was built on top of python which all pythony goodness available to all jac-lang programmers while including the entire python ecosystem, available to use.
-
-- **Offers more readable code**
-    - By adopting a clean and intuitive syntax, Jac Lang makes it easier for developers and coders to write code that is easy to understand and maintain.
-
-- **More flexible than python, in terms of styling the code**
-    - As jac lang uses syntax where multiline comments, multiline function declerations and more, which allows the user to arrange arguments, lists, dictionaties and other list-like objects in a readable format.
-
-- **Type safe to support large codebases**
-    - Jac lang prioritizes type safety to support the development of large-scale applications. By enforcing strict type checking, jac lang helps identify potential errors at compile time, rather than runtime, leading to more robust and reliable code.
-
-- **Data Spatial Programming**
-    - Jac Lang's programming approach focuses on data-spatial constructs, enhancing the handling and visualization of data in ways traditional programming paradigms might not support.
-
-- **Programming with Large Language Models**
-    - Jac-lang has an up & coming feature which allows programmers to integrate LLMs into their programming pipeline seamlessly without the need for learning extensive libraries and complicated new syntaxes.
-<!-- ## Integrating Jac into Python Modules
-
-JacLang also provides a seamless way to import Jac into existing Python modules through library functions. Here's an example:
-
-```python
-"""CLI for jaclang."""
-from jaclang import jac_import
-
-cli = jac_import("cli")
-cmds = jac_import("cmds")
-
-cli.cmd_registry = cmds.cmd_reg  # type: ignore
+with entry {
+    print(add(2, 3));
+}
 ```
+This snippet runs identically to its Python counterpart, illustrating Jac's compatibility.
+# Beyond OOP with Data Spatial Programming
+Data Spatial Programming (DSP) inverts the traditional relationship between data and computation. Rather than moving data to computation, DSP moves computation to data through topologically aware constructs. This paradigm introduces specialized archetypes—objects, nodes, edges and walkers—that model spatial relationships directly in the language and enable optimizations around data locality and distributed execution【F:docs/docs/learn/dspfoundation.md†L16-L32】.
 
-In the above code snippet, `cli` and `cmds` are modules that are imported similar to how you'd typically import modules in Python, i.e., `import cli` or `import cmds`.
+```jac
+node Place { has name: str; }
 
-Below is the actual implementation for Jac's CLI (`cli.jac`) to provide some insight into how Jac code looks:
+walker tour {
+    can at Place entry {
+        print("Visiting " + here.name);
+        visit [-->];
+    }
+}
 
-=== "cli.jac"
-    ```jac linenums="1"
-    --8<-- "jaclang/cli/cli.jac"
-    ```
-=== "cli_impl.jac"
-    ```jac linenums="1"
-    --8<-- "jaclang/cli/cli_impl.jac"
-    ```
+with entry {
+    start = Place(name="Home");
+    end = Place(name="Work");
+    start ++> end;
+    :> tour spawn start;
+}
+```
+A walker moves between nodes using edges, demonstrating Data Spatial Programming.
+# Programming Abstractions for AI
+Jac provides novel constructs for integrating LLMs into code. A function body can simply be replaced with a call to an LLM, removing the need for prompt engineering or extensive new libraries【F:docs/docs/index.md†L30-L34】.
 
-That's all you need to get started with JacLang. As you delve into this new language, you'll discover how it beautifully combines the power of Python with a modern and intuitive syntax. Happy coding! -->
+```jac
+can summarize(text: str) -> str by llm();
+
+with entry {
+    print(summarize("Jac simplifies LLM integration."));
+}
+```
+`by llm()` delegates execution to an LLM without any extra library code.
+# Zero to Infinite Scale with no Code Changes
+Jac's cloud-native abstractions make persistence and user concepts part of the language so that simple programs can run unchanged locally or in the cloud【F:docs/docs/index.md†L44-L48】. Deployments can be scaled by increasing replicas of the `jac-cloud` service when needed【F:docs/docs/learn/jac-cloud/cloud-orc-integration.md†L170-L178】.
+
+```jac
+walker ping {
+    can handle with root entry {
+        report {"status": "ok"};
+    }
+}
+```
+Deployed with `jac-cloud`, this walker becomes a scalable REST endpoint.
+# Better Organized and Well Typed Codebases
+Jac focuses on type safety and readability. Type hints are required and the built-in typing system eliminates boilerplate imports. Code structure can be split across multiple files, allowing definitions and implementations to be organized separately while still being checked by Jac's native type system【F:docs/docs/learn/jac_coding_manual.md†L196-L216】【F:docs/docs/learn/jac_coding_manual.md†L218-L252】.
+
+```jac
+walker Greeter {
+    def hello(name: str) -> None;
+}
+```
+```jac
+impl Greeter.hello(name: str) {
+    print("Hello, " + name);
+}
+```
+This shows how declarations and implementations can live in separate files for maintainable, typed codebases.
+
+<div class="grid cards" markdown>
+
+-   __In The Works__
+
+    ---
+
+    *Roadmap Items*
+
+    [In The Roadmap](bigfeatures.md){ .md-button .md-button--primary }
+
+-   __In The Future__
+
+    ---
+
+    *Research in Jac/Jaseci*
+
+
+    [In Research](research.md){ .md-button }
+
+
+</div>
+

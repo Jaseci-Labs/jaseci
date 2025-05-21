@@ -309,11 +309,9 @@ class PyastBuildPass(Transform[uni.PythonModuleAst, uni.Module]):
                 and isinstance(body_stmt.signature, uni.FuncSignature)
                 and body_stmt.signature.params
             ):
-                body_stmt.signature.params.items = [
-                    param
-                    for param in body_stmt.signature.params.items
-                    if param.name.value != "self"
-                ]
+                for param in body_stmt.signature.params.items:
+                    if param.name.value == "self":
+                        param.type_tag = uni.SubTag[uni.Expr](name, kid=[name])
         doc = (
             body[0].expr
             if isinstance(body[0], uni.ExprStmt)
