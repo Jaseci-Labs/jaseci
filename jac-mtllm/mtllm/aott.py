@@ -8,7 +8,7 @@ from typing import Mapping
 
 from PIL import Image as PILImage
 
-from jaclang.compiler.semtable import SemRegistry
+from mtllm.semtable import SemRegistry
 
 from loguru import logger
 

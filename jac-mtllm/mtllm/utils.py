@@ -4,7 +4,7 @@ import re
 from enum import Enum
 from typing import Any
 
-from jaclang.compiler.semtable import SemRegistry, SemScope
+from mtllm.semtable import SemRegistry, SemScope
 
 
 def get_object_string(obj: Any) -> str:  # noqa: ANN401
