@@ -1,3 +1,12 @@
+jest.mock('../../env/manager', () => {
+    return {
+        EnvManager: class {
+            constructor() {}
+            async init() {}
+        }
+    };
+});
+
 import * as path from 'path';
 import * as Mocha from 'mocha';
 
