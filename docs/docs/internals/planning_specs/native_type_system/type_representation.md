@@ -29,7 +29,7 @@ classDiagram
     JacType <|-- PrimitiveType
     JacType <|-- AnyType
     JacType <|-- NothingType
-    JacType <|-- ArchitypeType
+    JacType <|-- ArchetypeType
     JacType <|-- CallableType
     JacType <|-- ContainerType
     JacType <|-- OptionalType
@@ -54,19 +54,19 @@ class PrimitiveType(JacType):
         self.name = name  # e.g., "int", "float", "str"
 ```
 
-### ArchitypeType
+### ArchetypeType
 
-Represents Jac architypes (objects, nodes, edges, walkers) and enums.
+Represents Jac archetypes (objects, nodes, edges, walkers) and enums.
 
 ```python
-class ArchitypeType(JacType):
-    def __init__(self, name: str, sym_tab: UniScopeNode, arch_node: Architype):
+class ArchetypeType(JacType):
+    def __init__(self, name: str, sym_tab: UniScopeNode, arch_node: Archetype):
         self.name = name  # Fully qualified name
-        self.sym_tab = sym_tab  # Symbol table of the architype
-        self.arch_node = arch_node  # AST node for the architype definition
+        self.sym_tab = sym_tab  # Symbol table of the archetype
+        self.arch_node = arch_node  # AST node for the archetype definition
 ```
 
-This type maintains connections to both the symbol table and AST node of the architype, enabling member lookups and inheritance resolution.
+This type maintains connections to both the symbol table and AST node of the archetype, enabling member lookups and inheritance resolution.
 
 ### CallableType
 
@@ -144,13 +144,13 @@ def is_equivalent(self, other: JacType) -> bool:
     return (isinstance(other, ListType) and
             self.element_type.is_equivalent(other.element_type))
 
-# In ArchitypeType (nominal typing)
+# In ArchetypeType (nominal typing)
 def is_equivalent(self, other: JacType) -> bool:
-    return isinstance(other, ArchitypeType) and self.name == other.name
+    return isinstance(other, ArchetypeType) and self.name == other.name
 ```
 
 Different types have different equivalence rules:
-- **Nominal equivalence** for architypes (based on name)
+- **Nominal equivalence** for archetypes (based on name)
 - **Structural equivalence** for containers and callables (based on structure)
 
 ### Subtyping Relationships
@@ -158,13 +158,13 @@ Different types have different equivalence rules:
 The `is_subtype_of` method determines if one type can be used where another is expected:
 
 ```python
-# In ArchitypeType
+# In ArchetypeType
 def is_subtype_of(self, super_type: JacType, env: TypeEnvironment) -> bool:
     if self.is_equivalent(super_type):
         return True
     if isinstance(super_type, AnyType):
         return True
-    if isinstance(super_type, ArchitypeType):
+    if isinstance(super_type, ArchetypeType):
         # Check inheritance chain
         for base in env.get_base_types(self):
             if base.is_equivalent(super_type) or base.is_subtype_of(super_type, env):
@@ -175,7 +175,7 @@ def is_subtype_of(self, super_type: JacType, env: TypeEnvironment) -> bool:
 Subtyping relationships follow these principles:
 - A type is always a subtype of itself
 - A type is always a subtype of `any`
-- For architypes, subtyping follows the inheritance hierarchy
+- For archetypes, subtyping follows the inheritance hierarchy
 - For containers, variance rules apply (e.g., covariance for lists)
 - For callables, parameter types are contravariant and return types are covariant
 
@@ -233,7 +233,7 @@ graph TD
     B --> C["key_type: StringType"]
     B --> D["value_type: ListType"]
     D --> E["element_type: OptionalType"]
-    E --> F["wrapped_type: ArchitypeType"]
+    E --> F["wrapped_type: ArchetypeType"]
     F --> G["name: 'MyClass'"]
     F --> H["sym_tab: MyClass's symbol table"]
     F --> I["arch_node: MyClass's AST node"]

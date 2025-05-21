@@ -143,7 +143,7 @@ walker post_with_body_and_file {
 
 ## **Walker Response Structure**
 
-- Response support auto serialization of walker/edge/node architypes and obj as long as it's attributes is also serializable (ex: nested dataclass)
+- Response support auto serialization of walker/edge/node archetypes and obj as long as it's attributes is also serializable (ex: nested dataclass)
 
 ```python
 {
@@ -160,6 +160,6 @@ walker post_with_body_and_file {
 ```python
 {
     "id": {{ str : anchor ref_id }},
-    "context": {{ dict : anchor architype data }}
+    "context": {{ dict : anchor archetype data }}
 }
 ```

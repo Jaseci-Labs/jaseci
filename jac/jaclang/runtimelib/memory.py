@@ -8,7 +8,7 @@ from shelve import Shelf, open
 from typing import Callable, Generator, Generic, Iterable, TypeVar
 from uuid import UUID
 
-from .architype import Anchor, NodeAnchor, Root, TANCH
+from .archetype import Anchor, NodeAnchor, Root, TANCH
 
 ID = TypeVar("ID")
 
@@ -118,7 +118,7 @@ class ShelfStorage(Memory[UUID, Anchor]):
                             and p_d.edges != d.edges
                             and Jac.check_connect_access(d)
                         ):
-                            if not d.edges and not isinstance(d.architype, Root):
+                            if not d.edges and not isinstance(d.archetype, Root):
                                 self.__shelf__.pop(_id, None)
                                 continue
                             p_d.edges = d.edges
@@ -126,13 +126,13 @@ class ShelfStorage(Memory[UUID, Anchor]):
                         if Jac.check_write_access(d):
                             if hash(dumps(p_d.access)) != hash(dumps(d.access)):
                                 p_d.access = d.access
-                            if hash(dumps(p_d.architype)) != hash(dumps(d.architype)):
-                                p_d.architype = d.architype
+                            if hash(dumps(p_d.archetype)) != hash(dumps(d.archetype)):
+                                p_d.archetype = d.archetype
 
                         self.__shelf__[_id] = p_d
                     elif not (
                         isinstance(d, NodeAnchor)
-                        and not isinstance(d.architype, Root)
+                        and not isinstance(d.archetype, Root)
                         and not d.edges
                     ):
                         self.__shelf__[_id] = d

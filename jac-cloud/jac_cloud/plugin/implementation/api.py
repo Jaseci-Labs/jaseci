@@ -39,7 +39,7 @@ from starlette.datastructures import UploadFile as BaseUploadFile
 
 from .scheduler import run_task, schedule_walker
 from .websocket import websocket_events
-from ...core.architype import NodeAnchor, WalkerAnchor, WalkerArchitype
+from ...core.archetype import NodeAnchor, WalkerAnchor, WalkerArchetype
 from ...core.context import ContextResponse, JaseciContext
 from ...jaseci.security import authenticator, generate_webhook_auth, validate_request
 from ...jaseci.utils import log_entry, log_exit
@@ -125,8 +125,8 @@ def gen_model_field(cls: type, field: Field, is_file: bool = False) -> tuple[typ
     return consts
 
 
-def populate_apis(cls: Type[WalkerArchitype]) -> None:
-    """Generate FastAPI endpoint based on WalkerArchitype class."""
+def populate_apis(cls: Type[WalkerArchetype]) -> None:
+    """Generate FastAPI endpoint based on WalkerArchetype class."""
     if not (specs := get_specs(cls)):
         return
 
@@ -263,7 +263,7 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
                     resp = {"walker_id": wanch.ref_id}
                     log_exit(resp, log)
                 else:
-                    Jac.spawn(warch, jctx.entry_node.architype)
+                    Jac.spawn(warch, jctx.entry_node.archetype)
                     if jctx.custom is not MISSING:
                         log_exit(
                             (
@@ -357,7 +357,7 @@ def populate_apis(cls: Type[WalkerArchitype]) -> None:
 
 
 def specs(
-    cls: Type[WalkerArchitype] | None = None,
+    cls: Type[WalkerArchetype] | None = None,
     *,
     path: str = "",
     methods: list[str] = ["post"],  # noqa: B006
@@ -380,7 +380,7 @@ def specs(
 ) -> Callable:
     """Walker Decorator."""
 
-    def wrapper(cls: Type[WalkerArchitype]) -> Type[WalkerArchitype]:
+    def wrapper(cls: Type[WalkerArchetype]) -> Type[WalkerArchetype]:
         if get_specs(cls) is None:
             _path = path
             _methods = methods

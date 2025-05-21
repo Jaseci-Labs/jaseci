@@ -16,6 +16,7 @@ from jac_splice_orc.managers.proxy_manager import ModuleProxy, RemoteObjectProxy
 
 from jaclang.cli.cmdreg import cmd_registry
 from jaclang.runtimelib.machine import JacMachine, JacMachineInterface, JacProgram
+from jaclang.utils import infer_language
 
 
 from kubernetes import client, config
@@ -566,7 +567,6 @@ class SpliceOrcPlugin:
         absorb: bool,
         mdl_alias: Optional[str],
         override_name: Optional[str],
-        lng: Optional[str],
         items: Optional[dict[str, Union[str, Optional[str]]]],
         reload_module: Optional[bool],
     ) -> tuple[Union[types.ModuleType, "RemoteObjectProxy"], ...]:
@@ -592,6 +592,7 @@ class SpliceOrcPlugin:
             PythonImporter,
         )
 
+        lng = infer_language(target, base_path)
         module_config_path = os.getenv("MODULE_CONFIG_PATH", "/cfg/module_config.json")
         try:
             logging.debug(f"Loading from {module_config_path} for module_config...")

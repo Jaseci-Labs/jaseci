@@ -96,7 +96,7 @@ Key classes:
 - `UniNode`: Base class for all AST nodes
 - `UniScopeNode`: Represents a scope with a symbol table
 - `Module`: Represents a Jac module
-- `Architype`: Represents a Jac architype (object, node, edge, walker)
+- `Archetype`: Represents a Jac archetype (object, node, edge, walker)
 - `Ability`: Represents a Jac ability (method)
 
 #### Compiler Components Relationship
@@ -327,36 +327,36 @@ class ShelfStorage(Memory[UUID, Anchor]):
     __shelf__: Shelf[Anchor] | None = None
 ```
 
-## Architypes and Anchors
+## Archetypes and Anchors
 
-Jaclang uses architypes and anchors to represent objects in the runtime system.
+Jaclang uses archetypes and anchors to represent objects in the runtime system.
 
 ```mermaid
 classDiagram
-    class Architype {
+    class Archetype {
         +list _jac_entry_funcs_
         +list _jac_exit_funcs_
         +Anchor __jac__
     }
 
-    class NodeArchitype {
+    class NodeArchetype {
         +__jac_base__: bool
     }
 
-    class EdgeArchitype {
+    class EdgeArchetype {
         +__jac_base__: bool
     }
 
-    class WalkerArchitype {
+    class WalkerArchetype {
         +__jac_base__: bool
     }
 
-    class ObjectArchitype {
+    class ObjectArchetype {
         +__jac_base__: bool
     }
 
     class Anchor {
-        +Architype architype
+        +Archetype archetype
         +UUID id
         +UUID root
         +Permission access
@@ -368,51 +368,51 @@ classDiagram
     }
 
     class NodeAnchor {
-        +NodeArchitype architype
+        +NodeArchetype archetype
         +list edges
     }
 
     class EdgeAnchor {
-        +EdgeArchitype architype
+        +EdgeArchetype archetype
         +NodeAnchor source
         +NodeAnchor target
         +bool is_undirected
     }
 
     class WalkerAnchor {
-        +WalkerArchitype architype
+        +WalkerArchetype archetype
         +list path
         +list next
         +list ignores
         +bool disengaged
     }
 
-    Architype <|-- NodeArchitype : inherits
-    Architype <|-- EdgeArchitype : inherits
-    Architype <|-- WalkerArchitype : inherits
-    Architype <|-- ObjectArchitype : inherits
+    Archetype <|-- NodeArchetype : inherits
+    Archetype <|-- EdgeArchetype : inherits
+    Archetype <|-- WalkerArchetype : inherits
+    Archetype <|-- ObjectArchetype : inherits
 
     Anchor <|-- NodeAnchor : inherits
     Anchor <|-- EdgeAnchor : inherits
     Anchor <|-- WalkerAnchor : inherits
 
-    Architype --> Anchor : has
-    NodeArchitype --> NodeAnchor : has
-    EdgeArchitype --> EdgeAnchor : has
-    WalkerArchitype --> WalkerAnchor : has
+    Archetype --> Anchor : has
+    NodeArchetype --> NodeAnchor : has
+    EdgeArchetype --> EdgeAnchor : has
+    WalkerArchetype --> WalkerAnchor : has
 
     NodeAnchor --> EdgeAnchor : contains
     EdgeAnchor --> NodeAnchor : references
 ```
 
-### Architype
+### Archetype
 
-`Architype` is the base class for all Jac objects. It defines the common interface for all architypes.
+`Archetype` is the base class for all Jac objects. It defines the common interface for all archetypes.
 
 ```python
 @dataclass(eq=False, repr=False, kw_only=True)
-class Architype:
-    """Architype Protocol."""
+class Archetype:
+    """Archetype Protocol."""
 
     _jac_entry_funcs_: ClassVar[list[DataSpatialFunction]] = []
     _jac_exit_funcs_: ClassVar[list[DataSpatialFunction]] = []
@@ -420,25 +420,25 @@ class Architype:
     @cached_property
     def __jac__(self) -> Anchor:
         """Create default anchor."""
-        return Anchor(architype=self)
+        return Anchor(archetype=self)
 ```
 
-Specialized architypes:
-- `NodeArchitype`: Represents a node in a graph
-- `EdgeArchitype`: Represents an edge in a graph
-- `WalkerArchitype`: Represents a walker that traverses a graph
-- `ObjectArchitype`: Represents a generic object
+Specialized archetypes:
+- `NodeArchetype`: Represents a node in a graph
+- `EdgeArchetype`: Represents an edge in a graph
+- `WalkerArchetype`: Represents a walker that traverses a graph
+- `ObjectArchetype`: Represents a generic object
 
 ### Anchor
 
-`Anchor` is a wrapper around an architype that provides additional metadata and functionality.
+`Anchor` is a wrapper around an archetype that provides additional metadata and functionality.
 
 ```python
 @dataclass(eq=False, repr=False, kw_only=True)
 class Anchor:
     """Object Anchor."""
 
-    architype: Architype
+    archetype: Archetype
     id: UUID = field(default_factory=uuid4)
     root: Optional[UUID] = None
     access: Permission = field(default_factory=Permission)
@@ -447,9 +447,9 @@ class Anchor:
 ```
 
 Specialized anchors:
-- `NodeAnchor`: Wraps a `NodeArchitype` and maintains a list of connected edges
-- `EdgeAnchor`: Wraps an `EdgeArchitype` and maintains references to source and target nodes
-- `WalkerAnchor`: Wraps a `WalkerArchitype` and maintains walker state
+- `NodeAnchor`: Wraps a `NodeArchetype` and maintains a list of connected edges
+- `EdgeAnchor`: Wraps an `EdgeArchetype` and maintains references to source and target nodes
+- `WalkerAnchor`: Wraps a `WalkerArchetype` and maintains walker state
 
 ## Module System
 
@@ -741,7 +741,7 @@ graph TD
     B --> B3[program.py]
     B --> B4[parser.py]
 
-    C --> C1[architype.py]
+    C --> C1[archetype.py]
     C --> C2[machine.py]
     C --> C3[memory.py]
     C --> C4[importer.py]

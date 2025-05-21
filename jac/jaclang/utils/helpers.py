@@ -104,7 +104,7 @@ def auto_generate_refs() -> str:
             f'    ```\n=== "Python"\n    ```python linenums="1"\n    --8<-- "jac/examples/reference/'
             f'{heading_snakecase}.py"\n    ```\n'
             f'??? example "Jac Grammar Snippet"\n    ```yaml linenums="{lines[0]}"\n    --8<-- '
-            f'"jaclang/compiler/jac.lark:{lines[0]}:{lines[1]}"\n    ```\n'
+            f'"jac/jaclang/compiler/jac.lark:{lines[0]}:{lines[1]}"\n    ```\n'
             "**Description**\n\n--8<-- "
             f'"jac/examples/reference/'
             f'{heading_snakecase}.md"\n'

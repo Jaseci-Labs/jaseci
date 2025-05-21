@@ -12,6 +12,7 @@ import sys
 import tempfile
 import types
 from collections import OrderedDict
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import MISSING, dataclass, field
 from functools import partial, wraps
 from inspect import getfile
@@ -37,7 +38,7 @@ from jaclang.compiler import unitree as ast
 from jaclang.compiler.constant import Constants as Con, EdgeDir, colors
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
 from jaclang.compiler.program import JacProgram
-from jaclang.runtimelib.architype import (
+from jaclang.runtimelib.archetype import (
     DataSpatialFunction,
     GenericEdge as _GenericEdge,
     Root as _Root,
@@ -45,16 +46,16 @@ from jaclang.runtimelib.architype import (
 from jaclang.runtimelib.constructs import (
     AccessLevel,
     Anchor,
-    Architype,
+    Archetype,
     EdgeAnchor,
-    EdgeArchitype,
+    EdgeArchetype,
     GenericEdge,
     JacTestCheck,
     NodeAnchor,
-    NodeArchitype,
+    NodeArchetype,
     Root,
     WalkerAnchor,
-    WalkerArchitype,
+    WalkerArchetype,
 )
 from jaclang.runtimelib.memory import Memory, Shelf, ShelfStorage
 from jaclang.runtimelib.utils import (
@@ -62,6 +63,7 @@ from jaclang.runtimelib.utils import (
     collect_node_connections,
     traverse_graph,
 )
+from jaclang.utils import infer_language
 
 import pluggy
 
@@ -86,13 +88,13 @@ class JacAccessValidation:
 
     @staticmethod
     def allow_root(
-        architype: Architype,
+        archetype: Archetype,
         root_id: UUID,
         level: AccessLevel | int | str = AccessLevel.READ,
     ) -> None:
-        """Allow all access from target root graph to current Architype."""
+        """Allow all access from target root graph to current Archetype."""
         level = AccessLevel.cast(level)
-        access = architype.__jac__.access.roots
+        access = archetype.__jac__.access.roots
 
         _root_id = str(root_id)
         if level != access.anchors.get(_root_id, AccessLevel.NO_ACCESS):
@@ -100,30 +102,30 @@ class JacAccessValidation:
 
     @staticmethod
     def disallow_root(
-        architype: Architype,
+        archetype: Archetype,
         root_id: UUID,
         level: AccessLevel | int | str = AccessLevel.READ,
     ) -> None:
-        """Disallow all access from target root graph to current Architype."""
+        """Disallow all access from target root graph to current Archetype."""
         level = AccessLevel.cast(level)
-        access = architype.__jac__.access.roots
+        access = archetype.__jac__.access.roots
 
         access.anchors.pop(str(root_id), None)
 
     @staticmethod
     def perm_grant(
-        architype: Architype, level: AccessLevel | int | str = AccessLevel.READ
+        archetype: Archetype, level: AccessLevel | int | str = AccessLevel.READ
     ) -> None:
-        """Allow everyone to access current Architype."""
-        anchor = architype.__jac__
+        """Allow everyone to access current Archetype."""
+        anchor = archetype.__jac__
         level = AccessLevel.cast(level)
         if level != anchor.access.all:
             anchor.access.all = level
 
     @staticmethod
-    def perm_revoke(architype: Architype) -> None:
-        """Disallow others to access current Architype."""
-        anchor = architype.__jac__
+    def perm_revoke(archetype: Archetype) -> None:
+        """Disallow others to access current Archetype."""
+        anchor = archetype.__jac__
         if anchor.access.all > AccessLevel.NO_ACCESS:
             anchor.access.all = AccessLevel.NO_ACCESS
 
@@ -206,15 +208,15 @@ class JacNode:
     """Jac Node Operations."""
 
     @staticmethod
-    def node_dot(node: NodeArchitype, dot_file: Optional[str] = None) -> str:
+    def node_dot(node: NodeArchetype, dot_file: Optional[str] = None) -> str:
         """Generate Dot file for visualizing nodes and edges."""
         visited_nodes: set[NodeAnchor] = set()
-        connections: set[tuple[NodeArchitype, NodeArchitype, str]] = set()
+        connections: set[tuple[NodeArchetype, NodeArchetype, str]] = set()
         unique_node_id_dict = {}
 
         collect_node_connections(node.__jac__, visited_nodes, connections)
         dot_content = 'digraph {\nnode [style="filled", shape="ellipse", fillcolor="invis", fontcolor="black"];\n'
-        for idx, i in enumerate([nodes_.architype for nodes_ in visited_nodes]):
+        for idx, i in enumerate([nodes_.archetype for nodes_ in visited_nodes]):
             unique_node_id_dict[i] = (i.__class__.__name__, str(idx))
             dot_content += f'{idx} [label="{i}"];\n'
         dot_content += 'edge [color="gray", style="solid"];\n'
@@ -233,66 +235,66 @@ class JacNode:
     def get_edges(
         node: NodeAnchor,
         dir: EdgeDir,
-        filter: Callable[[EdgeArchitype], bool] | None,
-        target_obj: list[NodeArchitype] | None,
-    ) -> list[EdgeArchitype]:
+        filter: Callable[[EdgeArchetype], bool] | None,
+        target_obj: list[NodeArchetype] | None,
+    ) -> list[EdgeArchetype]:
         """Get edges connected to this node."""
-        ret_edges: list[EdgeArchitype] = []
+        ret_edges: list[EdgeArchetype] = []
         for anchor in node.edges:
             if (
                 (source := anchor.source)
                 and (target := anchor.target)
-                and (not filter or filter(anchor.architype))
-                and source.architype
-                and target.architype
+                and (not filter or filter(anchor.archetype))
+                and source.archetype
+                and target.archetype
             ):
                 if (
                     dir in [EdgeDir.OUT, EdgeDir.ANY]
                     and node == source
-                    and (not target_obj or target.architype in target_obj)
+                    and (not target_obj or target.archetype in target_obj)
                     and JacMachineInterface.check_read_access(target)
                 ):
-                    ret_edges.append(anchor.architype)
+                    ret_edges.append(anchor.archetype)
                 if (
                     dir in [EdgeDir.IN, EdgeDir.ANY]
                     and node == target
-                    and (not target_obj or source.architype in target_obj)
+                    and (not target_obj or source.archetype in target_obj)
                     and JacMachineInterface.check_read_access(source)
                 ):
-                    ret_edges.append(anchor.architype)
+                    ret_edges.append(anchor.archetype)
         return ret_edges
 
     @staticmethod
     def edges_to_nodes(
         node: NodeAnchor,
         dir: EdgeDir,
-        filter: Callable[[EdgeArchitype], bool] | None,
-        target_obj: list[NodeArchitype] | None,
-    ) -> list[NodeArchitype]:
+        filter: Callable[[EdgeArchetype], bool] | None,
+        target_obj: list[NodeArchetype] | None,
+    ) -> list[NodeArchetype]:
         """Get set of nodes connected to this node."""
-        ret_edges: list[NodeArchitype] = []
+        ret_edges: list[NodeArchetype] = []
         for anchor in node.edges:
             if (
                 (source := anchor.source)
                 and (target := anchor.target)
-                and (not filter or filter(anchor.architype))
-                and source.architype
-                and target.architype
+                and (not filter or filter(anchor.archetype))
+                and source.archetype
+                and target.archetype
             ):
                 if (
                     dir in [EdgeDir.OUT, EdgeDir.ANY]
                     and node == source
-                    and (not target_obj or target.architype in target_obj)
+                    and (not target_obj or target.archetype in target_obj)
                     and JacMachineInterface.check_read_access(target)
                 ):
-                    ret_edges.append(target.architype)
+                    ret_edges.append(target.archetype)
                 if (
                     dir in [EdgeDir.IN, EdgeDir.ANY]
                     and node == target
-                    and (not target_obj or source.architype in target_obj)
+                    and (not target_obj or source.archetype in target_obj)
                     and JacMachineInterface.check_read_access(source)
                 ):
-                    ret_edges.append(source.architype)
+                    ret_edges.append(source.archetype)
         return ret_edges
 
     @staticmethod
@@ -319,17 +321,17 @@ class JacWalker:
 
     @staticmethod
     def visit(
-        walker: WalkerArchitype,
+        walker: WalkerArchetype,
         expr: (
-            list[NodeArchitype | EdgeArchitype]
-            | list[NodeArchitype]
-            | list[EdgeArchitype]
-            | NodeArchitype
-            | EdgeArchitype
+            list[NodeArchetype | EdgeArchetype]
+            | list[NodeArchetype]
+            | list[EdgeArchetype]
+            | NodeArchetype
+            | EdgeArchetype
         ),
     ) -> bool:  # noqa: ANN401
         """Jac's visit stmt feature."""
-        if isinstance(walker, WalkerArchitype):
+        if isinstance(walker, WalkerArchetype):
             """Walker visits node."""
             wanch = walker.__jac__
             before_len = len(wanch.next)
@@ -350,17 +352,17 @@ class JacWalker:
 
     @staticmethod
     def ignore(
-        walker: WalkerArchitype,
+        walker: WalkerArchetype,
         expr: (
-            list[NodeArchitype | EdgeArchitype]
-            | list[NodeArchitype]
-            | list[EdgeArchitype]
-            | NodeArchitype
-            | EdgeArchitype
+            list[NodeArchetype | EdgeArchetype]
+            | list[NodeArchetype]
+            | list[EdgeArchetype]
+            | NodeArchetype
+            | EdgeArchetype
         ),
     ) -> bool:  # noqa: ANN401
         """Jac's ignore stmt feature."""
-        if isinstance(walker, WalkerArchitype):
+        if isinstance(walker, WalkerArchetype):
             wanch = walker.__jac__
             before_len = len(wanch.ignores)
             for anchor in (
@@ -379,12 +381,12 @@ class JacWalker:
             raise TypeError("Invalid walker object")
 
     @staticmethod
-    def spawn_call(walker: WalkerAnchor, node: NodeAnchor) -> WalkerArchitype:
+    def spawn_call(walker: WalkerAnchor, node: NodeAnchor) -> WalkerArchetype:
         """Jac's spawn operator feature."""
-        warch = walker.architype
+        warch = walker.archetype
         walker.path = []
         walker.next = [node]
-        current_node = node.architype
+        current_node = node.archetype
 
         # walker entry
         for i in warch._jac_entry_funcs_:
@@ -394,12 +396,12 @@ class JacWalker:
                 return warch
 
         while len(walker.next):
-            if current_node := walker.next.pop(0).architype:
+            if current_node := walker.next.pop(0).archetype:
                 # walker entry with
                 for i in warch._jac_entry_funcs_:
                     if (
                         i.trigger
-                        and all_issubclass(i.trigger, NodeArchitype)
+                        and all_issubclass(i.trigger, NodeArchetype)
                         and isinstance(current_node, i.trigger)
                     ):
                         i.func(warch, current_node)
@@ -417,7 +419,7 @@ class JacWalker:
                 for i in current_node._jac_entry_funcs_:
                     if (
                         i.trigger
-                        and all_issubclass(i.trigger, WalkerArchitype)
+                        and all_issubclass(i.trigger, WalkerArchetype)
                         and isinstance(warch, i.trigger)
                     ):
                         i.func(current_node, warch)
@@ -428,7 +430,7 @@ class JacWalker:
                 for i in current_node._jac_exit_funcs_:
                     if (
                         i.trigger
-                        and all_issubclass(i.trigger, WalkerArchitype)
+                        and all_issubclass(i.trigger, WalkerArchetype)
                         and isinstance(warch, i.trigger)
                     ):
                         i.func(current_node, warch)
@@ -446,7 +448,7 @@ class JacWalker:
                 for i in warch._jac_exit_funcs_:
                     if (
                         i.trigger
-                        and all_issubclass(i.trigger, NodeArchitype)
+                        and all_issubclass(i.trigger, NodeArchetype)
                         and isinstance(current_node, i.trigger)
                     ):
                         i.func(warch, current_node)
@@ -463,23 +465,23 @@ class JacWalker:
         return warch
 
     @staticmethod
-    def spawn(op1: Architype, op2: Architype) -> WalkerArchitype | asyncio.Future:
+    def spawn(op1: Archetype, op2: Archetype) -> WalkerArchetype | asyncio.Future:
         """Jac's spawn operator feature."""
-        if isinstance(op1, WalkerArchitype):
+        if isinstance(op1, WalkerArchetype):
             warch = op1
             walker = op1.__jac__
-            if isinstance(op2, NodeArchitype):
+            if isinstance(op2, NodeArchetype):
                 node = op2.__jac__
-            elif isinstance(op2, EdgeArchitype):
+            elif isinstance(op2, EdgeArchetype):
                 node = op2.__jac__.target
             else:
                 raise TypeError("Invalid target object")
-        elif isinstance(op2, WalkerArchitype):
+        elif isinstance(op2, WalkerArchetype):
             warch = op2
             walker = op2.__jac__
-            if isinstance(op1, NodeArchitype):
+            if isinstance(op1, NodeArchetype):
                 node = op1.__jac__
-            elif isinstance(op1, EdgeArchitype):
+            elif isinstance(op1, EdgeArchetype):
                 node = op1.__jac__.target
             else:
                 raise TypeError("Invalid target object")
@@ -497,7 +499,7 @@ class JacWalker:
             return JacMachineInterface.spawn_call(walker=walker, node=node)
 
     @staticmethod
-    def disengage(walker: WalkerArchitype) -> bool:
+    def disengage(walker: WalkerArchetype) -> bool:
         """Jac's disengage stmt feature."""
         walker.__jac__.disengaged = True
         return True
@@ -510,10 +512,10 @@ class JacClassReferences:
     EdgeDir: TypeAlias = EdgeDir
     DSFunc: TypeAlias = DataSpatialFunction
 
-    Obj: TypeAlias = Architype
-    Node: TypeAlias = NodeArchitype
-    Edge: TypeAlias = EdgeArchitype
-    Walker: TypeAlias = WalkerArchitype
+    Obj: TypeAlias = Archetype
+    Node: TypeAlias = NodeArchetype
+    Edge: TypeAlias = EdgeArchetype
+    Walker: TypeAlias = WalkerArchetype
 
     Root: TypeAlias = _Root
     GenericEdge: TypeAlias = _GenericEdge
@@ -524,7 +526,7 @@ class JacBuiltin:
 
     @staticmethod
     def dotgen(
-        node: NodeArchitype,
+        node: NodeArchetype,
         depth: int,
         traverse: bool,
         edge_type: Optional[list[str]],
@@ -535,12 +537,12 @@ class JacBuiltin:
     ) -> str:
         """Generate Dot file for visualizing nodes and edges."""
         edge_type = edge_type if edge_type else []
-        visited_nodes: list[NodeArchitype] = []
-        node_depths: dict[NodeArchitype, int] = {node: 0}
+        visited_nodes: list[NodeArchetype] = []
+        node_depths: dict[NodeArchetype, int] = {node: 0}
         queue: list = [[node, 0]]
-        connections: list[tuple[NodeArchitype, NodeArchitype, EdgeArchitype]] = []
+        connections: list[tuple[NodeArchetype, NodeArchetype, EdgeArchetype]] = []
 
-        def dfs(node: NodeArchitype, cur_depth: int) -> None:
+        def dfs(node: NodeArchetype, cur_depth: int) -> None:
             """Depth first search."""
             if node not in visited_nodes:
                 visited_nodes.append(node)
@@ -588,7 +590,7 @@ class JacBuiltin:
             'fillcolor="invis", fontcolor="black"];\n'
         )
         for source, target, edge in connections:
-            edge_label = html.escape(str(edge.__jac__.architype))
+            edge_label = html.escape(str(edge.__jac__.archetype))
             dot_content += (
                 f"{visited_nodes.index(source)} -> {visited_nodes.index(target)} "
                 f' [label="{edge_label if "GenericEdge" not in edge_label else ""}"];\n'
@@ -598,7 +600,7 @@ class JacBuiltin:
                 colors[node_depths[node_]] if node_depths[node_] < 25 else colors[24]
             )
             dot_content += (
-                f'{visited_nodes.index(node_)} [label="{html.escape(str(node_.__jac__.architype))}"'
+                f'{visited_nodes.index(node_)} [label="{html.escape(str(node_.__jac__.archetype))}"'
                 f'fillcolor="{color}"];\n'
             )
         if dot_file:
@@ -650,23 +652,23 @@ class JacBasics:
         return deleted_count
 
     @staticmethod
-    def get_object(id: str) -> Architype | None:
+    def get_object(id: str) -> Archetype | None:
         """Get object given id."""
         if id == "root":
-            return JacMachineInterface.get_context().root_state.architype
+            return JacMachineInterface.get_context().root_state.archetype
         elif obj := JacMachineInterface.get_context().mem.find_by_id(UUID(id)):
-            return obj.architype
+            return obj.archetype
 
         return None
 
     @staticmethod
-    def object_ref(obj: Architype) -> str:
+    def object_ref(obj: Archetype) -> str:
         """Get object reference id."""
         return obj.__jac__.id.hex
 
     @staticmethod
-    def make_architype(cls: Type[Architype]) -> Type[Architype]:
-        """Create a obj architype."""
+    def make_archetype(cls: Type[Archetype]) -> Type[Archetype]:
+        """Create a obj archetype."""
         entries: OrderedDict[str, JacMachineInterface.DSFunc] = OrderedDict(
             (fn.name, fn) for fn in cls._jac_entry_funcs_
         )
@@ -729,6 +731,14 @@ class JacBasics:
     @staticmethod
     def py_get_jac_machine() -> JacMachine:
         """Get jac machine from python context."""
+        machine = JacBasics.py_find_jac_machine()
+        if not machine:
+            raise RuntimeError("Jac machine not found in python context. ")
+        return machine
+
+    @staticmethod
+    def py_find_jac_machine() -> Optional[JacMachine]:
+        """Get jac machine from python context."""
         machine = None
         for i in inspect.stack():
             machine = i.frame.f_globals.get("__jac_mach__") or i.frame.f_locals.get(
@@ -736,8 +746,6 @@ class JacBasics:
             )
             if machine:
                 break
-        if not machine:
-            raise RuntimeError("Jac machine not found in python context. ")
         return machine
 
     @staticmethod
@@ -745,15 +753,13 @@ class JacBasics:
         target: str,
         base_path: str,
         absorb: bool = False,
-        cachable: bool = True,
         mdl_alias: Optional[str] = None,
         override_name: Optional[str] = None,
-        lng: Optional[str] = "jac",
         items: Optional[dict[str, Union[str, Optional[str]]]] = None,
         reload_module: Optional[bool] = False,
     ) -> tuple[types.ModuleType, ...]:
         """Core Import Process."""
-        machine = JacMachineInterface.py_get_jac_machine()
+        machine = JacBasics.py_find_jac_machine()
         if not machine:
             machine = JacMachine(base_path=base_path)
         return JacMachineInterface.jac_import(
@@ -763,7 +769,6 @@ class JacBasics:
             absorb=absorb,
             mdl_alias=mdl_alias,
             override_name=override_name,
-            lng=lng,
             items=items,
             reload_module=reload_module,
         )
@@ -776,7 +781,6 @@ class JacBasics:
         absorb: bool = False,
         mdl_alias: Optional[str] = None,
         override_name: Optional[str] = None,
-        lng: Optional[str] = "jac",
         items: Optional[dict[str, Union[str, Optional[str]]]] = None,
         reload_module: Optional[bool] = False,
     ) -> tuple[types.ModuleType, ...]:
@@ -786,6 +790,8 @@ class JacBasics:
             JacImporter,
             PythonImporter,
         )
+
+        lng = infer_language(target, base_path)
 
         spec = ImportPathSpec(
             target,
@@ -913,22 +919,22 @@ class JacBasics:
 
     @staticmethod
     def refs(
-        sources: NodeArchitype | list[NodeArchitype],
-        targets: NodeArchitype | list[NodeArchitype] | None = None,
+        sources: NodeArchetype | list[NodeArchetype],
+        targets: NodeArchetype | list[NodeArchetype] | None = None,
         dir: EdgeDir = EdgeDir.OUT,
-        filter: Callable[[EdgeArchitype], bool] | None = None,
+        filter: Callable[[EdgeArchetype], bool] | None = None,
         edges_only: bool = False,
-    ) -> list[NodeArchitype] | list[EdgeArchitype]:
+    ) -> list[NodeArchetype] | list[EdgeArchetype]:
         """Jac's apply_dir stmt feature."""
-        if isinstance(sources, NodeArchitype):
+        if isinstance(sources, NodeArchetype):
             sources = [sources]
-        targ_obj_set: Optional[list[NodeArchitype]] = (
+        targ_obj_set: Optional[list[NodeArchetype]] = (
             [targets]
-            if isinstance(targets, NodeArchitype)
+            if isinstance(targets, NodeArchetype)
             else targets if targets else None
         )
         if edges_only:
-            connected_edges: list[EdgeArchitype] = []
+            connected_edges: list[EdgeArchetype] = []
             for node in sources:
                 edges = JacMachineInterface.get_edges(
                     node.__jac__, dir, filter, target_obj=targ_obj_set
@@ -938,7 +944,7 @@ class JacBasics:
                 )
             return connected_edges
         else:
-            connected_nodes: list[NodeArchitype] = []
+            connected_nodes: list[NodeArchetype] = []
             for node in sources:
                 nodes = JacMachineInterface.edges_to_nodes(
                     node.__jac__, dir, filter, target_obj=targ_obj_set
@@ -950,24 +956,24 @@ class JacBasics:
 
     @staticmethod
     def filter(
-        items: list[Architype],
-        func: Callable[[Architype], bool],
-    ) -> list[Architype]:
-        """Jac's filter architype list."""
+        items: list[Archetype],
+        func: Callable[[Archetype], bool],
+    ) -> list[Archetype]:
+        """Jac's filter archetype list."""
         return [item for item in items if func(item)]
 
     @staticmethod
     def connect(
-        left: NodeArchitype | list[NodeArchitype],
-        right: NodeArchitype | list[NodeArchitype],
-        edge: Type[EdgeArchitype] | EdgeArchitype | None = None,
+        left: NodeArchetype | list[NodeArchetype],
+        right: NodeArchetype | list[NodeArchetype],
+        edge: Type[EdgeArchetype] | EdgeArchetype | None = None,
         undir: bool = False,
         conn_assign: tuple[tuple, tuple] | None = None,
         edges_only: bool = False,
-    ) -> list[NodeArchitype] | list[EdgeArchitype]:
+    ) -> list[NodeArchetype] | list[EdgeArchetype]:
         """Jac's connect operator feature."""
-        left = [left] if isinstance(left, NodeArchitype) else left
-        right = [right] if isinstance(right, NodeArchitype) else right
+        left = [left] if isinstance(left, NodeArchetype) else left
+        right = [right] if isinstance(right, NodeArchetype) else right
         edges = []
 
         for i in left:
@@ -987,15 +993,15 @@ class JacBasics:
 
     @staticmethod
     def disconnect(
-        left: NodeArchitype | list[NodeArchitype],
-        right: NodeArchitype | list[NodeArchitype],
+        left: NodeArchetype | list[NodeArchetype],
+        right: NodeArchetype | list[NodeArchetype],
         dir: EdgeDir = EdgeDir.OUT,
-        filter: Callable[[EdgeArchitype], bool] | None = None,
+        filter: Callable[[EdgeArchetype], bool] | None = None,
     ) -> bool:
         """Jac's disconnect operator feature."""
         disconnect_occurred = False
-        left = [left] if isinstance(left, NodeArchitype) else left
-        right = [right] if isinstance(right, NodeArchitype) else right
+        left = [left] if isinstance(left, NodeArchetype) else left
+        right = [right] if isinstance(right, NodeArchetype) else right
 
         for i in left:
             node = i.__jac__
@@ -1003,14 +1009,14 @@ class JacBasics:
                 if (
                     (source := anchor.source)
                     and (target := anchor.target)
-                    and (not filter or filter(anchor.architype))
-                    and source.architype
-                    and target.architype
+                    and (not filter or filter(anchor.archetype))
+                    and source.archetype
+                    and target.archetype
                 ):
                     if (
                         dir in [EdgeDir.OUT, EdgeDir.ANY]
                         and node == source
-                        and target.architype in right
+                        and target.archetype in right
                         and JacMachineInterface.check_connect_access(target)
                     ):
                         (
@@ -1022,7 +1028,7 @@ class JacBasics:
                     if (
                         dir in [EdgeDir.IN, EdgeDir.ANY]
                         and node == target
-                        and source.architype in right
+                        and source.archetype in right
                         and JacMachineInterface.check_connect_access(source)
                     ):
                         (
@@ -1051,17 +1057,17 @@ class JacBasics:
     @staticmethod
     def build_edge(
         is_undirected: bool,
-        conn_type: Optional[Type[EdgeArchitype] | EdgeArchitype],
+        conn_type: Optional[Type[EdgeArchetype] | EdgeArchetype],
         conn_assign: Optional[tuple[tuple, tuple]],
-    ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchitype]:
+    ) -> Callable[[NodeAnchor, NodeAnchor], EdgeArchetype]:
         """Jac's root getter."""
         ct = conn_type if conn_type else GenericEdge
 
-        def builder(source: NodeAnchor, target: NodeAnchor) -> EdgeArchitype:
+        def builder(source: NodeAnchor, target: NodeAnchor) -> EdgeArchetype:
             edge = ct() if isinstance(ct, type) else ct
 
             eanch = edge.__jac__ = EdgeAnchor(
-                architype=edge,
+                archetype=edge,
                 source=source,
                 target=target,
                 is_undirected=is_undirected,
@@ -1083,10 +1089,10 @@ class JacBasics:
 
     @staticmethod
     def save(
-        obj: Architype | Anchor,
+        obj: Archetype | Anchor,
     ) -> None:
         """Destroy object."""
-        anchor = obj.__jac__ if isinstance(obj, Architype) else obj
+        anchor = obj.__jac__ if isinstance(obj, Archetype) else obj
 
         jctx = JacMachineInterface.get_context()
 
@@ -1109,13 +1115,13 @@ class JacBasics:
                 pass
 
     @staticmethod
-    def destroy(objs: Architype | Anchor | list[Architype | Anchor]) -> None:
+    def destroy(objs: Archetype | Anchor | list[Archetype | Anchor]) -> None:
         """Destroy multiple objects passed in a tuple or list."""
         obj_list = objs if isinstance(objs, list) else [objs]
         for obj in obj_list:
-            if not isinstance(obj, (Architype, Anchor)):
+            if not isinstance(obj, (Archetype, Anchor)):
                 return
-            anchor = obj.__jac__ if isinstance(obj, Architype) else obj
+            anchor = obj.__jac__ if isinstance(obj, Archetype) else obj
 
             if JacMachineInterface.check_write_access(anchor):
                 match anchor:
@@ -1326,7 +1332,7 @@ class JacUtils:
         if module:
             walkers = []
             for name, obj in inspect.getmembers(module):
-                if isinstance(obj, type) and issubclass(obj, WalkerArchitype):
+                if isinstance(obj, type) and issubclass(obj, WalkerArchetype):
                     walkers.append(name)
             return walkers
         return []
@@ -1338,7 +1344,7 @@ class JacUtils:
         if module:
             nodes = []
             for name, obj in inspect.getmembers(module):
-                if isinstance(obj, type) and issubclass(obj, NodeArchitype):
+                if isinstance(obj, type) and issubclass(obj, NodeArchetype):
                     nodes.append(name)
             return nodes
         return []
@@ -1350,13 +1356,13 @@ class JacUtils:
         if module:
             nodes = []
             for name, obj in inspect.getmembers(module):
-                if isinstance(obj, type) and issubclass(obj, EdgeArchitype):
+                if isinstance(obj, type) and issubclass(obj, EdgeArchetype):
                     nodes.append(name)
             return nodes
         return []
 
     @staticmethod
-    def create_architype_from_source(
+    def create_archetype_from_source(
         mach: JacMachine,
         source_code: str,
         module_name: Optional[str] = None,
@@ -1364,7 +1370,7 @@ class JacUtils:
         cachable: bool = False,
         keep_temporary_files: bool = False,
     ) -> Optional[types.ModuleType]:
-        """Dynamically creates architypes (nodes, walkers, etc.) from Jac source code."""
+        """Dynamically creates archetypes (nodes, walkers, etc.) from Jac source code."""
         from jaclang.runtimelib.importer import JacImporter, ImportPathSpec
 
         if not base_path:
@@ -1459,10 +1465,10 @@ class JacUtils:
         node_name: str,
         attributes: Optional[dict] = None,
         module_name: str = "__main__",
-    ) -> NodeArchitype:
+    ) -> NodeArchetype:
         """Spawn a node instance of the given node_name with attributes."""
-        node_class = JacMachineInterface.get_architype(mach, module_name, node_name)
-        if isinstance(node_class, type) and issubclass(node_class, NodeArchitype):
+        node_class = JacMachineInterface.get_archetype(mach, module_name, node_name)
+        if isinstance(node_class, type) and issubclass(node_class, NodeArchetype):
             if attributes is None:
                 attributes = {}
             node_instance = node_class(**attributes)
@@ -1476,10 +1482,10 @@ class JacUtils:
         walker_name: str,
         attributes: Optional[dict] = None,
         module_name: str = "__main__",
-    ) -> WalkerArchitype:
+    ) -> WalkerArchetype:
         """Spawn a walker instance of the given walker_name."""
-        walker_class = JacMachineInterface.get_architype(mach, module_name, walker_name)
-        if isinstance(walker_class, type) and issubclass(walker_class, WalkerArchitype):
+        walker_class = JacMachineInterface.get_archetype(mach, module_name, walker_name)
+        if isinstance(walker_class, type) and issubclass(walker_class, WalkerArchetype):
             if attributes is None:
                 attributes = {}
             walker_instance = walker_class(**attributes)
@@ -1488,13 +1494,13 @@ class JacUtils:
             raise ValueError(f"Walker {walker_name} not found.")
 
     @staticmethod
-    def get_architype(
-        mach: JacMachine, module_name: str, architype_name: str
-    ) -> Optional[Architype]:
-        """Retrieve an architype class from a module."""
+    def get_archetype(
+        mach: JacMachine, module_name: str, archetype_name: str
+    ) -> Optional[Archetype]:
+        """Retrieve an archetype class from a module."""
         module = mach.loaded_modules.get(module_name)
         if module:
-            return getattr(module, architype_name, None)
+            return getattr(module, archetype_name, None)
         return None
 
     @staticmethod
@@ -1503,6 +1509,18 @@ class JacUtils:
         machine = JacMachineInterface.py_get_jac_machine()
         _event_loop = machine._event_loop
         return _event_loop.run_until_complete(obj)
+
+    @staticmethod
+    def thread_run(func: Callable, *args: object) -> Future:  # noqa: ANN401
+        """Run a function in a thread."""
+        machine = JacMachine.py_get_jac_machine()
+        _executor = machine.pool
+        return _executor.submit(func, *args)
+
+    @staticmethod
+    def thread_wait(future: Any) -> None:  # noqa: ANN401
+        """Wait for a thread to finish."""
+        return future.result()
 
 
 class JacMachineInterface(
@@ -1542,6 +1560,7 @@ class JacMachine(JacMachineInterface):
         )
         self.jac_program: JacProgram = JacProgram()
         self.interp_mode = interp_mode
+        self.pool = ThreadPoolExecutor()
         self._event_loop = asyncio.new_event_loop()
         self.mem: Memory = ShelfStorage(session)
         self.reports: list[Any] = []
@@ -1584,7 +1603,7 @@ class JacMachine(JacMachineInterface):
 
     def get_root(self) -> Root:
         """Get current root."""
-        return cast(Root, self.root_state.architype)
+        return cast(Root, self.root_state.archetype)
 
     def global_system_root(self) -> NodeAnchor:
         """Get global system root."""

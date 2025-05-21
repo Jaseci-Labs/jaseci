@@ -69,7 +69,10 @@ class JacLanguageTests(TestCase):
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(
-            self.mach, "micro.simple_walk", base_path=self.examples_abs_path("")
+            self.mach,
+            "micro.simple_walk",
+            base_path=self.examples_abs_path(""),
+            override_name="__main__",
         )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
@@ -152,7 +155,7 @@ class JacLanguageTests(TestCase):
             stdout_value,
             "{'apple': None, 'pineapple': None}\n"
             "This is a long\n"
-            "    line of code.\n"
+            "        line of code.\n"
             "{'a': 'apple', 'b': 'ball', 'c': 'cat', 'd': 'dog', 'e': 'elephant'}\n",
         )
 
@@ -344,18 +347,6 @@ class JacLanguageTests(TestCase):
         self.assertIn("one level deeperslHello World!", stdout_value)
         self.assertIn("module 'pyfunc' from ", stdout_value)
 
-    # def test_second_deep_outer_imports(self) -> None:
-    #     """Parse micro jac file."""
-    #     captured_output = io.StringIO()
-    #     sys.stdout = captured_output
-    #     Jac.jac_import(self.mach,
-    #         "deep.deeper.deep_outer_import2", base_path=self.fixture_abs_path("./")
-    #     )
-    #     sys.stdout = sys.__stdout__
-    #     stdout_value = captured_output.getvalue()
-    #     self.assertIn("one level deeperslHello World!", stdout_value)
-    #     self.assertIn("module 'pyfunc' from ", stdout_value)
-
     def test_has_lambda_goodness(self) -> None:
         """Test has lambda_goodness."""
         captured_output = io.StringIO()
@@ -536,12 +527,12 @@ class JacLanguageTests(TestCase):
         print(output)
         self.assertIn("def greet2(**kwargs: Any)", output)
         self.assertEqual(output.count("with entry {"), 14)
-        self.assertIn("assert x == 5 , 'x should be equal to 5' ;", output)
-        self.assertIn("if not x == y {", output)
+        self.assertIn("assert (x == 5) , 'x should be equal to 5' ;", output)
+        self.assertIn("if not (x == y) {", output)
         self.assertIn("def greet2(**kwargs: Any) {", output)
-        self.assertIn("squares_dict = {x: (x ** 2)  for x in numbers};", output)
+        self.assertIn("squares_dict = { x : (x ** 2) for x in numbers };", output)
         self.assertIn(
-            '\n\n"""Say hello"""\n@ my_decorator \n def say_hello() {\n\n', output
+            '\n\n"""Say hello"""\n@ my_decorator\n\n def say_hello() {', output
         )
 
     def test_pyfunc_2(self) -> None:
@@ -560,10 +551,12 @@ class JacLanguageTests(TestCase):
                 ),
                 prog=JacProgram(),
             ).ir_out.unparse()
-        self.assertIn("class X {\n    with entry {\n\n        a_b = 67;", output)
+        self.assertIn("class X {\n    with entry {\n        a_b = 67;", output)
         self.assertIn("br = b'Hello\\\\\\\\nWorld'", output)
-        self.assertIn("class Circle {\n    def init(radius: float", output)
-        self.assertIn("<>node = 90;    \n    print(<>node) ;\n}\n", output)
+        self.assertIn(
+            "class Circle {\n    def init(self: Circle, radius: float", output
+        )
+        self.assertIn("<>node = 90;\n    \n\n    print(<>node);\n", output)
 
     def test_pyfunc_3(self) -> None:
         """Test py ast to Jac ast conversion."""
@@ -581,9 +574,9 @@ class JacLanguageTests(TestCase):
                 ),
                 prog=JacProgram(),
             ).ir_out.unparse()
-        self.assertIn("if 0 <= x<= 5 {", output)
+        self.assertIn("if (0 <= x <= 5) {", output)
         self.assertIn("  case _:\n", output)
-        self.assertIn(" case Point(x = int(a), y = 0):\n", output)
+        self.assertIn(" case Point ( x = int ( a ), y = 0 ):\n", output)
         self.assertIn("class Sample {\n    def init", output)
 
     def test_py2jac(self) -> None:
@@ -602,9 +595,9 @@ class JacLanguageTests(TestCase):
                 ),
                 prog=None,
             ).ir_out.unparse()
-        self.assertIn("match Container(inner=Inner(x=a, y=b)){\n", output)
-        self.assertIn("case Container(inner = Inner(x = a, y = 0)):\n", output)
-        self.assertIn("case Container(inner = Inner(x = a, y = b)):\n", output)
+        self.assertIn("match Container(inner=Inner(x=a, y=b)) { \n", output)
+        self.assertIn("case Container ( inner = Inner ( x = a, y = 0 ) ):\n", output)
+        self.assertIn("case Container ( inner = Inner ( x = a, y = b ) ):\n", output)
         self.assertIn("case _:\n", output)
 
     def test_refs_target(self) -> None:
@@ -883,11 +876,11 @@ class JacLanguageTests(TestCase):
             with open(bar_file_path, "w") as bar_file:
                 bar_file.write(original_content)
 
-    def test_dynamic_spawn_architype(self) -> None:
+    def test_dynamic_spawn_archetype(self) -> None:
         """Test that the walker and node can be spawned and behaves as expected."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        cli.run(self.fixture_abs_path("dynamic_architype.jac"))
+        cli.run(self.fixture_abs_path("dynamic_archetype.jac"))
 
         output = captured_output.getvalue().strip()
         output_lines = output.split("\n")
@@ -923,11 +916,11 @@ class JacLanguageTests(TestCase):
                 f"Expected '{val}' to appear 2 times, but found {len(occurrences)}.",
             )
 
-    def test_dynamic_architype_creation(self) -> None:
+    def test_dynamic_archetype_creation(self) -> None:
         """Test that the walker and node can be created dynamically."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        cli.run(self.fixture_abs_path("create_dynamic_architype.jac"))
+        cli.run(self.fixture_abs_path("create_dynamic_archetype.jac"))
 
         output = captured_output.getvalue().strip()
         # Expected outputs for spawned entities
@@ -939,7 +932,7 @@ class JacLanguageTests(TestCase):
             f"Expected '{expected_spawned_walker}' in output.",
         )
 
-    def test_dynamic_architype_creation_rel_import(self) -> None:
+    def test_dynamic_archetype_creation_rel_import(self) -> None:
         """Test that the walker and node can be created dynamically, with relative import."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
@@ -1012,12 +1005,12 @@ class JacLanguageTests(TestCase):
         self.assertIn("Hello World !", stdout_value[0])
         self.assertIn("Welcome to Jaseci!", stdout_value[1])
 
-    def test_architype_def(self) -> None:
-        """Test architype definition bug."""
+    def test_archetype_def(self) -> None:
+        """Test archetype definition bug."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(
-            self.mach, "architype_def_bug", base_path=self.fixture_abs_path("./")
+            self.mach, "archetype_def_bug", base_path=self.fixture_abs_path("./")
         )
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
@@ -1210,3 +1203,69 @@ class JacLanguageTests(TestCase):
         self.assertIn("Hello", stdout_value[0])
         self.assertIn("Hello", stdout_value[1])
         self.assertIn("World!", stdout_value[2])
+
+    def test_concurrency(self) -> None:
+        """Test concurrency in jaclang."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(self.mach, "concurrency", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("Started", stdout_value[0])
+        self.assertIn("B(name='Hi')", stdout_value[8])
+        self.assertIn("11", stdout_value[9])
+        self.assertIn("13", stdout_value[10])
+
+    def test_import_jac_from_py(self) -> None:
+        """Parse micro jac file."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        from .fixtures import jac_from_py
+
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue()
+        self.assertEqual(
+            stdout_value,
+            "Value: -1\nValue: 0\nValue: 1\nValue: 2\nValue: 3\nValue: 4"
+            "\nValue: 5\nValue: 6\nValue: 7\nFinal Value: 8\nDone walking.\n",
+        )
+
+    def test_py_namedexpr(self) -> None:
+        """Ensure NamedExpr nodes are converted to AtomUnit."""
+        from jaclang.compiler.passes.main import PyastBuildPass
+        import jaclang.compiler.unitree as uni
+        import ast as py_ast
+
+        py_out_path = os.path.join(self.fixture_abs_path("./"), "py_namedexpr.py")
+        with open(py_out_path) as f:
+            file_source = f.read()
+            output = PyastBuildPass(
+                ir_in=uni.PythonModuleAst(
+                    py_ast.parse(file_source),
+                    orig_src=uni.Source(file_source, py_out_path),
+                ),
+                prog=JacProgram(),
+            ).ir_out.unparse()
+        self.assertIn("(x := 10)", output)
+
+    def test_py_bool_parentheses(self) -> None:
+        """Ensure boolean expressions preserve parentheses during conversion."""
+        from jaclang.compiler.passes.main import PyastBuildPass
+        import jaclang.compiler.unitree as uni
+        import ast as py_ast
+
+        py_out_path = os.path.join(self.fixture_abs_path("./"), "py_bool_expr.py")
+        with open(py_out_path) as f:
+            file_source = f.read()
+            output = PyastBuildPass(
+                ir_in=uni.PythonModuleAst(
+                    py_ast.parse(file_source),
+                    orig_src=uni.Source(file_source, py_out_path),
+                ),
+                prog=JacProgram(),
+            ).ir_out.unparse()
+        self.assertIn("(prev_token_index is None)", output)
+        self.assertIn("(next_token_index is None)", output)
+        self.assertIn("(tok[ 0 ] > change_end_line)", output)
+        self.assertIn("(tok[ 0 ] == change_end_line)", output)
+        self.assertIn("(tok[ 1 ] > change_end_char)", output)

@@ -3,29 +3,26 @@
 from __future__ import annotations
 
 import ast as ast3
-from dataclasses import dataclass, field
 from typing import Optional, TYPE_CHECKING
+
 
 if TYPE_CHECKING:
     from jaclang.compiler.unitree import Source, Token
 
 
-@dataclass
 class CodeGenTarget:
     """Code generation target."""
 
-    py: str = ""
-    jac: str = ""
-    js: str = ""
-    py_ast: list[ast3.AST] = field(default_factory=lambda: [])
-    py_bytecode: Optional[bytes] = None
+    def __init__(self) -> None:
+        """Initialize code generation target."""
+        import jaclang.compiler.passes.tool.doc_ir as doc
 
-    def clean(self) -> None:
-        """Clean code generation target."""
-        self.py = ""
-        self.jac = ""
-        self.js = ""
-        self.py_ast = []
+        self.py: str = ""
+        self.jac: str = ""
+        self.doc_ir: doc.DocType = doc.Text("")
+        self.js: str = ""
+        self.py_ast: list[ast3.AST] = []
+        self.py_bytecode: Optional[bytes] = None
 
 
 class CodeLocInfo:

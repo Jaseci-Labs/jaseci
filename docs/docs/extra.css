@@ -22,3 +22,67 @@
 .md-typeset details > summary:after {
     color: #ffab40 !important;
 }
+
+.code-container {
+    margin: 1em 0;
+    padding: 1em;
+    background: #282c34;
+    color: #abb2bf;
+    border-radius: 4px;
+}
+
+.code-container pre {
+    background: #1e1e1e;
+    color: #dcdcdc;
+    padding: 0.5em;
+    margin: 0;
+    overflow-x: auto;
+    border-radius: 4px;
+}
+
+.code-container button {
+    margin-top: 0.5em;
+    padding: 0.4em 1.2em;
+    background: linear-gradient(90deg, #ff9800 0%, #ffab40 100%);
+    color: #1e1e1e;
+    border: none;
+    border-radius: 3px;
+    font-weight: 600;
+    font-size: 1em;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    outline: none;
+    letter-spacing: 0.03em;
+}
+
+.code-container button:hover,
+.code-container button:focus {
+    background: linear-gradient(90deg, #ffa726 0%, #ffd180 100%);
+    color: #111;
+    box-shadow: 0 4px 16px rgba(255,171,64,0.15);
+}
+
+.code-container button:active {
+    background: #ff9800;
+    color: #fff;
+}
+
+.code-container .code-output {
+    margin-top: 0.5em;
+    background: #1e1e1e;
+    color: #98c379;
+    padding: 0.5em;
+    border-radius: 4px;
+    font-family: monospace;
+    max-height: 1000px;
+    overflow: auto;
+    transition: max-height 0.3s cubic-bezier(0.4,0,0.2,1), padding 0.3s;
+}
+
+.code-container .code-output[style*="display: none"] {
+    max-height: 0;
+    padding: 0;
+    overflow: hidden;
+    margin-top: 0;
+}

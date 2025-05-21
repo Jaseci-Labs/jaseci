@@ -32,7 +32,7 @@ from ..models import NO_PASSWORD, User as BaseUser
 from ..security import authenticator, create_code, create_token
 from ..sso import AppleSSO, GoogleSSO
 from ..utils import logger
-from ...core.architype import BulkWrite, NodeAnchor
+from ...core.archetype import BulkWrite, NodeAnchor
 
 router = APIRouter(prefix="/sso", tags=["SSO APIs"])
 
@@ -202,7 +202,7 @@ def login(platform: str, open_id: OpenID) -> Response:
 
 def register(platform: str, open_id: OpenID) -> Response:
     """Register user method."""
-    from ...core.architype import Root
+    from ...core.archetype import Root
 
     if user := User.Collection.find_one(
         {

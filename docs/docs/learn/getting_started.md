@@ -1,8 +1,8 @@
-# Getting Started With Jac and Jaseci
+<h1 style="color: orange; font-weight: bold; text-align: center;">Getting Started With Jac and Jaseci</h1>
 
-[Jac is a new language that supersets the semantics of Python with full interoperability with Python's ecosystem that introduces cutting edge programming models and abstractions for minimizing and hiding complexity, being AI forward, and abstracting away categories of common software systems we do manually today. The langauge is designed to be production grade and is already used in production for a number of use cases.]
+Jac is an innovative programming language that extends Python's semantics while maintaining full interoperability with the Python ecosystem. It introduces cutting-edge programming models and abstractions specifically designed to minimize and hide complexity, embrace AI-forward development, and automate categories of common software systems that typically require manual implementation. Despite being relatively new, Jac has already proven its production-grade capabilities, currently powering several real-world applications across various use cases.
 
-[Jaseci is an implementation of the Jac runtime. (think CPython for Python)]
+Jaseci serves as the implementation of the Jac runtime, functioning in a relationship similar to how CPython serves as the reference implementation for Python. This runtime environment enables Jac code to execute with its enhanced features while maintaining the seamless Python interoperability that makes the language particularly accessible to Python developers.
 
 # Installation
 
@@ -18,7 +18,7 @@ Once you've got Jaclang installed, just give the Jac CLI a try to make sure ever
     ```bash
     jac --version
     ```
-- Run a .jac file
+- Run a .jac fil
     ```bash
     jac run <file_name>.jac
 - To test run a 'Hello World'Program

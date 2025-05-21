@@ -16,7 +16,7 @@ from jwt import decode, encode
 from ..datasources.redis import CodeRedis, TokenRedis, WebhookRedis
 from ..models import User as BaseUser, Webhook
 from ..utils import logger, random_string, utc_timestamp
-from ...core.architype import NodeAnchor
+from ...core.archetype import NodeAnchor
 
 
 TOKEN_SECRET = getenv("TOKEN_SECRET", random_string(50))
