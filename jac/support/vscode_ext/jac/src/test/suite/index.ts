@@ -1,10 +1,10 @@
-jest.mock('../../env/manager', () => {
-    return {
-        EnvManager: class {
-            constructor() {}
-            async init() {}
-        }
-    };
+import mock = require('mock-require');
+// Mock EnvManager for tests
+mock('../../env/manager', {
+    EnvManager: class {
+        constructor() {}
+        async init() {}
+    }
 });
 
 import * as path from 'path';
