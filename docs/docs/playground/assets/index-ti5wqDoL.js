@@ -199,7 +199,7 @@ with entry {
         }
     }
 }
-`},{name:"Abilities",code:`# Abilities in Jaclang
+`},{name:"Functions",code:`# Functions in Jaclang
 def add(a: int, b: int) -> int {
     return a + b;
 }
@@ -213,12 +213,15 @@ with entry {
 }
 `},{name:"Data Spatial Programming",code:`# Data Spatial programming in Jaclang
 walker Creator {
+
+    # create ability of Creator walker.
     can create with \`root entry;
 }
 
 node node_a {
     has val: int;
 
+    # make_something ability of node_a node.
     can make_something with Creator entry;
 }
 
@@ -226,6 +229,7 @@ edge connector {
     has value: int = 10;
 }
 
+# implementation of create ability
 impl Creator.create {
     end = here;
     for i=0 to i<3 by i+=1  {
@@ -236,6 +240,7 @@ impl Creator.create {
     visit [-->];
 }
 
+# implementation of make_something ability
 impl node_a.make_something {
     i = 0;
     while i < 5 {
