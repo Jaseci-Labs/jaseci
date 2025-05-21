@@ -67,7 +67,7 @@ In addition to setting up JacLang itself, you may also want to take advantage of
 
     *Hit the Playground*
 
-    [Jac Playground](playground/index.html){ .md-button .md-button--primary }
+    [Jac Playground](../playground/index.html){ .md-button .md-button--primary }
 
 </div>
 
