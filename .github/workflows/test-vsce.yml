@@ -28,6 +28,11 @@ jobs:
           curl -fsSL https://code-server.dev/install.sh | sh
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
+      - name: Build extension
+        run: |
+          cd jac/support/vscode_ext/jac
+          npm run compile
+
       - name: Install ms-python.python extension for test VS Code
         run: |
           cd jac/support/vscode_ext/jac
