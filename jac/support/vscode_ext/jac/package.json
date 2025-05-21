@@ -28,22 +28,19 @@
     "vscode": "^1.96.0"
   },
   "contributes": {
-
     "debuggers": [
       {
         "type": "jacdebug",
         "label": "Jac Debug",
-
         "initialConfigurations": [
           {
             "type": "debugpy",
             "request": "launch",
             "name": "Run a jac file",
             "program": "${command:extension.jaclang-extension.getJacPath}",
-            "args" : "run ${file}"
+            "args": "run ${file}"
           }
         ]
-
       }
     ],
     "commands": [
@@ -124,7 +121,8 @@
     "build": "vsce",
     "watch": "tsc -b -w",
     "deploy": "vsce publish --yarn",
-    "vsce-package": "mkdir build && vsce package -o build/jac.vsix"
+    "vsce-package": "mkdir build && vsce package -o build/jac.vsix",
+    "test": "npm run compile && node ./out/test/runTest.js"
   },
   "extensionDependencies": [
     "ms-python.python"
@@ -133,9 +131,17 @@
     "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {
-    "@types/node": "^20.14.1",
+    "@types/chai": "^4.3.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.17.50",
+    "@types/sinon": "^10.0.0",
     "@types/vscode": "^1.96.0",
+    "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^2.27.0",
-    "typescript": "^5.4.5"
+    "chai": "^4.3.0",
+    "mocha": "^10.8.2",
+    "sinon": "^15.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
   }
 }
