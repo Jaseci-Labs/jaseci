@@ -234,7 +234,8 @@ def process_prev_react(prev_react_outputs: list[ReActOutput]) -> str:
         )
     return prev_react_input
 
-
+#here
+# need methods for scraping the UniiR
 def get_all_type_explanations(
     type_list: list, mod_registry: SemRegistry
 ) -> list[TypeExplanation]:

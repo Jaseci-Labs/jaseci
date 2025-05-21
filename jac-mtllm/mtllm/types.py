@@ -88,7 +88,7 @@ class Image:
                 img_format.lower(),
             )
 
-
+# And Here
 class TypeExplanation:
     """Class to represent a type explanation."""
 
