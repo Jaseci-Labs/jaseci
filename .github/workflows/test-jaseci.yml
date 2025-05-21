@@ -41,6 +41,7 @@ jobs:
         pip install -e jac-splice-orc
         pip install -e jac-cloud
         pip install pytest
+        pip install pytest-asyncio
 
     - name: Set environment for testing
       run: |
