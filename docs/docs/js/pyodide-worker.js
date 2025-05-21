@@ -1,15 +1,37 @@
 let pyodide = null;
 
+// Functions to load Pyodide and its jaclang
+async function readFileAsBytes(fileName) {
+  const response = await fetch(fileName);
+  const buffer = await response.arrayBuffer();
+  return new Uint8Array(buffer);
+}
+
+async function loadPythonResources(pyodide) {
+  const data = await readFileAsBytes("../playground/jaclang.zip");
+  await pyodide.FS.writeFile("/jaclang.zip", data);
+  await pyodide.runPythonAsync(`
+import zipfile
+import os
+
+with zipfile.ZipFile("/jaclang.zip", "r") as zip_ref:
+    zip_ref.extractall("/jaclang")
+
+os.sys.path.append("/jaclang")
+print("JacLang files loaded!")
+`);
+}
+
+// Worker code
 self.onmessage = async (event) => {
     const { type, code } = event.data;
 
     if (type === "init") {
         importScripts("https://cdn.jsdelivr.net/pyodide/v0.27.0/full/pyodide.js");
         pyodide = await loadPyodide();
-        await pyodide.loadPackage("micropip");
+        
+        await loadPythonResources(pyodide);
         await pyodide.runPythonAsync(`
-import micropip
-await micropip.install("jaclang==0.7.0")
 from jaclang.cli.cli import run
         `);
         self.postMessage({ type: "ready" });
