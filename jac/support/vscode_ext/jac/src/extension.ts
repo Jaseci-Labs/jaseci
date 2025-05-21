@@ -16,6 +16,13 @@ export async function activate(context: vscode.ExtensionContext) {
     // Register all extension commands (run, check, serve, env select, etc)
     registerAllCommands(context, envManager);
 
+    // Register getJacPath command for debug integration and tests
+    context.subscriptions.push(
+        vscode.commands.registerCommand('extension.jaclang-extension.getJacPath', () => {
+            return envManager.getJacPath();
+        })
+    );
+
     // Visual debugger webview integration
     setupVisualDebuggerWebview(context, envManager);
 }

@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { runJacCommandForCurrentFile } from '../utils';
 import { COMMANDS } from '../constants';
+import { makeWebView, getDebugGraphData } from '../visual_debugger/visdbg';
 
 export function registerAllCommands(context: vscode.ExtensionContext, envManager: any) {
     context.subscriptions.push(
@@ -26,7 +27,7 @@ export function registerAllCommands(context: vscode.ExtensionContext, envManager
         })
     );
     context.subscriptions.push(
-        vscode.commands.registerCommand('extension.jaclang-extension.getJacPath', config => {
+        vscode.commands.registerCommand(COMMANDS.GET_JAC_PATH, config => {
             const programName = (process.platform === 'win32') ? "jac.exe" : "jac";
             const paths = process.env.PATH.split(path.delimiter);
             for (const dir of paths) {
@@ -36,12 +37,23 @@ export function registerAllCommands(context: vscode.ExtensionContext, envManager
                     return fullPath;
                 } catch (err) {
                     // Not found or not executable
-                    // Ignore and continue searching
                 }
             }
             const err_msg = `Couldn't find ${programName} in the PATH.`;
             vscode.window.showErrorMessage(err_msg);
             return null;
+        })
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand(COMMANDS.VISUALIZE, async () => {
+            let webviewPanel: vscode.WebviewPanel | undefined;
+            let graphData: JSON = JSON.parse('{}');
+            if (webviewPanel) {
+                webviewPanel.reveal();
+            } else {
+                webviewPanel = makeWebView();
+                webviewPanel.onDidDispose(() => { webviewPanel = undefined; });
+            }
         })
     );
 }

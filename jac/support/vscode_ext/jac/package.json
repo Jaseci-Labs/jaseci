@@ -27,6 +27,15 @@
   "engines": {
     "vscode": "^1.100.0"
   },
+  "activationEvents": [
+    "onCommand:jaclang-extension.selectEnv",
+    "onCommand:jaclang-extension.runCurrentFile",
+    "onCommand:jaclang-extension.checkCurrentFile",
+    "onCommand:jaclang-extension.serveCurrentFile",
+    "onCommand:jac.visualize",
+    "onCommand:extension.jaclang-extension.getJacPath",
+    "onLanguage:jac"
+  ],
   "contributes": {
     "debuggers": [
       {
@@ -122,7 +131,7 @@
     "watch": "tsc -b -w",
     "deploy": "vsce publish --yarn",
     "vsce-package": "mkdir build && vsce package -o build/jac.vsix",
-    "test": "npm run compile && node ./out/test/runTest.js"
+    "test": "npm run compile &&npm install && vsce package && node ./out/test/runTest.js"
   },
   "extensionDependencies": [
     "ms-python.python"
