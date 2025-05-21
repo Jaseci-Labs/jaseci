@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { setupLspClient, client } from './lsp/client';
-import { EnvManager } from './env/manager';
+import { EnvManager } from './environment/manager';
 import { registerAllCommands } from './commands';
 import { setupVisualDebuggerWebview } from './webview/visualDebugger';
 
