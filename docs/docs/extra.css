@@ -68,6 +68,10 @@
     color: #fff;
 }
 
+.code-container .jac-code {
+    font-size: 15px !important;
+}
+
 .code-container .code-output {
     margin-top: 0.5em;
     background: #1e1e1e;
@@ -78,6 +82,7 @@
     max-height: 1000px;
     overflow: auto;
     transition: max-height 0.3s cubic-bezier(0.4,0,0.2,1), padding 0.3s;
+    font-size: 15px;
 }
 
 .code-container .code-output[style*="display: none"] {
