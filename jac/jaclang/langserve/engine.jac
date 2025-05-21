@@ -11,7 +11,7 @@ import from jaclang { JacMachineInterface as Jac }
 import from jaclang.compiler.passes.main { CompilerMode as CMode }
 import from jaclang.compiler.program { JacProgram }
 import from jaclang.compiler.unitree { UniScopeNode }
-import from jaclang.langserve.sem_manager { SemTokManager }
+import from sem_manager { SemTokManager }
 import from jaclang.vendor.pygls { uris }
 import from jaclang.vendor.pygls.server { LanguageServer }
 
