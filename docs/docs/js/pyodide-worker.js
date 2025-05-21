@@ -8,18 +8,26 @@ async function readFileAsBytes(fileName) {
 }
 
 async function loadPythonResources(pyodide) {
-  const data = await readFileAsBytes("../playground/jaclang.zip");
-  await pyodide.FS.writeFile("/jaclang.zip", data);
-  await pyodide.runPythonAsync(`
+  try {
+    const data = await readFileAsBytes("../playground/jaclang.zip");
+    await pyodide.FS.writeFile("/jaclang.zip", data);
+    await pyodide.runPythonAsync(`
 import zipfile
 import os
 
-with zipfile.ZipFile("/jaclang.zip", "r") as zip_ref:
-    zip_ref.extractall("/jaclang")
-
-os.sys.path.append("/jaclang")
-print("JacLang files loaded!")
+try:
+    with zipfile.ZipFile("/jaclang.zip", "r") as zip_ref:
+        zip_ref.extractall("/jaclang")
+    os.sys.path.append("/jaclang")
+    print("JacLang files loaded!")
+except Exception as e:
+    print("Failed to extract JacLang files:", e)
+    raise
 `);
+  } catch (err) {
+    console.error("Error loading Python resources:", err);
+    throw err;
+  }
 }
 
 // Worker code
