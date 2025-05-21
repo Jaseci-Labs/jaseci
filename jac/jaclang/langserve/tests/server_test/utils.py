@@ -2,11 +2,14 @@
 import os
 import tempfile
 
-from jaclang.langserve.engine import JacLangServer
 from jaclang.vendor.pygls.uris import from_fs_path
 from jaclang.vendor.pygls.workspace import Workspace
 
 from textwrap import dedent
+from jaclang import JacMachineInterface as _
+JacLangServer = _.py_jac_import(
+    "....langserve.engine", __file__, items={"JacLangServer": None}
+)[0]
 
 def get_jac_file_path():
     """Return the absolute path to the sample Jac file used for testing."""

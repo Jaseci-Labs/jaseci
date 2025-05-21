@@ -1,12 +1,17 @@
 from jaclang.utils.test import TestCase
 from jaclang.vendor.pygls import uris
 from jaclang.vendor.pygls.workspace import Workspace
-from jaclang.langserve.engine import JacLangServer
-from .session import LspSession
 
 import lsprotocol.types as lspt
 import pytest
+from jaclang import JacMachineInterface as _
 
+JacLangServer = _.py_jac_import(
+    "...langserve.engine", __file__, items={"JacLangServer": None}
+)[0]
+LspSession = _.py_jac_import(
+    "session", __file__, items={"LspSession": None}
+)[0]
 
 class TestJacLangServer(TestCase):
 
@@ -62,7 +67,7 @@ class TestJacLangServer(TestCase):
         self.assertIn(
             # "ability) calculate_area: float",
             "ability) calculate_area\n( radius : float ) -> float",
-            lsp.get_hover_info(circle_impl_file, pos).contents.value,
+            lsp.get_hover_info(circle_impl_file, pos).contents.value.replace("'", ""),
         )
 
     def test_impl_auto_discover(self) -> None:
@@ -80,7 +85,7 @@ class TestJacLangServer(TestCase):
         self.assertIn(
             # "ability) calculate_area: float",
             "(public ability) calculate_area\n( radius : float ) -> float",
-            lsp.get_hover_info(circle_impl_file, pos).contents.value,
+            lsp.get_hover_info(circle_impl_file, pos).contents.value.replace("'", ""),
         )
 
     @pytest.mark.xfail(reason="TODO: Fix when we have the type checker")

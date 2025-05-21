@@ -2,12 +2,12 @@
 
 import copy
 import lsprotocol.types as lspt
-
-from jaclang.langserve.sem_manager import SemTokManager
+from jaclang import JacMachineInterface as _
 from jaclang.utils.test import TestCase
 
 from typing import Tuple
 
+SemTokManager = _.py_jac_import("..sem_manager", __file__, items={"SemTokManager": None})[0]
 
 class TestUpdateSemTokens(TestCase):
     """Test update semantic tokens"""
