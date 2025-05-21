@@ -6,8 +6,7 @@ from typing import Any, Callable, Mapping, Optional, Sequence
 import jaclang.compiler.unitree as uni
 from jaclang.compiler.constant import Constants as Con
 from jaclang.compiler.passes.main.pyast_gen_pass import PyastGenPass
-from mtllm.semtable import SemInfo, SemRegistry, SemScope
-from jaclang.runtimelib.machine import hookimpl
+from jaclang.runtimelib.machine import JacMachineInterface, hookimpl
 
 # from jaclang.runtimelib.utils import extract_params, extract_type, get_sem_scope
 
@@ -16,8 +15,10 @@ from mtllm.aott import (
     get_all_type_explanations,
 )
 from mtllm.llms.base import BaseLLM
+from mtllm.semtable import SemInfo, SemRegistry, SemScope
 from mtllm.types import Information, InputInformation, OutputHint, Tool
 from mtllm.utils import get_filtered_registry
+
 
 
 def extract_params(
@@ -139,7 +140,7 @@ class JacMachine:
     @staticmethod
     @hookimpl
     def with_llm(
-        self,
+        # self,
         file_loc: str,
         model: BaseLLM,
         model_params: dict[str, Any],
@@ -155,14 +156,7 @@ class JacMachine:
         _locals: Mapping,
     ) -> Any:  # noqa: ANN401
         """Jac's with_llm feature."""
-
-        if hasattr(self, "base_path"):
-            print(self.base_path)
-        else:
-            print("No base path found")
-        # from jaclang.runtimelib.machine import JacMachine
-
-        # mod_registry = JacMachine.get().jac_program.sem_ir
+        machine = JacMachineInterface.py_get_jac_machine()
 
         _scope = SemScope.get_scope_from_str(scope)
         assert _scope is not None, f"Invalid scope: {scope}"
@@ -334,14 +328,14 @@ class JacMachine:
         include_info: list[tuple[str, ast3.AST]],
         exclude_info: list[tuple[str, ast3.AST]],
     ) -> ast3.Call:
-        """Return the LLM Call, e.g. _Jac.with_llm()."""
+        """Return the LLM Call, e.g. JacMachine.with_llm()."""
         return _pass.sync(
             ast3.Call(
                 func=_pass.sync(
                     ast3.Attribute(
                         value=_pass.sync(
                             ast3.Name(
-                                id=Con.JAC_FEATURE.value,
+                                id="_",
                                 ctx=ast3.Load(),
                             )
                         ),
@@ -533,7 +527,7 @@ class JacMachine:
                     ast3.Attribute(
                         value=_pass.sync(
                             ast3.Name(
-                                id=Con.JAC_FEATURE.value,
+                                id="_",
                                 ctx=ast3.Load(),
                             )
                         ),
@@ -559,7 +553,7 @@ class JacMachine:
                     ast3.Attribute(
                         value=_pass.sync(
                             ast3.Name(
-                                id=Con.JAC_FEATURE.value,
+                                id="_",
                                 ctx=ast3.Load(),
                             )
                         ),
@@ -590,7 +584,7 @@ class JacMachine:
                                         ast3.Attribute(
                                             value=_pass.sync(
                                                 ast3.Name(
-                                                    id=Con.JAC_FEATURE.value,
+                                                    id="_",
                                                     ctx=ast3.Load(),
                                                 )
                                             ),
@@ -623,7 +617,7 @@ class JacMachine:
                                         ast3.Attribute(
                                             value=_pass.sync(
                                                 ast3.Name(
-                                                    id=Con.JAC_FEATURE.value,
+                                                    id="_",
                                                     ctx=ast3.Load(),
                                                 )
                                             ),
