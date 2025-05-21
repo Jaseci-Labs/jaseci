@@ -14,12 +14,26 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '18'
-      - run: cd jac/support/vscode_ext/jac && npm install
+
+      - name: Install dependencies
+        run: |
+          cd jac/support/vscode_ext/jac
+          npm install
+          npm install --save-dev @vscode/test-electron
+
       - run: sudo apt-get update && sudo apt-get install -y xvfb
+
       - name: Install code-server (VS Code CLI)
         run: |
           curl -fsSL https://code-server.dev/install.sh | sh
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       - name: Install ms-python.python extension for test VS Code
-        run: npx @vscode/test-electron --install-extension ms-python.python
-      - run: cd jac/support/vscode_ext/jac && xvfb-run -a npm test
+        run: |
+          cd jac/support/vscode_ext/jac
+          npx @vscode/test-electron --install-extension ms-python.python
+
+      - name: Run tests
+        run: |
+          cd jac/support/vscode_ext/jac
+          xvfb-run -a npm test
