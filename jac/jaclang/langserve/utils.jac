@@ -24,10 +24,8 @@ import from jaclang.vendor.pygls { uris }
 import lsprotocol.types as lspt;
 
 
-with entry {
-    P = ParamSpec('P');
-    T = TypeVar('T', bound=Callable[(P, Coroutine[(Any, Any, Any)])]);
-}
+glob P = ParamSpec('P');
+glob T = TypeVar('T', bound=Callable[(P, Coroutine[(Any, Any, Any)])]);
 
 
 """Return diagnostics."""
@@ -36,11 +34,15 @@ def gen_diagnostics(
     errors: <>list[Alert],
     warnings: <>list[Alert]
 ) -> <>list[lspt.Diagnostic] {
-    return ([ lspt.Diagnostic(range=create_range(error.loc),
-    message=error.msg,
-    severity=lspt.DiagnosticSeverity.Error) for error in errors if error.loc.mod_path == uris.to_fs_path(from_path) ] + [ lspt.Diagnostic(range=create_range(warning.loc),
-    message=warning.msg,
-    severity=lspt.DiagnosticSeverity.Warning) for warning in warnings if warning.loc.mod_path == uris.to_fs_path(from_path) ]);
+    return [ lspt.Diagnostic(
+        range=create_range(error.loc),
+        message=error.msg,
+        severity=lspt.DiagnosticSeverity.Error
+    ) for error in errors if error.loc.mod_path == uris.to_fs_path(from_path) ] + [ lspt.Diagnostic(
+        range=create_range(warning.loc),
+        message=warning.msg,
+        severity=lspt.DiagnosticSeverity.Warning
+    ) for warning in warnings if warning.loc.mod_path == uris.to_fs_path(from_path) ];
 }
 
 
@@ -156,25 +158,31 @@ def get_symbols_for_outline(<>node: UniScopeNode) -> <>list[lspt.DocumentSymbol]
             continue;
         }
         pos = create_range(item.decl.loc);
-        symbol = lspt.DocumentSymbol(name=key,
-        kind=kind_map(item.decl),
-        range=pos,
-        selection_range=pos,
-        children=[]);
+        symbol = lspt.DocumentSymbol(
+            name=key,
+            kind=kind_map(item.decl),
+            range=pos,
+            selection_range=pos,
+            children=[]
+        );
         symbols.append(symbol);
     }
     for sub_tab in [ i for i in <>node.kid_scope if i.loc.mod_path == <>node.loc.mod_path ] {
         sub_symbols = get_symbols_for_outline(sub_tab);
-        if isinstance(sub_tab,
-        (uni.IfStmt, uni.ElseStmt, uni.WhileStmt, uni.IterForStmt, uni.InForStmt)) {
+        if isinstance(
+            sub_tab,
+            (uni.IfStmt, uni.ElseStmt, uni.WhileStmt, uni.IterForStmt, uni.InForStmt)
+        ) {
             symbols.extend(sub_symbols);
         } else {
             sub_pos = create_range(sub_tab.loc);
-            symbol = lspt.DocumentSymbol(name=sub_tab.scope_name,
-            kind=kind_map(sub_tab),
-            range=sub_pos,
-            selection_range=sub_pos,
-            children=sub_symbols);
+            symbol = lspt.DocumentSymbol(
+                name=sub_tab.scope_name,
+                kind=kind_map(sub_tab),
+                range=sub_pos,
+                selection_range=sub_pos,
+                children=sub_symbols
+            );
             symbols.append(symbol);
         }
     }
@@ -193,10 +201,16 @@ def owner_sym(table: UniScopeNode) -> Optional[Symbol] {
 
 """Create an lspt.Range from a location object."""
 def create_range(loc: CodeLocInfo) -> lspt.Range {
-    return lspt.Range(start=lspt.Position(line=(loc.first_line - 1) if loc.first_line > 0 else 0 ,
-    character=(loc.col_start - 1) if loc.col_start > 0 else 0 ),
-    end=lspt.Position(line=(loc.last_line - 1) if loc.last_line > 0 else 0 ,
-    character=(loc.col_end - 1) if loc.col_end > 0 else 0 ));
+    return lspt.Range(
+        start=lspt.Position(
+            line=(loc.first_line - 1) if loc.first_line > 0 else 0 ,
+            character=(loc.col_start - 1) if loc.col_start > 0 else 0
+        ),
+        end=lspt.Position(
+            line=(loc.last_line - 1) if loc.last_line > 0 else 0 ,
+            character=(loc.col_end - 1) if loc.col_end > 0 else 0
+        )
+    );
 }
 
 
@@ -263,8 +277,9 @@ def collect_all_symbols_in_scope(
         visited.add(current_tab);
         for (name, symbol) in current_tab.names_in_scope.items() {
             if name not in dir(builtins) and symbol.sym_type != SymbolType.IMPL  {
-                symbols.append(lspt.CompletionItem(label=name,
-                kind=label_map(symbol.sym_type)));
+                symbols.append(
+                    lspt.CompletionItem(label=name, kind=label_map(symbol.sym_type))
+                );
             }
         }
         if not up_tree {
@@ -284,8 +299,12 @@ def collect_child_tabs(sym_tab: UniScopeNode) -> <>list[lspt.CompletionItem] {
     symbols : <>list[lspt.CompletionItem] = [];
     for tab in sym_tab.kid_scope {
         if tab.scope_name not in [ i.label for i in symbols ] {
-            symbols.append(lspt.CompletionItem(label=tab.scope_name,
-            kind=label_map(tab.get_type())));
+            symbols.append(
+                lspt.CompletionItem(
+                    label=tab.scope_name,
+                    kind=label_map(tab.get_type())
+                )
+            );
         }
     }
     return symbols;
@@ -368,7 +387,9 @@ def find_surrounding_tokens(
     prev_token_index = None;
     next_token_index = None;
     inside_tok = False;
-    for (i, tok) in enumerate([ get_token_start(i, sem_tokens) for i in range(0, len(sem_tokens), 5) ][ 0 : ]) {
+    for (i, tok) in enumerate(
+        [ get_token_start(i, sem_tokens) for i in range(0, len(sem_tokens), 5) ][ 0 : ]
+    ) {
         if (not (prev_token_index is None or next_token_index is None ))
         and (tok[0] > change_end_line
         or (tok[0] == change_end_line and tok[1] > change_end_char )
