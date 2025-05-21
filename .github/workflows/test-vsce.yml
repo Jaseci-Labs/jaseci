@@ -16,4 +16,5 @@ jobs:
           node-version: '18'
       - run: cd jac/support/vscode_ext/jac && npm install
       - run: sudo apt-get update && sudo apt-get install -y xvfb
+      - run: npx @vscode/test-electron --install-extension ms-python.python
       - run: cd jac/support/vscode_ext/jac && xvfb-run -a npm test
