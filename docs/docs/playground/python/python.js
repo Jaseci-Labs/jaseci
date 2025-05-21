@@ -68,13 +68,13 @@ function logMessage(message) {
 
 
 async function readFileAsString(fileName) {
-  const response = await fetch(fileName);
+  const response = await fetch("/playground" + fileName);
   return await response.text();
 };
 
 
 async function readFileAsBytes(fileName) {
-  const response = await fetch("/jaclang.zip");
+  const response = await fetch("/playground" + fileName);
   const buffer = await response.arrayBuffer();
   return new Uint8Array(buffer);
 }
