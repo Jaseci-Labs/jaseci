@@ -26,6 +26,10 @@ class DocIRGenPass(UniPass):
         """Create a Line node."""
         return doc.Line(hard, literal)
 
+    def soft_line(self) -> doc.Line:
+        """Create a soft line break."""
+        return self.line()
+
     def hard_line(self) -> doc.Line:
         """Create a hard line break."""
         return doc.Line(hard=True)
@@ -53,6 +57,18 @@ class DocIRGenPass(UniPass):
     def concat(self, parts: List[doc.DocType]) -> doc.Concat:
         """Create a Concat node."""
         return doc.Concat(parts)
+
+    def line_or_space(self) -> doc.IfBreak:
+        """Line break if broken, otherwise a single space."""
+        return self.if_break(self.line(), self.space())
+
+    def join_with_line(self, parts: List[doc.DocType]) -> doc.Concat:
+        """Join parts using a conditional line break."""
+        return self.join(self.line_or_space(), parts)
+
+    def join_with_space(self, parts: List[doc.DocType]) -> doc.Concat:
+        """Join parts using a single space."""
+        return self.join(self.space(), parts)
 
     def if_break(
         self,
@@ -143,7 +159,7 @@ class DocIRGenPass(UniPass):
                 parts.append(
                     self.indent(self.concat([self.tight_line(), i.gen.doc_ir]))
                 )
-                parts.append(self.line())
+                parts.append(self.soft_line())
             elif isinstance(i, uni.Token) and i.name == Tok.SEMI:
                 parts.pop()
                 parts.append(i.gen.doc_ir)
@@ -265,35 +281,23 @@ class DocIRGenPass(UniPass):
 
     def exit_if_stmt(self, node: uni.IfStmt) -> None:
         """Generate DocIR for if statements."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_else_if(self, node: uni.ElseIf) -> None:
         """Generate DocIR for else if statements."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_else_stmt(self, node: uni.ElseStmt) -> None:
         """Generate DocIR for else statements."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_binary_expr(self, node: uni.BinaryExpr) -> None:
         """Generate DocIR for binary expressions."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_expr_stmt(self, node: uni.ExprStmt) -> None:
         """Generate DocIR for expression statements."""
@@ -314,11 +318,8 @@ class DocIRGenPass(UniPass):
 
     def exit_concurrent_expr(self, node: uni.ConcurrentExpr) -> None:
         """Generate DocIR for concurrent expressions."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_return_stmt(self, node: uni.ReturnStmt) -> None:
         """Generate DocIR for return statements."""
@@ -367,7 +368,13 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for list values."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
+            if isinstance(i, uni.SubNodeList) and i.items:
+                parts.append(
+                    self.indent(self.concat([self.soft_line(), i.gen.doc_ir]))
+                )
+                parts.append(self.soft_line())
+            else:
+                parts.append(i.gen.doc_ir)
         node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_dict_val(self, node: uni.DictVal) -> None:
@@ -377,18 +384,19 @@ class DocIRGenPass(UniPass):
             if isinstance(i, uni.Token) and i.name == Tok.LBRACE:
                 parts.append(self.tight_line())
                 parts.append(i.gen.doc_ir)
+            elif isinstance(i, uni.SubNodeList) and i.items:
+                parts.append(
+                    self.indent(self.concat([self.soft_line(), i.gen.doc_ir]))
+                )
+                parts.append(self.soft_line())
             else:
                 parts.append(i.gen.doc_ir)
-                parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        node.gen.doc_ir = self.group(self.concat(parts))
 
     def exit_k_v_pair(self, node: uni.KVPair) -> None:
         """Generate DocIR for key-value pairs."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_line(parts))
 
     def exit_has_var(self, node: uni.HasVar) -> None:
         """Generate DocIR for has variable declarations."""
@@ -492,9 +500,9 @@ class DocIRGenPass(UniPass):
             if isinstance(i, uni.Token):
                 parts.append(i.gen.doc_ir)
             elif isinstance(i, uni.SubNodeList):
-                parts.append(self.if_break(self.line(), self.space()))
+                parts.append(self.line_or_space())
                 parts.append(i.gen.doc_ir)
-                parts.append(self.if_break(self.line(), self.space()))
+                parts.append(self.line_or_space())
 
         node.gen.doc_ir = self.group(self.concat(parts))
 
@@ -536,7 +544,7 @@ class DocIRGenPass(UniPass):
         for i in node.kid:
             if isinstance(i, uni.Expr):
                 parts.append(i.gen.doc_ir)
-                parts.append(self.line())  # Potential break
+                parts.append(self.line_or_space())  # Potential break
             elif isinstance(i, uni.Token):
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
@@ -555,7 +563,7 @@ class DocIRGenPass(UniPass):
                 parts.append(self.space())
             else:
                 parts.append(i.gen.doc_ir)
-                parts.append(self.line())  # Potential break
+                parts.append(self.line_or_space())  # Potential break
 
         node.gen.doc_ir = self.group(self.concat(parts))
 
@@ -583,7 +591,7 @@ class DocIRGenPass(UniPass):
             elif isinstance(i, uni.Expr):
                 parts.append(
                     self.if_break(
-                        self.indent(self.concat([self.line(), i.gen.doc_ir])),
+                        self.indent(self.concat([self.soft_line(), i.gen.doc_ir])),
                         i.gen.doc_ir,
                     )
                 )
@@ -618,27 +626,18 @@ class DocIRGenPass(UniPass):
 
     def exit_index_slice(self, node: uni.IndexSlice) -> None:
         """Generate DocIR for index slices."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_gen_compr(self, node: uni.GenCompr) -> None:
         """Generate DocIR for generator comprehensions."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_set_compr(self, node: uni.SetCompr) -> None:
         """Generate DocIR for set comprehensions."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_dict_compr(self, node: uni.DictCompr) -> None:
         """Generate DocIR for dictionary comprehensions."""
@@ -648,31 +647,22 @@ class DocIRGenPass(UniPass):
                 parts.append(i.gen.doc_ir)
             else:
                 parts.append(i.gen.doc_ir)
-                parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_k_w_pair(self, node: uni.KWPair) -> None:
         """Generate DocIR for keyword arguments."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_await_expr(self, node: uni.AwaitExpr) -> None:
         """Generate DocIR for await expressions."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_yield_expr(self, node: uni.YieldExpr) -> None:
         """Generate DocIR for yield expressions."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_ctrl_stmt(self, node: uni.CtrlStmt) -> None:
         """Generate DocIR for control statements (break, continue, skip)."""
@@ -683,11 +673,8 @@ class DocIRGenPass(UniPass):
 
     def exit_delete_stmt(self, node: uni.DeleteStmt) -> None:
         """Generate DocIR for delete statements."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_disengage_stmt(self, node: uni.DisengageStmt) -> None:
         """Generate DocIR for disengage statements."""
@@ -698,27 +685,18 @@ class DocIRGenPass(UniPass):
 
     def exit_report_stmt(self, node: uni.ReportStmt) -> None:
         """Generate DocIR for report statements."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_assert_stmt(self, node: uni.AssertStmt) -> None:
         """Generate DocIR for assert statements."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_raise_stmt(self, node: uni.RaiseStmt) -> None:
         """Generate DocIR for raise statements."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_global_vars(self, node: uni.GlobalVars) -> None:
         """Generate DocIR for global variables."""
@@ -761,11 +739,8 @@ class DocIRGenPass(UniPass):
 
     def exit_non_local_stmt(self, node: uni.NonLocalStmt) -> None:
         """Generate DocIR for nonlocal statements."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_visit_stmt(self, node: uni.VisitStmt) -> None:
         """Generate DocIR for visit statements."""
@@ -782,35 +757,23 @@ class DocIRGenPass(UniPass):
 
     def exit_ignore_stmt(self, node: uni.IgnoreStmt) -> None:
         """Generate DocIR for ignore statements."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_connect_op(self, node: uni.ConnectOp) -> None:
         """Generate DocIR for connect operator."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_disconnect_op(self, node: uni.DisconnectOp) -> None:
         """Generate DocIR for disconnect operator."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_compare_expr(self, node: uni.CompareExpr) -> None:
         """Generate DocIR for comparison expressions."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_atom_unit(self, node: uni.AtomUnit) -> None:
         """Generate DocIR for atom units (parenthesized expressions)."""
@@ -836,27 +799,18 @@ class DocIRGenPass(UniPass):
 
     def exit_expr_as_item(self, node: uni.ExprAsItem) -> None:
         """Generate DocIR for expression as item nodes."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_filter_compr(self, node: uni.FilterCompr) -> None:
         """Generate DocIR for filter comprehensions."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_assign_compr(self, node: uni.AssignCompr) -> None:
         """Generate DocIR for assignment comprehensions."""
-        parts: list[doc.DocType] = []
-        for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.finalize(parts)
+        parts: list[doc.DocType] = [i.gen.doc_ir for i in node.kid]
+        node.gen.doc_ir = self.group(self.join_with_space(parts))
 
     def exit_py_inline_code(self, node: uni.PyInlineCode) -> None:
         """Generate DocIR for Python inline code blocks."""
@@ -1066,7 +1020,7 @@ class DocIRGenPass(UniPass):
                     indent_parts.pop()
                 parts.append(self.indent(self.concat(indent_parts)))
                 if prev_item != node.left_enc:
-                    parts.append(self.line())
+                    parts.append(self.soft_line())
                 parts.append(i.gen.doc_ir)
             elif (
                 isinstance(i, uni.Token)
@@ -1075,7 +1029,7 @@ class DocIRGenPass(UniPass):
                 and i.name not in [Tok.DOT, Tok.DECOR_OP]
             ):
                 indent_parts.append(i.gen.doc_ir)
-                indent_parts.append(self.line())
+                indent_parts.append(self.line_or_space())
             else:
                 if (
                     in_codeblock
