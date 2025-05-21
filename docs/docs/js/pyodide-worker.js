@@ -29,7 +29,6 @@ self.onmessage = async (event) => {
     if (type === "init") {
         importScripts("https://cdn.jsdelivr.net/pyodide/v0.27.0/full/pyodide.js");
         pyodide = await loadPyodide();
-        
         await loadPythonResources(pyodide);
         await pyodide.runPythonAsync(`
 from jaclang.cli.cli import run

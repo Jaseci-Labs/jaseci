@@ -58,7 +58,6 @@ function setupCodeBlock(div) {
 
         const runButton = container.querySelector(".run-code-btn");
         runButton.addEventListener("click", async () => {
-            
             const outputBlock = container.querySelector(".code-output");
             const codeElem = container.querySelector(".jac-code");
             outputBlock.style.display = "block";
