@@ -22,10 +22,16 @@ from jaclang.vendor.pygls.uris import from_fs_path
 from jaclang.vendor.pygls.workspace import Workspace
 from jaclang import JacMachineInterface as _
 
+from jaclang.langserve.server import (
+    did_open,
+    did_save,
+    did_change,
+    formatting,
+)
 JacLangServer = _.py_jac_import(
     "....langserve.engine", __file__, items={"JacLangServer": None}
 )[0]
-(did_open, did_save, did_change, formatting) = _.py_jac_import(    "....langserve.server", __file__, items={"did_open": None, "did_save": None, "did_change": None, "formatting": None})[0]
+# (did_open, did_save, did_change, formatting) = _.py_jac_import(    "....langserve.server", __file__, items={"did_open": None, "did_save": None, "did_change": None, "formatting": None})[0]
 
 JAC_FILE = get_jac_file_path()
 
