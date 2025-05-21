@@ -15,11 +15,15 @@ Every statement in Jac ends with a semicolon `;`.
 print("Hello, Jac!");
 ```
 
-<code-block>
+<div class="code-block">
 with entry {
-    print("Hello, Jac!");
+    print("Hello, Jac 1!");
 }
-</code-block>
+
+with entry {
+    print("Hello, Jac 2!");
+}
+</div>
 
 
 ## Variables
@@ -32,13 +36,13 @@ y = 20;
 print(x + y);
 ```
 
-<code-block>
+<div class="code-block">
 with entry {
     x = 10;
     y = 20;
     print(x + y);
 }
-</code-block>
+</div>
 
 ## Control Structures
 

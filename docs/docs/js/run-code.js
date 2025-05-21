@@ -35,57 +35,67 @@ function runJacCodeInWorker(code) {
     });
 }
 
-class CodeBlock extends HTMLElement {
-    constructor() {
-        super();
+function setupCodeBlock(div) {
+    if (div.shadowRoot) return;
 
-        const shadow = this.attachShadow({ mode: "open" });
-        const container = document.createElement("div");
-        container.className = "code-container";
+    const shadow = div.attachShadow({ mode: 'open' });
 
-        // Inject external CSS from extra.css
-        const link = document.createElement("link");
-        link.rel = "stylesheet";
-        link.href = "/extra.css";
-        shadow.appendChild(link);
+    const container = document.createElement('div');
+    container.className = 'code-container';
 
-        const code = this.textContent.trim() || "with entry{\n    print('Hello, Jac!');\n}";
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = '/extra.css';
+    shadow.appendChild(link);
+    shadow.appendChild(container);
 
+    const setupBlock = (code) => {
         container.innerHTML = `
             <pre><code class="jac-code" contenteditable="true" spellcheck="false" style="display:block; min-height:80px; padding: 5px;">${code}</code></pre>
             <button class="md-button md-button--primary run-code-btn">Run</button>
             <pre class="code-output" style="display:none;"></pre>
         `;
 
-        shadow.appendChild(container);
-
-        container.querySelector(".run-code-btn").addEventListener("click", async () => {
+        const runButton = container.querySelector(".run-code-btn");
+        runButton.addEventListener("click", async () => {
             const outputBlock = container.querySelector(".code-output");
             const codeElem = container.querySelector(".jac-code");
             outputBlock.style.display = "block";
+
             if (!pyodideReady) {
                 outputBlock.textContent = "Loading Jac runner (Pyodide)...";
                 await initPyodideWorker();
             }
-            // Ensure Pyodide is ready before running code
+
             outputBlock.textContent = "Running...";
             try {
                 const codeToRun = codeElem.textContent.trim();
                 const result = await runJacCodeInWorker(codeToRun);
-                console.log(result);
                 outputBlock.textContent = `Output:\n${result}`;
             } catch (error) {
-                console.log(error);
                 outputBlock.textContent = `Error:\n${error}`;
             }
         });
-    }
+    };
+
+    const inlineCode = div.textContent.trim();
+    setupBlock(inlineCode);
 }
 
-// Define the custom element
-customElements.define("code-block", CodeBlock);
+// Observe and apply when .code-blocks are added
+const observer = new MutationObserver(() => {
+    document.querySelectorAll('.code-block').forEach(setupCodeBlock);
+});
 
+observer.observe(document.body, {
+    childList: true,
+    subtree: true
+});
 
+// Initial loading
+document.querySelectorAll('.code-block').forEach(setupCodeBlock);
+
+// Loading Pyodide worker
 document.addEventListener("DOMContentLoaded", () => {
     initPyodideWorker();
 });
