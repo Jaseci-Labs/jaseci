@@ -12,7 +12,7 @@ class CustomHeaderHandler(http.server.SimpleHTTPRequestHandler):
 
 
 def serve_with_headers():
-    PORT = 8001
+    PORT = 8000
 
     # Step 1: Build MkDocs site
     print("Building MkDocs site...")
