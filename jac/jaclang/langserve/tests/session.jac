@@ -36,8 +36,8 @@ class LspSession (MethodDispatcher) {
     """Context manager entrypoint.\n\n        shell=True needed for pytest-cov to work in subprocess.\n        """
     def __enter__(self: LspSession) {
         self._sub = subprocess.Popen(
-            [sys.executable,
-            os.path.join(os.path.dirname(os.path.dirname(__file__)), 'server.py')],
+            ["jac", "run",
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), 'server.jac')],
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
