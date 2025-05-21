@@ -65,7 +65,7 @@ class TestJacLangServer(TestCase):
         self.assertIn(
             # "ability) calculate_area: float",
             "ability) calculate_area\n( radius : float ) -> float",
-            lsp.get_hover_info(circle_impl_file, pos).contents.value,
+            lsp.get_hover_info(circle_impl_file, pos).contents.value.replace("'", ""),
         )
 
     def test_impl_auto_discover(self) -> None:
@@ -83,7 +83,7 @@ class TestJacLangServer(TestCase):
         self.assertIn(
             # "ability) calculate_area: float",
             "(public ability) calculate_area\n( radius : float ) -> float",
-            lsp.get_hover_info(circle_impl_file, pos).contents.value,
+            lsp.get_hover_info(circle_impl_file, pos).contents.value.replace("'", ""),
         )
 
     @pytest.mark.xfail(reason="TODO: Fix when we have the type checker")

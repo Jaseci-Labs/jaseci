@@ -127,7 +127,7 @@ def definition(
 
 """Provide references."""
 @server.feature(lspt.TEXT_DOCUMENT_REFERENCES)
-def references(ls: JacLangServer, params: lspt.ReferenceParams) -> <>list[lspt.Location] {
+def references(ls: JacLangServer, params: lspt.ReferenceParams) -> list[lspt.Location] {
     return ls.get_references(params.text_document.uri, params.position);
 }
 
