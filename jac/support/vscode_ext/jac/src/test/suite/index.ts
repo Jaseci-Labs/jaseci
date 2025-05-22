@@ -4,6 +4,7 @@ mock('../../environement/manager', {
     EnvManager: class {
         constructor() {}
         async init() {}
+        getJacPath() { return null; }
     }
 });
 

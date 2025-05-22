@@ -1,13 +1,12 @@
 import * as vscode from 'vscode';
 import { makeWebView, getDebugGraphData } from '../visual_debugger/visdbg';
 
-export function setupVisualDebuggerWebview(context: vscode.ExtensionContext, envManager: any) {
-    let webviewPanel: vscode.WebviewPanel | undefined;
-    let graphData: JSON = JSON.parse('{}');
+export let webviewPanel: vscode.WebviewPanel | undefined;
 
+export function setupVisualDebuggerWebview(context: vscode.ExtensionContext, envManager: any) {
     vscode.debug.onDidStartDebugSession(async () => {
         if (webviewPanel) {
-            graphData = await getDebugGraphData();
+            const graphData = await getDebugGraphData();
             if (graphData != null) {
                 webviewPanel.webview.postMessage({
                     "command": "init",
@@ -19,7 +18,7 @@ export function setupVisualDebuggerWebview(context: vscode.ExtensionContext, env
 
     vscode.debug.onDidChangeActiveStackItem(async () => {
         if (webviewPanel) {
-            graphData = await getDebugGraphData();
+            const graphData = await getDebugGraphData();
             if (graphData != null) {
                 webviewPanel.webview.postMessage({
                     "command": "update",

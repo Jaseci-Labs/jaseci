@@ -31,12 +31,11 @@ Once you've got Jaclang installed, just give the Jac CLI a try to make sure ever
 >
 > If these commands prints ```hello world``` you are good to go.
 
-## <span style="color: orange">Installing the VS Code Extention
-</span>
+## <span style="color: orange">Installing the VS Code Extension</span>
 
 In addition to setting up JacLang itself, you may also want to take advantage of the JacLang language extension for Visual Studio Code (VSCode). This will give you enhanced code highlighting, autocomplete, and other useful language features within your VSCode environment.
 
-- To install just visit the VS Code marketplace and install,
+- To install, visit the VS Code marketplace and install:
     - [Jac](https://marketplace.visualstudio.com/items?itemName=jaseci-labs.jaclang-extension)
 
 ## Next Steps

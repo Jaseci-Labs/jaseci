@@ -45,6 +45,6 @@ This is how we kill the docs if it dies for some reason
 ## Build VSCode Extention
 
 ```bash
---8<-- "scripts/build_vsce.sh"
+--8<-- "jac/support/vscode_ext/jac/scripts/build.sh"
 ```
 

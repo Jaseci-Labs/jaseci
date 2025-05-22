@@ -1,2 +1,1 @@
-sudo npm install -g @vscode/vsce
-vsce package jac
+# (Remove this file, functionality moved to scripts/build.sh)

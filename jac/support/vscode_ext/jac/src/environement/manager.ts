@@ -23,10 +23,22 @@ export class EnvManager {
         this.updateStatusBar();
     }
 
-    getJacPath(): string {
+    // Fix: getJacPath must always be a function, and return string | null
+    getJacPath(): string | null {
         if (this.jacPath) return this.jacPath;
         // Fallback: try to find jac in PATH
-        return process.platform === 'win32' ? 'jac.exe' : 'jac';
+        const programName = process.platform === 'win32' ? 'jac.exe' : 'jac';
+        const paths = process.env.PATH ? process.env.PATH.split(path.delimiter) : [];
+        for (const dir of paths) {
+            const fullPath = path.join(dir, programName);
+            try {
+                fs.accessSync(fullPath, fs.constants.X_OK);
+                return fullPath;
+            } catch (err) {
+                // Not found or not executable
+            }
+        }
+        return null;
     }
 
     async promptEnvironmentSelection() {

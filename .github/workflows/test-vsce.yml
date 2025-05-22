@@ -31,12 +31,7 @@ jobs:
       - name: Build extension
         run: |
           cd jac/support/vscode_ext/jac
-          npm run compile
-
-      - name: Install ms-python.python extension for test VS Code
-        run: |
-          cd jac/support/vscode_ext/jac
-          npx @vscode/test-electron --install-extension ms-python.python
+          ./scripts/build.sh
 
       - name: Run tests
         run: |

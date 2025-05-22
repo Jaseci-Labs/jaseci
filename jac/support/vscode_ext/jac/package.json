@@ -133,9 +133,6 @@
     "vsce-package": "mkdir build && vsce package -o build/jac.vsix",
     "test": "npm run compile &&npm install && vsce package && node ./out/test/runTest.js"
   },
-  "extensionDependencies": [
-    "ms-python.python"
-  ],
   "dependencies": {
     "vscode-languageclient": "^9.0.1"
   },
