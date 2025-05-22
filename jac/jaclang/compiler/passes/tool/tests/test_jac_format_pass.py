@@ -51,6 +51,12 @@ class JacFormatPassTests(TestCaseMicroSuite):
             os.path.join(self.fixture_abs_path(""), "simple_walk_fmt.jac"),
         )
 
+    def test_data_spatial_fmt(self) -> None:
+        """Tests if the file matches a particular format."""
+        self.compare_files(
+            os.path.join(self.fixture_abs_path(""), "data_spatial_fmt.jac"),
+        )
+
     # def test_corelib_fmt(self) -> None:
     #     """Tests if the file matches a particular format."""
     #     self.compare_files(
@@ -68,8 +74,6 @@ class JacFormatPassTests(TestCaseMicroSuite):
     #     fixtures_dir = os.path.join(self.fixture_abs_path(""), "myca_formatted_code")
     #     fixture_files = os.listdir(fixtures_dir)
     #     for file_name in fixture_files:
-    #         if file_name == "__jac_gen__":
-    #             continue
     #         with self.subTest(file=file_name):
     #             file_path = os.path.join(fixtures_dir, file_name)
     #             self.compare_files(file_path)
@@ -79,11 +83,18 @@ class JacFormatPassTests(TestCaseMicroSuite):
     #     fixtures_dir = os.path.join(self.fixture_abs_path(""), "general_format_checks")
     #     fixture_files = os.listdir(fixtures_dir)
     #     for file_name in fixture_files:
-    #         if file_name == "__jac_gen__":
-    #             continue
     #         with self.subTest(file=file_name):
     #             file_path = os.path.join(fixtures_dir, file_name)
     #             self.compare_files(file_path)
+
+    def test_data_spatial_examples(self) -> None:
+        """Tests if files in the general fixtures directory do not change after being formatted."""
+        fixtures_dir = os.path.join(self.examples_abs_path(""), "data_spatial")
+        fixture_files = os.listdir(fixtures_dir)
+        for file_name in fixture_files:
+            with self.subTest(file=file_name):
+                file_path = os.path.join(fixtures_dir, file_name)
+                self.compare_files(file_path)
 
     def micro_suite_test(self, filename: str) -> None:
         """

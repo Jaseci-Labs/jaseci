@@ -21,6 +21,13 @@ walker Creator {
 }
 
 
+with entry {
+    print([-->(`?C)]);
+    print([root-->(`?C)]);
+    print([-->(?val == 25 if True else 20 )]);
+}
+
+
 walker Walk {
     has count: int = 0;
     has value: int = 0;
