@@ -6,6 +6,7 @@ import sys;
 import from concurrent.futures { Future, ThreadPoolExecutor } 
 import from threading { Event } 
 
+import from jaclang { JacMachine as Jac }
 import from pylsp_jsonrpc.dispatchers { MethodDispatcher } 
 import from pylsp_jsonrpc.endpoint { Endpoint } 
 import from pylsp_jsonrpc.streams { JsonRpcStreamReader, JsonRpcStreamWriter } 
@@ -25,7 +26,6 @@ with entry {
 class LspSession (MethodDispatcher) {
     def init(self: LspSession, cwd: Any = None) {
         self.cwd = cwd if cwd else os.getcwd() ;
-        self._thread_pool = ThreadPoolExecutor();
         self._sub = None;
         self._writer = None;
         self._reader = None;
@@ -51,7 +51,7 @@ class LspSession (MethodDispatcher) {
         dispatcher = 
         {PUBLISH_DIAGNOSTICS : self._publish_diagnostics , WINDOW_SHOW_MESSAGE : self._window_show_message , WINDOW_LOG_MESSAGE : self._window_log_message };
         self._endpoint = Endpoint(dispatcher, self._writer.write);
-        self._thread_pool.submit(self._reader.listen, self._endpoint.consume);
+        flow self._reader.listen(self._endpoint.consume);
         return self;
     }
     
@@ -64,7 +64,7 @@ class LspSession (MethodDispatcher) {
         }
         
         self._endpoint.shutdown();
-        self._thread_pool.shutdown();
+        Jac.py_get_jac_machine().pool.shutdown();
     }
     
     """Sends the initialize request to LSP server."""
@@ -271,7 +271,7 @@ class LspSession (MethodDispatcher) {
             callback(params);
             fut.set_result(None);
         }
-        self._thread_pool.submit(_handler);
+        flow _handler();
         return fut;
     }
     
