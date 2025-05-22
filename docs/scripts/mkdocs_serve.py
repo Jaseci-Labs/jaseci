@@ -1,3 +1,10 @@
+"""MkDocs development server with file watching and automatic rebuilds.
+
+This module provides a custom HTTP server for serving an MkDocs site locally,
+with file system watching to trigger rebuilds when source files change.
+It uses a debounced rebuild mechanism to avoid excessive rebuilds during rapid file changes.
+"""
+
 import http.server
 import os
 import socketserver
@@ -7,19 +14,26 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 class CustomHeaderHandler(http.server.SimpleHTTPRequestHandler):
+    """HTTP request handler with custom security headers for MkDocs site serving."""
+
     def end_headers(self) -> None:
+        """Add security headers to HTTP responses."""
         self.send_header("Cross-Origin-Opener-Policy", "same-origin")
         self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
         super().end_headers()
 
 class DebouncedRebuildHandler(FileSystemEventHandler):
+    """File system event handler for debounced MkDocs site rebuilding."""
+
     def __init__(self, root_dir, debounce_seconds=10):
+        """Initialize the handler with root directory and debounce time."""
         self.root_dir = root_dir
         self.debounce_seconds = debounce_seconds
         self._timer = None
         self._lock = threading.Lock()
 
     def _debounced_rebuild(self, event_type, path):
+        """Schedule a debounced rebuild on file system events."""
         print(f"Change detected: {event_type} — {path}")
         with self._lock:
             if self._timer:
@@ -28,18 +42,22 @@ class DebouncedRebuildHandler(FileSystemEventHandler):
             self._timer.start()
 
     def on_modified(self, event):
+        """Handle file modification events."""
         if not event.is_directory and "site" not in event.src_path:
             self._debounced_rebuild("modified", event.src_path)
 
     def on_created(self, event):
+        """Handle file creation events."""
         if not event.is_directory and "site" not in event.src_path:
             self._debounced_rebuild("created", event.src_path)
 
     def on_deleted(self, event):
+        """Handle file deletion events."""
         if not event.is_directory and "site" not in event.src_path:
             self._debounced_rebuild("deleted", event.src_path)
 
     def _rebuild(self):
+        """Rebuild the MkDocs site."""
         print("\nRebuilding MkDocs site...")
         try:
             subprocess.run(["mkdocs", "build"], check=True, cwd=self.root_dir)
@@ -49,6 +67,7 @@ class DebouncedRebuildHandler(FileSystemEventHandler):
 
 
 def serve_with_watch() -> None:
+    """Serve MkDocs site and watch for file changes to trigger rebuilds."""
     port = 8000
     root_dir = os.path.dirname(os.path.dirname(__file__))
 
