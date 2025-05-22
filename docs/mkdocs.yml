@@ -175,6 +175,8 @@ extra_javascript:
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
   - https://cdn.jsdelivr.net/pyodide/v0.27.0/full/pyodide.js
   - js/run-code.js
+  - https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js
+  - js/mermaid-init.js
 
 plugins:
   - search
