@@ -2,7 +2,9 @@ import http.server
 import os
 import socketserver
 import subprocess
-
+import threading
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
 class CustomHeaderHandler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self) -> None:
@@ -10,24 +12,70 @@ class CustomHeaderHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
         super().end_headers()
 
+class DebouncedRebuildHandler(FileSystemEventHandler):
+    def __init__(self, root_dir, debounce_seconds=10):
+        self.root_dir = root_dir
+        self.debounce_seconds = debounce_seconds
+        self._timer = None
+        self._lock = threading.Lock()
 
-def serve_with_headers() -> None:
+    def _debounced_rebuild(self, event_type, path):
+        print(f"Change detected: {event_type} — {path}")
+        with self._lock:
+            if self._timer:
+                self._timer.cancel()
+            self._timer = threading.Timer(self.debounce_seconds, self._rebuild)
+            self._timer.start()
+
+    def on_modified(self, event):
+        if not event.is_directory and "site" not in event.src_path:
+            self._debounced_rebuild("modified", event.src_path)
+
+    def on_created(self, event):
+        if not event.is_directory and "site" not in event.src_path:
+            self._debounced_rebuild("created", event.src_path)
+
+    def on_deleted(self, event):
+        if not event.is_directory and "site" not in event.src_path:
+            self._debounced_rebuild("deleted", event.src_path)
+
+    def _rebuild(self):
+        print("\nRebuilding MkDocs site...")
+        try:
+            subprocess.run(["mkdocs", "build"], check=True, cwd=self.root_dir)
+            print("Rebuild complete.")
+        except subprocess.CalledProcessError as e:
+            print(f"Rebuild failed: {e}")
+
+
+def serve_with_watch() -> None:
     port = 8000
-
-    # Step 1: Build MkDocs site from project root
     root_dir = os.path.dirname(os.path.dirname(__file__))
-    print("Building MkDocs site...")
+
+    print("Initial build of MkDocs site...")
     subprocess.run(["mkdocs", "build"], check=True, cwd=root_dir)
 
-    # Step 2: Change to the 'site' directory in project root
+    # Set up file watcher
+    event_handler = DebouncedRebuildHandler(root_dir=root_dir, debounce_seconds=5)
+    observer = Observer()
+
+    # Watch everything except the site directory
+    observer.schedule(event_handler, root_dir, recursive=True)
+    observer.start()
+
+    # Change working dir to 'site' and start server
     site_dir = os.path.join(root_dir, "site")
     os.chdir(site_dir)
+    print(f"Serving at http://localhost:{port}")
 
-    # Step 3: Serve the site
-    with socketserver.ThreadingTCPServer(("", port), CustomHeaderHandler) as httpd:
-        print(f"Serving on http://localhost:{port}")
-        httpd.serve_forever()
-
+    try:
+        with socketserver.ThreadingTCPServer(("", port), CustomHeaderHandler) as httpd:
+            httpd.serve_forever()
+    except KeyboardInterrupt:
+        print("Stopping server...")
+    finally:
+        observer.stop()
+        observer.join()
 
 if __name__ == "__main__":
-    serve_with_headers()
+    serve_with_watch()

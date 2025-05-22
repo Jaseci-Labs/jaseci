@@ -63,7 +63,7 @@ function setupCodeBlock(div) {
             outputBlock.style.display = "block";
 
             if (!pyodideReady) {
-                outputBlock.textContent = "Loading Jac runner (Pyodide)...";
+                outputBlock.textContent = "Loading Jac runner...";
                 await initPyodideWorker();
             }
 
