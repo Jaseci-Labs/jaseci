@@ -1038,9 +1038,8 @@ class PyastGenPass(UniPass):
         ):
             pass
         else:
-            if (
-                isinstance(arch_parent, uni.Archetype)
-                and arch_parent.arch_type.name == Tok.KW_WALKER
+            if isinstance(arch_parent, uni.Archetype) and (
+                arch_parent.arch_type.name in [Tok.KW_WALKER, Tok.KW_OBJECT]
             ):
                 arch_kw = Con.HERE.value
             elif (
@@ -1048,11 +1047,6 @@ class PyastGenPass(UniPass):
                 and arch_parent.arch_type.name == Tok.KW_NODE
             ):
                 arch_kw = Con.VISITOR.value
-            elif (
-                isinstance(arch_parent, uni.Archetype)
-                and arch_parent.arch_type.name == Tok.KW_OBJECT
-            ):
-                arch_kw = Con.HERE.value
         arch_arg = self.sync(
             ast3.arg(
                 arg=f"{arch_kw}",
