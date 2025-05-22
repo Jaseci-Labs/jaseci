@@ -2,7 +2,7 @@
 <div class="hero" style="background-color: var(--bg-color); padding: 2rem; text-align: center;">
   <div class="container">
     <div style="display: flex; align-items: center; justify-content: center;">
-      <img src="https://www.jac-lang.org/assets/logo.png" alt="Jac Logo" width="150rem"/>
+      <img src="/assets/logo.png" alt="Jac Logo" width="150rem"/>
       <div style="color: var(--hero-text-color); font-size: 3rem; font-weight: 600; margin-left: 1rem; font-family: 'Roboto', sans-serif; display: flex; flex-direction: column; align-items: flex-start;">
         Jac and Jaseci
         <span style="font-size: 1.2rem; font-style: italic; font-weight: 100; margin: 0; color: var(--hero-text-color);">

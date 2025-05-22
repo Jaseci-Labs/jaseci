@@ -5,6 +5,7 @@ nav:
   - Learn:
     - Getting Started: "learn/getting_started.md"
     - Tour of Jac/Jaseci: "learn/introduction.md"
+    - Jac in a Flash: "learn/jac_in_a_flash.md"
     - A Robust Example:
       - LittleX (your own twitter):
         - "learn/examples/littleX/overview.md"
@@ -31,6 +32,7 @@ nav:
       - "learn/jac-cloud/jac_cloud_logging.md"
       - "learn/jac-cloud/jac_cloud_env_vars.md"
       - "learn/jac-cloud/jac_cloud_scheduler.md"
+      - "learn/jac-cloud/jac_cloud_async_walker.md"
       - "learn/jac-cloud/jac_cloud_webhook.md"
       - "learn/jac-cloud/jac_cloud_websocket.md"
       - "learn/jac-cloud/cloud-orc-integration.md"
@@ -52,7 +54,6 @@ nav:
       - Theoretical Principles: "learn/dspfoundation.md" # DSP Foundation
       - Quick FAQ: "learn/data_spatial/FAQ.md" # faq
     - Tooling:
-      - "learn/tools/jac_streamlit.md"
       - "learn/tools/cli.md"
 
 
@@ -71,7 +72,7 @@ nav:
           - "internals/symbol_tables/resolution.md"
       - Reference:
         - Language Spec: "learn/jac_ref.md"
-        - UniIR Nodes: "internals/uniir_node.md"
+        # - UniIR Nodes: "internals/uniir_node.md"
       - Runtime Plugin Interface: "internals/jac_plugins.md"
     - Planning Specs and Docs:
       - Error System: "internals/planning_specs/error_system.md"
@@ -172,6 +173,8 @@ extra_javascript:
   - assets/mathjax-config.js
   - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+  - https://cdn.jsdelivr.net/pyodide/v0.27.0/full/pyodide.js
+  - js/run-code.js
 
 plugins:
   - search

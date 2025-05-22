@@ -1,12 +1,15 @@
 from jaclang.utils.test import TestCase
 from jaclang.vendor.pygls import uris
 from jaclang.vendor.pygls.workspace import Workspace
-from jaclang.langserve.engine import JacLangServer
-from jaclang.settings import settings
-from .session import LspSession
 
 import lsprotocol.types as lspt
 import pytest
+from jaclang import JacMachineInterface as _
+
+JacLangServer = _.py_jac_import(
+    "...langserve.engine", __file__, items={"JacLangServer": None}
+)[0]
+LspSession = _.py_jac_import("session", __file__, items={"LspSession": None})[0]
 
 
 class TestJacLangServer(TestCase):
@@ -65,7 +68,7 @@ class TestJacLangServer(TestCase):
         self.assertIn(
             # "ability) calculate_area: float",
             "ability) calculate_area\n( radius : float ) -> float",
-            lsp.get_hover_info(circle_impl_file, pos).contents.value,
+            lsp.get_hover_info(circle_impl_file, pos).contents.value.replace("'", ""),
         )
         settings.enable_jac_semantics = old_setting
 
@@ -87,7 +90,7 @@ class TestJacLangServer(TestCase):
         self.assertIn(
             # "ability) calculate_area: float",
             "(public ability) calculate_area\n( radius : float ) -> float",
-            lsp.get_hover_info(circle_impl_file, pos).contents.value,
+            lsp.get_hover_info(circle_impl_file, pos).contents.value.replace("'", ""),
         )
 
     @pytest.mark.xfail(reason="TODO: Fix when we have the type checker")
@@ -143,12 +146,12 @@ class TestJacLangServer(TestCase):
         workspace = Workspace(workspace_path, lsp)
         lsp.lsp._workspace = workspace
         guess_game_file = uris.from_fs_path(
-            self.examples_abs_path("guess_game/guess_game4.jac")
+            self.examples_abs_path("guess_game/guess_game4.impl.jac")
         )
         lsp.deep_check(guess_game_file)
         self.assertIn(
-            "guess_game4.jac:27:8-27:21",
-            str(lsp.get_definition(guess_game_file, lspt.Position(46, 45))),
+            "guess_game4.jac:16:8-16:21",
+            str(lsp.get_definition(guess_game_file, lspt.Position(14, 45))),
         )
 
     def test_go_to_definition_method_manual_impl(self) -> None:

@@ -15,6 +15,17 @@ Every statement in Jac ends with a semicolon `;`.
 print("Hello, Jac!");
 ```
 
+<div class="code-block">
+with entry {
+    print("Hello, Jac 1!");
+}
+
+with entry {
+    print("Hello, Jac 2!");
+}
+</div>
+
+
 ## Variables
 
 Variable declaration and assignment remain identical to Python though its not the line break that signifies the end of a statement, it's the semicolon.
@@ -24,6 +35,14 @@ x = 10;
 y = 20;
 print(x + y);
 ```
+
+<div class="code-block">
+with entry {
+    x = 10;
+    y = 20;
+    print(x + y);
+}
+</div>
 
 ## Control Structures
 

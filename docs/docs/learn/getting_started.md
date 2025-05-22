@@ -1,4 +1,4 @@
-# Getting Started With Jac and Jaseci
+<h1 style="color: orange; font-weight: bold; text-align: center;">Getting Started With Jac and Jaseci</h1>
 
 Jac is an innovative programming language that extends Python's semantics while maintaining full interoperability with the Python ecosystem. It introduces cutting-edge programming models and abstractions specifically designed to minimize and hide complexity, embrace AI-forward development, and automate categories of common software systems that typically require manual implementation. Despite being relatively new, Jac has already proven its production-grade capabilities, currently powering several real-world applications across various use cases.
 
@@ -67,7 +67,7 @@ In addition to setting up JacLang itself, you may also want to take advantage of
 
     *Hit the Playground*
 
-    [Jac Playground](playground/index.html){ .md-button .md-button--primary }
+    [Jac Playground](../playground/index.html){ .md-button .md-button--primary }
 
 </div>
 
