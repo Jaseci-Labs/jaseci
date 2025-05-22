@@ -25,8 +25,17 @@
     "Machine Learning"
   ],
   "engines": {
-    "vscode": "^1.96.0"
+    "vscode": "^1.100.0"
   },
+  "activationEvents": [
+    "onCommand:jaclang-extension.selectEnv",
+    "onCommand:jaclang-extension.runCurrentFile",
+    "onCommand:jaclang-extension.checkCurrentFile",
+    "onCommand:jaclang-extension.serveCurrentFile",
+    "onCommand:jac.visualize",
+    "onCommand:extension.jaclang-extension.getJacPath",
+    "onLanguage:jac"
+  ],
   "contributes": {
 
     "debuggers": [
@@ -124,18 +133,25 @@
     "build": "vsce",
     "watch": "tsc -b -w",
     "deploy": "vsce publish --yarn",
-    "vsce-package": "mkdir build && vsce package -o build/jac.vsix"
+    "vsce-package": "mkdir build && vsce package -o build/jac.vsix",
+    "test": "npm run compile && node ./out/test/runTest.js"
   },
-  "extensionDependencies": [
-    "ms-python.python"
-  ],
   "dependencies": {
     "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {
-    "@types/node": "^20.14.1",
-    "@types/vscode": "^1.96.0",
+    "@types/chai": "^4.3.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.17.50",
+    "@types/sinon": "^10.0.0",
+    "@types/vscode": "^1.100.0",
+    "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^2.27.0",
-    "typescript": "^5.4.5"
+    "chai": "^4.3.0",
+    "mocha": "^10.8.2",
+    "sinon": "^15.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3",
+    "mock-require": "^3.0.3"
   }
 }

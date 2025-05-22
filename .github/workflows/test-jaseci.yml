@@ -60,3 +60,19 @@ jobs:
         pip install numpy
         pip install scikit-learn
         jac test jac/examples/littleX/littleX.jac
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install VSCode Extension dependencies
+      run: |
+        cd jac/support/vscode_ext/jac
+        npm install
+
+    - name: Install code-server (VS Code CLI) and run tests
+      run: |
+        sudo apt-get update && sudo apt-get install -y xvfb
+        cd jac/support/vscode_ext/jac
+        xvfb-run -a npm test
