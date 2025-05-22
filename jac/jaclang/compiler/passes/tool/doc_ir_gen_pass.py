@@ -183,6 +183,10 @@ class DocIRGenPass(UniPass):
             if i in [node.doc, node.decorators]:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
+            elif i == node.name:
+                parts.append(i.gen.doc_ir)
+                if not node.base_classes:
+                    parts.append(self.space())
             elif isinstance(i, uni.Token) and i.name == Tok.SEMI:
                 parts.pop()
                 parts.append(i.gen.doc_ir)

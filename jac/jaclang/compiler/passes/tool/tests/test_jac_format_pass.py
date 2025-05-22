@@ -132,5 +132,9 @@ class JacFormatPassTests(TestCaseMicroSuite):
             print("\n".join(unified_diff(before.splitlines(), after.splitlines())))
             raise e
 
+    def test_compare(self) -> None:
+        """Tests if the file does not change after being formatted."""
+        file_path = os.path.join(self.fixture_abs_path("./"), "archetype.jac")
+        self.compare_files(file_path)
 
 JacFormatPassTests.self_attach_micro_tests()

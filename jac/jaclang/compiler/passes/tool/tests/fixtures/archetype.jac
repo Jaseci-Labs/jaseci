@@ -1,0 +1,1 @@
+walker Person(Animal) {}
