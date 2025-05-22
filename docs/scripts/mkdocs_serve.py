@@ -10,6 +10,8 @@ import os
 import socketserver
 import subprocess
 import threading
+
+from typing import Optional
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -25,14 +27,14 @@ class CustomHeaderHandler(http.server.SimpleHTTPRequestHandler):
 class DebouncedRebuildHandler(FileSystemEventHandler):
     """File system event handler for debounced MkDocs site rebuilding."""
 
-    def __init__(self, root_dir, debounce_seconds=10):
+    def __init__(self, root_dir: str, debounce_seconds: int=10):
         """Initialize the handler with root directory and debounce time."""
         self.root_dir = root_dir
         self.debounce_seconds = debounce_seconds
-        self._timer = None
+        self._timer: Optional[threading.Timer] = None
         self._lock = threading.Lock()
 
-    def debounced_rebuild(self, event_type, path):
+    def debounced_rebuild(self, event_type: str, path: str) -> None:
         """Schedule a debounced rebuild on file system events."""
         print(f"Change detected: {event_type} — {path}")
         with self._lock:
