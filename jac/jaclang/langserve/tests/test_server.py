@@ -5,6 +5,7 @@ from jaclang.vendor.pygls.workspace import Workspace
 import lsprotocol.types as lspt
 import pytest
 from jaclang import JacMachineInterface as _
+from jaclang.settings import settings
 
 JacLangServer = _.py_jac_import(
     "...langserve.engine", __file__, items={"JacLangServer": None}
