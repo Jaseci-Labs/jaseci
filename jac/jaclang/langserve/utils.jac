@@ -25,30 +25,38 @@ import lsprotocol.types as lspt;
 
 
 glob P = ParamSpec('P');
-glob T = TypeVar('T', bound=Callable[(P, Coroutine[(Any, Any, Any)])]);
+glob T = TypeVar('T', bound=Callable[ (P, Coroutine[ (Any, Any, Any) ]) ]);
 
 
 """Return diagnostics."""
 def gen_diagnostics(
     from_path: str,
-    errors: <>list[Alert],
-    warnings: <>list[Alert]
-) -> <>list[lspt.Diagnostic] {
-    return [ lspt.Diagnostic(
+    errors: <>list[ Alert ],
+    warnings: <>list[ Alert ]
+) -> <>list[ lspt.Diagnostic ] {
+    return [
+    lspt.Diagnostic(
         range=create_range(error.loc),
         message=error.msg,
         severity=lspt.DiagnosticSeverity.Error
-    ) for error in errors if error.loc.mod_path == uris.to_fs_path(from_path) ] + [ lspt.Diagnostic(
+    )
+    for error in errors if error.loc.mod_path == uris.to_fs_path(from_path)
+    ]
+    +
+    [
+    lspt.Diagnostic(
         range=create_range(warning.loc),
         message=warning.msg,
         severity=lspt.DiagnosticSeverity.Warning
-    ) for warning in warnings if warning.loc.mod_path == uris.to_fs_path(from_path) ];
+    )
+    for warning in warnings if warning.loc.mod_path == uris.to_fs_path(from_path)
+    ];
 }
 
 
 """Debounce decorator for async functions."""
-def debounce(<>wait: float) -> Callable[[T], Callable[(..., Awaitable[None])]] {
-    def decorator(fn: T) -> Callable[P, Awaitable[None]] {
+def debounce(<>wait: float) -> Callable[[ T ], Callable[ (..., Awaitable[ None ]) ]] {
+    def decorator(fn: T) -> Callable[P, Awaitable[ None ]] {
         @wraps(fn)
         async def debounced(*args: P.args, **kwargs: P.kwargs) -> None {
             async def call_it() -> None {
@@ -75,8 +83,8 @@ def debounce(<>wait: float) -> Callable[[T], Callable[(..., Awaitable[None])]] {
 
 
 """Iterate through symbol table."""
-def sym_tab_list(sym_tab: UniScopeNode, file_path: str) -> <>list[UniScopeNode] {
-    sym_tabs = [sym_tab]
+def sym_tab_list(sym_tab: UniScopeNode, file_path: str) -> <>list[ UniScopeNode ] {
+    sym_tabs = [ sym_tab ]
     if not (isinstance(sym_tab, uni.Module) and sym_tab.loc.mod_path != file_path )
     else []
     ;
@@ -92,7 +100,7 @@ def find_deepest_symbol_node_at_pos(
     <>node: uni.UniNode,
     line: int,
     character: int
-) -> Optional[uni.AstSymbolNode] {
+) -> Optional[ uni.AstSymbolNode ] {
     last_symbol_node = None;
     if position_within_node(<>node, line, character) {
         if isinstance(<>node, uni.AstSymbolNode) {
@@ -135,11 +143,14 @@ def position_within_node(<>node: uni.UniNode, line: int, character: int) -> bool
 
 
 """Find index."""
-def find_index(sem_tokens: <>list[int], line: int, char: int) -> Optional[int] {
+def find_index(sem_tokens: <>list[ int ], line: int, char: int) -> Optional[ int ] {
     index = None;
-    token_start_list = [ get_token_start(i, sem_tokens) for i in range(0, len(sem_tokens), 5) ];
+    token_start_list = [
+    get_token_start(i, sem_tokens)
+    for i in range(0, len(sem_tokens), 5)
+    ];
     for (i, j) in enumerate(token_start_list) {
-        if j[0] == line and j[1] <= char <= j[2]  {
+        if j[ 0 ] == line and j[ 1 ] <= char <= j[ 2 ]  {
             return i;
         }
     }
@@ -148,7 +159,7 @@ def find_index(sem_tokens: <>list[int], line: int, char: int) -> Optional[int] {
 
 
 """Recursively collect symbols from the AST."""
-def get_symbols_for_outline(<>node: UniScopeNode) -> <>list[lspt.DocumentSymbol] {
+def get_symbols_for_outline(<>node: UniScopeNode) -> <>list[ lspt.DocumentSymbol ] {
     symbols = [];
     for (key, item) in <>node.names_in_scope.items() {
         if key in dir(builtins)
@@ -167,7 +178,10 @@ def get_symbols_for_outline(<>node: UniScopeNode) -> <>list[lspt.DocumentSymbol]
         );
         symbols.append(symbol);
     }
-    for sub_tab in [ i for i in <>node.kid_scope if i.loc.mod_path == <>node.loc.mod_path ] {
+    for sub_tab in [
+    i
+    for i in <>node.kid_scope if i.loc.mod_path == <>node.loc.mod_path
+    ] {
         sub_symbols = get_symbols_for_outline(sub_tab);
         if isinstance(
             sub_tab,
@@ -191,7 +205,7 @@ def get_symbols_for_outline(<>node: UniScopeNode) -> <>list[lspt.DocumentSymbol]
 
 
 """Get owner sym."""
-def owner_sym(table: UniScopeNode) -> Optional[Symbol] {
+def owner_sym(table: UniScopeNode) -> Optional[ Symbol ] {
     if table.parent_scope and isinstance(table, uni.AstSymbolNode)  {
         return table.parent_scope.lookup(table.sym_name);
     }
@@ -235,12 +249,14 @@ def kind_map(sub_tab: uni.UniNode) -> lspt.SymbolKind {
 """Map the symbol node to an lspt.CompletionItemKind."""
 def label_map(sub_tab: SymbolType) -> lspt.CompletionItemKind {
     return lspt.CompletionItemKind.Function
-    if sub_tab in [SymbolType.ABILITY, SymbolType.TEST]
+    if sub_tab in [ SymbolType.ABILITY, SymbolType.TEST ]
     else lspt.CompletionItemKind.Class
-    if sub_tab in [SymbolType.OBJECT_ARCH,
-    SymbolType.NODE_ARCH,
-    SymbolType.EDGE_ARCH,
-    SymbolType.WALKER_ARCH]
+    if sub_tab in [
+    SymbolType.OBJECT_ARCH,
+        SymbolType.NODE_ARCH,
+        SymbolType.EDGE_ARCH,
+        SymbolType.WALKER_ARCH
+    ]
     else lspt.CompletionItemKind.Module
     if sub_tab == SymbolType.MODULE
     else lspt.CompletionItemKind.Enum
@@ -269,10 +285,10 @@ def label_map(sub_tab: SymbolType) -> lspt.CompletionItemKind {
 def collect_all_symbols_in_scope(
     sym_tab: UniScopeNode,
     up_tree: bool = True
-) -> <>list[lspt.CompletionItem] {
+) -> <>list[ lspt.CompletionItem ] {
     symbols = [];
     visited = <>set();
-    current_tab : Optional[UniScopeNode] = sym_tab;
+    current_tab : Optional[ UniScopeNode ] = sym_tab;
     while current_tab is not None and current_tab not in visited  {
         visited.add(current_tab);
         for (name, symbol) in current_tab.names_in_scope.items() {
@@ -295,8 +311,8 @@ def collect_all_symbols_in_scope(
 
 
 """Return all child tab's as completion items."""
-def collect_child_tabs(sym_tab: UniScopeNode) -> <>list[lspt.CompletionItem] {
-    symbols : <>list[lspt.CompletionItem] = [];
+def collect_child_tabs(sym_tab: UniScopeNode) -> <>list[ lspt.CompletionItem ] {
+    symbols : <>list[ lspt.CompletionItem ] = [];
     for tab in sym_tab.kid_scope {
         if tab.scope_name not in [ i.label for i in symbols ] {
             symbols.append(
@@ -312,7 +328,7 @@ def collect_child_tabs(sym_tab: UniScopeNode) -> <>list[lspt.CompletionItem] {
 
 
 """Parse text and return a list of symbols."""
-def parse_symbol_path(text: str, dot_position: int) -> <>list[str] {
+def parse_symbol_path(text: str, dot_position: int) -> <>list[ str ] {
     text = text[ : dot_position ][ : -1 ].strip();
     valid_character_pattern = re.compile('[a-zA-Z0-9_]');
     reversed_text = text[ : : -1 ];
@@ -333,7 +349,7 @@ def parse_symbol_path(text: str, dot_position: int) -> <>list[str] {
     }
     all_words = all_words[ : : -1 ]
     if not current_word
-    else ([''.join(current_word[ : : -1 ])] + all_words[ : : -1 ])
+    else ([ ''.join(current_word[ : : -1 ]) ] + all_words[ : : -1 ])
     ;
     return all_words;
 }
@@ -342,7 +358,7 @@ def parse_symbol_path(text: str, dot_position: int) -> <>list[str] {
 """Return the starting position of a token."""
 def get_token_start(
     token_index: (int | None),
-    sem_tokens: <>list[int]
+    sem_tokens: <>list[ int ]
 ) -> <>tuple[int, int, int] {
     if token_index is None or token_index >= len(sem_tokens)  {
         return (0, 0, 0);
@@ -351,8 +367,8 @@ def get_token_start(
     current_char = 0;
     current_tok_index = 0;
     while current_tok_index < len(sem_tokens) {
-        token_line_delta = sem_tokens[current_tok_index];
-        token_start_char = sem_tokens[(current_tok_index + 1)];
+        token_line_delta = sem_tokens[ current_tok_index ];
+        token_start_char = sem_tokens[ (current_tok_index + 1) ];
         if token_line_delta > 0 {
             current_line += token_line_delta;
             current_char = 0;
@@ -361,18 +377,18 @@ def get_token_start(
             if token_line_delta > 0 {
                 return (current_line,
                 token_start_char,
-                (token_start_char + sem_tokens[(current_tok_index + 2)]));
+                (token_start_char + sem_tokens[ (current_tok_index + 2) ]));
             }
             return (current_line,
             (current_char + token_start_char),
-            ((current_char + token_start_char) + sem_tokens[(current_tok_index + 2)]));
+            ((current_char + token_start_char) + sem_tokens[ (current_tok_index + 2) ]));
         }
         current_char += token_start_char;
         current_tok_index += 5;
     }
     return (current_line,
     current_char,
-    (current_char + sem_tokens[(current_tok_index + 2)]));
+    (current_char + sem_tokens[ (current_tok_index + 2) ]));
 }
 
 
@@ -382,7 +398,7 @@ def find_surrounding_tokens(
     change_start_char: int,
     change_end_line: int,
     change_end_char: int,
-    sem_tokens: <>list[int]
+    sem_tokens: <>list[ int ]
 ) -> <>tuple[(int | None), (int | None), bool] {
     prev_token_index = None;
     next_token_index = None;
@@ -391,25 +407,25 @@ def find_surrounding_tokens(
         [ get_token_start(i, sem_tokens) for i in range(0, len(sem_tokens), 5) ][ 0 : ]
     ) {
         if (not (prev_token_index is None or next_token_index is None ))
-        and (tok[0] > change_end_line
-        or (tok[0] == change_end_line and tok[1] > change_end_char )
+        and (tok[ 0 ] > change_end_line
+        or (tok[ 0 ] == change_end_line and tok[ 1 ] > change_end_char )
         )
          {
             prev_token_index = (i * 5);
             break;
-        } elif change_start_line == tok[0] == change_end_line
-        and tok[1] <= change_start_char
-        and tok[2] >= change_end_char
+        } elif change_start_line == tok[ 0 ] == change_end_line
+        and tok[ 1 ] <= change_start_char
+        and tok[ 2 ] >= change_end_char
          {
             prev_token_index = (i * 5);
             inside_tok = True;
             break;
-        } elif tok[0] < change_start_line
-        or tok[0] == change_start_line and tok[1] < change_start_char
+        } elif tok[ 0 ] < change_start_line
+        or tok[ 0 ] == change_start_line and tok[ 1 ] < change_start_char
          {
             prev_token_index = (i * 5);
-        } elif tok[0] > change_end_line
-        or tok[0] == change_end_line and tok[1] > change_end_char
+        } elif tok[ 0 ] > change_end_line
+        or tok[ 0 ] == change_end_line and tok[ 1 ] > change_end_char
          {
             next_token_index = (i * 5);
             break;
@@ -422,10 +438,10 @@ def find_surrounding_tokens(
 """Get the line of code, and the first non-space character index."""
 def get_line_of_code(
     line_number: int,
-    lines: <>list[str]
-) -> Optional[<>tuple[(str, int)]] {
+    lines: <>list[ str ]
+) -> Optional[ <>tuple[ (str, int) ] ] {
     if 0 <= line_number < len(lines) {
-        line = lines[line_number].rstrip('\n');
+        line = lines[ line_number ].rstrip('\n');
         first_non_space = (len(line) - len(line.lstrip()));
         return (line,
         (first_non_space + 4)
@@ -439,14 +455,14 @@ def get_line_of_code(
 
 """Add a new text edit to the changes dictionary if it is unique."""
 def add_unique_text_edit(
-    changes: <>dict[(str, <>list[lspt.TextEdit])],
+    changes: <>dict[ (str, <>list[ lspt.TextEdit ]) ],
     key: str,
     new_edit: lspt.TextEdit
 ) -> None {
     if key not in changes {
-        changes[key] = [new_edit];
+        changes[ key ] = [ new_edit ];
     } else {
-        for existing_edit in changes[key] {
+        for existing_edit in changes[ key ] {
             if existing_edit.range.start == new_edit.range.start
             and existing_edit.range.end == new_edit.range.end
             and existing_edit.new_text == new_edit.new_text
@@ -454,6 +470,6 @@ def add_unique_text_edit(
                 return;
             }
         }
-        changes[key].append(new_edit);
+        changes[ key ].append(new_edit);
     }
 }
