@@ -126,7 +126,8 @@ classDiagram
         +__str__() str
     }
 
-    class NoneType { // Represents Jac's null
+    class NoneType {
+        %% Represents Jac's null
         +__str__() str
     }
 
@@ -134,14 +135,20 @@ classDiagram
         +__str__() str
     }
 
-    class ArchetypeType { // Represents Jac archetypes: object, node, edge, walker, class
+    class ArchetypeType {
+        %% Represents Jac archetypes: object, node, edge, walker, class
         +str name
         +str module
-        +ArchetypeKind kind // object, node, edge, walker, class
-        +Dict members // For 'has' variables
-        +Dict abilities // For 'can' abilities/methods
-        +List bases // Inherited archetypes
-        +List typeParameters // For potential future generic support
+        +ArchetypeKind kind
+        %% object, node, edge, walker, class
+        +Dict members
+        %% For 'has' variables
+        +Dict abilities
+        %% For 'can' abilities/methods
+        +List bases
+        %% Inherited archetypes
+        +List typeParameters
+        %% For potential future generic support
         +__eq__(other) bool
         +__hash__() int
         +__str__() str
@@ -149,22 +156,26 @@ classDiagram
 
     class ArchetypeInstanceType {
         +ArchetypeType archetypeType
-        +Dict typeArguments // For potential future generic support
+        +Dict typeArguments
+        %% For potential future generic support
         +__eq__(other) bool
         +__hash__() int
         +__str__() str
     }
 
-    class CallableType { // Represents Jac abilities and functions
+    class CallableType {
+        %% Represents Jac abilities and functions
         +List parameters
         +Type returnType
-        +bool is_ability // Differentiates from plain functions if needed
+        +bool is_ability
+        %% Differentiates from plain functions if needed
         +__eq__(other) bool
         +__hash__() int
         +__str__() str
     }
 
-    class EnumType { // Represents Jac enums
+    class EnumType {
+        %% Represents Jac enums
         +str name
         +str module
         +Dict members
@@ -336,11 +347,13 @@ The TypeFactory implements the Factory pattern for creating Jac type objects, en
 graph TD
     A[TypeFactory] --> B[create unknown]
     A --> C[create any]
-    A --> D[create none] // For Jac's null
+    A --> D[create none]
+    %% For Jac's null
     A --> E[create never]
     A --> F[create archetype]
     A --> G[create archetype_instance]
-    A --> H[create callable] // For Jac abilities/functions
+    A --> H[create callable]
+    %% For Jac abilities/functions
     A --> I[create union]
     A --> L[create enum]
 
@@ -606,7 +619,8 @@ Type relationships determine compatibility between Jac types. Key operations inc
 ```mermaid
 graph TD
     A[TypeRelationship] --> B[is_subtype]
-    A --> C[is_assignable_to] // Often similar to is_subtype but can have nuances
+    A --> C[is_assignable_to]
+    %% Often similar to is_subtype but can have nuances
 
     B --> D{source == AnyType?}
     D -->|Yes| E[return True]
@@ -621,7 +635,8 @@ graph TD
     J -->|No| L{target == UnionType?}
     L -->|Yes| M[check source against any target type]
     L -->|No| N[Handle NoneType (Jac null) assignability, e.g., to Optional-like unions]
-    N --> O[return False] // Default
+    N --> O[return False]
+    %% Default
 ```
 
 #### Implementation of Type Relationships for Jac
