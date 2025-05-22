@@ -162,6 +162,8 @@ class DocIRGenPass(UniPass):
             if i == node.doc:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.hard_line())
+            elif i in [node.name_ref]:
+                parts.append(i.gen.doc_ir)
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
@@ -195,8 +197,13 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for assignments."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            parts.append(i.gen.doc_ir)
-            parts.append(self.space())
+            if i == node.type_tag:
+                parts.pop()
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
+            else:
+                parts.append(i.gen.doc_ir)
+                parts.append(self.space())
         node.gen.doc_ir = self.concat(parts[:-1])
 
     def exit_if_stmt(self, node: uni.IfStmt) -> None:
@@ -268,8 +275,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.concat(parts[:-1])
+        node.gen.doc_ir = self.concat(parts)
 
     def exit_list_val(self, node: uni.ListVal) -> None:
         """Generate DocIR for list values."""
@@ -846,7 +852,10 @@ class DocIRGenPass(UniPass):
                 parts.append(self.tight_line())
             elif isinstance(i, uni.Token) and i.name == node.delim:
                 parts.append(i.gen.doc_ir)
-                parts.append(self.line())
+                if node.delim not in [Tok.DOT]:
+                    parts.append(self.line())
+                else:
+                    parts.append(self.tight_line())
             elif i == node.right_enc:
                 parts.pop()
                 enc_parts.append(self.indent(self.concat(parts)))
