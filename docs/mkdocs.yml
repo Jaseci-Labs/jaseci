@@ -72,7 +72,7 @@ nav:
           - "internals/symbol_tables/resolution.md"
       - Reference:
         - Language Spec: "learn/jac_ref.md"
-        - UniIR Nodes: "internals/uniir_node.md"
+        # - UniIR Nodes: "internals/uniir_node.md"
       - Runtime Plugin Interface: "internals/jac_plugins.md"
     - Planning Specs and Docs:
       - Error System: "internals/planning_specs/error_system.md"
