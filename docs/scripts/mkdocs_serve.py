@@ -32,31 +32,31 @@ class DebouncedRebuildHandler(FileSystemEventHandler):
         self._timer = None
         self._lock = threading.Lock()
 
-    def _debounced_rebuild(self, event_type, path):
+    def debounced_rebuild(self, event_type, path):
         """Schedule a debounced rebuild on file system events."""
         print(f"Change detected: {event_type} — {path}")
         with self._lock:
             if self._timer:
                 self._timer.cancel()
-            self._timer = threading.Timer(self.debounce_seconds, self._rebuild)
+            self._timer = threading.Timer(self.debounce_seconds, self.rebuild)
             self._timer.start()
 
     def on_modified(self, event):
         """Handle file modification events."""
         if not event.is_directory and "site" not in event.src_path:
-            self._debounced_rebuild("modified", event.src_path)
+            self.debounced_rebuild("modified", event.src_path)
 
     def on_created(self, event):
         """Handle file creation events."""
         if not event.is_directory and "site" not in event.src_path:
-            self._debounced_rebuild("created", event.src_path)
+            self.debounced_rebuild("created", event.src_path)
 
     def on_deleted(self, event):
         """Handle file deletion events."""
         if not event.is_directory and "site" not in event.src_path:
-            self._debounced_rebuild("deleted", event.src_path)
+            self.debounced_rebuild("deleted", event.src_path)
 
-    def _rebuild(self):
+    def rebuild(self):
         """Rebuild the MkDocs site."""
         print("\nRebuilding MkDocs site...")
         try:
@@ -75,7 +75,7 @@ def serve_with_watch() -> None:
     subprocess.run(["mkdocs", "build"], check=True, cwd=root_dir)
 
     # Set up file watcher
-    event_handler = DebouncedRebuildHandler(root_dir=root_dir, debounce_seconds=5)
+    event_handler = DebouncedRebuildHandler(root_dir=root_dir, debounce_seconds=20)
     observer = Observer()
 
     # Watch everything except the site directory
