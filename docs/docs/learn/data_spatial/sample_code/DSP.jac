@@ -5,11 +5,11 @@ node test_node {
         print(f">>> Some Walker entered the node: ", self);
     }
     can log_test_walker_entry with test_walker entry {
-        print(f">>> {here} entered the node {self}");
-        here.callable();
+        print(f">>> {visitor} entered the node {visitor}");
+        visitor.callable();
     }
     can log_test_walker_exit with test_walker exit {
-        print(f"<<< {here} exited the node {self}");
+        print(f"<<< {visitor} exited the node {self}");
     }
     can log_exit with exit {
         print(f"<<< Some Walker exited the node {self}");

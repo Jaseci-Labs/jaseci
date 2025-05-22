@@ -17,7 +17,7 @@ node turn {
 
 impl turn.check {
     guess = guesses.pop(0);
-    guess |> here.process_guess;
+    guess |> visitor.process_guess;
     visit [-->];
 }
 

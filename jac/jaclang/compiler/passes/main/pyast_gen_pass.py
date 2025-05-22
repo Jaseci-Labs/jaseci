@@ -1027,9 +1027,35 @@ class PyastGenPass(UniPass):
         ]
 
     def exit_event_signature(self, node: uni.EventSignature) -> None:
-        here = self.sync(
+        arch_parent = node.parent
+        while (
+            isinstance(arch_parent, uni.UniNode)
+            and hasattr(arch_parent, "parent")
+            and getattr(arch_parent, "parent", None) is not None
+            and (arch_parent.parent is not None)
+            and (arch_parent := arch_parent.parent)
+            and (not isinstance(arch_parent, uni.Archetype))
+        ):
+            pass
+        else:
+            if (
+                isinstance(arch_parent, uni.Archetype)
+                and arch_parent.arch_type.name == Tok.KW_WALKER
+            ):
+                arch_kw = Con.HERE.value
+            elif (
+                isinstance(arch_parent, uni.Archetype)
+                and arch_parent.arch_type.name == Tok.KW_NODE
+            ):
+                arch_kw = Con.VISITOR.value
+            elif (
+                isinstance(arch_parent, uni.Archetype)
+                and arch_parent.arch_type.name == Tok.KW_OBJECT
+            ):
+                arch_kw = Con.HERE.value
+        arch_arg = self.sync(
             ast3.arg(
-                arg=f"{Con.HERE.value}",
+                arg=f"{arch_kw}",
                 annotation=(
                     cast(ast3.expr, node.arch_tag_info.gen.py_ast[0])
                     if node.arch_tag_info
@@ -1043,10 +1069,10 @@ class PyastGenPass(UniPass):
                 ast3.arguments(
                     posonlyargs=[],
                     args=(
-                        [self.sync(ast3.arg(arg="self", annotation=None)), here]
+                        [self.sync(ast3.arg(arg="self", annotation=None)), arch_arg]
                         if (abl := node.find_parent_of_type(uni.Ability))
                         and abl.is_method
-                        else [here]
+                        else [arch_arg]
                     ),
                     kwonlyargs=[],
                     vararg=None,
@@ -1746,7 +1772,7 @@ class PyastGenPass(UniPass):
         walker = self.sync(
             ast3.Name(id="self", ctx=ast3.Load())
             if node.from_walker
-            else ast3.Name(id=Con.HERE.value, ctx=ast3.Load())
+            else ast3.Name(id=Con.VISITOR.value, ctx=ast3.Load())
         )
 
         node.gen.py_ast = [
@@ -1769,7 +1795,7 @@ class PyastGenPass(UniPass):
         loc = self.sync(
             ast3.Name(id="self", ctx=ast3.Load())
             if node.from_walker
-            else ast3.Name(id=Con.HERE.value, ctx=ast3.Load())
+            else ast3.Name(id=Con.VISITOR.value, ctx=ast3.Load())
         )
 
         visit_call = self.sync(
@@ -1803,7 +1829,7 @@ class PyastGenPass(UniPass):
         loc = self.sync(
             ast3.Name(id="self", ctx=ast3.Load())
             if node.from_walker
-            else ast3.Name(id=Con.HERE.value, ctx=ast3.Load())
+            else ast3.Name(id=Con.VISITOR.value, ctx=ast3.Load())
         )
         node.gen.py_ast = [
             self.sync(

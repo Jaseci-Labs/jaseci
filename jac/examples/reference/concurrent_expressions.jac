@@ -6,7 +6,7 @@ node A {
     can do with entry {
         print("Started");
         sleep(2);
-        print(here);
+        print(visitor);
 
     }
 }

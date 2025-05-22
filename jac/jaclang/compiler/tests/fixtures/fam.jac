@@ -25,14 +25,14 @@ node location {
 
         for i in activities {
             i.duration = visitor.duration;
-            if here.name not in visitor.passport {
+            if visitor.name not in visitor.passport {
                 if i.name == "Hiking" {
                     for j=0 to j<3 by j+=1  {
                         i.duration+=1;
                     }
                     i.duration+=1;
                 }
-                visitor.passport.append(here.name);
+                visitor.passport.append(visitor.name);
             }
         }
     }
