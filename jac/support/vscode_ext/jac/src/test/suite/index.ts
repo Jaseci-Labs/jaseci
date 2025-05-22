@@ -1,6 +1,6 @@
 import mock = require('mock-require');
 // Mock EnvManager for tests
-mock('../../environement/manager', {
+mock('../../environment/manager', {
     EnvManager: class {
         constructor() {}
         async init() {}

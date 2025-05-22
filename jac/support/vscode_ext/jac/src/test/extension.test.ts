@@ -3,16 +3,10 @@ import * as vscode from 'vscode';
 import * as sinon from 'sinon';
 
 suite('Extension Tests', () => {
-    suiteSetup(async () => {
+    suiteSetup(async function() {
+        this.timeout(10000);
         const ext = vscode.extensions.getExtension('jaseci-labs.jaclang-extension');
-        console.log('Extension:', ext);
-        if (typeof ext?.activate === 'function') {
-            console.log('It has an activate method.');
-        }
-
-        if (ext) {
             await ext.activate();
-        }
     });
 
     test('Commands are registered', async () => {
