@@ -25,7 +25,7 @@ The project brings together a set of components that work seamlessly together:
 
 - **[`jaclang`](jac/):** The Jac programming language, a drop‑in replacement for and superset of Python.
 - **[`jac-cloud`](jac-cloud/):** Cloud‑native utilities that automatically turn a Jac application into a production-ready server stack.
-- **[`jac VSCE`](jac/support/vscode_ext):** The official VS Code extension for Jac.
+- **[`jac VSCE`](jac/support/vscode_ext/jac):** The official VS Code extension for Jac.
 - **[`mtllm`](jac-mtllm/):** Easy integration of large language models into your applications.
 
 ## Quick Start

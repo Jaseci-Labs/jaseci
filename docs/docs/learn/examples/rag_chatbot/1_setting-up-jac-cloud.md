@@ -6,7 +6,8 @@ pip install jaclang==0.7.19 jac-cloud==0.1.1
 ```
 
 ## Installing your VSCode Extension
-To make your development experience easier, you should install the jac extension for Visual Studio Code. This extension provides syntax highlighting, code snippets, and other features to help you write Jac Cloud code more efficiently. You can install the extension from the Visual Studio Code marketplace [here](https://marketplace.visualstudio.com/items?itemName=jaseci-labs.jaclang-extension).
+
+To make your development experience easier, you should install the Jac extension for Visual Studio Code. This extension provides syntax highlighting, code snippets, and other features to help you write Jac Cloud code more efficiently. You can install the extension from the Visual Studio Code marketplace [here](https://marketplace.visualstudio.com/items?itemName=jaseci-labs.jaclang-extension).
 
 ![Jac Extension](images/1_vscode.png)
 
