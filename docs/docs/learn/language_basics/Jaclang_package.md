@@ -1,6 +1,6 @@
 # Jaclang Package & Import System
 
-Jaclang supports a modular package system, allowing you to organize Jac code across multiple files and folders. This promotes reusability, clean design, and scalability.Jac packages are directories containing an `__init__.jac` file to define what’s exposed during import.
+Jaclang features a modular package system that helps organize code across multiple files and folders, enhancing reusability, clean design, and scalability. Similar to Python, Jac packages are directories containing an `__init__.jac` file that defines what is exposed when the package is imported. This structure allows developers to group related code logically and control the public interface of the package, making it easier to manage larger projects efficiently.
 
 ## Folder structure
 
@@ -13,8 +13,8 @@ Jaclang supports a modular package system, allowing you to organize Jac code acr
 - This is the **entry point** to the project.
 
 ```Jac linenums="1"
-import from library.tools { tool_func }
-import from library.sub.helper { help_func }
+import from library { tool_func }
+import from library.sub { help_func }
 
 with entry {
     print('Main Execution:\n') ;
@@ -74,8 +74,6 @@ import from library.sub.helper { help_func }
 
 Absolute imports specify the complete path to a module starting from the root of the project. They are useful for clearly indicating where a module is located within the overall folder structure and remain consistent regardless of the location of the importing file.
 
-- **Package.mod** - Absolute import path from the root of the project (`import from library.sub { help_func }`)
-
 2.Relative Imports
 
 ```Jac linenums="1"
@@ -87,18 +85,17 @@ Relative imports use dots `(. or ..)` to indicate location relative to the curre
 
 - **Single dot (.)** - Current directory/module (`import from .tools {tool_func}`)
 - **Double dot (..)** - parent directory (`import from ..library {sub}`)
+- **Package.mod** - Absolute import path from the root of the project (`import from library.sub { help_func }`)
 
 ## How __init__.jac works in Jaclang
 
-In Jaclang, this is also important. The significance of it is explained below.
+In Jaclang, the `__init__.jac` file plays a crucial role by defining the public interface of a package. It determines which parts of the package are exposed and accessible when the package is imported, helping manage and organize code effectively within modular structures.
 
 1.Marks a Directory as a Jac Package
 
-When Jaclang finds a folder with a file named `__init__.jac`, it considers that folder as a package. This tells the Jac interpreter that the folder can be used for imports, not just as a normal directory.
+The `__init__.jac` file marks a directory as a Jac package and defines what is exposed when importing it. When Jaclang finds a folder with an `__init__.jac` file, it treats that folder as a package, allowing it to be used for imports rather than just a regular directory. Without this file, Jac won’t recognize the folder as a package properly, which can cause import issues and limit modular code organization.
 
 ![Diagram](init.png)
-
-Without this `__init__.jac ` file , jaclang will not allow direct imports from the  folder.
 
 2.Allows Selective Exports of functionality
 
