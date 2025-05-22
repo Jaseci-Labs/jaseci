@@ -10,10 +10,11 @@ import os
 import socketserver
 import subprocess
 import threading
-
 from typing import Optional
+
+from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+
 
 class CustomHeaderHandler(http.server.SimpleHTTPRequestHandler):
     """HTTP request handler with custom security headers for MkDocs site serving."""
@@ -24,10 +25,11 @@ class CustomHeaderHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
         super().end_headers()
 
+
 class DebouncedRebuildHandler(FileSystemEventHandler):
     """File system event handler for debounced MkDocs site rebuilding."""
 
-    def __init__(self, root_dir: str, debounce_seconds: int=10):
+    def __init__(self, root_dir: str, debounce_seconds: int = 10) -> None:
         """Initialize the handler with root directory and debounce time."""
         self.root_dir = root_dir
         self.debounce_seconds = debounce_seconds
@@ -43,22 +45,22 @@ class DebouncedRebuildHandler(FileSystemEventHandler):
             self._timer = threading.Timer(self.debounce_seconds, self.rebuild)
             self._timer.start()
 
-    def on_modified(self, event):
+    def on_modified(self, event: FileSystemEvent) -> None:
         """Handle file modification events."""
         if not event.is_directory and "site" not in event.src_path:
-            self.debounced_rebuild("modified", event.src_path)
+            self.debounced_rebuild("modified", str(event.src_path))
 
-    def on_created(self, event):
+    def on_created(self, event: FileSystemEvent) -> None:
         """Handle file creation events."""
         if not event.is_directory and "site" not in event.src_path:
-            self.debounced_rebuild("created", event.src_path)
+            self.debounced_rebuild("created", str(event.src_path))
 
-    def on_deleted(self, event):
+    def on_deleted(self, event: FileSystemEvent) -> None:
         """Handle file deletion events."""
         if not event.is_directory and "site" not in event.src_path:
-            self.debounced_rebuild("deleted", event.src_path)
+            self.debounced_rebuild("deleted", str(event.src_path))
 
-    def rebuild(self):
+    def rebuild(self) -> None:
         """Rebuild the MkDocs site."""
         print("\nRebuilding MkDocs site...")
         try:
@@ -97,6 +99,7 @@ def serve_with_watch() -> None:
     finally:
         observer.stop()
         observer.join()
+
 
 if __name__ == "__main__":
     serve_with_watch()
