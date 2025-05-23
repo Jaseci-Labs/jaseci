@@ -1954,7 +1954,9 @@ class JacParser(Transform[uni.Source, uni.Module]):
                     kid = self.cur_nodes
                 else:
                     sublist = uni.SubNodeList[uni.Expr | uni.KWPair](
-                        items=[*index.values.items], delim=Tok.COMMA, kid=index.kid
+                        items=[*index.values.items],
+                        delim=Tok.COMMA,
+                        kid=index.kid,
                     )
                     expr = uni.TupleVal(values=sublist, kid=[sublist])
                     kid = [expr]

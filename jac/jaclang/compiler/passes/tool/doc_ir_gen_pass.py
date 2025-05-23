@@ -212,7 +212,7 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for assignments."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            if i == node.type_tag:
+            if i == node.type_tag or isinstance(i, uni.Token) and i.name == Tok.SEMI:
                 parts.pop()
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
@@ -296,8 +296,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.concat(parts[:-1])
+        node.gen.doc_ir = self.concat(parts)
 
     def exit_list_val(self, node: uni.ListVal) -> None:
         """Generate DocIR for list values."""
