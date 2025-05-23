@@ -1275,7 +1275,6 @@ class JacLanguageTests(TestCase):
         captured_output = io.StringIO()
         sys.stdout = captured_output
         Jac.jac_import(self.mach, "here_visitor_usage", base_path=self.fixture_abs_path("./"))
-        print("Captured output:\n", captured_output.getvalue())
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue().split("\n")
         self.assertIn("Here value is  10", stdout_value[0])
