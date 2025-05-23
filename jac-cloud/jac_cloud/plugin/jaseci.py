@@ -4,8 +4,7 @@ from concurrent.futures import Future
 from contextlib import suppress
 from typing import Callable, Type
 
-from jaclang.compiler.constant import EdgeDir
-from jaclang.runtimelib.archetype import Archetype
+from jaclang.runtimelib.archetype import Archetype, DataSpatialDestination
 from jaclang.runtimelib.machine import (
     JacMachineImpl,
     JacMachineInterface as Jac,
@@ -167,34 +166,24 @@ class JacNodePlugin:
     @staticmethod
     @hookimpl
     def get_edges(
-        node: NodeAnchor,
-        dir: EdgeDir,
-        filter: Callable[[EdgeArchetype], bool] | None,
-        target_obj: list[NodeArchetype] | None,
+        origin: list[NodeArchetype], destination: DataSpatialDestination
     ) -> list[EdgeArchetype]:
         """Get edges connected to this node."""
         if FastAPI.is_enabled():
-            JaseciContext.get().mem.populate_data(node.edges)
+            JaseciContext.get().mem.populate_data(origin)
 
-        return JacMachineImpl.get_edges(
-            node=node, dir=dir, filter=filter, target_obj=target_obj  # type: ignore[arg-type, return-value]
-        )
+        return JacMachineImpl.get_edges(origin=origin, destination=destination)
 
     @staticmethod
     @hookimpl
     def edges_to_nodes(
-        node: NodeAnchor,
-        dir: EdgeDir,
-        filter: Callable[[EdgeArchetype], bool] | None,
-        target_obj: list[NodeArchetype] | None,
+        origin: list[NodeArchetype], destination: DataSpatialDestination
     ) -> list[NodeArchetype]:
         """Get set of nodes connected to this node."""
         if FastAPI.is_enabled():
-            JaseciContext.get().mem.populate_data(node.edges)
+            JaseciContext.get().mem.populate_data(origin)
 
-        return JacMachineImpl.edges_to_nodes(
-            node=node, dir=dir, filter=filter, target_obj=target_obj  # type: ignore[arg-type, return-value]
-        )
+        return JacMachineImpl.edges_to_nodes(origin=origin, destination=destination)
 
 
 class JacEdgePlugin:
