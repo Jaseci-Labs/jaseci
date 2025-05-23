@@ -1,9 +1,5 @@
 <h1 style="color: orange; font-weight: bold; text-align: center;">Getting Started With Jac and Jaseci</h1>
 
-Jac is an innovative programming language that extends Python's semantics while maintaining full interoperability with the Python ecosystem. It introduces cutting-edge programming models and abstractions specifically designed to minimize and hide complexity, embrace AI-forward development, and automate categories of common software systems that typically require manual implementation. Despite being relatively new, Jac has already proven its production-grade capabilities, currently powering several real-world applications across various use cases.
-
-Jaseci serves as the implementation of the Jac runtime, functioning in a relationship similar to how CPython serves as the reference implementation for Python. This runtime environment enables Jac code to execute with its enhanced features while maintaining the seamless Python interoperability that makes the language particularly accessible to Python developers.
-
 # Installation
 
 Firstly make sure that Python 3.12 or higher is installed in your environment, then simply install Jac using pip:

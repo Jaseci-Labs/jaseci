@@ -1269,3 +1269,24 @@ class JacLanguageTests(TestCase):
         self.assertIn("(tok[ 0 ] > change_end_line)", output)
         self.assertIn("(tok[ 0 ] == change_end_line)", output)
         self.assertIn("(tok[ 1 ] > change_end_char)", output)
+
+    def test_here_visitor_usage(self) -> None:
+        """Test visitor, here keyword usage in jaclang."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        Jac.jac_import(self.mach, "here_visitor_usage", base_path=self.fixture_abs_path("./"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("Here value is  10", stdout_value[0])
+        self.assertIn("Visitor name is  Walker 1", stdout_value[1])
+
+    def test_here_visitor_error(self) -> None:
+        """Test visitor, here keyword usage in jaclang."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        sys.stderr = captured_output
+        cli.run(self.fixture_abs_path("here_usage_error.jac"))
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("'here' is not defined", stdout_value)

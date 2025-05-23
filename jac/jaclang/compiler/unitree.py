@@ -1837,7 +1837,7 @@ class FuncSignature(UniNode):
         )
 
 
-class EventSignature(UniNode):
+class EventSignature(WalkerStmtOnlyNode):
     """EventSignature node type for Jac Ast."""
 
     def __init__(
@@ -1851,6 +1851,7 @@ class EventSignature(UniNode):
         self.arch_tag_info = arch_tag_info
         self.return_type = return_type
         UniNode.__init__(self, kid=kid)
+        WalkerStmtOnlyNode.__init__(self)
 
     def normalize(self, deep: bool = False) -> bool:
         res = True

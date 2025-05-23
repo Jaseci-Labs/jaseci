@@ -4,10 +4,10 @@ obj MyObj {
     has a: int;
 
     def init(a: int) -> None {
-        here.a = a;
+        self.a = a;
     }
 
     def set_a(val: int) -> None {
-        here.a = val;
+        self.a = val;
     }
 }

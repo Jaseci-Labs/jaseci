@@ -31,8 +31,8 @@ node Session {
     ) -> 'response':str by llm();
 
     can chat with interact entry {
-        self.chat_history.append({"role": "user", "content": here.message});
-        response = infer(message=here.message, chat_history=self.chat_history) spawn root;
+        self.chat_history.append({"role": "user", "content": visitor.message});
+        response = infer(message=visitor.message, chat_history=self.chat_history) spawn root;
         self.chat_history.append({"role": "assistant", "content": response.response});
 
         report {
@@ -84,10 +84,10 @@ node RagChat(Chat) {
                     agent_role:'role of the agent responding':str,
                     context:'retirved context from documents':list
                         ) -> 'response':str by llm();
-        data = rag_engine.get_from_chroma(query=here.message);
+        data = rag_engine.get_from_chroma(query=visitor.message);
         print("Data:", data);
-        here.response = respond_with_llm(here.message, here.chat_history, "You are a conversation agent designed to help users with their queries based on the documents provided", data);
-        print("Here:", here);
+        visitor.response = respond_with_llm(visitor.message, visitor.chat_history, "You are a conversation agent designed to help users with their queries based on the documents provided", data);
+        print("Visitor:", visitor);
     }
 }
 
@@ -101,7 +101,7 @@ node QAChat(Chat) {
             chat_history: 'chat history':list[dict],
             agent_role:'role of the agent responding':str
                 ) -> 'response':str by llm();
-        here.response = respond_with_llm(here.message, here.chat_history, agent_role="You are a conversation agent designed to help users with their queries");
-        print("Here:", here);
+        visitor.response = respond_with_llm(visitor.message, visitor.chat_history, agent_role="You are a conversation agent designed to help users with their queries");
+        print("Visitor:", visitor);
     }
 }
