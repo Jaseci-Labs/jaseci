@@ -20,7 +20,6 @@ from mtllm.types import Information, InputInformation, OutputHint, Tool
 from mtllm.utils import get_filtered_registry
 
 
-
 def extract_params(
     body: uni.FuncCall,
 ) -> tuple[dict[str, uni.Expr], list[tuple[str, ast3.AST]], list[tuple[str, ast3.AST]]]:
@@ -140,7 +139,6 @@ class JacMachine:
     @staticmethod
     @hookimpl
     def with_llm(
-        # self,
         file_loc: str,
         model: BaseLLM,
         model_params: dict[str, Any],
@@ -157,8 +155,13 @@ class JacMachine:
     ) -> Any:  # noqa: ANN401
         """Jac's with_llm feature."""
         machine = JacMachineInterface.py_get_jac_machine()
-
+        program_head = machine.jac_program.mod
         _scope = SemScope.get_scope_from_str(scope)
+        mod_registry = SemRegistry(program_head=program_head, by_scope=_scope)
+
+        if not program_head:
+            raise ValueError("Jac program head not found")
+
         assert _scope is not None, f"Invalid scope: {scope}"
 
         method = model_params.pop("method") if "method" in model_params else "Normal"
@@ -179,9 +182,11 @@ class JacMachine:
 
         type_collector: list = []
 
-        filtered_registry = get_filtered_registry(mod_registry, _scope)
+        # filtered_registry = get_filtered_registry(mod_registry, _scope)
         incl_info = [x for x in incl_info if not isinstance(x[1], type)]
-        informations = [Information(filtered_registry, x[0], x[1]) for x in incl_info]
+        informations = (
+            []
+        )  # [Information(filtered_registry, x[0], x[1]) for x in incl_info]
         type_collector.extend([x.get_types() for x in informations])
 
         inputs_information = []
@@ -277,23 +282,13 @@ class JacMachine:
             )
             outputs = (
                 [
-                    (
-                        _pass.sync(
-                            ast3.Constant(
-                                value=(
-                                    ""
-                                )
-                            )
-                        )
-                    ),
+                    (_pass.sync(ast3.Constant(value=("")))),
                     (_pass.sync(ast3.Constant(value=(extracted_type)))),
                 ]
                 if isinstance(node.signature, uni.FuncSignature)
                 else []
             )
-            action = (
-                _pass.sync(ast3.Constant(value=node.name_ref.sym_name))
-            )
+            action = _pass.sync(ast3.Constant(value=node.name_ref.sym_name))
             return [
                 _pass.sync(
                     ast3.Return(

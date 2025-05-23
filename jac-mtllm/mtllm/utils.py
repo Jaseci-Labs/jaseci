@@ -91,6 +91,8 @@ def get_filtered_registry(mod_registry: SemRegistry, scope: SemScope) -> SemRegi
             break
         scope = scope.parent
 
+    print(f"Available scopes: {avail_scopes}")
+
     filtered_registry = SemRegistry()
     for _scope, sem_info_list in mod_registry.registry.items():
         if str(_scope) in avail_scopes:

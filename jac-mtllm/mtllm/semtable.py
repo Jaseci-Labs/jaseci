@@ -6,10 +6,9 @@ semantic information.
 
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
 
-if TYPE_CHECKING:
-    import jaclang.compiler.unitree as uni
+import jaclang.compiler.unitree as uni
 
 
 class SemInfo:
@@ -95,65 +94,137 @@ class SemScope:
 class SemRegistry:
     """Registry class."""
 
-    def __init__(self) -> None:
+    def __init__(self, program_head: uni.ProgramModule, by_scope: SemScope) -> None:
         """Initialize the class."""
-        self.registry: dict[SemScope, list[SemInfo]] = {}
-
-    def add(self, scope: SemScope, seminfo: SemInfo) -> None:
-        """Add semantic information to the registry."""
-        for k in self.registry.keys():
-            if str(k) == str(scope):
-                scope = k
-                break
-        else:
-            self.registry[scope] = []
-        self.registry[scope].append(seminfo)
+        self.program_head: uni.ProgramModule = program_head
+        self.by_scope: SemScope = by_scope
 
     def lookup(
         self,
         scope: Optional[SemScope] = None,
         name: Optional[str] = None,
-        type: Optional[str] = None,
+        _type: Optional[str] = None,
     ) -> tuple[Optional[SemScope], Optional[SemInfo | list[SemInfo]]]:
         """Lookup semantic information in the registry."""
+        mods = self.program_head.hub
+        #find the relavent symbol table
+        # for mod_name, m in mods.items():
+        #     if mod_name in str(self.by_scope) :
+        #         mod = m
+        #         break
+        # symbol_table = mod.find_scope(self.by_scope.scope).get_parent()
+        # print(f"SymbolTable: {symbol_table}")
+        mod = mods[list(mods.keys())[0]]
+        if not mod:
+            raise ValueError("Module not found in the registry.")
+        scope_obj = mod.find_scope(self.by_scope.scope)
+        if not scope_obj:
+            raise ValueError("Scope not found in the registry.")
+        symbol_table = scope_obj.get_parent()
+        # print(f"SymbolTable: {symbol_table}")
+
         if scope:
-            for k, v in self.registry.items():
-                if str(k) == str(scope):
-                    if name:
-                        for i in v:
-                            if i.name == name:
-                                return k, i
-                    elif type:
-                        for i in v:
-                            if i.type == type:
-                                return k, i
-                    else:
-                        return k, v
+            print(f"Looking up scope: {scope}")
+            symbol = symbol_table.lookup(scope.scope) if symbol_table else None
+            # print(f"Symbol: {symbol}")
         else:
-            for k, v in self.registry.items():
-                if name:
-                    for i in v:
-                        if i.name == name:
-                            return k, i
-                elif type:
-                    for i in v:
-                        if i.type == type:
-                            return k, i
-        return None, None
+            if name:
+                print(f"Looking up name: {name}")
+                symbol = symbol_table.lookup(name) if symbol_table else None
+            # else: not sure how to fetch only using the type of a symbol needs more digging of this use
 
-    @property
-    def module_scope(self) -> SemScope:
-        """Get the module scope."""
-        for i in self.registry.keys():
-            if not i.parent:
-                break
-        return i
+        node = symbol.parent_tab if symbol else None
+        print(f"Node: {node}")
+        sem_info = []
+        if isinstance(node, uni.UniNode):
+            # print(f"Symbol: {symbol}")
+            sem_scope = get_sem_scope(node)
+            # print(f"Symbol: {symbol.get_type()}")
+            # print(f"Symbol List: {node.names_in_scope}")
+            for k, v in node.names_in_scope.items():
+                sem_info.append(
+                    SemInfo(
+                        v.parent_tab,
+                        v.sym_name,
+                        str(v.parent_tab.get_type()), # this should report the expected type of the symbol (int, str ...)
+                        "",
+                    )
+                )
+        else:
+            raise ValueError("Node not found in the registry.")
 
-    def pp(self) -> str:
-        """Pretty print the registry."""
-        ret_str = ""
-        for k, v in self.registry.items():
-            ret_str += f"{k}\n"
-            for i in v:
-                ret_str += f"  {i.name} {i.type} {i.semstr}\n"
-        return ret_str
+        print(f"SemInfo: {sem_info}")
+        print(f"SemScope: {sem_scope}")
+
+        # previous code
+        # if scope:
+        #     for k, v in self.registry.items():
+        #         if str(k) == str(scope):
+        #             if name:
+        #                 for i in v:
+        #                     if i.name == name:
+        #                         return k, i
+        #             elif type:
+        #                 for i in v:
+        #                     if i.type == type:
+        #                         return k, i
+        #             else:
+        #                 return k, v
+        # else:
+        #     for k, v in self.registry.items():
+        #         if name:
+        #             for i in v:
+        #                 if i.name == name:
+        #                     return k, i
+        #         elif type:
+        #             for i in v:
+        #                 if i.type == type:
+        #                     return k, i
+        return sem_scope, sem_info
+
+    # @property
+    # def module_scope(self) -> SemScope:
+    #     """Get the module scope."""
+    #     for i in self.registry.keys():
+    #         if not i.parent:
+    #             break
+    #     return i
+
+    # def pp(self) -> str:
+    #     """Pretty print the registry."""
+    #     ret_str = ""
+    #     for k, v in self.registry.items():
+    #         ret_str += f"{k}\n"
+    #         for i in v:
+    #             ret_str += f"  {i.name} {i.type} {i.semstr}\n"
+    #     return ret_str
+
+def get_sem_scope(node: uni.UniNode) -> SemScope:
+    """Get scope of the node."""
+    a = (
+        node.name
+        if isinstance(node, uni.Module)
+        else (
+            node.name.value
+            if isinstance(node, (uni.Enum, uni.Archetype))
+            else node.name_ref.sym_name if isinstance(node, uni.Ability) else ""
+        )
+    )
+    if isinstance(node, uni.Module):
+        return SemScope(a, "Module", None)
+    elif isinstance(node, (uni.Enum, uni.Archetype, uni.Ability)):
+        node_type = (
+            node.__class__.__name__
+            if isinstance(node, uni.Enum)
+            else ("Ability" if isinstance(node, uni.Ability) else node.arch_type.value)
+        )
+        if node.parent:
+            return SemScope(
+                a,
+                node_type,
+                get_sem_scope(node.parent),
+            )
+    else:
+        if node.parent:
+            return get_sem_scope(node.parent)
+    return SemScope("", "", None)

@@ -1,27 +1,24 @@
 import from mtllm.llms { OpenAI }
 
-glob llm = OpenAI(verbose=True, model_name="gpt-4o-mini");
+glob llm = OpenAI(verbose=False, model_name="gpt-4o-mini");
 
-enum 'Personality of the Person'
-Personality {
-    INTROVERT: 'Person who is shy and reticent' = "Introvert",
-    EXTROVERT: 'Person who is outgoing and socially confident' = "Extrovert"
+enum Personality {
+    INTROVERT = "Introvert",
+    EXTROVERT = "Extrovert"
 }
 
-obj 'Person'
-Person {
-    has full_name: 'Fullname of the Person': str,
-        yod: 'Year of Death': int,
-        personality: 'Personality of the Person': Personality;
+obj Person {
+    has full_name: str,
+        yod: int,
+        personality: Personality;
 }
 
-glob personality_examples: 'Personality Information of Famous People': dict[str, Personality] = {
+glob personality_examples: dict[str, Personality] = {
     'Albert Einstein': Personality.INTROVERT,
     'Barack Obama': Personality.EXTROVERT
 };
 
-can 'Get Person Information use common knowledge'
-get_person_info(name: 'Name of the Person': str) -> 'Person': Person by llm(
+def get_person_info(name: str) -> Person by llm(
     reason=True,
     temperature=0.0,
     incl_info=(personality_examples)

@@ -1149,7 +1149,6 @@ class JacBasics:
 
     @staticmethod
     def with_llm(
-        # self,
         file_loc: str,
         model: Any,  # noqa: ANN401
         model_params: dict[str, Any],
