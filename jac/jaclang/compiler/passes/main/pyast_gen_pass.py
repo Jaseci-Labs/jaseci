@@ -1027,29 +1027,7 @@ class PyastGenPass(UniPass):
         ]
 
     def exit_event_signature(self, node: uni.EventSignature) -> None:
-        arch_parent = node.parent
-        while (
-            isinstance(arch_parent, uni.UniNode)
-            and hasattr(arch_parent, "parent")
-            and getattr(arch_parent, "parent", None) is not None
-            and (arch_parent.parent is not None)
-            and (arch_parent := arch_parent.parent)
-            and (not isinstance(arch_parent, uni.Archetype))
-        ):
-            pass
-        else:
-            if isinstance(arch_parent, uni.Archetype) and (
-                arch_parent.arch_type.name == Tok.KW_WALKER
-            ):
-                arch_kw = Con.HERE.value
-            elif (
-                isinstance(arch_parent, uni.Archetype)
-                and arch_parent.arch_type.name == Tok.KW_NODE
-            ):
-                arch_kw = Con.VISITOR.value
-            else:
-                arch_kw = None
-                self.ice("Abilities are allowed within nodes and walkers")
+        arch_kw = Con.HERE.value if node.from_walker else Con.VISITOR.value
         arch_arg = self.sync(
             ast3.arg(
                 arg=f"{arch_kw}",

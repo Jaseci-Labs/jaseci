@@ -38,6 +38,7 @@ class DefUsePass(UniPass):
                 + node.get_all_sub_nodes(uni.IgnoreStmt)
                 + node.get_all_sub_nodes(uni.DisengageStmt)
                 + node.get_all_sub_nodes(uni.EdgeOpRef)
+                + node.get_all_sub_nodes(uni.EventSignature)
             ):
                 i.from_walker = True
 
