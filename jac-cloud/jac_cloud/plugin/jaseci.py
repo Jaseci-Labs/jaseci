@@ -467,7 +467,7 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
         else:
             raise TypeError("Invalid walker object")
 
-        return Jac.spawn_call(walker=walker, node=node)  # type: ignore[return-value]
+        return Jac.spawn_call(walker=walker, loc=node)  # type: ignore[return-value]
 
     @staticmethod
     @hookimpl
