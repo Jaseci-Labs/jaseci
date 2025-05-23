@@ -1280,3 +1280,14 @@ class JacLanguageTests(TestCase):
         stdout_value = captured_output.getvalue().split("\n")
         self.assertIn("Here value is  10", stdout_value[0])
         self.assertIn("Visitor name is  Walker 1", stdout_value[1])
+
+    def test_here_visitor_error(self) -> None:
+        """Test visitor, here keyword usage in jaclang."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        sys.stderr = captured_output
+        cli.run(self.fixture_abs_path("here_usage_error.jac"))
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
+        stdout_value = captured_output.getvalue()
+        self.assertIn("'here' is not defined", stdout_value)
