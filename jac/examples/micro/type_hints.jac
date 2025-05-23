@@ -12,7 +12,7 @@ obj Bar {
 
     def init() -> None {
 
-        for i in here.b_list {
+        for i in self.b_list {
             foo(5, i) |> print;
         }
     }

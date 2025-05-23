@@ -4,7 +4,7 @@ obj Obj1 {
     has var: int;
 
     def init {
-        here.var = 1;
+        self.var = 1;
     }
 }
 # with entry {  # allowed but discouraged
@@ -15,7 +15,7 @@ obj Obj2 {
     has var: int;
 
     def init {
-        here.var = 2;
+        self.var = 2;
     }
 }
 # with entry {  # allowed but discouraged
@@ -26,7 +26,7 @@ obj Obj3 {
     has var: int;
 
     def init {
-        here.var = 3;
+        self.var = 3;
     }
 }
 # with entry {  # allowed but discouraged
