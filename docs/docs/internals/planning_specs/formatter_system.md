@@ -149,9 +149,8 @@ class Line(Doc):
 
 class Group(Doc):
     """A group that can be printed flat or broken into multiple lines."""
-    def __init__(self, contents, break_contiguous=False, id=None):
+    def __init__(self, contents, id=None):
         self.contents = contents
-        self.break_contiguous = break_contiguous
         self.id = id
 
     def __str__(self):

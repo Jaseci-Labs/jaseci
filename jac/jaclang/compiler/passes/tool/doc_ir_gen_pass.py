@@ -48,7 +48,7 @@ class DocIRGenPass(UniPass):
         break_contiguous: bool = False,
     ) -> doc.Group:
         """Create a Group node."""
-        return doc.Group(contents, break_contiguous)
+        return doc.Group(contents)
 
     def indent(self, contents: doc.DocType) -> doc.Indent:
         """Create an Indent node."""
@@ -219,7 +219,7 @@ class DocIRGenPass(UniPass):
             else:
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())
-        node.gen.doc_ir = self.concat(parts[:-1])
+        node.gen.doc_ir = self.group(self.concat(parts[:-1]))
 
     def exit_if_stmt(self, node: uni.IfStmt) -> None:
         """Generate DocIR for if statements."""
@@ -304,8 +304,7 @@ class DocIRGenPass(UniPass):
         parts: list[doc.DocType] = []
         for i in node.kid:
             parts.append(i.gen.doc_ir)
-            parts.append(self.space())
-        node.gen.doc_ir = self.concat(parts[:-1])
+        node.gen.doc_ir = self.concat(parts)
 
     def exit_dict_val(self, node: uni.DictVal) -> None:
         """Generate DocIR for dictionary values."""

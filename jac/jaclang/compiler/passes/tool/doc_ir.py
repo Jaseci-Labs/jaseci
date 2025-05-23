@@ -77,12 +77,10 @@ class Group(Doc):
     def __init__(
         self,
         contents: DocType,
-        break_contiguous: bool = False,
         id: Optional[str] = None,
     ) -> None:
         """Initialize a Group object."""
         self.contents: DocType = contents
-        self.break_contiguous: bool = break_contiguous
         self.id: Optional[str] = id
 
     def __str__(self) -> str:
@@ -91,9 +89,7 @@ class Group(Doc):
 
     def treeprint(self, level: int = 0) -> str:
         indent = "  " * level
-        header = (
-            f"{indent}Group(id={self.id}, break_contiguous={self.break_contiguous}):"
-        )
+        header = f"{indent}Group(id={self.id}):"
         children_repr: list[str] = [self.contents.treeprint(level + 1)]
         return f"{header}\n" + "\n".join(children_repr)
 
