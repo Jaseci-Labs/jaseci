@@ -300,24 +300,28 @@ class DocIRGenPass(UniPass):
 
     def exit_list_val(self, node: uni.ListVal) -> None:
         """Generate DocIR for list values."""
-        enc_parts: list[doc.DocType] = []
         parts: list[doc.DocType] = []
-        in_enc = False
         for i in node.kid:
-            if isinstance(i, uni.Token) and i.name == Tok.LSQUARE:
-                enc_parts.extend(parts)
-                enc_parts.append(i.gen.doc_ir)
-                parts = []
-                in_enc = True
-            elif isinstance(i, uni.Token) and i.name == Tok.RSQUARE:
-                enc_parts.append(self.indent(self.concat([self.tight_line()] + parts)))
-                enc_parts.append(self.tight_line())
-                enc_parts.append(i.gen.doc_ir)
-                parts = []
-                in_enc = False
-            else:
-                parts.append(i.gen.doc_ir) if in_enc else enc_parts.append(i.gen.doc_ir)
-        node.gen.doc_ir = self.group(self.concat(enc_parts))
+            parts.append(i.gen.doc_ir)
+        node.gen.doc_ir = self.concat(parts)
+        # enc_parts: list[doc.DocType] = []
+        # parts: list[doc.DocType] = []
+        # in_enc = False
+        # for i in node.kid:
+        #     if isinstance(i, uni.Token) and i.name == Tok.LSQUARE:
+        #         enc_parts.extend(parts)
+        #         enc_parts.append(i.gen.doc_ir)
+        #         parts = []
+        #         in_enc = True
+        #     elif isinstance(i, uni.Token) and i.name == Tok.RSQUARE:
+        #         enc_parts.append(self.indent(self.concat([self.tight_line()] + parts)))
+        #         enc_parts.append(self.tight_line())
+        #         enc_parts.append(i.gen.doc_ir)
+        #         parts = []
+        #         in_enc = False
+        #     else:
+        #         parts.append(i.gen.doc_ir) if in_enc else enc_parts.append(i.gen.doc_ir)
+        # node.gen.doc_ir = self.group(self.concat(enc_parts))
 
     def exit_dict_val(self, node: uni.DictVal) -> None:
         """Generate DocIR for dictionary values."""
@@ -900,7 +904,14 @@ class DocIRGenPass(UniPass):
                 parts.append(self.space() if not codeblock_style else self.hard_line())
         enc_parts.pop() if enc_parts else parts.pop()
         node.gen.doc_ir = self.group(
-            self.concat(enc_parts) if enc_parts else self.concat(parts)
+            self.concat(enc_parts)
+            if enc_parts
+            else self.concat(
+                [
+                    self.indent(self.concat([self.tight_line(), *parts])),
+                    self.tight_line(),
+                ]
+            )
         )
 
     def exit_impl_def(self, node: uni.ImplDef) -> None:
