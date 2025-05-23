@@ -1,4 +1,4 @@
-site_name: The Jac Programming Language and Jaseci Runtime Stack
+site_name: The Jac Programming Language and Jaseci Stack
 site_url: https://jac-lang.org
 use_directory_urls: true
 nav:

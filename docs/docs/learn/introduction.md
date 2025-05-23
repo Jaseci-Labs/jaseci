@@ -1,6 +1,7 @@
 <h1 style="color: orange; font-weight: bold; text-align: center;">Tour to Jac</h1>
 
-# All of Python Plus More Phylosophy
+## Python Superset Phylosophy: All of Python Plus More
+
 Jac is a drop-in replacement for Python and supersets Python, much like Typescript supersets Javascript or C++ supersets C. It extends Python's semantics while maintaining full interoperability with the Python ecosystem, introducing cutting-edge abstractions designed to minimize complexity and embrace AI-forward development.
 
 ```jac
@@ -15,7 +16,8 @@ with entry {
 This snippet runs identically to its Python counterpart, illustrating Jac's compatibility.
 
 
-# Beyond OOP with Data Spatial Programming
+## Beyond OOP with Data Spatial Programming
+
 Data Spatial Programming (DSP) inverts the traditional relationship between data and computation. Rather than moving data to computation, DSP moves computation to data through topologically aware constructs. This paradigm introduces specialized archetypes—objects, nodes, edges and walkers—that model spatial relationships directly in the language and enable optimizations around data locality and distributed execution.
 
 ```jac
@@ -38,7 +40,8 @@ with entry {
 A walker moves between nodes using edges, demonstrating Data Spatial Programming.
 
 
-# Programming Abstractions for AI
+## Programming Abstractions for AI
+
 Jac provides novel constructs for integrating LLMs into code. A function body can simply be replaced with a call to an LLM, removing the need for prompt engineering or extensive new libraries.
 
 ```jac
@@ -51,7 +54,8 @@ with entry {
 `by llm()` delegates execution to an LLM without any extra library code.
 
 
-# Zero to Infinite Scale with no Code Changes
+## Zero to Infinite Scale with no Code Changes
+
 Jac's cloud-native abstractions make persistence and user concepts part of the language so that simple programs can run unchanged locally or in the cloud【F:docs/docs/index.md†L44-L48】. Deployments can be scaled by increasing replicas of the `jac-cloud` service when needed.
 
 ```jac
@@ -64,7 +68,8 @@ walker ping {
 Deployed with `jac-cloud`, this walker becomes a scalable REST endpoint.
 
 
-# Better Organized and Well Typed Codebases
+## Better Organized and Well Typed Codebases
+
 Jac focuses on type safety and readability. Type hints are required and the built-in typing system eliminates boilerplate imports. Code structure can be split across multiple files, allowing definitions and implementations to be organized separately while still being checked by Jac's native type system.
 
 ```jac
