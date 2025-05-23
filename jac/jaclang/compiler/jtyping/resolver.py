@@ -271,8 +271,18 @@ class JTypeResolver:
         Returns:
             JType: The resolved type of the special variable.
         """
-        if node.sym_name == "here":
-            archetype_node = node.parent_of_type(ast.Archetype)
+        if node.sym_name in ["here", "self"]:
+            archetype_node = node.find_parent_of_type(ast.Archetype)
+            if archetype_node is None:
+                impl_decl = node.find_parent_of_type(ast.ImplDef)
+                if impl_decl:
+                    if impl_decl.decl_link:
+                        if isinstance(impl_decl.decl_link, ast.Archetype):
+                            archetype_node = impl_decl.decl_link
+                        else:
+                            archetype_node =  impl_decl.decl_link.find_parent_of_type(ast.Archetype)
+            if not archetype_node:
+                return jtype.JAnyType()
             if archetype_node.sym:
                 return archetype_node.sym.jtype
         return self._get_name_expr_type(node)

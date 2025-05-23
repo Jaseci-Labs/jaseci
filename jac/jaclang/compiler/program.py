@@ -143,7 +143,7 @@ class JacProgram:
             self.schedule_runner(mod_targ, mode=mode)
             return mod_targ
         JacImportDepsPass(ir_in=mod_targ, prog=self)
-        if len(self.errors_had):
+        if len(self.errors_had) and not mode == CompilerMode.TYPECHECK:
             return mod_targ
         SymTabLinkPass(ir_in=mod_targ, prog=self)
         for mod in self.mod.hub.values():
