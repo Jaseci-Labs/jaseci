@@ -1,5 +1,3 @@
-
-
 node LLM{
 
     can infer with AgentNode entry{
@@ -9,15 +7,13 @@ node LLM{
     def testing_infer {
         return "LLM's response";
     }
-
 }
 
 
-obj AgentNode{
+walker Agent{
     has describ :str = "AgentNode";
 
     can connect with LLM entry{
         return "AgentNode's response";
-
     }
 }

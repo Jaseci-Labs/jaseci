@@ -5,12 +5,12 @@ obj rson {
         name: str;
 
     def init(name: str, age: int) -> None {
-        here.name = name;
-        here.age = age;
+        self.name = name;
+        self.age = age;
     }
 
     def greet() -> None {
-        print("Hello, my name is ", here.name, " and I'm ", here.age, " years old.");
+        print("Hello, my name is ", self.name, " and I'm ", self.age, " years old.");
     }
 }
 

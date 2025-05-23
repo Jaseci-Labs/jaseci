@@ -8,9 +8,9 @@ obj MyObj {
 }
 
 impl MyObj.init {
-    here.a = a;
+    self.a = a;
 }
 
 impl MyObj.set_a {
-    here.a = val;
+    self.a = val;
 }
