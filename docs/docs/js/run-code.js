@@ -64,6 +64,10 @@ function setupCodeBlock(div) {
                 handleMouseWheel: false,
             },
             automaticLayout: true,
+            padding: {
+                top: 10,
+                bottom: 10
+            }
         });
 
         function updateEditorHeight() {
@@ -98,7 +102,6 @@ function setupCodeBlock(div) {
     });
 }
 
-
 // Observe and apply when .code-blocks are added
 const observer = new MutationObserver(() => {
     document.querySelectorAll('.code-block').forEach(setupCodeBlock);
@@ -109,10 +112,8 @@ observer.observe(document.body, {
     subtree: true
 });
 
-// Initial loading
 document.querySelectorAll('.code-block').forEach(setupCodeBlock);
 
-// Loading Pyodide worker
 document.addEventListener("DOMContentLoaded", () => {
     initPyodideWorker();
 });
