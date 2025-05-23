@@ -51,6 +51,12 @@ class JacFormatPassTests(TestCaseMicroSuite):
             os.path.join(self.fixture_abs_path(""), "simple_walk_fmt.jac"),
         )
 
+    def test_listval_split(self) -> None:
+        """Tests if the file matches a particular format."""
+        self.compare_files(
+            os.path.join(self.fixture_abs_path(""), "listval_split.jac"),
+        )
+
     # def test_corelib_fmt(self) -> None:
     #     """Tests if the file matches a particular format."""
     #     self.compare_files(

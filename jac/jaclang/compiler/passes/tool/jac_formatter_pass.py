@@ -131,18 +131,17 @@ class JacFormatPass(Transform[uni.Module, uni.Module]):
             else:
                 # Normal mode with budget tracking
                 result = ""
-                current_line_budget = width_remaining
 
                 for part in doc_node.parts:
                     part_str = self.format_doc_ir(
-                        part, indent_level, current_line_budget, is_broken, force_flat
+                        part, indent_level, width_remaining, is_broken, force_flat
                     )
                     result += part_str
 
                     if "\n" in part_str:
                         # part_str created a newline. The next part starts on a new line.
                         # Its budget is the full width available at this indent level.
-                        current_line_budget = self.MAX_LINE_LENGTH - (
+                        width_remaining = self.MAX_LINE_LENGTH - (
                             indent_level * self.indent_size
                         )
                         # Subtract what the *last line* of part_str consumed from this budget.
@@ -158,13 +157,13 @@ class JacFormatPass(Transform[uni.Module, uni.Module]):
                         else:  # It was a line not starting with the full indent (e.g. literal \n)
                             content_on_last_line = len(last_line_of_part)
 
-                        current_line_budget -= content_on_last_line
+                        width_remaining -= content_on_last_line
                     else:
                         # part_str stayed on the same line. Reduce budget for next part on this line.
-                        current_line_budget -= len(part_str)
+                        width_remaining -= len(part_str)
 
-                    if current_line_budget < 0:  # Ensure budget isn't negative
-                        current_line_budget = 0
+                    if width_remaining < 0:  # Ensure budget isn't negative
+                        width_remaining = 0
                 return result
 
         elif isinstance(doc_node, doc.IfBreak):
