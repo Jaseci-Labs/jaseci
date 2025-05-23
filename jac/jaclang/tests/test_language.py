@@ -1290,3 +1290,15 @@ class JacLanguageTests(TestCase):
         sys.stderr = sys.__stderr__
         stdout_value = captured_output.getvalue()
         self.assertIn("'here' is not defined", stdout_value)
+
+    def test_edge_ability(self) -> None:
+        """Test visitor, here keyword usage in jaclang."""
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        cli.run(self.fixture_abs_path("edge_ability.jac"))
+        sys.stdout = sys.__stdout__
+        stdout_value = captured_output.getvalue().split("\n")
+        self.assertIn("MyEdge from walker MyEdge(path=1)", stdout_value[0])
+        self.assertIn("MyWalker from edge MyWalker()", stdout_value[1])
+        self.assertIn("MyWalker from node MyWalker()", stdout_value[6])
+        self.assertIn("MyEdge from walker MyEdge(path=2)", stdout_value[16])
