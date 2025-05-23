@@ -383,12 +383,12 @@ class JacWalker:
     @staticmethod
     def spawn_call(
         walker: WalkerAnchor,
-        loc: NodeAnchor | EdgeAnchor,
+        node: NodeAnchor | EdgeAnchor,
     ) -> WalkerArchetype:
         """Jac's spawn operator feature."""
         warch = walker.archetype
         walker.path = []
-        current_loc = loc.archetype
+        current_loc = node.archetype
 
         # walker ability on any entry
         for i in warch._jac_entry_funcs_:
@@ -514,7 +514,7 @@ class JacWalker:
                 _event_loop.run_in_executor(None, func), loop=_event_loop
             )
         else:
-            return JacMachineInterface.spawn_call(walker=walker, loc=loc)
+            return JacMachineInterface.spawn_call(walker=walker, node=loc)
 
     @staticmethod
     def disengage(walker: WalkerArchetype) -> bool:
