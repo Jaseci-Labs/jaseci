@@ -1,5 +1,5 @@
-import from library.tools { tool_func }
-import from library.sub.helper { help_func }
+import from library { tool_func }
+import from library.sub { help_func }
 
 with entry {
     print('Main Execution:\n') ;

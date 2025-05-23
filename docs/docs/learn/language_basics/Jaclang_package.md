@@ -31,6 +31,7 @@ This file initializes the `library` package, exposing the `tool_func` function a
 
 ```Jac linenums="1"
 import from .tools { tool_func }
+import from ..library { sub }
 ```
 
 3.library/tools.jac
@@ -85,9 +86,8 @@ Relative imports use dots `(. or ..)` to indicate location relative to the curre
 
 - **Single dot (.)** - Current directory/module (`import from .tools {tool_func}`)
 - **Double dot (..)** - parent directory (`import from ..library {sub}`)
-- **Package.mod** - Absolute import path from the root of the project (`import from library.sub { help_func }`)
 
-## How __init__.jac works in Jaclang
+## How `__init__.jac` works in Jaclang
 
 In Jaclang, the `__init__.jac` file plays a crucial role by defining the public interface of a package. It determines which parts of the package are exposed and accessible when the package is imported, helping manage and organize code effectively within modular structures.
 
@@ -95,7 +95,11 @@ In Jaclang, the `__init__.jac` file plays a crucial role by defining the public 
 
 The `__init__.jac` file marks a directory as a Jac package and defines what is exposed when importing it. When Jaclang finds a folder with an `__init__.jac` file, it treats that folder as a package, allowing it to be used for imports rather than just a regular directory. Without this file, Jac won’t recognize the folder as a package properly, which can cause import issues and limit modular code organization.
 
-![Diagram](init.png)
+```
+library/
+├── __init__.jac      # Makes 'lib' an importable Jac package
+├── tools.jac
+```
 
 2.Allows Selective Exports of functionality
 
@@ -113,12 +117,44 @@ In this abstraction helps to:
 
 3.Enables Grouping and Organizing of Modules
 
-We can structure projects into meaningful subdirectories and use `__init__.jac` files at different levels to expose only what you need.
+We can structure projects into meaningful subdirectories and use `__init__.jac` files at different levels to expose only the necessary components.
 
-```Jac linenums="1"
-import from .tools { tool_func }
-import from .sub.helper { help_func }  # Explicitly import from submodule helper.jac
+```
+library/
+├── __init__.jac      # Can import from tools.jac and sub/__init__.jac
+├── tools.jac
+└── sub/
+    ├── __init__.jac  # Can import from helper.jac
+    └── helper.jac
 ```
 
-- `library/__init__.jac` can import from `tools.jac` and `sub/__init__.jac`
-- `sub/__init__.jac` can import from `helper.jac`
+4. Makes Submodules Accessible During Imports
+
+`__init__.jac` is also useful for **exposing sub-packages** or allowing **nested modules to be accessed via top-level imports.**
+
+`library/__init__.jac`
+```Jac linenums="1"
+import from .tools { tool_func }
+import from .sub.helper { help_func }  // re-export from subpackage
+```
+
+Now in main.jac, we can write:
+
+```Jac linenums="1"
+import from library { tool_func, help_func }
+
+with entry {
+    print('Main Execution:\n') ;
+    print('Calling from tools.jac...') ;
+    print('Tool says:', tool_func()) ;
+    print('\nCalling from helper.jac...') ;
+    print('Helper says:', help_func()) ;
+}
+```
+
+Without the re-export in `library/__init__.jac`, we would need more specific imports.
+
+```Jac linenums="1"
+import from library.tools { tool_func }
+import from library.sub.helper { help_func }
+```
