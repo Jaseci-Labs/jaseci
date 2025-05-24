@@ -1,4 +1,3 @@
-### Data Spatial Spawn Expressions
 Data spatial spawn expressions in Jac implement the fundamental mechanism for activating walkers within the topological structure, transitioning them from inactive objects to active participants in the distributed computational system. This operation embodies the initialization phase of the "computation moving to data" paradigm that characterizes Data Spatial Programming.
 
 **Theoretical Foundation**

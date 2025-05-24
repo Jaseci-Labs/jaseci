@@ -1,5 +1,3 @@
-### Control Statements
-
 Control statements provide essential flow control mechanisms for managing program execution within loops and conditional structures. These statements enable precise control over iteration and branching, complementing Jac's data spatial features with traditional imperative programming constructs.
 
 #### Basic Control Operations

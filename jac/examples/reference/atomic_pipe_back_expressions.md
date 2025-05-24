@@ -1,4 +1,3 @@
-### Atomic Pipe Back Expressions
 Atomic pipe back expressions in Jac provide an alternative directional flow for data processing using the `<:` operator. This feature complements the pipe forward operator (`:>`) by enabling right-to-left data flow, offering flexibility in expression composition and readability.
 
 **Atomic Pipe Back Syntax**

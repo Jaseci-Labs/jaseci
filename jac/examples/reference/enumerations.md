@@ -1,5 +1,3 @@
-### Enumerations
-
 Jac provides native enumeration support through the `enum` construct, offering ordered sets of named constants with integrated access control and implementation capabilities. Enumerations behave similarly to Python's `enum.Enum` while supporting Jac's archetype system and data spatial programming features.
 
 #### Basic Enumeration Declaration

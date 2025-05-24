@@ -1,4 +1,3 @@
-### Lambda Expressions
 Lambda expressions in Jac provide a concise way to create anonymous functions for functional programming patterns. These expressions enable the creation of small, single-expression functions without the overhead of formal function definitions, supporting Jac's functional programming capabilities while maintaining type safety through required parameter annotations.
 
 **Basic Lambda Syntax**

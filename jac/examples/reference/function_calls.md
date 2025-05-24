@@ -1,4 +1,3 @@
-### Function Calls
 Function calls in Jac provide the fundamental mechanism for invoking defined functions and methods, supporting both traditional positional arguments and named keyword arguments. The function call system integrates seamlessly with Jac's type system and expression evaluation, enabling flexible and expressive function invocation patterns.
 
 **Basic Function Call Syntax**

@@ -1,4 +1,3 @@
-### Check Statements
 Check statements in Jac provide a built-in testing mechanism that integrates directly into the language syntax. They are primarily used within test blocks to verify that specific conditions hold true, forming the foundation of Jac's integrated testing framework.
 
 **Basic Syntax**

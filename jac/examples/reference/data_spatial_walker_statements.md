@@ -1,5 +1,3 @@
-### Data Spatial Walker Statements
-
 Walker statements control the movement and lifecycle of computational entities within topological structures. These statements implement the core data spatial paradigm where computation moves to data through controlled traversal of nodes and edges.
 
 #### Visit Statement

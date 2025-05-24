@@ -1,5 +1,3 @@
-### Pipe Back Expressions
-
 Pipe back expressions provide the reverse flow of pipe forward expressions, passing the result of the right expression as the last argument to the left expression. This operator enables different composition patterns that can be more natural for certain operations.
 
 #### Backward Pipe Operator (`<|`)

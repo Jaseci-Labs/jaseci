@@ -1,5 +1,3 @@
-### Import and Include Statements
-
 Jac provides flexible module importing capabilities that extend Python's import system with additional convenience features and compile-time source inclusion. The language supports three distinct import mechanisms for different use cases.
 
 #### Standard Import

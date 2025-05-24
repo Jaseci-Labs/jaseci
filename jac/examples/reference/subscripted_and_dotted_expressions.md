@@ -1,5 +1,3 @@
-### Subscripted and Dotted Expressions
-
 Jac provides comprehensive data access mechanisms through attribute access and subscript operations that extend Python's familiar syntax with additional conveniences for pipe operations and null-safe access patterns.
 
 #### Attribute Access

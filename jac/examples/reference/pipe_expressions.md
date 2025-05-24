@@ -1,5 +1,3 @@
-### Pipe Expressions
-
 Pipe expressions enable functional-style data transformation through left-to-right value flow, eliminating deeply nested function calls and creating readable transformation chains. This feature is particularly powerful in data spatial contexts where computation flows through topological structures.
 
 #### Forward Pipe Operator (`|>`)

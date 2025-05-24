@@ -1,4 +1,3 @@
-### Atomic Expressions
 Atomic expressions in Jac represent the most fundamental and indivisible units of expression evaluation. They serve as building blocks for more complex expressions and include literals, identifiers, and other primary expression forms.
 
 **Atomic Pipe Forward Expressions**

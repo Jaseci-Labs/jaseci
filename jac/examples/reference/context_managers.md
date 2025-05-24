@@ -1,5 +1,3 @@
-### Context Managers
-
 Context managers in Jac provide automatic resource management through `with` statements, ensuring proper acquisition and release of resources. This feature supports the context management protocol for clean handling of files, connections, locks, and other resources.
 
 #### Syntax

@@ -1,4 +1,3 @@
-### Base Module Structure
 In Jac, a module is analogous to a Python module, serving as a container for various elements such as functions, classes (referred to as "archetypes" later in this document), global variables, and other constructs that facilitate code organization and reusability. Each module begins with an optional module-level docstring, which provides a high-level overview of the module's purpose and functionality. This docstring, if present, is positioned at the very start of the module, before any other elements.
 
 ???+ Note "Docstrings"

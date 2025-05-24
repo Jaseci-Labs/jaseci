@@ -1,5 +1,3 @@
-### Names and References
-
 Jac employs a familiar identifier system similar to Python and C-style languages while introducing specialized references essential for data spatial programming. The naming system supports both traditional programming patterns and the unique requirements of computation moving through topological structures.
 
 #### Standard Identifiers

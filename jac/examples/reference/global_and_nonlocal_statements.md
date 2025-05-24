@@ -1,5 +1,3 @@
-### Global and Nonlocal Statements
-
 Global and nonlocal statements in Jac provide mechanisms for accessing and modifying variables from outer scopes. These statements enable controlled access to variables defined outside the current function or ability scope.
 
 #### Global Statement

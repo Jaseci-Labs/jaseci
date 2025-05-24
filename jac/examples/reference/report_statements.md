@@ -1,5 +1,3 @@
-### Report Statements
-
 Report statements provide a mechanism for walkers to communicate results back to their spawning context. This feature is essential for extracting information from graph traversals and data spatial computations.
 
 #### Syntax

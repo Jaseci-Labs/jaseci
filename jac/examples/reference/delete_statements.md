@@ -1,5 +1,3 @@
-### Delete Statements
-
 Delete statements in Jac remove objects, nodes, edges, or properties from memory and graph structures. The `del` keyword provides a unified interface for deletion operations across different contexts.
 
 #### Syntax

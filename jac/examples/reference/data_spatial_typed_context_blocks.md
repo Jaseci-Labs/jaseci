@@ -1,5 +1,3 @@
-### Data Spatial Typed Context Blocks
-
 Typed context blocks establish type-annotated scopes that provide compile-time type safety and runtime type assertions within data spatial operations. These blocks enhance the reliability of graph traversal and data processing by ensuring type consistency across topological boundaries.
 
 #### Syntax and Structure
