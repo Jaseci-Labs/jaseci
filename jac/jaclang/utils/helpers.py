@@ -99,14 +99,14 @@ def auto_generate_refs() -> str:
         heading = heading.strip()
         heading_snakecase = heading_to_snake(heading)
         content = (
-            f'## {heading}\n**Code Example**\n=== "Jac"\n'
-            '    ```jac linenums="1"\n'
-            f'    --8<-- "jac/examples/reference/{heading_snakecase}.jac"\n'
-            f'    ```\n=== "Python"\n'
-            '    ```python linenums="1"\n'
-            '    --8<-- "jac/examples/reference/'
-            f'{heading_snakecase}.py"\n    ```\n'
-            f'??? example "Jac Grammar Snippet"\n    ```yaml linenums="{lines[0]}"\n    --8<-- '
+            f'## {heading}\n**Code Example**\n??? example "Runnable Example in Jac and JacLib"\n'
+            '    === "Jac"\n        ```jac linenums="1"\n'
+            f'        --8<-- "jac/examples/reference/{heading_snakecase}.jac"\n'
+            f'        ```\n    === "Python"\n'
+            '        ```python linenums="1"\n'
+            '        --8<-- "jac/examples/reference/'
+            f'{heading_snakecase}.py"\n        ```\n'
+            f'??? info "Jac Grammar Snippet"\n    ```yaml linenums="{lines[0]}"\n    --8<-- '
             f'"jac/jaclang/compiler/jac.lark:{lines[0]}:{lines[1]}"\n    ```\n'
             "**Description**\n\n--8<-- "
             f'"jac/examples/reference/'
