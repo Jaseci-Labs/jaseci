@@ -177,6 +177,8 @@ extra_javascript:
   - https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.js
   - https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/editor/editor.main.min.js
   - js/run-code.js
+  - https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js
+  - js/mermaid-init.js
 
 plugins:
   - search
