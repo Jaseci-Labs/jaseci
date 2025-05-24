@@ -8,7 +8,7 @@ Jac is a drop-in replacement for Python and supersets Python, much like Typescri
 import math;
 import from random { uniform }
 
-def calculate_distance(x1: float, y1: float, x2: float, y2: float) -> float {
+def calc_distance(x1: float, y1: float, x2: float, y2: float) -> float {
     return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
 }
 
@@ -17,7 +17,7 @@ with entry {
     (x1, y1) = (uniform(0, 10), uniform(0, 10));
     (x2, y2) = (uniform(0, 10), uniform(0, 10));
 
-    distance = calculate_distance(x1, y1, x2, y2);
+    distance = calc_distance(x1, y1, x2, y2);
     area = math.pi * (distance / 2) ** 2;
 
     print(f"Distance: {distance:.2f}, Circle area: {area:.2f}");
@@ -31,23 +31,29 @@ This snippet natively imports python packages `math` and `random` and runs ident
 Data Spatial Programming (DSP) inverts the traditional relationship between data and computation. Rather than moving data to computation, DSP moves computation to data through topologically aware constructs. This paradigm introduces specialized archetypes—objects, nodes, edges and walkers—that model spatial relationships directly in the language and enable optimizations around data locality and distributed execution.
 
 ```jac
-node Place { has name: str; }
+node GameStage { has name: str, frame_time: float = 0.0; }
 
-walker tour {
-    can at Place entry {
-        print("Visiting " + here.name);
-        visit [-->];
+walker RenderWalk {
+    has fps: int = 60;
+
+    can process with GameStage entry {
+        print(f"Processing {here.name} stage");
+        here.frame_time = 1000.0 / self.fps;  # ms per frame
+        visit [-->];  # Move to next stage
     }
 }
 
 with entry {
-    start = Place(name="Home");
-    end = Place(name="Work");
-    start ++> end;
-    tour() spawn start;
+    input_stage = GameStage(name="Input");
+
+    # Create render loop cycle
+    input_stage ++> GameStage(name="Update") ++> GameStage(name="Render") ++>
+        GameStage(name="Present") ++> input_stage;
+
+    RenderWalk() spawn input_stage;
 }
 ```
-A walker moves between nodes using edges, demonstrating Data Spatial Programming.
+A walker cycles through game stages using edges, demonstrating Data Spatial Programming for game loops.
 
 
 ## Programming Abstractions for AI
