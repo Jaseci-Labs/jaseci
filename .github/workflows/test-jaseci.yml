@@ -59,4 +59,4 @@ jobs:
         pip uninstall jac-splice-orc -y
         pip install numpy
         pip install scikit-learn
-        jac test jac/examples/littleX/littleX.jac
+        jac test jac/examples/littleX/littleX.test.jac
