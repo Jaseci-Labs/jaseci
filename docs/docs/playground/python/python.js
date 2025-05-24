@@ -236,7 +236,7 @@ async function startExecution(safeCode) {
   // Run the main script
   logMessage("Execution started.");
   await pyodide.runPythonAsync(
-    await readFileAsString("/python/main.py")
+    await readFileAsString("/python/main_playground.py")
   );
   logMessage("Execution finished.");
   dbg = null;
