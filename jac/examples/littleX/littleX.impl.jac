@@ -35,6 +35,7 @@ impl Tweet.update {
 
 impl Tweet.delete {
         del self;
+        disengage;
     }
 
 impl Tweet.like_tweet {
@@ -52,7 +53,7 @@ impl Tweet.remove_like {
 
 impl Tweet.comment {
         current_profile = [root-->(`?Profile)];
-        comment_node = current_profile[0] ++> Comment(content=visitor.content);
+        comment_node = current_profile[0] +>:Post():+> Comment(content=visitor.content);
         _.perm_grant(comment_node[0], level="CONNECT");
         self ++> comment_node[0];
         report comment_node[0];
@@ -82,6 +83,7 @@ impl Comment.update {
 
 impl Comment.delete {
         del self;
+        disengage;
     }
 
 impl visit_profile.visit_profile {
@@ -108,14 +110,15 @@ impl load_user_profiles.report_profiles {
 }
 
 impl create_tweet.tweet {
-        embedding = vectorizer.fit_transform([self.content]);
-        tweet_node = here +>:Post:+> Tweet(content=self.content, embedding=embedding);
+        embedding = vectorizer.fit_transform([self.content]).toarray().tolist();
+        tweet_node = here +>:Post():+> Tweet(content=self.content, embedding=embedding);
         _.perm_grant(tweet_node[0], level="CONNECT");
         report tweet_node;
     }
 
 impl load_feed.load {
-        visit [-->(`?Tweet)];
+        visit [->:Post:->];
+        ignore [--> (`?Comment)];
         for user_node in [->:Follow:->(`?Profile)] {
             visit [user_node-->(`?Tweet)];
         }
