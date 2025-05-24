@@ -1,299 +1,283 @@
-If statements in Jac provide conditional execution control, allowing programs to make decisions based on boolean expressions. The if statement syntax supports the familiar if-elif-else pattern with code blocks, enabling complex conditional logic with clear, readable structure.
+### If Statements
 
-**Basic If Statement Syntax**
+If statements provide conditional execution control, enabling programs to make decisions based on boolean expressions. Jac's if statement syntax supports the familiar if-elif-else pattern with mandatory code blocks, ensuring clear and safe conditional logic.
 
-If statements follow this pattern from the grammar:
+#### Basic Conditional Syntax
+
+If statements follow a structured pattern with required code blocks:
+
 ```jac
 if condition {
-    // code block
+    # code block executed when condition is true
 }
 ```
 
-**Complete If-Elif-Else Structure**
+The condition must evaluate to a boolean value, and the code block is enclosed in mandatory curly braces for clarity and consistency.
 
-The full conditional structure supports multiple branches:
+#### Complete Conditional Structure
+
+The full conditional structure supports multiple decision branches:
+
 ```jac
-if condition1 {
-    // first condition block
-} elif condition2 {
-    // second condition block  
+if primary_condition {
+    # executed when primary condition is true
+} elif secondary_condition {
+    # executed when secondary condition is true
 } else {
-    // default block
+    # executed when no conditions are true
 }
 ```
 
-**Example Implementation**
+#### Chained Comparison Operations
 
-The provided example demonstrates a range-based conditional structure:
+Jac supports elegant chained comparisons for range checking and multiple relationships:
+
 ```jac
-x = 15;
-if 0 <= x <= 5 {
-    print("Not Bad");
-} elif 6 <= x <= 10 {
-    print("Average");
+score = 85;
+if 0 <= score <= 59 {
+    grade = "F";
+} elif 60 <= score <= 69 {
+    grade = "D";
+} elif 70 <= score <= 79 {
+    grade = "C";
+} elif 80 <= score <= 89 {
+    grade = "B";
 } else {
-    print("Good Enough");
-}
-```
-
-**Key features demonstrated:**
-- **Variable-based conditions**: Using variable `x` in conditional expressions
-- **Chained comparisons**: `0 <= x <= 5` syntax for range checking
-- **Sequential evaluation**: Conditions checked in order until one matches
-- **Default handling**: `else` block executes when no previous conditions match
-
-**Chained Comparison Operators**
-
-Jac supports chained comparison operations, allowing elegant range checking:
-
-**Range Checking**
-```jac
-if 0 <= value <= 100 {
-    // value is in range [0, 100]
-}
-```
-
-**Multiple Comparisons**
-```jac
-if a < b <= c < d {
-    // Multiple relationships in single expression
-}
-```
-
-**Supported Comparison Operators**
-- **Equality**: `==`, `!=`
-- **Ordering**: `<`, `<=`, `>`, `>=`
-- **Identity**: `is`, `is not`
-- **Membership**: `in`, `not in`
-
-**Boolean Logic Integration**
-
-If statements work with complex boolean expressions:
-
-**Logical Operators**
-```jac
-if condition1 and condition2 {
-    // Both conditions must be true
-}
-
-if condition1 or condition2 {
-    // Either condition can be true
-}
-
-if not condition {
-    // Condition must be false
-}
-```
-
-**Mixed Expressions**
-```jac
-if (x > 0 and x < 100) or x == -1 {
-    // Complex logical combinations
-}
-```
-
-**Code Block Structure**
-
-If statements require code blocks enclosed in curly braces:
-
-**Single Statement Blocks**
-```jac
-if condition {
-    single_statement();
-}
-```
-
-**Multi-Statement Blocks**
-```jac
-if condition {
-    first_statement();
-    second_statement();
-    result = calculation();
-}
-```
-
-**Nested Blocks**
-```jac
-if outer_condition {
-    if inner_condition {
-        nested_logic();
-    }
-    outer_logic();
-}
-```
-
-**Elif Chain Behavior**
-
-Elif statements provide efficient multi-way branching:
-
-**Sequential Evaluation**
-```jac
-if score >= 90 {
     grade = "A";
-} elif score >= 80 {
-    grade = "B";  // Only checked if score < 90
-} elif score >= 70 {
-    grade = "C";  // Only checked if score < 80
+}
+```
+
+Chained comparisons provide natural mathematical notation that improves readability and reduces the need for complex boolean expressions.
+
+#### Boolean Logic Integration
+
+If statements work with complex boolean expressions using logical operators:
+
+```jac
+# Logical AND
+if user.is_authenticated and user.has_permission("read") {
+    display_content();
+}
+
+# Logical OR
+if is_admin or is_moderator {
+    access_admin_panel();
+}
+
+# Logical NOT
+if not is_maintenance_mode {
+    process_requests();
+}
+
+# Complex combinations
+if (user.age >= 18 and user.verified) or user.has_guardian_consent {
+    allow_registration();
+}
+```
+
+#### Sequential Evaluation Behavior
+
+Elif statements provide efficient multi-way branching with sequential evaluation:
+
+```jac
+temperature = 75;
+if temperature < 32 {
+    status = "freezing";
+} elif temperature < 50 {
+    status = "cold";        # Only checked if temperature >= 32
+} elif temperature < 80 {
+    status = "comfortable"; # Only checked if temperature >= 50
 } else {
-    grade = "F";  // Only if all conditions fail
+    status = "hot";         # Only if temperature >= 80
 }
 ```
 
-**Early Termination**
-- Once a condition matches, remaining elif/else blocks are skipped
-- Ensures exactly one block executes
-- Optimizes performance by avoiding unnecessary condition checks
+Once a condition matches, remaining elif and else blocks are skipped, ensuring exactly one block executes and optimizing performance.
 
-**Expression Types in Conditions**
+#### Data Spatial Integration
 
-If statements accept various expression types:
+If statements integrate seamlessly with data spatial programming constructs:
 
-**Boolean Expressions**
 ```jac
-if is_valid and is_ready {
-    proceed();
-}
-```
-
-**Function Calls**
-```jac
-if validate_input(data) {
-    process(data);
-}
-```
-
-**Variable References**
-```jac
-if enabled {
-    activate_feature();
-}
-```
-
-**Complex Expressions**
-```jac
-if user.age >= minimum_age and user.has_permission("access") {
-    grant_access();
-}
-```
-
-**Integration with Data Spatial Features**
-
-If statements work within data spatial contexts:
-
-**Walker Abilities**
-```jac
-walker Processor {
-    can process with `node entry {
-        if here.is_processable {
-            here.process();
+walker PathValidator {
+    can validate_path with entry {
+        if here.is_accessible {
+            # Continue traversal
             visit [-->];
+        } elif here.has_alternate_route {
+            # Try alternate path
+            visit here.alternate_nodes;
         } else {
+            # No valid path found
+            report "Path blocked at node";
             disengage;
         }
     }
 }
-```
 
-**Node Abilities**
-```jac
-node DataNode {
-    can respond with Walker entry {
-        if visitor.permission_level >= self.required_level {
-            self.provide_data(visitor);
+node SecurityNode {
+    has access_level: int;
+    
+    can check_access with visitor entry {
+        if visitor.security_clearance >= self.access_level {
+            visitor.grant_access();
+        } else {
+            visitor.deny_access();
+            # Prevent further traversal
         }
     }
 }
 ```
 
-**Conditional Traversal**
+#### Type-Safe Conditional Operations
+
+Jac's type system ensures conditional safety through compile-time checking:
+
 ```jac
-if neighbor.is_accessible {
-    visit neighbor;
-} elif backup_path.exists {
-    visit backup_path;
-} else {
-    disengage;
+# Type checking with isinstance
+if isinstance(data, dict) {
+    process_dictionary(data);
+} elif isinstance(data, list) {
+    process_list(data);
+}
+
+# Null safety patterns
+if user_input is not None {
+    validated_input = validate(user_input);
+    if validated_input.is_valid {
+        process_input(validated_input);
+    }
 }
 ```
 
-**Type-Safe Conditionals**
+#### Nested Conditional Patterns
 
-Jac's type system ensures conditional safety:
+If statements support nesting for complex decision trees:
 
-**Type Checking**
 ```jac
-if isinstance(obj, SpecificType) {
-    obj.specific_method();  // Type-safe access
+walker DecisionMaker {
+    can make_decision with entry {
+        if here.has_data {
+            if here.data.is_valid {
+                if here.data.priority == "high" {
+                    process_immediately(here.data);
+                } else {
+                    queue_for_processing(here.data);
+                }
+            } else {
+                clean_invalid_data(here);
+            }
+        } else {
+            request_data_update(here);
+        }
+    }
 }
 ```
 
-**Null Safety**
+#### Conditional Expression Support
+
+If statements work with various expression types:
+
 ```jac
-if value is not None {
-    process(value);  // Safe access after null check
+# Function call conditions
+if validate_credentials(username, password) {
+    login_user(username);
+}
+
+# Property access conditions
+if node.status == "active" and node.load < threshold {
+    assign_task(node, new_task);
+}
+
+# Collection membership
+if user_id in authorized_users {
+    grant_access();
+}
+
+# Complex expressions
+if calculate_risk_score(transaction) > risk_threshold {
+    flag_for_review(transaction);
 }
 ```
 
-**Performance Considerations**
+#### Performance Optimization
 
-If statements are optimized for efficiency:
+If statements include several performance optimizations:
 
-**Short-Circuit Evaluation**
-- `and` operations stop at first false condition
-- `or` operations stop at first true condition
-- Minimizes unnecessary computation
+**Short-Circuit Evaluation**: Logical operators (`and`, `or`) stop evaluation as soon as the result is determined, minimizing unnecessary computation.
 
-**Branch Prediction**
-- Modern compilers optimize frequently taken branches
-- Consistent condition patterns improve performance
+**Branch Prediction**: The compiler optimizes frequently taken branches based on usage patterns.
 
-**Common Patterns**
+**Condition Ordering**: Place most likely conditions first in elif chains for optimal performance.
 
-**Input Validation**
+#### Common Conditional Patterns
+
+**Input Validation**:
 ```jac
 if input_data is None or len(input_data) == 0 {
-    return error("Invalid input");
+    raise ValueError("Invalid input data");
 }
 ```
 
-**Range Validation**
+**Range Validation**:
 ```jac
-if not (0 <= index < len(array)) {
-    throw IndexError("Index out of bounds");
+if not (0 <= index < array_length) {
+    raise IndexError("Index out of bounds");
 }
 ```
 
-**Configuration Checks**
-```jac
-if config.debug_mode {
-    print("Debug: Processing item", item.id);
-}
-```
-
-**Error Handling**
+**Error Handling**:
 ```jac
 if operation.has_error() {
-    log_error(operation.error);
-    return failure_result;
+    log_error(operation.get_error());
+    return default_value;
 } else {
-    return operation.result;
+    return operation.get_result();
 }
 ```
 
-**Best Practices**
+**Configuration-Based Logic**:
+```jac
+if config.debug_enabled {
+    log_debug_info(current_state);
+}
 
-1. **Clear Conditions**: Write readable boolean expressions
-2. **Avoid Deep Nesting**: Use elif instead of nested if statements when possible
-3. **Positive Logic**: Prefer positive conditions over negated ones when readable
-4. **Consistent Style**: Use consistent indentation and formatting
-5. **Early Returns**: Use early returns to reduce nesting in functions
+if config.feature_flags.new_algorithm {
+    use_new_algorithm();
+} else {
+    use_legacy_algorithm();
+}
+```
 
-**Comparison with Other Languages**
+#### Integration with Graph Traversal
 
-Jac's if statements provide:
-- **Mandatory braces**: Always require `{}` for code blocks
-- **Chained comparisons**: Natural mathematical notation support
-- **Type safety**: Integration with Jac's type system
-- **Data spatial integration**: Work seamlessly with walker and node abilities
+If statements enable sophisticated conditional traversal patterns:
 
-If statements in Jac provide a familiar yet enhanced conditional execution mechanism that integrates smoothly with both traditional programming patterns and the language's innovative data spatial features. The support for chained comparisons and mandatory code blocks promotes both readability and safety in conditional logic.
+```jac
+walker SmartTraverser {
+    has visited: set = set();
+    
+    can traverse with entry {
+        # Avoid cycles
+        if here in self.visited {
+            disengage;
+        }
+        
+        self.visited.add(here);
+        
+        # Conditional traversal based on node properties
+        if here.node_type == "data" {
+            process_data_node(here);
+            visit [-->:DataEdge:];
+        } elif here.node_type == "control" {
+            if here.should_continue() {
+                visit [-->];
+            } else {
+                disengage;
+            }
+        }
+    }
+}
+```
+
+If statements provide the foundation for decision-making in Jac programs, supporting both traditional programming patterns and sophisticated data spatial operations with clear, readable syntax and robust type safety.

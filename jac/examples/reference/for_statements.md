@@ -1,272 +1,301 @@
-For statements in Jac provide powerful iteration mechanisms with multiple syntax variants to suit different looping scenarios. Jac supports both traditional iteration patterns and more expressive loop constructs that enhance readability and reduce common programming errors.
+### For Statements
 
-**For Loop Variants**
+For statements provide powerful iteration mechanisms with multiple syntax variants designed for different looping scenarios. Jac supports both traditional iteration patterns and expressive loop constructs that enhance readability while reducing common programming errors.
 
-Jac provides three distinct for loop syntaxes:
+#### For Loop Variants
 
-1. **For-In loops**: Iterate over collections and iterables
-2. **For-To-By loops**: Explicit counter-based iteration with clear termination conditions
-3. **Async For loops**: Asynchronous iteration (when prefixed with `async`)
+Jac offers three distinct for loop syntaxes:
 
-**For-In Loop Syntax**
+**For-In Loops**: Iterate over collections and iterables with clean, readable syntax.
 
-For-in loops provide clean iteration over collections:
+**For-To-By Loops**: Explicit counter-based iteration with clear initialization, termination, and increment specifications.
+
+**Async For Loops**: Asynchronous iteration for concurrent processing patterns.
+
+#### For-In Loop Syntax
+
+For-in loops provide clean iteration over collections and sequences:
+
 ```jac
 for variable in iterable {
-    // loop body
+    # loop body
 }
 ```
 
-**String Iteration**
+This syntax works with all iterable types including strings, lists, ranges, and custom collections.
+
+#### String and Character Iteration
+
 ```jac
-for i in "ban" {
-    print(i);  // Prints 'b', 'a', 'n'
+for character in "hello" {
+    print(character);  # Prints 'h', 'e', 'l', 'l', 'o'
 }
 ```
 
-This demonstrates:
-- **Character iteration**: Strings are iterable character sequences
-- **Automatic unpacking**: Each character assigned to the loop variable
-- **Clear semantics**: Natural iteration over string contents
+String iteration processes each character individually, providing natural text processing capabilities.
 
-**Range Iteration**
+#### Range-Based Iteration
+
 ```jac
-for j in range(1, 3) {
-    print(j);  // Prints 1, 2
+for number in range(1, 5) {
+    print(number);  # Prints 1, 2, 3, 4
+}
+
+for index in range(len(array)) {
+    process(array[index]);
 }
 ```
 
-Key aspects:
-- **Range objects**: Generate sequences of numbers efficiently  
-- **Boundary semantics**: End value is exclusive (like Python)
-- **Memory efficiency**: Ranges generate values on demand
+Range objects generate sequences efficiently with exclusive end boundaries, following Python conventions.
 
-**Collection Iteration**
-For-in loops work with all Jac collection types:
+#### Collection Iteration
+
+For-in loops work seamlessly with all Jac collection types:
+
 ```jac
-// List iteration
-for item in [1, 2, 3, 4] {
-    print(item);
+# List iteration
+for item in [1, 2, 3, 4, 5] {
+    process_item(item);
 }
 
-// Dictionary iteration
-for key in {"a": 1, "b": 2} {
-    print(key);  // Iterates over keys
+# Dictionary key iteration
+for key in {"name": "John", "age": 30} {
+    print(f"{key}: {data[key]}");
 }
 
-// Set iteration
-for element in {1, 2, 3} {
-    print(element);
+# Set iteration
+for element in {1, 2, 3, 4} {
+    validate_element(element);
 }
 ```
 
-**For-To-By Loop Syntax**
+#### For-To-By Loop Syntax
 
 For-to-by loops provide explicit control over counter-based iteration:
+
 ```jac
 for initialization to condition by increment {
-    // loop body
+    # loop body
 }
 ```
 
-**Example Usage**
+This syntax makes loop components explicit and reduces common iteration errors.
+
+#### For-To-By Examples
+
 ```jac
-for k=1 to k<3 by k+=1 {
-    print(k);  // Prints 1, 2
+# Basic counting
+for i=0 to i<10 by i+=1 {
+    print(i);  # Prints 0 through 9
 }
-```
 
-**Components breakdown:**
-- **Initialization**: `k=1` sets the starting value
-- **Condition**: `k<3` specifies the continuation condition
-- **Increment**: `k+=1` defines how the counter changes each iteration
-
-**Advantages of For-To-By Syntax**
-
-**Clarity**: Each component is explicitly labeled
-```jac
-for i=0 to i<10 by i+=2 {
-    // Clear intent: start at 0, while i<10, increment by 2
-}
-```
-
-**Flexibility**: Support for complex increment patterns
-```jac
+# Custom increments
 for count=100 to count>0 by count-=5 {
-    // Countdown from 100 by 5s
+    print(f"Countdown: {count}");
+}
+
+# Complex conditions
+for x=1.0 to x<=100.0 by x*=1.5 {
+    # Exponential growth pattern
+    process_value(x);
 }
 ```
 
-**Error Prevention**: Explicit termination conditions reduce infinite loop risks
-```jac
-for index=0 to index<array.length by index+=1 {
-    // Clear bounds checking
-}
-```
+#### Nested Loop Patterns
 
-**Nested Loop Patterns**
+Different loop syntaxes can be combined for complex iteration patterns:
 
-The example demonstrates nested loops with different syntaxes:
 ```jac
-for i in "ban" {          // Outer: for-in loop
-    for j in range(1, 3) { // Middle: for-in with range
-        for k=1 to k<3 by k+=1 { // Inner: for-to-by loop
-            print(i, j, k);
+for outer_char in "abc" {
+    for inner_num in range(1, 3) {
+        for counter=1 to counter<=2 by counter+=1 {
+            print(f"{outer_char}-{inner_num}-{counter}");
         }
     }
 }
 ```
 
-**Expected output pattern:**
-```
-b 1 1
-b 1 2
-b 2 1
-b 2 2
-a 1 1
-a 1 2
-a 2 1
-a 2 2
-n 1 1
-n 1 2
-n 2 1
-n 2 2
-```
+This demonstrates the flexibility of mixing for-in and for-to-by syntaxes based on specific needs.
 
-**Loop Variable Scope**
+#### Advanced For-In Patterns
 
-Loop variables are scoped to their respective loops:
-- **Isolation**: Inner loop variables don't conflict with outer ones
-- **Cleanup**: Variables automatically cleaned up when loops exit
-- **Type inference**: Variable types inferred from iterables
-
-**Advanced For-In Patterns**
-
-**Enumeration**
+**Enumeration with Index**:
 ```jac
 for index, value in enumerate(collection) {
-    print(index, value);
+    print(f"Item {index}: {value}");
 }
 ```
 
-**Destructuring**
+**Dictionary Items**:
 ```jac
-for key, value in dictionary.items() {
-    print(key, value);
+for key, value in data.items() {
+    process_pair(key, value);
 }
 ```
 
-**Filtering**
+**Destructuring Assignment**:
 ```jac
-for item in collection if item > threshold {
-    process(item);
+for name, age, city in user_records {
+    create_user_profile(name, age, city);
 }
 ```
 
-**Advanced For-To-By Patterns**
+#### Data Spatial Integration
 
-**Custom Increments**
+For loops integrate naturally with data spatial programming constructs:
+
 ```jac
-for x=1.0 to x<=10.0 by x*=1.5 {
-    // Exponential growth pattern
-}
-```
-
-**Complex Conditions**
-```jac
-for i=0 to i<n and not found by i+=1 {
-    if array[i] == target {
-        found = true;
-    }
-}
-```
-
-**Multiple Variables**
-```jac
-for i=0, j=n-1 to i<j by i+=1, j-=1 {
-    // Two-pointer technique
-}
-```
-
-**Integration with Control Statements**
-
-For loops work seamlessly with control statements:
-```jac
-for item in collection {
-    if item.should_skip() {
-        continue;  // Skip to next iteration
-    }
-    if item.is_terminal() {
-        break;     // Exit loop entirely
-    }
-    process(item);
-}
-```
-
-**Async For Loops**
-
-For asynchronous iteration:
-```jac
-async for item in async_iterable {
-    await process(item);
-}
-```
-
-**Data Spatial Integration**
-
-For loops integrate with data spatial constructs:
-```jac
-walker Iterator {
-    can traverse with `node entry {
+walker GraphTraverser {
+    can traverse_neighbors with entry {
+        # Iterate over connected nodes
         for neighbor in [-->] {
-            visit neighbor;
+            if neighbor.is_processable {
+                visit neighbor;
+            }
+        }
+    }
+    
+    can process_edges with entry {
+        # Iterate over specific edge types
+        for edge in [-->:DataEdge:] {
+            edge.process_data();
+        }
+    }
+}
+
+node CollectionNode {
+    has items: list;
+    
+    can process_items with visitor entry {
+        for item in self.items {
+            result = visitor.process_item(item);
+            if result.should_stop {
+                break;
+            }
         }
     }
 }
 ```
 
-**Performance Considerations**
+#### Control Flow Integration
 
-**For-In Optimization**
-- **Iterator efficiency**: Optimized for collection traversal
-- **Memory usage**: Minimal overhead for large collections
-- **Type specialization**: Optimized paths for specific collection types
+For loops work seamlessly with control statements:
 
-**For-To-By Optimization**
-- **Counter efficiency**: Optimized arithmetic operations
-- **Condition evaluation**: Efficient termination checking
-- **Increment optimization**: Specialized operators for common patterns
-
-**Common Patterns**
-
-**Array Processing**
 ```jac
-for i=0 to i<array.length by i+=1 {
-    array[i] = transform(array[i]);
+for item in large_collection {
+    if item.should_skip() {
+        continue;  # Skip to next iteration
+    }
+    
+    if item.is_terminal() {
+        break;     # Exit loop entirely
+    }
+    
+    process_item(item);
 }
 ```
 
-**Batch Processing**
+#### Asynchronous For Loops
+
+For asynchronous iteration over async iterables:
+
 ```jac
-for batch in chunked(data, batch_size=100) {
+async for data_chunk in async_data_stream {
+    processed = await process_chunk(data_chunk);
+    await store_result(processed);
+}
+```
+
+Async for loops enable efficient processing of streaming data and concurrent operations.
+
+#### Performance Considerations
+
+**For-In Optimization**: Optimized for collection traversal with minimal memory overhead and efficient iterator protocols.
+
+**For-To-By Optimization**: Specialized arithmetic operations and efficient condition evaluation for counter-based loops.
+
+**Memory Efficiency**: Iterators generate values on demand, supporting large datasets without excessive memory usage.
+
+#### Complex Iteration Patterns
+
+**Multi-Variable For-To-By**:
+```jac
+for i=0, j=len(array)-1 to i<j by i+=1, j-=1 {
+    # Two-pointer technique
+    if array[i] + array[j] == target {
+        return (i, j);
+    }
+}
+```
+
+**Conditional Iteration**:
+```jac
+for item in collection if item.is_valid() {
+    # Only iterate over valid items
+    process_valid_item(item);
+}
+```
+
+**Batch Processing**:
+```jac
+for batch in chunked(large_dataset, batch_size=1000) {
     process_batch(batch);
+    if should_pause() {
+        break;
+    }
 }
 ```
 
-**Convergence Loops**
+#### Graph Traversal Patterns
+
+For loops enable sophisticated graph processing:
+
 ```jac
-for iteration=0 to iteration<max_iterations and not converged by iteration+=1 {
-    update_state();
-    converged = check_convergence();
+walker PathAnalyzer {
+    has path_lengths: dict = {};
+    
+    can analyze_paths with entry {
+        # Analyze all possible paths
+        for target_node in [-->*] {
+            path_length = calculate_distance(here, target_node);
+            self.path_lengths[target_node.id] = path_length;
+        }
+        
+        # Process paths by length
+        for length=1 to length<=max_depth by length+=1 {
+            nodes_at_distance = [n for n, d in self.path_lengths.items() if d == length];
+            for node in nodes_at_distance {
+                process_node_at_distance(node, length);
+            }
+        }
+    }
 }
 ```
 
-**Best Practices**
+#### Error Handling in Loops
 
-1. **Choose appropriate syntax**: Use for-in for collections, for-to-by for counters
-2. **Clear variable names**: Use descriptive names for loop variables
-3. **Avoid side effects**: Minimize modifications to collections during iteration
-4. **Consider performance**: Choose efficient iteration patterns for large datasets
-5. **Use control statements**: Leverage break and continue for complex logic
+```jac
+for item in potentially_problematic_collection {
+    try {
+        result = risky_operation(item);
+        store_result(result);
+    } except ProcessingError as e {
+        log_error(f"Failed to process {item}: {e}");
+        continue;  # Skip problematic items
+    }
+}
+```
 
-For statements in Jac provide flexible, expressive iteration capabilities that support both traditional programming patterns and modern language features. The multiple syntax variants enable developers to choose the most appropriate form for their specific use case, promoting code clarity and correctness while maintaining high performance.
+#### Best Practices
+
+**Choose Appropriate Syntax**: Use for-in for collections, for-to-by for explicit counter control.
+
+**Clear Variable Names**: Use descriptive names that indicate the purpose of loop variables.
+
+**Avoid Side Effects**: Minimize modifications to collections during iteration to prevent unexpected behavior.
+
+**Performance Awareness**: Consider memory usage and computational complexity for large datasets.
+
+**Control Flow**: Use break and continue judiciously to implement complex iteration logic clearly.
+
+For statements provide flexible, expressive iteration capabilities that support both traditional programming patterns and modern data spatial operations, enabling developers to write clear, efficient code for a wide range of computational scenarios.
