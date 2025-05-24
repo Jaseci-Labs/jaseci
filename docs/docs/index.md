@@ -19,7 +19,7 @@ Jaseci serves as the implementation of the Jac runtime, functioning in a relatio
 
 <div class="grid cards" style="text-align: center;" markdown>
 
-[Dive into Jac!](for_coders/introduction.md){ .md-button }
+[Dive into Jac!](learn/introduction.md){ .md-button }
 
 </div>
 

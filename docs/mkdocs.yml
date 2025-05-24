@@ -33,7 +33,7 @@ nav:
       - "learn/language_basics/can_abilities.md"
       - "learn/language_basics/import.md"
       - "learn/language_basics/impl_docs.md"
-      - "learn/tools/testing.md"
+      - "learn/language_basics/testing.md"
       - Language Reference: "learn/jac_ref.md"
       - Understanding Data Spatial:
         # - "learn/data_spatial/dataspatial.md" # Why data spatial
@@ -70,9 +70,7 @@ nav:
           - "internals/symbol_tables/def_use.md"
           - "internals/symbol_tables/linking.md"
           - "internals/symbol_tables/resolution.md"
-      - Reference:
-        - Language Spec: "learn/jac_ref.md"
-        # - UniIR Nodes: "internals/uniir_node.md"
+        - UniIR Nodes: "internals/uniir_node.md"
       - Runtime Plugin Interface: "internals/jac_plugins.md"
     - Planning Specs and Docs:
       - Error System: "internals/planning_specs/error_system.md"

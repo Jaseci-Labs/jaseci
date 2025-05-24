@@ -100,6 +100,9 @@ def auto_generate_refs() -> str:
         heading_snakecase = heading_to_snake(heading)
         content = (
             f'## {heading}\n**Code Example**\n??? example "Runnable Example in Jac and JacLib"\n'
+            '    === "Try it!"\n        <div class="code-block">\n'
+            f'        --8<-- "jac/examples/reference/{heading_snakecase}.jac"\n'
+            "        </div>\n"
             '    === "Jac"\n        ```jac linenums="1"\n'
             f'        --8<-- "jac/examples/reference/{heading_snakecase}.jac"\n'
             f'        ```\n    === "Python"\n'

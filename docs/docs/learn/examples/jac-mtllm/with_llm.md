@@ -4,7 +4,6 @@ Jaclang facilitates the integration of generative AI models, specifically Large 
 
 **MTLLM** has been developed as a separate plugin to Jaclang which can be installed as a PyPi package.
 
-![type:video](../../assets/mtllm demo.mp4){: autoplay="true" loop="true"}
 
 <div class="grid cards" markdown>
 
