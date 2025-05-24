@@ -25,13 +25,13 @@ This syntax avoids ambiguity in comma-separated import lists while maintaining v
 
 #### Include Statement
 
-The `include` statement performs compile-time textual inclusion of source files:
+The `include` statement imports all exported symbols from the target module into the current namespace:
 
 ```jac
-include ./support/logger.py;
+include os.path;
 ```
 
-Include operations insert the target file's contents verbatim at the inclusion point, sharing the same scope as the including file. This mechanism is particularly useful for embedding helper functions from Python files or splitting large Jac archetypes across multiple files while maintaining a single compilation unit.
+Include operations are functionally equivalent to Python's `from target import *` syntax, bringing all public symbols from the target module into the current scope. This mechanism is particularly useful for importing helper functions from Python files or accessing all symbols from Jac modules without explicit enumeration, while maintaining clean namespace organization.
 
 #### Module Resolution
 
