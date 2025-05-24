@@ -262,6 +262,9 @@ class JTypeResolver:
         For example, `here` refers to the current instance of the enclosing archetype
         and should resolve to that archetype's type.
 
+        If the keyword is not part of an archetype then check if it's part of an impl
+        node of an archetype.
+
         If the special variable is not recognized (e.g., not `here`), the method
         falls back to standard name-based resolution.
 
@@ -275,12 +278,13 @@ class JTypeResolver:
             archetype_node = node.find_parent_of_type(ast.Archetype)
             if archetype_node is None:
                 impl_decl = node.find_parent_of_type(ast.ImplDef)
-                if impl_decl:
-                    if impl_decl.decl_link:
-                        if isinstance(impl_decl.decl_link, ast.Archetype):
-                            archetype_node = impl_decl.decl_link
-                        else:
-                            archetype_node =  impl_decl.decl_link.find_parent_of_type(ast.Archetype)
+                if impl_decl and impl_decl.decl_link:
+                    if isinstance(impl_decl.decl_link, ast.Archetype):
+                        archetype_node = impl_decl.decl_link
+                    else:
+                        archetype_node = impl_decl.decl_link.find_parent_of_type(
+                            ast.Archetype
+                        )
             if not archetype_node:
                 return jtype.JAnyType()
             if archetype_node.sym:
