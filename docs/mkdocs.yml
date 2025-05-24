@@ -6,7 +6,7 @@ nav:
     - Getting Started: "learn/getting_started.md"
     - Tour of Jac/Jaseci: "learn/introduction.md"
     - Jac in a Flash: "learn/jac_in_a_flash.md"
-    - A Robust Example:
+    - End-to-End Examples:
       - LittleX (your own twitter):
         - "learn/examples/littleX/overview.md"
         - "learn/examples/littleX/tutorial.md"
@@ -26,7 +26,24 @@ nav:
         - Bring your own LM: "learn/examples/jac-mtllm/create_own_lm.md"
         - Python MTLLM Interface: "learn/examples/jac-mtllm/python_integration.md"
         - Tutorials: "learn/examples/jac-mtllm/rpg_game.md"
-    - Jac/Jaseci Overview:
+    - Learn Jac Language:
+      - "learn/jac_coding_manual.md"
+      - "learn/language_basics/basic_syntax.md"
+      - "learn/language_basics/types.md"
+      - "learn/language_basics/can_abilities.md"
+      - "learn/language_basics/import.md"
+      - "learn/language_basics/impl_docs.md"
+      - "learn/tools/testing.md"
+      - Language Reference: "learn/jac_ref.md"
+      - Understanding Data Spatial:
+        # - "learn/data_spatial/dataspatial.md" # Why data spatial
+        - "learn/data_spatial/nodes_and_edges.md" # Introduction to DS primitives
+        - "learn/data_spatial/walkers.md" # Walker
+        - "learn/data_spatial/filtering.md" # Filtering
+        - "learn/data_spatial/sequence.md"
+        - Theoretical Principles: "learn/dspfoundation.md" # DSP Foundation
+        - Quick FAQ: "learn/data_spatial/FAQ.md" # faq
+    - Jac Cloud Guides:
       - "learn/jac-cloud/jac_cloud.md"
       - "learn/jac-cloud/permission.md"
       - "learn/jac-cloud/jac_cloud_logging.md"
@@ -36,23 +53,6 @@ nav:
       - "learn/jac-cloud/jac_cloud_webhook.md"
       - "learn/jac-cloud/jac_cloud_websocket.md"
       - "learn/jac-cloud/cloud-orc-integration.md"
-    - Language Basics:
-      - "learn/jac_coding_manual.md"
-      - "learn/language_basics/basic_syntax.md"
-      - "learn/language_basics/types.md"
-      - "learn/language_basics/can_abilities.md"
-      - "learn/language_basics/import.md"
-      - "learn/language_basics/impl_docs.md"
-      - "learn/tools/testing.md"
-      - Language Reference: "learn/jac_ref.md"
-    - Understanding Data Spatial:
-      # - "learn/data_spatial/dataspatial.md" # Why data spatial
-      - "learn/data_spatial/nodes_and_edges.md" # Introduction to DS primitives
-      - "learn/data_spatial/walkers.md" # Walker
-      - "learn/data_spatial/filtering.md" # Filtering
-      - "learn/data_spatial/sequence.md"
-      - Theoretical Principles: "learn/dspfoundation.md" # DSP Foundation
-      - Quick FAQ: "learn/data_spatial/FAQ.md" # faq
     - Tooling:
       - "learn/tools/cli.md"
 
