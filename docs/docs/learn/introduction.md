@@ -56,7 +56,7 @@ with entry {
 
 ## Zero to Infinite Scale with no Code Changes
 
-Jac's cloud-native abstractions make persistence and user concepts part of the language so that simple programs can run unchanged locally or in the cloud【F:docs/docs/index.md†L44-L48】. Deployments can be scaled by increasing replicas of the `jac-cloud` service when needed.
+Jac's cloud-native abstractions make persistence and user concepts part of the language so that simple programs can run unchanged locally or in the cloud. Deployments can be scaled by increasing replicas of the `jac-cloud` service when needed.
 
 ```jac
 walker ping {
