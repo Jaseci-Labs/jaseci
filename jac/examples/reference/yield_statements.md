@@ -1,4 +1,3 @@
-### Yield Statements
 Yield statements in Jac provide the foundation for generator functions and iterative computation patterns. These statements enable functions to produce sequences of values on-demand rather than computing and returning entire collections at once, supporting memory-efficient iteration and lazy evaluation.
 
 **Basic Yield Statement Syntax**

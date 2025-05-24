@@ -1,5 +1,3 @@
-### Ignore Statements
-
 Ignore statements provide a mechanism to exclude specific nodes or edges from walker traversal paths. This feature enables selective graph navigation by marking elements that should be skipped during traversal operations.
 
 #### Syntax

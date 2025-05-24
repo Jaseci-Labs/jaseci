@@ -1,5 +1,3 @@
-### Unpack Expressions
-
 Unpack expressions enable the expansion of iterables and mappings into their constituent elements using the `*` and `**` operators. Jac follows Python's unpacking semantics while integrating seamlessly with pipe operations and data spatial programming constructs.
 
 #### Iterable Unpacking

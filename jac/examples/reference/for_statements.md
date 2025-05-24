@@ -1,5 +1,3 @@
-### For Statements
-
 For statements provide powerful iteration mechanisms with multiple syntax variants designed for different looping scenarios. Jac supports both traditional iteration patterns and expressive loop constructs that enhance readability while reducing common programming errors.
 
 #### For Loop Variants

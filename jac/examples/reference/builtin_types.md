@@ -1,4 +1,3 @@
-### Builtin Types
 Jac provides a rich set of built-in data types that cover the fundamental data structures needed for most programming tasks. These types are similar to Python's built-in types but are integrated into Jac's type system and syntax.
 
 **Primitive Types**

@@ -1,5 +1,3 @@
-### Special Comprehensions
-
 Special comprehensions in Jac extend traditional list comprehensions with powerful filtering and assignment capabilities. These constructs enable concise manipulation of data structures, particularly in graph traversal contexts.
 
 #### Filter Comprehensions

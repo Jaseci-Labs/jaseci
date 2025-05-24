@@ -1,5 +1,3 @@
-### Match Statements
-
 Match statements provide powerful pattern matching capabilities in Jac, enabling elegant handling of complex data structures and control flow based on value patterns. This feature supports structural pattern matching similar to modern programming languages.
 
 #### Syntax

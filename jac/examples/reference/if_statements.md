@@ -1,5 +1,3 @@
-### If Statements
-
 If statements provide conditional execution control, enabling programs to make decisions based on boolean expressions. Jac's if statement syntax supports the familiar if-elif-else pattern with mandatory code blocks, ensuring clear and safe conditional logic.
 
 #### Basic Conditional Syntax

@@ -1,5 +1,3 @@
-### Data Spatial Calls
-
 Data spatial calls represent specialized operators that enable computation to move through topological structures rather than data moving to computation. These operators fundamentally invert traditional programming paradigms by activating computational entities within graph structures and enabling fluid data transformations.
 
 #### Spawn Operator (`spawn`)

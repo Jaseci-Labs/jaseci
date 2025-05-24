@@ -1,5 +1,3 @@
-### Data Spatial References
-
 Data spatial references provide specialized syntax for navigating and manipulating topological structures, enabling direct expression of graph relationships and traversal patterns. These references make topological relationships first-class citizens in the programming model.
 
 #### Edge Reference Syntax

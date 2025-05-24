@@ -1,5 +1,3 @@
-### Assignments
-
 Jac provides comprehensive assignment operations that extend Python's familiar syntax with enhanced type safety and explicit variable declaration capabilities. These assignment patterns support both traditional programming and data spatial operations.
 
 #### Basic Assignment Operations

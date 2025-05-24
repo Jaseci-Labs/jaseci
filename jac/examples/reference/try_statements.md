@@ -1,5 +1,3 @@
-### Try Statements
-
 Try statements provide exception handling mechanisms in Jac, enabling robust error management and graceful recovery from runtime errors. This construct supports structured exception handling with try, except, else, and finally blocks.
 
 #### Syntax

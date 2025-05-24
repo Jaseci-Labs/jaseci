@@ -1,4 +1,3 @@
-### Visit Statements
 Visit statements in Jac implement the fundamental data spatial operation that enables walkers to traverse through node-edge topological structures. This statement embodies the core Data Spatial Programming (DSP) paradigm of "computation moving to data" rather than the traditional approach of moving data to computation.
 
 **Theoretical Foundation**

@@ -1,5 +1,3 @@
-### Tuples and Jac Tuples
-
 Jac provides two distinct tuple syntaxes that serve different programming needs: traditional positional tuples for ordered data and keyword tuples for labeled data structures that integrate seamlessly with pipe operations and data spatial programming.
 
 #### Positional Tuples

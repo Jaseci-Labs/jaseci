@@ -1,4 +1,3 @@
-### Free Code
 Free code in Jac refers to executable statements that exist at the module level but are not part of a function, class, or other structural element. Unlike many programming languages that allow loose statements to float freely in a module, Jac requires such code to be explicitly wrapped in `with entry` blocks for better code organization and clarity.
 
 **Entry Blocks**

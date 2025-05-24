@@ -1,5 +1,3 @@
-### Codeblocks and Statements
-
 Code blocks and statements form the structural foundation of Jac programs, organizing executable code into logical units and providing the syntactic framework for all program operations.
 
 #### Code Block Structure

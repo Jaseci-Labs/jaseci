@@ -1,5 +1,3 @@
-### Tests
-
 Tests in Jac provide built-in support for unit testing and validation of code functionality. The `test` keyword creates test blocks that can be executed to verify program correctness.
 
 #### Syntax

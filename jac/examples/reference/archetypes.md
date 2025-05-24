@@ -1,5 +1,3 @@
-### Archetypes
-
 Archetypes represent Jac's extension of traditional object-oriented programming classes, providing specialized constructs that enable data spatial programming. Each archetype type serves a distinct role in building topological computational systems where data and computation are distributed across graph structures.
 
 #### Archetype Types

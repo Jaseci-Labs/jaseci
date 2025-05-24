@@ -1,4 +1,3 @@
-### Implementations
 Implementations in Jac provide a powerful mechanism for separating interface declarations from their concrete implementations. This feature supports modular programming, interface segregation, and flexible code organization patterns common in modern software development.
 
 **Implementation Concept**

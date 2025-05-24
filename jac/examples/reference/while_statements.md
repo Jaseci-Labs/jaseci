@@ -1,4 +1,3 @@
-### While Statements
 While statements in Jac provide iterative execution based on conditional expressions, enabling loops that continue as long as a specified condition remains true. The while loop syntax offers a fundamental control structure for implementing algorithms that require repeated execution with dynamic termination conditions.
 
 **Basic While Loop Syntax**

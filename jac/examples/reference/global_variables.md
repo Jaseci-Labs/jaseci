@@ -1,5 +1,3 @@
-### Global Variables
-
 Global variables provide module-level data storage that persists throughout program execution and can be accessed across different scopes within a Jac program. Jac offers two declaration keywords with distinct semantic meanings and access control capabilities.
 
 #### Declaration Keywords

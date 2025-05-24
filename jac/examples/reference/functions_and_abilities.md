@@ -1,5 +1,3 @@
-### Functions and Abilities
-
 Jac provides two complementary approaches to defining executable code: traditional functions using `def` and data spatial abilities using `can`. This dual system supports both conventional programming patterns and the unique requirements of computation moving through topological structures.
 
 #### Function Definitions

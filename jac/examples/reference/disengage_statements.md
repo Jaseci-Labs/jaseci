@@ -1,4 +1,3 @@
-### Disengage Statements
 Disengage statements in Jac provide a mechanism for terminating walker traversal within the data spatial topology. This statement enables walkers to exit their active traversal state and return to inactive object status, representing a controlled termination of the "computation moving to data" process that characterizes Data Spatial Programming.
 
 **Theoretical Foundation**

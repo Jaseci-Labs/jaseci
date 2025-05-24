@@ -1,5 +1,3 @@
-### Concurrent Expressions
-
 Concurrent expressions enable parallel and asynchronous execution in Jac through the `flow` and `wait` modifiers. These constructs provide built-in concurrency support, allowing efficient parallel processing while maintaining clean, readable code.
 
 #### Flow Modifier

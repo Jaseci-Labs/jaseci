@@ -1,5 +1,3 @@
-### Archetype Bodies
-
 Archetype bodies define the internal structure and behavior of Jac's specialized class constructs. These bodies contain member declarations, abilities, and implementation details that enable both traditional object-oriented programming and data spatial computation patterns.
 
 #### Member Declaration Syntax
