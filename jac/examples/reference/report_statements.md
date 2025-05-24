@@ -1,14 +1,14 @@
-# Report Statements
+### Report Statements
 
 Report statements provide a mechanism for walkers to communicate results back to their spawning context. This feature is essential for extracting information from graph traversals and data spatial computations.
 
-## Syntax
+#### Syntax
 
 ```jac
 report expression;
 ```
 
-## Purpose
+#### Purpose
 
 Report statements allow walkers to:
 - Return computed results from traversals
@@ -16,7 +16,7 @@ Report statements allow walkers to:
 - Communicate findings to the calling context
 - Build up results incrementally during traversal
 
-## Basic Usage
+#### Basic Usage
 
 ```jac
 walker DataCollector {
@@ -36,7 +36,7 @@ with entry {
 }
 ```
 
-## Multiple Reports
+#### Multiple Reports
 
 Walkers can report multiple times during traversal:
 
@@ -65,7 +65,7 @@ walker PathFinder {
 }
 ```
 
-## Aggregating Results
+#### Aggregating Results
 
 Common pattern for collecting data:
 
@@ -96,7 +96,7 @@ walker Aggregator {
 }
 ```
 
-## Conditional Reporting
+#### Conditional Reporting
 
 Report based on conditions:
 
@@ -120,7 +120,7 @@ walker SearchWalker {
 }
 ```
 
-## Report vs Return
+#### Report vs Return
 
 Key differences:
 - `report`: Accumulates values, continues execution
@@ -138,7 +138,7 @@ walker Finder {
 }
 ```
 
-## Integration with Data Spatial
+#### Integration with Data Spatial
 
 Reports work seamlessly with graph traversal:
 
@@ -174,9 +174,9 @@ with entry {
 }
 ```
 
-## Advanced Patterns
+#### Advanced Patterns
 
-### Path Tracking
+##### Path Tracking
 ```jac
 walker PathTracker {
     has path: list = [];
@@ -198,7 +198,7 @@ walker PathTracker {
 }
 ```
 
-### Hierarchical Aggregation
+##### Hierarchical Aggregation
 ```jac
 walker TreeAggregator {
     can aggregate with entry {
@@ -220,7 +220,7 @@ walker TreeAggregator {
 }
 ```
 
-## Best Practices
+#### Best Practices
 
 1. **Report Meaningful Data**: Include context with reported values
 2. **Use Structured Reports**: Return dictionaries for complex data

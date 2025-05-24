@@ -1,8 +1,8 @@
-# Context Managers
+### Context Managers
 
 Context managers in Jac provide automatic resource management through `with` statements, ensuring proper acquisition and release of resources. This feature supports the context management protocol for clean handling of files, connections, locks, and other resources.
 
-## Syntax
+#### Syntax
 
 ```jac
 with expression as variable {
@@ -20,7 +20,7 @@ async with async_expression as variable {
 }
 ```
 
-## Basic Usage
+#### Basic Usage
 
 ```jac
 # File handling
@@ -37,7 +37,7 @@ with get_connection() as conn {
 }  # Connection automatically closed
 ```
 
-## Multiple Context Managers
+#### Multiple Context Managers
 
 Manage multiple resources simultaneously:
 
@@ -51,7 +51,7 @@ with open("input.txt", "r") as infile,
 }  # Both files automatically closed
 ```
 
-## Custom Context Managers
+#### Custom Context Managers
 
 Create your own context managers:
 
@@ -79,7 +79,7 @@ with TimedOperation("data_processing") as timer {
 }
 ```
 
-## Graph Lock Management
+#### Graph Lock Management
 
 Context managers for thread-safe graph operations:
 
@@ -98,7 +98,7 @@ node ThreadSafeNode {
 }
 ```
 
-## Transaction Management
+#### Transaction Management
 
 Database-style transactions:
 
@@ -139,7 +139,7 @@ obj Transaction {
 }
 ```
 
-## Walker State Management
+#### Walker State Management
 
 Manage walker state during traversal:
 
@@ -179,7 +179,7 @@ walker StatefulWalker {
 }
 ```
 
-## Async Context Managers
+#### Async Context Managers
 
 For asynchronous resource management:
 
@@ -191,7 +191,7 @@ async with acquire_async_resource() as resource {
 }
 ```
 
-## Graph Session Management
+#### Graph Session Management
 
 ```jac
 obj GraphSession {
@@ -236,7 +236,7 @@ with GraphSession(root) as session {
 }  # Changes committed atomically
 ```
 
-## Temporary State Changes
+#### Temporary State Changes
 
 ```jac
 obj TemporaryState {
@@ -271,7 +271,7 @@ node ConfigNode {
 }
 ```
 
-## Best Practices
+#### Best Practices
 
 1. **Always Use With**: For resources that need cleanup
 2. **Don't Suppress Exceptions**: Return False from __exit__
@@ -279,9 +279,9 @@ node ConfigNode {
 4. **Document Side Effects**: Clear about what's managed
 5. **Test Error Cases**: Ensure cleanup on exceptions
 
-## Common Patterns
+#### Common Patterns
 
-### Resource Pool
+##### Resource Pool
 ```jac
 with get_resource_from_pool() as resource {
     # Use resource
@@ -289,7 +289,7 @@ with get_resource_from_pool() as resource {
 }  # Resource returned to pool
 ```
 
-### Nested Contexts
+##### Nested Contexts
 ```jac
 with outer_context() as outer {
     # Outer resource acquired
@@ -300,7 +300,7 @@ with outer_context() as outer {
 }  # Outer released
 ```
 
-### Optional Context
+##### Optional Context
 ```jac
 context = get_optional_context() if condition else nullcontext();
 with context as ctx {

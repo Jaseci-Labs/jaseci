@@ -1,3 +1,4 @@
+### Bitwise Expressions
 Bitwise expressions in Jac provide low-level bit manipulation operations that work directly on the binary representation of integer values. These operations are essential for systems programming, data encoding, optimization algorithms, and working with binary data formats.
 
 **Bitwise Operators**

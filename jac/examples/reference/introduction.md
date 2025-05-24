@@ -1,4 +1,4 @@
-## Introduction
+### Introduction
 
 Welcome to the official reference guide for the Jac programming language. This document is designed to serve as a comprehensive reference manual as well as a formal specification of the language. The mission of this guide is to be a resource for developers seeking to answer the question, "How do I code X in Jac?"
 

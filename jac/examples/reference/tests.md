@@ -1,8 +1,8 @@
-# Tests
+### Tests
 
 Tests in Jac provide built-in support for unit testing and validation of code functionality. The `test` keyword creates test blocks that can be executed to verify program correctness.
 
-## Syntax
+#### Syntax
 
 ```jac
 test {
@@ -14,7 +14,7 @@ test "descriptive test name" {
 }
 ```
 
-## Basic Testing
+#### Basic Testing
 
 Simple test assertions:
 
@@ -35,7 +35,7 @@ test {
 }
 ```
 
-## Testing Functions
+#### Testing Functions
 
 Validate function behavior:
 
@@ -51,7 +51,7 @@ test "area calculation" {
 }
 ```
 
-## Testing Objects and Classes
+#### Testing Objects and Classes
 
 Test object creation and methods:
 
@@ -81,7 +81,7 @@ test "rectangle operations" {
 }
 ```
 
-## Testing Graph Operations
+#### Testing Graph Operations
 
 Test node and edge functionality:
 
@@ -115,7 +115,7 @@ test "graph construction" {
 }
 ```
 
-## Testing Walkers
+#### Testing Walkers
 
 Verify walker behavior:
 
@@ -149,7 +149,7 @@ test "walker traversal" {
 }
 ```
 
-## Exception Testing
+#### Exception Testing
 
 Test error handling:
 
@@ -176,7 +176,7 @@ test "exception handling" {
 }
 ```
 
-## Parameterized Testing
+#### Parameterized Testing
 
 Test with multiple inputs:
 
@@ -195,7 +195,7 @@ test "parameterized validation" {
 }
 ```
 
-## Setup and Teardown
+#### Setup and Teardown
 
 Organize test environment:
 
@@ -218,7 +218,7 @@ test "with setup and cleanup" {
 }
 ```
 
-## Testing Async Operations
+#### Testing Async Operations
 
 Test asynchronous code:
 
@@ -235,7 +235,7 @@ test "async operations" {
 }
 ```
 
-## Test Organization
+#### Test Organization
 
 Group related tests:
 
@@ -261,7 +261,7 @@ test "string manipulation" {
 }
 ```
 
-## Best Practices
+#### Best Practices
 
 1. **Descriptive Names**: Use clear test names that explain what's being tested
 2. **Single Responsibility**: Each test should verify one specific behavior
@@ -269,7 +269,7 @@ test "string manipulation" {
 4. **Clear Assertions**: Make test expectations obvious
 5. **Test Edge Cases**: Include boundary conditions and error cases
 
-## Running Tests
+#### Running Tests
 
 Tests can be executed:
 - Individually by name
@@ -277,7 +277,7 @@ Tests can be executed:
 - Tests matching a pattern
 - With verbose output for debugging
 
-## Integration Testing
+#### Integration Testing
 
 Test complete workflows:
 

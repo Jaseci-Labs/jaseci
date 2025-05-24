@@ -1,14 +1,14 @@
-# Delete Statements
+### Delete Statements
 
 Delete statements in Jac remove objects, nodes, edges, or properties from memory and graph structures. The `del` keyword provides a unified interface for deletion operations across different contexts.
 
-## Syntax
+#### Syntax
 
 ```jac
 del expression;
 ```
 
-## Deleting Variables
+#### Deleting Variables
 
 Remove variables from the current scope:
 
@@ -22,7 +22,7 @@ a, b, c = 1, 2, 3;
 del a, b, c;
 ```
 
-## Deleting Object Properties
+#### Deleting Object Properties
 
 Remove attributes from objects:
 
@@ -43,7 +43,7 @@ with entry {
 }
 ```
 
-## Deleting List Elements
+#### Deleting List Elements
 
 Remove items from lists by index:
 
@@ -60,7 +60,7 @@ del items[1:3];  # items = [1, 5]
 del items[-1];  # items = [1]
 ```
 
-## Deleting Dictionary Entries
+#### Deleting Dictionary Entries
 
 Remove key-value pairs:
 
@@ -76,7 +76,7 @@ if "c" in data {
 }
 ```
 
-## Deleting Nodes
+#### Deleting Nodes
 
 Remove nodes from the graph structure:
 
@@ -97,7 +97,7 @@ walker Cleaner {
 }
 ```
 
-## Deleting Edges
+#### Deleting Edges
 
 Remove connections between nodes:
 
@@ -112,7 +112,7 @@ del node [-->];
 del node [-->(?.weight < threshold)];
 ```
 
-## Graph Operations
+#### Graph Operations
 
 Complex deletion patterns:
 
@@ -137,7 +137,7 @@ walker GraphPruner {
 }
 ```
 
-## Edge Deletion Patterns
+#### Edge Deletion Patterns
 
 ```jac
 node Network {
@@ -158,7 +158,7 @@ node Network {
 }
 ```
 
-## Cascading Deletions
+#### Cascading Deletions
 
 When nodes are deleted, associated edges are automatically removed:
 
@@ -178,7 +178,7 @@ with entry {
 }
 ```
 
-## Memory Management
+#### Memory Management
 
 Jac handles cleanup automatically:
 
@@ -203,7 +203,7 @@ walker MemoryManager {
 }
 ```
 
-## Best Practices
+#### Best Practices
 
 1. **Check Before Delete**: Verify existence before deletion
 2. **Handle Dependencies**: Consider edge deletion when removing nodes  
@@ -211,9 +211,9 @@ walker MemoryManager {
 4. **Clean Up Resources**: Delete temporary nodes/edges after use
 5. **Document Side Effects**: Deletion can affect graph connectivity
 
-## Common Patterns
+#### Common Patterns
 
-### Filtered Node Deletion
+##### Filtered Node Deletion
 ```jac
 walker FilterDelete {
     can delete_by_type(type_name: str) {
@@ -225,7 +225,7 @@ walker FilterDelete {
 }
 ```
 
-### Conditional Edge Removal
+##### Conditional Edge Removal
 ```jac
 can prune_edges(node: node, condition: func) {
     edges = node[<-->];
@@ -237,7 +237,7 @@ can prune_edges(node: node, condition: func) {
 }
 ```
 
-### Safe Deletion
+##### Safe Deletion
 ```jac
 can safe_delete(item: any) -> bool {
     try {

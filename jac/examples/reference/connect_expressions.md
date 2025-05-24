@@ -1,3 +1,4 @@
+### Connect Expressions
 Connect expressions in Jac provide the fundamental mechanism for creating topological relationships between nodes, implementing the edge creation and management aspects of Data Spatial Programming. These expressions enable the construction of graph structures where computation can flow through connected data locations.
 
 **Theoretical Foundation**

@@ -1,8 +1,8 @@
-# Concurrent Expressions
+### Concurrent Expressions
 
 Concurrent expressions enable parallel and asynchronous execution in Jac through the `flow` and `wait` modifiers. These constructs provide built-in concurrency support, allowing efficient parallel processing while maintaining clean, readable code.
 
-## Flow Modifier
+#### Flow Modifier
 
 The `flow` modifier initiates parallel execution of expressions:
 
@@ -13,7 +13,7 @@ flow process_data(chunk2);
 flow process_data(chunk3);
 ```
 
-## Wait Modifier
+#### Wait Modifier
 
 The `wait` modifier synchronizes parallel operations:
 
@@ -25,7 +25,7 @@ result = wait async_operation();
 wait all_tasks_complete();
 ```
 
-## Combined Usage
+#### Combined Usage
 
 Flow and wait work together for parallel patterns:
 
@@ -48,7 +48,7 @@ walker ParallelProcessor {
 }
 ```
 
-## Parallel Walker Spawning
+#### Parallel Walker Spawning
 
 Concurrent execution with walkers:
 
@@ -66,7 +66,7 @@ walker Analyzer {
 }
 ```
 
-## Async Graph Operations
+#### Async Graph Operations
 
 Parallel graph traversal:
 
@@ -94,7 +94,7 @@ walker ParallelTraverser {
 }
 ```
 
-## Error Handling
+#### Error Handling
 
 Managing errors in concurrent operations:
 
@@ -128,9 +128,9 @@ can parallel_safe_process(items: list) -> list {
 }
 ```
 
-## Concurrency Patterns
+#### Concurrency Patterns
 
-### Map-Reduce Pattern
+##### Map-Reduce Pattern
 ```jac
 can map_reduce(data: list, mapper: func, reducer: func) -> any {
     # Map phase - parallel
@@ -152,7 +152,7 @@ can map_reduce(data: list, mapper: func, reducer: func) -> any {
 }
 ```
 
-### Pipeline Pattern
+##### Pipeline Pattern
 ```jac
 walker Pipeline {
     can process with entry {
@@ -178,7 +178,7 @@ walker Pipeline {
 }
 ```
 
-## Best Practices
+#### Best Practices
 
 1. **Granularity**: Balance task size for efficient parallelism
 2. **Dependencies**: Clearly manage data dependencies
@@ -186,7 +186,7 @@ walker Pipeline {
 4. **Resource Limits**: Consider system constraints
 5. **Synchronization**: Use wait appropriately to avoid race conditions
 
-## Integration with Data Spatial
+#### Integration with Data Spatial
 
 Concurrent expressions enhance graph processing:
 

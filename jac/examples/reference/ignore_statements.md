@@ -1,14 +1,14 @@
-# Ignore Statements
+### Ignore Statements
 
 Ignore statements provide a mechanism to exclude specific nodes or edges from walker traversal paths. This feature enables selective graph navigation by marking elements that should be skipped during traversal operations.
 
-## Syntax
+#### Syntax
 
 ```jac
 ignore expression;
 ```
 
-## Purpose
+#### Purpose
 
 Ignore statements allow walkers to:
 - Skip specific nodes during traversal
@@ -16,7 +16,7 @@ Ignore statements allow walkers to:
 - Create filtered traversal patterns
 - Optimize navigation by avoiding irrelevant paths
 
-## Basic Usage
+#### Basic Usage
 
 ```jac
 walker Traverser {
@@ -30,7 +30,7 @@ walker Traverser {
 }
 ```
 
-## Ignoring Nodes
+#### Ignoring Nodes
 
 Mark nodes to be skipped:
 
@@ -55,7 +55,7 @@ walker Searcher {
 }
 ```
 
-## Ignoring Edges
+#### Ignoring Edges
 
 Exclude specific connections:
 
@@ -72,7 +72,7 @@ walker PathFinder {
 }
 ```
 
-## Conditional Ignoring
+#### Conditional Ignoring
 
 Dynamic exclusion based on conditions:
 
@@ -96,7 +96,7 @@ walker ConditionalTraverser {
 }
 ```
 
-## Pattern-Based Ignoring
+#### Pattern-Based Ignoring
 
 Use type and property filters:
 
@@ -115,7 +115,7 @@ walker TypedExplorer {
 }
 ```
 
-## Integration with Visit
+#### Integration with Visit
 
 Combine ignore and visit for precise control:
 
@@ -149,7 +149,7 @@ walker SmartNavigator {
 }
 ```
 
-## Temporary Ignoring
+#### Temporary Ignoring
 
 Ignore within specific contexts:
 
@@ -176,7 +176,7 @@ walker ContextualWalker {
 }
 ```
 
-## Performance Optimization
+#### Performance Optimization
 
 Use ignore to prune search spaces:
 
@@ -207,7 +207,7 @@ walker EfficientSearcher {
 }
 ```
 
-## Relationship with Graph Structure
+#### Relationship with Graph Structure
 
 Ignore statements don't modify the graph:
 
@@ -229,7 +229,7 @@ walker Observer {
 }
 ```
 
-## Best Practices
+#### Best Practices
 
 1. **Clear Criteria**: Use explicit conditions for ignoring
 2. **Document Reasons**: Explain why nodes are ignored
@@ -237,9 +237,9 @@ walker Observer {
 4. **Reset State**: Clear ignore lists when appropriate
 5. **Performance**: Ignore early to avoid unnecessary computation
 
-## Common Patterns
+#### Common Patterns
 
-### Visited Set Pattern
+##### Visited Set Pattern
 ```jac
 walker DepthFirst {
     has visited: set = {};
@@ -255,7 +255,7 @@ walker DepthFirst {
 }
 ```
 
-### Type-Based Filtering
+##### Type-Based Filtering
 ```jac
 walker TypeFilter {
     has allowed_types: list;
@@ -271,7 +271,7 @@ walker TypeFilter {
 }
 ```
 
-### Threshold-Based Pruning
+##### Threshold-Based Pruning
 ```jac
 walker ThresholdWalker {
     has min_score: float;

@@ -1,3 +1,4 @@
+### Arithmetic Expressions
 Jac supports a comprehensive set of arithmetic operations that follow the standard mathematical precedence rules. The arithmetic expression system in Jac is designed to be intuitive and consistent with mathematical conventions while maintaining compatibility with Python's arithmetic operations.
 
 **Basic Arithmetic Operators**

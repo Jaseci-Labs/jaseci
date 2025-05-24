@@ -1,8 +1,8 @@
-# Special Comprehensions
+### Special Comprehensions
 
 Special comprehensions in Jac extend traditional list comprehensions with powerful filtering and assignment capabilities. These constructs enable concise manipulation of data structures, particularly in graph traversal contexts.
 
-## Filter Comprehensions
+#### Filter Comprehensions
 
 Filter comprehensions apply conditional filtering with optional null-safety:
 
@@ -26,7 +26,7 @@ filtered_nodes = [-->(?score > 0.5)];
 typed_edges = [<--(`Connection: weight > 10)];
 ```
 
-## Assignment Comprehensions
+#### Assignment Comprehensions
 
 Assignment comprehensions enable in-place property updates:
 
@@ -51,7 +51,7 @@ walker Updater {
 }
 ```
 
-## Filter Compare Lists
+#### Filter Compare Lists
 
 Complex filtering with multiple conditions:
 
@@ -63,7 +63,7 @@ Complex filtering with multiple conditions:
 (name != "admin", role in ["user", "guest"])
 ```
 
-## Typed Filter Compare Lists
+#### Typed Filter Compare Lists
 
 Type-specific filtering with property constraints:
 
@@ -75,7 +75,7 @@ Type-specific filtering with property constraints:
 `FriendEdge: (mutual == True, years > 2)
 ```
 
-## Integration with Data Spatial Operations
+#### Integration with Data Spatial Operations
 
 Special comprehensions shine in graph operations:
 
@@ -105,7 +105,7 @@ walker Processor {
 }
 ```
 
-## Comparison Operators
+#### Comparison Operators
 
 Available operators for filter comprehensions:
 - `==`, `!=`: Equality comparisons
@@ -113,7 +113,7 @@ Available operators for filter comprehensions:
 - `in`, `not in`: Membership tests
 - `is`, `is not`: Identity comparisons
 
-## Null-Safe Operations
+#### Null-Safe Operations
 
 The `?` operator enables safe property access:
 

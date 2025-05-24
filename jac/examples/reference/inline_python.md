@@ -1,3 +1,4 @@
+### Inline Python
 Inline Python in Jac provides a powerful mechanism to seamlessly integrate native Python code within Jac programs. This feature enables developers to leverage the vast Python ecosystem and existing Python libraries directly within their Jac applications.
 
 **Inline Python Syntax**

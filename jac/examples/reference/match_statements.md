@@ -1,8 +1,8 @@
-# Match Statements
+### Match Statements
 
 Match statements provide powerful pattern matching capabilities in Jac, enabling elegant handling of complex data structures and control flow based on value patterns. This feature supports structural pattern matching similar to modern programming languages.
 
-## Syntax
+#### Syntax
 
 ```jac
 match expression {
@@ -13,9 +13,9 @@ match expression {
 }
 ```
 
-## Pattern Types
+#### Pattern Types
 
-### Literal Patterns
+##### Literal Patterns
 Match specific literal values:
 ```jac
 match value {
@@ -28,7 +28,7 @@ match value {
 }
 ```
 
-### Capture Patterns
+##### Capture Patterns
 Bind matched values to variables:
 ```jac
 match data {
@@ -37,7 +37,7 @@ match data {
 }
 ```
 
-### Sequence Patterns
+##### Sequence Patterns
 Match lists and tuples:
 ```jac
 match point {
@@ -50,7 +50,7 @@ match point {
 }
 ```
 
-### Mapping Patterns
+##### Mapping Patterns
 Match dictionary structures:
 ```jac
 match config {
@@ -61,7 +61,7 @@ match config {
 }
 ```
 
-### Class Patterns
+##### Class Patterns
 Match object instances and extract attributes:
 ```jac
 match shape {
@@ -72,7 +72,7 @@ match shape {
 }
 ```
 
-### OR Patterns
+##### OR Patterns
 Match multiple patterns:
 ```jac
 match command {
@@ -83,7 +83,7 @@ match command {
 }
 ```
 
-### AS Patterns
+##### AS Patterns
 Bind the entire match while matching pattern:
 ```jac
 match data {
@@ -92,7 +92,7 @@ match data {
 }
 ```
 
-## Guard Conditions
+#### Guard Conditions
 
 Add conditions to patterns:
 ```jac
@@ -104,7 +104,7 @@ match user {
 }
 ```
 
-## Singleton Patterns
+#### Singleton Patterns
 
 Match None and boolean values:
 ```jac
@@ -118,7 +118,7 @@ match result {
 }
 ```
 
-## Practical Example
+#### Practical Example
 
 ```jac
 node RequestHandler {
