@@ -1,3 +1,4 @@
+### Raise Statements
 Raise statements in Jac provide the mechanism for explicitly throwing exceptions, enabling structured error handling and control flow disruption. These statements allow functions and methods to signal error conditions, invalid states, or exceptional circumstances that require special handling by calling code.
 
 **Basic Raise Statement Syntax**

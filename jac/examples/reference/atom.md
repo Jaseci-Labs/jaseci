@@ -1,3 +1,4 @@
+### Atom
 Atomic expressions in Jac represent the most basic building blocks of expressions - the fundamental units that cannot be broken down further. These include literals, references, collections, and other primary elements that form the foundation of more complex expressions.
 
 **Atomic Expression Types**

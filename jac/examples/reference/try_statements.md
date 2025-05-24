@@ -1,8 +1,8 @@
-# Try Statements
+### Try Statements
 
 Try statements provide exception handling mechanisms in Jac, enabling robust error management and graceful recovery from runtime errors. This construct supports structured exception handling with try, except, else, and finally blocks.
 
-## Syntax
+#### Syntax
 
 ```jac
 try {
@@ -18,7 +18,7 @@ try {
 }
 ```
 
-## Basic Exception Handling
+#### Basic Exception Handling
 
 ```jac
 try {
@@ -31,7 +31,7 @@ try {
 }
 ```
 
-## Multiple Exception Types
+#### Multiple Exception Types
 
 Handle different exceptions with specific responses:
 
@@ -53,7 +53,7 @@ walker DataProcessor {
 }
 ```
 
-## Else Clause
+#### Else Clause
 
 Execute code only when no exceptions occur:
 
@@ -71,7 +71,7 @@ can safe_divide(a: float, b: float) -> float {
 }
 ```
 
-## Finally Clause
+#### Finally Clause
 
 Guarantee cleanup code execution:
 
@@ -94,7 +94,7 @@ can process_file(filename: str) -> dict {
 }
 ```
 
-## Graph Operations Error Handling
+#### Graph Operations Error Handling
 
 Robust walker traversal:
 
@@ -130,7 +130,7 @@ walker SafeTraverser {
 }
 ```
 
-## Resource Management Pattern
+#### Resource Management Pattern
 
 Using try-finally for resource cleanup:
 
@@ -162,7 +162,7 @@ node DatabaseNode {
 }
 ```
 
-## Nested Try Blocks
+#### Nested Try Blocks
 
 Handle errors at multiple levels:
 
@@ -188,7 +188,7 @@ can complex_operation(data: dict) -> any {
 }
 ```
 
-## Custom Exception Handling
+#### Custom Exception Handling
 
 Define and handle custom exceptions:
 
@@ -214,7 +214,7 @@ walker GraphValidator {
 }
 ```
 
-## Best Practices
+#### Best Practices
 
 1. **Specific Exceptions First**: Order except blocks from most to least specific
 2. **Minimal Try Blocks**: Keep try blocks focused on code that may fail
@@ -222,7 +222,7 @@ walker GraphValidator {
 4. **Meaningful Error Messages**: Provide context in error handling
 5. **Don't Suppress Errors**: Avoid empty except blocks
 
-## Integration with Data Spatial
+#### Integration with Data Spatial
 
 Exception handling in graph contexts:
 

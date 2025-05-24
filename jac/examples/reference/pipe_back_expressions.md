@@ -1,8 +1,8 @@
-# Pipe Back Expressions
+### Pipe Back Expressions
 
 Pipe back expressions provide the reverse flow of pipe forward expressions, passing the result of the right expression as the last argument to the left expression. This operator enables different composition patterns that can be more natural for certain operations.
 
-## Backward Pipe Operator (`<|`)
+#### Backward Pipe Operator (`<|`)
 
 The backward pipe operator flows data from right to left:
 
@@ -14,9 +14,9 @@ result = data |> process |> format;
 result = format <| process <| data;
 ```
 
-## Use Cases
+#### Use Cases
 
-### Building Processing Pipelines
+##### Building Processing Pipelines
 ```jac
 # Define a processing pipeline right-to-left
 processor = output_formatter
@@ -27,7 +27,7 @@ processor = output_formatter
 result = processor(raw_input);
 ```
 
-### Partial Application Patterns
+##### Partial Application Patterns
 ```jac
 # Create specialized functions
 process_users = save_to_database
@@ -38,7 +38,7 @@ process_users = save_to_database
 process_users(user_list);
 ```
 
-## Combining with Forward Pipes
+#### Combining with Forward Pipes
 
 Mix both operators for expressive code:
 
@@ -52,7 +52,7 @@ final_result = formatter <| (
 );
 ```
 
-## Graph Operations
+#### Graph Operations
 
 In data spatial contexts:
 
@@ -72,7 +72,7 @@ walker Analyzer {
 }
 ```
 
-## Function Composition
+#### Function Composition
 
 Create reusable processing chains:
 
@@ -91,7 +91,7 @@ transform_all = final_format
 process = transform_all <| validate_all;
 ```
 
-## Precedence and Grouping
+#### Precedence and Grouping
 
 Understanding operator precedence:
 
@@ -105,9 +105,9 @@ output = final_step <| (
 );
 ```
 
-## Common Patterns
+#### Common Patterns
 
-### Builder Pattern
+##### Builder Pattern
 ```jac
 # Build configuration right-to-left
 config = apply_overrides
@@ -116,7 +116,7 @@ config = apply_overrides
     <| "config.json";
 ```
 
-### Middleware Chain
+##### Middleware Chain
 ```jac
 # Web request processing
 handle_request = send_response
@@ -125,7 +125,7 @@ handle_request = send_response
     <| parse_request;
 ```
 
-### Data Validation Pipeline
+##### Data Validation Pipeline
 ```jac
 # Validation stages
 validate = report_errors
@@ -134,14 +134,14 @@ validate = report_errors
     <| sanitize_input;
 ```
 
-## Best Practices
+#### Best Practices
 
 - **Use `<|` when**: Building processing chains where later stages depend on earlier ones
 - **Use `|>` when**: Transforming data through sequential steps
 - **Mix operators**: When it improves readability
 - **Group with parentheses**: To make precedence explicit
 
-## Comparison with Forward Pipe
+#### Comparison with Forward Pipe
 
 ```jac
 # Forward pipe - follows data flow

@@ -1,8 +1,8 @@
-# Global and Nonlocal Statements
+### Global and Nonlocal Statements
 
 Global and nonlocal statements in Jac provide mechanisms for accessing and modifying variables from outer scopes. These statements enable controlled access to variables defined outside the current function or ability scope.
 
-## Global Statement
+#### Global Statement
 
 The global statement declares that variables refer to globally scoped names:
 
@@ -14,7 +14,7 @@ The global statement declares that variables refer to globally scoped names:
 :global: config, state;
 ```
 
-### Basic Usage
+##### Basic Usage
 
 ```jac
 # Global variable
@@ -33,7 +33,7 @@ obj Controller {
 }
 ```
 
-### Multiple Global Variables
+##### Multiple Global Variables
 
 ```jac
 glob counter: int = 0;
@@ -49,7 +49,7 @@ can process_item(value: float) {
 }
 ```
 
-## Nonlocal Statement
+#### Nonlocal Statement
 
 The nonlocal statement declares that variables refer to names in the nearest enclosing scope:
 
@@ -61,7 +61,7 @@ The nonlocal statement declares that variables refer to names in the nearest enc
 :nonlocal: outer_counter;
 ```
 
-### Nested Function Scopes
+##### Nested Function Scopes
 
 ```jac
 can create_counter -> (func) {
@@ -77,7 +77,7 @@ can create_counter -> (func) {
 }
 ```
 
-### In Walker Abilities
+##### In Walker Abilities
 
 ```jac
 walker StateTracker {
@@ -103,26 +103,26 @@ walker StateTracker {
 }
 ```
 
-## Scope Resolution Rules
+#### Scope Resolution Rules
 
-### Global Scope
+##### Global Scope
 - Variables declared at module level
 - Accessible throughout the module
 - Require explicit `global` declaration to modify
 
-### Nonlocal Scope
+##### Nonlocal Scope
 - Variables in enclosing function/ability scope
 - Not global, not local
 - Require explicit `nonlocal` declaration to modify
 
-### Local Scope
+##### Local Scope
 - Variables defined within current function/ability
 - Default scope for assignments
 - Shadow outer scope variables
 
-## Common Patterns
+#### Common Patterns
 
-### Configuration Management
+##### Configuration Management
 ```jac
 glob config: dict = {
     "debug": False,
@@ -149,7 +149,7 @@ obj App {
 }
 ```
 
-### Counter Patterns
+##### Counter Patterns
 ```jac
 can create_id_generator -> func {
     next_id = 1000;
@@ -165,7 +165,7 @@ can create_id_generator -> func {
 }
 ```
 
-### State Accumulation
+##### State Accumulation
 ```jac
 walker Collector {
     can collect with entry {
@@ -193,7 +193,7 @@ walker Collector {
 }
 ```
 
-## Best Practices
+#### Best Practices
 
 1. **Minimize Global State**: Use sparingly for truly global concerns
 2. **Prefer Parameters**: Pass values explicitly when possible
@@ -201,7 +201,7 @@ walker Collector {
 4. **Use Nonlocal for Closures**: Appropriate for nested function state
 5. **Consider Alternatives**: Class attributes or node properties
 
-## Integration with Data Spatial
+#### Integration with Data Spatial
 
 In data spatial contexts, consider using node/edge properties instead of global state:
 

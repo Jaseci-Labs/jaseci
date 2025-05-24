@@ -1,3 +1,4 @@
+### Collection Values
 Collection values in Jac provide rich data structures for organizing and manipulating groups of related data. Jac supports all major collection types found in modern programming languages, along with powerful comprehension syntax for creating collections programmatically.
 
 **Basic Collection Types**

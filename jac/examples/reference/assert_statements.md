@@ -1,3 +1,4 @@
+### Assert Statements
 Assert statements in Jac provide a mechanism for debugging and testing by allowing developers to verify that certain conditions hold true during program execution. When an assertion fails, it raises an `AssertionError` exception, which can be caught and handled like any other exception.
 
 **Basic Assert Syntax**
