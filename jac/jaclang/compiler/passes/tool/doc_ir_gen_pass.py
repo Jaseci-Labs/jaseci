@@ -254,7 +254,7 @@ class DocIRGenPass(UniPass):
         """Generate DocIR for assignments."""
         parts: list[doc.DocType] = []
         for i in node.kid:
-            if isinstance(i, uni.Token) and i.name == Tok.SEMI:
+            if i == node.type_tag or (isinstance(i, uni.Token) and i.name == Tok.SEMI):
                 parts.pop()
                 parts.append(i.gen.doc_ir)
                 parts.append(self.space())

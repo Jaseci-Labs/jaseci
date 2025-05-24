@@ -14,8 +14,8 @@ import lsprotocol.types as lspt;
 class SemTokManager {
     """Initialize semantic token manager."""
     def init(self: SemTokManager, ir: uni.Module) -> None {
-        self.sem_tokens : List[int] = self.gen_sem_tokens(ir);
-        self.static_sem_tokens : List[Tuple[lspt.Position, int, int, uni.AstSymbolNode]] = self.gen_sem_tok_node(
+        self.sem_tokens: List[int] = self.gen_sem_tokens(ir);
+        self.static_sem_tokens: List[Tuple[lspt.Position, int, int, uni.AstSymbolNode]] = self.gen_sem_tok_node(
             ir
         );
     }
@@ -45,7 +45,7 @@ class SemTokManager {
         self: SemTokManager,
         ir: uni.Module
     ) -> List[Tuple[(lspt.Position, int, int, uni.AstSymbolNode)]] {
-        tokens : List[Tuple[(lspt.Position, int, int, uni.AstSymbolNode)]] = [];
+        tokens: List[Tuple[(lspt.Position, int, int, uni.AstSymbolNode)]] = [];
         for <>node in ir._in_mod_nodes {
             if isinstance(<>node, uni.NameAtom) and <>node.sem_token  {
                 (line, col_start, col_end) = ((<>node.loc.first_line - 1),
