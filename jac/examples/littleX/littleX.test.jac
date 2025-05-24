@@ -86,3 +86,15 @@ test remove_comment {
     comment spawn remove_comment();
     check len([root --> (`?Profile) --> (`?Tweet) --> (`?Comment)]) == 0;
 }
+
+test load_feed {
+    profile1 = Profile("Mars");
+    profile1 spawn follow_request();
+    profile1 spawn create_tweet("How are working man");
+    profile1 spawn create_tweet("How are u");
+    profile1 spawn create_tweet("how are u doing");
+    feeds = root spawn load_feed("How");
+    check all(
+        [ (feeds.results[i]['similarity'][0] >= feeds.results[i + 1]['similarity'][0]) for i in range(len(feeds.results) - 1) ]
+    );
+}
