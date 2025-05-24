@@ -6,7 +6,7 @@ import importlib.util
 from io import BytesIO
 from typing import Any, Callable
 
-from jaclang.compiler.semtable import SemInfo, SemRegistry, SemScope
+from mtllm.semtable import SemInfo, SemRegistry, SemScope
 
 from mtllm.utils import extract_non_primary_type, get_object_string, get_type_annotation
 
@@ -88,7 +88,7 @@ class Image:
                 img_format.lower(),
             )
 
-
+# And Here
 class TypeExplanation:
     """Class to represent a type explanation."""
 

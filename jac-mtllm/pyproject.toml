@@ -9,7 +9,7 @@ readme = "README.md"
 keywords = ["llm", "jaclang", "jaseci", "mtllm"]
 
 [tool.poetry.dependencies]
-jaclang = "0.7.31"
+jaclang = "0.8.0"
 loguru = "~0.7.2"
 openai = { version = "~1.30.4", optional = true }
 anthropic = { version = "~0.26.1", optional = true }
@@ -33,7 +33,7 @@ openai = ["openai"]
 together = ["together"]
 
 [tool.poetry.plugins."jac"]
-mtllm = "mtllm.plugin:JacMachineInterface"
+mtllm = "mtllm.plugin:JacMachine"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
