@@ -1,3 +1,116 @@
-Jac has enumerations directly in the language. The `enum Color` defines an enumeration called `Color`, which includes two members: `RED` assigned the value `1` and `pencil` which implicitly takes the next integer value, `2` (effectively the same as a typical `pencil = auto()` in Python's enum).
+### Enumerations
 
-The entry point of the program is defined with `with entry`, which serves as the main function or starting point for execution. Inside this block, the code prints the value of the `RED` enumeration member using `print(Color.RED.value);`. Since `RED` is assigned the value `1`, this statement will output `1` to the console when the program runs.
+Jac provides native enumeration support through the `enum` construct, offering ordered sets of named constants with integrated access control and implementation capabilities. Enumerations behave similarly to Python's `enum.Enum` while supporting Jac's archetype system and data spatial programming features.
+
+#### Basic Enumeration Declaration
+
+```jac
+enum Color {
+    RED   = 1,
+    GREEN = 2,
+    BLUE,          # implicit value → 3
+}
+```
+
+Enumeration values automatically increment from the previous value when omitted. Trailing commas are permitted, and enum names follow standard identifier rules consistent with other Jac archetypes.
+
+#### Access Control
+
+Enumerations support access modifiers to control visibility across module boundaries:
+
+```jac
+enum :protect Role {
+    ADMIN = "admin",
+    USER  = "user",
+}
+
+enum :pub Status {
+    ACTIVE,
+    INACTIVE,
+    PENDING
+}
+```
+
+Access modifiers (`:priv`, `:protect`, `:pub`) determine whether enumerations can be accessed from external modules, enabling proper encapsulation of enumerated constants.
+
+#### Member Properties
+
+Enumeration members expose standard properties for introspection:
+
+```jac
+print(Color.RED.name);    # "RED"
+print(Color.RED.value);   # 1
+```
+
+These properties provide runtime access to both the symbolic name and underlying value of enumeration members, supporting dynamic enumeration processing.
+
+#### Implementation Blocks
+
+Enumerations can include additional behavior through implementation blocks, separating declaration from logic:
+
+```jac
+enum Day;
+
+impl Day {
+    MON = 1,
+    TUE = 2,
+    WED = 3,
+    THU = 4,
+    FRI = 5,
+    SAT = 6,
+    SUN = 7,
+
+    def is_weekend(self) -> bool {
+        return self in [Day.SAT, Day.SUN];
+    }
+    
+    def next_day(self) -> Day {
+        return Day((self.value % 7) + 1);
+    }
+}
+```
+
+Implementation blocks enable enumerations to contain methods and computed properties while maintaining clean separation between constant definitions and behavioral logic.
+
+#### Integration with Decorators
+
+Enumerations support Python decorators for additional functionality:
+
+```jac
+import from enum { unique };
+
+@unique
+enum Priority {
+    LOW = 1,
+    MEDIUM = 2,
+    HIGH = 3
+}
+```
+
+The `@unique` decorator ensures all enumeration values are distinct, preventing accidental duplicate assignments.
+
+#### Usage in Data Spatial Contexts
+
+Enumerations integrate seamlessly with data spatial programming constructs:
+
+```jac
+enum NodeType {
+    DATA,
+    PROCESSING,
+    STORAGE
+}
+
+node TypedNode {
+    has node_type: NodeType;
+    
+    can process with visitor entry {
+        if (self.node_type == NodeType.PROCESSING) {
+            # Perform processing logic
+            result = process_data(visitor.data);
+            visitor.set_result(result);
+        }
+    }
+}
+```
+
+Enumerations provide type-safe constants that enhance code clarity and maintainability in both traditional programming contexts and data spatial graph operations.

@@ -1,4 +1,65 @@
-Jac's import and include statements provides a propoer superset of python's import semantics with some improvements for imports of Jac modules. That being said, its important to note an important syntax difference in that `from X import Y` is reworked into `import from X, Y`  (`import X` remains in the style of `import X` in Jac). Also there is a `:py` or `:jac` after the import statment to signify which type of import to consider.
+### Import and Include Statements
 
-- **Python Imports:** Utilize `import` to seamlessly import Python libraries, allowing full access to Python's ecosystem within Jac programs, with the same semantics as python.
-- **Jac Imports:** Use `import` for importing Jac-specific modules from `.jac` files with the same symantics as python files with and additional functionality for Jac's impl separation (described later), and static analysis features.
+Jac provides flexible module importing capabilities that extend Python's import system with additional convenience features and compile-time source inclusion. The language supports three distinct import mechanisms for different use cases.
+
+#### Standard Import
+
+Standard imports bring entire modules into the current namespace:
+
+```jac
+import math;
+import my_utils.helpers as utils;
+```
+
+The compiler automatically detects module types: paths ending with `.jac` are treated as Jac modules, while other paths are forwarded to Python's import machinery. The `as` keyword provides aliasing functionality identical to Python's behavior.
+
+#### Selective Import with Curly Braces
+
+Jac enables selective importing using curly brace syntax borrowed from ES modules:
+
+```jac
+import from my_pkg.subpkg { foo, bar as baz };
+```
+
+This syntax avoids ambiguity in comma-separated import lists while maintaining visual consistency with Jac's block delimiters. The curly brace notation clearly distinguishes between multiple import paths and multiple items from a single path.
+
+#### Include Statement
+
+The `include` statement performs compile-time textual inclusion of source files:
+
+```jac
+include ./support/logger.py;
+```
+
+Include operations insert the target file's contents verbatim at the inclusion point, sharing the same scope as the including file. This mechanism is particularly useful for embedding helper functions from Python files or splitting large Jac archetypes across multiple files while maintaining a single compilation unit.
+
+#### Module Resolution
+
+Jac follows a systematic approach to module resolution:
+
+1. **Relative paths** are resolved relative to the current file's location
+2. **Absolute module names** are searched first in `JAC_PATH`, then in Python's `sys.path`
+3. **Module caching** ensures each file is processed only once per build cycle
+
+#### Interface and Implementation Separation
+
+Jac's `impl` keyword enables separation of interface declarations from implementation details. Import statements bring only the interface unless the implementation file is found on the module path, supporting lightweight static analysis and efficient incremental builds.
+
+#### Integration with Data Spatial Programming
+
+Import statements work seamlessly with Jac's data spatial constructs, enabling modular organization of walkers, nodes, and edges across multiple files while maintaining the topological relationships essential for graph-based computation.
+
+```jac
+import from graph_utils { PathFinder, DataNode };
+import spatial_algorithms as algorithms;
+
+walker MyWalker {
+    can traverse with entry {
+        finder = PathFinder();
+        path = finder.find_path(here, target);
+        visit path;
+    }
+}
+```
+
+Organized imports enable the Jac compiler to analyze dependencies effectively and optimize distributed execution graphs for data spatial operations.
