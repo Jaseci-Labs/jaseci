@@ -1,18 +1,12 @@
 import datetime;
 import from jac_cloud.core.archetype { NodeAnchor }
-#import from mtllm.llms { Ollama, OpenAI }
 import numpy;
 import from sklearn.feature_extraction.text { TfidfVectorizer }
 import from sklearn.metrics.pairwise { cosine_similarity }
 
-# glob llm_open_ai = OpenAI(model_name="gpt-4o");
-# glob llm_ollama = Ollama(host="http://127.0.0.1:11434", model_name="llama3.2:1b");
 glob vectorizer = TfidfVectorizer();
 
 def search_tweets(query: str, tweet:str) -> int;
-
-# can 'Extract and summarize trending themes, major highlights, and key interactions from recent tweets in one concise sentence.'
-# summarize_tweets(tweets: list[str]) -> 'Summarization': str by llm_open_ai();
 
 node Profile {
     has username: str = "";
@@ -84,6 +78,8 @@ walker load_user_profiles {
         static has auth: bool = False;
     }
     can load_profiles with `root entry;
+
+    can report_profiles with exit;
 }
 
 walker follow_request {}
@@ -121,5 +117,7 @@ walker load_feed(visit_profile) {
     has results: list = [];
 
     can load with Profile entry;
+
+    can report_feed with exit;
 
 }

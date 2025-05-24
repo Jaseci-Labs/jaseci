@@ -1,8 +1,7 @@
 
 impl search_tweets {
-    query_embedding = vectorizer.fit_transform([query]);
-    tweet_embeddings = vectorizer.fit_transform([tweet]);
-    similarity = cosine_similarity(query_embedding, tweet_embeddings)[0];
+    transformed = vectorizer.fit_transform([query, tweet]);
+    similarity = cosine_similarity(transformed[0], transformed[1])[0];
     return similarity;
 }
 
@@ -97,16 +96,19 @@ impl load_user_profiles.load_profiles {
         self.profiles: list = [];
 
         for user in NodeAnchor.Collection.find({"name": "Profile"}) {
-            user_node = user.architype;
+            user_node = user.archetype;
             self.profiles.append(
                 {"name": user_node.username, "id": jid(user_node)}
             );
         }
-        report self.profiles;
     }
 
+impl load_user_profiles.report_profiles {
+    report self.profiles;
+}
+
 impl create_tweet.tweet {
-        embedding = vectorizer.fit_transform([self.content]).toarray().tolist();
+        embedding = vectorizer.fit_transform([self.content]);
         tweet_node = here +>:Post:+> Tweet(content=self.content, embedding=embedding);
         _.perm_grant(tweet_node[0], level="CONNECT");
         report tweet_node;
@@ -117,5 +119,9 @@ impl load_feed.load {
         for user_node in [->:Follow:->(`?Profile)] {
             visit [user_node-->(`?Tweet)];
         }
-        report self.results;
     }
+
+impl load_feed.report_feed {
+        self.results.sort(key=lambda x:dict:x['similarity'][0], reverse=True);
+        report self.results;
+}
