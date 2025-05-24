@@ -15,11 +15,13 @@ class Settings:
     pass_timer: bool = False
     collect_py_dep_debug: bool = False
     print_py_raised_ast: bool = False
+    debug_jac_typing: bool = False
 
     # Compiler configuration
     disable_mtllm: bool = False
     ignore_test_annex: bool = False
     pyout_jaclib_alias: str = "_"
+    enable_jac_semantics = True
 
     # Formatter configuration
     max_line_length: int = 88

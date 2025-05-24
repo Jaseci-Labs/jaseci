@@ -7,6 +7,7 @@ from jaclang.utils.helpers import extract_headings, heading_to_snake
 from jaclang.utils.lang_tools import AstTool
 from jaclang.utils.test import TestCase
 
+from jaclang.settings import settings
 
 class JacAstToolTests(TestCase):
     """Test pass module."""
@@ -38,17 +39,22 @@ class JacAstToolTests(TestCase):
 
     def test_print(self) -> None:
         """Testing for print AstTool."""
+        old_setting = settings.enable_jac_semantics
+        settings.enable_jac_semantics = False
         jac_file = os.path.join(
             os.path.dirname(jaclang.__file__),
             "../examples/reference/names_and_references.jac",
         )
         msg = "error in " + jac_file
         out = self.tool.ir(["ast", jac_file])
+        settings.enable_jac_semantics = old_setting
         self.assertIn("+-- Token", out, msg)
         self.assertIsNotNone(out, msg=msg)
 
     def test_print_py(self) -> None:
         """Testing for print_py AstTool."""
+        old_setting = settings.enable_jac_semantics
+        settings.enable_jac_semantics = False
         jac_py_directory = os.path.join(
             os.path.dirname(jaclang.__file__), "../examples/reference/"
         )
@@ -69,6 +75,7 @@ class JacAstToolTests(TestCase):
                     continue
                 self.assertIn("Module(", out, msg)
                 self.assertIsNotNone(out, msg=msg)
+        settings.enable_jac_semantics = old_setting
 
     def test_automated(self) -> None:
         """Testing for py, jac, md files for each content in Jac Grammer."""

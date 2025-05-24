@@ -14,6 +14,8 @@ from jaclang.cli.cmdreg import cmd_registry, extract_param_descriptions
 from jaclang.runtimelib.builtin import dotgen
 from jaclang.utils.test import TestCase
 
+from jaclang.settings import settings
+
 
 class JacCliTests(TestCase):
     """Test pass module."""
@@ -206,11 +208,14 @@ class JacCliTests(TestCase):
 
     def test_del_clean(self) -> None:
         """Testing for print AstTool."""
+        old_settings = settings.enable_jac_semantics 
+        settings.enable_jac_semantics = False
         captured_output = io.StringIO()
         sys.stdout = captured_output
         cli.check(f"{self.fixture_abs_path('del_clean.jac')}")
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
+        settings.enable_jac_semantics = old_settings
         self.assertIn("Errors: 0, Warnings: 0", stdout_value)
 
     def test_build_and_run(self) -> None:

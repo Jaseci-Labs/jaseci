@@ -5,13 +5,13 @@ from jaclang.vendor.pygls.workspace import Workspace
 import lsprotocol.types as lspt
 import pytest
 from jaclang import JacMachineInterface as _
+from jaclang.settings import settings
 
 JacLangServer = _.py_jac_import(
     "...langserve.engine", __file__, items={"JacLangServer": None}
 )[0]
-LspSession = _.py_jac_import(
-    "session", __file__, items={"LspSession": None}
-)[0]
+LspSession = _.py_jac_import("session", __file__, items={"LspSession": None})[0]
+
 
 class TestJacLangServer(TestCase):
 
@@ -47,6 +47,8 @@ class TestJacLangServer(TestCase):
 
     def test_impl_stay_connected(self) -> None:
         """Test that the server doesn't run if there is a syntax error."""
+        old_setting = settings.enable_jac_semantics
+        settings.enable_jac_semantics = False
         lsp = JacLangServer()
         # Set up the workspace path to "fixtures/"
         workspace_path = self.fixture_abs_path("")
@@ -69,9 +71,12 @@ class TestJacLangServer(TestCase):
             "ability) calculate_area\n( radius : float ) -> float",
             lsp.get_hover_info(circle_impl_file, pos).contents.value.replace("'", ""),
         )
+        settings.enable_jac_semantics = old_setting
 
     def test_impl_auto_discover(self) -> None:
         """Test that the server doesn't run if there is a syntax error."""
+        old_setting = settings.enable_jac_semantics
+        settings.enable_jac_semantics = False
         lsp = JacLangServer()
         # Set up the workspace path to "fixtures/"
         workspace_path = self.fixture_abs_path("")
@@ -82,6 +87,7 @@ class TestJacLangServer(TestCase):
         )
         lsp.deep_check(circle_impl_file)
         pos = lspt.Position(8, 11)
+        settings.enable_jac_semantics = old_setting
         self.assertIn(
             # "ability) calculate_area: float",
             "(public ability) calculate_area\n( radius : float ) -> float",
@@ -116,6 +122,8 @@ class TestJacLangServer(TestCase):
 
     def test_go_to_definition(self) -> None:
         """Test that the go to definition is correct."""
+        old_setting = settings.enable_jac_semantics
+        settings.enable_jac_semantics = False
         lsp = JacLangServer()
         workspace_path = self.fixture_abs_path("")
         workspace = Workspace(workspace_path, lsp)
@@ -130,6 +138,7 @@ class TestJacLangServer(TestCase):
             "fixtures/circle_pure.jac:13:11-13:16",
             str(lsp.get_definition(circle_file, lspt.Position(20, 16))),
         )
+        settings.enable_jac_semantics = old_setting
 
     def test_go_to_definition_method(self) -> None:
         """Test that the go to definition is correct."""

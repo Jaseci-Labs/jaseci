@@ -1,0 +1,177 @@
+site_name: The Jac Programming Language
+site_url: https://jac-lang.org
+use_directory_urls: true
+nav:
+  - For coders:
+      - "for_coders/introduction.md"
+      - "for_coders/why_jac.md"
+      - "for_coders/getting_started.md"
+      - "for_coders/installation.md"
+      - Language Basics:
+        - "for_coders/language_basics/basic_syntax.md"
+        - "for_coders/language_basics/types.md"
+        - "for_coders/language_basics/can_abilities.md"
+        - "for_coders/language_basics/import.md"
+        - "for_coders/language_basics/impl_docs.md"
+      - Data Spatial Programming:
+        # - "for_coders/data_spatial/dataspatial.md" # Why data spatial
+        - "for_coders/data_spatial/nodes_and_edges.md" # Introduction to DS primitives
+        - "for_coders/data_spatial/walkers.md" # Walker
+        - "for_coders/data_spatial/filtering.md" # Filtering
+        - "for_coders/data_spatial/sequence.md"
+        - "for_coders/data_spatial/FAQ.md" # faq
+      # - Python Integration:
+      #   - "for_coders/python_integration.md"
+      - Programming with Generative AI Models:
+        - "for_coders/jac-mtllm/with_llm.md"
+        - Quick Start Guide: "for_coders/jac-mtllm/quickstart.md"
+        - Models: "for_coders/jac-mtllm/model_declaration.md"
+        - Usage of MTLLM: "for_coders/jac-mtllm/usage.md"
+        - Optional Meaning Hints: "for_coders/jac-mtllm/semstrings.md"
+        - Using Multimodal models: "for_coders/jac-mtllm/multimodality.md"
+        - Bring your own LM: "for_coders/jac-mtllm/create_own_lm.md"
+        - Python MTLLM Interface: "for_coders/jac-mtllm/python_integration.md"
+        - Tutorials: "for_coders/jac-mtllm/rpg_game.md"
+      - Cloud Native Abstractions:
+        - "for_coders/jac-cloud/jac_cloud.md"
+        - "for_coders/jac-cloud/permission.md"
+        - "for_coders/jac-cloud/jac_cloud_logging.md"
+        - "for_coders/jac-cloud/jac_cloud_env_vars.md"
+        - "for_coders/jac-cloud/jac_cloud_webhook.md"
+        - "for_coders/jac-cloud/jac_cloud_websocket.md"
+        - "for_coders/jac-cloud/cloud-orc-integration.md"
+      - Tools:
+        - "for_coders/tools/testing.md"
+        - "for_coders/tools/jac_streamlit.md"
+        - "for_coders/tools/cli.md"
+      - Manual:
+        - "for_coders/jac_coding_manual.md"
+  - For contributors:
+      - "for_contributors/contrib.md"
+      - "for_contributors/internals.md"
+      - Symbol Tables:
+        - "for_contributors/symbol_tables/index.md"
+        - "for_contributors/symbol_tables/structure.md"
+        - "for_contributors/symbol_tables/building.md"
+        - "for_contributors/symbol_tables/def_use.md"
+        - "for_contributors/symbol_tables/linking.md"
+        - "for_contributors/symbol_tables/resolution.md"
+      - Type Checker Roadmap:
+        - "plan/README.md"
+        - "plan/01-type-system-foundation.md"
+        - "plan/02-type-inference-engine.md"
+        - "plan/03-type-checking-pipeline.md"
+        - "plan/04-error-reporting-system.md"
+        - "plan/05-special-features.md"
+        - "plan/06-external-integration.md"
+        - "plan/07-implementation-steps.md"
+      - "for_contributors/jac_plugins.md"
+      - "for_contributors/uniir_node.md"
+      - "for_contributors/roadmap.md"
+  - Examples:
+    - LittleX (your own twitter):
+      - "examples/littleX/overview.md"
+      - "examples/littleX/tutorial.md"
+      - "examples/littleX/quickstart.md"
+    - RAG-based Conversational Chatbot:
+      - "examples/rag_chatbot/readme.md"
+      - "examples/rag_chatbot/1_setting-up-jac-cloud.md"
+      - "examples/rag_chatbot/2_building-a-rag-chatbot.md"
+      - "examples/rag_chatbot/3_rag-dialogue-routing-chatbot.md"
+
+  - Language Reference:
+    - "lang_ref/jac_ref.md"
+  - Jac Playground:
+    - Playground: playground/index.html
+
+theme:
+  logo: "assets/logo.png"
+  name: "material"
+  palette:
+    scheme: "slate"
+    primary: "black"
+    accent: "orange"
+  font:
+    text: "Roboto"
+    code: "Roboto Mono"
+  features:
+    - content.code.copy
+    - content.code.mermaid
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.path
+    - navigation.footer
+    - navigation.expand
+    - navigation.sections
+    - navigation.top
+  icon:
+    admonition:
+      note: octicons/tag-16
+      abstract: octicons/checklist-16
+      info: octicons/info-16
+      tip: material/fire
+      success: octicons/check-16
+      question: octicons/question-16
+      warning: octicons/alert-16
+      failure: octicons/x-circle-16
+      danger: octicons/zap-16
+      bug: octicons/bug-16
+      example: octicons/beaker-16
+      quote: octicons/quote-16
+
+markdown_extensions:
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+      pygments_style: "autumn"
+  - pymdownx.inlinehilite
+  # - codehilite:
+  #     linenums: true
+  - pymdownx.snippets:
+      base_path: [".", "../../"]
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          # format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - attr_list
+  - md_in_html
+  - attr_list
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - tables
+  - toc:
+        permalink: "#"
+  # - pymdownx.emoji:
+  #     emoji_index: !!python/name:material.extensions.emoji.twemoji
+  #     emoji_generator: !!python/name:material.extensions.emoji.to_svg
+extra_javascript:
+  - https://unpkg.com/mermaid@11.6.0/dist/mermaid.min.js  # Specify the newer version
+extra_css:
+  - extra.css
+
+extra:
+  generator: false
+  social:
+    - icon: fontawesome/brands/mastodon
+      link: https://fosstodon.org/@squidfunk
+copyright: Copyright &copy; 2023 - 2024 Jac Hackers Everwhere
+
+plugins:
+  - search
+  - open-in-new-tab
+  - mkdocs-video:
+      is_video: True
+      video_autoplay: True
+      # video_loop: True
+      video_controls: False
+  - mkdocs-simple-hooks:
+      hooks:
+        on_pre_build: scripts.handle_jac_compile_data:pre_build_hook

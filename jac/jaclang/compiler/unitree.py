@@ -30,6 +30,8 @@ from jaclang.compiler.constant import (
     SymbolType,
 )
 from jaclang.compiler.constant import DELIM_MAP, SymbolAccess, Tokens as Tok
+from jaclang.compiler.jtyping.types.janytype import JAnyType
+from jaclang.compiler.jtyping.types.jtype import JType
 from jaclang.utils import resolve_relative_path
 from jaclang.utils.treeprinter import (
     dotgen_ast_tree,
@@ -242,6 +244,7 @@ class Symbol:
         defn.sym = self
         self.access: SymbolAccess = access
         self.parent_tab = parent_tab
+        self.jtype: JType = JAnyType()
 
     @property
     def decl(self) -> NameAtom:

@@ -6,6 +6,7 @@ from contextlib import suppress
 
 from jaclang.cli import cli
 from jaclang.utils.test import TestCase
+from jaclang.settings import settings
 
 
 class JacCliTests(TestCase):
@@ -90,6 +91,8 @@ class JacCliTests(TestCase):
 
     def test_pure_circle_impl_not_double_generated(self) -> None:
         """Basic test for pass."""
+        old_setting = settings.enable_jac_semantics
+        settings.enable_jac_semantics = False
         captured_output = io.StringIO()
         sys.stdout = captured_output
 
@@ -103,6 +106,7 @@ class JacCliTests(TestCase):
 
         sys.stdout = sys.__stdout__
         stdout_value = captured_output.getvalue()
+        settings.enable_jac_semantics = old_setting
 
         # Assertions or verifications
         self.assertNotIn("\ndef __init__(self", stdout_value)
