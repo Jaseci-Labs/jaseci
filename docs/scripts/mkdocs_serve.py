@@ -25,6 +25,22 @@ class CustomHeaderHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
         super().end_headers()
 
+    def send_error(self, code, message=None, explain=None):
+        """Serve custom 404.html page for 404 errors."""
+        if code == 404:
+            try:
+                with open("404/index.html", "rb") as f:
+                    content = f.read()
+                self.send_response(404)
+                self.send_header("Content-Type", "text/html")
+                self.send_header("Content-Length", str(len(content)))
+                self.end_headers()
+                self.wfile.write(content)
+            except Exception as e:
+                super().send_error(code, message, explain)
+        else:
+            super().send_error(code, message, explain)
+
 
 class DebouncedRebuildHandler(FileSystemEventHandler):
     """File system event handler for debounced MkDocs site rebuilding."""
