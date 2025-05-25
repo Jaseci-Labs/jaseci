@@ -25,7 +25,9 @@ class CustomHeaderHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
         super().end_headers()
 
-    def send_error(self, code, message=None, explain=None):
+    def send_error(
+        self, code: int, message: Optional[str] = None, explain: Optional[str] = None
+    ) -> None:
         """Serve custom 404.html page for 404 errors."""
         if code == 404:
             try:
@@ -36,7 +38,7 @@ class CustomHeaderHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_header("Content-Length", str(len(content)))
                 self.end_headers()
                 self.wfile.write(content)
-            except Exception as e:
+            except Exception:
                 super().send_error(code, message, explain)
         else:
             super().send_error(code, message, explain)
