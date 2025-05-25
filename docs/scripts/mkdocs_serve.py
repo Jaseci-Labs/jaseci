@@ -29,7 +29,7 @@ class CustomHeaderHandler(http.server.SimpleHTTPRequestHandler):
         """Serve custom 404.html page for 404 errors."""
         if code == 404:
             try:
-                with open("404/index.html", "rb") as f:
+                with open("404.html", "rb") as f:
                     content = f.read()
                 self.send_response(404)
                 self.send_header("Content-Type", "text/html")
