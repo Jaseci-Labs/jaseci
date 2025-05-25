@@ -37,4 +37,5 @@ else:
     mach.close()
     raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
+FastAPI.__jac_mach__ = mach
 app = FastAPI.get()

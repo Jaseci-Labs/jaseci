@@ -2,7 +2,6 @@
 
 from contextvars import ContextVar
 from dataclasses import dataclass, is_dataclass
-from os import getenv
 from typing import Any, Generic, TypeVar, cast
 
 from bson import ObjectId
@@ -19,10 +18,8 @@ from .archetype import (
     Root,
     asdict,
 )
-from .memory import MongoDB  # type: ignore[attr-defined]
+from .memory import MongoDB
 
-
-SHOW_ENDPOINT_RETURNS = getenv("SHOW_ENDPOINT_RETURNS") == "true"
 JASECI_CONTEXT = ContextVar["JaseciContext | None"]("JaseciContext")
 
 SUPER_ROOT_ID = ObjectId("000000000000000000000000")
@@ -38,16 +35,7 @@ class ContextResponse(Generic[RT]):
     """Default Context Response."""
 
     status: int
-    reports: list[Any] | None = None
-    returns: list[RT] | None = None
-
-    def __serialize__(self) -> dict[str, Any]:
-        """Serialize response."""
-        return {
-            key: value
-            for key, value in self.__dict__.items()
-            if value is not None and not key.startswith("_")
-        }
+    reports: list[RT]
 
 
 class JaseciContext(JacMachine):
@@ -132,22 +120,14 @@ class JaseciContext(JacMachine):
         """Get current root."""
         return cast(Root, JaseciContext.get().root_state.archetype)
 
-    def response(self, returns: list[Any]) -> dict[str, Any]:
+    def response(self) -> dict[str, Any]:
         """Return serialized version of reports."""
-        resp = ContextResponse[Any](status=self.status)
+        resp = ContextResponse[Any](status=self.status, reports=self.reports)
 
-        if self.reports:
-            for key, val in enumerate(self.reports):
-                self.clean_response(key, val, self.reports)
-            resp.reports = self.reports
+        for key, val in enumerate(self.reports):
+            self.clean_response(key, val, self.reports)
 
-        for key, val in enumerate(returns):
-            self.clean_response(key, val, returns)
-
-        if SHOW_ENDPOINT_RETURNS:
-            resp.returns = returns
-
-        return resp.__serialize__()
+        return asdict(resp)
 
     def clean_response(
         self, key: str | int, val: Any, obj: list | dict  # noqa: ANN401

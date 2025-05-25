@@ -63,7 +63,8 @@ class JacCmd:
                 mach.close()
                 raise ValueError("Not a valid file!\nOnly supports `.jac` and `.jir`")
 
-            FastAPI.start(mach=mach, host=host, port=port)
+            FastAPI.__jac_mach__ = mach
+            FastAPI.start(host=host, port=port)
             mach.close()
 
         @cmd_registry.register

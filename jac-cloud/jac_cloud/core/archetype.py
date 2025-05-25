@@ -186,7 +186,6 @@ class Schedule:
     execute_date: datetime | None = None
     executed_date: datetime | None = None
     http_status: int | None = None
-    returns: list[Any] | None = None
     reports: list[Any] | None = None
     custom: Any = None
     error: list[str] | None = None
@@ -903,7 +902,6 @@ class WalkerAnchor(BaseAnchor, _WalkerAnchor):  # type: ignore[misc]
     state: WalkerAnchorState
     path: list[NodeAnchor] = field(default_factory=list)  # type: ignore[assignment]
     next: list[NodeAnchor] = field(default_factory=list)  # type: ignore[assignment]
-    returns: list[Any] = field(default_factory=list)
     ignores: list[NodeAnchor] = field(default_factory=list)  # type: ignore[assignment]
     disengaged: bool = False
     schedule: Schedule | None = None

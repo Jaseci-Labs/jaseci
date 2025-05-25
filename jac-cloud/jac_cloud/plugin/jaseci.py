@@ -11,7 +11,6 @@ from jaclang.runtimelib.machine import (
     JacMachineInterface as Jac,
     hookimpl,
 )
-from jaclang.runtimelib.utils import all_issubclass
 
 from ..core.archetype import (
     AccessLevel,
@@ -351,95 +350,6 @@ class JacPlugin(JacAccessValidationPlugin, JacNodePlugin, JacEdgePlugin):
             return JacMachineImpl.object_ref(obj=obj)
 
         return str(obj.__jac__.ref_id)
-
-    @staticmethod
-    @hookimpl
-    def spawn_call(walker: WalkerAnchor, node: NodeAnchor) -> WalkerArchetype:
-        """Invoke data spatial call."""
-        if not FastAPI.is_enabled():
-            return JacMachineImpl.spawn_call(walker=walker, node=node)
-
-        warch = walker.archetype
-        walker.path = []
-        walker.next = [node]
-        walker.returns = []
-        current_node = node.archetype
-
-        # walker entry
-        for i in warch._jac_entry_funcs_:
-            if not i.trigger:
-                walker.returns.append(i.func(warch, current_node))
-            if walker.disengaged:
-                return warch
-
-        while len(walker.next):
-            if current_node := walker.next.pop(0).archetype:
-                # walker entry with
-                for i in warch._jac_entry_funcs_:
-                    if (
-                        i.trigger
-                        and all_issubclass(i.trigger, NodeArchetype)
-                        and isinstance(current_node, i.trigger)
-                    ):
-                        walker.returns.append(i.func(warch, current_node))
-                    if walker.disengaged:
-                        return warch
-
-                # node entry
-                for i in current_node._jac_entry_funcs_:
-                    if not i.trigger:
-                        walker.returns.append(i.func(current_node, warch))
-                    if walker.disengaged:
-                        return warch
-
-                # node entry with
-                for i in current_node._jac_entry_funcs_:
-                    if (
-                        i.trigger
-                        and all_issubclass(i.trigger, WalkerArchetype)
-                        and isinstance(warch, i.trigger)
-                    ):
-                        walker.returns.append(i.func(current_node, warch))
-                    if walker.disengaged:
-                        return warch
-
-                # node exit with
-                for i in current_node._jac_exit_funcs_:
-                    if (
-                        i.trigger
-                        and all_issubclass(i.trigger, WalkerArchetype)
-                        and isinstance(warch, i.trigger)
-                    ):
-                        walker.returns.append(i.func(current_node, warch))
-                    if walker.disengaged:
-                        return warch
-
-                # node exit
-                for i in current_node._jac_exit_funcs_:
-                    if not i.trigger:
-                        walker.returns.append(i.func(current_node, warch))
-                    if walker.disengaged:
-                        return warch
-
-                # walker exit with
-                for i in warch._jac_exit_funcs_:
-                    if (
-                        i.trigger
-                        and all_issubclass(i.trigger, NodeArchetype)
-                        and isinstance(current_node, i.trigger)
-                    ):
-                        walker.returns.append(i.func(warch, current_node))
-                    if walker.disengaged:
-                        return warch
-        # walker exit
-        for i in warch._jac_exit_funcs_:
-            if not i.trigger:
-                walker.returns.append(i.func(warch, current_node))
-            if walker.disengaged:
-                return warch
-
-        walker.ignores = []
-        return warch
 
     @staticmethod
     @hookimpl

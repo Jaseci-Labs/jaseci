@@ -257,7 +257,7 @@ def walker_execution(websocket: WebSocket, event: WalkerEvent) -> dict:
             if jctx.custom is not MISSING:
                 return jctx.custom
 
-            return jctx.response(wlk.returns)
+            return jctx.response()
         else:
             jctx.close()
             raise WalkerExecutionError(
