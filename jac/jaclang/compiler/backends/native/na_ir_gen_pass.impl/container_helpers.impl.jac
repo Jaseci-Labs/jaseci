@@ -1107,6 +1107,42 @@ impl NaIRGenPass._emit_grow_array(
     return new_data;
 }
 
+impl NaIRGenPass._emit_slow_path_helper(
+    fn_name: str, ret_type: ir.Type, arg_types: list[ir.Type], nounwind: bool = True
+) -> ir.Function {
+    fn = ir.Function(
+        self.llvm_module, ir.FunctionType(ret_type, arg_types), name=fn_name
+    );
+    fn.linkage = "private";
+    fn.attributes.add("noinline");
+    fn.attributes.add("cold");
+    if nounwind {
+        fn.attributes.add("nounwind");
+    }
+    return fn;
+}
+
+impl NaIRGenPass._emit_list_grow_fn(
+    fn_name: str, list_ptr_type: ir.Type, elem_type: ir.Type
+) -> ir.Function {
+    i64 = ir.IntType(64);
+    i32 = ir.IntType(32);
+    grow_fn = self._emit_slow_path_helper(fn_name, ir.VoidType(), [list_ptr_type, i64]);
+    grow_fn.args[0].name = "list";
+    grow_fn.args[1].name = "len";
+    b = ir.IRBuilder(grow_fn.append_basic_block("entry"));
+    cap_ptr = b.gep(
+        grow_fn.args[0], [ir.Constant(i32, 0), ir.Constant(i32, 1)], name="cap.ptr.g"
+    );
+    cur_cap = b.load(cap_ptr, name="cap");
+    arr_ptr = b.gep(
+        grow_fn.args[0], [ir.Constant(i32, 0), ir.Constant(i32, 2)], name="data.ptr.g"
+    );
+    self._emit_grow_array(b, arr_ptr, elem_type, grow_fn.args[1], cap_ptr, cur_cap);
+    b.ret_void();
+    return grow_fn;
+}
+
 impl NaIRGenPass._emit_rc_destructor_preamble(
     release_fn: ir.Function, ptr_type: ir.Type
 ) -> tuple[ir.IRBuilder, ir.Block] {

@@ -264,11 +264,9 @@ impl NaIRGenPass._emit_hash_core_helpers(
     bnx.store(nslm, slot_a);
     bnx.branch(probe_bb);
 
-    rehash_fnty = ir.FunctionType(ir.VoidType(), [cont_ptr_type]);
-    rehash_fn: ir.Function = ir.Function(
-        self.llvm_module, rehash_fnty, name=f"{_pre}_rehash_{_safe}"
+    rehash_fn: any = self._emit_slow_path_helper(
+        f"{_pre}_rehash_{_safe}", ir.VoidType(), [cont_ptr_type]
     );
-    rehash_fn.linkage = "private";
     rehash_fn.args[0].name = "cont";
     brh = ir.IRBuilder(rehash_fn.append_basic_block("entry"));
     d_rh = rehash_fn.args[0];

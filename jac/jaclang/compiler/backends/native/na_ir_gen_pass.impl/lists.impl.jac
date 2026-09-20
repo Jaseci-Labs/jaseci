@@ -53,6 +53,7 @@ impl NaIRGenPass._emit_list_helpers(elem_type_name: str, elem_type: ir.Type) -> 
         self.llvm_module, append_fnty, name=f"__list_append_{elem_type_name}"
     );
     append_fn.linkage = "private";
+    append_fn.attributes.add("nounwind");
     append_fn.args[0].name = "list";
     append_fn.args[1].name = "val";
     entry_bb = append_fn.append_basic_block("entry");
@@ -69,10 +70,10 @@ impl NaIRGenPass._emit_list_helpers(elem_type_name: str, elem_type: ir.Type) -> 
     b.cbranch(need_grow, grow_bb, store_bb);
 
     b.position_at_end(grow_bb);
-    data_p_g = b.gep(
-        l_arg, [ir.Constant(i32, 0), ir.Constant(i32, 2)], name="data.ptr.g"
+    grow_fn = self._emit_list_grow_fn(
+        f"__list_grow_{elem_type_name}", list_ptr_type, elem_type
     );
-    self._emit_grow_array(b, data_p_g, elem_type, cur_len, cap_p2, cur_cap);
+    b.call(grow_fn, [l_arg, cur_len]);
     b.branch(store_bb);
 
     b.position_at_end(store_bb);
@@ -97,6 +98,7 @@ impl NaIRGenPass._emit_list_helpers(elem_type_name: str, elem_type: ir.Type) -> 
         self.llvm_module, set_fnty, name=f"__list_set_{elem_type_name}"
     );
     set_fn.linkage = "private";
+    set_fn.attributes.add("nounwind");
     set_fn.args[0].name = "list";
     set_fn.args[1].name = "index";
     set_fn.args[2].name = "val";

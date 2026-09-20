@@ -1253,6 +1253,14 @@ walker NaIRGenPass(CompilerPass) {
         cur_cap: ir.Value
     ) -> ir.Value;
 
+    def _emit_slow_path_helper(
+        fn_name: str, ret_type: ir.Type, arg_types: list[ir.Type], nounwind: bool = True
+    ) -> ir.Function;
+
+    def _emit_list_grow_fn(
+        fn_name: str, list_ptr_type: ir.Type, elem_type: ir.Type
+    ) -> ir.Function;
+
     def _emit_rc_destructor_preamble(
         release_fn: ir.Function, ptr_type: ir.Type
     ) -> tuple[ir.IRBuilder, ir.Block];
