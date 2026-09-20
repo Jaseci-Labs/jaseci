@@ -23,8 +23,10 @@ obj NativeLibrary {
         functions: dict[str, Callable] = {};
 
     def handle -> ctypes.CDLL {
+        import os;
         if self.library is None {
-            self.library = ctypes.CDLL(self.path);
+            mode = getattr(os, "RTLD_NOW", 0);
+            self.library = ctypes.CDLL(self.path, mode=mode);
         }
         return self.library;
     }

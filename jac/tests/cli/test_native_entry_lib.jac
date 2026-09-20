@@ -65,12 +65,15 @@ def _seal_fixture_project(
 }
 
 
-test "_build_c_argv returns argc and keeps encoded argv pointers" {
+test "NativeArgv builds argc and keeps encoded argv pointers alive" {
     argv = ["/tmp/app.jac", "hello", "world"];
-    (argc, c_argv, c_strings) = exec_cmds._build_c_argv(argv);
-    assert argc == 3 , f"expected argc 3, got {argc}";
-    assert len(c_strings) == 3 , "one c_char_p per argument";
-    assert c_strings[0].value == b"/tmp/app.jac" , "argv strings must be UTF-8 encoded";
+    native_argv = exec_cmds.NativeArgv(argv);
+    assert native_argv.argc == 3 , f"expected argc 3, got {native_argv.argc}";
+    assert len(native_argv.refs) == 3 , "one c_char_p per argument";
+    assert native_argv.refs[0].value == b"/tmp/app.jac" , "argv strings must be UTF-8 encoded";
+    assert native_argv.vector[1] == b"hello" and native_argv.vector[2] == b"world" , (
+        "the char** vector must expose the encoded arguments"
+    );
 }
 
 
@@ -102,7 +105,9 @@ test "_jab_native_lib resolves the sealed native artifact path" {
 
 
 test "_run_native_lib returns None when the library cannot be loaded" {
-    rc = exec_cmds._run_native_lib("/no/such/lib.so", ["app.jac"]);
+    rc = exec_cmds._run_native_lib(
+        "/no/such/lib.so", ["app.jac"], img_root=Path("/no/such/img")
+    );
     assert rc is None , "load failure must fall back to the standalone binary";
 }
 
@@ -115,7 +120,7 @@ test "_run_native_lib returns None when required exports are missing" {
     with patch("ctypes.CDLL", return_value=stub), patch.object(
         exec_cmds, "_set_native_argv_in_dll", return_value=True
     ) {
-        rc = exec_cmds._run_native_lib("fake.so", ["app.jac"]);
+        rc = exec_cmds._run_native_lib("fake.so", ["app.jac"], img_root=Path("."));
     }
     assert rc is None , "missing jac_entry must fall back, not abort the jab run";
 }
@@ -172,7 +177,7 @@ test "_run_native_lib succeeds for a valid entry library (Linux)" {
         lib_out = os.path.join(d, "entry.so");
         assert build_native_entry_lib(filename=fixture, output=lib_out) == 0;
         host_argv = ["/sealed/main.jac"];
-        rc = exec_cmds._run_native_lib(lib_out, host_argv);
+        rc = exec_cmds._run_native_lib(lib_out, host_argv, img_root=Path(d));
         assert rc == 0 , "_run_native_lib should run jac_entry successfully";
     }
 }
@@ -198,7 +203,7 @@ test "_bake_native_payloads accepts native_build_sealed_pair success (return 0)"
             "return 0 from native_build_sealed_pair must not abort native bake "
             "(Jac treats 0 as falsy — check != 0, not `if not`)"
         );
-        assert mock_pair.called , "expected nacompile_sealed_pair to be invoked";
+        assert mock_pair.called , "expected native_build_sealed_pair to be invoked";
     } finally {
         shutil.rmtree(tmp, ignore_errors=True);
     }
@@ -269,6 +274,76 @@ test "sealed pair on a native_imports app drops the exe and keeps the lib" {
 }
 
 
+test "_run_native_lib executes na->sv callbacks resolved from the image root (Linux)" {
+    if not sys.platform.startswith("linux") {
+        testskip("linux-only native linking");
+    }
+    if not _llvm_available() {
+        testskip("LLVM toolchain unavailable");
+    }
+    tmp = tempfile.mkdtemp(prefix="jac_callback_root_");
+    try {
+        proj = Path(tmp) / "proj";
+        proj.mkdir();
+        _seal_fixture_project(proj, "callbackroot", interop=True);
+        marker = Path(tmp) / "marker.txt";
+        (proj / "helper.jac").write_text(
+            "import from pathlib { Path }\n\n"
+            "def:pub py_double(x: int) -> int {\n"
+            f"    Path({str(marker)!r}).write_text(str(x * 2));\n"
+            "    return x * 2;\n"
+            "}\n",
+            encoding="utf-8"
+        );
+        import from jaclang.cli.commands.native_build { native_build_sealed_pair }
+        lib_out = str(proj / "libmain.entry.so");
+        assert native_build_sealed_pair(
+            filename=str(proj / "main.jac"),
+            exe_output=str(proj / "main"),
+            lib_output=lib_out
+        )
+            == 0 , "interop seal must produce the host-driven entry library";
+
+        # Stage the sealed layout the jab host runs: the library under
+        # .jac/native/<triple>, its interop sidecar beside it, and the
+        # callback source module at the image root. The library path alone
+        # must not be used to locate callback sources.
+        import jaclang.compiler.backends.native.llvm.binding as llvm;
+        img = Path(tmp) / "img";
+        lib_dir = img / NATIVE_DIR_REL / llvm.get_default_triple();
+        lib_dir.mkdir(parents=True);
+        sealed_lib = lib_dir / "libmain.entry.so";
+        shutil.copy2(lib_out, sealed_lib);
+        shutil.copy2(
+            Path(lib_out + ".interop.json"), Path(str(sealed_lib) + ".interop.json")
+        );
+        (img / "helper.jac").write_text(
+            (proj / "helper.jac").read_text(encoding="utf-8"), encoding="utf-8"
+        );
+
+        callbacks = exec_cmds._jab_interop_callbacks(str(sealed_lib));
+        assert callbacks , "the seal must record the callback contract";
+        assert callbacks[0].get("name") == "py_double" , (
+            f"unexpected callback contract: {callbacks}"
+        );
+        rc = exec_cmds._run_native_lib(
+            str(sealed_lib), [str(img / "main.jac")], callbacks=callbacks, img_root=img
+        );
+        assert rc == 0 , "the native entry must run to completion";
+        assert marker.is_file() , (
+            "the native entry must have called back into the Python helper "
+            "resolved from the image root (a wrong root leaves the dispatch "
+            "slot empty and silently returns 0)"
+        );
+        assert marker.read_text(encoding="utf-8") == "42" , (
+            "the callback must receive 21 and return 42 into native code"
+        );
+    } finally {
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
+
 test "standalone exe native_build still rejects native_imports" {
     if not _llvm_available() {
         testskip("LLVM toolchain unavailable");
@@ -315,6 +390,8 @@ test "run_jab_image execs the sealed exe first when the app is not interop" {
         _fake_jab_image(img, interop=False);
         exec_calls: list[any] = [];
         lib_calls: list[str] = [];
+        lib_argvs: list[list[str]] = [];
+        root_calls: list[str] = [];
 
         def fake_execv(path: str, argv: list[str]) {
             exec_calls.append((path, list(argv)));
@@ -322,9 +399,11 @@ test "run_jab_image execs the sealed exe first when the app is not interop" {
         }
 
         def fake_run_lib(
-            lib_path: str, argv: list[str], callbacks: list[dict[str, any]] = []
+            lib_path: str, argv: list[str], callbacks: any = None, img_root: any = None
         ) -> (int | None) {
             lib_calls.append(lib_path);
+            lib_argvs.append(list(argv));
+            root_calls.append(str(img_root));
             return 0;
         }
 
@@ -348,7 +427,10 @@ test "run_jab_image execs the sealed exe first when the app is not interop" {
             assert exec_calls[0][0] == str(img / "bin") , (
                 "execv targets the sealed exe, not the lib"
             );
-            assert "arg1" in exec_calls[0][1] , "args pass through";
+            assert exec_calls[0][1] == [str(img / "bin"), "arg1"] , (
+                "execv argv must be [exe, *user_args] -- the sealed entry "
+                f"path is not a user argument; got {exec_calls[0][1]}"
+            );
             assert lib_calls == [] , (
                 "a self-contained exe replaces the process before " "any dlopen rung"
             );
@@ -367,7 +449,10 @@ test "run_jab_image loads interop jabs in-process and never execs them" {
         _fake_jab_image(img, interop=True);
         exec_calls: list[str] = [];
         lib_calls: list[str] = [];
-        run_calls: list[str] = [];
+        lib_argvs: list[list[str]] = [];
+        cb_calls: list[list[dict[str, any]]] = [];
+        root_calls: list[str] = [];
+        run_calls: list[any] = [];
 
         def fake_execv(path: str, argv: list[str]) {
             exec_calls.append(path);
@@ -375,14 +460,17 @@ test "run_jab_image loads interop jabs in-process and never execs them" {
         }
 
         def fake_run_lib(
-            lib_path: str, argv: list[str], callbacks: list[dict[str, any]] = []
+            lib_path: str, argv: list[str], callbacks: any = None, img_root: any = None
         ) -> (int | None) {
             lib_calls.append(lib_path);
+            lib_argvs.append(list(argv));
+            cb_calls.append(list(callbacks or []));
+            root_calls.append(str(img_root));
             return 0;
         }
 
         def fake_run(target: str, args: list[str]) -> int {
-            run_calls.append(target);
+            run_calls.append((target, list(args)));
             return 0;
         }
 
@@ -405,6 +493,18 @@ test "run_jab_image loads interop jabs in-process and never execs them" {
                 "interop artifacts must be loaded in-process via the "
                 "NativeLibrary dispatch lane"
             );
+            assert lib_argvs == [[str(img / "main.jac"), "arg1"]] , (
+                "the in-process lane must see host argv [entry, *args]; "
+                f"got {lib_argvs}"
+            );
+            assert cb_calls == [[]] , (
+                "the interop lane must consult the interop record (empty "
+                f"contract for this stub image); got {cb_calls}"
+            );
+            assert root_calls == [str(img)] , (
+                "the entry-lib lane must pass the sealed image root down "
+                f"for callback source resolution; got {root_calls}"
+            );
             assert run_calls == [] , (
                 "a successful in-process load must not fall back to the "
                 "JIT interpreter"
@@ -412,6 +512,62 @@ test "run_jab_image loads interop jabs in-process and never execs them" {
         }
     } finally {
         shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
+
+test "started native entry never falls back to the JIT in either lane" {
+    for interop in [True, False] {
+        tmp = tempfile.mkdtemp(prefix="jac_started_entry_");
+        try {
+            img = Path(tmp) / "img";
+            img.mkdir();
+            _fake_jab_image(img, interop=interop);
+            jit_calls: list[str] = [];
+            exec_calls: list[str] = [];
+
+            def fake_run(target: str, args: list[str]) -> int {
+                jit_calls.append(target);
+                return 0;
+            }
+
+            def fake_execv(path: str, argv: list[str]) {
+                exec_calls.append(path);
+                raise SystemExit(0);
+            }
+
+            def raising_lib(
+                lib_path: str,
+                argv: list[str],
+                callbacks: any = None,
+                img_root: any = None
+            ) -> (int | None) {
+                raise exec_cmds.NativeEntryStartedError("entry already ran");
+            }
+
+            with patch(
+                "jaclang.cli.commands.execution._jab_native_lib",
+                return_value=str(img / "lib")
+            ), patch(
+                "jaclang.cli.commands.execution._jab_native_bin", return_value=None
+            ), patch("jaclang.cli.commands.execution._run_native_lib", raising_lib), patch(
+                "jaclang.cli.commands.execution.run", fake_run
+            ), patch("os.execv", fake_execv) {
+                rc = exec_cmds.run_jab_image(img, None, [], False, "img");
+                assert rc == 1 , (
+                    "a failure after jac_entry started must surface as a "
+                    "clean CLI error, not a fallback that re-runs the entry"
+                );
+                assert jit_calls == [] , (
+                    "the JIT interpreter must not run once the entry started"
+                );
+                assert exec_calls == [] , (
+                    "the standalone exe must not exec once the entry started"
+                );
+            }
+        } finally {
+            shutil.rmtree(tmp, ignore_errors=True);
+        }
     }
 }
 

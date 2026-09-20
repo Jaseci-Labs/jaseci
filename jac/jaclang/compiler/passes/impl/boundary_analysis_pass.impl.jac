@@ -92,7 +92,7 @@ impl BoundaryAnalysisPass._extract_type_name(expr: (UniNode | None)) -> str {
 }
 
 impl BoundaryAnalysisPass._in_native_module -> bool {
-    if (self.module.gen.native_codespace) {
+    if (self.module and self.module.gen.native_codespace) {
         return True;
     }
     if not (self.module and self.module.loc) {

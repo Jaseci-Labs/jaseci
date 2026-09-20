@@ -10,3 +10,5 @@ def native_build(
 ) -> int;
 
 def native_build_sealed_pair(filename: str, exe_output: str, lib_output: str) -> int;
+
+def build_native_entry_lib(filename: str, output: str) -> int;
