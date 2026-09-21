@@ -220,9 +220,9 @@ native layout records the emitted name separately from its source-level key.
   Pinned sv<->na congruent by `prim_array.jac`.
 - **`mmap.jac`** -- the `mmap` class over the per-OS `_mmap_native`
   FFI floors (`_mmap_native.linux.jac` / `_mmap_native.darwin.jac`,
-  Mechanism F shape: the floors declare `mmap`/`munmap`/`msync`/`mprotect`/
-  `close`/`lseek`/`memcpy`/`memmove` and carry the platform
-  `MAP_ANON`/`MS_SYNC` constants plus `mm_os_name`). Anonymous
+  Mechanism F shape: the floors declare `mmap`/`munmap`/`msync`/`lseek`/
+  `memcpy`/`memmove` and carry the platform `MAP_ANON`/`MS_SYNC` constants
+  plus `mm_os_name`). Anonymous
   (`fileno=-1`) and file-backed maps, `read`/`write`/
   `read_byte`/`write_byte`/`readline`, `seek`/`tell`, `find`/`rfind`,
   `move`, `resize` (`mmap`+copy on both platforms; refuses

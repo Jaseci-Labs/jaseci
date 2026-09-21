@@ -5,8 +5,6 @@ import from c {
 }
 import from c { def munmap(addr: int, length: u64) -> i32;  }
 import from c { def msync(addr: int, length: u64, flags: i32) -> i32;  }
-import from c { def mprotect(addr: int, length: u64, prot: i32) -> i32;  }
-import from c { def close(fd: i32) -> i32;  }
 import from c { def lseek(fd: i32, off: i64, whence: i32) -> i64;  }
 import from c { def memcpy(dst: bytes, src: int, n: u64) -> int;  }
 import from c { def memmove(dst: int, src: bytes, n: u64) -> int;  }
@@ -43,11 +41,6 @@ def:pub mm_sync(addr: int, length: int) -> int {
 }
 
 
-def:pub mm_protect(addr: int, length: int, prot: int) -> int {
-    return mprotect(addr, u64(length), i32(prot));
-}
-
-
 def:pub mm_filesize(fd: int) -> int {
     cur = lseek(i32(fd), 0, 1);
     end = lseek(i32(fd), 0, 2);
@@ -55,11 +48,6 @@ def:pub mm_filesize(fd: int) -> int {
         lseek(i32(fd), i64(cur), 0);
     }
     return int(end);
-}
-
-
-def:pub mm_close_fd(fd: int) -> int {
-    return close(i32(fd));
 }
 
 

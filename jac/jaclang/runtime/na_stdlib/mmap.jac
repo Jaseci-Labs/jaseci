@@ -5,7 +5,6 @@ import from _mmap_native {
     mm_unmap,
     mm_sync,
     mm_filesize,
-    mm_close_fd,
     mm_read,
     mm_write,
     mm_copy,
