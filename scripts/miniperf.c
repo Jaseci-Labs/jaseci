@@ -6,6 +6,9 @@
 //              ld_blocks.store_forward, ld_blocks_partial.address_alias
 //   frontend : uops_issued.any, idq mite/dsb cycles, resource_stalls.sb
 // Multiple events share one group; events the kernel rejects are skipped.
+// The child is pinned to CPU $MINIPERF_CPU if set, else its current CPU.
+// On hybrid x86 (P/E cores) pinning to a P-class CPU is required for
+// reliable counts; native_profile.py picks one via MINIPERF_CPU.
 // NOTE: generic PERF_COUNT_HW_CACHE mappings are unreliable under
 // paranoid=2 on recent kernels (L1-dcache-loads aliases cycles, misses
 // return null) -- use the raw codes in the cache profile instead.
@@ -64,11 +67,18 @@ int main(int argc, char **argv) {
     int n; struct ev *evs = pick(argv[1], &n);
     char **cmd = argv + 2;
 
+    int cpu = -1;
+    const char *cpu_s = getenv("MINIPERF_CPU");
+    if (cpu_s && *cpu_s) cpu = atoi(cpu_s);
+    if (cpu < 0) cpu = sched_getcpu();
     pid_t pid = fork();
     if (pid == 0) {
         raise(SIGSTOP);
-        cpu_set_t set; CPU_ZERO(&set); CPU_SET(2, &set);
-        sched_setaffinity(0, sizeof(set), &set);
+        if (cpu >= 0) {
+            cpu_set_t set; CPU_ZERO(&set); CPU_SET(cpu, &set);
+            if (sched_setaffinity(0, sizeof(set), &set) != 0)
+                perror("sched_setaffinity");
+        }
         execvp(cmd[0], cmd);
         perror("execvp"); _exit(127);
     }
@@ -100,7 +110,7 @@ int main(int argc, char **argv) {
 
     printf("{\"cmd\":\"");
     for (int i = 0; cmd[i]; i++) printf("%s%s", cmd[i], cmd[i+1] ? " " : "");
-    printf("\",\"exit\":%d", WIFEXITED(status) ? WEXITSTATUS(status) : -1);
+    printf("\",\"exit\":%d,\"cpu\":%d", WIFEXITED(status) ? WEXITSTATUS(status) : -1, cpu);
     for (int j = 0; j < cnt && j < MAXEV; j++) {
         unsigned long long v = (j + 1 <= nr) ? buf[1 + j] : 0;
         printf(",\"%s\":%llu", evs[order[j]].name, v);

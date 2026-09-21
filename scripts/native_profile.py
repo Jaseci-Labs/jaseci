@@ -32,6 +32,40 @@ JAC_SRC = REPO_ROOT / "jac"
 PROFILES = ("core", "cache", "frontend")
 
 
+def pick_profile_cpu() -> str | None:
+    """Pick a CPU for the profiled child. On hybrid x86, perf groups on
+    E-cores return zero or partial counts, so pin to the fastest core
+    class, preferring the least busy one. None = let miniperf decide."""
+    try:
+        freqs: dict[int, int] = {}
+        for d in Path("/sys/devices/system/cpu").glob("cpu[0-9]*"):
+            f = d / "cpufreq" / "cpuinfo_max_freq"
+            if f.exists():
+                freqs[int(d.name[3:])] = int(f.read_text())
+        if not freqs:
+            return None
+        pcores = [c for c, v in freqs.items() if v == max(freqs.values())]
+        idle: dict[int, float] = {}
+        with open("/proc/stat") as fh:
+            for line in fh:
+                parts = line.split()
+                if not parts or not parts[0].startswith("cpu"):
+                    if idle:
+                        break
+                    continue
+                if len(parts) < 5 or not parts[0][3:].isdigit():
+                    continue
+                vals = [int(v) for v in parts[1:]]
+                total = sum(vals)
+                idle[int(parts[0][3:])] = (vals[3] + vals[4]) / total if total else 0.0
+        candidates = [c for c in pcores if c in idle]
+        if not candidates:
+            return str(min(pcores))
+        return str(max(candidates, key=lambda c: idle[c]))
+    except (OSError, ValueError):
+        return None
+
+
 def ensure_miniperf(cache_dir: Path) -> Path:
     bin_path = cache_dir / "miniperf"
     src_path = REPO_ROOT / "scripts" / "miniperf.c"
@@ -81,11 +115,46 @@ def build_binary(ll_path: Path, out_bin: Path) -> None:
         )
 
 
-def run_profile(miniperf: Path, profile: str, cmd: list[str]) -> dict:
-    res = subprocess.run(
-        [str(miniperf), profile, *cmd], check=True, capture_output=True, text=True
-    )
-    return json.loads(res.stdout.strip().splitlines()[-1])
+def run_profile(
+    miniperf: Path, profile: str, cmd: list[str], env: dict[str, str] | None = None
+) -> dict:
+    parsed: dict = {}
+    for attempt in range(2):
+        res = subprocess.run(
+            [str(miniperf), profile, *cmd],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        parsed = json.loads(res.stdout.strip().splitlines()[-1])
+        if parsed["exit"] != 0:
+            raise RuntimeError(
+                f"profiled workload exited {parsed['exit']} ({parsed['cmd']}); "
+                f"{profile} counters are invalid"
+            )
+        if any(v for k, v in parsed.items() if k not in ("cmd", "exit")):
+            break
+        if attempt == 0:
+            print(
+                f"warning: {profile}: all counters zero for {parsed['cmd']}; retrying",
+                file=sys.stderr,
+            )
+    else:
+        print(
+            f"warning: {profile}: counters still zero for {parsed['cmd']} after "
+            "retry; results unreliable",
+            file=sys.stderr,
+        )
+    rejected = [k for k, v in parsed.items() if v is None]
+    if rejected:
+        print(
+            f"warning: {profile}: kernel rejected counter(s) {', '.join(rejected)} "
+            f"for {parsed['cmd']}; reported as 0 (raw codes target "
+            "Skylake-descendant cores)",
+            file=sys.stderr,
+        )
+    return parsed
 
 
 def main() -> int:
@@ -100,6 +169,13 @@ def main() -> int:
     cache.mkdir(exist_ok=True)
     miniperf = ensure_miniperf(cache)
 
+    profile_cpu = pick_profile_cpu()
+    if profile_cpu is not None:
+        print(f"pinning profiled children to CPU {profile_cpu}")
+        profile_env = os.environ | {"MINIPERF_CPU": profile_cpu}
+    else:
+        profile_env = None
+
     ll = cache / f"{args.workload.stem}.ll"
     bin_ = cache / args.workload.stem
     dump_ir(args.workload, ll)
@@ -110,7 +186,7 @@ def main() -> int:
         (Path(c).name, [c]) for c in args.compare
     ]:
         for prof in PROFILES:
-            results[f"{label}:{prof}"] = run_profile(miniperf, prof, cmd)
+            results[f"{label}:{prof}"] = run_profile(miniperf, prof, cmd, profile_env)
 
     if args.out:
         args.out.write_text(json.dumps(results, indent=2))
