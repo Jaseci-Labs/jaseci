@@ -735,6 +735,15 @@ walker NaIRGenPass(CompilerPass) {
         slice_node: uni.Slice, src_len: ir.Value
     ) -> (tuple[ir.Value, ir.Value, ir.Value, ir.Value] | None);
 
+    def _emit_list_slice_fn(
+        list_key: str,
+        list_ptr_type: ir.Type,
+        helpers: dict[str, any],
+        elem_type_name: str
+    ) -> ir.Function;
+
+    def _emit_string_step_slice_fn -> ir.Function;
+
     def _codegen_list_slice(
         target_val: ir.Value, slice_node: uni.Slice, elem_type_name: str
     ) -> (ir.Value | None);
@@ -3179,6 +3188,31 @@ walker NaIRGenPass(CompilerPass) {
     ) -> (ir.Value | None);
 
     def _jacval_truthy(jv: ir.Value) -> ir.Value;
+    def _emit_str_repeat_fn -> ir.Function;
+    def _emit_list_repeat_fn(
+        list_key: str, list_ptr_type: ir.Type, helpers: dict[str, any]
+    ) -> ir.Function;
+    def _emit_list_concat_fn(
+        list_key: str, list_ptr_type: ir.Type, helpers: dict[str, any]
+    ) -> ir.Function;
+    def _emit_list_contains_fn(
+        list_key: str,
+        list_ptr_type: ir.Type,
+        elem_type: ir.Type,
+        helpers: dict[str, any],
+        is_str: bool
+    ) -> ir.Function;
+    def _emit_list_compare_fn(
+        list_key: str,
+        list_ptr_type: ir.Type,
+        elem_type: ir.Type,
+        helpers: dict[str, any],
+        op: str,
+        elem_unsigned: bool = False,
+        unsigned: bool = False,
+        elem_key: any = None
+    ) -> ir.Function;
+
     def _jacval_is_none(jv: ir.Value, negate: bool) -> ir.Value;
     def _entry_alloca(var_type: ir.Type, name: str) -> ir.Value;
     def _zero_const(ty: ir.Type) -> ir.Constant;
