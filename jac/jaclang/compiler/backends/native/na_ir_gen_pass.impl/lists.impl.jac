@@ -805,10 +805,44 @@ impl NaIRGenPass._emit_aos_list_helpers(tname: str) -> ir.Type {
     );
     b.ret(_selfp);
 
+    grow_fn = self._emit_slow_path_helper(
+        f"__list_grow_aos_{tname}", ir.VoidType(), [_stp, i64]
+    );
+    grow_fn.args[0].name = "list";
+    grow_fn.args[1].name = "len";
+    b = ir.IRBuilder(grow_fn.append_basic_block("entry"));
+    _gz_len = grow_fn.args[1];
+    _gz_cap_p = b.gep(grow_fn.args[0], [_z, ir.Constant(i32, 1)], name="gz.cap.p");
+    _gz_data_p = b.gep(grow_fn.args[0], [_z, ir.Constant(i32, 2)], name="gz.data.p");
+    _gz_cap = b.load(_gz_cap_p, name="gz.cap");
+    _gz_ncap = b.mul(_gz_cap, ir.Constant(i64, 2), name="gz.ncap");
+    _gz_sz = b.ptrtoint(
+        b.gep(ir.Constant(_tp, None), [ir.Constant(i32, 1)], name="gz.sz.p"),
+        i64,
+        name="gz.sz"
+    );
+    _gz_new = b.call(
+        _malloc, [b.mul(_gz_ncap, _gz_sz, name="gz.nsz")], name="gz.nbuf"
+    );
+    _gz_old = b.load(_gz_data_p, name="gz.old");
+    b.call(
+        _memcpy,
+        [
+            b.bitcast(_gz_new, i8p, name="gz.nbuf8"),
+            b.bitcast(_gz_old, i8p, name="gz.old8"),
+            b.mul(_gz_len, _gz_sz, name="gz.copysz")
+        ]
+    );
+    b.call(_free, [b.bitcast(_gz_old, i8p, name="gz.old8f")]);
+    b.store(b.bitcast(_gz_new, _tp, name="gz.nbuf.t"), _gz_data_p);
+    b.store(_gz_ncap, _gz_cap_p);
+    b.ret_void();
+
     push_fn = self._define_function(
         f"__list_push_aos_{tname}", ir.FunctionType(ir.VoidType(), [_stp, _tp])
     );
     push_fn.linkage = "private";
+    push_fn.attributes.add("nounwind");
     append_fn = push_fn;
     _a_entry = append_fn.append_basic_block("entry");
     _a_grow = append_fn.append_basic_block("grow");
@@ -826,20 +860,7 @@ impl NaIRGenPass._emit_aos_list_helpers(tname: str) -> ir.Type {
     _a_cap = b.load(_a_cap_p, name="a.cap");
     b.cbranch(b.icmp_signed(">=", _a_len, _a_cap, name="a.full"), _a_grow, _a_store);
     b = ir.IRBuilder(_a_grow);
-    _g_ncap = b.mul(_a_cap, ir.Constant(i64, 2), name="a.ncap");
-    _g_new = b.call(_malloc, [b.mul(_g_ncap, _a_szT, name="a.nsz")], name="a.nbuf");
-    _g_old = b.load(_a_data_p, name="a.old");
-    b.call(
-        _memcpy,
-        [
-            _g_new,
-            b.bitcast(_g_old, i8p, name="a.old8"),
-            b.mul(_a_len, _a_szT, name="a.copysz")
-        ]
-    );
-    b.call(_free, [b.bitcast(_g_old, i8p, name="a.old8f")]);
-    b.store(b.bitcast(_g_new, _tp, name="a.nbuf.t"), _a_data_p);
-    b.store(_g_ncap, _a_cap_p);
+    b.call(grow_fn, [append_fn.args[0], _a_len]);
     b.branch(_a_store);
     b = ir.IRBuilder(_a_store);
     _s_data = b.load(_a_data_p, name="a.data");
@@ -859,6 +880,7 @@ impl NaIRGenPass._emit_aos_list_helpers(tname: str) -> ir.Type {
         f"__list_append_aos_{tname}", ir.FunctionType(ir.VoidType(), [_stp, _tp])
     );
     append_fn.linkage = "private";
+    append_fn.attributes.add("nounwind");
     b = ir.IRBuilder(append_fn.append_basic_block("entry"));
     b.call(push_fn, [append_fn.args[0], append_fn.args[1]]);
     b.call(_free, [b.bitcast(append_fn.args[1], i8p, name="a.shell8")]);
@@ -868,6 +890,7 @@ impl NaIRGenPass._emit_aos_list_helpers(tname: str) -> ir.Type {
         f"__list_get_aos_{tname}", ir.FunctionType(_tp, [_stp, i64])
     );
     get_fn.linkage = "private";
+    get_fn.attributes.add("nounwind");
     b = ir.IRBuilder(get_fn.append_basic_block("entry"));
     _g_data = b.load(
         b.gep(get_fn.args[0], [_z, ir.Constant(i32, 2)], name="g.data.p"), name="g.data"
@@ -878,6 +901,7 @@ impl NaIRGenPass._emit_aos_list_helpers(tname: str) -> ir.Type {
         f"__list_set_aos_{tname}", ir.FunctionType(ir.VoidType(), [_stp, i64, _tp])
     );
     set_fn.linkage = "private";
+    set_fn.attributes.add("nounwind");
     b = ir.IRBuilder(set_fn.append_basic_block("entry"));
     _st_szT = b.ptrtoint(
         b.gep(ir.Constant(_tp, None), [ir.Constant(i32, 1)], name="s.szT.p"),
@@ -907,6 +931,7 @@ impl NaIRGenPass._emit_aos_list_helpers(tname: str) -> ir.Type {
         f"__list_len_aos_{tname}", ir.FunctionType(i64, [_stp])
     );
     len_fn.linkage = "private";
+    len_fn.attributes.add("nounwind");
     b = ir.IRBuilder(len_fn.append_basic_block("entry"));
     b.ret(
         b.load(
