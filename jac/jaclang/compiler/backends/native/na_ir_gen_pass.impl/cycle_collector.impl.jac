@@ -66,9 +66,7 @@ impl NaIRGenPass._emit_rc_roots_globals -> None {
     self.rc_trace_lookup_fn = lookup_fn;
 
     realloc_fn = self._get_or_declare_extern("realloc", i8_ptr, [i8_ptr, i64]);
-    grow_fn = self._emit_slow_path_helper(
-        "__rc_push_root_grow", i1, [i8_ptr, i64]
-    );
+    grow_fn = self._emit_slow_path_helper("__rc_push_root_grow", i1, [i8_ptr, i64]);
     grow_fn.args[0].name = "old_buf";
     grow_fn.args[1].name = "old_cap";
     grow_state = self._enter_function(grow_fn);

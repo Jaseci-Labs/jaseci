@@ -993,14 +993,13 @@ impl NaIRGenPass._emit_norm_slice_bounds(
 }
 
 impl NaIRGenPass._emit_list_slice_fn(
-    list_key: str,
-    list_ptr_type: ir.Type,
-    helpers: dict[str, any],
-    elem_type_name: str
+    list_key: str, list_ptr_type: ir.Type, helpers: dict[str, any], elem_type_name: str
 ) -> ir.Function {
     i64 = ir.IntType(64);
     i1 = ir.IntType(1);
-    _safe = list_key.replace(":", "_").replace("[", "_").replace("]", "_").replace(",", "_");
+    _safe = list_key.replace(":", "_").replace("[", "_").replace("]", "_").replace(
+        ",", "_"
+    );
     _name = "__list_slice_" + _safe;
     try {
         _old = self.llvm_module.get_global(_name);
@@ -1027,9 +1026,15 @@ impl NaIRGenPass._emit_list_slice_fn(
         self.builder.branch(check);
         self.builder.position_at_start(check);
         current = self.builder.load(index, name="slice.current");
-        forward = self.builder.icmp_signed("<", current, fn.args[2], name="slice.forward");
-        backward = self.builder.icmp_signed(">", current, fn.args[2], name="slice.backward");
-        in_range = self.builder.select(fn.args[4], forward, backward, name="slice.inrange");
+        forward = self.builder.icmp_signed(
+            "<", current, fn.args[2], name="slice.forward"
+        );
+        backward = self.builder.icmp_signed(
+            ">", current, fn.args[2], name="slice.backward"
+        );
+        in_range = self.builder.select(
+            fn.args[4], forward, backward, name="slice.inrange"
+        );
         self.builder.cbranch(in_range, body, done);
         self.builder.position_at_start(body);
         elem: ir.Value = self.builder.call(
@@ -1061,9 +1066,7 @@ impl NaIRGenPass._emit_string_step_slice_fn -> ir.Function {
             return _old;
         }
     } except KeyError {}
-    fn = self._emit_slow_path_helper(
-        _name, i8p, [i8p, i64, i64, i64, i1, i64]
-    );
+    fn = self._emit_slow_path_helper(_name, i8p, [i8p, i64, i64, i64, i1, i64]);
     fn.args[0].name = "data";
     fn.args[1].name = "start";
     fn.args[2].name = "stop";
@@ -1090,14 +1093,22 @@ impl NaIRGenPass._emit_string_step_slice_fn -> ir.Function {
         self.builder.position_at_start(check);
         current = self.builder.load(index, name="slice.current");
         current_written = self.builder.load(written, name="slice.written.current");
-        forward = self.builder.icmp_signed("<", current, fn.args[2], name="slice.forward");
-        backward = self.builder.icmp_signed(">", current, fn.args[2], name="slice.backward");
-        in_range = self.builder.select(fn.args[4], forward, backward, name="slice.inrange");
+        forward = self.builder.icmp_signed(
+            "<", current, fn.args[2], name="slice.forward"
+        );
+        backward = self.builder.icmp_signed(
+            ">", current, fn.args[2], name="slice.backward"
+        );
+        in_range = self.builder.select(
+            fn.args[4], forward, backward, name="slice.inrange"
+        );
         self.builder.cbranch(in_range, body, done);
         self.builder.position_at_start(body);
         source = self.builder.gep(fn.args[0], [current], name="slice.source");
         ch = self.builder.load(source, name="slice.char");
-        destination = self.builder.gep(out, [current_written], name="slice.destination");
+        destination = self.builder.gep(
+            out, [current_written], name="slice.destination"
+        );
         self.builder.store(ch, destination);
         self.builder.store(
             self.builder.add(current_written, one, name="slice.written.next"), written
@@ -1138,9 +1149,7 @@ impl NaIRGenPass._codegen_list_slice(
         elem_type_name, target_val.type, helpers, elem_type_name
     );
     _slice = self.builder.call(
-        _slice_fn,
-        [target_val, start_val, stop_val, step_val, step_pos],
-        name="sl"
+        _slice_fn, [target_val, start_val, stop_val, step_val, step_pos], name="sl"
     );
     return self._mark_owned(_slice);
 }
@@ -1257,9 +1266,7 @@ impl NaIRGenPass._codegen_string_slice(
 
     _step_fn = self._emit_string_step_slice_fn();
     _step_slice = self.builder.call(
-        _step_fn,
-        [_data, start_val, stop_val, step_val, step_pos, n_val],
-        name="ss"
+        _step_fn, [_data, start_val, stop_val, step_val, step_pos, n_val], name="ss"
     );
     return self._mark_owned(_step_slice);
 }

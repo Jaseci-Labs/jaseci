@@ -1302,19 +1302,17 @@ impl NaIRGenPass._codegen_compare_link(
                     or left.type == ir.IntType(8).as_pointer()
                 );
                 _contains_fn = self._emit_list_contains_fn(
-                    list_key,
-                    list_type.as_pointer(),
-                    elem_type,
-                    helpers,
-                    _lin_str_elems
-
+                    list_key, list_type.as_pointer(), elem_type, helpers, _lin_str_elems
                 );
                 result = self.builder.call(
                     _contains_fn, [left_coerced, right], name="list.in"
                 );
                 if _lin_gate is not None {
                     result = self.builder.select(
-                        _lin_gate, result, ir.Constant(ir.IntType(64), 0), name="list.in.opt"
+                        _lin_gate,
+                        result,
+                        ir.Constant(ir.IntType(64), 0),
+                        name="list.in.opt"
                     );
                 }
                 if is_not_in {

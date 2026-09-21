@@ -3320,7 +3320,9 @@ impl NaIRGenPass._emit_list_repeat_fn(
     list_key: str, list_ptr_type: ir.Type, helpers: dict[str, any]
 ) -> ir.Function {
     i64 = ir.IntType(64);
-    _safe = list_key.replace(":", "_").replace("[", "_").replace("]", "_").replace(",", "_");
+    _safe = list_key.replace(":", "_").replace("[", "_").replace("]", "_").replace(
+        ",", "_"
+    );
     _name = "__list_repeat_" + _safe;
     try {
         _old = self.llvm_module.get_global(_name);
@@ -3346,19 +3348,27 @@ impl NaIRGenPass._emit_list_repeat_fn(
         self.builder.position_at_start(outer);
         rep = self.builder.phi(i64, name="repeat.rep");
         rep.add_incoming(ir.Constant(i64, 0), entry_bb);
-        rep_done = self.builder.icmp_signed(">=", rep, fn.args[1], name="repeat.rep.done");
+        rep_done = self.builder.icmp_signed(
+            ">=", rep, fn.args[1], name="repeat.rep.done"
+        );
         self.builder.cbranch(rep_done, done, inner_init);
         self.builder.position_at_start(inner_init);
         self.builder.branch(inner);
         self.builder.position_at_start(inner);
         index = self.builder.phi(i64, name="repeat.index");
         index.add_incoming(ir.Constant(i64, 0), inner_init);
-        index_done = self.builder.icmp_unsigned(">=", index, src_len, name="repeat.index.done");
+        index_done = self.builder.icmp_unsigned(
+            ">=", index, src_len, name="repeat.index.done"
+        );
         self.builder.cbranch(index_done, outer_next, inner_body);
         self.builder.position_at_start(inner_body);
-        elem = self.builder.call(helpers["get"], [fn.args[0], index], name="repeat.elem");
+        elem = self.builder.call(
+            helpers["get"], [fn.args[0], index], name="repeat.elem"
+        );
         self._rc_call_with_ctx(helpers["append"], [out, elem], op="list_mul");
-        next_index = self.builder.add(index, ir.Constant(i64, 1), name="repeat.next.index");
+        next_index = self.builder.add(
+            index, ir.Constant(i64, 1), name="repeat.next.index"
+        );
         index.add_incoming(next_index, inner_body);
         self.builder.branch(inner);
         self.builder.position_at_start(outer_next);
@@ -3377,7 +3387,9 @@ impl NaIRGenPass._emit_list_concat_fn(
     list_key: str, list_ptr_type: ir.Type, helpers: dict[str, any]
 ) -> ir.Function {
     i64 = ir.IntType(64);
-    _safe = list_key.replace(":", "_").replace("[", "_").replace("]", "_").replace(",", "_");
+    _safe = list_key.replace(":", "_").replace("[", "_").replace("]", "_").replace(
+        ",", "_"
+    );
     _name = "__list_concat_" + _safe;
     try {
         _old = self.llvm_module.get_global(_name);
@@ -3385,13 +3397,17 @@ impl NaIRGenPass._emit_list_concat_fn(
             return _old;
         }
     } except KeyError {}
-    fn = self._emit_slow_path_helper(_name, list_ptr_type, [list_ptr_type, list_ptr_type]);
+    fn = self._emit_slow_path_helper(
+        _name, list_ptr_type, [list_ptr_type, list_ptr_type]
+    );
     fn.args[0].name = "left";
     fn.args[1].name = "right";
     state = self._enter_function(fn);
     try {
         out = self.builder.call(helpers["new"], [], name="concat.new");
-        left_len = self.builder.call(helpers["len"], [fn.args[0]], name="concat.left.len");
+        left_len = self.builder.call(
+            helpers["len"], [fn.args[0]], name="concat.left.len"
+        );
         entry_bb = self.builder.basic_block;
         left_loop = fn.append_basic_block("concat.left.loop");
         left_body = fn.append_basic_block("concat.left.body");
@@ -3403,26 +3419,40 @@ impl NaIRGenPass._emit_list_concat_fn(
         self.builder.position_at_start(left_loop);
         left_i = self.builder.phi(i64, name="concat.left.i");
         left_i.add_incoming(ir.Constant(i64, 0), entry_bb);
-        left_end = self.builder.icmp_unsigned(">=", left_i, left_len, name="concat.left.end");
+        left_end = self.builder.icmp_unsigned(
+            ">=", left_i, left_len, name="concat.left.end"
+        );
         self.builder.cbranch(left_end, right_init, left_body);
         self.builder.position_at_start(left_body);
-        left_elem = self.builder.call(helpers["get"], [fn.args[0], left_i], name="concat.left.elem");
+        left_elem = self.builder.call(
+            helpers["get"], [fn.args[0], left_i], name="concat.left.elem"
+        );
         self._rc_call_with_ctx(helpers["append"], [out, left_elem], op="list_cat");
-        left_next = self.builder.add(left_i, ir.Constant(i64, 1), name="concat.left.next");
+        left_next = self.builder.add(
+            left_i, ir.Constant(i64, 1), name="concat.left.next"
+        );
         left_i.add_incoming(left_next, left_body);
         self.builder.branch(left_loop);
         self.builder.position_at_start(right_init);
-        right_len = self.builder.call(helpers["len"], [fn.args[1]], name="concat.right.len");
+        right_len = self.builder.call(
+            helpers["len"], [fn.args[1]], name="concat.right.len"
+        );
         self.builder.branch(right_loop);
         self.builder.position_at_start(right_loop);
         right_i = self.builder.phi(i64, name="concat.right.i");
         right_i.add_incoming(ir.Constant(i64, 0), right_init);
-        right_end = self.builder.icmp_unsigned(">=", right_i, right_len, name="concat.right.end");
+        right_end = self.builder.icmp_unsigned(
+            ">=", right_i, right_len, name="concat.right.end"
+        );
         self.builder.cbranch(right_end, done, right_body);
         self.builder.position_at_start(right_body);
-        right_elem = self.builder.call(helpers["get"], [fn.args[1], right_i], name="concat.right.elem");
+        right_elem = self.builder.call(
+            helpers["get"], [fn.args[1], right_i], name="concat.right.elem"
+        );
         self._rc_call_with_ctx(helpers["append"], [out, right_elem], op="list_cat");
-        right_next = self.builder.add(right_i, ir.Constant(i64, 1), name="concat.right.next");
+        right_next = self.builder.add(
+            right_i, ir.Constant(i64, 1), name="concat.right.next"
+        );
         right_i.add_incoming(right_next, right_body);
         self.builder.branch(right_loop);
         self.builder.position_at_end(done);
@@ -3442,7 +3472,9 @@ impl NaIRGenPass._emit_list_contains_fn(
 ) -> ir.Function {
     i64 = ir.IntType(64);
     i1 = ir.IntType(1);
-    _safe = list_key.replace(":", "_").replace("[", "_").replace("]", "_").replace(",", "_");
+    _safe = list_key.replace(":", "_").replace("[", "_").replace("]", "_").replace(
+        ",", "_"
+    );
     _name = "__list_contains_" + _safe;
     try {
         _old = self.llvm_module.get_global(_name);
@@ -3469,7 +3501,9 @@ impl NaIRGenPass._emit_list_contains_fn(
         at_end = self.builder.icmp_unsigned(">=", index, length, name="contains.end");
         self.builder.cbranch(at_end, done, body);
         self.builder.position_at_start(body);
-        elem = self.builder.call(helpers["get"], [fn.args[1], index], name="contains.elem");
+        elem = self.builder.call(
+            helpers["get"], [fn.args[1], index], name="contains.elem"
+        );
         if is_str and isinstance(elem_type, ir.PointerType) {
             i8p = ir.IntType(8).as_pointer();
             cmp = self._call_str_cmp(
@@ -3518,12 +3552,25 @@ impl NaIRGenPass._emit_list_compare_fn(
 ) -> ir.Function {
     i64 = ir.IntType(64);
     i1 = ir.IntType(1);
-    _safe = list_key.replace(":", "_").replace("[", "_").replace("]", "_").replace(",", "_");
+    _safe = list_key.replace(":", "_").replace("[", "_").replace("]", "_").replace(
+        ",", "_"
+    );
     _op_name = (
-        "eq" if op == Tok.EE
-        else ("ne" if op == Tok.NE else ("lt" if op == Tok.LT else (
-            "gt" if op == Tok.GT else ("lte" if op == Tok.LTE else "gte")
-        )))
+        "eq"
+            if op == Tok.EE
+            else (
+                "ne"
+                    if op == Tok.NE
+                    else (
+                        "lt"
+                            if op == Tok.LT
+                            else (
+                                "gt"
+                                    if op == Tok.GT
+                                    else ("lte" if op == Tok.LTE else "gte")
+                            )
+                    )
+            )
     );
     _name = "__list_compare_" + _safe + "_" + _op_name;
     try {
@@ -3537,8 +3584,12 @@ impl NaIRGenPass._emit_list_compare_fn(
     fn.args[1].name = "right";
     state = self._enter_function(fn);
     try {
-        left_len = self.builder.call(helpers["len"], [fn.args[0]], name="compare.left.len");
-        right_len = self.builder.call(helpers["len"], [fn.args[1]], name="compare.right.len");
+        left_len = self.builder.call(
+            helpers["len"], [fn.args[0]], name="compare.left.len"
+        );
+        right_len = self.builder.call(
+            helpers["len"], [fn.args[1]], name="compare.right.len"
+        );
         entry_bb = self.builder.basic_block;
         loop = fn.append_basic_block("compare.loop");
         body = fn.append_basic_block("compare.body");
@@ -3554,19 +3605,31 @@ impl NaIRGenPass._emit_list_compare_fn(
             self.builder.position_at_start(loop);
             index = self.builder.phi(i64, name="compare.index");
             index.add_incoming(ir.Constant(i64, 0), entry_bb);
-            at_end = self.builder.icmp_unsigned(">=", index, left_len, name="compare.end");
+            at_end = self.builder.icmp_unsigned(
+                ">=", index, left_len, name="compare.end"
+            );
             self.builder.cbranch(at_end, true_bb if op == Tok.EE else false_bb, body);
             self.builder.position_at_start(body);
-            left_elem = self.builder.call(helpers["get"], [fn.args[0], index], name="compare.left");
-            right_elem = self.builder.call(helpers["get"], [fn.args[1], index], name="compare.right");
+            left_elem = self.builder.call(
+                helpers["get"], [fn.args[0], index], name="compare.left"
+            );
+            right_elem = self.builder.call(
+                helpers["get"], [fn.args[1], index], name="compare.right"
+            );
             if self?.jacval_type and elem_type == self.jacval_type {
                 equal = self._emit_jacval_eq(left_elem, right_elem);
             } elif isinstance(elem_type, ir.DoubleType) {
-                equal = self.builder.fcmp_ordered("==", left_elem, right_elem, name="compare.eq");
+                equal = self.builder.fcmp_ordered(
+                    "==", left_elem, right_elem, name="compare.eq"
+                );
             } elif isinstance(elem_type, ir.FloatType) {
-                equal = self.builder.fcmp_ordered("==", left_elem, right_elem, name="compare.eq");
+                equal = self.builder.fcmp_ordered(
+                    "==", left_elem, right_elem, name="compare.eq"
+                );
             } elif isinstance(elem_type, ir.IntType) {
-                equal = self.builder.icmp_signed("==", left_elem, right_elem, name="compare.eq");
+                equal = self.builder.icmp_signed(
+                    "==", left_elem, right_elem, name="compare.eq"
+                );
             } elif isinstance(elem_type, ir.PointerType) {
                 _eq = self._emit_comparison(Tok.EE, left_elem, right_elem, False);
                 equal = _eq if _eq is not None else ir.Constant(i1, 0);
@@ -3576,7 +3639,9 @@ impl NaIRGenPass._emit_list_compare_fn(
             }
             self.builder.cbranch(equal, next_bb, false_bb if op == Tok.EE else true_bb);
             self.builder.position_at_start(next_bb);
-            next_index = self.builder.add(index, ir.Constant(i64, 1), name="compare.next.index");
+            next_index = self.builder.add(
+                index, ir.Constant(i64, 1), name="compare.next.index"
+            );
             index.add_incoming(next_index, next_bb);
             self.builder.branch(loop);
         } else {
@@ -3593,15 +3658,23 @@ impl NaIRGenPass._emit_list_compare_fn(
             at_end = self.builder.icmp_unsigned(">=", index, limit, name="compare.end");
             self.builder.cbranch(at_end, end, body);
             self.builder.position_at_start(body);
-            left_elem = self.builder.call(helpers["get"], [fn.args[0], index], name="compare.left");
-            right_elem = self.builder.call(helpers["get"], [fn.args[1], index], name="compare.right");
+            left_elem = self.builder.call(
+                helpers["get"], [fn.args[0], index], name="compare.left"
+            );
+            right_elem = self.builder.call(
+                helpers["get"], [fn.args[1], index], name="compare.right"
+            );
             if isinstance(elem_type, ir.IntType) {
                 (less, greater) = self._int_lt_gt_pair(
                     left_elem, right_elem, elem_unsigned, "compare"
                 );
             } elif isinstance(elem_type, (ir.DoubleType, ir.FloatType)) {
-                less = self.builder.fcmp_ordered("<", left_elem, right_elem, name="compare.lt");
-                greater = self.builder.fcmp_ordered(">", left_elem, right_elem, name="compare.gt");
+                less = self.builder.fcmp_ordered(
+                    "<", left_elem, right_elem, name="compare.lt"
+                );
+                greater = self.builder.fcmp_ordered(
+                    ">", left_elem, right_elem, name="compare.gt"
+                );
             } elif isinstance(elem_type, ir.PointerType)
                 and (list_key == "str" or list_key.startswith("str")) {
                 _cmp = self._call_str_cmp(
@@ -3610,8 +3683,12 @@ impl NaIRGenPass._emit_list_compare_fn(
                     self.builder.bitcast(right_elem, ir.IntType(8).as_pointer()),
                     name="compare.strcmp"
                 );
-                less = self.builder.icmp_signed("<", _cmp, ir.Constant(ir.IntType(32), 0));
-                greater = self.builder.icmp_signed(">", _cmp, ir.Constant(ir.IntType(32), 0));
+                less = self.builder.icmp_signed(
+                    "<", _cmp, ir.Constant(ir.IntType(32), 0)
+                );
+                greater = self.builder.icmp_signed(
+                    ">", _cmp, ir.Constant(ir.IntType(32), 0)
+                );
             } elif isinstance(elem_type, ir.PointerType) {
                 _ord = self._emit_order_pair(
                     left_elem, right_elem, False, unsigned, "list element", elem_key
@@ -3624,8 +3701,12 @@ impl NaIRGenPass._emit_list_compare_fn(
                 }
             } else {
                 _ord = self._emit_order_pair(
-                    left_elem, right_elem, isinstance(elem_type, ir.FloatType),
-                    unsigned, "list element", elem_key
+                    left_elem,
+                    right_elem,
+                    isinstance(elem_type, ir.FloatType),
+                    unsigned,
+                    "list element",
+                    elem_key
                 );
                 if _ord is None {
                     less = ir.Constant(i1, 0);
@@ -3645,25 +3726,28 @@ impl NaIRGenPass._emit_list_compare_fn(
             self.builder.position_at_start(order_bb);
             self.builder.cbranch(less, less_bb, greater_bb);
             self.builder.position_at_start(less_bb);
-            self.builder.ret(
-                ir.Constant(
-                    i1, 1 if op in (Tok.LT, Tok.LTE) else 0
-                )
-            );
+            self.builder.ret(ir.Constant(i1, 1 if op in (Tok.LT, Tok.LTE) else 0));
             self.builder.position_at_start(greater_bb);
-            self.builder.cbranch(greater, true_bb if op in (Tok.GT, Tok.GTE) else false_bb, next_bb);
+            self.builder.cbranch(
+                greater, true_bb if op in (Tok.GT, Tok.GTE) else false_bb, next_bb
+            );
             self.builder.position_at_start(end);
             _len_op = (
-                "<" if op == Tok.LT
-                else ("<=" if op == Tok.LTE else (">" if op == Tok.GT else ">="))
+                "<"
+                    if op == Tok.LT
+                    else ("<=" if op == Tok.LTE else (">" if op == Tok.GT else ">="))
             );
             self.builder.cbranch(
-                self.builder.icmp_unsigned(_len_op, left_len, right_len, name="compare.len"),
+                self.builder.icmp_unsigned(
+                    _len_op, left_len, right_len, name="compare.len"
+                ),
                 true_bb,
                 false_bb
             );
             self.builder.position_at_start(next_bb);
-            next_index = self.builder.add(index, ir.Constant(i64, 1), name="compare.next.index");
+            next_index = self.builder.add(
+                index, ir.Constant(i64, 1), name="compare.next.index"
+            );
             index.add_incoming(next_index, next_bb);
             self.builder.branch(loop);
         }
@@ -5146,7 +5230,9 @@ impl NaIRGenPass._emit_comparison(
                 _largs: list[TypeBase] = self._agg_key_args(key_ret, "list") or [];
                 _lelem_key = _largs[0] if _largs else None;
                 _lelem_unsigned = (
-                    self._key_elem_unsigned(_lelem_key) if _lelem_key is not None else False
+                    self._key_elem_unsigned(_lelem_key)
+                        if _lelem_key is not None
+                        else False
                 );
                 _cmp_fn = self._emit_list_compare_fn(
                     lcmp_key,
@@ -5158,9 +5244,7 @@ impl NaIRGenPass._emit_comparison(
                     unsigned,
                     _lelem_key
                 );
-                return self.builder.call(
-                    _cmp_fn, [left, right], name="lcmp"
-                );
+                return self.builder.call(_cmp_fn, [left, right], name="lcmp");
             }
         }
 
