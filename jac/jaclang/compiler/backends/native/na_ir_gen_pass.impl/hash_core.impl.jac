@@ -264,7 +264,7 @@ impl NaIRGenPass._emit_hash_core_helpers(
     bnx.store(nslm, slot_a);
     bnx.branch(probe_bb);
 
-    rehash_fn: any = self._emit_slow_path_helper(
+    rehash_fn: ir.Function = self._emit_slow_path_helper(
         f"{_pre}_rehash_{_safe}", ir.VoidType(), [cont_ptr_type]
     );
     rehash_fn.args[0].name = "cont";
@@ -930,7 +930,9 @@ impl NaIRGenPass._emit_hash_core_helpers(
         name="gk.len0"
     );
     _gk_ord0 = bgk.load(
-        bgk.gep(d_gk, [ir.Constant(i32, 0), ir.Constant(i32, ORDER_F)], name="gk.ord0.p"),
+        bgk.gep(
+            d_gk, [ir.Constant(i32, 0), ir.Constant(i32, ORDER_F)], name="gk.ord0.p"
+        ),
         name="gk.ord0"
     );
     _gk_cap0 = bgk.load(

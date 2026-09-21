@@ -743,7 +743,6 @@ walker NaIRGenPass(CompilerPass) {
     ) -> ir.Function;
 
     def _emit_string_step_slice_fn -> ir.Function;
-
     def _codegen_list_slice(
         target_val: ir.Value, slice_node: uni.Slice, elem_type_name: str
     ) -> (ir.Value | None);
@@ -1263,7 +1262,7 @@ walker NaIRGenPass(CompilerPass) {
     ) -> ir.Value;
 
     def _emit_slow_path_helper(
-        fn_name: str, ret_type: ir.Type, arg_types: list[ir.Type], nounwind: bool = True
+        fn_name: str, ret_type: ir.Type, arg_types: list[ir.Type]
     ) -> ir.Function;
 
     def _emit_list_grow_fn(
@@ -3192,9 +3191,11 @@ walker NaIRGenPass(CompilerPass) {
     def _emit_list_repeat_fn(
         list_key: str, list_ptr_type: ir.Type, helpers: dict[str, any]
     ) -> ir.Function;
+
     def _emit_list_concat_fn(
         list_key: str, list_ptr_type: ir.Type, helpers: dict[str, any]
     ) -> ir.Function;
+
     def _emit_list_contains_fn(
         list_key: str,
         list_ptr_type: ir.Type,
@@ -3202,6 +3203,7 @@ walker NaIRGenPass(CompilerPass) {
         helpers: dict[str, any],
         is_str: bool
     ) -> ir.Function;
+
     def _emit_list_compare_fn(
         list_key: str,
         list_ptr_type: ir.Type,

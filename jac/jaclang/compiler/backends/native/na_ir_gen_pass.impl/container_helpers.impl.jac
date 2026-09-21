@@ -1113,17 +1113,12 @@ impl NaIRGenPass._emit_grow_array(
 }
 
 impl NaIRGenPass._emit_slow_path_helper(
-    fn_name: str, ret_type: ir.Type, arg_types: list[ir.Type], nounwind: bool = True
+    fn_name: str, ret_type: ir.Type, arg_types: list[ir.Type]
 ) -> ir.Function {
-    fn = ir.Function(
-        self.llvm_module, ir.FunctionType(ret_type, arg_types), name=fn_name
-    );
+    fn = self._define_function(fn_name, ir.FunctionType(ret_type, arg_types));
     fn.linkage = "private";
     fn.attributes.add("noinline");
     fn.attributes.add("cold");
-    if nounwind {
-        fn.attributes.add("nounwind");
-    }
     return fn;
 }
 

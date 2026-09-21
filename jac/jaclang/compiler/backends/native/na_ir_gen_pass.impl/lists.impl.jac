@@ -811,31 +811,12 @@ impl NaIRGenPass._emit_aos_list_helpers(tname: str) -> ir.Type {
     grow_fn.args[0].name = "list";
     grow_fn.args[1].name = "len";
     b = ir.IRBuilder(grow_fn.append_basic_block("entry"));
-    _gz_len = grow_fn.args[1];
     _gz_cap_p = b.gep(grow_fn.args[0], [_z, ir.Constant(i32, 1)], name="gz.cap.p");
     _gz_data_p = b.gep(grow_fn.args[0], [_z, ir.Constant(i32, 2)], name="gz.data.p");
     _gz_cap = b.load(_gz_cap_p, name="gz.cap");
-    _gz_ncap = b.mul(_gz_cap, ir.Constant(i64, 2), name="gz.ncap");
-    _gz_sz = b.ptrtoint(
-        b.gep(ir.Constant(_tp, None), [ir.Constant(i32, 1)], name="gz.sz.p"),
-        i64,
-        name="gz.sz"
+    self._emit_grow_array(
+        b, _gz_data_p, _t_struct, grow_fn.args[1], _gz_cap_p, _gz_cap
     );
-    _gz_new = b.call(
-        _malloc, [b.mul(_gz_ncap, _gz_sz, name="gz.nsz")], name="gz.nbuf"
-    );
-    _gz_old = b.load(_gz_data_p, name="gz.old");
-    b.call(
-        _memcpy,
-        [
-            b.bitcast(_gz_new, i8p, name="gz.nbuf8"),
-            b.bitcast(_gz_old, i8p, name="gz.old8"),
-            b.mul(_gz_len, _gz_sz, name="gz.copysz")
-        ]
-    );
-    b.call(_free, [b.bitcast(_gz_old, i8p, name="gz.old8f")]);
-    b.store(b.bitcast(_gz_new, _tp, name="gz.nbuf.t"), _gz_data_p);
-    b.store(_gz_ncap, _gz_cap_p);
     b.ret_void();
 
     push_fn = self._define_function(

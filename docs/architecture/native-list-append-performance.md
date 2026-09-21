@@ -126,7 +126,7 @@ emit only the check and update inline, and build the slow branch through
 Deliberately left inlineable: `_hash_order_remove_fn` (deletion trim, not a
 growth path), hash/probe and insert fast paths, and the tiny scalar accessors
 that do not carry allocation or scan loops. The criterion is *small hot path
-plus rare allocation, copying, looping, or complex control flow* — not all
+plus rare allocation, copying, looping, or complex control flow*; not all
 container helpers.
 
 The same rule now covers the remaining audited operators:
