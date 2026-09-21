@@ -124,10 +124,26 @@ emit only the check and update inline, and build the slow branch through
   capacity check stays inline for `extend`/`setslice`.
 
 Deliberately left inlineable: `_hash_order_remove_fn` (deletion trim, not a
-growth path), hash/probe and insert fast paths, `find`/`get`/`set`/`len`,
-and retain/release, which are small hot-path operations by design. The
-criterion is *small hot path plus rare allocation, copying, looping, or
-complex control flow* — not all container helpers.
+growth path), hash/probe and insert fast paths, and the tiny scalar accessors
+that do not carry allocation or scan loops. The criterion is *small hot path
+plus rare allocation, copying, looping, or complex control flow* — not all
+container helpers.
+
+The same rule now covers the remaining audited operators:
+
+- string repetition (`__jac_str_repeat`);
+- list repetition and concatenation (`__list_repeat_*`, `__list_concat_*`);
+- list equality and lexicographic comparison (`__list_compare_*`);
+- list membership (`__list_contains_*`);
+- list slicing and stepped string slicing (`__list_slice_*`,
+  `__jac_str_slice_step`); and
+- cycle-root buffer growth (`__rc_push_root_grow`), while the root push
+  fast path remains a short `nounwind` wrapper.
+
+Capacity/holes checks stay in the caller. Allocation, copy, and scan loops are
+private `noinline cold nounwind` helpers, so LLVM cannot re-inline their
+machinery into a hot user loop. The native function factory also marks fixed
+runtime helpers `nounwind`; callback thunks remain outside that default.
 
 ## Result and validation
 
