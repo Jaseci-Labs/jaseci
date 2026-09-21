@@ -1583,6 +1583,12 @@ impl NaIRGenPass._emit_intrinsic_buffer_data(
         dp = self.builder.bitcast(dp, i8p, name="buf.data.i8");
         return self.builder.ptrtoint(dp, i64, name="buf.data.i64");
     }
+    if intr.name != "__bytearray_data" {
+        self._emit_intrinsic_misuse(
+            nd, intr, "expects __bytes_data or __bytearray_data"
+        );
+        return None;
+    }
     if not (len(elems) >= 3 and isinstance(elems[2], ir.PointerType)) {
         self._emit_intrinsic_misuse(
             nd, intr, "expects a bytearray/list value ({i64 len, i64 cap, T* data})"

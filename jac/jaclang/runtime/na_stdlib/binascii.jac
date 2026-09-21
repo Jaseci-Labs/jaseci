@@ -6,8 +6,7 @@ obj:pub Error(ValueError) {}
 obj:pub Incomplete(Exception) {}
 
 
-glob _HEXU: bytes = b"0123456789ABCDEF",
-     _CRCTAB: list[int] = [];
+glob _CRCTAB: list[int] = [];
 
 
 def _hexval(c: int) -> int {
@@ -21,6 +20,11 @@ def _hexval(c: int) -> int {
         return c - 55;
     }
     return -1;
+}
+
+
+def _hexdig(v: int) -> int {
+    return (48 + v) if v < 10 else (55 + v);
 }
 
 
@@ -165,7 +169,7 @@ def:pub b2a_uu(data: bytes, backtick: bool = False) -> bytes {
         raise Error("At most 45 bytes at once");
     }
 
-    out: bytearray = bytearray(63);
+    out: bytearray = bytearray(((bin_len + 2) // 3) * 4 + 2);
     dp: int = __bytearray_data(out);
     j: int = 0;
     if backtick and bin_len == 0 {
@@ -255,45 +259,58 @@ def:pub a2b_uu(data: bytes) -> bytes {
 
 def:pub a2b_qp(data: bytes, header: bool = False) -> bytes {
     datalen: int = len(data);
-    out: list[int] = [];
+    out: bytearray = bytearray(datalen);
+    sp: int = __bytes_data(data) if datalen > 0 else 0;
+    dp: int = __bytearray_data(out) if datalen > 0 else 0;
+    out_j: int = 0;
     in_i: int = 0;
     while in_i < datalen {
-        if data[in_i] == 61 {
+        c: int = __mem_load_i8(sp + in_i);
+        if c == 61 {
             in_i += 1;
             if in_i >= datalen {
                 break;
             }
-            if data[in_i] == 10 or data[in_i] == 13 {
-                if data[in_i] != 10 {
-                    while in_i < datalen and data[in_i] != 10 {
+            c = __mem_load_i8(sp + in_i);
+            if c == 10 or c == 13 {
+                if c != 10 {
+                    while in_i < datalen and __mem_load_i8(sp + in_i) != 10 {
                         in_i += 1;
                     }
                 }
                 if in_i < datalen {
                     in_i += 1;
                 }
-            } elif data[in_i] == 61 {
-                out.append(61);
+            } elif c == 61 {
+                __mem_store_i8(dp + out_j, 61);
+                out_j += 1;
                 in_i += 1;
             } elif (
                 in_i + 1 < datalen
-                and _hexval(data[in_i]) >= 0
-                and _hexval(data[in_i + 1]) >= 0
+                and _hexval(c) >= 0
+                and _hexval(__mem_load_i8(sp + in_i + 1)) >= 0
             ) {
-                out.append((_hexval(data[in_i]) << 4) | _hexval(data[in_i + 1]));
+                __mem_store_i8(
+                    dp + out_j,
+                    (_hexval(c) << 4) | _hexval(__mem_load_i8(sp + in_i + 1))
+                );
+                out_j += 1;
                 in_i += 2;
             } else {
-                out.append(61);
+                __mem_store_i8(dp + out_j, 61);
+                out_j += 1;
             }
-        } elif header and data[in_i] == 95 {
-            out.append(32);
+        } elif header and c == 95 {
+            __mem_store_i8(dp + out_j, 32);
+            out_j += 1;
             in_i += 1;
         } else {
-            out.append(data[in_i]);
+            __mem_store_i8(dp + out_j, c);
+            out_j += 1;
             in_i += 1;
         }
     }
-    return bytes(out);
+    return bytes(out[0:out_j]);
 }
 
 
@@ -301,23 +318,26 @@ def:pub b2a_qp(
     data: bytes, quotetabs: bool = False, istext: bool = True, header: bool = False
 ) -> bytes {
     datalen: int = len(data);
+    sp: int = __bytes_data(data) if datalen > 0 else 0;
     crlf: bool = False;
     p: int = 0;
     while p < datalen {
-        if data[p] == 10 {
-            if p > 0 and data[p - 1] == 13 {
+        if __mem_load_i8(sp + p) == 10 {
+            if p > 0 and __mem_load_i8(sp + p - 1) == 13 {
                 crlf = True;
             }
             break;
         }
         p += 1;
     }
-    out: list[int] = [];
+    out: bytearray = bytearray(6 * datalen + 8);
+    dp: int = __bytearray_data(out);
+    out_j: int = 0;
     linelen: int = 0;
     in_i: int = 0;
     while in_i < datalen {
-        c: int = data[in_i];
-        nxt: int = data[in_i + 1] if in_i + 1 < datalen else -1;
+        c: int = __mem_load_i8(sp + in_i);
+        nxt: int = __mem_load_i8(sp + in_i + 1) if in_i + 1 < datalen else -1;
         needs_enc: bool = c > 126
             or c == 61
             or (header and c == 95)
@@ -331,33 +351,41 @@ def:pub b2a_qp(
             or (c < 33 and c != 13 and c != 10 and (quotetabs or (c != 9 and c != 32)));
         if needs_enc {
             if linelen + 3 >= 76 {
-                out.append(61);
+                __mem_store_i8(dp + out_j, 61);
+                out_j += 1;
                 if crlf {
-                    out.append(13);
+                    __mem_store_i8(dp + out_j, 13);
+                    out_j += 1;
                 }
-                out.append(10);
+                __mem_store_i8(dp + out_j, 10);
+                out_j += 1;
                 linelen = 0;
             }
-            out.append(61);
-            out.append(_HEXU[(c >> 4) & 15]);
-            out.append(_HEXU[c & 15]);
+            __mem_store_i8(dp + out_j, 61);
+            __mem_store_i8(dp + out_j + 1, _hexdig((c >> 4) & 15));
+            __mem_store_i8(dp + out_j + 2, _hexdig(c & 15));
+            out_j += 3;
             in_i += 1;
             linelen += 3;
         } else {
             at_lf: bool = c == 10 or (c == 13 and nxt == 10);
             if istext and at_lf {
                 linelen = 0;
-                outlen: int = len(out);
-                if outlen > 0 and (out[outlen - 1] == 32 or out[outlen - 1] == 9) {
-                    ch: int = out[outlen - 1];
-                    out[outlen - 1] = 61;
-                    out.append(_HEXU[(ch >> 4) & 15]);
-                    out.append(_HEXU[ch & 15]);
+                if out_j > 0 {
+                    prev: int = __mem_load_i8(dp + out_j - 1);
+                    if prev == 32 or prev == 9 {
+                        __mem_store_i8(dp + out_j - 1, 61);
+                        __mem_store_i8(dp + out_j, _hexdig((prev >> 4) & 15));
+                        __mem_store_i8(dp + out_j + 1, _hexdig(prev & 15));
+                        out_j += 2;
+                    }
                 }
                 if crlf {
-                    out.append(13);
+                    __mem_store_i8(dp + out_j, 13);
+                    out_j += 1;
                 }
-                out.append(10);
+                __mem_store_i8(dp + out_j, 10);
+                out_j += 1;
                 if c == 13 {
                     in_i += 2;
                 } else {
@@ -365,23 +393,28 @@ def:pub b2a_qp(
                 }
             } else {
                 if in_i + 1 != datalen and nxt != 10 and linelen + 1 >= 76 {
-                    out.append(61);
+                    __mem_store_i8(dp + out_j, 61);
+                    out_j += 1;
                     if crlf {
-                        out.append(13);
+                        __mem_store_i8(dp + out_j, 13);
+                        out_j += 1;
                     }
-                    out.append(10);
+                    __mem_store_i8(dp + out_j, 10);
+                    out_j += 1;
                     linelen = 0;
                 }
                 linelen += 1;
                 if header and c == 32 {
-                    out.append(95);
+                    __mem_store_i8(dp + out_j, 95);
+                    out_j += 1;
                     in_i += 1;
                 } else {
-                    out.append(c);
+                    __mem_store_i8(dp + out_j, c);
+                    out_j += 1;
                     in_i += 1;
                 }
             }
         }
     }
-    return bytes(out);
+    return bytes(out[0:out_j]);
 }
