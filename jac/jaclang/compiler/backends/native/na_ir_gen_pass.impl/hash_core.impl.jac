@@ -925,7 +925,32 @@ impl NaIRGenPass._emit_hash_core_helpers(
     get_key_fn.args[1].name = "i";
     bgk = ir.IRBuilder(get_key_fn.append_basic_block("entry"));
     d_gk = get_key_fn.args[0];
+    _gk_len0 = bgk.load(
+        bgk.gep(d_gk, [ir.Constant(i32, 0), ir.Constant(i32, LEN_F)], name="gk.len0.p"),
+        name="gk.len0"
+    );
+    _gk_ord0 = bgk.load(
+        bgk.gep(d_gk, [ir.Constant(i32, 0), ir.Constant(i32, ORDER_F)], name="gk.ord0.p"),
+        name="gk.ord0"
+    );
+    _gk_cap0 = bgk.load(
+        bgk.gep(d_gk, [ir.Constant(i32, 0), ir.Constant(i32, 1)], name="gk.cap0.p"),
+        name="gk.cap0"
+    );
+    _gk_extent0 = bgk.load(
+        self._hash_order_extent_ptr(bgk, _gk_ord0, _gk_cap0), name="gk.extent0"
+    );
+    _gk_need = get_key_fn.append_basic_block("gk.compact");
+    _gk_go = get_key_fn.append_basic_block("gk.go");
+    bgk.cbranch(
+        bgk.icmp_unsigned("!=", _gk_extent0, _gk_len0, name="gk.holes"),
+        _gk_need,
+        _gk_go
+    );
+    bgk = ir.IRBuilder(_gk_need);
     bgk.call(compact_order_fn, [d_gk]);
+    bgk.branch(_gk_go);
+    bgk = ir.IRBuilder(_gk_go);
     tgt_gk = get_key_fn.args[1];
     len_gk = bgk.load(
         bgk.gep(d_gk, [ir.Constant(i32, 0), ir.Constant(i32, LEN_F)], name="lp"),
@@ -1035,7 +1060,36 @@ impl NaIRGenPass._emit_hash_core_helpers(
         get_val_fn.args[1].name = "i";
         bgv = ir.IRBuilder(get_val_fn.append_basic_block("entry"));
         d_gv = get_val_fn.args[0];
+        _gv_len0 = bgv.load(
+            bgv.gep(
+                d_gv, [ir.Constant(i32, 0), ir.Constant(i32, LEN_F)], name="gv.len0.p"
+            ),
+            name="gv.len0"
+        );
+        _gv_ord0 = bgv.load(
+            bgv.gep(
+                d_gv, [ir.Constant(i32, 0), ir.Constant(i32, ORDER_F)], name="gv.ord0.p"
+            ),
+            name="gv.ord0"
+        );
+        _gv_cap0 = bgv.load(
+            bgv.gep(d_gv, [ir.Constant(i32, 0), ir.Constant(i32, 1)], name="gv.cap0.p"),
+            name="gv.cap0"
+        );
+        _gv_extent0 = bgv.load(
+            self._hash_order_extent_ptr(bgv, _gv_ord0, _gv_cap0), name="gv.extent0"
+        );
+        _gv_need = get_val_fn.append_basic_block("gv.compact");
+        _gv_go = get_val_fn.append_basic_block("gv.go");
+        bgv.cbranch(
+            bgv.icmp_unsigned("!=", _gv_extent0, _gv_len0, name="gv.holes"),
+            _gv_need,
+            _gv_go
+        );
+        bgv = ir.IRBuilder(_gv_need);
         bgv.call(compact_order_fn, [d_gv]);
+        bgv.branch(_gv_go);
+        bgv = ir.IRBuilder(_gv_go);
         tgt_gv = get_val_fn.args[1];
         len_gv = bgv.load(
             bgv.gep(d_gv, [ir.Constant(i32, 0), ir.Constant(i32, LEN_F)], name="lp"),
