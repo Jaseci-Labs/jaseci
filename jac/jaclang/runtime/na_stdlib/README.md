@@ -167,6 +167,77 @@ native layout records the emitted name separately from its source-level key.
   `b""` here (na has no None-able `bytes` parameter), and bad `altchars`/
   `map01` lengths raise `ValueError` where CPython asserts; the Ascii85
   (`a85`) variant is a follow-up.
+- **`binascii.jac`** -- a faithful port of CPython 3.14's
+  `Modules/binascii.c` over native `bytes` primitives plus the raw-buffer
+  intrinsic floor (`hexlify`/`unhexlify`/`crc_hqx`/`b2a_uu`/`a2b_uu` run
+  their inner loops on `__bytes_data`/`__mem_load_i8`/`__mem_store_i8`
+  pointers; `hexlify`/`unhexlify` allocate the result with `b"\x00" * n`
+  and write the payload in place before it escapes, so there is no
+  intermediate `list[int]` and no final copy): `hexlify`/`unhexlify`
+  (with `sep`/`bytes_per_sep`, including negative `bytes_per_sep` left-edge
+  anchoring), the `a2b_hex`/`b2a_hex` aliases, `a2b_base64`/`b2a_base64`
+  (delegating to the bundled `base64` floor so strict/non-strict modes share
+  CPython's exact error text), `a2b_uu`/`b2a_uu` (incl. `backtick`),
+  `a2b_qp`/`b2a_qp` (quotetabs/istext/header, underscore-header rule,
+  `=\r\n` soft breaks), `crc32` (via the `_zlib_native` FFI floor, the same
+  zlib `crc32` CPython binds under `USE_ZLIB_CRC32`), `crc_hqx`, plus the
+  `Error` (a `ValueError` subclass, matching CPython) and `Incomplete`
+  types. SCOPE: parameters are typed `bytes` -- CPython's `ascii_buffer`
+  also accepts ASCII `str`, but on the native pathway `isinstance` cannot
+  discriminate `str` from `bytes`, so a `str` argument is a type error
+  rather than an auto-encoded one; pass `bytes`/`bytearray`-frozen values.
+  `hexlify`'s `sep` is `bytes` only. Removed-in-3.14 functions
+  (`a2b_hqx`/`b2a_hqx`/`rlecode`/`rledecode`) are not provided. Pinned
+  sv<->na congruent by `prim_binascii.jac`.
+- **`array.jac`** -- the `array` class over a `bytearray` backing store,
+  little-endian/native byte order. Typecode facts (`_isz` item size, `_sgn`
+  signedness, `_flt`, `_lo`/`_hi` bounds) are cached as `has` fields at
+  construction so hot methods never re-run the typecode string-compare
+  chains, and `_get_le`/`_put_le` are single typed `__mem_load_i*`/
+  `__mem_store_i*` ops on `__bytearray_data(self._buf)` (the data pointer
+  is re-fetched after any grow/realloc, per the intrinsic-floor lifetime
+  rules below). `append` encodes into a per-instance scratch `bytearray`
+  allocated once in `init` rather than a fresh temporary per element.
+  Supports the CPython typecodes
+  `b B h H i I l L q Q f d` (4-byte `l`/`L` on the native i64 word are
+  8 bytes here -- `itemsize` follows the stored width, matching CPython
+  on a 64-bit LP64 host where `l`/`L` are 8). `append`, `extend`
+  (`list[any]`), `extend_array`, `extend_bytes`, `insert`, `pop`,
+  `remove`, `index`, `count`, `reverse`, `tolist`, `tobytes`,
+  `frombytes`, `byteswap`, `buffer_info`, `tofile`/`fromfile`, and the
+  dunders `__len__`/`__getitem__`/`__setitem__`/`__contains__`/`__eq__`/
+  `__add__`/`__mul__`/`__ne__`. Overflow/underflow messages
+  match CPython text (`OverflowError`/`TypeError`/`ValueError`/
+  `IndexError`). SCOPE/divergences: operator syntax does not dispatch
+  dunders on the na pathway -- call them explicitly (`a.__getitem__(i)`,
+  `a.__eq__(b)`); the constructor takes `list[any]` (literal elements box
+  correctly) and deliberately does NOT accept `bytes`/array initializers --
+  use `frombytes`/`extend_array`/`extend_bytes` (a boxed `any` cannot be
+  safely redispatched on the na pathway); `u`/`w` codes, slicing, and `del`
+  are not provided; `buffer_info()[0]` is `0` (no raw addresses); `__eq__`
+  compares typecode + raw buffer where CPython compares values across
+  typecodes; 8-byte unsigned codes wrap mod 2^64 at the i64 boundary.
+  Pinned sv<->na congruent by `prim_array.jac`.
+- **`mmap.jac`** -- the `mmap` class over the per-OS `_mmap_native`
+  FFI floors (`_mmap_native.linux.jac` / `_mmap_native.darwin.jac`,
+  Mechanism F shape: the floors declare `mmap`/`munmap`/`msync`/`mprotect`/
+  `close`/`lseek`/`memcpy`/`memmove` and carry the platform
+  `MAP_ANON`/`MS_SYNC` constants plus `mm_os_name`). Anonymous
+  (`fileno=-1`) and file-backed maps, `read`/`write`/
+  `read_byte`/`write_byte`/`readline`, `seek`/`tell`, `find`/`rfind`,
+  `move`, `resize` (`mmap`+copy on both platforms; refuses
+  non-private-writable maps with CPython's messages -- `TypeError` for
+  readonly/copy-on-write, `ValueError` for shared anonymous maps), `flush`,
+  `close`, `read_slice`, `size`, `closed`, `ACCESS_*`/`PROT_*`/`MAP_*`
+  constants, and explicit-callable dunders (`__getitem__`/`__setitem__`/
+  `__len__`, context-manager `__enter__`/`__exit__`). Error text matches
+  CPython (`mmap closed or invalid`, `seek out of range`, `data out of
+  range`, `mmap index out of range`, `mmap can't modify a readonly memory
+  map.`). SCOPE: no operator-syntax slicing (`m[a:b]` -- use `read_slice`),
+  no `ACCESS_COPY` copy-on-write verification beyond flag semantics, and
+  `size()` answers the map length where CPython fstats the fd (it raises
+  `OSError` on anonymous maps there). Pinned sv<->na congruent by
+  `prim_mmap.jac` on anonymous maps.
 - **`textwrap.jac`** (#6978 Phase 3) -- the greedy line wrapper (`wrap`,
   `fill`) plus `dedent` and `indent`, a faithful port of CPython's
   `TextWrapper._wrap_chunks`/`_handle_long_word` over primitives (following
@@ -973,6 +1044,10 @@ Mechanism B exists to avoid writing twice. Reaching for one through the flat
    container/None branches with `isinstance` -- `x is None` does not lower to a
    branch condition on the native pathway for a boxed `any` read out of a
    container (on an `any` *parameter* it does; `_typename.jac` relies on it).
+   Hot byte loops may drop to the **raw-buffer intrinsic floor**
+   (`__bytes_data`, `__bytearray_data`, `__mem_load_i8`/`i16`/`i32`/`i64`,
+   `__mem_store_i8`/`i16`/`i32`/`i64` -- see "Unsafe raw-buffer intrinsics"
+   below) instead of per-element container calls.
 3. Add a tri-backend equivalence fixture
    (`jac/jaclang/compiler/tests/fixtures/prim_<name>.jac`) and register it in
    `test_prim_equivalence.jac` with `require=["na"]` so sv/na congruence is
@@ -1002,6 +1077,48 @@ Mechanism B exists to avoid writing twice. Reaching for one through the flat
 
 Functions that need a syscall (`os.path.realpath`, `exists`, ...) stay as
 Mechanism-A intercepts, not here.
+
+## Unsafe raw-buffer intrinsics
+
+Mechanism-B modules whose inner loops are byte shuffles (`binascii`,
+`array`, and future codecs like quoted-printable/base85/uu) can bypass
+per-element container calls through a small unsafe floor registered in
+`jac/jaclang/compiler/intrinsic_registry.jac` (same mechanism as
+`region_native.jac`'s `__mem_load_i64`/`__mem_store_i64`):
+
+- `__bytes_data(b: bytes) -> int` -- address of the inline payload
+  (`jacbytes` is `{ i64 len, [0 x i8] data }`; the address is a GEP to
+  field 1).
+- `__bytearray_data(b: bytearray) -> int` -- the data pointer stored in
+  the `List.u8` `{ i64 len, i64 cap, i8* data }` header.
+- `__mem_load_i8/i16/i32/i64(addr: int) -> int` and
+  `__mem_store_i8/i16/i32/i64(addr: int, val: int)` -- raw loads/stores.
+  Loads zero-extend narrow reads to `i64`; stores truncate `i64` to the
+  named width. (The `i32` pair pre-existed for `_errno_native`.)
+
+Layout and lifetime contract for callers:
+
+- Addresses are raw pointers carried as `i64`; the caller owns bounds
+  (track `len` separately) and lifetime.
+- A `bytearray` data pointer is invalidated by any operation that can
+  grow or reallocate the buffer (`append`/`extend`/slice-assign) --
+  re-fetch after mutation. `bytes` payloads are stable (inline storage).
+- Empty buffers may return a meaningless/null data pointer; guard `n == 0`
+  before dereferencing.
+- Writing through `__bytes_data` mutates "immutable" bytes -- only safe
+  on a fresh, unshared buffer (e.g. `out = b"\x00" * n` filled before it
+  escapes, the `hexlify`/`unhexlify` idiom).
+- On the sv (Python) backend these names are undefined; modules using
+  them are native-only (which is fine -- `na_stdlib` only ships on na).
+
+Measured effect (`scripts/bench/run_na_stdlib_bench.sh`, hexlify+unhexlify
+of a 43-byte buffer / append+get on `array("i")` / set+get byte on a
+private anon `mmap`): `binascii` ~444 -> ~224 ns/op, `array` ~222 ->
+~71 ns/op, and `mmap` ~118 -> ~4 ns/op (`__getitem__`/`__setitem__`/
+`read_byte`/`write_byte`/`find`/`rfind`/`readline` operate directly on the
+mapped pages via the floor intrinsics -- no FFI call or temporary `bytes`
+per op). All three are now under their CPython lanes (~258 / ~143 /
+~133 ns/op).
 
 ## Mechanism F: FFI floor + pure-Jac surface (`zlib`)
 

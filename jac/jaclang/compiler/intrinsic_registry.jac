@@ -7,6 +7,7 @@ enum IntrinsicDispatch {
     ATOMIC_XCHG = "atomic_xchg",
     CALL_DTOR = "call_dtor",
     REGION_TLS = "region_tls",
+    BUFFER_DATA = "buffer_data",
     ALLOCA = "alloca"
 }
 
@@ -114,12 +115,12 @@ glob INTRINSIC_REGISTRY = IntrinsicRegistry(
              "__mem_load_i32": IntrinsicEntry(
                  name="__mem_load_i32",
                  param_specs=["i64"],
-                 result_spec="i32",
+                 result_spec="i64",
                  dispatch=IntrinsicDispatch.MEM_LOAD
              ),
              "__mem_store_i32": IntrinsicEntry(
                  name="__mem_store_i32",
-                 param_specs=["i64", "i32"],
+                 param_specs=["i64", "i64"],
                  result_spec="none",
                  dispatch=IntrinsicDispatch.MEM_STORE
              ),
@@ -134,6 +135,42 @@ glob INTRINSIC_REGISTRY = IntrinsicRegistry(
                  param_specs=["i64", "i64"],
                  result_spec="none",
                  dispatch=IntrinsicDispatch.MEM_STORE
+             ),
+             "__mem_load_i8": IntrinsicEntry(
+                 name="__mem_load_i8",
+                 param_specs=["i64"],
+                 result_spec="i64",
+                 dispatch=IntrinsicDispatch.MEM_LOAD
+             ),
+             "__mem_store_i8": IntrinsicEntry(
+                 name="__mem_store_i8",
+                 param_specs=["i64", "i64"],
+                 result_spec="none",
+                 dispatch=IntrinsicDispatch.MEM_STORE
+             ),
+             "__mem_load_i16": IntrinsicEntry(
+                 name="__mem_load_i16",
+                 param_specs=["i64"],
+                 result_spec="i64",
+                 dispatch=IntrinsicDispatch.MEM_LOAD
+             ),
+             "__mem_store_i16": IntrinsicEntry(
+                 name="__mem_store_i16",
+                 param_specs=["i64", "i64"],
+                 result_spec="none",
+                 dispatch=IntrinsicDispatch.MEM_STORE
+             ),
+             "__bytes_data": IntrinsicEntry(
+                 name="__bytes_data",
+                 param_specs=["ref"],
+                 result_spec="i64",
+                 dispatch=IntrinsicDispatch.BUFFER_DATA
+             ),
+             "__bytearray_data": IntrinsicEntry(
+                 name="__bytearray_data",
+                 param_specs=["ref"],
+                 result_spec="i64",
+                 dispatch=IntrinsicDispatch.BUFFER_DATA
              ),
              "__atomic_xchg_i64": IntrinsicEntry(
                  name="__atomic_xchg_i64",

@@ -1391,6 +1391,9 @@ impl NaIRGenPass._codegen_intrinsic(
     if _dispatch == IntrinsicDispatch.REGION_TLS {
         return self._emit_intrinsic_region_tls(nd, intr, positional);
     }
+    if _dispatch == IntrinsicDispatch.BUFFER_DATA {
+        return self._emit_intrinsic_buffer_data(nd, intr, positional);
+    }
     if _dispatch == IntrinsicDispatch.ALLOCA {
         return self._emit_intrinsic_alloca(nd, intr, positional);
     }
@@ -1491,22 +1494,106 @@ impl NaIRGenPass._emit_intrinsic_mem_load(
     if addr is None {
         return None;
     }
-    value_type = ir.IntType(int(intr.result_spec[1:]));
+
+    width = int(intr.name.split("_i")[-1]);
+    value_type = ir.IntType(width);
     slot = self.builder.inttoptr(addr, value_type.as_pointer(), name="mem.p");
-    return self.builder.load(slot, name="mem.ld");
+    raw = self.builder.load(slot, name="mem.ld");
+    if width < 64 {
+        return self.builder.zext(raw, ir.IntType(64), name="mem.ld.wide");
+    }
+    return raw;
 }
 
 impl NaIRGenPass._emit_intrinsic_mem_store(
     nd: uni.FuncCall, intr: IntrinsicEntry, args: list[uni.Expr]
 ) -> (ir.Value | None) {
     addr = self._intrinsic_operand(nd, intr, args[0], intr.param_specs[0]);
-    val = self._intrinsic_operand(nd, intr, args[1], intr.param_specs[1]);
+
+    width = int(intr.name.split("_i")[-1]);
+    if width >= 64 {
+        val = self._intrinsic_operand(nd, intr, args[1], intr.param_specs[1]);
+    } else {
+        _raw = self._codegen_expr(args[1]);
+        if _raw is None {
+            self._emit_intrinsic_misuse(nd, intr, "operand did not lower to a value");
+            return None;
+        }
+        val = None;
+        vt = ir.IntType(width);
+        if isinstance(_raw.type, ir.IntType) {
+            if _raw.type.width > width {
+                val = self.builder.trunc(_raw, vt, name="mem.tr");
+            } elif _raw.type.width < width {
+                val = self.builder.zext(_raw, vt, name="mem.zx");
+            } else {
+                val = _raw;
+            }
+        }
+        if val is None {
+            val = self._coerce_type(_raw, vt);
+        }
+    }
     if addr is None or val is None {
         return None;
     }
     slot = self.builder.inttoptr(addr, val.type.as_pointer(), name="mem.p");
     self.builder.store(val, slot);
     return None;
+}
+
+impl NaIRGenPass._emit_intrinsic_buffer_data(
+    nd: uni.FuncCall, intr: IntrinsicEntry, args: list[uni.Expr]
+) -> (ir.Value | None) {
+    arg_val = self._codegen_expr(args[0]);
+    if arg_val is None {
+        self._emit_intrinsic_misuse(nd, intr, "operand did not lower to a value");
+        return None;
+    }
+    if self._opt_ptr_payload_of(arg_val.type) is not None {
+        arg_val = self.builder.extract_value(arg_val, 1, name="buf.opt");
+    }
+    if not isinstance(arg_val.type, ir.PointerType) {
+        self._emit_intrinsic_misuse(nd, intr, "operand is not a buffer value");
+        return None;
+    }
+    i64 = ir.IntType(64);
+    i32 = ir.IntType(32);
+    i8p = ir.IntType(8).as_pointer();
+    pt = arg_val.type.pointee;
+    elems = (
+        list(pt.elements)
+            if isinstance(pt, (ir.LiteralStructType, ir.IdentifiedStructType))
+            else []
+    );
+    if intr.name == "__bytes_data" {
+        if not (
+            len(elems) >= 2
+            and isinstance(elems[1], ir.ArrayType)
+            and elems[1].element == ir.IntType(8)
+        ) {
+            self._emit_intrinsic_misuse(
+                nd, intr, "expects a bytes value ({i64 len, i8 data[]})"
+            );
+            return None;
+        }
+        dp = self.builder.gep(
+            arg_val, [ir.Constant(i32, 0), ir.Constant(i32, 1)], name="buf.data"
+        );
+        dp = self.builder.bitcast(dp, i8p, name="buf.data.i8");
+        return self.builder.ptrtoint(dp, i64, name="buf.data.i64");
+    }
+    if not (len(elems) >= 3 and isinstance(elems[2], ir.PointerType)) {
+        self._emit_intrinsic_misuse(
+            nd, intr, "expects a bytearray/list value ({i64 len, i64 cap, T* data})"
+        );
+        return None;
+    }
+    slot = self.builder.gep(
+        arg_val, [ir.Constant(i32, 0), ir.Constant(i32, 2)], name="buf.data.p"
+    );
+    raw = self.builder.load(slot, name="buf.data");
+    return self.builder.ptrtoint(raw, i64, name="buf.data.i64");
 }
 
 impl NaIRGenPass._emit_intrinsic_atomic_xchg(
