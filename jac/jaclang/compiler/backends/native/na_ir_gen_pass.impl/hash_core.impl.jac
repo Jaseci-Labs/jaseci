@@ -1151,6 +1151,7 @@ impl NaIRGenPass._emit_hash_core_helpers(
             self.llvm_module, _wfnty, name=f"{_pre}_{_wop}_{_safe}"
         );
         _wfn.linkage = "private";
+        _wfn.attributes.add("nounwind");
         _wfn.args[0].name = "cont";
         _wfn.args[1].name = "key";
         _wb = ir.IRBuilder(_wfn.append_basic_block("entry"));
@@ -1162,6 +1163,11 @@ impl NaIRGenPass._emit_hash_core_helpers(
             _wb.ret(_wb.call(_wcore, list(_wfn.args) + [_wh], name="res"));
         }
         core[_wkey] = _wfn;
+    }
+    for _core_fn in core.values() {
+        if isinstance(_core_fn, ir.Function) {
+            _core_fn.attributes.add("nounwind");
+        }
     }
     return core;
 }
@@ -1186,6 +1192,7 @@ impl NaIRGenPass._emit_cstr_hash_fn -> ir.Function {
         name="__jac_cstr_hash"
     );
     fn.linkage = "private";
+    fn.attributes.add("nounwind");
     fn.args[0].name = "s";
     head = fn.append_basic_block("entry");
     loop = fn.append_basic_block("loop");

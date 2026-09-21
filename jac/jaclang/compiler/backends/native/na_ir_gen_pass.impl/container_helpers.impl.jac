@@ -96,6 +96,7 @@ impl NaIRGenPass._emit_jacval_rc_fn(fn_name: str, is_retain: bool) -> ir.Functio
         fnty = ir.FunctionType(ir.VoidType(), [self.jacval_type]);
         fn = ir.Function(self.llvm_module, fnty, name=fn_name);
         fn.linkage = "private";
+        fn.attributes.add("nounwind");
     }
     fn.args[0].name = "jv";
     if self.rc_retain_fn is None or self.rc_release_simple_fn is None {
@@ -559,6 +560,7 @@ impl NaIRGenPass._emit_container_new_fn(
     new_fnty = ir.FunctionType(container_ptr_type, []);
     new_fn = ir.Function(self.llvm_module, new_fnty, name=fn_name);
     new_fn.linkage = "private";
+    new_fn.attributes.add("nounwind");
     bb = new_fn.append_basic_block("entry");
     b = ir.IRBuilder(bb);
     result = self._emit_rc_alloc_container(
@@ -685,6 +687,7 @@ impl NaIRGenPass._emit_container_len_fn(
     len_fnty = ir.FunctionType(i64, [container_ptr_type]);
     len_fn = ir.Function(self.llvm_module, len_fnty, name=fn_name);
     len_fn.linkage = "private";
+    len_fn.attributes.add("nounwind");
     len_fn.args[0].name = "container";
     bb = len_fn.append_basic_block("entry");
     b = ir.IRBuilder(bb);
@@ -715,6 +718,7 @@ impl NaIRGenPass._emit_container_release_fn(
         release_fn = ir.Function(self.llvm_module, release_fnty, name=fn_name);
         release_fn.linkage = "private";
     }
+    release_fn.attributes.add("nounwind");
     release_fn.args[0].name = "container";
     i8 = ir.IntType(8);
     (b, done_bb) = self._emit_rc_destructor_preamble(release_fn, container_ptr_type);
@@ -853,6 +857,7 @@ impl NaIRGenPass._emit_array_get_fn(
     get_fnty = ir.FunctionType(elem_type, [container_ptr_type, i64]);
     get_fn = ir.Function(self.llvm_module, get_fnty, name=fn_name);
     get_fn.linkage = "private";
+    get_fn.attributes.add("nounwind");
     get_fn.args[0].name = "container";
     get_fn.args[1].name = "index";
     bb = get_fn.append_basic_block("entry");
@@ -1187,6 +1192,7 @@ impl NaIRGenPass._tuple_box_release_fn(
         name=f"__rc_release_tuple{len(self.tuple_release_fns)}"
     );
     release_fn.linkage = "private";
+    release_fn.attributes.add("nounwind");
     release_fn.args[0].name = "tup";
     self.tuple_release_fns[key] = release_fn;
 
@@ -1265,6 +1271,7 @@ impl NaIRGenPass._tuple_box_trace_fn(
         name=f"__rc_trace_tuple{len(self.tuple_trace_fns)}"
     );
     trace_fn.linkage = "private";
+    trace_fn.attributes.add("nounwind");
     trace_fn.args[0].name = "obj";
     trace_fn.args[1].name = "vis";
     self.tuple_trace_fns[key] = trace_fn;
