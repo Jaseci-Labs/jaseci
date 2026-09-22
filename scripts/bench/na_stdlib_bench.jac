@@ -119,92 +119,31 @@ def emit_row(name: str, dt: float, n: int, acc: any) {
 }
 
 
-def best_of_sqrt(n: int) -> tuple[float, float] {
-    res = bench_sqrt(n);
-    t: float = res[0];
+# Mirrors na_stdlib_bench.py's generic best_of(fn, n, rounds=3): one warm-up
+# candidate plus two repeats, keeping the fastest.
+def best_of(fn: any, n: int) -> tuple[float, int] {
+    best = fn(n);
     i: int = 0;
     while i < 2 {
-        res = bench_sqrt(n);
-        if res[0] < t {
-            t = res[0];
+        res = fn(n);
+        if res[0] < best[0] {
+            best = res;
         }
         i += 1;
     }
-    return (t, res[1]);
+    return best;
 }
 
-
-def best_of_struct(n: int) -> tuple[float, int] {
-    res = bench_struct(n);
-    t: float = res[0];
-    i: int = 0;
-    while i < 2 {
-        res = bench_struct(n);
-        if res[0] < t {
-            t = res[0];
-        }
-        i += 1;
-    }
-    return (t, res[1]);
-}
-
-
-def best_of_binascii(n: int) -> tuple[float, int] {
-    res = bench_binascii(n);
-    t: float = res[0];
-    i: int = 0;
-    while i < 2 {
-        res = bench_binascii(n);
-        if res[0] < t {
-            t = res[0];
-        }
-        i += 1;
-    }
-    return (t, res[1]);
-}
-
-
-def best_of_array(n: int) -> tuple[float, int] {
-    res = bench_array(n);
-    t: float = res[0];
-    i: int = 0;
-    while i < 2 {
-        res = bench_array(n);
-        if res[0] < t {
-            t = res[0];
-        }
-        i += 1;
-    }
-    return (t, res[1]);
-}
-
-
-def best_of_mmap(n: int) -> tuple[float, int] {
-    res = bench_mmap(n);
-    t: float = res[0];
-    i: int = 0;
-    while i < 2 {
-        res = bench_mmap(n);
-        if res[0] < t {
-            t = res[0];
-        }
-        i += 1;
-    }
-    return (t, res[1]);
-}
-
-
-glob scale: int = 1;
 
 with entry {
-    res = best_of_sqrt(2000000 * scale);
-    emit_row("math.sqrt loop    ", res[0], 2000000 * scale, res[1]);
-    res2 = best_of_struct(200000 * scale);
-    emit_row("struct pack/unpack", res2[0], 200000 * scale, res2[1]);
-    res3 = best_of_binascii(50000 * scale);
-    emit_row("binascii hexlify  ", res3[0], 50000 * scale, res3[1]);
-    res4 = best_of_array(300000 * scale);
-    emit_row("array append/get  ", res4[0], 300000 * scale, res4[1]);
-    res5 = best_of_mmap(200000 * scale);
-    emit_row("mmap set/get byte ", res5[0], 200000 * scale, res5[1]);
+    res = best_of(bench_sqrt, 2000000);
+    emit_row("math.sqrt loop    ", res[0], 2000000, res[1]);
+    res = best_of(bench_struct, 200000);
+    emit_row("struct pack/unpack", res[0], 200000, res[1]);
+    res = best_of(bench_binascii, 50000);
+    emit_row("binascii hexlify  ", res[0], 50000, res[1]);
+    res = best_of(bench_array, 300000);
+    emit_row("array append/get  ", res[0], 300000, res[1]);
+    res = best_of(bench_mmap, 200000);
+    emit_row("mmap set/get byte ", res[0], 200000, res[1]);
 }

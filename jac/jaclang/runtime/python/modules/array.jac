@@ -4,6 +4,12 @@ CPython bytearray supplies the retained buffer allocation; resizing, element
 conversion, slicing and sequence behavior are native Jac. Exported views pin
 logical size until the final buffer release. Derived from CPython 3.14.6;
 see ../LICENSE.cpython.
+
+NOTE: this is the jacpython-VM transcription of CPython's array. The
+na (native LLVM) port lives at ../na_stdlib/array.jac; the two runtimes
+have disjoint primitive floors and cannot import each other, so the
+element-encode/decode and range-check kernels are transcribed twice
+by design -- keep algorithmic fixes in BOTH files.
 """
 
 import from jaclang.runtime.python.cpython_api {

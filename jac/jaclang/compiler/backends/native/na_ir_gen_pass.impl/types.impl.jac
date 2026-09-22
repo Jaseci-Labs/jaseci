@@ -2260,9 +2260,11 @@ impl NaIRGenPass._zero_const(ty: ir.Type) -> ir.Constant {
     return ir.Constant(ty, 0);
 }
 
-impl NaIRGenPass._coerce_type(val: ir.Value, target_type: ir.Type) -> ir.Value {
+impl NaIRGenPass._coerce_type(
+    val: ir.Value, target_type: ir.Type, allow_narrow: bool = False
+) -> ir.Value {
     _was_owned = self._is_owned(val);
-    _result = self._coerce_type_inner(val, target_type);
+    _result = self._coerce_type_inner(val, target_type, allow_narrow);
     if _was_owned and _result is not val {
         self._mark_owned(_result);
     }
@@ -2635,7 +2637,9 @@ impl NaIRGenPass._opt_ptr_payload_of(t: ir.Type) -> (ir.Type | None) {
     return None;
 }
 
-impl NaIRGenPass._coerce_type_inner(val: ir.Value, target_type: ir.Type) -> ir.Value {
+impl NaIRGenPass._coerce_type_inner(
+    val: ir.Value, target_type: ir.Type, allow_narrow: bool = False
+) -> ir.Value {
     if val.type == target_type {
         return val;
     }
@@ -3130,6 +3134,9 @@ impl NaIRGenPass._coerce_type_inner(val: ir.Value, target_type: ir.Type) -> ir.V
                 return self.builder.icmp_signed(
                     "!=", val, ir.Constant(val.type, 0), name="int.truth"
                 );
+            }
+            if allow_narrow {
+                return self.builder.trunc(val, target_type, name="int.tr");
             }
             if isinstance(val, ir.Constant) and isinstance(val.constant, int) {
                 _w = target_type.width;

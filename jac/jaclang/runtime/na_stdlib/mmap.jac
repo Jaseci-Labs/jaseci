@@ -1,6 +1,4 @@
 import from _mmap_native {
-    mm_anon_flag,
-    mm_os_name,
     mm_map,
     mm_unmap,
     mm_sync,
@@ -8,8 +6,10 @@ import from _mmap_native {
     mm_read,
     mm_write,
     mm_copy,
+    mm_errno,
     mm_errstr
 }
+import from _mmap_platform { mm_anon_flag, mm_sync_flag }
 
 
 glob:pub PROT_READ: int = 1,
@@ -26,7 +26,13 @@ glob:pub PROT_READ: int = 1,
      SEEK_END: int = 2;
 
 glob:pub MAP_ANONYMOUS: int = mm_anon_flag();
-glob MAP_ANON: int = mm_anon_flag();
+glob MAP_ANON: int = mm_anon_flag(),
+     _NO_POS: int = -9223372036854775807;
+
+
+def _os_err -> str {
+    return "[Errno " + str(mm_errno()) + "] " + mm_errstr();
+}
 
 
 obj:pub mmap {
@@ -35,7 +41,8 @@ obj:pub mmap {
         _pos: int = 0,
         closed: bool = False,
         _access: int = 0,
-        _flags: int = 0;
+        _flags: int = 0,
+        _fd: int = -1;
 
     def init(
         fileno: int,
@@ -47,7 +54,8 @@ obj:pub mmap {
     ) {
         use_flags: int = flags;
         use_prot: int = prot;
-        if access != ACCESS_DEFAULT and (flags != MAP_SHARED or prot != 3) {
+        if access != ACCESS_DEFAULT
+            and (flags != MAP_SHARED or prot != (PROT_READ | PROT_WRITE)) {
             raise ValueError("mmap can't specify both access and flags, prot.");
         }
         if access == ACCESS_READ {
@@ -60,34 +68,46 @@ obj:pub mmap {
             use_prot = PROT_READ | PROT_WRITE;
             use_flags = MAP_PRIVATE;
         } elif access != ACCESS_DEFAULT {
-            raise ValueError("mmap invalid access parameter");
+            raise ValueError("mmap invalid access parameter.");
         }
         self._access = access;
         self._flags = use_flags;
         map_len: int = length;
+        if map_len < 0 {
+            raise OverflowError("memory mapped length must be positive");
+        }
+        if offset < 0 {
+            raise OverflowError("memory mapped offset must be positive");
+        }
         if fileno == -1 {
             use_flags = use_flags | MAP_ANON;
-            if map_len <= 0 {
-                raise ValueError("mmap can't allocate 0 bytes");
-            }
         } else {
-            if map_len == 0 {
-                map_len = mm_filesize(fileno);
-                if map_len == 0 {
-                    raise ValueError("cannot mmap empty file");
-                }
+            fsize: int = mm_filesize(fileno);
+            if fsize < 0 {
+                raise OSError(_os_err());
             }
-            if map_len < 0 {
-                raise ValueError("mmap length is negative");
+            if map_len == 0 {
+                if fsize == 0 {
+                    raise ValueError("cannot mmap an empty file");
+                }
+                if offset > fsize {
+                    raise ValueError("mmap offset is greater than file size");
+                }
+                map_len = fsize - offset;
+            } else {
+                if offset > fsize or map_len > fsize - offset {
+                    raise ValueError("mmap length is greater than file size");
+                }
             }
         }
         addr: int = mm_map(map_len, use_prot, use_flags, fileno, offset);
         if addr == -1 or addr == 0 {
-            raise OSError("mmap: " + mm_errstr());
+            raise OSError(_os_err());
         }
         self._addr = addr;
         self._len = map_len;
         self._pos = 0;
+        self._fd = fileno;
         self.closed = False;
     }
 
@@ -109,8 +129,9 @@ obj:pub mmap {
         return self;
     }
 
-    def __exit__(exc: any, tb: any) {
+    def __exit__(exc_type: any, exc: any, tb: any) -> bool {
         self.close();
+        return False;
     }
 
     def __len__ -> int {
@@ -118,7 +139,11 @@ obj:pub mmap {
     }
 
     def size -> int {
-        return self._len;
+        self._check_open();
+        if self._fd == -1 {
+            raise OSError("[Errno 9] Bad file descriptor");
+        }
+        return mm_filesize(self._fd);
     }
 
     def tell -> int {
@@ -129,10 +154,14 @@ obj:pub mmap {
     def seek(pos: int, whence: int = 0) {
         self._check_open();
         at: int = pos;
-        if whence == SEEK_CUR {
+        if whence == SEEK_SET {
+            at = pos;
+        } elif whence == SEEK_CUR {
             at = self._pos + pos;
         } elif whence == SEEK_END {
             at = self._len + pos;
+        } else {
+            raise ValueError("unknown seek type");
         }
         if at < 0 or at > self._len {
             raise ValueError("seek out of range");
@@ -213,7 +242,13 @@ obj:pub mmap {
         if self._pos >= self._len {
             raise ValueError("write byte out of range");
         }
-        __mem_store_i8(self._addr + self._pos, v & 255);
+        if v < 0 {
+            raise OverflowError("unsigned byte integer is less than minimum");
+        }
+        if v > 255 {
+            raise OverflowError("unsigned byte integer is greater than maximum");
+        }
+        __mem_store_i8(self._addr + self._pos, v);
         self._pos += 1;
     }
 
@@ -239,16 +274,35 @@ obj:pub mmap {
         if at < 0 or at >= self._len {
             raise IndexError("mmap index out of range");
         }
-        __mem_store_i8(self._addr + at, v & 255);
+        if v < 0 or v > 255 {
+            raise ValueError("mmap item value must be in range(0, 256)");
+        }
+        __mem_store_i8(self._addr + at, v);
     }
 
     def _find_bounds(start: int, end: int) -> tuple[int, int] {
         lo: int = start;
-        if lo < 0 {
+        if lo == _NO_POS {
             lo = self._pos;
+        } elif lo < 0 {
+            lo += self._len;
+            if lo < 0 {
+                lo = 0;
+            }
+        }
+        if lo > self._len {
+            lo = self._len;
         }
         hi: int = end;
-        if hi < 0 or hi > self._len {
+        if hi == _NO_POS {
+            hi = self._len;
+        } elif hi < 0 {
+            hi += self._len;
+            if hi < 0 {
+                hi = 0;
+            }
+        }
+        if hi > self._len {
             hi = self._len;
         }
         if lo >= hi {
@@ -295,7 +349,7 @@ obj:pub mmap {
         return -1;
     }
 
-    def find(sub: bytes, start: int = -1, end: int = -1) -> int {
+    def find(sub: bytes, start: int = _NO_POS, end: int = _NO_POS) -> int {
         self._check_open();
         w: tuple[int, int] = self._find_bounds(start, end);
         if w[0] < 0 {
@@ -304,7 +358,7 @@ obj:pub mmap {
         return self._scan(sub, w[0], w[1], False);
     }
 
-    def rfind(sub: bytes, start: int = -1, end: int = -1) -> int {
+    def rfind(sub: bytes, start: int = _NO_POS, end: int = _NO_POS) -> int {
         self._check_open();
         w: tuple[int, int] = self._find_bounds(start, end);
         if w[0] < 0 {
@@ -315,13 +369,16 @@ obj:pub mmap {
 
     def flush(offset: int = 0, size: int = 0) {
         self._check_open();
+        if offset < 0 or size < 0 or offset > self._len or offset + size > self._len {
+            raise ValueError("flush values out of range");
+        }
         cnt: int = size;
         if cnt == 0 {
             cnt = self._len - offset;
         }
         rc: int = mm_sync(self._addr + offset, cnt);
         if rc != 0 {
-            raise OSError("msync: " + mm_errstr());
+            raise OSError(_os_err());
         }
     }
 
@@ -329,10 +386,10 @@ obj:pub mmap {
         self._check_open();
         self._check_writable();
         if dest < 0 or src < 0 or count < 0 {
-            raise ValueError("source, destination, and count must be positive");
+            raise ValueError("source, destination, or count out of range");
         }
         if dest + count > self._len or src + count > self._len {
-            raise ValueError("source or destination out of range");
+            raise ValueError("source, destination, or count out of range");
         }
         mm_copy(self._addr + dest, self._addr + src, count);
     }
@@ -345,19 +402,23 @@ obj:pub mmap {
                 "mmap can't resize a readonly or copy-on-write memory map."
             );
         }
-        if (self._flags & MAP_PRIVATE) == 0 {
-            raise ValueError(
-                "mmap: can't expand a shared anonymous mapping on " + mm_os_name()
-            );
+        if newsize < 0 {
+            raise ValueError("new size out of range");
         }
-        if newsize <= 0 {
-            raise ValueError("mmap length must be positive");
+        if (self._flags & MAP_PRIVATE) == 0 {
+            if self._fd == -1 {
+                if newsize > self._len {
+                    raise ValueError("mmap: can't expand a shared anonymous mapping");
+                }
+            } else {
+                raise ValueError("mmap: can't resize a file-backed shared mapping");
+            }
         }
         new_addr: int = mm_map(
             newsize, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0
         );
         if new_addr == -1 or new_addr == 0 {
-            raise OSError("mmap resize: " + mm_errstr());
+            raise OSError(_os_err());
         }
         keep: int = newsize;
         if self._len < keep {

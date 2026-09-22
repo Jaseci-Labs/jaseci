@@ -18,8 +18,8 @@ on CPython too, keeping the two lanes source-identical where possible.
 Documented divergences NOT exercised here (they would spuriously fail):
   - bytes/array constructor initializers (na: use ``frombytes`` /
     ``extend_array`` -- the ctor takes ``list[any]``),
-  - ``buffer_info()[0]`` (na has no raw addresses; only ``[1]`` is compared),
-  - cross-typecode ``__eq__`` (na compares raw buffers, CPython values),
+  - ``buffer_info()[0]`` is a live address on BOTH lanes and differs across
+    backends (raw addresses), so only ``[1]`` (the item count) is compared,
   - 'u'/'w' typecodes, slicing, ``del``, and ``tobuffer``.
 
 ES/JS opts out (``array_cl`` returns an empty dict).
@@ -145,6 +145,35 @@ def array_py -> dict[any, any] {
     } except IndexError as e {
         r["err_getitem"] = str(e);
     }
+    # negative/absent stop slice semantics on index
+    ai = array.array("i", [1, 2, 3]);
+    try {
+        ai.index(3, 0, -1);
+        r["err_index_stop"] = "noraise";
+    } except ValueError as e {
+        r["err_index_stop"] = str(e);
+    }
+    try {
+        ai.index(1, 0, -100);
+        r["err_index_tooneg"] = "noraise";
+    } except ValueError as e {
+        r["err_index_tooneg"] = str(e);
+    }
+    r["index_start_neg"] = ai.index(1, -100, 2);
+    # value-based cross-typecode equality (each side read via its own
+    # typecode; NaN never equals itself)
+    fb = array.array("b", [-1]);
+    fu = array.array("B", [255]);
+    r["eq_signed_unsigned"] = 1 if fb.__eq__(fu) else 0;
+    r["ne_signed_unsigned"] = 1 if fb.__ne__(fu) else 0;
+    fi = array.array("i", [1]);
+    ff1 = array.array("f", [1.0]);
+    ff2 = array.array("f", [2.0]);
+    nan = float("nan");
+    fn = array.array("f", [nan]);
+    r["eq_int_float"] = 1 if fi.__eq__(ff1) else 0;
+    r["eq_int_float_diff"] = 1 if fi.__eq__(ff2) else 0;
+    r["eq_nan"] = 1 if fn.__eq__(fn) else 0;
     return r;
 }
 
@@ -175,7 +204,7 @@ def _core_na(r: dict[str, any]) {
     popped0 = a.pop(0);
     # All entries below see the post-pop `a` ([10, 20, 30, 40, 50]), matching
     # the sv lane's ordering.
-    r["isize_i"] = a.itemsize();
+    r["isize_i"] = a.itemsize;
     r["len_a"] = a.__len__();
     r["g0"] = a.__getitem__(0);
     r["g_last"] = a.__getitem__(a.__len__() - 1);
@@ -200,10 +229,10 @@ def _widths_na(r: dict[str, any]) {
     h = array.array("h", [1, 2]);
     q = array.array("q", [1000000000000]);
     B = array.array("B", [200, 255]);
-    r["isize_d"] = f.itemsize();
-    r["isize_h"] = h.itemsize();
-    r["isize_q"] = q.itemsize();
-    r["isize_B"] = B.itemsize();
+    r["isize_d"] = f.itemsize;
+    r["isize_h"] = h.itemsize;
+    r["isize_q"] = q.itemsize;
+    r["isize_B"] = B.itemsize;
     r["f_g0"] = f.__getitem__(0);
     r["f_g1"] = f.__getitem__(1);
     r["f_digest"] = _digest_na(f.tobytes());
@@ -292,6 +321,37 @@ def _err_na(r: dict[str, any]) {
     } except IndexError as e {
         r["err_getitem"] = str(e);
     }
+    try {
+        a.index(30, 0, -1);
+        r["err_index_stop"] = "noraise";
+    } except ValueError as e {
+        r["err_index_stop"] = str(e);
+    }
+    try {
+        a.index(10, 0, -100);
+        r["err_index_tooneg"] = "noraise";
+    } except ValueError as e {
+        r["err_index_tooneg"] = str(e);
+    }
+    r["index_start_neg"] = a.index(10, -100, 2);
+}
+
+
+def _eq_na(r: dict[str, any]) {
+    # Value-based cross-typecode equality (each side read via its own
+    # typecode; NaN never equals itself).
+    fb = array.array("b", [-1]);
+    fu = array.array("B", [255]);
+    r["eq_signed_unsigned"] = 1 if fb.__eq__(fu) else 0;
+    r["ne_signed_unsigned"] = 1 if fb.__ne__(fu) else 0;
+    fi = array.array("i", [1]);
+    ff1 = array.array("f", [1.0]);
+    ff2 = array.array("f", [2.0]);
+    nan = float("nan");
+    fn = array.array("f", [nan]);
+    r["eq_int_float"] = 1 if fi.__eq__(ff1) else 0;
+    r["eq_int_float_diff"] = 1 if fi.__eq__(ff2) else 0;
+    r["eq_nan"] = 1 if fn.__eq__(fn) else 0;
 }
 
 
@@ -301,5 +361,6 @@ def array_na -> dict[str, any] {
     _widths_na(r);
     _ops_na(r);
     _err_na(r);
+    _eq_na(r);
     return r;
 }

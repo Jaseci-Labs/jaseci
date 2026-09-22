@@ -187,10 +187,17 @@ native layout records the emitted name separately from its source-level key.
   discriminate `str` from `bytes`, so a `str` argument is a type error
   rather than an auto-encoded one; pass `bytes`/`bytearray`-frozen values.
   `hexlify`'s `sep` is `bytes` only. Removed-in-3.14 functions
-  (`a2b_hqx`/`b2a_hqx`/`rlecode`/`rledecode`) are not provided. Pinned
+  (`a2b_hqx`/`b2a_hqx`/`rlecode`/`rledecode`) are not provided. This module
+  is the na (native LLVM) transcription of CPython's binascii; the
+  jacpython-VM port lives at `runtime/python/modules/binascii.jac` -- the
+  two runtimes have disjoint primitive floors and cannot import each other,
+  so the hexlify/unhexlify/uu/quoted-printable/crc_hqx kernels are
+  transcribed twice by design: keep algorithmic fixes in BOTH files.
+  Pinned
   sv<->na congruent by `prim_binascii.jac`.
 - **`array.jac`** -- the `array` class over a `bytearray` backing store,
-  little-endian/native byte order. Typecode facts (`_isz` item size, `_sgn`
+  little-endian/native byte order. Typecode facts (`itemsize` item size,
+  `_sgn`
   signedness, `_flt`, `_lo`/`_hi` bounds) are cached as `has` fields at
   construction so hot methods never re-run the typecode string-compare
   chains, and `_get_le`/`_put_le` are single typed `__mem_load_i*`/
@@ -206,7 +213,8 @@ native layout records the emitted name separately from its source-level key.
   `remove`, `index`, `count`, `reverse`, `tolist`, `tobytes`,
   `frombytes`, `byteswap`, `buffer_info`, `tofile`/`fromfile`, and the
   dunders `__len__`/`__getitem__`/`__setitem__`/`__contains__`/`__eq__`/
-  `__add__`/`__mul__`/`__ne__`. Overflow/underflow messages
+  `__add__`/`__mul__`/`__ne__`. `itemsize` is a plain attribute, as in
+  CPython. Overflow/underflow messages
   match CPython text (`OverflowError`/`TypeError`/`ValueError`/
   `IndexError`). SCOPE/divergences: operator syntax does not dispatch
   dunders on the na pathway -- call them explicitly (`a.__getitem__(i)`,
@@ -214,29 +222,44 @@ native layout records the emitted name separately from its source-level key.
   correctly) and deliberately does NOT accept `bytes`/array initializers --
   use `frombytes`/`extend_array`/`extend_bytes` (a boxed `any` cannot be
   safely redispatched on the na pathway); `u`/`w` codes, slicing, and `del`
-  are not provided; `buffer_info()[0]` is `0` (no raw addresses); `__eq__`
-  compares typecode + raw buffer where CPython compares values across
-  typecodes; 8-byte unsigned codes wrap mod 2^64 at the i64 boundary.
+  are not provided; `buffer_info()[0]` is the live `__bytearray_data`
+  payload address (0 for an empty array, invalidated by growth like
+  CPython's) so it is lane-specific and never compared across backends;
+  `__eq__`/
+  `__ne__` compare element values with each side read through its own
+  typecode, like CPython (`array('b', [-1]) != array('B', [255])`, int and
+  float values compare numerically across typecodes, NaN never equals
+  itself); 8-byte unsigned codes wrap mod 2^64 at the i64 boundary.
   Pinned sv<->na congruent by `prim_array.jac`.
-- **`mmap.jac`** -- the `mmap` class over the per-OS `_mmap_native`
-  FFI floors (`_mmap_native.linux.jac` / `_mmap_native.darwin.jac`,
-  Mechanism F shape: the floors declare `mmap`/`munmap`/`msync`/`lseek`/
-  `memcpy`/`memmove` and carry the platform `MAP_ANON`/`MS_SYNC` constants
-  plus `mm_os_name`). Anonymous
+- **`mmap.jac`** -- the `mmap` class over the shared `_mmap_native.jac` FFI
+  floor and the per-OS constants in `_mmap_platform.jac` /
+  `_mmap_platform.darwin.jac` (Mechanism F shape: the floor declares
+  `mmap`/`munmap`/`msync`/`lseek`/
+  `memcpy`/`memmove` and carries the platform `MAP_ANON`/`MS_SYNC` constants).
+  Anonymous
   (`fileno=-1`) and file-backed maps, `read`/`write`/
   `read_byte`/`write_byte`/`readline`, `seek`/`tell`, `find`/`rfind`,
-  `move`, `resize` (`mmap`+copy on both platforms; refuses
-  non-private-writable maps with CPython's messages -- `TypeError` for
-  readonly/copy-on-write, `ValueError` for shared anonymous maps), `flush`,
-  `close`, `read_slice`, `size`, `closed`, `ACCESS_*`/`PROT_*`/`MAP_*`
+  `move`, `resize` (`mmap`+copy on both platforms; `TypeError` for
+  readonly/copy-on-write maps in either direction, CPython's suffix-less
+  `ValueError` for growing a shared anonymous map, and a documented
+  na-only `ValueError` for file-backed shared maps -- the replacement
+  mapping is private-anonymous, so writes after such a resize would
+  silently stop reaching the file, where CPython keeps write-through via
+  `mremap`), `flush`,
+  `close`, `read_slice`, `size` (the live FILE size, as CPython's fstat --
+  anonymous maps raise CPython's `[Errno 9] Bad file descriptor`), `closed`,
+  `ACCESS_*`/`PROT_*`/`MAP_*`
   constants, and explicit-callable dunders (`__getitem__`/`__setitem__`/
   `__len__`, context-manager `__enter__`/`__exit__`). Error text matches
   CPython (`mmap closed or invalid`, `seek out of range`, `data out of
-  range`, `mmap index out of range`, `mmap can't modify a readonly memory
-  map.`). SCOPE: no operator-syntax slicing (`m[a:b]` -- use `read_slice`),
-  no `ACCESS_COPY` copy-on-write verification beyond flag semantics, and
-  `size()` answers the map length where CPython fstats the fd (it raises
-  `OSError` on anonymous maps there). Pinned sv<->na congruent by
+  range`, `mmap index out of range`, `mmap item value must be in range(0,
+  256)`, `unknown seek type`, `flush values out of range`, `mmap can't
+  modify a readonly memory map.`); `init` pre-validates length/offset
+  (`OverflowError`) and file size/emptiness (`ValueError`) like CPython,
+  and OS-level failures format as CPython's (`[Errno n] ...`). SCOPE: no operator-syntax slicing (`m[a:b]` -- use `read_slice`),
+  and no
+  `ACCESS_COPY` copy-on-write verification beyond flag semantics. Pinned
+  sv<->na congruent by
   `prim_mmap.jac` on anonymous maps.
 - **`textwrap.jac`** (#6978 Phase 3) -- the greedy line wrapper (`wrap`,
   `fill`) plus `dedent` and `indent`, a faithful port of CPython's
@@ -1094,7 +1117,10 @@ per-element container calls through a small unsafe floor registered in
 - `__mem_load_i8/i16/i32/i64(addr: int) -> int` and
   `__mem_store_i8/i16/i32/i64(addr: int, val: int)` -- raw loads/stores.
   Loads zero-extend narrow reads to `i64`; stores truncate `i64` to the
-  named width. (The `i32` pair pre-existed for `_errno_native`.)
+  named width. (The `i32` pair pre-existed for `_errno_native`.) The
+  access width lives as `width` metadata on the `IntrinsicEntry` (the
+  checker-visible specs stay `i64`, so callers pass plain `int`); the
+  emitters never derive semantics from the intrinsic name.
 
 Layout and lifetime contract for callers:
 

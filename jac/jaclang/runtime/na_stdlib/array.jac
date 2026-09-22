@@ -99,7 +99,7 @@ def _get_le(buf: bytearray, off: int, size: int, signed: bool) -> int {
 obj:pub array {
     has typecode: str = "b",
         _buf: bytearray = bytearray(0),
-        _isz: int = 1,
+        itemsize: int = 1,
         _sgn: bool = True,
         _flt: bool = False,
         _lo: int = -128,
@@ -108,10 +108,10 @@ obj:pub array {
 
     def init(typecode: str, initial: (list[any] | None) = None) {
         self.typecode = typecode;
-        self._isz = _arr_itemsize(typecode);
+        self.itemsize = _arr_itemsize(typecode);
         self._sgn = _arr_signed(typecode);
         self._flt = _arr_float(typecode);
-        if self._isz == 8 {
+        if self.itemsize == 8 {
             self._lo = 0;
             self._hi = -1;
         } else {
@@ -120,18 +120,14 @@ obj:pub array {
             self._hi = bounds[1];
         }
         self._buf = bytearray(0);
-        self._enc = bytearray(self._isz);
+        self._enc = bytearray(self.itemsize);
         if initial is not None {
             self.extend(initial);
         }
     }
 
-    def itemsize -> int {
-        return self._isz;
-    }
-
     def _count -> int {
-        return len(self._buf) // self._isz;
+        return len(self._buf) // self.itemsize;
     }
 
     def __len__ -> int {
@@ -157,7 +153,7 @@ obj:pub array {
 
     def _check_range(v: int) {
         tc = self.typecode;
-        if self._isz == 8 {
+        if self.itemsize == 8 {
             if v < 0 and not self._sgn {
                 if tc == "L" {
                     raise OverflowError("can't convert negative value to unsigned int");
@@ -183,12 +179,12 @@ obj:pub array {
 
     def _write_elem(off: int, v: int) {
         b = self._buf;
-        _put_le(b, off, v, self._isz);
+        _put_le(b, off, v, self.itemsize);
     }
 
     def _read_elem(off: int) -> int {
         b = self._buf;
-        return _get_le(b, off, self._isz, self._sgn);
+        return _get_le(b, off, self.itemsize, self._sgn);
     }
 
     def _write_float_elem(off: int, v: float) {
@@ -222,7 +218,7 @@ obj:pub array {
         }
         iv: int = self._coerce_int(v);
         self._check_range(iv);
-        _put_le(dst, 0, iv, self._isz);
+        _put_le(dst, 0, iv, self.itemsize);
     }
 
     def append(v: any) {
@@ -274,7 +270,7 @@ obj:pub array {
             at = n;
         }
         self._encode_one(v, self._enc);
-        pos: int = at * self._isz;
+        pos: int = at * self.itemsize;
         b = self._buf;
         self._buf = b[0:pos] + self._enc + b[pos:];
     }
@@ -292,7 +288,7 @@ obj:pub array {
             raise IndexError("pop index out of range");
         }
         v: any = self.__getitem__(at);
-        sz: int = self._isz;
+        sz: int = self.itemsize;
         b = self._buf;
         self._buf = b[0:at * sz] + b[(at + 1) * sz:];
         return v;
@@ -303,21 +299,24 @@ obj:pub array {
         if i < 0 {
             raise ValueError("array.remove(x): x not in array");
         }
-        sz: int = self._isz;
+        sz: int = self.itemsize;
         b = self._buf;
         self._buf = b[0:i * sz] + b[(i + 1) * sz:];
     }
 
+    def _elem_eq(v: any, i: int) -> bool {
+        sz: int = self.itemsize;
+        if self._flt {
+            return self._read_float_elem(i * sz) == self._coerce_float(v);
+        }
+        return self._read_elem(i * sz) == self._coerce_int(v);
+    }
+
     def _find(v: any) -> int {
         n: int = self._count();
-        sz: int = self._isz;
         i: int = 0;
         while i < n {
-            if self._flt {
-                if self._read_float_elem(i * sz) == self._coerce_float(v) {
-                    return i;
-                }
-            } elif self._read_elem(i * sz) == self._coerce_int(v) {
+            if self._elem_eq(v, i) {
                 return i;
             }
             i += 1;
@@ -325,7 +324,7 @@ obj:pub array {
         return -1;
     }
 
-    def index(v: any, start: int = 0, stop: int = -1) -> int {
+    def index(v: any, start: int = 0, stop: int = 9223372036854775807) -> int {
         n: int = self._count();
         lo: int = start;
         if lo < 0 {
@@ -335,18 +334,18 @@ obj:pub array {
             }
         }
         hi: int = stop;
-        if hi < 0 or hi > n {
+        if hi < 0 {
+            hi += n;
+            if hi < 0 {
+                hi = 0;
+            }
+        }
+        if hi > n {
             hi = n;
         }
         i: int = lo;
         while i < hi {
-            hit: bool = False;
-            if self._flt {
-                hit = self._read_float_elem(i * self._isz) == self._coerce_float(v);
-            } else {
-                hit = self._read_elem(i * self._isz) == self._coerce_int(v);
-            }
-            if hit {
+            if self._elem_eq(v, i) {
                 return i;
             }
             i += 1;
@@ -356,17 +355,10 @@ obj:pub array {
 
     def count(v: any) -> int {
         n: int = self._count();
-        sz: int = self._isz;
         c: int = 0;
         i: int = 0;
         while i < n {
-            hit: bool = False;
-            if self._flt {
-                hit = self._read_float_elem(i * sz) == self._coerce_float(v);
-            } else {
-                hit = self._read_elem(i * sz) == self._coerce_int(v);
-            }
-            if hit {
+            if self._elem_eq(v, i) {
                 c += 1;
             }
             i += 1;
@@ -379,7 +371,7 @@ obj:pub array {
     }
 
     def reverse {
-        sz: int = self._isz;
+        sz: int = self.itemsize;
         n: int = self._count();
         b = self._buf;
         i: int = 0;
@@ -398,7 +390,7 @@ obj:pub array {
     }
 
     def byteswap {
-        sz: int = self._isz;
+        sz: int = self.itemsize;
         if sz == 1 {
             return;
         }
@@ -422,7 +414,7 @@ obj:pub array {
     }
 
     def frombytes(data: bytes) {
-        sz: int = self._isz;
+        sz: int = self.itemsize;
         if len(data) % sz != 0 {
             raise ValueError("bytes length not a multiple of item size");
         }
@@ -435,13 +427,13 @@ obj:pub array {
     }
 
     def fromfile(f: any, n: int) {
-        self.frombytes(f.read(n * self._isz));
+        self.frombytes(f.read(n * self.itemsize));
     }
 
     def tolist -> list[any] {
         out: list[any] = [];
         n: int = self._count();
-        sz: int = self._isz;
+        sz: int = self.itemsize;
         i: int = 0;
         while i < n {
             if self._flt {
@@ -455,7 +447,11 @@ obj:pub array {
     }
 
     def buffer_info -> tuple[int, int] {
-        return (0, self._count());
+        n: int = len(self._buf);
+        if n == 0 {
+            return (0, 0);
+        }
+        return (__bytearray_data(self._buf), self._count());
     }
 
     def __getitem__(i: int) -> any {
@@ -468,9 +464,9 @@ obj:pub array {
             raise IndexError("array index out of range");
         }
         if self._flt {
-            return self._read_float_elem(at * self._isz);
+            return self._read_float_elem(at * self.itemsize);
         }
-        return self._read_elem(at * self._isz);
+        return self._read_elem(at * self.itemsize);
     }
 
     def __setitem__(i: int, v: any) {
@@ -483,20 +479,46 @@ obj:pub array {
             raise IndexError("array assignment index out of range");
         }
         if self._flt {
-            self._write_float_elem(at * self._isz, self._coerce_float(v));
+            self._write_float_elem(at * self.itemsize, self._coerce_float(v));
         } else {
             iv: int = self._coerce_int(v);
             self._check_range(iv);
-            self._write_elem(at * self._isz, iv);
+            self._write_elem(at * self.itemsize, iv);
         }
     }
 
+    def _same_elem(other: array, i: int) -> bool {
+        if self._flt {
+            lv: float = self._read_float_elem(i * self.itemsize);
+            if other._flt {
+                return lv == other._read_float_elem(i * other.itemsize);
+            }
+            return lv == float(other._read_elem(i * other.itemsize));
+        }
+        li: int = self._read_elem(i * self.itemsize);
+        if other._flt {
+            return float(li) == other._read_float_elem(i * other.itemsize);
+        }
+        return li == other._read_elem(i * other.itemsize);
+    }
+
     def __eq__(other: array) -> bool {
-        return self._buf == other._buf;
+        if self._count() != other._count() {
+            return False;
+        }
+        i: int = 0;
+        n: int = self._count();
+        while i < n {
+            if not self._same_elem(other, i) {
+                return False;
+            }
+            i += 1;
+        }
+        return True;
     }
 
     def __ne__(other: array) -> bool {
-        return self._buf != other._buf;
+        return not self.__eq__(other);
     }
 
     def __add__(other: array) -> array {

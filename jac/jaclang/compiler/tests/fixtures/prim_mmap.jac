@@ -15,9 +15,12 @@ dunder methods on objs, so BOTH lanes call them explicitly
 legal on CPython too.
 
 Not exercised (documented na divergences or platform-dependent):
-  - ``m.size()`` on an anonymous map (CPython raises ``OSError: Bad file
-    descriptor`` -- the na surface reports the map length),
-  - ``m[1:3]`` slicing, file-backed maps, ``ACCESS_COPY`` semantics.
+  - ``m[1:3]`` slicing, file-backed maps (so ``size()``'s live fstat path
+    and file-backed resize refusal are pinned only by type, not exercised
+    end to end), ``ACCESS_COPY`` semantics.
+  - the shared-anonymous ``resize`` refusal IS pinned, with the sv lane
+    stripping CPython < 3.14.7's `` on <os>`` suffix so the pin survives
+    bundled-runtime bumps.
 
 ES/JS opts out (``mmap_cl`` returns an empty dict).
 """
@@ -72,7 +75,11 @@ def mmap_py -> dict[any, any] {
         pm.resize(128);
         r["err_resize"] = "noraise";
     } except ValueError as e {
-        r["err_resize"] = str(e);
+        # CPython < 3.14.7 words this "mmap: can't expand a shared anonymous
+        # mapping on Linux"; the " on <os>" suffix was dropped in 3.14.7.
+        # Strip it so the pin survives bundled-runtime bumps -- the na
+        # surface carries the suffix-less text.
+        r["err_resize"] = str(e).split(" on ")[0];
     }
     pm.close();
     m2 = mmap.mmap(-1, 64);
@@ -114,7 +121,137 @@ def mmap_py -> dict[any, any] {
     } except TypeError as e {
         r["err_rote"] = str(e);
     }
+    try {
+        ro.resize(16);
+        r["err_ro_resize"] = "noraise";
+    } except TypeError as e {
+        r["err_ro_resize"] = str(e);
+    }
     ro.close();
+    # size() answers the FILE size like CPython's fstat; an anonymous map has
+    # no fd, so both lanes raise CPython's EBADF OSError.
+    sz = mmap.mmap(-1, 64);
+    try {
+        sz.size();
+        r["err_anon_size"] = "noraise";
+    } except OSError as e {
+        r["err_anon_size"] = str(e);
+    }
+    sz.close();
+    # context-manager protocol: __exit__ closes on scope exit, both lanes.
+    with mmap.mmap(-1, 8) as wm {
+        wm.write(b"ok");
+        wm.seek(0);
+        r["wm_read_digest"] = _digest(wm.read(2));
+    }
+    # init validation: negative length/offset and fd errors. The fd-branch
+    # checks fire before the fd is touched, so a bogus fd (-5) pins them on
+    # both lanes without needing a real file.
+    try {
+        mmap.mmap(-1, -5);
+        r["err_anon_neg"] = "noraise";
+    } except OverflowError as e {
+        r["err_anon_neg"] = str(e);
+    }
+    try {
+        mmap.mmap(-1, 0);
+        r["err_anon_zero"] = "noraise";
+    } except OSError as e {
+        r["err_anon_zero"] = str(e);
+    }
+    try {
+        mmap.mmap(-5, -1);
+        r["err_fd_neg_len"] = "noraise";
+    } except OverflowError as e {
+        r["err_fd_neg_len"] = str(e);
+    }
+    try {
+        mmap.mmap(-5, 10, offset=-1);
+        r["err_fd_neg_off"] = "noraise";
+    } except OverflowError as e {
+        r["err_fd_neg_off"] = str(e);
+    }
+    try {
+        mmap.mmap(-5, 100);
+        r["err_fd_bad"] = "noraise";
+    } except OSError as e {
+        r["err_fd_bad"] = str(e);
+    }
+    try {
+        mmap.mmap(-1, 64, offset=-1);
+        r["err_anon_neg_off"] = "noraise";
+    } except OverflowError as e {
+        r["err_anon_neg_off"] = str(e);
+    }
+    # item/write_byte range checks and whence/flush/move/resize validation
+    m3 = mmap.mmap(-1, 16);
+    try {
+        m3.__setitem__(0, 300);
+        r["err_setitem_range"] = "noraise";
+    } except ValueError as e {
+        r["err_setitem_range"] = str(e);
+    }
+    try {
+        m3.__setitem__(0, -1);
+        r["err_setitem_neg"] = "noraise";
+    } except ValueError as e {
+        r["err_setitem_neg"] = str(e);
+    }
+    try {
+        m3.write_byte(-1);
+        r["err_wb_neg"] = "noraise";
+    } except OverflowError as e {
+        r["err_wb_neg"] = str(e);
+    }
+    try {
+        m3.write_byte(300);
+        r["err_wb_big"] = "noraise";
+    } except OverflowError as e {
+        r["err_wb_big"] = str(e);
+    }
+    r["after_range_g0"] = m3.__getitem__(0);
+    try {
+        m3.seek(0, 5);
+        r["err_whence"] = "noraise";
+    } except ValueError as e {
+        r["err_whence"] = str(e);
+    }
+    try {
+        m3.flush(-1);
+        r["err_flush"] = "noraise";
+    } except ValueError as e {
+        r["err_flush"] = str(e);
+    }
+    try {
+        m3.move(-1, 0, 1);
+        r["err_move"] = "noraise";
+    } except ValueError as e {
+        r["err_move"] = str(e);
+    }
+    try {
+        m3.resize(-1);
+        r["err_resize_neg"] = "noraise";
+    } except ValueError as e {
+        r["err_resize_neg"] = str(e);
+    }
+    m3.close();
+    # find/rfind: defaults scan from pos to end; explicit negatives are
+    # slice-adjusted (+= size, clamped)
+    mb = mmap.mmap(-1, 10);
+    mb.write(b"x........x");
+    r["find_default_pos10"] = mb.find(b"x");
+    r["rfind_default_pos10"] = mb.rfind(b"x");
+    mb.seek(0);
+    r["find_all"] = mb.find(b"x");
+    r["rfind_all"] = mb.rfind(b"x");
+    r["find_excl_last"] = mb.find(b"x", 0, -1);
+    r["rfind_excl_last"] = mb.rfind(b"x", 0, -1);
+    mb.seek(5);
+    r["find_neg_start"] = mb.find(b"x", -100);
+    r["rfind_neg_start"] = mb.rfind(b"x", -100);
+    r["find_default_pos5"] = mb.find(b"x");
+    r["rfind_default_pos5"] = mb.rfind(b"x");
+    mb.close();
     return r;
 }
 
@@ -167,9 +304,10 @@ def _core_na(r: dict[str, any]) {
 
 
 def _seek_resize_na(r: dict[str, any]) {
-    # MAP_PRIVATE anonymous: CPython refuses to expand a MAP_SHARED anonymous
-    # mapping on Linux ("can't expand a shared anonymous mapping"), so the sv
-    # lane uses MAP_PRIVATE and this lane matches.
+    # ACCESS_WRITE maps are MAP_SHARED; both lanes refuse to EXPAND a shared
+    # anonymous mapping. The na surface carries the suffix-less CPython
+    # 3.14.7+ text; the sv lane strips the " on <os>" suffix its older
+    # runtime appends, so the compared values agree on any bundled runtime.
     pm = mmap.mmap(-1, 64, access=mmap.ACCESS_WRITE);
     pm.write(b"hello mmap world");
     try {
@@ -225,7 +363,142 @@ def _err_na(r: dict[str, any]) {
     } except TypeError as e {
         r["err_rote"] = str(e);
     }
+    try {
+        ro.resize(16);
+        r["err_ro_resize"] = "noraise";
+    } except TypeError as e {
+        r["err_ro_resize"] = str(e);
+    }
     ro.close();
+    sz = mmap.mmap(-1, 64);
+    try {
+        sz.size();
+        r["err_anon_size"] = "noraise";
+    } except OSError as e {
+        r["err_anon_size"] = str(e);
+    }
+    sz.close();
+    with mmap.mmap(-1, 8) as wm {
+        wm.write(b"ok");
+        wm.seek(0);
+        r["wm_read_digest"] = _digest_na(wm.read(2));
+    }
+}
+
+
+def _init_err_na(r: dict[str, any]) {
+    # The fd-branch checks fire before the fd is touched, so a bogus fd (-5)
+    # pins them on both lanes without needing a real file.
+    try {
+        mmap.mmap(-1, -5);
+        r["err_anon_neg"] = "noraise";
+    } except OverflowError as e {
+        r["err_anon_neg"] = str(e);
+    }
+    try {
+        mmap.mmap(-1, 0);
+        r["err_anon_zero"] = "noraise";
+    } except OSError as e {
+        r["err_anon_zero"] = str(e);
+    }
+    try {
+        mmap.mmap(-5, -1);
+        r["err_fd_neg_len"] = "noraise";
+    } except OverflowError as e {
+        r["err_fd_neg_len"] = str(e);
+    }
+    try {
+        mmap.mmap(-5, 10, offset=-1);
+        r["err_fd_neg_off"] = "noraise";
+    } except OverflowError as e {
+        r["err_fd_neg_off"] = str(e);
+    }
+    try {
+        mmap.mmap(-5, 100);
+        r["err_fd_bad"] = "noraise";
+    } except OSError as e {
+        r["err_fd_bad"] = str(e);
+    }
+    try {
+        mmap.mmap(-1, 64, offset=-1);
+        r["err_anon_neg_off"] = "noraise";
+    } except OverflowError as e {
+        r["err_anon_neg_off"] = str(e);
+    }
+}
+
+
+def _mask_na(r: dict[str, any]) {
+    m3 = mmap.mmap(-1, 16);
+    try {
+        m3.__setitem__(0, 300);
+        r["err_setitem_range"] = "noraise";
+    } except ValueError as e {
+        r["err_setitem_range"] = str(e);
+    }
+    try {
+        m3.__setitem__(0, -1);
+        r["err_setitem_neg"] = "noraise";
+    } except ValueError as e {
+        r["err_setitem_neg"] = str(e);
+    }
+    try {
+        m3.write_byte(-1);
+        r["err_wb_neg"] = "noraise";
+    } except OverflowError as e {
+        r["err_wb_neg"] = str(e);
+    }
+    try {
+        m3.write_byte(300);
+        r["err_wb_big"] = "noraise";
+    } except OverflowError as e {
+        r["err_wb_big"] = str(e);
+    }
+    r["after_range_g0"] = m3.__getitem__(0);
+    try {
+        m3.seek(0, 5);
+        r["err_whence"] = "noraise";
+    } except ValueError as e {
+        r["err_whence"] = str(e);
+    }
+    try {
+        m3.flush(-1);
+        r["err_flush"] = "noraise";
+    } except ValueError as e {
+        r["err_flush"] = str(e);
+    }
+    try {
+        m3.move(-1, 0, 1);
+        r["err_move"] = "noraise";
+    } except ValueError as e {
+        r["err_move"] = str(e);
+    }
+    try {
+        m3.resize(-1);
+        r["err_resize_neg"] = "noraise";
+    } except ValueError as e {
+        r["err_resize_neg"] = str(e);
+    }
+    m3.close();
+}
+
+
+def _bounds_na(r: dict[str, any]) {
+    mb = mmap.mmap(-1, 10);
+    mb.write(b"x........x");
+    r["find_default_pos10"] = mb.find(b"x");
+    r["rfind_default_pos10"] = mb.rfind(b"x");
+    mb.seek(0);
+    r["find_all"] = mb.find(b"x");
+    r["rfind_all"] = mb.rfind(b"x");
+    r["find_excl_last"] = mb.find(b"x", 0, -1);
+    r["rfind_excl_last"] = mb.rfind(b"x", 0, -1);
+    mb.seek(5);
+    r["find_neg_start"] = mb.find(b"x", -100);
+    r["rfind_neg_start"] = mb.rfind(b"x", -100);
+    r["find_default_pos5"] = mb.find(b"x");
+    r["rfind_default_pos5"] = mb.rfind(b"x");
+    mb.close();
 }
 
 
@@ -234,5 +507,8 @@ def mmap_na -> dict[str, any] {
     _core_na(r);
     _seek_resize_na(r);
     _err_na(r);
+    _init_err_na(r);
+    _mask_na(r);
+    _bounds_na(r);
     return r;
 }

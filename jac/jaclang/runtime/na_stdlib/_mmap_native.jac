@@ -9,21 +9,7 @@ import from c { def lseek(fd: i32, off: i64, whence: i32) -> i64;  }
 import from c { def memcpy(dst: bytes, src: int, n: u64) -> int;  }
 import from c { def memmove(dst: int, src: bytes, n: u64) -> int;  }
 import from _errno_native { last_errno, errno_message }
-
-
-def:pub mm_anon_flag -> int {
-    return 4096;
-}
-
-
-def:pub mm_os_name -> str {
-    return "Darwin";
-}
-
-
-def:pub mm_sync_flag -> int {
-    return 16;
-}
+import from _mmap_platform { mm_sync_flag }
 
 
 def:pub mm_map(length: int, prot: int, flags: int, fd: int, offset: int) -> int {
