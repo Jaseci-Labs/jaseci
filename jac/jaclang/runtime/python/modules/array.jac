@@ -231,7 +231,19 @@ def:priv encode(state: array_state, value: ptr[PyObject]) -> u64 {
             if state.itemsize < 8 {
                 limit = i64(1) << i64(state.itemsize * 8 - 1);
                 if actual < -limit or actual >= limit {
-                    object_error(PyExc_OverflowError, "signed integer is out of range");
+                    if letter == "b" {
+                        name = "signed char";
+                    } elif letter == "h" {
+                        name = "signed short integer";
+                    } else {
+                        name = "signed integer";
+                    }
+                    object_error(
+                        PyExc_OverflowError,
+                        name + " is less than minimum"
+                            if actual < -limit
+                            else name + " is greater than maximum"
+                    );
                     raise boundary_failure();
                 }
             }
@@ -240,7 +252,14 @@ def:priv encode(state: array_state, value: ptr[PyObject]) -> u64 {
         bits = PyLong_AsUnsignedLongLong(number);
         pending();
         if state.itemsize < 8 and bits >= (u64(1) << i64(state.itemsize * 8)) {
-            object_error(PyExc_OverflowError, "unsigned integer is out of range");
+            if letter == "B" {
+                uname = "unsigned byte integer";
+            } elif letter == "H" {
+                uname = "unsigned short";
+            } else {
+                uname = "unsigned int";
+            }
+            object_error(PyExc_OverflowError, uname + " is greater than maximum");
             raise boundary_failure();
         }
         return bits;
