@@ -163,6 +163,11 @@ exclude = [
 
     # CPython-derived Python grammar.
     "jac/jaclang/compiler/frontend/python/parser.jac",
+
+    # Bench scripts: exercises the native-only na_stdlib surface
+    # (extend_array/extend_bytes/read_slice/mmap flags+prot), which the
+    # CPython-typed stubs the checker sees can never resolve.
+    "scripts/bench/na_stdlib_extra.jac",
 ]
 
 [check.lint]
