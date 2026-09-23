@@ -139,7 +139,7 @@ def:pub jacpy_array_init(state: array_state, code: i64) -> i64 {
     if kind < 0 and letter not in "uw" {
         object_error(
             PyExc_ValueError,
-            "bad typecode (must be b, B, u, h, H, i, I, l, L, q, Q, f, d or w)"
+            "bad typecode (must be b, B, u, w, h, H, i, I, l, L, q, Q, f or d)"
         );
         return -1;
     }
@@ -633,6 +633,10 @@ def:pub jacpy_array_delete(
 def:pub jacpy_array_pop(state: array_state, index: i64) -> ptr[PyObject] {
     value: ptr[PyObject] = NULL;
     try {
+        if state.length == 0 {
+            object_error(PyExc_IndexError, "pop from empty array");
+            return NULL;
+        }
         if index < 0 {
             index += state.length;
         }
