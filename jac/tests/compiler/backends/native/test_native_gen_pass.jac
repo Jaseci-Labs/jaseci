@@ -1033,6 +1033,15 @@ test "scalar raise cause boxing" {
     assert rf(2.5) == 1;
 }
 
+# Regression: a Jac `def` sharing its name with a same-module clib extern
+# must emit under a module-mangled symbol instead of tripping the
+# duplicate-name error; unqualified calls bind the Jac def.
+test "clib extern name collision" {
+    (eng, _) = compile_native("fix_clib_name_collision.jac");
+    f = get_func(eng, "call_local", ctypes.c_int64);
+    assert f() == 4242;
+}
+
 # --- TestNativeForTupleUnpack ---
 """for-loop tuple unpack: homogeneous products (issue 7238)"""
 def _for_tuple_unpack__for_loop_tuple_unpack_homogeneous_products_issue_7238(
