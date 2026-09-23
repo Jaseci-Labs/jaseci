@@ -1137,15 +1137,6 @@ Layout and lifetime contract for callers:
 - On the sv (Python) backend these names are undefined; modules using
   them are native-only (which is fine -- `na_stdlib` only ships on na).
 
-Measured effect (`scripts/bench/run_na_stdlib_bench.sh`, hexlify+unhexlify
-of a 43-byte buffer / append+get on `array("i")` / set+get byte on a
-private anon `mmap`): `binascii` ~444 -> ~224 ns/op, `array` ~222 ->
-~71 ns/op, and `mmap` ~118 -> ~4 ns/op (`__getitem__`/`__setitem__`/
-`read_byte`/`write_byte`/`find`/`rfind`/`readline` operate directly on the
-mapped pages via the floor intrinsics -- no FFI call or temporary `bytes`
-per op). All three are now under their CPython lanes (~258 / ~143 /
-~133 ns/op).
-
 ## Mechanism F: FFI floor + pure-Jac surface (`zlib`)
 
 `zlib` is the first Mechanism-F module (#6940 Phase 2): the DEFLATE engine is
