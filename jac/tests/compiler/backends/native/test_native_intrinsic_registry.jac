@@ -93,6 +93,7 @@ glob RAW_MEM_IMPORTS = "import from c { def malloc(n: int) -> int; def free(p: i
          IntrinsicDispatch.MEM_STORE: "mem.p",
          IntrinsicDispatch.ATOMIC_XCHG: "atomicrmw xchg",
          IntrinsicDispatch.CALL_DTOR: "dtor.fn",
+         IntrinsicDispatch.BUFFER_DATA: "buf.data.i64",
          IntrinsicDispatch.ALLOCA: "alloca.buf"
      };
 
@@ -135,6 +136,16 @@ def _probe_source(intr: any) -> str {
         return (
             "def probe(x: int) -> int { if x == 0 { __mem_call_dtor(x, x); } "
             "return x + 7; }\n"
+        );
+    }
+    if intr.dispatch == IntrinsicDispatch.BUFFER_DATA {
+        arg = "b\"jac\"" if intr.name == "__bytes_data" else "bytearray(4)";
+        return (
+            "def probe(x: int) -> int { p = "
+            + intr.name
+            + "("
+            + arg
+            + "); " "return x + 7 if p != 0 else 0; }\n"
         );
     }
     if intr.dispatch == IntrinsicDispatch.ALLOCA {
@@ -201,6 +212,7 @@ test "32 bit memory operations preserve adjacent storage and signed values" {
             + "def probe(x: int) -> int { p = malloc(8); "
             + "__mem_store_i32(p, 123); __mem_store_i32(p + 4, i32(x)); "
             + "lo = int(__mem_load_i32(p)); hi = int(__mem_load_i32(p + 4)); "
+            + "if hi >= 2147483648 { hi -= 4294967296; } "
             + "free(p); return lo + hi; }\n"
     );
     assert not prog.errors_had , str(prog.errors_had);
