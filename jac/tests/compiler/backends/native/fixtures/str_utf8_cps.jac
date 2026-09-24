@@ -69,3 +69,11 @@ def cp_center(s: str, w: int) -> str {
 def cp_zfill(s: str, w: int) -> str {
     return s.zfill(w);
 }
+
+def cp_expandtabs(s: str, t: int) -> str {
+    return s.expandtabs(t);
+}
+
+def cp_isascii(s: str) -> bool {
+    return s.isascii();
+}

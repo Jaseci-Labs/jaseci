@@ -4,7 +4,18 @@ import ctypes;
 import from tests.support { compile_native, native_str_func as get_sfunc }
 
 test "str len/index/slice/find are codepoint-oriented on utf-8" {
-    STRS = ["", "a", "héllo", "日本語", "a日b本c", "🙂x🙂", "café", "abcabc"];
+    STRS = [
+        "",
+        "a",
+        "héllo",
+        "日本語",
+        "a日b本c",
+        "🙂x🙂",
+        "café",
+        "abcabc",
+        "a\tb",
+        "x\t日"
+    ];
     NEEDLES = ["", "a", "é", "日", "x", "llo", "日本", "🙂", "abc"];
     BOUNDS = [-12, -5, -3, -1, 0, 1, 2, 4, 7, 12];
     STEPS = [-3, -2, -1, 1, 2, 3];
@@ -90,6 +101,10 @@ test "str len/index/slice/find are codepoint-oriented on utf-8" {
     cp_zfill = get_sfunc(
         eng, "cp_zfill", ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int64
     );
+    cp_expandtabs = get_sfunc(
+        eng, "cp_expandtabs", ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int64
+    );
+    cp_isascii = get_sfunc(eng, "cp_isascii", ctypes.c_bool, ctypes.c_char_p);
 
     for s in STRS {
         sb = s.encode("utf-8");
@@ -103,11 +118,17 @@ test "str len/index/slice/find are codepoint-oriented on utf-8" {
                 - len(s)}]";
             assert cp_ord_at(sb, i) == ord(s[i]);
         }
-        for w in [0, 1, 3, 6, 10] {
+        assert bool(cp_isascii(sb)) == s.isascii() , f"{s!r}.isascii()";
+        for w in [-5, -1, 0, 1, 3, 6, 10] {
             assert cp_ljust(sb, w).decode() == s.ljust(w) , f"{s!r}.ljust({w})";
             assert cp_rjust(sb, w).decode() == s.rjust(w) , f"{s!r}.rjust({w})";
             assert cp_center(sb, w).decode() == s.center(w) , f"{s!r}.center({w})";
             assert cp_zfill(sb, w).decode() == s.zfill(w) , f"{s!r}.zfill({w})";
+        }
+        for t in [-3, 0, 1, 4, 8] {
+            assert cp_expandtabs(sb, t).decode() == s.expandtabs(t) , (
+                f"{s!r}.expandtabs({t})"
+            );
         }
         for a in BOUNDS {
             for bb in BOUNDS {

@@ -7,9 +7,6 @@ impl NaIRGenPass._emit_utf8_helpers -> None {
     if self.rc_alloc_fn is None {
         self._emit_rc_helpers();
     }
-    if self.str_len_fn is None {
-        self._emit_str_len_helpers();
-    }
     if self.str_isascii_fn is None {
         self._emit_str_len_helpers();
     }
@@ -75,25 +72,25 @@ impl NaIRGenPass._emit_utf8_helpers -> None {
     _o_cont = cpoff_fn.append_basic_block("cont");
     _o_done = cpoff_fn.append_basic_block("done");
     b = ir.IRBuilder(_o_entry);
+    _o_k = b.select(
+        b.icmp_signed("<", cpoff_fn.args[2], zero, name="u8of.kneg"),
+        zero,
+        cpoff_fn.args[2],
+        name="u8of.kpos"
+    );
     _o_isa = b.call(
         self.str_isascii_fn, [cpoff_fn.args[0], cpoff_fn.args[1]], name="u8of.isa"
     );
     b.cbranch(_o_isa, _o_ascii, _o_chk);
     b = ir.IRBuilder(_o_ascii);
-    _o_k = cpoff_fn.args[2];
-    _o_clamp = b.select(
-        b.icmp_signed("<", _o_k, cpoff_fn.args[1], name="u8of.klt"),
-        _o_k,
-        cpoff_fn.args[1],
-        name="u8of.kmin"
+    b.ret(
+        b.select(
+            b.icmp_signed("<", _o_k, cpoff_fn.args[1], name="u8of.klt"),
+            _o_k,
+            cpoff_fn.args[1],
+            name="u8of.kmin"
+        )
     );
-    _o_clamp = b.select(
-        b.icmp_signed("<", _o_clamp, zero, name="u8of.kneg"),
-        zero,
-        _o_clamp,
-        name="u8of.kmax"
-    );
-    b.ret(_o_clamp);
     b = ir.IRBuilder(_o_chk);
     oi = b.phi(i64, name="u8of.i");
     oi.add_incoming(zero, _o_entry);
@@ -108,7 +105,7 @@ impl NaIRGenPass._emit_utf8_helpers -> None {
     ohi = b.icmp_unsigned(">=", obv, ir.Constant(i64, 0xC0), name="u8of.hi");
     olo = b.icmp_unsigned("<", obv, ir.Constant(i64, 0x80), name="u8of.lo");
     olead = b.or_(ohi, olo, name="u8of.lead");
-    oeq = b.icmp_signed("==", ocnt, cpoff_fn.args[2], name="u8of.eq");
+    oeq = b.icmp_signed("==", ocnt, _o_k, name="u8of.eq");
     oisk = b.and_(olead, oeq, name="u8of.isk");
     b.cbranch(oisk, _o_found, _o_cont);
     b = ir.IRBuilder(_o_found);
