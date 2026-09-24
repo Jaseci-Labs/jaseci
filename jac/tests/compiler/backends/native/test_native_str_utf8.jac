@@ -61,7 +61,7 @@ test "str len/index/slice/find are codepoint-oriented on utf-8" {
     cp_startswith = get_sfunc(
         eng,
         "cp_startswith",
-        ctypes.c_int64,
+        ctypes.c_bool,
         ctypes.c_char_p,
         ctypes.c_char_p,
         ctypes.c_int64,
@@ -70,7 +70,7 @@ test "str len/index/slice/find are codepoint-oriented on utf-8" {
     cp_endswith = get_sfunc(
         eng,
         "cp_endswith",
-        ctypes.c_int64,
+        ctypes.c_bool,
         ctypes.c_char_p,
         ctypes.c_char_p,
         ctypes.c_int64,

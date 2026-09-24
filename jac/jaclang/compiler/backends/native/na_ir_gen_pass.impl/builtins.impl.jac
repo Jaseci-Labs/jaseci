@@ -387,7 +387,9 @@ impl NaIRGenPass._static_str_struct_const(data: bytes) -> tuple[ir.Type, ir.Cons
     arr_type = ir.ArrayType(i8, len(data));
     struct_type = ir.LiteralStructType([i64, i64, arr_type]);
     sentinel_val = ir.Constant(i64, RC_SENTINEL);
-    tagged_len = ir.Constant(i64, str_len_tag(len(data) - 1));
+    tagged_len = ir.Constant(
+        i64, str_len_tag(len(data) - 1, all(b < 0x80 for b in data))
+    );
     c_str = ir.Constant(arr_type, bytearray(data));
     return (struct_type, ir.Constant(struct_type, [sentinel_val, tagged_len, c_str]), );
 }
@@ -886,12 +888,12 @@ impl NaIRGenPass._codegen_fstring(nd: uni.FString) -> (ir.Value | None) {
     self._set_rc_ctx("fstring", _fstr_loc);
     buf = self._str_alloc(self.builder, buf_size, name="fstr.buf");
     self._clear_rc_ctx();
-    self._stamp_str_len(self.builder, buf, need);
     call_args: list[ir.Value] = [buf, buf_size, fmt_global];
     for a in args {
         call_args.append(a);
     }
     self.builder.call(snprintf_fn, call_args, name="fstr.len");
+    self._stamp_str_len(self.builder, buf, need);
 
     for _obj_s in obj_strs {
         self._emit_rc_release_typed(_obj_s, op="fstr_obj_tmp", loc="");
@@ -1201,7 +1203,7 @@ impl NaIRGenPass._codegen_string_slice(
     k_next = self.builder.add(cur_k, cp_len, name="ss.nextk");
     self.builder.store(k_next, k_alloca);
     i_next = self._call_utf8_advance(
-        self.builder, _data, cur_i, step_val, name="ss.nexti"
+        self.builder, _data, src_blen, cur_i, step_val, name="ss.nexti"
     );
     self.builder.store(i_next, i_alloca);
     self.builder.branch(loop_check);

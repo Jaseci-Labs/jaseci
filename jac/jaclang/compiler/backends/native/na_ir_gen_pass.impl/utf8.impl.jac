@@ -10,6 +10,9 @@ impl NaIRGenPass._emit_utf8_helpers -> None {
     if self.str_len_fn is None {
         self._emit_str_len_helpers();
     }
+    if self.str_isascii_fn is None {
+        self._emit_str_len_helpers();
+    }
     i8 = ir.IntType(8);
     i8p = i8.as_pointer();
     i64 = ir.IntType(64);
@@ -23,11 +26,17 @@ impl NaIRGenPass._emit_utf8_helpers -> None {
     cplen_fn.args[0].name = "s";
     cplen_fn.args[1].name = "n";
     _u_entry = cplen_fn.append_basic_block("entry");
+    _u_ascii = cplen_fn.append_basic_block("ascii");
     _u_chk = cplen_fn.append_basic_block("chk");
     _u_body = cplen_fn.append_basic_block("body");
     _u_done = cplen_fn.append_basic_block("done");
     b = ir.IRBuilder(_u_entry);
-    b.branch(_u_chk);
+    _u_isa = b.call(
+        self.str_isascii_fn, [cplen_fn.args[0], cplen_fn.args[1]], name="u8cp.isa"
+    );
+    b.cbranch(_u_isa, _u_ascii, _u_chk);
+    b = ir.IRBuilder(_u_ascii);
+    b.ret(cplen_fn.args[1]);
     b = ir.IRBuilder(_u_chk);
     ui = b.phi(i64, name="u8cp.i");
     ui.add_incoming(zero, _u_entry);
@@ -59,13 +68,32 @@ impl NaIRGenPass._emit_utf8_helpers -> None {
     cpoff_fn.args[1].name = "n";
     cpoff_fn.args[2].name = "k";
     _o_entry = cpoff_fn.append_basic_block("entry");
+    _o_ascii = cpoff_fn.append_basic_block("ascii");
     _o_chk = cpoff_fn.append_basic_block("chk");
     _o_body = cpoff_fn.append_basic_block("body");
     _o_found = cpoff_fn.append_basic_block("found");
     _o_cont = cpoff_fn.append_basic_block("cont");
     _o_done = cpoff_fn.append_basic_block("done");
     b = ir.IRBuilder(_o_entry);
-    b.branch(_o_chk);
+    _o_isa = b.call(
+        self.str_isascii_fn, [cpoff_fn.args[0], cpoff_fn.args[1]], name="u8of.isa"
+    );
+    b.cbranch(_o_isa, _o_ascii, _o_chk);
+    b = ir.IRBuilder(_o_ascii);
+    _o_k = cpoff_fn.args[2];
+    _o_clamp = b.select(
+        b.icmp_signed("<", _o_k, cpoff_fn.args[1], name="u8of.klt"),
+        _o_k,
+        cpoff_fn.args[1],
+        name="u8of.kmin"
+    );
+    _o_clamp = b.select(
+        b.icmp_signed("<", _o_clamp, zero, name="u8of.kneg"),
+        zero,
+        _o_clamp,
+        name="u8of.kmax"
+    );
+    b.ret(_o_clamp);
     b = ir.IRBuilder(_o_chk);
     oi = b.phi(i64, name="u8of.i");
     oi.add_incoming(zero, _o_entry);
@@ -178,15 +206,18 @@ impl NaIRGenPass._emit_utf8_helpers -> None {
     self.utf8_cp_at_off_fn = cpat_fn;
 
     adv_fn = self._define_function(
-        "__jac_utf8_advance", ir.FunctionType(i64, [i8p, i64, i64])
+        "__jac_utf8_advance", ir.FunctionType(i64, [i8p, i64, i64, i64])
     );
     adv_fn.linkage = "private";
     adv_fn.args[0].name = "s";
-    adv_fn.args[1].name = "off";
-    adv_fn.args[2].name = "delta";
+    adv_fn.args[1].name = "n";
+    adv_fn.args[2].name = "off";
+    adv_fn.args[3].name = "delta";
     _v_entry = adv_fn.append_basic_block("entry");
+    _v_ascii = adv_fn.append_basic_block("ascii");
     _v_loop = adv_fn.append_basic_block("loop");
     _v_work = adv_fn.append_basic_block("work");
+    _v_fchk = adv_fn.append_basic_block("fwdchk");
     _v_fwd = adv_fn.append_basic_block("fwd");
     _v_back = adv_fn.append_basic_block("back");
     _v_scan = adv_fn.append_basic_block("scan");
@@ -196,18 +227,35 @@ impl NaIRGenPass._emit_utf8_helpers -> None {
     _v_merge = adv_fn.append_basic_block("merge");
     _v_done = adv_fn.append_basic_block("done");
     b = ir.IRBuilder(_v_entry);
-    b.branch(_v_loop);
+    _v_isa = b.call(
+        self.str_isascii_fn, [adv_fn.args[0], adv_fn.args[1]], name="u8adv.isa"
+    );
+    b.cbranch(_v_isa, _v_ascii, _v_loop);
+    b = ir.IRBuilder(_v_ascii);
+    _v_sum = b.add(adv_fn.args[2], adv_fn.args[3], name="u8adv.sum");
+    _v_fpos = b.icmp_signed(">", adv_fn.args[3], zero, name="u8adv.dpos");
+    _v_clamp = b.select(
+        b.icmp_signed(">", _v_sum, adv_fn.args[1], name="u8adv.over"),
+        adv_fn.args[1],
+        _v_sum,
+        name="u8adv.clamp"
+    );
+    b.ret(b.select(_v_fpos, _v_clamp, _v_sum, name="u8adv.res"));
     b = ir.IRBuilder(_v_loop);
     voff = b.phi(i64, name="u8adv.off");
-    voff.add_incoming(adv_fn.args[1], _v_entry);
+    voff.add_incoming(adv_fn.args[2], _v_entry);
     vrem = b.phi(i64, name="u8adv.rem");
-    vrem.add_incoming(adv_fn.args[2], _v_entry);
+    vrem.add_incoming(adv_fn.args[3], _v_entry);
     vpos = b.icmp_signed(">", vrem, zero, name="u8adv.pos");
     vneg = b.icmp_signed("<", vrem, zero, name="u8adv.neg");
     vmore = b.or_(vpos, vneg, name="u8adv.more");
     b.cbranch(vmore, _v_work, _v_done);
     b = ir.IRBuilder(_v_work);
-    b.cbranch(vpos, _v_fwd, _v_back);
+    b.cbranch(vpos, _v_fchk, _v_back);
+    b = ir.IRBuilder(_v_fchk);
+    b.cbranch(
+        b.icmp_signed("<", voff, adv_fn.args[1], name="u8adv.inb"), _v_fwd, _v_done
+    );
     b = ir.IRBuilder(_v_fwd);
     vfl = b.call(self.utf8_cp_len_at_fn, [adv_fn.args[0], voff], name="u8adv.fl");
     voff_f = b.add(voff, vfl, name="u8adv.off.f");
@@ -291,10 +339,16 @@ impl NaIRGenPass._call_utf8_cp_at_off(
 }
 
 impl NaIRGenPass._call_utf8_advance(
-    b: ir.IRBuilder, ptr: ir.Value, off: ir.Value, delta: ir.Value, name: str = "u8.adv"
+    b: ir.IRBuilder,
+    ptr: ir.Value,
+    nbytes: ir.Value,
+    off: ir.Value,
+    delta: ir.Value,
+    name: str = "u8.adv"
 ) -> ir.Value {
     self._emit_utf8_helpers();
+    nbytes = self._coerce_type(nbytes, ir.IntType(64));
     off = self._coerce_type(off, ir.IntType(64));
     delta = self._coerce_type(delta, ir.IntType(64));
-    return b.call(self.utf8_advance_fn, [ptr, off, delta], name=name);
+    return b.call(self.utf8_advance_fn, [ptr, nbytes, off, delta], name=name);
 }
