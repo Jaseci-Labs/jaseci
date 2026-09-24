@@ -94,6 +94,7 @@ glob RAW_MEM_IMPORTS = "import from c { def malloc(n: int) -> int; def free(p: i
          IntrinsicDispatch.ATOMIC_XCHG: "atomicrmw xchg",
          IntrinsicDispatch.CALL_DTOR: "dtor.fn",
          IntrinsicDispatch.BUFFER_DATA: "buf.data.i64",
+         IntrinsicDispatch.REF_ADDR: "ref.addr",
          IntrinsicDispatch.ALLOCA: "alloca.buf"
      };
 
@@ -146,6 +147,12 @@ def _probe_source(intr: any) -> str {
             + "("
             + arg
             + "); " "return x + 7 if p != 0 else 0; }\n"
+        );
+    }
+    if intr.dispatch == IntrinsicDispatch.REF_ADDR {
+        return (
+            "def probe(x: int) -> int { l = [x, 2]; "
+            "return x + 7 if __ref_addr(l) != 0 else 0; }\n"
         );
     }
     if intr.dispatch == IntrinsicDispatch.ALLOCA {
