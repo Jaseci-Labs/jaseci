@@ -10,7 +10,7 @@ import from unittest.mock { patch }
 import from tests.support { TESTS_DIR }
 import from jaclang.cli.commands { execution as exec_cmds }
 import from jaclang.cli.commands { project as proj_cmds }
-import from jaclang.cli.commands.native_build { native_build, build_native_entry_lib }
+import from jaclang.cli.commands.native_build { native_build, _build_native_entry_lib }
 import from jaclang.project.config { JacConfig }
 import from jaclang.server.sealed_serve {
     native_lib_name,
@@ -77,9 +77,46 @@ test "NativeArgv builds argc and keeps encoded argv pointers alive" {
 }
 
 
-test "native_lib_name appends the platform shared-library suffix" {
-    stem = "main";
-    assert native_lib_name(stem) == stem + native_lib_suffix();
+test "native_lib_name uses the platform shared-library suffix" {
+    if sys.platform.startswith("win") {
+        assert native_lib_name("main") == "main.dll";
+    } elif sys.platform == "darwin" {
+        assert native_lib_name("main") == "main.dylib";
+    } else {
+        assert native_lib_name("main") == "main.so";
+    }
+}
+
+
+test "resolve_sv_callbacks finds a nested provider under the image root" {
+    import from jaclang.runtime.interop_bridge { resolve_sv_callbacks }
+    tmp = tempfile.mkdtemp(prefix="jac_sv_resolve_");
+    try {
+        img = Path(tmp);
+        lib_dir = img / "lib";
+        lib_dir.mkdir();
+        (lib_dir / "nested_helper.jac").write_text(
+            "def:pub nested_double(x: int) -> int {\n    return x * 2;\n}\n",
+            encoding="utf-8"
+        );
+        for src in ["lib/nested_helper.jac", "lib.nested_helper"] {
+            callbacks = [
+                {
+                    "name": "nested_double",
+                    "ret_type": "int",
+                    "param_types": ["int"],
+                    "source_module": src
+                }
+            ];
+            fns = resolve_sv_callbacks(callbacks, str(img));
+            assert "nested_double" in fns , (
+                f"source_module {src!r} must resolve to lib/nested_helper.jac"
+            );
+            assert fns["nested_double"](21) == 42;
+        }
+    } finally {
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
 }
 
 
@@ -141,7 +178,7 @@ test "entry_lib runs __jac_shared_init only after argv is populated (Linux)" {
     );
     with tempfile.TemporaryDirectory() as d {
         lib_out = os.path.join(d, "entry.so");
-        rc = build_native_entry_lib(filename=fixture, output=lib_out);
+        rc = _build_native_entry_lib(filename=fixture, output=lib_out);
         assert rc == 0 , "entry_lib native_build failed";
         assert os.path.isfile(lib_out) , "entry library was not produced";
         host_argv = ["/sealed/main.jac", "alpha", "beta"];
@@ -175,7 +212,7 @@ test "_run_native_lib succeeds for a valid entry library (Linux)" {
     );
     with tempfile.TemporaryDirectory() as d {
         lib_out = os.path.join(d, "entry.so");
-        assert build_native_entry_lib(filename=fixture, output=lib_out) == 0;
+        assert _build_native_entry_lib(filename=fixture, output=lib_out) == 0;
         host_argv = ["/sealed/main.jac"];
         rc = exec_cmds._run_native_lib(lib_out, host_argv, img_root=Path(d));
         assert rc == 0 , "_run_native_lib should run jac_entry successfully";
@@ -602,6 +639,152 @@ test "app_metadata reads interop from the seal-time record, not artifact presenc
         assert meta.get("native") == {"interop": True, "unresolved": ["py_double"]} , f"seal-time record must mark the app interop; got {meta.get(
             'native'
         )}";
+    } finally {
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
+
+test "unreadable interop record marks the app non-interop" {
+    tmp = tempfile.mkdtemp(prefix="jac_meta_corrupt_");
+    try {
+        pkg = Path(tmp) / "pkg";
+        triple_dir = pkg / ".jac" / "native" / "x86_64-unknown-linux-gnu";
+        triple_dir.mkdir(parents=True);
+        (pkg / "jac.toml").write_text(
+            '[project]\nname = "corruptmeta"\nversion = "0.1.0"\n'
+                + 'entry-point = "main"\n',
+            encoding="utf-8"
+        );
+        (pkg / "main.jac").write_text("with entry { }\n", encoding="utf-8");
+        import from jaclang.dist.precompile_bytecode { app_metadata }
+
+        (triple_dir / native_lib_name("main")).write_bytes(b"");
+        (triple_dir / (native_lib_name("main") + ".interop.json")).write_text(
+            "{ not json at all", encoding="utf-8"
+        );
+        meta = app_metadata(pkg, "metaapp");
+        assert meta.get("native") == {"interop": False} , (
+            "an unreadable record must fail conservative (JIT lane), "
+            f"not steer into the in-process lane; got {meta.get('native')}"
+        );
+    } finally {
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
+
+test "_run_native_lib refuses a stale interop record before init runs" {
+    inits: list[bool] = [];
+    class _StubLib {
+        def __jac_shared_init(self: _StubLib) {
+            inits.append(True);
+        }
+    }
+    stub = _StubLib();
+    with patch("ctypes.CDLL", return_value=stub), patch.object(
+        exec_cmds, "_set_native_argv_in_dll", return_value=True
+    ) {
+        rc = exec_cmds._run_native_lib(
+            "fake.so",
+            ["app.jac"],
+            callbacks=[{"name": "pyz", "ret_type": "int", "param_types": ["int"]}],
+            img_root=Path(".")
+        );
+    }
+    assert rc is None , (
+        "a record naming a bind slot the library lacks must be refused, "
+        "not run with a null dispatch slot"
+    );
+    assert not inits , (
+        "__jac_shared_init must not run when the interop record is stale "
+        "(a JIT fallback after init would re-run module side effects)"
+    );
+}
+
+
+test "sized scalars map to width-correct ctypes trampolines" {
+    import ctypes;
+    import from jaclang.runtime.interop_bridge { JAC_TO_CTYPES, JAC_TO_CTYPES_STR }
+    assert JAC_TO_CTYPES["f32"] is ctypes.c_float , (
+        "f32 must trampoline as c_float, not the c_int64 fallback"
+    );
+    assert JAC_TO_CTYPES["f64"] is ctypes.c_double;
+    assert JAC_TO_CTYPES["i8"] is ctypes.c_int8;
+    assert JAC_TO_CTYPES["u8"] is ctypes.c_uint8;
+    assert JAC_TO_CTYPES["i16"] is ctypes.c_int16;
+    assert JAC_TO_CTYPES["u32"] is ctypes.c_uint32;
+    assert JAC_TO_CTYPES["i64"] is ctypes.c_int64;
+    assert JAC_TO_CTYPES["u64"] is ctypes.c_uint64;
+    assert JAC_TO_CTYPES_STR["f32"] == "ctypes.c_float";
+    assert JAC_TO_CTYPES["int"] is ctypes.c_int64 , "base wire map preserved";
+}
+
+
+test "None-returning callback builds a void trampoline" {
+    import ctypes;
+    import from jaclang.runtime.interop_bridge { register_py_callbacks }
+    class _Binding {
+        has name: str = "noop",
+            ret_type: str = "None",
+            param_types: list[str] = [];
+    }
+    def _no_register(sym: str, addr: int) {}
+    table: dict[(str, Callable[(..., object)])] = {};
+    cbs: list[object] = [];
+    register_py_callbacks([_Binding()], table, cbs, _no_register);
+    assert len(cbs) == 1 , (
+        "a None-returning na->sv binding must build its trampoline "
+        "instead of erroring"
+    );
+}
+
+
+test "seal succeeds when a native module imports a server fn it never calls" {
+    if not sys.platform.startswith("linux") {
+        testskip("linux-only native linking");
+    }
+    if not _llvm_available() {
+        testskip("LLVM toolchain unavailable");
+    }
+    tmp = tempfile.mkdtemp(prefix="jac_uncalled_import_");
+    try {
+        proj = Path(tmp) / "proj";
+        proj.mkdir();
+        (proj / "helper.jac").write_text(
+            "def:pub unused_fn(x: int) -> int {\n    return x;\n}\n", encoding="utf-8"
+        );
+        (proj / "main.jac").write_text(
+            "import from .helper { unused_fn }\n\nwith entry {\n    print(1);\n}\n",
+            encoding="utf-8"
+        );
+        (proj / "jac.toml").write_text(
+            '[project]\nname = "uncalled"\nversion = "0.1.0"\n'
+                + 'entry-point = "main"\nkind = "cli-native"\n'
+                + '[placement.pins]\nmain = "native"\nhelper = "server"\n',
+            encoding="utf-8"
+        );
+        import from jaclang.cli.commands.native_build { native_build_sealed_pair }
+        exe_out = str(proj / "main");
+        rc = native_build_sealed_pair(
+            filename=str(proj / "main.jac"),
+            exe_output=exe_out,
+            lib_output=str(proj / "libmain.entry.so")
+        );
+        assert rc == 0 , (
+            "an imported-but-uncalled server fn has no IR declaration; the "
+            "seal must skip its bind slot instead of crashing on get_function"
+        );
+        assert os.path.isfile(str(proj / "libmain.entry.so")) , "library sealed";
+        assert not os.path.isfile(exe_out) , "interop app drops the standalone exe";
+        record = proj / "libmain.entry.so.interop.json";
+        assert record.is_file() , "sidecar written after successful link";
+        rec = json.loads(record.read_text(encoding="utf-8"));
+        assert rec.get("interop") is True;
+        assert rec.get("callbacks") == [] , (
+            f"the uncalled import must get no callback record; "
+            f"got {rec.get('callbacks')}"
+        );
     } finally {
         shutil.rmtree(tmp, ignore_errors=True);
     }
