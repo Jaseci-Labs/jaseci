@@ -193,7 +193,6 @@ impl BoundaryAnalysisPass._caller_context(
 }
 
 impl BoundaryAnalysisPass.enter_import with Import entry {
-    import from jaclang.compiler.symbol_utils { import_target_pinned_server }
     import_context = self._get_context(here);
     facts = here.boundary_facts;
     if (here.from_loc and isinstance(here.from_loc, ModulePath)) {
@@ -224,8 +223,14 @@ impl BoundaryAnalysisPass.enter_import with Import entry {
                     self._register_na_client_import(here);
                 } else {
                     _pin_caller = self._caller_context(here, import_context);
-                    if _pin_caller == InteropContext.NATIVE
-                        and import_target_pinned_server(here) {
+                    _sv_pinned = False;
+                    if _pin_caller == InteropContext.NATIVE {
+                        import from jaclang.compiler.symbol_utils {
+                            import_target_pinned_server
+                        }
+                        _sv_pinned = import_target_pinned_server(here);
+                    }
+                    if _sv_pinned {
                         self._register_sv_import(
                             here, from_loc.base_module_name, _pin_caller
                         );
