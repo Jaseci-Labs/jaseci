@@ -1004,9 +1004,7 @@ impl NativeStrEmitter._emit_affix(
             return None;
         }
     }
-    (blen, _, _, lo_off, hi_off, inverted) = _str_cp_region(
-        p, b, target, args[1:]
-    );
+    (blen, _, _, lo_off, hi_off, inverted) = _str_cp_region(p, b, target, args[1:]);
     matched = _emit_affix_match(
         p,
         b,
