@@ -4,18 +4,7 @@ import ctypes;
 import from tests.support { compile_native, native_str_func as get_sfunc }
 
 test "str len/index/slice/find are codepoint-oriented on utf-8" {
-    STRS = [
-        "",
-        "a",
-        "héllo",
-        "日本語",
-        "a日b本c",
-        "🙂x🙂",
-        "café",
-        "abcabc",
-        "a\tb",
-        "x\t日"
-    ];
+    STRS = ["", "a", "héllo", "日本語", "a日b本c", "🙂x🙂", "café", "abcabc", "a\tb", "x\t日"];
     NEEDLES = ["", "a", "é", "日", "x", "llo", "日本", "🙂", "abc"];
     BOUNDS = [-12, -5, -3, -1, 0, 1, 2, 4, 7, 12];
     STEPS = [-3, -2, -1, 1, 2, 3];

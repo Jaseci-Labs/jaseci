@@ -926,9 +926,7 @@ impl NaIRGenPass._codegen_string_index(
     self._emit_runtime_raise(_oob, "IndexError", "string index out of range");
     off = self._call_utf8_cp_off(b, target_val, len_val, index_val, name="char.off");
     _ch = self._call_utf8_cp_at_off(b, target_val, off, name="char.val");
-    # Headerless nogc frees "owned" temps outright, and the ASCII fast path
-    # returns a static char-cache slot -- only mark owned when a refcount
-    # header exists to absorb the release.
+
     return _ch if self._nogc_headerless() else self._mark_owned(_ch);
 }
 
