@@ -134,6 +134,7 @@ import from jaclang.compiler.backends.native.na_constants {
     EXC_LINEAGE_MIX,
     EXC_LINEAGE_SLOTS,
     JACVAL_ELLIPSIS_TAG,
+    JACVAL_STRUCT_TAG,
     LIVE_NODE_NEXT_OFF,
     LIVE_NODE_RC_OFF,
     LIVE_NODE_SIZE,
@@ -143,9 +144,7 @@ import from jaclang.compiler.backends.native.na_constants {
     NATIVE_COPY_FUNCS,
     NATIVE_OS_FUNCS,
     NATIVE_OSPATH_FUNCS,
-    NATIVE_RANDOM_FUNCS,
     NATIVE_STDLIB_FUNC_TABLES,
-    NATIVE_STRUCT_FUNCS,
     RC_BUFFERED_BIT,
     RC_COLOR_BLACK,
     RC_COLOR_GRAY,
@@ -560,6 +559,7 @@ walker NaIRGenPass(CompilerPass) {
         _struct_bodies_done: set[str] = set(),
         _native_stdlib_modules: set[str] = set(),
         _native_stdlib_bare_names: dict[str, tuple[(str, str)]] = {},
+        _stdlib_call_emitters: dict[str, Callable] = {},
         _native_module_imports: set[str] = set(),
         _stdlib_helpers_emitted: set[str] = set(),
         _global_origins: dict[str, str] = {},
@@ -1415,6 +1415,7 @@ walker NaIRGenPass(CompilerPass) {
     def _define_clib_struct(decl: uni.Archetype) -> None;
     def _ensure_clib_struct(t: any) -> (str | None);
     def _record_stdlib_bare_name(mod_name: str, item: uni.UniNode) -> None;
+    def _stdlib_call_emitter(mod_name: str) -> (Callable | None);
     def _declare_pending_clib_abilities -> None;
     def _declare_clib_definitions -> None;
     def _clib_abi_signature(decl: uni.Ability) -> str;
@@ -1716,6 +1717,12 @@ walker NaIRGenPass(CompilerPass) {
     def _emit_yield_suspend(v: ir.Value) -> None;
     def _codegen_lambda(nd: uni.LambdaExpr) -> (ir.Value | None);
     def _ternary_keep(value: ir.Value) -> ir.Value;
+    def _finish_lambda_ret(
+        nd: uni.LambdaExpr,
+        body_value: (ir.Value | None),
+        ret_type: ir.Type,
+        err_count: int
+    ) -> None;
     def _codegen_atom_trailer(nd: uni.AtomTrailer) -> (ir.Value | None);
     def _codegen_plain_trailer(nd: uni.AtomTrailer) -> (ir.Value | None);
     def _codegen_null_safe_trailer(nd: uni.AtomTrailer) -> (ir.Value | None);
@@ -1773,7 +1780,7 @@ walker NaIRGenPass(CompilerPass) {
     def _codegen_ability(nd: uni.Ability) -> None;
     def _codegen_nested_ability(nd: uni.Ability) -> None;
     def _predeclare_nested_siblings(nd: uni.Ability) -> None;
-    def _test_call_reaches_demoted(call: uni.FuncCall, seen: set) -> bool;
+    def _test_call_reaches_demoted(call: uni.FuncCall, seen: set[str]) -> bool;
     def _codegen_test(nd: uni.Test) -> None;
     def _demote_native_test(nd: uni.Test, func: ir.Function, local_mark: int) -> None;
     def _apply_static_decorators -> None;

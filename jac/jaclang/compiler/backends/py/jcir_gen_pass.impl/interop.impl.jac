@@ -185,6 +185,7 @@ impl JcirGenPass._gen_native_import_mirrors(nd: Import) -> bool {
         'from jaclang.runtime.interop_bridge import pyb_mirror_member '
             + 'as __jac_pyb_mirror_member'
     );
+    names.insert(0, '__jac_pyb_mirror_member');
     self.set_out(nd, [CgSplice(src='\n'.join(parts), offset=0, bound_names=names)]);
     return True;
 }

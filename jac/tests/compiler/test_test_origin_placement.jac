@@ -5,7 +5,8 @@ touches a native blocker -- `root`, an async ability, an endpoint -- used to
 push the module under test off the native lane, or, when the module did seal
 native, left the test calling into a demoted function's abort() stub. Tests
 run in the server codespace either way, so nodes originating in a
-`*.test.jac` file are excluded from the native blocker scan.
+`*.test.jac` file -- or inside an inline `test` block -- are excluded from
+the native blocker scan.
 """
 
 import os;
@@ -89,6 +90,26 @@ test "an async ability written in a test annex is not a module blocker" {
         assert not prog.errors_had , [str(e) for e in prog.errors_had];
         (blocker, _deps) = scan_native_blockers(mod, d);
         assert not blocker , blocker;
+        assert mod.decided_codespace == "native" , mod.decided_codespace;
+    } finally {
+        shutil.rmtree(d, ignore_errors=True);
+    }
+}
+
+
+test "an inline test block touching root does not push its module off native" {
+    d = _proj("");
+    try {
+        with open(os.path.join(d, "calc.jac"), "a") as f {
+            f.write(ROOT_TEST);
+        }
+        prog = JacProgram();
+        mod = prog.compile(
+            os.path.join(d, "calc.jac"), options=CompileOptions(no_ir_cache=True)
+        );
+        assert not prog.errors_had , [str(e) for e in prog.errors_had];
+        (blocker, _deps) = scan_native_blockers(mod, d);
+        assert not blocker , f"inline test code entered the blocker scan: {blocker}";
         assert mod.decided_codespace == "native" , mod.decided_codespace;
     } finally {
         shutil.rmtree(d, ignore_errors=True);

@@ -2536,3 +2536,4 @@ impl NaIRGenPass._record_stdlib_bare_name(mod_name: str, item: uni.UniNode) -> N
         self._native_stdlib_bare_names[_bound] = (mod_name, _orig.value);
     }
 }
+

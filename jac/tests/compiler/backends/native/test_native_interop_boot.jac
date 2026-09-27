@@ -11,8 +11,9 @@ native caller read a wrong value instead of the server function's result.
 
 import ctypes;
 import os;
-import from tests.support { TESTS_DIR, native_address, native_force_opts, unit_symbol }
+import from tests.support { TESTS_DIR, native_address, unit_symbol }
 import jaclang.compiler.frontend.unitree as uni;
+import from jaclang.compiler.driver.compile_options { CompileOptions }
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.runtime.interop_bridge { ensure_py_funcs_loaded }
 
@@ -22,8 +23,15 @@ glob FIXTURES = os.path.join(
      SEAM = "na_py_interop.jac";
 
 def _compiled -> tuple[JacProgram, uni.Module] {
+    # Server default + the jac.toml pin on native_add_one_to_doubled leaves
+    # py_double on the server lane, which is what makes the seam exist;
+    # force_codespace='native' would force it native too and there would be
+    # nothing for the boot loader to resolve.
     prog = JacProgram();
-    ir = prog.compile(str(os.path.join(FIXTURES, SEAM)), options=native_force_opts());
+    ir = prog.compile(
+        str(os.path.join(FIXTURES, SEAM)),
+        options=CompileOptions(default_codespace='server')
+    );
     errors = [str(e) for e in prog.errors_had] if prog.errors_had else [];
     assert not prog.errors_had , f"Compilation errors: {errors}";
     return (prog, ir, );

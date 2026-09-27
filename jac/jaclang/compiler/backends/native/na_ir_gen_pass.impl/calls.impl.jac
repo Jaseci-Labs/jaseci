@@ -1761,17 +1761,9 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
         _bare_stdlib = self._native_stdlib_bare_names.get(func_name);
         if _bare_stdlib is not None {
             (_bare_mod, _bare_orig) = _bare_stdlib;
-            if _bare_mod == "os" {
-                return self._emit_os_call(_bare_orig, nd);
-            }
-            if _bare_mod == "os.path" {
-                return self._emit_ospath_call(_bare_orig, nd);
-            }
-            if _bare_mod == "random" {
-                return self._emit_random_call(_bare_orig, nd);
-            }
-            if _bare_mod == "struct" {
-                return self._emit_struct_call(_bare_orig, nd);
+            _bare_emit = self._stdlib_call_emitter(_bare_mod);
+            if _bare_emit is not None {
+                return _bare_emit(_bare_orig, nd);
             }
         }
     }

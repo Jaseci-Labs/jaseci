@@ -729,10 +729,9 @@ impl NaIRGenPass._test_call_reaches_demoted(
     _tname = self._get_name(call.target);
     if _tname is not None {
         _short = _tname.rsplit(".", 1)[-1];
-        for _skipped in self._native_skipped_methods {
-            if _skipped == _tname or _skipped.rsplit(".", 1)[-1] == _short {
-                return True;
-            }
+        if _tname in self._native_skipped_methods
+            or _short in self._native_skipped_methods {
+            return True;
         }
         if _tname in seen {
             return False;
