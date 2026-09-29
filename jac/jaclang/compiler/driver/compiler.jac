@@ -64,7 +64,10 @@ obj JacCompiler(SessionHooks) {
 
     static def _check_native_abi(layout: NativeModuleLayout, full_target: str) -> None;
     def get_bytecode(
-        full_target: str, target_program: JacProgram, skip_analysis: bool = False
+        full_target: str,
+        target_program: JacProgram,
+        skip_analysis: bool = False,
+        options: (CompileOptions | None) = None
     ) -> (types.CodeType | None);
 
     def get_client_artifact(
@@ -72,7 +75,10 @@ obj JacCompiler(SessionHooks) {
     ) -> (ClientArtifact | None);
 
     def _get_bytecode(
-        full_target: str, target_program: JacProgram, skip_analysis: bool = False
+        full_target: str,
+        target_program: JacProgram,
+        skip_analysis: bool = False,
+        gm_active: bool = False
     ) -> (types.CodeType | None);
 
     def _get_client_artifact(
@@ -133,7 +139,10 @@ obj JacCompiler(SessionHooks) {
     ) -> None;
 
     def _persist_module_cache(
-        full_target: str, result: uni.Module, actual_program: JacProgram
+        full_target: str,
+        result: uni.Module,
+        actual_program: JacProgram,
+        gm_noop_variant: (str | None) = None
     ) -> None;
 
     def _persist_native_unit(
