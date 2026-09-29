@@ -4,7 +4,7 @@ The SAME ``import mmap`` binds CPython's ``mmap`` module on the sv (Python)
 backend and the bundled ``na_stdlib/mmap.jac`` Mechanism-B module (over the
 ``_mmap_native`` OS FFI floors) on the na (native LLVM) backend. This fixture
 pins the two congruent using anonymous mappings, which both lanes can create
-with ``mmap.mmap(-1, length)``.
+with ``mmap(-1, length)``.
 
 Byte results are compared via ``_digest`` of ``read`` output --
 raw ``bytes`` cannot be marshalled across the sv/na boundary.
@@ -25,7 +25,7 @@ Not exercised (documented na divergences or platform-dependent):
 ES/JS opts out (``mmap_cl`` returns an empty dict).
 """
 
-import mmap;
+import from mmap { mmap, ACCESS_READ, ACCESS_WRITE };
 
 
 def _digest(data: bytes) -> int {
@@ -41,7 +41,7 @@ def _digest(data: bytes) -> int {
 
 
 def mmap_py -> dict[any, any] {
-    m = mmap.mmap(-1, 64);
+    m = mmap(-1, 64);
     m.write(b"hello mmap world");
     m.seek(0);
     first = m.read(5);
@@ -69,7 +69,7 @@ def mmap_py -> dict[any, any] {
     m.seek(20);
     r["move_digest"] = _digest(m.read(5));
     m.close();
-    pm = mmap.mmap(-1, 64, access=mmap.ACCESS_WRITE);
+    pm = mmap(-1, 64, access=ACCESS_WRITE);
     pm.write(b"hello mmap world");
     try {
         pm.resize(128);
@@ -82,7 +82,7 @@ def mmap_py -> dict[any, any] {
         r["err_resize"] = str(e).split(" on ")[0];
     }
     pm.close();
-    m2 = mmap.mmap(-1, 64);
+    m2 = mmap(-1, 64);
     m2.seek(0);
     m2.seek(2, 1);
     r["seek_cur"] = m2.tell();
@@ -114,7 +114,7 @@ def mmap_py -> dict[any, any] {
     } except ValueError as e {
         r["err_closed"] = str(e);
     }
-    ro = mmap.mmap(-1, 32, access=mmap.ACCESS_READ);
+    ro = mmap(-1, 32, access=ACCESS_READ);
     try {
         ro.write(b"x");
         r["err_rote"] = "noraise";
@@ -130,7 +130,7 @@ def mmap_py -> dict[any, any] {
     ro.close();
     # size() answers the FILE size like CPython's fstat; an anonymous map has
     # no fd, so both lanes raise CPython's EBADF OSError.
-    sz = mmap.mmap(-1, 64);
+    sz = mmap(-1, 64);
     try {
         sz.size();
         r["err_anon_size"] = "noraise";
@@ -139,7 +139,7 @@ def mmap_py -> dict[any, any] {
     }
     sz.close();
     # context-manager protocol: __exit__ closes on scope exit, both lanes.
-    with mmap.mmap(-1, 8) as wm {
+    with mmap(-1, 8) as wm {
         wm.write(b"ok");
         wm.seek(0);
         r["wm_read_digest"] = _digest(wm.read(2));
@@ -148,43 +148,43 @@ def mmap_py -> dict[any, any] {
     # checks fire before the fd is touched, so a bogus fd (-5) pins them on
     # both lanes without needing a real file.
     try {
-        mmap.mmap(-1, -5);
+        mmap(-1, -5);
         r["err_anon_neg"] = "noraise";
     } except OverflowError as e {
         r["err_anon_neg"] = str(e);
     }
     try {
-        mmap.mmap(-1, 0);
+        mmap(-1, 0);
         r["err_anon_zero"] = "noraise";
     } except OSError as e {
         r["err_anon_zero"] = str(e);
     }
     try {
-        mmap.mmap(-5, -1);
+        mmap(-5, -1);
         r["err_fd_neg_len"] = "noraise";
     } except OverflowError as e {
         r["err_fd_neg_len"] = str(e);
     }
     try {
-        mmap.mmap(-5, 10, offset=-1);
+        mmap(-5, 10, offset=-1);
         r["err_fd_neg_off"] = "noraise";
     } except OverflowError as e {
         r["err_fd_neg_off"] = str(e);
     }
     try {
-        mmap.mmap(-5, 100);
+        mmap(-5, 100);
         r["err_fd_bad"] = "noraise";
     } except OSError as e {
         r["err_fd_bad"] = str(e);
     }
     try {
-        mmap.mmap(-1, 64, offset=-1);
+        mmap(-1, 64, offset=-1);
         r["err_anon_neg_off"] = "noraise";
     } except OverflowError as e {
         r["err_anon_neg_off"] = str(e);
     }
     # item/write_byte range checks and whence/flush/move/resize validation
-    m3 = mmap.mmap(-1, 16);
+    m3 = mmap(-1, 16);
     try {
         m3.__setitem__(0, 300);
         r["err_setitem_range"] = "noraise";
@@ -237,7 +237,7 @@ def mmap_py -> dict[any, any] {
     m3.close();
     # find/rfind: defaults scan from pos to end; explicit negatives are
     # slice-adjusted (+= size, clamped)
-    mb = mmap.mmap(-1, 10);
+    mb = mmap(-1, 10);
     mb.write(b"x........x");
     r["find_default_pos10"] = mb.find(b"x");
     r["rfind_default_pos10"] = mb.rfind(b"x");
@@ -274,7 +274,7 @@ def _digest_na(data: bytes) -> int {
 
 
 def _core_na(r: dict[str, any]) {
-    m = mmap.mmap(-1, 64);
+    m = mmap(-1, 64);
     m.write(b"hello mmap world");
     m.seek(0);
     first = m.read(5);
@@ -308,7 +308,7 @@ def _seek_resize_na(r: dict[str, any]) {
     # anonymous mapping. The na surface carries the suffix-less CPython
     # 3.14.7+ text; the sv lane strips the " on <os>" suffix its older
     # runtime appends, so the compared values agree on any bundled runtime.
-    pm = mmap.mmap(-1, 64, access=mmap.ACCESS_WRITE);
+    pm = mmap(-1, 64, access=ACCESS_WRITE);
     pm.write(b"hello mmap world");
     try {
         pm.resize(128);
@@ -317,7 +317,7 @@ def _seek_resize_na(r: dict[str, any]) {
         r["err_resize"] = str(e);
     }
     pm.close();
-    m = mmap.mmap(-1, 64);
+    m = mmap(-1, 64);
     m.seek(0);
     m.seek(2, 1);
     r["seek_cur"] = m.tell();
@@ -328,7 +328,7 @@ def _seek_resize_na(r: dict[str, any]) {
 
 
 def _err_na(r: dict[str, any]) {
-    m = mmap.mmap(-1, 64);
+    m = mmap(-1, 64);
     m.write(b"hello mmap world");
     try {
         m.seek(999);
@@ -356,7 +356,7 @@ def _err_na(r: dict[str, any]) {
     } except ValueError as e {
         r["err_closed"] = str(e);
     }
-    ro = mmap.mmap(-1, 32, access=mmap.ACCESS_READ);
+    ro = mmap(-1, 32, access=ACCESS_READ);
     try {
         ro.write(b"x");
         r["err_rote"] = "noraise";
@@ -370,7 +370,7 @@ def _err_na(r: dict[str, any]) {
         r["err_ro_resize"] = str(e);
     }
     ro.close();
-    sz = mmap.mmap(-1, 64);
+    sz = mmap(-1, 64);
     try {
         sz.size();
         r["err_anon_size"] = "noraise";
@@ -378,7 +378,7 @@ def _err_na(r: dict[str, any]) {
         r["err_anon_size"] = str(e);
     }
     sz.close();
-    with mmap.mmap(-1, 8) as wm {
+    with mmap(-1, 8) as wm {
         wm.write(b"ok");
         wm.seek(0);
         r["wm_read_digest"] = _digest_na(wm.read(2));
@@ -390,37 +390,37 @@ def _init_err_na(r: dict[str, any]) {
     # The fd-branch checks fire before the fd is touched, so a bogus fd (-5)
     # pins them on both lanes without needing a real file.
     try {
-        mmap.mmap(-1, -5);
+        mmap(-1, -5);
         r["err_anon_neg"] = "noraise";
     } except OverflowError as e {
         r["err_anon_neg"] = str(e);
     }
     try {
-        mmap.mmap(-1, 0);
+        mmap(-1, 0);
         r["err_anon_zero"] = "noraise";
     } except OSError as e {
         r["err_anon_zero"] = str(e);
     }
     try {
-        mmap.mmap(-5, -1);
+        mmap(-5, -1);
         r["err_fd_neg_len"] = "noraise";
     } except OverflowError as e {
         r["err_fd_neg_len"] = str(e);
     }
     try {
-        mmap.mmap(-5, 10, offset=-1);
+        mmap(-5, 10, offset=-1);
         r["err_fd_neg_off"] = "noraise";
     } except OverflowError as e {
         r["err_fd_neg_off"] = str(e);
     }
     try {
-        mmap.mmap(-5, 100);
+        mmap(-5, 100);
         r["err_fd_bad"] = "noraise";
     } except OSError as e {
         r["err_fd_bad"] = str(e);
     }
     try {
-        mmap.mmap(-1, 64, offset=-1);
+        mmap(-1, 64, offset=-1);
         r["err_anon_neg_off"] = "noraise";
     } except OverflowError as e {
         r["err_anon_neg_off"] = str(e);
@@ -429,7 +429,7 @@ def _init_err_na(r: dict[str, any]) {
 
 
 def _mask_na(r: dict[str, any]) {
-    m3 = mmap.mmap(-1, 16);
+    m3 = mmap(-1, 16);
     try {
         m3.__setitem__(0, 300);
         r["err_setitem_range"] = "noraise";
@@ -484,7 +484,7 @@ def _mask_na(r: dict[str, any]) {
 
 
 def _bounds_na(r: dict[str, any]) {
-    mb = mmap.mmap(-1, 10);
+    mb = mmap(-1, 10);
     mb.write(b"x........x");
     r["find_default_pos10"] = mb.find(b"x");
     r["rfind_default_pos10"] = mb.rfind(b"x");

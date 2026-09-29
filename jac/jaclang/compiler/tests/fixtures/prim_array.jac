@@ -25,7 +25,7 @@ Documented divergences NOT exercised here (they would spuriously fail):
 ES/JS opts out (``array_cl`` returns an empty dict).
 """
 
-import array;
+import from array { array };
 
 
 def _digest(data: bytes) -> int {
@@ -41,19 +41,19 @@ def _digest(data: bytes) -> int {
 
 
 def array_py -> dict[any, any] {
-    a = array.array("i", [10, 20, 30]);
+    a = array("i", [10, 20, 30]);
     a.append(40);
     a.extend([50, 60]);
     a.insert(0, 5);
-    a2 = array.array("i");
+    a2 = array("i");
     a2.frombytes(b"\x01\x00\x00\x00\x02\x00\x00\x00");
-    f = array.array("d", [1.5, 2.5]);
-    h = array.array("h", [1, 2]);
+    f = array("d", [1.5, 2.5]);
+    h = array("h", [1, 2]);
     h.byteswap();
-    b = array.array("b", [1, 2, 3]);
+    b = array("b", [1, 2, 3]);
     b.reverse();
-    q = array.array("q", [1000000000000]);
-    B = array.array("B", [200, 255]);
+    q = array("q", [1000000000000]);
+    B = array("B", [200, 255]);
     popped = a.pop();
     popped0 = a.pop(0);
     bi = a.buffer_info();
@@ -87,10 +87,10 @@ def array_py -> dict[any, any] {
         "index_20": a.index(20),
         "count_20": a.count(20),
         "bi_len": bi[1],
-        "add_len": a.__add__(array.array("i", [7, 8])).__len__(),
+        "add_len": a.__add__(array("i", [7, 8])).__len__(),
         "mul_len": b.__mul__(2).__len__(),
         "mul_g4": b.__mul__(2).__getitem__(4),
-        "eq_same": 1 if a.__eq__(array.array("i", a.tolist())) else 0,
+        "eq_same": 1 if a.__eq__(array("i", a.tolist())) else 0,
         "eq_diff": 1 if a.__eq__(b) else 0
     };
     a.remove(20);
@@ -104,7 +104,7 @@ def array_py -> dict[any, any] {
         r["err_index"] = str(e);
     }
     try {
-        array.array("i").pop();
+        array("i").pop();
         r["err_pop"] = "noraise";
     } except IndexError as e {
         r["err_pop"] = str(e);
@@ -122,19 +122,19 @@ def array_py -> dict[any, any] {
         r["err_remove"] = str(e);
     }
     try {
-        array.array("z");
+        array("z");
         r["err_tc"] = "noraise";
     } except ValueError as e {
         r["err_tc"] = str(e);
     }
     try {
-        array.array("h", [65535]);
+        array("h", [65535]);
         r["err_over"] = "noraise";
     } except OverflowError as e {
         r["err_over"] = str(e);
     }
     try {
-        array.array("i", [1.5]);
+        array("i", [1.5]);
         r["err_float"] = "noraise";
     } except TypeError as e {
         r["err_float"] = str(e);
@@ -146,7 +146,7 @@ def array_py -> dict[any, any] {
         r["err_getitem"] = str(e);
     }
     # negative/absent stop slice semantics on index
-    ai = array.array("i", [1, 2, 3]);
+    ai = array("i", [1, 2, 3]);
     try {
         ai.index(3, 0, -1);
         r["err_index_stop"] = "noraise";
@@ -162,15 +162,15 @@ def array_py -> dict[any, any] {
     r["index_start_neg"] = ai.index(1, -100, 2);
     # value-based cross-typecode equality (each side read via its own
     # typecode; NaN never equals itself)
-    fb = array.array("b", [-1]);
-    fu = array.array("B", [255]);
+    fb = array("b", [-1]);
+    fu = array("B", [255]);
     r["eq_signed_unsigned"] = 1 if fb.__eq__(fu) else 0;
     r["ne_signed_unsigned"] = 1 if fb.__ne__(fu) else 0;
-    fi = array.array("i", [1]);
-    ff1 = array.array("f", [1.0]);
-    ff2 = array.array("f", [2.0]);
+    fi = array("i", [1]);
+    ff1 = array("f", [1.0]);
+    ff2 = array("f", [2.0]);
     nan = float("nan");
-    fn = array.array("f", [nan]);
+    fn = array("f", [nan]);
     r["eq_int_float"] = 1 if fi.__eq__(ff1) else 0;
     r["eq_int_float_diff"] = 1 if fi.__eq__(ff2) else 0;
     r["eq_nan"] = 1 if fn.__eq__(fn) else 0;
@@ -196,7 +196,7 @@ def _digest_na(data: bytes) -> int {
 
 
 def _core_na(r: dict[str, any]) {
-    a = array.array("i", [10, 20, 30]);
+    a = array("i", [10, 20, 30]);
     a.append(40);
     a.extend([50, 60]);
     a.insert(0, 5);
@@ -225,10 +225,10 @@ def _core_na(r: dict[str, any]) {
 
 
 def _widths_na(r: dict[str, any]) {
-    f = array.array("d", [1.5, 2.5]);
-    h = array.array("h", [1, 2]);
-    q = array.array("q", [1000000000000]);
-    B = array.array("B", [200, 255]);
+    f = array("d", [1.5, 2.5]);
+    h = array("h", [1, 2]);
+    q = array("q", [1000000000000]);
+    B = array("B", [200, 255]);
     r["isize_d"] = f.itemsize;
     r["isize_h"] = h.itemsize;
     r["isize_q"] = q.itemsize;
@@ -247,24 +247,24 @@ def _widths_na(r: dict[str, any]) {
 
 def _ops_na(r: dict[str, any]) {
     # Same post-pop contents as the sv lane's `a`: [10, 20, 30, 40, 50].
-    a = array.array("i", [10, 20, 30]);
+    a = array("i", [10, 20, 30]);
     a.append(40);
     a.extend([50, 60]);
     a.insert(0, 5);
     a.pop();
     a.pop(0);
-    a2 = array.array("i");
+    a2 = array("i");
     a2.frombytes(b"\x01\x00\x00\x00\x02\x00\x00\x00");
-    b = array.array("b", [1, 2, 3]);
+    b = array("b", [1, 2, 3]);
     b.reverse();
     r["fb_list_0"] = a2.tolist()[0];
     r["fb_list_1"] = a2.tolist()[1];
     r["b_rev_0"] = b.tolist()[0];
     r["b_rev_2"] = b.tolist()[2];
-    r["add_len"] = a.__add__(array.array("i", [7, 8])).__len__();
+    r["add_len"] = a.__add__(array("i", [7, 8])).__len__();
     r["mul_len"] = b.__mul__(2).__len__();
     r["mul_g4"] = b.__mul__(2).__getitem__(4);
-    same = array.array("i");
+    same = array("i");
     same.extend(a.tolist());
     r["eq_same"] = 1 if a.__eq__(same) else 0;
     r["eq_diff"] = 1 if a.__eq__(b) else 0;
@@ -272,7 +272,7 @@ def _ops_na(r: dict[str, any]) {
 
 
 def _err_na(r: dict[str, any]) {
-    a = array.array("i", [10, 20, 30]);
+    a = array("i", [10, 20, 30]);
     try {
         a.index(99);
         r["err_index"] = "noraise";
@@ -280,7 +280,7 @@ def _err_na(r: dict[str, any]) {
         r["err_index"] = str(e);
     }
     try {
-        array.array("i").pop();
+        array("i").pop();
         r["err_pop"] = "noraise";
     } except IndexError as e {
         r["err_pop"] = str(e);
@@ -298,19 +298,19 @@ def _err_na(r: dict[str, any]) {
         r["err_remove"] = str(e);
     }
     try {
-        array.array("z");
+        array("z");
         r["err_tc"] = "noraise";
     } except ValueError as e {
         r["err_tc"] = str(e);
     }
     try {
-        array.array("h", [65535]);
+        array("h", [65535]);
         r["err_over"] = "noraise";
     } except OverflowError as e {
         r["err_over"] = str(e);
     }
     try {
-        array.array("i", [1.5]);
+        array("i", [1.5]);
         r["err_float"] = "noraise";
     } except TypeError as e {
         r["err_float"] = str(e);
@@ -340,15 +340,15 @@ def _err_na(r: dict[str, any]) {
 def _eq_na(r: dict[str, any]) {
     # Value-based cross-typecode equality (each side read via its own
     # typecode; NaN never equals itself).
-    fb = array.array("b", [-1]);
-    fu = array.array("B", [255]);
+    fb = array("b", [-1]);
+    fu = array("B", [255]);
     r["eq_signed_unsigned"] = 1 if fb.__eq__(fu) else 0;
     r["ne_signed_unsigned"] = 1 if fb.__ne__(fu) else 0;
-    fi = array.array("i", [1]);
-    ff1 = array.array("f", [1.0]);
-    ff2 = array.array("f", [2.0]);
+    fi = array("i", [1]);
+    ff1 = array("f", [1.0]);
+    ff2 = array("f", [2.0]);
     nan = float("nan");
-    fn = array.array("f", [nan]);
+    fn = array("f", [nan]);
     r["eq_int_float"] = 1 if fi.__eq__(ff1) else 0;
     r["eq_int_float_diff"] = 1 if fi.__eq__(ff2) else 0;
     r["eq_nan"] = 1 if fn.__eq__(fn) else 0;

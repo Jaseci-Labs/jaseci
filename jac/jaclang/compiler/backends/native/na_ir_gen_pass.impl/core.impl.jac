@@ -1188,13 +1188,7 @@ impl NaIRGenPass._register_imported_struct_types -> None {
             continue;
         }
         if (not imp.from_loc) and (not imp.is_absorb) {
-            # A bundled na_stdlib module is native by location, the same
-            # as any from-form import of one: it must enter the dep walk
-            # even when this module carries no explicitly-marked native
-            # statements (an inferred-native module's statements need not
-            # be individually marked), or its classes never adopt layouts
-            # and every use in the importer refuses to lower.
-            if not _has_native_code and not is_bundled_native_module(mod_name) {
+            if not _has_native_code {
                 continue;
             }
             if not is_bundled_native_module(mod_name) {
