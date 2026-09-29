@@ -2143,9 +2143,7 @@ impl NativeStrEmitter.emit_isascii(
     p = ctx.pass_ref;
     b = get_builder(p);
     slen = p._call_str_len(b, target, name="isascii.len");
-    # __jac_str_isascii yields i1 and answers True for the empty string, so
-    # the emitter must hand back that bool directly: widening to i64 makes
-    # the value an integer downstream and str()/f-strings render 1 not True.
+
     return p._call_str_isascii(b, target, slen, name="isascii.ok");
 }
 

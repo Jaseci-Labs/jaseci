@@ -926,10 +926,7 @@ impl NaIRGenPass._codegen_string_index(
     _oob = b.or_(_lo, _hi, name="char.oob");
     self._emit_runtime_raise(_oob, "IndexError", "string index out of range");
     off = self._call_utf8_cp_off(b, target_val, len_val, index_val, name="char.off");
-    # ASCII characters come straight from the immortal __jac_chars table:
-    # emit the lookup inline so the consumer's IR body references the cache
-    # (and no per-character rc_alloc). Multi-byte sequences fall back to the
-    # shared helper, which heap-allocates the codepoint's UTF-8 bytes.
+
     _ch_ptr = b.gep(target_val, [off], name="char.ptr");
     _ch_byte = b.load(_ch_ptr, name="char.byte");
     _byte_idx = b.zext(_ch_byte, i64, name="char.idx");
