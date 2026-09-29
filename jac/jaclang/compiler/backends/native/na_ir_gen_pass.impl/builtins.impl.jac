@@ -906,6 +906,7 @@ impl NaIRGenPass._codegen_fstring(nd: uni.FString) -> (ir.Value | None) {
 impl NaIRGenPass._codegen_string_index(
     target_val: ir.Value, index_val: ir.Value, len_val: (ir.Value | None) = None
 ) -> (ir.Value | None) {
+    i32 = ir.IntType(32);
     i64 = ir.IntType(64);
 
     if len_val is None {
@@ -925,7 +926,26 @@ impl NaIRGenPass._codegen_string_index(
     _oob = b.or_(_lo, _hi, name="char.oob");
     self._emit_runtime_raise(_oob, "IndexError", "string index out of range");
     off = self._call_utf8_cp_off(b, target_val, len_val, index_val, name="char.off");
-    _ch = self._call_utf8_cp_at_off(b, target_val, off, name="char.val");
+    # ASCII characters come straight from the immortal __jac_chars table:
+    # emit the lookup inline so the consumer's IR body references the cache
+    # (and no per-character rc_alloc). Multi-byte sequences fall back to the
+    # shared helper, which heap-allocates the codepoint's UTF-8 bytes.
+    _ch_ptr = b.gep(target_val, [off], name="char.ptr");
+    _ch_byte = b.load(_ch_ptr, name="char.byte");
+    _byte_idx = b.zext(_ch_byte, i64, name="char.idx");
+    cache_gv = self._get_char_cache_gv();
+    _cached_ptr = b.gep(
+        cache_gv,
+        [ir.Constant(i32, 0), _byte_idx, ir.Constant(i32, 2), ir.Constant(i32, 0)],
+        name="char.cached"
+    );
+    _ascii = b.icmp_unsigned("<", _byte_idx, ir.Constant(i64, 0x80), name="char.isasc");
+    _ch = b.select(
+        _ascii,
+        _cached_ptr,
+        self._call_utf8_cp_at_off(b, target_val, off, name="char.multi"),
+        name="char.val"
+    );
 
     return _ch if self._nogc_headerless() else self._mark_owned(_ch);
 }

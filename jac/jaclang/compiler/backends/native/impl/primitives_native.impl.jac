@@ -2142,15 +2142,11 @@ impl NativeStrEmitter.emit_isascii(
 ) -> (ir.Value | None) {
     p = ctx.pass_ref;
     b = get_builder(p);
-    i64 = ir.IntType(64);
     slen = p._call_str_len(b, target, name="isascii.len");
-    is_ok = p._call_str_isascii(b, target, slen, name="isascii.ok");
-    return b.select(
-        b.icmp_unsigned("==", slen, ir.Constant(i64, 0), name="isascii.empty"),
-        ir.Constant(i64, 1),
-        b.zext(is_ok, i64, name="isascii.ext"),
-        name="isascii.res"
-    );
+    # __jac_str_isascii yields i1 and answers True for the empty string, so
+    # the emitter must hand back that bool directly: widening to i64 makes
+    # the value an integer downstream and str()/f-strings render 1 not True.
+    return p._call_str_isascii(b, target, slen, name="isascii.ok");
 }
 
 impl NativeStrEmitter.emit_isdecimal(
