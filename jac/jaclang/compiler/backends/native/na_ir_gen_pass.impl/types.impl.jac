@@ -3519,6 +3519,17 @@ impl NaIRGenPass._emit_list_contains_fn(
             eq = self.builder.fcmp_ordered("==", fn.args[0], elem);
         } elif isinstance(elem_type, ir.IntType) {
             eq = self.builder.icmp_signed("==", fn.args[0], elem);
+        } elif isinstance(elem_type, ir.PointerType) and elem_key is not None {
+            _eq = self._emit_comparison(
+                Tok.EE, fn.args[0], elem, False, key_ret=elem_key
+            );
+            eq = (
+                self._to_bool(_eq)
+                    if _eq is not None
+                    else self.builder.icmp_signed(
+                        "==", fn.args[0], elem, name="contains.eq"
+                    )
+            );
         } elif isinstance(elem_type, ir.PointerType) {
             eq = self.builder.icmp_unsigned("==", fn.args[0], elem);
         } else {

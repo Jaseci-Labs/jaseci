@@ -1301,6 +1301,19 @@ impl NaIRGenPass._codegen_compare_link(
                     or _lin_coll_tk.startswith("list[str")
                     or left.type == ir.IntType(8).as_pointer()
                 );
+                _lin_args = (
+                    self._agg_key_args(_in_hay_nd.type, "list")
+                        if isinstance(_in_hay_nd, uni.Expr)
+                        else None
+                );
+                _lin_key = _lin_args[0] if _lin_args else None;
+                if _lin_key is not None
+                    and _lin_key.is_any_type()
+                    and isinstance(left_node, uni.Expr)
+                    and left_node.type is not None
+                    and not left_node.type.is_any_type() {
+                    _lin_key = left_node.type;
+                }
                 _contains_fn = self._emit_list_contains_fn(
                     list_key, list_type.as_pointer(), elem_type, helpers, _lin_str_elems
                 );
