@@ -420,8 +420,9 @@ impl NaIRGenPass._emit_hash_core_helpers(
     }
     brf.ret_void();
 
-    mat_fn: ir.Function = ir.Function(
-        self.llvm_module, rehash_fnty, name=f"{_pre}_materialize_{_safe}"
+    mat_fnty = ir.FunctionType(ir.VoidType(), [cont_ptr_type]);
+    mat_fn: any = ir.Function(
+        self.llvm_module, mat_fnty, name=f"{_pre}_materialize_{_safe}"
     );
     mat_fn.linkage = "private";
     mat_fn.args[0].name = "cont";
