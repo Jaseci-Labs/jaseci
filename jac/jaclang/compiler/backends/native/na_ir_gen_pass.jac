@@ -376,6 +376,7 @@ walker NaIRGenPass(CompilerPass) {
         func_ret_elem_keys: dict[str, list[str | None]] = {},
         list_types: dict[str, ir.IdentifiedStructType] = {},
         list_helpers: dict[str, dict[str, any]] = {},
+        _list_helper_seq: int = 0,
         var_list_elem_struct: dict[str, ir.Type | None] = {},
         _pending_list_elem_struct: (ir.Type | None) = None,
         _self_arch: (str | None) = None,

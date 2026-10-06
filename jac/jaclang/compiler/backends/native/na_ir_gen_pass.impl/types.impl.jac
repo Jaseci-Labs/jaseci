@@ -3475,13 +3475,8 @@ impl NaIRGenPass._emit_list_contains_fn(
     _safe = list_key.replace(":", "_").replace("[", "_").replace("]", "_").replace(
         ",", "_"
     );
-    _name = "__list_contains_" + _safe;
-    try {
-        _old = self.llvm_module.get_global(_name);
-        if isinstance(_old, ir.Function) and _old.blocks {
-            return _old;
-        }
-    } except KeyError {}
+    self._list_helper_seq += 1;
+    _name = f"__list_contains_{_safe}.{self._list_helper_seq}";
     fn = self._emit_slow_path_helper(_name, i64, [elem_type, list_ptr_type]);
     fn.args[0].name = "needle";
     fn.args[1].name = "list";
@@ -3583,13 +3578,8 @@ impl NaIRGenPass._emit_list_compare_fn(
                     )
             )
     );
-    _name = "__list_compare_" + _safe + "_" + _op_name;
-    try {
-        _old = self.llvm_module.get_global(_name);
-        if isinstance(_old, ir.Function) and _old.blocks {
-            return _old;
-        }
-    } except KeyError {}
+    _name = f"__list_compare_{_safe}_{_op_name}.{self._list_helper_seq}";
+    self._list_helper_seq += 1;
     fn = self._emit_slow_path_helper(_name, i1, [list_ptr_type, list_ptr_type]);
     fn.args[0].name = "left";
     fn.args[1].name = "right";
