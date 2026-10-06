@@ -524,76 +524,26 @@ test "serve flags are recognised only when they were actually typed" {
     # None means "not typed"; only explicitly passed flags become overrides.
     # The old `client` slot is gone with the --client flag.
     over = execution._serve_overrides(
-        execution._ServeFlags(
-            port=None,
-            dev=None,
-            api_port=None,
-            no_client=None,
-            faux=None,
-            host=None,
-            platform=None,
-            fleet=False
-        ),
-        None
+        None, None, None, None, None, None, None, False, None
     );
     assert over == {};
     over = execution._serve_overrides(
-        execution._ServeFlags(
-            port=None,
-            dev=True,
-            api_port=None,
-            no_client=None,
-            faux=None,
-            host=None,
-            platform=None,
-            fleet=False
-        ),
-        None
+        None, True, None, None, None, None, None, False, None
     );
     assert over == {"dev": True};
     # --no-client is a real choice, not an absence: False must survive.
     over = execution._serve_overrides(
-        execution._ServeFlags(
-            port=None,
-            dev=None,
-            api_port=None,
-            no_client=False,
-            faux=None,
-            host=None,
-            platform=None,
-            fleet=False
-        ),
-        None
+        None, None, None, False, None, None, None, False, None
     );
     assert over == {"no_client": False};
     # --platform is the only client-side choice that survives.
     over = execution._serve_overrides(
-        execution._ServeFlags(
-            port=None,
-            dev=None,
-            api_port=None,
-            no_client=None,
-            faux=None,
-            host=None,
-            platform="ios",
-            fleet=False
-        ),
-        None
+        None, None, None, None, None, None, "ios", False, None
     );
     assert over == {"platform": "ios"};
     # --fleet is a plain switch: only True is an override.
     over = execution._serve_overrides(
-        execution._ServeFlags(
-            port=None,
-            dev=None,
-            api_port=None,
-            no_client=None,
-            faux=None,
-            host=None,
-            platform=None,
-            fleet=True
-        ),
-        None
+        None, None, None, None, None, None, None, True, None
     );
     assert over == {"fleet": True};
 }

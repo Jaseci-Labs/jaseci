@@ -763,15 +763,11 @@ def resolved_callback_bindings(
     unreferenced = {b.name for b in bindings} - set(declarations);
     if unreferenced {
         sys.stderr.write(
-            f"[link plan] no IR references for na->sv callback(s) {', '.join(
-                sorted(unreferenced)
-            )}; skipping their bind slots\n"
+            f"[link plan] no IR references for na->sv callback(s) {
+                ', '.join(sorted(unreferenced))
+            }; skipping their bind slots\n"
         );
-        bindings = [
-            b
-            for b in bindings
-            if b.name in declarations
-        ];
+        bindings = [b for b in bindings if b.name in declarations];
     }
     return (bindings, declarations);
 }
