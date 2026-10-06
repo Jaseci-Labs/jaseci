@@ -209,7 +209,8 @@ impl NaIRGenPass._internal_error(
     self.emit(
         E5092,
         node_override=nd,
-        kind=f"{kind} (native emitter error in)",
+        kind=f"{kind} (native emitter error in: "
+        f"{type(exc).__name__}: {exc})",
         name=name,
         help_text=f"The native backend raised {type(exc).__name__} while lowering "
         f"this {kind}: {exc}. This is a compiler bug -- please report it. Pin the "
