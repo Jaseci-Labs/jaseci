@@ -61,6 +61,7 @@ import from jaclang.compiler.frontend.codeinfo {
     str_len_tag,
     STR_ASCII_TAG_BIT,
     STR_LEN_TAG_BIT,
+    STR_LEN_PAYLOAD_MASK,
     STR_LEN_TAG_SHIFT
 }
 import from jaclang.compiler.frontend.constant {

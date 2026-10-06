@@ -65,9 +65,15 @@ glob HDR_MAGIC: int = 44061,
      HDR_MAGIC_SHIFT_BASE: int = 44061 * 4294967296,
      RC_SENTINEL: int = 0x7FFFFFFFFFFFFFFF;
 
+# The ASCII flag lives in the dtor slot's reserved high bit, above the length
+# payload: a tag without the flag reads back identically under the stage-0
+# pinned kernel's encoding (`length << 1 | 1`), whose strings (jac_str_new
+# exports, C-bridge results) branch-compiled units must keep parsing until the
+# pin catches up. Length parse sites mask the flag off.
 glob STR_LEN_TAG_BIT: int = 1,
-     STR_ASCII_TAG_BIT: int = 2,
-     STR_LEN_TAG_SHIFT: int = 2;
+     STR_ASCII_TAG_BIT: int = -9223372036854775808,
+     STR_LEN_PAYLOAD_MASK: int = 9223372036854775807,
+     STR_LEN_TAG_SHIFT: int = 1;
 
 glob JACSTR_DESC_FIELDS: dict[(str, tuple[str, ...])] = {
          'jacstr3': ('root', 'data', 'len'),
