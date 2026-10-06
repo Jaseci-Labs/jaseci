@@ -144,7 +144,6 @@ import from jaclang.compiler.backends.native.na_constants {
     NATIVE_COPY_FUNCS,
     NATIVE_OS_FUNCS,
     NATIVE_OSPATH_FUNCS,
-    NATIVE_STDLIB_FUNC_TABLES,
     RC_BUFFERED_BIT,
     RC_COLOR_BLACK,
     RC_COLOR_GRAY,
@@ -558,8 +557,6 @@ walker NaIRGenPass(CompilerPass) {
         set_release_fns: dict[str, ir.Function] = {},
         _struct_bodies_done: set[str] = set(),
         _native_stdlib_modules: set[str] = set(),
-        _native_stdlib_bare_names: dict[str, tuple[(str, str)]] = {},
-        _stdlib_call_emitters: dict[str, Callable] = {},
         _native_module_imports: set[str] = set(),
         _stdlib_helpers_emitted: set[str] = set(),
         _global_origins: dict[str, str] = {},
@@ -1414,8 +1411,6 @@ walker NaIRGenPass(CompilerPass) {
     def _declare_clib_struct(decl: uni.Archetype) -> (str | None);
     def _define_clib_struct(decl: uni.Archetype) -> None;
     def _ensure_clib_struct(t: any) -> (str | None);
-    def _record_stdlib_bare_name(mod_name: str, item: uni.UniNode) -> None;
-    def _stdlib_call_emitter(mod_name: str) -> (Callable | None);
     def _declare_pending_clib_abilities -> None;
     def _declare_clib_definitions -> None;
     def _clib_abi_signature(decl: uni.Ability) -> str;
