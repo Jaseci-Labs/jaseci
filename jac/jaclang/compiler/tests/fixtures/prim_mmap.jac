@@ -25,7 +25,7 @@ Not exercised (documented na divergences or platform-dependent):
 ES/JS opts out (``mmap_cl`` returns an empty dict).
 """
 
-import from mmap { mmap, ACCESS_READ, ACCESS_WRITE };
+import from mmap { mmap, ACCESS_READ, ACCESS_WRITE }
 
 
 def _digest(data: bytes) -> int {

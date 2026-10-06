@@ -25,7 +25,7 @@ Documented divergences NOT exercised here (they would spuriously fail):
 ES/JS opts out (``array_cl`` returns an empty dict).
 """
 
-import from array { array };
+import from array { array }
 
 
 def _digest(data: bytes) -> int {
