@@ -351,14 +351,6 @@ glob STR_NA_GAPS: list[any] = [
          ),
          ("math", "prim_math.jac", "math_py", "math_cl", "math_na", ["na"]),
          (
-             "struct intercept",
-             "prim_struct.jac",
-             "struct_py",
-             "struct_cl",
-             "struct_na",
-             ["na"]
-         ),
-         (
              "binascii bundled",
              "prim_binascii.jac",
              "binascii_py",

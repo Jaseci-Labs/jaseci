@@ -3000,19 +3000,7 @@ walker NaIRGenPass(CompilerPass) {
         little: bool
     ) -> (ir.Value | None);
 
-    def _emit_struct_copy_bytes(dst: ir.Value, src: ir.Value, n: ir.Value);
-    def _emit_struct_half_to_f64(hv: ir.Value) -> ir.Value;
-    def _emit_struct_f64_to_half(nd: uni.FuncCall, fv: ir.Value) -> ir.Value;
-    def _emit_struct_pack_fields(
-        nd: uni.FuncCall,
-        arg_vals: list[ir.Value],
-        fields: list[tuple[str, int, bool]],
-        little: bool,
-        data: ir.Value
-    ) -> bool;
 
-    def _emit_time_call(name: str, nd: uni.FuncCall) -> (ir.Value | None);
-    def _emit_clock_gettime(clock_id: int) -> tuple[ir.Value, ir.Value];
     def _emit_trace_fn(arch_name: str) -> None;
     def _register_trace_pair(
         dtor_fn: (ir.Function | None), trace_fn: ir.Function
