@@ -47,10 +47,13 @@ test "a server binding with no declared native caller is a compile error" {
         "binding has no declared provider"
     );
     msgs = " ".join(str(e) for e in prog.errors_had);
-    assert "getppid" in msgs , (
-        f"the error must name the callee; got: {msgs[:300]}"
-    );
-    assert "E5092" in msgs , (
+    assert "getppid" in msgs , (f"the error must name the callee; got: {msgs[:300]}");
+    codes = [
+        str(e.code.code)
+        for e in prog.errors_had
+        if e.code is not None
+    ];
+    assert "E5092" in codes , (
         f"the refusal must be a codegen error, not silent codegen; got: {msgs[:300]}"
     );
 }
@@ -62,7 +65,7 @@ test "qualified bare and aliased spellings resolve to one interop symbol" {
             "jac.toml": ('[placement.pins]\nhelper = "server"\n'),
             "helper.jac": ("def:pub answer -> int {\n" "    return 42;\n" "}\n"),
             "main.jac": (
-                "import helper\n"
+                "import helper;\n"
                 + "import from helper { answer }\n"
                 + "import from helper { answer as ans }\n\n"
                 + "def:pub three_ways -> int {\n"
@@ -74,9 +77,7 @@ test "qualified bare and aliased spellings resolve to one interop symbol" {
     prog = JacProgram();
     mod = prog.compile(
         os.path.join(tmp, "main.jac"),
-        options=CompileOptions(
-            default_codespace='native', skip_native_engine=True
-        )
+        options=CompileOptions(default_codespace='native', skip_native_engine=True)
     );
     assert not prog.errors_had , (
         f"all three spellings of the pinned function must lower; "
@@ -88,11 +89,7 @@ test "qualified bare and aliased spellings resolve to one interop symbol" {
     assert len(decls) == 1 , (
         f"qualified/bare/aliased spellings must emit one extern, got {decls}"
     );
-    assert "answer" in decls[0] , (
-        f"the extern keeps the export name, got {decls[0]}"
-    );
+    assert "answer" in decls[0] , (f"the extern keeps the export name, got {decls[0]}");
     bare_name = re.search(r"@answer\b", ir_text);
-    assert bare_name is None , (
-        "no bare-name extern may survive the closed world"
-    );
+    assert bare_name is None , ("no bare-name extern may survive the closed world");
 }

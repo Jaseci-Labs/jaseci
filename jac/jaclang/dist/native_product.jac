@@ -69,6 +69,7 @@ def write_native_product(
                 'name': binding.name,
                 'source_module': binding.source_module or '',
                 'ret_type': binding.ret_type,
+
             } for binding in bindings
         ]
     };

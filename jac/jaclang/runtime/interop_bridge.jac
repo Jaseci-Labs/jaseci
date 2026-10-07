@@ -1,4 +1,5 @@
 import ctypes;
+import hashlib;
 import logging;
 import from collections.abc { Callable, Iterable }
 import from typing { Protocol }
@@ -9,13 +10,46 @@ class CallbackSignature(Protocol) {
         source_module: (str | None) = None;
 }
 
+"""Same rule as codeinfo.native_safe_sym -- duplicated here because this
+module is vendored into runtime wheels and cannot import the compiler.
+Keep the encodings identical: compiler emits, runtime binds."""
+def _interop_safe_sym(src: str) -> str {
+    safe = '';
+    for ch in src {
+        if ((ch >= 'a') and (ch <= 'z'))
+            or ((ch >= 'A') and (ch <= 'Z'))
+            or ((ch >= '0') and (ch <= '9'))
+            or (ch == '_') {
+            safe += ch;
+        } else {
+            safe += '_';
+        }
+    }
+    return f"{safe}_{hashlib.sha1(src.encode()).hexdigest()[:8]}";
+}
+
+"""The closed-world link name for a native->server callback binding.
+
+Interop symbols are module-qualified (#9782): the emitting unit and the
+runtime that binds the callback agree on one name derived from the
+binding's source module, so nothing resolves a bare name against the
+process-global symbol table.
+"""
+def interop_callback_symbol(binding: CallbackSignature) -> str {
+    if binding.source_module {
+        return f"__jac_na_import_{_interop_safe_sym(binding.source_module)}_{_interop_safe_sym(
+            binding.name
+        )}";
+    }
+    return f"__jac_na_import_{_interop_safe_sym(binding.name)}";
+}
+
 obj NativeCallback {
     has name: str,
         ret_type: str,
         param_types: list[str],
         source_module: str = '';
 }
-
 obj NativeLibrary {
     has path: str,
         bindings: list[NativeCallback] = [],
@@ -185,13 +219,13 @@ def register_py_callbacks(
     register_symbol: Callable[[str, int], None]
 ) {
     for binding in bindings {
-        import from jaclang.compiler.frontend.codeinfo { interop_callback_symbol }
         _sym = interop_callback_symbol(binding);
         ret_ct = JAC_TO_CTYPES.get(binding.ret_type);
         arg_cts = [JAC_TO_CTYPES.get(pt) for pt in binding.param_types];
         if ret_ct is None or None in arg_cts {
             raise RuntimeError(
-                f"Native callback '{binding.name}' (from {binding.source_module or '?'}) "
+                f"Native callback '{binding.name}' (from {binding.source_module
+                    or '?'}) "
                 f"has an unmarshallable signature ret={binding.ret_type} "
                 f"params={binding.param_types}; the closed world does not "
                 f"default unknown types to i64 (#9782)."

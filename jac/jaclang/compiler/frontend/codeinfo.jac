@@ -470,19 +470,6 @@ def native_test_symbol(name: str, line: int, prefix: str = "") -> str {
     return native_symbol_name(prefix, bare) if prefix else bare;
 }
 
-def interop_callback_symbol(binding: InteropBinding) -> str {
-    """The closed-world link name for a native->server callback binding.
-
-    Interop symbols are module-qualified (#9782): the emitting unit and the
-    runtime that binds the callback agree on one name derived from the
-    binding's source module, so nothing resolves a bare name against the
-    process-global symbol table.
-    """;
-    if binding.source_module {
-        return f"__jac_na_import_{native_safe_sym(binding.source_module)}_{native_safe_sym(binding.name)}";
-    }
-    return f"__jac_na_import_{native_safe_sym(binding.name)}";
-}
 
 
 glob JAC_ENTRY_SYMBOL: str = "jac_entry",

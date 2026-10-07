@@ -719,7 +719,7 @@ def _target_machine(plan: LinkPlan, kind: ArtifactKind) -> TargetMachine {
 }
 
 def _interop_sym(binding: InteropBinding) -> str {
-    import from jaclang.compiler.frontend.codeinfo { interop_callback_symbol }
+    import from jaclang.runtime.interop_bridge { interop_callback_symbol }
     return interop_callback_symbol(binding);
 }
 
@@ -1175,7 +1175,9 @@ def link_artifact(
     callback_ir = callback_glue_ir(plan);
     glue_ir += callback_ir;
     if callback_ir {
-        glue_exports.extend('__jac_bind_' + _interop_sym(b) for b in plan.callback_bindings);
+        glue_exports.extend(
+            '__jac_bind_' + _interop_sym(b) for b in plan.callback_bindings
+        );
     }
     registry = plan.prog.native_units();
     code_inputs: list[bytes] = [];
