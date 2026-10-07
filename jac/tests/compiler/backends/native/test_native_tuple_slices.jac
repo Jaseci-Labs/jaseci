@@ -57,6 +57,15 @@ test "an annotated variadic local holds every unpacked field" {
 test "a slice of a None-narrowed optional string still lowers" {
     print("MARK 5: narrowed str", flush=True);
     eng = _engine();
+    print("MARK 5a: is-not-none", flush=True);
+    assert get_func(eng, "narrowed_is_not_none", ctypes.c_int64)() == 1;
+    print("MARK 5b: startswith", flush=True);
+    assert get_func(eng, "narrowed_startswith", ctypes.c_int64)() == 1;
+    print("MARK 5c: slice+len", flush=True);
+    assert get_func(eng, "narrowed_slice_len", ctypes.c_int64)() == 3;
+    print("MARK 5d: slice+eq", flush=True);
+    assert get_func(eng, "narrowed_slice_eq", ctypes.c_int64)() == 1;
+    print("MARK 5e: combined", flush=True);
     assert get_func(eng, "narrowed_str_tail", ctypes.c_int64)() == 3;
 }
 
