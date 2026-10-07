@@ -83,11 +83,16 @@ test "qualified bare and aliased spellings resolve to one interop symbol" {
         f"all three spellings of the pinned function must lower; "
         f"errors: {[str(e) for e in prog.errors_had]}"
     );
+    assert mod.gen.llvm_ir is not None , (
+        "main.jac must lower for the native codespace"
+    );
     ir_text = str(mod.gen.llvm_ir);
     import re;
     decls = re.findall(r"declare [^\n]*@__jac_na_import_\w+", ir_text);
+    all_decls = re.findall(r"declare [^\n]*@[^(\s]+", ir_text);
     assert len(decls) == 1 , (
-        f"qualified/bare/aliased spellings must emit one extern, got {decls}"
+        f"qualified/bare/aliased spellings must emit one extern, "
+        f"got {decls}; all declares: {all_decls[:20]}"
     );
     assert "answer" in decls[0] , (f"the extern keeps the export name, got {decls[0]}");
     bare_name = re.search(r"@answer\b", ir_text);

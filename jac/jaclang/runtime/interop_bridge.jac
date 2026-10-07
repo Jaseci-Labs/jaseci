@@ -10,10 +10,10 @@ class CallbackSignature(Protocol) {
         source_module: (str | None) = None;
 }
 
-"""Same rule as codeinfo.native_safe_sym -- duplicated here because this
-module is vendored into runtime wheels and cannot import the compiler.
-Keep the encodings identical: compiler emits, runtime binds."""
 def _interop_safe_sym(src: str) -> str {
+    # Same rule as codeinfo.native_safe_sym -- duplicated here because this
+    # module is vendored into runtime wheels and cannot import the compiler.
+    # Keep the encodings identical: compiler emits, runtime binds.
     safe = '';
     for ch in src {
         if ((ch >= 'a') and (ch <= 'z'))
@@ -28,14 +28,10 @@ def _interop_safe_sym(src: str) -> str {
     return f"{safe}_{hashlib.sha1(src.encode()).hexdigest()[:8]}";
 }
 
-"""The closed-world link name for a native->server callback binding.
-
-Interop symbols are module-qualified (#9782): the emitting unit and the
-runtime that binds the callback agree on one name derived from the
-binding's source module, so nothing resolves a bare name against the
-process-global symbol table.
-"""
 def interop_callback_symbol(binding: CallbackSignature) -> str {
+    # The closed-world link name for a native->server callback binding (#9782):
+    # qualified by the binding's source module so nothing resolves a bare name
+    # against the process-global symbol table.
     if binding.source_module {
         return f"__jac_na_import_{_interop_safe_sym(binding.source_module)}_{_interop_safe_sym(
             binding.name
@@ -50,6 +46,7 @@ obj NativeCallback {
         param_types: list[str],
         source_module: str = '';
 }
+
 obj NativeLibrary {
     has path: str,
         bindings: list[NativeCallback] = [],

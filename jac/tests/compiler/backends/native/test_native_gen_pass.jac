@@ -2755,11 +2755,14 @@ test "py interop py function not defined in native ir" {
     # The extern is module-qualified (#9782 closed-world symbols), so the
     # native code calls __jac_na_import_<module>_py_double instead of a
     # bare name resolved against the process symbol table.
-    assert re.search(
-            r'declare i64 @"__jac_na_import_\w*py_double(_\w+)?"', llvm_ir_str
-        ) is not None , (
+    assert re.search(r'declare i64 @"__jac_na_import_\w*py_double(_\w+)?"', llvm_ir_str)
+        is not None , (
         f"expected a qualified interop declare for py_double; IR excerpt: "
-        f"{[ln for ln in llvm_ir_str.split(chr(10)) if 'py_double' in ln]}"
+        f"{[
+            ln
+            for ln in llvm_ir_str.split(chr(10))
+            if 'py_double' in ln
+        ]}"
     );
 }
 

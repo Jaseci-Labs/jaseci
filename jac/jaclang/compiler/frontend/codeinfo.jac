@@ -471,7 +471,6 @@ def native_test_symbol(name: str, line: int, prefix: str = "") -> str {
 }
 
 
-
 glob JAC_ENTRY_SYMBOL: str = "jac_entry",
      JAC_SHARED_INIT_SYMBOL: str = "__jac_shared_init";
 
