@@ -93,13 +93,13 @@ test "bare and aliased spellings resolve to one interop symbol" {
     );
     ir_text = str(mod.gen.llvm_ir);
     import re;
-    decls = re.findall(r"declare [^\n]*@__jac_na_import_\w+", ir_text);
+    decls = re.findall(r"declare [^\n]*@\"?__jac_na_import_\w+", ir_text);
     all_decls = re.findall(r"declare [^\n]*@[^(\s]+", ir_text);
     assert len(decls) == 1 , (
         f"bare/aliased spellings must emit one extern, "
         f"got {decls}; all declares: {all_decls[:20]}"
     );
     assert "answer" in decls[0] , (f"the extern keeps the export name, got {decls[0]}");
-    bare_name = re.search(r"@answer\b", ir_text);
+    bare_name = re.search(r'@"answer"', ir_text);
     assert bare_name is None , ("no bare-name extern may survive the closed world");
 }
