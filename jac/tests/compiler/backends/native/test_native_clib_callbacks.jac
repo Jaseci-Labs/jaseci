@@ -113,7 +113,7 @@ test "Callback records survive managed field and container cleanup" {
     guarded: list[bool] = [False];
     def allocate(count: int, size: int) -> int {
         if guarded[0] {
-            assert count * size <= mmap.PAGESIZE, (
+            assert count * size <= mmap.PAGESIZE , (
                 f"calloc(count={count}, size={size}) exceeds one page"
             );
             return address + mmap.PAGESIZE;
