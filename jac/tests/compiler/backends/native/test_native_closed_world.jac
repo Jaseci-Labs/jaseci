@@ -77,7 +77,7 @@ test "qualified bare and aliased spellings resolve to one interop symbol" {
     prog = JacProgram();
     mod = prog.compile(
         os.path.join(tmp, "main.jac"),
-        options=CompileOptions(default_codespace='native', skip_native_engine=True)
+        options=CompileOptions(aot_mode=True, default_codespace='native', skip_native_engine=True)
     );
     assert not prog.errors_had , (
         f"all three spellings of the pinned function must lower; "
