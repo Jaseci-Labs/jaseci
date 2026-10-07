@@ -59,17 +59,20 @@ test "a server binding with no declared native caller is a compile error" {
 }
 
 
-test "qualified bare and aliased spellings resolve to one interop symbol" {
+test "bare and aliased spellings resolve to one interop symbol" {
+    # `import helper` itself is refused earlier on the native pathway (a
+    # module object cannot cross the boundary), so the spellings that reach
+    # the emit are the bare and aliased `from` forms of one export -- and
+    # they must emit a single qualified extern.
     tmp = _write_mods(
         {
             "jac.toml": ('[placement.pins]\nhelper = "server"\n'),
             "helper.jac": ("def:pub answer -> int {\n" "    return 42;\n" "}\n"),
             "main.jac": (
-                "import helper;\n"
-                + "import from helper { answer }\n"
+                "import from helper { answer }\n"
                 + "import from helper { answer as ans }\n\n"
-                + "def:pub three_ways -> int {\n"
-                + "    return helper.answer() + answer() + ans();\n"
+                + "def:pub two_ways -> int {\n"
+                + "    return answer() + ans();\n"
                 + "}\n"
             )
         }
@@ -77,10 +80,12 @@ test "qualified bare and aliased spellings resolve to one interop symbol" {
     prog = JacProgram();
     mod = prog.compile(
         os.path.join(tmp, "main.jac"),
-        options=CompileOptions(aot_mode=True, default_codespace='native', skip_native_engine=True)
+        options=CompileOptions(
+            aot_mode=True, default_codespace='native', skip_native_engine=True
+        )
     );
     assert not prog.errors_had , (
-        f"all three spellings of the pinned function must lower; "
+        f"both spellings of the pinned function must lower; "
         f"errors: {[str(e) for e in prog.errors_had]}"
     );
     assert mod.gen.llvm_ir is not None , (
@@ -91,7 +96,7 @@ test "qualified bare and aliased spellings resolve to one interop symbol" {
     decls = re.findall(r"declare [^\n]*@__jac_na_import_\w+", ir_text);
     all_decls = re.findall(r"declare [^\n]*@[^(\s]+", ir_text);
     assert len(decls) == 1 , (
-        f"qualified/bare/aliased spellings must emit one extern, "
+        f"bare/aliased spellings must emit one extern, "
         f"got {decls}; all declares: {all_decls[:20]}"
     );
     assert "answer" in decls[0] , (f"the extern keeps the export name, got {decls[0]}");
