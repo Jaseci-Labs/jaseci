@@ -477,7 +477,7 @@ def interop_callback_symbol(binding: InteropBinding) -> str {
     runtime that binds the callback agree on one name derived from the
     binding's source module, so nothing resolves a bare name against the
     process-global symbol table.
-    """
+    """;
     if binding.source_module {
         return f"__jac_na_import_{native_safe_sym(binding.source_module)}_{native_safe_sym(binding.name)}";
     }
