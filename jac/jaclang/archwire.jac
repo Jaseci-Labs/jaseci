@@ -8317,6 +8317,8 @@ graph import compiler {
             MatchStmt,
             Module,
             ModuleCode,
+            ModuleItem,
+            ModulePath,
             Name,
             ParamVar,
             ReturnStmt,
