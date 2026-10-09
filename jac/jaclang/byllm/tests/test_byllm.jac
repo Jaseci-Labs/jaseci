@@ -19,6 +19,9 @@ import from jaclang.byllm.exceptions {
     McpError
 }
 import from jaclang.byllm.mcp { McpClient, McpTool }
+import from jaclang.byllm.schema { type_display_name }
+import typing;
+import from typing { Optional }
 import from jaclang.byllm.types { Tool, Message, MessageRole }
 import from jaclang { JacRuntimeInterface as Jac }
 import from jaclang.byllm.lib { MockLLM }
@@ -294,6 +297,49 @@ test "parse_response raises OutputConversionError with the raw output attached" 
     }
 }
 
+test "return types are named the way they are written" {
+    # Error messages and the retry prompt name the return type with this. A union
+    # has no usable __name__ (missing before Python 3.14, just "Union" on 3.14),
+    # so composite annotations are spelled out member by member.
+    for (ty, expected) in [
+        (int, "int"),
+        (_TestPerson, "_TestPerson"),
+        (None, "None"),
+        (int | None, "int | None"),
+        (Optional[int], "int | None"),
+        (_TestPerson | int | None, "_TestPerson | int | None"),
+        (list[_TestPerson], "list[_TestPerson]"),
+        (dict[str, list[int | None]], "dict[str, list[int | None]]"),
+        (tuple[int, ...], "tuple[int, ...]"),
+        (Literal["low", 2], "Literal['low', 2]"),
+        (Callable[[int], str], "Callable[[int], str]"),
+        (typing.Any, "Any")
+    ] {
+        got = type_display_name(ty);
+        assert got == expected , f"{ty!r}: expected '{expected}', got '{got}'";
+    }
+}
+
+test "a composite return that will not parse is a conversion error naming the type" {
+    raw = "not json";
+    for (resp_type, name) in [
+        (int | None, "'int | None'"),
+        (int | float | None, "'int | float | None'"),
+        (list[_TestPerson], "'list[_TestPerson]'")
+    ] {
+        err: any = None;
+        try {
+            mk_run(resp_type=resp_type).parse_response(raw);
+        } except OutputConversionError as e {
+            err = e;
+        }
+        assert err is not None , f"{name}: expected OutputConversionError";
+        assert name in str(err) , f"{name}: the message should name the type, got: {err}";
+        assert err.raw_output == raw , f"{name}: raw_output lost, got {err.raw_output!r}";
+        assert err.__cause__ is not None , f"{name}: the parse failure must be chained";
+    }
+}
+
 test "parse_response passes through str returns and valid typed json" {
     raw = "This is not JSON at all";
     assert mk_run(resp_type=str).parse_response(raw) == raw , (
@@ -347,6 +393,27 @@ test "finish tool error on type mismatch" {
         assert "Person" in str(e) , f"Error should name the target type, got: {e}";
     }
     assert raised , "Expected FinishToolError for mismatched input type";
+}
+
+test "finish tool error names a composite target type and keeps the cause" {
+    for (resp_type, name) in [
+        (int | None, "'int | None'"),
+        (int | float, "'int | float'"),
+        (list[_TestPerson], "'list[_TestPerson]'")
+    ] {
+        finish_tool = Tool.make_finish_tool(resp_type);
+        err: any = None;
+        try {
+            finish_tool("not a value");
+        } except FinishToolError as e {
+            err = e;
+        }
+        assert err is not None , f"{name}: expected FinishToolError";
+        assert f"does not match expected type {name}" in str(err) , (
+            f"{name}: the model should be told which type was expected, got: {err}"
+        );
+        assert err.__cause__ is not None , f"{name}: the validation error must be chained";
+    }
 }
 
 test "finish tool error not raised for valid type" {

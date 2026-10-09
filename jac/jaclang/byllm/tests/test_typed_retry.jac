@@ -9,6 +9,7 @@ import asyncio;
 import from pathlib { Path }
 import from jaclang.byllm.config_loader { get_byllm_config, reset_byllm_config }
 import from jaclang.byllm.lib { MockLLM }
+import from jaclang.byllm.exceptions { OutputConversionError }
 import from support { FIXTURE_DIR, fail, prompt_text, say }
 
 
@@ -83,6 +84,55 @@ test "retries are bounded, and the error reports how many were spent" {
             f"{label}: the error should report the counts, got: {err}"
         );
     }
+}
+
+
+test "a union return that will not parse is retried like any other typed return" {
+    optional_llm = MockLLM(outputs=[say("x"), say('{"schema_object_wrapper": 42}')]);
+    either_llm = MockLLM(
+        outputs=[say("x"), say('{"schema_object_wrapper": {"name": "Ada", "age": 36}}')]
+    );
+
+    def maybe_age -> int | None by optional_llm();
+    def person_or_age -> RetryPerson | int by either_llm();
+
+    age = maybe_age();
+    person: any = person_or_age();
+    assert age == 42 , f"int | None: expected 42 after one retry, got {age!r}";
+    assert (person.name, person.age) == ("Ada", 36) , (
+        f"RetryPerson | int: expected Ada after one retry, got {person!r}"
+    );
+    for (label, model) in [
+        ("int | None", optional_llm),
+        ("RetryPerson | int", either_llm)
+    ] {
+        attempts = len(model.seen);
+        assert attempts == 2 , f"{label}: expected one retry, got {attempts}";
+        assert f"`{label}`" in prompt_text(model, 1) , (
+            f"{label}: the retry prompt must name the union as written"
+        );
+    }
+
+    # Once the budget is spent the caller gets the usual conversion error, chained
+    # back to the parse failure of the last attempt.
+    spent = MockLLM(outputs=[say("nope-0"), say("nope-1")]);
+
+    def stubborn_age -> int | None by spent(max_output_retries=1);
+
+    err: any = None;
+    try {
+        stubborn_age();
+    } except OutputConversionError as e {
+        err = e;
+    }
+    assert err is not None , "an exhausted union return must raise OutputConversionError";
+    assert "'int | None'" in str(err) , f"the error should name the type, got: {err}";
+    assert isinstance(err.__cause__, OutputConversionError) , (
+        f"the last attempt's conversion error must be chained, got {err.__cause__!r}"
+    );
+    assert isinstance(err.__cause__.__cause__, ValueError) , (
+        f"the JSON parse failure must be chained, got {err.__cause__.__cause__!r}"
+    );
 }
 
 
