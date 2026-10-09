@@ -1,6 +1,7 @@
 import atexit;
 import contextlib;
 import concurrent.futures;
+import json;
 import os;
 import socket;
 import subprocess;
@@ -13,9 +14,19 @@ import requests;
 import from pymongo { MongoClient }
 import from testcontainers.community.mongodb { MongoDbContainer }
 import from testcontainers.community.redis { RedisContainer }
-import from jaclang.jac0core.archetype { Root }
+import from unittest.mock { patch }
+import from uuid { UUID, uuid4 }
+import from jaclang.jac0core.archetype { Anchor, EdgeAnchor, NodeAnchor, Root }
+import from jaclang.jac0core.runtime { JacRuntime }
+import from jaclang.runtimelib.context { ExecutionContext }
+import from jaclang.runtimelib.serializer { Serializer }
+import from jaclang.runtimelib.utils { to_uuid }
 import from jaclang.scale.memory.context { JScaleExecutionContext }
-import from jaclang.scale.memory.memory_hierarchy { _process_cache, MongoBackend }
+import from jaclang.scale.memory.memory_hierarchy {
+    _process_cache,
+    MongoBackend,
+    ScaleTieredMemory
+}
 import from jaclang.scale.persistence.db { close_all_db_connections }
 
 def get_free_port -> int {
@@ -1439,114 +1450,202 @@ test "system root cache: N consecutive inits cost one MongoDB fetch total" {
 }
 
 
-test "L2 Redis is invalidated (not re-poisoned) after edge-delta atomic write (issue 6295)" {
-    import json;
-    import from uuid { uuid4, UUID }
-    import from jaclang.jac0core.archetype { EdgeAnchor, NodeAnchor }
-    import from jaclang.runtimelib.utils { to_uuid }
-    import from jaclang.scale.memory.memory_hierarchy {
-        ScaleTieredMemory,
-        MongoBackend
-    }
+node _CacheWitness {
+    has pointer: str = "",
+        stamp: str = "seed";
+}
 
+def _cache_pod -> ExecutionContext {
+    ctx = ExecutionContext();
+    ctx.mem = ScaleTieredMemory();
+    JacRuntime.set_context(ctx);
+    return ctx;
+}
+
+def _load_witness(ctx: ExecutionContext, witness_id: UUID) -> _CacheWitness {
+    JacRuntime.set_context(ctx);
+    anchor = ctx.mem.get(witness_id);
+    assert anchor is not None , "the witness must load";
+    return cast(_CacheWitness, anchor.archetype);
+}
+
+def _seed_cache_witness -> UUID {
+    ctx = _cache_pod();
+    owner = Root();
+    owner_anchor = owner.__jac__;
+    owner_anchor.persistent = True;
+    ctx.mem.__mem__[owner_anchor.id] = owner_anchor;
+    witness = _CacheWitness();
+    owner ++> witness;
+    ctx.mem.commit();
+    return witness.__jac__.id;
+}
+
+def _edge_delta_race -> tuple {
+    redis_client: any = _get_redis()[0];
+    mem = ScaleTieredMemory();
+    mem.postinit();
+    assert mem.l3 is not None , "MongoDB must be available for this test";
+    assert mem.l2 is not None , "Redis must be available for this test";
+
+    col: any = cast(MongoBackend, mem.l3).collection;
+
+    root_id: str = str(uuid4());
+    col.insert_one(
+        {
+            '_id': root_id,
+            'type': 'NodeAnchor',
+            'arch_module': 'jaclang.jac0core.archetype',
+            'arch_type': 'Root',
+            'fingerprint': None,
+            'data': {
+                '__type__': 'NodeAnchor',
+                '__module__': 'jaclang.jac0core.archetype',
+                'id': root_id,
+                'persistent': True,
+                'archetype': {
+                    '__type__': 'Root',
+                    '__module__': 'jaclang.jac0core.archetype'
+                },
+                'edges': []
+            },
+            'format_version': 1,
+            'updated_at': '2026-01-01T00:00:00'
+        }
+    );
+
+    root_anchor = mem.get(UUID(root_id));
+    assert root_anchor is not None , "root must load from Mongo";
+    _raw_after_read: any = redis_client.get(f"anchor:{root_id}");
+    assert _raw_after_read is not None , "root must be cached in Redis after tiered read";
+    assert json.loads(cast(bytes, _raw_after_read)).get('edges', []) == [] , (
+        "L2 must show empty edges at this point (pre-write state)"
+    );
+
+    node_anchor = cast(NodeAnchor, root_anchor);
+    setattr(node_anchor, '_initial_edge_ids', frozenset());
+    edge_id: str = str(uuid4());
+    edge_stub = EdgeAnchor.__new__(EdgeAnchor);
+    setattr(edge_stub, 'id', to_uuid(edge_id));
+    setattr(edge_stub, 'persistent', True);
+    node_anchor.edges.append(edge_stub);
+    setattr(node_anchor, 'hash', 0);
+    mem.__mem__[UUID(root_id)] = node_anchor;
+
+    mem.commit();
+
+    _mongo_doc: any = col.find_one({'_id': root_id});
+    l3_edges: list[str] = cast(
+        list[str], _mongo_doc.get('data', {}).get('edges', [])
+    );
+    assert edge_id in l3_edges , (
+        f"L3 (Mongo) must contain the new edge after commit; got {l3_edges}"
+    );
+
+    initial_ids: frozenset[UUID] = cast(
+        frozenset[UUID], getattr(node_anchor, '_initial_edge_ids', frozenset())
+    );
+    assert len(initial_ids) > 0 , (
+        "_initial_edge_ids must be non-empty after _put_node_atomic read-back"
+    );
+    assert to_uuid(edge_id) in initial_ids , (
+        f"_initial_edge_ids must include the merged edge; got {initial_ids}"
+    );
+
+    mem.l3.close();
+    return (UUID(root_id), {});
+}
+
+def _field_update_race -> tuple {
+    witness_id = _seed_cache_witness();
+    first = _cache_pod();
+    first_witness = _load_witness(first, witness_id);
+    second = _cache_pod();
+    second_witness = _load_witness(second, witness_id);
+    second_witness.stamp = "second-request";
+    JacRuntime.set_context(first);
+    first_witness.pointer = "sandbox-one";
+    first.mem.commit();
+    JacRuntime.set_context(second);
+    second.mem.commit();
+    return (witness_id, {"pointer": "sandbox-one", "stamp": "second-request"});
+}
+
+def _delayed_refill_race -> tuple {
+    witness_id = _seed_cache_witness();
+    writer = _cache_pod();
+    writer_witness = _load_witness(writer, witness_id);
+    reader = _cache_pod();
+    reader.mem.l2.invalidate(witness_id);
+    original_get = MongoBackend.get;
+    def commit_during_read(backend: MongoBackend, anchor_id: UUID) -> (Anchor | None) {
+        loaded = original_get(backend, anchor_id);
+        if backend is reader.mem.l3 and anchor_id == witness_id {
+            JacRuntime.set_context(writer);
+            writer_witness.pointer = "sandbox-two";
+            writer.mem.commit();
+            JacRuntime.set_context(reader);
+        }
+        return loaded;
+    }
+    with patch.object(MongoBackend, "get", commit_during_read) {
+        _load_witness(reader, witness_id);
+    }
+    return (witness_id, {"pointer": "sandbox-two", "stamp": "seed"});
+}
+
+def _cached_view(anchor: Anchor) -> dict {
+    data = Serializer.serialize(anchor, include_type=True);
+    return {"archetype": data.get("archetype"), "edges": data.get("edges")};
+}
+
+def _assert_l2_matches_mongo(row: str, anchor_id: UUID, expected: dict) -> None {
+    observer = _cache_pod();
+    stored = cast(MongoBackend, observer.mem.l3).get(anchor_id);
+    assert stored is not None , f"{row}: Mongo must hold the anchor";
+    mongo_view = _cached_view(stored);
+    for (field, value) in expected.items() {
+        assert mongo_view["archetype"][field] == value , (
+            f"{row}: Mongo {field}={mongo_view['archetype'][field]!r}, want {value!r}"
+        );
+    }
+    cached = observer.mem.l2.get(anchor_id);
+    if cached is not None {
+        assert _cached_view(cached) == mongo_view , (
+            f"{row}: Redis holds {_cached_view(cached)}, Mongo holds {mongo_view}"
+        );
+    }
+    fresh = observer.mem.get(anchor_id);
+    assert fresh is not None and _cached_view(fresh) == mongo_view , (
+        f"{row}: a fresh pod read {_cached_view(fresh) if fresh else None}, "
+        f"Mongo holds {mongo_view}"
+    );
+}
+
+test "L2 Redis never holds an anchor older than Mongo after a commit or refill (issues 6295, 9840)" {
     _reset_mongo();
     _reset_redis();
     _reset_process_cache();
-    _mongo_result = _get_mongo();
-    _redis_result = _get_redis();
-    mongo_uri: str = cast(str, _mongo_result[1]);
-    redis_client: any = _redis_result[0];
-    redis_url: str = cast(str, _redis_result[1]);
-
-    os.environ["MONGODB_URI"] = mongo_uri;
-    os.environ["REDIS_URL"] = redis_url;
-
+    os.environ["MONGODB_URI"] = cast(str, _get_mongo()[1]);
+    os.environ["REDIS_URL"] = cast(str, _get_redis()[1]);
+    prior = JacRuntime.get_context();
+    failures: list[str] = [];
     try {
-        mem = ScaleTieredMemory();
-        mem.postinit();
-        assert mem.l3 is not None , "MongoDB must be available for this test";
-        assert mem.l2 is not None , "Redis must be available for this test";
-
-        col: any = cast(MongoBackend, mem.l3).collection;
-
-        root_id: str = str(uuid4());
-        col.insert_one(
-            {
-                '_id': root_id,
-                'type': 'NodeAnchor',
-                'arch_module': 'jaclang.jac0core.archetype',
-                'arch_type': 'Root',
-                'fingerprint': None,
-                'data': {
-                    '__type__': 'NodeAnchor',
-                    '__module__': 'jaclang.jac0core.archetype',
-                    'id': root_id,
-                    'persistent': True,
-                    'archetype': {
-                        '__type__': 'Root',
-                        '__module__': 'jaclang.jac0core.archetype'
-                    },
-                    'edges': []
-                },
-                'format_version': 1,
-                'updated_at': '2026-01-01T00:00:00'
+        for (row, race) in [
+            ("edge delta", _edge_delta_race),
+            ("field update", _field_update_race),
+            ("delayed refill", _delayed_refill_race)
+        ] {
+            try {
+                (anchor_id, expected) = race();
+                _assert_l2_matches_mongo(row, anchor_id, expected);
+            } except AssertionError as e {
+                failures.append(str(e));
             }
-        );
-
-        root_anchor = mem.get(UUID(root_id));
-        assert root_anchor is not None , "root must load from Mongo";
-        _raw_after_read: any = redis_client.get(f"anchor:{root_id}");
-        assert _raw_after_read is not None , "root must be cached in Redis after tiered read";
-        assert json.loads(cast(bytes, _raw_after_read)).get('edges', []) == [] , (
-            "L2 must show empty edges at this point (pre-write state)"
-        );
-
-        node_anchor = cast(NodeAnchor, root_anchor);
-        setattr(node_anchor, '_initial_edge_ids', frozenset());
-        edge_id: str = str(uuid4());
-        edge_stub = EdgeAnchor.__new__(EdgeAnchor);
-        setattr(edge_stub, 'id', to_uuid(edge_id));
-        setattr(edge_stub, 'persistent', True);
-        node_anchor.edges.append(edge_stub);
-        setattr(node_anchor, 'hash', 0);
-        mem.__mem__[UUID(root_id)] = node_anchor;
-
-        mem.commit();
-
-        _mongo_doc: any = col.find_one({'_id': root_id});
-        l3_edges: list[str] = cast(
-            list[str], _mongo_doc.get('data', {}).get('edges', [])
-        );
-        assert edge_id in l3_edges , (
-            f"L3 (Mongo) must contain the new edge after commit; got {l3_edges}"
-        );
-
-        l2_raw: any = redis_client.get(f"anchor:{root_id}");
-        if l2_raw is not None {
-            l2_edges: list[str] = cast(
-                list[str], json.loads(cast(bytes, l2_raw)).get('edges', [])
-            );
-            assert l2_edges != [] , (
-                "L2 (Redis) must NOT cache empty edges when L3 has the edge "
-                "(issue #6295 regression)"
-            );
-            assert edge_id in l2_edges , (
-                f"L2 edges must match L3 after commit; L3={l3_edges}, L2={l2_edges}"
-            );
         }
-
-        initial_ids: frozenset[UUID] = cast(
-            frozenset[UUID], getattr(node_anchor, '_initial_edge_ids', frozenset())
-        );
-        assert len(initial_ids) > 0 , (
-            "_initial_edge_ids must be non-empty after _put_node_atomic read-back"
-        );
-        assert to_uuid(edge_id) in initial_ids , (
-            f"_initial_edge_ids must include the merged edge; got {initial_ids}"
-        );
-
-        mem.l3.close();
+        assert not failures , "\n".join(failures);
     } finally {
+        JacRuntime.set_context(prior);
         os.environ.pop("MONGODB_URI", None);
         os.environ.pop("REDIS_URL", None);
         _reset_process_cache();
