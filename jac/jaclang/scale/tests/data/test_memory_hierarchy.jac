@@ -1,6 +1,7 @@
 import atexit;
 import contextlib;
 import concurrent.futures;
+import functools;
 import json;
 import os;
 import socket;
@@ -1571,16 +1572,17 @@ def _field_update_race -> tuple {
     return (witness_id, {"pointer": "sandbox-one", "stamp": "second-request"});
 }
 
-def _delayed_refill_race -> tuple {
+def _delayed_refill_race(read: str) -> tuple {
     witness_id = _seed_cache_witness();
     writer = _cache_pod();
     writer_witness = _load_witness(writer, witness_id);
     reader = _cache_pod();
     reader.mem.l2.invalidate(witness_id);
-    original_get = MongoBackend.get;
-    def commit_during_read(backend: MongoBackend, anchor_id: UUID) -> (Anchor | None) {
-        loaded = original_get(backend, anchor_id);
-        if backend is reader.mem.l3 and anchor_id == witness_id {
+    original_read = getattr(MongoBackend, read);
+    def commit_during_read(backend: MongoBackend, requested: any) -> any {
+        loaded = original_read(backend, requested);
+        ids = requested if isinstance(requested, list) else [requested];
+        if backend is reader.mem.l3 and witness_id in ids {
             JacRuntime.set_context(writer);
             writer_witness.pointer = "sandbox-two";
             writer.mem.commit();
@@ -1588,8 +1590,13 @@ def _delayed_refill_race -> tuple {
         }
         return loaded;
     }
-    with patch.object(MongoBackend, "get", commit_during_read) {
-        _load_witness(reader, witness_id);
+    with patch.object(MongoBackend, read, commit_during_read) {
+        JacRuntime.set_context(reader);
+        if read == "batch_get" {
+            assert witness_id in reader.mem.batch_get([witness_id]) , "the witness must load";
+        } else {
+            _load_witness(reader, witness_id);
+        }
     }
     return (witness_id, {"pointer": "sandbox-two", "stamp": "seed"});
 }
@@ -1634,7 +1641,11 @@ test "L2 Redis never holds an anchor older than Mongo after a commit or refill (
         for (row, race) in [
             ("edge delta", _edge_delta_race),
             ("field update", _field_update_race),
-            ("delayed refill", _delayed_refill_race)
+            ("delayed get refill", functools.partial(_delayed_refill_race, "get")),
+            (
+                "delayed batch_get refill",
+                functools.partial(_delayed_refill_race, "batch_get")
+            )
         ] {
             try {
                 (anchor_id, expected) = race();
