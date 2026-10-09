@@ -155,6 +155,10 @@ impl RedisBackend.fill(anchor: Anchor, token: (str | None)) -> None {
     if self.redis_client is None or token is None {
         return;
     }
+    self.put_count += 1;
+    span = start_memory_span(
+        "memory.put redis", {"db.system": "redis", "mem.tier": "L2", "mem.op": "put"}
+    );
     try {
         key = storage_key(anchor.id);
         data = json.dumps(Serializer.serialize(anchor, include_type=True));
@@ -162,6 +166,8 @@ impl RedisBackend.fill(anchor: Anchor, token: (str | None)) -> None {
         self.redis_client.eval(_FILL_IF_LEASED, 2, key, _lease_key(key), token, data, ttl);
     } except Exception as e {
         logger.debug(f"Redis fill failed: {e}");
+    } finally {
+        end_memory_span(span);
     }
 }
 
