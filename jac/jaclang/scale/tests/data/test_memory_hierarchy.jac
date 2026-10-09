@@ -1627,6 +1627,14 @@ test "L2 Redis never serves an anchor older than Mongo (issues 6295, 9840)" {
                 f"{row}: a fresh pod read {(fresh.pointer, fresh.stamp)}, Mongo holds {expected}"
             );
         }
+
+        witness_id = _seed_witness();
+        cache = _cache_pod().mem.l2;
+        cache.invalidate(witness_id);
+        first = cache.lease([witness_id]);
+        assert cache.lease([witness_id]) == {} , "a concurrent miss must not take over the refill";
+        cache.fill(_cache_pod().mem.l3.get(witness_id), first.get(witness_id));
+        assert cache.get(witness_id) is not None , "the first reader's refill must land";
     } finally {
         JacRuntime.set_context(prior);
         os.environ.pop("MONGODB_URI", None);
