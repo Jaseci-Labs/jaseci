@@ -141,14 +141,16 @@ impl RedisBackend.lease(ids: list[UUID]) -> dict[UUID, str] {
     try {
         pipe = self.redis_client.pipeline(transaction=False);
         for (id, token) in leases.items() {
-            pipe.set(_lease_key(storage_key(to_uuid(id))), token, px=_REFILL_LEASE_MS);
+            pipe.set(
+                _lease_key(storage_key(to_uuid(id))), token, px=_REFILL_LEASE_MS, nx=True
+            );
         }
-        pipe.execute();
+        taken = pipe.execute();
     } except Exception as e {
         logger.debug(f"Redis lease failed: {e}");
         return {};
     }
-    return leases;
+    return {id: leases[id] for (id, ok) in zip(leases, taken) if ok};
 }
 
 impl RedisBackend.fill(anchor: Anchor, token: (str | None)) -> None {
