@@ -277,21 +277,41 @@ obj _TestFieldless {}
 
 
 test "parse_response raises OutputConversionError with the raw output attached" {
-    for (why, raw) in [
-        ("plain text", "Alice is a 30 year old engineer."),
-        ("markdown fenced json", "```json\n{\"name\": \"Alice\", \"age\": 30}\n```"),
-        ("wrong json structure", "{\"foo\": \"bar\", \"baz\": 99}")
+    # Union and generic returns must fail the same way, named as written.
+    for (why, resp_type, raw, name) in [
+        (
+            "plain text",
+            _TestPerson,
+            "Alice is a 30 year old engineer.",
+            "'_TestPerson'"
+        ),
+        (
+            "markdown fenced json",
+            _TestPerson,
+            "```json\n{\"name\": \"Alice\", \"age\": 30}\n```",
+            "'_TestPerson'"
+        ),
+        (
+            "wrong json structure",
+            _TestPerson,
+            "{\"foo\": \"bar\", \"baz\": 99}",
+            "'_TestPerson'"
+        ),
+        ("optional return", int | None, "not json", "'int | None'"),
+        ("multi-member union", int | float | None, "not json", "'int | float | None'"),
+        ("generic return", list[_TestPerson], "not json", "'list[_TestPerson]'")
     ] {
         raised = False;
         try {
-            mk_run(resp_type=_TestPerson).parse_response(raw);
+            mk_run(resp_type=resp_type).parse_response(raw);
         } except OutputConversionError as e {
             raised = True;
             err: any = e;
             assert err.raw_output == raw , (
                 f"{why}: raw_output should carry the model output, got '{err.raw_output}'"
             );
-            assert "Person" in str(e) , f"{why}: error message should name the target type";
+            assert name in str(e) , f"{why}: error message should name {name}, got: {e}";
+            assert e.__cause__ is not None , f"{why}: the parse failure must be chained";
         }
         assert raised , f"{why}: expected OutputConversionError";
     }
@@ -317,26 +337,6 @@ test "return types are named the way they are written" {
     ] {
         got = type_display_name(ty);
         assert got == expected , f"{ty!r}: expected '{expected}', got '{got}'";
-    }
-}
-
-test "a composite return that will not parse is a conversion error naming the type" {
-    raw = "not json";
-    for (resp_type, name) in [
-        (int | None, "'int | None'"),
-        (int | float | None, "'int | float | None'"),
-        (list[_TestPerson], "'list[_TestPerson]'")
-    ] {
-        err: any = None;
-        try {
-            mk_run(resp_type=resp_type).parse_response(raw);
-        } except OutputConversionError as e {
-            err = e;
-        }
-        assert err is not None , f"{name}: expected OutputConversionError";
-        assert name in str(err) , f"{name}: the message should name the type, got: {err}";
-        assert err.raw_output == raw , f"{name}: raw_output lost, got {err.raw_output!r}";
-        assert err.__cause__ is not None , f"{name}: the parse failure must be chained";
     }
 }
 
@@ -383,36 +383,25 @@ test "unregistered tool call is recovered not fatal" {
 }
 
 test "finish tool error on type mismatch" {
-    finish_tool = Tool.make_finish_tool(_TestPerson);
-
-    raised = False;
-    try {
-        finish_tool({"wrong_key": "value"});
-    } except FinishToolError as e {
-        raised = True;
-        assert "Person" in str(e) , f"Error should name the target type, got: {e}";
-    }
-    assert raised , "Expected FinishToolError for mismatched input type";
-}
-
-test "finish tool error names a composite target type and keeps the cause" {
-    for (resp_type, name) in [
-        (int | None, "'int | None'"),
-        (int | float, "'int | float'"),
-        (list[_TestPerson], "'list[_TestPerson]'")
+    for (resp_type, sent, name) in [
+        (_TestPerson, {"wrong_key": "value"}, "'_TestPerson'"),
+        (int | None, "not a value", "'int | None'"),
+        (int | float, "not a value", "'int | float'"),
+        (list[_TestPerson], "not a value", "'list[_TestPerson]'")
     ] {
         finish_tool = Tool.make_finish_tool(resp_type);
-        err: any = None;
+
+        raised = False;
         try {
-            finish_tool("not a value");
+            finish_tool(sent);
         } except FinishToolError as e {
-            err = e;
+            raised = True;
+            assert f"does not match expected type {name}" in str(e) , (
+                f"{name}: error should name the target type, got: {e}"
+            );
+            assert e.__cause__ is not None , f"{name}: the validation error must be chained";
         }
-        assert err is not None , f"{name}: expected FinishToolError";
-        assert f"does not match expected type {name}" in str(err) , (
-            f"{name}: the model should be told which type was expected, got: {err}"
-        );
-        assert err.__cause__ is not None , f"{name}: the validation error must be chained";
+        assert raised , f"{name}: expected FinishToolError for mismatched input type";
     }
 }
 
