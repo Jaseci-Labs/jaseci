@@ -493,9 +493,17 @@ def emit_name_delete(g: cfg_builder, name: str, tloc: cloc) {
     if g.sym_top is not None {
         flags = sym_dict_get(g.sym_top.symbols, name, 0);
         scope = sym_scope_of(flags);
+        # Same _PyCompile_ResolveNameop rule as name_load_opcode: implicit
+        # globals in a class body are name-scope ops (DELETE_NAME), except
+        # inside an inlined comprehension (DELETE_GLOBAL).
+        in_class_scope = (
+            g.sym_top.kind == scope_kind.CLASS and g.u.comp_depth == 0
+        );
         if scope == SCOPE_GLOBAL_EXPLICIT
             or (
-                scope == SCOPE_GLOBAL_IMPLICIT and g.sym_top.kind != scope_kind.MODULE
+                scope == SCOPE_GLOBAL_IMPLICIT
+                and g.sym_top.kind != scope_kind.MODULE
+                and not in_class_scope
             ) {
             idx = g.u.add_name(name);
             g.emit_op(OP_DELETE_GLOBAL, idx, tloc);

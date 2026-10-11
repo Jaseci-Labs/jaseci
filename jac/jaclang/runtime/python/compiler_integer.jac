@@ -180,6 +180,57 @@ def integer_add(left: PyObj, right: PyObj, subtract: bool = False) -> PyObj {
     return integer_from_digits(digits, a_negative if comparison > 0 else b_negative);
 }
 
+# Limb (base-2**15) multiply for compile-time constant folding: CPython's
+# optimizer folds int products up to 128 bits, which overflows Jac's native
+# i64 PyInt.val, so the result is built in PyBigInt storage directly.
+def integer_multiply(left: PyObj, right: PyObj) -> PyObj {
+    a = integer_digits(left);
+    b = integer_digits(right);
+    if len(a) == 0 or len(b) == 0 {
+        return PyInt(t="int", val=0);
+    }
+    size = len(a) + len(b);
+    out: list[int] = [];
+    for i in range(size) {
+        out.append(0);
+    }
+    for i in range(len(a)) {
+        carry = 0;
+        for j in range(len(b)) {
+            cur = out[i + j] + a[i] * b[j] + carry;
+            out[i + j] = cur & 32767;
+            carry = cur >> 15;
+        }
+        k = i + len(b);
+        while carry > 0 {
+            cur = out[k] + carry;
+            out[k] = cur & 32767;
+            carry = cur >> 15;
+            k += 1;
+        }
+    }
+    return integer_from_digits(out, integer_negative(left) != integer_negative(right));
+}
+
+# integer_multiply applied by squaring; callers must guard exp against
+# CPython's MAX_INT_SIZE folding bound first (negative exp yields 1: callers
+# never reach this with one).
+def integer_pow(base: PyObj, exp: int) -> PyObj {
+    b = base;
+    e = exp;
+    r: PyObj = PyInt(t="int", val=1);
+    while e > 0 {
+        if e & 1 {
+            r = integer_multiply(r, b);
+        }
+        e >>= 1;
+        if e > 0 {
+            b = integer_multiply(b, b);
+        }
+    }
+    return r;
+}
+
 def integer_to_float(value: PyObj) -> float {
     if isinstance(value, PyInt) {
         return float(value.val);

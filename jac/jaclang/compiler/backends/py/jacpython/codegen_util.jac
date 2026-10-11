@@ -1,4 +1,10 @@
-import from jaclang.runtime.python.compiler_integer { PyBigInt, integer_add }
+import from jaclang.runtime.python.compiler_integer {
+    PyBigInt,
+    integer_add,
+    integer_multiply,
+    integer_negate,
+    integer_pow
+}
 import from jaclang.compiler.frontend.python.compiler_symtable { scope_kind }
 
 # Pure leaf helpers extracted from compiler_codegen.jac (no cfg_builder,
@@ -12,7 +18,12 @@ import from jaclang.runtime.python.objects {
     py_none,
     PySlice,
     PyCode,
-    PyTuple
+    PyTuple,
+    PyBool,
+    PyFloat,
+    PyComplex,
+    PyBytes,
+    is_error
 }
 import from jaclang.runtime.python.opcode_meta {
     OP_RESUME,
@@ -814,26 +825,278 @@ def cmpop_filter_oparg(op: PyObj) -> int {
     return compare_filter_oparg(kind);
 }
 
-# Constant-fold a BinOp when both operands are literal ints (CPython peephole).
-def try_fold_binop(left: expr, op: PyObj, right: expr) -> PyObj | None {
-    if not isinstance(left, Constant) {
+# --- Constant folding (CPython 3.14 Python/flowgraph.c eval_const_binop /
+# eval_const_unaryop + const_folding_safe_* guards) ---------------------------
+# CPython folds at instruction level over any consecutive const loads, so the
+# AST mirrors it recursively: a foldable operand is a Constant, an all-constant
+# Tuple display, or a UnaryOp/BinOp that itself folds. Guarded-out or
+# error-producing folds return None and the expression is left unfolded --
+# matching CPython, which clears the error and keeps the BINARY_OP/intrinsic.
+glob FOLD_MAX_INT_BITS: int = 128,
+     FOLD_MAX_COLLECTION: int = 256,
+     FOLD_MAX_STR: int = 4096,
+     FOLD_MAX_ITEMS: int = 1024,
+     FOLD_TUPLE_GUIDELINE: int = 30;
+
+# bool operands coerce to int for arithmetic (CPython's PyLong_Check sees the
+# bool subclass): True -> 1, False -> 0.
+def fold_int_coerce(v: PyObj) -> PyObj {
+    if isinstance(v, PyBool) {
+        return PyInt(t="int", val=1 if (v as PyBool).val else 0);
+    }
+    return v;
+}
+
+# Bit-length bound mirroring CPython's _PyLong_NumBits. PyInt (i64) is exact;
+# PyBigInt uses its 15-bit limb count (slight overestimate only under-folds).
+def fold_int_bits(v: PyObj) -> int {
+    if isinstance(v, PyInt) {
+        a = (v as PyInt).val;
+        if a < 0 {
+            a = -a;
+        }
+        n = 0;
+        while a > 0 {
+            a >>= 1;
+            n += 1;
+        }
+        return n;
+    }
+    if isinstance(v, PyBigInt) {
+        return len((v as PyBigInt).digits) * 15;
+    }
+    return 0;
+}
+
+# Recursive total-item bound for tuple constants (CPython
+# const_folding_check_complexity): returns the remaining budget, negative when
+# the collection is too deep/wide to fold cheaply.
+def fold_complexity(items: list[PyObj], limit: int) -> int {
+    rest = limit - len(items);
+    i = 0;
+    while rest >= 0 and i < len(items) {
+        if isinstance(items[i], PyTuple) {
+            rest = fold_complexity((items[i] as PyTuple).items, rest);
+        }
+        i += 1;
+    }
+    return rest;
+}
+
+# int * sequence repeat with CPython's const_folding_safe_multiply size
+# guards. The int operand is always PyInt/PyBigInt here.
+def fold_seq_repeat(nobj: PyObj, seq: PyObj) -> PyObj | None {
+    size = 0;
+    if isinstance(seq, PyTuple) {
+        size = len((seq as PyTuple).items);
+    } elif isinstance(seq, PyStr) {
+        size = len((seq as PyStr).val);
+    } elif isinstance(seq, PyBytes) {
+        size = len((seq as PyBytes).val);
+    } else {
         return None;
     }
-    if not isinstance(right, Constant) {
+    if isinstance(nobj, PyBigInt) {
+        # PyLong_AsLong overflow in CPython -> left unfolded.
         return None;
     }
-    lc = left as Constant;
-    rc = right as Constant;
-    if not isinstance(lc.value, (PyInt, PyBigInt)) {
+    n = (nobj as PyInt).val;
+    if size > 0 {
+        cap = FOLD_MAX_COLLECTION if isinstance(seq, PyTuple) else FOLD_MAX_STR;
+        if n < 0 or n > cap // size {
+            return None;
+        }
+        if n > 0
+            and isinstance(seq, PyTuple)
+            and fold_complexity((seq as PyTuple).items, FOLD_MAX_ITEMS // n) < 0 {
+            return None;
+        }
+    }
+    return seq.nb_binop(NB_MULTIPLY, nobj);
+}
+
+# Constant-folded unary op on an already-folded operand (CPython
+# eval_const_unaryop). None keeps the runtime instruction.
+def fold_const_unary(op: PyObj, v: PyObj) -> PyObj | None {
+    if isinstance(op, UAdd) {
+        if isinstance(v, PyBool) {
+            # PyNumber_Positive promotes bool to int: +False is 0, never False.
+            return PyInt(t="int", val=1 if (v as PyBool).val else 0);
+        }
+        if isinstance(v, (PyInt, PyBigInt, PyFloat, PyComplex)) {
+            return v;
+        }
         return None;
     }
-    if not isinstance(rc.value, (PyInt, PyBigInt)) {
+    if isinstance(op, USub) {
+        if isinstance(v, PyBool) {
+            return PyInt(t="int", val=-1 if (v as PyBool).val else 0);
+        }
+        if isinstance(v, (PyInt, PyBigInt)) {
+            return integer_negate(v);
+        }
+        if isinstance(v, PyFloat) {
+            return PyFloat(t="float", val=-(v as PyFloat).val);
+        }
+        if isinstance(v, PyComplex) {
+            c = v as PyComplex;
+            return PyComplex(t="complex", real=-c.real, imag=-c.imag);
+        }
         return None;
     }
-    if isinstance(op, Add) {
-        return integer_add(lc.value, rc.value);
+    if isinstance(op, Invert) {
+        # CPython declines to fold ~bool (pending deprecation removal).
+        if isinstance(v, (PyInt, PyBigInt)) {
+            return integer_negate(integer_add(v, PyInt(t="int", val=1)));
+        }
+        return None;
+    }
+    if isinstance(op, Not) {
+        return PyBool(t="bool", val=not v.tp_bool());
     }
     return None;
+}
+
+# Constant-fold a BinOp over already-folded values (CPython eval_const_binop
+# with the const_folding_safe_* guards first; errors -> None = unfolded).
+def fold_const_binop(lv: PyObj, kind: int, rv: PyObj) -> PyObj | None {
+    if kind == NB_REMAINDER and (isinstance(lv, PyStr) or isinstance(lv, PyBytes)) {
+        # str % tuple is formatting, never folded.
+        return None;
+    }
+    if (kind == NB_AND or kind == NB_OR or kind == NB_XOR)
+        and isinstance(lv, PyBool)
+        and isinstance(rv, PyBool) {
+        # CPython bool.__and__/__or__/__xor__ stay bool when both operands
+        # are bool (long_and only returns int on mixed int operands).
+        a = (lv as PyBool).val;
+        b = (rv as PyBool).val;
+        r = a & b;
+        if kind == NB_OR {
+            r = a | b;
+        } elif kind == NB_XOR {
+            r = a ^ b;
+        }
+        return PyBool(t="bool", val=r);
+    }
+    li = fold_int_coerce(lv);
+    ri = fold_int_coerce(rv);
+    lint = isinstance(li, (PyInt, PyBigInt));
+    rint = isinstance(ri, (PyInt, PyBigInt));
+    if kind == NB_MULTIPLY {
+        if lint and rint {
+            if li.tp_bool()
+                and ri.tp_bool()
+                and fold_int_bits(li) + fold_int_bits(ri) > FOLD_MAX_INT_BITS {
+                return None;
+            }
+            return integer_multiply(li, ri);
+        }
+        if lint {
+            return fold_seq_repeat(li, ri);
+        }
+        if rint {
+            return fold_seq_repeat(ri, li);
+        }
+    }
+    if kind == NB_POWER and lint and rint {
+        # int ** int: CPython folds when v != 0 and w >= 0 with the 128-bit
+        # result bound. Everything else is left unfolded.
+        wb = (ri as PyInt).val if isinstance(ri, PyInt) else -1;
+        if not li.tp_bool() or wb < 0 {
+            return None;
+        }
+        vbits = fold_int_bits(li);
+        if wb > 0 and vbits > FOLD_MAX_INT_BITS // wb {
+            return None;
+        }
+        return integer_pow(li, wb);
+    }
+    if kind == NB_LSHIFT and lint and rint {
+        rb = (ri as PyInt).val if isinstance(ri, PyInt) else -1;
+        if not li.tp_bool() or rb < 0 {
+            return None;
+        }
+        vbits = fold_int_bits(li);
+        if rb > FOLD_MAX_INT_BITS or vbits > FOLD_MAX_INT_BITS - rb {
+            return None;
+        }
+        return integer_multiply(li, integer_pow(PyInt(t="int", val=2), rb));
+    }
+    if (kind == NB_ADD or kind == NB_SUBTRACT) and lint and rint {
+        # Arbitrary-precision via limb helpers (PyInt.val is only i64).
+        return integer_add(li, ri, kind == NB_SUBTRACT);
+    }
+    result = li.nb_binop(kind, ri);
+    if is_error(result) and (kind == NB_MULTIPLY or kind == NB_ADD) {
+        # Sequence repeat/concat reflection (int * seq, str + tuple is still
+        # an error, but seq * int hits here for the unguarded small cases).
+        result = ri.nb_binop(kind, li);
+    }
+    if is_error(result) {
+        return None;
+    }
+    return result;
+}
+
+# Fold an expression subtree to its constant value, or None when CPython's
+# instruction-level folds would leave it unfolded.
+def fold_const_expr(e: expr) -> PyObj | None {
+    if isinstance(e, Constant) {
+        return (e as Constant).value;
+    }
+    if isinstance(e, Tuple) {
+        elts = (e as Tuple).elts;
+        if elts is None or len(elts) > FOLD_TUPLE_GUIDELINE {
+            return None;
+        }
+        items: list[PyObj] = [];
+        for elt in elts {
+            v = fold_const_expr(elt);
+            if v is None {
+                return None;
+            }
+            items.append(v);
+        }
+        return PyTuple(t="tuple", items=items);
+    }
+    if isinstance(e, UnaryOp) {
+        un = e as UnaryOp;
+        v = fold_const_expr(un.operand);
+        if v is None {
+            return None;
+        }
+        return fold_const_unary(un.op as PyObj, v);
+    }
+    if isinstance(e, BinOp) {
+        b = e as BinOp;
+        lv = fold_const_expr(b.left);
+        rv = fold_const_expr(b.right);
+        if lv is None or rv is None {
+            return None;
+        }
+        kind = binop_id(b.op);
+        if kind < 0 or kind == NB_MATRIX_MULTIPLY {
+            return None;
+        }
+        return fold_const_binop(lv, kind, rv);
+    }
+    return None;
+}
+
+# Folded value for a BinOp whose operands lower to constant loads (CPython
+# fold_const_binop), or None to emit the real BINARY_OP.
+def try_fold_binop(left: expr, op: PyObj, right: expr) -> PyObj | None {
+    lv = fold_const_expr(left);
+    rv = fold_const_expr(right);
+    if lv is None or rv is None {
+        return None;
+    }
+    kind = binop_id(op as operator);
+    if kind < 0 or kind == NB_MATRIX_MULTIPLY {
+        return None;
+    }
+    return fold_const_binop(lv, kind, rv);
 }
 
 # The callable's location, used for PUSH_NULL. For the slice the callable is a

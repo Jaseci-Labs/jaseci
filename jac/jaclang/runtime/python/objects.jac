@@ -364,6 +364,23 @@ obj PyStr(PyObj) {
         if kind == NB_ADD and other.t == "str" {
             return PyStr(t="str", val=self.val + (other as PyStr).val);
         }
+        if kind == NB_MULTIPLY {
+            # str * n -- unicode_repeat; elements shared, count via nb_index
+            # so bool counts as int like CPython.
+            if not isinstance(other, (PyInt, PyBool)) {
+                return py_error(
+                    "TypeError",
+                    "can't multiply sequence by non-int of type '" + other.t + "'",
+                );
+            }
+            n = (other.to_index() as PyInt).val;
+            repeated = "";
+            while n > 0 {
+                repeated += self.val;
+                n = n - 1;
+            }
+            return PyStr(t="str", val=repeated);
+        }
         if kind == NB_REMAINDER {
             return str_mod_format(self.val, other);
         }
@@ -425,6 +442,30 @@ obj PyStr(PyObj) {
 
 obj PyBytes(PyObj) {
     has val: list[int];
+
+    def nb_binop(kind: int, other: PyObj) -> PyObj {
+        if kind == NB_ADD and other.t == "bytes" {
+            joined = self.val.copy();
+            joined.extend((other as PyBytes).val);
+            return PyBytes(t="bytes", val=joined);
+        }
+        if kind == NB_MULTIPLY {
+            if not isinstance(other, (PyInt, PyBool)) {
+                return py_error(
+                    "TypeError",
+                    "can't multiply sequence by non-int of type '" + other.t + "'",
+                );
+            }
+            n = (other.to_index() as PyInt).val;
+            repeated: list[int] = [];
+            while n > 0 {
+                repeated.extend(self.val);
+                n = n - 1;
+            }
+            return PyBytes(t="bytes", val=repeated);
+        }
+        return py_error("TypeError", "unsupported operand types");
+    }
 
     def mp_subscript(index: PyObj) -> PyObj {
         if isinstance(index, PySlice) {

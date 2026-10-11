@@ -1,5 +1,5 @@
 import from jaclang.runtime.python.cpython_api { NULL }
-import from jaclang.runtime.python.compiler_integer { PyBigInt, integer_negate }
+import from jaclang.runtime.python.compiler_integer { PyBigInt }
 
 # Expression-side lowering: visit_expr, expression/comprehension/lambda
 # visitors, call/slice/await emission primitives, and the shared name/
@@ -10,7 +10,6 @@ import from jaclang.runtime.python.compiler_integer { PyBigInt, integer_negate }
 
 import from jaclang.runtime.python.objects {
     PyFloat,
-    PyComplex,
     PyObj,
     PyBool,
     PyInt,
@@ -355,6 +354,8 @@ import from jaclang.compiler.backends.py.jacpython.codegen_util {
     cmpop_oparg,
     cmpop_filter_oparg,
     try_fold_binop,
+    fold_const_expr,
+    fold_const_unary,
     call_func_loc,
     call_effective_args,
     call_effective_keywords,
@@ -1318,8 +1319,19 @@ def name_load_opcode(g: cfg_builder, name: str) -> int {
     }
     flags = sym_dict_get(g.sym_top.symbols, name, 0);
     scope = sym_scope_of(flags);
+    # CPython _PyCompile_ResolveNameop: implicit globals resolve to
+    # COMPILE_OP_GLOBAL only in function-like scopes. Class bodies emit
+    # LOAD_NAME so class locals (and an exec'd code object's namespace) are
+    # consulted first -- except inside an inlined comprehension (LOAD_GLOBAL).
+    in_class_scope = (
+        g.sym_top.kind == scope_kind.CLASS and g.u.comp_depth == 0
+    );
     if scope == SCOPE_GLOBAL_EXPLICIT
-        or (scope == SCOPE_GLOBAL_IMPLICIT and g.sym_top.kind != scope_kind.MODULE) {
+        or (
+            scope == SCOPE_GLOBAL_IMPLICIT
+            and g.sym_top.kind != scope_kind.MODULE
+            and not in_class_scope
+        ) {
         return OP_LOAD_GLOBAL;
     }
     return OP_LOAD_NAME;
@@ -1540,6 +1552,70 @@ def register_int_literal_const(g: cfg_builder, e: expr, register_int_const: bool
         }
     } else {
         g.u.add_const(c.value);
+    }
+}
+
+# Emit a folded constant value the way CPython's optimizer does: small ints
+# become LOAD_SMALL_INT; every other const is interned at optimize time, so it
+# goes through stage_late_const (deduped against the visit-time pool at flush).
+def emit_folded_const(g: cfg_builder, v: PyObj, lc: cloc) {
+    if isinstance(v, PyInt) {
+        iv = (v as PyInt).val;
+        if iv >= 0 and iv <= 255 {
+            g.emit_op(OP_LOAD_SMALL_INT, iv, lc);
+            return;
+        }
+    }
+    idx = g.u.stage_late_const(v);
+    g.emit_op(OP_LOAD_CONST, idx, lc);
+}
+
+# Register the const-pool entries CPython's optimizer leaves behind when it
+# nop-outs the operand loads of a folded expression: a Constant keeps its
+# visit-time slot; a Tuple display's folded const was interned at optimize
+# time (staged here in element order); folded UnaryOp/BinOp operands keep
+# their own operand slots plus the folded value's slot.
+def register_const_operand(g: cfg_builder, e: expr, register_int_const: bool) {
+    if isinstance(e, Constant) {
+        c = e as Constant;
+        if isinstance(c.value, (PyInt, PyBigInt)) {
+            register_int_literal_const(g, e, register_int_const);
+            return;
+        }
+        g.u.add_const(c.value);
+        return;
+    }
+    if isinstance(e, Tuple) {
+        elts = (e as Tuple).elts;
+        if elts is not None {
+            for elt in elts {
+                register_const_operand(g, elt, register_int_const);
+            }
+        }
+        v = fold_const_expr(e);
+        if v is not None {
+            g.u.stage_late_const(v);
+        }
+        return;
+    }
+    if isinstance(e, UnaryOp) {
+        un = e as UnaryOp;
+        register_const_operand(g, un.operand, register_int_const);
+        v = fold_const_expr(e);
+        if v is not None {
+            g.u.stage_late_const(v);
+        }
+        return;
+    }
+    if isinstance(e, BinOp) {
+        b = e as BinOp;
+        register_const_operand(g, b.left, register_int_const);
+        register_const_operand(g, b.right, register_int_const);
+        v = fold_const_expr(e);
+        if v is not None {
+            g.u.stage_late_const(v);
+        }
+        return;
     }
 }
 
@@ -1779,13 +1855,9 @@ def visit_expr(
         bl = nloc(b.lineno, b.end_lineno, b.col_offset, b.end_col_offset);
         folded = try_fold_binop(b.left, b.op as PyObj, b.right);
         if folded is not None {
-            register_int_literal_const(g, b.left, register_int_const);
-            register_int_literal_const(g, b.right, register_int_const);
-            if isinstance(folded, PyInt) {
-                emit_folded_int(g, folded.val, bl);
-            } else {
-                g.emit_op(OP_LOAD_CONST, g.u.add_const(folded), bl);
-            }
+            register_const_operand(g, b.left, register_int_const);
+            register_const_operand(g, b.right, register_int_const);
+            emit_folded_const(g, folded, bl);
             return None;
         }
         opid = binop_id(b.op);
@@ -1804,57 +1876,23 @@ def visit_expr(
     }
     if isinstance(e, UnaryOp) {
         un = e as UnaryOp;
-        # CPython folds unary minus on int constants in its POST-visit
-        # optimizer pass: the operand keeps its visit-time const slot (dead
-        # small-int registration included) and the negated const is interned
-        # AFTER every visit-time const (incl. the epilogue None), so -1
-        # lowers to LOAD_CONST <late>, never LOAD_SMALL_INT + UNARY_NEGATIVE.
-        if isinstance(un.op, USub) and isinstance(un.operand, Constant) {
-            cv = (un.operand as Constant).value;
-            if isinstance(cv, PyFloat) or isinstance(cv, PyComplex) {
-                if isinstance(cv, PyFloat) {
-                    negated: PyObj = PyFloat(t="float", val=-cv.val);
-                } else {
-                    negated = PyComplex(t="complex", real=-cv.real, imag=-cv.imag);
-                }
-                idx = g.u.add_const(negated);
-                g.emit_op(OP_LOAD_CONST, idx, expr_loc(un));
-                return None;
-            }
-            if isinstance(cv, (PyInt, PyBigInt)) {
-                uloc = nloc(un.lineno, un.end_lineno, un.col_offset, un.end_col_offset);
-                # The operand's own const is removed by CPython's optimizer
-                # unless it occupies the protected index-0 dead slot.
-                if len(g.u.consts) == 0 {
-                    in_class_body = g.sym_top is not None
-                        and g.sym_top.kind == scope_kind.CLASS;
-                    if not in_class_body {
-                        g.u.add_const(cv);
-                        g.u.dead_small_int_const = True;
-                    }
-                }
-                late_idx = g.u.stage_late_const(integer_negate(cv));
-                g.emit_op(OP_LOAD_CONST, late_idx, uloc);
-                return None;
-            }
+        uloc = nloc(un.lineno, un.end_lineno, un.col_offset, un.end_col_offset);
+        # CPython's post-visit optimizer folds unary ops on constants
+        # (eval_const_unaryop): operands keep their visit-time const slots and
+        # the folded const is interned late. UAdd lowers to CALL_INTRINSIC_1
+        # (INTRINSIC_UNARY_POSITIVE, oparg 5) when the operand does not fold --
+        # e.g. +"x" must still raise TypeError at runtime.
+        unv = fold_const_expr(un.operand);
+        folded_un: PyObj | None = None;
+        if unv is not None {
+            folded_un = fold_const_unary(un.op as PyObj, unv);
+        }
+        if folded_un is not None {
+            register_const_operand(g, un.operand, register_int_const);
+            emit_folded_const(g, folded_un, uloc);
+            return None;
         }
         if isinstance(un.op, UAdd) {
-            # 3.14 dropped UNARY_POSITIVE: unary + lowers to CALL_INTRINSIC_1
-            # (INTRINSIC_UNARY_POSITIVE). A constant operand folds to the plain
-            # const load located at the UnaryOp span, matching the host
-            # optimizer's +const fold.
-            uloc = nloc(un.lineno, un.end_lineno, un.col_offset, un.end_col_offset);
-            if isinstance(un.operand, Constant) {
-                cvu = (un.operand as Constant).value;
-                if isinstance(cvu, PyInt) {
-                    register_int_literal_const(g, un.operand, register_int_const);
-                    emit_folded_int(g, (cvu as PyInt).val, uloc);
-                    return None;
-                }
-                idxu = g.u.add_const(cvu);
-                g.emit_op(OP_LOAD_CONST, idxu, uloc);
-                return None;
-            }
             visit_expr(g, un.operand);
             if codegen_busy(g) {
                 return None;
@@ -3010,6 +3048,13 @@ def visit_comp_elt(
     if isinstance(e, BinOp) {
         b = e as BinOp;
         bl = nloc(b.lineno, b.end_lineno, b.col_offset, b.end_col_offset);
+        folded = try_fold_binop(b.left, b.op as PyObj, b.right);
+        if folded is not None {
+            register_const_operand(g, b.left, True);
+            register_const_operand(g, b.right, True);
+            emit_folded_const(g, folded, bl);
+            return;
+        }
         opid = binop_id(b.op);
         if opid < 0 {
             codegen_fail(g, "NotImplementedError", "unsupported binary operator");
@@ -3031,34 +3076,23 @@ def visit_comp_elt(
     }
     if isinstance(e, UnaryOp) {
         un = e as UnaryOp;
-        # Same negative-int fold as visit_expr (CPython's post-visit optimizer
-        # folds comprehension elements too; negated consts are interned late).
-        if isinstance(un.op, USub) and isinstance(un.operand, Constant) {
-            cv = (un.operand as Constant).value;
-            if isinstance(cv, (PyInt, PyBigInt)) {
-                ul = nloc(un.lineno, un.end_lineno, un.col_offset, un.end_col_offset);
-                if len(g.u.consts) == 0 {
-                    in_class_body = g.sym_top is not None
-                        and g.sym_top.kind == scope_kind.CLASS;
-                    if not in_class_body {
-                        g.u.add_const(cv);
-                        g.u.dead_small_int_const = True;
-                    }
-                }
-                late_idx = g.u.stage_late_const(integer_negate(cv));
-                g.emit_op(OP_LOAD_CONST, late_idx, ul);
-                return;
-            }
+        uloc = nloc(un.lineno, un.end_lineno, un.col_offset, un.end_col_offset);
+        # Same constant fold as visit_expr (CPython's optimizer folds
+        # comprehension elements too; folded consts are interned late).
+        unv = fold_const_expr(un.operand);
+        folded_un: PyObj | None = None;
+        if unv is not None {
+            folded_un = fold_const_unary(un.op as PyObj, unv);
+        }
+        if folded_un is not None {
+            register_const_operand(g, un.operand, True);
+            emit_folded_const(g, folded_un, uloc);
+            return;
         }
         if isinstance(un.op, UAdd) {
             # Same CALL_INTRINSIC_1 lowering as visit_expr (3.14 dropped
-            # UNARY_POSITIVE); constant operand folds to the const load at the
-            # UnaryOp span.
-            uloc = nloc(un.lineno, un.end_lineno, un.col_offset, un.end_col_offset);
-            if isinstance(un.operand, Constant) {
-                visit_comp_elt(g, un.operand, bound_names, filter_compare);
-                return;
-            }
+            # UNARY_POSITIVE); non-folding operands keep the intrinsic so a
+            # bad operand raises TypeError at runtime.
             visit_comp_elt(g, un.operand, bound_names, filter_compare);
             if codegen_busy(g) {
                 return;
@@ -3066,7 +3100,6 @@ def visit_comp_elt(
             g.emit_op(OP_CALL_INTRINSIC_1, 5, uloc);
             return;
         }
-        ul = nloc(un.lineno, un.end_lineno, un.col_offset, un.end_col_offset);
         visit_comp_elt(g, un.operand, bound_names, filter_compare);
         if codegen_busy(g) {
             return;
@@ -3076,7 +3109,7 @@ def visit_comp_elt(
             codegen_fail(g, "NotImplementedError", "unsupported unary operator");
             return;
         }
-        g.emit_op(opc, 0, ul);
+        g.emit_op(opc, 0, uloc);
         return;
     }
     visit_expr(g, e);
