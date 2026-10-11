@@ -700,7 +700,7 @@ impl Session.quarantine_ref(referrer: (Anchor | None), stub: Anchor) -> None {
 
 
 impl Session._txn_isolation -> TxnIsolation {
-    if self._dirty or self._deleted or self._contended {
+    if self._dirty or self._deleted or self._queued {
         return TxnIsolation.SERIALIZABLE;
     }
     if self._read_scopes > 0 and self._active_units == 0 {
@@ -1200,27 +1200,11 @@ impl Session._begin_serializable -> None {
     if store is None {
         return;
     }
-    if not self._contended {
+    if not self._queued {
         store.begin(TxnIsolation.SERIALIZABLE);
         return;
     }
-    waiting = sorted(
-        id
-        for id in self._contended
-        if id not in self._queued
-    );
-    if waiting {
-        if store.queue_enter(waiting) {
-            self._queued.extend(waiting);
-        } else {
-            self._contended.difference_update(waiting);
-            if not self._contended {
-                store.begin(TxnIsolation.SERIALIZABLE);
-                return;
-            }
-        }
-    }
-    pinned = sorted(self._contended);
+    pinned = sorted(self._queued);
     for _ in range(PIN_ATTEMPTS) {
         store.begin(TxnIsolation.SERIALIZABLE);
         try {
@@ -1234,6 +1218,44 @@ impl Session._begin_serializable -> None {
         }
     }
     store.begin(TxnIsolation.SERIALIZABLE);
+}
+
+
+impl Session.acommit(anchor: (Anchor | None) = None) -> None {
+    import asyncio;
+    await asyncio.to_thread(self.commit, anchor);
+}
+
+
+impl Session.aget(id: UUID) -> (Anchor | None) {
+    import asyncio;
+    return await asyncio.to_thread(self.get, id);
+}
+
+
+impl Session.wait_turn -> None {
+    with self._lock {
+        backing = self._store;
+        if backing is None or not self._contended {
+            return;
+        }
+        wanted = sorted(self._contended);
+        if wanted != sorted(self._queued) {
+            if self._queued {
+                held = self._queued;
+                self._queued = [];
+                backing.queue_exit(held);
+            }
+            if not backing.queue_enter(wanted) {
+                self._contended.clear();
+                return;
+            }
+            self._queued = wanted;
+        }
+        if not backing.in_txn() {
+            self._begin_serializable();
+        }
+    }
 }
 
 

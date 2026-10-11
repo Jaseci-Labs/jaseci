@@ -256,6 +256,9 @@ obj Session(Memory) {
     def read_barrier -> None;
     def _begin_writable -> None;
     def _begin_serializable -> None;
+    def wait_turn -> None;
+    override async def acommit(anchor: (Anchor | None) = None) -> None;
+    override async def aget(id: UUID) -> (Anchor | None);
     def _leave_queue -> None;
     def _commit_txn -> None;
     def _rollback_txn -> None;

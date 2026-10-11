@@ -1137,6 +1137,9 @@ impl PgStore.queue_enter(ids: list[UUID]) -> bool {
             try {
                 self._run('ROLLBACK', {});
             } except Exception {}
+            try {
+                self.queue_exit(ids);
+            } except Exception {}
             if _sqlstate(e) in ('55P03', '40P01') {
                 return False;
             }

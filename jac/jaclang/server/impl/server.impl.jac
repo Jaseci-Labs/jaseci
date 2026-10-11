@@ -255,6 +255,11 @@ async def _run_function_with_occ(
                 if occ_backoff_ms > 0 {
                     await asyncio.sleep(occ_backoff_ms * attempt / 1000.0);
                 }
+                import from jaclang.server.session { Session }
+                mem: any = ctx.mem;
+                if isinstance(mem, Session) {
+                    await asyncio.to_thread(mem.wait_turn);
+                }
                 await ctx.aset_user_root(root_id);
             } except Exception as e {
                 ctx.mem.abort();
