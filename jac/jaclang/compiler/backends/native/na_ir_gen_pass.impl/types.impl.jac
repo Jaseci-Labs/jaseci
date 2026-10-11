@@ -3280,6 +3280,16 @@ impl NaIRGenPass._str_concat_fresh(
 impl NaIRGenPass._emit_str_concat_inplace(
     left: ir.Value, right: ir.Value, slot: ir.Value
 ) -> (ir.Value | None) {
+    """Append to a string in place when its buffer is uniquely owned.
+
+    The header reads are staged. The refcount word sits inside the two-word
+    header a static literal carries too, where it holds the immortal
+    sentinel; the allocation word two words further back exists only on a
+    heap block. So the refcount is read first, and the allocation word only
+    once it says the string is a uniquely owned heap block: a literal, a
+    shared string, or a null never reaches that load and takes the fresh
+    allocation instead.
+    """;
     if self._nogc_headerless() or self._gc_mode() == "none" {
         return None;
     }
@@ -3343,11 +3353,44 @@ impl NaIRGenPass._emit_str_concat_inplace(
     );
 
     nn = self.builder.icmp_unsigned("!=", left, ir.Constant(i8p, None), name="ip.nn");
-    aw_slot = self.builder.bitcast(
-        self.builder.gep(left, [ir.Constant(i64, HDR_ALLOC_ID_OFF)], name="ip.aw.slot"),
-        i64p,
-        name="ip.aw.p"
+    _left_i = self.builder.ptrtoint(left, i64, name="ip.l.i");
+    _rdiff = self.builder.sub(
+        self.builder.ptrtoint(rdata, i64, name="ip.r.i"), _left_i, name="ip.rd"
     );
+
+    noalias = self.builder.icmp_unsigned(">", _rdiff, total, name="ip.noalias");
+    need = self.builder.add(total, ir.Constant(i64, 1), name="ip.need");
+    base = self.builder.gep(left, [ir.Constant(i64, HDR_ALLOC_ID_OFF)], name="ip.base");
+    func = self.builder.function;
+    rc_bb = func.append_basic_block("cat.rc");
+    hdr_bb = func.append_basic_block("cat.hdr");
+    slow_bb = func.append_basic_block("cat.slow");
+    capgo_bb = func.append_basic_block("cat.capgo");
+    capcall_bb = func.append_basic_block("cat.capcall");
+    grow_bb = func.append_basic_block("cat.grow");
+    tail_bb = func.append_basic_block("cat.tail");
+    fresh_bb = func.append_basic_block("cat.fresh");
+    merge_bb = func.append_basic_block("cat.merge");
+    self.builder.cbranch(
+        self.builder.and_(
+            self.builder.and_(nn, _root_ok, name="ip.c0"), noalias, name="ip.c1"
+        ),
+        rc_bb,
+        fresh_bb
+    );
+
+    self.builder.position_at_end(rc_bb);
+    rc_slot = self.builder.bitcast(
+        self.builder.gep(left, [ir.Constant(i64, HDR_RC_OFF)], name="ip.rc.slot"),
+        i64p,
+        name="ip.rc.p"
+    );
+    rc = self.builder.load(rc_slot, name="ip.rc");
+    uniq = self.builder.icmp_unsigned("==", rc, ir.Constant(i64, 1), name="ip.uniq");
+    self.builder.cbranch(uniq, hdr_bb, fresh_bb);
+
+    self.builder.position_at_end(hdr_bb);
+    aw_slot = self.builder.bitcast(base, i64p, name="ip.aw.p");
     aw = self.builder.load(aw_slot, name="ip.aw");
     magic = self.builder.icmp_unsigned(
         "==",
@@ -3359,46 +3402,15 @@ impl NaIRGenPass._emit_str_concat_inplace(
         ir.Constant(i64, HDR_MAGIC),
         name="ip.mok"
     );
-    rc_slot = self.builder.bitcast(
-        self.builder.gep(left, [ir.Constant(i64, HDR_RC_OFF)], name="ip.rc.slot"),
-        i64p,
-        name="ip.rc.p"
-    );
-    rc = self.builder.load(rc_slot, name="ip.rc");
-    uniq = self.builder.icmp_unsigned("==", rc, ir.Constant(i64, 1), name="ip.uniq");
-    _left_i = self.builder.ptrtoint(left, i64, name="ip.l.i");
-    _rdiff = self.builder.sub(
-        self.builder.ptrtoint(rdata, i64, name="ip.r.i"), _left_i, name="ip.rd"
-    );
-
-    noalias = self.builder.icmp_unsigned(">", _rdiff, total, name="ip.noalias");
-    need = self.builder.add(total, ir.Constant(i64, 1), name="ip.need");
-    base = self.builder.gep(left, [ir.Constant(i64, HDR_ALLOC_ID_OFF)], name="ip.base");
     cap_u = self.builder.lshr(aw, ir.Constant(i64, 52), name="ip.capu");
     capf = self.builder.shl(cap_u, ir.Constant(i64, 8), name="ip.capf");
     fitsf = self.builder.icmp_unsigned("<=", need, capf, name="ip.fitsf");
-    ok_ip = self.builder.and_(
-        self.builder.and_(
-            self.builder.and_(nn, magic, name="ip.c1"), _root_ok, name="ip.c0"
-        ),
-        self.builder.and_(uniq, noalias, name="ip.c2"),
-        name="ip.can"
-    );
-    func = self.builder.function;
-    check_bb = self.builder.block;
-    slow_bb = func.append_basic_block("cat.slow");
-    capgo_bb = func.append_basic_block("cat.capgo");
-    capcall_bb = func.append_basic_block("cat.capcall");
-    grow_bb = func.append_basic_block("cat.grow");
-    tail_bb = func.append_basic_block("cat.tail");
-    fresh_bb = func.append_basic_block("cat.fresh");
-    merge_bb = func.append_basic_block("cat.merge");
     self.builder.cbranch(
-        self.builder.and_(ok_ip, fitsf, name="ip.fast"), tail_bb, slow_bb
+        self.builder.and_(magic, fitsf, name="ip.fast"), tail_bb, slow_bb
     );
 
     self.builder.position_at_end(slow_bb);
-    self.builder.cbranch(ok_ip, capgo_bb, fresh_bb);
+    self.builder.cbranch(magic, capgo_bb, fresh_bb);
 
     self.builder.position_at_end(capgo_bb);
     self.builder.cbranch(
@@ -3475,7 +3487,7 @@ impl NaIRGenPass._emit_str_concat_inplace(
 
     self.builder.position_at_end(tail_bb);
     buf = self.builder.phi(i8p, name="ip.buf");
-    buf.add_incoming(left, check_bb);
+    buf.add_incoming(left, hdr_bb);
     buf.add_incoming(left, capcall_bb);
     buf.add_incoming(grown, grow_bb);
     self.builder.call(
