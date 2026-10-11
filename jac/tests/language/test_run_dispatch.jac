@@ -724,6 +724,60 @@ test "backend override rejects unsupported execution modes" {
     _cleanup();
 }
 
+test "a served bundle takes --port after it and refuses other program arguments" {
+    import socket;
+    import subprocess;
+    import time;
+    import from urllib.request { urlopen }
+    import from jaclang.dist.seal { build_jab }
+    d = _mk_project(
+        "kind = \"service\"\nentry-point = \"main\"\n",
+        "main.jac",
+        "def:pub ping -> str { return \"pong\"; }\nwith entry { print(\"up\"); }\n"
+    );
+    bundle = Path(d) / "out" / "p.jab";
+    try {
+        build_jab(JacConfig.load(Path(d) / "jac.toml"), bundle, bake_client=False);
+    } finally {
+        set_config(None);
+    }
+    refused = subprocess.run(
+        jac_command("run", str(bundle), "--verbose"),
+        capture_output=True,
+        text=True,
+        timeout=300
+    );
+    assert refused.returncode != 0 , refused.stdout;
+    assert "takes no program arguments" in refused.stdout + refused.stderr;
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock {
+        sock.bind(("127.0.0.1", 0));
+        port = sock.getsockname()[1];
+    }
+    server = subprocess.Popen(
+        jac_command("run", str(bundle), "--port", str(port)),
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    );
+    try {
+        served = False;
+        deadline = time.time() + 120;
+        while not served and time.time() < deadline {
+            try {
+                with urlopen(f"http://127.0.0.1:{port}/healthz", timeout=2) as reply {
+                    served = reply.status == 200;
+                }
+            } except OSError {
+                time.sleep(0.5);
+            }
+        }
+        assert served , f"the bundle did not serve on --port {port}";
+    } finally {
+        server.terminate();
+        server.wait(timeout=30);
+        _cleanup();
+    }
+}
+
 test "python backend restores compiler context when compilation fails" {
     import from jaclang.compiler.frontend.codeinfo {
         get_effective_default_codespace_override

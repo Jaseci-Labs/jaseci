@@ -548,7 +548,11 @@ impl run_jab_image(
     }
     servable = kind in ["service", "service-mesh", "web-app", "web-static"];
     if serve_only or servable {
-        serve_port = port;
+        (arg_port, accepted) = _bundle_serve_args(args, label);
+        if not accepted {
+            return 1;
+        }
+        serve_port = port if port is not None else arg_port;
         if serve_port is None {
             import from jaclang.project.config { get_config_for_path }
             img_cfg = get_config_for_path(img_root);
@@ -578,6 +582,32 @@ impl run_jab_image(
         "(build its platform projection instead)."
     );
     return 1;
+}
+
+def _bundle_serve_args(args: list[str], label: str) -> tuple[(int | None), bool] {
+    rest = [str(a) for a in args];
+    if rest and rest[0] == "--" {
+        rest = rest[1:];
+    }
+    port: (int | None) = None;
+    i = 0;
+    while i < len(rest) {
+        arg = rest[i];
+        if arg == "--port" and i + 1 < len(rest) and rest[i + 1].isdigit() {
+            port = int(rest[i + 1]);
+            i += 2;
+        } elif arg.startswith("--port=") and arg[len("--port="):].isdigit() {
+            port = int(arg[len("--port="):]);
+            i += 1;
+        } else {
+            console.error(
+                f"{label} serves, so it takes no program arguments (got '{arg}'). "
+                f"Put serve options before the bundle: jac run --port 8080 {label}"
+            );
+            return (None, False);
+        }
+    }
+    return (port, True);
 }
 
 def _jab_native_bin(img_root: Path, entry_rel: str) -> (str | None) {
