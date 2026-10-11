@@ -7,13 +7,14 @@ a C library but not a POSIX one, and not quite the hosted C library either: its
 printf family is a set of inline wrappers in the SDK headers, its standard
 streams are a function call, and it has no pthread keys.
 
-The floor is the LLVM IR that closes that gap. It is linked into every PE
-artifact with the rest of the link glue, defines the names the runtime calls
-with their C library meaning, and implements them over ucrtbase and kernel32.
-A name the floor does not define is imported from ucrtbase by the PE linker,
-under the spelling `WIN_CRT_ALIAS` gives it when the UCRT spells it otherwise.
-`WIN_FLOOR_IMPORTS` names the DLL of each system import the floor itself
-makes that the UCRT does not provide.
+The floor closes that gap. It is LLVM IR linked into every PE artifact with
+the rest of the link glue: win_floor.c, compiled once to the text in
+win_floor_ir.jac, defines the names the runtime calls with the meaning and
+record layouts they have on Linux, over ucrtbase and kernel32; this module
+adds the exception frames' jump pair and tells the PE linker where each
+import comes from. A name the floor does not define is imported from
+ucrtbase, under the spelling `WIN_CRT_ALIAS` gives it when the UCRT spells it
+otherwise.
 """
 
 glob WIN_CRT_DLL: str = "ucrtbase.dll";
@@ -24,11 +25,9 @@ glob WIN_CRT_ALIAS: dict[str, str] = {
     "malloc_usable_size": "_msize",
     "strdup": "_strdup",
     "getpid": "_getpid",
-    "getcwd": "_getcwd",
     "chdir": "_chdir",
     "rmdir": "_rmdir",
     "unlink": "_unlink",
-    "access": "_access",
     "fileno": "_fileno",
     "isatty": "_isatty",
     "close": "_close",
@@ -56,15 +55,9 @@ glob WIN_CRT_ALIAS: dict[str, str] = {
     "y1": "_y1"
 };
 
-"""The DLL behind each system call the floor makes outside the UCRT."""
-glob WIN_FLOOR_IMPORTS: dict[str, str] = {
-    "__chkstk": "kernel32.dll",
-    "FlsAlloc": "kernel32.dll",
-    "FlsGetValue": "kernel32.dll",
-    "FlsSetValue": "kernel32.dll",
-    "SetConsoleOutputCP": "kernel32.dll",
-    "SetConsoleCP": "kernel32.dll"
-};
+"""A UCRT function the floor also defines is called from the floor under this
+prefix, and imported under its own name."""
+glob WIN_UCRT_PREFIX: str = "__ucrt_";
 
 """Logical C library names whose functions the UCRT holds on Windows: an
 `import from c` or `import from m` binds the CRT, not a DLL of that name."""
@@ -82,11 +75,18 @@ def win_import_dll(name: str, declared: (str | None)) -> str {
             return base;
         }
     }
-    return WIN_FLOOR_IMPORTS.get(name, WIN_CRT_DLL);
+    import from jaclang.compiler.backends.native.win_floor_ir { WIN_FLOOR_KERNEL32 }
+    if name == "__chkstk" or name in WIN_FLOOR_KERNEL32 {
+        return "kernel32.dll";
+    }
+    return WIN_CRT_DLL;
 }
 
 def win_import_name(name: str) -> str {
     """The spelling `name` is imported under.""";
+    if name.startswith(WIN_UCRT_PREFIX) {
+        return name[len(WIN_UCRT_PREFIX):];
+    }
     return WIN_CRT_ALIAS.get(name, name);
 }
 
@@ -157,141 +157,8 @@ def _win_jmp_ir -> str {
     return "".join([f'module asm "{line}"\n' for line in lines]) + "\n";
 }
 
-def _win_stdio_ir -> str {
-    """The standard streams and the printf family. The UCRT hands out its
-    streams through `__acrt_iob_func` and formats through the
-    `__stdio_common_*` entry points its headers wrap; option 2 asks those for
-    C99 `snprintf` truncation, which returns the length the text needed.""";
-    return (
-        "@stdin = global ptr null\n"
-        "@stdout = global ptr null\n"
-        "@stderr = global ptr null\n\n"
-        "declare ptr @__acrt_iob_func(i32)\n"
-        "declare i32 @__stdio_common_vfprintf(i64, ptr, ptr, ptr, ptr)\n"
-        "declare i32 @__stdio_common_vsprintf(i64, ptr, i64, ptr, ptr, ptr)\n"
-        "declare i32 @__stdio_common_vsscanf(i64, ptr, i64, ptr, ptr, ptr)\n"
-        "declare void @llvm.va_start(ptr)\n"
-        "declare void @llvm.va_end(ptr)\n\n"
-        "define i32 @printf(ptr %fmt, ...) {\n"
-        "entry:\n"
-        "  %ap = alloca ptr\n"
-        "  call void @llvm.va_start(ptr %ap)\n"
-        "  %args = load ptr, ptr %ap\n"
-        "  %out = load ptr, ptr @stdout\n"
-        "  %r = call i32 @__stdio_common_vfprintf(i64 0, ptr %out, ptr %fmt, ptr null, ptr %args)\n"
-        "  call void @llvm.va_end(ptr %ap)\n"
-        "  ret i32 %r\n"
-        "}\n\n"
-        "define i32 @fprintf(ptr %stream, ptr %fmt, ...) {\n"
-        "entry:\n"
-        "  %ap = alloca ptr\n"
-        "  call void @llvm.va_start(ptr %ap)\n"
-        "  %args = load ptr, ptr %ap\n"
-        "  %r = call i32 @__stdio_common_vfprintf(i64 0, ptr %stream, ptr %fmt, ptr null, ptr %args)\n"
-        "  call void @llvm.va_end(ptr %ap)\n"
-        "  ret i32 %r\n"
-        "}\n\n"
-        "define i32 @snprintf(ptr %buf, i64 %size, ptr %fmt, ...) {\n"
-        "entry:\n"
-        "  %ap = alloca ptr\n"
-        "  call void @llvm.va_start(ptr %ap)\n"
-        "  %args = load ptr, ptr %ap\n"
-        "  %r = call i32 @__stdio_common_vsprintf(i64 2, ptr %buf, i64 %size, ptr %fmt, ptr null, ptr %args)\n"
-        "  call void @llvm.va_end(ptr %ap)\n"
-        "  %failed = icmp slt i32 %r, 0\n"
-        "  %out = select i1 %failed, i32 -1, i32 %r\n"
-        "  ret i32 %out\n"
-        "}\n\n"
-        "define i32 @sprintf(ptr %buf, ptr %fmt, ...) {\n"
-        "entry:\n"
-        "  %ap = alloca ptr\n"
-        "  call void @llvm.va_start(ptr %ap)\n"
-        "  %args = load ptr, ptr %ap\n"
-        "  %r = call i32 @__stdio_common_vsprintf(i64 2, ptr %buf, i64 -1, ptr %fmt, ptr null, ptr %args)\n"
-        "  call void @llvm.va_end(ptr %ap)\n"
-        "  %failed = icmp slt i32 %r, 0\n"
-        "  %out = select i1 %failed, i32 -1, i32 %r\n"
-        "  ret i32 %out\n"
-        "}\n\n"
-        "declare i64 @strlen(ptr)\n\n"
-        "define i32 @sscanf(ptr %text, ptr %fmt, ...) {\n"
-        "entry:\n"
-        "  %ap = alloca ptr\n"
-        "  call void @llvm.va_start(ptr %ap)\n"
-        "  %args = load ptr, ptr %ap\n"
-        "  %n = call i64 @strlen(ptr %text)\n"
-        "  %r = call i32 @__stdio_common_vsscanf(i64 0, ptr %text, i64 %n, ptr %fmt, ptr null, ptr %args)\n"
-        "  call void @llvm.va_end(ptr %ap)\n"
-        "  ret i32 %r\n"
-        "}\n\n"
-    );
-}
-
-def _win_tls_ir -> str {
-    """pthread keys over fiber-local storage, which runs a slot's destructor
-    when its thread exits as a pthread key does. The runtime keeps a key in 64
-    bits; an FLS index is 32.""";
-    return (
-        "declare i32 @FlsAlloc(ptr)\n"
-        "declare ptr @FlsGetValue(i32)\n"
-        "declare i32 @FlsSetValue(i32, ptr)\n\n"
-        "define i32 @pthread_key_create(ptr %key, ptr %destructor) {\n"
-        "entry:\n"
-        "  %index = call i32 @FlsAlloc(ptr %destructor)\n"
-        "  %wide = zext i32 %index to i64\n"
-        "  store i64 %wide, ptr %key\n"
-        "  %failed = icmp eq i32 %index, -1\n"
-        "  %r = select i1 %failed, i32 11, i32 0\n"
-        "  ret i32 %r\n"
-        "}\n\n"
-        "define ptr @pthread_getspecific(i64 %key) {\n"
-        "entry:\n"
-        "  %index = trunc i64 %key to i32\n"
-        "  %v = call ptr @FlsGetValue(i32 %index)\n"
-        "  ret ptr %v\n"
-        "}\n\n"
-        "define i32 @pthread_setspecific(i64 %key, ptr %value) {\n"
-        "entry:\n"
-        "  %index = trunc i64 %key to i32\n"
-        "  %ok = call i32 @FlsSetValue(i32 %index, ptr %value)\n"
-        "  %failed = icmp eq i32 %ok, 0\n"
-        "  %r = select i1 %failed, i32 22, i32 0\n"
-        "  ret i32 %r\n"
-        "}\n\n"
-    );
-}
-
-def _win_init_ir -> str {
-    """`__jac_win_floor_init`, run before any Jac code: it binds the standard
-    streams and makes UTF-8 the encoding of the console and of the narrow
-    strings the UCRT takes for paths (LC_CTYPE only, so number formatting
-    keeps the C locale).""";
-    return (
-        '@.jac.win.utf8 = private unnamed_addr constant [7 x i8] c".UTF-8\\00"\n'
-        "declare ptr @setlocale(i32, ptr)\n"
-        "declare i32 @SetConsoleOutputCP(i32)\n"
-        "declare i32 @SetConsoleCP(i32)\n\n"
-        "define void @__jac_win_floor_init() {\n"
-        "entry:\n"
-        "  %in = call ptr @__acrt_iob_func(i32 0)\n"
-        "  store ptr %in, ptr @stdin\n"
-        "  %out = call ptr @__acrt_iob_func(i32 1)\n"
-        "  store ptr %out, ptr @stdout\n"
-        "  %err = call ptr @__acrt_iob_func(i32 2)\n"
-        "  store ptr %err, ptr @stderr\n"
-        "  %loc = call ptr @setlocale(i32 2, ptr @.jac.win.utf8)\n"
-        "  %cp.out = call i32 @SetConsoleOutputCP(i32 65001)\n"
-        "  %cp.in = call i32 @SetConsoleCP(i32 65001)\n"
-        "  ret void\n"
-        "}\n\n"
-    );
-}
-
 def win_floor_ir -> str {
     """The floor's IR, for the link glue of a PE artifact.""";
-    return "; --- Windows floor ---\n"
-        + _win_jmp_ir()
-        + _win_stdio_ir()
-        + _win_tls_ir()
-        + _win_init_ir();
+    import from jaclang.compiler.backends.native.win_floor_ir { WIN_FLOOR_IR }
+    return "; --- Windows floor ---\n" + _win_jmp_ir() + WIN_FLOOR_IR;
 }
