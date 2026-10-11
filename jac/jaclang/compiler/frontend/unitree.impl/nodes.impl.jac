@@ -818,7 +818,7 @@ impl UniScopeNode.lookup(
     if decl is not None {
         decl_scope = decl.sym_tab;
         if decl_scope is not None {
-            return decl_scope.lookup(name, deep=True, incl_inner_scope=False);
+            return decl_scope.lookup(name, deep=deep, incl_inner_scope=False);
         }
     }
     return None;
