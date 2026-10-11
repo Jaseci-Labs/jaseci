@@ -10,8 +10,12 @@ native->Python call boundary in the harness). `write()` is not probed here
 and a second module-level `write` method poisons ConfigParser.write
 resolution) -- it is byte-verified by the module's differential audit.
 Errors are
-pinned as "<ClassName>: <str(e)>" via exact-class arms with a WRONG-TYPE
-fallback so a mistyped raise shows as a value diff, not a lane abort.
+pinned as "<ClassName>: " + str(e) via exact-class arms with a WRONG-TYPE
+fallback so a mistyped raise shows as a value diff, not a lane abort, and a
+drifted message shows as a value diff too. The two builtin ValueError arms
+stay fixed strings: their messages are concatenated at the raise site, and
+the na runtime does not yet keep such a message alive reliably across
+unwinding (same pin as prim_base64).
 Documented scope divergences are not probed here -- see na_stdlib/README.md.
 ES/JS opts out.
 """
@@ -73,12 +77,27 @@ def configparser_py -> dict[any, any] {
     cp5: ConfigParser = ConfigParser();
     cp5.read_dict({"s": {"a": "1"}, "t": {"b": "2"}});
     out["rd_secs"] = len(cp5.sections());
+    cpm: ConfigParser = ConfigParser();
+    cpm.read_string("[s]\na = 1\n");
+    cpm.read_string("[s]\nb = 2\n[t]\nc = 3\n");
+    out["reread_a"] = cpm.get("s", "a");
+    out["reread_b"] = cpm.get("s", "b");
+    out["reread_n"] = len(cpm.options("s"));
+    out["reread_secs"] = len(cpm.sections());
+    try {
+        cpm.read_string("[s]\nd = 4\n[s]\ne = 5\n");
+        out["reread_dup"] = "NO-RAISE";
+    } except DuplicateSectionError {
+        out["reread_dup"] = "DuplicateSectionError";
+    } except Exception {
+        out["reread_dup"] = "WRONG-TYPE";
+    }
     cpw: ConfigParser = ConfigParser();
     cpw.read_string("[s]\nb = multi\n\tline2\n");
     try {
         ConfigParser().get("nope", "k");
-    } except NoSectionError {
-        out["e_ns"] = "NoSectionError: No section: 'nope'";
+    } except NoSectionError as e {
+        out["e_ns"] = "NoSectionError: " + str(e);
     } except Exception {
         out["e_ns"] = "WRONG-TYPE";
     }
@@ -86,29 +105,29 @@ def configparser_py -> dict[any, any] {
     cpn.read_string("[s]\na = 1\n");
     try {
         cpn.get("s", "zz");
-    } except NoOptionError {
-        out["e_no"] = "NoOptionError: No option 'zz' in section: 's'";
+    } except NoOptionError as e {
+        out["e_no"] = "NoOptionError: " + str(e);
     } except Exception {
         out["e_no"] = "WRONG-TYPE";
     }
     try {
         ConfigParser().read_string("key=val\n");
-    } except MissingSectionHeaderError {
-        out["e_mh"] = "MissingSectionHeaderError: File contains no section headers.\nfile: '<string>', line: 1\n'key=val\n'";
+    } except MissingSectionHeaderError as e {
+        out["e_mh"] = "MissingSectionHeaderError: " + str(e);
     } except Exception {
         out["e_mh"] = "WRONG-TYPE";
     }
     try {
         ConfigParser().read_string("[s]\na = 1\n[s]\nb = 2\n");
-    } except DuplicateSectionError {
-        out["e_ds"] = "DuplicateSectionError: While reading from '<string>' [line  3]: section 's' already exists";
+    } except DuplicateSectionError as e {
+        out["e_ds"] = "DuplicateSectionError: " + str(e);
     } except Exception {
         out["e_ds"] = "WRONG-TYPE";
     }
     try {
         ConfigParser().read_string("[s]\na = 1\na = 2\n");
-    } except DuplicateOptionError {
-        out["e_do"] = "DuplicateOptionError: While reading from '<string>' [line  3]: option 'a' in section 's' already exists";
+    } except DuplicateOptionError as e {
+        out["e_do"] = "DuplicateOptionError: " + str(e);
     } except Exception {
         out["e_do"] = "WRONG-TYPE";
     }
@@ -118,29 +137,29 @@ def configparser_py -> dict[any, any] {
     );
     try {
         cpi.get("s", "a");
-    } except InterpolationMissingOptionError {
-        out["e_im"] = "InterpolationMissingOptionError: Bad value substitution: option 'a' in section 's' contains an interpolation key 'zz' which is not a valid option name. Raw value: '%(zz)s'";
+    } except InterpolationMissingOptionError as e {
+        out["e_im"] = "InterpolationMissingOptionError: " + str(e);
     } except Exception {
         out["e_im"] = "WRONG-TYPE";
     }
     try {
         cpi.get("s", "v0");
-    } except InterpolationDepthError {
-        out["e_id"] = "InterpolationDepthError: Recursion limit exceeded in value substitution: option 'v0' in section 's' contains an interpolation key which cannot be substituted in 10 steps. Raw value: '%(v1)s'";
+    } except InterpolationDepthError as e {
+        out["e_id"] = "InterpolationDepthError: " + str(e);
     } except Exception {
         out["e_id"] = "WRONG-TYPE";
     }
     try {
         cpi.get("s", "pct");
-    } except InterpolationSyntaxError {
-        out["e_is"] = "InterpolationSyntaxError: '%' must be followed by '%' or '(', found: '% off'";
+    } except InterpolationSyntaxError as e {
+        out["e_is"] = "InterpolationSyntaxError: " + str(e);
     } except Exception {
         out["e_is"] = "WRONG-TYPE";
     }
     try {
         ConfigParser().read_string("[s]\nok\nbad2\n");
-    } except ParsingError {
-        out["e_pe"] = "ParsingError: Source contains parsing errors: '<string>'\n\t[line  2]: 'ok\n'\n\t[line  3]: 'bad2\n'";
+    } except ParsingError as e {
+        out["e_pe"] = "ParsingError: " + str(e);
     } except Exception {
         out["e_pe"] = "WRONG-TYPE";
     }
@@ -212,12 +231,27 @@ def configparser_na -> dict[str, any] {
     cp5: ConfigParser = ConfigParser();
     cp5.read_dict({"s": {"a": "1"}, "t": {"b": "2"}});
     out["rd_secs"] = len(cp5.sections());
+    cpm: ConfigParser = ConfigParser();
+    cpm.read_string("[s]\na = 1\n");
+    cpm.read_string("[s]\nb = 2\n[t]\nc = 3\n");
+    out["reread_a"] = cpm.get("s", "a");
+    out["reread_b"] = cpm.get("s", "b");
+    out["reread_n"] = len(cpm.options("s"));
+    out["reread_secs"] = len(cpm.sections());
+    try {
+        cpm.read_string("[s]\nd = 4\n[s]\ne = 5\n");
+        out["reread_dup"] = "NO-RAISE";
+    } except DuplicateSectionError {
+        out["reread_dup"] = "DuplicateSectionError";
+    } except Exception {
+        out["reread_dup"] = "WRONG-TYPE";
+    }
     cpw: ConfigParser = ConfigParser();
     cpw.read_string("[s]\nb = multi\n\tline2\n");
     try {
         ConfigParser().get("nope", "k");
-    } except NoSectionError {
-        out["e_ns"] = "NoSectionError: No section: 'nope'";
+    } except NoSectionError as e {
+        out["e_ns"] = "NoSectionError: " + str(e);
     } except Exception {
         out["e_ns"] = "WRONG-TYPE";
     }
@@ -225,29 +259,29 @@ def configparser_na -> dict[str, any] {
     cpn.read_string("[s]\na = 1\n");
     try {
         cpn.get("s", "zz");
-    } except NoOptionError {
-        out["e_no"] = "NoOptionError: No option 'zz' in section: 's'";
+    } except NoOptionError as e {
+        out["e_no"] = "NoOptionError: " + str(e);
     } except Exception {
         out["e_no"] = "WRONG-TYPE";
     }
     try {
         ConfigParser().read_string("key=val\n");
-    } except MissingSectionHeaderError {
-        out["e_mh"] = "MissingSectionHeaderError: File contains no section headers.\nfile: '<string>', line: 1\n'key=val\n'";
+    } except MissingSectionHeaderError as e {
+        out["e_mh"] = "MissingSectionHeaderError: " + str(e);
     } except Exception {
         out["e_mh"] = "WRONG-TYPE";
     }
     try {
         ConfigParser().read_string("[s]\na = 1\n[s]\nb = 2\n");
-    } except DuplicateSectionError {
-        out["e_ds"] = "DuplicateSectionError: While reading from '<string>' [line  3]: section 's' already exists";
+    } except DuplicateSectionError as e {
+        out["e_ds"] = "DuplicateSectionError: " + str(e);
     } except Exception {
         out["e_ds"] = "WRONG-TYPE";
     }
     try {
         ConfigParser().read_string("[s]\na = 1\na = 2\n");
-    } except DuplicateOptionError {
-        out["e_do"] = "DuplicateOptionError: While reading from '<string>' [line  3]: option 'a' in section 's' already exists";
+    } except DuplicateOptionError as e {
+        out["e_do"] = "DuplicateOptionError: " + str(e);
     } except Exception {
         out["e_do"] = "WRONG-TYPE";
     }
@@ -257,29 +291,29 @@ def configparser_na -> dict[str, any] {
     );
     try {
         cpi.get("s", "a");
-    } except InterpolationMissingOptionError {
-        out["e_im"] = "InterpolationMissingOptionError: Bad value substitution: option 'a' in section 's' contains an interpolation key 'zz' which is not a valid option name. Raw value: '%(zz)s'";
+    } except InterpolationMissingOptionError as e {
+        out["e_im"] = "InterpolationMissingOptionError: " + str(e);
     } except Exception {
         out["e_im"] = "WRONG-TYPE";
     }
     try {
         cpi.get("s", "v0");
-    } except InterpolationDepthError {
-        out["e_id"] = "InterpolationDepthError: Recursion limit exceeded in value substitution: option 'v0' in section 's' contains an interpolation key which cannot be substituted in 10 steps. Raw value: '%(v1)s'";
+    } except InterpolationDepthError as e {
+        out["e_id"] = "InterpolationDepthError: " + str(e);
     } except Exception {
         out["e_id"] = "WRONG-TYPE";
     }
     try {
         cpi.get("s", "pct");
-    } except InterpolationSyntaxError {
-        out["e_is"] = "InterpolationSyntaxError: '%' must be followed by '%' or '(', found: '% off'";
+    } except InterpolationSyntaxError as e {
+        out["e_is"] = "InterpolationSyntaxError: " + str(e);
     } except Exception {
         out["e_is"] = "WRONG-TYPE";
     }
     try {
         ConfigParser().read_string("[s]\nok\nbad2\n");
-    } except ParsingError {
-        out["e_pe"] = "ParsingError: Source contains parsing errors: '<string>'\n\t[line  2]: 'ok\n'\n\t[line  3]: 'bad2\n'";
+    } except ParsingError as e {
+        out["e_pe"] = "ParsingError: " + str(e);
     } except Exception {
         out["e_pe"] = "WRONG-TYPE";
     }

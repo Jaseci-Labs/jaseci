@@ -1014,8 +1014,15 @@ obj:pub ConfigParser {
                             break;
                         }
                     }
-                    cur = parts_sect[sectname];
+                    if sectname in parts_sect {
+                        cur = parts_sect[sectname];
+                    } else {
+                        rd: dict[str, list[str]] = {};
+                        parts_sect[sectname] = rd;
+                        cur = rd;
+                    }
                     cur_sectname = sectname;
+                    elements_sect[sectname] = True;
                 } elif sectname == self.default_section {
                     cur = parts_def;
                     cur_sectname = sectname;

@@ -10,8 +10,8 @@ marshal datetime values); value correctness is covered by the module's
 differential audit against CPython (README).
 Integers >= 2^63 raise OverflowError natively (i64 machine) --
 not probed here; documented SCOPE divergence. Errors pinned as
-"TOMLDecodeError: <str(e)>" with a WRONG-TYPE fallback arm so a wrong class
-shows as a value diff, not a lane abort. The probe body is DUPLICATED into
+"TOMLDecodeError: " + str(e) with a WRONG-TYPE fallback arm so a wrong class
+or a drifted message shows as a value diff, not a lane abort. The probe body is DUPLICATED into
 each lane fn (a shared helper's dict[str, any] signature cannot cross the
 native->Python call boundary in the harness). ES/JS opts out.
 """
@@ -36,48 +36,48 @@ def tomllib_py -> dict[any, any] {
     e1: str = "";
     try {
         loads("a = \"abc");
-    } except TOMLDecodeError {
-        e1 = "TOMLDecodeError: Unterminated string (at end of document)";
+    } except TOMLDecodeError as e {
+        e1 = "TOMLDecodeError: " + str(e);
     } except Exception {
         e1 = "WRONG-TYPE";
     }
     e2: str = "";
     try {
         loads("a = 01");
-    } except TOMLDecodeError {
-        e2 = "TOMLDecodeError: Expected newline or end of document after a statement (at line 1, column 6)";
+    } except TOMLDecodeError as e {
+        e2 = "TOMLDecodeError: " + str(e);
     } except Exception {
         e2 = "WRONG-TYPE";
     }
     e3: str = "";
     try {
         loads("a = 1\na = 2");
-    } except TOMLDecodeError {
-        e3 = "TOMLDecodeError: Cannot overwrite a value (at end of document)";
+    } except TOMLDecodeError as e {
+        e3 = "TOMLDecodeError: " + str(e);
     } except Exception {
         e3 = "WRONG-TYPE";
     }
     e4: str = "";
     try {
         loads("[a]\n[a]");
-    } except TOMLDecodeError {
-        e4 = "TOMLDecodeError: Cannot declare ('a',) twice (at line 2, column 3)";
+    } except TOMLDecodeError as e {
+        e4 = "TOMLDecodeError: " + str(e);
     } except Exception {
         e4 = "WRONG-TYPE";
     }
     e5: str = "";
     try {
         loads("a = \"\\x41\"");
-    } except TOMLDecodeError {
-        e5 = "TOMLDecodeError: Unescaped '\\' in a string (at line 1, column 8)";
+    } except TOMLDecodeError as e {
+        e5 = "TOMLDecodeError: " + str(e);
     } except Exception {
         e5 = "WRONG-TYPE";
     }
     e6: str = "";
     try {
         loads("a = {b = 1,}");
-    } except TOMLDecodeError {
-        e6 = "TOMLDecodeError: Invalid initial character for a key part (at line 1, column 12)";
+    } except TOMLDecodeError as e {
+        e6 = "TOMLDecodeError: " + str(e);
     } except Exception {
         e6 = "WRONG-TYPE";
     }
@@ -152,48 +152,48 @@ def tomllib_na -> dict[str, any] {
     e1: str = "";
     try {
         loads("a = \"abc");
-    } except TOMLDecodeError {
-        e1 = "TOMLDecodeError: Unterminated string (at end of document)";
+    } except TOMLDecodeError as e {
+        e1 = "TOMLDecodeError: " + str(e);
     } except Exception {
         e1 = "WRONG-TYPE";
     }
     e2: str = "";
     try {
         loads("a = 01");
-    } except TOMLDecodeError {
-        e2 = "TOMLDecodeError: Expected newline or end of document after a statement (at line 1, column 6)";
+    } except TOMLDecodeError as e {
+        e2 = "TOMLDecodeError: " + str(e);
     } except Exception {
         e2 = "WRONG-TYPE";
     }
     e3: str = "";
     try {
         loads("a = 1\na = 2");
-    } except TOMLDecodeError {
-        e3 = "TOMLDecodeError: Cannot overwrite a value (at end of document)";
+    } except TOMLDecodeError as e {
+        e3 = "TOMLDecodeError: " + str(e);
     } except Exception {
         e3 = "WRONG-TYPE";
     }
     e4: str = "";
     try {
         loads("[a]\n[a]");
-    } except TOMLDecodeError {
-        e4 = "TOMLDecodeError: Cannot declare ('a',) twice (at line 2, column 3)";
+    } except TOMLDecodeError as e {
+        e4 = "TOMLDecodeError: " + str(e);
     } except Exception {
         e4 = "WRONG-TYPE";
     }
     e5: str = "";
     try {
         loads("a = \"\\x41\"");
-    } except TOMLDecodeError {
-        e5 = "TOMLDecodeError: Unescaped '\\' in a string (at line 1, column 8)";
+    } except TOMLDecodeError as e {
+        e5 = "TOMLDecodeError: " + str(e);
     } except Exception {
         e5 = "WRONG-TYPE";
     }
     e6: str = "";
     try {
         loads("a = {b = 1,}");
-    } except TOMLDecodeError {
-        e6 = "TOMLDecodeError: Invalid initial character for a key part (at line 1, column 12)";
+    } except TOMLDecodeError as e {
+        e6 = "TOMLDecodeError: " + str(e);
     } except Exception {
         e6 = "WRONG-TYPE";
     }
