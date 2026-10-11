@@ -314,9 +314,6 @@ pub fn build(b: *std.Build) void {
     // see the bundled per-OS native floors the launcher imports.) Needs the
     // LLVMPY_* shim placed in-tree and the target's C floor archives.
     const build_stub = tool.run("jac", &.{ "build", "--native" });
-    // Pin the selected runtime's libraries and certificates when both variants are cached.
-    build_stub.setEnvironmentVariable("JAC_NATIVE_FLOOR_DIR", b.fmt("{s}/build/lib", .{python_tree}));
-    build_stub.setEnvironmentVariable("JAC_NATIVE_CA_BUNDLE", b.fmt("{s}/build/cacert.pem", .{python_tree}));
     build_stub.addFileArg(b.path("launcher/launcher.jac"));
     build_stub.addArg("-o");
     const stub = build_stub.addOutputFileArg("jac-stub");
@@ -419,15 +416,18 @@ pub fn build(b: *std.Build) void {
             mk.step.dependOn(&fetch_bun.step);
         }
 
-        // Linux: harvest a static-musl runtime for the target and bundle it so
-        // the shipped binary can fully static-link Linux executables against
-        // musl at native build time -- no glibc/loader dep.
+        // Linux: harvest a static-musl runtime for every Linux target and bundle
+        // them, so the shipped binary can fully static-link Linux executables
+        // for either arch at native build time -- no glibc/loader dep, and no
+        // checkout needed to cross-link.
         if (link_dir == null and std.mem.startsWith(u8, osarch, "linux-")) {
-            const musl_lib = b.pathFromRoot(b.fmt(".pbs-build/{s}/musl/lib", .{osarch}));
-            const vendor_musl = tool.run("payload", &.{ "build-musl", osarch, musl_lib, b.graph.zig_exe });
-            vendor_musl.has_side_effects = true;
-            mk.step.dependOn(&vendor_musl.step);
-            mk.addArg(b.fmt("--musl={s}", .{musl_lib}));
+            for ([_][]const u8{ "linux-x86_64", "linux-aarch64" }) |musl_osarch| {
+                const musl_lib = b.pathFromRoot(b.fmt(".pbs-build/{s}/musl/lib", .{musl_osarch}));
+                const vendor_musl = tool.run("payload", &.{ "build-musl", musl_osarch, musl_lib, b.graph.zig_exe });
+                vendor_musl.has_side_effects = true;
+                mk.step.dependOn(&vendor_musl.step);
+                mk.addArg(b.fmt("--musl={s}", .{musl_lib}));
+            }
         }
 
         // Wasm32 libc bitcode: runs for EVERY build, dev included (a -Ddev

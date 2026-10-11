@@ -81,7 +81,7 @@ impl mk_payload(python_dir: str, repo_root: str, out: str, opts: MkPayloadOpts) 
         False
     );
 
-    stage_tree(python_dir, site, stage, opts.musl_dir, opts.wasm_libc_dir);
+    stage_tree(python_dir, site, stage, opts.musl_dirs, opts.wasm_libc_dir);
 
     precompile_pyc(py, stage);
 
@@ -397,7 +397,7 @@ impl stage_tree(
     python_dir: str,
     site: str,
     stage: str,
-    musl_dir: str | None,
+    musl_dirs: list[str],
     wasm_libc_dir: str | None
 ) {
     log("==> staging runtime tree (shared libpython + stdlib + site)");
@@ -434,7 +434,7 @@ impl stage_tree(
 
     stage_floor(python_dir, stage);
 
-    if musl_dir is not None {
+    for musl_dir in musl_dirs {
         stage_musl(musl_dir, stage);
     }
     if wasm_libc_dir is not None {
@@ -514,7 +514,8 @@ impl stage_floor(python_dir: str, stage: str) {
 }
 
 impl stage_musl(musl_dir: str, stage: str) {
-    osarch = host_os_arch();
+    vendored = os.path.basename(os.path.dirname(os.path.dirname(musl_dir)));
+    osarch = vendored if vendored.startswith("linux-") else host_os_arch();
     dst = os.path.join(stage, "python", "floor", osarch, "musl");
     make_dirs(dst);
     staged = 0;

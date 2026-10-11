@@ -85,7 +85,6 @@ impl parse_mkpayload_flags(flags: list[str]) -> MkPayloadOpts {
         "--shim=": "shim_so",
         "--bun=": "bun_bin",
         "--link-source=": "link_source",
-        "--musl=": "musl_dir",
         "--wasm-libc=": "wasm_libc_dir",
         "--precompiled-cache=": "precompiled_cache",
         "--layer-cache=": "layer_cache",
@@ -102,6 +101,10 @@ impl parse_mkpayload_flags(flags: list[str]) -> MkPayloadOpts {
         }
         if arg == "--debug-src" {
             opts.debug_src = True;
+            continue;
+        }
+        if arg.startswith("--musl=") {
+            opts.musl_dirs.append(arg[len("--musl="):]);
             continue;
         }
         if arg == "--skip-stubcat" {

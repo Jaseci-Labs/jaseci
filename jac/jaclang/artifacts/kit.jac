@@ -33,3 +33,40 @@ def _find_kit -> tuple[str, (SealedImage | None)] {
         return ("", None);
     }
 }
+
+def runtime_floor_root(sealed: bool) -> str {
+    """The `python/floor` directory of the runtime this process runs on: the
+    sealed image's own for a sealed process, the kit's for a rerouted
+    checkout. Empty when there is neither.""";
+    site_pkg = "";
+    if sealed {
+        import from jaclang.jac0core { sealed as sealed_mod }
+        image = sealed_mod._jaclang_image();
+        site_pkg = str(image.pkg_dir) if image is not None else "";
+    } else {
+        found = kit_image();
+        site_pkg = found[0] if found is not None else "";
+    }
+    if not site_pkg {
+        return "";
+    }
+    return os.path.join(os.path.dirname(os.path.dirname(site_pkg)), "python", "floor");
+}
+
+def osarch(triple: str = "") -> str {
+    """`<os>-<arch>` as the build trees and floors name a platform
+    (linux-x86_64, macos-aarch64), for a target triple or this host.""";
+    import platform;
+    text = (triple or f"{sys.platform}-{platform.machine()}").lower();
+    arch = "aarch64" if ("aarch64" in text or "arm64" in text) else "x86_64";
+    if "wasm" in text {
+        return "wasm32";
+    }
+    if "darwin" in text or "apple" in text or "macos" in text {
+        return f"macos-{arch}";
+    }
+    if "win" in text {
+        return f"windows-{arch}";
+    }
+    return f"linux-{arch}";
+}

@@ -90,7 +90,7 @@ def _build(names: list[str], force: bool, exact: bool, release: bool) -> int {
             router.artifact_named(name).provide_floor(_log);
         }
     } else {
-        requested = names or router.names();
+        requested = names or router.release_set();
     }
     try {
         built = router.build(requested, _log, force=force, exact=exact, strict=release);

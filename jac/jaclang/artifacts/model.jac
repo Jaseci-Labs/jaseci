@@ -2,7 +2,11 @@ import from enum { StrEnum }
 
 enum ArtifactKind(StrEnum) { ACCELERATOR = "accelerator", CAPABILITY = "capability" }
 
-enum ReleasePolicy(StrEnum) { REQUIRED = "required", FLOOR = "floor" }
+enum ReleasePolicy(StrEnum) {
+    REQUIRED = "required",
+    FLOOR = "floor",
+    ON_DEMAND = "on-demand"
+}
 
 enum Source(StrEnum) { SEALED = "sealed", CHECKOUT = "checkout", KIT = "kit" }
 
@@ -43,6 +47,7 @@ obj Artifact {
         release: ReleasePolicy,
         summary: str,
         floor: str = "",
+        variant: str = "",
         requires: list[str] = [],
         consumes: list[str] = [],
         hosts: list[str] = [];

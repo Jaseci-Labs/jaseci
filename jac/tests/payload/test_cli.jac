@@ -115,7 +115,7 @@ test "offline argument validation dies before any network or subprocess" {
 test "mkpayload trailing flags parse into MkPayloadOpts; unknown flags are ignored" {
     opts = parse_mkpayload_flags([]);
     assert opts.shim_so is None and opts.bun_bin is None and opts.link_source is None;
-    assert opts.musl_dir is None and opts.wasm_libc_dir is None;
+    assert opts.musl_dirs == [] and opts.wasm_libc_dir is None;
     assert opts.precompiled_cache is None and opts.layer_cache is None;
     assert not opts.skip_precompile and not opts.seal and not opts.debug_src;
 
@@ -143,7 +143,7 @@ test "mkpayload trailing flags parse into MkPayloadOpts; unknown flags are ignor
     assert opts.precompiled_cache == "/c/pre";
     assert opts.layer_cache == "/c/layers";
     assert opts.bun_bin == "/b/bun";
-    assert opts.musl_dir == "/m";
+    assert opts.musl_dirs == ["/m"];
     assert opts.wasm_libc_dir == "/w";
     assert opts.seal and opts.debug_src;
     assert not hasattr(opts, "nvim_dir") and not hasattr(opts, "pyembed_so");

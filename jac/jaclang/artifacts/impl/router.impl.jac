@@ -10,12 +10,17 @@ impl artifact_named(name: str) -> Artifact {
     }
     import importlib;
     import from jaclang.jac0core.artifact_registry { ARTIFACTS }
-    target = ARTIFACTS.get(name);
+    (base, _, variant) = name.partition("@");
+    target = ARTIFACTS.get(base);
     if target is None {
-        raise KeyError(f"no artifact named {name!r}; known: {', '.join(ARTIFACTS)}");
+        raise KeyError(f"no artifact named {base!r}; known: {', '.join(ARTIFACTS)}");
     }
     (module_name, attr) = target.split(":", 1);
     made = getattr(importlib.import_module(module_name), attr)();
+    if variant {
+        made.variant = variant;
+        made.name = name;
+    }
     _ENTRIES[name] = made;
     return made;
 }

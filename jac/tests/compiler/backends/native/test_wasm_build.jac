@@ -65,6 +65,30 @@ def fixture_ir -> str {
 }
 
 # ─── tests ───────────────────────────────────────────────────────────────────
+
+"""Serve the wasm libc from `floor` (an empty string for none) while `fn` runs:
+the checkout tier probes that directory, and no sealed image or kit
+competes."""
+def _with_floor(floor: str, fn: any) -> any {
+    import from unittest.mock { patch }
+    import jaclang.artifacts.router as router;
+    import jaclang.compiler.backends.native.floors as floors;
+    import from jaclang.artifacts.model { Probe, Source }
+    probe = floors._wasm_probe(floor, Source.CHECKOUT) if floor else Probe.missing();
+    router.forget();
+    try {
+        with patch.object(floors.WasmLibcArtifact, "probe_sealed", return_value=None), patch.object(
+            floors.WasmLibcArtifact, "probe_checkout", return_value=probe
+        ), patch.object(
+            floors.WasmLibcArtifact, "probe_kit", return_value=Probe.missing()
+        ) {
+            return fn();
+        }
+    } finally {
+        router.forget();
+    }
+}
+
 test "wasm links retain their target in a host application context" {
     import from jaclang.compiler.driver.pipeline_runner { wasm_ir }
     import from jaclang.compiler.driver.compilation_context { context_program }
@@ -148,24 +172,18 @@ console.log(`slen=${Number(instance.exports.slen())}`);
     assert proc.stdout.strip().splitlines()[-1] == "slen=3";
 }
 
-test "missing vendored libc falls back to the legacy env-import surface" {
-    prev = os.environ.get("JAC_NATIVE_WASM_LIBC_DIR", None);
-    os.environ["JAC_NATIVE_WASM_LIBC_DIR"] = os.path.join(
-        tempfile.mkdtemp(), "definitely-missing"
-    );
-    try {
-        mod = emit_wasm_from_ir(fixture_ir(), [], app_imports=set());
-    } finally {
-        if prev is None {
-            os.environ.pop("JAC_NATIVE_WASM_LIBC_DIR", None);
-        } else {
-            os.environ["JAC_NATIVE_WASM_LIBC_DIR"] = prev;
+test "a missing wasm libc is an error that names the build command" {
+    import from jaclang.artifacts.model { ArtifactUnavailable }
+    def emit -> str {
+        try {
+            emit_wasm_from_ir(fixture_ir(), [], app_imports=set());
+        } except ArtifactUnavailable as e {
+            return str(e);
         }
+        return "";
     }
-    imports = wasm_import_map(mod);
-    # legacy single-namespace behavior: libc leaks as env imports, no jac_host1
-    assert WASM_HOST_MODULE not in imports;
-    assert "malloc" in imports.get("env", []);
+    message = _with_floor("", emit);
+    assert "jac native build wasm-libc" in message , message;
 }
 
 test "the fixture runs under node with ONLY the jac_host1 host object" {
@@ -236,35 +254,31 @@ test "abi64 adapter gap is reported against the floor, not the app" {
     if os.path.exists(merged) {
         os.remove(merged);
     }
-    prev = os.environ.get("JAC_NATIVE_WASM_LIBC_DIR", None);
-    os.environ["JAC_NATIVE_WASM_LIBC_DIR"] = floor;
-    try {
-        with testraises(RuntimeError) as ei {
+    def emit -> str {
+        try {
             emit_wasm_from_ir(fixture_ir(), [], app_imports=set());
+        } except RuntimeError as e {
+            return str(e);
         }
-        msg = str(ei.value);
+        return "";
+    }
+    try {
+        msg = _with_floor(floor, emit);
         assert "is stale" in msg , msg;
         assert "__jac64_" in msg , msg;
         # Names the floor, never tells the reader to touch the host ABI.
         assert floor in msg , msg;
         assert "wasm_host_abi" not in msg , msg;
     } finally {
-        if prev is None {
-            del os.environ["JAC_NATIVE_WASM_LIBC_DIR"];
-        } else {
-            os.environ["JAC_NATIVE_WASM_LIBC_DIR"] = prev;
-        }
         shutil.rmtree(d, ignore_errors=True);
     }
 }
 
 test "every adapted libc name has a floor adapter" {
     _require_libc();
-    import from jaclang.compiler.backends.native.wasm_build {
-        _ABI64_ADAPTED,
-        _wasm_rt_src_dir
-    }
-    src = os.path.join(_wasm_rt_src_dir(), "jac_abi64.c");
+    import from jaclang.compiler.backends.native.wasm_build { _ABI64_ADAPTED }
+    import from jaclang.compiler.backends.native.floors { wasm_rt_src_dir }
+    src = os.path.join(wasm_rt_src_dir(), "jac_abi64.c");
     text = Path(src).read_text();
     missing = sorted(
         [
@@ -311,7 +325,9 @@ test "the built floor defines every abi64 adapter" {
 # the payload tool uses as its incremental-rebuild key.
 test "a floor built from different wasm_rt sources is refused" {
     _require_libc();
-    import from jaclang.compiler.backends.native.wasm_build { FLOOR_MANIFEST }
+    import from jaclang.compiler.backends.native.floors {
+        WASM_FLOOR_MANIFEST as FLOOR_MANIFEST
+    }
     src = _wasm_libc_dir();
     assert src is not None;
     if not os.path.isfile(os.path.join(src, FLOOR_MANIFEST)) {
@@ -338,30 +354,31 @@ test "a floor built from different wasm_rt sources is refused" {
     assert hit , "manifest has no jac_alloc.c entry";
     Path(man).write_text("\n".join(patched) + "\n");
 
-    prev = os.environ.get("JAC_NATIVE_WASM_LIBC_DIR", None);
-    os.environ["JAC_NATIVE_WASM_LIBC_DIR"] = floor;
-    try {
-        with testraises(RuntimeError) as ei {
+    import from jaclang.artifacts.model { ArtifactUnavailable }
+    def emit -> str {
+        try {
             emit_wasm_from_ir(fixture_ir(), [], app_imports=set());
+        } except ArtifactUnavailable as e {
+            return str(e);
         }
-        msg = str(ei.value);
-        assert "different wasm_rt sources" in msg , msg;
-        assert "jac_alloc.c" in msg , msg;
+        return "";
+    }
+    try {
+        msg = _with_floor(floor, emit);
+        assert "wasm_rt/jac_alloc.c changed" in msg , msg;
+        assert "jac native build wasm-libc" in msg , msg;
     } finally {
-        if prev is None {
-            del os.environ["JAC_NATIVE_WASM_LIBC_DIR"];
-        } else {
-            os.environ["JAC_NATIVE_WASM_LIBC_DIR"] = prev;
-        }
         shutil.rmtree(d, ignore_errors=True);
     }
 }
 
-"""A floor with no manifest is unverifiable, not wrong: older artifacts and
-hand-built floors must keep working rather than hard-fail on a missing file."""
-test "a floor without a manifest still links" {
+"""A checkout or kit floor with no manifest cannot be checked against wasm_rt/,
+so the router reports it stale instead of linking it unverified."""
+test "a floor without a manifest is refused until it is rebuilt" {
     _require_libc();
-    import from jaclang.compiler.backends.native.wasm_build { FLOOR_MANIFEST }
+    import from jaclang.compiler.backends.native.floors {
+        WASM_FLOOR_MANIFEST as FLOOR_MANIFEST
+    }
     src = _wasm_libc_dir();
     assert src is not None;
     d = tempfile.mkdtemp();
@@ -371,17 +388,19 @@ test "a floor without a manifest still links" {
     if os.path.exists(man) {
         os.remove(man);
     }
-    prev = os.environ.get("JAC_NATIVE_WASM_LIBC_DIR", None);
-    os.environ["JAC_NATIVE_WASM_LIBC_DIR"] = floor;
-    try {
-        mod = emit_wasm_from_ir(fixture_ir(), [], app_imports=set());
-        assert mod and len(mod) > 0;
-    } finally {
-        if prev is None {
-            del os.environ["JAC_NATIVE_WASM_LIBC_DIR"];
-        } else {
-            os.environ["JAC_NATIVE_WASM_LIBC_DIR"] = prev;
+    import from jaclang.artifacts.model { ArtifactUnavailable }
+    def emit -> str {
+        try {
+            emit_wasm_from_ir(fixture_ir(), [], app_imports=set());
+        } except ArtifactUnavailable as e {
+            return str(e);
         }
+        return "";
+    }
+    try {
+        msg = _with_floor(floor, emit);
+        assert "no source manifest" in msg , msg;
+    } finally {
         shutil.rmtree(d, ignore_errors=True);
     }
 }

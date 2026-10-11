@@ -987,9 +987,6 @@ jobs:
       - name: Run aarch64 cross tests under qemu
         env:
           JAC_TEST_JOBS: "0"
-          # The sealed binary bundles host-arch musl only; point the
-          # static-link search at the kit's cross runtime.
-          JAC_NATIVE_MUSL_DIR: ${{ github.workspace }}/jac/.pbs-build/linux-aarch64/musl/lib
         run: >-
           jac test jac/tests/compiler/backends/native/test_native_gen_pass.jac
           -f aarch64
@@ -1626,6 +1623,8 @@ jobs:
           sudo apt-get install -y llvm-22-dev cmake
       # This step carries test_c_backend.jac's coverage: test-runtime also
       # discovers it but skips it there, having no LLVM 22 toolchain.
+      - name: Build the LLVM C backend
+        run: jac native build llvm-cbe
       - name: Verify C backend comparisons and executable startup
         run: jac test jac/tests/toolchains/test_c_backend.jac
       - name: Scaffold and export the jaclang.org site

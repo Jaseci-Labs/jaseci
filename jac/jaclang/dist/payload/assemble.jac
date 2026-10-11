@@ -53,7 +53,7 @@ obj MkPayloadOpts {
         bun_bin: str | None = None,
         skip_precompile: bool = False,
         link_source: str | None = None,
-        musl_dir: str | None = None,
+        musl_dirs: list[str] = [],
         wasm_libc_dir: str | None = None,
         precompiled_cache: str | None = None,
         layer_cache: str | None = None,
@@ -91,7 +91,7 @@ def stage_tree(
     python_dir: str,
     site: str,
     stage: str,
-    musl_dir: str | None,
+    musl_dirs: list[str],
     wasm_libc_dir: str | None
 );
 

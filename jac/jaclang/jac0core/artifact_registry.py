@@ -14,9 +14,13 @@ import sys
 
 ARTIFACTS: dict[str, str] = {
     "llvm-shim": "jaclang.compiler.backends.native.llvm.shim_path:ShimArtifact",
+    "c-floor": "jaclang.compiler.backends.native.floors:CFloorArtifact",
+    "musl": "jaclang.compiler.backends.native.floors:MuslArtifact",
+    "wasm-libc": "jaclang.compiler.backends.native.floors:WasmLibcArtifact",
     "typeshed": "jaclang.compiler.types.stubcat.locate:TypeshedArtifact",
     "stubcat": "jaclang.compiler.types.stubcat.locate:StubcatArtifact",
     "kernel": "jaclang.compiler.backends.native.kernel_resolve:KernelArtifact",
+    "llvm-cbe": "jaclang.toolchains.c_backend:CBackendArtifact",
 }
 
 ROUTER_MODULES: tuple[str, ...] = (
