@@ -1728,6 +1728,29 @@ impl NaIRGenPass._codegen_compare_link(
             _view_eq, _cmp_left_orig, _cmp_right_orig, release_operands, "cmp_view"
         );
     }
+    if op == Tok.EE or op == Tok.NE {
+        _mixed_eq = self._emit_mixed_list_eq(
+            left,
+            right,
+            self._flow_narrowed_type_of(
+                left_node.expr if isinstance(left_node, uni.CfgExpr) else left_node
+            ),
+            self._flow_narrowed_type_of(
+                right_node.expr if isinstance(right_node, uni.CfgExpr) else right_node
+            )
+        );
+        if _mixed_eq is not None {
+            return self._compare_result(
+                self.builder.not_(_mixed_eq, name="lmix.ne")
+                    if op == Tok.NE
+                    else _mixed_eq,
+                _cmp_left_orig,
+                _cmp_right_orig,
+                release_operands,
+                "cmp_list_mixed"
+            );
+        }
+    }
     _cmp_result = self._emit_comparison(
         op,
         left,

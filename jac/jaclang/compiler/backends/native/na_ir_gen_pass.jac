@@ -3095,6 +3095,28 @@ walker NaIRGenPass(CompilerPass) {
     def _emit_arch_eq(op: str, left: ir.Value, right: ir.Value) -> (ir.Value | None);
     def _eq_fn_new(cache_key: str, left_ty: ir.Type, right_ty: ir.Type) -> ir.Function;
     def _eq_fn_prologue(fn: ir.Function) -> tuple[ir.Block, ir.Block];
+    def _emit_mixed_list_eq(
+        left: ir.Value,
+        right: ir.Value,
+        left_ty: (TypeBase | None),
+        right_ty: (TypeBase | None)
+    ) -> (ir.Value | None);
+
+    def _checked_list_elem(
+        value: ir.Value, ty: (TypeBase | None)
+    ) -> (TypeBase | None);
+
+    def _is_number_slot(elem_type: ir.Type, elem_ty: (TypeBase | None)) -> bool;
+    def _erased_elem_view(elem_ty: (TypeBase | None)) -> (ir.Type | None);
+    def _emit_jacval_number_eq(
+        boxed: ir.Value, number: ir.Value, unsigned: bool
+    ) -> ir.Value;
+
+    def _emit_exact_number_eq(
+        left: ir.Value, right: ir.Value, left_unsigned: bool, right_unsigned: bool
+    ) -> ir.Value;
+
+    def _widen_list_int(value: ir.Value, unsigned: bool) -> ir.Value;
     def _emit_dict_eq(
         left: ir.Value, right: ir.Value, dict_key: str, val_ty: (TypeBase | None)
     ) -> (ir.Value | None);
