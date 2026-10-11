@@ -369,6 +369,7 @@ impl NaIRGenPass._repr_obj_fn(arch_name: str) -> ir.Function {
     );
     fn.linkage = "private";
     fn.args[0].name = "obj";
+    self._repr_fns[arch_name] = fn;
     o = fn.args[0];
     saved_builder = self._builder;
     entry_bb = fn.append_basic_block("entry");
@@ -396,7 +397,6 @@ impl NaIRGenPass._repr_obj_fn(arch_name: str) -> ir.Function {
     }
     b.ret(self._coerce_type(_res, i8p));
     self._builder = saved_builder;
-    self._repr_fns[arch_name] = fn;
     return fn;
 }
 
@@ -889,6 +889,10 @@ impl NaIRGenPass._repr_list_fn(type_key: str) -> (ir.Function | None) {
     if elem_fn is None {
         return None;
     }
+    _built = self._repr_fns.get(type_key);
+    if _built is not None {
+        return _built;
+    }
     self._emit_list_helpers(_spec[0], _spec[1]);
     _st = self.list_types.get(_spec[0]);
     if _st is None {
@@ -914,6 +918,10 @@ impl NaIRGenPass._repr_set_fn(type_key: str) -> (ir.Function | None) {
     elem_fn = self._repr_fn_for_type_key(_inner);
     if elem_fn is None {
         return None;
+    }
+    _built = self._repr_fns.get(type_key);
+    if _built is not None {
+        return _built;
     }
     self._emit_set_helpers(_spec[0], _spec[1]);
     _st = self.set_types.get(_spec[0]);
@@ -946,6 +954,10 @@ impl NaIRGenPass._repr_dict_fn(type_key: str) -> (ir.Function | None) {
     vfn = self._repr_fn_for_type_key(_args[1]);
     if kfn is None or vfn is None {
         return None;
+    }
+    _built = self._repr_fns.get(type_key);
+    if _built is not None {
+        return _built;
     }
     self._emit_dict_helpers(_kspec[0], _vspec[0], _kspec[1], _vspec[1]);
     _st = self.dict_types.get(f"{_kspec[0]}:{_vspec[0]}");
@@ -1039,6 +1051,10 @@ impl NaIRGenPass._repr_tuple_fn(type_key: str) -> (ir.Function | None) {
         }
         _ffns.append(_f);
         _ftys.append(_ft);
+    }
+    _built = self._repr_fns.get(type_key);
+    if _built is not None {
+        return _built;
     }
     i8p = ir.IntType(8).as_pointer();
     i32 = ir.IntType(32);
