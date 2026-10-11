@@ -104,10 +104,15 @@ test "one named-param rewrite per text and bound-name set" {
 obj _ReadProbe {
     has sock: any,
         delay: float = 0.0,
+        sent: any = None,
+        hold: any = None,
         reads: int = 0;
 
     def recv(n: int) -> bytes {
         self.reads += 1;
+        if self.hold is not None {
+            assert self.hold.wait(10.0) , 'the probe was never released';
+        }
         if self.delay {
             time.sleep(self.delay);
         }
@@ -116,6 +121,9 @@ obj _ReadProbe {
 
     def sendall(data: bytes) {
         self.sock.sendall(data);
+        if self.sent is not None {
+            self.sent.set();
+        }
     }
 
     def close {
@@ -180,10 +188,14 @@ test "a notification that shares a read with ReadyForQuery reaches the listener"
         try {
             listener.run('LISTEN jac_pgwire_buf');
             raw = listener._sock;
-            listener._sock = _ReadProbe(sock=raw, delay=0.5);
+            sent = threading.Event();
+            fired = threading.Event();
+            listener._sock = _ReadProbe(sock=raw, delay=0.2, sent=sent, hold=fired);
             def _fire {
-                time.sleep(0.1);
+                assert sent.wait(10.0);
+                time.sleep(0.2);
                 sender.run("NOTIFY jac_pgwire_buf, 'hello'");
+                fired.set();
             }
             t = threading.Thread(target=_fire, daemon=True);
             t.start();
