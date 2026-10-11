@@ -935,6 +935,52 @@ test "bug_comprehension_narrowing_negative" {
 }
 
 # =========================================================================
+# Bug #COMPR-TAIL-NARROW: a statement that ends an `if` body with a
+# comprehension did not flow on to what follows the `if`.
+#
+# `CFGBuildPass._wire_compr_filters` links the enclosing statement to the
+# comprehension's first clause. `_exit_wired` took that link for the
+# statement's way out, so `_connect_tails` never joined the body's last
+# statement to the next one: the only way into it was the edge on which the
+# condition was false. A second `if x is not None` then narrowed `x` from
+# `None` alone, and every use of `x` under it raised E1099.
+# =========================================================================
+test "bug_comprehension_block_tail_narrowing" {
+    program = compile_and_check("checker_bug_compr_block_tail_narrowing.jac");
+
+    assert len(program.errors_had) == 0 , (
+        "A statement that ends a block with a comprehension must flow on to "
+        "what follows the block, so that a guard asked again after it "
+        "narrows as it would after any other statement. "
+        f"Got errors: {[str(e) for e in program.errors_had]}"
+    );
+}
+
+# =========================================================================
+# Bug #COMPR-TAIL-NARROW (true-positive guard): joining the block's tail to
+# what follows must not hide a use that is not guarded, nor one on the
+# branch where the name is None.
+# =========================================================================
+test "bug_comprehension_block_tail_narrowing_negative" {
+    program = compile_and_check("checker_bug_compr_block_tail_narrowing_negative.jac");
+    found = [str(e) for e in program.errors_had];
+    none_lines = [
+        e.loc.first_line
+        for e in program.errors_had
+        if "NoneType" in str(e)
+    ];
+
+    assert 21 in none_lines , (
+        "After the `if`, with no guard, the name may still be None: the "
+        f"use on line 21 must be reported. Got: {found}"
+    );
+    assert 28 in none_lines , (
+        "On the branch where the name is None the use on line 28 must be "
+        f"reported. Got: {found}"
+    );
+}
+
+# =========================================================================
 # Bug #JSX-SLOT-NARROW: `T | None` narrowing did not reach JSX statement
 # slot bodies (`{for ... { <jsx> }}` / `{if ... { <jsx> }}`).
 #
