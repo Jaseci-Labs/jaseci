@@ -5,9 +5,12 @@ import from pathlib { Path }
 import from jaclang.dist.fused.trailer {
     MAGIC,
     OVERLAY_MAGIC,
+    REGION_DESC_LEN,
     TRAILER_LEN,
+    Region,
     Trailer,
     build_trailer,
+    parse_region_desc,
     parse_trailer,
     region_start,
     rt_key
@@ -76,7 +79,7 @@ def graft_runtime(self_path: str, host_path: str) -> bool {
 }
 
 
-def runtime_trailer(exe: str) -> (Trailer | None) {
+def _runtime_tail(exe: str) -> (tuple[int, Trailer] | None) {
     if not os.path.isfile(exe) {
         return None;
     }
@@ -97,7 +100,36 @@ def runtime_trailer(exe: str) -> (Trailer | None) {
             tail = f.read(TRAILER_LEN);
         }
     }
-    return parse_trailer(tail, MAGIC);
+    found = parse_trailer(tail, MAGIC);
+    return (total, found) if found is not None else None;
+}
+
+
+def runtime_trailer(exe: str) -> (Trailer | None) {
+    found = _runtime_tail(exe);
+    return found[1] if found is not None else None;
+}
+
+
+def stubcat_region(exe: str = "") -> (Region | None) {
+    path = exe or running_executable();
+    found = _runtime_tail(path);
+    if found is None {
+        return None;
+    }
+    (total, trailer) = found;
+    payload_start = region_start(total, trailer.payload_len);
+    if payload_start < REGION_DESC_LEN {
+        return None;
+    }
+    with open(path, "rb") as f {
+        f.seek(payload_start - REGION_DESC_LEN);
+        desc = parse_region_desc(f.read(REGION_DESC_LEN));
+    }
+    if desc is None or desc.length <= 0 or desc.off + desc.length > payload_start {
+        return None;
+    }
+    return desc;
 }
 
 

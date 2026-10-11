@@ -317,6 +317,8 @@ test "freezing bootstrap bytecode initializes and preserves its interface" {
     # Finalization is a fresh process. A selfhost symbol-only compile does not
     # initialize the interface codec implicitly, unlike an application compile.
     script = """
+from jaclang.jac0core.artifact_registry import begin
+begin(['stubcat'])
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -345,14 +347,8 @@ with TemporaryDirectory() as directory:
     assert read_section_bytes(data, SEC_IFACE) is not None, (
         'fresh bootstrap sealing lost the dependency interface')
 """;
-    env = dict(os.environ);
-    env["JAC_STUBCAT_BUILDING"] = "1";
     result = subprocess.run(
-        [sys.executable, "-c", script],
-        env=env,
-        capture_output=True,
-        text=True,
-        timeout=600
+        [sys.executable, "-c", script], capture_output=True, text=True, timeout=600
     );
     assert result.returncode == 0 , result.stdout + result.stderr;
 }

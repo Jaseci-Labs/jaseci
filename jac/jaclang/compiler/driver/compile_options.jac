@@ -369,11 +369,6 @@ def env_wasm_libc_dir -> str {
     return os.environ.get("JAC_NATIVE_WASM_LIBC_DIR", "");
 }
 
-def env_llvm_shim_override -> (str | None) {
-    import os;
-    return os.environ.get("JAC_LLVM_SHIM", None);
-}
-
 def env_typed_pointers_enabled -> bool {
     import os;
     return os.environ.get(

@@ -1,5 +1,5 @@
 impl names -> list[str] {
-    import from jaclang.artifacts.registry { ARTIFACTS }
+    import from jaclang.jac0core.artifact_registry { ARTIFACTS }
     return list(ARTIFACTS);
 }
 
@@ -9,7 +9,7 @@ impl artifact_named(name: str) -> Artifact {
         return found;
     }
     import importlib;
-    import from jaclang.artifacts.registry { ARTIFACTS }
+    import from jaclang.jac0core.artifact_registry { ARTIFACTS }
     target = ARTIFACTS.get(name);
     if target is None {
         raise KeyError(f"no artifact named {name!r}; known: {', '.join(ARTIFACTS)}");
@@ -24,6 +24,10 @@ impl resolve(name: str) -> Resolution {
     known = _RESOLVED.get(name);
     if known is not None {
         return known;
+    }
+    import from jaclang.jac0core.artifact_registry { resolution_in_flight }
+    if resolution_in_flight() {
+        return Resolution(name=name, reason="still loading", quiet=True, deferred=True);
     }
     resolution = _decide(artifact_named(name));
     _RESOLVED[name] = resolution;
@@ -55,35 +59,28 @@ impl forget(name: str = "") -> None {
     _ANNOUNCED.clear();
 }
 
-impl building_now -> set[str] {
-    return _BUILDING;
+impl building_now -> frozenset[str] {
+    import from jaclang.jac0core.artifact_registry { building as marked }
+    return marked();
 }
 
 impl building(names: list[str]) -> _BuildingSpan {
-    return _BuildingSpan(
-        added=[
-            n
-            for n in names
-            if n not in _BUILDING
-        ]
-    );
+    return _BuildingSpan(added=list(names));
 }
 
 impl _BuildingSpan.__enter__ -> _BuildingSpan {
-    for name in self.added {
-        _BUILDING.add(name);
-        forget(name);
-    }
+    import from jaclang.jac0core.artifact_registry { begin }
+    self.added = begin(self.added);
+    forget();
     return self;
 }
 
 impl _BuildingSpan.__exit__(
     _exc_type: object, _exc_value: object, _traceback: object
 ) -> bool {
-    for name in self.added {
-        _BUILDING.discard(name);
-        forget(name);
-    }
+    import from jaclang.jac0core.artifact_registry { end }
+    end(self.added);
+    forget();
     return False;
 }
 
@@ -126,17 +123,6 @@ impl publish(stage: str, destination: str, companions: tuple[str, ...] = ()) -> 
             atomic_write(path, data, mode=mode);
         }
     }
-}
-
-impl floor_reason(drift: list[str]) -> str {
-    if not drift or drift == ["not built"] {
-        return "not built";
-    }
-    summary = f"stale: {drift[0]}";
-    if len(drift) > 1 {
-        summary += f" (and {len(drift) - 1} more)";
-    }
-    return summary;
 }
 
 impl tiers(name: str) -> list[tuple[str, Probe]] {
@@ -185,7 +171,7 @@ impl build(
             log(f"skipped {message}");
             continue;
         }
-        why = artifact.unavailable_reason();
+        why = artifact.unavailable_reason() or artifact.build_blocker();
         if why {
             if strict {
                 raise ArtifactUnavailable(f"{name}: {why}");

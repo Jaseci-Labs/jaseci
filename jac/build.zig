@@ -32,6 +32,7 @@ const std = @import("std");
 // Pinned toolchain inputs (Python, LLVM slices), read from bootstrap/pins.json --
 // the single source of truth shared with the Jac payload tool.
 const pins = @import("bootstrap/pins.zig");
+const native_inputs = @import("bootstrap/native_inputs.zig");
 
 // Where `zig build fetch-llvm` extracts the pinned LLVM -- one dir per platform.
 // Used as the default -Dllvm-dir for the jacllvm shim. Returns null for
@@ -86,7 +87,6 @@ const JACBOOT_SRC =
     "root, mode, argv = sys.argv[1], sys.argv[2], sys.argv[3:]\n" ++
     "sys.path.insert(0, root)\n" ++
     "os.environ['JAC_NO_DEV_SOURCE'] = '1'\n" ++
-    "os.environ['JAC_STUBCAT_BUILDING'] = '1'\n" ++
     "import _jac_finder\n" ++
     "_jac_finder.install()\n" ++
     "if mode == 'payload':\n" ++
@@ -572,12 +572,11 @@ fn addLlvmShim(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.bu
     // `zig build` (no option) always links from source.
     if (b.option([]const u8, "shim-bin", "Prebuilt LLVMPY_* shim to bundle (skips the LLVM fetch + link)")) |p| {
         const bin: std.Build.LazyPath = .{ .cwd_relative = p };
-        const place = b.addUpdateSourceFiles();
-        place.addCopyFileToSource(bin, b.fmt("{s}/{s}", .{ SHIM_PLACE_DIR, shim_file }));
+        const place = placeShim(b, bin, shim_file);
         const jacllvm_step = b.step("jacllvm", "Build the LLVMPY_* shim (jac/native), static-link LLVM, place it in-tree");
         jacllvm_step.dependOn(&b.addInstallLibFile(bin, shim_file).step);
-        jacllvm_step.dependOn(&place.step);
-        return .{ .bin = bin, .place = &place.step };
+        jacllvm_step.dependOn(place);
+        return .{ .bin = bin, .place = place };
     }
 
     // -Dllvm-dir wins; otherwise use the fetch-llvm cache (.llvm-build). If
@@ -623,13 +622,29 @@ fn addLlvmShim(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.bu
     // payload -- finds it via ffi.jac's __file__-relative lookup. Mirrors how
     // fetch-typeshed materializes gitignored stubs into the tree. mkpayload's
     // jaclang copy skips this file (it ships the shim via --shim instead).
-    const place = b.addUpdateSourceFiles();
-    place.addCopyFileToSource(bin, b.fmt("{s}/{s}", .{ SHIM_PLACE_DIR, shim_file }));
+    const place = placeShim(b, bin, shim_file);
 
     const jacllvm_step = b.step("jacllvm", "Build the LLVMPY_* shim (jac/native), static-link LLVM, place it in-tree");
     jacllvm_step.dependOn(&b.addInstallLibFile(bin, shim_file).step);
-    jacllvm_step.dependOn(&place.step);
-    return .{ .bin = bin, .place = &place.step };
+    jacllvm_step.dependOn(place);
+    return .{ .bin = bin, .place = place };
+}
+
+/// Place the shim in-tree together with its artifact record: the hash of
+/// the inputs it was built from (bootstrap/native_inputs.zig). The artifact
+/// router accepts a placed shim only when that hash matches the checkout's
+/// current sources, so a shim left over from an older native/ is stale, not
+/// silently loaded.
+fn placeShim(b: *std.Build, bin: std.Build.LazyPath, shim_file: []const u8) *std.Build.Step {
+    const digest = native_inputs.shimInputsHex(b.graph.io, b.allocator, b.pathFromRoot(".")) catch |err|
+        std.debug.panic("shim inputs: {s}", .{@errorName(err)});
+    const place = b.addUpdateSourceFiles();
+    place.addCopyFileToSource(bin, b.fmt("{s}/{s}", .{ SHIM_PLACE_DIR, shim_file }));
+    place.addBytesToSource(
+        b.fmt("{{\"inputs\": \"{s}\"}}\n", .{&digest}),
+        b.fmt("{s}/{s}.artifact.json", .{ SHIM_PLACE_DIR, shim_file }),
+    );
+    return &place.step;
 }
 
 /// Linux link path for the LLVMPY_* shim. Which path a target takes is decided by

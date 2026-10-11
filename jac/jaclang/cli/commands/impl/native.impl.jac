@@ -13,10 +13,7 @@ def _probe_text(probe: Probe) -> str {
     if probe.found is not None {
         return f"current ({probe.found.path})";
     }
-    if probe.omitted {
-        return "ships its floor by design";
-    }
-    return router.floor_reason(probe.drift);
+    return probe.describe();
 }
 
 

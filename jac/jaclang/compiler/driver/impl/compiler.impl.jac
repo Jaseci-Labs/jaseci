@@ -32,15 +32,15 @@ impl JacCompiler.ensure_stub_catalog -> StubCatalog | None {
     }
     found = self.stub_catalog();
     if found is None {
-        import from jaclang.jac0core.stubcat_hook { env_disabled }
-        if env_disabled() or self._stub_catalog_tried {
+        import from jaclang.jac0core.artifact_registry { resolution_in_flight }
+        if self._stub_catalog_tried or resolution_in_flight() {
             return None;
         }
         self._stub_catalog_tried = True;
         import jaclang.compiler.types.stubcat.format;
         import jaclang.compiler.types.stubcat.reader;
-        import from jaclang.compiler.types.stubcat.locate { ensure_catalog }
-        found = ensure_catalog();
+        import from jaclang.compiler.types.stubcat.locate { open_catalog }
+        found = open_catalog();
         self._stub_catalog = found;
     }
 
@@ -847,10 +847,7 @@ impl JacCompiler.enter_compile(ctx: SessionContext) -> CompileFrame {
     if self._reentrant_depth == 0
         and not self.stub_catalog_disabled
         and not target_program.internal {
-        import from jaclang.compiler.types.stubcat.locate { StubCatalogUnavailable }
-        try {
-            self.ensure_stub_catalog();
-        } except StubCatalogUnavailable {}
+        self.ensure_stub_catalog();
     }
     frame = HostCompileFrame(
         nested=self._reentrant_depth > 0, depth_prev=self._reentrant_depth

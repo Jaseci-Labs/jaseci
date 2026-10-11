@@ -24,13 +24,15 @@ obj Probe {
     static def stale(drift: list[str]) -> Probe;
     static def missing(why: str = "not built") -> Probe;
     static def by_design -> Probe;
+    def describe -> str;
 }
 
 obj Resolution {
     has name: str,
         found: (Found | None) = None,
         reason: str = "",
-        quiet: bool = False;
+        quiet: bool = False,
+        deferred: bool = False;
 
     def on_floor -> bool;
 }
@@ -42,6 +44,7 @@ obj Artifact {
         summary: str,
         floor: str = "",
         requires: list[str] = [],
+        consumes: list[str] = [],
         hosts: list[str] = [];
 
     def disabled -> bool;
@@ -52,6 +55,7 @@ obj Artifact {
     def checkout_path -> str abst;
     def build(log: Callable[[str], None], force: bool, exact: bool) -> None abst;
     def host_supported -> bool;
+    def build_blocker -> str;
     def provide_floor(log: Callable[[str], None]) -> None;
     def floor_present -> bool;
 }

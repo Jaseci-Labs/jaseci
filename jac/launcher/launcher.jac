@@ -21,7 +21,7 @@ Dispatch, before any Python bring-up:
 import os;
 import sys;
 import from jaclang.dist.fused.bringup { open_runtime }
-import from jaclang.dist.fused.materialize { overlay_for_path, stubcat_for_path }
+import from jaclang.dist.fused.materialize { overlay_for_path }
 import from jaclang.dist.fused.report { die }
 import from _exec_native { executable_path }
 
@@ -77,19 +77,6 @@ with entry {
     } else {
         os.environ.pop("JAC_APP_OVERLAY_OFF", "");
         os.environ.pop("JAC_APP_OVERLAY_LEN", "");
-    }
-
-    # The stub catalog region (pre-resolved typeshed types) follows the same
-    # export-or-clear discipline: the type checker maps it straight out of
-    # this binary, and a child that is a different jac must not inherit
-    # coordinates that only make sense for this file.
-    cat = stubcat_for_path(exe_path);
-    if cat is not None {
-        os.environ["JAC_STUBCAT_OFF"] = str(cat.off);
-        os.environ["JAC_STUBCAT_LEN"] = str(cat.length);
-    } else {
-        os.environ.pop("JAC_STUBCAT_OFF", "");
-        os.environ.pop("JAC_STUBCAT_LEN", "");
     }
 
     emb = open_runtime(exe_path);

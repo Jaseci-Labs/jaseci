@@ -381,6 +381,16 @@ obj HostServices {
         return False;
     }
 
+    def typeshed_unavailable_reason -> str {
+        import os;
+        import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
+        stdlib = os.path.join(jaclang_pkg_root(), "vendor", "typeshed", "stdlib");
+        if os.path.isfile(os.path.join(stdlib, "builtins.pyi")) {
+            return "";
+        }
+        return f"no typeshed stdlib at {stdlib}";
+    }
+
     def is_native_only_source(rel: str) -> bool {
         return False;
     }

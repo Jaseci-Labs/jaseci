@@ -14,13 +14,31 @@ impl Probe.by_design -> Probe {
     return Probe(omitted=True);
 }
 
+impl Probe.describe -> str {
+    if self.found is not None {
+        return "current";
+    }
+    if self.omitted {
+        return "ships its floor by design";
+    }
+    if self.absent or not self.drift {
+        return self.drift[0] if self.drift else "not built";
+    }
+    summary = f"stale: {self.drift[0]}";
+    if len(self.drift) > 1 {
+        summary += f" (and {len(self.drift) - 1} more)";
+    }
+    return summary;
+}
+
 impl Resolution.on_floor -> bool {
     return self.found is None;
 }
 
 impl Artifact.disabled -> bool {
     import from jaclang.artifacts.router { building_now }
-    return self.name in building_now();
+    marked = building_now();
+    return self.name in marked or any(name in marked for name in self.consumes);
 }
 
 impl Artifact.unavailable_reason -> str {
@@ -43,6 +61,10 @@ impl Artifact.host_supported -> bool {
     import sys;
     host = f"{sys.platform}-{platform.machine().lower()}";
     return any(host.startswith(h) for h in self.hosts);
+}
+
+impl Artifact.build_blocker -> str {
+    return "";
 }
 
 impl Artifact.provide_floor(log: Callable[[str], None]) -> None {}

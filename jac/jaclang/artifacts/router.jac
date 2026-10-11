@@ -10,19 +10,17 @@ import from jaclang.artifacts.model {
 
 glob _ENTRIES: dict[str, Artifact] = {},
      _RESOLVED: dict[str, Resolution] = {},
-     _ANNOUNCED: set[str] = set(),
-     _BUILDING: set[str] = set();
+     _ANNOUNCED: set[str] = set();
 
 def names -> list[str];
 def artifact_named(name: str) -> Artifact;
 def resolve(name: str) -> Resolution;
 def require(name: str) -> Resolution;
 def forget(name: str = "") -> None;
-def building_now -> set[str];
+def building_now -> frozenset[str];
 def building(names: list[str]) -> _BuildingSpan;
 def build_order(requested: list[str]) -> list[str];
 def publish(stage: str, destination: str, companions: tuple[str, ...] = ()) -> None;
-def floor_reason(drift: list[str]) -> str;
 def tiers(name: str) -> list[tuple[str, Probe]];
 def release_set -> list[str];
 def shipped_floors -> list[str];
@@ -75,7 +73,7 @@ def _decide(artifact: Artifact) -> Resolution {
             name=artifact.name, reason="the kit ships its floor", quiet=True
         );
     }
-    return Resolution(name=artifact.name, reason=floor_reason(tree.drift));
+    return Resolution(name=artifact.name, reason=tree.describe());
 }
 
 def _announce(artifact: Artifact, resolution: Resolution) {

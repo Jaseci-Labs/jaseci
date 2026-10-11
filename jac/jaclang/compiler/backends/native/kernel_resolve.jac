@@ -18,8 +18,7 @@ import from jaclang.artifacts.model {
     Source
 }
 
-glob STUBCAT_BUILDING_ENV: str = "JAC_STUBCAT_BUILDING",
-     NOT_BUILT: str = "not built",
+glob NOT_BUILT: str = "not built",
      LAYOUT_SIDECAR_SUFFIX: str = ".layout.json",
      KERNEL_DEV_LINK_MODE: str = NATIVE_LINK_MODE_OBJECTS,
      SEALED_LINK_MODE: str = NATIVE_LINK_MODE_BITCODE,
@@ -304,31 +303,15 @@ def _inspect(
 }
 
 
-def _bundled_image -> (tuple[str, any] | None) {
-    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
-    site_pkg = os.path.join(os.path.dirname(sys.prefix), "site", "jaclang");
-    if not os.path.isdir(os.path.join(site_pkg, "_precompiled")) {
-        return None;
-    }
-    if os.path.realpath(site_pkg) == os.path.realpath(jaclang_pkg_root()) {
-        return None;
-    }
-    try {
-        import from jaclang.jac0core.sealed { load_image }
-        image = load_image(os.path.join(site_pkg, "_precompiled"));
-    } except Exception {
-        return None;
-    }
-    return (site_pkg, image) if image is not None else None;
-}
-
 def _bundled_kit_omits_kernel -> bool {
-    found = _bundled_image();
+    import from jaclang.artifacts.kit { kit_image }
+    found = kit_image();
     return found is not None and kit_omits_kernel(found[1].native);
 }
 
 def _bundled_kernel -> tuple[str, dict[str, any]] | None {
-    found = _bundled_image();
+    import from jaclang.artifacts.kit { kit_image }
+    found = kit_image();
     if found is None {
         return None;
     }
@@ -353,11 +336,9 @@ obj KernelArtifact(Artifact) {
         kind: ArtifactKind = ArtifactKind.ACCELERATOR,
         release: ReleasePolicy = ReleasePolicy.REQUIRED,
         summary: str = "the native compiler kernel",
-        floor: str = "the bytecode compiler";
-
-    override def disabled -> bool {
-        return bool(os.environ.get(STUBCAT_BUILDING_ENV)) or super.disabled();
-    }
+        floor: str = "the bytecode compiler",
+        requires: list[str] = ["llvm-shim"],
+        consumes: list[str] = ["stubcat"];
 
     override def unavailable_reason -> str {
         try {

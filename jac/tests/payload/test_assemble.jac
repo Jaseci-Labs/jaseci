@@ -16,7 +16,7 @@ import from compression.zstd {
     compress,
     decompress
 }
-import from jaclang.compiler.backends.native.llvm.binding.ffi { _shim_name }
+import from jaclang.compiler.backends.native.llvm.shim_path { shim_name }
 import from jaclang.dist.payload.assemble {
     MkPayloadOpts,
     PAYLOAD_WINDOW_LOG,
@@ -144,35 +144,23 @@ test "payload interface sealing uses the fresh staged catalog" {
             argv: list[str], env: dict[str, str] | None, allow_fail: bool
         ) -> bool {
             assert env is not None;
-            for name in ("JAC_STUBCAT_FILE", "JAC_STUBCAT_OFF", "JAC_STUBCAT_LEN") {
-                assert name not in env , "the payload inherited the host's catalog";
-            }
             if argv[2].endswith("stubcat_boot.py") {
-                assert env.get("JAC_STUBCAT_BUILDING") == "1";
+                assert "begin(['stubcat'])" in rf(argv[2]).decode() , (
+                    "the catalog writer marks itself before importing the compiler"
+                );
                 assert not os.path.exists(os.path.join(pre, "MANIFEST.json")) , (
                     "catalog construction must load staged sources, not a cached image"
                 );
                 wf(pre, "stubcat.bin", b"fresh catalog");
                 calls.append("catalog");
             } else {
-                assert not env.get("JAC_STUBCAT_BUILDING") , (
-                    "interface sealing disabled its stub authority"
-                );
                 assert rf(os.path.join(pre, "stubcat.bin")) == b"fresh catalog";
                 wf(pre, "PRECOMPILE_RESULT.json", b"{}");
                 calls.append("interfaces");
             }
             return True;
         }
-        with patch.object(assembly, "run_child", side_effect=child), patch.dict(
-            os.environ,
-            {
-                "JAC_STUBCAT_BUILDING": "1",
-                "JAC_STUBCAT_FILE": "host.bin",
-                "JAC_STUBCAT_OFF": "100",
-                "JAC_STUBCAT_LEN": "200"
-            }
-        ) {
+        with patch.object(assembly, "run_child", side_effect=child) {
             assembly.run_precompile_stage(
                 "python",
                 base,
@@ -217,7 +205,7 @@ test "skipping the payload catalog cannot reuse a cached catalog" {
             argv: list[str], env: dict[str, str] | None, allow_fail: bool
         ) -> bool {
             assert argv[2].endswith("precompile_boot.py");
-            assert env is not None and env.get("JAC_STUBCAT_BUILDING") == "1";
+            assert env is not None;
             assert not os.path.exists(os.path.join(pre, "stubcat.bin"));
             wf(pre, "PRECOMPILE_RESULT.json", b"{}");
             return True;
@@ -511,6 +499,14 @@ test "assemble_site bundles a content-keyed shim under the canonical name" {
     try {
         repo = os.path.join(base, "repo");
         fake_repo(repo);
+        for rel in (
+            "build.zig",
+            "build.zig.zon",
+            "bootstrap/pins.json",
+            "native/core.cpp"
+        ) {
+            wf(repo, rel, f"shim input {rel}\n".encode());
+        }
 
         # What the release channel hands mkpayload: the deps-release asset,
         # whose name embeds the platform and the shim-input hash.
@@ -532,14 +528,22 @@ test "assemble_site bundles a content-keyed shim under the canonical name" {
             assert rf(os.path.join(site, template, "web.jac")) == b"template-entry\n";
             assert not os.path.exists(os.path.join(site, template, ".jac"));
         }
-        # Exactly the path _find_shim() scans for on every sys.path entry.
+        # Exactly the path the llvm-shim artifact probes for in a kit.
         llvm_dir = os.path.join(
             site, "jaclang", "compiler", "backends", "native", "llvm"
         );
         staged = sorted(os.listdir(llvm_dir));
-        assert shim_file_name() == _shim_name() , "payload and loader must spell one shim name";
-        assert staged == [_shim_name()] , f"site shim dir holds {staged}";
-        shim = rf(os.path.join(llvm_dir, _shim_name()));
+        assert shim_file_name() == shim_name() , "payload and loader must spell one shim name";
+        assert staged == [shim_name(), shim_name() + ".artifact.json"] , f"site shim dir holds {staged}";
+        import json;
+        import from jaclang.compiler.backends.native.llvm.shim_path {
+            shim_inputs_digest
+        }
+        record = json.loads(rf(os.path.join(llvm_dir, shim_name() + ".artifact.json")));
+        assert record == {"inputs": shim_inputs_digest(repo)} , (
+            "the kit's shim records the sources it was built from"
+        );
+        shim = rf(os.path.join(llvm_dir, shim_name()));
         assert shim == b"prebuilt-shim-bytes" , "the --shim asset, not the in-tree copy";
     } finally {
         shutil.rmtree(base, ignore_errors=True);

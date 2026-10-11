@@ -206,7 +206,7 @@ test "a kit sealed without its kernel runs from bytecode quietly, sealed or rero
 }
 
 test "the catalog build never loads a kernel" {
-    with patch.dict(os.environ, {"JAC_STUBCAT_BUILDING": "1"}) {
+    with router.building(["stubcat"]) {
         with patch.object(KernelArtifact, "probe_checkout", side_effect=_never) {
             (found, said) = _resolve_fresh();
         }
@@ -383,7 +383,7 @@ test "the kit's kernel runs in place although the kit stripped it after its side
         shipped = Image(
             record={"path": "compiler/libjac_compiler.dylib", "sha256": stripped}
         );
-        with patch.object(resolver, "_bundled_image", return_value=(site, shipped)) {
+        with patch("jaclang.artifacts.kit.kit_image", return_value=(site, shipped)) {
             probe = KernelArtifact().probe_kit();
         }
         found = probe.found;
@@ -401,7 +401,7 @@ test "the kit's kernel runs in place although the kit stripped it after its side
                 "sha256": "not this library"
             }
         );
-        with patch.object(resolver, "_bundled_image", return_value=(site, forged)) {
+        with patch("jaclang.artifacts.kit.kit_image", return_value=(site, forged)) {
             assert KernelArtifact().probe_kit().found is None , (
                 "a kit whose library disagrees with its own manifest is never run"
             );

@@ -20,7 +20,7 @@ import from jaclang.artifacts.model {
     Source
 }
 import jaclang.artifacts.router as router;
-import jaclang.artifacts.registry as registry;
+import jaclang.jac0core.artifact_registry as registry;
 
 obj Fake(Artifact) {
     has sealed: (Probe | None) = None,
