@@ -14,9 +14,6 @@ import from jaclang.dist.payload.pins { host_py_minor, py_ver }
 import from jaclang.dist.payload.vendor { build_musl, build_wasm_libc }
 
 impl main(argv: list[str]) -> int {
-    import os;
-    os.environ.setdefault("JAC_COMPILER_LIB", "off");
-    os.environ.setdefault("JAC_KERNEL_BUILDING", "1");
     try {
         dispatch(list(argv));
     } except PayloadDie as e {

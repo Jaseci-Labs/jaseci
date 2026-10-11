@@ -1583,6 +1583,21 @@ glob JAC_RUNTIME_JS_OBJECT: str = r"""{
     }
   },
 
+  // A closure created in a loop body reaches the loop's own names through a
+  // link made once per pass: it shares the function's binding until the pass
+  // ends, then keeps the value the binding held as its own.
+  passLink(get, set) {
+    return {
+      get v() { return get(); },
+      set v(value) { set(value); },
+      detach() {
+        let own = get();
+        get = () => own;
+        set = (value) => { own = value; };
+      }
+    };
+  },
+
   fw: __JAC_FW_RUNTIME__,
 
   exc: __JAC_EXC_RUNTIME__

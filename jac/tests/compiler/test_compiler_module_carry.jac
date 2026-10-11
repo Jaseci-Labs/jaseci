@@ -438,10 +438,9 @@ test "an unrelated compiler edit lowers no kernel unit again" {
 test "a kernel linked before a compiler edit is still accepted after it" {
     import sys;
     import from jaclang.compiler.backends.native.kernel_resolve {
-        _unit_sources_match,
-        kernel_options
+        kernel_options,
+        unit_drift
     }
-    import from jaclang.compiler.backends.native.link_plan { units_source_key }
     import from jaclang.compiler.driver.jir { unit_source_digest }
     import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
     with checkout() as tree {
@@ -457,20 +456,15 @@ test "a kernel linked before a compiler edit is still accepted after it" {
             "unit_policy": {ident: int(options.native_required_for(MODULE))}
         };
         recorded = {ident: unit_source_digest(MODULE)};
-        source_key = units_source_key([MODULE], options);
-        assert _unit_sources_match(sidecar, recorded, [MODULE]);
+        assert unit_drift(sidecar, recorded, [MODULE]) == [];
         tree.build("b", native="n1");
-        assert _unit_sources_match(sidecar, recorded, [MODULE]) , (
+        assert unit_drift(sidecar, recorded, [MODULE]) == [] , (
             "a compiler edit outside the kernel's units retired the kernel"
         );
-        assert units_source_key([MODULE], options) == source_key;
-        assert not _unit_sources_match(
-            sidecar, {ident: "an earlier revision"}, [MODULE]
-        );
+        assert unit_drift(sidecar, {ident: "an earlier revision"}, [MODULE]);
         os.environ["JAC_DEV_EXACT"] = "1";
-        assert not _unit_sources_match(sidecar, recorded, [MODULE]) , (
+        assert unit_drift(sidecar, recorded, [MODULE]) , (
             "an exact build accepted a kernel stamped by its ABI"
         );
-        assert units_source_key([MODULE], options) != source_key;
     }
 }

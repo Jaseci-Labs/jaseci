@@ -51,6 +51,7 @@ obj HotReloader {
     def _extract_js_exports(js_path: Path) -> set[str];
     def _signal_full_reload -> None;
     def _remove_compiled_output(file_path: str) -> None;
+    def _compiled_root -> Path;
     def _remove_compiled_dir(file_path: str) -> None;
     def _refresh_routing(file_path: str) -> None;
     def _tracked_wasm_module(file_path: str) -> bool;
