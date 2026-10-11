@@ -114,13 +114,10 @@ with entry {
         for name in kernel32_names(source)
         if name in declared
     ];
-    out: list[str] = [
-        '"""The Windows floor as LLVM IR. Generated from win_floor.c by',
-        'scripts/gen_win_floor.jac; edit that file and regenerate, not this one."""',
-        "",
-        '"""The kernel32 functions the floor imports."""',
-        "glob WIN_FLOOR_KERNEL32: list[str] = ["
-    ];
+    # No header in the module: `jac fmt --lintfix` strips one, and the module
+    # must come out of the formatter as it went in. win_floor.jac says what
+    # the two globals are.
+    out: list[str] = ["glob WIN_FLOOR_KERNEL32: list[str] = ["];
     # Laid out as `jac fmt` lays a glob's list out, so the formatter leaves it alone.
     for (i, name) in enumerate(imports) {
         out.append('         "' + name + '"' + ("," if i + 1 < len(imports) else ""));

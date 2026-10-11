@@ -94,9 +94,6 @@ impl PeLinker.parse_object -> bool {
         sec = CoffSection(name=name, characteristics=chars, data=data, vsize=vsize);
         self.sections.append(sec);
 
-        # A section with more than 65534 relocations sets the overflow flag
-        # and keeps the real count in its first entry, which is not a
-        # relocation.
         first_rel = 0;
         if (chars & SCN_LNK_NRELOC_OVFL) and nrel == 0xFFFF {
             nrel = struct.unpack_from("<I", raw, prel)[0];

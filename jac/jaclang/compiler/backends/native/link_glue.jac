@@ -58,7 +58,6 @@ def entry_preamble_ir(spec: GlueSpec) -> str {
         );
     }
     if spec.shared and spec.platform == "pe" {
-        # A DLL has no entry point to bind the floor's standard streams.
         calls.insert(0, "  call void @__jac_win_floor_init()");
     }
     name = SHARED_INIT_SYMBOL if spec.shared else ENTRY_SYMBOL;

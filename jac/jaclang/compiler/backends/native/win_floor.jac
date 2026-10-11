@@ -1,28 +1,5 @@
-"""The Windows floor: what a PE image needs beneath the native runtime.
-
-A Linux executable links musl and a Mach-O one libSystem, and both give the
-runtime the C library it was written against. A Windows image imports the
-Universal C Runtime (ucrtbase.dll, part of every supported Windows), which is
-a C library but not a POSIX one, and not quite the hosted C library either: its
-printf family is a set of inline wrappers in the SDK headers, its standard
-streams are a function call, and it has no pthread keys.
-
-The floor closes that gap. It is LLVM IR linked into every PE artifact with
-the rest of the link glue: win_floor.c, compiled once to the text in
-win_floor_ir.jac, defines the names the runtime calls with the meaning and
-record layouts they have on Linux, over ucrtbase and kernel32; this module
-adds the exception frames' jump pair and tells the PE linker where each
-import comes from. A name the floor does not define is imported from
-ucrtbase, under the spelling `WIN_CRT_ALIAS` gives it when the UCRT spells it
-otherwise.
-"""
-
-glob WIN_CRT_DLL: str = "ucrtbase.dll";
-
-"""C library names the UCRT exports under another spelling, with the same
-arguments in the registers the Win64 convention passes them in."""
-glob WIN_CRT_ALIAS: dict[str, str] = {
-         # `long` is 64 bits to the runtime and 32 to the UCRT.
+glob WIN_CRT_DLL: str = "ucrtbase.dll",
+     WIN_CRT_ALIAS: dict[str, str] = {
          "strtol": "strtoll",
          "strtoul": "strtoull",
          "atol": "atoll",
@@ -62,15 +39,9 @@ glob WIN_CRT_ALIAS: dict[str, str] = {
          "j1": "_j1",
          "y0": "_y0",
          "y1": "_y1"
-     };
-
-"""A UCRT function the floor also defines is called from the floor under this
-prefix, and imported under its own name."""
-glob WIN_UCRT_PREFIX: str = "__ucrt_";
-
-"""Logical C library names whose functions the UCRT holds on Windows: an
-`import from c` or `import from m` binds the CRT, not a DLL of that name."""
-glob WIN_CRT_LIBRARIES: list[str] = [
+     },
+     WIN_UCRT_PREFIX: str = "__ucrt_",
+     WIN_CRT_LIBRARIES: list[str] = [
          "c.dll",
          "m.dll",
          "pthread.dll",
@@ -173,7 +144,21 @@ def _win_jmp_ir -> str {
 }
 
 def win_floor_ir -> str {
-    """The floor's IR, for the link glue of a PE artifact.""";
+    """The Windows floor's IR, for the link glue of a PE artifact.
+
+    A Windows image imports the Universal C Runtime, which is a C library
+    but not the POSIX one the native runtime was written against. The floor
+    closes the gap: win_floor.c, compiled once to the text in win_floor_ir.jac
+    (WIN_FLOOR_IR, with WIN_FLOOR_KERNEL32 naming its kernel32 imports;
+    scripts/gen_win_floor.jac regenerates both), defines the names the
+    runtime calls with the meaning and record layouts they have on Linux,
+    and `_win_jmp_ir` adds the exception frames' jump pair. A name the floor
+    does not define is imported from ucrtbase.dll, under the spelling
+    WIN_CRT_ALIAS gives it where the UCRT spells it otherwise or types it
+    with a 32-bit `long`. A UCRT function the floor also defines is called
+    from the floor as `__ucrt_<name>` (WIN_UCRT_PREFIX), and a library named
+    in WIN_CRT_LIBRARIES is the CRT, not a DLL of that name.
+    """;
     import from jaclang.compiler.backends.native.win_floor_ir { WIN_FLOOR_IR }
     return "; --- Windows floor ---\n" + _win_jmp_ir() + WIN_FLOOR_IR;
 }

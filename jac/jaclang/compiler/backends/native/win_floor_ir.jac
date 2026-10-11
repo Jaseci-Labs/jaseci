@@ -1,7 +1,3 @@
-"""The Windows floor as LLVM IR. Generated from win_floor.c by
-scripts/gen_win_floor.jac; edit that file and regenerate, not this one."""
-
-"""The kernel32 functions the floor imports."""
 glob WIN_FLOOR_KERNEL32: list[str] = [
          "FlsAlloc",
          "FlsGetValue",
@@ -30,9 +26,8 @@ glob WIN_FLOOR_KERNEL32: list[str] = [
          "FreeLibrary",
          "GetModuleHandleW",
          "GetModuleFileNameW"
-     ];
-
-glob WIN_FLOOR_IR: str = r"""
+     ],
+     WIN_FLOOR_IR: str = r"""
 %struct.ucrt_stat64 = type { i32, i16, i16, i16, i16, i16, i32, i64, i64, i64, i64 }
 %struct.linux_timespec = type { i64, i64 }
 

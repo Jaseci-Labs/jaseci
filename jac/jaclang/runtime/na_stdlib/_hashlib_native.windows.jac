@@ -1,12 +1,3 @@
-"""hashlib and hmac over Windows CNG (bcrypt.dll), which every Windows has; the
-other platforms' backend is OpenSSL's libcrypto, which Windows does not ship.
-
-A digest is named to the rest of the library by a small index, and an
-algorithm provider is opened once per digest and use (plain or keyed) and
-kept for the life of the process. CNG has no SHA-224 or BLAKE2, and SHA-3
-only from Windows 11 24H2: a digest the system cannot open is reported
-unsupported, as a libcrypto built without it is."""
-
 import from bcrypt {
     def BCryptOpenAlgorithmProvider(
         provider: bytes, algorithm: bytes, implementation: int, flags: u32
@@ -45,10 +36,8 @@ import from bcrypt {
 glob _BCRYPT_ALG_HANDLE_HMAC_FLAG: int = 8,
      _HASH_CHUNK: int = 1073741824;
 
-"""Open providers, by digest index doubled, plus one for the keyed use."""
 glob _providers: dict[int, int] = {};
 
-"""L"HashDigestLength"."""
 glob _HASH_LENGTH: bytes = b"H\x00a\x00s\x00h\x00D\x00i\x00g\x00e\x00s\x00t\x00L\x00e\x00n\x00g\x00t\x00h\x00\x00\x00";
 
 def _digest_index(name: str) -> int {
@@ -93,7 +82,6 @@ def _algorithm_id(index: int) -> bytes {
     return b"";
 }
 
-"""The provider of digest `index`, opened on first use; 0 if the system has none."""
 def _provider(index: int, keyed: bool) -> int {
     slot: int = index * 2 + (1 if keyed else 0);
     if slot in _providers {
@@ -185,9 +173,6 @@ def:pub ctx_require(ctx: int, what: str) {
 }
 
 
-"""A hash of digest `index`, keyed for HMAC or plain. CNG refuses a plain hash
-given a secret, even an empty one, so the key travels as an address: null
-when there is none."""
 def _hash_new(index: int, key: bytes, keyed: bool) -> int {
     provider: int = _provider(index, keyed);
     if provider == 0 {
@@ -234,8 +219,6 @@ def _hash_clone(ctx: int) -> int {
     return int.from_bytes(handle, "little");
 }
 
-"""The digest of what `ctx` has taken so far. Finishing a CNG hash ends it, so
-a copy is finished and `ctx` goes on."""
 def _hash_digest(ctx: int) -> bytes {
     size = b"\x00" * 4;
     written = b"\x00" * 4;

@@ -2,7 +2,7 @@ impl NaIRGenPass._get_exception_state_type -> ir.Type {
     if self._exc_state_type is not None {
         return self._exc_state_type;
     }
-    # The Windows floor's pair saves xmm6-xmm15 as well: 240 bytes.
+    """The Windows floor's pair saves xmm6-xmm15 as well: 240 bytes.""";
     jmp_buf_type = ir.ArrayType(
         ir.IntType(8), 256 if self._exc_jmp_symbols()[0] == "__jac_setjmp" else 200
     );

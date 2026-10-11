@@ -197,6 +197,9 @@ def _reserved_c_symbols -> frozenset[str] {
         "pthread_setspecific "
         "socket connect send recv shutdown getaddrinfo freeaddrinfo gai_strerror "
         "dlopen dlsym dlclose dlerror "
+        "BCryptOpenAlgorithmProvider BCryptCreateHash BCryptHashData "
+        "BCryptDuplicateHash BCryptFinishHash BCryptDestroyHash BCryptGetProperty "
+        "__jac_win_executable_path "
         "main _start __libc_start_main __getmainargs mainCRTStartup "
         "compress2 uncompress uncompress2 compressBound crc32_z adler32_z "
         "BZ2_bzBuffToBuffCompress BZ2_bzBuffToBuffDecompress "
@@ -893,9 +896,6 @@ def _native_variant_path(base_no_ext: str) -> (str | None) {
         return _osv;
     }
     if _os == "windows" {
-        # The Windows floor presents the libc surface musl gives a Linux
-        # executable, so a module with no Windows variant of its own binds
-        # the Linux one.
         _floorv = f"{base_no_ext}.linux.jac";
         if os.path.exists(_floorv) {
             return _floorv;
