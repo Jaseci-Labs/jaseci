@@ -1138,8 +1138,7 @@ print(json.dumps({
 
 """Each unit's interface digest after planning the cascade project from
 `root_dir`, and the units that build lowered. Every build runs in its own
-process with the bytecode analysis a stage-0 build uses: a dependency the parent
-already analyzed would hide a unit whose interface depends on how deeply its
+process: a dependency the parent already analyzed would hide a unit whose interface depends on how deeply its
 imports were read."""
 def _cascade_plan(root_dir: str) -> tuple[dict[str, str], list[str]] {
     import json;
@@ -1150,7 +1149,6 @@ def _cascade_plan(root_dir: str) -> tuple[dict[str, str], list[str]] {
         for (k, v) in os.environ.items()
         if not k.startswith("JAC_STUBCAT_") and k != "JAC_STANDALONE"
     };
-    env["JAC_COMPILER_LIB"] = "off";
     run = subprocess.run(
         compiler_python_command(CASCADE_PLAN_SCRIPT, root_dir, source_root),
         capture_output=True,

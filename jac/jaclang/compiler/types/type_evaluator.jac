@@ -907,6 +907,10 @@ walker TypeEvaluator {
     ) -> None;
 
     def _member_is_metaclass_only(cls_type: ClassType, expr: FuncCall) -> bool;
+    def _type_args_from_init_overload(
+        caller_type: ClassType, expr: FuncCall, raw_ctor: FunctionType
+    ) -> list[TypeBase];
+
     def class_constructor_callables(cls_type: ClassType) -> list[FunctionType];
     def _infer_type_args_from_method(
         caller_type: ClassType, expr: FuncCall, matched_method: FunctionType | None

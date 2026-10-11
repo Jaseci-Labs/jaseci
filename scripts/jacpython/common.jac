@@ -93,9 +93,6 @@ def format_jac_many(items: list[tuple[str, Path]]) -> list[str] {
     home = items[0][1].parent;
     home.mkdir(parents=True, exist_ok=True);
     scratch = Path(tempfile.mkdtemp(prefix=".gen_", dir=home));
-    # The scratch files sit in the compiler's source tree, so a native
-    # compiler kernel keyed on that tree would be rebuilt for every run.
-    environment = {** os.environ, "JAC_COMPILER_LIB": "off"};
     paths = [
         scratch / f"{index}_{target.name}" for (index, (_, target)) in enumerate(items)
     ];
@@ -106,10 +103,7 @@ def format_jac_many(items: list[tuple[str, Path]]) -> list[str] {
         for _ in range(3) {
             before = [path.read_text() for path in paths];
             result = subprocess.run(
-                [jac, "fmt", "--lintfix", str(scratch)],
-                capture_output=True,
-                text=True,
-                env=environment
+                [jac, "fmt", "--lintfix", str(scratch)], capture_output=True, text=True
             );
             if result.returncode != 0 {
                 sys.exit(
