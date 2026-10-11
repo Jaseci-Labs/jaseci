@@ -71,12 +71,14 @@ def _client_inventory(
     previous = previous or {};
     result: dict[str, tuple[int, int, str]] = {};
     def take(path: str) {
-        if os.path.isfile(path) and not _runtime_output(os.path.basename(path)) {
+        if os.path.isfile(path) {
             result[path] = _stamp(path, previous.get(path));
         }
     }
     for name in sorted(os.listdir(`root)) {
-        take(os.path.join(`root, name));
+        if not _runtime_output(name) {
+            take(os.path.join(`root, name));
+        }
     }
     for directory in dirs {
         for (current, subdirs, names) in os.walk(directory) {

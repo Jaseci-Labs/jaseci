@@ -126,7 +126,20 @@ test "files a web app writes at runtime do not invalidate its prepared record" {
         assert _restored(path, tmp);
         page = base / 'pages' / 'about.jac';
         page.parent.mkdir();
-        page.write_text('def:pub page -> JsxElement {\n    <div>about</div>\n}\n');
+        page.write_text('def:pub page -> JsxPage {\n    return <div>about</div>;\n}\n');
         assert not _restored(path, tmp) , "a new page must re-prepare";
+        import os;
+        import from jaclang.compiler.driver.application { prepare_application }
+        import from jaclang.compiler.driver.program { JacProgram }
+        import from jaclang.runtime.prepared { forget }
+        try {
+            prepared = prepare_application(str(path), JacProgram(), tmp, client=True);
+            routes = str(
+                prepared.manifests[os.path.realpath(str(path))].get('spa_routes')
+            );
+            assert 'about' in routes , f"the first page is not routed: {routes}";
+        } finally {
+            forget(str(path));
+        }
     }
 }
