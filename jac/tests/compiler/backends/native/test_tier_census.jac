@@ -95,3 +95,21 @@ test "a program recorded as not repeatable never makes the baseline stale" {
     assert stale[0].startswith("b.jac: skipped -> refused") , stale;
     assert stale[1].startswith("c.jac: same -> skipped") , stale;
 }
+
+"""Programs in one folder share its graph store, so each run gets a store of
+its own. Sharing one, a program read nodes another program or its own first
+run had left behind, and failed or printed something else the second time."""
+test "every run keeps its graph in a store of its own" {
+    import subprocess;
+    envs: list[dict[str, str]] = [];
+    def finished(*args: any, **kwargs: any) -> subprocess.CompletedProcess {
+        envs.append(kwargs["env"]);
+        return subprocess.CompletedProcess(args=[], returncode=0, stdout="", stderr="");
+    }
+    with patch.object(census_tool.subprocess, "run", side_effect=finished) {
+        census_tool.run_tier("examples/stores.jac", "python");
+        census_tool.run_tier("examples/stores.jac", "python");
+    }
+    assert [env.get("JAC_DB_SCRATCH") for env in envs] == ["1", "1"] , len(envs);
+    assert envs[0]["JAC_DATA_PATH"] != envs[1]["JAC_DATA_PATH"] , len(envs);
+}

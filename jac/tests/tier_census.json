@@ -1,12 +1,12 @@
 {
   "summary": {
-    "same": 46,
-    "refused": 61,
+    "same": 47,
+    "refused": 80,
     "fails": 0,
     "differs": 1,
     "hangs": 0,
     "crashes": 1,
-    "skipped": 78
+    "skipped": 58
   },
   "programs": {
     "examples/chess/chess.jac": {
@@ -170,15 +170,15 @@
       "reason": "E5092 Native lowering failed for constructor '_'"
     },
     "tests/language/fixtures/anonymous_ability_test.jac": {
-      "class": "skipped",
-      "reason": "the Python tier fails"
+      "class": "refused",
+      "reason": "E5092 Native lowering failed for type 'Root'"
     },
     "tests/language/fixtures/arch_create_util.jac": {
       "class": "same"
     },
     "tests/language/fixtures/arch_rel_import_creation.jac": {
-      "class": "skipped",
-      "reason": "the Python tier is not repeatable"
+      "class": "refused",
+      "reason": "E5090 Native pathway does not yet support Python module import 'jaclang'"
     },
     "tests/language/fixtures/archetype_def_bug.jac": {
       "class": "same"
@@ -232,16 +232,16 @@
       "class": "same"
     },
     "tests/language/fixtures/builtin_printgraph.jac": {
-      "class": "skipped",
-      "reason": "the Python tier fails"
+      "class": "refused",
+      "reason": "E5092 Native lowering failed for subscript/index access 'b'"
     },
     "tests/language/fixtures/builtin_printgraph_json.jac": {
       "class": "skipped",
-      "reason": "the Python tier fails"
+      "reason": "the Python tier is not repeatable"
     },
     "tests/language/fixtures/builtin_printgraph_mermaid.jac": {
-      "class": "skipped",
-      "reason": "the Python tier fails"
+      "class": "refused",
+      "reason": "E5092 Native lowering failed for expression 'root'"
     },
     "tests/language/fixtures/by_operator.jac": {
       "class": "skipped",
@@ -288,8 +288,8 @@
       "reason": "its output depends on thread timing"
     },
     "tests/language/fixtures/connect_traverse_syntax.jac": {
-      "class": "skipped",
-      "reason": "the Python tier is not repeatable"
+      "class": "refused",
+      "reason": "E5092 Native lowering failed for connect operand 'root'"
     },
     "tests/language/fixtures/console_edge_cases.jac": {
       "class": "same"
@@ -325,8 +325,8 @@
       "reason": "E5090 Native pathway does not yet support Python module import 'deep.one_lev'"
     },
     "tests/language/fixtures/deep_walker_chain.jac": {
-      "class": "skipped",
-      "reason": "the Python tier fails"
+      "class": "refused",
+      "reason": "E5092 Native lowering failed for type 'Root'"
     },
     "tests/language/fixtures/deferred_field.jac": {
       "class": "same"
@@ -344,11 +344,11 @@
     },
     "tests/language/fixtures/disconn.jac": {
       "class": "refused",
-      "reason": "E5090 Native pathway does not yet support expression 'EdgeRefTrailer'"
+      "reason": "E5090 Native pathway does not yet support attribute access '__name__'"
     },
     "tests/language/fixtures/disconn_typed.jac": {
       "class": "refused",
-      "reason": "E5090 Native pathway does not yet support expression 'EdgeRefTrailer'"
+      "reason": "E5092 Native lowering failed for connect operand 'root'"
     },
     "tests/language/fixtures/disconn_undir.jac": {
       "class": "same"
@@ -362,24 +362,24 @@
       "reason": "E5092 Native lowering failed for connect operand 'root'"
     },
     "tests/language/fixtures/edge_node_walk.jac": {
-      "class": "skipped",
-      "reason": "the Python tier fails"
+      "class": "refused",
+      "reason": "E5092 Native lowering failed for type 'Root'"
     },
     "tests/language/fixtures/edge_ops.jac": {
-      "class": "skipped",
-      "reason": "the Python tier fails"
+      "class": "refused",
+      "reason": "E5092 Native lowering failed for type 'Root'"
     },
     "tests/language/fixtures/edges_walk.jac": {
-      "class": "skipped",
-      "reason": "the Python tier fails"
+      "class": "refused",
+      "reason": "E5092 Native lowering failed for type 'Root'"
     },
     "tests/language/fixtures/edgetypeissue.jac": {
       "class": "refused",
       "reason": "E5092 Native lowering failed for connect operand 'root'"
     },
     "tests/language/fixtures/entry_exit.jac": {
-      "class": "skipped",
-      "reason": "the Python tier is not repeatable"
+      "class": "refused",
+      "reason": "E5092 Native lowering failed for type 'Root'"
     },
     "tests/language/fixtures/enum_inside_archtype.jac": {
       "class": "refused",
@@ -403,8 +403,8 @@
       "class": "same"
     },
     "tests/language/fixtures/foo.jac": {
-      "class": "skipped",
-      "reason": "the Python tier fails"
+      "class": "refused",
+      "reason": "E5090 Native pathway does not yet support Python module import 'jaclang'"
     },
     "tests/language/fixtures/for_else.jac": {
       "class": "same"
@@ -423,15 +423,15 @@
       "reason": "E5092 Native lowering failed for function '_'"
     },
     "tests/language/fixtures/gendot_bubble_sort.jac": {
-      "class": "skipped",
-      "reason": "the Python tier fails"
+      "class": "refused",
+      "reason": "E5092 Native lowering failed for type 'Root'"
     },
     "tests/language/fixtures/glob_multivar_statement.jac": {
       "class": "same"
     },
     "tests/language/fixtures/guess_game.jac": {
-      "class": "skipped",
-      "reason": "the Python tier fails"
+      "class": "refused",
+      "reason": "E5092 Native lowering failed for type 'Root'"
     },
     "tests/language/fixtures/guide_hint_type_error.jac": {
       "class": "skipped",
@@ -463,12 +463,12 @@
       "class": "same"
     },
     "tests/language/fixtures/ignore.jac": {
-      "class": "skipped",
-      "reason": "the Python tier fails"
+      "class": "refused",
+      "reason": "E5092 Native lowering failed for type 'Root'"
     },
     "tests/language/fixtures/ignore_dup.jac": {
-      "class": "skipped",
-      "reason": "the Python tier fails"
+      "class": "refused",
+      "reason": "E5092 Native lowering failed for type 'Root'"
     },
     "tests/language/fixtures/iife_functions_client.jac": {
       "class": "skipped",
@@ -495,7 +495,7 @@
     },
     "tests/language/fixtures/jp_importer.jac": {
       "class": "skipped",
-      "reason": "the Python tier fails"
+      "reason": "the Python tier is not repeatable"
     },
     "tests/language/fixtures/jp_importer_auto.jac": {
       "class": "skipped",
@@ -560,8 +560,8 @@
       "reason": "the Python tier is not repeatable"
     },
     "tests/language/fixtures/node_del.jac": {
-      "class": "skipped",
-      "reason": "the Python tier fails"
+      "class": "refused",
+      "reason": "E5092 Native lowering failed for statement 'Archetype'"
     },
     "tests/language/fixtures/node_trigger.jac": {
       "class": "same"
@@ -614,11 +614,11 @@
     },
     "tests/language/fixtures/refs_target.jac": {
       "class": "refused",
-      "reason": "E5090 Native pathway does not yet support expression 'EdgeRefTrailer'"
+      "reason": "E5092 Native lowering failed for connect operand 'list'"
     },
     "tests/language/fixtures/root_builtin.jac": {
-      "class": "skipped",
-      "reason": "the Python tier is not repeatable"
+      "class": "refused",
+      "reason": "E5092 Native lowering failed for expression 'root'"
     },
     "tests/language/fixtures/root_keyword_trigger_err.jac": {
       "class": "skipped",
@@ -640,8 +640,8 @@
       "class": "same"
     },
     "tests/language/fixtures/simple_walk.jac": {
-      "class": "skipped",
-      "reason": "the Python tier fails"
+      "class": "refused",
+      "reason": "E5092 Native lowering failed for type 'Root'"
     },
     "tests/language/fixtures/spawn_loc_list.jac": {
       "class": "refused",
@@ -676,16 +676,15 @@
       "class": "same"
     },
     "tests/language/fixtures/unicode_strings.jac": {
-      "class": "refused",
-      "reason": "E5092 Native lowering failed for expression 'subscript of an element-erased collection'"
+      "class": "same"
     },
     "tests/language/fixtures/visit_order.jac": {
-      "class": "skipped",
-      "reason": "the Python tier fails"
+      "class": "refused",
+      "reason": "E5092 Native lowering failed for connect operand 'root'"
     },
     "tests/language/fixtures/visit_sequence.jac": {
-      "class": "skipped",
-      "reason": "the Python tier fails"
+      "class": "refused",
+      "reason": "E5092 Native lowering failed for type 'Root'"
     },
     "tests/language/fixtures/visit_traversal.jac": {
       "class": "same"
@@ -696,7 +695,7 @@
     },
     "tests/language/fixtures/walker_update.jac": {
       "class": "skipped",
-      "reason": "the Python tier fails"
+      "reason": "the Python tier is not repeatable"
     },
     "tests/language/fixtures/warnings_only.jac": {
       "class": "same"

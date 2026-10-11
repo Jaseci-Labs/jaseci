@@ -28,6 +28,7 @@ import os;
 import re;
 import subprocess;
 import sys;
+import tempfile;
 import from concurrent.futures { ThreadPoolExecutor }
 import from pathlib { Path }
 
@@ -135,20 +136,27 @@ def jac_argv(*args: str) -> list[str] {
     ];
 }
 
+"""Each run keeps its graph in a scratch database and a data directory of
+its own. Programs that share a folder share its store otherwise, so a
+program would read the nodes another one, or its own earlier run, left
+behind."""
 def run_tier(program: str, tier: str) -> Run {
     path = os.path.join(JAC_ROOT, program);
-    try {
-        done = subprocess.run(
-            jac_argv("run", "-b", tier, path),
-            cwd=os.path.dirname(path),
-            capture_output=True,
-            text=True,
-            errors="replace",
-            timeout=RUN_SECONDS,
-            stdin=subprocess.DEVNULL
-        );
-    } except subprocess.TimeoutExpired {
-        return Run(code=0, out="", err="", timed_out=True);
+    with tempfile.TemporaryDirectory(prefix="jac-census-") as data {
+        try {
+            done = subprocess.run(
+                jac_argv("run", "-b", tier, path),
+                cwd=os.path.dirname(path),
+                capture_output=True,
+                text=True,
+                errors="replace",
+                timeout=RUN_SECONDS,
+                stdin=subprocess.DEVNULL,
+                env={** os.environ, "JAC_DATA_PATH": data, "JAC_DB_SCRATCH": "1"}
+            );
+        } except subprocess.TimeoutExpired {
+            return Run(code=0, out="", err="", timed_out=True);
+        }
     }
     return Run(code=done.returncode, out=done.stdout, err=done.stderr);
 }
