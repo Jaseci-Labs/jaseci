@@ -730,35 +730,45 @@ test "a served bundle takes --port after it and refuses other program arguments"
     import time;
     import from urllib.request { urlopen }
     import from jaclang.dist.seal { build_jab }
+    def free_port -> int {
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock {
+            sock.bind(("127.0.0.1", 0));
+            return sock.getsockname()[1];
+        }
+    }
+    configured = free_port();
     d = _mk_project(
-        "kind = \"service\"\nentry-point = \"main\"\n",
+        f"kind = \"service\"\nentry-point = \"main\"\n\n[serve]\nport = {configured}\n",
         "main.jac",
         "def:pub ping -> str { return \"pong\"; }\nwith entry { print(\"up\"); }\n"
     );
-    bundle = Path(d) / "out" / "p.jab";
+    server: any = None;
     try {
-        build_jab(JacConfig.load(Path(d) / "jac.toml"), bundle, bake_client=False);
-    } finally {
-        set_config(None);
-    }
-    refused = subprocess.run(
-        jac_command("run", str(bundle), "--verbose"),
-        capture_output=True,
-        text=True,
-        timeout=300
-    );
-    assert refused.returncode != 0 , refused.stdout;
-    assert "takes no program arguments" in refused.stdout + refused.stderr;
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock {
-        sock.bind(("127.0.0.1", 0));
-        port = sock.getsockname()[1];
-    }
-    server = subprocess.Popen(
-        jac_command("run", str(bundle), "--port", str(port)),
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
-    );
-    try {
+        bundle = Path(d) / "out" / "p.jab";
+        try {
+            build_jab(JacConfig.load(Path(d) / "jac.toml"), bundle, bake_client=False);
+        } finally {
+            set_config(None);
+        }
+        for extra in (["--verbose"], ["--port=\u00b2"]) {
+            refused = subprocess.run(
+                jac_command("run", str(bundle), *extra),
+                cwd=d,
+                capture_output=True,
+                text=True,
+                timeout=300
+            );
+            assert refused.returncode != 0 , refused.stdout;
+            assert "the only argument it takes is --port"
+                in refused.stdout + refused.stderr , refused.stdout + refused.stderr;
+        }
+        port = free_port();
+        server = subprocess.Popen(
+            jac_command("run", str(bundle), "--port", str(port)),
+            cwd=d,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        );
         served = False;
         deadline = time.time() + 120;
         while not served and time.time() < deadline {
@@ -770,10 +780,18 @@ test "a served bundle takes --port after it and refuses other program arguments"
                 time.sleep(0.5);
             }
         }
-        assert served , f"the bundle did not serve on --port {port}";
+        assert served , (
+            f"the bundle did not serve on --port {port} (configured port {configured})"
+        );
     } finally {
-        server.terminate();
-        server.wait(timeout=30);
+        if server is not None {
+            server.terminate();
+            try {
+                server.wait(timeout=30);
+            } except subprocess.TimeoutExpired {
+                server.kill();
+            }
+        }
         _cleanup();
     }
 }

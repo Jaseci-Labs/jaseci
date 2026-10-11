@@ -510,7 +510,11 @@ def _show_run(
 }
 
 def _run_jab(
-    filename: str, port: (int | None), args: list[str], serve_only: bool
+    filename: str,
+    port: (int | None),
+    args: list[str],
+    serve_only: bool,
+    port_explicit: bool = True
 ) -> int {
     import from jaclang.dist.jab { materialize_jab }
 
@@ -520,11 +524,16 @@ def _run_jab(
         console.error(f"Cannot load {filename}: {e}");
         return 1;
     }
-    return run_jab_image(img_root, port, args, serve_only, filename);
+    return run_jab_image(img_root, port, args, serve_only, filename, port_explicit);
 }
 
 impl run_jab_image(
-    img_root: Path, port: (int | None), args: list[str], serve_only: bool, label: str
+    img_root: Path,
+    port: (int | None),
+    args: list[str],
+    serve_only: bool,
+    label: str,
+    port_explicit: bool = True
 ) -> int {
     import from jaclang.dist.jab { jab_app_meta }
 
@@ -552,7 +561,11 @@ impl run_jab_image(
         if not accepted {
             return 1;
         }
-        serve_port = port if port is not None else arg_port;
+        serve_port = (
+            port
+                if port is not None and (port_explicit or arg_port is None)
+                else arg_port
+        );
         if serve_port is None {
             import from jaclang.project.config { get_config_for_path }
             img_cfg = get_config_for_path(img_root);
@@ -593,21 +606,37 @@ def _bundle_serve_args(args: list[str], label: str) -> tuple[(int | None), bool]
     i = 0;
     while i < len(rest) {
         arg = rest[i];
-        if arg == "--port" and i + 1 < len(rest) and rest[i + 1].isdigit() {
-            port = int(rest[i + 1]);
+        value: (int | None) = None;
+        if arg == "--port" and i + 1 < len(rest) {
+            value = _cli_port(rest[i + 1]);
             i += 2;
-        } elif arg.startswith("--port=") and arg[len("--port="):].isdigit() {
-            port = int(arg[len("--port="):]);
+        } elif arg.startswith("--port=") {
+            value = _cli_port(arg[len("--port="):]);
             i += 1;
-        } else {
+        }
+        if value is None {
+            example = (
+                f"{os.path.basename(sys.argv[0])} --port 8080"
+                    if label == "<app binary>"
+                    else f"jac run --port 8080 {label}"
+            );
             console.error(
-                f"{label} serves, so it takes no program arguments (got '{arg}'). "
-                f"Put serve options before the bundle: jac run --port 8080 {label}"
+                f"{label} serves, so the only argument it takes is --port N "
+                f"(got '{arg}'). For example: {example}"
             );
             return (None, False);
         }
+        port = value;
     }
     return (port, True);
+}
+
+def _cli_port(text: str) -> (int | None) {
+    if not (text.isascii() and text.isdigit()) {
+        return None;
+    }
+    value = int(text);
+    return value if 0 < value < 65536 else None;
 }
 
 def _jab_native_bin(img_root: Path, entry_rel: str) -> (str | None) {
@@ -895,7 +924,14 @@ impl run(
             );
             return 0;
         }
-        return _run_jab(target, port, args, serve_only=(serve_mode is True));
+        import from jaclang.project.config { get_config }
+        return _run_jab(
+            target,
+            port,
+            args,
+            serve_only=(serve_mode is True),
+            port_explicit=_port_is_explicit(port, get_config())
+        );
     }
 
     if show and not target {
