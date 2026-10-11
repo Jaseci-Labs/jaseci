@@ -47,6 +47,7 @@ def emit_coff_object(fixture: str) -> bytes {
         src = program_ir(fixture, WIN_TRIPLE);
         llvm.initialize_all_targets();
         llvm.initialize_all_asmprinters();
+        llvm.initialize_all_asmparsers();
         mod = llvm.parse_assembly(src);
         mod.verify();
         # codemodel="large" (not the default "jitdefault"): on a Windows host
