@@ -31,6 +31,10 @@ def _stamp(path: str, previous: any = None) -> tuple[int, int, str] {
     );
 }
 
+def _runtime_output(name: str) -> bool {
+    return name.endswith(('.log', '.db', '.db-wal', '.db-shm', '.sqlite', '.sqlite3'));
+}
+
 def _inventory(
     `root: any,
     inputs: bool = False,
@@ -45,10 +49,7 @@ def _inventory(
             if ((d not in _SKIP) and not d.startswith('.'))
         );
         for name in sorted(files) {
-            if inputs
-                and name.endswith(
-                    ('.log', '.db', '.db-wal', '.db-shm', '.sqlite', '.sqlite3')
-                ) {
+            if inputs and _runtime_output(name) {
                 continue;
             }
             path = os.path.join(directory, name);
@@ -70,7 +71,7 @@ def _client_inventory(
     previous = previous or {};
     result: dict[str, tuple[int, int, str]] = {};
     def take(path: str) {
-        if os.path.isfile(path) {
+        if os.path.isfile(path) and not _runtime_output(os.path.basename(path)) {
             result[path] = _stamp(path, previous.get(path));
         }
     }
@@ -775,7 +776,16 @@ def _prepare_revision(
         }
     } except (OSError, ValueError, EOFError, TypeError) {}
     stamps = candidate if isinstance(candidate, dict) else {};
-    client_dirs: list[str] = list(stamps.get('client_dirs') or []);
+    client_dirs: list[str] = [];
+    if client {
+        import from jaclang.client.config_loader { JacClientConfig }
+        import from jaclang.project.client_paths { client_input_dirs }
+        client_dirs = client_input_dirs(
+            JacClientConfig(Path(`root), entry_path=`entry).get_jac_config(),
+            Path(`root),
+            `entry
+        );
+    }
     client_files: list[str] = list(stamps.get('client_files') or []);
     inventory = _client_inventory(
         `root, client_dirs, client_files, stamps.get('inventory')
@@ -1017,10 +1027,10 @@ def _prepare_revision(
             'Sources changed during preparation; retry with the new revision.'
         );
     }
+    read: dict[str, str] = {};
     if revision.client_compiler is not None {
-        reader = revision.client_compiler.jac_client_compiler;
-        client_dirs = reader.input_dirs();
-        client_files = sorted(reader.input_files);
+        read = dict(revision.client_compiler.jac_client_compiler.input_files);
+        client_files = sorted(read);
     }
     settled = _client_inventory(`root, client_dirs, client_files, inventory)
         if client
@@ -1030,7 +1040,8 @@ def _prepare_revision(
         or any(
             current.get(path) != digest
             for (path, digest) in _digests(inventory).items()
-        ) {
+        )
+        or any(current.get(path, '') != digest for (path, digest) in read.items()) {
         raise RuntimeError(
             'Sources changed during preparation; retry with the new revision.'
         );

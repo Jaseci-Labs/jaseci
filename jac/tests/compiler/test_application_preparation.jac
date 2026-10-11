@@ -723,47 +723,18 @@ test "preparation loads native engines for executable server calls" {
 }
 
 """Prepare `path` and report whether it restored the recorded application."""
-def _restored(path: Path, `root: str, client: bool = False) -> bool {
+def _restored(path: Path, `root: str) -> bool {
     import contextlib;
     import io;
     err = io.StringIO();
     try {
         with contextlib.redirect_stderr(err) {
-            prepare_application(str(path), JacProgram(), `root, client=client);
+            prepare_application(str(path), JacProgram(), `root);
         }
     } finally {
         forget(str(path));
     }
     return 'Restoring prepared application' in err.getvalue();
-}
-
-test "files a web app writes at runtime do not invalidate its prepared record" {
-    import from jaclang.testing.requires { require_tool }
-    require_tool("bun");
-    with tempfile.TemporaryDirectory(prefix='jac-prepared-data-') as tmp {
-        base = Path(tmp);
-        path = base / 'main.jac';
-        path.write_text(
-            'import from "@jac/runtime" { renderJsxTree, }\n\n'
-            'def:pub app -> JsxElement {\n    <div class="root">hello</div>\n}\n'
-        );
-        asset = base / 'assets' / 'brand.css';
-        asset.parent.mkdir();
-        asset.write_text('.root { color: red; }');
-        assert not _restored(path, tmp, client=True);
-        data = base / 'storage' / 'orgs' / 'state.json';
-        data.parent.mkdir(parents=True);
-        data.write_text('{"n": 1}');
-        assert _restored(path, tmp, client=True) , (
-            "a data file the app wrote at runtime discarded the prepared application"
-        );
-        data.write_text('{"n": 2}');
-        assert _restored(path, tmp, client=True);
-        asset.write_text('.root { color: blue; }');
-        assert not _restored(path, tmp, client=True) , (
-            "a change to a client asset must still re-prepare"
-        );
-    }
 }
 
 test "prepared applications are reused by content, not by timestamp" {

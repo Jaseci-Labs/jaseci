@@ -98,7 +98,7 @@ impl JacClientCompiler.compile(
     module_path: Path,
     native: bool = False
 ) -> tuple[list[str], list[str]] {
-    self.input_files = set();
+    self.input_files = {};
     self.emit_prelude();
     artifact = self.jac_compiler.compile_module(module_path);
     self._collect_na_modules(artifact);
@@ -140,14 +140,6 @@ impl JacClientCompiler.compile(
     client_exports = sorted(collected_exports);
     client_globals = list(collected_globals.keys());
     return (client_exports, client_globals);
-}
-
-impl JacClientCompiler.input_dirs(self: JacClientCompiler) -> list[str] {
-    import from jaclang.client.config_loader { JacClientConfig }
-    assets = JacClientConfig(
-        self.project_dir, entry_path=self.entry_path
-    ).get_assets_dir();
-    return [str(assets), str(self._app_root() / 'pages')];
 }
 
 impl JacClientCompiler.copy_root_assets(self: JacClientCompiler) -> None {
@@ -298,8 +290,11 @@ impl JacClientCompiler.emit_dependencies(
             artifact, str(module_path), output_path, source_header + combined_js
         );
     }
-    self.input_files.update(str(asset) for asset in closure.assets);
+    import from jaclang.compiler.driver.jir { compute_content_sha256 }
     for asset in closure.assets {
+        self.input_files[str(asset)] = compute_content_sha256(str(asset))
+            if asset.is_file()
+            else "";
         if asset.suffix == '.js' {
             self._copy_js_file(asset, source_root);
         } elif asset.suffix in {'.ts', '.tsx'} {

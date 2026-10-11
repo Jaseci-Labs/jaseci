@@ -17,7 +17,7 @@ with entry {
 class JacClientCompiler {
     has entry_path: str = "",
         na_wasm_modules: set[str] = set(),
-        input_files: set[str] = set();
+        input_files: dict[str, str] = {};
 
     with entry {
         ROUTER_EXPORTS = [
@@ -93,7 +93,6 @@ class JacClientCompiler {
     ) -> None;
 
     def copy_root_assets(self: JacClientCompiler) -> None;
-    def input_dirs(self: JacClientCompiler) -> list[str];
     def _scan_and_compile_pages(
         self: JacClientCompiler,
         entry_manifest: any = None,
