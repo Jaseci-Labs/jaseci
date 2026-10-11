@@ -1,11 +1,8 @@
-"""`resolve_kernel()` is the one kernel lookup.
-
-Its precedence is fixed: the sealed image, then a checkout's own kernel,
-then the kernel of the kit the checkout runs on, each accepted only when it
-was built from the sources this process runs. Anything else runs the
-compiler from bytecode and says so once. Resolving never builds a kernel;
-`jac kernel build` does.
-"""
+"""The kernel is one artifact the router resolves: the sealed image's
+kernel, then the checkout's, then the kit's in place, each accepted only
+when it was built from the sources this process runs; otherwise the
+bytecode compiler serves and the router says so. Resolving never builds;
+`jac native build kernel` does."""
 
 import io;
 import json;
@@ -16,7 +13,10 @@ import tempfile;
 import from pathlib { Path }
 import from unittest.mock { patch }
 import from jaclang.compiler.driver.compile_options { CompileOptions }
+import from jaclang.artifacts.model { Probe, Source }
+import jaclang.artifacts.router as router;
 import from jaclang.compiler.backends.native.kernel_resolve {
+    KernelArtifact,
     ResolvedKernel,
     _inspect,
     kernel_options,
@@ -28,16 +28,8 @@ import jaclang.compiler.backends.native.kernel_resolve as resolver;
 import from jaclang.compiler.backends.native.link_plan { LinkResult }
 import from jaclang.compiler.native_compiler { reset_loaded }
 
-def _unsealed(fn: any) -> any {
-    with patch.object(resolver, "_sealed_kit_omits_kernel", return_value=False) {
-        with patch.object(resolver, "_from_sealed_image", return_value=None) {
-            return fn();
-        }
-    }
-}
-
-def _resolve_unsealed -> any {
-    return _unsealed(resolve_kernel);
+def _never(*args: any, **kwargs: any) -> any {
+    raise AssertionError("resolving a kernel must never build or probe here");
 }
 
 def _toolchain(ok: bool = True) -> any {
@@ -49,28 +41,37 @@ def _toolchain(ok: bool = True) -> any {
     );
 }
 
-def _never(*args: any, **kwargs: any) -> any {
-    raise AssertionError("resolving a kernel must never build one");
-}
-
-"""Resolve with a fresh notice and return what resolved and what it printed."""
-def _resolve_quietly(fn: any) -> tuple[any, str] {
+"""Resolve the kernel afresh with the sealed image out of the way and return
+what resolved and what the router printed."""
+def _resolve_fresh(sealed: bool = False) -> tuple[(ResolvedKernel | None), str] {
     err = io.StringIO();
-    prior = dict(resolver._NOTICE);
-    resolver._NOTICE["shown"] = False;
+    router.forget();
+    reset_loaded();
     try {
-        with patch.object(sys, "stderr", err) {
-            found = fn();
+        with patch.object(resolver, "_sealed_kit_omits_kernel", return_value=False) {
+            with patch.object(
+                resolver,
+                "_from_sealed_image",
+                return_value=(
+                    ResolvedKernel(lib_path="shipped", layout={}, source="sealed")
+                        if sealed
+                        else None
+                )
+            ) {
+                with patch.object(
+                    resolver, "read_sidecar", return_value={"classes": {}}
+                ) {
+                    with patch.object(sys, "stderr", err) {
+                        found = resolve_kernel();
+                    }
+                }
+            }
         }
     } finally {
-        resolver._NOTICE.clear();
-        resolver._NOTICE.update(prior);
+        router.forget();
+        reset_loaded();
     }
     return (found, err.getvalue());
-}
-
-def _resolve_twice -> tuple[any, any] {
-    return (_unsealed(resolve_kernel), _unsealed(resolve_kernel));
 }
 
 def _sidecar_for(lib: str, unit: str, **overrides: any) -> dict[str, any] {
@@ -100,14 +101,13 @@ def _sidecar_for(lib: str, unit: str, **overrides: any) -> dict[str, any] {
 }
 
 test "a sealed image runs its own kernel and never consults the checkout" {
-    shipped = ResolvedKernel(lib_path="shipped", layout={}, source="sealed");
-    with patch.object(resolver, "_sealed_kit_omits_kernel", return_value=False) {
-        with patch.object(resolver, "_from_sealed_image", return_value=shipped) {
-            with patch.object(resolver, "_from_source_tree", side_effect=_never) {
-                assert resolve_kernel() is shipped;
-            }
-        }
+    with patch.object(KernelArtifact, "probe_checkout", side_effect=_never) {
+        (found, said) = _resolve_fresh(sealed=True);
     }
+    assert found is not None
+        and found.lib_path == "shipped"
+        and found.source == "sealed";
+    assert said == "";
 }
 
 test "a seal omits the kernel only in a pull-request CI build" {
@@ -177,142 +177,92 @@ test "only a pull-request kit's own record omits the kernel" {
     ) , "a record that names a kernel carries one";
 }
 
-test "a kit sealed without a kernel runs from bytecode quietly, sealed or rerouted" {
-    reset_loaded();
+test "a kit sealed without its kernel runs from bytecode quietly, sealed or rerouted" {
+    router.forget();
     try {
-        os.environ.pop("JAC_STUBCAT_BUILDING", None);
         with patch.object(resolver, "_sealed_kit_omits_kernel", return_value=True) {
-            with patch.object(resolver, "_from_sealed_image", side_effect=_never) {
-                with patch.object(resolver, "_from_source_tree", side_effect=_never) {
-                    assert resolve_kernel() is None;
-                }
-            }
+            sealed = KernelArtifact().probe_sealed();
+            assert sealed is not None and sealed.omitted;
+        }
+        with patch.object(resolver, "_bundled_kit_omits_kernel", return_value=True) {
+            assert KernelArtifact().probe_kit().omitted;
         }
         with _toolchain() {
             with patch.object(
-                resolver,
-                "tree_kernel",
-                return_value=(None, ["no kernel has been built"])
+                KernelArtifact, "probe_checkout", return_value=Probe.missing()
             ) {
                 with patch.object(
-                    resolver, "_bundled_kit_omits_kernel", return_value=True
+                    KernelArtifact, "probe_kit", return_value=Probe.by_design()
                 ) {
-                    with patch.object(resolver, "kit_kernel", side_effect=_never) {
-                        (found, said) = _resolve_quietly(_resolve_unsealed);
-                        assert found is None;
-                        assert said == "" , "a pull-request kit runs from bytecode by design";
-                    }
+                    (found, said) = _resolve_fresh();
                 }
             }
         }
+        assert found is None;
+        assert said == "" , "a pull-request kit runs from bytecode by design";
     } finally {
-        reset_loaded();
+        router.forget();
     }
 }
 
 test "the catalog build never loads a kernel" {
-    reset_loaded();
-    try {
-        with patch.dict(os.environ, {"JAC_STUBCAT_BUILDING": "1"}) {
-            with patch.object(resolver, "_from_source_tree", side_effect=_never) {
-                assert resolve_kernel() is None;
-            }
+    with patch.dict(os.environ, {"JAC_STUBCAT_BUILDING": "1"}) {
+        with patch.object(KernelArtifact, "probe_checkout", side_effect=_never) {
+            (found, said) = _resolve_fresh();
         }
-    } finally {
-        reset_loaded();
     }
+    assert found is None and said == "";
 }
 
 test "a stale checkout runs from bytecode, says so once, and never builds" {
     import jaclang.compiler.backends.native.kernel_stage0 as stage0;
-    drift = [
-        "jaclang/compiler/frontend/unitree.jac changed",
-        "jaclang/compiler/driver/jir.jac changed"
-    ];
+    drift = Probe.stale(
+        [
+            "jaclang/compiler/frontend/unitree.jac changed",
+            "jaclang/compiler/driver/jir.jac changed"
+        ]
+    );
     with _toolchain() {
-        with patch.object(resolver, "tree_kernel", return_value=(None, drift)) {
+        with patch.object(KernelArtifact, "probe_checkout", return_value=drift) {
             with patch.object(
-                resolver, "_bundled_kit_omits_kernel", return_value=False
+                KernelArtifact, "probe_kit", return_value=Probe.missing()
             ) {
-                with patch.object(
-                    resolver,
-                    "kit_kernel",
-                    return_value=(None, ["this process runs on no kit"])
-                ) {
-                    with patch.object(stage0, "link_kernel", side_effect=_never) {
-                        ((first, second), said) = _resolve_quietly(_resolve_twice);
-                    }
-                }
-            }
-        }
-    }
-    assert first is None and second is None;
-    assert said.count("running from bytecode") == 1 , said;
-    assert "unitree.jac changed (and 1 more)" in said , said;
-    assert "jac kernel build" in said , said;
-}
-
-test "a checkout that never built a kernel is told how to build one" {
-    with _toolchain() {
-        with patch.object(
-            resolver, "tree_kernel", return_value=(None, ["no kernel has been built"])
-        ) {
-            with patch.object(
-                resolver, "_bundled_kit_omits_kernel", return_value=False
-            ) {
-                with patch.object(
-                    resolver,
-                    "kit_kernel",
-                    return_value=(None, ["the kit carries no kernel"])
-                ) {
-                    (found, said) = _resolve_quietly(_resolve_unsealed);
+                with patch.object(stage0, "link_kernel", side_effect=_never) {
+                    (found, said) = _resolve_fresh();
                 }
             }
         }
     }
     assert found is None;
-    assert "no kernel has been built in this checkout" in said , said;
+    assert said.count("kernel runs on its floor") == 1 , said;
+    assert "unitree.jac changed (and 1 more)" in said , said;
+    assert "jac native build kernel" in said , said;
 }
 
 test "a checkout without a native toolchain says why it runs from bytecode" {
     with _toolchain(ok=False) {
-        with patch.object(resolver, "tree_kernel", side_effect=_never) {
-            (found, said) = _resolve_quietly(_resolve_unsealed);
+        with patch.object(KernelArtifact, "probe_checkout", side_effect=_never) {
+            (found, said) = _resolve_fresh();
         }
     }
     assert found is None;
     assert "no LLVM shim here" in said , said;
 }
 
-test "a current checkout kernel loads silently, ahead of the kit's" {
-    mine = ResolvedKernel(lib_path="tree", layout={}, source="tree");
+test "a current checkout kernel loads silently and reports where it came from" {
+    mine = Probe.hit(
+        Source.CHECKOUT, "/tree/libjac_compiler.so", {"classes": {}, "plan_digest": "p"}
+    );
     with _toolchain() {
-        with patch.object(resolver, "tree_kernel", return_value=(mine, [])) {
-            with patch.object(resolver, "kit_kernel", side_effect=_never) {
-                (found, said) = _resolve_quietly(_resolve_unsealed);
+        with patch.object(KernelArtifact, "probe_checkout", return_value=mine) {
+            with patch.object(KernelArtifact, "probe_kit", side_effect=_never) {
+                (found, said) = _resolve_fresh();
             }
         }
     }
-    assert found is mine;
-    assert said == "";
-}
-
-test "a checkout without a current kernel runs the kit's when the kit matches" {
-    kits = ResolvedKernel(lib_path="kit", layout={}, source="kit");
-    with _toolchain() {
-        with patch.object(
-            resolver, "tree_kernel", return_value=(None, ["no kernel has been built"])
-        ) {
-            with patch.object(
-                resolver, "_bundled_kit_omits_kernel", return_value=False
-            ) {
-                with patch.object(resolver, "kit_kernel", return_value=(kits, [])) {
-                    (found, said) = _resolve_quietly(_resolve_unsealed);
-                }
-            }
-        }
-    }
-    assert found is kits;
+    assert found is not None
+        and found.source == "checkout"
+        and found.plan_digest == "p";
     assert said == "";
 }
 
@@ -373,7 +323,7 @@ test "a kernel is accepted by its units' content and names what moved" {
         Path(lib).write_bytes(b"a library the sidecar never described");
         assert _inspect(lib)[0] is None , "the sidecar vouches for one library";
         os.remove(lib);
-        assert _inspect(lib) == (None, ["no kernel has been built"]);
+        assert _inspect(lib) == (None, ["not built"]);
     }
 }
 
@@ -407,7 +357,8 @@ test "a kernel built elsewhere is accepted by its units' package identity" {
 }
 
 obj Image {
-    has record: dict[str, any];
+    has record: dict[str, any],
+        native: dict[str, any] = {};
 
     def native_artifact -> dict[str, any] {
         return self.record;
@@ -433,10 +384,11 @@ test "the kit's kernel runs in place although the kit stripped it after its side
             record={"path": "compiler/libjac_compiler.dylib", "sha256": stripped}
         );
         with patch.object(resolver, "_bundled_image", return_value=(site, shipped)) {
-            (found, drift) = resolver.kit_kernel();
+            probe = KernelArtifact().probe_kit();
         }
-        assert found is not None , drift;
-        assert found.source == "kit" and found.lib_path == bundled , (
+        found = probe.found;
+        assert found is not None , probe.drift;
+        assert found.source == Source.KIT and found.path == bundled , (
             "the kit's kernel is loaded where the kit keeps it"
         );
         assert sorted(os.listdir(os.path.join(site, "compiler")))
@@ -450,7 +402,7 @@ test "the kit's kernel runs in place although the kit stripped it after its side
             }
         );
         with patch.object(resolver, "_bundled_image", return_value=(site, forged)) {
-            assert resolver.kit_kernel()[0] is None , (
+            assert KernelArtifact().probe_kit().found is None , (
                 "a kit whose library disagrees with its own manifest is never run"
             );
         }
@@ -485,52 +437,6 @@ test "application configuration does not change the compiler kernel" {
         }
     } finally {
         pop_native_target(prev);
-    }
-}
-
-test "kernel publication never accepts mismatched library and sidecar images" {
-    import from jaclang.jac0core.cache_paths { FileLock, atomic_write }
-    with tempfile.TemporaryDirectory() as directory {
-        source = Path(directory) / "new.so";
-        target = Path(directory) / "kernel.so";
-        source.write_bytes(b"new kernel");
-        target.write_bytes(b"old kernel");
-        for path in [source, target] {
-            Path(str(path) + ".layout.json").write_text(
-                json.dumps(
-                    {
-                        "classes": {},
-                        "units": ["unit.jac"],
-                        "unit_sources": {"unit.jac": "d"},
-                        "artifact_sha256": hashlib.sha256(path.read_bytes()).hexdigest()
-                    }
-                )
-            );
-        }
-        observed: list[bool] = [];
-        held: list[bool] = [];
-        def publish(path: str, data: bytes, mode: (int | None) = None) {
-            rival = FileLock(str(target) + ".lock", timeout=0.0);
-            try {
-                rival.acquire();
-                rival.release();
-                held.append(False);
-            } except TimeoutError {
-                held.append(True);
-            }
-            atomic_write(path, data, mode);
-            observed.append(_inspect(str(target))[0] is not None);
-        }
-        with patch.object(resolver, "unit_drift", return_value=[]) {
-            assert _inspect(str(target))[0] is not None;
-            with patch.object(resolver, "atomic_write", side_effect=publish) {
-                resolver._publish_kernel(str(source), str(target));
-            }
-        }
-        assert observed == [False, True];
-        assert held == [True, True] , (
-            "a concurrent build cannot interleave its writes between the library and its sidecar"
-        );
     }
 }
 

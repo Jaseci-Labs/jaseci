@@ -1,0 +1,57 @@
+import from enum { StrEnum }
+
+enum ArtifactKind(StrEnum) { ACCELERATOR = "accelerator", CAPABILITY = "capability" }
+
+enum ReleasePolicy(StrEnum) { REQUIRED = "required", FLOOR = "floor" }
+
+enum Source(StrEnum) { SEALED = "sealed", CHECKOUT = "checkout", KIT = "kit" }
+
+class ArtifactUnavailable(RuntimeError) {}
+
+obj Found {
+    has source: Source,
+        path: str,
+        record: dict[str, any] = {};
+}
+
+obj Probe {
+    has found: (Found | None) = None,
+        drift: list[str] = [],
+        omitted: bool = False,
+        absent: bool = False;
+
+    static def hit(source: Source, path: str, record: dict[str, any]) -> Probe;
+    static def stale(drift: list[str]) -> Probe;
+    static def missing(why: str = "not built") -> Probe;
+    static def by_design -> Probe;
+}
+
+obj Resolution {
+    has name: str,
+        found: (Found | None) = None,
+        reason: str = "",
+        quiet: bool = False;
+
+    def on_floor -> bool;
+}
+
+obj Artifact {
+    has name: str,
+        kind: ArtifactKind,
+        release: ReleasePolicy,
+        summary: str,
+        floor: str = "",
+        requires: list[str] = [],
+        hosts: list[str] = [];
+
+    def disabled -> bool;
+    def unavailable_reason -> str;
+    def probe_sealed -> (Probe | None);
+    def probe_checkout -> Probe abst;
+    def probe_kit -> Probe;
+    def checkout_path -> str abst;
+    def build(log: Callable[[str], None], force: bool, exact: bool) -> None abst;
+    def host_supported -> bool;
+    def provide_floor(log: Callable[[str], None]) -> None;
+    def floor_present -> bool;
+}

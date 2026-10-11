@@ -275,7 +275,7 @@ setting, and stay inert unless the application calls them.
 The native compiler kernel is the plan rooted at `jc_unit` with the
 frontend scope compiled as native units, linked as a shared library in
 bitcode mode. `resolve_kernel()` in `kernel_resolve.jac` is the one lookup.
-It only ever loads a kernel; nothing but `jac kernel build` and the seal
+It only ever loads a kernel; nothing but `jac native build kernel` and the seal
 builds one. Its precedence is fixed:
 
 1. Sealed image. The manifest's `native` record names the artifact, its
@@ -294,14 +294,14 @@ builds one. Its precedence is fixed:
 4. Bytecode. Otherwise the compiler runs from bytecode with the store
    parser, and the process says so once on stderr: why the kernel is not
    usable (none built, the first source that moved, or no native toolchain)
-   and that `jac kernel build` builds it.
+   and that `jac native build kernel` builds it.
 
-`jac kernel status` prints what resolution sees: the checkout's kernel and
+`jac native status kernel` prints what resolution sees: the checkout's kernel and
 every input that moved since it was built, the kit's kernel, and which one
-this process runs. `jac kernel build` builds the kernel the sources describe
+this process runs. `jac native build kernel` builds the kernel the sources describe
 in its own process, on whatever compiler resolved for it (bytecode when the
 kernel is stale), and reuses every unit whose inputs have not moved, so a
-build after a small edit relinks in seconds. `JAC_DEV_EXACT=1 jac kernel
+build after a small edit relinks in seconds. `JAC_DEV_EXACT=1 jac native
 build --force` rebuilds every unit with the compiler as edited.
 
 The sidecar records the kernel's inputs one by one: the compiler digest,
