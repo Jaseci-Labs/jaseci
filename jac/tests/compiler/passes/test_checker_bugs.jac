@@ -2283,3 +2283,44 @@ test "bug_unbound_1_method_through_class_as_value" {
         f"receiver. Got errors: {[str(e) for e in program.errors_had]}"
     );
 }
+
+# Bug #CTOR-INIT-ARGS: a class whose `__new__` takes anything (`dict`'s is
+# `__new__(cls, *args, **kwargs)`) left its type arguments unsolved, because
+# the `__init__` overloads that carry them were never asked. `dict(x)` was a
+# bare `dict`, and everything read from it untyped.
+test "bug_ctor_init_args_dict_call_is_typed_by_init" {
+    program = compile_and_check("checker_ctor_type_args_from_init.jac");
+    assert program.errors_had == [] , (
+        "Bug #CTOR-INIT-ARGS: each use reads `dict(...)` as the typed dict "
+        f"its arguments make it. Got errors: {[str(e) for e in program.errors_had]}"
+    );
+}
+
+test "bug_ctor_init_args_dict_call_misuse_is_reported" {
+    program = compile_and_check("checker_ctor_type_args_from_init_negative.jac");
+    by_line = {
+        e.loc.first_line: str(e)
+        for e in program.errors_had
+        if e.loc
+    };
+    assert len(program.errors_had) == 4 , (
+        "Bug #CTOR-INIT-ARGS: the four deliberate misuses, and only those, "
+        f"must be reported. Got: {[str(e) for e in program.errors_had]}"
+    );
+    assert "str" in by_line.get(9, "") and "int" in by_line.get(9, "") , (
+        "Bug #CTOR-INIT-ARGS: a value read from `dict(fields)` is a str. "
+        f"Line 9 reported: {by_line.get(9)}"
+    );
+    assert "int" in by_line.get(14, "") and "str" in by_line.get(14, "") , (
+        "Bug #CTOR-INIT-ARGS: a value read from `dict(pairs)` is an int. "
+        f"Line 14 reported: {by_line.get(14)}"
+    );
+    assert "dict[str, int]" in by_line.get(19, "") , (
+        "Bug #CTOR-INIT-ARGS: `dict(a=1, b=2)` is a dict[str, int]. "
+        f"Line 19 reported: {by_line.get(19)}"
+    );
+    assert "dict[int, str]" in by_line.get(24, "") , (
+        "Bug #CTOR-INIT-ARGS: `dict({1: \"one\"})` is a dict[int, str]. "
+        f"Line 24 reported: {by_line.get(24)}"
+    );
+}
