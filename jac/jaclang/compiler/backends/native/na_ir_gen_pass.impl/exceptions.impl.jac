@@ -1447,6 +1447,7 @@ impl NaIRGenPass._codegen_try_slot(nd: uni.TryStmt) -> None {
 impl NaIRGenPass._emit_finalizers(loop_depth: int = 0) -> bool {
     saved_finalizers = self._finally_stack;
     saved_handlers = self._slot_try_stack;
+    saved_loops = self.loop_stack;
     try {
         for index in range(len(saved_finalizers) - 1, -1, -1) {
             frame = saved_finalizers[index];
@@ -1456,6 +1457,7 @@ impl NaIRGenPass._emit_finalizers(loop_depth: int = 0) -> bool {
             }
             self._finally_stack = saved_finalizers[:index];
             self._slot_try_stack = saved_handlers[:frame.handler_depth];
+            self.loop_stack = saved_loops[:frame.loop_depth];
             if frame.pop_handler {
                 self.builder.call(self._exc_pop_fn, []);
             }
@@ -1478,6 +1480,7 @@ impl NaIRGenPass._emit_finalizers(loop_depth: int = 0) -> bool {
     } finally {
         self._finally_stack = saved_finalizers;
         self._slot_try_stack = saved_handlers;
+        self.loop_stack = saved_loops;
     }
 }
 

@@ -10,7 +10,6 @@ import from jaclang.compiler.kernel_target {
 }
 import from jaclang.compiler.backends.native.kernel_resolve {
     KERNEL_DEV_LINK_MODE,
-    _StoreParserSpan,
     kernel_plan
 }
 
@@ -49,9 +48,18 @@ def link_kernel(
     mode = link_mode
         or (target.link_mode if target is not None else "")
         or KERNEL_DEV_LINK_MODE;
-    with _StoreParserSpan() {
+    import from jaclang.compiler.driver.program { JacProgram }
+    program = prog if prog is not None else JacProgram();
+    registry = program.native_units();
+    registry.progress = log;
+    try {
         started = time.perf_counter();
-        plan = kernel_plan(prog, mode=mode, target=target);
+        if log is not None {
+            log(
+                f"  Planning the kernel ({mode} link): analyzing and lowering each unit"
+            );
+        }
+        plan = kernel_plan(program, mode=mode, target=target);
         planned = time.perf_counter();
         if log is not None {
             log(
@@ -73,6 +81,8 @@ def link_kernel(
             log(plan.prog.native_units().phase_summary());
         }
         return result;
+    } finally {
+        registry.progress = None;
     }
 }
 

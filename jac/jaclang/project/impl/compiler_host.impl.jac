@@ -473,6 +473,10 @@ impl ProjectHost.native_parse(
 ) -> (tuple[Module, bool] | None) {
     import from jaclang.compiler.frontend.parser.frontend { finish_parse }
     import jaclang.compiler.native_compiler as _jc;
+    natives = program._natives if program is not None else None;
+    if natives is not None and natives.progress is not None {
+        natives.note_step("parse", file_path);
+    }
     kernel = _jc.ensure_loaded();
     if kernel is None {
         return None;

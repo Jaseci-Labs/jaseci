@@ -667,6 +667,7 @@ impl JacProgram.stamp_access_check_facts(self: JacProgram, mod: uni.Module) -> N
 
 impl JacProgram.stamp_native_import_facts(self: JacProgram, mod: uni.Module) -> None {
     import from jaclang.compiler.driver.boundary_classify {
+        clib_decl_type_names,
         import_bound_names,
         native_only_import_target,
         python_side_name_refs
@@ -676,7 +677,8 @@ impl JacProgram.stamp_native_import_facts(self: JacProgram, mod: uni.Module) -> 
     needs_native = mod.decided_codespace == 'native'
         or ModuleFacts.has_native_context_stmts(mod);
     py_refs: (set[str] | None) = None;
-    for imp in mod.get_all_sub_nodes(uni.Import) {
+    imports = list(mod.get_all_sub_nodes(uni.Import));
+    for imp in imports {
         target = native_only_import_target(imp, self);
         drop = needs_native
             and (
@@ -692,7 +694,32 @@ impl JacProgram.stamp_native_import_facts(self: JacProgram, mod: uni.Module) -> 
             }
             drop = not any(name in py_refs for name in import_bound_names(imp));
         }
+        if drop and mod.decided_codespace == 'native' {
+            for decl in imp.clib_decls or [] {
+                if isinstance(decl, uni.Archetype) {
+                    drop = False;
+                }
+            }
+        }
         imp.native_only_drop = drop;
+    }
+
+    settled = False;
+    while not settled {
+        settled = True;
+        kept: set[str] = set();
+        for imp in imports {
+            if imp.clib_decls and not imp.native_only_drop {
+                kept.update(clib_decl_type_names(imp));
+            }
+        }
+        for imp in imports {
+            if imp.native_only_drop
+                and any(name in kept for name in import_bound_names(imp)) {
+                imp.native_only_drop = False;
+                settled = False;
+            }
+        }
     }
 }
 
