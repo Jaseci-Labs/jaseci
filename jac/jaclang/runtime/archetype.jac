@@ -729,6 +729,29 @@ def _dirty_setattr(self: any, name: str, value: any) -> None {
     }
 }
 
+def _dirty_delattr(self: any, name: str) -> None {
+    an = self.__dict__.get('__jac__');
+    if an is None or not an.persistent {
+        object.__delattr__(self, name);
+        return;
+    }
+    import from jaclang.runtime.runtime { JacRuntime }
+    ctx = JacRuntime.peek_context();
+    if ctx is None {
+        object.__delattr__(self, name);
+        return;
+    }
+    import from jaclang { JacRuntimeInterface }
+    if not JacRuntimeInterface.check_write_access(an, op_hint="field_write") {
+        return;
+    }
+    object.__delattr__(self, name);
+    md = ctx.mem?.mark_dirty;
+    if md is not None {
+        md(an);
+    }
+}
+
 def untracked_class(cls: type[Archetype]) -> type[Archetype] {
     return cls.__dict__.get('__jac_untracked__', cls);
 }
@@ -760,6 +783,7 @@ def track_writes(arch: Archetype) -> None {
                 '__jac_tracked__': True,
                 '__jac_untracked__': cls,
                 '__setattr__': _dirty_setattr,
+                '__delattr__': _dirty_delattr,
                 '__reduce_ex__': _tracked_reduce_ex
             }
         );

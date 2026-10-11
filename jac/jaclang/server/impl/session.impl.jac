@@ -313,11 +313,13 @@ def _frozen_value(value: any) -> bool {
                 uuid.UUID,
                 datetime.date,
                 datetime.time,
-                datetime.timedelta,
-                enum.Enum
+                datetime.timedelta
             )
         ) {
         return True;
+    }
+    if isinstance(value, enum.Enum) {
+        return _frozen_value(value.value);
     }
     if isinstance(value, (tuple, frozenset)) {
         return all(_frozen_value(item) for item in value);

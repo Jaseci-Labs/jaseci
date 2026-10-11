@@ -49,6 +49,14 @@ node RBag {
     has items: list[int] = [];
 }
 
+enum RShelf {
+    FULL = [1]
+}
+
+node RShelved {
+    has shelf: RShelf = RShelf.FULL;
+}
+
 edge RLink: any --> any {
     has w: int = 0;
 }
@@ -724,8 +732,13 @@ test "a commit re-hashes only loaded anchors whose fields can change in place" {
         JacRuntime.exec_ctx = seed;
         ids: list[UUID] = [];
         bag_id = UUID(int=0);
+        shelf_id = UUID(int=0);
         try {
             ids = [_loose(seed, n).ensure_id() for n in range(4)];
+            shelved: NodeAnchor = _as_any(RShelved()).__jac__;
+            shelved.persistent = True;
+            seed.mem.put(shelved);
+            shelf_id = shelved.ensure_id();
             bag: NodeAnchor = _as_any(RBag(items=[1])).__jac__;
             bag.persistent = True;
             seed.mem.put(bag);
@@ -773,6 +786,17 @@ test "a commit re-hashes only loaded anchors whose fields can change in place" {
             ctx.mem.commit();
             assert _stored(ctx, ids[0], "n") == "41" , (
                 "a field write on an anchor with only scalar fields must still land"
+            );
+            delattr(_as_any(loaded[ids[0]].archetype), "n");
+            ctx.mem.commit();
+            assert _stored(ctx, ids[0], "n") == "0" , (
+                "deleting a field exposes its default; the anchor must be written"
+            );
+            shelf = ctx.mem.batch_get([shelf_id])[shelf_id];
+            _as_any(shelf.archetype).shelf.value.append(2);
+            ctx.mem.commit();
+            assert _stored(ctx, shelf_id, "shelf") == "[1, 2]" , (
+                "an enum whose value is a list can change in place; it must be scanned"
             );
         } finally {
             JacRuntime.exec_ctx = old;
