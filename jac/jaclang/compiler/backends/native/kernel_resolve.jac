@@ -13,7 +13,6 @@ import type from jaclang.compiler.driver.program { JacProgram }
 import type from jaclang.compiler.backends.native.link_plan { LinkPlan }
 
 glob KERNEL_LIB_ENV: str = "JAC_COMPILER_LIB",
-     KERNEL_BUILDING_ENV: str = "JAC_KERNEL_BUILDING",
      STUBCAT_BUILDING_ENV: str = "JAC_STUBCAT_BUILDING",
      KERNEL_OFF_VALUES: tuple[str, ...] = ("none", "off", "disabled", "0"),
      LAYOUT_SIDECAR_SUFFIX: str = ".layout.json",
@@ -33,7 +32,7 @@ obj ResolvedKernel {
 class KernelUnavailable(RuntimeError) {}
 
 def kernel_build_env -> dict[str, str] {
-    return {KERNEL_LIB_ENV: "off", KERNEL_BUILDING_ENV: "1"};
+    return {KERNEL_LIB_ENV: "off"};
 }
 
 def kernel_lib_name -> str {
@@ -553,26 +552,19 @@ def resolve_kernel -> (ResolvedKernel | None) {
     if os.environ.get(STUBCAT_BUILDING_ENV) {
         return None;
     }
-    lib_setting = os.environ.get(KERNEL_LIB_ENV, "");
-    if lib_setting.strip().lower() in KERNEL_OFF_VALUES {
-        if os.environ.get(KERNEL_BUILDING_ENV) {
-            return None;
-        }
-        raise KernelUnavailable(
-            f"{KERNEL_LIB_ENV}={lib_setting} is not supported: the native compiler "
-            "kernel compiles and analyzes every program (only a kernel build "
-            "parses with the store parser)"
-        );
-    }
-    if lib_setting {
-        return _from_explicit(lib_setting);
-    }
     if _sealed_kit_omits_kernel() {
         return None;
     }
     sealed = _from_sealed_image();
     if sealed is not None {
         return sealed;
+    }
+    lib_setting = os.environ.get(KERNEL_LIB_ENV, "");
+    if lib_setting.strip().lower() in KERNEL_OFF_VALUES {
+        return None;
+    }
+    if lib_setting {
+        return _from_explicit(lib_setting);
     }
     return _from_source_tree();
 }

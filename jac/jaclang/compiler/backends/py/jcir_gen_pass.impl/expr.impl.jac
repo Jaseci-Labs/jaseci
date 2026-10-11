@@ -228,6 +228,24 @@ impl JcirGenPass.exit_binary_expr with BinaryExpr exit {
                 )
             ]
         );
+    } elif (
+        here.op.name in [Tok.WALRUS_EQ]
+        and isinstance(here.left, Name)
+        and (link := self.loop_links.of_name(here.left)) is not None
+    ) {
+        put = self.nod(
+            'Attribute',
+            ['value', 'attr', 'ctx'],
+            [
+                self.name_load(self._pass_link_name(link), here),
+                'put',
+                self.nod('Load', [], [], jac_node=here)
+            ],
+            jac_node=here
+        );
+        self.set_out(
+            here, [self.call_node(put, [self.val(here.right)], [], jac_node=here)]
+        );
     } elif ((here.op.name in [Tok.WALRUS_EQ]) and self.val(here.left).cls == 'Name') {
         self.val(here.left).setf('ctx', self.nod('Store', [], []));
         self.set_out(
@@ -442,17 +460,10 @@ impl JcirGenPass._emit_lambda_expr_body(nd: LambdaExpr, body_node: Expr) -> None
             jac_node=nd
         );
     }
-    self.set_out(
-        nd,
-        [
-            self.nod(
-                'Lambda',
-                ['args', 'body'],
-                [arguments, self.val(body_node)],
-                jac_node=nd
-            )
-        ]
+    lam = self.nod(
+        'Lambda', ['args', 'body'], [arguments, self.val(body_node)], jac_node=nd
     );
+    self.set_out(nd, [self._linked_closure_value(nd, lam)]);
 }
 
 impl JcirGenPass._remove_lambda_param_annotations(signature: FuncSignature) -> None {
@@ -896,6 +907,11 @@ impl JcirGenPass.exit_dict_compr with DictCompr exit {
 
 impl JcirGenPass.exit_name with Name exit {
     if here.__class__ is not Name {
+        return;
+    }
+    link = self.loop_links.of_name(here);
+    if link is not None {
+        self.set_out(here, [self._pass_link_ref(link, here)]);
         return;
     }
     if here.expr_ctx == ExprCtx.LOAD

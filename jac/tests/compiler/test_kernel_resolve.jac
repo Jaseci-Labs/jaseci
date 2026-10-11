@@ -1,7 +1,8 @@
 """`resolve_kernel()` is the one kernel lookup (#8943).
 
-Its precedence is fixed: the explicit switch, the sealed image, the source
-tree by source key, then the store parser when there is no toolchain. A
+Its precedence is fixed: the sealed image, the explicit switch, the source
+tree by source key, then the store parser when there is no toolchain. A sealed
+image runs its own kernel whatever the switch says. A
 source tree with no kernel derives one on the first parse, in a child
 process; a kernel whose sidecar source key disagrees with the sources now
 is rebuilt; nothing raises about a missing kernel a build could make.
@@ -43,34 +44,43 @@ def _with_env(name: str, value: (str | None), fn: any) -> any {
     }
 }
 
-test "the off switch selects the store parser only in a kernel build" {
-    import from jaclang.compiler.backends.native.kernel_resolve {
-        KERNEL_BUILDING_ENV,
-        KernelUnavailable
+def _unsealed(fn: any) -> any {
+    import from unittest.mock { patch }
+    import jaclang.compiler.backends.native.kernel_resolve as resolver;
+    with patch.object(resolver, "_sealed_kit_omits_kernel", return_value=False) {
+        with patch.object(resolver, "_from_sealed_image", return_value=None) {
+            return fn();
+        }
     }
-    def off(fn: any) -> any {
-        return _with_env(KERNEL_LIB_ENV, "off", fn);
+}
+
+test "the off switch selects the store parser in a checkout" {
+    def resolved -> any {
+        return _with_env(KERNEL_LIB_ENV, "off", resolve_kernel);
+    }
+    def loaded -> any {
+        return _with_env(KERNEL_LIB_ENV, "off", ensure_loaded);
     }
     reset_loaded();
     try {
-        def building(fn: any) -> any {
-            return _with_env(KERNEL_BUILDING_ENV, "1", lambda() { off(fn); });
-        }
-        assert building(lambda() { resolve_kernel(); }) is None;
-        assert building(lambda() { ensure_loaded(); }) is None;
-        refused = False;
-        try {
-            _with_env(
-                KERNEL_BUILDING_ENV,
-                None,
-                lambda() { off(lambda() { resolve_kernel(); }); }
-            );
-        } except KernelUnavailable {
-            refused = True;
-        }
-        assert refused , "JAC_COMPILER_LIB=off outside a kernel build must be refused";
+        assert _unsealed(resolved) is None , "JAC_COMPILER_LIB=off resolves no kernel";
+        assert _unsealed(loaded) is None , "JAC_COMPILER_LIB=off parses with the store parser";
     } finally {
         reset_loaded();
+    }
+}
+
+test "a sealed image runs its own kernel whatever the switch says" {
+    import from unittest.mock { patch }
+    import jaclang.compiler.backends.native.kernel_resolve as resolver;
+    shipped = resolver.ResolvedKernel(lib_path="shipped", layout={}, source="sealed");
+    with patch.object(resolver, "_sealed_kit_omits_kernel", return_value=False) {
+        with patch.object(resolver, "_from_sealed_image", return_value=shipped) {
+            for setting in ("off", "none", "0", "/no/such/libjac_compiler.so") {
+                found = _with_env(KERNEL_LIB_ENV, setting, resolve_kernel);
+                assert found is shipped , f"JAC_COMPILER_LIB={setting} must not displace a sealed kernel";
+            }
+        }
     }
 }
 
@@ -151,11 +161,7 @@ test "a kit sealed without a kernel serves the store parser, sealed or rerouted"
     reset_loaded();
     try {
         with patch.dict(os.environ) {
-            for name in (
-                KERNEL_LIB_ENV,
-                "JAC_KERNEL_BUILDING",
-                "JAC_STUBCAT_BUILDING"
-            ) {
+            for name in (KERNEL_LIB_ENV, "JAC_STUBCAT_BUILDING") {
                 os.environ.pop(name, None);
             }
             with patch.object(
@@ -204,7 +210,7 @@ test "an explicit path must carry its sidecar" {
         Path(bogus).write_bytes(b"not a library");
         raised = False;
         try {
-            _with_env(KERNEL_LIB_ENV, bogus, lambda() { resolve_kernel(); });
+            _unsealed(lambda() { _with_env(KERNEL_LIB_ENV, bogus, resolve_kernel); });
         } except KernelUnavailable {
             raised = True;
         }

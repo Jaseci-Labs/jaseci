@@ -854,14 +854,14 @@ impl JacBuiltin.log_report(expr: any, custom: bool = False) -> None {
     if custom {
         JacRuntimeInterface.get_context().custom = expr;
     } else {
-        JacRuntimeInterface.get_console().print(expr);
+        cs = JacRuntimeInterface.get_context().call_state.get(None);
+        if cs is None {
+            JacRuntimeInterface.get_console().print(expr);
+        }
         if _current_scope() is not None {
             osp_report(expr);
-        } else {
-            cs = JacRuntimeInterface.get_context().call_state.get(None);
-            if cs is not None {
-                cs.reports.put_nowait(expr);
-            }
+        } elif cs is not None {
+            cs.reports.put_nowait(expr);
         }
     }
 }

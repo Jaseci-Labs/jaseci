@@ -22,6 +22,13 @@ import from jaclang.compiler.backends.native.na_constants {
     FACT_TARGET
 }
 import jaclang.compiler.frontend.unitree as uni;
+import from jaclang.compiler.frontend.loop_links {
+    LoopLinks,
+    LoopStmt,
+    PassLink,
+    enclosing_loop,
+    frame_owns
+}
 import os;
 import sys;
 import jaclang.compiler.backends.native.llvm.ir as ir;
@@ -66,6 +73,7 @@ import from jaclang.compiler.frontend.diagnostics {
     E5060,
     E5088,
     E5089,
+    E5113,
     E5090,
     E5091,
     E5092,
@@ -563,6 +571,11 @@ walker NaIRGenPass(CompilerPass) {
             dict[str, tuple[ir.IdentifiedStructType, ir.FunctionType]] = {},
         _closure_sig_keys: dict[str, str] = {},
         _closure_cell_structs: dict[str, str] = {},
+        loop_links: LoopLinks = LoopLinks(),
+        closure_pass_links: dict[str, dict[str, PassLink]] = {},
+        closure_rebinds: dict[str, set[str]] = {},
+        _pass_link_structs: dict[str, str] = {},
+        _pass_link_slots: dict[str, tuple[ir.Value, str, str]] = {},
         _helper_structs: set[str] = set(),
         closure_thunks: dict[str, ir.Function] = {},
         _closure_uid: int = 0,
@@ -1035,6 +1048,12 @@ walker NaIRGenPass(CompilerPass) {
     def _callable_signature_of(val_type: ir.Type) -> (ir.FunctionType | None);
     def _closure_cell_struct(slot_type: ir.Type) -> str;
     def _emit_closure_cell(var_name: str, slot_type: ir.Type) -> ir.Value;
+    def _register_pass_links(closure: uni.UniNode, target_fn: ir.Function) -> None;
+    def _pass_link_struct(cell_name: str) -> str;
+    def _current_pass_link(link: PassLink) -> (ir.Value | None);
+    def _emit_pass_link_detaches(loop: (LoopStmt | None)) -> None;
+    def _codegen_pass_body(loop: LoopStmt) -> None;
+    def _binding_slot(var_type: ir.Type, var_name: str) -> ir.Value;
     def _emit_closure_thunk(
         target_fn: ir.Function,
         declared_count: int,
@@ -1229,6 +1248,7 @@ walker NaIRGenPass(CompilerPass) {
     ) -> None;
 
     def _register_imported_hierarchy(imported_mod: uni.Module) -> None;
+    def _report_unreachable_overrides -> None;
     def _own_prefix -> str;
     def _prefix_of_module(mod: (uni.Module | None)) -> str;
     def _prefix_of_path(path: str) -> str;
@@ -1281,6 +1301,9 @@ walker NaIRGenPass(CompilerPass) {
     def _propagate_seam_demotions -> None;
     def _reaches_seam_stub(func: ir.Function, seen: set[int]) -> (str | None);
     def _process_clib_imports(module: uni.Module) -> None;
+    def _declare_clib_struct(decl: uni.Archetype) -> (str | None);
+    def _define_clib_struct(decl: uni.Archetype) -> None;
+    def _ensure_clib_struct(t: any) -> (str | None);
     def _declare_pending_clib_abilities -> None;
     def _resolve_clib_lib_name(components: list[str], level: int) -> str;
     def _llvm_type_str(ty: ir.Type, pointee_names: dict[str, str]) -> str;

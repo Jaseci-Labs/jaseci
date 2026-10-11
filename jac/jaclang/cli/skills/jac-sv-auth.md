@@ -148,7 +148,8 @@ max_attempts = 10           # failed logins per source address + identity per wi
 
 - A new username may not contain `@`. Register an email as `{"type": "email", ...}`, not as a username.
 - `GET /user/auth-policy` (public) returns the rules a form needs; `jacSignup` reads it to type a bare string as a username or an email (`jacLogin` types by shape: `@` means email).
-- With `verification = "required"`, `/user/register` returns `verification_required: true` and no token, and `/user/login` answers `403 EMAIL_NOT_VERIFIED` (re-sending the link) until `POST /user/verify-identity` succeeds.
+- With `verification = "required"`, `/user/register` returns `verification_required: true` and no token, and `/user/login` answers `403 EMAIL_NOT_VERIFIED` (re-sending the link) until `POST /user/verify-identity` succeeds. The emailed link is `verify_url_template` with `{token}` filled in; the server does not serve that page, so the app needs a route that posts the token to `/user/verify-identity`. Signing in again is the resend (`/user/send-verification` needs a session the account cannot get yet; sends cap at 5 per user per hour). Only an email given at registration blocks sign-in; one added later with `/user/add-identity` is mailed a link but does not.
+- The mail transport is `[scale.emailer] provider = "smtp"` plus `from_address`, with the server in a `[scale.emailer.smtp]` sub-table (`host`, `port`, `username`, `use_tls`; password via `EMAILER_SMTP_PASSWORD`). The message is fixed plain text; only the link is configurable.
 - Every key takes an env override named `JAC_SERVE_AUTH_<TABLE>_<KEY>` (`JAC_SERVE_AUTH_PASSWORD_MIN_LENGTH`). An unknown key under `[serve.auth]` stops the server at startup.
 - The bootstrap admin has no default password: a dev server mints one and logs it once; a cluster needs `[scale.admin] default_password` or `JAC_SCALE_ADMIN_PASSWORD` (`jac scale deploy` mints one into the app Secret).
 
@@ -174,6 +175,6 @@ No token revocation exists - tokens stay valid until expiry. SSO (Google/Apple/G
 - Don't "fix" a 401 by making the endpoint `:pub` - that changes whose graph it runs on, not just who may call it.
 - `:pub` and authenticated endpoints can live in the same file - visibility is per-declaration.
 - Client calls to an authenticated endpoint without a session raise an error containing `"UNAUTHORIZED"` - catch and redirect to login (`jac-cl-auth`).
-- `register` returns a token too (verified), but `login`'s response is the canonical source of `token` + `root_id` - keep `root_id` if you plan to use per-user grants (`jac-sv-multi-user`).
+- `register` returns `token` and `root_id` too (no token when `verification = "required"`: it answers `verification_required: true`), but `login`'s response is the canonical source of `token` + `root_id` - keep `root_id` if you plan to use per-user grants (`jac-sv-multi-user`).
 
 Deep dive bundled with the CLI: `jac guide reference/persistence` (auth + per-user roots in the full persistence reference).

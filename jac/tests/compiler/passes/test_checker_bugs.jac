@@ -23,6 +23,7 @@ Bug index:
   #TVAR-3 - Union return types with TypeVars (e.g., V | None) resolve to Unknown
   #TVAR-5 - Module-level TypeVars shadowed by class type parameters
   #IMPL-1 - Has var reassigned in impl body loses its type (shadow local)
+  #IMPL-2 - Local first assigned in a nested block of an impl body taken for the archetype's member
   #BASE-1 - Base class name resolved in class's own scope (should be enclosing)
   #SUPER-1 - super() call returns Unknown instead of parent instance
   #DSTR-1  - Docstring before declaration inside function body triggers W0060 instead of attaching
@@ -685,6 +686,44 @@ test "bug_impl1_has_var_shadow_in_impl_body" {
     assert len(program.errors_had) == 0 , (
         "Bug #IMPL-1: has var `tasks` in impl body should resolve to the "
         "parent HasVar (type list[dict[str, any]]), not a local shadow (type Unknown). "
+        f"Got errors: {[str(e) for e in program.errors_had]}"
+    );
+}
+
+# =========================================================================
+# Bug #IMPL-2: Local in a nested block of an impl body bound to a member
+#
+# In the body of `impl Arch.method`, a name first assigned inside a nested
+# block (a `for` or `if` body) was bound to the archetype's method or `has`
+# field of that name instead of becoming a local:
+#
+#     impl Shelf.tally(words: list[str]) -> int {
+#         for word in words {
+#             changed = len(word);     # E1001: Cannot assign int to
+#         }                            #        <function changed() -> None>
+#     }
+#
+# The same assignment at the top level of the body was a local, as it is in
+# a method bodied inline.
+#
+# Root cause: binding a target in a nested block asks the enclosing
+# function's scope whether it already has the name, with a shallow lookup
+# (`deep=False`). For an impl, `UniScopeNode.lookup` then falls through to
+# the declaration it implements, and from there it looked deep, climbing
+# from the declaration into the archetype. A shallow lookup came back with
+# the archetype's member.
+#
+# Fix: the lookup through an impl's declaration is as deep as was asked
+# for. A shallow one sees the declaration's own names (its parameters) and
+# no further, so the target is a local; `self.member` reaches the member.
+# =========================================================================
+test "bug_impl2_local_in_nested_block_of_impl_body" {
+    fixture_dir = os.path.join(JAC_ROOT, "tests", "compiler", "passes", "fixtures");
+    program = JacProgram();
+    program.compile(os.path.join(fixture_dir, "impl_nested_local_shadows_member.jac"));
+    assert len(program.errors_had) == 0 , (
+        "Bug #IMPL-2: a local first assigned in a nested block of an impl body "
+        "should be a local, not the archetype's method or field of that name. "
         f"Got errors: {[str(e) for e in program.errors_had]}"
     );
 }

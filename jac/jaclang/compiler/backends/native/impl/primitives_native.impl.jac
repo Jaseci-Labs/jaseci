@@ -3509,8 +3509,13 @@ impl NativeListEmitter.emit_sort(
     b.cbranch(needs_swap, swap_bb, no_swap);
 
     b.position_at_start(swap_bb);
-    b.call(helpers["set"], [target, ji, ej1]);
-    b.call(helpers["set"], [target, j1, ej]);
+
+    _sw_dpp = b.gep(
+        target, [ir.Constant(i32, 0), ir.Constant(i32, 2)], name="sort.dpp"
+    );
+    _sw_da = b.load(_sw_dpp, name="sort.da");
+    b.store(ej1, b.gep(_sw_da, [ji], name="sort.slot.j"));
+    b.store(ej, b.gep(_sw_da, [j1], name="sort.slot.j1"));
     b.branch(inner_next);
     b.position_at_start(no_swap);
     b.branch(inner_next);
@@ -3769,8 +3774,13 @@ impl NativeListEmitter.emit_reverse(
     b.position_at_start(body_bb);
     val_i = b.call(helpers["get"], [target, i_phi], name="rev.val.i");
     val_j = b.call(helpers["get"], [target, j_phi], name="rev.val.j");
-    b.call(helpers["set"], [target, i_phi, val_j]);
-    b.call(helpers["set"], [target, j_phi, val_i]);
+
+    _rev_dpp = b.gep(
+        target, [ir.Constant(i32, 0), ir.Constant(i32, 2)], name="rev.dpp"
+    );
+    _rev_da = b.load(_rev_dpp, name="rev.da");
+    b.store(val_j, b.gep(_rev_da, [i_phi], name="rev.slot.i"));
+    b.store(val_i, b.gep(_rev_da, [j_phi], name="rev.slot.j"));
     next_i = b.add(i_phi, ir.Constant(i64, 1), name="rev.next.i");
     next_j = b.sub(j_phi, ir.Constant(i64, 1), name="rev.next.j");
     i_phi.add_incoming(next_i, body_bb);

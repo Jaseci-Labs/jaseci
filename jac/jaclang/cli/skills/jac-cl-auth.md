@@ -164,6 +164,17 @@ client_secret = "..."
 
 The server then exposes `/sso/{platform}/login`, `/sso/{platform}/register`, and the OAuth callback. Client side, `await jacSsoLogin("google")` (async, returns `bool`) hands off to the provider and resolves once the token lands; `jacSetToken(token)` stores a token directly (used by SSO callback pages).
 
+## Email verification (`verification = "required"`)
+
+When the project sets `[serve.auth.email] verification = "required"` (see `jac-sv-auth`), a new account cannot sign in until the emailed link is used, and the helpers do not report that state:
+
+- `jacSignup` returns `success=True` and mails the link; `SignupResult` has no field saying verification is pending.
+- `jacLogin` then returns `False`, the same as for a wrong password (the server's `403 EMAIL_NOT_VERIFIED` is not surfaced), and the server mails a fresh link.
+
+So in a project with verification required, do not run the 3-step signup flow above. After a successful `jacSignup`, show "check your email" and stop. On a failed `jacLogin`, say the password may be wrong or the email unverified, and that a new link was sent.
+
+The link points at `verify_url_template` (for example `https://app.example.com/verify?token={token}`). There is no runtime helper for the page it opens: add that route yourself, read `token` from `useLocation().search` (see `jac-cl-routing` for query params), `await fetch("/user/verify-identity", ...)` with a JSON body `{"token": token}`, then send the user to the login page. An expired or reused token answers `400 INVALID_TOKEN`; signing in again mails a new link.
+
 ## Auth-relevant `@jac/runtime` exports
 
 `jacLogin`, `jacSignup`, `jacLogout`, `jacIsLoggedIn`, `jacSsoLogin`, `jacSetToken`, `AuthGuard`, plus `Navigate` / `useNavigate` for post-auth redirects. For the full client export list, see `jac-cl-components`.

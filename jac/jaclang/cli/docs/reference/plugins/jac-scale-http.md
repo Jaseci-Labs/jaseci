@@ -582,12 +582,14 @@ Returns on success (HTTP 201):
   "ok": true,
   "data": {
     "user_id": "550e8400-e29b-41d4-a716-446655440000",
-    "message": "User registered successfully"
+    "root_id": "7c1e9f2a-...",
+    "message": "User registered successfully",
+    "token": "eyJhbGciOiJIUzI1NiIs..."
   }
 }
 ```
 
-Registration does **not** return a token. Use `/user/login` after registration to authenticate.
+The `token` is a session, as from `/user/login`. With `[serve.auth.email] verification = "required"` and an email identity, the body carries `"verification_required": true` instead of a token, and the user signs in after following the emailed link (see [Email Verification](#email-verification)).
 
 **Validation rules:**
 
@@ -942,6 +944,19 @@ forgot_password_per_hour   = 3      # per recovery address
 ```
 
 The `{token}` placeholder in each template is replaced with the raw token before the email is sent. Leave a template empty to receive the bare token in the email body (useful in tests/dev).
+
+#### Email Verification
+
+With `verification = "optional"` or `"required"`, the server mails a link to each unverified email when an account registers and when an email is added. The flow under `"required"`:
+
+1. `/user/register` creates the account and mails the link. It answers `201` with `verification_required: true` and no token.
+2. The link is `verify_url_template` with the token filled in. The server does not serve that page: it is a page in your app that reads `token` from its URL and sends it to `POST /user/verify-identity`.
+3. Until that succeeds, `/user/login` with the right password answers `403 EMAIL_NOT_VERIFIED` and mails a fresh link. Signing in again is the way to resend: `/user/send-verification` needs a session, which the account cannot get yet.
+4. After `/user/verify-identity` succeeds, `/user/login` returns a token.
+
+Each send revokes the earlier links for that address, so only the newest one works. Sends are limited to `send_verification_per_hour` per user (5 by default); a login over the limit still answers `403 EMAIL_NOT_VERIFIED` but mails nothing. Only an email given at registration under `"required"` blocks sign-in: an email added later with `/user/add-identity` gets a link but does not block it, and accounts created before the mode changed are never blocked.
+
+The message is plain text with the subject "Verify your email address"; only the link is configurable. For other wording or HTML, use a [custom emailer](#custom-emailer-python-or-jac) that rewrites what it is given.
 
 #### Add Identity
 
