@@ -424,6 +424,7 @@ impl Session.postinit -> None {
     self._foreign_refs = set();
     self._contended = set();
     self._queued = [];
+    self._last_conflict = None;
 }
 
 
@@ -652,6 +653,10 @@ impl Session.commit(anchor: (Anchor | None) = None) -> None {
 
 impl Session.abort -> None {
     with self._lock {
+        if self._last_conflict is not None {
+            self._contended.add(self._last_conflict);
+            self._last_conflict = None;
+        }
         self._rollback_txn();
         self._forget_loaded();
         self._dirty.clear();
@@ -981,7 +986,7 @@ impl Session._flush_locked(full: bool) -> None {
         try {
             store.upsert(rows);
         } except WriteConflict as wc {
-            self._contended.add(wc.anchor_id);
+            self._last_conflict = wc.anchor_id;
             raise;
         }
         for (row, u) in zip(rows, unflushed) {
@@ -1205,8 +1210,15 @@ impl Session._begin_serializable -> None {
         if id not in self._queued
     );
     if waiting {
-        store.queue_enter(waiting);
-        self._queued.extend(waiting);
+        if store.queue_enter(waiting) {
+            self._queued.extend(waiting);
+        } else {
+            self._contended.difference_update(waiting);
+            if not self._contended {
+                store.begin(TxnIsolation.SERIALIZABLE);
+                return;
+            }
+        }
     }
     pinned = sorted(self._contended);
     for _ in range(PIN_ATTEMPTS) {
@@ -1227,6 +1239,7 @@ impl Session._begin_serializable -> None {
 
 impl Session._leave_queue -> None {
     self._contended.clear();
+    self._last_conflict = None;
     held = self._queued;
     self._queued = [];
     if not held or self._store is None {

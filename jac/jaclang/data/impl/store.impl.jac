@@ -1116,7 +1116,7 @@ impl PgStore.rows(sql: str, params: dict[str, any]) -> list[tuple[any, ...]] {
 }
 
 
-impl PgStore.queue_enter(ids: list[UUID]) -> None {
+impl PgStore.queue_enter(ids: list[UUID]) -> bool {
     with self._lock {
         self._run('BEGIN', {});
         try {
@@ -1132,12 +1132,13 @@ impl PgStore.queue_enter(ids: list[UUID]) -> None {
                 {'ids': sorted(str(i) for i in ids)}
             );
             self._run('COMMIT', {});
+            return True;
         } except Exception as e {
             try {
                 self._run('ROLLBACK', {});
             } except Exception {}
-            if _sqlstate(e) == '55P03' {
-                raise WriteConflict(anchor_id=sorted(ids)[0]) from e;
+            if _sqlstate(e) in ('55P03', '40P01') {
+                return False;
             }
             raise;
         }
