@@ -278,11 +278,11 @@ bitcode mode. `resolve_kernel()` in `kernel_resolve.jac` is the one lookup,
 with a fixed precedence:
 
 1. Explicit switches. `JAC_COMPILER_LIB` as a path is used as given and
-   must carry its layout sidecar. `off` selects the store parser only in a
-   process that builds the kernel, which carries `JAC_KERNEL_BUILDING`;
-   anywhere else it is refused, because the kernel compiles and checks
-   every program. `JAC_STUBCAT_BUILDING` keeps the store parser during the
-   catalog build.
+   must carry its layout sidecar. `off` selects the store parser: the
+   kernel build's own processes set it, and a developer iterating on the
+   compiler sets it to run the checkout from bytecode instead of rebuilding
+   the kernel after every edit, the way a pull request's CI kit runs.
+   `JAC_STUBCAT_BUILDING` keeps the store parser during the catalog build.
 2. Sealed image. The manifest's `native` record names the artifact, its
    sha256, layout digest and plan digest; missing or mismatched is a startup
    error. The one image without an artifact is a pull request's CI kit: its

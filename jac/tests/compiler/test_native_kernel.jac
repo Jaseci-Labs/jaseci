@@ -225,15 +225,13 @@ test "kernel parses retain no native memory once the tree is handed over" {
 }
 
 
-test "only a kernel build parses with the store parser" {
+test "the off switch parses with the store parser" {
     # `JAC_COMPILER_LIB=off` is the first step of `resolve_kernel`'s precedence
-    # (`kernel_resolve.jac`), honored only beside the kernel-build marker that
-    # a kernel build's own processes carry; anywhere else it is refused, since
-    # the kernel compiles and analyzes every program.
+    # (`kernel_resolve.jac`): a kernel build's own processes and a developer
+    # iterating on the compiler both run it from bytecode with the store parser.
     import from jaclang.compiler.backends.native.kernel_resolve {
         KERNEL_BUILDING_ENV,
         KERNEL_LIB_ENV,
-        KernelUnavailable,
         kernel_build_env,
         resolve_kernel
     }
@@ -243,10 +241,9 @@ test "only a kernel build parses with the store parser" {
     try {
         os.environ[KERNEL_LIB_ENV] = "off";
         os.environ.pop(KERNEL_BUILDING_ENV, None);
-        try {
-            resolve_kernel();
-            assert False , "JAC_COMPILER_LIB=off outside a kernel build must be refused";
-        } except KernelUnavailable {}
+        assert resolve_kernel() is None , "the off switch must resolve no kernel";
+        assert ensure_loaded() is None , "the off switch must parse with the store parser";
+        reset_loaded();
         os.environ.update(kernel_build_env());
         assert resolve_kernel() is None , "a kernel build must resolve no kernel";
         assert ensure_loaded() is None , "a kernel build must parse with the store parser";

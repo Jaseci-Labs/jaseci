@@ -541,6 +541,12 @@ impl EsastGenPass.exit_binary_expr with uni.BinaryExpr exit {
         here.gen.es_ast = assign_expr;
         return;
     }
+    if (op_name == Tok.WALRUS_EQ) and isinstance(left, es.MemberExpression) {
+        here.gen.es_ast = self.sync_loc(
+            es.AssignmentExpression(operator='=', left=left, right=right), jac_node=here
+        );
+        return;
+    }
 
     if op_name and op_name in FW_BINARY_OPS {
         _fw_result = self._fw_binary(here, FW_BINARY_OPS[op_name], left, right);

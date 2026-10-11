@@ -742,9 +742,7 @@ impl NaIRGenPass._codegen_while(nd: uni.WhileStmt) -> None {
     );
 
     _while_prebody = set(self.local_vars.keys());
-    if isinstance(nd.body, (list, tuple)) {
-        self._codegen_body(nd.body);
-    }
+    self._codegen_pass_body(nd);
     if not self.builder.block.is_terminated {
         _while_loc = f"{os.path.basename(self.module.loc.mod_path)}:{nd.loc.last_line
             if nd.loc
@@ -828,9 +826,7 @@ impl NaIRGenPass._codegen_forever(nd: uni.ForeverStmt) -> None {
     );
 
     _forever_prebody = set(self.local_vars.keys());
-    if isinstance(nd.body, (list, tuple)) {
-        self._codegen_body(nd.body);
-    }
+    self._codegen_pass_body(nd);
     if not self.builder.block.is_terminated {
         _forever_loc = f"{os.path.basename(self.module.loc.mod_path)}:{nd.loc.last_line
             if nd.loc
@@ -876,9 +872,7 @@ impl NaIRGenPass._codegen_iter_for(nd: uni.IterForStmt) -> None {
     );
 
     _iterfor_prebody = set(self.local_vars.keys());
-    if isinstance(nd.body, (list, tuple)) {
-        self._codegen_body(nd.body);
-    }
+    self._codegen_pass_body(nd);
     _loc = f"{os.path.basename(self.module.loc.mod_path)}:{nd.loc.last_line
         if nd.loc
         else 0}";
@@ -3086,11 +3080,7 @@ impl NaIRGenPass._codegen_assignment(nd: uni.Assignment) -> None {
                 var_name in self.closure_cell_vars
                 and var_name not in self.closure_cell_handles
             );
-            if _mk_cell {
-                alloca = self._emit_closure_cell(var_name, var_type);
-            } else {
-                alloca = self._entry_alloca(var_type, var_name);
-            }
+            alloca = self._binding_slot(var_type, var_name);
             _in_gen_frame = (
                 self._gen_ctx is not None
                 and self.builder.function is self._gen_ctx.resume_fn
@@ -3332,6 +3322,7 @@ impl NaIRGenPass._codegen_ctrl(nd: uni.CtrlStmt) -> None {
     }
     (continue_bb, break_bb) = self.loop_stack[-1];
     _loop_depth = len(self.loop_stack);
+    self._emit_pass_link_detaches(enclosing_loop(nd));
     if self._emit_finalizers(_loop_depth) {
         return;
     }
@@ -4022,9 +4013,7 @@ impl NaIRGenPass._try_flow_for_parallel(nd: uni.InForStmt) -> bool {
         );
         _ff_prebody = set(self.local_vars.keys());
         self.loop_stack.append((_c_incr, _c_end));
-        if isinstance(nd.body, (list, tuple)) {
-            self._codegen_body(nd.body);
-        }
+        self._codegen_pass_body(nd);
         self.loop_stack.pop();
         if not self.builder.block.is_terminated {
             self._emit_loop_iter_cleanup(
@@ -4458,7 +4447,7 @@ impl NaIRGenPass._codegen_for_indexed(
 
     if kind == "range" {
         len_val = collection_val;
-        idx_alloca = self._entry_alloca(i64, var_names[0]);
+        idx_alloca = self._binding_slot(i64, var_names[0]);
         self.builder.store(range_start, idx_alloca);
         self.local_vars[var_names[0]] = idx_alloca;
         allocas = [idx_alloca];
@@ -4493,7 +4482,7 @@ impl NaIRGenPass._codegen_for_indexed(
                 and isinstance(_existing.type, ir.PointerType)
                 and _existing.type.pointee == vtype
             );
-            alloca = _existing if _reuse else self._entry_alloca(vtype, vname);
+            alloca = _existing if _reuse else self._binding_slot(vtype, vname);
             assert alloca is not None;
             _in_resume_fn = (
                 self._gen_ctx is not None
@@ -4669,9 +4658,7 @@ impl NaIRGenPass._codegen_for_indexed(
     );
 
     _for_prebody = set(self.local_vars.keys());
-    if isinstance(nd.body, (list, tuple)) {
-        self._codegen_body(nd.body);
-    }
+    self._codegen_pass_body(nd);
     if not self.builder.block.is_terminated {
         self._emit_loop_iter_cleanup(
             [
@@ -4854,9 +4841,7 @@ impl NaIRGenPass._try_chunked_for(nd: uni.InForStmt) -> bool {
     );
     _ch_prebody = set(self.local_vars.keys());
     self.loop_stack.append((_c_incr, _c_end));
-    if isinstance(nd.body, (list, tuple)) {
-        self._codegen_body(nd.body);
-    }
+    self._codegen_pass_body(nd);
 
     if not self.builder.block.is_terminated {
         self._emit_loop_iter_cleanup(

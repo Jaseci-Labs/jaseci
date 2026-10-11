@@ -62,6 +62,8 @@ def _native_emitter_of(suffix: str) -> (object | None) {
 impl NaIRGenPass.postinit -> None {
     import os as _ni_os;
 
+    self.loop_links = LoopLinks.of(self.module);
+
     _ni_opts = self.prog.options;
     self._rc_debug_codegen = bool(_ni_opts.rc_debug_codegen);
     _ni_src: str = self.module.loc.mod_path if self.module.loc else "";

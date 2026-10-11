@@ -182,7 +182,7 @@ impl NaIRGenPass._codegen_tuple_unpack(
                     elem_val, _want, name=f"unpack.{i}.typed"
                 );
             }
-            alloca = self._entry_alloca(elem_val.type, var_name);
+            alloca = self._binding_slot(elem_val.type, var_name);
             self.local_vars[var_name] = alloca;
             stored = elem_val;
         }

@@ -555,14 +555,7 @@ def resolve_kernel -> (ResolvedKernel | None) {
     }
     lib_setting = os.environ.get(KERNEL_LIB_ENV, "");
     if lib_setting.strip().lower() in KERNEL_OFF_VALUES {
-        if os.environ.get(KERNEL_BUILDING_ENV) {
-            return None;
-        }
-        raise KernelUnavailable(
-            f"{KERNEL_LIB_ENV}={lib_setting} is not supported: the native compiler "
-            "kernel compiles and analyzes every program (only a kernel build "
-            "parses with the store parser)"
-        );
+        return None;
     }
     if lib_setting {
         return _from_explicit(lib_setting);

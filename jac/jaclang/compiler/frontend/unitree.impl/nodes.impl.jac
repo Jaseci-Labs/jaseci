@@ -919,11 +919,14 @@ impl UniScopeNode.get_enclosing_captures -> list[Symbol] {
                 tab = sym.parent_tab;
             }
         }
-        if (
-            (tab is None)
-            or same_lexical_scope(tab, self)
-            or not isinstance(tab, (Ability, ImplDef, LambdaExpr, Test))
-        ) {
+        if (tab is None) or same_lexical_scope(tab, self) {
+            continue;
+        }
+        frame: (UniScopeNode | None) = tab;
+        while frame is not None and not UniScopeNode.is_python_scoping(frame) {
+            frame = frame.parent_scope;
+        }
+        if not isinstance(frame, (Ability, ImplDef, LambdaExpr, Test)) {
             continue;
         }
 

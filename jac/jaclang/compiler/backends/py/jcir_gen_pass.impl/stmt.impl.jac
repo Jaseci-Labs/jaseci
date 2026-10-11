@@ -162,12 +162,16 @@ impl JcirGenPass.scope_directive_stmts(
         if scope is None {
             continue;
         }
+        linked = self.loop_links.linked_within(scope);
         for name in scope.implicit_rebinds {
             if name in seen {
                 continue;
             }
             seen.add(name);
             sym = scope.implicit_rebinds[name];
+            if sym in linked {
+                continue;
+            }
             if isinstance(sym.parent_tab, Module) {
                 global_names.append(name);
             } else {
@@ -461,9 +465,17 @@ impl JcirGenPass.exit_finally_stmt with FinallyStmt exit {
     self.set_out(here, self.resolve_stmt_block(here.body));
 }
 
+impl JcirGenPass._pass_body(loop: LoopStmt) -> list[CgItem] {
+    body = self.resolve_stmt_block(loop.body);
+    if not self.loop_links.of_loop(loop) {
+        return body;
+    }
+    return [*self._pass_link_opens(loop), *body, *self._pass_link_detaches(loop)];
+}
+
 impl JcirGenPass.exit_iter_for_stmt with IterForStmt exit {
     py_nodes: list[CgNode] = [];
-    body = self.resolve_stmt_block(here.body);
+    body = self._pass_body(here);
     body = body + [self.val(here.count_by)];
     py_nodes.append(self.val(here.iter));
     py_nodes.append(
@@ -490,7 +502,7 @@ impl JcirGenPass.exit_in_for_stmt with InForStmt exit {
                 [
                     self.val(here.target),
                     self.val(here.collection),
-                    self.resolve_stmt_block(here.body),
+                    self._pass_body(here),
                     self.outs(here.else_body) if here.else_body else []
                 ]
             )
@@ -507,7 +519,7 @@ impl JcirGenPass.exit_while_stmt with WhileStmt exit {
                 ['test', 'body', 'orelse'],
                 [
                     self.val(here.condition),
-                    self.resolve_stmt_block(here.body),
+                    self._pass_body(here),
                     self.outs(here.else_body) if here.else_body else []
                 ]
             )
@@ -522,7 +534,7 @@ impl JcirGenPass.exit_forever_stmt with ForeverStmt exit {
             self.nod(
                 'While',
                 ['test', 'body', 'orelse'],
-                [self.const_of(True), self.resolve_stmt_block(here.body), []]
+                [self.const_of(True), self._pass_body(here), []]
             )
         ]
     );
@@ -595,14 +607,18 @@ impl JcirGenPass.exit_assert_stmt with AssertStmt exit {
 
 impl JcirGenPass.exit_ctrl_stmt with CtrlStmt exit {
     if (here.ctrl.name == Tok.KW_BREAK) {
-        self.set_out(here, [self.nod('Break', [], [])]);
+        loop = enclosing_loop(here);
+        self.set_out(
+            here, self._pass_link_detaches(loop) + [self.nod('Break', [], [])]
+        );
     } elif (here.ctrl.name == Tok.KW_CONTINUE) {
-        if (iter_for_parent := here.find_parent_of_type(IterForStmt)) {
-            count_by = iter_for_parent.count_by;
-            self.set_out(here, [self.val(count_by), self.nod('Continue', [], [])]);
-        } else {
-            self.set_out(here, [self.nod('Continue', [], [])]);
+        loop = enclosing_loop(here);
+        stmts = self._pass_link_detaches(loop);
+        if isinstance(loop, IterForStmt) {
+            stmts.append(self.val(loop.count_by));
         }
+        stmts.append(self.nod('Continue', [], []));
+        self.set_out(here, stmts);
     } elif (here.ctrl.name == Tok.KW_SKIP) {
         self.set_out(here, [self.nod('Return', ['value'], [None])]);
     }
