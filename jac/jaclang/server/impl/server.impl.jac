@@ -281,11 +281,11 @@ async def _run_function_with_occ(
                         _conflict_turn_pool(), take_turn
                     );
                     try {
-                        await turn;
+                        await asyncio.shield(turn);
                     } except asyncio.CancelledError {
                         while not turn.done() {
                             try {
-                                await asyncio.wait({turn});
+                                await asyncio.shield(turn);
                             } except asyncio.CancelledError {
                                 continue;
                             }
