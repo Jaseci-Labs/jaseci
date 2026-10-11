@@ -89,10 +89,24 @@ obj NativeLibrary {
 glob logger = logging.getLogger(__name__),
      JAC_TO_CTYPES: dict[(str, type)] = {
          'int': ctypes.c_int64,
+         'i8': ctypes.c_int64,
+         'i16': ctypes.c_int64,
+         'i32': ctypes.c_int64,
+         'i64': ctypes.c_int64,
+         'isize': ctypes.c_int64,
+         'u8': ctypes.c_int64,
+         'u16': ctypes.c_int64,
+         'u32': ctypes.c_int64,
+         'u64': ctypes.c_int64,
+         'usize': ctypes.c_int64,
          'float': ctypes.c_double,
+         'f32': ctypes.c_double,
+         'f64': ctypes.c_double,
          'bool': ctypes.c_bool,
-         'str': ctypes.c_char_p
+         'str': ctypes.c_char_p,
+         'bytes': ctypes.c_char_p
      },
+     _CB_VOID_RETURNS: set[str] = {'None', 'void'},
      _pyb_shadows: dict[(int, object)] = {},
      _pyb_class_memo: dict[(tuple[any, ...], type)] = {},
      _pyb_module_memo: dict[(str, object)] = {};
@@ -211,9 +225,10 @@ def register_py_callbacks(
 ) {
     for binding in bindings {
         _sym = interop_callback_symbol(binding);
-        ret_ct = JAC_TO_CTYPES.get(binding.ret_type);
+        ret_void = binding.ret_type in _CB_VOID_RETURNS;
+        ret_ct = None if ret_void else JAC_TO_CTYPES.get(binding.ret_type);
         arg_cts = [JAC_TO_CTYPES.get(pt) for pt in binding.param_types];
-        if ret_ct is None or None in arg_cts {
+        if (ret_ct is None and not ret_void) or None in arg_cts {
             raise RuntimeError(
                 f"Native callback '{binding.name}' (from {binding.source_module
                     or '?'}) "
@@ -231,11 +246,18 @@ def register_py_callbacks(
                 if (fn is not None) {
                     return fn(*args);
                 }
-                raise RuntimeError(
-                    f"Native code called Python function '{func_name}' but it "
-                        + "is not registered. Ensure the Python module "
-                        + "defining it executes before native code calls it."
+
+                import os;
+                import sys;
+                sys.stderr.write(
+                    f"Native code called Python function '{func_name}' before "
+                        + "its provider registered; a ctypes callback cannot raise "
+                        + "across the boundary (native would read a fabricated 0 "
+                        + "return), so the process stops. Load the Python module "
+                        + f"defining '{func_name}' before native entry.\n"
                 );
+                sys.stderr.flush();
+                os.abort();
             }
             return callback;
         }
