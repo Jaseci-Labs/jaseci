@@ -205,6 +205,11 @@ test "an unchanged project reuses its sealed bundle instead of sealing again" {
         "a source edit reused the previous seal"
     );
     assert edited != first;
+    (base / "svc.jac").chmod(0o755);
+    (_, mode_log) = _pack_logged(base, binary);
+    assert not any("Reusing the sealed bundle" in m for m in mode_log) , (
+        "a file mode change reused the previous seal"
+    );
 }
 
 

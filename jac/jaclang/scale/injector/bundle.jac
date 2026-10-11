@@ -982,6 +982,8 @@ def seal_input_digest(
     for path in sorted(sources) {
         digest.update(path.relative_to(base).as_posix().encode("utf-8"));
         digest.update(b"\0");
+        digest.update(f"{path.stat().st_mode & 0o777:o}".encode("utf-8"));
+        digest.update(b"\0");
         digest.update(hashlib.sha256(path.read_bytes()).digest());
     }
     return digest.hexdigest();
@@ -998,12 +1000,33 @@ def _mtime(path: Path) -> float {
 }
 
 
+def _cached_seal(base: Path, key: str) -> (bytes | None) {
+    cached = _seal_cache_dir(base) / f"{key}.jab";
+    try {
+        raw = cached.read_bytes();
+    } except OSError {
+        return None;
+    }
+    try {
+        os.utime(cached, None);
+    } except OSError as exc {
+        logger.debug(f"Could not touch the reused sealed bundle: {exc}");
+    }
+    return raw;
+}
+
+
 def _remember_seal(base: Path, key: str, raw: bytes) {
     cache = _seal_cache_dir(base);
+    partial = "";
     try {
         cache.mkdir(parents=True, exist_ok=True);
-        partial = cache / f"{key}.jab.partial";
-        partial.write_bytes(raw);
+        (fd, partial) = tempfile.mkstemp(
+            dir=str(cache), prefix=f"{key}.", suffix=".partial"
+        );
+        with os.fdopen(fd, "wb") as out {
+            out.write(raw);
+        }
         os.replace(partial, cache / f"{key}.jab");
         kept = sorted(cache.`glob("*.jab"), key=_mtime, reverse=True);
         for stale in kept[SEAL_CACHE_KEEP:] {
@@ -1011,6 +1034,10 @@ def _remember_seal(base: Path, key: str, raw: bytes) {
         }
     } except OSError as exc {
         logger.warning(f"Could not keep the sealed bundle for reuse: {exc}");
+    } finally {
+        if partial {
+            Path(partial).unlink(missing_ok=True);
+        }
     }
 }
 
@@ -1045,22 +1072,24 @@ def pack_jab(
     }
     sanitized = sanitized_jac_toml(base);
     app_name = sealed_app_name(project_dir, fleet);
-    key = seal_input_digest(
-        base,
-        sources,
-        seal_binary,
-        pod_arch,
-        app_name,
-        sanitized,
-        fat_bundle_setting(project_dir)[0]
-    );
-    cached = _seal_cache_dir(base) / f"{key}.jab";
-    if cached.is_file() {
+    def input_key -> str {
+        return seal_input_digest(
+            base,
+            sources,
+            seal_binary,
+            pod_arch,
+            app_name,
+            sanitized,
+            fat_bundle_setting(project_dir)[0]
+        );
+    }
+    key = input_key();
+    cached = _cached_seal(base, key);
+    if cached is not None {
         logger.info(
             f"Reusing the sealed bundle for unchanged inputs ({key[:12]}); skipping the seal."
         );
-        os.utime(cached, None);
-        return cached.read_bytes();
+        return cached;
     }
     staged = _precompile_app(
         base, seal_binary, sanitized, seal_timeout_setting(project_dir), app_name
@@ -1170,7 +1199,18 @@ def pack_jab(
             gz.close();
         }
         raw = buf.getvalue();
-        _remember_seal(base, key, raw);
+        try {
+            unchanged = input_key() == key;
+        } except OSError {
+            unchanged = False;
+        }
+        if unchanged {
+            _remember_seal(base, key, raw);
+        } else {
+            logger.info(
+                "The project changed while it was sealed; not keeping this bundle for reuse."
+            );
+        }
         return raw;
     } finally {
         remove_stage_root(staged.parent);
