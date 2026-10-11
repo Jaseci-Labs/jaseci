@@ -468,6 +468,8 @@ walker TypeEvaluator {
         path: str, importer_path: (str | None) = None, need_tree: bool = False
     ) -> Module;
 
+    def _in_flight_module(resolved_path: str) -> (Module | None);
+    def _module_in_flight(path: str) -> bool;
     def _resolve_importer_path(ast_node: UniNode) -> (str | None);
     def forget_module(resolved_path: str) -> None;
     def _resolve_from_path(from_mod: ModulePath) -> Path;

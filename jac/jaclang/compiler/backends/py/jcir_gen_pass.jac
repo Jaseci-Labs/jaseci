@@ -1,6 +1,12 @@
 import textwrap;
 import from jaclang.compiler.frontend.roles { Kid }
 import from collections.abc { Sequence }
+import from jaclang.compiler.frontend.loop_links {
+    LoopLinks,
+    LoopStmt,
+    PassLink,
+    enclosing_loop
+}
 import from jaclang.compiler.frontend.unitree {
     literal_string_value,
     Ability,
@@ -380,6 +386,8 @@ walker JcirGenPass(TreePass) {
         builtin_imports: set[str] postinit,
         sized_imports: set[str] postinit,
         typing_imports: set[str] postinit,
+        loop_links: LoopLinks postinit,
+        _pass_link_names: dict[int, str] postinit,
         _lambda_counter: int = 0,
         _hoist_frames: list[list[CgNode]] postinit,
         preamble: list[CgItem] postinit,
@@ -497,6 +505,16 @@ walker JcirGenPass(TreePass) {
     def _docstring_offset(body: list[CgItem]) -> int;
     def _report_leaked_hoisted_lambdas -> None;
     def _function_expr_from_def(func_def: CgNode, jac_node: UniNode) -> CgNode;
+    def _pass_body(loop: LoopStmt) -> list[CgItem];
+    def _pass_link_name(link: PassLink) -> str;
+    def _closure_bindings(closure: UniNode) -> list[str];
+    def _pass_link_args(names: list[str]) -> CgNode;
+    def _pass_link_ref(link: PassLink, nd: Name) -> CgNode;
+    def _pass_link_opens(loop: UniNode) -> list[CgNode];
+    def _pass_link_ctor(kind: str, loop: UniNode) -> CgNode;
+    def _pass_link_detaches(loop: (UniNode | None)) -> list[CgNode];
+    def _linked_closure_value(closure: UniNode, value: CgNode) -> CgNode;
+    def _linked_closure_factory(func_def: CgNode, closure: UniNode) -> CgNode;
     def _get_sem_decorator(nd: UniNode) -> (CgNode | None);
     def _gen_native_interop_stubs(nd: UniNode) -> None;
     def _native_import_registration_map -> dict[str, list[CgSplice]];

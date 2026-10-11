@@ -62,6 +62,8 @@ def _native_emitter_of(suffix: str) -> (object | None) {
 impl NaIRGenPass.postinit -> None {
     import os as _ni_os;
 
+    self.loop_links = LoopLinks.of(self.module);
+
     _ni_opts = self.prog.options;
     self._rc_debug_codegen = bool(_ni_opts.rc_debug_codegen);
     _ni_src: str = self.module.loc.mod_path if self.module.loc else "";
@@ -1312,6 +1314,7 @@ impl NaIRGenPass._register_imported_struct_types -> None {
 
     import from jaclang.compiler.passes.layout_pass { adopt_imported_bases }
     adopt_imported_bases(self.module);
+    self._report_unreachable_overrides();
 
     for (_, imported_mod) in imported_mods {
         self._walk_imported_module_types(imported_mod);
@@ -1918,47 +1921,13 @@ impl NaIRGenPass._process_clib_imports(module: uni.Module) -> None {
 
         for decl in stmt.clib_decls {
             if isinstance(decl, uni.Archetype) {
-                arch_name = decl.name.value if decl.name else None;
-                if arch_name is not None {
-                    struct_type = self.llvm_module.context.get_identified_type(
-                        arch_name
-                    );
-                    self.struct_types[arch_name] = struct_type;
-                    self.clib_struct_names.add(arch_name);
-                    self.has_native_code = True;
-                }
+                self._declare_clib_struct(decl);
             }
         }
 
         for decl in stmt.clib_decls {
             if isinstance(decl, uni.Archetype) {
-                arch_name = decl.name.value if decl.name else None;
-                if arch_name is not None and arch_name in self.struct_types {
-                    self._codegen_archetype(decl);
-
-                    stype = self.struct_types[arch_name];
-                    if stype?.elements and stype.elements {
-                        total_bits = 0;
-                        all_int = True;
-                        for elem in stype.elements {
-                            if isinstance(elem, ir.IntType) {
-                                total_bits += elem.width;
-                            } else {
-                                all_int = False;
-                                break;
-                            }
-                        }
-                        if all_int and 0 < total_bits <= 64 {
-                            abi_bits = 8;
-                            while abi_bits < total_bits {
-                                abi_bits *= 2;
-                            }
-                            self.clib_struct_abi_types[arch_name] = ir.IntType(
-                                abi_bits
-                            );
-                        }
-                    }
-                }
+                self._define_clib_struct(decl);
             }
         }
 
@@ -1989,6 +1958,62 @@ impl NaIRGenPass._process_clib_imports(module: uni.Module) -> None {
             self.has_native_code = True;
         }
     }
+}
+
+impl NaIRGenPass._declare_clib_struct(decl: uni.Archetype) -> (str | None) {
+    arch_name = decl.name.value if decl.name else None;
+    if arch_name is None {
+        return None;
+    }
+    self.struct_types[arch_name] = self.llvm_module.context.get_identified_type(
+        arch_name
+    );
+    self.clib_struct_names.add(arch_name);
+    self.has_native_code = True;
+    return arch_name;
+}
+
+impl NaIRGenPass._define_clib_struct(decl: uni.Archetype) -> None {
+    arch_name = decl.name.value if decl.name else None;
+    if arch_name is None or arch_name not in self.struct_types {
+        return;
+    }
+    self._codegen_archetype(decl);
+
+    stype = self.struct_types[arch_name];
+    if stype?.elements and stype.elements {
+        total_bits = 0;
+        all_int = True;
+        for elem in stype.elements {
+            if isinstance(elem, ir.IntType) {
+                total_bits += elem.width;
+            } else {
+                all_int = False;
+                break;
+            }
+        }
+        if all_int and 0 < total_bits <= 64 {
+            abi_bits = 8;
+            while abi_bits < total_bits {
+                abi_bits *= 2;
+            }
+            self.clib_struct_abi_types[arch_name] = ir.IntType(abi_bits);
+        }
+    }
+}
+
+impl NaIRGenPass._ensure_clib_struct(t: any) -> (str | None) {
+    import from jaclang.compiler.c_interop { foreign_struct_of_type }
+    arch = foreign_struct_of_type(t);
+    if arch is None or arch.name is None {
+        return None;
+    }
+    name = arch.name.value;
+    if name not in self.clib_struct_names {
+        self._declare_clib_struct(arch);
+        self._define_clib_struct(arch);
+    }
+    return name;
 }
 
 impl NaIRGenPass._declare_pending_clib_abilities -> None {

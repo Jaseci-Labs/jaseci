@@ -613,6 +613,7 @@ def prepare_application(
                 revision.services = tuple(entries[1:]);
                 revision.applications = applications[1:];
                 publish(revision);
+                _release_compile_state(program);
                 return revision;
             }
         }
@@ -623,6 +624,14 @@ def prepare_application(
         }
         set_effective_default_codespace(previous);
     }
+}
+
+def _release_compile_state(program: any) {
+    import from jaclang.project.kernel_compile { forget_application_units }
+    import from jaclang.project.kernel_snapshot { forget_interface_memo }
+    program._get_compiler().release_compile_state(program);
+    forget_application_units();
+    forget_interface_memo();
 }
 
 def _capture_input(path: str, inputs: dict[str, str]) {

@@ -30,6 +30,17 @@ import from jaclang.compiler.types.operations { AUG_TO_BINARY_MAP }
 import from jaclang.compiler.passes.osp_analysis { OspAnalysis, OspModel, OspSlot }
 import from jaclang.compiler.passes.context { TreePass }
 import from jaclang.compiler.frontend.module_facts { ModuleFacts }
+import from jaclang.compiler.frontend.loop_links {
+    LoopLinks,
+    LoopStmt,
+    PassLink,
+    assigned_on_entry,
+    binding_sites,
+    binds_target,
+    confined_to,
+    enclosing_loop,
+    is_within
+}
 import from jaclang.compiler.backends.es.jsx_processor { EsJsxProcessor }
 import from jaclang.compiler.frontend.codeinfo {
     BoundaryTypeInfo,
@@ -283,7 +294,9 @@ walker EsastGenPass(TreePass) {
         _primitive_emitters: dict[str, PrimitiveEmitter[(str, ESEmitCtx)]] = {},
         _emitters_ready: bool = False,
         _builtin_emitter: PrimitiveEmitter[(str, ESEmitCtx)] = ESBuiltinEmitter(),
-        _poly_methods: (set[str] | None) = None;
+        _poly_methods: (set[str] | None) = None,
+        loop_links: LoopLinks = LoopLinks(),
+        _native_links: dict[int, bool] = {};
 
     has resolved_backend: FrameworkBackend {
         getter {
@@ -431,6 +444,14 @@ walker EsastGenPass(TreePass) {
     def _is_ct_type_param(nd: uni.Name) -> bool;
     def _ct_ctor_slots(nd: uni.UniNode) -> (list[tuple[str, uni.Expr]] | None);
     def _trailer_reaches_ct_class(nd: uni.AtomTrailer) -> bool;
+    def _pass_link_name(link: PassLink) -> str;
+    def _pass_link_ref(link: PassLink, nd: uni.UniNode) -> es.Expression;
+    def _build_pass_block(loop: LoopStmt) -> es.BlockStatement;
+    def _pass_link_native(link: PassLink) -> bool;
+    def _target_confined(loop: uni.InForStmt) -> bool;
+    def _target_rebound(loop: uni.InForStmt) -> bool;
+    def _frame_scope_of(nd: uni.UniNode) -> (ScopeInfo | None);
+    def _pass_link_detaches(loop: (LoopStmt | None)) -> list[es.Statement];
     def _build_block_statement(
         scope_node: uni.UniScopeNode, body_nodes: (Sequence[uni.UniNode] | None)
     ) -> es.BlockStatement;

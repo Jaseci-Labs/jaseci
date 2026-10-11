@@ -482,6 +482,7 @@ impl NaIRGenPass._codegen_lambda(nd: uni.LambdaExpr) -> (ir.Value | None) {
     fn_type = ir.FunctionType(ret_type, all_param_types);
     anon_fn = ir.Function(self.llvm_module, fn_type, name=anon_name);
     anon_fn.linkage = "private";
+    self._register_pass_links(nd, anon_fn);
     for (i, arg) in enumerate(anon_fn.args) {
         if i < len(all_param_names) {
             arg.name = all_param_names[i];
@@ -543,8 +544,9 @@ impl NaIRGenPass._codegen_lambda(nd: uni.LambdaExpr) -> (ir.Value | None) {
 
     if captures {
         _all_cells = True;
+        _rebinds = self.closure_rebinds.get(anon_fn.name, set());
         for (cap_name, _cap_val, _cap_type) in captures {
-            if cap_name not in self.closure_cell_handles {
+            if cap_name not in self.closure_cell_handles and cap_name not in _rebinds {
                 _all_cells = False;
                 break;
             }
@@ -570,6 +572,32 @@ impl NaIRGenPass._codegen_lambda(nd: uni.LambdaExpr) -> (ir.Value | None) {
         self._pending_lambda_captures = None;
     }
     return anon_fn;
+}
+
+impl NaIRGenPass._binds_variable(nd: uni.Expr) -> bool {
+    import from jaclang.compiler.frontend.constant { SymbolType }
+    import from jaclang.compiler.frontend.unitree { ability_of_symbol }
+    if not isinstance(nd, uni.Name) or nd.sym is None {
+        return False;
+    }
+    sym = nd.sym;
+    if sym.imported_from is not None
+        or isinstance(sym.decl.parent, (uni.ModuleItem, uni.ModulePath)) {
+        return False;
+    }
+    scope = sym.parent_tab;
+    while scope is not None and not isinstance(scope, uni.Module) {
+        scope = scope.parent_scope;
+    }
+    if scope is None
+        or (
+            scope is not self.module and scope is not nd.find_parent_of_type(uni.Module)
+        ) {
+        return False;
+    }
+    kind = sym.sym_type;
+    return (kind == SymbolType.VAR or kind == SymbolType.MOD_VAR)
+        and ability_of_symbol(sym) is None;
 }
 
 impl NaIRGenPass._codegen_name(nd: uni.Name) -> (ir.Value | None) {
@@ -616,6 +644,10 @@ impl NaIRGenPass._codegen_name(nd: uni.Name) -> (ir.Value | None) {
         and not (
             var_name in self.global_vars
             and self.func_symtab[var_name] is self.clib_extern_fns.get(var_name)
+        )
+        and not (
+            isinstance(self.func_symtab[var_name], ir.Function)
+            and self._binds_variable(nd)
         ) {
         return self.func_symtab[var_name];
     }
@@ -1684,6 +1716,29 @@ impl NaIRGenPass._codegen_compare_link(
         return self._compare_result(
             _view_eq, _cmp_left_orig, _cmp_right_orig, release_operands, "cmp_view"
         );
+    }
+    if op == Tok.EE or op == Tok.NE {
+        _mixed_eq = self._emit_mixed_list_eq(
+            left,
+            right,
+            self._flow_narrowed_type_of(
+                left_node.expr if isinstance(left_node, uni.CfgExpr) else left_node
+            ),
+            self._flow_narrowed_type_of(
+                right_node.expr if isinstance(right_node, uni.CfgExpr) else right_node
+            )
+        );
+        if _mixed_eq is not None {
+            return self._compare_result(
+                self.builder.not_(_mixed_eq, name="lmix.ne")
+                    if op == Tok.NE
+                    else _mixed_eq,
+                _cmp_left_orig,
+                _cmp_right_orig,
+                release_operands,
+                "cmp_list_mixed"
+            );
+        }
     }
     _cmp_result = self._emit_comparison(
         op,

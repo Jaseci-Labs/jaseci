@@ -170,7 +170,19 @@ impl NaIRGenPass._codegen_tuple_unpack(
                 if slot_type == self.jacval_type
                 else self._coerce_type(elem_val, slot_type);
         } else {
-            alloca = self._entry_alloca(elem_val.type, var_name);
+            _i8p = ir.IntType(8).as_pointer();
+            _want = self._lower_type(target.type)
+                if isinstance(target, uni.Expr)
+                else None;
+            if elem_val.type == _i8p
+                and isinstance(_want, ir.PointerType)
+                and _want != _i8p
+                and not isinstance(_want.pointee, ir.FunctionType) {
+                elem_val = self.builder.bitcast(
+                    elem_val, _want, name=f"unpack.{i}.typed"
+                );
+            }
+            alloca = self._binding_slot(elem_val.type, var_name);
             self.local_vars[var_name] = alloca;
             stored = elem_val;
         }

@@ -191,9 +191,12 @@ def c_call_borrows_args(call: (UniNode | None)) -> bool {
 glob _SPEC_SCALAR_ALIASES: dict[str, str] = {"int": "i64", "float": "f64"};
 
 def c_type_spec(
-    t: (TypeBase | None), annotation: (UniNode | None) = None
+    t: (TypeBase | None),
+    annotation: (UniNode | None) = None,
+    written_in: (UniNode | None) = None
 ) -> list[any] {
     import from jaclang.compiler.types.types { ClassType, FunctionType, UnionType }
+    spelled = written_in if written_in is not None else annotation;
     if isinstance(t, UnionType) {
         members = [
             m
@@ -203,7 +206,7 @@ def c_type_spec(
             )
         ];
         if len(members) == 1 {
-            inner = c_type_spec(members[0], None);
+            inner = c_type_spec(members[0], None, spelled);
             return ["opt", inner] if len(members) < len(t.types or []) else inner;
         }
         return ["any"];
@@ -211,18 +214,18 @@ def c_type_spec(
     if isinstance(t, FunctionType) {
         return [
             "fn",
-            [c_type_spec(p.param_type, None) for p in (t.parameters or [])],
-            c_type_spec(t.return_type, None)
+            [c_type_spec(p.param_type, None, spelled) for p in (t.parameters or [])],
+            c_type_spec(t.return_type, None, spelled)
         ];
     }
     if isinstance(t, ClassType) and t._shared is not None {
         kind = c_builtin_kind(t);
         if kind == "ptr" {
             arg = c_type_arg(t);
-            return ["ptr", None if arg is None else c_type_spec(arg, None)];
+            return ["ptr", None if arg is None else c_type_spec(arg, None, spelled)];
         }
         if kind == "Pinned" {
-            return ["pinned", c_type_spec(c_type_arg(t), None)];
+            return ["pinned", c_type_spec(c_type_arg(t), None, spelled)];
         }
         name = t.shared.class_name;
         if name in ("NoneType", "None") {
@@ -232,7 +235,7 @@ def c_type_spec(
         if arch is not None {
             return [
                 "opaque" if is_opaque_c_archetype(arch) else "struct",
-                arch.name.value
+                _spelled_c_type_name(arch, spelled)
             ];
         }
         if t.is_builtin() {
@@ -245,6 +248,24 @@ def c_type_spec(
         return _spec_for_name(written) or ["any"];
     }
     return ["any"];
+}
+
+def _spelled_c_type_name(arch: Archetype, written_in: (UniNode | None)) -> str {
+    import from jaclang.compiler.frontend.unitree { Name }
+    declared: str = arch.name.value;
+    if written_in is None {
+        return declared;
+    }
+    if isinstance(written_in, Name)
+        and clib_archetype_of_type(written_in.type) is arch {
+        return written_in.value;
+    }
+    for nm in written_in.get_all_sub_nodes(Name) {
+        if clib_archetype_of_type(nm.type) is arch {
+            return nm.value;
+        }
+    }
+    return declared;
 }
 
 def _spec_for_name(name: str) -> (list[any] | None) {

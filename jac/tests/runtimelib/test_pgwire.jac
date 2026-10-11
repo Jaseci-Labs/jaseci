@@ -1,15 +1,28 @@
-"""Unit tests for jac's minimal Postgres wire client (epic #7945).
+"""Tests for jac's minimal Postgres wire client (epic #7945).
 
 Offline: SCRAM-SHA-256 math pinned to the RFC 7677 test vector, named
 parameter conversion, array literal encoding, and error-field parsing.
-The live protocol (trust auth over unix sockets) is exercised end to end
-by the pg-session parity suite; SCRAM-over-TCP is covered by the k8s path.
+
+Live, against the embedded server: how many socket reads a result costs
+and that NOTIFY traffic survives the read buffer. The socket is wrapped
+in a pass-through that counts reads (and, to stand in for a starved
+thread, can delay them); every byte still comes from a real Postgres
+backend. SCRAM-over-TCP is covered by the k8s path.
 """
 
+import select;
+import threading;
+import time;
+import from pathlib { Path }
+import from tempfile { TemporaryDirectory }
+import from jaclang.data.pgembed { PgRuntime }
+import from jaclang.data.pgload { connect as pg_connect }
+import from jaclang.server.session { shared_pg_data_dir, project_db_name }
 import from jaclang.data.pgwire {
     _array_literal,
     _named_to_positional,
     _parse_error_fields,
+    _rewrite_named,
     _scram_proofs
 }
 
@@ -64,4 +77,140 @@ test "error fields parse into the sqlstate dict shape" {
     payload = b'SERROR\x00C40001\x00Mdeadlock\x00\x00';
     fields = _parse_error_fields(payload);
     assert fields == {'S': 'ERROR', 'C': '40001', 'M': 'deadlock'};
+}
+
+
+test "one named-param rewrite per text and bound-name set" {
+    sql = "SELECT :a, :b FROM t WHERE c = ':a'";
+    rewrite: any = _rewrite_named;
+    rewrite.cache_clear();
+    (first, args1) = _named_to_positional(sql, {'a': 1, 'b': 2});
+    (again, args2) = _named_to_positional(sql, {'b': 'y', 'a': 'x'});
+    reused = rewrite.cache_info();
+    assert (reused.misses, reused.hits) == (1, 1) , (
+        f"the same text and names must be rewritten once: {reused}"
+    );
+    (partial, args3) = _named_to_positional(sql, {'b': 3});
+    assert rewrite.cache_info().misses == 2 , (
+        'a different bound-name set must not reuse the rewrite'
+    );
+    assert first == again == "SELECT $1, $2 FROM t WHERE c = ':a'";
+    assert args1 == [1, 2] and args2 == ['x', 'y'];
+    assert partial == "SELECT :a, $1 FROM t WHERE c = ':a'";
+    assert args3 == [3];
+}
+
+
+obj _ReadProbe {
+    has sock: any,
+        delay: float = 0.0,
+        sent: any = None,
+        hold: any = None,
+        reads: int = 0;
+
+    def recv(n: int) -> bytes {
+        self.reads += 1;
+        if self.hold is not None {
+            assert self.hold.wait(10.0) , 'the probe was never released';
+        }
+        if self.delay {
+            time.sleep(self.delay);
+        }
+        return self.sock.recv(n);
+    }
+
+    def sendall(data: bytes) {
+        self.sock.sendall(data);
+        if self.sent is not None {
+            self.sent.set();
+        }
+    }
+
+    def close {
+        self.sock.close();
+    }
+}
+
+
+def _live_conn(td: str, app_name: str = 'jac_pgwire_test') -> any {
+    rt = PgRuntime(
+        data_dir=shared_pg_data_dir(),
+        database=project_db_name(td, str(Path(td) / 'app.jac')),
+        owner_path=td
+    );
+    info = rt.ensure();
+    return pg_connect(
+        info.user,
+        host=(info.host or None),
+        port=info.port,
+        unix_socket_dir=info.unix_socket_dir,
+        database=info.database,
+        password=(info.password or None),
+        startup_params={'application_name': app_name}
+    );
+}
+
+
+test "a multi-row result costs a few socket reads, not two per row" {
+    with TemporaryDirectory() as td {
+        conn = _live_conn(td);
+        counter = _ReadProbe(sock=conn._sock);
+        conn._sock = counter;
+        try {
+            rows = conn.run(
+                "SELECT g, repeat('x', 40) FROM generate_series(1, :n) AS g", n=2000
+            );
+            assert len(rows) == 2000;
+            assert rows[0] == (1, 'x' * 40) and rows[-1][0] == 2000;
+            assert counter.reads <= 100 , (
+                f"{counter.reads} socket reads for one 2000-row statement:"
+                ' the client reads protocol messages one recv at a time'
+            );
+            reads_before = counter.reads;
+            for _ in range(50) {
+                assert conn.run('SELECT 1') == [(1, )];
+            }
+            per_stmt = (counter.reads - reads_before) / 50;
+            assert per_stmt <= 1.5 , (
+                f"{per_stmt} socket reads per single-row statement (expected about 1)"
+            );
+        } finally {
+            conn.close();
+        }
+    }
+}
+
+
+test "a notification that shares a read with ReadyForQuery reaches the listener" {
+    with TemporaryDirectory() as td {
+        listener = _live_conn(td, 'jac_pgwire_listen');
+        sender = _live_conn(td, 'jac_pgwire_notify');
+        try {
+            listener.run('LISTEN jac_pgwire_buf');
+            raw = listener._sock;
+            sent = threading.Event();
+            fired = threading.Event();
+            listener._sock = _ReadProbe(sock=raw, delay=0.2, sent=sent, hold=fired);
+            def _fire {
+                assert sent.wait(10.0);
+                time.sleep(0.2);
+                sender.run("NOTIFY jac_pgwire_buf, 'hello'");
+                fired.set();
+            }
+            t = threading.Thread(target=_fire, daemon=True);
+            t.start();
+            listener.run('SELECT 1');
+            t.join(timeout=10.0);
+            listener._sock = raw;
+            queued = [n[2] for n in listener.notifications];
+            wakes = bool(select.select([raw], [], [], 1.0)[0]);
+            assert queued == ['hello'] or wakes , (
+                'the NOTIFY sent right after ReadyForQuery is neither queued nor'
+                ' readable on the socket: a select()-driven listener never sees it'
+            );
+        } finally {
+            listener.close();
+            sender.close();
+        }
+    }
 }
