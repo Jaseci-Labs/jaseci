@@ -377,9 +377,18 @@ test "a served scheduled walker runs each tick without an error record" {
             ][0];
             served_log = sys.modules[walker_cls.__module__].execution_log;
             before = served_log.count("interval-walker");
-            server.scheduler._execute(task);
-            server.scheduler._execute(task);
+            import io;
+            import from contextlib { redirect_stdout }
+            printed = io.StringIO();
+            with redirect_stdout(printed) {
+                server.scheduler._execute(task);
+                server.scheduler._execute(task);
+            }
             assert served_log.count("interval-walker") == before + 2 , served_log;
+            assert "interval-walker-report" not in printed.getvalue() , (
+                "a scheduled run inside the server printed its report to stdout, "
+                "the server log"
+            );
             errors = [
                 m
                 for m in records.messages

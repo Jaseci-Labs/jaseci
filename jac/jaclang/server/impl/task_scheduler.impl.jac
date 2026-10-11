@@ -492,16 +492,21 @@ impl Scheduler._compute_date(
 }
 
 impl Scheduler._execute(task: ScheduledTask) -> None {
+    import from jaclang { JacRuntimeInterface as Jac }
+    import from jaclang.runtime.context { CallState }
+    ctx = Jac.get_context();
+    token = ctx.call_state.set(CallState());
     try {
         result = task.target();
         if task.is_walker {
             import from jaclang.runtime.constructs { WalkerArchetype }
             if isinstance(result, WalkerArchetype) {
-                import from jaclang { JacRuntimeInterface as Jac }
                 Jac.`spawn(result, Jac.root());
             }
         }
     } except Exception as e {
         logger.error(f"Error executing task '{task.name}': {e}");
+    } finally {
+        ctx.call_state.reset(token);
     }
 }

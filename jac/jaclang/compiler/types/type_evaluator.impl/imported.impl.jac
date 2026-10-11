@@ -372,6 +372,7 @@ impl TypeEvaluator.get_type_of_module(node_: ModulePath) -> TypeBase {
                 }
                 pkg_dir = Path(mod_path);
                 pkg_sym_tab: (Module | None) = None;
+                pkg_settled = True;
                 for ext in (".jac", ".py", ".pyi") {
                     init_file = pkg_dir / f"__init__{ext}";
                     if init_file.exists() {
@@ -379,6 +380,7 @@ impl TypeEvaluator.get_type_of_module(node_: ModulePath) -> TypeBase {
                             str(init_file),
                             importer_path=self._resolve_importer_path(node_)
                         );
+                        pkg_settled = not self._module_in_flight(str(init_file));
                         break;
                     }
                 }
@@ -388,7 +390,9 @@ impl TypeEvaluator.get_type_of_module(node_: ModulePath) -> TypeBase {
                     symbol_table=pkg_sym_tab,
                 );
                 part.type = pkg_type;
-                self._module_type_cache[mod_path] = pkg_type;
+                if pkg_settled {
+                    self._module_type_cache[mod_path] = pkg_type;
+                }
                 continue;
             }
 
@@ -423,7 +427,9 @@ impl TypeEvaluator.get_type_of_module(node_: ModulePath) -> TypeBase {
                 npath._sym_category = SymbolType.MODULE;
             }
 
-            self._module_type_cache[mod_path] = mod_type;
+            if not self._module_in_flight(mod_path) {
+                self._module_type_cache[mod_path] = mod_type;
+            }
         }
         if node_.alias {
             node_.alias.type = path_parts[-1].type;
@@ -482,7 +488,9 @@ impl TypeEvaluator._resolve_submodule_attr(
             }
             mod = self._import_module_from_path(path_str);
             mod_type = ModuleType(mod_name=attr_name, file_uri=path, symbol_table=mod);
-            self._module_type_cache[path_str] = mod_type;
+            if not self._module_in_flight(path_str) {
+                self._module_type_cache[path_str] = mod_type;
+            }
             return mod_type;
         }
     }
@@ -495,7 +503,7 @@ impl TypeEvaluator._import_module_from_path(
     resolved_path = str(Path(path).resolve());
 
     if resolved_path in self._modules_in_compile {
-        _pending = self.program.find_module(resolved_path);
+        _pending = self._in_flight_module(resolved_path);
         if _pending is not None {
             mod = _pending;
         } else {
@@ -516,6 +524,19 @@ impl TypeEvaluator._import_module_from_path(
         mod.parent_scope = self.builtins_module;
     }
     return mod;
+}
+
+impl TypeEvaluator._in_flight_module(resolved_path: str) -> (Module | None) {
+    import from jaclang.compiler.driver.compilation_context { program_for }
+    found = self.program.find_module(resolved_path);
+    if found is None {
+        found = program_for(resolved_path, self.program).find_module(resolved_path);
+    }
+    return found;
+}
+
+impl TypeEvaluator._module_in_flight(path: str) -> bool {
+    return str(Path(path).resolve()) in self._modules_in_compile;
 }
 
 impl TypeEvaluator.forget_module(resolved_path: str) -> None {
