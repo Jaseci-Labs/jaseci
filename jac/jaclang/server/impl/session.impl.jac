@@ -1210,7 +1210,48 @@ impl Session.wait_turn -> None {
             }
             self._queued = wanted;
         }
+        if backing.in_txn() {
+            return;
+        }
+        pinned = sorted(self._queued);
+        for _ in range(PIN_ATTEMPTS) {
+            backing.begin(TxnIsolation.SERIALIZABLE);
+            try {
+                backing.lock_rows(pinned);
+                return;
+            } except Exception as e {
+                if not _is_serialization_conflict(e) {
+                    raise;
+                }
+                backing.rollback();
+            }
+        }
     }
+}
+
+
+glob _COMMIT_POOL: list[any] = [];
+
+
+def _commit_pool -> any {
+    if not _COMMIT_POOL {
+        import from concurrent.futures { ThreadPoolExecutor }
+        _COMMIT_POOL.append(
+            ThreadPoolExecutor(
+                max_workers=COMMIT_THREADS, thread_name_prefix="jac-session-commit"
+            )
+        );
+    }
+    return _COMMIT_POOL[0];
+}
+
+
+impl Session.acommit(anchor: (Anchor | None) = None) -> None {
+    import asyncio;
+    def settle {
+        self.commit(anchor);
+    }
+    await asyncio.get_running_loop().run_in_executor(_commit_pool(), settle);
 }
 
 
