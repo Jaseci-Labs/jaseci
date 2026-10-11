@@ -14,21 +14,18 @@ import from jaclang.project.config { JacConfig }
 import from jaclang.client.targets.desktop.desktop_build { serving_app_for }
 
 
-glob _MAIN = 'def:pub app -> JsxElement {\n    return <div>hi</div>;\n}\n';
-
-glob _DESKTOP_DEFAULT_TOML: str = (
+glob _MAIN = 'def:pub app -> JsxElement {\n    return <div>hi</div>;\n}\n',
+     _DESKTOP_DEFAULT_TOML: str = (
          '[project]\nname = "kiosk_ws"\ndefault-app = "desktop"\n\n'
          '[apps.desktop]\nkind = "desktop"\nentry-point = "desktop.main"\n\n'
          '[apps.harness]\nkind = "service"\nentry-point = "harness.main"\n'
-     );
-
-glob _SERVICE_DEFAULT_TOML: str = (
+     ),
+     _SERVICE_DEFAULT_TOML: str = (
          '[project]\nname = "svc_ws"\ndefault-app = "harness"\n\n'
          '[apps.harness]\nkind = "service"\nentry-point = "harness.main"\n\n'
          '[apps.web]\nkind = "web-app"\nentry-point = "web.main"\n'
-     );
-
-glob _WEB_FALLBACK_TOML: str = (
+     ),
+     _WEB_FALLBACK_TOML: str = (
          '[project]\nname = "web_ws"\ndefault-app = "desktop"\n\n'
          '[apps.desktop]\nkind = "desktop"\nentry-point = "desktop.main"\n\n'
          '[apps.web]\nkind = "web-app"\nentry-point = "web.main"\n'
