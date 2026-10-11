@@ -2299,9 +2299,21 @@ walker NaIRGenPass(CompilerPass) {
     def _codegen_report(nd: uni.ReportStmt) -> None;
     def _codegen_connect(nd: uni.BinaryExpr) -> (ir.Value | None);
     def _osp_connect_assign(
-        co: uni.ConnectOp, edge_obj: ir.Value, edge_arch: (str | None)
+        co: uni.ConnectOp,
+        edge_obj: ir.Value,
+        edge_arch: (str | None),
+        held: (list[tuple[ir.Value, ir.Value]] | None) = None
     ) -> bool;
 
+    def _osp_connect_assign_hold(
+        co: uni.ConnectOp, edge_arch: (str | None)
+    ) -> (list[tuple[ir.Value, ir.Value]] | None);
+
+    def _osp_connect_assign_field(
+        kw: uni.KWPair, edge_arch: (str | None)
+    ) -> (str | None);
+
+    def _osp_connect_assign_value(kw: uni.KWPair) -> (ir.Value | None);
     def _codegen_disconnect(nd: uni.BinaryExpr) -> (ir.Value | None);
     def _osp_disc_list_operand(expr: (uni.UniNode | None)) -> bool;
     def _codegen_edge_ref_trailer(nd: uni.EdgeRefTrailer) -> (ir.Value | None);

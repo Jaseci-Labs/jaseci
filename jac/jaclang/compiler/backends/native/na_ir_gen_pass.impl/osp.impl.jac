@@ -772,6 +772,43 @@ impl NaIRGenPass._codegen_connect(nd: uni.BinaryExpr) -> (ir.Value | None) {
         }
         many = right if right_spec is not None else left;
     }
+    held: (list[tuple[ir.Value, ir.Value]] | None) = None;
+    held_edge: (ir.Value | None) = None;
+    if many is not None and co.conn_type is not None {
+        edge_class = self._osp_static_edge_name(co.conn_type)
+            or self._osp_edge_class_name(co.conn_type);
+        if co.conn_assign is not None and self._nogc_headerless() {
+            self.emit(
+                E5092,
+                node_override=co.conn_assign,
+                kind="connect operand",
+                name="list",
+                help_text=(
+                    "A connect with a list of nodes gives every edge the same "
+                    "attribute values, which a headerless value cannot share. "
+                    "Connect in a loop."
+                )
+            );
+            return None;
+        }
+        if edge_class is None {
+            held_edge = self._codegen_expr(co.conn_type);
+            if held_edge is None {
+                self.emit(
+                    E5092, node_override=nd, kind="binary operator", name="ConnectOp"
+                );
+                return None;
+            }
+        }
+        if co.conn_assign is not None {
+            held = self._osp_connect_assign_hold(
+                co, edge_class or self._struct_name_of(co.conn_type)
+            );
+            if held is None {
+                return None;
+            }
+        }
+    }
     left_whole = left;
     right_whole = right;
     loop_idx: (ir.Value | None) = None;
@@ -850,8 +887,12 @@ impl NaIRGenPass._codegen_connect(nd: uni.BinaryExpr) -> (ir.Value | None) {
                 edge_obj = self.builder.inttoptr(edge_obj, ir.IntType(8).as_pointer());
             }
         } else {
-            edge_obj = self._codegen_expr(co.conn_type);
-            edge_fresh = edge_obj is not None and self._is_owned(edge_obj);
+            edge_obj = held_edge
+                if held_edge is not None
+                else self._codegen_expr(co.conn_type);
+            edge_fresh = held_edge is None
+                and edge_obj is not None
+                and self._is_owned(edge_obj);
             edge_arch = self._struct_name_of(co.conn_type);
             edge_name = self._spawn_operand_name(co.conn_type);
             if edge_name is not None {
@@ -872,7 +913,7 @@ impl NaIRGenPass._codegen_connect(nd: uni.BinaryExpr) -> (ir.Value | None) {
     if not self._osp_pins_refs() {
         self._osp_make_immortal(edge_obj);
     }
-    if not self._osp_connect_assign(co, edge_obj, edge_arch) {
+    if not self._osp_connect_assign(co, edge_obj, edge_arch, held) {
         return None;
     }
     _argtys = osp_conn_fn.function_type.args;
@@ -929,6 +970,24 @@ impl NaIRGenPass._codegen_connect(nd: uni.BinaryExpr) -> (ir.Value | None) {
         );
         self.builder.branch(loop_cond);
         self.builder.position_at_end(loop_done);
+        if held_edge is not None
+            and self._is_owned(held_edge)
+            and self._osp_pins_refs() {
+            self._emit_rc_release_simple(
+                self._osp_handle_ptr(held_edge, ir.IntType(8).as_pointer()),
+                op="osp_conn_edge",
+                loc=""
+            );
+        }
+        if held is not None and co.conn_assign is not None {
+            for (kw, (_slot, value)) in zip(co.conn_assign.assigns, held) {
+                if self._opt_result_owned(value, kw.value) {
+                    self._release_owned_args(
+                        [self._mark_owned(value)], op="conn_assign"
+                    );
+                }
+            }
+        }
         return left_whole if dir_val == 1 else right_whole;
     }
     if co.capture_edges {
@@ -945,14 +1004,19 @@ impl NaIRGenPass._codegen_connect(nd: uni.BinaryExpr) -> (ir.Value | None) {
 }
 
 impl NaIRGenPass._osp_connect_assign(
-    co: uni.ConnectOp, edge_obj: ir.Value, edge_arch: (str | None)
+    co: uni.ConnectOp,
+    edge_obj: ir.Value,
+    edge_arch: (str | None),
+    held: (list[tuple[ir.Value, ir.Value]] | None) = None
 ) -> bool {
     """Apply a typed connect's attribute assignments to its new edge.
 
     `a +>:E:f=v, g=w:+> b` builds `E` with no arguments and then sets each
     named field, as the Python runtime does, so a field left out keeps its
     default. The values are evaluated left to right after the edge exists and
-    before it joins the graph.
+    before it joins the graph. A connect that builds one edge per node of a
+    list evaluates them once, before the first edge (`held`), and each edge
+    takes its own reference.
     """;
     assign = co.conn_assign;
     if assign is None {
@@ -964,35 +1028,23 @@ impl NaIRGenPass._osp_connect_assign(
             edge_obj, _estruct.as_pointer(), name="edge.assign.recv"
         );
     }
-    for kw in assign.assigns {
-        field_name = self._get_name(kw.key) if kw.key is not None else None;
-        if edge_arch is None
-            or field_name is None
-            or (
-                field_name not in self.struct_field_indices.get(edge_arch, {})
-                and self._accessor_slot_of(edge_arch, field_name, "setter") is None
-            ) {
-            self.ctx.emit(
-                E5092,
-                node_override=kw,
-                kind="edge attribute",
-                name=field_name or "<field>",
-                help_text="a connect's attribute assignments need an edge type "
-                "whose fields are known at compile time."
-            );
+    for (position, kw) in enumerate(assign.assigns) {
+        field_name = self._osp_connect_assign_field(kw, edge_arch);
+        if field_name is None or edge_arch is None {
             return False;
         }
-        _errs = len(self.ctx.errors_had);
-        value = self._codegen_expr(kw.value);
+        if held is not None {
+            self._emit_field_store(
+                kw,
+                edge_obj,
+                edge_arch,
+                field_name,
+                self.builder.load(held[position][0], name="edge.assign.held")
+            );
+            continue;
+        }
+        value = self._osp_connect_assign_value(kw);
         if value is None {
-            if len(self.ctx.errors_had) == _errs {
-                self.ctx.emit(
-                    E5092,
-                    node_override=kw.value,
-                    kind="expression",
-                    name=type(kw.value).__name__
-                );
-            }
             return False;
         }
         self._emit_field_store(
@@ -1000,6 +1052,78 @@ impl NaIRGenPass._osp_connect_assign(
         );
     }
     return True;
+}
+
+impl NaIRGenPass._osp_connect_assign_hold(
+    co: uni.ConnectOp, edge_arch: (str | None)
+) -> (list[tuple[ir.Value, ir.Value]] | None) {
+    held: list[tuple[ir.Value, ir.Value]] = [];
+    if co.conn_assign is None {
+        return held;
+    }
+    for kw in co.conn_assign.assigns {
+        field_name = self._osp_connect_assign_field(kw, edge_arch);
+        if field_name is None or edge_arch is None {
+            return None;
+        }
+        if field_name in self.struct_field_inline.get(edge_arch, set()) {
+            self.ctx.emit(
+                E5092,
+                node_override=kw,
+                kind="edge attribute",
+                name=field_name,
+                help_text="a connect with a list of nodes gives every edge the "
+                "same value, and a struct held inline would be moved into the "
+                "first; connect in a loop."
+            );
+            return None;
+        }
+        value = self._osp_connect_assign_value(kw);
+        if value is None {
+            return None;
+        }
+        slot = self._entry_alloca(value.type, "edge.assign.slot");
+        self.builder.store(value, slot);
+        held.append((slot, value));
+    }
+    return held;
+}
+
+impl NaIRGenPass._osp_connect_assign_field(
+    kw: uni.KWPair, edge_arch: (str | None)
+) -> (str | None) {
+    field_name = self._get_name(kw.key) if kw.key is not None else None;
+    if edge_arch is None
+        or field_name is None
+        or (
+            field_name not in self.struct_field_indices.get(edge_arch, {})
+            and self._accessor_slot_of(edge_arch, field_name, "setter") is None
+        ) {
+        self.ctx.emit(
+            E5092,
+            node_override=kw,
+            kind="edge attribute",
+            name=field_name or "<field>",
+            help_text="a connect's attribute assignments need an edge type "
+            "whose fields are known at compile time."
+        );
+        return None;
+    }
+    return field_name;
+}
+
+impl NaIRGenPass._osp_connect_assign_value(kw: uni.KWPair) -> (ir.Value | None) {
+    _errs = len(self.ctx.errors_had);
+    value = self._codegen_expr(kw.value);
+    if value is None and len(self.ctx.errors_had) == _errs {
+        self.ctx.emit(
+            E5092,
+            node_override=kw.value,
+            kind="expression",
+            name=type(kw.value).__name__
+        );
+    }
+    return value;
 }
 
 impl NaIRGenPass._osp_disc_list_operand(expr: (uni.UniNode | None)) -> bool {
