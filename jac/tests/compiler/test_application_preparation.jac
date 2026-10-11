@@ -737,6 +737,43 @@ def _restored(path: Path, `root: str) -> bool {
     return 'Restoring prepared application' in err.getvalue();
 }
 
+test "an in-process prepare releases the compiler state it built" {
+    import from jaclang.project.kernel_compile { _APPLICATION_UNITS }
+    with tempfile.TemporaryDirectory(prefix='jac-prepared-release-') as tmp {
+        base = Path(tmp);
+        path = base / 'main.jac';
+        helper = base / 'helper.jac';
+        helper.write_text("def:pub twice(n: int) -> int { return n * 2; }\n");
+        path.write_text(
+            "import from helper { twice }\n"
+            "def:pub hello -> int { return twice(21); }\n"
+        );
+        program = JacProgram();
+        try {
+            prepared = prepare_application(str(path), program, tmp);
+            assert prepared.code , "the prepared application lost its code";
+            held = [
+                key
+                for key in program.mod.hub
+                if key.startswith(tmp)
+            ];
+            assert not held , (
+                f"the program still holds {len(held)} parsed app modules after prepare"
+            );
+            assert not program.contexts , (
+                f"{len(program.contexts)} per-context programs survived the prepare"
+            );
+            assert not [
+                p
+                for p in _APPLICATION_UNITS
+                if p.startswith(tmp)
+            ] , "kernel unit products for the app survived the prepare";
+        } finally {
+            forget(str(path));
+        }
+    }
+}
+
 test "prepared applications are reused by content, not by timestamp" {
     import time;
     with tempfile.TemporaryDirectory() as tmp {
