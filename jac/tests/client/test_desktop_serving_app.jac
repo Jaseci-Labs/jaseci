@@ -47,10 +47,10 @@ def _workspace(toml: str) -> tuple[JacConfig, Path] {
 
 
 def _serve(
-    config: JacConfig, d: Path, entry: str, backend: str = "embedded"
+    config: JacConfig, d: Path, app_name: str, backend: str = "embedded"
 ) -> str {
     try {
-        return serving_app_for(config, d / entry / "main.jac", backend);
+        return serving_app_for(config, d / app_name / "main.jac", backend);
     } finally {
         shutil.rmtree(d, ignore_errors=True);
     }
