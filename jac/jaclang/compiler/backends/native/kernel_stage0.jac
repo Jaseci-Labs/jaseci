@@ -10,7 +10,6 @@ import from jaclang.compiler.kernel_target {
 }
 import from jaclang.compiler.backends.native.kernel_resolve {
     KERNEL_DEV_LINK_MODE,
-    _StoreParserSpan,
     kernel_plan
 }
 
@@ -49,31 +48,29 @@ def link_kernel(
     mode = link_mode
         or (target.link_mode if target is not None else "")
         or KERNEL_DEV_LINK_MODE;
-    with _StoreParserSpan() {
-        started = time.perf_counter();
-        plan = kernel_plan(prog, mode=mode, target=target);
-        planned = time.perf_counter();
-        if log is not None {
-            log(
-                f"  Kernel plan: {len(plan.units)} units in {planned - started:.1f}s "
-                f"({mode} link)"
-            );
-        }
-        os.makedirs(os.path.dirname(os.path.abspath(dst)) or ".", exist_ok=True);
-        result = link_artifact(plan, dst, ArtifactKind.SHARED, log=log);
-        if log is not None {
-            events = plan.prog.analysis.cache_events;
-            log(
-                f"  Kernel link: {time.perf_counter() - planned:.1f}s "
-                f"(total {time.perf_counter() - started:.1f}s); "
-                f"analysis/lowering/codegen: {events.get('native_unit_analysis', 0)}/"
-                f"{events.get('native_unit_lower', 0)}/"
-                f"{events.get('native_unit_codegen', 0)}"
-            );
-            log(plan.prog.native_units().phase_summary());
-        }
-        return result;
+    started = time.perf_counter();
+    plan = kernel_plan(prog, mode=mode, target=target);
+    planned = time.perf_counter();
+    if log is not None {
+        log(
+            f"  Kernel plan: {len(plan.units)} units in {planned - started:.1f}s "
+            f"({mode} link)"
+        );
     }
+    os.makedirs(os.path.dirname(os.path.abspath(dst)) or ".", exist_ok=True);
+    result = link_artifact(plan, dst, ArtifactKind.SHARED, log=log);
+    if log is not None {
+        events = plan.prog.analysis.cache_events;
+        log(
+            f"  Kernel link: {time.perf_counter() - planned:.1f}s "
+            f"(total {time.perf_counter() - started:.1f}s); "
+            f"analysis/lowering/codegen: {events.get('native_unit_analysis', 0)}/"
+            f"{events.get('native_unit_lower', 0)}/"
+            f"{events.get('native_unit_codegen', 0)}"
+        );
+        log(plan.prog.native_units().phase_summary());
+    }
+    return result;
 }
 
 def build_target_kernel(

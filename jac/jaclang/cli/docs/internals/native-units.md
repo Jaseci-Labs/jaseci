@@ -274,33 +274,35 @@ setting, and stay inert unless the application calls them.
 
 The native compiler kernel is the plan rooted at `jc_unit` with the
 frontend scope compiled as native units, linked as a shared library in
-bitcode mode. `resolve_kernel()` in `kernel_resolve.jac` is the one lookup,
-with a fixed precedence:
+bitcode mode. `resolve_kernel()` in `kernel_resolve.jac` is the one lookup.
+It only ever loads a kernel; nothing but `jac kernel build` and the seal
+builds one. Its precedence is fixed:
 
 1. Sealed image. The manifest's `native` record names the artifact, its
    sha256, layout digest and plan digest; missing or mismatched is a startup
-   error. A sealed image runs its own kernel: no setting displaces it. The
-   one image without an artifact is a pull request's CI kit: its record says
-   `"kernel": "none"` and names the kit it ships in, and the store parser
-   serves every process that runs on it, sealed or rerouted.
+   error. A sealed image runs its own kernel and never looks at a checkout.
+   The one image without an artifact is a pull request's CI kit: its record
+   says `"kernel": "none"` and names the kit it ships in, and the store
+   parser serves every process that runs on it, sealed or rerouted.
    (`JAC_STUBCAT_BUILDING`, set only while the stub catalog is built, keeps
    the store parser ahead of every step.)
-2. Explicit switch, in a checkout. `JAC_COMPILER_LIB` as a path is used as
-   given and must carry its layout sidecar. `off` selects the store parser:
-   a kernel build sets it for its own processes, and a developer iterating
-   on the compiler sets it to run the checkout from bytecode instead of
-   rebuilding the kernel after every edit, the way a pull request's CI kit
-   runs.
-3. Source tree. The kernel beside `native_compiler.jac` is accepted when the
-   inputs its sidecar records are the ones the sources have now.
-   Otherwise, under a lock, the checkout first looks at the kernel the
-   running kit carries: a rerouted checkout runs on a kit's interpreter,
-   and when that kit was built from these very sources its kernel's inputs
-   match, so the kernel is copied beside the loader and accepted.
-   Only a checkout whose compiler differs from every kernel in reach has a
-   child `jac` process rebuild one, with the store parser pinned for the
-   build.
-4. No native toolchain: the store parser serves, silently.
+2. The checkout's kernel. The kernel beside `native_compiler.jac` is loaded
+   when the inputs its sidecar records are the ones the sources have now.
+3. The kit's kernel. A rerouted checkout runs on a kit's interpreter; when
+   that kit was built from these very sources, its kernel's inputs match and
+   it is loaded where the kit keeps it. Nothing is copied.
+4. Bytecode. Otherwise the compiler runs from bytecode with the store
+   parser, and the process says so once on stderr: why the kernel is not
+   usable (none built, the first source that moved, or no native toolchain)
+   and that `jac kernel build` builds it.
+
+`jac kernel status` prints what resolution sees: the checkout's kernel and
+every input that moved since it was built, the kit's kernel, and which one
+this process runs. `jac kernel build` builds the kernel the sources describe
+in its own process, on whatever compiler resolved for it (bytecode when the
+kernel is stale), and reuses every unit whose inputs have not moved, so a
+build after a small edit relinks in seconds. `JAC_DEV_EXACT=1 jac kernel
+build --force` rebuilds every unit with the compiler as edited.
 
 The sidecar records the kernel's inputs one by one: the compiler digest,
 the codegen identity every unit shares, the target triple, the interpreter
@@ -309,27 +311,23 @@ identity, a digest of its source, annexes and wiring, and whether the build's
 placement policy required that unit natively. Nothing in them is a path or an
 environment fingerprint, which is what lets a kernel built at the kit's
 staging directory be accepted in a checkout elsewhere; acceptance finds
-each unit where this process's jaclang lives and compares its digest. The
-folded `source_key` the sidecar also carries is the module-key form an
-in-tree build records for itself; a module key of a file outside the
-running package fingerprints that file's project, so a kit's folded key is
-never the checkout's and only decides for sidecars that predate the
-per-unit record. Accepting a kernel therefore costs one content hash per
-unit and no plan, which is what makes a warm `jac run` in a source tree
-start in well under a second. The derivation runs in a child
-on purpose: the first parse of a checkout happens inside the compiler's own
-import chain, where half the checker is not importable yet, and a rebuild
-must not depend on the state of the process that asked for it. The kernel
-build and the seal use the same in-process build session as applications.
+each unit where this process's jaclang lives and compares its digest.
+Accepting a kernel therefore costs one content hash per unit and no plan,
+which is what makes a warm `jac run` in a source tree start in well under a
+second.
 
-CI holds the adoption path to account on every reroute lane. The
-`jac-kit` action's warm step is the lane's first `jac run`, and a fresh
-checkout has no kernel (`libjac_*` is gitignored). Since the kit was built
-from the same commit, that run must leave a byte-for-byte copy of the kit's
-kernel beside the loader, with a sidecar that carries a plan digest, and a
-second run must leave that file in place (same inode and mtime). A kernel
-derived there instead would cost every reroute lane a relink, so the step
-fails rather than letting a lane quietly pay it. Sealed lanes skip the check:
+A build links into a private file and publishes the library, then its
+sidecar, each on a new inode. The sidecar carries the library's sha256, so a
+process that reads between the two writes sees them disagree and runs from
+bytecode for that one run, and a process already running the old kernel
+keeps its mapping. Concurrent builds therefore need no lock: the last one to
+publish wins.
+
+CI holds the kit path to account on every reroute lane. The `jac-kit`
+action's warm step is the lane's first `jac run`, and a fresh checkout has
+no kernel (`libjac_*` is gitignored). Since the kit was built from the same
+commit, that run must load the kit's kernel in place, print no bytecode
+notice, and leave nothing beside the loader. Sealed lanes skip the check:
 they boot from the payload's own image.
 
 A pull request's kit is built without the kernel. The kernel is most of a
@@ -339,9 +337,8 @@ its lanes on the bytecode the kit precompiles: the path every kernel build
 compiles through. `JAC_PR_KIT_KERNEL=none` asks the seal for such a kit, and
 the seal refuses it outside a `pull_request` CI build, so main, nightly and
 release kits always carry a kernel; the release smoke test asserts one is
-loaded. On such a kit the warm step checks the opposite of adoption: the
-first run must leave no kernel beside the loader, because a lane that derived
-its own would pay the build the kit skipped. A pull request that changes what
+loaded. On such a kit the warm step checks that the first run resolves no
+kernel and leaves none beside the loader. A pull request that changes what
 the kernel is built from can ask for the full kit with the `build-kernel`
 label; otherwise the first build with a kernel is the one on main.
 
