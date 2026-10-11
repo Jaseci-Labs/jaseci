@@ -1230,28 +1230,46 @@ impl Session.wait_turn -> None {
 }
 
 
-glob _COMMIT_POOL: list[any] = [];
+glob _SESSION_POOLS: dict[str, any] = {};
 
 
-def _commit_pool -> any {
-    if not _COMMIT_POOL {
+def _session_pool(name: str) -> any {
+    if name not in _SESSION_POOLS {
         import from concurrent.futures { ThreadPoolExecutor }
-        _COMMIT_POOL.append(
-            ThreadPoolExecutor(
-                max_workers=COMMIT_THREADS, thread_name_prefix="jac-session-commit"
-            )
+        _SESSION_POOLS[name] = ThreadPoolExecutor(
+            max_workers=SESSION_THREADS, thread_name_prefix=f"jac-session-{name}"
         );
     }
-    return _COMMIT_POOL[0];
+    return _SESSION_POOLS[name];
+}
+
+
+async def _off_loop(work: Callable, pool: str) -> any {
+    import asyncio;
+    import contextvars;
+    context = contextvars.copy_context();
+    def in_context -> any {
+        return context.run(work);
+    }
+    return await asyncio.get_running_loop().run_in_executor(
+        _session_pool(pool), in_context
+    );
 }
 
 
 impl Session.acommit(anchor: (Anchor | None) = None) -> None {
-    import asyncio;
     def settle {
         self.commit(anchor);
     }
-    await asyncio.get_running_loop().run_in_executor(_commit_pool(), settle);
+    await _off_loop(settle, "turn" if self._queued else "io");
+}
+
+
+impl Session.aget(id: UUID) -> (Anchor | None) {
+    def fetch -> (Anchor | None) {
+        return self.get(id);
+    }
+    return await _off_loop(fetch, "turn" if self._queued else "io");
 }
 
 
@@ -1289,6 +1307,7 @@ impl Session.run_request(body: Callable) -> any {
                     f"(attempt {attempt}/{MAX_RETRIES})"
                 );
                 self.abort();
+                self.wait_turn();
                 continue;
             }
             self.abort();

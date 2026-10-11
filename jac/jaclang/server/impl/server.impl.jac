@@ -272,9 +272,20 @@ async def _run_function_with_occ(
                 import from jaclang.server.session { Session }
                 mem: any = ctx.mem;
                 if isinstance(mem, Session) {
-                    await asyncio.get_running_loop().run_in_executor(
-                        _conflict_turn_pool(), mem.wait_turn
+                    import contextvars;
+                    turn_context = contextvars.copy_context();
+                    def take_turn {
+                        turn_context.run(mem.wait_turn);
+                    }
+                    turn = asyncio.get_running_loop().run_in_executor(
+                        _conflict_turn_pool(), take_turn
                     );
+                    try {
+                        await turn;
+                    } except asyncio.CancelledError {
+                        await asyncio.wait({turn});
+                        raise;
+                    }
                 }
                 await ctx.aset_user_root(root_id);
             } except Exception as e {
