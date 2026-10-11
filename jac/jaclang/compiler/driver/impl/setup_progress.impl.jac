@@ -76,20 +76,6 @@ impl SetupProgress.on_internal_compile(file_path: str) -> None {
     self._halt_at_limit();
 }
 
-impl SetupProgress.on_kernel_build(lib_path: str) -> None {
-    if not self._banner_shown {
-        self._banner_shown = True;
-        self._register_exit();
-        sys.stderr.write(
-            '\nSetting up Jac for first use (compiling and caching compiler)...\n'
-        );
-    }
-    sys.stderr.write(
-        f"  Linking the native compiler kernel ({os.path.basename(lib_path)})...\n"
-    );
-    sys.stderr.flush();
-}
-
 impl SetupProgress._precompile_limit -> int {
     raw = os.environ.get("JAC_PRECOMPILE_LIMIT");
     if not raw {
