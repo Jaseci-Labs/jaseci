@@ -292,13 +292,14 @@ test "a gap behind an import that native code shares refuses only the code that 
     assert mod.gen.llvm_ir is not None;
 }
 
-test "what closed the native preference at parse is read off the typed module" {
+test "what syntax alone closes the native preference is decided before typing" {
     (prog, mod, path, parses) = compile_native_default(ASYNC_SRC);
     assert not prog.errors_had , f"{[str(e) for e in prog.errors_had]}";
     assert parses == 1 , f"the module is analyzed once, got {parses} analyses";
-    assert mod.gen.native_undecided , (
-        "the parse decides nothing about the module's contents"
+    assert not mod.gen.native_undecided , (
+        "the placement pass that runs before typing closes the preference"
     );
+    assert "async" in mod.gen.native_closed_why , mod.gen.native_closed_why;
     assert set(placed_by_name(mod).values()) == {'server'} , (
         f"an async ability still keeps the module in Python: {placed_by_name(mod)}"
     );

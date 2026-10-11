@@ -633,7 +633,7 @@ impl element_requirements(mod: Module, prog: JacProgram) -> dict[int, tuple[str,
     import from jaclang.compiler.capability_notes { TARGET_NATIVE, capability_notes_of }
     import from jaclang.compiler.placement.placement { element_display_name }
     import from jaclang.compiler.placement.placement_pins {
-        config_module_pin,
+        config_element_pin,
         config_pin_for
     }
     out: dict[int, tuple[str, str]] = {};
@@ -643,15 +643,18 @@ impl element_requirements(mod: Module, prog: JacProgram) -> dict[int, tuple[str,
     if preferred {
         declared = "";
     }
-    module_pin = config_module_pin(mod_path) if preferred else "";
     for elem in mod.body {
         if not isinstance(elem, ContextAwareNode) {
             continue;
         }
-        pin = config_pin_for(mod_path, element_display_name(elem)) if mod_path else "";
-        if pin and pin == module_pin {
-            pin = "";
-        }
+        name = element_display_name(elem);
+        pin = (
+            config_element_pin(mod_path, name)
+                if preferred
+                else config_pin_for(mod_path, name)
+        )
+            if mod_path
+            else "";
         if pin {
             out[id(elem)] = (pin, "pinned in jac.toml");
         } elif declared {
@@ -783,14 +786,23 @@ impl stamp_native(mod: Module, held: set[int]) -> list[ContextAwareNode] {
 impl settle_native_module(
     mod: Module, prog: JacProgram, pending: list[Alert], warnings: list[Alert]
 ) -> (NativeRefusal | None) {
-    if not pending or not native_placement_soft(prog, mod) {
-        return None;
-    }
     """The backend refused a module whose native placement was a preference,
     for a reason the legality rules did not predict. The module was typed for
     no codespace, so placing it on the server is a restamp of the same tree:
     the Python backend, which runs after this one, emits it as it is. The
-    module's importers drop what they bound to its native code.""";
+    module's importers drop what they bound to its native code. A module with
+    an element that must be native (a native-only construct, an element pin,
+    a C declaration) cannot move, so its refusal stays an error.""";
+    if not pending or not native_placement_soft(prog, mod) {
+        return None;
+    }
+    if mod.gen.placement_mode == "inferred" {
+        for (need, _why) in element_requirements(mod, prog).values() {
+            if need == "native" {
+                return None;
+            }
+        }
+    }
     import from jaclang.compiler.frontend.host { active_host }
     import from jaclang.compiler.placement.placement_facts { settle_server }
     import from jaclang.compiler.placement.placement_solver { invalidate_importers_es }
@@ -1055,7 +1067,7 @@ impl PlacementPass._run_undecided(ir_in: Module) -> Module {
                 refusals.append(legality.elements[id(elem)]);
             }
             for unit_refusal in legality.units.get(id(elem), []) {
-                if unit_refusal.noted {
+                if unit_refusal.noted or (need is not None and need[0] == "native") {
                     refusals.append(unit_refusal);
                 }
             }

@@ -154,6 +154,23 @@ def _param_names(decl: Ability) -> tuple[list[str], bool] {
     return (names, variadic);
 }
 
+def _constructor_params(arch: Archetype) -> tuple[list[str], bool] {
+    fields: list[str] = [];
+    for stmt in (ModuleFacts.unwrap_body(arch) or []) {
+        if isinstance(stmt, Ability)
+            and stmt.name_ref is not None
+            and stmt.name_ref.sym_name in ("init", "__init__") {
+            return _param_names(stmt);
+        }
+        for field in stmt.get_all_sub_nodes(HasVar) {
+            if not field.defer {
+                fields.append(field.name.value);
+            }
+        }
+    }
+    return (fields, bool(arch.base_classes));
+}
+
 def _field_names(arch: Archetype) -> set[str] {
     out: set[str] = set();
     for stmt in (ModuleFacts.unwrap_body(arch) or []) {
@@ -199,11 +216,14 @@ impl native_surface(native_mod: Module, stub_module: str) -> dict[str, NativeBin
                 variadic=variadic
             );
         } elif isinstance(stmt, Archetype) and stmt.name is not None {
+            (ctor_params, ctor_open) = _constructor_params(stmt);
             out[stmt.name.value] = NativeBinding(
                 stub_module=stub_module,
                 name=stmt.name.value,
                 native_path=path,
                 decl=stmt,
+                params=ctor_params,
+                variadic=ctor_open,
                 members=_member_names(stmt),
                 fields=_field_names(stmt)
             );
@@ -619,7 +639,9 @@ impl binding_gaps(prog: JacProgram, nm: Name, base_dir: str) -> list[str] {
     if isinstance(call, AtomTrailer) {
         call = call.parent;
     }
-    if isinstance(call, FuncCall) and isinstance(bound.decl, Ability) {
+    if isinstance(call, FuncCall)
+        and call.target is (nm if nm.parent is call else nm.parent)
+        and isinstance(bound.decl, (Ability, Archetype)) {
         return call_gaps(call, bound);
     }
     return [];

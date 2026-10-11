@@ -7,6 +7,7 @@ import from jaclang.compiler.frontend.unitree {
     Ellipsis,
     Enum,
     FuncSignature,
+    HasVar,
     IndexSlice,
     Module,
     NameAtom,
@@ -267,10 +268,9 @@ def json_refusal(
             return None;
         }
         seen.add(head);
-        home = decl.find_parent_of_type(Module) or scope;
-        for field in decl.get_has_vars() {
+        for (field, field_home) in archetype_fields(decl) {
             inner = field.type_tag.tag if field.type_tag is not None else None;
-            why = json_refusal(inner, home, is_return, to_server, seen);
+            why = json_refusal(inner, field_home or scope, is_return, to_server, seen);
             if why is not None {
                 (inner_spelled, reason) = why;
                 return (
@@ -344,12 +344,36 @@ def archetype_refusals(
     if src == dst or TARGET_NATIVE in (src, dst) {
         return out;
     }
-    scope = decl.find_parent_of_type(Module);
-    for field in decl.get_has_vars() {
+    for (field, home) in archetype_fields(decl) {
         tag = field.type_tag.tag if field.type_tag is not None else None;
-        why = json_refusal(tag, scope, False, dst == TARGET_SERVER, {decl.sym_name});
+        why = json_refusal(tag, home, False, dst == TARGET_SERVER, {decl.sym_name});
         if why is not None {
             out.append((f"field '{field.sym_name}'", why[0], why[1]));
+        }
+    }
+    return out;
+}
+
+def archetype_fields(decl: Archetype) -> list[tuple[HasVar, (Module | None)]] {
+    import from jaclang.compiler.passes.layout_pass { referenced_archetype }
+    out: list[tuple[HasVar, (Module | None)]] = [];
+    seen: set[int] = set();
+    pending: list[Archetype] = [decl];
+    while pending {
+        current = pending.pop(0);
+        if id(current) in seen {
+            continue;
+        }
+        seen.add(id(current));
+        home = current.find_parent_of_type(Module);
+        for field in current.get_has_vars() {
+            out.append((field, home));
+        }
+        for base in current.base_classes {
+            parent = referenced_archetype(base);
+            if parent is not None {
+                pending.append(parent);
+            }
         }
     }
     return out;
@@ -364,6 +388,14 @@ def ability_crossing(decl: Ability, src: str, dst: str) -> (str | None) {
     if found {
         (what, _spelled, why) = found[0];
         return f"{what}: {why}";
+    }
+    if src == TARGET_SERVER and dst == TARGET_NATIVE {
+        for param in sig.get_parameters() {
+            if param.value is not None {
+                return f"parameter '{param.name.value}' has a default, which the "
+                "Python stub for a native function does not carry";
+            }
+        }
     }
     return None;
 }

@@ -122,6 +122,8 @@ obj ModuleAnalysis {
             and not _annex_of_base
             and (candidate or not _unasked);
         self.placement_only = _analyze and _unasked and not self.native;
+        errors_mark = len(self.program.errors_had);
+        blocked_before = self.blocked;
 
         if _analyze
             and not product_ready(
@@ -135,6 +137,15 @@ obj ModuleAnalysis {
             ) {
                 self.blocked = True;
             }
+        }
+        if self.placement_only
+            and not blocked_before
+            and len(self.program.errors_had) > errors_mark
+            and not cancelled(self.options) {
+            import from jaclang.compiler.placement.placement_facts { settle_server }
+            del self.program.errors_had[errors_mark:];
+            settle_server(self.module);
+            self.blocked = False;
         }
 
         if not self.blocked
@@ -220,14 +231,5 @@ def run_analysis_phases(
 def analyze_module(
     program: JacProgram, path: str, options: CompileOptions, source: str | None = None
 ) -> ModuleAnalysis {
-    import from jaclang.compiler.placement.placement_facts { settle_server }
-    errors_mark = len(program.errors_had);
-    task = run_analysis_phases(program, path, options, source);
-    if task.placement_only
-        and len(program.errors_had) > errors_mark
-        and not cancelled(options) {
-        del program.errors_had[errors_mark:];
-        settle_server(task.module);
-    }
-    return task;
+    return run_analysis_phases(program, path, options, source);
 }

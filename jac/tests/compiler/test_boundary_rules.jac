@@ -11,7 +11,11 @@ import tempfile;
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.driver.compile_options { CompileOptions }
 import jaclang.compiler.frontend.unitree as uni;
-import from jaclang.compiler.boundary_rules { archetype_refusals, signature_refusals }
+import from jaclang.compiler.boundary_rules {
+    ability_crossing,
+    archetype_refusals,
+    signature_refusals
+}
 import from jaclang.compiler.capability_notes {
     TARGET_CLIENT,
     TARGET_NATIVE,
@@ -59,6 +63,15 @@ glob WIRE_SRC = (
          "}\n\n"
          "def texty(s: str) -> str {\n"
          "    return s;\n"
+         "}\n\n"
+         "obj Child(Holder) {\n"
+         "    has extra: int = 0;\n"
+         "}\n\n"
+         "def child -> Child {\n"
+         "    return Child(label='x', hook=lambda (x: int) { x });\n"
+         "}\n\n"
+         "def defaulted(n: int = 2) -> int {\n"
+         "    return n;\n"
          "}\n"
      );
 
@@ -114,6 +127,21 @@ test "an archetype crosses only when every field does" {
     (what, spelled, why) = found[0];
     assert what == "the return" and spelled == "Holder" , found;
     assert "hook" in why , why;
+}
+
+test "an archetype is judged by the fields it inherits too" {
+    found = request_refusals(typed_module(), "child");
+    assert len(found) == 1 , found;
+    (what, spelled, why) = found[0];
+    assert what == "the return" and spelled == "Child" , found;
+    assert "hook" in why , why;
+}
+
+test "a native function with a default is not called from Python through its stub" {
+    defaulted = function_named(typed_module(), "defaulted");
+    why = ability_crossing(defaulted, TARGET_SERVER, TARGET_NATIVE);
+    assert why is not None and "default" in why , why;
+    assert ability_crossing(defaulted, TARGET_NATIVE, TARGET_SERVER) is None;
 }
 
 test "a walker spawned from the client is judged by its fields" {

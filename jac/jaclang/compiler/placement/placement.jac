@@ -730,6 +730,7 @@ def summarize_module(
         es.pinned = '';
         if ps.mod_path {
             import from jaclang.compiler.placement.placement_pins {
+                config_element_pin,
                 config_module_pin,
                 effective_pin_for
             }
@@ -738,7 +739,7 @@ def summarize_module(
                 and prog is not None
                 and config_module_pin(ps.mod_path) == 'native'
                 and prog.prefers_native_codespace(ps.mod_path) {
-                es.pinned = '';
+                es.pinned = config_element_pin(ps.mod_path, es.name);
             }
         }
         es.is_pub = _endpoint_evidence(stmt) == 'pub access';

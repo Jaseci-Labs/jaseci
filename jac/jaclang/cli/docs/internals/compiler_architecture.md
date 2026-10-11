@@ -285,12 +285,16 @@ tree every backend reads.
    *requirement* (`compiler/capability_notes.jac`); where native code is
    stricter or the native library lacks a member it recorded a *refusal*
    (the same table, and `compiler/native_bindings.jac`). The legality table
-   adds what the typed tree shows (`native_blocker_scan`): an async or
-   `by llm` ability, inline Python, an endpoint, a pin to another codespace,
-   an import with no native form, or access to the persistent graph
-   (`root`) closes the module's native preference, as the parse-time scan
-   did on `main`; it is a reason not to choose native, never an error on an
-   element that is native by requirement or by a C-library seed. A `.jac`
+   adds what the tree shows (`native_blocker_scan`): an async or `by llm`
+   ability, inline Python, an endpoint, a pin to another codespace, an
+   import with no native form, or access to the persistent graph (`root`)
+   closes the module's native preference, as the parse-time scan did on
+   `main`. These are syntactic facts, so `PlacementApplyPass` reads them
+   before typing (the checker needs to know whether a native-only idiom is
+   a requirement or an error), and the legality table reads them again for
+   the module it judges; they are a reason not to choose native, never an
+   error on an element that is native by requirement or by a C-library
+   seed. A `.jac`
    import is judged by the placement summaries of the modules it reaches
    (`native_closure_blocker`): each summary was computed by that module's
    own analysis and is persisted with it, so no dependency is parsed again

@@ -1256,7 +1256,9 @@ impl NaIRGenPass._demote_method_if_unlowerable(
     since `local_mark` are a refusal the static legality rules did not predict:
     they move out of the pending list into the legality table as late refusals
     and the unit is placed on its Python-only implementation. Where the module
-    requires native they stay behind as errors as well.""";
+    requires native, or the unit belongs to an element that must be native (an
+    element pin, a native-only construct), they stay behind as errors as
+    well.""";
     if len(self.ctx.errors_had) <= local_mark {
         return False;
     }
@@ -1266,7 +1268,23 @@ impl NaIRGenPass._demote_method_if_unlowerable(
     if self._legality is not None {
         self._legality.late[full_name] = _refusals;
     }
-    if not self.prog.options.native_required_for(self.module.loc.mod_path) {
+    required = self.prog.options.native_required_for(self.module.loc.mod_path);
+    if not required and self.module.gen.placement_mode == "inferred" {
+        import from jaclang.compiler.passes.placement_pass { element_requirements }
+        import from jaclang.compiler.placement.placement { element_display_name }
+        needs = element_requirements(self.module, self.prog);
+        owner_name = full_name.split(".")[0];
+        for elem in self.module.body {
+            need = needs.get(id(elem));
+            if need is not None
+                and need[0] == "native"
+                and element_display_name(elem) == owner_name {
+                required = True;
+                break;
+            }
+        }
+    }
+    if not required {
         del self.ctx.errors_had[local_mark:];
     }
     self._place_unit_python(

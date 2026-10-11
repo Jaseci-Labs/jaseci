@@ -273,11 +273,10 @@ test "solver does not propose native for capability-violating modules" {
             if isinstance(s, Ability)
         ][0];
         assert f_elem.code_context.value == 'server';
-        refused = prog.analysis.placement_refusals[os.path.realpath(path)]['native'];
-        assert id(f_elem) in refused , (
-            "the inline Python refuses the function that holds it, as a recorded "
-            "legality fact"
+        assert not mod.gen.native_undecided , (
+            "inline Python closes the module's native preference before typing"
         );
+        assert "PyInlineCode" in mod.gen.native_closed_why , mod.gen.native_closed_why;
     } finally {
         set_effective_default_codespace(previous);
         shutil.rmtree(d, ignore_errors=True);
