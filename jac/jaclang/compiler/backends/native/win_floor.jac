@@ -79,21 +79,22 @@ glob WIN_CRT_LIBRARIES: list[str] = [
          "msvcrt.dll"
      ];
 
-def win_import_dll(name: str, declared: (str | None)) -> str {
+def win_import_dll(name: str, declared: (str | None), crt: str = "") -> str {
     """The DLL a PE image imports `name` from. `declared` is the library the
-    program named for it, if it named one.""";
+    program named for it, if it named one; `crt` is the C runtime the link
+    asked for, the UCRT if it asked for none.""";
     import os;
+    import from jaclang.compiler.backends.native.win_floor_ir { WIN_FLOOR_KERNEL32 }
     if declared {
         base = os.path.basename(declared.replace("\\", "/"));
         if base.lower().endswith(".dll") and base.lower() not in WIN_CRT_LIBRARIES {
             return base;
         }
     }
-    import from jaclang.compiler.backends.native.win_floor_ir { WIN_FLOOR_KERNEL32 }
     if name == "__chkstk" or name in WIN_FLOOR_KERNEL32 {
         return "kernel32.dll";
     }
-    return WIN_CRT_DLL;
+    return crt or WIN_CRT_DLL;
 }
 
 def win_import_name(name: str) -> str {

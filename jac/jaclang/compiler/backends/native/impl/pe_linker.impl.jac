@@ -151,6 +151,7 @@ impl PeLinker.parse_object -> bool {
 
 
 impl PeLinker.build_executable -> bytes {
+    crt_dll = self.needed_libs[0] if self.needed_libs else "";
     code_secs: list[int] = [];
     rodata_secs: list[int] = [];
     data_secs: list[int] = [];
@@ -248,7 +249,7 @@ impl PeLinker.build_executable -> bytes {
     dll_of: dict[str, str] = {};
     dlls: list[str] = [];
     for name in import_syms {
-        d = win_import_dll(name, self.symbol_lib_map.get(name));
+        d = win_import_dll(name, self.symbol_lib_map.get(name), crt_dll);
         dll_of[name] = d;
         if d not in dlls {
             dlls.append(d);
@@ -605,6 +606,7 @@ def _pe_build_dllmain(num_inits: int) -> tuple[bytes, list[int]] {
 
 
 impl PeLinker.build_shared_object -> bytes {
+    crt_dll = self.needed_libs[0] if self.needed_libs else "";
     image_base = DLL_IMAGE_BASE;
 
     code_secs: list[int] = [];
@@ -729,7 +731,7 @@ impl PeLinker.build_shared_object -> bytes {
     dll_of: dict[str, str] = {};
     dlls: list[str] = [];
     for name in extern_funcs {
-        d = win_import_dll(name, self.symbol_lib_map.get(name));
+        d = win_import_dll(name, self.symbol_lib_map.get(name), crt_dll);
         dll_of[name] = d;
         if d not in dlls {
             dlls.append(d);
