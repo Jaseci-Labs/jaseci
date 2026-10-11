@@ -538,7 +538,12 @@ def seal_step_env -> dict[str, str] {
 }
 
 
-def _stage_app(base: Path, sanitized_toml: (str | None)) -> Path {
+def _stage_app(
+    base: Path,
+    sanitized_toml: (str | None),
+    sources: (list[Path] | None) = None,
+    tomls: (dict[str, str] | None) = None
+) -> Path {
     reap_stale_stage_roots();
     stage_root = Path(tempfile.mkdtemp(prefix=_stage_root_prefix()));
     if not _stage_roots {
@@ -548,7 +553,7 @@ def _stage_app(base: Path, sanitized_toml: (str | None)) -> Path {
     _stage_roots.append(str(stage_root));
     stage = stage_root / "app";
     try {
-        for path in bundle_source_files(base) {
+        for path in (sources if sources is not None else bundle_source_files(base)) {
             dest = stage / path.relative_to(base);
             dest.parent.mkdir(parents=True, exist_ok=True);
             shutil.copy2(str(path), str(dest));
@@ -559,7 +564,9 @@ def _stage_app(base: Path, sanitized_toml: (str | None)) -> Path {
         } else {
             (stage / "jac.toml").write_text(PLACEHOLDER_JAC_TOML, encoding="utf-8");
         }
-        for (rel, text) in nested_sanitized_tomls(base).items() {
+        for (rel, text) in (
+            tomls if tomls is not None else nested_sanitized_tomls(base)
+        ).items() {
             dest = stage / Path(rel);
             dest.parent.mkdir(parents=True, exist_ok=True);
             dest.write_text(text, encoding="utf-8");
@@ -658,9 +665,11 @@ def _precompile_app(
     seal_binary: bytes,
     sanitized_toml: (str | None),
     timeout_s: int,
-    app: str = ""
+    app: str = "",
+    sources: (list[Path] | None) = None,
+    tomls: (dict[str, str] | None) = None
 ) -> Path {
-    stage_root = _stage_app(base, sanitized_toml);
+    stage_root = _stage_app(base, sanitized_toml, sources, tomls);
     stage = stage_root / "app";
     seal_flags: list[str] = ["--seal"] + ([f"--app={app}"] if app else []);
     try {
@@ -1095,7 +1104,13 @@ def pack_jab(
         return cached;
     }
     staged = _precompile_app(
-        base, seal_binary, sanitized, seal_timeout_setting(project_dir), app_name
+        base,
+        seal_binary,
+        sanitized,
+        seal_timeout_setting(project_dir),
+        app_name,
+        sources,
+        tomls
     );
 
     try {
