@@ -11,7 +11,7 @@
  * It is compiled to LLVM IR, not to an object: win_floor_ir.jac holds the IR
  * as text and the link glue of every PE artifact carries it, so a Windows
  * image is built without a C toolchain. Regenerate that file after a change
- * here with scripts/gen_win_floor.py.
+ * here with scripts/gen_win_floor.jac.
  *
  * Conventions:
  *   - No headers. The declarations below are the whole interface to Windows.

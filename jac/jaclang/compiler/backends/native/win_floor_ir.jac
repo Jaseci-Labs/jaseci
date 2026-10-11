@@ -1,5 +1,5 @@
 """The Windows floor as LLVM IR. Generated from win_floor.c by
-scripts/gen_win_floor.py; edit that file and regenerate, not this one."""
+scripts/gen_win_floor.jac; edit that file and regenerate, not this one."""
 
 """The kernel32 functions the floor imports."""
 glob WIN_FLOOR_KERNEL32: list[str] = [
