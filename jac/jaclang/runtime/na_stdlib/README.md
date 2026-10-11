@@ -248,18 +248,29 @@ native layout records the emitted name separately from its source-level key.
   `str` indexing model, and `Match` slices decode back through the encoded
   bytes -- non-ASCII literals like `é` match whole characters, while the
   character-class semantics stay ASCII (`\w`/`\d`/`\s`, IGNORECASE fold).
-  **POSIX fast path**: patterns `_posix_translate` can express as POSIX ERE
-  (no alternation, anchors, `?(` constructs, lazy quantifiers, or
-  backslashes it cannot desugar) are additionally compiled through libc
-  `regcomp`/`regexec` via `_re_posix_native.jac` (Mechanism F) and used for
-  matching on ASCII subjects only; anything else runs the Jac VM. The
-  `regmatch_t` stride is detected at import by a compile+exec probe
-  (`posix_probe`) so both 32-bit `regoff_t` (glibc) and 64-bit
-  (BSD/macOS/musl) layouts read correctly; an unknown layout disables the
-  fast path rather than misreading. Because `regex_t` owns heap state that
-  the Jac GC cannot see, every successfully compiled program is registered
-  in `_PSX.pregs` and `purge()` calls `regfree` on all of them and bumps a
-  generation counter so previously compiled `Pattern`s fall back to the VM.
+  **POSIX no-match prefilter**: patterns `_posix_translate` can express as a
+  portable POSIX ERE (no alternation, anchors, `(?` constructs, lazy
+  quantifiers, non-ASCII or NUL bytes, or backslashes it cannot desugar;
+  `\d`/`\w`/`\s` and their negations become explicit bracket classes, since
+  libc spells those escapes differently per platform) are additionally
+  compiled through libc `regcomp` via `_re_posix_native.jac` (Mechanism F).
+  libc is asked one question only, on ASCII NUL-free subjects: does the
+  pattern match anywhere in the window? A "no" answers the call at libc
+  speed; any "yes" is matched by the Jac VM, which alone decides spans and
+  groups. POSIX picks the leftmost-longest match and Python the first one a
+  backtracking search finds, so the two disagree on which span wins
+  (`x*(xy)?` on `xxy`) and on what a repeated group last captured, and
+  macOS libc does not even return the leftmost match for some patterns;
+  whether a match exists is the one thing every matcher agrees on. Because
+  `regex_t` owns heap state the Jac GC cannot see, compiled programs live in
+  a bounded registry (`_POSIX_MAX` = 512, CPython's own pattern-cache size):
+  compiling past it releases the oldest program with `regfree`, and its
+  `Pattern` simply stops consulting libc. `purge()` releases all of them and
+  bumps a generation counter with the same effect. The `regmatch_t` stride
+  probe (`posix_probe`) still gates the path, so a libc whose layout it does
+  not recognize is never consulted. `Pattern.flags` reports
+  what CPython reports: the explicit flags, any global inline flags, and
+  `UNICODE` unless `ASCII` is set.
   SCOPE/divergences: ASCII semantics only (`\w`/`\d`/`\s` and IGNORECASE
   fold ASCII; no unicode categories or full casefold); no lookbehind,
   conditional `(?(id)y|n)`, atomic `(?>...)`, possessive quantifiers, `\N{}`,

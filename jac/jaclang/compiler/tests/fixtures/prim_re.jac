@@ -11,7 +11,14 @@ module's scope and are not probed.
 
 Match objects, lists, dicts, and tuples marshal as raw i64 across the harness,
 so all results are probed through scalar reads (`group`, `start`/`end`/`span`
-elements, `len`, element indexing). `err*` pin the pattern-compile error paths
+elements, `len`, element indexing). `sem*` pin the cases where a POSIX
+leftmost-longest matcher and Python's backtracking matcher disagree (which
+span wins, what a repeated group last captured), `cls_*` and `esc_caret` pin
+the class escapes libc spells differently per platform, and `many`/`old_ok`
+compile more distinct patterns than the libc program registry holds, so the
+oldest programs are released while their `Pattern` objects keep answering.
+`flags*` pin `Pattern.flags` as CPython reports it. `err*` pin the
+pattern-compile error paths
 (`except Exception` covers CPython's `re.error`/`PatternError` and the native
 `ValueError`). ES/JS opts out.
 """
@@ -200,7 +207,72 @@ def re_py -> dict[any, any] {
         mo = mopen.end();
     }
 
+    sem1 = re.match("x*(xy)?", "xxy");
+    sem1g: str = "none";
+    if sem1 is not None {
+        sem1g = sem1.group(0);
+    }
+    sem2 = re.search("[bc][ab]c?c+[bc]?", "bcacacc");
+    sem2s: int = -1;
+    sem2e: int = -1;
+    if sem2 is not None {
+        sem2s = sem2.start();
+        sem2e = sem2.end();
+    }
+    sem3 = re.match("[bc]b*[bc]{1,2}", "bcbbc");
+    sem3e: int = -1;
+    if sem3 is not None {
+        sem3e = sem3.end();
+    }
+    sem4 = re.match("(a*)*b", "aab");
+    sem4g: str = "none";
+    if sem4 is not None {
+        sem4g = sem4.group(1);
+    }
+    sem5 = re.findall("[bc][ab]c?c+[bc]?", "bcacacc");
+    cls_w = re.findall("\\w+", "hello w_1");
+    cls_s = re.split("\\s", "a b");
+    cls_ns = re.findall("\\S+", " ab ");
+    cls_nw = re.findall("\\W", "a-b");
+    esc_caret = re.findall("\\^a]", "x^a]");
+    old_pat = re.compile("q+z");
+    many: int = 0;
+    mi: int = 0;
+    while mi < 700 {
+        if re.search("a" + str(mi) + "b+", "xa" + str(mi) + "bb") is not None {
+            many += 1;
+        }
+        if re.search("a" + str(mi) + "b+", "xa" + str(mi) + "c") is None {
+            many += 1;
+        }
+        mi += 1;
+    }
+    old_ok: bool = old_pat.search("xqqz") is not None and old_pat.search("xqq") is None;
     return {
+        "sem1": sem1g,
+        "sem2": str(sem2s) + "," + str(sem2e),
+        "sem3": sem3e,
+        "sem4": sem4g,
+        "sem5n": len(sem5),
+        "sem5a": sem5[0],
+        "cls_wn": len(cls_w),
+        "cls_w0": cls_w[0],
+        "cls_w1": cls_w[1],
+        "cls_sn": len(cls_s),
+        "cls_s0": cls_s[0],
+        "cls_s1": cls_s[1],
+        "cls_nsn": len(cls_ns),
+        "cls_ns0": cls_ns[0],
+        "cls_nwn": len(cls_nw),
+        "cls_nw0": cls_nw[0],
+        "esc_caretn": len(esc_caret),
+        "esc_caret0": esc_caret[0],
+        "many": many,
+        "old_ok": old_ok,
+        "flags0": re.compile("a").flags,
+        "flags_i": re.compile("a", re.I).flags,
+        "flags_inline": re.compile("(?i)a").flags,
+        "flags_a": re.compile("a", re.A).flags,
         "en1": en1,
         "ems": ems,
         "eme": eme,
@@ -458,7 +530,72 @@ def re_na -> dict[str, any] {
         mo = mopen.end();
     }
 
+    sem1 = re.match("x*(xy)?", "xxy");
+    sem1g: str = "none";
+    if sem1 is not None {
+        sem1g = sem1.group(0);
+    }
+    sem2 = re.search("[bc][ab]c?c+[bc]?", "bcacacc");
+    sem2s: int = -1;
+    sem2e: int = -1;
+    if sem2 is not None {
+        sem2s = sem2.start();
+        sem2e = sem2.end();
+    }
+    sem3 = re.match("[bc]b*[bc]{1,2}", "bcbbc");
+    sem3e: int = -1;
+    if sem3 is not None {
+        sem3e = sem3.end();
+    }
+    sem4 = re.match("(a*)*b", "aab");
+    sem4g: str = "none";
+    if sem4 is not None {
+        sem4g = sem4.group(1);
+    }
+    sem5 = re.findall("[bc][ab]c?c+[bc]?", "bcacacc");
+    cls_w = re.findall("\\w+", "hello w_1");
+    cls_s = re.split("\\s", "a b");
+    cls_ns = re.findall("\\S+", " ab ");
+    cls_nw = re.findall("\\W", "a-b");
+    esc_caret = re.findall("\\^a]", "x^a]");
+    old_pat = re.compile("q+z");
+    many: int = 0;
+    mi: int = 0;
+    while mi < 700 {
+        if re.search("a" + str(mi) + "b+", "xa" + str(mi) + "bb") is not None {
+            many += 1;
+        }
+        if re.search("a" + str(mi) + "b+", "xa" + str(mi) + "c") is None {
+            many += 1;
+        }
+        mi += 1;
+    }
+    old_ok: bool = old_pat.search("xqqz") is not None and old_pat.search("xqq") is None;
     return {
+        "sem1": sem1g,
+        "sem2": str(sem2s) + "," + str(sem2e),
+        "sem3": sem3e,
+        "sem4": sem4g,
+        "sem5n": len(sem5),
+        "sem5a": sem5[0],
+        "cls_wn": len(cls_w),
+        "cls_w0": cls_w[0],
+        "cls_w1": cls_w[1],
+        "cls_sn": len(cls_s),
+        "cls_s0": cls_s[0],
+        "cls_s1": cls_s[1],
+        "cls_nsn": len(cls_ns),
+        "cls_ns0": cls_ns[0],
+        "cls_nwn": len(cls_nw),
+        "cls_nw0": cls_nw[0],
+        "esc_caretn": len(esc_caret),
+        "esc_caret0": esc_caret[0],
+        "many": many,
+        "old_ok": old_ok,
+        "flags0": re.compile("a").flags,
+        "flags_i": re.compile("a", re.I).flags,
+        "flags_inline": re.compile("(?i)a").flags,
+        "flags_a": re.compile("a", re.A).flags,
         "en1": en1,
         "ems": ems,
         "eme": eme,

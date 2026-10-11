@@ -84,26 +84,56 @@ glob _DIGIT_PRS: list[int] = [48, 57],
      _WORD_PRS: list[int] = [48, 57, 65, 90, 95, 95, 97, 122],
      _NWORD_PRS: list[int] = [0, 47, 58, 64, 91, 94, 96, 96, 123, 1114111];
 
-import from _re_posix_native {
-    posix_probe,
-    posix_compile,
-    posix_exec,
-    posix_free,
-    pm_off
-}
+import from _re_posix_native { posix_probe, posix_compile, posix_exec, posix_free }
 
 import from _ascii { is_digit, is_word, is_alpha, is_space, swapcase, hexv }
-import from _utf8 { utf8_cps, cp_off, cp_len, cps_str, cpslice_str, is_ascii }
+import from _utf8 { utf8_cps, cp_off, cp_len, cps_str, cpslice_str }
 
 
 obj _PS {
     has gen: int = 0,
-        pregs: list[bytes] = [];
+        pregs: list[bytes] = [],
+        ids: list[int] = [],
+        next_id: int = 1,
+        head: int = 0;
 }
 
 
 glob _PMW: int = posix_probe(),
-     _PSX: _PS = _PS();
+     _PSX: _PS = _PS(),
+     _POSIX_MAX: int = 512;
+
+
+def _posix_register(preg: bytes) -> int {
+    pid: int = _PSX.next_id;
+    _PSX.next_id += 1;
+    slot: int = len(_PSX.pregs);
+    if slot < _POSIX_MAX {
+        _PSX.pregs.append(preg);
+        _PSX.ids.append(pid);
+        return slot;
+    }
+    slot = _PSX.head;
+    posix_free(_PSX.pregs[slot]);
+    _PSX.pregs[slot] = preg;
+    _PSX.ids[slot] = pid;
+    _PSX.head = (slot + 1) % _POSIX_MAX;
+    return slot;
+}
+
+
+def _posix_subject_ok(bv: bytes) -> bool {
+    i: int = 0;
+    n: int = len(bv);
+    while i < n {
+        c: int = bv[i];
+        if c == 0 or c >= 128 {
+            return False;
+        }
+        i += 1;
+    }
+    return True;
+}
 
 
 def _push_prs(dst: list[int], src: list[int]) {
@@ -1588,6 +1618,9 @@ def _posix_translate(pat: str, flags: int) -> (str | None) {
     prev_quant: bool = False;
     while i < n {
         c: int = pb[i];
+        if c == 0 or c >= 128 {
+            return None;
+        }
         if inclass {
             if c == 92 or c == 91 {
                 return None;
@@ -1609,8 +1642,14 @@ def _posix_translate(pat: str, flags: int) -> (str | None) {
                 _push_str(out, "[0-9]");
             } elif e == 68 {
                 _push_str(out, "[^0-9]");
-            } elif e == 119 or e == 87 or e == 115 or e == 83 {
-                _push_range(out, pb, i, i + 2);
+            } elif e == 119 {
+                _push_str(out, "[A-Za-z0-9_]");
+            } elif e == 87 {
+                _push_str(out, "[^A-Za-z0-9_]");
+            } elif e == 115 {
+                _push_str(out, "[ \t\n\x0b\x0c\r]");
+            } elif e == 83 {
+                _push_str(out, "[^ \t\n\x0b\x0c\r]");
             } elif e == 110 {
                 out.append(10);
             } elif e == 116 {
@@ -1623,6 +1662,9 @@ def _posix_translate(pat: str, flags: int) -> (str | None) {
                 out.append(11);
             } elif e == 97 {
                 out.append(7);
+            } elif e == 94 {
+                out.append(92);
+                out.append(94);
             } elif (e >= 33 and e <= 47)
                 or (e >= 58 and e <= 64)
                 or (e >= 91 and e <= 96)
@@ -1744,12 +1786,18 @@ obj:pub Pattern {
         groupindex: dict[str, int] = {},
         _preg: bytes = b"",
         _pgen: int = -1,
+        _pslot: int = -1,
+        _pid: int = 0,
         _posix: bool = False;
 
     def init(pattern: str, flags: int = 0) {
         self.pattern = pattern;
-        self.flags = flags;
         self._re = _compile_re(pattern, flags);
+        pf: int = self._re.flags;
+        if (pf & ASCII) == 0 {
+            pf = pf | UNICODE;
+        }
+        self.flags = pf;
         self.groups = self._re.ngroups;
         self.groupindex = self._re.names;
         if _PMW > 0 {
@@ -1757,9 +1805,11 @@ obj:pub Pattern {
             if ep is not None {
                 preg: bytes = posix_compile(ep, (flags & IGNORECASE) != 0);
                 if len(preg) > 0 {
-                    _PSX.pregs.append(preg);
+                    slot: int = _posix_register(preg);
                     self._preg = preg;
                     self._pgen = _PSX.gen;
+                    self._pslot = slot;
+                    self._pid = _PSX.ids[slot];
                     self._posix = True;
                 }
             }
@@ -1767,25 +1817,18 @@ obj:pub Pattern {
     }
 
     def _use_posix(bv: bytes) -> bool {
-        return self._posix and self._pgen == _PSX.gen and is_ascii(bv);
+        return self._posix
+            and self._pgen == _PSX.gen
+            and _PSX.ids[self._pslot] == self._pid
+            and _posix_subject_ok(bv);
     }
 
-    def _pm_slots(pm: bytes, bv: bytes, base: int) -> list[int] {
-        slots: list[int] = [];
-        g: int = 0;
-        while g <= self.groups {
-            so: int = pm_off(pm, _PMW, g * 2);
-            eo: int = pm_off(pm, _PMW, g * 2 + 1);
-            if so < 0 or eo < so {
-                slots.append(-1);
-                slots.append(-1);
-            } else {
-                slots.append(cp_len(bv, base + so));
-                slots.append(cp_len(bv, base + eo));
-            }
-            g += 1;
+    def _posix_miss(bv: bytes, lo: int, hi: int) -> bool {
+        if not self._use_posix(bv) {
+            return False;
         }
-        return slots;
+        pm: bytes = posix_exec(self._preg, bv[lo:hi].decode(), 1, _PMW);
+        return len(pm) == 0;
     }
 
     def _scan_from(st: _St, start: int) -> int {
@@ -1807,17 +1850,8 @@ obj:pub Pattern {
     def _search_from(
         string: str, bv: bytes, start: int, endpos: int
     ) -> (Match | None) {
-        if self._use_posix(bv) {
-            bp: int = cp_off(bv, start);
-            pm: bytes = posix_exec(
-                self._preg, bv[bp:cp_off(bv, endpos)].decode(), self.groups + 1, _PMW
-            );
-            if len(pm) == 0 {
-                return None;
-            }
-            return Match(
-                self._re, string, bv, start, endpos, self._pm_slots(pm, bv, bp)
-            );
+        if self._posix_miss(bv, cp_off(bv, start), cp_off(bv, endpos)) {
+            return None;
         }
         st: _St = _new_st(utf8_cps(bv), endpos, self._re);
         r: int = self._scan_from(st, start);
@@ -1846,15 +1880,8 @@ obj:pub Pattern {
         if pos > endpos {
             return None;
         }
-        if self._use_posix(bv) {
-            bp: int = cp_off(bv, pos);
-            pm: bytes = posix_exec(
-                self._preg, bv[bp:cp_off(bv, endpos)].decode(), self.groups + 1, _PMW
-            );
-            if len(pm) == 0 or pm_off(pm, _PMW, 0) != 0 {
-                return None;
-            }
-            return Match(self._re, string, bv, pos, endpos, self._pm_slots(pm, bv, bp));
+        if self._posix_miss(bv, cp_off(bv, pos), cp_off(bv, endpos)) {
+            return None;
         }
         st: _St = _new_st(utf8_cps(bv), endpos, self._re);
         r: int = _run(self._re, st, 0, pos);
@@ -1884,37 +1911,17 @@ obj:pub Pattern {
         pos = b[0];
         endpos = b[1];
         out: list[Match] = [];
-        if self._use_posix(bv) {
-            p: int = cp_off(bv, pos);
-            be: int = cp_off(bv, endpos);
-            while p <= be {
-                pm: bytes = posix_exec(
-                    self._preg, bv[p:be].decode(), self.groups + 1, _PMW
-                );
-                if len(pm) == 0 {
-                    break;
-                }
-                m2: Match = Match(
-                    self._re, string, bv, pos, endpos, self._pm_slots(pm, bv, p)
-                );
-                out.append(m2);
-                nxt: int = p + pm_off(pm, _PMW, 1);
-                if nxt > p {
-                    p = nxt;
-                } else {
-                    p = nxt + 1;
-                }
-            }
+        if self._posix_miss(bv, cp_off(bv, pos), cp_off(bv, endpos)) {
             return out;
         }
         st: _St = _new_st(utf8_cps(bv), endpos, self._re);
-        p = pos;
+        p: int = pos;
         while p <= endpos {
             r: int = self._scan_from(st, p);
             if r < 0 {
                 break;
             }
-            m2 = Match(self._re, string, bv, pos, endpos, st.slots[:]);
+            m2: Match = Match(self._re, string, bv, pos, endpos, st.slots[:]);
             out.append(m2);
             if r > p {
                 p = r;
@@ -1936,40 +1943,11 @@ obj:pub Pattern {
         pos = b[0];
         endpos = b[1];
         out: list[str] = [];
-        if self._use_posix(bv) {
-            p: int = cp_off(bv, pos);
-            be: int = cp_off(bv, endpos);
-            while p <= be {
-                pm: bytes = posix_exec(
-                    self._preg, bv[p:be].decode(), self.groups + 1, _PMW
-                );
-                if len(pm) == 0 {
-                    break;
-                }
-                if self._re.ngroups == 0 {
-                    out.append(
-                        bv[p + pm_off(pm, _PMW, 0):p + pm_off(pm, _PMW, 1)].decode()
-                    );
-                } else {
-                    lo: int = pm_off(pm, _PMW, 2);
-                    hi: int = pm_off(pm, _PMW, 3);
-                    if lo < 0 or hi < lo {
-                        out.append("");
-                    } else {
-                        out.append(bv[p + lo:p + hi].decode());
-                    }
-                }
-                nxt: int = p + pm_off(pm, _PMW, 1);
-                if nxt > p {
-                    p = nxt;
-                } else {
-                    p = nxt + 1;
-                }
-            }
+        if self._posix_miss(bv, cp_off(bv, pos), cp_off(bv, endpos)) {
             return out;
         }
         st: _St = _new_st(utf8_cps(bv), endpos, self._re);
-        p = pos;
+        p: int = pos;
         while p <= endpos {
             r: int = self._scan_from(st, p);
             if r < 0 {
@@ -1978,8 +1956,8 @@ obj:pub Pattern {
             if self._re.ngroups == 0 {
                 out.append(cpslice_str(bv, st.slots[0], r));
             } else {
-                lo = st.slots[2];
-                hi = st.slots[3];
+                lo: int = st.slots[2];
+                hi: int = st.slots[3];
                 if lo < 0 or hi < lo {
                     out.append("");
                 } else {
@@ -2001,46 +1979,12 @@ obj:pub Pattern {
         out: list[any] = [];
         last: int = 0;
         count: int = 0;
-        if self._use_posix(bv) {
-            p: int = 0;
-            nb: int = len(bv);
-            while p <= nb {
-                pm: bytes = posix_exec(
-                    self._preg, bv[p:nb].decode(), self.groups + 1, _PMW
-                );
-                if len(pm) == 0 {
-                    break;
-                }
-                if maxsplit > 0 and count >= maxsplit {
-                    break;
-                }
-                m0: int = p + pm_off(pm, _PMW, 0);
-                m1: int = p + pm_off(pm, _PMW, 1);
-                out.append(bv[last:m0].decode());
-                g: int = 1;
-                while g <= self._re.ngroups {
-                    lo: int = pm_off(pm, _PMW, g * 2);
-                    hi: int = pm_off(pm, _PMW, g * 2 + 1);
-                    if lo < 0 or hi < lo {
-                        out.append(None);
-                    } else {
-                        out.append(bv[p + lo:p + hi].decode());
-                    }
-                    g += 1;
-                }
-                last = m1;
-                count += 1;
-                if m1 > p {
-                    p = m1;
-                } else {
-                    p = m1 + 1;
-                }
-            }
-            out.append(bv[last:nb].decode());
+        if self._posix_miss(bv, 0, len(bv)) {
+            out.append(cpslice_str(bv, 0, n));
             return out;
         }
         st: _St = _new_st(utf8_cps(bv), n, self._re);
-        p = 0;
+        p: int = 0;
         while p <= n {
             r: int = self._scan_from(st, p);
             if r < 0 {
@@ -2050,10 +1994,10 @@ obj:pub Pattern {
                 break;
             }
             out.append(cpslice_str(bv, last, st.slots[0]));
-            g = 1;
+            g: int = 1;
             while g <= self._re.ngroups {
-                lo = st.slots[g * 2];
-                hi = st.slots[g * 2 + 1];
+                lo: int = st.slots[g * 2];
+                hi: int = st.slots[g * 2 + 1];
                 if lo < 0 or hi < lo {
                     out.append(None);
                 } else {
@@ -2079,39 +2023,11 @@ obj:pub Pattern {
         out: str = "";
         last: int = 0;
         nsub: int = 0;
-        if self._use_posix(bv) {
-            p: int = 0;
-            nb: int = len(bv);
-            while p <= nb {
-                if count != 0 and nsub >= count {
-                    break;
-                }
-                pm: bytes = posix_exec(
-                    self._preg, bv[p:nb].decode(), self.groups + 1, _PMW
-                );
-                if len(pm) == 0 {
-                    break;
-                }
-                m2: Match = Match(
-                    self._re, string, bv, 0, n, self._pm_slots(pm, bv, p)
-                );
-                m0: int = p + pm_off(pm, _PMW, 0);
-                m1: int = p + pm_off(pm, _PMW, 1);
-                out += bv[last:m0].decode();
-                out += _expand_repl(repl, m2, self._re);
-                nsub += 1;
-                last = m1;
-                if m1 > p {
-                    p = m1;
-                } else {
-                    p = m1 + 1;
-                }
-            }
-            out += bv[last:nb].decode();
-            return (out, nsub);
+        if self._posix_miss(bv, 0, len(bv)) {
+            return (cpslice_str(bv, 0, n), 0);
         }
         st: _St = _new_st(utf8_cps(bv), n, self._re);
-        p = 0;
+        p: int = 0;
         while p <= n {
             if count != 0 and nsub >= count {
                 break;
@@ -2368,5 +2284,7 @@ def:pub purge {
     while len(_PSX.pregs) > 0 {
         posix_free(_PSX.pregs.pop());
     }
+    _PSX.ids = [];
+    _PSX.head = 0;
     _PSX.gen += 1;
 }
