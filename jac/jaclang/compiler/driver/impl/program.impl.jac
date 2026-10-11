@@ -520,9 +520,6 @@ impl JacProgram.parse_source(
         _coerce_native_module
     }
     import from jaclang.compiler.frontend.host { active_host }
-    if self._natives is not None and self._natives.progress is not None {
-        self._natives.note_step("parse", file_path);
-    }
     had_error = False;
     run_codespace_infer = False;
     infer_native = False;
