@@ -193,7 +193,7 @@ obj Session(Memory) {
         _foreign_refs: set[UUID] postinit,
         _contended: set[UUID] postinit,
         _queued: list[UUID] postinit,
-        _last_conflict: (UUID | None) postinit;
+        _last_conflict: set[UUID] postinit;
 
     override def new_session(target_path: str) -> Session {
         if self.store is None {

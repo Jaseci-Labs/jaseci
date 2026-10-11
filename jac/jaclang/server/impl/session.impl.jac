@@ -441,7 +441,7 @@ impl Session.postinit -> None {
     self._foreign_refs = set();
     self._contended = set();
     self._queued = [];
-    self._last_conflict = None;
+    self._last_conflict = set();
 }
 
 
@@ -670,10 +670,8 @@ impl Session.commit(anchor: (Anchor | None) = None) -> None {
 
 impl Session.abort -> None {
     with self._lock {
-        if self._last_conflict is not None {
-            self._contended.add(self._last_conflict);
-            self._last_conflict = None;
-        }
+        self._contended |= self._last_conflict;
+        self._last_conflict = set();
         self._rollback_txn();
         self._forget_loaded();
         self._dirty.clear();
@@ -999,13 +997,13 @@ impl Session._flush_locked(full: bool) -> None {
         try {
             store.upsert(rows);
         } except WriteConflict as wc {
-            self._last_conflict = wc.anchor_id;
+            self._last_conflict = {wc.anchor_id};
             raise;
         } except Exception as e {
             if self._queued or not _is_lock_timeout(e) {
                 raise;
             }
-            self._last_conflict = rows[0].id;
+            self._last_conflict = {row.id for row in rows};
             raise WriteConflict(anchor_id=rows[0].id) from e;
         }
         for (row, u) in zip(rows, unflushed) {
@@ -1014,7 +1012,15 @@ impl Session._flush_locked(full: bool) -> None {
         }
     }
     if self._deleted {
-        store.delete(list(self._deleted));
+        try {
+            store.delete(list(self._deleted));
+        } except Exception as e {
+            if self._queued or not _is_lock_timeout(e) {
+                raise;
+            }
+            self._last_conflict = set(self._deleted);
+            raise WriteConflict(anchor_id=sorted(self._deleted)[0]) from e;
+        }
         for id in self._deleted {
             self._rows.removed(id);
         }
@@ -1304,7 +1310,7 @@ impl Session.acommit(anchor: (Anchor | None) = None) -> None {
 
 impl Session._leave_queue -> None {
     self._contended.clear();
-    self._last_conflict = None;
+    self._last_conflict = set();
     held = self._queued;
     self._queued = [];
     if not held or self._store is None {
@@ -1336,7 +1342,6 @@ impl Session.run_request(body: Callable) -> any {
                     f"(attempt {attempt}/{MAX_RETRIES})"
                 );
                 self.abort();
-                self.wait_turn();
                 continue;
             }
             self.abort();

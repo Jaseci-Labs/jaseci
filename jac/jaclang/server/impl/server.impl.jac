@@ -283,7 +283,13 @@ async def _run_function_with_occ(
                     try {
                         await turn;
                     } except asyncio.CancelledError {
-                        await asyncio.wait({turn});
+                        while not turn.done() {
+                            try {
+                                await asyncio.wait({turn});
+                            } except asyncio.CancelledError {
+                                continue;
+                            }
+                        }
                         raise;
                     }
                 }
