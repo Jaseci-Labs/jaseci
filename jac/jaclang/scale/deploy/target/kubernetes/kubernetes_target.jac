@@ -521,10 +521,12 @@ obj KubernetesTargetBase(DeploymentTarget) {
                 pod_labels: (dict[str, str] | None) = pod.metadata.labels;
                 if pod_labels and 'app' in pod_labels {
                     pod_app = pod_labels['app'];
-                    if pod.status
-                        and pod.status.container_statuses
-                        and not pod.metadata.deletion_timestamp {
-                        for cs in pod.status.container_statuses {
+                    if pod.status and not pod.metadata.deletion_timestamp {
+                        statuses: list[any] = list(
+                            pod.status.init_container_statuses or []
+                        )
+                            + list(pod.status.container_statuses or []);
+                        for cs in statuses {
                             if container_crashlooping(cs) {
                                 restarting_apps[pod_app] = True;
                             }

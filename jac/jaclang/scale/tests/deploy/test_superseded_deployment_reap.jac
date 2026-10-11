@@ -19,6 +19,7 @@ import from jaclang.scale.sdk {
 }
 import from jaclang.scale.models.resource_status {
     REPLICA_FLOOR_ANNOTATION,
+    container_crashlooping,
     assess_workload
 }
 
@@ -652,6 +653,28 @@ obj FakeCoreV1 {
 }
 
 
+def _container(
+    ready: bool,
+    restarts: int,
+    waiting: (str | None) = None,
+    last_terminated: bool = False
+) -> any {
+    return SimpleNamespace(
+        name="main",
+        ready=ready,
+        restart_count=restarts,
+        state=SimpleNamespace(
+            waiting=SimpleNamespace(reason=waiting) if waiting else None,
+            running=None if waiting else SimpleNamespace(),
+            terminated=None
+        ),
+        last_state=SimpleNamespace(
+            terminated=SimpleNamespace(exit_code=1) if last_terminated else None
+        )
+    );
+}
+
+
 def _pod(
     app: str,
     ready: bool,
@@ -660,7 +683,8 @@ def _pod(
     last_terminated: bool = False,
     deleting: bool = False,
     labeled: bool = True,
-    statuses: bool = True
+    statuses: bool = True,
+    init_statuses: (list[any] | None) = None
 ) -> any {
     return SimpleNamespace(
         metadata=SimpleNamespace(
@@ -669,27 +693,10 @@ def _pod(
             deletion_timestamp="2026-01-01T00:00:00Z" if deleting else None
         ),
         status=SimpleNamespace(
-            container_statuses=None
-                if not statuses
-                else [
-                    SimpleNamespace(
-                        name="main",
-                        ready=ready,
-                        restart_count=restarts,
-                        state=SimpleNamespace(
-                            waiting=SimpleNamespace(reason=waiting)
-                                if waiting
-                                else None,
-                            running=None if waiting else SimpleNamespace(),
-                            terminated=None
-                        ),
-                        last_state=SimpleNamespace(
-                            terminated=SimpleNamespace(exit_code=1)
-                                if last_terminated
-                                else None
-                        )
-                    )
-                ]
+            init_container_statuses=init_statuses,
+            container_statuses=[_container(ready, restarts, waiting, last_terminated)]
+                if statuses
+                else None
         )
     );
 }
@@ -698,8 +705,8 @@ def _pod(
 # restart_count is the lifetime total and never goes down. `jac deploy status`
 # read any nonzero count as "crash-looping", so a pod that restarted once while
 # its volume attached read degraded through every later rollout. Only a
-# container that is not Ready now, and is waiting in CrashLoopBackOff or has
-# died before, is crash-looping.
+# container (init containers included) that is not Ready now and has restarted
+# is crash-looping, which is the rule the deploy-wait path shares.
 test "status reads a container's current state, not its lifetime restart count" {
     import unittest.mock;
     # (label, the app's pod, expected status of a Deployment mid-rollout)
@@ -718,6 +725,32 @@ test "status reads a container's current state, not its lifetime restart count" 
             "not Ready and its last run terminated",
             _pod("standup", ready=False, restarts=3, last_terminated=True),
             "degraded"
+        ),
+        (
+            "not Ready, running, restarted, no last state recorded",
+            _pod("standup", ready=False, restarts=3),
+            "degraded"
+        ),
+        (
+            "an init container in CrashLoopBackOff",
+            _pod(
+                "standup",
+                ready=False,
+                restarts=0,
+                waiting="PodInitializing",
+                init_statuses=[_container(False, 2, waiting="CrashLoopBackOff")]
+            ),
+            "degraded"
+        ),
+        (
+            "an init container that finished after a restart",
+            _pod(
+                "standup",
+                ready=True,
+                restarts=0,
+                init_statuses=[_container(True, 2, last_terminated=True)]
+            ),
+            "activating"
         ),
         (
             "still starting, never restarted",
@@ -784,6 +817,14 @@ test "status reads a container's current state, not its lifetime restart count" 
         }
     }
     assert wrong == [] , "\n".join(wrong);
+    # min_restarts is one threshold for every state, so a waiting container
+    # under it is tolerated and one at it is not.
+    assert not container_crashlooping(
+        _container(False, 1, waiting="CrashLoopBackOff"), 3
+    );
+    assert container_crashlooping(_container(False, 3, waiting="CrashLoopBackOff"), 3);
+    assert container_crashlooping(_container(False, 3), 3);
+    assert not container_crashlooping(_container(True, 9), 3);
 }
 
 
