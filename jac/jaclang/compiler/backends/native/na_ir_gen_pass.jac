@@ -1521,7 +1521,6 @@ walker NaIRGenPass(CompilerPass) {
     def _exc_stored_message(obj_val: ir.Value, type_name: str) -> ir.Value;
     def _emit_exc_message_str(obj_val: ir.Value, type_name: str) -> ir.Value;
     def _exc_state_message(obj_val: ir.Value, type_name: str) -> ir.Value;
-    def _exc_binds_object(type_name: str) -> bool;
     def _exc_bound_struct(ex: (uni.Expr | None)) -> (str | None);
     def _reraise_caught(values: tuple[ir.Value, ir.Value, ir.Value]) -> None;
     def _reraise_if_bound(cause: uni.Expr) -> None;
