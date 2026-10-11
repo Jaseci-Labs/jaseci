@@ -1160,17 +1160,6 @@ impl PgStore.queue_exit(ids: list[UUID]) -> None {
 }
 
 
-impl PgStore.lock_rows(ids: list[UUID]) -> None {
-    self._run(
-        """
-        SELECT id FROM anchors WHERE id = ANY(CAST(:ids AS uuid[]))
-        ORDER BY id FOR UPDATE
-        """,
-        {'ids': [str(i) for i in ids]}
-    );
-}
-
-
 impl PgStore.kv_get(key: str) -> (str | None) {
     rows = self._run(
         """

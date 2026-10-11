@@ -18,7 +18,6 @@ import from jaclang.data.store { AnchorRow, ConnInfo, PgStore, Store, TxnIsolati
 
 glob logger = logging.getLogger(__name__),
      MAX_RETRIES = 5,
-     PIN_ATTEMPTS = 20,
      EDGE_PAGE = 1000,
      SCRATCH_ENV = 'JAC_DB_SCRATCH',
      SCRATCH_OWNER_ENV = 'JAC_DB_SCRATCH_OWNER',
@@ -255,10 +254,7 @@ obj Session(Memory) {
     def ensure_writable_txn -> None;
     def read_barrier -> None;
     def _begin_writable -> None;
-    def _begin_serializable -> None;
     def wait_turn -> None;
-    override async def acommit(anchor: (Anchor | None) = None) -> None;
-    override async def aget(id: UUID) -> (Anchor | None);
     def _leave_queue -> None;
     def _commit_txn -> None;
     def _rollback_txn -> None;

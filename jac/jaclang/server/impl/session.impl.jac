@@ -700,7 +700,7 @@ impl Session.quarantine_ref(referrer: (Anchor | None), stub: Anchor) -> None {
 
 
 impl Session._txn_isolation -> TxnIsolation {
-    if self._dirty or self._deleted or self._queued {
+    if self._dirty or self._deleted {
         return TxnIsolation.SERIALIZABLE;
     }
     if self._read_scopes > 0 and self._active_units == 0 {
@@ -760,11 +760,7 @@ impl Session._ensure_txn -> None {
         self._reclaim_dead_txn();
         wanted = self._txn_isolation();
         if not self._store.in_txn() {
-            if wanted is TxnIsolation.SERIALIZABLE {
-                self._begin_serializable();
-            } else {
-                self._store.begin(wanted);
-            }
+            self._store.begin(wanted);
         } elif wanted is TxnIsolation.SERIALIZABLE {
             self._begin_writable();
         }
@@ -1187,49 +1183,11 @@ impl Session._begin_writable -> None {
             }
             self._commit_txn();
             self._drop_snapshot_reads();
-            self._begin_serializable();
+            self._store.begin(TxnIsolation.SERIALIZABLE);
         } elif not self._store.in_txn() {
-            self._begin_serializable();
+            self._store.begin(TxnIsolation.SERIALIZABLE);
         }
     }
-}
-
-
-impl Session._begin_serializable -> None {
-    store = self._store;
-    if store is None {
-        return;
-    }
-    if not self._queued {
-        store.begin(TxnIsolation.SERIALIZABLE);
-        return;
-    }
-    pinned = sorted(self._queued);
-    for _ in range(PIN_ATTEMPTS) {
-        store.begin(TxnIsolation.SERIALIZABLE);
-        try {
-            store.lock_rows(pinned);
-            return;
-        } except Exception as e {
-            if not _is_serialization_conflict(e) {
-                raise;
-            }
-            store.rollback();
-        }
-    }
-    store.begin(TxnIsolation.SERIALIZABLE);
-}
-
-
-impl Session.acommit(anchor: (Anchor | None) = None) -> None {
-    import asyncio;
-    await asyncio.to_thread(self.commit, anchor);
-}
-
-
-impl Session.aget(id: UUID) -> (Anchor | None) {
-    import asyncio;
-    return await asyncio.to_thread(self.get, id);
 }
 
 
@@ -1251,9 +1209,6 @@ impl Session.wait_turn -> None {
                 return;
             }
             self._queued = wanted;
-        }
-        if not backing.in_txn() {
-            self._begin_serializable();
         }
     }
 }

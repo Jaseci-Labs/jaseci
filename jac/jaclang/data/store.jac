@@ -107,7 +107,6 @@ obj Store {
     def rows(sql: str, params: dict[str, any]) -> list[tuple[any, ...]] abst;
     def queue_enter(ids: list[UUID]) -> bool abst;
     def queue_exit(ids: list[UUID]) -> None abst;
-    def lock_rows(ids: list[UUID]) -> None abst;
     def kv_get(key: str) -> (str | None) abst;
     def kv_put(key: str, value: str) -> None abst;
     def kv_put_ttl(key: str, value: str, ttl_seconds: int) -> None abst;
@@ -180,7 +179,6 @@ obj PgStore(Store) {
     def rows(sql: str, params: dict[str, any]) -> list[tuple[any, ...]];
     def queue_enter(ids: list[UUID]) -> bool;
     def queue_exit(ids: list[UUID]) -> None;
-    def lock_rows(ids: list[UUID]) -> None;
     def kv_get(key: str) -> (str | None);
     def kv_put(key: str, value: str) -> None;
     def kv_put_ttl(key: str, value: str, ttl_seconds: int) -> None;
