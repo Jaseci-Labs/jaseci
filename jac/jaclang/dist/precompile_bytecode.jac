@@ -1357,6 +1357,12 @@ def seal_native(
     import from jaclang.server.sealed_serve { NATIVE_DIR_REL }
 
     prog = JacProgram();
+
+    def progress(line: str) {
+        console.print(line);
+    }
+
+    prog.native_units().progress = progress;
     options = CompileOptions(
         aot_mode=True,
         default_codespace="native",

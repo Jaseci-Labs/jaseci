@@ -2343,9 +2343,21 @@ walker NaIRGenPass(CompilerPass) {
     def _codegen_report(nd: uni.ReportStmt) -> None;
     def _codegen_connect(nd: uni.BinaryExpr) -> (ir.Value | None);
     def _osp_connect_assign(
-        co: uni.ConnectOp, edge_obj: ir.Value, edge_arch: (str | None)
+        co: uni.ConnectOp,
+        edge_obj: ir.Value,
+        edge_arch: (str | None),
+        held: (list[tuple[ir.Value, ir.Value]] | None) = None
     ) -> bool;
 
+    def _osp_connect_assign_hold(
+        co: uni.ConnectOp, edge_arch: (str | None)
+    ) -> (list[tuple[ir.Value, ir.Value]] | None);
+
+    def _osp_connect_assign_field(
+        kw: uni.KWPair, edge_arch: (str | None)
+    ) -> (str | None);
+
+    def _osp_connect_assign_value(kw: uni.KWPair) -> (ir.Value | None);
     def _codegen_disconnect(nd: uni.BinaryExpr) -> (ir.Value | None);
     def _osp_disc_list_operand(expr: (uni.UniNode | None)) -> bool;
     def _codegen_edge_ref_trailer(nd: uni.EdgeRefTrailer) -> (ir.Value | None);
@@ -2865,6 +2877,21 @@ walker NaIRGenPass(CompilerPass) {
     ) -> bool;
 
     def _unpack_target_ok(target: uni.UniNode) -> bool;
+    def _unpack_into(
+        targets: Sequence[uni.UniNode],
+        tuple_val: ir.Value,
+        tuple_node: (uni.UniNode | None),
+        replaced: list[tuple[str, ir.Value]]
+    ) -> bool;
+
+    def _unpack_store_global(
+        var_name: str,
+        value: ir.Value,
+        moved: bool,
+        at: uni.UniNode,
+        replaced: list[tuple[str, ir.Value]]
+    ) -> bool;
+
     def _codegen_tuple_index(
         tuple_val: ir.Value, idx_val: ir.Value, struct_type: ir.LiteralStructType
     ) -> (ir.Value | None);
@@ -3214,6 +3241,12 @@ walker NaIRGenPass(CompilerPass) {
     ) -> (ir.Value | None);
 
     def _emit_class_name_const(arch_name: str) -> ir.Constant;
+    def _default_repr_fn(arch_name: str) -> (ir.Function | None);
+    def _repr_active_fns -> tuple[ir.Function, ir.Function];
+    def _default_repr_piece(
+        value: ir.Value, arch_name: str, field_name: str, decl: uni.HasVar
+    ) -> (ir.Value | None);
+
     def _emit_class_display_const(arch_name: str) -> ir.Constant;
     def _emit_class_display_fn -> ir.Function;
     def _emit_runtime_class_name_fn -> (ir.Function | None);

@@ -225,23 +225,22 @@ test "kernel parses retain no native memory once the tree is handed over" {
 }
 
 
-test "the off switch parses with the store parser" {
-    # `JAC_COMPILER_LIB=off` is consulted after the sealed image in
-    # `resolve_kernel` (`kernel_resolve.jac`): in a checkout, a kernel build's
-    # own processes and a developer iterating on the compiler both run it from
-    # bytecode with the store parser. A sealed image runs its own kernel.
+test "a checkout without a current kernel parses with the store parser" {
+    # Resolving never builds a kernel (`kernel_resolve.jac`): a checkout whose
+    # kernel and kit kernel are both stale runs the compiler from bytecode
+    # with the store parser until `jac kernel build` publishes one.
     import from unittest.mock { patch }
     import jaclang.compiler.backends.native.kernel_resolve as resolver;
     import from jaclang.compiler.native_compiler { ensure_loaded, reset_loaded }
     reset_loaded();
     try {
-        with patch.dict(os.environ, resolver.kernel_build_env()) {
-            with patch.object(
-                resolver, "_sealed_kit_omits_kernel", return_value=False
-            ) {
-                with patch.object(resolver, "_from_sealed_image", return_value=None) {
-                    assert resolver.resolve_kernel() is None , "the off switch must resolve no kernel";
-                    assert ensure_loaded() is None , "the off switch must parse with the store parser";
+        with patch.object(resolver, "_sealed_kit_omits_kernel", return_value=False) {
+            with patch.object(resolver, "_from_sealed_image", return_value=None) {
+                with patch.object(
+                    resolver, "_from_source_tree", return_value=(None, "")
+                ) {
+                    assert resolver.resolve_kernel() is None , "a stale checkout must resolve no kernel";
+                    assert ensure_loaded() is None , "a stale checkout must parse with the store parser";
                 }
             }
         }

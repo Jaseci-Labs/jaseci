@@ -19,6 +19,7 @@ comptime import from jaclang.cli.commands.db { SPEC_DB }
 comptime import from jaclang.cli.commands.execution { SPEC_RUN, SPEC_X }
 comptime import from jaclang.cli.commands.fix { SPEC_FIX }
 comptime import from jaclang.cli.commands.guide { SPEC_GUIDE }
+comptime import from jaclang.cli.commands.kernel { SPEC_KERNEL }
 comptime import from jaclang.cli.commands.mcp { SPEC_MCP_CMD }
 comptime import from jaclang.cli.commands.precompile { SPEC_PRECOMPILE }
 comptime import from jaclang.cli.commands.project {
@@ -118,6 +119,7 @@ comptime ROUTES: list[CommandSpec] = [
          _route(SPEC_GEN_PARSER),
          _route(SPEC_GUIDE),
          _route(SPEC_INSTALL),
+         _route(SPEC_KERNEL),
          _route(SPEC_LSP),
          _route(SPEC_MCP_CMD),
          _route(SPEC_MODEL),
