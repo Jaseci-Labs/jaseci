@@ -646,16 +646,6 @@ impl ProjectHost.native_session_active(program: JacProgram) -> bool {
     return natives is not None and natives.session is not None;
 }
 
-impl ProjectHost.placement_plan(path: str) -> str {
-    import from jaclang.compiler.placement.placement_facts { held_plan }
-    return held_plan(path);
-}
-
-impl ProjectHost.record_placement_plan(path: str, plan: str) {
-    import from jaclang.compiler.placement.placement_facts { hold_plan }
-    hold_plan(path, plan);
-}
-
 impl ProjectHost.internal_program(program: JacProgram) -> (JacProgram | None) {
     return self.compiler_for(program).selfhost.peek_program();
 }

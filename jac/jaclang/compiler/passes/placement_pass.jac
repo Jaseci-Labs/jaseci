@@ -3,11 +3,14 @@ import os;
 import from jaclang.compiler.frontend.unitree {
     Ability,
     Archetype,
+    AtomTrailer,
     ContextAwareNode,
     ImplDef,
     Import,
     Module,
     ModuleCode,
+    ModuleItem,
+    ModulePath,
     Name,
     Test,
     UniNode
@@ -74,6 +77,9 @@ def build_native_legality(
 ) -> NativeLegality;
 
 def top_element_of(mod: Module, nd: UniNode) -> (UniNode | None);
+def import_bindings(imp: Import) -> set[str];
+def bridged_use_crosses(nm: Name) -> (str | None);
+def binds_module_name(mod: Module, nm: Name) -> bool;
 def element_requirements(mod: Module, prog: JacProgram) -> dict[int, tuple[str, str]];
 def client_refused_elements(mod: Module) -> dict[int, list[tuple[UniNode, str]]];
 def stamp_native(mod: Module, held: set[int]) -> list[ContextAwareNode];
@@ -379,32 +385,58 @@ impl build_native_legality(
         native_capability_demotion_owner,
         native_capability_violations
     }
-    import from jaclang.compiler.placement.placement { scan_native_blockers }
-    import from jaclang.compiler.placement.placement_solver { _native_deps_ok }
+    import from jaclang.compiler.placement.placement { native_blocker_scan }
+    import from jaclang.compiler.placement.placement_solver { native_closure_blocker }
     import from jaclang.compiler.capability_notes { TARGET_NATIVE, capability_notes_of }
     import from jaclang.compiler.native_bindings { binding_gaps }
     legality = NativeLegality();
     mod_path = mod.loc.mod_path if mod.loc is not None else "";
     base_dir = os.path.dirname(os.path.abspath(mod_path)) if mod_path else ".";
     judging: (JacProgram | None) = prog if not mod.gen.placement_mode else None;
+    refused_imports: dict[int, NativeRefusal] = {};
+    bridged_imports: set[int] = set();
+    refused_names: dict[str, NativeRefusal] = {};
+    bridged_names: set[str] = set();
     if judging is not None {
-        (blocker, deps) = scan_native_blockers(mod, base_dir);
-        if blocker {
+        scan = native_blocker_scan(mod, base_dir);
+        if scan.module {
             legality.blockers.append(
-                NativeRefusal(kind="module", name=blocker, site=mod)
+                NativeRefusal(kind="module", name=scan.module, site=mod)
             );
         }
-        if not blocker and not _native_deps_ok(os.path.abspath(mod_path), deps) {
-            legality.blockers.append(
-                NativeRefusal(
-                    kind="import closure",
-                    name=os.path.basename(mod_path),
-                    site=mod,
-                    help="A module this one imports, directly or through "
-                    "another import, cannot be placed native, and native code "
-                    "cannot call into it."
-                )
+        for (site, why) in scan.sites {
+            refusal = NativeRefusal(kind="element", name=why, site=site);
+            legality.refuse_site(mod, refusal);
+            top = top_element_of(mod, site);
+            if isinstance(top, Import) and id(top) not in refused_imports {
+                refused_imports[id(top)] = refusal;
+            }
+        }
+        for (imp, dep) in scan.dep_imports {
+            top = top_element_of(mod, imp);
+            if top is None or id(top) in refused_imports {
+                continue;
+            }
+            (closure, bridged) = native_closure_blocker(judging, mod_path, [dep]);
+            if not closure {
+                continue;
+            }
+            if bridged {
+                refused_imports[id(top)] = NativeRefusal(
+                    kind="import of Python code", name=closure, site=imp
+                );
+                bridged_imports.add(id(top));
+                continue;
+            }
+            refusal = NativeRefusal(
+                kind="import closure",
+                name=closure,
+                site=imp,
+                help="The compiler cannot judge what this import reaches, so "
+                "native code does not use it."
             );
+            legality.refuse_site(mod, refusal);
+            refused_imports[id(top)] = refusal;
         }
         for note in capability_notes_of(judging, mod_path, TARGET_NATIVE) {
             noted = NativeRefusal(
@@ -454,11 +486,45 @@ impl build_native_legality(
             );
         }
     }
+    for elem in mod.body {
+        if isinstance(elem, Import) and id(elem) in refused_imports {
+            for bound_name in import_bindings(elem) {
+                refused_names[bound_name] = refused_imports[id(elem)];
+                if id(elem) in bridged_imports {
+                    bridged_names.add(bound_name);
+                }
+            }
+        }
+    }
     for stmt in ModuleFacts.iter_context_stmts(mod, CodeContext.NATIVE) {
         if isinstance(stmt, Import) {
             continue;
         }
         for nm in stmt.get_all_sub_nodes(Name) {
+            cause = refused_names.get(nm.value) if refused_names else None;
+            why: (str | None) = "";
+            if cause is not None and nm.value in bridged_names {
+                why = bridged_use_crosses(nm);
+                if why is None {
+                    cause = None;
+                }
+            }
+            if cause is not None and binds_module_name(mod, nm) {
+                uses = NativeRefusal(
+                    kind="use of an import native code cannot reach",
+                    name=nm.value,
+                    site=nm,
+                    help=f"'{nm.value}' comes from an import that stays in "
+                    f"Python: {cause.name}."
+                        + (f" A native call cannot reach it: {why}." if why else "")
+                );
+                use_owner = native_capability_demotion_owner(nm);
+                if use_owner is None {
+                    legality.refuse_site(mod, uses);
+                } else {
+                    legality.refuse_unit(use_owner, uses);
+                }
+            }
             if judging is not None {
                 for gap in binding_gaps(judging, nm, base_dir) {
                     missing = NativeRefusal(
@@ -508,6 +574,54 @@ impl build_native_legality(
     return legality;
 }
 
+impl import_bindings(imp: Import) -> set[str] {
+    bound: set[str] = set();
+    for item in imp.items {
+        if isinstance(item, ModuleItem) {
+            binding = item.binding_name;
+            if binding is not None {
+                bound.add(binding.value);
+            }
+        } elif isinstance(item, ModulePath) {
+            if item.alias is not None {
+                bound.add(item.alias.value);
+            } elif item.path and isinstance(item.path[0], Name) {
+                bound.add(item.path[0].value);
+            }
+        }
+    }
+    return bound;
+}
+
+impl binds_module_name(mod: Module, nm: Name) -> bool {
+    if nm.sym is None {
+        return False;
+    }
+    owner = nm.parent;
+    if isinstance(owner, AtomTrailer) and owner.is_attr and owner.target is not nm {
+        return False;
+    }
+    if nm.sym.parent_tab is mod {
+        return True;
+    }
+    decl = nm.sym.decl;
+    return decl is None or decl.find_parent_of_type(Module) is not mod;
+}
+
+impl bridged_use_crosses(nm: Name) -> (str | None) {
+    import from jaclang.compiler.boundary_rules { ability_crossing }
+    import from jaclang.compiler.capability_notes { TARGET_NATIVE, TARGET_SERVER }
+    decl = nm.sym.decl if nm.sym is not None else None;
+    target = decl.name_of if decl is not None else None;
+    if isinstance(target, Archetype) {
+        return None;
+    }
+    if not isinstance(target, Ability) {
+        return "it is not a function";
+    }
+    return ability_crossing(target, TARGET_NATIVE, TARGET_SERVER);
+}
+
 impl top_element_of(mod: Module, nd: UniNode) -> (UniNode | None) {
     cur: (UniNode | None) = nd;
     while cur is not None and cur.parent is not mod {
@@ -519,15 +633,26 @@ impl top_element_of(mod: Module, nd: UniNode) -> (UniNode | None) {
 impl element_requirements(mod: Module, prog: JacProgram) -> dict[int, tuple[str, str]] {
     import from jaclang.compiler.capability_notes { TARGET_NATIVE, capability_notes_of }
     import from jaclang.compiler.placement.placement { element_display_name }
-    import from jaclang.compiler.placement.placement_pins { config_pin_for }
+    import from jaclang.compiler.placement.placement_pins {
+        config_module_pin,
+        config_pin_for
+    }
     out: dict[int, tuple[str, str]] = {};
     mod_path = mod.loc.mod_path if mod.loc is not None else "";
     declared = prog.declared_codespace(mod_path) if mod_path else "";
+    preferred = declared == TARGET_NATIVE and prog.prefers_native_codespace(mod_path);
+    if preferred {
+        declared = "";
+    }
+    module_pin = config_module_pin(mod_path) if preferred else "";
     for elem in mod.body {
         if not isinstance(elem, ContextAwareNode) {
             continue;
         }
         pin = config_pin_for(mod_path, element_display_name(elem)) if mod_path else "";
+        if pin and pin == module_pin {
+            pin = "";
+        }
         if pin {
             out[id(elem)] = (pin, "pinned in jac.toml");
         } elif declared {
@@ -662,6 +787,15 @@ impl settle_native_module(
     if not pending or not native_placement_soft(prog, mod) {
         return None;
     }
+    """The backend refused a module whose native placement was a preference,
+    for a reason the legality rules did not predict. The module was typed for
+    no codespace, so placing it on the server is a restamp of the same tree:
+    the Python backend, which runs after this one, emits it as it is. The
+    module's importers drop what they bound to its native code.""";
+    import from jaclang.compiler.frontend.host { active_host }
+    import from jaclang.compiler.placement.placement_facts { settle_server }
+    import from jaclang.compiler.placement.placement_solver { invalidate_importers_es }
+    import from jaclang.compiler.driver.session_compile { drop_native_bindings }
     refusal = refusal_from_alert(pending[0]);
     del pending[:];
     del warnings[:];
@@ -675,6 +809,19 @@ impl settle_native_module(
     gen.native_iface = None;
     gen.native_layout = None;
     gen.native_deps = [];
+    settle_server(mod);
+    mod_path = mod.loc.mod_path if mod.loc is not None else "";
+    resolved = os.path.realpath(mod_path);
+    for stale in invalidate_importers_es(prog, resolved) {
+        drop_native_bindings(stale, resolved);
+    }
+    host = active_host();
+    host.record_native_coverage(resolved, 'demoted', refusal.code, refusal.headline());
+    host.note(
+        f"note: {mod_path} preferred native but did not lower; "
+        f"compiled in the server codespace ({refusal.headline()})",
+        "dim"
+    );
     return refusal;
 }
 
@@ -716,10 +863,11 @@ impl PlacementPass._emit_refusal(refusal: NativeRefusal, required_by: str) -> No
 }
 
 impl PlacementPass._run_impl(ir_in: Module) -> Module {
-    """Placement is decided once. A module whose codespace was declared, or
-    one being analyzed again under the plan its first analysis produced, has
-    its elements placed already: what remains is to hold that placement to
-    account. Any other module is undecided, and this is where it is decided.""";
+    """Placement is decided once, on the typed module. A module whose
+    codespace was declared has its elements placed already: what remains is
+    to hold that placement to account. Any other module was typed for no
+    codespace, and this is where its elements are placed. Nothing types it
+    again: what was placed is the tree every backend reads.""";
     ir_in.native_viols_reported = True;
     ir_in.client_viols_reported = True;
     self._check_conformance(ir_in);
@@ -738,15 +886,8 @@ impl PlacementPass._run_decided(ir_in: Module) -> Module {
         refresh_placement_module,
         solve_module_placement
     }
-    import from jaclang.compiler.placement.placement_facts { apply_plan, decode_plan }
     mod_path = ir_in.loc.mod_path if ir_in.loc is not None else "";
     self.prog.analysis.placement_refusals.pop(os.path.realpath(mod_path), None);
-    if ir_in.gen.placement_mode == 'plan' and ir_in.source is not None {
-        held = decode_plan(active_host().placement_plan(mod_path), ir_in.source.hash);
-        if held is not None {
-            apply_plan(ir_in, held);
-        }
-    }
     client_refused = client_refused_elements(ir_in);
     placed: list[CodeContext] = [];
     for elem in ir_in.body {
@@ -761,23 +902,11 @@ impl PlacementPass._run_decided(ir_in: Module) -> Module {
         }
     }
     has_native = CodeContext.NATIVE in placed;
-    if ir_in.gen.placement_mode == 'plan' {
-        uniform = placed[0]
-            if placed and all(ctx == placed[0] for ctx in placed)
-            else None;
-        ir_in.decided_codespace = uniform.value
-            if uniform is not None and uniform != CodeContext.SERVER
-            else "";
-        ir_in.codespace_inferred = has_native;
-    }
     if has_native {
         legality = build_native_legality(ir_in, self.prog);
         refused: list[NativeRefusal] = list(legality.module);
         refused.extend(legality.elements.values());
-        if refused and native_placement_soft(self.prog, ir_in) {
-            ir_in.gen.native_refusal_code = refused[0].code;
-            ir_in.gen.native_refusal = refused[0].headline();
-        } elif refused {
+        if refused {
             reached: set[int] = {id(refusal) for refusal in legality.reach};
             direct: list[NativeRefusal] = [
                 refusal
@@ -828,7 +957,7 @@ impl PlacementPass._run_undecided(ir_in: Module) -> Module {
         'client': CodeContext.CLIENT,
         'native': CodeContext.NATIVE
     };
-    import from jaclang.compiler.placement.placement_facts { contexts_of, write_plan }
+    import from jaclang.compiler.placement.placement_facts { contexts_of }
     import from jaclang.compiler.capability_notes { capability_notes_of }
     mod_path = ir_in.loc.mod_path if ir_in.loc is not None else "";
     given = contexts_of(ir_in);
@@ -975,7 +1104,7 @@ impl PlacementPass._run_undecided(ir_in: Module) -> Module {
         );
     }
     report_serverless_kind_errors(self, ir_in);
-    write_plan(ir_in, given);
+    ir_in.gen.placement_mode = 'inferred';
     return ir_in;
 }
 

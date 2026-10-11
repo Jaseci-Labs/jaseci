@@ -480,8 +480,35 @@ impl JacProgram.declared_codespace(self: JacProgram, file_path: str) -> str {
     return kind_space if kind_space in ('client', 'native') else '';
 }
 
+impl JacProgram.prefers_native_codespace(self: JacProgram, file_path: str) -> bool {
+    import from jaclang.compiler.frontend.codeinfo { is_kernel_unit_path }
+    import from jaclang.compiler.placement.placement_facts {
+        native_only,
+        native_placement_hard
+    }
+    import from jaclang.compiler.placement.placement_pins {
+        config_kind_space,
+        effective_module_pin
+    }
+    if self.internal
+        or native_only(file_path)
+        or is_kernel_unit_path(file_path)
+        or native_placement_hard(self, file_path) {
+        return False;
+    }
+    if effective_module_pin(file_path, self) == 'native' {
+        return True;
+    }
+    opts = self.options;
+    return config_kind_space(file_path, opts.app_kind if opts is not None else '')
+        == 'native';
+}
+
 impl JacProgram.infers_native_codespace(self: JacProgram, file_path: str) -> bool {
     import from jaclang.compiler.driver.boundary_classify { _default_codespace_for }
+    if self.prefers_native_codespace(file_path) {
+        return True;
+    }
     opts = self.options;
     if opts is not None and opts.no_cgen {
         return False;
@@ -538,44 +565,19 @@ impl JacProgram.parse_source(
             _coerce_client_module,
             _coerce_native_module
         }
-        import from jaclang.compiler.placement.placement_facts {
-            apply_plan,
-            decode_plan,
-            native_placement_hard
-        }
         codespace = self.declared_codespace(file_path);
-        held = active_host().placement_plan(file_path);
-        plan = decode_plan(held, uni.Source(source_str, file_path).hash)
-            if held
-            else None;
-        if plan is not None and native_placement_hard(self, file_path) {
-            plan = None;
+        if codespace == 'native' and self.prefers_native_codespace(file_path) {
+            codespace = '';
         }
-        infer_native = plan is None
-            and not codespace
-            and self.infers_native_codespace(file_path);
+        infer_native = not codespace and self.infers_native_codespace(file_path);
         (parsed, had_error) = parse_woven(
             source_str,
             file_path,
             self,
             annex_sources(file_path),
-            early_context=''
-                if plan is not None
-                else (codespace or ('' if infer_native else 'server'))
+            early_context=codespace or ('' if infer_native else 'server')
         );
-        if plan is not None {
-            apply_plan(parsed, plan);
-            placed = [
-                elem.code_context
-                for elem in parsed.body
-                if isinstance(elem, uni.ContextAwareNode)
-            ];
-            if placed and all(ctx == CodeContext.NATIVE for ctx in placed) {
-                _coerce_native_module(parsed);
-                parsed.codespace_inferred = True;
-            }
-            parsed.gen.placement_mode = 'plan';
-        } elif codespace == 'client' {
+        if codespace == 'client' {
             _coerce_client_module(parsed);
             parsed.gen.placement_mode = 'declared';
         } elif codespace == 'native' {
@@ -586,9 +588,9 @@ impl JacProgram.parse_source(
             parsed.gen.placement_mode = 'declared';
         } elif infer_native and not had_error {
             import from jaclang.compiler.placement.placement_solver {
-                native_preference_open
+                native_placement_candidate
             }
-            (opened, closed_why) = native_preference_open(parsed, self);
+            (opened, closed_why) = native_placement_candidate(parsed, self);
             parsed.gen.native_undecided = opened;
             parsed.gen.native_closed_why = closed_why;
         }

@@ -61,8 +61,7 @@ glob _IFACE_MEMO: dict[str, tuple[list[str], list[str], PythonInterface]] = {},
          "project_facts",
          "workspace",
          "app_for_path",
-         "lint_settings",
-         "placement_plan"
+         "lint_settings"
      ),
      THIRD_PARTY_DIRS: tuple[str, ...] = ("/site-packages/", "/dist-packages/"),
      _TOTALS: list[HostCensus] = [],
@@ -416,8 +415,6 @@ obj KernelSnapshot(HostAsker) {
             learner.app_for_path(path);
         } elif method == "lint_settings" {
             learner.lint_settings(path);
-        } elif method == "placement_plan" {
-            learner.placement_plan(path);
         }
     }
 

@@ -1199,30 +1199,6 @@ obj KernelHost(HostServices) {
         return answer;
     }
 
-    def placement_plan(path: str) -> str {
-        self.census.count("placement_plan");
-        key = os.path.realpath(path);
-        if key in self.inputs.plans {
-            return self.inputs.plans[key];
-        }
-        with self.missing("placement_plan", key) as host {
-            answer = host.placement_plan(key);
-        }
-        self.inputs.plans[key] = answer;
-        return answer;
-    }
-
-    def record_placement_plan(path: str, plan: str) {
-        key = os.path.realpath(path);
-        self.inputs.plans[key] = plan;
-        if self.kernel_only("record_placement_plan") {
-            return;
-        }
-        with self.delegating("record_placement_plan") as host {
-            host.record_placement_plan(key, plan);
-        }
-    }
-
     def record_native_coverage(
         path: str, outcome: str, code: str = "", detail: str = ""
     ) {

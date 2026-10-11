@@ -8,10 +8,12 @@ import type from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.placement.placement_work { PlacementWork }
 import from jaclang.compiler.placement.placement {
     PLACEMENT_HOLD_EXEMPT_ROOTS,
+    PlacementSummary,
     get_module_summary,
     record_placement_evidence,
     scan_native_blockers,
-    summarize_module
+    summarize_module,
+    summary_store
 }
 import from jaclang.runtime.portability { supports }
 
@@ -209,21 +211,73 @@ def native_placement_candidate(
     return (True, '');
 }
 
-def native_preference_open(module: uni.Module, prog: JacProgram) -> tuple[bool, str] {
-    (candidate, why) = native_placement_candidate(module, prog);
-    if not candidate {
-        return (False, why);
+def dependency_summary(prog: JacProgram, path: str) -> (PlacementSummary | None) {
+    import from jaclang.compiler.driver.boundary_classify { hub_module_for_path }
+    key = os.path.abspath(path);
+    store = summary_store(prog);
+    if key in store {
+        return store[key];
     }
-    mod_path = module.loc.mod_path if module.loc is not None else '';
-    base_dir = os.path.dirname(os.path.abspath(mod_path)) or '.';
-    (blocker, deps) = scan_native_blockers(module, base_dir);
-    if blocker {
-        return (False, blocker);
+    mod = hub_module_for_path(key, prog);
+    if mod is None or mod.stub_only {
+        try {
+            mod = prog.load_dependency_module(key, need_tree=True);
+        } except Exception {
+            return store.get(key);
+        }
     }
-    if not _native_deps_ok(os.path.abspath(mod_path), deps) {
-        return (False, "import-closure (sv dep or cap)");
+    if mod is None or mod.stub_only or mod.loc is None or not mod.loc.mod_path {
+        return store.get(key);
     }
-    return (True, '');
+    return get_module_summary(mod, prog, with_refs=False);
+}
+
+def native_closure_blocker(
+    prog: JacProgram, root_path: str, deps: list[str]
+) -> tuple[str, bool] {
+    import from jaclang.compiler.frontend.codeinfo {
+        effective_native_closure_cap,
+        native_unit_compile_active
+    }
+    import from jaclang.compiler.native_scope { in_native_scope_path }
+    import from jaclang.compiler.placement.placement_facts { pinned_module_space }
+    cap = effective_native_closure_cap();
+    seen: set[str] = {os.path.abspath(root_path)};
+    queue: list[str] = [os.path.abspath(dep) for dep in deps];
+    while queue {
+        dep = queue.pop();
+        if dep in seen {
+            continue;
+        }
+        seen.add(dep);
+        if len(seen) > cap {
+            note_native_closure_cap(root_path, cap);
+            return (
+                f"its import closure exceeds the native closure cap ({cap} modules)",
+                False
+            );
+        }
+        name = os.path.basename(dep);
+        if in_native_scope_path(dep) and not native_unit_compile_active() {
+            return (f"'{name}' is a compiler frontend module", False);
+        }
+        if pinned_module_space(dep) == 'server' {
+            return (f"'{name}' is pinned to the server", True);
+        }
+        summary = dependency_summary(prog, dep);
+        if summary is None {
+            return (f"'{name}' has no placement facts", False);
+        }
+        if summary.native_blocker {
+            return (f"'{name}' stays in Python ({summary.native_blocker})", True);
+        }
+        for more in summary.jac_deps {
+            if os.path.abspath(more) not in seen {
+                queue.append(os.path.abspath(more));
+            }
+        }
+    }
+    return ('', False);
 }
 
 def _endpoint_veto_applies(module: uni.Module) -> bool {
@@ -574,7 +628,7 @@ def solve_module_placement(
         }
     }
 
-    if module.gen.placement_mode != 'plan' {
+    if module.gen.placement_mode != 'inferred' {
         stamp_count[0] += _seed_from_summary(module, prog);
     }
     pinned_idx: set[int] = set();
@@ -609,7 +663,7 @@ def solve_module_placement(
         inferable.append(stmt);
     }
     has_seeds = bool(seed_ref_ids);
-    if module.gen.placement_mode == 'plan' {
+    if module.gen.placement_mode == 'inferred' {
         client_tops = [];
         native_tops = [];
     }

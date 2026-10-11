@@ -150,11 +150,12 @@ test "the host runs a native module from its kernel record without analysing it"
     }
 }
 
-"""A module pinned or inferred native that cannot be lowered is placed on the
-server and compiled again. In a kernel session that happens inside the
-session, and the host learns of it from the unit's placement record and the
-session's notes, not by compiling the module."""
-test "a module that cannot be lowered is demoted inside the session" {
+"""A module pinned or inferred native that the backend cannot lower is placed
+on the server in place: the Python backend emits the tree that was typed for
+no codespace. In a kernel session that happens inside the session, and the
+host learns of it from the unit's placement record and the session's notes,
+not by compiling the module."""
+test "a module that cannot be lowered is placed on the server inside the session" {
     import json;
     with TemporaryDirectory() as td {
         base = Path(os.path.realpath(td));
@@ -163,7 +164,7 @@ test "a module that cannot be lowered is demoted inside the session" {
         );
         (base / 'models.jac').write_text(
             'def double(x: int) -> int {\n    return x * 2;\n}\n\n'
-                + 'with entry {\n    print(len([root-->]));\n}\n'
+                + 'with entry {\n    s = {1, "a"};\n    print(double(2), len(s));\n}\n'
         );
         entry_file = str(base / 'models.jac');
         with patch.dict(os.environ, SWITCHES) {
@@ -237,11 +238,11 @@ test "a default run lowers a bundled native import the way the host does" {
 }
 
 """The host can still fail after the kernel has lowered a module: the IR may
-not link, because a dependency turned out not to be a native unit. Where
-placement only inferred native, the module goes to the server like any other
-refusal. The host holds a plan that places it there and asks the kernel again,
-and the second session compiles the module for the server."""
-test "a module the host cannot link is demoted and compiled again for the server" {
+not link. Placement was settled before the module was lowered, and a
+dependency is placed before its importer is analyzed, so a link failure is a
+compiler defect. It surfaces as one; nothing compiles the module again for
+the server."""
+test "a module the host cannot link is an error, not a second compile" {
     import from jaclang.compiler.backends.native.link_plan { LinkPlanError }
     import from jaclang.compiler.driver.compiler { JacCompiler }
     with TemporaryDirectory() as td {
@@ -252,23 +253,22 @@ test "a module the host cannot link is demoted and compiled again for the server
         program = JacProgram();
         builder = program._get_compiler();
         refusal = LinkPlanError("helper.jac is not a native unit");
+        raised = False;
         with patch.dict(os.environ, SWITCHES) {
             with patch.object(
                 JacCompiler, "_load_native_from_cache", side_effect=refusal
             ) as link {
-                code = builder.get_bytecode(
-                    full_target=entry_file, target_program=program
-                );
+                try {
+                    builder.get_bytecode(
+                        full_target=entry_file, target_program=program
+                    );
+                } except LinkPlanError {
+                    raised = True;
+                }
             }
         }
-        assert link.call_count == 1 , (
-            "the module came back native after its server plan was held"
-        );
-        assert code is not None , "the demoted module has no server code";
-        held = active_host().placement_plan(entry_file);
-        assert held.endswith("||") , (
-            f"the host holds no plan placing the module on the server: {held!r}"
-        );
+        assert raised , "a link failure was absorbed instead of surfacing";
+        assert link.call_count == 1 , "the module was compiled again after it failed to link";
     }
 }
 

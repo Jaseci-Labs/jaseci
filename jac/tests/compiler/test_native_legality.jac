@@ -1,12 +1,13 @@
-"""Placement is one judgment, made after a module has been typed.
+"""Placement is one judgment, made after a module has been typed, and the
+module is analyzed once.
 
 A module with no declared codespace is typed with none assumed. What only one
 codespace has is recorded on the typed module as a requirement or a refusal,
-and the placement pass reads those to place each top-level element. If any
-element is placed off the server, the module is analyzed a second time under
-that plan, so each backend sees the trees its codespace expects. A refusal
-found only then, or only by the backend, sends the module to the server once.
-A backend crash is none of these: it is a compiler error."""
+and the placement pass reads those to place each top-level element. The tree
+it placed is the tree every backend reads: nothing types the module again. A
+refusal only the backend can see places the module on the server in place,
+before the Python backend runs. A backend crash is none of these: it is a
+compiler error."""
 
 import os;
 import tempfile;
@@ -122,6 +123,37 @@ glob PIN_FIXTURE_DIR = os.path.join(
          "    print(other(2));\n"
          "}\n"
      ),
+     ASYNC_SRC = (
+         "async def fetch(x: int) -> int {\n"
+         "    return x;\n"
+         "}\n\n"
+         "def double(n: int) -> int {\n"
+         "    return n * 2;\n"
+         "}\n\n"
+         "with entry {\n"
+         "    print(double(2));\n"
+         "}\n"
+     ),
+     PY_IMPORT_SRC = (
+         "import pickle;\n\n"
+         "def dump(n: int) -> int {\n"
+         "    return len(pickle.dumps(n));\n"
+         "}\n\n"
+         "def double(n: int) -> int {\n"
+         "    return n * 2;\n"
+         "}\n\n"
+         "with entry {\n"
+         "    print(double(2), dump(3));\n"
+         "}\n"
+     ),
+     ROOT_SRC = (
+         "def double(n: int) -> int {\n"
+         "    return n * 2;\n"
+         "}\n\n"
+         "with entry {\n"
+         "    print(double(2), len([root-->]));\n"
+         "}\n"
+     ),
      NATIVE_ONLY_SRC = (
          "def size(f: File) -> int {\n"
          "    s = \"x\";\n"
@@ -176,18 +208,18 @@ def placed_by_name(mod: uni.Module) -> dict[str, str] {
     return out;
 }
 
-test "an inferred native module is judged once, then typed again under its plan" {
+test "an inferred native module is judged and analyzed once" {
     (prog, mod, path, parses) = compile_native_default(CLEAN_SRC);
     assert not prog.errors_had , f"{[str(e) for e in prog.errors_had]}";
-    assert parses == 2 , f"one judgment and one analysis under the plan, got {parses}";
-    assert mod.gen.placement_mode == 'plan';
+    assert parses == 1 , f"placement needs no second analysis, got {parses}";
+    assert mod.gen.placement_mode == 'inferred';
     assert mod.decided_codespace == 'native' and mod.codespace_inferred;
     assert mod.gen.llvm_ir is not None;
 }
 
 test "placement is per element: what cannot be native stays in Python, the rest is native" {
     (prog, mod, path, parses) = compile_native_default(SEAM_SRC + REACHING_ENTRY);
-    assert parses == 2 , f"the plan is applied once, got {parses} analyses";
+    assert parses == 1 , f"the module is analyzed once, got {parses} analyses";
     assert not prog.errors_had , f"{[str(e) for e in prog.errors_had]}";
     placed = placed_by_name(mod);
     assert placed["helper"] == 'server' , placed;
@@ -205,7 +237,7 @@ test "placement is per element: what cannot be native stays in Python, the rest 
 
 test "a caller stays native only when its call can cross the boundary" {
     (prog, mod, path, parses) = compile_native_default(DRAG_SRC);
-    assert parses == 2 , f"the plan is applied once, got {parses} analyses";
+    assert parses == 1 , f"the module is analyzed once, got {parses} analyses";
     assert not prog.errors_had , f"{[str(e) for e in prog.errors_had]}";
     placed = placed_by_name(mod);
     assert placed["helper"] == 'server' , placed;
@@ -216,15 +248,17 @@ test "a caller stays native only when its call can cross the boundary" {
     assert placed["entry"] == 'server' , placed;
 }
 
-test "a refusal only the backend can see sends the module to the server once" {
+test "a refusal only the backend can see places the module on the server in place" {
     (prog, mod, path, parses) = compile_native_default(LATE_SRC);
     assert not prog.errors_had , f"{[str(e) for e in prog.errors_had]}";
-    assert parses == 3 , (
-        f"the judgment, the plan, and one fallback to the server, got {parses}"
+    assert parses == 1 , (
+        f"the backend's refusal is a restamp of the typed tree, not a second "
+        f"analysis, got {parses}"
     );
     assert mod.decided_codespace != 'native';
+    assert set(placed_by_name(mod).values()) == {'server'} , placed_by_name(mod);
     assert mod.gen.llvm_ir is None;
-    assert mod.gen.py_ast , "the Python backend emits the module after the fallback";
+    assert mod.gen.py_ast , "the Python backend emits the module it was handed";
 }
 
 test "a native library gap refuses the function that uses it, not the module" {
@@ -233,7 +267,7 @@ test "a native library gap refuses the function that uses it, not the module" {
         f"a parameter the native json lacks is a placement fact, not a type "
         f"error: {[str(e) for e in prog.errors_had]}"
     );
-    assert parses == 2 , f"the plan is applied once, got {parses} analyses";
+    assert parses == 1 , f"the module is analyzed once, got {parses} analyses";
     placed = placed_by_name(mod);
     assert placed["pretty"] == 'server' and placed["double"] == 'native' , placed;
     assert placed["entry"] == 'server' , placed;
@@ -247,12 +281,46 @@ test "a native library gap refuses the function that uses it, not the module" {
     );
 }
 
-test "a gap behind an import that native code shares sends the module to the server" {
+test "a gap behind an import that native code shares refuses only the code that uses it" {
     (prog, mod, path, parses) = compile_native_default(SHARED_GAP_SRC);
     assert not prog.errors_had , f"{[str(e) for e in prog.errors_had]}";
-    assert parses == 3 , (
-        f"the judgment, the plan, and one fallback to the server, got {parses}"
+    assert parses == 1 , f"the module is analyzed once, got {parses} analyses";
+    placed = placed_by_name(mod);
+    assert placed["pretty"] == 'server' and placed["plain"] == 'native' , (
+        f"the gap is on `pretty`'s call, so only `pretty` is refused: {placed}"
     );
+    assert mod.gen.llvm_ir is not None;
+}
+
+test "a construct local to one element refuses that element, not the module" {
+    (prog, mod, path, parses) = compile_native_default(ASYNC_SRC);
+    assert not prog.errors_had , f"{[str(e) for e in prog.errors_had]}";
+    assert parses == 1 , f"the module is analyzed once, got {parses} analyses";
+    placed = placed_by_name(mod);
+    assert placed["fetch"] == 'server' and placed["double"] == 'native' , (
+        f"an async function stays in Python, its sibling does not: {placed}"
+    );
+    assert mod.gen.llvm_ir is not None;
+}
+
+test "an import with no native form refuses only the code that uses it" {
+    (prog, mod, path, parses) = compile_native_default(PY_IMPORT_SRC);
+    assert not prog.errors_had , f"{[str(e) for e in prog.errors_had]}";
+    placed = placed_by_name(mod);
+    assert placed["dump"] == 'server' and placed["double"] == 'native' , placed;
+    imports = [
+        s
+        for s in mod.body
+        if isinstance(s, uni.Import)
+    ];
+    assert imports[0].code_context.value == 'server' , (
+        "the import stays with the Python code that uses it"
+    );
+}
+
+test "access to the persistent graph still keeps the whole module in Python" {
+    (prog, mod, path, parses) = compile_native_default(ROOT_SRC);
+    assert not prog.errors_had , f"{[str(e) for e in prog.errors_had]}";
     assert set(placed_by_name(mod).values()) == {'server'} , placed_by_name(mod);
     assert mod.gen.llvm_ir is None;
 }
@@ -260,7 +328,7 @@ test "a gap behind an import that native code shares sends the module to the ser
 test "what only matters natively is a note on the typed module, never a type error" {
     (prog, mod, path, parses) = compile_native_default(ERASED_SRC);
     assert not prog.errors_had , f"{[str(e) for e in prog.errors_had]}";
-    assert parses == 1 , "nothing was placed off the server, so there is no plan";
+    assert parses == 1 , f"the module is analyzed once, got {parses} analyses";
     assert mod.decided_codespace != 'native';
     assert "E1124" in [note.code for note in capability_notes_of(prog, path, "native")];
 }

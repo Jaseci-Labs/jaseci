@@ -1164,7 +1164,6 @@ obj CodeGenTarget {
         placement_mode: str = "",
         native_undecided: bool = False,
         native_closed_why: str = "",
-        placement_plan: str = "",
         _interop_manifest: (InteropManifest | None) = None,
         interop_py_funcs: dict[(str, any)] = {},
         _interop_callbacks: list[any] = [],

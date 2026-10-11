@@ -217,82 +217,17 @@ def run_analysis_phases(
     return task;
 }
 
-def keep_hub_order(program: JacProgram, order: list[str]) {
-    hub = program.mod.hub;
-    held = [
-        key
-        for key in order
-        if key in hub
-    ];
-    if list(hub.keys())[:len(held)] == held {
-        return;
-    }
-    entries = dict(hub);
-    hub.clear();
-    for key in held {
-        hub[key] = entries.pop(key);
-    }
-    hub.update(entries);
-}
-
-def carry_comptime_deps(judged: (uni.Module | None), placed: (uni.Module | None)) {
-    if judged is None or placed is None or judged is placed {
-        return;
-    }
-    for dep in judged.ct_file_deps {
-        if dep not in placed.ct_file_deps {
-            placed.ct_file_deps.append(dep);
-        }
-    }
-    for dep in judged.ct_body_deps {
-        if dep not in placed.ct_body_deps {
-            placed.ct_body_deps.append(dep);
-        }
-    }
-    for row in judged.ct_def_deps {
-        if row not in placed.ct_def_deps {
-            placed.ct_def_deps.append(row);
-        }
-    }
-}
-
 def analyze_module(
     program: JacProgram, path: str, options: CompileOptions, source: str | None = None
 ) -> ModuleAnalysis {
-    import from jaclang.compiler.placement.placement_facts { server_plan }
+    import from jaclang.compiler.placement.placement_facts { settle_server }
     errors_mark = len(program.errors_had);
-    warnings_mark = len(program.warnings_had);
     task = run_analysis_phases(program, path, options, source);
-    plan = task.module.gen.placement_plan
-        if task.module is not None and not task.parse_failed
-        else "";
-    failed = len(program.errors_had) > errors_mark;
-    if failed and task.placement_only and not cancelled(options) {
+    if task.placement_only
+        and len(program.errors_had) > errors_mark
+        and not cancelled(options) {
         del program.errors_had[errors_mark:];
-        plan = server_plan(task.module);
-    } elif not plan or failed or cancelled(options) {
-        return task;
-    }
-    host = active_host();
-    host.record_placement_plan(path, plan);
-    judged = task.module;
-    order = list(program.mod.hub.keys());
-    try {
-        del program.warnings_had[warnings_mark:];
-        program.invalidate_module(os.path.realpath(path));
-        task = run_analysis_phases(program, path, options, source);
-    } finally {
-        host.record_placement_plan(path, "");
-    }
-    keep_hub_order(program, order);
-    carry_comptime_deps(judged, task.module);
-    if task.module is not None
-        and not task.parse_failed
-        and not task.module.gen.placement_mode {
-        raise RuntimeError(
-            f"the placement plan for {path} was not applied to its second "
-            f"analysis ({plan})"
-        );
+        settle_server(task.module);
     }
     return task;
 }

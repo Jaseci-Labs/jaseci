@@ -13,7 +13,7 @@ import shutil;
 import tempfile;
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.driver.compile_options { CompileOptions }
-import from jaclang.compiler.frontend.unitree { AstAccessNode }
+import from jaclang.compiler.frontend.unitree { Ability, AstAccessNode }
 
 def _proj(files: dict[str, any], pins: str = "") -> str {
     d = tempfile.mkdtemp(prefix="jacplace_");
@@ -242,7 +242,6 @@ test "unpinned rootless archetypes pull into client closures" {
 # so it no longer blocks native placement; inline ::py:: remains the
 # statically-known native-incompatible construct.
 test "solver does not propose native for capability-violating modules" {
-    import from jaclang.compiler.passes.placement_pass { build_native_legality }
     d = _proj(
         {
             "pymod.jac": (
@@ -255,13 +254,32 @@ test "solver does not propose native for capability-violating modules" {
             )
         }
     );
+    import from jaclang.compiler.frontend.codeinfo {
+        get_effective_default_codespace_override,
+        set_effective_default_codespace
+    }
+    previous = get_effective_default_codespace_override();
     try {
         prog = JacProgram();
-        mod = prog.compile(os.path.join(d, "pymod.jac"), no_cgen=True);
+        path = os.path.join(d, "pymod.jac");
+        mod = prog.compile(
+            path,
+            options=CompileOptions(default_codespace="native", skip_native_engine=True)
+        );
         assert mod.decided_codespace != 'native' , "capability-violating module must not be placed native";
-        legality = build_native_legality(mod, prog);
-        assert legality.blockers , "the refusal must be a recorded legality fact";
+        f_elem = [
+            s
+            for s in mod.body
+            if isinstance(s, Ability)
+        ][0];
+        assert f_elem.code_context.value == 'server';
+        refused = prog.analysis.placement_refusals[os.path.realpath(path)]['native'];
+        assert id(f_elem) in refused , (
+            "the inline Python refuses the function that holds it, as a recorded "
+            "legality fact"
+        );
     } finally {
+        set_effective_default_codespace(previous);
         shutil.rmtree(d, ignore_errors=True);
     }
 }

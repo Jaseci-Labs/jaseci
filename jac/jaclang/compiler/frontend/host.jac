@@ -286,11 +286,6 @@ obj HostServices {
         return False;
     }
 
-    def placement_plan(path: str) -> str {
-        return "";
-    }
-
-    def record_placement_plan(path: str, plan: str) {}
     def record_native_coverage(
         path: str, outcome: str, code: str = "", detail: str = ""
     ) {}
