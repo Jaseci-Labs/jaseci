@@ -887,9 +887,19 @@ def _native_variant_path(base_no_ext: str) -> (str | None) {
     if os.path.exists(_archv) {
         return _archv;
     }
-    _osv = os.path.join(f"{base_no_ext}.{native_target_os()}.jac");
+    _os = native_target_os();
+    _osv = os.path.join(f"{base_no_ext}.{_os}.jac");
     if os.path.exists(_osv) {
         return _osv;
+    }
+    if _os == "windows" {
+        # The Windows floor presents the libc surface musl gives a Linux
+        # executable, so a module with no Windows variant of its own binds
+        # the Linux one.
+        _floorv = f"{base_no_ext}.linux.jac";
+        if os.path.exists(_floorv) {
+            return _floorv;
+        }
     }
     _plain = f"{base_no_ext}.jac";
     if os.path.exists(_plain) {

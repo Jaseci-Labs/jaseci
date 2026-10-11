@@ -1,6 +1,10 @@
 import from jaclang.jac0core.cache_paths { atomic_write }
 import struct;
 import os;
+import from jaclang.compiler.backends.native.win_floor {
+    win_import_dll,
+    win_import_name
+}
 import from jaclang.compiler.backends.native.linker_common {
     _align,
     _append_to_blob,
@@ -38,7 +42,6 @@ glob IMAGE_FILE_DLL = 0x2000,
      IMAGE_DLLCHAR_DYNAMIC_BASE = 0x40,
      IMAGE_DLLCHAR_NX_COMPAT = 0x100;
 
-glob WIN_ALIAS = {"malloc_usable_size": "_msize", "snprintf": "_snprintf"};
 
 
 def _coff_name(raw: bytes, field_off: int, strtab_off: int) -> str {
@@ -139,7 +142,6 @@ impl PeLinker.parse_object -> bool {
 
 
 impl PeLinker.build_executable -> bytes {
-    default_dll = self.needed_libs[0] if self.needed_libs else "msvcrt.dll";
 
     code_secs: list[int] = [];
     rodata_secs: list[int] = [];
@@ -238,13 +240,7 @@ impl PeLinker.build_executable -> bytes {
     dll_of: dict[str, str] = {};
     dlls: list[str] = [];
     for name in import_syms {
-        raw_dll = self.symbol_lib_map.get(name, default_dll);
-
-        if ".dll" in raw_dll.lower() {
-            d = os.path.basename(raw_dll.replace("\\", "/"));
-        } else {
-            d = default_dll;
-        }
+        d = win_import_dll(name, self.symbol_lib_map.get(name));
         dll_of[name] = d;
         if d not in dlls {
             dlls.append(d);
@@ -277,7 +273,7 @@ impl PeLinker.build_executable -> bytes {
     name_rva: dict[str, int] = {};
     for d in dlls {
         for name in by_dll[d] {
-            imp = WIN_ALIAS.get(name, name);
+            imp = win_import_name(name);
             cur = _align(cur, 2);
             name_rva[name] = cur;
             cur += 2 + len(imp.encode()) + 1;
@@ -319,7 +315,7 @@ impl PeLinker.build_executable -> bytes {
 
     for d in dlls {
         for name in by_dll[d] {
-            impb = WIN_ALIAS.get(name, name).encode();
+            impb = win_import_name(name).encode();
             o = name_rva[name];
             struct.pack_into("<H", idata, o, 0);
             idata[o + 2:o + 2 + len(impb)] = impb;
@@ -599,7 +595,6 @@ def _pe_build_dllmain(num_inits: int) -> tuple[bytes, list[int]] {
 
 impl PeLinker.build_shared_object -> bytes {
     image_base = DLL_IMAGE_BASE;
-    default_dll = self.needed_libs[0] if self.needed_libs else "msvcrt.dll";
 
     code_secs: list[int] = [];
     rodata_secs: list[int] = [];
@@ -723,12 +718,7 @@ impl PeLinker.build_shared_object -> bytes {
     dll_of: dict[str, str] = {};
     dlls: list[str] = [];
     for name in extern_funcs {
-        raw_dll = self.symbol_lib_map.get(name, default_dll);
-        if ".dll" in raw_dll.lower() {
-            d = os.path.basename(raw_dll.replace("\\", "/"));
-        } else {
-            d = default_dll;
-        }
+        d = win_import_dll(name, self.symbol_lib_map.get(name));
         dll_of[name] = d;
         if d not in dlls {
             dlls.append(d);
@@ -760,7 +750,7 @@ impl PeLinker.build_shared_object -> bytes {
     name_rva: dict[str, int] = {};
     for d in dlls {
         for name in by_dll[d] {
-            imp = WIN_ALIAS.get(name, name);
+            imp = win_import_name(name);
             cur = _align(cur, 2);
             name_rva[name] = cur;
             cur += 2 + len(imp.encode()) + 1;
@@ -799,7 +789,7 @@ impl PeLinker.build_shared_object -> bytes {
     }
     for d in dlls {
         for name in by_dll[d] {
-            impb = WIN_ALIAS.get(name, name).encode();
+            impb = win_import_name(name).encode();
             no = name_rva[name];
             struct.pack_into("<H", idata, no, 0);
             idata[no + 2:no + 2 + len(impb)] = impb;
@@ -1177,7 +1167,7 @@ def _pe_write_shdr(
 impl PeLinker.link(
     objects: list[bytes],
     output_path: str,
-    needed_libs: list[str] = ["msvcrt.dll"],
+    needed_libs: list[str] = ["ucrtbase.dll"],
     symbol_lib_map: dict[str, str] = {},
     shared: bool = False,
     export_symbols: list[str] = [],

@@ -1037,7 +1037,8 @@ def link_artifact(
     }
     needed_libs: list[str] = [];
     if is_windows {
-        needed_libs = ["msvcrt.dll"];
+        import from jaclang.compiler.backends.native.win_floor { WIN_CRT_DLL }
+        needed_libs = [WIN_CRT_DLL];
     } elif is_macos {
         needed_libs = ["/usr/lib/libSystem.B.dylib"];
     }

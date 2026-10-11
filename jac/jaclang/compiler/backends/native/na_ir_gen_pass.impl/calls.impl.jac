@@ -2255,9 +2255,6 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
                     self.llvm_module, stdin_type, name=stdin_name
                 );
                 stdin_global.linkage = "external";
-                if "windows" in str(self.llvm_module.triple or "") {
-                    stdin_global.storage_class = "dllimport";
-                }
             }
             stdin_var = self.llvm_module.globals[stdin_name];
             assert isinstance(stdin_var, ir.GlobalVariable);
