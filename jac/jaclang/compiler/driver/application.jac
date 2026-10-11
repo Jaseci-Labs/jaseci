@@ -61,6 +61,40 @@ def _inventory(
     return result;
 }
 
+def _client_inventory(
+    `root: str,
+    dirs: list[str],
+    files: list[str],
+    previous: (dict[str, tuple[int, int, str]] | None) = None
+) -> dict[str, tuple[int, int, str]] {
+    previous = previous or {};
+    result: dict[str, tuple[int, int, str]] = {};
+    def take(path: str) {
+        if os.path.isfile(path) {
+            result[path] = _stamp(path, previous.get(path));
+        }
+    }
+    for name in sorted(os.listdir(`root)) {
+        take(os.path.join(`root, name));
+    }
+    for directory in dirs {
+        for (current, subdirs, names) in os.walk(directory) {
+            subdirs[:] = sorted(
+                d
+                for d in subdirs
+                if d not in _SKIP and not d.startswith('.')
+            );
+            for name in sorted(names) {
+                take(os.path.join(current, name));
+            }
+        }
+    }
+    for path in files {
+        take(path);
+    }
+    return result;
+}
+
 def _digests(inventory: dict[str, tuple[int, int, str]]) -> dict[str, str] {
     return {path: stamp[2] for (path, stamp) in inventory.items()};
 }
@@ -741,9 +775,13 @@ def _prepare_revision(
         }
     } except (OSError, ValueError, EOFError, TypeError) {}
     stamps = candidate if isinstance(candidate, dict) else {};
-    inventory = _inventory(
-        inventory_root, inputs=True, previous=stamps.get('inventory')
-    );
+    client_dirs: list[str] = list(stamps.get('client_dirs') or []);
+    client_files: list[str] = list(stamps.get('client_files') or []);
+    inventory = _client_inventory(
+        `root, client_dirs, client_files, stamps.get('inventory')
+    )
+        if client
+        else _inventory(inventory_root, inputs=True, previous=stamps.get('inventory'));
     key = (
         _FORMAT,
         _identity(),
@@ -979,7 +1017,15 @@ def _prepare_revision(
             'Sources changed during preparation; retry with the new revision.'
         );
     }
-    current = _digests(_inventory(inventory_root, inputs=True, previous=inventory));
+    if revision.client_compiler is not None {
+        reader = revision.client_compiler.jac_client_compiler;
+        client_dirs = reader.input_dirs();
+        client_files = sorted(reader.input_files);
+    }
+    settled = _client_inventory(`root, client_dirs, client_files, inventory)
+        if client
+        else _inventory(inventory_root, inputs=True, previous=inventory);
+    current = _digests(settled);
     if (not client and current != _digests(inventory))
         or any(
             current.get(path) != digest
@@ -988,6 +1034,10 @@ def _prepare_revision(
         raise RuntimeError(
             'Sources changed during preparation; retry with the new revision.'
         );
+    }
+    if client {
+        inventory = settled;
+        key = (key[0], key[1], current) + tuple(key[3:]);
     }
     _write(
         cache,
@@ -1007,6 +1057,8 @@ def _prepare_revision(
             sections=sections,
             outputs=outputs,
             inventory=inventory,
+            client_dirs=client_dirs,
+            client_files=client_files,
             dependencies=inputs
         )
     );
