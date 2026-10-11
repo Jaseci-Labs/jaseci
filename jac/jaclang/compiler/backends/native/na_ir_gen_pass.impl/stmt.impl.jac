@@ -3412,6 +3412,27 @@ impl NaIRGenPass._codegen_for(nd: uni.InForStmt) -> None {
                 helpers = self.dict_helpers.get(items_dict_key)
                     if items_dict_key is not None
                     else None;
+                dict_struct = self.dict_types.get(items_dict_key)
+                    if items_dict_key is not None
+                    else None;
+                if collection_val is not None
+                    and helpers is not None
+                    and (
+                        dict_struct is None
+                        or collection_val.type != dict_struct.as_pointer()
+                    ) {
+                    self.emit(
+                        E5092,
+                        node_override=items_source,
+                        kind="dict iteration",
+                        name="items() of a value that is not a native dict",
+                        help_text="The value is typed as a dict only by narrowing a "
+                        "dynamically typed value, and it is held boxed, so native "
+                        "code cannot iterate it as a native dict. Give it a "
+                        "declared dict type, or keep this code in Python."
+                    );
+                    return;
+                }
                 if collection_val is not None and helpers is not None {
                     self._codegen_for_indexed(
                         nd,
