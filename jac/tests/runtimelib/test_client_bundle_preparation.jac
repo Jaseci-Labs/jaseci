@@ -106,7 +106,7 @@ test "files a web app writes at runtime do not invalidate its prepared record" {
         path = base / 'main.jac';
         path.write_text(
             'import from "@jac/runtime" { renderJsxTree, }\n\n'
-            'def:pub app -> JsxElement {\n    <div class="root">hello</div>\n}\n'
+            'def:pub app(children: any) -> JsxElement {\n    <div class="root">{children}</div>\n}\n'
         );
         asset = base / 'assets' / 'brand.css';
         asset.parent.mkdir();
