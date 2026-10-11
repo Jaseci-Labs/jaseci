@@ -54,11 +54,13 @@ obj NativeLegality {
         reached: dict[int, int] = {},
         late: dict[str, list[NativeRefusal]] = {},
         requires: dict[int, NativeRefusal] = {},
-        module_requires: list[NativeRefusal] = [];
+        module_requires: list[NativeRefusal] = [],
+        preferences: dict[int, NativeRefusal] = {};
 
     def refuse_unit(owner: UniNode, refusal: NativeRefusal) -> None;
     def refuse_module(refusal: NativeRefusal) -> None;
     def refuse_site(mod: Module, refusal: NativeRefusal) -> None;
+    def prefer_against(mod: Module, refusal: NativeRefusal) -> None;
     def refused_elements(mod: Module) -> set[int];
     def unit_refusals(owner: UniNode) -> list[NativeRefusal];
     def unit_refused(owner: UniNode) -> bool;
@@ -156,6 +158,13 @@ impl NativeLegality.refuse_site(mod: Module, refusal: NativeRefusal) -> None {
     self.tops[id(top)] = top;
     if id(top) not in self.elements {
         self.elements[id(top)] = refusal;
+    }
+}
+
+impl NativeLegality.prefer_against(mod: Module, refusal: NativeRefusal) -> None {
+    top = top_element_of(mod, refusal.site) if refusal.site is not None else None;
+    if top is not None and id(top) not in self.preferences {
+        self.preferences[id(top)] = refusal;
     }
 }
 
@@ -406,7 +415,7 @@ impl build_native_legality(
         }
         for (site, why) in scan.sites {
             refusal = NativeRefusal(kind="element", name=why, site=site);
-            legality.refuse_site(mod, refusal);
+            legality.prefer_against(mod, refusal);
             top = top_element_of(mod, site);
             if isinstance(top, Import) and id(top) not in refused_imports {
                 refused_imports[id(top)] = refusal;
@@ -435,7 +444,7 @@ impl build_native_legality(
                 help="The compiler cannot judge what this import reaches, so "
                 "native code does not use it."
             );
-            legality.refuse_site(mod, refusal);
+            legality.prefer_against(mod, refusal);
             refused_imports[id(top)] = refusal;
         }
         for note in capability_notes_of(judging, mod_path, TARGET_NATIVE) {
@@ -518,12 +527,7 @@ impl build_native_legality(
                     f"Python: {cause.name}."
                         + (f" A native call cannot reach it: {why}." if why else "")
                 );
-                use_owner = native_capability_demotion_owner(nm);
-                if use_owner is None {
-                    legality.refuse_site(mod, uses);
-                } else {
-                    legality.refuse_unit(use_owner, uses);
-                }
+                legality.prefer_against(mod, uses);
             }
             if judging is not None {
                 for gap in binding_gaps(judging, nm, base_dir) {
@@ -985,6 +989,7 @@ impl PlacementPass._run_undecided(ir_in: Module) -> Module {
     native_refused = legality.refused_elements(ir_in);
     client_refused = client_refused_elements(ir_in);
     inferred_refused: set[int] = set(native_refused);
+    inferred_refused.update(legality.preferences.keys());
     for elem in tentative {
         owner = top_element_of(ir_in, elem);
         if legality.blockers or (owner is not None and id(owner) in inferred_refused) {
@@ -1093,7 +1098,11 @@ impl PlacementPass._run_undecided(ir_in: Module) -> Module {
                     else (
                         next(iter(legality.elements.values()))
                             if legality.elements
-                            else None
+                            else (
+                                next(iter(legality.preferences.values()))
+                                    if legality.preferences
+                                    else None
+                            )
                     )
             );
         active_host().record_native_coverage(
