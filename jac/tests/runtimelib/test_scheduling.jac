@@ -245,9 +245,14 @@ test "scheduler executes walkers and functions correctly" {
     }
     sched.register("bad", bad_fn, ScheduleSpec(interval=0.2), False);
 
-    sched.start();
-    time.sleep(1.5);
-    sched.stop();
+    import io;
+    import from contextlib { redirect_stdout }
+    printed = io.StringIO();
+    with redirect_stdout(printed) {
+        sched.start();
+        time.sleep(1.5);
+        sched.stop();
+    }
 
     # Date tasks fire exactly once
     assert module.execution_log.count("date-walker") == 1 , "Date walker should fire once";
@@ -258,4 +263,7 @@ test "scheduler executes walkers and functions correctly" {
     fn_count = module.execution_log.count("interval-function");
     assert walker_count >= 2 , f"Expected >=2 interval-walker runs, got {walker_count}";
     assert fn_count >= 2 , f"Expected >=2 interval-function runs, got {fn_count}";
+    assert "interval-walker-report" not in printed.getvalue() , (
+        "a scheduled run printed its report to stdout, the server log"
+    );
 }

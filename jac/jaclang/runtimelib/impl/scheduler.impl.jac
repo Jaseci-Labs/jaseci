@@ -215,6 +215,10 @@ impl Scheduler._cron_field_matches(
 }
 
 impl Scheduler._execute(task: ScheduledTask) -> None {
+    import from jaclang { JacRuntimeInterface as Jac }
+    import from jaclang.runtimelib.context { CallState }
+    ctx = Jac.get_context();
+    token = ctx.call_state.set(CallState());
     try {
         if task.spec.trigger == ScheduleTrigger.DYNAMIC {
             if self.dynamic_handler is None {
@@ -226,7 +230,6 @@ impl Scheduler._execute(task: ScheduledTask) -> None {
             return;
         }
         if task.is_walker {
-            import from jaclang { JacRuntimeInterface as Jac }
             walker_instance = task.target();
             Jac.spawn(walker_instance, Jac.root());
         } else {
@@ -234,5 +237,7 @@ impl Scheduler._execute(task: ScheduledTask) -> None {
         }
     } except Exception as e {
         logger.error(f"Error executing task '{task.name}': {e}");
+    } finally {
+        ctx.call_state.reset(token);
     }
 }
