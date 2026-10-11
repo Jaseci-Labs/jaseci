@@ -315,6 +315,23 @@ def _is_serialization_conflict(e: Exception) -> bool {
 }
 
 
+def _is_lock_timeout(e: Exception) -> bool {
+    seen = 0;
+    cur: (BaseException | None) = e;
+    while cur is not None and seen < 8 {
+        c: BaseException = cur;
+        for arg in getattr(c, 'args', ()) {
+            if isinstance(arg, dict) and arg.get('C') == '55P03' {
+                return True;
+            }
+        }
+        cur = c.__cause__ or c.__context__;
+        seen += 1;
+    }
+    return False;
+}
+
+
 impl RowLedger.postinit -> None {
     self._committed = {};
     self._upserted = {};
@@ -760,7 +777,7 @@ impl Session._ensure_txn -> None {
         self._reclaim_dead_txn();
         wanted = self._txn_isolation();
         if not self._store.in_txn() {
-            self._store.begin(wanted);
+            self._begin_txn(wanted);
         } elif wanted is TxnIsolation.SERIALIZABLE {
             self._begin_writable();
         }
@@ -984,6 +1001,12 @@ impl Session._flush_locked(full: bool) -> None {
         } except WriteConflict as wc {
             self._last_conflict = wc.anchor_id;
             raise;
+        } except Exception as e {
+            if self._queued or not _is_lock_timeout(e) {
+                raise;
+            }
+            self._last_conflict = rows[0].id;
+            raise WriteConflict(anchor_id=rows[0].id) from e;
         }
         for (row, u) in zip(rows, unflushed) {
             self._rows.upserted(row.id, RowState(hash=u.hash, version=row.version));
@@ -1183,10 +1206,22 @@ impl Session._begin_writable -> None {
             }
             self._commit_txn();
             self._drop_snapshot_reads();
-            self._store.begin(TxnIsolation.SERIALIZABLE);
+            self._begin_txn(TxnIsolation.SERIALIZABLE);
         } elif not self._store.in_txn() {
-            self._store.begin(TxnIsolation.SERIALIZABLE);
+            self._begin_txn(TxnIsolation.SERIALIZABLE);
         }
+    }
+}
+
+
+impl Session._begin_txn(isolation: TxnIsolation) -> None {
+    backing = self._store;
+    if backing is None {
+        return;
+    }
+    backing.begin(isolation);
+    if not self._queued and isolation is TxnIsolation.SERIALIZABLE {
+        backing.lock_wait(FIRST_LOCK_WAIT);
     }
 }
 
@@ -1230,21 +1265,23 @@ impl Session.wait_turn -> None {
 }
 
 
-glob _SESSION_POOLS: dict[str, any] = {};
+glob _SESSION_POOL: list[any] = [];
 
 
-def _session_pool(name: str) -> any {
-    if name not in _SESSION_POOLS {
+def _session_pool -> any {
+    if not _SESSION_POOL {
         import from concurrent.futures { ThreadPoolExecutor }
-        _SESSION_POOLS[name] = ThreadPoolExecutor(
-            max_workers=SESSION_THREADS, thread_name_prefix=f"jac-session-{name}"
+        _SESSION_POOL.append(
+            ThreadPoolExecutor(
+                max_workers=SESSION_THREADS, thread_name_prefix="jac-session-io"
+            )
         );
     }
-    return _SESSION_POOLS[name];
+    return _SESSION_POOL[0];
 }
 
 
-async def _off_loop(work: Callable, pool: str) -> any {
+async def _off_loop(work: Callable) -> any {
     import asyncio;
     import contextvars;
     context = contextvars.copy_context();
@@ -1252,7 +1289,7 @@ async def _off_loop(work: Callable, pool: str) -> any {
         return context.run(work);
     }
     return await asyncio.get_running_loop().run_in_executor(
-        _session_pool(pool), in_context
+        _session_pool(), in_context
     );
 }
 
@@ -1261,15 +1298,7 @@ impl Session.acommit(anchor: (Anchor | None) = None) -> None {
     def settle {
         self.commit(anchor);
     }
-    await _off_loop(settle, "turn" if self._queued else "io");
-}
-
-
-impl Session.aget(id: UUID) -> (Anchor | None) {
-    def fetch -> (Anchor | None) {
-        return self.get(id);
-    }
-    return await _off_loop(fetch, "turn" if self._queued else "io");
+    await _off_loop(settle);
 }
 
 

@@ -1563,3 +1563,12 @@ impl PgStore.close -> None {
     _park_conn(self.conninfo, main_conn, was_txn, False);
     _park_conn(self.conninfo, side_conn, False, listened);
 }
+
+
+impl PgStore.lock_wait(timeout: str) -> None {
+    with self._lock {
+        if self._in_txn {
+            self._run(f"SET LOCAL lock_timeout = '{timeout}'", {});
+        }
+    }
+}
