@@ -148,7 +148,8 @@ import from jaclang.compiler.backends.native.na_constants {
     RC_CYCLE_PACE,
     RC_CYCLE_THRESHOLD,
     RC_UNTRACED_BIT,
-    UNBOUND_CAUGHT
+    UNBOUND_CAUGHT,
+    stdlib_intercepted
 }
 
 glob GEN_PENDING_FLAG_OFF: int = 8,

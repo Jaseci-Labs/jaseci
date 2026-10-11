@@ -1303,12 +1303,8 @@ impl NaIRGenPass._native_module_call_target(
 impl NaIRGenPass._stdlib_intercept_covers(module_name: str, func_name: str) -> bool {
     """Whether `module_name.func_name` lowers through a compiler intercept for an
     imported stdlib module (`os`, `random`, `struct`).""";
-    if module_name not in self._native_stdlib_modules {
-        return False;
-    }
-    return (module_name == "os" and func_name in NATIVE_OS_FUNCS)
-        or (module_name == "random" and func_name in NATIVE_RANDOM_FUNCS)
-        or (module_name == "struct" and func_name in NATIVE_STRUCT_FUNCS);
+    return module_name in self._native_stdlib_modules
+        and stdlib_intercepted(module_name, func_name);
 }
 
 impl NaIRGenPass._emit_stdlib_intercept(

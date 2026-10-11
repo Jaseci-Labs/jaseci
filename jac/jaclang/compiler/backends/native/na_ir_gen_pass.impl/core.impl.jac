@@ -1893,7 +1893,8 @@ impl NaIRGenPass._check_native_import_names(
     NULL in its place and the binary crashed wherever that value was read.
     The module's own scope is the whole answer (its globals, functions,
     archetypes, enums and the names it imports); a module that absorbs
-    another (`include`, `*`) is left to the checker.
+    another (`include`, `*`) is left to the checker, and a stdlib function
+    the compiler intercepts (`os.getpid`) needs no definition.
     """;
     import os;
     import from jaclang.compiler.types.type_utils { lookup_symtab }
@@ -1906,7 +1907,11 @@ impl NaIRGenPass._check_native_import_names(
     for (item, path, mod_name) in self._native_import_items {
         name = item.name.value if item.name else None;
         src = by_path.get(path);
-        if name is None or name == "*" or src is None or not path.endswith(".jac") {
+        if name is None
+            or name == "*"
+            or src is None
+            or not path.endswith(".jac")
+            or stdlib_intercepted(mod_name, name) {
             continue;
         }
         if any(
