@@ -300,6 +300,11 @@ impl EsastGenPass._convert_assignment_target(
     target: uni.UniNode
 ) -> tuple[(es.Pattern | es.Expression), (es.Expression | None), (str | None)] {
     if isinstance(target, uni.Name) {
+        link = self.loop_links.of_name(target);
+        if link is not None and not self._pass_link_native(link) {
+            linked = self._pass_link_ref(link, target);
+            return (linked, linked, None);
+        }
         identifier = self.sync_loc(
             es.Identifier(name=target.sym_name), jac_node=target
         );

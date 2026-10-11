@@ -1869,30 +1869,6 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
          " exports in its jac.toml ({exports}). Import one of those modules, or"
          " ask the package to export this one."
      ),
-     E2097 = _err(
-         "E2097",
-         Category.SEMANTIC,
-         "Closure captures '{name}', which the enclosing loop reassigns: every closure the loop creates shares that one binding and will see its final value",
-         help="'{name}' belongs to the scope around the loop, not to one iteration,"
-         " so the loop assigns the same binding each time round. Pass the value"
-         " through a parameter, which is bound per call: declare"
-         " `def handler_for({name}: T) -> Callable[[], None] {{ return lambda {{ ... }}; }}`"
-         " outside the loop and use `handler_for({name})` inside it. A type"
-         " annotation on the assignment does not change which scope owns the binding."
-     ),
-     W2084 = _warn(
-         "W2084",
-         Category.SEMANTIC,
-         "Closure captures '{name}', which the enclosing loop reassigns: every closure the loop creates shares that one binding and will see its final value if the callee or container it is handed to keeps it past the iteration",
-         help="The closure is handed to a call the compiler cannot see into, or stored"
-         " where it may or may not outlive the iteration. If it runs before the"
-         " iteration ends, each closure sees its own iteration's value; if it is"
-         " kept (stored, scheduled, registered as a handler), every one reads what"
-         " the last iteration assigned to '{name}'."
-         " Pass the value through a parameter, which is bound per call: declare"
-         " `def handler_for({name}: T) -> Callable[[], None] {{ return lambda {{ ... }}; }}`"
-         " outside the loop and pass `handler_for({name})`."
-     ),
      W3001 = _warn(
          "W3001",
          Category.LINT,
@@ -2362,6 +2338,12 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
          Category.CODEGEN,
          "Constructing '{cls}' would run '{owner}.postinit' on a Python shadow the native object cannot see",
          help="A native class over a Python-side base owns two halves: its own slots live in the native struct, the base's live on a Python shadow instance the bridge keeps beside it. Construction runs the base's `__post_init__` on that shadow, where the subclass's native slots do not exist and its method overrides are not on the shadow's class -- so a store the base initializer makes is invisible natively, and a call it dispatches reaches the base's body rather than the override. The object comes out with its declared defaults and nothing says so. Give '{cls}' a `postinit` of its own -- it suppresses the base's and can chain into it with `super.postinit()`, which does bridge -- or bring the base into the native unit so the whole chain lowers."
+     ),
+     E5113 = _err(
+         "E5113",
+         Category.CODEGEN,
+         "'{cls}.{meth}' overrides '{base}.{meth}', but '{base}.{caller}' calls '{base}.{meth}' for a '{cls}' too: '{base}' is compiled in '{module}' without dispatch",
+         help="Which classes carry a vtable is decided per module, and '{base}' is nobody's parent in '{module}', so it was lowered flat: '{base}.{caller}' binds its `self.{meth}()` straight to '{base}.{meth}'. '{cls}' inherits '{caller}', so calling it on a '{cls}' runs the base's '{meth}', not this override -- the wrong body runs and nothing else says so. Declare '{base}.{meth}' abstract (`def {meth}(...) abst;`) so '{base}' reserves dispatch for implementations in other modules, override '{caller}' on '{cls}' as well, or keep '{cls}' in the module that declares '{base}'."
      ),
      E5112 = _err(
          "E5112",

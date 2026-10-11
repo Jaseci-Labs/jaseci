@@ -347,48 +347,20 @@ Loop slots that emit keyless JSX get a warning -- `W2019` for a `while` loop and
 
 #### Per-item handlers
 
-A handler built in a loop slot may read the loop target directly; each iteration has its own:
+A handler built in a loop slot sees its own row. It may read the loop target and any local the slot body assigns; each handler keeps the values of the iteration that created it:
 
 ```jac
 def:pub Picker(items: list[str], onPick: Callable[[str], None]) -> JsxElement {
-    <ul>
-        {for (i, item) in enumerate(items) {
-            <li key={i} onClick={lambda { onPick(item); }}>{item}</li>
-        }}
-    </ul>
-}
-```
-
-A local assigned in the slot body is different. It belongs to the component, not to one iteration (annotated or not), so every handler would read the value the last iteration assigned. The compiler rejects that capture with `E2097`:
-
-<!-- jac-skip -->
-```jac
-{for item in items {
-    label = item.upper();
-    <li onClick={lambda { onPick(label); }}>{label}</li>;   # E2097
-}}
-```
-
-Give the handler its value through a parameter instead. A parameter is bound per call, so each row keeps its own:
-
-```jac
-def:pub Picker(items: list[str], onPick: Callable[[str], None]) -> JsxElement {
-    def pick(label: str) -> Callable[[], None] {
-        return lambda { onPick(label); };
-    }
-
     <ul>
         {for (i, item) in enumerate(items) {
             label = item.upper();
-            <li key={i} onClick={pick(label)}>{label}</li>;
+            <li key={i} onClick={lambda { onPick(label); }}>{label}</li>;
         }}
     </ul>
 }
 ```
 
-Reading the local for the row's own content (`{label}` above) is fine: that runs during the iteration.
-
-If the handler goes through a call before it reaches the element (`onClick={debounce(lambda { onPick(label); })}`, or a props dict passed to a helper), the compiler cannot see whether that call keeps it, so it reports a warning (`W2084`) instead of the error. The fix is the same. See [Variables and Scope](../../reference/language/variables-and-scope.md#4-scope-rules) for the rule.
+A name the component also assigns outside the loop is shared instead: every handler reads its current value. See [Variables and Scope](../../reference/language/variables-and-scope.md#4-scope-rules) for the rule.
 
 ### `has`-fields and Handlers
 

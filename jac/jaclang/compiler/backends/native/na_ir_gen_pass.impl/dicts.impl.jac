@@ -743,7 +743,7 @@ impl NaIRGenPass._codegen_dict_val(nd: uni.DictVal) -> (ir.Value | None) {
     }
 
     first_pair = nd.kv_pairs[0];
-    first_key = self._codegen_expr(first_pair.key);
+    first_key = self._str_norm_optional(self._codegen_expr(first_pair.key));
     first_val = self._str_norm_optional(self._codegen_expr(first_pair.value));
     if first_key is None or first_val is None {
         return None;
