@@ -3259,11 +3259,13 @@ def:pub init_global(ctx: GlobalContext) {
         str_intern("nextTick"),
         js_native_create("nextTick", 1, NATIVE_KIND_NEXT_TICK)
     );
-    # process.version / platform / arch
+    # process.version / platform / arch. process.version is the Node.js API
+    # level the engine implements (tools gate on it, as they do under bun); the
+    # engine's own version is process.versions.js_engine.
     js_object_set(
         proc_obj,
         str_intern("version"),
-        jsv_from_string_id(str_intern(JS_ENGINE_VERSION_V))
+        jsv_from_string_id(str_intern("v" + NODE_COMPAT_VERSION))
     );
     js_object_set(
         proc_obj, str_intern("platform"), jsv_from_string_id(str_intern("linux"))
@@ -3343,7 +3345,7 @@ def:pub init_global(ctx: GlobalContext) {
     # process.release — js_engine release metadata
     proc_release: JSValue = js_object_create_null();
     js_object_set(
-        proc_release, str_intern("name"), jsv_from_string_id(str_intern("js_engine"))
+        proc_release, str_intern("name"), jsv_from_string_id(str_intern("node"))
     );
     js_object_set(
         proc_release,

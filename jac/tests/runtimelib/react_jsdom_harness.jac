@@ -135,14 +135,9 @@ def npm_install(
 
 """Run `work/harness.mjs` once, with `args` appended, and assert it exited 0.
 
-Prefers a real `node` when present; falls back to `js_engine run`."""
+Runs under the jac binary's `node`."""
 def run_harness(js_engine: str, work: Path, args: list[any], label: str) {
-    node_bin = shutil.which("node");
-    if node_bin {
-        cmd = [node_bin, str(work / "harness.mjs")] + args;
-    } else {
-        cmd = [js_engine, "run", str(work / "harness.mjs")] + args;
-    }
+    cmd = [js_engine, str(work / "harness.mjs")] + args;
     run = subprocess.run(
         cmd, cwd=str(work), capture_output=True, text=True, timeout=120
     );

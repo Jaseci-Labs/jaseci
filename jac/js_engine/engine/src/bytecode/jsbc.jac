@@ -92,11 +92,15 @@ glob JSBC_FORMAT_VER: int = 16,
 # ══════════════════════════════════════════════════════════════════════════════
 
 """Wrap raw CJS module source in the CommonJS function shell + invocation.
-Identical to what _cjs_run_in_module compiles at runtime."""
+Identical to what _cjs_run_in_module compiles at runtime. A leading hashbang
+(`#!/usr/bin/env node` on a bin script another module requires) becomes a
+line comment, as Node's loader strips it: inside the shell it is no longer
+the first line of the source, where the grammar allows it."""
 def:pub _cjs_wrap_source(source: str) -> str {
+    body: str = ("//" + source) if source.startswith("#!") else source;
     return (
         "var __jac_cjs_run__ = (function(exports, require, module, __filename, __dirname){\n"
-        + source
+        + body
         + "\n});\n"
         + "__jac_cjs_run__(exports, module.require, module, __filename, __dirname);"
     );

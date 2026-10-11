@@ -2278,7 +2278,7 @@ def:pub vm_finalize_entry_module(vm: VM, mod: JSValue, abs_path: str) -> None {
     if not jsv_is_object_cell(mod) {
         return;
     }
-    final_exports: JSValue = js_object_get(mod, WK_EXPORTS);
+    final_exports: JSValue = vm._get_prop_accessor(mod, WK_EXPORTS);
     js_object_set(mod, WK_LOADED, js_boolean(True));
     module_cache_set(abs_path, final_exports);
     if jsv_is_object_cell(_REQUIRE_CACHE_OBJ) {
@@ -8168,6 +8168,27 @@ obj VM {
         return result;
     }
 
+    """A property a function inherits from a custom [[Prototype]], an object or
+    another function (Object.setPrototypeOf, as chalk does on its builders), read with
+    the prototype's accessors invoked on `receiver`. _fn_prop answers inherited
+    data only, so an inherited getter otherwise reads as undefined."""
+    def _fn_inherited_get(fn_v: JSValue, key: int, receiver: JSValue) -> JSValue {
+        fi_idx: int = get_fn_idx(fn_v);
+        if fi_idx < 0 or fi_idx >= len(self.realm.closures) {
+            return js_undefined();
+        }
+        fi_cl: JSClosure = self.realm.closures[fi_idx];
+        if cl_props_has_own(fi_cl, key) {
+            return js_undefined();
+        }
+        fi_proto: JSValue = fi_cl.object_proto;
+        if is_fn_val(fi_proto)
+            or (jsv_is_object_cell(fi_proto) and jsv_to_table_id(fi_proto) > 0) {
+            return self._get_prop_accessor_recv(fi_proto, key, receiver);
+        }
+        return js_undefined();
+    }
+
     """
     Helper: resolve a property on an object, checking for accessor getters first.
     If an accessor getter exists (on own or prototype chain), call it with
@@ -8313,7 +8334,11 @@ obj VM {
                     }
                 }
             }
-            return _fn_prop(js_obj, key);
+            fa_res: JSValue = _fn_prop(js_obj, key);
+            if jsv_is_undefined(fa_res) and is_fn_val(js_obj) {
+                return self._fn_inherited_get(js_obj, key, receiver);
+            }
+            return fa_res;
         }
         if self._ta_is_instance(js_obj) {
             ta_key_g: tuple[bool, int] = self._ta_key_index(key);
@@ -9353,6 +9378,13 @@ obj VM {
             if fn_idx_h >= 0 and fn_idx_h < len(self.realm.closures) {
                 if cl_props_has_own(self.realm.closures[fn_idx_h], key) {
                     return True;
+                }
+                # A custom [[Prototype]] (Object.setPrototypeOf) replaces
+                # Function.prototype in the chain.
+                fn_cproto_h: JSValue = self.realm.closures[fn_idx_h].object_proto;
+                if is_fn_val(fn_cproto_h)
+                    or (jsv_is_object_cell(fn_cproto_h) and jsv_to_table_id(fn_cproto_h) > 0) {
+                    return self.obs_has(fn_cproto_h, key);
                 }
             }
             fp_proto_h: JSValue = js_function_get_proto();
@@ -10575,7 +10607,7 @@ obj VM {
             return js_undefined();
         }
 
-        final_exports: JSValue = js_object_get(module_obj, WK_EXPORTS);
+        final_exports: JSValue = self._get_prop_accessor(module_obj, WK_EXPORTS);
         self.module_fns = saved_module_fns;
         self.script_dir = saved_dir;
         self.globals["module"] = saved_mod_g;
@@ -10642,7 +10674,7 @@ obj VM {
             return js_undefined();
         }
 
-        final_exports: JSValue = js_object_get(req_module, WK_EXPORTS);
+        final_exports: JSValue = self._get_prop_accessor(req_module, WK_EXPORTS);
         return self._finalize_cjs_module(
             req_module, resolved, final_exports, mod_bare, is_esm_import
         );
@@ -15739,6 +15771,9 @@ obj VM {
                         gp_fn_res = self._get_prop_accessor(gp_fn_props, gp_key);
                     }
                 }
+            }
+            if jsv_is_undefined(gp_fn_res) {
+                gp_fn_res = self._fn_inherited_get(gp_obj, gp_key, gp_obj);
             }
             self._push(gp_fn_res);
         } elif is_native_val(gp_obj) {

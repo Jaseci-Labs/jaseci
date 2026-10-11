@@ -389,6 +389,11 @@ obj Compiler {
         eval_force_strict: bool = False,
         eval_in_param_expr: int = 0,
         super_prop_allowed: bool = False,
+        # Optional-chain short-circuit scopes: one per outermost member / call /
+        # optional node, holding the jumps its inner `?.` landings take to its end.
+        oc_scopes: list[list[int]] = [],
+        oc_cont: bool = False,
+        oc_active: bool = False,
         super_call_allowed: bool = False,
         pending_super_prop: bool = False,
         pending_super_call: bool = False,
@@ -5483,6 +5488,21 @@ obj Compiler {
     # ══════════════════════════════════════════════════════════════════════
 
     def compile_expr(nd: ASTNode) {
+        if nd.ntype == ASTNodeType.CallExpression
+            or nd.ntype == ASTNodeType.MemberExpression
+            or nd.ntype == ASTNodeType.OptionalChainExpr {
+            self._compile_chain_link(nd);
+            return;
+        }
+        # Any other expression is a boundary: a `?.` reached inside it (through a
+        # `delete`, an assignment target, ...) short-circuits only its own chain.
+        ce_active: bool = self.oc_active;
+        self.oc_active = False;
+        self._compile_expr_node(nd);
+        self.oc_active = ce_active;
+    }
+
+    def _compile_expr_node(nd: ASTNode) {
         if nd.ntype == ASTNodeType.Literal {
             self.compile_literal(nd);
         } elif nd.ntype == ASTNodeType.Identifier {
@@ -5499,14 +5519,8 @@ obj Compiler {
             self.compile_assign(nd);
         } elif nd.ntype == ASTNodeType.UpdateExpression {
             self.compile_update(nd);
-        } elif nd.ntype == ASTNodeType.CallExpression {
-            self.compile_call(nd);
         } elif nd.ntype == ASTNodeType.NewExpression {
             self.compile_new(nd);
-        } elif nd.ntype == ASTNodeType.MemberExpression {
-            self.compile_member(nd);
-        } elif nd.ntype == ASTNodeType.OptionalChainExpr {
-            self.compile_optional_chain(nd);
         } elif nd.ntype == ASTNodeType.ArrayExpression {
             self.compile_array(nd);
         } elif nd.ntype == ASTNodeType.ObjectExpression {
@@ -7867,11 +7881,12 @@ obj Compiler {
                         self._op(Opcode.POP);
                     }
                     self._op(Opcode.LOAD_UNDEFINED);
+                    self._oc_escape();
                     self._patch(_cc_jend);
                     return;
                 }
                 if callee.object is not None {
-                    self.compile_expr(callee.object);
+                    self._compile_chain_object(callee.object);
                 }
                 self._op(Opcode.DUP);
                 if callee.computed {
@@ -7919,7 +7934,7 @@ obj Compiler {
             # x?.method(args)  or  x?.[key](args)
             # Evaluate the object; short-circuit to undefined on null/undefined.
             if callee.object is not None {
-                self.compile_expr(callee.object);
+                self._compile_chain_object(callee.object);
             } else {
                 self._op(Opcode.LOAD_UNDEFINED);
             }
@@ -7960,9 +7975,10 @@ obj Compiler {
             self._patch(j_undef_oc);
             self._op(Opcode.POP);
             self._op(Opcode.LOAD_UNDEFINED);
+            self._oc_escape();
             self._patch(j_end_oc);
         } else {
-            self.compile_expr(callee);
+            self._compile_chain_object(callee);
             for arg in nd.arguments {
                 self.compile_expr(arg);
             }
@@ -8027,6 +8043,57 @@ obj Compiler {
         self._emit(make_instruction(Opcode.NEW, argc, 0, 0, _nw_spfl));
     }
 
+    # ── optional-chain scopes ──────────────────────────────────────────────
+    # A `?.` short-circuits the rest of its chain, calls included (`a?.b().c`
+    # is undefined when `a` is). Each link evaluates its object/callee first, so
+    # when an inner `?.` lands on undefined the stack holds exactly the chain's
+    # result: its landing jumps straight to the end of the outermost link. The
+    # outermost link opens a scope; the object/callee a link compiles continues
+    # it, while anything else (arguments, keys) starts its own.
+
+    def _compile_chain_link(nd: ASTNode) -> None {
+        cont: bool = self.oc_cont;
+        self.oc_cont = False;
+        if not cont {
+            cl_new: list[int] = [];
+            self.oc_scopes.append(cl_new);
+        }
+        cl_active: bool = self.oc_active;
+        self.oc_active = True;
+        if nd.ntype == ASTNodeType.CallExpression {
+            self.compile_call(nd);
+        } elif nd.ntype == ASTNodeType.MemberExpression {
+            self.compile_member(nd);
+        } else {
+            self.compile_optional_chain(nd);
+        }
+        self.oc_active = cl_active;
+        if not cont {
+            cl_jumps: list[int] = self.oc_scopes.pop();
+            for cl_j in cl_jumps {
+                self._patch(cl_j);
+            }
+        }
+    }
+
+    """Compile a link's object/callee as part of the same chain."""
+    def _compile_chain_object(nd: ASTNode) -> None {
+        if nd.ntype == ASTNodeType.CallExpression
+            or nd.ntype == ASTNodeType.MemberExpression
+            or nd.ntype == ASTNodeType.OptionalChainExpr {
+            self.oc_cont = True;
+        }
+        self.compile_expr(nd);
+    }
+
+    """After a `?.` landing has pushed undefined: skip the rest of the chain."""
+    def _oc_escape -> None {
+        if self.oc_active and len(self.oc_scopes) > 0 {
+            oe_top: list[int] = self.oc_scopes[len(self.oc_scopes) - 1];
+            oe_top.append(self._jump(Opcode.JUMP));
+        }
+    }
+
     # ── member ─────────────────────────────────────────────────────────────
 
     def compile_member(nd: ASTNode) -> None {
@@ -8047,6 +8114,7 @@ obj Compiler {
                 self._op(Opcode.POP);
             }
             self._op(Opcode.LOAD_UNDEFINED);
+            self._oc_escape();
             self._patch(ocv_jend);
             return;
         }
@@ -8095,7 +8163,7 @@ obj Compiler {
             if orc_callee is not None
                 and orc_callee.ntype == ASTNodeType.MemberExpression
                 and orc_callee.object is not None {
-                self.compile_expr(orc_callee.object);  # [recv]
+                self._compile_chain_object(orc_callee.object);  # [recv]
                 self._op(Opcode.DUP);  # [recv, recv]
                 if orc_callee.computed {
                     if orc_callee.property is not None {
@@ -8112,12 +8180,12 @@ obj Compiler {
                 }
             } else {
                 if orc_callee is not None {
-                    self.compile_expr(orc_callee);
+                    self._compile_chain_object(orc_callee);
                 }  # [fn]
             }
         } else {
             if opt_root.object is not None {
-                self.compile_expr(opt_root.object);
+                self._compile_chain_object(opt_root.object);
             }
         }
         j_null: int = self._jump(Opcode.JUMP_IF_NULL);
@@ -8233,7 +8301,7 @@ obj Compiler {
 
         # Normal (non-optional-rooted) member access.
         if nd.object is not None {
-            self.compile_expr(nd.object);
+            self._compile_chain_object(nd.object);
         }
         if nd.computed {
             if nd.property is not None {
@@ -8293,7 +8361,7 @@ obj Compiler {
             and nd.object.object is not None {
             oc_mem: ASTNode = nd.object;
             if oc_mem.object is not None {
-                self.compile_expr(oc_mem.object);
+                self._compile_chain_object(oc_mem.object);
             }  # [receiver]
             self._op(Opcode.DUP);  # [receiver, receiver]
             if oc_mem.computed {
@@ -8332,11 +8400,12 @@ obj Compiler {
             self._op(Opcode.POP);  # discard nullish fn
             self._op(Opcode.POP);  # discard receiver
             self._op(Opcode.LOAD_UNDEFINED);
+            self._oc_escape();
             self._patch(ocm_jend);
             return;
         }
         if nd.object is not None {
-            self.compile_expr(nd.object);
+            self._compile_chain_object(nd.object);
         }
         # Peek at the top of stack; jump to nullish path if null or undefined.
         j_null: int = self._jump(Opcode.JUMP_IF_NULL);
@@ -8393,6 +8462,7 @@ obj Compiler {
         self._patch(j_undef);
         self._op(Opcode.POP);  # discard null/undefined object
         self._op(Opcode.LOAD_UNDEFINED);
+        self._oc_escape();
         self._patch(j_end);
     }
 

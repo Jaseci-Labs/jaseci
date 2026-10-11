@@ -49,8 +49,11 @@ def:pub link_node(rt: str, exe_path: str) {
 def:pub run_node(rt: str, argv: list[str]) -> int {
     """Run the JavaScript engine as `node` in this process: load the engine
     library from the runtime tree and hand it argv, with argv[0] the runtime's
-    `node` so the engine's execPath names an executable that runs it again.""";
+    `node` so the engine's execPath names an executable that runs it again,
+    and that `node` first on PATH so a tool that spawns `node` by name does too.""";
     export_ca_bundle(rt);
+    node_dir = os.path.dirname(node_path(rt));
+    os.environ["PATH"] = node_dir + ":" + os.environ.get("PATH", "");
     lib = rt + "/js/libjs_engine.so";
     handle = dlopen(lib, i32(RTLD_NOW | RTLD_GLOBAL));
     if handle == 0 {

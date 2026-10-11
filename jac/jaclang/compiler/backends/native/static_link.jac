@@ -1,6 +1,7 @@
 import from jaclang.compiler.backends.native.linker_common {
     object_undefined_symbols,
-    select_ar_members
+    select_ar_members,
+    ArMember
 }
 
 def resolve_floor_dir(pkg_root: str, triple: str) -> (str | None) {
@@ -106,7 +107,7 @@ def collect_floor_archives(
     """Select to a fixpoint across the archives: a member one archive
     contributes can call into another (libssl's members need libcrypto's).""";
     known: set[str] = set(roots);
-    selected: dict[str, list] = {};
+    selected: dict[str, list[ArMember]] = {};
     while True {
         selected = {
             arch_file: select_ar_members(data, roots)

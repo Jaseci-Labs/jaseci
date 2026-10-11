@@ -764,10 +764,6 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/jac-kit
-      - name: Set up Node.js (ES backend)
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
       - name: Set up Zig for compiler runtime and ELF fixtures
         if: matrix.chunk == 'passes-native'
         uses: mlugg/setup-zig@v2
@@ -821,10 +817,6 @@ jobs:
       - name: Pin the runtime cache outside $HOME
         run: echo "XDG_CACHE_HOME=$RUNNER_TEMP/.cache" >> "$GITHUB_ENV"
       - uses: ./.github/actions/jac-kit
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
       - name: Install the serve deps the plugin-integration test needs
         run: jac install "python-dotenv>=1.2.1,<2.0.0" "requests>=2.32.0,<3.0.0" --global
       # tests/client is test-client's lane (it needs the serial runner). The
@@ -918,10 +910,6 @@ jobs:
         with:
           submodules: true
       - uses: ./.github/actions/jac-kit
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
       - name: Install the scale dep the in-process dispatch tests import
         run: jac install "python-dotenv>=1.2.1,<2.0.0" --global
       - name: Run all client tests
@@ -1223,10 +1211,6 @@ jobs:
       - uses: actions/checkout@v5
         with:
           submodules: true
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
       - uses: ./.github/actions/jac-kit
 
       - name: Validate performance accounting
@@ -1763,9 +1747,6 @@ jobs:
       - uses: actions/checkout@v5
         with:
           submodules: true
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
       - uses: ./.github/actions/jac-kit
       - name: Install the C export toolchain
         run: |

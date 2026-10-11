@@ -30,6 +30,22 @@ runs:
         chmod +x "$GITHUB_WORKSPACE/jac/zig-out/bin/jac"
         echo "$GITHUB_WORKSPACE/jac/zig-out/bin" >> "$GITHUB_PATH"
 
+    # The jac binary is its own `node` (it runs the bundled engine and puts that
+    # `node` first on PATH for what it spawns). The runner image ships a system
+    # Node.js too, so shadow it: anything that still reaches a `node`, `npm` or
+    # `npx` by name outside the engine fails loudly instead of passing on it.
+    - name: Shadow the runner's Node.js
+      shell: bash
+      run: |
+        SHADOW="$RUNNER_TEMP/no-system-node"
+        mkdir -p "$SHADOW"
+        for tool in node npm npx corepack; do
+          printf '#!/bin/sh\necho "::error::system %s reached ($*); jac runs JavaScript on its bundled engine" >&2\nexit 127\n' \
+            "$tool" > "$SHADOW/$tool"
+          chmod +x "$SHADOW/$tool"
+        done
+        echo "$SHADOW" >> "$GITHUB_PATH"
+
     # A composite step's `if:` cannot read the caller's job-level env through
     # the `env` context, so branch on a step output instead.
     - name: Resolve lane mode

@@ -9,7 +9,7 @@ Sequential on purpose for now: the differential harness measures parity, not
 speed. Concurrency (bun opens up to 48 sockets) is a P2 item.
 """
 
-import from engine.src.ffi.libc { recv, close, getenv }
+import from engine.src.ffi.libc { recv, close, getenv, poll }
 import from engine.src.runtime.mem { io_alloc, io_free, read_byte }
 import from engine.src.net.tcp_socket {
     TCPSocket,
@@ -37,7 +37,8 @@ import from engine.src.pm.bytes {
 import from engine.src.pm.gunzip { gunzip_bytes }
 import from engine.src.version { JS_ENGINE_VERSION }
 
-glob:pub HTTP_MAX_REDIRECTS: int = 5;
+glob:pub HTTP_MAX_REDIRECTS: int = 5,
+     HTTP_ATTEMPTS: int = 3;
 glob:priv _READ_CHUNK: int = 65536;
 
 obj:pub HttpUrl {
@@ -176,6 +177,17 @@ def:pub http_get(
             return r;
         }
         r: HttpResponse = _http_once(u, hdrs, verify, ca_file);
+        # A dropped connection or a busy registry is retried with a growing
+        # pause, as npm and bun do: one blip must not fail a whole install.
+        attempt: int = 1;
+        while _http_retryable(r) and attempt < HTTP_ATTEMPTS {
+            poll(0, 0, 250 * attempt);
+            if r.error == "" {
+                bytebuf_free(r.body);
+            }
+            r = _http_once(u, hdrs, verify, ca_file);
+            attempt = attempt + 1;
+        }
         r.url = cur;
         if r.error != "" {
             return r;
@@ -214,6 +226,11 @@ def:pub http_get(
         }
         return r;
     }
+}
+
+"""A transport failure, a rate limit or a server error: worth asking again."""
+def _http_retryable(r: HttpResponse) -> bool {
+    return r.error != "" or r.status == 429 or r.status >= 500;
 }
 
 def _http_once(

@@ -55,9 +55,8 @@ test "solid returned cleanup runs on invalidation and disposal" {
         npm_install(
             js_engine, work, "solid-effect-cleanup-test", {"solid-js": "^1.9.13"}
         );
-        runner = shutil.which("node") or js_engine;
         result = subprocess.run(
-            [runner, "--conditions=browser", str(work / "harness.mjs")],
+            [js_engine, "--conditions=browser", str(work / "harness.mjs")],
             cwd=str(work),
             capture_output=True,
             text=True,

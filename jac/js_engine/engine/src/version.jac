@@ -2,7 +2,7 @@
 js_engine version constants.
 
 Single source of truth for all version strings exposed via:
-  process.version          → JS_ENGINE_VERSION_V      (e.g. "v0.1.0")
+  process.version          → "v" + NODE_COMPAT_VERSION (the Node.js API level, as under bun)
   process.versions.js_engine → JS_ENGINE_VERSION         (e.g. "0.1.0")
   process.versions.node    → NODE_COMPAT_VERSION      (Node.js API compat target)
   process.versions.uv      → UV_VERSION               (libuv — must match system)

@@ -8,6 +8,7 @@ browser LinkError. These tests skip when the vendored bitcode is absent
 """
 
 import os;
+import from jaclang.client.js_engine { node_executable }
 import from jaclang.compiler.driver.compile_options {
     push_native_target,
     pop_native_target
@@ -126,10 +127,7 @@ test "floor-style i64 libc declarations bind through the __jac64 adapters" {
     mod = emit_wasm_from_ir(app_ir, ["slen"], app_imports=set());
     imports = wasm_import_map(mod);
     assert "env" not in imports;
-    node_bin = shutil.which("node");
-    if not node_bin {
-        testskip("node not available");
-    }
+    node_bin = node_executable();
     d = tempfile.mkdtemp();
     wpath = os.path.join(d, "m.wasm");
     Path(wpath).write_bytes(mod);
@@ -170,10 +168,7 @@ test "missing vendored libc falls back to the legacy env-import surface" {
 
 test "the fixture runs under node with ONLY the jac_host1 host object" {
     _require_libc();
-    node_bin = shutil.which("node");
-    if not node_bin {
-        testskip("node not available");
-    }
+    node_bin = node_executable();
     mod = emit_wasm_from_ir(fixture_ir(), [], app_imports=set());
     d = tempfile.mkdtemp();
     wpath = os.path.join(d, "m.wasm");

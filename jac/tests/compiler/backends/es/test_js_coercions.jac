@@ -8,6 +8,7 @@ import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.driver.pass_driver { run_pass }
 import from jaclang.compiler.passes.type_checker_pass { TypeCheckPass }
 import shutil;
+import from jaclang.client.js_engine { node_executable }
 import subprocess;
 
 def compile_client(source: str) -> str {
@@ -27,12 +28,9 @@ def compile_client(source: str) -> str {
 
 def run_client(source: str, assertions: str) {
     js = compile_client(source);
-    if not shutil.which("node") {
-        testskip("node not on PATH");
-    }
     result = subprocess.run(
         [
-            "node",
+            node_executable(),
             "--input-type=module",
             "-e",
             'import assert from "node:assert/strict";\n' + js + "\n" + assertions

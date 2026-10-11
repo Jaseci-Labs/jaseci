@@ -18,6 +18,7 @@ are checked, so a backend that returns {} (unimplemented) is silently skipped.
 import from jaclang.compiler.passes.execution { run_walker }
 
 import ctypes;
+import from jaclang.client.js_engine { node_executable }
 import importlib;
 import json;
 import os;
@@ -155,7 +156,7 @@ def run_js_function(js_code: str, func_name: str) -> dict[str, any] {
             + "()));"
         );
     result = subprocess.run(
-        ["node", "-"],
+        [node_executable(), "-"],
         input=wrapper,
         capture_output=True,
         text=True,
@@ -207,7 +208,10 @@ def run_js_module_fixture(fixture: str, func_name: str) -> dict[str, any] {
             stream.write("\nconsole.log(JSON.stringify(" + func_name + "()));\n");
         }
         result = subprocess.run(
-            ["node", str(js_entry)], capture_output=True, text=True, timeout=30
+            [node_executable(), str(js_entry)],
+            capture_output=True,
+            text=True,
+            timeout=30
         );
         assert result.returncode == 0 , f"Node.js failed: {result.stderr}";
         return json.loads(result.stdout.strip());
@@ -222,7 +226,7 @@ runtime itself rather than only on what a fixture function returns.
 def run_js_expr(js_code: str, expr: str) -> any {
     wrapper = js_code + "\nconsole.log(JSON.stringify(" + expr + "));";
     result = subprocess.run(
-        ["node", "-"],
+        [node_executable(), "-"],
         input=wrapper,
         capture_output=True,
         text=True,

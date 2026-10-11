@@ -872,15 +872,8 @@ test "solid counter mounts and reacts in jsdom" {
             f"js_engine install failed (exit {install.returncode}):\n"
             f"{install.stdout}\n{install.stderr}"
         );
-        # node with the `browser` condition selects solid's DOM build (not SSR);
-        # fall back to js_engine if node is unavailable on the runner. (`node` is a Jac
-        # keyword, so the binary path is held in `node_bin`.)
-        node_bin = shutil.which("node");
-        if node_bin {
-            cmd = [node_bin, "--conditions=browser", str(work / "harness.mjs")];
-        } else {
-            cmd = [js_engine, "--conditions=browser", "run", str(work / "harness.mjs")];
-        }
+        # The `browser` condition selects solid's DOM build (not SSR).
+        cmd = [js_engine, "--conditions=browser", str(work / "harness.mjs")];
         run = subprocess.run(
             cmd, cwd=str(work), capture_output=True, text=True, timeout=120
         );
@@ -942,12 +935,7 @@ test "solid native control flow (<For>/<Show>) renders + reacts in jsdom (Branch
             f"js_engine install failed (exit {install.returncode}):\n"
             f"{install.stdout}\n{install.stderr}"
         );
-        node_bin = shutil.which("node");
-        if node_bin {
-            cmd = [node_bin, "--conditions=browser", str(work / "harness.mjs")];
-        } else {
-            cmd = [js_engine, "--conditions=browser", "run", str(work / "harness.mjs")];
-        }
+        cmd = [js_engine, "--conditions=browser", str(work / "harness.mjs")];
         run = subprocess.run(
             cmd, cwd=str(work), capture_output=True, text=True, timeout=120
         );
@@ -1051,7 +1039,6 @@ test "solid file-based routing mounts, navigates, and guards in jsdom" {
             f"js_engine install failed (exit {install.returncode}):\n"
             f"{install.stdout}\n{install.stderr}"
         );
-        node_bin = shutil.which("node");
         # Each scenario is a fresh process so `entry.js` (and its one-time render)
         # re-runs at the scenario's start URL / auth state.
         scenarios = [
@@ -1064,26 +1051,14 @@ test "solid file-based routing mounts, navigates, and guards in jsdom" {
             ["/bare", "loggedIn", "./manual_entry.js"]
         ];
         for sc in scenarios {
-            if node_bin {
-                cmd = [
-                    node_bin,
-                    "--conditions=browser",
-                    str(work / "harness.mjs"),
-                    sc[0],
-                    sc[1],
-                    sc[2]
-                ];
-            } else {
-                cmd = [
-                    js_engine,
-                    "--conditions=browser",
-                    "run",
-                    str(work / "harness.mjs"),
-                    sc[0],
-                    sc[1],
-                    sc[2]
-                ];
-            }
+            cmd = [
+                js_engine,
+                "--conditions=browser",
+                str(work / "harness.mjs"),
+                sc[0],
+                sc[1],
+                sc[2]
+            ];
             run = subprocess.run(
                 cmd, cwd=str(work), capture_output=True, text=True, timeout=120
             );
@@ -1149,12 +1124,7 @@ test "solid JacForm renders and validates in jsdom (TanStack Form end-to-end)" {
             f"js_engine install failed (exit {install.returncode}):\n"
             f"{install.stdout}\n{install.stderr}"
         );
-        node_bin = shutil.which("node");
-        if node_bin {
-            cmd = [node_bin, "--conditions=browser", str(work / "harness.mjs")];
-        } else {
-            cmd = [js_engine, "--conditions=browser", "run", str(work / "harness.mjs")];
-        }
+        cmd = [js_engine, "--conditions=browser", str(work / "harness.mjs")];
         run = subprocess.run(
             cmd, cwd=str(work), capture_output=True, text=True, timeout=120
         );
@@ -1231,12 +1201,7 @@ test "solid P2 jsdom matrix: dynamic prop, ref e2e, and callback prop" {
             f"js_engine install failed (exit {install.returncode}):\n"
             f"{install.stdout}\n{install.stderr}"
         );
-        node_bin = shutil.which("node");
-        if node_bin {
-            cmd = [node_bin, "--conditions=browser", str(work / "harness.mjs")];
-        } else {
-            cmd = [js_engine, "--conditions=browser", "run", str(work / "harness.mjs")];
-        }
+        cmd = [js_engine, "--conditions=browser", str(work / "harness.mjs")];
         run = subprocess.run(
             cmd, cwd=str(work), capture_output=True, text=True, timeout=120
         );
