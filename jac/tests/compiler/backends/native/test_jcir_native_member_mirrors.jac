@@ -25,6 +25,7 @@ import from jaclang.compiler.driver.compile_options { CompileOptions }
 import jaclang.compiler.frontend.unitree as uni;
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.backends.py.codegen_shim { generated_python }
+import from jaclang.runtime.interop_bridge { pyb_mirror_member }
 
 glob FIXTURES = os.path.join(
          TESTS_DIR, "compiler", "backends", "native", "fixtures"
@@ -125,4 +126,33 @@ test "mirrored obj constructs and answers across the codespace" {
     assert output == "7 42" , (
         f"cross-codespace construction produced '{output}', expected '7 42'"
     );
+}
+
+
+test "the mirror binds a None-valued member and refuses only a missing one" {
+    # The splice binds names nothing on the Python side references, so a
+    # global that is legitimately None must not fail the consumer's load.
+    with tempfile.TemporaryDirectory() as tmp {
+        mod_path = os.path.join(tmp, "na_mirror_none_probe.jac");
+        probe = types.ModuleType("na_mirror_none_probe");
+        probe.__file__ = mod_path;
+        probe.UNSET = None;
+        probe.SET = 7;
+        sys.modules["na_mirror_none_probe"] = probe;
+        try {
+            assert pyb_mirror_member(mod_path, "UNSET") is None;
+            assert pyb_mirror_member(mod_path, "SET") == 7;
+            raised = "";
+            try {
+                pyb_mirror_member(mod_path, "ABSENT");
+            } except AttributeError as e {
+                raised = str(e);
+            }
+            assert "ABSENT" in raised , (
+                f"a name the module does not define must still be refused: {raised!r}"
+            );
+        } finally {
+            sys.modules.pop("na_mirror_none_probe", None);
+        }
+    }
 }

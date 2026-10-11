@@ -11,6 +11,7 @@ native caller read a wrong value instead of the server function's result.
 
 import ctypes;
 import os;
+import types;
 import from tests.support { TESTS_DIR, native_address, unit_symbol }
 import jaclang.compiler.frontend.unitree as uni;
 import from jaclang.compiler.driver.compile_options { CompileOptions }
@@ -85,4 +86,40 @@ test "the native call reaches the server function after boot loading" {
         "the native call did not reach the server function; 0 means the "
         "callback table never filled"
     );
+}
+
+
+test "the boot loader refuses to leave a callback unresolved" {
+    # A callback nothing can fill answers 0 to its native caller, so an
+    # unresolvable binding has to stop the boot rather than log and run on.
+    table: dict[str, any] = {};
+    manifest: any = types.SimpleNamespace(
+        native_imports=[
+            types.SimpleNamespace(
+                kind="function", name="py_double", source_module="na_py_interop"
+            ),
+            types.SimpleNamespace(
+                kind="function", name="no_such_fn", source_module="na_py_interop"
+            ),
+            types.SimpleNamespace(
+                kind="function",
+                name="orphan_fn",
+                source_module="na_py_interop_no_such_module"
+            )
+        ]
+    );
+    raised = "";
+    try {
+        ensure_py_funcs_loaded(
+            manifest, table, base_path=str(FIXTURES), default_module="na_py_interop"
+        );
+    } except ImportError as e {
+        raised = str(e);
+    }
+    assert raised , "an unresolvable native->server binding booted silently";
+    assert "no_such_fn" in raised and "orphan_fn" in raised , raised;
+    assert "'py_double'" not in raised , (
+        f"the resolvable binding was reported as unresolved: {raised}"
+    );
+    assert "py_double" in table , sorted(table.keys());
 }

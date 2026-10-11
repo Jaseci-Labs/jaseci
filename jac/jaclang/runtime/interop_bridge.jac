@@ -69,7 +69,8 @@ glob logger = logging.getLogger(__name__),
      },
      _pyb_shadows: dict[(int, object)] = {},
      _pyb_class_memo: dict[(tuple[any, ...], type)] = {},
-     _pyb_module_memo: dict[(str, object)] = {};
+     _pyb_module_memo: dict[(str, object)] = {},
+     _PYB_MISSING: object = object();
 
 def _pyb_import_module(mod_path: str) -> object {
     import os;
@@ -106,12 +107,15 @@ def pyb_mirror_member(mod_path: str, name: str) -> object {
     import bound nothing, and constructing a native-placed obj from server
     code died with NameError.
 
+    A member whose value is None is a member like any other: only a name the
+    module does not define at all is refused, as a plain import would.
+
     When per-module AOT execution lands this seam upgrades to dylib-backed
     shadows without touching consumer code.
     """;
     mod = _pyb_import_module(mod_path);
-    member = getattr(mod, name, None);
-    if member is None {
+    member = getattr(mod, name, _PYB_MISSING);
+    if member is _PYB_MISSING {
         raise AttributeError(
             f"native-placed module '{mod_path}' exposes no '{name}' "
                 + "to mirror into the server codespace"
@@ -259,8 +263,13 @@ def ensure_py_funcs_loaded(
     here instead: import each binding's source module through the ordinary
     Jac import machinery and register the named member. Returns how many
     functions were made callable.
+
+    A binding that cannot be resolved raises ImportError naming it: nothing
+    else fills the table on this path, so running on would hand the native
+    caller 0 in place of the server function's result.
     """;
     loaded: int = 0;
+    unresolved: list[str] = [];
     for binding in manifest.native_imports {
         if binding.kind != 'function' or binding.name in py_func_table {
             continue;
@@ -276,21 +285,26 @@ def ensure_py_funcs_loaded(
             mod = mods[0] if isinstance(mods, tuple) else mods;
             fn = getattr(mod, binding.name, None);
         } except Exception as e {
-            logger.warning(
-                f"native interop: failed to load '{binding.name}' from "
-                    + f"'{src_mod}': {e}"
+            unresolved.append(
+                f"'{binding.name}' from '{src_mod}' ({type(e).__name__}: {e})"
             );
             continue;
         }
         if fn is None {
-            logger.warning(
-                f"native interop: '{src_mod}' exposes no '{binding.name}' "
-                    + "for the native callback table"
+            unresolved.append(
+                f"'{binding.name}' from '{src_mod}' (the module defines no such name)"
             );
             continue;
         }
         py_func_table[binding.name] = fn;
         loaded += 1;
+    }
+    if unresolved {
+        raise ImportError(
+            "native interop: cannot load the server function(s) native code "
+                + "calls: "
+                + "; ".join(unresolved)
+        );
     }
     return loaded;
 }
