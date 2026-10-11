@@ -1521,9 +1521,7 @@ impl NaIRGenPass._try_iter_protocol_for(nd: uni.InForStmt) -> bool {
     _saved = loop_body_locals(nd.body if isinstance(nd.body, (list, tuple)) else None);
 
     _iter_prebody = set(self.local_vars.keys());
-    if isinstance(nd.body, (list, tuple)) {
-        self._codegen_body(nd.body);
-    }
+    self._codegen_pass_body(nd);
     if not self.builder.block.is_terminated {
         self._emit_loop_iter_cleanup(
             [

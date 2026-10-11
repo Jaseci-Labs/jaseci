@@ -45,6 +45,16 @@ node RTally {
 
 node RTallyKind(RTally) {}
 
+node RBag {
+    has items: list[int] = [];
+}
+
+enum RShelf { FULL = [1] }
+
+node RShelved {
+    has shelf: RShelf = RShelf.FULL;
+}
+
 edge RLink: any --> any {
     has w: int = 0;
 }
@@ -713,6 +723,137 @@ test "a loaded anchor is hashed once (#9410)" {
 }
 
 
+test "a commit re-hashes only loaded anchors whose fields can change in place" {
+    with TemporaryDirectory() as td {
+        old = JacRuntime.exec_ctx;
+        seed = _ctx(td);
+        JacRuntime.exec_ctx = seed;
+        ids: list[UUID] = [];
+        bag_id = UUID(int=0);
+        shelf_id = UUID(int=0);
+        try {
+            ids = [_loose(seed, n).ensure_id() for n in range(4)];
+            shelved: NodeAnchor = _as_any(RShelved()).__jac__;
+            shelved.persistent = True;
+            seed.mem.put(shelved);
+            shelf_id = shelved.ensure_id();
+            bag: NodeAnchor = _as_any(RBag(items=[1])).__jac__;
+            bag.persistent = True;
+            seed.mem.put(bag);
+            bag_id = bag.ensure_id();
+            seed.mem.commit();
+        } finally {
+            JacRuntime.exec_ctx = old;
+            seed.close();
+        }
+        ctx = _ctx(td);
+        JacRuntime.exec_ctx = ctx;
+        dumps_calls: list[int] = [];
+        import json;
+        real_dumps = json.dumps;
+        def counting_dumps(*args: any, **kwargs: any) -> str {
+            if kwargs.get("sort_keys") {
+                dumps_calls.append(1);
+            }
+            return real_dumps(*args, **kwargs);
+        }
+        try {
+            _ = ctx.user_root;
+            ctx.mem.commit();
+            loaded = ctx.mem.batch_get(ids + [bag_id]);
+            assert len(loaded) == len(ids) + 1;
+            json.dumps = counting_dumps;
+            try {
+                for _ in range(3) {
+                    ctx.mem.commit();
+                }
+            } finally {
+                json.dumps = real_dumps;
+            }
+            assert len(dumps_calls) == 3 , (
+                f"three commits hashed {len(dumps_calls)} stored forms; only the "
+                "anchor holding a list can change without a field write, so only "
+                "it needs re-hashing (once per commit)"
+            );
+            _as_any(loaded[bag_id].archetype).items.append(2);
+            ctx.mem.commit();
+            assert _stored(ctx, bag_id, "items") == "[1, 2]" , (
+                "an in-place append to a list field must still be found and written"
+            );
+            _as_any(loaded[ids[0]].archetype).n = 41;
+            ctx.mem.commit();
+            assert _stored(ctx, ids[0], "n") == "41" , (
+                "a field write on an anchor with only scalar fields must still land"
+            );
+            delattr(_as_any(loaded[ids[0]].archetype), "n");
+            ctx.mem.commit();
+            assert _stored(ctx, ids[0], "n") == "0" , (
+                "deleting a field exposes its default; the anchor must be written"
+            );
+            shelf = ctx.mem.batch_get([shelf_id])[shelf_id];
+            _as_any(shelf.archetype).shelf.value.append(2);
+            ctx.mem.commit();
+            assert _stored(ctx, shelf_id, "shelf") == "[1, 2]" , (
+                "an enum whose value is a list can change in place; it must be scanned"
+            );
+        } finally {
+            JacRuntime.exec_ctx = old;
+            ctx.close();
+        }
+    }
+}
+
+
+test "a write the session was not told about survives a retried flush" {
+    with TemporaryDirectory() as td {
+        old = JacRuntime.exec_ctx;
+        seed = _ctx(td);
+        JacRuntime.exec_ctx = seed;
+        id = UUID(int=0);
+        try {
+            id = _loose(seed, 7).ensure_id();
+            seed.mem.commit();
+        } finally {
+            JacRuntime.exec_ctx = old;
+            seed.close();
+        }
+        ctx = _ctx(td);
+        JacRuntime.exec_ctx = ctx;
+        other = _sess(ctx).new_session(str(Path(td) / "rb_app.jac"));
+        try {
+            loaded = other.get(id);
+            assert loaded is not None;
+            _as_any(loaded.archetype).n = 70;
+            assert id not in other._dirty , (
+                "the write must reach this session only through the anchor's own mark"
+            );
+            store: any = other.store;
+            real_upsert = store.upsert;
+            left = [1];
+            def failing_upsert(rows: any) {
+                if left[0] > 0 {
+                    left[0] -= 1;
+                    raise PgWireError(
+                        {"C": "40001", "M": "could not serialize access"}
+                    );
+                }
+                real_upsert(rows);
+            }
+            store.upsert = failing_upsert;
+            other.commit();
+            assert left == [0] , "the first upsert was never attempted";
+            assert _stored(ctx, id, "n") == "70" , (
+                "a field write whose first upsert failed was dropped by the retry"
+            );
+        } finally {
+            other.close();
+            JacRuntime.exec_ctx = old;
+            ctx.close();
+        }
+    }
+}
+
+
 test "run_request re-runs a unit that ended in a conflict" {
     with TemporaryDirectory() as td {
         old = JacRuntime.exec_ctx;
@@ -761,7 +902,7 @@ def _vote_app(td: str) -> tuple[any, dict[str, any], any] {
     walkers = introspector.get_walkers();
     user_mgr = UserManager(base_path=td);
     exec_mgr = ExecutionManager(base_path=td, user_manager=user_mgr);
-    user_mgr.create_user("voter", "pw");
+    user_mgr.create_internal_user("voter", "pw");
     mod = sys.modules[walkers["Vote"].__module__];
     mod.runs.clear();
     mod.rival_commits.clear();

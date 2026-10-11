@@ -147,7 +147,8 @@ obj TxnWrites {
 obj UnflushedAnchor {
     has anchor: Anchor,
         stored: (dict[str, object] | None),
-        hash: int;
+        hash: int,
+        written: int = 0;
 }
 
 

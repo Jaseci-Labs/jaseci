@@ -1,4 +1,5 @@
 import ctypes;
+import ctypes.util;
 import json;
 import os;
 import sys;
@@ -499,7 +500,32 @@ def _load_library(desc: dict[str, any], module_file: str) -> any {
         _LIBS[cand] = lib;
         return lib;
     }
+    found = _system_library(desc);
+    if found is not None {
+        lib = _LIBS.get(found);
+        if lib is not None {
+            return lib;
+        }
+        try {
+            lib = ctypes.CDLL(found);
+            _LIBS[found] = lib;
+            return lib;
+        } except OSError as e {
+            errors.append(str(e));
+        }
+    }
     raise ImportError(f"cannot load C library: {'; '.join(errors)}");
+}
+
+def _system_library(desc: dict[str, any]) -> (str | None) {
+    if "path" in desc or desc.get("level", 0) > 0 {
+        return None;
+    }
+    names: list[str] = desc["names"];
+    if len(names) != 1 {
+        return None;
+    }
+    return ctypes.util.find_library(names[0]);
 }
 
 class CFunction {

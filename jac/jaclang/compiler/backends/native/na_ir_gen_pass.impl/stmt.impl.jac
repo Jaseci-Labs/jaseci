@@ -658,61 +658,44 @@ impl NaIRGenPass._codegen_switch(nd: uni.SwitchStmt) -> None {
     }
     func = self.builder.function;
     merge_bb = func.append_basic_block(name="switch.end");
-
-    default_case: (uni.SwitchCase | None) = None;
-    value_cases: list[uni.SwitchCase] = [];
-    for sc in nd.cases {
-        if sc.pattern is None {
-            default_case = sc;
-        } else {
-            value_cases.append(sc);
-        }
+    cases = list(nd.cases);
+    body_bbs: list[ir.Block] = [];
+    for (i, _sc) in enumerate(cases) {
+        body_bbs.append(func.append_basic_block(name=f"switch.case.{i}"));
     }
-    i8p = ir.IntType(8).as_pointer();
-    is_str = target_val.type == i8p;
-
-    for (i, sc) in enumerate(value_cases) {
-        pattern_val = None;
-        if isinstance(sc.pattern, uni.MatchValue) {
-            pattern_val = self._codegen_expr(sc.pattern.value);
+    subj_slot = self._entry_alloca(target_val.type, "switch.subj");
+    self.builder.store(target_val, subj_slot);
+    subj_ty = self._match_subj_ty(nd.target);
+    reached_default = False;
+    for (i, sc) in enumerate(cases) {
+        if sc.pattern is None {
+            self.builder.branch(body_bbs[i]);
+            reached_default = True;
+            break;
         }
-        if pattern_val is None {
-            continue;
+        subj = self.builder.load(subj_slot, name="switch.subj.l");
+        cond = self._match_pattern_cond(sc.pattern, subj, subj_ty);
+        if cond is None {
+            self.emit(E5092, node_override=sc, kind="switch case", name="pattern");
+            cond = ir.Constant(ir.IntType(1), 0);
         }
-
-        if is_str {
-            pattern_coerced = self._coerce_type(pattern_val, i8p);
-            cmp_result = self._call_str_cmp(
-                self.builder, target_val, pattern_coerced, name="switch.strcmp"
-            );
-            cond = self.builder.icmp_signed(
-                "==", cmp_result, ir.Constant(ir.IntType(32), 0), name="switch.eq"
-            );
-        } else {
-            pattern_coerced = self._coerce_type(pattern_val, target_val.type);
-            cond = self.builder.icmp_signed(
-                "==", target_val, pattern_coerced, name="switch.eq"
-            );
-        }
-        case_bb = func.append_basic_block(name=f"switch.case.{i}");
         next_bb = func.append_basic_block(name=f"switch.next.{i}");
-        self.builder.cbranch(cond, case_bb, next_bb);
-
-        self.builder.position_at_end(case_bb);
-        self._codegen_body(sc.body);
-        if not self.builder.block.is_terminated {
-            self.builder.branch(merge_bb);
-        }
-
+        self.builder.cbranch(cond, body_bbs[i], next_bb);
         self.builder.position_at_end(next_bb);
     }
-
-    if default_case is not None {
-        self._codegen_body(default_case.body);
-    }
-    if not self.builder.block.is_terminated {
+    if not reached_default {
         self.builder.branch(merge_bb);
     }
+    continue_bb = self.loop_stack[-1][0] if self.loop_stack else merge_bb;
+    self.loop_stack.append((continue_bb, merge_bb));
+    for (i, sc) in enumerate(cases) {
+        self.builder.position_at_end(body_bbs[i]);
+        self._codegen_body(sc.body);
+        if not self.builder.block.is_terminated {
+            self.builder.branch(body_bbs[i + 1] if i + 1 < len(cases) else merge_bb);
+        }
+    }
+    self.loop_stack.pop();
     self.builder.position_at_end(merge_bb);
 }
 
@@ -742,9 +725,7 @@ impl NaIRGenPass._codegen_while(nd: uni.WhileStmt) -> None {
     );
 
     _while_prebody = set(self.local_vars.keys());
-    if isinstance(nd.body, (list, tuple)) {
-        self._codegen_body(nd.body);
-    }
+    self._codegen_pass_body(nd);
     if not self.builder.block.is_terminated {
         _while_loc = f"{os.path.basename(self.module.loc.mod_path)}:{nd.loc.last_line
             if nd.loc
@@ -828,9 +809,7 @@ impl NaIRGenPass._codegen_forever(nd: uni.ForeverStmt) -> None {
     );
 
     _forever_prebody = set(self.local_vars.keys());
-    if isinstance(nd.body, (list, tuple)) {
-        self._codegen_body(nd.body);
-    }
+    self._codegen_pass_body(nd);
     if not self.builder.block.is_terminated {
         _forever_loc = f"{os.path.basename(self.module.loc.mod_path)}:{nd.loc.last_line
             if nd.loc
@@ -876,9 +855,7 @@ impl NaIRGenPass._codegen_iter_for(nd: uni.IterForStmt) -> None {
     );
 
     _iterfor_prebody = set(self.local_vars.keys());
-    if isinstance(nd.body, (list, tuple)) {
-        self._codegen_body(nd.body);
-    }
+    self._codegen_pass_body(nd);
     _loc = f"{os.path.basename(self.module.loc.mod_path)}:{nd.loc.last_line
         if nd.loc
         else 0}";
@@ -3086,11 +3063,7 @@ impl NaIRGenPass._codegen_assignment(nd: uni.Assignment) -> None {
                 var_name in self.closure_cell_vars
                 and var_name not in self.closure_cell_handles
             );
-            if _mk_cell {
-                alloca = self._emit_closure_cell(var_name, var_type);
-            } else {
-                alloca = self._entry_alloca(var_type, var_name);
-            }
+            alloca = self._binding_slot(var_type, var_name);
             _in_gen_frame = (
                 self._gen_ctx is not None
                 and self.builder.function is self._gen_ctx.resume_fn
@@ -3332,6 +3305,30 @@ impl NaIRGenPass._codegen_ctrl(nd: uni.CtrlStmt) -> None {
     }
     (continue_bb, break_bb) = self.loop_stack[-1];
     _loop_depth = len(self.loop_stack);
+    if ctrl_name == Tok.KW_CONTINUE {
+        while _loop_depth > 1 and self.loop_stack[_loop_depth - 2][0] is continue_bb {
+            _loop_depth -= 1;
+        }
+    }
+    owner = nd.parent;
+    while owner is not None
+        and not isinstance(
+            owner,
+            (
+                uni.SwitchStmt,
+                uni.InForStmt,
+                uni.IterForStmt,
+                uni.WhileStmt,
+                uni.ForeverStmt,
+                uni.Ability,
+                uni.LambdaExpr
+            )
+        ) {
+        owner = owner.parent;
+    }
+    if ctrl_name != Tok.KW_BREAK or not isinstance(owner, uni.SwitchStmt) {
+        self._emit_pass_link_detaches(enclosing_loop(nd));
+    }
     if self._emit_finalizers(_loop_depth) {
         return;
     }
@@ -4022,9 +4019,7 @@ impl NaIRGenPass._try_flow_for_parallel(nd: uni.InForStmt) -> bool {
         );
         _ff_prebody = set(self.local_vars.keys());
         self.loop_stack.append((_c_incr, _c_end));
-        if isinstance(nd.body, (list, tuple)) {
-            self._codegen_body(nd.body);
-        }
+        self._codegen_pass_body(nd);
         self.loop_stack.pop();
         if not self.builder.block.is_terminated {
             self._emit_loop_iter_cleanup(
@@ -4458,7 +4453,7 @@ impl NaIRGenPass._codegen_for_indexed(
 
     if kind == "range" {
         len_val = collection_val;
-        idx_alloca = self._entry_alloca(i64, var_names[0]);
+        idx_alloca = self._binding_slot(i64, var_names[0]);
         self.builder.store(range_start, idx_alloca);
         self.local_vars[var_names[0]] = idx_alloca;
         allocas = [idx_alloca];
@@ -4493,7 +4488,7 @@ impl NaIRGenPass._codegen_for_indexed(
                 and isinstance(_existing.type, ir.PointerType)
                 and _existing.type.pointee == vtype
             );
-            alloca = _existing if _reuse else self._entry_alloca(vtype, vname);
+            alloca = _existing if _reuse else self._binding_slot(vtype, vname);
             assert alloca is not None;
             _in_resume_fn = (
                 self._gen_ctx is not None
@@ -4669,9 +4664,7 @@ impl NaIRGenPass._codegen_for_indexed(
     );
 
     _for_prebody = set(self.local_vars.keys());
-    if isinstance(nd.body, (list, tuple)) {
-        self._codegen_body(nd.body);
-    }
+    self._codegen_pass_body(nd);
     if not self.builder.block.is_terminated {
         self._emit_loop_iter_cleanup(
             [
@@ -4854,9 +4847,7 @@ impl NaIRGenPass._try_chunked_for(nd: uni.InForStmt) -> bool {
     );
     _ch_prebody = set(self.local_vars.keys());
     self.loop_stack.append((_c_incr, _c_end));
-    if isinstance(nd.body, (list, tuple)) {
-        self._codegen_body(nd.body);
-    }
+    self._codegen_pass_body(nd);
 
     if not self.builder.block.is_terminated {
         self._emit_loop_iter_cleanup(

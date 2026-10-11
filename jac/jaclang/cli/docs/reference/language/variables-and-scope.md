@@ -165,42 +165,38 @@ def example() {
 
 **Closures created in a loop:**
 
-Because a local assigned in a loop body belongs to the function, the loop assigns the same binding on every iteration; it does not make a new one. A type annotation does not change that: `label: str = ...` in a loop body is owned by the function exactly like `label = ...`. A `lambda` or nested `def` reads the binding when it is called, not when it is created, so a closure that is kept past its iteration would see whatever the last iteration assigned. When the loop keeps the closure (stores it, yields it, uses it as an event handler), the compiler rejects that capture (**E2097**):
+A name whose every assignment is inside a loop is *local to that loop*: the loop target, and any local the loop body introduces (annotated or not). A `lambda` or nested `def` created in the loop body shares such a name with the rest of the function only while its pass through the body lasts. When that pass ends -- at the end of the body, at `continue`, or at `break` -- the closure keeps the value the name holds at that moment as its own. So every closure a loop creates sees its own iteration:
 
-<!-- jac-skip -->
 ```jac
 def build(names: list[str]) -> list[Callable[[], str]] {
     greeters: list[Callable[[], str]] = [];
     for name in names {
         label = name.upper();
-        greeters.append(lambda -> str { return label; });   # E2097: all return the last label
+        greeters.append(lambda -> str { return f"{name}: {label}"; });
     }
-    return greeters;
+    return greeters;    # each greeter returns its own name and label
 }
 ```
 
-Bind the value through a parameter. A parameter is a fresh binding on every call, so each closure keeps its own:
+Within its pass the closure and the function share the name both ways: a later assignment in the same pass is visible to the closure, and a closure called during the pass can update the name for the code that follows it. Code after the loop reads the value the last pass left, as usual.
+
+A name that is also assigned outside the loop is not local to it, so every closure keeps sharing it with the function. That is how a flag or a running total set by the loop stays visible to handlers created in it:
 
 ```jac
-def greeter_for(label: str) -> Callable[[], str] {
-    return lambda -> str { return label; };
-}
-
-def build(names: list[str]) -> list[Callable[[], str]] {
-    greeters: list[Callable[[], str]] = [];
-    for name in names {
-        label = name.upper();
-        greeters.append(greeter_for(label));
+def watch(steps: list[str]) -> list[Callable[[], bool]] {
+    finished = False;
+    checks: list[Callable[[], bool]] = [];
+    for step in steps {
+        checks.append(lambda -> bool { return finished; });
+        if step == "last" {
+            finished = True;
+        }
     }
-    return greeters;
+    return checks;    # every check sees the final `finished`
 }
 ```
 
-A closure that cannot outlive its iteration is fine: one called on the spot, a local helper `def` that is only called, the callback of `map` / `filter` / `sorted(key=...)` and the like, or one in a `return` that ends the loop. So is a closure over a binding the loop does not assign.
-
-When the closure is handed to a callee the compiler cannot see into (`register(lambda -> str { return label; })`), it cannot tell whether that callee runs the closure before returning or keeps it. That is a warning (**W2084**) rather than an error: the code is correct if the callee runs it in place, and has the same last-value bug if it does not. Binding through a parameter removes the warning. See [E2097 and W2084](../diagnostics.md#closures-created-in-a-loop) for the full list of what is an error, a warning, or neither.
-
-The check reports bindings the function owns. The `for` target and a `def` declared in the loop body belong to the loop itself and are not reported: client code gets a fresh one each iteration. Server and native code keep a single slot for them, as Python does, so a closure there that outlives its iteration sees the last target too. Pass the target through a parameter in the same way.
+The rule is the same in every codespace: server, client, and native code all give a loop's closures the same bindings. A comprehension follows the same rule: a closure created for one element sees that element's variables.
 
 ## 5 Truthiness
 

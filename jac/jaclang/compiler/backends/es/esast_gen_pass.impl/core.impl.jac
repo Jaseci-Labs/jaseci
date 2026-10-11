@@ -179,6 +179,150 @@ impl EsastGenPass._build_block_statement(
     return self.sync_loc(es.BlockStatement(body=statements), jac_node=scope_node);
 }
 
+impl EsastGenPass._pass_link_name(link: PassLink) -> str {
+    return f"_jac_pass_{link.sym.sym_name}_{link.index}";
+}
+
+impl EsastGenPass._pass_link_ref(link: PassLink, nd: uni.UniNode) -> es.Expression {
+    return self.sync_loc(
+        es.MemberExpression(
+            object=self.sync_loc(
+                es.Identifier(name=self._pass_link_name(link)), jac_node=nd
+            ),
+            property=self.sync_loc(es.Identifier(name='v'), jac_node=nd),
+            computed=False
+        ),
+        jac_node=nd
+    );
+}
+
+impl EsastGenPass._build_pass_block(loop: LoopStmt) -> es.BlockStatement {
+    block = self._build_block_statement(loop, loop.body);
+    links = [
+        link
+        for link in self.loop_links.of_loop(loop)
+        if not self._pass_link_native(link)
+    ];
+    if not links {
+        return block;
+    }
+    opens: list[es.Statement] = [];
+    for link in links {
+        name = link.sym.sym_name;
+        read_fn = es.ArrowFunctionExpression(
+            params=[], body=es.Identifier(name=name), expression=True
+        );
+        write_fn = es.ArrowFunctionExpression(
+            params=[es.Identifier(name='value')],
+            body=es.BlockStatement(
+                body=[
+                    es.ExpressionStatement(
+                        expression=es.AssignmentExpression(
+                            operator='=',
+                            left=es.Identifier(name=name),
+                            right=es.Identifier(name='value')
+                        )
+                    )
+                ]
+            ),
+            expression=False
+        );
+        made = self._build_jac_call(
+            ["_jac", "passLink"],
+            [
+                self.sync_loc(read_fn, jac_node=loop),
+                self.sync_loc(write_fn, jac_node=loop)
+            ],
+            loop
+        );
+        declarator = es.VariableDeclarator(
+            id=es.Identifier(name=self._pass_link_name(link)), `init=made
+        );
+        opens.append(
+            self.sync_loc(
+                es.VariableDeclaration(declarations=[declarator], kind='const'),
+                jac_node=loop
+            )
+        );
+    }
+    block.body = [*opens, *block.body, *self._pass_link_detaches(loop)];
+    return block;
+}
+
+impl EsastGenPass._pass_link_native(link: PassLink) -> bool {
+    known = self._native_links.get(link.index);
+    if known is None {
+        known = confined_to(link.sym, link.loop)
+            and (
+                binds_target(link.sym, link.loop)
+                or assigned_on_entry(link.sym, link.loop)
+            );
+        self._native_links[link.index] = known;
+    }
+    return known;
+}
+
+impl EsastGenPass._target_confined(loop: uni.InForStmt) -> bool {
+    for nm in loop.target.get_all_sub_nodes(uni.Name) {
+        if nm.sym is not None and not confined_to(nm.sym, loop) {
+            return False;
+        }
+    }
+    return True;
+}
+
+impl EsastGenPass._target_rebound(loop: uni.InForStmt) -> bool {
+    for nm in loop.target.get_all_sub_nodes(uni.Name) {
+        if nm.sym is None {
+            continue;
+        }
+        for site in binding_sites(nm.sym) {
+            if not is_within(site, loop.target) {
+                return True;
+            }
+        }
+    }
+    return False;
+}
+
+impl EsastGenPass._frame_scope_of(nd: uni.UniNode) -> (ScopeInfo | None) {
+    cur = nd.parent;
+    while cur is not None {
+        if isinstance(cur, uni.ImplDef) and isinstance(cur.decl_link, uni.Ability) {
+            return self.scope_map.get(cur.decl_link);
+        }
+        if isinstance(cur, (uni.Module, uni.Ability, uni.Test, uni.LambdaExpr)) {
+            return self.scope_map.get(cur);
+        }
+        cur = cur.parent;
+    }
+    return None;
+}
+
+impl EsastGenPass._pass_link_detaches(loop: (LoopStmt | None)) -> list[es.Statement] {
+    detaches: list[es.Statement] = [];
+    if loop is None {
+        return detaches;
+    }
+    for link in self.loop_links.of_loop(loop) {
+        if self._pass_link_native(link) {
+            continue;
+        }
+        detach = es.CallExpression(
+            callee=es.MemberExpression(
+                object=es.Identifier(name=self._pass_link_name(link)),
+                property=es.Identifier(name='detach'),
+                computed=False
+            ),
+            arguments=[]
+        );
+        detaches.append(
+            self.sync_loc(es.ExpressionStatement(expression=detach), jac_node=loop)
+        );
+    }
+    return detaches;
+}
+
 impl EsastGenPass._get_ast_or_default(
     nd: (uni.UniNode | None), default_factory: Callable[([(uni.UniNode | None)], _T)]
 ) -> _T {
@@ -279,7 +423,22 @@ impl EsastGenPass._declaring_scope_for(name_node: uni.UniNode) -> (ScopeInfo | N
     if (sym is None) or (sym.parent_tab is None) {
         return None;
     }
+    for link in self.loop_links.of_symbol(sym) {
+        if self._pass_link_native(link) and not binds_target(sym, link.loop) {
+            return self.scope_map.get(link.loop);
+        }
+    }
     owner = sym.parent_tab;
+    if isinstance(owner, uni.InForStmt) {
+        if not self._target_confined(owner) {
+            return self._frame_scope_of(owner);
+        }
+        loop_scope = self.scope_map.get(owner);
+        if loop_scope is not None {
+            loop_scope.declared.add(sym.sym_name);
+        }
+        return loop_scope;
+    }
     if not isinstance(
         owner, (uni.Module, uni.Ability, uni.ImplDef, uni.Test, uni.LambdaExpr)
     ) {
@@ -517,6 +676,8 @@ impl EsastGenPass.prepare with entry {
     if self.ctx.nested_depth {
         return;
     }
+    self.loop_links = LoopLinks.of(self.module);
+    self._native_links = {};
     for nd in self.module.flatten() {
         nd.gen.es_ast = None;
     }
