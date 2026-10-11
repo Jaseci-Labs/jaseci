@@ -167,6 +167,9 @@ impl WorkPool._worker_loop(dispatch_fd: int, result_fd: int) -> None {
             } except Exception {
                 retire_now = False;
             }
+            if not retire_now {
+                rss = worker_rss_mb();
+            }
         }
         record["idx"] = request["idx"];
         record["retire"] = retire_now;
@@ -576,20 +579,48 @@ impl memory_headroom_bytes(
             cg = cg.parent;
         }
     } except Exception {}
+    if not known {
+        try {
+            known.append(os.sysconf("SC_PHYS_PAGES") * os.sysconf("SC_PAGE_SIZE"));
+        } except (ValueError, OSError, AttributeError) {}
+    }
     return min(known) if known else 0;
 }
 
+impl cpu_quota -> int {
+    import from pathlib { Path }
+    try {
+        text = Path('/sys/fs/cgroup/cpu.max').read_text(encoding='utf-8').strip();
+        parts = text.split();
+        if len(parts) == 2 and parts[0] != 'max' {
+            quota = int(parts[0]);
+            period = int(parts[1]);
+            if quota > 0 and period > 0 {
+                return max(1, -(-quota // period));
+            }
+        }
+    } except (OSError, ValueError) {}
+    try {
+        quota_text = Path('/sys/fs/cgroup/cpu/cpu.cfs_quota_us').read_text(
+            encoding='utf-8'
+        ).strip();
+        period_text = Path('/sys/fs/cgroup/cpu/cpu.cfs_period_us').read_text(
+            encoding='utf-8'
+        ).strip();
+        quota_v1 = int(quota_text);
+        period_v1 = int(period_text);
+        if quota_v1 > 0 and period_v1 > 0 {
+            return max(1, -(-quota_v1 // period_v1));
+        }
+    } except (OSError, ValueError) {}
+    counter: any = os?.process_cpu_count;
+    counted = counter() if counter is not None else os.cpu_count();
+    return max(1, int(counted or 1));
+}
+
 impl default_jobs(worker_bytes: int = 0, avail_bytes: int = 0) -> int {
-    import from jaclang.server.settings { cpu_quota }
     cpus = cpu_quota();
     avail = int(avail_bytes or 0) or memory_headroom_bytes();
-    if not avail {
-        try {
-            avail = os.sysconf("SC_PHYS_PAGES") * os.sysconf("SC_PAGE_SIZE");
-        } except Exception {
-            avail = 0;
-        }
-    }
 
     per_worker = max(WORKER_MEM_BYTES, int(worker_bytes or 0));
     cap = cpus;

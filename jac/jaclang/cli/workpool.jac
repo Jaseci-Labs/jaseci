@@ -63,6 +63,8 @@ def memory_headroom_bytes(
     cgroup_root: str = "/sys/fs/cgroup", self_cgroup: str = "/proc/self/cgroup"
 ) -> int;
 
+def cpu_quota -> int;
+
 def default_jobs(worker_bytes: int = 0, avail_bytes: int = 0) -> int;
 
 def jobs_setting(
