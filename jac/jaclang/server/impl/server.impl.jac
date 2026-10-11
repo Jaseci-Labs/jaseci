@@ -4,8 +4,6 @@ import from jaclang.runtime.object_model { MISSING }
 import inspect;
 import json;
 import os;
-import random;
-import time;
 import from inspect { iscoroutine }
 import from typing { get_type_hints }
 import from jaclang.data.serializer { Serializer }
@@ -139,17 +137,6 @@ def _unit_key_for(target: any) -> (str | None) {
 }
 
 
-glob CONFLICT_BACKOFF_CAP_S = 2.0;
-
-
-def _conflict_backoff_s(attempt: int, floor_ms: int, last_attempt_s: float) -> float {
-    base = max(floor_ms / 1000.0, last_attempt_s);
-    return random.uniform(
-        0.0, min(CONFLICT_BACKOFF_CAP_S, base * (2 ** (attempt - 1)))
-    );
-}
-
-
 def _occ_policy -> tuple[str, int, int] {
     mode = "retry";
     max_attempts = 5;
@@ -223,7 +210,6 @@ async def _run_function_with_occ(
         ro_retries = 0;
         while attempt < max_attempts {
             attempt += 1;
-            attempt_started = time.monotonic();
             call_token = ctx.call_state.set(CallState());
             call_state = ctx.call_state.get();
             try {
@@ -266,11 +252,9 @@ async def _run_function_with_occ(
                         'http_status': 409
                     };
                 }
-                await asyncio.sleep(
-                    _conflict_backoff_s(
-                        attempt, occ_backoff_ms, time.monotonic() - attempt_started
-                    )
-                );
+                if occ_backoff_ms > 0 {
+                    await asyncio.sleep(occ_backoff_ms * attempt / 1000.0);
+                }
                 await ctx.aset_user_root(root_id);
             } except Exception as e {
                 ctx.mem.abort();

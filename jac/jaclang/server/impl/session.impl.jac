@@ -422,6 +422,8 @@ impl Session.postinit -> None {
     self._unit_stack = [];
     self._snapshot_reads = set();
     self._foreign_refs = set();
+    self._contended = set();
+    self._queued = [];
 }
 
 
@@ -624,6 +626,7 @@ impl Session.commit(anchor: (Anchor | None) = None) -> None {
                 try {
                     self.flush(full=True);
                     self._commit_txn();
+                    self._leave_queue();
                     break;
                 } except Exception as e {
                     if not _is_serialization_conflict(e) {
@@ -692,7 +695,7 @@ impl Session.quarantine_ref(referrer: (Anchor | None), stub: Anchor) -> None {
 
 
 impl Session._txn_isolation -> TxnIsolation {
-    if self._dirty or self._deleted {
+    if self._dirty or self._deleted or self._contended {
         return TxnIsolation.SERIALIZABLE;
     }
     if self._read_scopes > 0 and self._active_units == 0 {
@@ -752,7 +755,11 @@ impl Session._ensure_txn -> None {
         self._reclaim_dead_txn();
         wanted = self._txn_isolation();
         if not self._store.in_txn() {
-            self._store.begin(wanted);
+            if wanted is TxnIsolation.SERIALIZABLE {
+                self._begin_serializable();
+            } else {
+                self._store.begin(wanted);
+            }
         } elif wanted is TxnIsolation.SERIALIZABLE {
             self._begin_writable();
         }
@@ -971,7 +978,12 @@ impl Session._flush_locked(full: bool) -> None {
     }
     if unflushed {
         rows = [self._serialize(u.anchor, u.stored) for u in unflushed];
-        store.upsert(rows);
+        try {
+            store.upsert(rows);
+        } except WriteConflict as wc {
+            self._contended.add(wc.anchor_id);
+            raise;
+        }
         for (row, u) in zip(rows, unflushed) {
             self._rows.upserted(row.id, RowState(hash=u.hash, version=row.version));
             u.anchor.hash = u.hash;
@@ -1170,10 +1182,60 @@ impl Session._begin_writable -> None {
             }
             self._commit_txn();
             self._drop_snapshot_reads();
-            self._store.begin(TxnIsolation.SERIALIZABLE);
+            self._begin_serializable();
         } elif not self._store.in_txn() {
-            self._store.begin(TxnIsolation.SERIALIZABLE);
+            self._begin_serializable();
         }
+    }
+}
+
+
+impl Session._begin_serializable -> None {
+    store = self._store;
+    if store is None {
+        return;
+    }
+    if not self._contended {
+        store.begin(TxnIsolation.SERIALIZABLE);
+        return;
+    }
+    waiting = sorted(
+        id
+        for id in self._contended
+        if id not in self._queued
+    );
+    if waiting {
+        store.queue_enter(waiting);
+        self._queued.extend(waiting);
+    }
+    pinned = sorted(self._contended);
+    for _ in range(PIN_ATTEMPTS) {
+        store.begin(TxnIsolation.SERIALIZABLE);
+        try {
+            store.lock_rows(pinned);
+            return;
+        } except Exception as e {
+            if not _is_serialization_conflict(e) {
+                raise;
+            }
+            store.rollback();
+        }
+    }
+    store.begin(TxnIsolation.SERIALIZABLE);
+}
+
+
+impl Session._leave_queue -> None {
+    self._contended.clear();
+    held = self._queued;
+    self._queued = [];
+    if not held or self._store is None {
+        return;
+    }
+    try {
+        self._store.queue_exit(held);
+    } except Exception as e {
+        logger.warning(f"releasing the write queue failed: {type(e).__name__}: {e}");
     }
 }
 
@@ -1211,7 +1273,7 @@ impl Session.close -> None {
     } except Exception as e {
         logger.warning(f"commit on close failed: {type(e).__name__}: {e}");
     }
-
+    self._leave_queue();
     if self._store is not None {
         self._store.close();
     }

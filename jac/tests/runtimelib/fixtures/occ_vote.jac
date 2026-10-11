@@ -18,11 +18,13 @@ COMMITs were made to fail.
 
 `Bump` is a read-modify-write of one `Counter` that holds its transaction
 open for `hold` seconds, the shape of a real update handler; many of them
-at once on the same counter is the contention case.
+at once on the same counter is the contention case. With `busy` the hold
+is CPU work instead of a sleep, so the requests compete for the process as
+well as for the row, the way a saturated server does.
 """
 
 import from jaclang.data.pgwire { PgWireError }
-import from time { sleep }
+import from time { sleep, time }
 import from jaclang.runtime.runtime { JacRuntimeInterface as Jac }
 
 glob runs: list[int] = [],
@@ -132,18 +134,29 @@ node Counter {
 
 walker:pub SeedCounter {
     can plant with Root entry {
-        here ++> Counter();
+        if not [here-->[?:Counter]] {
+            here ++> Counter();
+        }
     }
 }
 
 
 walker:pub Bump {
-    has hold: float = 0.05;
+    has hold: float = 0.05,
+        busy: bool = False;
 
     can bump with Root entry {
         counter = [here-->[?:Counter]][0];
         seen = counter.n;
-        sleep(self.hold);
+        if self.busy {
+            until = time() + self.hold;
+            spins = 0;
+            while time() < until {
+                spins += 1;
+            }
+        } else {
+            sleep(self.hold);
+        }
         counter.n = seen + 1;
     }
 }
