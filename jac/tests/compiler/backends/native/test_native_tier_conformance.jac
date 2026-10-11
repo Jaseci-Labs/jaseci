@@ -304,3 +304,45 @@ test "a swap through a nested tuple keeps every object" {
     );
     assert out == "R L 1 2\nL R 2 2\nR L 3 2\nba3\n" , out;
 }
+
+"""An object whose field holds its own type is written out by one helper,
+whichever is printed first: the object, or a list or dict that holds it.
+Printing the container first built the object's helper twice and stopped
+the compile."""
+test "a self-referential object prints from inside a container first" {
+    out = assert_native_identity(
+        fixture("default_object_text_recursive.jac"), profiles=["rc", "managed"]
+    );
+    assert "[Link(name='a', after=Link(name='b', after=None))]\n" in out , out;
+    assert "[Tree(label='r', kids=[Tree(label='x', kids=[])])]\n" in out , out;
+    assert "{'h': Hub(name='p', spokes={'q': Hub(name='q', spokes={})})}\n"
+        in out , out;
+}
+
+"""A connect with a list of nodes on one side evaluates its edge and its
+attribute values once, as the Python tier does, not once per node: with no
+nodes they are still evaluated, and every edge gets the same values."""
+test "a connect through a list evaluates its edge once" {
+    out = assert_native_identity(
+        fixture("connect_through_list_once.jac"), profiles=["rc", "managed"]
+    );
+    assert out == "assigned 1 3\nassigned to none 2\nbuilt 3 2\n" , out;
+}
+
+"""A `break` in a `finally` replaces a `continue` that was on its way out of
+a switch. The Python tier kept the `continue` pending and moved the loop on,
+skipping the statements after the switch. The native tier ran the `finally`
+where the `continue` or `return` was, so its `break` left the innermost loop
+or switch there instead of the one around the `try`, and the program
+crashed."""
+test "a break in a finally cancels a continue leaving a switch" {
+    out = assert_native_identity(
+        fixture("switch_finally_break.jac"), profiles=["rc", "managed"]
+    );
+    assert out
+        == (
+            "case 0 after 0 finally 1 after 1 case 2 after 2\n"
+            "even 0 after 0 after 1 even 2 after 2 inner 3 after inner 3 after 3\n"
+            "j 00 j 01 broke\n"
+        ) , out;
+}

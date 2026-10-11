@@ -64,7 +64,25 @@ impl JcirGenPass.resolve_switch_stmt(nd: SwitchStmt) -> list[CgItem] {
         ['op', 'operand'],
         [self.nod('Not', [], []), self.name_load('__executed')]
     );
-    passes_continue = False;
+    switch_loop = self.nod(
+        'While', ['test', 'body', 'orelse'], [while_cond, ast_nodes, []]
+    );
+    if not self._switch_passes_continue(nd) {
+        return [assign_var, switch_loop];
+    }
+    return [
+        self._switch_flag_set(nd, False),
+        assign_var,
+        switch_loop,
+        self.nod(
+            'If',
+            ['test', 'body', 'orelse'],
+            [self.name_load(self._continued_flag(nd)), self._continue_out(nd), []]
+        )
+    ];
+}
+
+impl JcirGenPass._switch_passes_continue(nd: SwitchStmt) -> bool {
     for ctrl in nd.get_all_sub_nodes(CtrlStmt) {
         if ctrl.ctrl.name != Tok.KW_CONTINUE {
             continue;
@@ -74,34 +92,31 @@ impl JcirGenPass.resolve_switch_stmt(nd: SwitchStmt) -> list[CgItem] {
             leaves = self._ctrl_owner(leaves);
         }
         if leaves is nd {
-            passes_continue = True;
-            break;
+            return True;
         }
     }
-    switch_loop = self.nod(
-        'While', ['test', 'body', 'orelse'], [while_cond, ast_nodes, []]
-    );
-    if not passes_continue {
-        return [assign_var, switch_loop];
-    }
-    flag = f"__continued_{nd.loc.first_line}_{nd.loc.col_start}";
-    return [
-        self.nod(
-            'Assign',
-            ['targets', 'value'],
+    return False;
+}
+
+impl JcirGenPass._continued_flag(nd: SwitchStmt) -> str {
+    return f"__continued_{nd.loc.first_line}_{nd.loc.col_start}";
+}
+
+impl JcirGenPass._switch_flag_set(nd: SwitchStmt, value: bool) -> CgNode {
+    return self.nod(
+        'Assign',
+        ['targets', 'value'],
+        [
             [
-                [self.nod('Name', ['id', 'ctx'], [flag, self.nod('Store', [], [])])],
-                self.const_of(False)
-            ]
-        ),
-        assign_var,
-        switch_loop,
-        self.nod(
-            'If',
-            ['test', 'body', 'orelse'],
-            [self.name_load(flag), self._continue_out(nd), []]
-        )
-    ];
+                self.nod(
+                    'Name',
+                    ['id', 'ctx'],
+                    [self._continued_flag(nd), self.nod('Store', [], [])]
+                )
+            ],
+            self.const_of(value)
+        ]
+    );
 }
 
 impl JcirGenPass._ctrl_owner(nd: UniNode) -> UniNode | None {
@@ -123,22 +138,7 @@ impl JcirGenPass._ctrl_owner(nd: UniNode) -> UniNode | None {
 impl JcirGenPass._continue_out(nd: UniNode) -> list[CgItem] {
     owner = self._ctrl_owner(nd);
     if isinstance(owner, SwitchStmt) {
-        flag = f"__continued_{owner.loc.first_line}_{owner.loc.col_start}";
-        return [
-            self.nod(
-                'Assign',
-                ['targets', 'value'],
-                [
-                    [
-                        self.nod(
-                            'Name', ['id', 'ctx'], [flag, self.nod('Store', [], [])]
-                        )
-                    ],
-                    self.const_of(True)
-                ]
-            ),
-            self.nod('Break', [], [])
-        ];
+        return [self._switch_flag_set(owner, True), self.nod('Break', [], [])];
     }
     if isinstance(owner, IterForStmt) {
         return [self.val(owner.count_by), self.nod('Continue', [], [])];
@@ -671,7 +671,14 @@ impl JcirGenPass.exit_assert_stmt with AssertStmt exit {
 
 impl JcirGenPass.exit_ctrl_stmt with CtrlStmt exit {
     if (here.ctrl.name == Tok.KW_BREAK) {
-        self.set_out(here, [self.nod('Break', [], [])]);
+        owner = self._ctrl_owner(here);
+        if isinstance(owner, SwitchStmt) and self._switch_passes_continue(owner) {
+            self.set_out(
+                here, [self._switch_flag_set(owner, False), self.nod('Break', [], [])]
+            );
+        } else {
+            self.set_out(here, [self.nod('Break', [], [])]);
+        }
     } elif (here.ctrl.name == Tok.KW_CONTINUE) {
         self.set_out(here, self._continue_out(here));
     } elif (here.ctrl.name == Tok.KW_SKIP) {
