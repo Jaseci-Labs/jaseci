@@ -24,7 +24,8 @@ glob APP_VOLUME_NAME: str = "jac-app",
      STAGE_PREFIX: str = "jac-app-precompile-",
      STAGE_REAP_AGE_S: int = 86400;
 
-glob _stage_roots: list[str] = [];
+glob _stage_roots: list[str] = [],
+     SEAL_CACHE_KEEP: int = 2;
 
 glob _reported_prunes: set[str] = set();
 
@@ -951,6 +952,69 @@ def _venv_stage(stage: Path, seal_binary: bytes, timeout_s: int) {
 }
 
 
+def seal_input_digest(
+    base: Path,
+    sources: list[Path],
+    seal_binary: bytes,
+    pod_arch: str,
+    app_name: str,
+    sanitized: (str | None),
+    fat: bool
+) -> str {
+    digest = hashlib.sha256();
+    digest.update(hashlib.sha256(seal_binary).digest());
+    for part in (
+        pod_arch,
+        app_name,
+        "fat" if fat else "thin",
+        os.environ.get("JAC_SEAL_SKIP_VENV", ""),
+        sanitized or ""
+    ) {
+        digest.update(part.encode("utf-8"));
+        digest.update(b"\0");
+    }
+    for (toml_rel, toml_text) in sorted(nested_sanitized_tomls(base).items()) {
+        digest.update(toml_rel.encode("utf-8"));
+        digest.update(b"\0");
+        digest.update(toml_text.encode("utf-8"));
+        digest.update(b"\0");
+    }
+    for path in sorted(sources) {
+        digest.update(path.relative_to(base).as_posix().encode("utf-8"));
+        digest.update(b"\0");
+        digest.update(hashlib.sha256(path.read_bytes()).digest());
+    }
+    return digest.hexdigest();
+}
+
+
+def _seal_cache_dir(base: Path) -> Path {
+    return base / ".jac" / "seal-cache";
+}
+
+
+def _mtime(path: Path) -> float {
+    return path.stat().st_mtime;
+}
+
+
+def _remember_seal(base: Path, key: str, raw: bytes) {
+    cache = _seal_cache_dir(base);
+    try {
+        cache.mkdir(parents=True, exist_ok=True);
+        partial = cache / f"{key}.jab.partial";
+        partial.write_bytes(raw);
+        os.replace(partial, cache / f"{key}.jab");
+        kept = sorted(cache.`glob("*.jab"), key=_mtime, reverse=True);
+        for stale in kept[SEAL_CACHE_KEEP:] {
+            stale.unlink(missing_ok=True);
+        }
+    } except OSError as exc {
+        logger.warning(f"Could not keep the sealed bundle for reuse: {exc}");
+    }
+}
+
+
 def pack_jab(
     project_dir: str, seal_binary: bytes, pod_arch: str = "", fleet: any = None
 ) -> bytes {
@@ -980,12 +1044,26 @@ def pack_jab(
         );
     }
     sanitized = sanitized_jac_toml(base);
-    staged = _precompile_app(
+    app_name = sealed_app_name(project_dir, fleet);
+    key = seal_input_digest(
         base,
+        sources,
         seal_binary,
+        pod_arch,
+        app_name,
         sanitized,
-        seal_timeout_setting(project_dir),
-        sealed_app_name(project_dir, fleet)
+        fat_bundle_setting(project_dir)[0]
+    );
+    cached = _seal_cache_dir(base) / f"{key}.jab";
+    if cached.is_file() {
+        logger.info(
+            f"Reusing the sealed bundle for unchanged inputs ({key[:12]}); skipping the seal."
+        );
+        os.utime(cached, None);
+        return cached.read_bytes();
+    }
+    staged = _precompile_app(
+        base, seal_binary, sanitized, seal_timeout_setting(project_dir), app_name
     );
 
     try {
@@ -1091,7 +1169,9 @@ def pack_jab(
         } finally {
             gz.close();
         }
-        return buf.getvalue();
+        raw = buf.getvalue();
+        _remember_seal(base, key, raw);
+        return raw;
     } finally {
         remove_stage_root(staged.parent);
     }

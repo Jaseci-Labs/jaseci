@@ -1,4 +1,5 @@
 import io;
+import logging;
 import os;
 import shutil;
 import subprocess;
@@ -157,6 +158,53 @@ def _names(raw: bytes) -> list[str] {
     with tarfile.open(fileobj=io.BytesIO(raw), mode="r:gz") as tar {
         return tar.getnames();
     }
+}
+
+
+class _SealLog(logging.Handler) {
+    def init(self: _SealLog) {
+        super.__init__();
+        self.messages: list[str] = [];
+    }
+
+    def emit(self: _SealLog, record: logging.LogRecord) {
+        self.messages.append(record.getMessage());
+    }
+}
+
+
+def _pack_logged(base: Path, binary: bytes) -> tuple[bytes, list[str]] {
+    log = logging.getLogger("jaclang.scale.injector.bundle");
+    seen = _SealLog();
+    previous = log.level;
+    log.setLevel(logging.INFO);
+    log.addHandler(seen);
+    try {
+        raw = pack_jab(str(base), binary);
+    } finally {
+        log.removeHandler(seen);
+        log.setLevel(previous);
+    }
+    return (raw, seen.messages);
+}
+
+
+test "an unchanged project reuses its sealed bundle instead of sealing again" {
+    binary = require_pod_binary().read_bytes();
+    base = Path(_mini_app());
+    (first, first_log) = _pack_logged(base, binary);
+    assert not any("Reusing the sealed bundle" in m for m in first_log);
+    (again, again_log) = _pack_logged(base, binary);
+    assert any("Reusing the sealed bundle" in m for m in again_log) , (
+        f"a deploy of unchanged code sealed the app again: {again_log}"
+    );
+    assert again == first , "the reused bundle differs from the one sealed";
+    (base / "svc.jac").write_text("def:pub ping -> str { return \"pong!\"; }\n");
+    (edited, edited_log) = _pack_logged(base, binary);
+    assert not any("Reusing the sealed bundle" in m for m in edited_log) , (
+        "a source edit reused the previous seal"
+    );
+    assert edited != first;
 }
 
 
