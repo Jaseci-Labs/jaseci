@@ -332,6 +332,13 @@ impl HotReloader._remove_compiled_output(file_path: str) -> None {
     }
 }
 
+impl HotReloader._compiled_root -> Path {
+    if self.client_compiler {
+        return Path(str(self.client_compiler.jac_client_compiler.compiled_dir));
+    }
+    return Path(self.base_path) / self._client_output_dir;
+}
+
 impl HotReloader._remove_compiled_dir(file_path: str) -> None {
     base_dir = Path(self.base_path).resolve();
     source_path = Path(file_path);
@@ -343,13 +350,7 @@ impl HotReloader._remove_compiled_dir(file_path: str) -> None {
     } except ValueError {
         return;
     }
-    if self.client_compiler {
-        compiled_root = Path(
-            str(self.client_compiler.jac_client_compiler.compiled_dir)
-        );
-    } else {
-        compiled_root = Path(self.base_path) / self._client_output_dir;
-    }
+    compiled_root = self._compiled_root();
     target = compiled_root / rel;
     try {
         if str(target.resolve()) == str(compiled_root.resolve()) {
@@ -764,8 +765,7 @@ impl HotReloader._copy_frontend_files(file_path: str) -> None {
         } except ValueError {
             rel_path = Path(source_path.name);
         }
-        output_base = Path(self.base_path) / self._client_output_dir;
-        output_path = output_base / rel_path;
+        output_path = self._compiled_root() / rel_path;
 
         if not source_path.exists() {
             if output_path.exists() {

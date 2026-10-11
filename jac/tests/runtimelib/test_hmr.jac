@@ -95,6 +95,23 @@ test "a stylesheet change in a prepared app is copied, not re-prepared" {
             );
             copied = Path(tmp) / reloader._client_output_dir / 'styles.css';
             assert copied.read_text() == '.root { color: red; }';
+            compiled = Path(tmp) / 'build' / 'web' / 'compiled';
+            reloader.client_compiler = _FakeCompiler(
+                jac_client_compiler=_FakeJcc(
+                    out_path=compiled / 'main.js',
+                    next_code='',
+                    compiled_dir=str(compiled)
+                )
+            );
+            sheet.write_text('.root { color: blue; }');
+            reloader._process_change(str(sheet));
+            served = compiled / 'styles.css';
+            assert served.read_text() == '.root { color: blue; }' , (
+                "the edit was not copied to the client compiler's output"
+            );
+            sheet.unlink();
+            reloader._process_change(str(sheet));
+            assert not served.exists() , "a deleted stylesheet stayed in the served output";
         } finally {
             forget(str(source_path));
             for name in list(sys.modules) {
