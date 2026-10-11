@@ -98,7 +98,7 @@ def _invalid(template: str, i: int) {
         }
         j += 1;
     }
-    colno: int = 0;
+    colno: int = 1;
     k: int = lastnl + 1;
     while k < i {
         if (bv[k] & 192) != 128 {
@@ -119,7 +119,7 @@ def _ph(bv: bytes, i: int, n: int) -> tuple[(str, int, str)] {
         while j < n and is_word(bv[j]) {
             j += 1;
         }
-        if j > i + 2 and j < n and bv[j] == 125 {
+        if j > i + 2 and is_id_start(bv[i + 2]) and j < n and bv[j] == 125 {
             return (bv[i + 2:j].decode(), j + 1 - i, bv[i:j + 1].decode());
         }
         return ("", 0, "");

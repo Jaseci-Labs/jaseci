@@ -10,7 +10,10 @@ locale-aware behavior are outside the native module's scope.
 `get_identifiers` returns a list, which the cross-backend harness reads as raw
 i64, so it is probed via `len(...)` and element reads. `suberr`/`caperr` pin the
 KeyError / ValueError paths; `lit*` pin `safe_substitute`'s literal preservation
-of malformed placeholders. ES/JS opts out.
+of malformed placeholders. `inv*` pin the "Invalid placeholder" message with
+its one-based line and column (first line, a later line, and a non-ASCII
+prefix counted in characters); `valid4`/`lit5` pin that a braced name must
+start like an identifier, so `${1}` is malformed. ES/JS opts out.
 """
 
 import from string { capwords, digits, hexdigits, whitespace, Template }
@@ -37,7 +40,31 @@ def string_py -> dict[any, any] {
     me: dict[str, any] = {};
     mu: dict[str, any] = {"w": "w\u00f6rld"};
 
+    inv1: str = "no raise";
+    try {
+        Template("$").substitute(me);
+    } except ValueError as e {
+        inv1 = str(e);
+    }
+    inv2: str = "no raise";
+    try {
+        Template("ab\ncd ${").substitute(me);
+    } except ValueError as e {
+        inv2 = str(e);
+    }
+    inv3: str = "no raise";
+    try {
+        Template("h\u00e9 ${1}").substitute(me);
+    } except ValueError as e {
+        inv3 = str(e);
+    }
     return {
+        "inv1": inv1,
+        "inv2": inv2,
+        "inv3": inv3,
+        "valid4": Template("${1}").is_valid(),
+        "valid5": Template("${_a1} $_b").is_valid(),
+        "lit5": Template("${1} ${9z}").safe_substitute(me),
         "cap4": capwords("h\u00e9llo w\u00f6rld"),
         "subu": Template("h\u00e9llo $w").substitute(mu),
         "idu": len(Template("\u00e9 $a \u00e9b").get_identifiers()),
@@ -92,7 +119,31 @@ def string_na -> dict[str, any] {
     me: dict[str, any] = {};
     mu: dict[str, any] = {"w": "w\u00f6rld"};
 
+    inv1: str = "no raise";
+    try {
+        Template("$").substitute(me);
+    } except ValueError as e {
+        inv1 = str(e);
+    }
+    inv2: str = "no raise";
+    try {
+        Template("ab\ncd ${").substitute(me);
+    } except ValueError as e {
+        inv2 = str(e);
+    }
+    inv3: str = "no raise";
+    try {
+        Template("h\u00e9 ${1}").substitute(me);
+    } except ValueError as e {
+        inv3 = str(e);
+    }
     return {
+        "inv1": inv1,
+        "inv2": inv2,
+        "inv3": inv3,
+        "valid4": Template("${1}").is_valid(),
+        "valid5": Template("${_a1} $_b").is_valid(),
+        "lit5": Template("${1} ${9z}").safe_substitute(me),
         "cap4": capwords("h\u00e9llo w\u00f6rld"),
         "subu": Template("h\u00e9llo $w").substitute(mu),
         "idu": len(Template("\u00e9 $a \u00e9b").get_identifiers()),

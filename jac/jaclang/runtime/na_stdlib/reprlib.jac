@@ -1,20 +1,47 @@
 import from _repr { repr_str, sorted_str_keys }
-import from _utf8 { cpslice_str }
+import from _utf8 { cp_len, cpslice_str }
 
 
-def _fill(s: str, limit: int) -> str {
-    if len(s) <= limit {
-        return s;
-    }
+def _fill_head(limit: int) -> int {
     i: int = (limit - 3) // 2;
     if i < 0 {
         i = 0;
     }
-    j: int = limit - 3 - i;
+    return i;
+}
+
+
+def _fill_tail(limit: int) -> int {
+    j: int = limit - 3 - _fill_head(limit);
     if j < 0 {
         j = 0;
     }
-    return s[0:i] + "..." + s[len(s) - j:];
+    return j;
+}
+
+
+def _cplen(s: str) -> int {
+    sb: bytes = s.encode();
+    return cp_len(sb, len(sb));
+}
+
+
+def _ellipsize(s: str, limit: int) -> str {
+    sb: bytes = s.encode();
+    n: int = cp_len(sb, len(sb));
+    lo: int = n - _fill_tail(limit);
+    if lo < 0 {
+        lo = 0;
+    }
+    return cpslice_str(sb, 0, _fill_head(limit)) + "..." + cpslice_str(sb, lo, n);
+}
+
+
+def _fill(s: str, limit: int) -> str {
+    if _cplen(s) <= limit {
+        return s;
+    }
+    return _ellipsize(s, limit);
 }
 
 
@@ -76,8 +103,23 @@ obj:pub Repr {
         }
         if isinstance(x, str) {
             sv: str = x;
-            r: str = repr_str(cpslice_str(sv.encode(), 0, self.maxstring));
-            return _fill(r, self.maxstring);
+            sb: bytes = sv.encode();
+            r: str = repr_str(cpslice_str(sb, 0, self.maxstring));
+            if _cplen(r) <= self.maxstring {
+                return r;
+            }
+            sn: int = cp_len(sb, len(sb));
+            lo: int = sn - _fill_tail(self.maxstring);
+            if lo < 0 {
+                lo = 0;
+            }
+            return _ellipsize(
+                repr_str(
+                    cpslice_str(sb, 0, _fill_head(self.maxstring))
+                        + cpslice_str(sb, lo, sn)
+                ),
+                self.maxstring
+            );
         }
         if isinstance(x, list) {
             lv: list[any] = x;
