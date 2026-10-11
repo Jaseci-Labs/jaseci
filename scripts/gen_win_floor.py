@@ -92,8 +92,9 @@ def main() -> None:
         '"""The kernel32 functions the floor imports."""',
         "glob WIN_FLOOR_KERNEL32: list[str] = [",
     ]
-    out += ['    "%s"%s' % (name, "," if i + 1 < len(imports) else "") for i, name in enumerate(imports)]
-    out += ["];", "", 'glob WIN_FLOOR_IR: str = r"""', ir.rstrip("\n"), '""";', ""]
+    # Laid out as `jac fmt` lays a glob's list out, so the formatter leaves it alone.
+    out += ['         "%s"%s' % (name, "," if i + 1 < len(imports) else "") for i, name in enumerate(imports)]
+    out += ["     ];", "", 'glob WIN_FLOOR_IR: str = r"""', ir.rstrip("\n"), '""";', ""]
     with open(OUTPUT, "w", encoding="utf-8") as handle:
         handle.write("\n".join(out))
     print(f"wrote {os.path.relpath(OUTPUT, ROOT)}: {len(ir.splitlines())} lines of IR, {len(imports)} kernel32 imports")

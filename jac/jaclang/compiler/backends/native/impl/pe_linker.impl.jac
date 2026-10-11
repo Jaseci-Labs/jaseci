@@ -45,7 +45,6 @@ glob IMAGE_FILE_DLL = 0x2000,
      IMAGE_DLLCHAR_NX_COMPAT = 0x100;
 
 
-
 def _coff_name(raw: bytes, field_off: int, strtab_off: int) -> str {
     name8 = raw[field_off:field_off + 8];
     if name8[:4] == b"\x00\x00\x00\x00" {
@@ -152,7 +151,6 @@ impl PeLinker.parse_object -> bool {
 
 
 impl PeLinker.build_executable -> bytes {
-
     code_secs: list[int] = [];
     rodata_secs: list[int] = [];
     data_secs: list[int] = [];

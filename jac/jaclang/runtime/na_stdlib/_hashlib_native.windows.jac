@@ -198,9 +198,8 @@ def _hash_new(index: int, key: bytes, keyed: bool) -> int {
         secret = memchr(key, i32(key[0]), u64(1));
     }
     handle = b"\x00" * 8;
-    if BCryptCreateHash(
-        provider, handle, 0, u32(0), secret, u32(len(key)), u32(0)
-    ) != 0 {
+    if BCryptCreateHash(provider, handle, 0, u32(0), secret, u32(len(key)), u32(0))
+        != 0 {
         raise ValueError("BCryptCreateHash failed");
     }
     return int.from_bytes(handle, "little");
