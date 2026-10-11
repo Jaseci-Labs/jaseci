@@ -109,6 +109,8 @@ test "a stylesheet change in a prepared app is copied, not re-prepared" {
             assert served.read_text() == '.root { color: blue; }' , (
                 "the edit was not copied to the client compiler's output"
             );
+            reloader._process_change(str(served));
+            assert not (compiled / 'build').exists() , "a copied asset was copied again";
             sheet.unlink();
             reloader._process_change(str(sheet));
             assert not served.exists() , "a deleted stylesheet stayed in the served output";

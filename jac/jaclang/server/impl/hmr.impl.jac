@@ -192,6 +192,9 @@ impl HotReloader._process_change(file_path: str, is_directory: bool = False) -> 
 
 impl HotReloader._dispatch_change(file_path: str, is_directory: bool = False) -> None {
     import from jaclang.runtime.prepared { application_for }
+    if Path(file_path).resolve().is_relative_to(self._compiled_root().resolve()) {
+        return;
+    }
     entry_path = str(self._entry_module_path());
     if application_for(entry_path) is not None
         and not is_directory
