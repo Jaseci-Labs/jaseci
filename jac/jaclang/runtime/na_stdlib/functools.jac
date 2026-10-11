@@ -21,33 +21,38 @@ obj:pub _KeyWrapper {
     has cmp: Callable[[any, any], any],
         `obj: any;
 
-    def _cmpv(other: _KeyWrapper) -> int {
+    def _cmpv(other: _KeyWrapper) -> float {
         r: any = self.cmp(self.obj, other.obj);
-        return r;
+        if isinstance(r, float) {
+            f: float = r;
+            return f;
+        }
+        i: int = r;
+        return float(i);
     }
 
     def __lt__(other: _KeyWrapper) -> bool {
-        return self._cmpv(other) < 0;
+        return self._cmpv(other) < 0.0;
     }
 
     def __gt__(other: _KeyWrapper) -> bool {
-        return self._cmpv(other) > 0;
+        return self._cmpv(other) > 0.0;
     }
 
     def __le__(other: _KeyWrapper) -> bool {
-        return self._cmpv(other) <= 0;
+        return self._cmpv(other) <= 0.0;
     }
 
     def __ge__(other: _KeyWrapper) -> bool {
-        return self._cmpv(other) >= 0;
+        return self._cmpv(other) >= 0.0;
     }
 
     def __eq__(other: _KeyWrapper) -> bool {
-        return self._cmpv(other) == 0;
+        return self._cmpv(other) == 0.0;
     }
 
     def __ne__(other: _KeyWrapper) -> bool {
-        return self._cmpv(other) != 0;
+        return self._cmpv(other) != 0.0;
     }
 }
 
@@ -65,94 +70,104 @@ obj:pub _Lru {
     has fn: Callable[[any], any],
         cap: (int | None),
         typed: bool,
-        store_i: dict[int, any],
-        store_s: dict[str, any],
-        tick_i: dict[int, int],
-        tick_s: dict[str, int],
-        tick: int = 0,
+        store_i: dict[int, int],
+        store_s: dict[str, int],
+        vals: list[any],
+        key_i: list[int],
+        key_s: list[str],
+        is_i: list[bool],
+        prev: list[int],
+        nxt: list[int],
+        head: int = -1,
+        tail: int = -1,
         hits: int = 0,
         misses: int = 0;
 
-    def _evict_over(cap: int) {
-        while len(self.store_i) + len(self.store_s) > cap {
-            best_t: int = 0;
-            ki: int = 0;
-            ks: str = "";
-            bi = False;
-            found = False;
-            for k in self.tick_i {
-                t: int = self.tick_i[k];
-                if not found or t < best_t {
-                    best_t = t;
-                    found = True;
-                    bi = True;
-                    ki = k;
-                }
-            }
-            for k in self.tick_s {
-                t = self.tick_s[k];
-                if not found or t < best_t {
-                    best_t = t;
-                    found = True;
-                    bi = False;
-                    ks = k;
-                }
-            }
-            if not found {
-                break;
-            }
-            if bi {
-                self.store_i.pop(ki);
-                self.tick_i.pop(ki);
-            } else {
-                self.store_s.pop(ks);
-                self.tick_s.pop(ks);
-            }
+    def _unlink(slot: int) {
+        p: int = self.prev[slot];
+        n: int = self.nxt[slot];
+        if p < 0 {
+            self.head = n;
+        } else {
+            self.nxt[p] = n;
+        }
+        if n < 0 {
+            self.tail = p;
+        } else {
+            self.prev[n] = p;
         }
     }
 
-    def _hit_i(ik: int) -> any {
-        v: any = self.store_i[ik];
-        if self.cap is not None {
-            self.tick += 1;
-            self.tick_i[ik] = self.tick;
+    def _push(slot: int) {
+        t: int = self.tail;
+        self.prev[slot] = t;
+        self.nxt[slot] = -1;
+        if t < 0 {
+            self.head = slot;
+        } else {
+            self.nxt[t] = slot;
         }
-        self.hits += 1;
-        return v;
+        self.tail = slot;
     }
 
-    def _hit_s(sk: str) -> any {
-        v: any = self.store_s[sk];
+    def _hit(slot: int) -> any {
         if self.cap is not None {
-            self.tick += 1;
-            self.tick_s[sk] = self.tick;
+            if slot != self.tail {
+                self._unlink(slot);
+                self._push(slot);
+            }
         }
         self.hits += 1;
-        return v;
+        return self.vals[slot];
     }
 
     def _miss(x: any, ik: int, use_i: bool, sk: str) -> any {
         self.misses += 1;
         r: any = self.fn(x);
-        if self.cap is None {
-            if use_i {
-                self.store_i[ik] = r;
+        bounded = False;
+        cap: int = 0;
+        if self.cap is not None {
+            cap = self.cap;
+            bounded = True;
+            if cap <= 0 {
+                return r;
+            }
+        }
+        if use_i {
+            if ik in self.store_i {
+                return r;
+            }
+        } elif sk in self.store_s {
+            return r;
+        }
+        slot: int = len(self.vals);
+        if bounded and slot >= cap {
+            slot = self.head;
+            self._unlink(slot);
+            if self.is_i[slot] {
+                self.store_i.pop(self.key_i[slot]);
             } else {
-                self.store_s[sk] = r;
+                self.store_s.pop(self.key_s[slot]);
             }
+            self.vals[slot] = r;
+            self.key_i[slot] = ik;
+            self.key_s[slot] = sk;
+            self.is_i[slot] = use_i;
         } else {
-            cap: int = self.cap;
-            if cap > 0 {
-                self.tick += 1;
-                if use_i {
-                    self.store_i[ik] = r;
-                    self.tick_i[ik] = self.tick;
-                } else {
-                    self.store_s[sk] = r;
-                    self.tick_s[sk] = self.tick;
-                }
-                self._evict_over(cap);
-            }
+            self.vals.append(r);
+            self.key_i.append(ik);
+            self.key_s.append(sk);
+            self.is_i.append(use_i);
+            self.prev.append(-1);
+            self.nxt.append(-1);
+        }
+        if use_i {
+            self.store_i[ik] = slot;
+        } else {
+            self.store_s[sk] = slot;
+        }
+        if bounded {
+            self._push(slot);
         }
         return r;
     }
@@ -192,12 +207,12 @@ obj:pub _Lru {
         }
         if use_i {
             if ik in self.store_i {
-                return self._hit_i(ik);
+                return self._hit(self.store_i[ik]);
             }
             return self._miss(x, ik, True, sk);
         }
         if sk in self.store_s {
-            return self._hit_s(sk);
+            return self._hit(self.store_s[sk]);
         }
         return self._miss(x, 0, False, sk);
     }
@@ -215,9 +230,14 @@ obj:pub _Lru {
     def cache_clear {
         self.store_i = {};
         self.store_s = {};
-        self.tick_i = {};
-        self.tick_s = {};
-        self.tick = 0;
+        self.vals = [];
+        self.key_i = [];
+        self.key_s = [];
+        self.is_i = [];
+        self.prev = [];
+        self.nxt = [];
+        self.head = -1;
+        self.tail = -1;
         self.hits = 0;
         self.misses = 0;
     }
@@ -229,7 +249,7 @@ obj:pub _LruDeco {
         typed: bool = False;
 
     def __call__(fn: Callable[[any], any]) -> _Lru {
-        return _Lru(fn, self.cap, self.typed, {}, {}, {}, {});
+        return _Lru(fn, self.cap, self.typed, {}, {}, [], [], [], [], [], []);
     }
 }
 
@@ -243,12 +263,18 @@ obj:pub _WrapDeco {
 }
 
 
+obj:pub _NoInitial {}
+
+
+glob _NO_INITIAL: _NoInitial = _NoInitial();
+
+
 def:pub reduce(
-    func: Callable[[any, any], any], data: list[any], initial: any = None
+    func: Callable[[any, any], any], data: list[any], initial: any = _NO_INITIAL
 ) -> any {
     n: int = len(data);
     i: int = 0;
-    if isinstance(initial, type(None)) {
+    if isinstance(initial, _NoInitial) {
         if n == 0 {
             raise TypeError("reduce() of empty iterable with no initial value");
         }
@@ -298,7 +324,7 @@ def:pub lru_cache(
 
 
 def:pub cache(fn: Callable[[any], any]) -> _Lru {
-    return _Lru(fn, None, False, {}, {}, {}, {});
+    return _Lru(fn, None, False, {}, {}, [], [], [], [], [], []);
 }
 
 

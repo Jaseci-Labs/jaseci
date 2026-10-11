@@ -27,18 +27,21 @@ return a bare function pointer, so stateful wrappers
 (lru_cache/contextmanager-style) are applied by explicit call on na.
 
 Also kept out of both lanes: `reduce` with an explicit positional
-initializer -- the implemented behavior matches CPython (verified by
-standalone probes on each lane), but the sv checker resolves every call
-spelled against `reduce` to its first overload, so the three-argument form
-cannot appear in an equivalence fixture.
+initializer -- the sv checker resolves every call spelled against `reduce`
+to its first overload, so the three-argument form cannot appear in an
+equivalence fixture. Its native behavior, including an explicit
+`initializer=None`, is pinned against CPython's values by
+`bundled_functools_reduce_init.jac`.
+`ckey_flt` uses a comparator that answers a float (`-0.0` for equal
+operands): the key objects compare that result as a number, never as an
+integer bit pattern. `lru_order`/`lru_mixed`/`lru_churn` drive bounded
+caches past capacity so recency order and eviction agree entry for entry.
 Waived on na (declared in test_prim_equivalence.jac `allow_missing`):
 `cmp_sort` -- `sorted(key=cmp_to_key(...))` demotes the whole native program
 (native sort compares only orderable primitive keys, never `__lt__` objects);
 `wraps_name` -- na `wraps`/`update_wrapper` are attribute-copy-free (native
 function values carry no attribute table), so the wrapper keeps its own
-`__name__`. The `r_none_init` row (an explicit `initializer=None`, which is
-indistinguishable from an omitted one natively) stays out of both lanes
-entirely for the same reason.
+`__name__`.
 ES/JS opts out.
 """
 
@@ -100,6 +103,12 @@ def ft_mycmp(a: any, b: any) -> any {
     return 0;
 }
 
+def ft_rcmp(a: any, b: any) -> any {
+    x: float = a;
+    y: float = b;
+    return -(x - y);
+}
+
 def ft_base(x: any) -> any {
     v: int = x;
     return v + 1;
@@ -118,7 +127,6 @@ sv-lane body and a na-lane body resolves to the sv binding in the na lane, so
 passing `ft_*` as a `Callable` argument emits a null closure and the callee
 jumps through a dead pointer. `ftn_*` copies keep the na lane's callables
 native."""
-
 def ftn_add(a: any, b: any) -> any {
     x: int = a;
     y: int = b;
@@ -156,6 +164,12 @@ def ftn_mycmp(a: any, b: any) -> any {
         return 1;
     }
     return 0;
+}
+
+def ftn_rcmp(a: any, b: any) -> any {
+    x: float = a;
+    y: float = b;
+    return -(x - y);
 }
 
 def ftn_base(x: any) -> any {
@@ -226,6 +240,39 @@ def functools_py -> dict[any, any] {
     } except Exception as e {
         unhash = type(e).__name__ + ": " + str(e);
     }
+    kff = cmp_to_key(ft_rcmp);
+    f1: any = kff(1.0);
+    f2: any = kff(1.0);
+    f3: any = kff(1.5);
+    lo = lru_cache(maxsize=2)(ft_id);
+    lo(1);
+    lo(2);
+    lo(1);
+    lo(3);
+    lo(2);
+    lo(3);
+    lo(1);
+    cio = lo.cache_info();
+    lm = lru_cache(maxsize=3)(ft_id);
+    lm(1);
+    lm("a");
+    lm(2.5);
+    lm(1);
+    lm("b");
+    lm("a");
+    lm(1);
+    lm(2.5);
+    lm(None);
+    lm(True);
+    lm(1);
+    cim = lm.cache_info();
+    lc = lru_cache(maxsize=16)(ft_id);
+    ci_n: int = 0;
+    while ci_n < 5000 {
+        lc((ci_n * 7 + (ci_n // 3)) % 37);
+        ci_n += 1;
+    }
+    cic2 = lc.cache_info();
     return {
         "r_sum": reduce(ft_add, [1, 2, 3, 4, 5]),
         "r_cat": reduce(ft_cat, ["a", "b", "c"]),
@@ -238,6 +285,10 @@ def functools_py -> dict[any, any] {
         "ckey_lt": str(k1 < k2) + str(k2 < k1) + str(k1 < k1b),
         "ckey_eq": str(k1 == k1b) + str(k1 == k2),
         "ckey_ne": str(k1 != k2) + str(k1 != k1b),
+        "ckey_flt": str(f1 < f2) + str(f1 == f2) + str(f1 <= f2) + str(f1 > f3),
+        "lru_order": str(cio.hits) + "," + str(cio.misses) + "," + str(cio.currsize),
+        "lru_mixed": str(cim.hits) + "," + str(cim.misses) + "," + str(cim.currsize),
+        "lru_churn": str(cic2.hits) + "," + str(cic2.misses) + "," + str(cic2.currsize),
         "lru_val": sq(3),
         "lru_info": str(ci.hits)
             + ","
@@ -346,6 +397,38 @@ def functools_na -> dict[str, any] {
     } except Exception as e {
         unhash = "WRONG-TYPE: " + str(e);
     }
+    f1 = cmp_to_key(ftn_rcmp).__call__(1.0);
+    f2 = cmp_to_key(ftn_rcmp).__call__(1.0);
+    f3 = cmp_to_key(ftn_rcmp).__call__(1.5);
+    lo = lru_cache(maxsize=2).__call__(ftn_id);
+    lo.__call__(1);
+    lo.__call__(2);
+    lo.__call__(1);
+    lo.__call__(3);
+    lo.__call__(2);
+    lo.__call__(3);
+    lo.__call__(1);
+    cio = lo.cache_info();
+    lm = lru_cache(maxsize=3).__call__(ftn_id);
+    lm.__call__(1);
+    lm.__call__("a");
+    lm.__call__(2.5);
+    lm.__call__(1);
+    lm.__call__("b");
+    lm.__call__("a");
+    lm.__call__(1);
+    lm.__call__(2.5);
+    lm.__call__(None);
+    lm.__call__(True);
+    lm.__call__(1);
+    cim = lm.cache_info();
+    lc = lru_cache(maxsize=16).__call__(ftn_id);
+    ci_n: int = 0;
+    while ci_n < 5000 {
+        lc.__call__((ci_n * 7 + (ci_n // 3)) % 37);
+        ci_n += 1;
+    }
+    cic2 = lc.cache_info();
     return {
         "r_sum": reduce(ftn_add, [1, 2, 3, 4, 5]),
         "r_cat": reduce(ftn_cat, ["a", "b", "c"]),
@@ -358,6 +441,13 @@ def functools_na -> dict[str, any] {
         "ckey_lt": str(k1.__lt__(k2)) + str(k2.__lt__(k1)) + str(k1.__lt__(k1b)),
         "ckey_eq": str(k1.__eq__(k1b)) + str(k1.__eq__(k2)),
         "ckey_ne": str(k1.__ne__(k2)) + str(k1.__ne__(k1b)),
+        "ckey_flt": str(f1.__lt__(f2))
+            + str(f1.__eq__(f2))
+            + str(f1.__le__(f2))
+            + str(f1.__gt__(f3)),
+        "lru_order": str(cio.hits) + "," + str(cio.misses) + "," + str(cio.currsize),
+        "lru_mixed": str(cim.hits) + "," + str(cim.misses) + "," + str(cim.currsize),
+        "lru_churn": str(cic2.hits) + "," + str(cic2.misses) + "," + str(cic2.currsize),
         "lru_val": sq.__call__(3),
         "lru_info": str(ci.hits)
             + ","

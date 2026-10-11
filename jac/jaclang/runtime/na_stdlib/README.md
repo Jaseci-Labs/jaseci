@@ -698,7 +698,8 @@ native layout records the emitted name separately from its source-level key.
   "reduce() of empty iterable with no initial value" matches type-and-text);
   `lru_cache` is dict-backed with CPython's maxsize semantics (128 default,
   `None` = unbounded, `0` = no caching, LRU move-to-end on hit and
-  oldest-insert eviction), plus `cache_info()` (same field names/values as
+  oldest-insert eviction; recency is an index-linked list over the entry
+  slots, so a hit and an eviction are O(1) at any maxsize), plus `cache_info()` (same field names/values as
   CPython's `CacheInfo`, but a plain object -- no namedtuple unpacking) and
   `cache_clear()`. Congruent *call shapes only*: the factory/decorate forms
   `lru_cache(maxsize=N)(fn)`, `cache(fn)` -- spelled with an explicit
@@ -718,16 +719,22 @@ native layout records the emitted name separately from its source-level key.
   `f(True)` are separate entries, hits=0, as on CPython 3.14; the classic
   "1 == 1.0 shares an entry" folding is pre-3.12 behavior), `typed` is
   accepted but no longer changes key shape (3.14 splits types either way),
-  and `-0.0`/`0.0` normalize to one entry as on CPython; `partial` binds
+  and `-0.0`/`0.0` normalize to one entry as on CPython; every NaN argument
+  shares one entry (a native float carries no identity, where CPython keys a
+  NaN by object identity: reusing one NaN object hits on both, two
+  separately built NaNs miss only on CPython); `partial` binds
   exactly one
   leading argument and its result takes exactly one argument (native calls
   are fixed-arity -- CPython's `*args`/`**kwargs` partials fail at compile
   time, not silently);
   `reduce` takes a `list` (CPython accepts any iterable); an explicit
-  `initializer=None` is indistinguishable from no initializer, so it raises
-  on an empty list where CPython returns `None`; `cmp_to_key(mycmp)` returns
+  `initializer=None` is told apart from an omitted one by a private sentinel
+  default, so it seeds the fold with `None` and answers `None` for an empty
+  list as on CPython (pinned natively by
+  `bundled_functools_reduce_init.jac`); `cmp_to_key(mycmp)` returns
   a factory whose key objects expose `.obj` and the six comparison dunders
-  over the stored comparator -- but **sorting with them demotes the whole
+  over the stored comparator, whose result may be an int or a float and is
+  compared against zero as a number either way -- but **sorting with them demotes the whole
   native program** (E5092: native `sorted`/`list.sort` compare only
   orderable primitive keys and never dispatch `__lt__` on key objects), so
   `cmp_to_key` is only directly usable (`.obj`, dunder calls) on na;
