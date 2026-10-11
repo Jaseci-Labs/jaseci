@@ -328,6 +328,13 @@ def _frozen_value(value: any) -> bool {
 }
 
 
+def _settle_written(anchor: Anchor, seen: int) {
+    if seen and anchor.__dict__.get('_field_written', 0) == seen {
+        anchor.__dict__.pop('_field_written', None);
+    }
+}
+
+
 def _frozen_fields(anchor: Anchor) -> bool {
     if anchor.__dict__.get('_field_written') {
         return False;
@@ -1030,6 +1037,7 @@ impl Session._flush_locked(full: bool) -> None {
         for (row, u) in zip(rows, unflushed) {
             self._rows.upserted(row.id, RowState(hash=u.hash, version=row.version));
             u.anchor.hash = u.hash;
+            _settle_written(u.anchor, u.written);
         }
     }
     if self._deleted {
@@ -1061,19 +1069,22 @@ impl Session._unflushed(full: bool) -> list[UnflushedAnchor] {
             and _frozen_fields(anchor) {
             continue;
         }
-        anchor.__dict__.pop('_field_written', None);
+        written = anchor.__dict__.get('_field_written', 0);
         stored: (dict[str, object] | None) = None;
         try {
             stored = Serializer.stored_form(anchor);
         } except Exception {}
         h = Serializer.stored_hash(anchor, stored);
         if h != 0 and known is not None and known.hash == h and id not in self._dirty {
+            _settle_written(anchor, written);
             continue;
         }
         if not JacRI.check_write_access(anchor, op_hint="field_write") {
             continue;
         }
-        out.append(UnflushedAnchor(anchor=anchor, stored=stored, hash=h));
+        out.append(
+            UnflushedAnchor(anchor=anchor, stored=stored, hash=h, written=written)
+        );
     }
     return out;
 }

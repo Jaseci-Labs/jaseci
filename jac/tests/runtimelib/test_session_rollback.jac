@@ -804,6 +804,56 @@ test "a commit re-hashes only loaded anchors whose fields can change in place" {
 }
 
 
+test "a write the session was not told about survives a retried flush" {
+    with TemporaryDirectory() as td {
+        old = JacRuntime.exec_ctx;
+        seed = _ctx(td);
+        JacRuntime.exec_ctx = seed;
+        id = UUID(int=0);
+        try {
+            id = _loose(seed, 7).ensure_id();
+            seed.mem.commit();
+        } finally {
+            JacRuntime.exec_ctx = old;
+            seed.close();
+        }
+        ctx = _ctx(td);
+        JacRuntime.exec_ctx = ctx;
+        other = _sess(ctx).new_session(str(Path(td) / "rb_app.jac"));
+        try {
+            loaded = other.get(id);
+            assert loaded is not None;
+            _as_any(loaded.archetype).n = 70;
+            assert id not in other._dirty , (
+                "the write must reach this session only through the anchor's own mark"
+            );
+            store: any = other.store;
+            real_upsert = store.upsert;
+            left = [1];
+            def failing_upsert(rows: any) {
+                if left[0] > 0 {
+                    left[0] -= 1;
+                    raise PgWireError(
+                        {"C": "40001", "M": "could not serialize access"}
+                    );
+                }
+                real_upsert(rows);
+            }
+            store.upsert = failing_upsert;
+            other.commit();
+            assert left == [0] , "the first upsert was never attempted";
+            assert _stored(ctx, id, "n") == "70" , (
+                "a field write whose first upsert failed was dropped by the retry"
+            );
+        } finally {
+            other.close();
+            JacRuntime.exec_ctx = old;
+            ctx.close();
+        }
+    }
+}
+
+
 test "run_request re-runs a unit that ended in a conflict" {
     with TemporaryDirectory() as td {
         old = JacRuntime.exec_ctx;
