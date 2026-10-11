@@ -277,17 +277,20 @@ frontend scope compiled as native units, linked as a shared library in
 bitcode mode. `resolve_kernel()` in `kernel_resolve.jac` is the one lookup,
 with a fixed precedence:
 
-1. Explicit switches. `JAC_COMPILER_LIB` as a path is used as given and
-   must carry its layout sidecar. `off` selects the store parser: the
-   kernel build's own processes set it, and a developer iterating on the
-   compiler sets it to run the checkout from bytecode instead of rebuilding
-   the kernel after every edit, the way a pull request's CI kit runs.
-   `JAC_STUBCAT_BUILDING` keeps the store parser during the catalog build.
-2. Sealed image. The manifest's `native` record names the artifact, its
+1. Sealed image. The manifest's `native` record names the artifact, its
    sha256, layout digest and plan digest; missing or mismatched is a startup
-   error. The one image without an artifact is a pull request's CI kit: its
-   record says `"kernel": "none"` and names the kit it ships in, and the
-   store parser serves every process that runs on it, sealed or rerouted.
+   error. A sealed image runs its own kernel: no setting displaces it. The
+   one image without an artifact is a pull request's CI kit: its record says
+   `"kernel": "none"` and names the kit it ships in, and the store parser
+   serves every process that runs on it, sealed or rerouted.
+   (`JAC_STUBCAT_BUILDING`, set only while the stub catalog is built, keeps
+   the store parser ahead of every step.)
+2. Explicit switch, in a checkout. `JAC_COMPILER_LIB` as a path is used as
+   given and must carry its layout sidecar. `off` selects the store parser:
+   a kernel build sets it for its own processes, and a developer iterating
+   on the compiler sets it to run the checkout from bytecode instead of
+   rebuilding the kernel after every edit, the way a pull request's CI kit
+   runs.
 3. Source tree. The kernel beside `native_compiler.jac` is accepted when the
    inputs its sidecar records are the ones the sources have now.
    Otherwise, under a lock, the checkout first looks at the kernel the

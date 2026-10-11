@@ -226,35 +226,26 @@ test "kernel parses retain no native memory once the tree is handed over" {
 
 
 test "the off switch parses with the store parser" {
-    # `JAC_COMPILER_LIB=off` is the first step of `resolve_kernel`'s precedence
-    # (`kernel_resolve.jac`): a kernel build's own processes and a developer
-    # iterating on the compiler both run it from bytecode with the store parser.
-    import from jaclang.compiler.backends.native.kernel_resolve {
-        KERNEL_BUILDING_ENV,
-        KERNEL_LIB_ENV,
-        kernel_build_env,
-        resolve_kernel
-    }
+    # `JAC_COMPILER_LIB=off` is consulted after the sealed image in
+    # `resolve_kernel` (`kernel_resolve.jac`): in a checkout, a kernel build's
+    # own processes and a developer iterating on the compiler both run it from
+    # bytecode with the store parser. A sealed image runs its own kernel.
+    import from unittest.mock { patch }
+    import jaclang.compiler.backends.native.kernel_resolve as resolver;
     import from jaclang.compiler.native_compiler { ensure_loaded, reset_loaded }
-    saved = {key: os.environ.get(key) for key in kernel_build_env()};
     reset_loaded();
     try {
-        os.environ[KERNEL_LIB_ENV] = "off";
-        os.environ.pop(KERNEL_BUILDING_ENV, None);
-        assert resolve_kernel() is None , "the off switch must resolve no kernel";
-        assert ensure_loaded() is None , "the off switch must parse with the store parser";
-        reset_loaded();
-        os.environ.update(kernel_build_env());
-        assert resolve_kernel() is None , "a kernel build must resolve no kernel";
-        assert ensure_loaded() is None , "a kernel build must parse with the store parser";
-    } finally {
-        for (key, value) in saved.items() {
-            if value is None {
-                os.environ.pop(key, None);
-            } else {
-                os.environ[key] = value;
+        with patch.dict(os.environ, resolver.kernel_build_env()) {
+            with patch.object(
+                resolver, "_sealed_kit_omits_kernel", return_value=False
+            ) {
+                with patch.object(resolver, "_from_sealed_image", return_value=None) {
+                    assert resolver.resolve_kernel() is None , "the off switch must resolve no kernel";
+                    assert ensure_loaded() is None , "the off switch must parse with the store parser";
+                }
             }
         }
+    } finally {
         reset_loaded();
     }
 }
