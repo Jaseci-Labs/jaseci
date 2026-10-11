@@ -428,11 +428,17 @@ def calliter_iternext(op: ptr[PyObject]) -> ptr[PyObject] {
             return result;
         }
         if ok > 0 {
+            # Py_CLEAR both fields: decref before clearing so the references
+            # the iterator owned are released (dealloc skips NULL fields).
+            py_decref(it.it_callable);
+            py_decref(it.it_sentinel);
             it.it_callable = ptr[PyObject]();
             it.it_sentinel = ptr[PyObject]();
         }
     } elif PyErr_ExceptionMatches(PyExc_StopIteration) {
         PyErr_Clear();
+        py_decref(it.it_callable);
+        py_decref(it.it_sentinel);
         it.it_callable = ptr[PyObject]();
         it.it_sentinel = ptr[PyObject]();
     }

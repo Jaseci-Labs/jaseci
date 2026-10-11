@@ -316,7 +316,8 @@ def namespace_repr(ns: ptr[PyObject]) -> ptr[PyObject] {
 
     i = Py_ReprEnter(ns);
     if i != 0 {
-        Py_ReprLeave(ns);
+        # Only a successful Py_ReprEnter (i == 0) is paired with Py_ReprLeave;
+        # leaving here would pop an OUTER call's recursion guard.
         if i > 0 {
             return jacpy_namespace_repr_selfref(name);
         }

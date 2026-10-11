@@ -7,6 +7,14 @@ import from c {
         has a0: ptr[PyObject] = ptr[PyObject](),
             a1: ptr[PyObject] = ptr[PyObject](),
             a2: ptr[PyObject] = ptr[PyObject]();
+    }  obj PyTupleArgs3_Layout {
+        has ob_refcnt: i64 = 0,
+            ob_type: ptr[PyObject] = ptr[PyObject](),
+            ob_size: i64 = 0,
+            ob_hash: i64 = 0,
+            a0: ptr[PyObject] = ptr[PyObject](),
+            a1: ptr[PyObject] = ptr[PyObject](),
+            a2: ptr[PyObject] = ptr[PyObject]();
     }  obj PyObject_Layout {
         has ob_refcnt: i64 = 0,
             ob_type: ptr[PyObject] = ptr[PyObject]();
@@ -710,25 +718,28 @@ def range_long_is_zero(o: ptr[PyObject]) -> bool {
 }
 
 def range_from_args(
-    type_: ptr[PyTypeObject_Layout], args: ptr, nargs: i64
+    type_: ptr[PyTypeObject_Layout],
+    a0: ptr[PyObject],
+    a1: ptr[PyObject],
+    a2: ptr[PyObject],
+    nargs: i64
 ) -> ptr[PyObject] {
-    argv = ptr[ArgVec3](args);
     start: ptr[PyObject] = ptr[PyObject]();
     stop: ptr[PyObject] = ptr[PyObject]();
     step: ptr[PyObject] = ptr[PyObject]();
     if nargs == 2 or nargs == 3 {
-        start = PyNumber_Index(argv.a0);
+        start = PyNumber_Index(a0);
         if start == ptr[PyObject]() {
             return ptr[PyObject]();
         }
-        stop = PyNumber_Index(argv.a1);
+        stop = PyNumber_Index(a1);
         if stop == ptr[PyObject]() {
             py_decref(start);
             return ptr[PyObject]();
         }
 
         if nargs == 3 {
-            step = PyNumber_Index(argv.a2);
+            step = PyNumber_Index(a2);
             if step != ptr[PyObject]() and range_long_is_zero(step) {
                 PyErr_SetString(PyExc_ValueError, "range() arg 3 must not be zero");
                 py_decref(step);
@@ -743,7 +754,7 @@ def range_from_args(
             return ptr[PyObject]();
         }
     } elif nargs == 1 {
-        stop = PyNumber_Index(argv.a0);
+        stop = PyNumber_Index(a0);
         if stop == ptr[PyObject]() {
             return ptr[PyObject]();
         }
@@ -772,7 +783,23 @@ def range_new(
     if kwargs != ptr[PyObject]() and _PyArg_NoKeywords("range", kwargs) == 0 {
         return ptr[PyObject]();
     }
-    return range_from_args(type_, ptr(args), PyTuple_Size(args));
+    # tp_new receives the argument TUPLE, not a PyObject*[]: read the items
+    # through the tuple layout.
+    targs = ptr[PyTupleArgs3_Layout](args);
+    nargs = PyTuple_Size(args);
+    a0: ptr[PyObject] = ptr[PyObject]();
+    a1: ptr[PyObject] = ptr[PyObject]();
+    a2: ptr[PyObject] = ptr[PyObject]();
+    if nargs >= 1 {
+        a0 = targs.a0;
+    }
+    if nargs >= 2 {
+        a1 = targs.a1;
+    }
+    if nargs >= 3 {
+        a2 = targs.a2;
+    }
+    return range_from_args(type_, a0, a1, a2, nargs);
 }
 
 def range_vectorcall(
@@ -782,7 +809,20 @@ def range_vectorcall(
         return ptr[PyObject]();
     }
     nargs = i64(nargsf & 0x7FFFFFFFFFFFFFFF);
-    return range_from_args(ptr[PyTypeObject_Layout](type_), ptr(args), nargs);
+    argv = ptr[ArgVec3](args);
+    a0: ptr[PyObject] = ptr[PyObject]();
+    a1: ptr[PyObject] = ptr[PyObject]();
+    a2: ptr[PyObject] = ptr[PyObject]();
+    if nargs >= 1 {
+        a0 = argv.a0;
+    }
+    if nargs >= 2 {
+        a1 = argv.a1;
+    }
+    if nargs >= 3 {
+        a2 = argv.a2;
+    }
+    return range_from_args(ptr[PyTypeObject_Layout](type_), a0, a1, a2, nargs);
 }
 
 glob range_methods: RangeMethods_Layout = RangeMethods_Layout(
@@ -1089,8 +1129,11 @@ def rangeiter_setstate(
     } elif index > it.len {
         index = it.len;
     }
-    it.start = it.start + index * it.step;
-    it.len = it.len - index;
+    # Wraps like C's long arithmetic: index * step can overflow i64 for valid
+    # large ranges (the iteration path uses wrapping_add/sub for the same
+    # reason).
+    it.start = wrapping_add(it.start, wrapping_mul(index, it.step));
+    it.len = wrapping_sub(it.len, index);
     py_incref(none_obj);
     return none_obj;
 }
