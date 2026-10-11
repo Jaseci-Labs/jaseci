@@ -2,7 +2,10 @@ impl NaIRGenPass._get_exception_state_type -> ir.Type {
     if self._exc_state_type is not None {
         return self._exc_state_type;
     }
-    jmp_buf_type = ir.ArrayType(ir.IntType(8), 200);
+    """The Windows floor's pair saves xmm6-xmm15 as well: 240 bytes.""";
+    jmp_buf_type = ir.ArrayType(
+        ir.IntType(8), 256 if self._exc_jmp_symbols()[0] == "__jac_setjmp" else 200
+    );
     exc_state = self.llvm_module.context.get_identified_type("JacExceptionState");
 
     exc_state.set_body(
@@ -47,14 +50,18 @@ impl NaIRGenPass._exc_jmp_symbols -> tuple[str, str] {
     so that is dead work on every `try`, walker spawn and guarded call.
     `_setjmp`/`_longjmp` leave the mask alone. They only work as a pair --
     Darwin's `longjmp` restores the mask from a buffer slot `_setjmp` never
-    writes -- so every frame raises through the matching `_longjmp`. Windows
-    and wasm keep the portable names: neither saves a mask, and wasm's SjLj
-    lowering matches the names.
+    writes -- so every frame raises through the matching `_longjmp`. wasm
+    keeps the portable names, which its SjLj lowering matches. Windows raises
+    through the floor's own pair (win_floor.jac): the UCRT's `longjmp` unwinds
+    through exception tables a Jac image does not carry.
     """;
     triple = str(self.llvm_module.triple or "").lower();
-    for os_name in ["wasm", "windows", "win32", "mingw", "msvc"] {
+    if "wasm" in triple {
+        return ("setjmp", "longjmp");
+    }
+    for os_name in ["windows", "win32", "mingw", "msvc"] {
         if os_name in triple {
-            return ("setjmp", "longjmp");
+            return ("__jac_setjmp", "__jac_longjmp");
         }
     }
     return ("_setjmp", "_longjmp");
