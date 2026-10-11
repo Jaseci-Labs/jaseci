@@ -516,6 +516,57 @@ def _erased_only_import(imp: uni.Import) -> bool {
     return native_erased_import_names(imp.from_loc.dot_path_str, names);
 }
 
+def _is_test_origin(nd: uni.UniNode) -> bool {
+    """True when a node was written in a `*.test.jac` annex.
+
+    Test code must not constrain placement: a test that crosses a native seam
+    otherwise either forces the module under test off native, or -- when the
+    module does seal -- calls into a demoted function's abort() stub. Tests
+    stay in the server codespace either way, so their nodes are excluded from
+    the blocker scan.
+    """;
+    _p = (nd.loc.mod_path if nd.loc is not None else '') or '';
+    return bool(_p) and _p.replace(os.sep, "/").endswith('.test.jac');
+}
+
+
+def native_blocker_in(nd: uni.UniNode) -> str {
+    """The native blocker this subtree carries, or '' when it carries none.
+
+    The same evidence `scan_native_blockers` reads off a whole module, scoped
+    to one element. Test code is excluded from the module-level scan so the
+    module under test can still seal native; the element that was excluded has
+    to be kept off the native lane itself, and this is what tells the native
+    backend so.
+    """;
+    for (nd_name, typ) in PLACEMENT_SV_SIGNAL_NODES {
+        if nd.get_all_sub_nodes(typ) {
+            return f"contains {nd_name}";
+        }
+    }
+    for (nd_name, typ) in PLACEMENT_NATIVE_REJECT_NODES {
+        if nd.get_all_sub_nodes(typ) {
+            return f"native-unsupported {nd_name}";
+        }
+    }
+    for svr in nd.get_all_sub_nodes(uni.SpecialVarRef) {
+        if svr.orig.name == Tok.KW_ROOT {
+            return "root access (persistent graph)";
+        }
+    }
+    import from jaclang.compiler.driver.boundary_classify { ability_delegates_to_model }
+    for ab in nd.get_all_sub_nodes(uni.Ability) {
+        if ability_delegates_to_model(ab) {
+            return "by llm ability (needs the byLLM runtime)";
+        }
+        if ab.is_async {
+            return "async ability";
+        }
+    }
+    return '';
+}
+
+
 def native_blocker_scan(
     module: uni.Module,
     base_dir: str,
@@ -540,22 +591,34 @@ def native_blocker_scan(
     }
     for (nd_name, typ) in PLACEMENT_SV_SIGNAL_NODES {
         for found in module.get_all_sub_nodes(typ) {
+            if _is_test_origin(found) {
+                continue;
+            }
             scan.sites.append((found, f"contains {nd_name}"));
         }
     }
 
     for (nd_name, typ) in PLACEMENT_NATIVE_REJECT_NODES {
         for found in module.get_all_sub_nodes(typ) {
+            if _is_test_origin(found) {
+                continue;
+            }
             scan.sites.append((found, f"native-unsupported {nd_name}"));
         }
     }
     for svr in module.get_all_sub_nodes(uni.SpecialVarRef) {
+        if _is_test_origin(svr) {
+            continue;
+        }
         if svr.orig.name == Tok.KW_ROOT and not scan.module {
             scan.module = "root access (persistent graph)";
         }
     }
     import from jaclang.compiler.driver.boundary_classify { ability_delegates_to_model }
     for ab in module.get_all_sub_nodes(uni.Ability) {
+        if _is_test_origin(ab) {
+            continue;
+        }
         if ability_delegates_to_model(ab) {
             scan.sites.append((ab, "by llm ability (needs the byLLM runtime)"));
             continue;
@@ -582,6 +645,9 @@ def native_blocker_scan(
     }
     scan_mod_path = module.loc.mod_path or '';
     for stmt in module.body {
+        if _is_test_origin(stmt) {
+            continue;
+        }
         if isinstance(stmt, uni.ContextAwareNode) and scan_mod_path {
             import from jaclang.compiler.placement.placement_pins { config_pin_for }
             pin = config_pin_for(scan_mod_path, element_display_name(stmt));
@@ -597,6 +663,9 @@ def native_blocker_scan(
         }
     }
     for imp in module.get_all_sub_nodes(uni.Import) {
+        if _is_test_origin(imp) {
+            continue;
+        }
         if imp.has_clib_decls {
             continue;
         }
