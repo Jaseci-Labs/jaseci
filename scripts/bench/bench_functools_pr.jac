@@ -3,9 +3,10 @@
     jac run -b native  scripts/bench/bench_functools_pr.jac   (bundled na_stdlib)
     jac run -b python  scripts/bench/bench_functools_pr.jac   (CPython bridge)
 
-Rows print name|n|ns_per_op|acc; acc must match the CPython reference
-(scripts/bench/bench_functools_pr.py) lane for lane. Wrapper products are
-spelled `.__call__(...)` -- the one call shape valid on both backends.
+Rows print name|n|ns_per_op|acc; acc must agree row for row between the two
+lanes above (the python lane runs CPython's own functools and is the
+reference). Wrapper products are spelled `.__call__(...)` -- the one call
+shape valid on both backends.
 """
 
 import time;
