@@ -26,7 +26,7 @@ def jmp_externs(triple: str) -> set[str] {
     } finally {
         pop_native_target(prev);
     }
-    return set(re.findall(r'@"?(_?(?:set|long)jmp)"?\(', ir_text));
+    return set(re.findall(r'@"?((?:__jac)?_?(?:set|long)jmp)"?\(', ir_text));
 }
 
 test "posix exception frames pair _setjmp with _longjmp" {
@@ -36,9 +36,9 @@ test "posix exception frames pair _setjmp with _longjmp" {
     }
 }
 
-test "windows exception frames keep setjmp with longjmp" {
+test "windows exception frames raise through the floor's own pair" {
     names = jmp_externs("x86_64-pc-windows-msvc");
-    assert names == {"setjmp", "longjmp"} , sorted(names);
+    assert names == {"__jac_setjmp", "__jac_longjmp"} , sorted(names);
 }
 
 test "frames armed and raised into repeatedly behave like Python" {
