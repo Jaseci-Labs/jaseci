@@ -45,6 +45,10 @@ node RTally {
 
 node RTallyKind(RTally) {}
 
+node RBag {
+    has items: list[int] = [];
+}
+
 edge RLink: any --> any {
     has w: int = 0;
 }
@@ -705,6 +709,71 @@ test "a loaded anchor is hashed once (#9410)" {
                     "its load-time hash does not match its flush-time hash"
                 );
             }
+        } finally {
+            JacRuntime.exec_ctx = old;
+            ctx.close();
+        }
+    }
+}
+
+
+test "a commit re-hashes only loaded anchors whose fields can change in place" {
+    with TemporaryDirectory() as td {
+        old = JacRuntime.exec_ctx;
+        seed = _ctx(td);
+        JacRuntime.exec_ctx = seed;
+        ids: list[UUID] = [];
+        bag_id = UUID(int=0);
+        try {
+            ids = [_loose(seed, n).ensure_id() for n in range(4)];
+            bag: NodeAnchor = _as_any(RBag(items=[1])).__jac__;
+            bag.persistent = True;
+            seed.mem.put(bag);
+            bag_id = bag.ensure_id();
+            seed.mem.commit();
+        } finally {
+            JacRuntime.exec_ctx = old;
+            seed.close();
+        }
+        ctx = _ctx(td);
+        JacRuntime.exec_ctx = ctx;
+        dumps_calls: list[int] = [];
+        import json;
+        real_dumps = json.dumps;
+        def counting_dumps(*args: any, **kwargs: any) -> str {
+            if kwargs.get("sort_keys") {
+                dumps_calls.append(1);
+            }
+            return real_dumps(*args, **kwargs);
+        }
+        try {
+            _ = ctx.user_root;
+            ctx.mem.commit();
+            loaded = ctx.mem.batch_get(ids + [bag_id]);
+            assert len(loaded) == len(ids) + 1;
+            json.dumps = counting_dumps;
+            try {
+                for _ in range(3) {
+                    ctx.mem.commit();
+                }
+            } finally {
+                json.dumps = real_dumps;
+            }
+            assert len(dumps_calls) == 3 , (
+                f"three commits hashed {len(dumps_calls)} stored forms; only the "
+                "anchor holding a list can change without a field write, so only "
+                "it needs re-hashing (once per commit)"
+            );
+            _as_any(loaded[bag_id].archetype).items.append(2);
+            ctx.mem.commit();
+            assert _stored(ctx, bag_id, "items") == "[1, 2]" , (
+                "an in-place append to a list field must still be found and written"
+            );
+            _as_any(loaded[ids[0]].archetype).n = 41;
+            ctx.mem.commit();
+            assert _stored(ctx, ids[0], "n") == "41" , (
+                "a field write on an anchor with only scalar fields must still land"
+            );
         } finally {
             JacRuntime.exec_ctx = old;
             ctx.close();

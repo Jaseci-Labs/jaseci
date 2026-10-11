@@ -294,6 +294,52 @@ def _ancestry_of(arch: (object | None)) -> list[str] {
 }
 
 
+def _frozen_value(value: any) -> bool {
+    import datetime;
+    import decimal;
+    import enum;
+    import uuid;
+    if value is None
+        or isinstance(
+            value,
+            (
+                bool,
+                int,
+                float,
+                complex,
+                str,
+                bytes,
+                decimal.Decimal,
+                uuid.UUID,
+                datetime.date,
+                datetime.time,
+                datetime.timedelta,
+                enum.Enum
+            )
+        ) {
+        return True;
+    }
+    if isinstance(value, (tuple, frozenset)) {
+        return all(_frozen_value(item) for item in value);
+    }
+    return False;
+}
+
+
+def _frozen_fields(anchor: Anchor) -> bool {
+    fields = anchor.archetype?.__dict__;
+    if not isinstance(fields, dict) {
+        return False;
+    }
+    for (name, value) in fields.items() {
+        if name != '__jac__' and not _frozen_value(value) {
+            return False;
+        }
+    }
+    return True;
+}
+
+
 def _is_serialization_conflict(e: Exception) -> bool {
     if isinstance(e, WriteConflict) {
         return False;
@@ -998,12 +1044,19 @@ impl Session._unflushed(full: bool) -> list[UnflushedAnchor] {
         if anchor is None or not anchor.persistent or not anchor.is_populated() {
             continue;
         }
+        known = self._rows.current(id);
+        if full
+            and id not in self._dirty
+            and known is not None
+            and known.hash != 0
+            and _frozen_fields(anchor) {
+            continue;
+        }
         stored: (dict[str, object] | None) = None;
         try {
             stored = Serializer.stored_form(anchor);
         } except Exception {}
         h = Serializer.stored_hash(anchor, stored);
-        known = self._rows.current(id);
         if h != 0 and known is not None and known.hash == h and id not in self._dirty {
             continue;
         }
