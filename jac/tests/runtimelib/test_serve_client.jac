@@ -1832,6 +1832,56 @@ test "serve blocking sync walkers run concurrently via to_thread" {
     }
 }
 
+test "a served walker's reports go to the response, not the server's stdout" {
+    import asyncio;
+    import io;
+    import from contextlib { redirect_stdout }
+    import from jaclang.server.server {
+        ExecutionManager,
+        UserManager,
+        ModuleIntrospector
+    }
+
+    with TemporaryDirectory() as tmpdir {
+        jac_file = fixture_abs_path("serve_blocking_io.jac");
+        introspector = ModuleIntrospector(
+            module_name="serve_blocking_io", base_path=str(Path(jac_file).parent)
+        );
+        prepare_source(jac_file);
+        introspector.load();
+        walkers = introspector.get_walkers();
+        user_mgr = UserManager(base_path=tmpdir);
+        exec_mgr = ExecutionManager(base_path=tmpdir, user_manager=user_mgr);
+        user_mgr.create_internal_user("testuser", "testpass");
+        _persist_system_root();
+        served = io.StringIO();
+        with redirect_stdout(served) {
+            result = _as_any(
+                asyncio.run(
+                    _in_request_scope(
+                        exec_mgr.spawn_walker(
+                            walkers["slow_blocking"], {"duration": 0.0}, "testuser"
+                        )
+                    )
+                )
+            );
+        }
+        reports = result.get("reports") or [];
+        assert reports and "duration" in reports[0] , f"report missing: {result}";
+        assert "duration" not in served.getvalue() , (
+            "a served request printed its report to the server's stdout, which "
+            f"copies response data into the server log: {served.getvalue()[:200]!r}"
+        );
+    }
+    script = io.StringIO();
+    with redirect_stdout(script) {
+        report {"printed_in": "script mode"};
+    }
+    assert "script mode" in script.getvalue() , (
+        "with no request collecting it, a report is printed (jac run)"
+    );
+}
+
 test "endpoint effect classifier follows helper calls" {
     # A walker whose only graph mutation happens inside a plain `def` helper
     # must still be classified as a writer -- otherwise the client cache is
