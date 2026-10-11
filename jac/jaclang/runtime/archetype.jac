@@ -716,6 +716,7 @@ def _dirty_setattr(self: any, name: str, value: any) -> None {
     ctx = JacRuntime.peek_context();
     if ctx is None {
         object.__setattr__(self, name, value);
+        an.__dict__['_field_written'] = True;
         return;
     }
     import from jaclang { JacRuntimeInterface }
@@ -723,6 +724,7 @@ def _dirty_setattr(self: any, name: str, value: any) -> None {
         return;
     }
     object.__setattr__(self, name, value);
+    an.__dict__['_field_written'] = True;
     md = ctx.mem?.mark_dirty;
     if md is not None {
         md(an);
@@ -739,6 +741,7 @@ def _dirty_delattr(self: any, name: str) -> None {
     ctx = JacRuntime.peek_context();
     if ctx is None {
         object.__delattr__(self, name);
+        an.__dict__['_field_written'] = True;
         return;
     }
     import from jaclang { JacRuntimeInterface }
@@ -746,6 +749,7 @@ def _dirty_delattr(self: any, name: str) -> None {
         return;
     }
     object.__delattr__(self, name);
+    an.__dict__['_field_written'] = True;
     md = ctx.mem?.mark_dirty;
     if md is not None {
         md(an);

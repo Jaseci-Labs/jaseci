@@ -49,9 +49,7 @@ node RBag {
     has items: list[int] = [];
 }
 
-enum RShelf {
-    FULL = [1]
-}
+enum RShelf { FULL = [1] }
 
 node RShelved {
     has shelf: RShelf = RShelf.FULL;

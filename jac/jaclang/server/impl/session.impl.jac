@@ -329,7 +329,14 @@ def _frozen_value(value: any) -> bool {
 
 
 def _frozen_fields(anchor: Anchor) -> bool {
-    fields = anchor.archetype?.__dict__;
+    if anchor.__dict__.get('_field_written') {
+        return False;
+    }
+    arch = anchor.archetype;
+    if not type(arch).__dict__.get('__jac_tracked__', False) {
+        return False;
+    }
+    fields = arch?.__dict__;
     if not isinstance(fields, dict) {
         return False;
     }
@@ -1054,6 +1061,7 @@ impl Session._unflushed(full: bool) -> list[UnflushedAnchor] {
             and _frozen_fields(anchor) {
             continue;
         }
+        anchor.__dict__.pop('_field_written', None);
         stored: (dict[str, object] | None) = None;
         try {
             stored = Serializer.stored_form(anchor);
