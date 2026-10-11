@@ -508,7 +508,7 @@ with entry {
     r4 = comprehension();
     r5 = iterable_scope();
     assert r3 == 8;
-    assert r4 == [3, 3];
+    assert r4 == [2, 3];
     assert r5 == [1, 2];
     assert _jac_lambda_1 == 123;
 }

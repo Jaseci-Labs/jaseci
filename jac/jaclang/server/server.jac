@@ -6,7 +6,9 @@ import from pathlib { Path }
 import from typing { AsyncGenerator, Generator, TypeAlias }
 import from jaclang.runtime.builtin { APIProtocol }
 import from jaclang.runtime.context { CallState, ExecutionContext }
+import from jaclang.server.identity.mail { IdentityMailer, verification_problems }
 import from jaclang.server.identity.user_manager { UserManager }
+import from jaclang.server.request_scope { RequestScope }
 import from jaclang.server.serving.app { ServingApp }
 import from jaclang.server.serving.drain { DrainState }
 import from jaclang.server.serving.endpoint { JEndPoint, WSEndPoint }
@@ -31,6 +33,10 @@ obj ServerExtension {
         return [];
     }
 
+    def mail_transport -> any {
+        return None;
+    }
+
     def register(server: JacAPIServer) -> None abst;
     def on_worker_start(server: JacAPIServer) {}
     def on_worker_exit(server: JacAPIServer, pid: int) {}
@@ -40,6 +46,9 @@ obj ServerExtension {
 obj EndpointHost {
     def add_endpoint(ep: JEndPoint) -> None abst;
     def identity -> UserManager abst;
+    def mailer -> IdentityMailer {
+        return IdentityMailer(emailer=self?.emailer);
+    }
 }
 
 
@@ -248,7 +257,9 @@ obj JacAPIServer(EndpointHost) {
         emailer: any = None,
         _endpoints: list[JEndPoint] = [],
         _hmr_pending: bool = False,
-        _hot_reloader: any = None;
+        _hot_reloader: any = None,
+        _context_base_path: (str | None) = None,
+        _context_target_path: (str | None) = None;
 
     obj RestSpecs {
         has method: str = "",
@@ -268,6 +279,7 @@ obj JacAPIServer(EndpointHost) {
     def add_ws_endpoint(path: str, handler: Callable[..., any]) -> None;
     def add_middleware(fn: Callable[..., any]) -> None;
     def add_shutdown_hook(fn: Callable[..., any]) -> None;
+    def request_scope -> RequestScope;
     def build_app -> ServingApp;
     def register_endpoints -> None;
     def _install_middleware -> None;
