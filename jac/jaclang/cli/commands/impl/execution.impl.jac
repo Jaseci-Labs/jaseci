@@ -510,11 +510,7 @@ def _show_run(
 }
 
 def _run_jab(
-    filename: str,
-    port: (int | None),
-    args: list[str],
-    serve_only: bool,
-    port_explicit: bool = True
+    filename: str, port: (int | None), args: list[str], serve_only: bool
 ) -> int {
     import from jaclang.dist.jab { materialize_jab }
 
@@ -524,16 +520,11 @@ def _run_jab(
         console.error(f"Cannot load {filename}: {e}");
         return 1;
     }
-    return run_jab_image(img_root, port, args, serve_only, filename, port_explicit);
+    return run_jab_image(img_root, port, args, serve_only, filename);
 }
 
 impl run_jab_image(
-    img_root: Path,
-    port: (int | None),
-    args: list[str],
-    serve_only: bool,
-    label: str,
-    port_explicit: bool = True
+    img_root: Path, port: (int | None), args: list[str], serve_only: bool, label: str
 ) -> int {
     import from jaclang.dist.jab { jab_app_meta }
 
@@ -561,11 +552,7 @@ impl run_jab_image(
         if not accepted {
             return 1;
         }
-        serve_port = (
-            port
-                if port is not None and (port_explicit or arg_port is None)
-                else arg_port
-        );
+        serve_port = arg_port if arg_port is not None else port;
         if serve_port is None {
             import from jaclang.project.config { get_config_for_path }
             img_cfg = get_config_for_path(img_root);
@@ -616,7 +603,7 @@ def _bundle_serve_args(args: list[str], label: str) -> tuple[(int | None), bool]
         }
         if value is None {
             example = (
-                f"{os.path.basename(sys.argv[0])} --port 8080"
+                f"{os.path.basename(sys.executable)} --port 8080"
                     if label == "<app binary>"
                     else f"jac run --port 8080 {label}"
             );
@@ -924,14 +911,7 @@ impl run(
             );
             return 0;
         }
-        import from jaclang.project.config { get_config }
-        return _run_jab(
-            target,
-            port,
-            args,
-            serve_only=(serve_mode is True),
-            port_explicit=_port_is_explicit(port, get_config())
-        );
+        return _run_jab(target, port, args, serve_only=(serve_mode is True));
     }
 
     if show and not target {

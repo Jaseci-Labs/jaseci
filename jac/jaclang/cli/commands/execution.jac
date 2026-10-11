@@ -290,12 +290,7 @@ def serve(
 def debug(filename: str, main: bool = True, cache: bool = False) -> int;
 
 def run_jab_image(
-    img_root: Path,
-    port: (int | None),
-    args: list[str],
-    serve_only: bool,
-    label: str,
-    port_explicit: bool = True
+    img_root: Path, port: (int | None), args: list[str], serve_only: bool, label: str
 ) -> int;
 
 comptime SPEC_X: CommandSpec = CommandSpec(
