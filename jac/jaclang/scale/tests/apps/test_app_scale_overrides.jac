@@ -599,22 +599,29 @@ test "an unknown project-level [scale] key still fails strict mode while serving
 
 test "the local gateway binds loopback unless a host is chosen or it runs in a pod" {
     import from jaclang.scale.runtime.orchestrator.orchestrator { FleetOrchestrator }
+    import from jaclang.scale.plugin { fleet_gateway_host }
 
-    # (in a pod, [scale.gateway] gateway_host, JAC_SERVE_HOST the image sets, expected bind)
+    # (in a pod, --host, [scale.gateway] gateway_host, [serve] host,
+    #  JAC_SERVE_HOST the image sets, expected bind)
     cases = [
-        (False, "", "", "127.0.0.1"),
-        (True, "", "", "0.0.0.0"),
-        (False, "0.0.0.0", "", "0.0.0.0"),
-        (False, "10.1.2.3", "", "10.1.2.3"),
-        (True, "127.0.0.1", "", "127.0.0.1"),
-        (False, "", "0.0.0.0", "0.0.0.0"),
-        (False, "10.1.2.3", "0.0.0.0", "10.1.2.3")
+        (False, "", "", "", "", "127.0.0.1"),
+        (True, "", "", "", "", "0.0.0.0"),
+        (False, "", "0.0.0.0", "", "", "0.0.0.0"),
+        (False, "", "10.1.2.3", "", "", "10.1.2.3"),
+        (True, "", "127.0.0.1", "", "", "127.0.0.1"),
+        (False, "", "", "", "0.0.0.0", "0.0.0.0"),
+        (False, "", "10.1.2.3", "", "0.0.0.0", "10.1.2.3"),
+        (False, "", "", "0.0.0.0", "", "0.0.0.0"),
+        (False, "", "10.1.2.3", "0.0.0.0", "", "10.1.2.3"),
+        (False, "", "", "0.0.0.0", "127.0.0.1", "127.0.0.1"),
+        (False, "0.0.0.0", "", "", "", "0.0.0.0"),
+        (False, "0.0.0.0", "10.1.2.3", "127.0.0.1", "127.0.0.1", "0.0.0.0")
     ];
     saved = {
         k: os.environ.get(k) for k in ["KUBERNETES_SERVICE_HOST", "JAC_SERVE_HOST"]
     };
     try {
-        for (in_pod, configured, image_host, expected) in cases {
+        for (in_pod, cli_host, configured, toml_host, image_host, expected) in cases {
             os.environ.pop("KUBERNETES_SERVICE_HOST", None);
             os.environ.pop("JAC_SERVE_HOST", None);
             if in_pod {
@@ -626,11 +633,18 @@ test "the local gateway binds loopback unless a host is chosen or it runs in a p
             orchestrator = FleetOrchestrator(
                 fleet=None,
                 gateway_config=normalize_gateway_config(
-                    {"gateway_host": configured} if configured else {}
+                    {
+                        "gateway_host": fleet_gateway_host(
+                            cli_host, configured, toml_host
+                        )
+                    }
                 )
             );
             got = orchestrator._gateway_host();
-            label = f"pod={in_pod} configured={configured!r} env={image_host!r}";
+            label = (
+                f"pod={in_pod} --host={cli_host!r} configured={configured!r} "
+                f"[serve]={toml_host!r} env={image_host!r}"
+            );
             assert got == expected , f"{label}: expected {expected}, got {got}";
         }
     } finally {
