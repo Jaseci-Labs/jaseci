@@ -416,9 +416,26 @@ impl NaIRGenPass._default_repr_piece(
     payload_type = self._opt_payload_of(shape);
     if payload_type is not None {
         fn = b.function;
-        none_bb = fn.append_basic_block(f"rp.d.{field_name}.none");
+        head_bb = b.block;
         some_bb = fn.append_basic_block(f"rp.d.{field_name}.some");
+        b.position_at_end(some_bb);
+        present = self._default_repr_piece(
+            b.extract_value(value, 1, name=f"rp.d.{field_name}.payload"),
+            arch_name,
+            field_name,
+            decl
+        );
+        if present is None {
+            b.unreachable();
+            b.position_at_end(head_bb);
+            return None;
+        }
+        present = self._coerce_type(present, i8p);
+        some_end = b.block;
+        none_bb = fn.append_basic_block(f"rp.d.{field_name}.none");
         done_bb = fn.append_basic_block(f"rp.d.{field_name}.done");
+        b.branch(done_bb);
+        b.position_at_end(head_bb);
         tag = b.extract_value(value, 0, name=f"rp.d.{field_name}.tag");
         b.cbranch(
             b.icmp_signed(
@@ -432,19 +449,6 @@ impl NaIRGenPass._default_repr_piece(
             self._make_global_string("None", name_prefix=".repr.none"),
             name=f"rp.d.{field_name}.nonetext"
         );
-        b.branch(done_bb);
-        b.position_at_end(some_bb);
-        present = self._default_repr_piece(
-            b.extract_value(value, 1, name=f"rp.d.{field_name}.payload"),
-            arch_name,
-            field_name,
-            decl
-        );
-        if present is None {
-            return None;
-        }
-        present = self._coerce_type(present, i8p);
-        some_end = b.block;
         b.branch(done_bb);
         b.position_at_end(done_bb);
         merged = b.phi(i8p, name=f"rp.d.{field_name}.text");
@@ -685,12 +689,16 @@ impl NaIRGenPass._default_repr_fn(arch_name: str) -> (ir.Function | None) {
                 or (owner is not None and owner.is_static) {
                 continue;
             }
-            fields = [
-                f
-                for f in fields
-                if f[0] != var.name.value
+            held = [
+                at
+                for (at, f) in enumerate(fields)
+                if f[0] == var.name.value
             ];
-            fields.append((var.name.value, cls, var));
+            if held {
+                fields[held[0]] = (var.name.value, cls, var);
+            } else {
+                fields.append((var.name.value, cls, var));
+            }
         }
     }
     i8p = ir.IntType(8).as_pointer();

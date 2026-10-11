@@ -346,3 +346,13 @@ test "a break in a finally cancels a continue leaving a switch" {
             "j 00 j 01 broke\n"
         ) , out;
 }
+
+"""A field a subclass declares again keeps the place its base gave it, as on
+the Python tier: `Child(x=3, y=2)`, not `Child(y=2, x=3)`. An optional field
+whose type has no native text still leaves a program that compiles."""
+test "default object text keeps the base's field order" {
+    out = assert_native_identity(
+        fixture("default_object_text_fields.jac"), profiles=["rc", "managed"]
+    );
+    assert out == "Child(x=3, y=2)\nBase(x=1, y=2) Child(x=5, y=6)\nb\n" , out;
+}
