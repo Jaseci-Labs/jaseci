@@ -269,7 +269,7 @@ def native_closure_blocker(
             return (f"'{name}' has no placement facts", False);
         }
         if summary.native_blocker {
-            return (f"'{name}' stays in Python ({summary.native_blocker})", True);
+            return (f"'{name}' cannot be native ({summary.native_blocker})", False);
         }
         for more in summary.jac_deps {
             if os.path.abspath(more) not in seen {

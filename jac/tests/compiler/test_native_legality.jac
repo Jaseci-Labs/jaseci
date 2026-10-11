@@ -292,30 +292,24 @@ test "a gap behind an import that native code shares refuses only the code that 
     assert mod.gen.llvm_ir is not None;
 }
 
-test "a construct local to one element refuses that element, not the module" {
+test "what closed the native preference at parse is read off the typed module" {
     (prog, mod, path, parses) = compile_native_default(ASYNC_SRC);
     assert not prog.errors_had , f"{[str(e) for e in prog.errors_had]}";
     assert parses == 1 , f"the module is analyzed once, got {parses} analyses";
-    placed = placed_by_name(mod);
-    assert placed["fetch"] == 'server' and placed["double"] == 'native' , (
-        f"an async function stays in Python, its sibling does not: {placed}"
+    assert mod.gen.native_undecided , (
+        "the parse decides nothing about the module's contents"
     );
-    assert mod.gen.llvm_ir is not None;
+    assert set(placed_by_name(mod).values()) == {'server'} , (
+        f"an async ability still keeps the module in Python: {placed_by_name(mod)}"
+    );
+    assert mod.gen.llvm_ir is None;
 }
 
-test "an import with no native form refuses only the code that uses it" {
+test "an import with no native form keeps the module in Python" {
     (prog, mod, path, parses) = compile_native_default(PY_IMPORT_SRC);
     assert not prog.errors_had , f"{[str(e) for e in prog.errors_had]}";
-    placed = placed_by_name(mod);
-    assert placed["dump"] == 'server' and placed["double"] == 'native' , placed;
-    imports = [
-        s
-        for s in mod.body
-        if isinstance(s, uni.Import)
-    ];
-    assert imports[0].code_context.value == 'server' , (
-        "the import stays with the Python code that uses it"
-    );
+    assert parses == 1 , f"the module is analyzed once, got {parses} analyses";
+    assert set(placed_by_name(mod).values()) == {'server'} , placed_by_name(mod);
 }
 
 test "access to the persistent graph still keeps the whole module in Python" {

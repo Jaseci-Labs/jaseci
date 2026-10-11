@@ -285,28 +285,28 @@ tree every backend reads.
    *requirement* (`compiler/capability_notes.jac`); where native code is
    stricter or the native library lacks a member it recorded a *refusal*
    (the same table, and `compiler/native_bindings.jac`). The legality table
-   adds what the typed tree shows (`native_blocker_scan`): a construct
-   local to an element (an async or `by llm` ability, inline Python, an
-   endpoint, a pin to another codespace, an import with no native form)
-   refuses that element, and native code that names something such an
-   import binds is refused with it; access to the persistent graph
-   (`root`) refuses the module. A `.jac` import is judged by the placement
-   summaries of the modules it reaches (`native_closure_blocker`): each
-   summary was computed by that module's own analysis and is persisted with
-   it, so no dependency is parsed again to judge an importer. When what the
-   import reaches stays in Python (a dependency pinned to the server, or one
-   whose summary records a blocker), native code reaches it through the
-   native-to-Python bridge, and each native use is judged by the boundary
-   rule: a call stays native when the callee's signature crosses, a type
-   binds as a data shape, anything else refuses the code that uses it. When
-   the closure cannot be judged (it exceeds `native_closure_cap`, or reaches
-   the compiler's own frontend), the import and the code that uses it stay
-   in Python. A native pin on a module is a preference like the project
-   default: only a pin on an element holds that element native. The pass
-   places each top-level element native unless a capability rule or a
-   refusal rules it out, and a reference between two elements placed apart
-   is allowed when the callee's signature can cross
-   (`compiler/boundary_rules.jac`): between native and Python code the
+   adds what the typed tree shows (`native_blocker_scan`): an async or
+   `by llm` ability, inline Python, an endpoint, a pin to another codespace,
+   an import with no native form, or access to the persistent graph
+   (`root`) closes the module's native preference, as the parse-time scan
+   did on `main`; it is a reason not to choose native, never an error on an
+   element that is native by requirement or by a C-library seed. A `.jac`
+   import is judged by the placement summaries of the modules it reaches
+   (`native_closure_blocker`): each summary was computed by that module's
+   own analysis and is persisted with it, so no dependency is parsed again
+   to judge an importer. A dependency pinned to the server is reached
+   through the native-to-Python bridge, and each native use is judged by
+   the boundary rule: a call stays native when the callee's signature
+   crosses, a type binds as a data shape, anything else refuses the code
+   that uses it. Any other closure that cannot be native (a dependency
+   whose summary records a blocker, past `native_closure_cap`, or into the
+   compiler's own frontend) closes the preference. A native pin on a module
+   is a preference like the project default: only a pin on an element
+   holds that element native. The pass places each top-level element
+   native unless a capability rule or a refusal rules it out, and a
+   reference between two elements placed apart is allowed when the
+   callee's signature can cross (`compiler/boundary_rules.jac`): between
+   native and Python code the
    ctypes scalars. A required placement that is refused is an error; any
    other refusal leaves the element in Python.
 

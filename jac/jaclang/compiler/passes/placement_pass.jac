@@ -414,16 +414,11 @@ impl build_native_legality(
             );
         }
         for (site, why) in scan.sites {
-            refusal = NativeRefusal(kind="element", name=why, site=site);
-            legality.prefer_against(mod, refusal);
-            top = top_element_of(mod, site);
-            if isinstance(top, Import) and id(top) not in refused_imports {
-                refused_imports[id(top)] = refusal;
-            }
+            legality.blockers.append(NativeRefusal(kind="module", name=why, site=site));
         }
         for (imp, dep) in scan.dep_imports {
             top = top_element_of(mod, imp);
-            if top is None or id(top) in refused_imports {
+            if top is None or id(top) in refused_imports or legality.blockers {
                 continue;
             }
             (closure, bridged) = native_closure_blocker(judging, mod_path, [dep]);
@@ -437,15 +432,15 @@ impl build_native_legality(
                 bridged_imports.add(id(top));
                 continue;
             }
-            refusal = NativeRefusal(
-                kind="import closure",
-                name=closure,
-                site=imp,
-                help="The compiler cannot judge what this import reaches, so "
-                "native code does not use it."
+            legality.blockers.append(
+                NativeRefusal(
+                    kind="import closure",
+                    name=closure,
+                    site=imp,
+                    help="A module this import reaches, directly or through "
+                    "another import, cannot be placed native."
+                )
             );
-            legality.prefer_against(mod, refusal);
-            refused_imports[id(top)] = refusal;
         }
         for note in capability_notes_of(judging, mod_path, TARGET_NATIVE) {
             noted = NativeRefusal(
