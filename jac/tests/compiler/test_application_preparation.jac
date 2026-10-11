@@ -739,6 +739,7 @@ def _restored(path: Path, `root: str) -> bool {
 
 test "an in-process prepare releases the compiler state it built" {
     import from jaclang.project.kernel_compile { _APPLICATION_UNITS }
+    import from jaclang.project.kernel_snapshot { _IFACE_MEMO, _IFACE_REFUSED }
     with tempfile.TemporaryDirectory(prefix='jac-prepared-release-') as tmp {
         base = Path(tmp);
         path = base / 'main.jac';
@@ -749,6 +750,9 @@ test "an in-process prepare releases the compiler state it built" {
             "def:pub hello -> int { return twice(21); }\n"
         );
         program = JacProgram();
+        memo: any = _IFACE_MEMO;
+        memo[str(base / 'stale_iface.py')] = ([], [], None);
+        _IFACE_REFUSED[str(base / 'stale_refused.py')] = 'stamp';
         try {
             prepared = prepare_application(str(path), program, tmp);
             assert prepared.code , "the prepared application lost its code";
@@ -768,6 +772,9 @@ test "an in-process prepare releases the compiler state it built" {
                 for p in _APPLICATION_UNITS
                 if p.startswith(tmp)
             ] , "kernel unit products for the app survived the prepare";
+            assert not _IFACE_MEMO and not _IFACE_REFUSED , (
+                "the interface memo survived the prepare"
+            );
         } finally {
             forget(str(path));
         }
