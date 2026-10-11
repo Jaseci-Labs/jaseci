@@ -40,6 +40,7 @@ import type from jaclang.compiler.types.types {
 import from jaclang.compiler.frontend.const_fold { fold_const }
 import from jaclang.compiler.frontend.constant { OwnershipKind, Tokens as Tok }
 import from jaclang.compiler.frontend.diagnostics { E5030, W5031, W5032 }
+import from jaclang.compiler.frontend.module_facts { ModuleFacts }
 import from jaclang.compiler.type_registry { JAC_TYPE_REGISTRY }
 
 glob LAYOUT_COMPATIBLE_PRIMITIVES: set[str] = {
@@ -269,7 +270,7 @@ def _recorded_native_name(shared: ClassDetailsShared) -> (str | None) {
 }
 
 def _declared_native_name(shared: ClassDetailsShared) -> str {
-    return _recorded_native_name(shared) or shared.class_name;
+    return _recorded_native_name(shared) or interface_class_native_name(shared);
 }
 
 def referenced_archetype(expr: (UniNode | None)) -> (Archetype | None) {
@@ -324,7 +325,7 @@ def class_type_native_name(typ: (TypeBase | None)) -> (str | None) {
     }
     shared = typ.shared;
     scope = shared.symbol_table;
-    if shared.is_enum_class {
+    if shared.is_enum_class or shared.is_extern_struct {
         return shared.class_name;
     }
     if not isinstance(scope, Archetype) {
@@ -337,6 +338,15 @@ def class_type_native_name(typ: (TypeBase | None)) -> (str | None) {
     name = archetype_native_name(scope);
     shared._native_name = (scope, name);
     return name;
+}
+
+def interface_class_native_name(shared: ClassDetailsShared) -> str {
+    key = shared.canonical_key();
+    if key is None or not key[0].endswith(".jac") {
+        return shared.class_name;
+    }
+    import from jaclang.compiler.frontend.codeinfo { native_arch_name }
+    return native_arch_name(key[0], shared.class_name);
 }
 
 def native_type_key(typ: TypeBase) -> str {

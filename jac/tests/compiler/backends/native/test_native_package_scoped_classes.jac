@@ -8,8 +8,9 @@ of its modules each defining `obj CompressorState` shared one LLVM struct:
 `jac check` warned `native struct name collision ... skipping
 re-registration` and the importer lowered one module's class with the other's
 layout. Bare names are now kept only where something binds them by name (the
-language runtime, the type stubs and the native compiler's own scope); the
-rest of the package is scoped like any program.
+language runtime, the kernel units and the type stubs); the rest of the
+package, the native compiler's own modules included, is scoped like any
+program.
 
 The fixture is a `jac.toml` project inside the package. Such a project was
 exempt from nogc enforcement, as if it were toolchain code, so its nogc build
@@ -42,7 +43,7 @@ test "package modules outside the bound set scope their classes" {
     assert native_arch_name(stdlib, "Path") != "Path";
 }
 
-test "the runtime, type stubs and the native compiler keep bare names" {
+test "the runtime and type stubs keep bare names; compiler modules are scoped" {
     kernel = os.path.join(PACKAGE, "runtime", "osp_kernel.jac");
     assert native_arch_name(kernel, "OspRuntime") == "OspRuntime";
     archetypes = os.path.join(PACKAGE, "runtime", "archetype.jac");
@@ -50,7 +51,7 @@ test "the runtime, type stubs and the native compiler keep bare names" {
     builtins = os.path.join(PACKAGE, "vendor", "typeshed", "stdlib", "builtins.pyi");
     assert native_arch_name(builtins, "dict") == "dict";
     unitree = os.path.join(PACKAGE, "compiler", "frontend", "unitree.jac");
-    assert native_arch_name(unitree, "Module") == "Module";
+    assert native_arch_name(unitree, "Module") != "Module";
 }
 
 test "a jac.toml project inside the package is a program, not the toolchain" {

@@ -16,11 +16,10 @@ glob KERNEL_LIB_ENV: str = "JAC_COMPILER_LIB",
      STUBCAT_BUILDING_ENV: str = "JAC_STUBCAT_BUILDING",
      KERNEL_OFF_VALUES: tuple[str, ...] = ("none", "off", "disabled", "0"),
      LAYOUT_SIDECAR_SUFFIX: str = ".layout.json",
-     STAGE0_BUILDER: str = "stage0",
      KERNEL_DEV_LINK_MODE: str = NATIVE_LINK_MODE_OBJECTS,
      SEALED_LINK_MODE: str = NATIVE_LINK_MODE_BITCODE,
-     PR_KIT_LINK_ENV: str = "JAC_PR_KIT_KERNEL_LINK",
-     PR_KIT_LINK_MODE: str = NATIVE_LINK_MODE_OBJECTS,
+     PR_KIT_KERNEL_ENV: str = "JAC_PR_KIT_KERNEL",
+     PR_KIT_KERNEL_OMITTED: str = "none",
      PR_KIT_EVENT: str = "pull_request";
 
 obj ResolvedKernel {
@@ -31,6 +30,10 @@ obj ResolvedKernel {
 }
 
 class KernelUnavailable(RuntimeError) {}
+
+def kernel_build_env -> dict[str, str] {
+    return {KERNEL_LIB_ENV: "off"};
+}
 
 def kernel_lib_name -> str {
     if sys.platform == "darwin" {
@@ -78,26 +81,37 @@ def _from_explicit(path: str) -> ResolvedKernel {
     );
 }
 
-def seal_link_mode -> str {
-    requested = os.environ.get(PR_KIT_LINK_ENV, "").strip().lower();
-    if requested in ("", SEALED_LINK_MODE) {
-        return SEALED_LINK_MODE;
+def seal_omits_kernel -> bool {
+    requested = os.environ.get(PR_KIT_KERNEL_ENV, "").strip().lower();
+    if not requested {
+        return False;
     }
-    if requested != PR_KIT_LINK_MODE {
+    if requested != PR_KIT_KERNEL_OMITTED {
         raise ValueError(
-            f"{PR_KIT_LINK_ENV}={requested!r}: expected {PR_KIT_LINK_MODE} or "
-            f"{SEALED_LINK_MODE}"
+            f"{PR_KIT_KERNEL_ENV}={requested!r}: expected {PR_KIT_KERNEL_OMITTED} "
+            "or nothing"
         );
     }
     event = os.environ.get("GITHUB_EVENT_NAME", "");
     if os.environ.get("GITHUB_ACTIONS") != "true" or event != PR_KIT_EVENT {
         raise RuntimeError(
-            f"{PR_KIT_LINK_ENV}={PR_KIT_LINK_MODE} is honored only in a "
+            f"{PR_KIT_KERNEL_ENV}={PR_KIT_KERNEL_OMITTED} is honored only in a "
             f"{PR_KIT_EVENT} CI build (this is {event or 'not a CI build'}); a "
-            f"shipped kernel is a {SEALED_LINK_MODE} link"
+            "shipped image carries its kernel"
         );
     }
-    return PR_KIT_LINK_MODE;
+    return True;
+}
+
+def omitted_kernel_record -> dict[str, any] {
+    return {"units": {}, "kernel": PR_KIT_KERNEL_OMITTED, "kit": PR_KIT_EVENT};
+}
+
+def kit_omits_kernel(native: any) -> bool {
+    return isinstance(native, dict)
+        and native.get("kernel") == PR_KIT_KERNEL_OMITTED
+        and native.get("kit") == PR_KIT_EVENT
+        and not native.get("artifact");
 }
 
 def sealed_link_refusal(record: dict[str, any], sidecar: dict[str, any]) -> str {
@@ -109,13 +123,13 @@ def sealed_link_refusal(record: dict[str, any], sidecar: dict[str, any]) -> str 
     if mode == SEALED_LINK_MODE {
         return "";
     }
-    if mode == PR_KIT_LINK_MODE and record.get("kit") == PR_KIT_EVENT {
-        return "";
-    }
-    return (
-        f"a {mode} link ships only in a {PR_KIT_EVENT} CI kit; a sealed image "
-        f"carries a {SEALED_LINK_MODE} link"
-    );
+    return f"a sealed image carries a {SEALED_LINK_MODE} link, not a {mode} link";
+}
+
+def _sealed_kit_omits_kernel -> bool {
+    import from jaclang.jac0core { sealed }
+    image = sealed._jaclang_image();
+    return image is not None and kit_omits_kernel(image.native);
 }
 
 def _from_sealed_image -> (ResolvedKernel | None) {
@@ -186,6 +200,7 @@ def kernel_options -> CompileOptions {
         na_debug=False,
         default_codespace="native",
         native_unit=True,
+        kernel_build=True,
         skip_native_engine=True,
         native_target="",
         na_gc_mode="cycles",
@@ -227,20 +242,22 @@ def build_kernel(
 
 class _StoreParserSpan {
     def init(self: _StoreParserSpan) {
-        self.prev = None;
+        self.prev: dict[str, (str | None)] = {};
     }
 
     def __enter__(self: _StoreParserSpan) -> _StoreParserSpan {
-        self.prev: (str | None) = os.environ.get(KERNEL_LIB_ENV);
-        os.environ[KERNEL_LIB_ENV] = "off";
+        self.prev = {key: os.environ.get(key) for key in kernel_build_env()};
+        os.environ.update(kernel_build_env());
         return self;
     }
 
     def __exit__(self: _StoreParserSpan, exc_type: any, exc: any, tb: any) -> bool {
-        if self.prev is None {
-            os.environ.pop(KERNEL_LIB_ENV, None);
-        } else {
-            os.environ[KERNEL_LIB_ENV] = str(self.prev);
+        for (key, value) in self.prev.items() {
+            if value is None {
+                os.environ.pop(key, None);
+            } else {
+                os.environ[key] = str(value);
+            }
         }
         return False;
     }
@@ -255,17 +272,19 @@ def _from_source_tree -> (ResolvedKernel | None) {
     if found is not None {
         return found;
     }
+    if _bundled_kit_omits_kernel() {
+        return None;
+    }
     try {
         return _derive_in_tree(lib_path);
     } except KernelUnavailable {
         raise;
     } except Exception as e {
-        sys.stderr.write(
-            f"jac: the native compiler kernel could not be derived "
-            f"({type(e).__name__}: {e}); parsing with the store parser. "
-            "Run `jac precompile ./jac --seal` to see the full diagnostics.\n"
-        );
-        return None;
+        raise KernelUnavailable(
+            f"the native compiler kernel could not be derived "
+            f"({type(e).__name__}: {e}). Run `jac precompile ./jac --seal` to see "
+            "the full diagnostics."
+        ) from e;
     }
 }
 
@@ -314,19 +333,14 @@ def _unit_sources_match(
     of a file outside the running package fingerprints its project, so the
     key a kit's build folded is never the one a checkout computes.""";
     import from jaclang.compiler.driver.jir {
+        native_producer_digest,
         running_compiler_digest,
         unit_source_digest
     }
     import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
     options = kernel_options();
-    if sidecar.get("builder") == STAGE0_BUILDER {
-        import from jaclang.compiler.backends.native.stage0_pin {
-            stage0_sidecar_matches
-        }
-        if not stage0_sidecar_matches(sidecar) {
-            return False;
-        }
-    } elif str(sidecar.get("compiler_digest", "")) != running_compiler_digest()
+    if str(sidecar.get("compiler_digest", ""))
+        not in (running_compiler_digest(), native_producer_digest(options.kernel_build))
         or str(sidecar.get("codegen_identity", ""))
             != options.base_codegen_identity() {
         return False;
@@ -387,10 +401,10 @@ def _bundled_kernel_path -> (str | None) {
     return found[0] if found is not None else None;
 }
 
-def _bundled_kernel -> (tuple[str, dict[str, any]] | None) {
-    """The kernel the running kit carries and its manifest record, when this
-    process's compiler is a rerouted checkout rather than that kit: the
-    kit's sealed jaclang sits beside its interpreter.""";
+def _bundled_image -> (tuple[str, any] | None) {
+    """The sealed jaclang the running kit carries, when this process's
+    compiler is a rerouted checkout rather than that kit: the kit's image
+    sits beside its interpreter.""";
     import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
     site_pkg = os.path.join(os.path.dirname(sys.prefix), "site", "jaclang");
     if not os.path.isdir(os.path.join(site_pkg, "_precompiled")) {
@@ -402,13 +416,25 @@ def _bundled_kernel -> (tuple[str, dict[str, any]] | None) {
     try {
         import from jaclang.jac0core.sealed { load_image }
         image = load_image(os.path.join(site_pkg, "_precompiled"));
-        if image is None {
-            return None;
-        }
-        record = image.native_artifact();
     } except Exception {
         return None;
     }
+    return (site_pkg, image) if image is not None else None;
+}
+
+def _bundled_kit_omits_kernel -> bool {
+    found = _bundled_image();
+    return found is not None and kit_omits_kernel(found[1].native);
+}
+
+def _bundled_kernel -> (tuple[str, dict[str, any]] | None) {
+    """The kernel the running kit carries and its manifest record.""";
+    found = _bundled_image();
+    if found is None {
+        return None;
+    }
+    (site_pkg, image) = found;
+    record = image.native_artifact();
     if not record {
         return None;
     }
@@ -469,7 +495,7 @@ def _publish_kernel(
 
 def _build_kernel_in_child(dst: str) {
     import subprocess;
-    env = child_compiler_env({KERNEL_LIB_ENV: "off"});
+    env = child_compiler_env(kernel_build_env());
     code = (
         "import sys\n"
         "sys.path.insert(0, sys.argv[-1])\n"
@@ -497,16 +523,11 @@ def _derive_in_tree(lib_path: str) -> (ResolvedKernel | None) {
         import from jaclang.compiler.driver.setup_progress { setup_progress }
         setup_progress.on_kernel_build(lib_path);
         tmp = f"{lib_path}.{os.getpid()}.tmp";
-        import from jaclang.compiler.backends.native.stage0_build {
-            build_kernel_by_pin
-        }
         try {
-            if not build_kernel_by_pin(tmp) {
-                _build_kernel_in_child(tmp);
-            }
+            _build_kernel_in_child(tmp);
             _publish_kernel(tmp, lib_path);
         } finally {
-            for leftover in (tmp, tmp + LAYOUT_SIDECAR_SUFFIX) {
+            for leftover in (tmp, tmp + LAYOUT_SIDECAR_SUFFIX, tmp + ".target.json") {
                 try {
                     os.remove(leftover);
                 } except OSError {}
@@ -531,16 +552,19 @@ def resolve_kernel -> (ResolvedKernel | None) {
     if os.environ.get(STUBCAT_BUILDING_ENV) {
         return None;
     }
+    if _sealed_kit_omits_kernel() {
+        return None;
+    }
+    sealed = _from_sealed_image();
+    if sealed is not None {
+        return sealed;
+    }
     lib_setting = os.environ.get(KERNEL_LIB_ENV, "");
     if lib_setting.strip().lower() in KERNEL_OFF_VALUES {
         return None;
     }
     if lib_setting {
         return _from_explicit(lib_setting);
-    }
-    sealed = _from_sealed_image();
-    if sealed is not None {
-        return sealed;
     }
     return _from_source_tree();
 }

@@ -401,7 +401,7 @@ the Jac form, not a C helper:
    is `return tail table.view(1)[0].handler(frame, stack, tstate, next,
    oparg);` from one C function defined in Jac to the next, in constant
    stack at every optimization level. The handlers share one signature;
-   a call that cannot reuse the frame is `E5113` naming why.
+   a call that cannot reuse the frame is `E5114` naming why.
 
 ## Object model (`Objects/`, 143k lines)
 

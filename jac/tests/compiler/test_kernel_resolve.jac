@@ -1,7 +1,8 @@
 """`resolve_kernel()` is the one kernel lookup (#8943).
 
-Its precedence is fixed: the explicit switch, the sealed image, the source
-tree by source key, then the store parser when there is no toolchain. A
+Its precedence is fixed: the sealed image, the explicit switch, the source
+tree by source key, then the store parser when there is no toolchain. A sealed
+image runs its own kernel whatever the switch says. A
 source tree with no kernel derives one on the first parse, in a child
 process; a kernel whose sidecar source key disagrees with the sources now
 is rebuilt; nothing raises about a missing kernel a build could make.
@@ -43,11 +44,151 @@ def _with_env(name: str, value: (str | None), fn: any) -> any {
     }
 }
 
-test "the off switch selects the store parser" {
+def _unsealed(fn: any) -> any {
+    import from unittest.mock { patch }
+    import jaclang.compiler.backends.native.kernel_resolve as resolver;
+    with patch.object(resolver, "_sealed_kit_omits_kernel", return_value=False) {
+        with patch.object(resolver, "_from_sealed_image", return_value=None) {
+            return fn();
+        }
+    }
+}
+
+test "the off switch selects the store parser in a checkout" {
+    def resolved -> any {
+        return _with_env(KERNEL_LIB_ENV, "off", resolve_kernel);
+    }
+    def loaded -> any {
+        return _with_env(KERNEL_LIB_ENV, "off", ensure_loaded);
+    }
     reset_loaded();
     try {
-        assert _with_env(KERNEL_LIB_ENV, "off", lambda() { resolve_kernel(); }) is None;
-        assert _with_env(KERNEL_LIB_ENV, "off", lambda() { ensure_loaded(); }) is None;
+        assert _unsealed(resolved) is None , "JAC_COMPILER_LIB=off resolves no kernel";
+        assert _unsealed(loaded) is None , "JAC_COMPILER_LIB=off parses with the store parser";
+    } finally {
+        reset_loaded();
+    }
+}
+
+test "a sealed image runs its own kernel whatever the switch says" {
+    import from unittest.mock { patch }
+    import jaclang.compiler.backends.native.kernel_resolve as resolver;
+    shipped = resolver.ResolvedKernel(lib_path="shipped", layout={}, source="sealed");
+    with patch.object(resolver, "_sealed_kit_omits_kernel", return_value=False) {
+        with patch.object(resolver, "_from_sealed_image", return_value=shipped) {
+            for setting in ("off", "none", "0", "/no/such/libjac_compiler.so") {
+                found = _with_env(KERNEL_LIB_ENV, setting, resolve_kernel);
+                assert found is shipped , f"JAC_COMPILER_LIB={setting} must not displace a sealed kernel";
+            }
+        }
+    }
+}
+
+test "a seal omits the kernel only in a pull-request CI build" {
+    import from unittest.mock { patch }
+    import from jaclang.compiler.backends.native.kernel_resolve {
+        PR_KIT_KERNEL_ENV,
+        seal_omits_kernel
+    }
+    ci = {"GITHUB_ACTIONS": "true", "GITHUB_EVENT_NAME": "pull_request"};
+    with patch.dict(os.environ, ci) {
+        os.environ.pop(PR_KIT_KERNEL_ENV, None);
+        assert not seal_omits_kernel() , "a kit carries its kernel unless asked";
+    }
+    with patch.dict(os.environ, dict(ci, **{PR_KIT_KERNEL_ENV: "none"})) {
+        assert seal_omits_kernel();
+    }
+    for event in ("push", "release", "workflow_dispatch", "schedule") {
+        refused = False;
+        with patch.dict(
+            os.environ,
+            {
+                "GITHUB_ACTIONS": "true",
+                "GITHUB_EVENT_NAME": event,
+                PR_KIT_KERNEL_ENV: "none"
+            }
+        ) {
+            try {
+                seal_omits_kernel();
+            } except RuntimeError {
+                refused = True;
+            }
+        }
+        assert refused , f"a {event} build must never ship an image without its kernel";
+    }
+    with patch.dict(os.environ, {PR_KIT_KERNEL_ENV: "none"}) {
+        os.environ.pop("GITHUB_ACTIONS", None);
+        refused = False;
+        try {
+            seal_omits_kernel();
+        } except RuntimeError {
+            refused = True;
+        }
+        assert refused , "a local seal carries its kernel";
+    }
+    with patch.dict(os.environ, dict(ci, **{PR_KIT_KERNEL_ENV: "objects"})) {
+        refused = False;
+        try {
+            seal_omits_kernel();
+        } except ValueError {
+            refused = True;
+        }
+        assert refused , "an unknown value is an error, not a full build";
+    }
+}
+
+test "only a pull-request kit's own record omits the kernel" {
+    import from jaclang.compiler.backends.native.kernel_resolve {
+        kit_omits_kernel,
+        omitted_kernel_record
+    }
+    assert kit_omits_kernel(omitted_kernel_record());
+    assert not kit_omits_kernel({});
+    assert not kit_omits_kernel(None);
+    assert not kit_omits_kernel({"kernel": "none"}) , "the record names the kit it ships in";
+    assert not kit_omits_kernel({"kernel": "none", "kit": "release"});
+    assert not kit_omits_kernel(
+        dict(omitted_kernel_record(), artifact={"path": "compiler/libjac_compiler.so"})
+    ) , "a record that names a kernel carries one";
+}
+
+test "a kit sealed without a kernel serves the store parser, sealed or rerouted" {
+    import from unittest.mock { patch }
+    import jaclang.compiler.backends.native.kernel_resolve as resolver;
+    def never(*args: any, **kwargs: any) -> any {
+        raise AssertionError("a kit without a kernel must not look for or build one");
+    }
+    reset_loaded();
+    try {
+        with patch.dict(os.environ) {
+            for name in (KERNEL_LIB_ENV, "JAC_STUBCAT_BUILDING") {
+                os.environ.pop(name, None);
+            }
+            with patch.object(
+                resolver, "_sealed_kit_omits_kernel", return_value=True
+            ) {
+                with patch.object(resolver, "_from_sealed_image", side_effect=never) {
+                    with patch.object(
+                        resolver, "_from_source_tree", side_effect=never
+                    ) {
+                        assert resolve_kernel() is None;
+                    }
+                }
+            }
+            with patch.object(resolver, "_toolchain_available", return_value=True) {
+                with patch.object(resolver, "_accept_in_tree", return_value=None) {
+                    with patch.object(
+                        resolver, "_bundled_kit_omits_kernel", return_value=True
+                    ) {
+                        with patch.object(
+                            resolver, "_derive_in_tree", side_effect=never
+                        ) {
+                            assert resolver._from_source_tree() is None;
+                        }
+                    }
+                }
+            }
+        }
     } finally {
         reset_loaded();
     }
@@ -69,7 +210,7 @@ test "an explicit path must carry its sidecar" {
         Path(bogus).write_bytes(b"not a library");
         raised = False;
         try {
-            _with_env(KERNEL_LIB_ENV, bogus, lambda() { resolve_kernel(); });
+            _unsealed(lambda() { _with_env(KERNEL_LIB_ENV, bogus, resolve_kernel); });
         } except KernelUnavailable {
             raised = True;
         }
@@ -362,5 +503,70 @@ test "kernel source identity is independent of the caller compilation context" {
         with cache_scope(CompileOptions(target_app="application-context")) {
             assert units_source_key([str(source)], options) == built;
         }
+    }
+}
+
+test "a successful derivation sweeps the stage, its sidecar, and its target spec" {
+    import from unittest.mock { patch }
+    import jaclang.compiler.backends.native.kernel_resolve as resolver;
+    with tempfile.TemporaryDirectory(prefix="jac-kernel-") as tmp {
+        lib = os.path.join(tmp, "libjac_compiler.so");
+        def fake_build(destination: str) {
+            Path(destination).write_bytes(b"fresh kernel");
+            Path(destination + ".layout.json").write_text(json.dumps({"classes": {}}));
+            Path(destination + ".target.json").write_text(json.dumps({"units": []}));
+        }
+        with patch.object(resolver, "_accept_in_tree", return_value=None) {
+            with patch.object(resolver, "_adopt_bundled", return_value=None) {
+                with patch.object(
+                    resolver, "_build_kernel_in_child", side_effect=fake_build
+                ) {
+                    found = resolver._derive_in_tree(lib);
+                }
+            }
+        }
+        assert found is not None and found.source == "tree";
+        assert Path(lib).read_bytes() == b"fresh kernel";
+        assert read_sidecar(lib) is not None , "the published sidecar travels with the library";
+        assert sorted(p.name for p in Path(tmp).iterdir())
+            == [
+                "libjac_compiler.so",
+                "libjac_compiler.so.layout.json",
+                "libjac_compiler.so.lock"
+            ] , "the stage file, its layout sidecar, and its target spec are swept";
+    }
+}
+
+test "a failed derivation still sweeps its stage and target spec" {
+    import from unittest.mock { patch }
+    import jaclang.compiler.backends.native.kernel_resolve as resolver;
+    with tempfile.TemporaryDirectory(prefix="jac-kernel-") as tmp {
+        lib = os.path.join(tmp, "libjac_compiler.so");
+        def dead_build(destination: str) {
+            Path(destination).write_bytes(b"torn kernel");
+            Path(destination + ".layout.json").write_text(json.dumps({"classes": {}}));
+            Path(destination + ".target.json").write_text(json.dumps({"units": []}));
+            raise RuntimeError("link died");
+        }
+        raised = False;
+        with patch.object(resolver, "_accept_in_tree", return_value=None) {
+            with patch.object(resolver, "_adopt_bundled", return_value=None) {
+                with patch.object(
+                    resolver, "_build_kernel_in_child", side_effect=dead_build
+                ) {
+                    try {
+                        resolver._derive_in_tree(lib);
+                    } except RuntimeError {
+                        raised = True;
+                    }
+                }
+            }
+        }
+        assert raised , "a failed build surfaces its error";
+        assert not os.path.exists(str(lib)) , "a failed build publishes nothing";
+        assert sorted(p.name for p in Path(tmp).iterdir())
+            == ["libjac_compiler.so.lock"] , (
+            "an interrupted build leaves no stage file, sidecar, or target spec behind"
+        );
     }
 }

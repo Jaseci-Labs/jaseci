@@ -6,7 +6,7 @@ from one handler to the next through a function-pointer table for as long as
 it runs. `tail` is contextual, so a variable named `tail` still reads as one.
 The Python backend runs the same program as ordinary calls.
 
-A call that cannot reuse the frame is `E5113` naming why, never a silent
+A call that cannot reuse the frame is `E5114` naming why, never a silent
 ordinary call; `return tail` on anything but a call is `E0097`.
 """
 

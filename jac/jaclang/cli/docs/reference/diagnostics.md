@@ -690,7 +690,7 @@ Emitted while lowering the unitree into the compact codegen IR container (`JcirG
 
 | Code | Message |
 |------|---------|
-| `E5113` | `return tail` cannot be a guaranteed tail call: {reason} |
+| `E5114` | `return tail` cannot be a guaranteed tail call: {reason} |
 
 ### Client Code Generation
 

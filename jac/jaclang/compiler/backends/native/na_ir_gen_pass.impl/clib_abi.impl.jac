@@ -72,6 +72,13 @@ impl NaIRGenPass._clib_alloc_box(name: str) -> ir.Value {
 
 impl NaIRGenPass._clib_materialize_c_ptr(jac_ptr: ir.Value, name: str) -> ir.Value {
     ct = self._clib_c_type(name).as_pointer();
+
+    _present = self._opt_unwrap_guarded(
+        jac_ptr, "clib.rec", f"C record argument '{name}' cannot be None"
+    );
+    if _present is not None {
+        jac_ptr = _present;
+    }
     if jac_ptr.type != ct {
         return self.builder.bitcast(jac_ptr, ct, name="clib.cptr");
     }
@@ -89,8 +96,8 @@ impl NaIRGenPass._codegen_clib_call(
     copybacks: (list[tuple[ir.Value, ir.Value, any]] | None) = None
 ) -> (ir.Value | None) {
     plan = self.clib_fn_abi[func_name];
-    param_plans = plan["params"];
-    ret_plan = plan["ret"];
+    param_plans: list[dict[str, any]] = plan["params"];
+    ret_plan: dict[str, any] = plan["ret"];
     call_args: list[ir.Value] = [];
 
     arg_attrs: dict[int, ir.ArgumentAttributes] = {};
@@ -101,16 +108,17 @@ impl NaIRGenPass._codegen_clib_call(
         sret_aa = ir.ArgumentAttributes();
         sret_aa.add("sret");
         sret_aa.type = sret_ct;
-        _sret_al = ret_plan["align"];
+        _sret_al: int = ret_plan["align"];
         sret_aa.align = _sret_al if _sret_al > 8 else 8;
         arg_attrs[len(call_args)] = sret_aa;
         call_args.append(sret_buf);
     }
     _materialized: list[ir.Value] = [];
-    for (i, pp) in enumerate(param_plans) {
+    for i in range(len(param_plans)) {
+        pp = param_plans[i];
         jac_val = args[i] if i < len(args) else None;
-        kind = pp["kind"];
-        _c_arg = pp.get("c_arg") or {};
+        kind: str = pp["kind"];
+        _c_arg: dict[str, any] = pp.get("c_arg") or {};
         if kind == "scalar" and _c_arg {
             if jac_val is None {
                 call_args.append(ir.Constant(pp["type"], None));
@@ -122,7 +130,7 @@ impl NaIRGenPass._codegen_clib_call(
                 call_args.append(ir.Constant(pp["type"], 0));
             } else {
                 _cv = jac_val;
-                scalar_type = pp["type"];
+                scalar_type: ir.Type = pp["type"];
                 if self._is_bytes_value(_cv)
                     and scalar_type == ir.IntType(8).as_pointer() {
                     _cv = self._bytes_data_ptr(_cv);
@@ -153,7 +161,7 @@ impl NaIRGenPass._codegen_clib_call(
                 byval_aa = ir.ArgumentAttributes();
                 byval_aa.add("byval");
                 byval_aa.type = self._clib_c_type(pp["sname"]);
-                _bv_al = pp["align"];
+                _bv_al: int = pp["align"];
                 byval_aa.align = _bv_al if _bv_al > 8 else 8;
                 arg_attrs[len(call_args)] = byval_aa;
                 call_args.append(c_ptr);
@@ -170,7 +178,7 @@ impl NaIRGenPass._codegen_clib_call(
                 return None;
             }
             c_ptr = self._clib_materialize_c_ptr(jac_val, pp["sname"]);
-            coerce = pp["coerce"];
+            coerce: list[ir.Type] = pp["coerce"];
             ct = ir.LiteralStructType(coerce);
             if pp["safe"] {
                 _buf = self._entry_alloca(ct, "clib.arg.buf");
@@ -216,7 +224,8 @@ impl NaIRGenPass._codegen_clib_call(
     }
     _struct_temps: list[ir.Value] = [];
     _heap_temps: list[ir.Value] = [];
-    for (i, pp) in enumerate(param_plans) {
+    for i in range(len(param_plans)) {
+        pp = param_plans[i];
         _tv = args[i] if i < len(args) else None;
         if _tv is None or not self._is_owned(_tv) {
             continue;
@@ -243,29 +252,31 @@ impl NaIRGenPass._codegen_clib_call(
         }
     }
     self._release_owned_args(_materialized, op="c_str_arg");
-    rkind = ret_plan["kind"];
+    rkind: str = ret_plan["kind"];
     if rkind == "sret" {
         assert sret_buf is not None , "the sret buffer is allocated whenever the plan asks for one";
         return self._clib_box_c_ptr(sret_buf, ret_plan["sname"]);
     }
     if rkind == "struct_reg" {
-        sname = ret_plan["sname"];
-        coerce = ret_plan["coerce"];
+        sname: str = ret_plan["sname"];
+        _ret_coerce: list[ir.Type] = ret_plan["coerce"];
 
         if ret_plan["safe"] {
-            rbuf = self._entry_alloca(ir.LiteralStructType(coerce), "clib.ret.rbuf");
+            rbuf = self._entry_alloca(
+                ir.LiteralStructType(_ret_coerce), "clib.ret.rbuf"
+            );
         } else {
             rbuf = self._entry_alloca(self._clib_c_type(sname), "clib.ret.cbuf");
         }
-        if len(coerce) == 1 {
+        if len(_ret_coerce) == 1 {
             slot = self.builder.bitcast(
-                rbuf, coerce[0].as_pointer(), name="clib.ret.cast"
+                rbuf, _ret_coerce[0].as_pointer(), name="clib.ret.cast"
             );
             self.builder.store(result, slot);
         } else {
-            ct = ir.LiteralStructType(coerce);
+            ct = ir.LiteralStructType(_ret_coerce);
             ct_ptr = self.builder.bitcast(rbuf, ct.as_pointer(), name="clib.ret.cast");
-            for j in range(len(coerce)) {
+            for j in range(len(_ret_coerce)) {
                 piece = self.builder.extract_value(result, j, name="clib.ret.piece");
                 piece_ptr = self.builder.gep(
                     ct_ptr,
