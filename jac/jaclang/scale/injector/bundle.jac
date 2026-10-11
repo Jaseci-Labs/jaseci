@@ -959,7 +959,8 @@ def seal_input_digest(
     pod_arch: str,
     app_name: str,
     sanitized: (str | None),
-    fat: bool
+    fat: bool,
+    tomls: dict[str, str]
 ) -> str {
     digest = hashlib.sha256();
     digest.update(hashlib.sha256(seal_binary).digest());
@@ -973,7 +974,7 @@ def seal_input_digest(
         digest.update(part.encode("utf-8"));
         digest.update(b"\0");
     }
-    for (toml_rel, toml_text) in sorted(nested_sanitized_tomls(base).items()) {
+    for (toml_rel, toml_text) in sorted(tomls.items()) {
         digest.update(toml_rel.encode("utf-8"));
         digest.update(b"\0");
         digest.update(toml_text.encode("utf-8"));
@@ -1072,18 +1073,20 @@ def pack_jab(
     }
     sanitized = sanitized_jac_toml(base);
     app_name = sealed_app_name(project_dir, fleet);
-    def input_key -> str {
+    tomls = nested_sanitized_tomls(base);
+    def input_key(tree: Path, files: list[Path]) -> str {
         return seal_input_digest(
-            base,
-            sources,
+            tree,
+            files,
             seal_binary,
             pod_arch,
             app_name,
             sanitized,
-            fat_bundle_setting(project_dir)[0]
+            fat_bundle_setting(project_dir)[0],
+            tomls
         );
     }
-    key = input_key();
+    key = input_key(base, sources);
     cached = _cached_seal(base, key);
     if cached is not None {
         logger.info(
@@ -1131,7 +1134,12 @@ def pack_jab(
         (tar, gz) = open_det_tar(buf);
         try {
             with tar {
-                add_source_members(tar, base, sources=sources);
+                snapshot = [
+                    staged / path.relative_to(base)
+                    for path in sources
+                    if (staged / path.relative_to(base)).is_file()
+                ];
+                add_source_members(tar, staged, sources=snapshot);
                 pre = staged / "_precompiled";
                 count = 0;
                 for path in sorted(pre.rglob("*")) {
@@ -1188,7 +1196,7 @@ def pack_jab(
                     info.size = len(data);
                     tar.addfile(info, io.BytesIO(data));
                 }
-                for (toml_rel, toml_text) in nested_sanitized_tomls(base).items() {
+                for (toml_rel, toml_text) in tomls.items() {
                     data = toml_text.encode("utf-8");
                     info = tarfile.TarInfo(name=toml_rel);
                     info.size = len(data);
@@ -1200,7 +1208,8 @@ def pack_jab(
         }
         raw = buf.getvalue();
         try {
-            unchanged = input_key() == key;
+            unchanged = len(snapshot) == len(sources)
+                and input_key(staged, snapshot) == key;
         } except OSError {
             unchanged = False;
         }
