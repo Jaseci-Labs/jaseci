@@ -320,8 +320,10 @@ A build links into a private file and publishes the library, then its
 sidecar, each on a new inode. The sidecar carries the library's sha256, so a
 process that reads between the two writes sees them disagree and runs from
 bytecode for that one run, and a process already running the old kernel
-keeps its mapping. Concurrent builds therefore need no lock: the last one to
-publish wins.
+keeps its mapping. Builds run unlocked and readers never lock; only the two
+publishing writes hold the kernel's `.lock`, so concurrent builds publish
+whole pairs and the last one wins instead of leaving one build's library
+beside another's sidecar.
 
 CI holds the kit path to account on every reroute lane. The `jac-kit`
 action's warm step is the lane's first `jac run`, and a fresh checkout has

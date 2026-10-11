@@ -25,6 +25,7 @@ import from jaclang.compiler.backends.native.kernel_resolve {
     source_tree_kernel_path
 }
 import jaclang.compiler.backends.native.kernel_resolve as resolver;
+import from jaclang.compiler.backends.native.link_plan { LinkResult }
 import from jaclang.compiler.native_compiler { reset_loaded }
 
 def _unsealed(fn: any) -> any {
@@ -488,7 +489,7 @@ test "application configuration does not change the compiler kernel" {
 }
 
 test "kernel publication never accepts mismatched library and sidecar images" {
-    import from jaclang.jac0core.cache_paths { atomic_write }
+    import from jaclang.jac0core.cache_paths { FileLock, atomic_write }
     with tempfile.TemporaryDirectory() as directory {
         source = Path(directory) / "new.so";
         target = Path(directory) / "kernel.so";
@@ -507,7 +508,16 @@ test "kernel publication never accepts mismatched library and sidecar images" {
             );
         }
         observed: list[bool] = [];
+        held: list[bool] = [];
         def publish(path: str, data: bytes, mode: (int | None) = None) {
+            rival = FileLock(str(target) + ".lock", timeout=0.0);
+            try {
+                rival.acquire();
+                rival.release();
+                held.append(False);
+            } except TimeoutError {
+                held.append(True);
+            }
             atomic_write(path, data, mode);
             observed.append(_inspect(str(target))[0] is not None);
         }
@@ -518,6 +528,9 @@ test "kernel publication never accepts mismatched library and sidecar images" {
             }
         }
         assert observed == [False, True];
+        assert held == [True, True] , (
+            "a concurrent build cannot interleave its writes between the library and its sidecar"
+        );
     }
 }
 
@@ -540,21 +553,26 @@ test "a kernel build publishes its library and sidecar and sweeps its stage" {
     import jaclang.compiler.backends.native.kernel_stage0 as stage0;
     with tempfile.TemporaryDirectory(prefix="jac-kernel-") as tmp {
         lib = os.path.join(tmp, "libjac_compiler.so");
-        def fake_link(destination: str, **kwargs: any) -> str {
+        def fake_link(destination: str, **kwargs: any) -> LinkResult {
             Path(destination).write_bytes(b"fresh kernel");
             Path(destination + ".layout.json").write_text(json.dumps({"classes": {}}));
             Path(destination + ".target.json").write_text(json.dumps({"units": []}));
-            return "linked";
+            return LinkResult(
+                output_path=destination, plan_digest="p", layout_digest="l", sha256="s"
+            );
         }
         with patch.object(stage0, "link_kernel", side_effect=fake_link) {
-            assert resolver.build_kernel(lib) == "linked";
+            result = resolver.build_kernel(lib);
         }
+        assert result.output_path == lib , "the result names the published kernel";
         assert Path(lib).read_bytes() == b"fresh kernel";
         assert read_sidecar(lib) is not None , "the published sidecar travels with the library";
         assert sorted(p.name for p in Path(tmp).iterdir())
-            == ["libjac_compiler.so", "libjac_compiler.so.layout.json"] , (
-            "the stage file, its layout sidecar, and its target spec are swept"
-        );
+            == [
+                "libjac_compiler.so",
+                "libjac_compiler.so.layout.json",
+                "libjac_compiler.so.lock"
+            ] , ("the stage file, its layout sidecar, and its target spec are swept");
     }
 }
 

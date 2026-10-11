@@ -116,3 +116,7 @@ libjac_*.dylib.layout.json
 libjacpyembed.so
 libjacpyembed.dylib
 jacpyembed.dll
+
+# A kernel publication lock keeps its inode while a build holds it.
+libjac_*.lock
+jac_compiler.dll.lock

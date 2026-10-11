@@ -1,4 +1,4 @@
-import from jaclang.jac0core.cache_paths { atomic_write }
+import from jaclang.jac0core.cache_paths { FileLock, atomic_write }
 import hashlib;
 import json;
 import os;
@@ -425,12 +425,12 @@ def resolve_kernel -> (ResolvedKernel | None) {
 
 def _publish_kernel(source: str, destination: str) {
     import from pathlib { Path }
-    atomic_write(destination, Path(source).read_bytes(), mode=0o755);
-    atomic_write(
-        destination + LAYOUT_SIDECAR_SUFFIX,
-        Path(source + LAYOUT_SIDECAR_SUFFIX).read_bytes(),
-        mode=0o644
-    );
+    library = Path(source).read_bytes();
+    sidecar = Path(source + LAYOUT_SIDECAR_SUFFIX).read_bytes();
+    with FileLock(destination + ".lock") {
+        atomic_write(destination, library, mode=0o755);
+        atomic_write(destination + LAYOUT_SIDECAR_SUFFIX, sidecar, mode=0o644);
+    }
 }
 
 def build_kernel(
@@ -444,6 +444,7 @@ def build_kernel(
     try {
         result = link_kernel(tmp, log=log, link_mode=link_mode);
         _publish_kernel(tmp, destination);
+        result.output_path = destination;
     } finally {
         for leftover in (tmp, tmp + LAYOUT_SIDECAR_SUFFIX, tmp + ".target.json") {
             try {
