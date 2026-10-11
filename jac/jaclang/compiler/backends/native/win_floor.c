@@ -621,6 +621,13 @@ int clock_gettime(int clock, struct linux_timespec *out) {
     return 0;
 }
 
+/* Setting the system clock needs a privilege a program does not hold. */
+int clock_settime(int clock, const struct linux_timespec *when) {
+    (void)clock; (void)when;
+    set_errno(1 /* EPERM */);
+    return -1;
+}
+
 int clock_getres(int clock, struct linux_timespec *out) {
     (void)clock;
     out->sec = 0;

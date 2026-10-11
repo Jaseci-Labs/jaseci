@@ -22,6 +22,15 @@ glob WIN_CRT_DLL: str = "ucrtbase.dll";
 """C library names the UCRT exports under another spelling, with the same
 arguments in the registers the Win64 convention passes them in."""
 glob WIN_CRT_ALIAS: dict[str, str] = {
+    # `long` is 64 bits to the runtime and 32 to the UCRT.
+    "strtol": "strtoll",
+    "strtoul": "strtoull",
+    "atol": "atoll",
+    "labs": "llabs",
+    "lround": "llround",
+    "lroundf": "llroundf",
+    "lrint": "llrint",
+    "lrintf": "llrintf",
     "malloc_usable_size": "_msize",
     "strdup": "_strdup",
     "getpid": "_getpid",

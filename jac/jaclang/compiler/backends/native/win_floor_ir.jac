@@ -1445,6 +1445,12 @@ declare dso_local i32 @QueryPerformanceCounter(ptr noundef) local_unnamed_addr #
 
 declare dso_local i32 @QueryPerformanceFrequency(ptr noundef) local_unnamed_addr #1
 
+define dso_local noundef i32 @clock_settime(i32 noundef %0, ptr noundef readnone captures(none) %1) local_unnamed_addr #0 {
+  %3 = tail call ptr @_errno() #7
+  store i32 1, ptr %3, align 4
+  ret i32 -1
+}
+
 define dso_local noundef i32 @clock_getres(i32 noundef %0, ptr noundef writeonly captures(none) initializes((0, 16)) %1) local_unnamed_addr #5 {
   store i64 0, ptr %1, align 8
   %3 = getelementptr inbounds nuw i8, ptr %1, i64 8

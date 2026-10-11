@@ -17,11 +17,13 @@ glob SCN_CNT_CODE = 0x20,
      SCN_CNT_INITIALIZED_DATA = 0x40,
      SCN_CNT_UNINITIALIZED_DATA = 0x80,
      SCN_LNK_REMOVE = 0x800,
+     SCN_LNK_NRELOC_OVFL = 0x01000000,
      SCN_MEM_EXECUTE = 0x20000000,
      SCN_MEM_READ = 0x40000000,
      SCN_MEM_WRITE = 0x80000000;
 
-glob REL_ADDR64 = 1,
+glob REL_ABSOLUTE = 0,
+     REL_ADDR64 = 1,
      REL_ADDR32 = 2,
      REL_ADDR32NB = 3,
      REL_REL32 = 4,
@@ -93,7 +95,15 @@ impl PeLinker.parse_object -> bool {
         sec = CoffSection(name=name, characteristics=chars, data=data, vsize=vsize);
         self.sections.append(sec);
 
-        for r in range(nrel) {
+        # A section with more than 65534 relocations sets the overflow flag
+        # and keeps the real count in its first entry, which is not a
+        # relocation.
+        first_rel = 0;
+        if (chars & SCN_LNK_NRELOC_OVFL) and nrel == 0xFFFF {
+            nrel = struct.unpack_from("<I", raw, prel)[0];
+            first_rel = 1;
+        }
+        for r in range(first_rel, nrel) {
             ro = prel + r * 10;
             (rva, symidx, rtype) = struct.unpack_from("<IIH", raw, ro);
             self.relocations.append(
@@ -391,6 +401,9 @@ impl PeLinker.build_executable -> bytes {
             }
         }
 
+        if rel.rtype == REL_ABSOLUTE {
+            continue;
+        }
         if rel.rtype == REL_ADDR64 {
             a = struct.unpack_from("<q", buf, patch_off)[0];
             val = IMAGE_BASE + trva + a;
