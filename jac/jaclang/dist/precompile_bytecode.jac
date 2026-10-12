@@ -1751,7 +1751,7 @@ def run_precompile(
                     f"  Compiler kernel: {len(dropped)} unit(s) "
                         + (
                             "left unlowered; this pull-request kit omits the kernel"
-                                if _kernel_omitted()
+                                if "kernel" in kit_omissions(pkg_name)
                                 else "left to the native seal; lowering the units programs link"
                         )
                 );
