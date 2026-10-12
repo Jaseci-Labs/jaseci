@@ -296,6 +296,20 @@ async def _run_function_with_occ(
                 }
                 await ctx.aset_user_root(root_id);
             } except Exception as e {
+                import from jaclang.server.session { transient_db_error }
+                if attempt < max_attempts and transient_db_error(e) {
+                    settled = False;
+                    if ctx.mem.unit_depth() == 0 {
+                        ctx.mem.unit_enter(unit_key);
+                    }
+                    ctx.mem.abort();
+                    ctx.pending_effects.clear();
+                    ctx.read_versions.clear();
+                    ctx.diagnostics.clear();
+                    forget_response_choice();
+                    await ctx.aset_user_root(root_id);
+                    continue;
+                }
                 ctx.mem.abort();
                 import logging;
                 logging.getLogger('jaclang.serve').exception(
