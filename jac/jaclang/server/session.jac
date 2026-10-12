@@ -13,6 +13,7 @@ import from jaclang.data.dbcatalog {
     stop_heartbeat
 }
 import from jaclang.data.pgembed { PgRuntime }
+import type from jaclang.project.config { DatabaseConfig }
 import from jaclang.runtime.exceptions { ReadOnlyRetry, TransactionLost, WriteConflict }
 import from jaclang.data.store { AnchorRow, ConnInfo, PgStore, Store, TxnIsolation }
 

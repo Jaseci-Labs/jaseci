@@ -48,6 +48,22 @@ def cache_env(cache_dir: Path | str) -> dict[str, str] {
     return env;
 }
 
+"""Let a child under a private cache root reuse this process's Postgres
+distribution instead of provisioning its own (a system Postgres it finds
+by itself)."""
+def share_postgres(cache_home: Path | str) {
+    import from jaclang.data.pg_dist { dist_cache_dir, postgres_bin_dir }
+    dist = Path(postgres_bin_dir()).parent;
+    if not dist.is_relative_to(Path(dist_cache_dir())) {
+        return;
+    }
+    link = Path(cache_home) / "pg" / "dist" / dist.name;
+    link.parent.mkdir(parents=True, exist_ok=True);
+    if not link.exists() {
+        link.symlink_to(dist, target_is_directory=True);
+    }
+}
+
 """Run as a project whose jac.toml sets `[network] offline`."""
 def offline_project -> any {
     import from unittest.mock { patch }

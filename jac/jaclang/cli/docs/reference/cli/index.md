@@ -1130,7 +1130,15 @@ Download the embedded Postgres distribution into the cache and print where it la
 jac db fetch
 ```
 
-Set `JAC_PG_DIST` to an already-populated distribution directory (one containing `bin/postgres`) to use it instead of the cache -- that is how the official image ships the binaries. See [Persistence & Schema Migration](../persistence.md#the-embedded-engine-in-containers) for the container rules.
+The runtime looks for a distribution in this order: the project's `[database] postgres_dist` (a directory containing `bin/postgres`, relative to the project), a distribution already in the cache (the pinned major first), a Postgres installed on the system, and only then a download -- which it announces, and which an offline project (`[network] offline = true`) refuses. `[database] postgres_version` picks the major:
+
+```toml
+[database]
+postgres_dist = "/opt/pg"     # use these binaries, never download
+postgres_version = "19"       # the major to provision (default 19)
+```
+
+The official image runs `jac db fetch` at build time, so its cache already holds the distribution. See [Persistence & Schema Migration](../persistence.md#the-embedded-engine-in-containers) for the container rules.
 
 ## Configuration Management
 

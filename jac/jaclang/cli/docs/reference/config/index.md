@@ -119,7 +119,7 @@ At deploy time (`jac scale deploy`), the pin selects the **pod runtime**: the de
 - **Range** -> the newest published release that satisfies it.
 - **No published release satisfies the pin** (or the matching release lacks the pod's CPU arch or a `jac-*` asset) -> the deploy **aborts** with an error naming the pin; a pinned deploy never silently ships a different version. Fix or remove `jac-version` to proceed.
 
-The pin is honored only on the default (stable) channel; the `[dev]`, `[experimental]`, and `JAC_SCALE_BINARY_PATH` (local) channels select the pod binary by their own rules and ignore it.
+The pin is honored only on the default (stable) channel; the `[dev]`, `[experimental]`, and `[dev] pod_binary` (local) channels select the pod binary by their own rules and ignore it.
 
 ---
 
@@ -739,6 +739,18 @@ enable this format cache explicitly and do **not** consult `[cache].enabled`
 safe to delete at any time. See [`jac fmt --cache`](../cli/index.md#jac-fmt).
 
 ---
+
+### [dev]
+
+Settings for working on jac itself or shipping a build of it. None of them is
+read by a sealed release; a `[dev]` table also selects the `dev` deploy channel.
+
+```toml
+[dev]
+jaclang_source = "../jac"   # run the compiler from this checkout
+exact = false               # true: never reuse an earlier compiler's products
+pod_binary = "../jac/zig-out/bin/jac"  # ship this jac to scale pods (channel local)
+```
 
 ### [network]
 

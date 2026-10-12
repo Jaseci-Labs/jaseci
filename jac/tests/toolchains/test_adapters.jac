@@ -2,7 +2,8 @@ import os;
 import from pathlib { Path }
 import from tempfile { TemporaryDirectory }
 import from unittest.mock { patch }
-import from jaclang.toolchains.android { AndroidEnvironment, compatible_jdk }
+import from jaclang.toolchains.android { AndroidEnvironment }
+import from jaclang.toolchains.tools { compatible_jdk }
 import from jaclang.toolchains.desktop { source_workspace }
 import from jaclang.toolchains.cef { cef_artifact }
 import from jaclang.toolchains.pins {
@@ -49,7 +50,7 @@ test "native build environments do not mutate the shell" {
 
 test "missing JDK is rejected without invoking subprocesses" {
     with TemporaryDirectory() as tmp {
-        with patch("jaclang.toolchains.android.subprocess.run") as process {
+        with patch("jaclang.toolchains.tools.subprocess.run") as process {
             assert not compatible_jdk(Path(tmp));
             process.assert_not_called();
         }

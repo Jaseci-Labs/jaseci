@@ -98,6 +98,8 @@ if [ "${CLUSTER_TYPE}" = "kind" ]; then
         jac-rwx-bundle-pv /var/jac-rwx-bundle jac-rwx-perms
 fi
 
+# Pods must run the code under test, never a published release.
+ship_checkout_binary "${PROJECT_DIR}" || exit 1
 cd "${PROJECT_DIR}"
 # The fixture ships jac.preview.toml with a deployment_overlay marker;
 # selecting it here makes the deploy exercise profile resolution AND
@@ -108,20 +110,7 @@ import logging, os, sys, jaclang  # noqa: F401
 from jaclang.scale.deploy.target.kubernetes.target import KubernetesTarget
 from jaclang.scale.deploy.target.kubernetes.kubernetes_config import KubernetesConfig
 from jaclang.scale.config.app_config import AppConfig
-from jaclang.scale.config.dev_config import BINARY_PATH_ENV
 
-# JAC_SCALE_BINARY_PATH makes the deploy resolve to the LOCAL channel and ship
-# the jac built from THIS checkout, so the e2e validates the code under test
-# rather than a published release.
-_local = os.environ.get(BINARY_PATH_ENV, "")
-if not _local or not os.path.isfile(_local):
-    print(
-        f"FATAL: {BINARY_PATH_ENV} must point at the jac binary built from this "
-        f"checkout so the pod runs the code under test; got {_local!r}.",
-        file=sys.stderr,
-    )
-    sys.exit(1)
-print(f"shipping local jac binary to pods: {_local}", file=sys.stderr)
 
 # Surface MonitoringDeployer / observability warnings to stderr so CI
 # logs show the actual error instead of the silent

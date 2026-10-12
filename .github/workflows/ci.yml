@@ -938,10 +938,8 @@ jobs:
       # paid for.
       - name: Run KEDA HTTP-activation + observer e2e
         env:
-          # Ship the jac built from this checkout to the pods (channel LOCAL),
-          # so the e2e validates the code under test rather than a published
-          # release.
-          JAC_SCALE_BINARY_PATH: ${{ github.workspace }}/jac/zig-out/bin/jac
+          # The harness names this checkout's jac as the fixture's
+          # [dev] pod_binary, so the pods run the code under test.
           # This lane's hostpath-storage addon is RWX-capable, but the bundle
           # PVC no longer trusts a cluster default silently; name it.
           BUNDLE_STORAGE_CLASS: microk8s-hostpath
@@ -951,8 +949,6 @@ jobs:
       - name: Run K8 tests (failure-path)
         env:
           JAC_TEST_JOBS: "0"
-          # Ship the jac built from this checkout to the pods (channel LOCAL).
-          JAC_SCALE_BINARY_PATH: ${{ github.workspace }}/jac/zig-out/bin/jac
         run: |
           jac test jac/jaclang/scale/tests/deploy/test_deploy_k8s.jac -x --test_name "early exit"
 
@@ -961,7 +957,6 @@ jobs:
       - name: Run destroy reclamation e2e
         env:
           CLUSTER_TYPE: microk8s
-          JAC_SCALE_BINARY_PATH: ${{ github.workspace }}/jac/zig-out/bin/jac
         run: bash jac/jaclang/scale/tests/deploy/destroy_reclaim_real_e2e.sh
 
   # aarch64 cross lane: in-house ELF linker + arch-parameterized musl from the

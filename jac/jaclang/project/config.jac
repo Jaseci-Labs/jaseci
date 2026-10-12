@@ -234,6 +234,13 @@ obj ClientConfig {
     has framework: str = "react";
 }
 
+obj DatabaseConfig {
+    has indexes: dict[str, list[str]] = {},
+        retention_days: int = 0,
+        postgres_dist: str = "",
+        postgres_version: str = "";
+}
+
 obj NetworkConfig {
     has offline: bool = False;
 }
@@ -245,6 +252,7 @@ obj ToolchainsConfig {
 obj DevConfig {
     has jaclang_source: str = "",
         exact: bool = False,
+        pod_binary: str = "",
         jobs: str = "",
         test_jobs: str = "",
         check_jobs: str = "",
@@ -310,6 +318,7 @@ obj JacConfig {
         client_errors: ClientErrorsConfig = ClientErrorsConfig(),
         client: ClientConfig = ClientConfig(),
         dev: DevConfig = DevConfig(),
+        database: DatabaseConfig = DatabaseConfig(),
         network: NetworkConfig = NetworkConfig(),
         toolchains: ToolchainsConfig = ToolchainsConfig(),
         dependencies: dict[str, PackageDep] = {},

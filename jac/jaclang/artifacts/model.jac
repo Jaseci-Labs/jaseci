@@ -8,7 +8,14 @@ enum ReleasePolicy(StrEnum) {
     ON_DEMAND = "on-demand"
 }
 
-enum Source(StrEnum) { SEALED = "sealed", CHECKOUT = "checkout", KIT = "kit" }
+enum Source(StrEnum) {
+    SEALED = "sealed",
+    CHECKOUT = "checkout",
+    KIT = "kit",
+    CONFIGURED = "configured",
+    CACHE = "cache",
+    SYSTEM = "system"
+}
 
 class ArtifactUnavailable(RuntimeError) {}
 
