@@ -1,6 +1,10 @@
+import os;
+import subprocess;
+import sys;
 import tempfile;
 import tomllib;
 import from pathlib { Path }
+import from tests.support { JAC_ROOT }
 import from jaclang.project.config { JacConfig }
 import from jaclang.project.dependencies { ManifestError, PackageDep }
 import from jaclang.packages.migrate { migrate_manifest }
@@ -26,6 +30,24 @@ glob MODERN: str = (
          "[dependencies.npm]\nreact = \"^19\"\n\n"
          "[dev-dependencies]\npytest = \">=8\"\n"
      );
+
+"""Run `jac <argv>` through the full CLI dispatcher in a fresh process, from `cwd`."""
+def run_jac(cwd: Path, argv: list[str]) -> tuple[int, str] {
+    script = (
+        "import runpy, sys\n"
+        + f"sys.path.insert(0, {JAC_ROOT!r})\n"
+        + f"sys.argv = {['jac'] + argv!r}\n"
+        + "runpy.run_module('jaclang', run_name='__main__', alter_sys=True)\n"
+    );
+    proc = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=str(cwd),
+        capture_output=True,
+        text=True,
+        env={** os.environ, "NO_COLOR": "1"}
+    );
+    return (proc.returncode, proc.stdout + proc.stderr);
+}
 
 test "the dependency tables split Jac packages from PyPI and npm" {
     cfg = JacConfig.from_toml_str(MODERN);
@@ -118,5 +140,52 @@ test "jac fix dependencies moves PyPI entries without touching the rest" {
         assert cfg.pypi_dependencies == {"requests": ">=2.28", "numpy": "~=2.0"};
         assert not cfg.dependencies;
         assert not migrate_manifest(path).moved;
+    }
+}
+
+test "jac fix dependencies runs from the CLI on the legacy manifest it migrates" {
+    with tempfile.TemporaryDirectory() as tmp {
+        proj = Path(tmp);
+        manifest = proj / "jac.toml";
+        manifest.write_text(
+            "[project]\nname = \"repro\"\nversion = \"0.1.0\"\n\n"
+            "[dependencies]\nrequests = \">=2.0\"\n"
+        );
+        (proj / "main.jac").write_text("with entry {\n    print(\"hi\");\n}\n");
+        legacy = manifest.read_text();
+        (code, out) = run_jac(proj, ["fix", "dependencies", "--dry-run"]);
+        assert code == 0 , out;
+        assert "Would move 1" in out , out;
+        assert manifest.read_text() == legacy , "--dry-run must not write";
+        (code, out) = run_jac(proj, ["fix", "dependencies"]);
+        assert code == 0 , out;
+        assert "Failed to apply profile" not in out , out;
+        doc = tomllib.loads(manifest.read_text());
+        assert doc["dependencies"] == {"pypi": {"requests": ">=2.0"}} , doc;
+        assert JacConfig.load(manifest).pypi_dependencies == {"requests": ">=2.0"};
+    }
+}
+
+test "commands other than fix still refuse a jac.toml that fails validation" {
+    with tempfile.TemporaryDirectory() as tmp {
+        proj = Path(tmp);
+        (proj / "jac.toml").write_text(
+            "[project]\nname = \"repro\"\nversion = \"0.1.0\"\n\n"
+            "[dependencies]\nrequests = \">=2.0\"\n"
+        );
+        (proj / "main.jac").write_text("with entry {\n    print(\"hi\");\n}\n");
+        (code, out) = run_jac(proj, ["fmt", "--check", "main.jac"]);
+        assert code == 2 , out;
+        assert "jac.toml is invalid" in out , out;
+    }
+}
+
+test "jac fix still stops on a jac.toml that is not TOML" {
+    with tempfile.TemporaryDirectory() as tmp {
+        proj = Path(tmp);
+        (proj / "jac.toml").write_text("[project\nname = \"repro\"\n");
+        (code, out) = run_jac(proj, ["fix", "dependencies"]);
+        assert code == 2 , out;
+        assert "jac.toml is malformed" in out , out;
     }
 }
