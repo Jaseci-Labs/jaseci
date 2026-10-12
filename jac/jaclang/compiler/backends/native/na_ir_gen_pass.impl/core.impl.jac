@@ -585,11 +585,17 @@ impl NaIRGenPass._dep_iface(imported_mod: uni.Module) -> (NativeIface | None) {
 }
 
 impl NaIRGenPass._dep_is_native_unit(imported_mod: uni.Module, path: str) -> bool {
-    """Only a dependency that placement makes native has products to consult.
-    Lowering any other import on a cache miss would compile the Python
-    lane's modules as native units, once per consumer.""";
+    """Only a dependency that is a native unit has products to consult:
+    one placement makes native, or one this module links against, which the
+    link plan builds as a unit whatever the program placed it as. Lowering
+    against that unit's interface is what makes this lowering the only one:
+    its demotions and layouts are the ones the link plan checks the recorded
+    digests against. Lowering any other import on a cache miss would compile
+    the Python lane's modules as native units, once per consumer.""";
+    import os;
     if imported_mod.gen.native_iface is not None
-        or imported_mod.decided_codespace == 'native' {
+        or imported_mod.decided_codespace == 'native'
+        or os.path.realpath(path) in self._native_dep_paths {
         return True;
     }
     import from jaclang.compiler.placement.placement_facts { native_unit }
