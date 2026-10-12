@@ -4,7 +4,7 @@ import sys;
 
 glob HANDOFF_ENV: str = "JAC_HANDOFF";
 
-def handoff -> dict {
+def handoff -> dict[str, object] {
     raw = os.environ.get(HANDOFF_ENV, "");
     if not raw {
         return {};
@@ -52,7 +52,9 @@ def process_executable -> str {
             }
         } elif sys.platform == "win32" {
             wide = ctypes.create_unicode_buffer(32768);
-            if ctypes.windll.kernel32.GetModuleFileNameW(None, wide, 32768) {
+            if getattr(ctypes.windll.kernel32, "GetModuleFileNameW")(
+                None, wide, 32768
+            ) {
                 return wide.value;
             }
         }

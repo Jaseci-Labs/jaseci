@@ -1,6 +1,6 @@
 import sys;
 
-glob ARTIFACTS: dict = {
+glob ARTIFACTS: dict[str, str] = {
          "llvm-shim": "jaclang.compiler.backends.native.llvm.shim_path:ShimArtifact",
          "c-floor": "jaclang.compiler.backends.native.floors:CFloorArtifact",
          "musl": "jaclang.compiler.backends.native.floors:MuslArtifact",
@@ -14,13 +14,13 @@ glob ARTIFACTS: dict = {
          "js-engine": "jaclang.client.js_runtime:JsEngineArtifact",
          "jacpython": "jaclang.dist.interpreter:JacPythonArtifact"
      },
-     ROUTER_MODULES: tuple = (
+     ROUTER_MODULES: tuple[str, ...] = (
          "jaclang.artifacts.model",
          "jaclang.artifacts.router",
          "jaclang.artifacts.kit"
      );
 
-def _marks -> set {
+def _marks -> set[str] {
     import from jaclang.jac0core.handoff { handoff }
     marked = handoff().get("building");
     if isinstance(marked, list) {
@@ -29,16 +29,16 @@ def _marks -> set {
     return set();
 }
 
-def _record(marked: set) {
+def _record(marked: set[str]) {
     import from jaclang.jac0core.handoff { update_handoff }
     update_handoff(building=sorted(marked) or None);
 }
 
-def building -> frozenset {
+def building -> frozenset[str] {
     return frozenset(_marks());
 }
 
-def begin(names: list) -> list {
+def begin(names: list[str]) -> list[str] {
     marked = _marks();
     added = [
         name
@@ -49,7 +49,7 @@ def begin(names: list) -> list {
     return added;
 }
 
-def end(names: list) {
+def end(names: list[str]) {
     _record(_marks() - set(names));
 }
 
