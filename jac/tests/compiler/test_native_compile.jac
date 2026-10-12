@@ -174,7 +174,7 @@ test "get_bytecode adopts a kernel compile and keeps no host tree" {
         write_project(base);
         entry_file = str(base / 'main.jac');
         program = JacProgram();
-        with patch.dict(os.environ, {"JAC_KERNEL_COMPILE": "inprocess"}) {
+        with patch("jaclang.project.kernel_compile._IN_PROCESS", [True]) {
             code = program._get_compiler().get_bytecode(entry_file, program);
         }
         assert code is not None;
@@ -699,7 +699,7 @@ test "an application being prepared on the host keeps its module compiles there"
     import jaclang.project.kernel_compile as kernel_compile_mod;
     with TemporaryDirectory() as td {
         entry_file = str(Path(os.path.realpath(td)) / 'main.jac');
-        with patch.dict(os.environ, {"JAC_KERNEL_COMPILE": "inprocess"}) {
+        with patch("jaclang.project.kernel_compile._IN_PROCESS", [True]) {
             assert kernel_compile_mod.kernel_route(JacProgram(), entry_file)
                 == (True, True);
             kernel_compile_mod.host_preparing(entry_file);

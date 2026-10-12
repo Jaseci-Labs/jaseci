@@ -2350,18 +2350,19 @@ without a restart), while genuine build failures stay memoized."""
 test "ensure_bundle retries a missing-bun failure and a build error alike" {
     import from unittest.mock { MagicMock }
     import from jaclang.server.server { ModuleIntrospector }
-    import from jaclang.client.client_bundle { ClientBundleError, MissingBunError }
+    import from jaclang.artifacts.model { ArtifactUnavailable }
+    import from jaclang.client.client_bundle { ClientBundleError }
     intro = ModuleIntrospector("serve_api", FIXTURES);
     intro._module = types.ModuleType("serve_api");
     intro._module.__file__ = fixture_abs_path("serve_api.jac");
     bun_missing = MagicMock();
-    bun_missing.build.side_effect = MissingBunError("bun is not available");
+    bun_missing.build.side_effect = ArtifactUnavailable("bun is not available");
     intro._bundle_builder = bun_missing;
     for _ in range(2) {
         try {
             intro.ensure_bundle();
             assert False , "ensure_bundle should raise while bun is missing";
-        } except ClientBundleError {}
+        } except ArtifactUnavailable {}
     }
     assert bun_missing.build.call_count == 2 , "missing bun must be re-checked on every call, not memoized";
 
@@ -2515,7 +2516,7 @@ process.exit(failed ? 1 : 0);
 """The stdlib server serves /graph, /graph/data and /docs, and the /graph login
 modal signs in against it (#8951)."""
 test "stdlib server serves graph visualizer and docs" {
-    import from jaclang.client.bun_installer { get_bun }
+    import from tests.support { js_runtime_or_none }
     import from jaclang.server.settings { ServeSettings }
     import from .react_jsdom_harness { REACT_JSDOM_DEPS, bun_install, run_harness }
 
@@ -2542,8 +2543,8 @@ test "stdlib server serves graph visualizer and docs" {
         assert "/walker/leave_note" in paths , "openapi should list the module's walkers";
         assert "/user/login" in paths , "openapi should list auth endpoints";
         _require_client_integration();
-        bun = get_bun();
-        assert bun is not None , "bun is on PATH but get_bun() could not locate it";
+        bun = js_runtime_or_none();
+        assert bun is not None , "bun is on PATH but js_runtime_or_none() could not locate it";
         registered = client.register_user("graph_viewer", "pw12345678");
         assert registered.ok , f"register failed: {registered.text}";
         client.server.settings = ServeSettings.load(

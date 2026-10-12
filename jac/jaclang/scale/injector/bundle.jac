@@ -60,15 +60,7 @@ glob _EXCLUDE_SUFFIXES: tuple[str, ...] = (
          ".jks",
          ".keystore"
      );
-glob _EXCLUDE_ENV: set[str] = {
-         "PYTHONPATH",
-         "PYTHONHOME",
-         "JAC_LLVM_SHIM",
-         "JAC_DEV_SOURCE",
-         "JAC_NO_PRECOMPILE",
-         "JAC_PRECOMPILE_REQUIRED",
-         "JAC_EXECUTABLE"
-     };
+glob _EXCLUDE_ENV: set[str] = {"PYTHONPATH", "PYTHONHOME", "JAC_HANDOFF"};
 
 
 def _is_bundle_required(rel: Path) -> bool {

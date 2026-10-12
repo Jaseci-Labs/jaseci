@@ -28,17 +28,17 @@ Pods run a prebuilt `jac` binary that carries the jaclang runtime (including the
 | **stable** | no `[dev]` or `[experimental]` stanza in `jac.toml` (default) | Latest published release, or the release matching a `[project] jac-version` pin |
 | **experimental** | an `[experimental]` stanza (`pr = <N>`) in `jac.toml` | The `experimental-<PR#>` build; pods run the `jaseci/jaclang:experimental-<PR#>` image |
 | **dev** | a `[dev]` stanza in `jac.toml` | Rolling `dev` prerelease (main HEAD) |
-| **local** | `JAC_SCALE_BINARY_PATH` set | The exact binary at that path |
+| **local** | `pod_binary` in the `[dev]` stanza | The exact binary at that path |
 
-Channel precedence is local, then experimental, then dev, then stable -- an `[experimental]` stanza wins over `[dev]`, and `JAC_SCALE_BINARY_PATH` wins over both.
+Channel precedence is local, then experimental, then dev, then stable -- an `[experimental]` stanza wins over `[dev]`, and `[dev] pod_binary` wins over both.
 
 `stable` and `dev` download the binary from [GitHub Releases](https://github.com/jaseci-labs/jac/releases) and run it as-is - there is no source overlay. On the stable channel, a `[project] jac-version` version spec is resolved against the published releases and that exact version is shipped; the deploy errors if the spec matches no release.
 
-**Local binary (`JAC_SCALE_BINARY_PATH`).** Point this environment variable at a `jac` binary you built (or an air-gapped mirror) and the deploy ships that exact file to pods instead of downloading a release. It takes precedence over the `[dev]` stanza:
+**Local binary (`[dev] pod_binary`).** Point `pod_binary` at a `jac` binary you built (or an air-gapped mirror); a relative path resolves against the project root. The deploy ships that exact file to pods instead of downloading a release, and it takes precedence over every other channel:
 
-```bash
-export JAC_SCALE_BINARY_PATH=/path/to/jac
-jac scale deploy app.jac
+```toml
+[dev]
+pod_binary = "../jac/zig-out/bin/jac"
 ```
 
 Use this for air-gapped clusters, to pin an exact build, or to deploy a binary you compiled locally. The driver checksum-caches downloaded release binaries per channel and architecture, so an unchanged `stable`/`dev` deploy does not re-download on every run.
@@ -679,7 +679,7 @@ additional_packages = ["xz-utils", "zstd"]
 
 The runtime version in the pod is pinned through the same channels as everywhere else -- there is no separate cluster-side pinning config:
 
-- **Runtime**: pin `[project] jac-version` in `jac.toml` (stable channel), use the `[dev]` / `[experimental]` stanzas, or ship an exact binary via `JAC_SCALE_BINARY_PATH`. See [Runtime Binary](#runtime-binary).
+- **Runtime**: pin `[project] jac-version` in `jac.toml` (stable channel), use the `[dev]` / `[experimental]` stanzas, or ship an exact binary via `[dev] pod_binary`. See [Runtime Binary](#runtime-binary).
 - **Project dependencies** (PyPI/npm): pinned in `jac.toml` as usual; the bootstrap init container runs `jac install` against the shipped, sanitized `jac.toml`, so the pod resolves exactly what you pinned.
 
 Scale, the frontend/client framework, byLLM, and the MCP server are part of `jaclang` core and arrive with the `jac` binary, so there is no plugin package to pin: `jaclang` is not on PyPI, and nothing is pip-installed from GitHub during a deploy.
