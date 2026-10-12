@@ -26,7 +26,6 @@ glob SERVE_MANIFEST_SHAPES: dict[int, dict[str, set[str]]] = {
             'module_manifests',
             'persistence',
             'private_declarations',
-            'root',
             'spa_routes',
             'surface'
         },
@@ -36,7 +35,6 @@ glob SERVE_MANIFEST_SHAPES: dict[int, dict[str, set[str]]] = {
             'endpoint_effects',
             'persistence',
             'private_declarations',
-            'root',
             'spa_routes',
             'surface'
         },
@@ -44,7 +42,6 @@ glob SERVE_MANIFEST_SHAPES: dict[int, dict[str, set[str]]] = {
             'explicit_access',
             'exposure',
             'kind',
-            'module',
             'placement',
             'reflect',
             'route',
@@ -54,8 +51,8 @@ glob SERVE_MANIFEST_SHAPES: dict[int, dict[str, set[str]]] = {
     }
 };
 
+"""Collect the key names of a serve manifest, its module records, and their surface entries."""
 def serve_manifest_shape(manifest: dict[str, any]) -> dict[str, set[str]] {
-    """Collect the key names of a serve manifest, its module records, and their surface entries."""
     modules = list(manifest['module_manifests'].values());
     return {
         'manifest': set(manifest),
@@ -63,8 +60,8 @@ def serve_manifest_shape(manifest: dict[str, any]) -> dict[str, set[str]] {
         'surface': {
             key
             for record in modules
-            for entry in (record.get('surface') or {}).values()
-            for key in entry
+            for rec in (record.get('surface') or {}).values()
+            for key in rec
         }
     };
 }

@@ -4,7 +4,6 @@ import os;
 import from pathlib { Path }
 import from jaclang.jac0core.sealed { MANIFEST_NAME }
 
-# Bump SERVE_MANIFEST_FORMAT only when older readers cannot handle a shape change.
 glob SERVE_MANIFEST_REL: str = os.path.join(".jac", "serve_manifest.json"),
      SERVE_MANIFEST_FORMAT: int = 3,
      CLIENT_DIST_REL: str = os.path.join(".jac", "client", "dist"),
