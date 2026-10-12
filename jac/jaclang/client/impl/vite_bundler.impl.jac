@@ -1244,6 +1244,15 @@ def _vite_host_arg(vite_config: dict[str, any], serve_host: str) -> str {
     return serve_host;
 }
 
+def _vite_listen_host(vite_config: dict[str, any], serve_host: str) -> str {
+    server = vite_config.get('server');
+    configured = server.get('host') if isinstance(server, dict) else None;
+    if configured is True {
+        return '0.0.0.0';
+    }
+    return str(configured) if configured else serve_host;
+}
+
 def _build_vite_dev_command(
     build_dir: Path, config_rel: Path, port: int, host: str = ""
 ) -> list[str] {

@@ -299,20 +299,39 @@ test "a mobile app served on the web platform gets its client prepared" {
 
 test "dev banner headlines vite port not api port and lists only bound interfaces" {
     ips = ["192.168.1.7", "10.0.0.4"];
-    # (bound host, network IPs that must be listed, IPs that must not appear)
+    local_only = "this machine only";
+    # (bound host, network IPs found, text that must appear, text that must not)
     cases = [
-        ("0.0.0.0", ["192.168.1.7", "10.0.0.4"], []),
-        ("::", ["192.168.1.7", "10.0.0.4"], []),
-        ("10.0.0.4", ["10.0.0.4"], ["192.168.1.7"]),
-        ("127.0.0.1", [], ["192.168.1.7", "10.0.0.4", "Network"]),
-        ("localhost", [], ["192.168.1.7", "10.0.0.4", "Network"]),
-        ("::1", [], ["192.168.1.7", "10.0.0.4", "Network"])
+        (
+            "0.0.0.0",
+            ips,
+            ["http://192.168.1.7:8000/", "http://10.0.0.4:8000/"],
+            [local_only]
+        ),
+        (
+            "::",
+            ips,
+            ["http://192.168.1.7:8000/", "http://10.0.0.4:8000/"],
+            [local_only]
+        ),
+        ("10.0.0.4", ips, ["http://10.0.0.4:8000/"], ["192.168.1.7", local_only]),
+        ("127.0.0.1", ips, [local_only], ["192.168.1.7", "10.0.0.4", "Network"]),
+        ("localhost", ips, [local_only], ["192.168.1.7", "10.0.0.4", "Network"]),
+        ("::1", ips, [local_only], ["192.168.1.7", "10.0.0.4", "Network"]),
+        (
+            "2001:db8::1",
+            ips,
+            ["http://[2001:db8::1]:8000/"],
+            ["http://2001:db8::1:8000/", local_only]
+        ),
+        ("0.0.0.0", [], [], [local_only, "Network"]),
+        ("::", [], [], [local_only, "Network"])
     ];
-    for (bound, shown, hidden) in cases {
+    for (bound, found, shown, hidden) in cases {
         with TemporaryDirectory() as tmpdir {
             captured_output = io.StringIO();
             with patch(
-                "jaclang.cli.commands.execution._get_network_ips", return_value=ips
+                "jaclang.cli.commands.execution._get_network_ips", return_value=found
             ) {
                 with redirect_stdout(captured_output) {
                     execution._print_startup_message(
@@ -329,8 +348,8 @@ test "dev banner headlines vite port not api port and lists only bound interface
             assert "Local:     http://localhost:8000/" in output , f"{bound}: {output}";
             assert "App:  http://localhost:8000/" in output , f"{bound}: {output}";
             assert "API:  http://localhost:8001/" in output , f"{bound}: {output}";
-            for ip in shown {
-                assert f"http://{ip}:8000/" in output , f"{bound}: {ip} missing:\n{output}";
+            for text in shown {
+                assert text in output , f"{bound}: {text} missing:\n{output}";
             }
             for gone in hidden {
                 assert gone not in output , f"{bound}: {gone} advertised:\n{output}";

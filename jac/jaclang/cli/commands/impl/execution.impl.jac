@@ -1480,6 +1480,7 @@ impl serve(
         }
         def _announce_ready(actual_port: int) {
             primary_port = actual_port;
+            banner_host = settings.host;
             if dev and not no_client {
                 free_vite_port = _find_free_port(
                     vite_port, skip_port=actual_port, strict=port_pinned
@@ -1495,7 +1496,7 @@ impl serve(
                 } except Exception as e {
                     console.warning(f"Could not read declared API paths: {e}");
                 }
-                (started_vite, bound_port) = _start_vite_dev_server(
+                (started_vite, bound_port, banner_host) = _start_vite_dev_server(
                     base,
                     free_vite_port,
                     actual_port,
@@ -1514,7 +1515,7 @@ impl serve(
                 primary_port=primary_port,
                 api_port=actual_port,
                 base_path=base,
-                host=settings.host,
+                host=banner_host,
                 watch_paths=watch_paths
             );
         }
@@ -1653,6 +1654,10 @@ def _count_jac_files(directory: str) -> int {
     }
 }
 
+def _url_host(host: str) -> str {
+    return f"[{host}]" if ':' in host and not host.startswith('[') else host;
+}
+
 def _network_urls_for(host: str) -> list[str] {
     if host in ('0.0.0.0', '::') {
         return _get_network_ips();
@@ -1687,11 +1692,12 @@ def _print_startup_message(
 
     network_ips = _network_urls_for(host);
     for ip in network_ips {
-        urls.append(("Network", f"http://{ip}:{primary_port}/"));
+        urls.append(("Network", f"http://{_url_host(ip)}:{primary_port}/"));
     }
 
     console.print_urls(urls);
-    if not network_ips {
+    import from jaclang.server.settings { is_loopback_host }
+    if not network_ips and is_loopback_host(host) {
         console.print(
             "  Listening on this machine only; pass --host 0.0.0.0 to serve "
             "other devices",
@@ -1789,19 +1795,24 @@ def _start_vite_dev_server(
             console.warning(f"Client error events will not reach the terminal: {e}");
         }
 
-        import from jaclang.client.vite_bundler { _vite_host_arg }
+        import from jaclang.client.vite_bundler { _vite_host_arg, _vite_listen_host }
+        vite_config = bundler.config_loader.get_vite_config();
         process = bundler.start_dev_server(
             vite_port,
             suppress_initial_output=True,
-            host=_vite_host_arg(bundler.config_loader.get_vite_config(), host)
+            host=_vite_host_arg(vite_config, host)
         );
-        return (process, bundler.dev_server_port or vite_port);
+        return (
+            process,
+            bundler.dev_server_port or vite_port,
+            _vite_listen_host(vite_config, host)
+        );
     } except ImportError as e {
         console.warning(f"client bundler unavailable, skipping Vite dev server: {e}");
-        return (None, vite_port);
+        return (None, vite_port, host);
     } except Exception as e {
         console.warning(f"Could not start Vite dev server: {e}");
-        return (None, vite_port);
+        return (None, vite_port, host);
     }
 }
 
