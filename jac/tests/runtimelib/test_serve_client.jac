@@ -2514,15 +2514,30 @@ process.exit(failed ? 1 : 0);
 """;
 
 test "an unset worker count picks as many as fit; an explicit one is kept" {
-    import from jaclang.cli.workpool { cpu_quota }
-    import from jaclang.server.settings { ServeSettings, default_worker_count }
+    import from jaclang.server.settings {
+        ServeSettings,
+        WORKER_MEMORY_BUDGET,
+        default_worker_count
+    }
+    budget = WORKER_MEMORY_BUDGET;
+    cases = [
+        (8, 64 * budget, False, True, 8, "ample memory gives one worker per core"),
+        (8, 2 * budget, False, True, 2, "two budgets of memory give two workers"),
+        (8, 2 * budget - 1, False, True, 1, "just under two budgets gives one"),
+        (8, budget // 2, False, True, 1, "less than one budget gives one"),
+        (8, 0, False, True, 1, "no free memory gives one"),
+        (8, 64 * budget, True, True, 1, "a cluster pod gives one"),
+        (8, 64 * budget, False, False, 1, "no fork gives one"),
+        (1, 64 * budget, False, True, 1, "one core gives one")
+    ];
+    for (quota, headroom, clustered, can_fork, expected, why) in cases {
+        got = default_worker_count(quota, headroom, clustered, can_fork);
+        assert got == expected , f"{why}: expected {expected}, got {got}";
+    }
     with TemporaryDirectory() as tmpdir {
         unset = ServeSettings.load(tmpdir, {"workers": ""});
         assert unset.workers.count_by_default;
-        assert unset.workers.count == default_worker_count(cpu_quota()) , (
-            f"an unset count resolved to {unset.workers.count}"
-        );
-        assert 1 <= unset.workers.count <= cpu_quota();
+        assert unset.workers.count >= 1;
         pinned = ServeSettings.load(tmpdir, {"workers": "3"});
         assert not pinned.workers.count_by_default;
         assert pinned.workers.count == 3;

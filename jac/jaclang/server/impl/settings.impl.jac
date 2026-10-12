@@ -361,13 +361,20 @@ impl resolve_count(raw: str, quota: int, label: str) -> int {
 }
 
 
-impl default_worker_count(quota: int) -> int {
-    if in_cluster() or not hasattr(os, 'fork') {
+impl default_worker_count(
+    quota: int, headroom: int, clustered: bool, can_fork: bool
+) -> int {
+    if clustered or not can_fork {
         return 1;
     }
-    headroom = memory_headroom_bytes();
-    fits = headroom // WORKER_MEMORY_BUDGET if headroom > 0 else quota;
-    return max(1, min(quota, fits));
+    return max(1, min(quota, headroom // WORKER_MEMORY_BUDGET));
+}
+
+
+impl machine_worker_count(quota: int) -> int {
+    return default_worker_count(
+        quota, memory_headroom_bytes(), in_cluster(), hasattr(os, 'fork')
+    );
 }
 
 
@@ -398,7 +405,7 @@ impl ServeSettings.load(
         given.get('workers') or env_value('WORKERS') or cfg.workers.count or ''
     ).strip();
     count_by_default = not workers_raw;
-    worker_count = default_worker_count(quota)
+    worker_count = machine_worker_count(quota)
         if count_by_default
         else resolve_count(workers_raw, quota, '[serve.workers] count');
     threads_raw = str(

@@ -290,4 +290,8 @@ def env_list(name: str, `default: list[str]) -> list[str] {
 
 def resolve_count(raw: str, quota: int, label: str) -> int;
 def default_threads(worker_count: int, quota: int) -> int;
-def default_worker_count(quota: int) -> int;
+def default_worker_count(
+    quota: int, headroom: int, clustered: bool, can_fork: bool
+) -> int;
+
+def machine_worker_count(quota: int) -> int;

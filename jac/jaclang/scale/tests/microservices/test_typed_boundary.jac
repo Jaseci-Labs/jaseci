@@ -11,14 +11,18 @@ def _served_by(pid: int, server_pid: int) -> bool {
     if pid == server_pid {
         return True;
     }
+    import subprocess;
     try {
-        for line in Path(f"/proc/{pid}/status").read_text().splitlines() {
-            if line.startswith("PPid:") {
-                return int(line.split()[1]) == server_pid;
-            }
-        }
-    } except OSError {}
-    return False;
+        parent = subprocess.run(
+            ["ps", "-o", "ppid=", "-p", str(pid)],
+            capture_output=True,
+            text=True,
+            timeout=10
+        ).stdout.strip();
+        return parent.isdigit() and int(parent) == server_pid;
+    } except (OSError, subprocess.SubprocessError) {
+        return False;
+    }
 }
 
 
