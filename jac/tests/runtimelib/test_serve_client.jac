@@ -2513,6 +2513,22 @@ for (const row of ROWS) {
 process.exit(failed ? 1 : 0);
 """;
 
+"""Serve settings for `base` as if JAC_SERVE_WORKERS were unset."""
+def _settings_without_worker_env(
+    base: str, overrides: (dict[str, any] | None) = None, config: any = None
+) -> any {
+    import from jaclang.server.settings { ServeSettings }
+    saved = os.environ.pop("JAC_SERVE_WORKERS", None);
+    try {
+        return ServeSettings.load(base, overrides, config=config);
+    } finally {
+        if saved is not None {
+            os.environ["JAC_SERVE_WORKERS"] = saved;
+        }
+    }
+}
+
+
 test "an unset worker count picks as many as fit; an explicit one is kept" {
     import from jaclang.server.settings {
         ServeSettings,
@@ -2535,7 +2551,7 @@ test "an unset worker count picks as many as fit; an explicit one is kept" {
         assert got == expected , f"{why}: expected {expected}, got {got}";
     }
     with TemporaryDirectory() as tmpdir {
-        unset = ServeSettings.load(tmpdir, {"workers": ""});
+        unset = _settings_without_worker_env(tmpdir, {"workers": ""});
         assert unset.workers.count_by_default;
         assert unset.workers.count >= 1;
         pinned = ServeSettings.load(tmpdir, {"workers": "3"});
@@ -2547,7 +2563,6 @@ test "an unset worker count picks as many as fit; an explicit one is kept" {
 
 test "a [serve] table without a worker count leaves the count unset" {
     import from jaclang.project.config { JacConfig }
-    import from jaclang.server.settings { ServeSettings }
     with TemporaryDirectory() as tmpdir {
         manifest = Path(tmpdir) / "jac.toml";
         manifest.write_text(
@@ -2558,7 +2573,7 @@ test "a [serve] table without a worker count leaves the count unset" {
         assert config.serve.workers.count == "" , (
             f"an absent worker count loaded as {config.serve.workers.count!r}"
         );
-        settings = ServeSettings.load(tmpdir, config=config);
+        settings = _settings_without_worker_env(tmpdir, config=config);
         assert settings.workers.count_by_default , (
             "a [serve] port pinned the app to an explicit worker count"
         );
@@ -2573,7 +2588,7 @@ test "an unset worker count falls back to one worker where more would be refused
             fixture_abs_path("serve_shared_root.jac"), base_path=tmpdir
         );
         try {
-            chosen = ServeSettings.load(tmpdir, {"workers": ""});
+            chosen = _settings_without_worker_env(tmpdir, {"workers": ""});
             chosen.workers.count = 4;
             chosen.dev = True;
             client.server.settings = chosen;
