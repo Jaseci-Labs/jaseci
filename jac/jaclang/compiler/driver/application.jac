@@ -945,6 +945,13 @@ def _prepare_revision(
         _check(program, before);
     }
     revision.manifests[`entry]['spa_routes'] = routes;
+    import from jaclang.compiler.placement.placement { summary_store }
+    import from jaclang.compiler.driver.compilation_context { program_for }
+    entry_placed = summary_store(program_for(`entry, program)).get(
+        os.path.abspath(`entry)
+    );
+    revision.manifests[`entry]['native_entry'] = entry_placed is not None
+        and entry_placed.decided == 'native';
     import from jaclang.compiler.backends.py.artifact_imports {
         runtime_sources,
         package_sources

@@ -399,6 +399,27 @@ impl JacCompiler._adopt_kernel_compile(
     return (True, adopted);
 }
 
+impl JacCompiler.prepared_native_entry(
+    prepared: any, target_program: JacProgram
+) -> any {
+    """The engine that runs a prepared application's entry natively, or None
+    when its compile did not place the entry native. The application compile
+    is the only compile: it records the placement in the entry's manifest and
+    caches the native artifact, which is loaded here.""";
+    entry_path = prepared.entry;
+    if not prepared.manifests.get(entry_path, {}).get('native_entry', False) {
+        return None;
+    }
+    (engine, callbacks) = prepared.native.get(entry_path, (None, None));
+    if engine is not None {
+        return engine;
+    }
+    actual = self.selfhost.resolve(entry_path, target_program, execution=True);
+    self._load_native_from_cache(entry_path, actual, None);
+    (engine, callbacks) = self.get_native_interop_setup(entry_path, target_program);
+    return engine;
+}
+
 impl JacCompiler.kernel_native_entry(
     full_target: str, target_program: JacProgram, options: (CompileOptions | None)
 ) -> tuple[bool, any] {
