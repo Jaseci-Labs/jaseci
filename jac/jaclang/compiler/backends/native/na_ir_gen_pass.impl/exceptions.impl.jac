@@ -672,8 +672,11 @@ impl NaIRGenPass._reraise_caught(values: tuple[ir.Value, ir.Value, ir.Value]) ->
         self._emit_err_propagate(loc="reraise");
     } else {
         held_slot = self._unbound_caught_slots.get(id(values));
-        if held_slot is not None and isinstance(held_slot.type, ir.PointerType) {
-            self.builder.store(ir.Constant(held_slot.type.pointee, None), held_slot);
+        held_type = held_slot.type.pointee
+            if held_slot is not None and isinstance(held_slot.type, ir.PointerType)
+            else None;
+        if held_slot is not None and held_type is not None {
+            self.builder.store(ir.Constant(held_type, None), held_slot);
         }
         self.builder.call(self._exc_raise_fn, [values[1], values[0], values[2]]);
         self.builder.unreachable();

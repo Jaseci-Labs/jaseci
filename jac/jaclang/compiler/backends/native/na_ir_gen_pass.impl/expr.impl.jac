@@ -681,8 +681,11 @@ impl NaIRGenPass._codegen_name(nd: uni.Name) -> (ir.Value | None) {
     }
     if var_name in self.global_vars {
         global_var = self.global_vars[var_name];
-        if isinstance(global_var.type, ir.PointerType) {
-            folded = self._final_scalar_value(nd, global_var.type.pointee);
+        global_type = global_var.type.pointee
+            if isinstance(global_var.type, ir.PointerType)
+            else None;
+        if global_type is not None {
+            folded = self._final_scalar_value(nd, global_type);
             if folded is not None {
                 return folded;
             }
