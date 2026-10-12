@@ -2,7 +2,13 @@
 
 This document provides a summary of new features, improvements, and bug fixes in each version of **Jaclang**. For details on changes that might require updates to your existing code, please refer to the [Breaking Changes](../breaking-changes.md) page.
 
-## jaclang 0.34.22 (Latest Release)
+## jaclang 0.34.23 (Latest Release)
+
+### Bug Fixes
+
+- **Fix: A reply cut off at max_tokens with nothing in it raises instead of returning ""**: when a reasoning model spends its whole output budget thinking and stops with no text and no tool call, `by llm()` now raises `OutputTruncatedError` instead of returning an empty answer. Cut-off text and cut-off tool calls behave as before.
+
+## jaclang 0.34.22
 
 ### Bug Fixes
 
