@@ -598,6 +598,7 @@ walker TypeEvaluator {
     def _in_native_context -> bool;
     def note_native(nd: UniNode, code: str, text: str, requires: bool = False) -> None;
     def neutral_site(nd: UniNode) -> bool;
+    def _is_address_pair(src_type: TypeBase, dest_type: TypeBase) -> bool;
     def is_typevar_class(ty: TypeBase) -> bool;
     def is_paramspec_class(ty: TypeBase) -> bool;
     def is_type_var_tuple_class(ty: TypeBase) -> bool;

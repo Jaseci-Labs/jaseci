@@ -416,6 +416,17 @@ impl build_native_legality(
         for (site, why) in scan.sites {
             legality.blockers.append(NativeRefusal(kind="module", name=why, site=site));
         }
+        import from jaclang.compiler.native_bindings { import_gaps }
+        for elem in mod.body {
+            if isinstance(elem, Import) and not legality.blockers {
+                for gap in import_gaps(judging, elem, base_dir) {
+                    legality.blockers.append(
+                        NativeRefusal(kind="library import", name=gap, site=elem)
+                    );
+                    break;
+                }
+            }
+        }
         for (imp, dep) in scan.dep_imports {
             top = top_element_of(mod, imp);
             if top is None or id(top) in refused_imports or legality.blockers {

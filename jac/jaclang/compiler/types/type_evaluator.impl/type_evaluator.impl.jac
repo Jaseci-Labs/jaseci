@@ -3722,6 +3722,19 @@ impl TypeEvaluator.assign_expr(
     return AssignVerdict(ok=self.assign_type(src_type, dest_type, strict));
 }
 
+impl TypeEvaluator._is_address_pair(src_type: TypeBase, dest_type: TypeBase) -> bool {
+    return (
+        isinstance(dest_type, FunctionType)
+        and isinstance(src_type, ClassType)
+        and src_type.is_builtin("int")
+    )
+        or (
+            isinstance(src_type, FunctionType)
+            and isinstance(dest_type, ClassType)
+            and dest_type.is_builtin("int")
+        );
+}
+
 impl TypeEvaluator.assign_type(
     src_type: TypeBase, dest_type: TypeBase, strict: bool = False
 ) -> bool {
@@ -3968,11 +3981,24 @@ impl TypeEvaluator.assign_type(
             for src_type_arg in src_type.types {
                 matched = False;
                 src_type_inst = self._convert_to_instance(src_type_arg);
+                deferred: list[TypeBase] = [];
                 for dest_type_arg in dest_type.types {
                     dest_type_inst = self._convert_to_instance(dest_type_arg);
+                    if self._is_address_pair(src_type_inst, dest_type_inst) {
+                        deferred.append(dest_type_inst);
+                        continue;
+                    }
                     if self.assign_type(src_type_inst, dest_type_inst, strict) {
                         matched = True;
                         break;
+                    }
+                }
+                if not matched {
+                    for dest_type_inst in deferred {
+                        if self.assign_type(src_type_inst, dest_type_inst, strict) {
+                            matched = True;
+                            break;
+                        }
                     }
                 }
 
@@ -3983,9 +4009,19 @@ impl TypeEvaluator.assign_type(
 
             return True;
         }
+        address_members: list[TypeBase] = [];
         for union_type in dest_type.types {
             new_dest_type = self._convert_to_instance(union_type);
+            if self._is_address_pair(src_type, new_dest_type) {
+                address_members.append(new_dest_type);
+                continue;
+            }
             if self.assign_type(src_type, new_dest_type, strict) {
+                return True;
+            }
+        }
+        for address_member in address_members {
+            if self.assign_type(src_type, address_member, strict) {
                 return True;
             }
         }

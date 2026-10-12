@@ -3,7 +3,11 @@ import from jaclang.compiler.frontend.unitree {
     Ability,
     Archetype,
     AtomTrailer,
+    Enum,
     FuncCall,
+    GlobalVars,
+    Import,
+    ModuleItem,
     FuncSignature,
     HasVar,
     KWPair,
@@ -125,6 +129,7 @@ def variant_base(path: str) -> (str | None);
 def variant_siblings(path: str) -> list[str];
 def variant_mismatches(mod: Module, prog: JacProgram) -> list[tuple[UniNode, str]];
 def binding_gaps(prog: JacProgram, nm: Name, base_dir: str) -> list[str];
+def import_gaps(prog: JacProgram, imp: Import, base_dir: str) -> list[str];
 
 impl is_pub(nd: UniNode) -> bool {
     if not isinstance(nd, (Ability, Archetype)) {
@@ -759,4 +764,53 @@ impl variant_mismatches(mod: Module, prog: JacProgram) -> list[tuple[UniNode, st
         }
     }
     return out;
+}
+
+impl import_gaps(prog: JacProgram, imp: Import, base_dir: str) -> list[str] {
+    """What a `from` import of a native library module names that the native
+    module does not provide. The interface may declare such a name under a
+    condition the checker does not resolve, so the import is checked against
+    the native module itself: its public functions, classes, enums and
+    globals.""";
+    if imp.from_loc is None or imp.is_absorb {
+        return [];
+    }
+    lib = imp.from_loc.dot_path_str;
+    if lib.startswith(".") {
+        return [];
+    }
+    table = native_bindings_of(prog).surface(prog, lib, base_dir);
+    if table is None {
+        return [];
+    }
+    import from jaclang.compiler.frontend.codeinfo { resolve_native_module }
+    (_src, full_path) = resolve_native_module(lib, base_dir, allow_inferred=False);
+    if full_path is None {
+        return [];
+    }
+    native_mod = prog.load_dependency_module(full_path, need_tree=True);
+    provided: set[str] = set(table.keys());
+    for stmt in ModuleFacts.iter_context_stmts(native_mod) {
+        if isinstance(stmt, GlobalVars) and is_public_glob(stmt) {
+            for nm in stmt.get_all_sub_nodes(Name) {
+                provided.add(nm.value);
+            }
+        } elif isinstance(stmt, Enum) and stmt.name is not None {
+            provided.add(stmt.name.value);
+        }
+    }
+    gaps: list[str] = [];
+    for item in imp.items {
+        if isinstance(item, ModuleItem) and isinstance(item.name, Name) {
+            if item.name.value not in provided {
+                gaps.append(f"the native '{lib}' does not provide '{item.name.value}'");
+            }
+        }
+    }
+    return gaps;
+}
+
+def is_public_glob(stmt: GlobalVars) -> bool {
+    access = stmt.access;
+    return access is not None and access.tag.name == Tok.KW_PUB;
 }
