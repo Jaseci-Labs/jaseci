@@ -331,6 +331,13 @@ pub fn build(b: *std.Build) void {
         b.getInstallStep().dependOn(&install_js.step);
         b.step("js-engine", "Build just the JavaScript engine (zig-out/js)").dependOn(&install_js.step);
     }
+    // Only the engine's foreign libraries, for a checkout that builds the
+    // engine itself with `jac build --native` (js_engine/'s local Makefile).
+    if (js_native.addJsNative(b, target, .ReleaseFast)) |native| {
+        const step = b.step("js-native", "Build just the engine's foreign libraries (zig-out/js)");
+        step.dependOn(&b.addInstallFileWithDir(native.native, .prefix, "js/libjs_native.so").step);
+        step.dependOn(&b.addInstallFileWithDir(native.wasmtime, .prefix, "js/libwasmtime.so").step);
+    }
 
     // --- runtime payload: -Dpayload override, else mkpayload ---------------
     // The stub catalog (pre-resolved typeshed types) is a second mkpayload

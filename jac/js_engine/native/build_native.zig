@@ -4,7 +4,8 @@
 //!   * `libjs_native.so`, compiled here: the engine's C shims -- Node-API
 //!     (`napi/shim`), TZif (`tz_shim`) and ECMA-402 over ICU (`icu_shim`) --
 //!     plus PCRE2 (RegExp), libuv (event loop), nghttp2 (http2), llhttp
-//!     (http/1 parser), brotli and ICU with its data linked in;
+//!     (http/1 parser), brotli, ICU with its data linked in, and mimalloc
+//!     (the allocator, see addMimalloc);
 //!   * `libwasmtime.so`, upstream's prebuilt Wasmtime C API (WebAssembly).
 //!
 //! Sources are compiled straight into the library, so every object is kept;
@@ -43,10 +44,11 @@ pub fn addJsNative(
         b.lazyDependency("llhttp", .{}),
         b.lazyDependency("node_api_headers", .{}),
         b.lazyDependency("icu4c", .{}),
+        b.lazyDependency("mimalloc", .{}),
     };
     inline for (deps) |dep| if (dep == null) return null;
-    const wasmtime, const pcre2, const libuv, const nghttp2, const brotli, const llhttp, const napi_headers, const icu = .{
-        deps[0].?, deps[1].?, deps[2].?, deps[3].?, deps[4].?, deps[5].?, deps[6].?, deps[7].?,
+    const wasmtime, const pcre2, const libuv, const nghttp2, const brotli, const llhttp, const napi_headers, const icu, const mimalloc = .{
+        deps[0].?, deps[1].?, deps[2].?, deps[3].?, deps[4].?, deps[5].?, deps[6].?, deps[7].?, deps[8].?,
     };
 
     const mod = b.createModule(.{
@@ -66,6 +68,7 @@ pub fn addJsNative(
     mod.addIncludePath(llhttp.path("include"));
     mod.addCSourceFiles(.{ .root = llhttp.path("src"), .files = &.{ "api.c", "http.c", "llhttp.c" } });
     addIcu(b, mod, icu);
+    addMimalloc(mod, mimalloc);
 
     mod.addIncludePath(napi_headers.path("include"));
     mod.addIncludePath(b.path("js_engine/native/tz_shim"));
@@ -79,6 +82,31 @@ pub fn addJsNative(
     const lib = b.addLibrary(.{ .name = "js_native", .linkage = .dynamic, .root_module = mod });
     lib.setVersionScript(b.path("js_engine/native/js_native.ver"));
     return .{ .native = lib.getEmittedBin(), .wasmtime = wasmtime.path("lib/libwasmtime.so") };
+}
+
+/// mimalloc in override mode: the library defines malloc, free and the rest of
+/// the C allocation API, and js_native.ver exports them. They are the
+/// process's allocator when libjs_native.so is loaded ahead of libc -- linked
+/// by the executable that runs the engine, or preloaded -- and every object
+/// the engine allocates then comes from mimalloc's size-class pages instead
+/// of glibc's malloc. Loaded after libc (as a dependency of a dlopen'ed
+/// libjs_engine.so) the process keeps glibc's malloc; only the C++ operators,
+/// kept local by the version script, still use mimalloc inside this library.
+/// The flags are mimalloc's own release build of the override library.
+fn addMimalloc(mod: *std.Build.Module, dep: *std.Build.Dependency) void {
+    mod.addIncludePath(dep.path("include"));
+    mod.addCSourceFiles(.{
+        .root = dep.path("src"),
+        .files = &.{"static.c"},
+        .flags = &.{
+            "-DMI_MALLOC_OVERRIDE",
+            "-DNDEBUG",
+            "-fvisibility=hidden",
+            "-ftls-model=initial-exec",
+            "-fno-builtin-malloc",
+            "-Wno-unknown-pragmas",
+        },
+    });
 }
 
 fn addLibuv(mod: *std.Build.Module, dep: *std.Build.Dependency) void {
