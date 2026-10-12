@@ -1323,9 +1323,7 @@ def name_load_opcode(g: cfg_builder, name: str) -> int {
     # COMPILE_OP_GLOBAL only in function-like scopes. Class bodies emit
     # LOAD_NAME so class locals (and an exec'd code object's namespace) are
     # consulted first -- except inside an inlined comprehension (LOAD_GLOBAL).
-    in_class_scope = (
-        g.sym_top.kind == scope_kind.CLASS and g.u.comp_depth == 0
-    );
+    in_class_scope = g.sym_top.kind == scope_kind.CLASS and g.u.comp_depth == 0;
     if scope == SCOPE_GLOBAL_EXPLICIT
         or (
             scope == SCOPE_GLOBAL_IMPLICIT

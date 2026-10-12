@@ -496,9 +496,7 @@ def emit_name_delete(g: cfg_builder, name: str, tloc: cloc) {
         # Same _PyCompile_ResolveNameop rule as name_load_opcode: implicit
         # globals in a class body are name-scope ops (DELETE_NAME), except
         # inside an inlined comprehension (DELETE_GLOBAL).
-        in_class_scope = (
-            g.sym_top.kind == scope_kind.CLASS and g.u.comp_depth == 0
-        );
+        in_class_scope = g.sym_top.kind == scope_kind.CLASS and g.u.comp_depth == 0;
         if scope == SCOPE_GLOBAL_EXPLICIT
             or (
                 scope == SCOPE_GLOBAL_IMPLICIT

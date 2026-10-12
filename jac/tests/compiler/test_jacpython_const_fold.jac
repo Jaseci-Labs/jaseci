@@ -63,11 +63,7 @@ test "sequence repeat and concat fold to constant tuples" {
 test "class bodies read module globals with LOAD_NAME" {
     namespace: dict[str, any] = {};
     pyexec(
-        pycompile(
-            "x = 5\nclass C:\n    y = x + 1\n",
-            "class_scope.py",
-            "exec"
-        ),
+        pycompile("x = 5\nclass C:\n    y = x + 1\n", "class_scope.py", "exec"),
         namespace
     );
     assert namespace["C"].y == 6;
