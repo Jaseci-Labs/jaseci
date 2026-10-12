@@ -404,6 +404,29 @@ test "a stored type resolves from its application once, and again after a reload
 }
 
 
+test "the resolved-type cache holds neither its classes nor its applications" {
+    import gc;
+    import weakref;
+    import from jaclang.data.type_identity { _remember_type, _resolved }
+    app = PreparedApplication(
+        `root='/tmp/cache-probe', `entry='/tmp/cache-probe/main.jac'
+    );
+    app_id = id(app);
+    probe = type('Probe', (object, ), {});
+    class_ref = weakref.ref(probe);
+    _remember_type(app, 'jac:probe.Probe', probe);
+    assert app_id in _resolved;
+    del probe;
+    gc.collect();
+    assert class_ref() is None , "the cache kept a resolved class alive";
+    app_ref = weakref.ref(app);
+    del app;
+    gc.collect();
+    assert app_ref() is None , "the cache kept its application alive";
+    assert app_id not in _resolved , "a collected application kept its cache slot";
+}
+
+
 test "obsolete compiled persistence metadata requires a rebuild" {
     obsolete = type(
         'Obsolete',

@@ -2,7 +2,7 @@ import json;
 import sys;
 import type from jaclang.runtime.prepared { PreparedApplication }
 import threading;
-import from weakref { WeakValueDictionary, ref }
+import from weakref { WeakValueDictionary, finalize, ref }
 import from contextlib { contextmanager }
 import from contextvars { ContextVar }
 
@@ -18,7 +18,7 @@ glob _scope: ContextVar[ResolutionScope | None] = ContextVar(
          'jac_persistence_scope', `default=None
      ),
      _types: dict[str, WeakValueDictionary[str, type]] = {},
-     _resolved: dict[int, tuple[any, dict[str, type]]] = {},
+     _resolved: dict[int, tuple[any, WeakValueDictionary[str, type]]] = {},
      _lock: threading.RLock = threading.RLock();
 
 def module_identity(facts: tuple[str, ...]) -> str {
@@ -95,12 +95,19 @@ def _cached_type(
     return None;
 }
 
+def _forget_resolved(application_id: int) {
+    with _lock {
+        _resolved.pop(application_id, None);
+    }
+}
+
 def _remember_type(application: PreparedApplication, key: str, cls: type) {
     with _lock {
         slot = _resolved.get(id(application));
         if slot is None or slot[0]() is not application {
-            slot = (ref(application), {});
+            slot = (ref(application), WeakValueDictionary());
             _resolved[id(application)] = slot;
+            finalize(application, _forget_resolved, id(application));
         }
         slot[1][key] = cls;
     }
