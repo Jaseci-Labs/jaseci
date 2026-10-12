@@ -5,7 +5,7 @@ OutputTruncatedError instead of returning an empty answer."""
 
 import asyncio;
 import from jaclang.byllm.lib { Model, OutputTruncatedError }
-import from support { call, finish, say, scripted }
+import from support { call, chunk_text, finish, say, scripted, stream_events }
 
 
 def save_data(name: str, payload: str) -> str {
@@ -16,49 +16,35 @@ def save_data(name: str, payload: str) -> str {
 """Run one scripted turn in `mode` and return (answer or raised error, conversation).
 `iters` caps the tool loop, so the next call is the forced final answer."""
 def _turn(
-    replies: list[any], mode: str, iters: int = 0
+    replies: list[any], mode: str, iters: int
 ) -> tuple[any, list[dict[str, any]]] {
     conv: list[dict[str, any]] = [];
     llm = Model(model_name="gpt-4o");
 
-    def plain(task: str) -> str by llm(
-        tools=[save_data], conversation=conv, stream=False, max_react_iterations=iters
-    );
-
-    def streamed(task: str) -> str by llm(
-        tools=[save_data], conversation=conv, stream=True, max_react_iterations=iters
-    );
-
-    """Built the way a streaming agent is: tools, streamed, with logging."""
-    def events(task: str) -> str by llm(
+    """In "events" mode this is built the way a streaming agent is: tools, streamed,
+    with logging."""
+    def run(task: str) -> str by llm(
         tools=[save_data],
         conversation=conv,
-        stream=True,
-        logging=True,
+        stream=(mode != "plain"),
+        logging=(mode == "events"),
         max_react_iterations=iters
     );
 
-    async def no_tools(task: str) -> str by llm(conversation=conv);
+    async def arun(task: str) -> str by llm(conversation=conv);
 
     with scripted(llm, replies) {
         try {
-            if mode == "plain" {
-                return (plain("save a big payload"), conv);
-            }
             if mode == "async" {
-                return (asyncio.run(no_tools("save a big payload")), conv);
+                return (asyncio.run(arun("save a big payload")), conv);
             }
-            text = "";
-            for item in (streamed if mode == "streamed" else events)(
-                "save a big payload"
-            ) {
-                if isinstance(item, str) {
-                    text += item;
-                } elif getattr(item, "event_type", "") == "chunk" {
-                    text += str(item.data.get("content", ""));
-                }
+            out = run("save a big payload");
+            if mode == "streamed" {
+                out = "".join(out);
+            } elif mode == "events" {
+                out = chunk_text(stream_events(out));
             }
-            return (text, conv);
+            return (out, conv);
         } except OutputTruncatedError as e {
             return (e, conv);
         }
@@ -67,93 +53,82 @@ def _turn(
 
 
 test "a reply cut off at max_tokens never passes as a finished answer" {
-    rows: list[dict[str, any]] = [
+    # (label, replies, answer, max_react_iterations). Rows with a tool call skip the
+    # async mode, which is only its own path without tools.
+    rows: list[tuple[str, list[any], any, int]] = [
         # Valid JSON cut off before `payload`: the tool must not run.
-        {
-            "case": "cut-off tool call",
-            "replies": [
-                call("save_data", {"name": "x"}, finish_reason="length"),
-                say("done")
-            ],
-            "answer": "done",
-            "tool_error": True,
-            "modes": ["plain", "streamed", "events"]
-        },
+        (
+            "cut-off tool call",
+            [call("save_data", {"name": "x"}, finish_reason="length"), say("done")],
+            "done",
+            0
+        ),
         # The whole budget went to reasoning: no answer exists.
-        {
-            "case": "empty cut-off reply",
-            "replies": [say("", finish_reason="length")],
-            "answer": OutputTruncatedError,
-            "tool_error": False
-        },
+        (
+            "empty cut-off reply",
+            [say("", finish_reason="length")],
+            OutputTruncatedError,
+            0
+        ),
         # The answer is committed; only the streamed restatement of it is empty.
-        {
-            "case": "empty cut-off narration",
-            "replies": [finish("saved it"), say("", finish_reason="length")],
-            "answer": "saved it",
-            "tool_error": False,
-            "modes": ["plain", "streamed", "events"]
-        },
+        (
+            "empty cut-off narration",
+            [finish("saved it"), say("", finish_reason="length")],
+            "saved it",
+            0
+        ),
         # An empty committed answer is still an answer.
-        {
-            "case": "empty committed answer, empty cut-off narration",
-            "replies": [finish(""), say("", finish_reason="length")],
-            "answer": "",
-            "tool_error": False,
-            "modes": ["plain", "streamed", "events"]
-        },
+        (
+            "empty committed answer, empty cut-off narration",
+            [finish(""), say("", finish_reason="length")],
+            "",
+            0
+        ),
         # The tool loop hit its cap and the forced final answer came back empty.
-        {
-            "case": "empty cut-off final answer",
-            "replies": [
+        (
+            "empty cut-off final answer",
+            [
                 call("save_data", {"name": "x", "payload": "y"}),
                 say("", finish_reason="length")
             ],
-            "answer": OutputTruncatedError,
-            "tool_error": False,
-            "iters": 1,
-            "modes": ["plain", "streamed", "events"]
-        },
+            OutputTruncatedError,
+            1
+        ),
         # Cut-off text is still the model's text.
-        {
-            "case": "cut-off text",
-            "replies": [say("partial answer", finish_reason="length")],
-            "answer": "partial answer",
-            "tool_error": False
-        },
+        (
+            "cut-off text",
+            [say("partial answer", finish_reason="length")],
+            "partial answer",
+            0
+        ),
         # An empty reply that stopped normally is the model's choice.
-        {
-            "case": "empty stop",
-            "replies": [say("", finish_reason="stop")],
-            "answer": "",
-            "tool_error": False
-        }
+        ("empty stop", [say("", finish_reason="stop")], "", 0)
     ];
-    for row in rows {
-        for mode in row.get("modes", ["plain", "streamed", "events", "async"]) {
-            (answer, conv) = _turn(row["replies"], mode, row.get("iters", 0));
-            where = row["case"] + " / " + mode;
-            assert conv , where + ": conversation was not written back";
-            if row["answer"] is OutputTruncatedError {
-                assert isinstance(answer, OutputTruncatedError) , where
-                    + ": got "
-                    + repr(answer);
-                assert "max_tokens" in str(answer) , where + ": " + str(answer);
+    for (label, replies, expected, iters) in rows {
+        modes = ["plain", "streamed", "events"];
+        if not any(r.tool_calls for r in replies) {
+            modes.append("async");
+        }
+        for mode in modes {
+            (answer, conv) = _turn(replies, mode, iters);
+            where = f"{label} / {mode}";
+            assert conv , f"{where}: conversation was not written back";
+            if expected is OutputTruncatedError {
+                assert isinstance(answer, OutputTruncatedError)
+                    and "max_tokens" in str(answer) , f"{where}: got {answer!r}";
             } else {
-                assert answer == row["answer"] , where + ": got " + repr(answer);
+                assert answer == expected , f"{where}: got {answer!r}";
             }
-            tool_results = [
-                str(m.get("content"))
-                for m in conv
-                if isinstance(m, dict) and m.get("role") == "tool"
-            ];
-            if row["tool_error"] {
-                assert tool_results and "max_tokens" in tool_results[0] , where
-                    + ": "
-                    + str(tool_results);
-                assert "missing" not in tool_results[0] , where
-                    + ": "
-                    + tool_results[0];
+            # A cut-off tool call is answered with a max_tokens error, not run.
+            if replies[0].tool_calls and replies[0].finish_reason == "length" {
+                results = [
+                    str(m.get("content"))
+                    for m in conv
+                    if isinstance(m, dict) and m.get("role") == "tool"
+                ];
+                assert results
+                    and "max_tokens" in results[0]
+                    and "missing" not in results[0] , f"{where}: {results}";
             }
         }
     }
