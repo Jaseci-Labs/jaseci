@@ -162,17 +162,14 @@ jobs:
       # cache hit does not, so leaving it implicit made the kit's contents a
       # function of cache state -- present on a miss, missing on a hit, with
       # if-no-files-found blind to it because the other paths matched.
-      # Every zig build here depends on the source-built runtime, so each names
-      # the kit's interpreter; a pull request reuses a JacPython whose lowered
-      # sources are unchanged instead of rebuilding it after the kit was built.
+      # Every zig build here runs through the kit's own (CPython) runtime.
       - name: Materialize typeshed + vendored runtimes
         working-directory: jac
         run: |
-          PY=(-Dpython=jacpython -Dreuse-python=${{ github.event_name == 'pull_request' }})
-          zig build fetch-typeshed "${PY[@]}" --summary all
-          zig build vendor-musl "${PY[@]}" --summary all
-          zig build vendor-musl-linux-aarch64 "${PY[@]}" --summary all
-          zig build vendor-wasm-libc "${PY[@]}" --summary all
+          zig build fetch-typeshed --summary all
+          zig build vendor-musl --summary all
+          zig build vendor-musl-linux-aarch64 --summary all
+          zig build vendor-wasm-libc --summary all
 
       - name: Hermeticity + smoke (no system Python)
         working-directory: jac
@@ -184,7 +181,9 @@ jobs:
           WORK="$(mktemp -d)"; cd "$WORK"
           ldd "$BIN" || true
           ! ldd "$BIN" | grep -qi python
-          "$BIN" -c 'import ctypes; assert ctypes.pythonapi._PyJac_CompilerRequired() == 1; assert ctypes.pythonapi._PyJac_CompilerBridgeVersion() == 4'
+          # The official configuration bundles stock CPython; JacPython is an
+          # accelerator its own lanes build (_jacpython.yml).
+          "$BIN" -c 'import ctypes; assert not hasattr(ctypes.pythonapi, "_PyJac_CompilerRequired")'
           # The kit carries every artifact a release does, less what its
           # manifest declares it leaves out -- only a pull request's kit may
           # (the seal decides that, artifacts/kit.jac pr_kit_omits).
@@ -263,9 +262,9 @@ jobs:
         working-directory: jac
         run: |
           set -euo pipefail
-          DIR="$(find .precompiled-build/jacpython -maxdepth 1 -type d -name 'cpython-*' | head -1)"
-          [ -n "$DIR" ] || { echo "::error::no .precompiled-build/jacpython/cpython-<ver> tree"; exit 1; }
-          [ -f .precompiled-build/jacpython/MANIFEST.json ] || {
+          DIR="$(find .precompiled-build/cpython -maxdepth 1 -type d -name 'cpython-*' | head -1)"
+          [ -n "$DIR" ] || { echo "::error::no .precompiled-build/cpython/cpython-<ver> tree"; exit 1; }
+          [ -f .precompiled-build/cpython/MANIFEST.json ] || {
             echo "::error::precompile tree has no MANIFEST.json, so the seal did not finish"; exit 1; }
           UNITS="$(find "$DIR" -name '*.jir' | wc -l | tr -d ' ')"
           [ "$UNITS" -ge 400 ] || { echo "::error::precompile tree has only $UNITS units"; exit 1; }
@@ -275,7 +274,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jac-precompiled
-          path: jac/.precompiled-build/jacpython
+          path: jac/.precompiled-build/cpython
           include-hidden-files: true
           retention-days: 1
           if-no-files-found: error
@@ -612,19 +611,6 @@ jobs:
           name: native-test-failures
           path: ${{ runner.temp }}/native-test-artifacts
           if-no-files-found: ignore
-      - name: Check JacPython native code-object boundary
-        if: matrix.chunk == 'passes-native'
-        run: jac run scripts/test_jacpython_native.jac
-      - name: Check native standard-library replacements against CPython
-        if: matrix.chunk == 'passes-native'
-        run: |
-          jac install "hypothesis>=6,<7" --global
-          while read -r module tests _ <&3; do
-            case "$module" in ''|'#'*) continue ;; esac
-            for test in $(printf '%s' "$tests" | tr ',' ' '); do
-              jac run scripts/run_cpython_compiler_tests.jac --module "$test" --native-modules "$module"
-            done
-          done 3< jac/bootstrap/python/jacpython-modules.txt
 
   # Everything except the compiler tests.
   test-runtime:
@@ -1700,6 +1686,13 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'macos')) }}
     uses: ./.github/workflows/_macos-native.yml
 
+  # The JacPython accelerator's lane: its own kit and its upstream CPython
+  # gates. On request only -- the `native:jacpython` label or a manual run;
+  # nightly.yml runs it on every platform.
+  jacpython:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'native:jacpython')) }}
+    uses: ./.github/workflows/_jacpython.yml
+
   test-managed-android:
     needs: [changes, build-kit]
     if: ${{ github.event_name != 'pull_request' || needs.changes.outputs.core == 'true' }}
@@ -1745,6 +1738,7 @@ jobs:
       - changes
       - build-kit
       - macos-native
+      - jacpython
       - jac-check
       - contribution-checks
       - test-compiler
