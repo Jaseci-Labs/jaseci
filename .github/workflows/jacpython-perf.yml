@@ -52,15 +52,11 @@ jobs:
 
       - name: Build main's JacPython runtime
         working-directory: main-src/jac
-        env:
-          JACPYTHON: "1"
-        run: zig build build-python --summary all
+        run: zig build build-python -Dpython=jacpython --summary all
 
       - name: Build this branch's JacPython runtime
         working-directory: jac
-        env:
-          JACPYTHON: "1"
-        run: zig build build-python --summary all
+        run: zig build build-python -Dpython=jacpython --summary all
 
       - name: Locate interpreters
         id: py
@@ -69,6 +65,11 @@ jobs:
           # The JacPython build also leaves a stock build-host CPython under
           # jacpython/<os-arch>.host; take the runtime itself.
           osarch=$(ls jac/.python-build/jacpython | grep -v '\.' | grep -v '^sources$' | head -1)
+          if [ -z "$osarch" ]; then
+            echo "no runtime directory under jac/.python-build/jacpython (only '<os-arch>.host' and 'sources' expected besides it); contents:" >&2
+            ls -la jac/.python-build/jacpython >&2
+            exit 1
+          fi
           c="$PWD/jac/.python-build/cpython/$osarch/python/install/bin/python3.14"
           m="$PWD/main-src/jac/.python-build/jacpython/$osarch/python/install/bin/python3.14"
           b="$PWD/jac/.python-build/jacpython/$osarch/python/install/bin/python3.14"
