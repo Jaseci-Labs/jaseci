@@ -1,3 +1,5 @@
+import from jaclang.scale.runtime.context.util { k8s_safe_name }
+
 glob OPS_READ_RULES: list[dict[str, any]] = [
          {
              "apiGroups": [""],
@@ -58,12 +60,18 @@ glob OPS_READ_RULES: list[dict[str, any]] = [
 
 
 def ops_role_name(app_name: str) -> str {
-    return f"{app_name}-ops-console";
+    return f"{k8s_safe_name(app_name)}-ops-console";
 }
 
 
 def ops_sa_name(app_name: str) -> str {
-    return f"{app_name}-ops";
+    return f"{k8s_safe_name(app_name)}-ops";
+}
+
+
+def ops_sa_is_ours(labels: (dict[str, str] | None), app_name: str) -> bool {
+    owned = labels or {};
+    return owned.get("managed") == "jac-scale" and owned.get("app") == app_name;
 }
 
 

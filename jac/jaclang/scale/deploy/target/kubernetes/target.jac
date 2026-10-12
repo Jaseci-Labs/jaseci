@@ -24,7 +24,10 @@ import from jaclang.scale.deploy.target.kubernetes.utils.kubernetes_utils {
     _resolve_current_rs_hashes,
     _refresh_rs_hashes
 }
-import from jaclang.scale.deploy.target.kubernetes.ops_rbac { ops_sa_name }
+import from jaclang.scale.deploy.target.kubernetes.ops_rbac {
+    ops_sa_is_ours,
+    ops_sa_name
+}
 import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
     KubernetesConfig
 }
@@ -2118,12 +2121,27 @@ obj KubernetesTarget(KubernetesTargetBase) {
 
     def _destroy_ops_rbac(app_name: str, namespace: str) {
         rbac_v1 = client.RbacAuthorizationV1Api();
-        delete_if_exists(
-            client.CoreV1Api().delete_namespaced_service_account,
-            ops_sa_name(app_name),
-            namespace,
-            'ServiceAccount'
-        );
+        core_v1 = client.CoreV1Api();
+        sa_name = ops_sa_name(app_name);
+        try {
+            existing = core_v1.read_namespaced_service_account(
+                name=sa_name, namespace=namespace
+            );
+            if ops_sa_is_ours(existing.metadata.labels, app_name) {
+                core_v1.delete_namespaced_service_account(
+                    name=sa_name, namespace=namespace
+                );
+            } elif self.logger {
+                self.logger.warning(
+                    f"Leaving ServiceAccount '{sa_name}' in place: it was not "
+                    f"created by jac-scale for '{app_name}'"
+                );
+            }
+        } except ApiException as e {
+            if e.status != 404 {
+                raise;
+            }
+        }
         ms_selector: str = f"managed=jac-scale,app={app_name}";
         for delete_collection in [
             rbac_v1.delete_collection_namespaced_role_binding,

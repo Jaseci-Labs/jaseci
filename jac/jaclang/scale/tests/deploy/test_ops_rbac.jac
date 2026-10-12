@@ -1,6 +1,8 @@
 import from jaclang.scale.deploy.target.kubernetes.ops_rbac {
     build_ops_rbac,
-    ops_role_name
+    ops_role_name,
+    ops_sa_is_ours,
+    ops_sa_name
 }
 import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
     KubernetesConfig
@@ -91,7 +93,9 @@ test "build_ops_rbac refuses to bind the console to the namespace default accoun
 }
 
 
-def _bundle(ops_console: bool, service_account_name: str) -> dict[str, any] {
+def _bundle(
+    ops_console: bool, service_account_name: str, app_name: str = "shop"
+) -> dict[str, any] {
     import tempfile;
     import from pathlib { Path }
     with tempfile.TemporaryDirectory() as project {
@@ -100,7 +104,7 @@ def _bundle(ops_console: bool, service_account_name: str) -> dict[str, any] {
         }
         builder = ManifestBuilder(
             k8s_config=KubernetesConfig(
-                app_name="shop",
+                app_name=app_name,
                 namespace="shop-ns",
                 bundle_storage_class="standard",
                 ops_console=ops_console,
@@ -114,7 +118,7 @@ def _bundle(ops_console: bool, service_account_name: str) -> dict[str, any] {
             dry_run=True
         );
         return builder.generate_manifests(
-            AppConfig(code_folder=project, app_name="shop"), ""
+            AppConfig(code_folder=project, app_name=app_name), ""
         );
     }
 }
@@ -149,4 +153,34 @@ test "only the gateway runs as the console's ServiceAccount, and the Role is nev
         subjects = rbac["role_binding"]["subjects"];
         assert [s["name"] for s in subjects] == ["shop-ops"] , label;
     }
+}
+
+
+test "the console's account and Role carry names Kubernetes accepts for any app name" {
+    # (app_name, ServiceAccount, Role). An app name is free text; the account
+    # is applied outside the handler that logs RBAC failures, so an invalid
+    # name would abort the deploy rather than just leave the console a 403.
+    cases = [
+        ("shop", "shop-ops", "shop-ops-console"),
+        ("my_app", "my-app-ops", "my-app-ops-console"),
+        ("MyApp", "myapp-ops", "myapp-ops-console")
+    ];
+    for (app, account, role) in cases {
+        assert ops_sa_name(app) == account , app;
+        assert ops_role_name(app) == role , app;
+        rbac = _bundle(True, "", app)["ops_rbac"];
+        assert rbac["service_account"]["metadata"]["name"] == account , app;
+        assert rbac["role"]["metadata"]["name"] == role , app;
+        assert rbac["role_binding"]["subjects"][0]["name"] == account , app;
+    }
+}
+
+
+test "teardown deletes the console's account only when jac-scale made it for this app" {
+    ours = {"app": "shop", "managed": "jac-scale"};
+    assert ops_sa_is_ours(ours, "shop");
+    assert not ops_sa_is_ours(None, "shop") , "a user-created account has no labels";
+    assert not ops_sa_is_ours({}, "shop");
+    assert not ops_sa_is_ours({"app": "shop"}, "shop") , "not managed by jac-scale";
+    assert not ops_sa_is_ours(ours, "other") , "another app's account";
 }

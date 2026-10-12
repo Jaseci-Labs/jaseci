@@ -690,6 +690,15 @@ obj ManifestBuilder {
             import from jaclang.scale.deploy.target.kubernetes.ops_rbac {
                 build_ops_rbac
             }
+            if self._service_account_name() and self.logger {
+                self.logger.warning(
+                    f"[scale.kubernetes].service_account_name = "
+                    f"'{self._service_account_name()}' does not apply to the "
+                    f"gateway while ops_console is on: it runs as "
+                    f"'{ops_sa_name(self.k8s_config.app_name)}'. Pre-create that "
+                    f"ServiceAccount to give the gateway a cloud identity."
+                );
+            }
             bundle["ops_rbac"] = build_ops_rbac(
                 self.k8s_config.app_name,
                 self.k8s_config.namespace,
