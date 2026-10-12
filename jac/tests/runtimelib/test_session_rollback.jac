@@ -1029,3 +1029,47 @@ test "request loop: a COMMIT that never succeeds is re-run up to conflict_max_at
         _restore_read_tier(prior);
     }
 }
+
+
+def _bump_burst(busy: bool) -> tuple[list[any], int] {
+    with TemporaryDirectory() as td {
+        (exec_mgr, walkers, mod) = _vote_app(td);
+        seeded = _spawn(exec_mgr, walkers["SeedCounter"]);
+        assert "error" not in seeded , f"seeding failed: {seeded}";
+        start = _spawn(exec_mgr, walkers["ReadCounter"])["reports"][0];
+        ambient = JacRuntime.get_context();
+        async def one -> any {
+            with RequestScope.open(ambient.base_path_dir, ambient.full_target_path) {
+                return await exec_mgr.spawn_walker(
+                    walkers["Bump"], {"hold": 0.05, "busy": busy}, "voter"
+                );
+            }
+        }
+        async def burst -> any {
+            return await asyncio.gather(*[one() for _ in range(10)]);
+        }
+        results = _as_any(asyncio.run(burst()));
+        final = _spawn(exec_mgr, walkers["ReadCounter"])["reports"][0];
+        return (list(results), final - start);
+    }
+}
+
+
+test "request loop: ten concurrent writers to one node all land" {
+    for busy in (False, True) {
+        (results, landed) = _bump_burst(busy);
+        refused = [
+            r
+            for r in results
+            if "error" in r
+        ];
+        assert not refused , (
+            f"{len(refused)} of 10 writers to one counter were refused "
+            f"(busy={busy}): losers raced again instead of waiting their turn. "
+            f"First: {refused[0]}"
+        );
+        assert landed == 10 , (
+            f"10 accepted writes moved the counter by {landed} (busy={busy})"
+        );
+    }
+}
