@@ -28,6 +28,7 @@ import from jaclang.compiler.backends.native.link_glue {
     ENTRY_SYMBOL,
     GlueSpec,
     GlueUnit,
+    RC_THREADED_SYMBOL,
     REGION_DIED_HOOK,
     SHARED_INIT_SYMBOL,
     STR_NEW_SYMBOL,
@@ -501,6 +502,20 @@ def _build_link_plan(
             if not stale {
                 continue;
             }
+            if all(not recorded.get(dep) for dep in stale)
+                and registry.adopt_dep_digests(
+                    u.path, {dep: units[dep].digest for dep in stale}
+                ) {
+                if env_na_debug() {
+                    sys.stderr.write(
+                        f"[link plan] adopting digests for {u.path}: {', '.join(
+                            stale
+                        )}\n"
+                    );
+                }
+                rebuilt = True;
+                continue;
+            }
             source_text = virtual_sources.get(u.path);
             if not os.path.isfile(u.path) {
                 source_module = prog.find_module(u.path);
@@ -757,6 +772,21 @@ def unit_objects(
     return (objs, exports);
 }
 
+def name_private_functions(merged: ModuleRef) {
+    """Give `private` functions a symbol (`internal` linkage) so the JAC_SYMMAP
+    symbol map names them. Both linkages are module-local, but a private
+    function gets no symbol-table entry, so a profile charged its cost to the
+    preceding named function (the refcount, dict and list helpers showed up
+    under whatever user function the linker placed before them). Only for the
+    merged whole-program module, where names are unique; per-unit objects
+    share helper names across units.""";
+    for fn in merged.functions {
+        if not fn.is_declaration and fn.linkage == llvm.Linkage.private {
+            fn.linkage = llvm.Linkage.internal;
+        }
+    }
+}
+
 def optimize_whole_program(
     plan: LinkPlan, merged: ModuleRef, kind: ArtifactKind, tm: TargetMachine
 ) -> None {
@@ -848,34 +878,15 @@ def plan_objects(
             df.write(str(merged));
         }
     }
+    import from jaclang.compiler.driver.compile_options { env_symmap_requested }
+    if env_symmap_requested() {
+        name_private_functions(merged);
+    }
     object_bytes = tm.emit_object(merged);
     assert isinstance(object_bytes, bytes);
     _log_phase(log, "emit_object", started);
     return ([object_bytes], exports);
 }
-
-def units_source_key(paths: list[str], options: CompileOptions) -> str {
-    import from jaclang.compiler.driver.jir { module_cache_key, native_producer_digest }
-    import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
-    h = hashlib.sha256();
-    h.update(native_producer_digest(options.kernel_build).encode("utf-8"));
-    h.update(options.codegen_identity().encode("utf-8"));
-    h.update(options.effective_triple().encode("utf-8"));
-    import from jaclang.compiler.driver.compilation_context { cache_scope }
-
-    with cache_scope(options) {
-        for path in sorted(os.path.realpath(p) for p in paths) {
-            h.update(native_unit_identity(path).encode("utf-8"));
-            try {
-                h.update(module_cache_key(path).encode("utf-8"));
-            } except OSError {
-                h.update(b"missing");
-            }
-        }
-    }
-    return h.hexdigest();
-}
-
 
 def _write_sidecar(
     plan: LinkPlan,
@@ -895,7 +906,6 @@ def _write_sidecar(
         "layout_digest": ldigest,
         "units": unit_paths,
         "unit_ids": [native_unit_identity(p) for p in unit_paths],
-        "source_key": units_source_key(unit_paths, plan.options),
         "compiler_digest": native_producer_digest(plan.options.kernel_build),
         "codegen_identity": plan.options.base_codegen_identity(),
         "triple": plan.triple,
@@ -1003,7 +1013,8 @@ def link_artifact(
     }
     needed_libs: list[str] = [];
     if is_windows {
-        needed_libs = ["msvcrt.dll"];
+        import from jaclang.compiler.backends.native.win_floor { WIN_CRT_DLL }
+        needed_libs = [WIN_CRT_DLL];
     } elif is_macos {
         needed_libs = ["/usr/lib/libSystem.B.dylib"];
     }
@@ -1359,6 +1370,22 @@ def _jit_image_path(plan: LinkPlan) -> (str | None) {
     return os.path.join(str(get_jir_cache_dir()), "jit", h.hexdigest()[:32] + ".bc");
 }
 
+def _has_global(module: ModuleRef, name: str) -> bool {
+    try {
+        module.get_global_variable(name);
+    } except NameError {
+        return False;
+    }
+    return True;
+}
+
+def _mark_host_rc_threaded(engine: ExecutionEngine) {
+    address = int(engine.get_global_value_address(RC_THREADED_SYMBOL));
+    if address {
+        ctypes.c_uint8.from_address(address).value = 1;
+    }
+}
+
 def jit_engine(plan: LinkPlan) -> ExecutionEngine {
     tm = _target_machine(plan, ArtifactKind.JIT);
     registry = plan.prog.native_units();
@@ -1419,10 +1446,14 @@ def jit_engine(plan: LinkPlan) -> ExecutionEngine {
         }
         symbols[symbol] = address;
     }
+    has_rc_flag = _has_global(merged, RC_THREADED_SYMBOL);
     engine = llvm.create_mcjit_compiler(merged, tm);
     assert isinstance(engine, llvm.ExecutionEngine);
     for (symbol, address) in symbols.items() {
         engine.add_global_mapping(merged.get_function(symbol), address);
+    }
+    if has_rc_flag {
+        _mark_host_rc_threaded(engine);
     }
     engine.static_init_symbols = list(plan.init_symbols());
     engine.static_init_chained = {JAC_ENTRY_SYMBOL};

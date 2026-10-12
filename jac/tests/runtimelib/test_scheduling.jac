@@ -377,9 +377,18 @@ test "a served scheduled walker runs each tick without an error record" {
             ][0];
             served_log = sys.modules[walker_cls.__module__].execution_log;
             before = served_log.count("interval-walker");
-            server.scheduler._execute(task);
-            server.scheduler._execute(task);
+            import io;
+            import from contextlib { redirect_stdout }
+            printed = io.StringIO();
+            with redirect_stdout(printed) {
+                server.scheduler._execute(task);
+                server.scheduler._execute(task);
+            }
             assert served_log.count("interval-walker") == before + 2 , served_log;
+            assert "interval-walker-report" not in printed.getvalue() , (
+                "a scheduled run inside the server printed its report to stdout, "
+                "the server log"
+            );
             errors = [
                 m
                 for m in records.messages
@@ -726,13 +735,16 @@ test "a static task never runs alongside an earlier run of itself" {
 }
 
 
+"""A scheduled function that holds `probe` busy for `seconds`."""
+def _slow_run(probe: _Probe, seconds: float) -> Callable[[], None] {
+    return lambda { probe.slow(seconds); };
+}
+
 test "stopping past its budget returns on time and names the runs it abandons" {
     for (name, budget, limit) in [("stuck_fn", 0.3, 1.0), ("late_fn", 0.0, 0.5)] {
         probe = _Probe();
         sched = fresh_scheduler();
-        sched.register(
-            name, lambda { probe.slow(2.0); }, ScheduleSpec(interval=0.2), False
-        );
+        sched.register(name, _slow_run(probe, 2.0), ScheduleSpec(interval=0.2), False);
         records = _Records();
         log = logging.getLogger("jaclang.server.task_scheduler");
         log.addHandler(records);

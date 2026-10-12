@@ -3720,12 +3720,10 @@ impl TypeEvaluator.assign_type(
         return True;
     }
 
-    if isinstance(dest_type, ClassType) and dest_type.is_class_instance() {
-        _ext_arch = dest_type.shared.symbol_table;
-        if isinstance(_ext_arch, Archetype)
-            and _ext_arch.find_parent_of_type(Import) is not None {
-            return True;
-        }
+    if isinstance(dest_type, ClassType)
+        and dest_type.is_class_instance()
+        and dest_type.shared.is_extern_struct {
+        return True;
     }
 
     if self._in_native_context() {
@@ -3786,14 +3784,12 @@ impl TypeEvaluator.assign_type(
         }
     }
 
-    if isinstance(src_type, ClassType) and src_type.is_class_instance() {
-        _ext_src = src_type.shared.symbol_table;
-        if isinstance(_ext_src, Archetype)
-            and _ext_src.find_parent_of_type(Import) is not None
-            and isinstance(dest_type, ClassType)
-            and dest_type.is_builtin("int") {
-            return True;
-        }
+    if isinstance(src_type, ClassType)
+        and src_type.is_class_instance()
+        and src_type.shared.is_extern_struct
+        and isinstance(dest_type, ClassType)
+        and dest_type.is_builtin("int") {
+        return True;
     }
 
     if self.prefetch
@@ -4294,6 +4290,7 @@ impl TypeEvaluator._is_sv_async_call(expr: FuncCall) -> bool {
             classify_client_import_item,
             resolve_import_source_module
         }
+        client_tops: dict[str, bool] = {};
         for imp in mod.get_all_sub_nodes(Import) {
             kind = classify_cross_app_import(imp, None);
             is_service = kind == CrossAppKind.SERVICE_BRIDGE;
@@ -4301,7 +4298,7 @@ impl TypeEvaluator._is_sv_async_call(expr: FuncCall) -> bool {
             is_native_edge = (
                 not is_service
                 and not is_boundary
-                and is_client_native_edge_import(imp, self.program)
+                and is_client_native_edge_import(imp, self.program, client_tops)
             );
             if not (is_service or is_boundary or is_native_edge) {
                 continue;
@@ -4610,6 +4607,8 @@ impl TypeEvaluator._init_prelude_from_sources -> list[Module] {
     ];
 }
 
+glob FLOW_QUERY_DEPTH: int = 48;
+
 def _find_cfg_node_for(at_node: UniNode) -> UniCFGNode | None {
     cur: UniNode | None = at_node;
     while cur is not None {
@@ -4650,7 +4649,16 @@ impl TypeEvaluator.get_narrowed_type(
     if sym_id in self._and_narrowing_overrides {
         return self._and_narrowing_overrides[sym_id];
     }
-    if sym_id in self._flow_pending_symbols {
+    """A query is pending at one place: the same symbol asked about at
+    another flow node is a different question, and answering it with "not
+    narrowed" types a read by the declared type. That happens when resolving
+    an assignment's value forces the rest of its scope: a read of the symbol
+    elsewhere in the function is evaluated while the outer query is open.
+    Only the same symbol at the same node is the query asking itself.""";
+    flow_node = _find_cfg_node_for(at_node);
+    pending: tuple[int, int] = (sym_id, id(flow_node) if flow_node is not None else 0);
+    if pending in self._flow_pending_symbols
+        or len(self._flow_pending_symbols) >= FLOW_QUERY_DEPTH {
         return None;
     }
     symbol_type = self.get_type_of_symbol(symbol);
@@ -4659,18 +4667,17 @@ impl TypeEvaluator.get_narrowed_type(
     ) {
         return None;
     }
-    self._flow_pending_symbols.add(sym_id);
+    self._flow_pending_symbols.add(pending);
     try {
         narrowing_target = NarrowingTarget(
             key=symbol.sym_name, declared_type=symbol_type, symbol=symbol
         );
-        flow_node = _find_cfg_node_for(at_node);
         if flow_node is not None {
             return self._get_type_from_flow_node(narrowing_target, flow_node, set());
         }
         return None;
     } finally {
-        self._flow_pending_symbols.discard(sym_id);
+        self._flow_pending_symbols.discard(pending);
     }
 }
 
@@ -4686,23 +4693,25 @@ impl TypeEvaluator.get_narrowed_type_for_expr(
     if key is None {
         return None;
     }
-    if key in self._flow_pending_keys {
+    flow_node = _find_cfg_node_for(at_node);
+    pending: tuple[str, int] = (key, id(flow_node) if flow_node is not None else 0);
+    if pending in self._flow_pending_keys
+        or len(self._flow_pending_keys) >= FLOW_QUERY_DEPTH {
         return None;
     }
-    self._flow_pending_keys.add(key);
+    self._flow_pending_keys.add(pending);
     try {
         narrowing_target = NarrowingTarget(
             key=key,
             declared_type=declared_type,
             deps=frozenset(reference_key_deps(expr)),
         );
-        flow_node = _find_cfg_node_for(at_node);
         if flow_node is not None {
             return self._get_type_from_flow_node(narrowing_target, flow_node, set());
         }
         return None;
     } finally {
-        self._flow_pending_keys.discard(key);
+        self._flow_pending_keys.discard(pending);
     }
 }
 
@@ -4855,7 +4864,7 @@ impl TypeEvaluator._get_type_from_flow_node(
             }
         }
 
-        if isinstance(pred, AssertStmt) {
+        if isinstance(pred, AssertStmt) and not self._node_encloses(pred, flow_node) {
             predicate = self._find_predicate_for(target, pred.condition);
             if predicate is not None {
                 narrowed = self._apply_narrowing(

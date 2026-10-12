@@ -680,6 +680,14 @@ impl Symbol.storage.getter -> SymbolStorage {
         }
         return SymbolStorage.CAPTURED;
     }
+    if (
+        def_scope is not owner
+        and not self.imported
+        and isinstance(owner, Ability)
+        and owner.is_method
+    ) {
+        return SymbolStorage.PARAM;
+    }
     return SymbolStorage.LOCAL;
 }
 
@@ -810,7 +818,7 @@ impl UniScopeNode.lookup(
     if decl is not None {
         decl_scope = decl.sym_tab;
         if decl_scope is not None {
-            return decl_scope.lookup(name, deep=True, incl_inner_scope=False);
+            return decl_scope.lookup(name, deep=deep, incl_inner_scope=False);
         }
     }
     return None;
@@ -911,11 +919,14 @@ impl UniScopeNode.get_enclosing_captures -> list[Symbol] {
                 tab = sym.parent_tab;
             }
         }
-        if (
-            (tab is None)
-            or same_lexical_scope(tab, self)
-            or not isinstance(tab, (Ability, ImplDef, LambdaExpr, Test))
-        ) {
+        if (tab is None) or same_lexical_scope(tab, self) {
+            continue;
+        }
+        frame: (UniScopeNode | None) = tab;
+        while frame is not None and not UniScopeNode.is_python_scoping(frame) {
+            frame = frame.parent_scope;
+        }
+        if not isinstance(frame, (Ability, ImplDef, LambdaExpr, Test)) {
             continue;
         }
 
@@ -2318,6 +2329,16 @@ impl FuncSignature.postinit -> None {
 }
 
 
+impl FuncSignature.get_named_parameters -> list[ParamVar] {
+    params: list[ParamVar] = [];
+    params.extend(self.posonly_params);
+    if self.params is not None {
+        params.extend(self.params);
+    }
+    params.extend(self.kwonlyargs);
+    return params;
+}
+
 impl FuncSignature.get_parameters -> list[ParamVar] {
     params: list[ParamVar] = [];
     params.extend(self.posonly_params);
@@ -3514,6 +3535,18 @@ impl FuncCall.callee_decl.setter(callee_decl: (Ability | None)) {
     }
 }
 
+impl FuncCall.callee_signature.getter -> (TypeBase | None) {
+    found = [self->:CalleeSignature:->];
+    return found[0] if found else None;
+}
+
+impl FuncCall.callee_signature.setter(callee_signature: (TypeBase | None)) {
+    del [edge self->:CalleeSignature:->];
+    if callee_signature is not None {
+        self +>:CalleeSignature:+> callee_signature;
+    }
+}
+
 impl Import.absorbed_mod.getter -> (Module | None) {
     found = [self->:Absorbs:->];
     return found[0] if found else None;
@@ -3766,6 +3799,28 @@ impl kind_has_runtime_binding(
 
 impl has_runtime_binding(sym: Symbol, space: CodeContext) -> bool {
     return kind_has_runtime_binding(sym.binding_kind, resolved_decl_of(sym), space);
+}
+
+impl is_comptime_stmt(nd: UniNode) -> bool {
+    if isinstance(nd, Ability) {
+        return nd.is_comptime;
+    }
+    if isinstance(nd, Assignment) {
+        return nd.is_comptime;
+    }
+    if isinstance(nd, IfStmt) {
+        return nd.is_comptime;
+    }
+    if isinstance(nd, InForStmt) {
+        return nd.is_comptime;
+    }
+    if isinstance(nd, AssertStmt) {
+        return nd.is_comptime;
+    }
+    if isinstance(nd, Import) {
+        return nd.is_comptime;
+    }
+    return False;
 }
 
 impl is_client_destined(nd: UniNode) -> bool {

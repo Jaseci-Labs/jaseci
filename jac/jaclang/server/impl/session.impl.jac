@@ -294,7 +294,72 @@ def _ancestry_of(arch: (object | None)) -> list[str] {
 }
 
 
+def _frozen_value(value: any) -> bool {
+    import datetime;
+    import decimal;
+    import enum;
+    import uuid;
+    if value is None
+        or isinstance(
+            value,
+            (
+                bool,
+                int,
+                float,
+                complex,
+                str,
+                bytes,
+                decimal.Decimal,
+                uuid.UUID,
+                datetime.date,
+                datetime.time,
+                datetime.timedelta
+            )
+        ) {
+        return True;
+    }
+    if isinstance(value, enum.Enum) {
+        return _frozen_value(value.value);
+    }
+    if isinstance(value, (tuple, frozenset)) {
+        return all(_frozen_value(item) for item in value);
+    }
+    return False;
+}
+
+
+def _settle_written(anchor: Anchor, seen: int) {
+    if seen and anchor.__dict__.get('_field_written', 0) == seen {
+        anchor.__dict__.pop('_field_written', None);
+    }
+}
+
+
+def _frozen_fields(anchor: Anchor) -> bool {
+    if anchor.__dict__.get('_field_written') {
+        return False;
+    }
+    arch = anchor.archetype;
+    if not type(arch).__dict__.get('__jac_tracked__', False) {
+        return False;
+    }
+    fields = arch?.__dict__;
+    if not isinstance(fields, dict) {
+        return False;
+    }
+    for (name, value) in fields.items() {
+        if name != '__jac__' and not _frozen_value(value) {
+            return False;
+        }
+    }
+    return True;
+}
+
+
 def _is_serialization_conflict(e: Exception) -> bool {
+    if isinstance(e, WriteConflict) {
+        return False;
+    }
     seen = 0;
     cur: (BaseException | None) = e;
     while cur is not None and seen < 8 {
@@ -312,42 +377,133 @@ def _is_serialization_conflict(e: Exception) -> bool {
 }
 
 
-def _json_default(o: object) -> str {
-    return str(o);
+def _is_lock_timeout(e: Exception) -> bool {
+    seen = 0;
+    cur: (BaseException | None) = e;
+    while cur is not None and seen < 8 {
+        c: BaseException = cur;
+        for arg in getattr(c, 'args', ()) {
+            if isinstance(arg, dict) and arg.get('C') == '55P03' {
+                return True;
+            }
+        }
+        cur = c.__cause__ or c.__context__;
+        seen += 1;
+    }
+    return False;
 }
 
 
-def _persist_hash(anchor: Anchor, props: (any | None) = None) -> int {
-    import from json { dumps }
-    import from jaclang.data.serializer { Serializer }
-    try {
-        data = props;
-        if data is None {
-            data = Serializer.serialize(anchor, include_type=True);
-        }
-        if isinstance(data, dict) {
-            data.pop('edges', None);
-        }
-        return hash(dumps(data, sort_keys=True));
-    } except Exception {
-        return 0;
+impl RowLedger.postinit -> None {
+    self._committed = {};
+    self._upserted = {};
+    self._removed = set();
+    self._joined = False;
+}
+
+
+impl RowLedger._reset -> None {
+    self._upserted = {};
+    self._removed = set();
+    self._joined = False;
+}
+
+
+impl RowLedger.current(id: UUID) -> (RowState | None) {
+    if id in self._removed {
+        return None;
     }
+    written = self._upserted.get(id);
+    return written if written is not None else self._committed.get(id);
+}
+
+
+impl RowLedger.write_version(id: UUID) -> int {
+    if id in self._removed {
+        prior = self._committed.get(id);
+        return prior.version + 1 if prior is not None else 0;
+    }
+    state = self.current(id);
+    return state.version if state is not None else 0;
+}
+
+
+impl RowLedger.loaded(id: UUID, state: RowState) -> None {
+    if id in self._upserted {
+        self._upserted[id] = state;
+    } else {
+        self._committed[id] = state;
+    }
+}
+
+
+impl RowLedger.upserted(id: UUID, state: RowState) -> None {
+    self._removed.discard(id);
+    self._upserted[id] = state;
+}
+
+
+impl RowLedger.removed(id: UUID) -> None {
+    self._upserted.pop(id, None);
+    self._removed.add(id);
+}
+
+
+impl RowLedger.joined -> None {
+    self._joined = True;
+}
+
+
+impl RowLedger.forget(id: UUID) -> None {
+    self._committed.pop(id, None);
+}
+
+
+impl RowLedger.in_flight -> bool {
+    return bool(self._upserted) or bool(self._removed) or self._joined;
+}
+
+
+impl RowLedger.promote -> None {
+    self._committed.update(self._upserted);
+    for id in self._removed {
+        self._committed.pop(id, None);
+    }
+    self._reset();
+}
+
+
+impl RowLedger.discard -> TxnWrites {
+    lost = TxnWrites(
+        upserted=list(self._upserted), removed=list(self._removed), joined=self._joined
+    );
+    self._reset();
+    self.rollbacks += 1;
+    return lost;
+}
+
+
+impl RowLedger.clear -> None {
+    self._committed = {};
+    self._reset();
 }
 
 
 impl Session.postinit -> None {
     self._init_memory();
     self._fetch_count = 0;
-    self._flushed_hash = {};
-    self._txn_changed = set();
+    self._rows = RowLedger();
+    self._lost = False;
     self._active_units = 0;
     self._flushing = None;
     self._read_scopes = 0;
     self._ro_units = 0;
     self._unit_stack = [];
     self._snapshot_reads = set();
-    self._version_seen = {};
     self._foreign_refs = set();
+    self._contended = set();
+    self._queued = [];
+    self._last_conflict = set();
 }
 
 
@@ -439,7 +595,6 @@ impl Session.delete(id: UUID) -> None {
     with self._lock {
         self.__mem__.pop(id, None);
         self._dirty.pop(id, None);
-        self._flushed_hash.pop(id, None);
         self._deleted.add(id);
     }
 }
@@ -462,7 +617,7 @@ impl Session.`has(id: UUID) -> bool {
         if not _is_serialization_conflict(e) {
             raise;
         }
-        self._recover_conflict();
+        self._replay_txn(e);
         self.read_barrier();
         return id in self.store.existing([id]);
     }
@@ -526,7 +681,7 @@ impl Session.batch_get(ids: list[UUID]) -> dict[UUID, Anchor] {
                 if attempt == 1 or not _is_serialization_conflict(e) {
                     raise;
                 }
-                self._recover_conflict();
+                self._replay_txn(e);
             }
         }
     }
@@ -542,21 +697,30 @@ impl Session.commit(anchor: (Anchor | None) = None) -> None {
             self._boot_store();
         }
         if self._store is not None {
+            if self._lost {
+                self._rollback_txn();
+                raise TransactionLost(anchor_id=UUID(int=0));
+            }
             attempt = 0;
             while True {
                 try {
                     self.flush(full=True);
-                    self._store.commit();
+                    self._commit_txn();
+                    self._leave_queue();
                     break;
                 } except Exception as e {
-                    if not _is_serialization_conflict(e) or attempt >= MAX_RETRIES {
+                    if not _is_serialization_conflict(e) {
+                        self._rollback_txn();
                         raise;
                     }
+                    self._replay_txn(e, exhausted=attempt >= MAX_RETRIES);
                     attempt += 1;
-                    self._recover_conflict();
+                    logger.info(
+                        "serialization conflict at commit; replaying the write set "
+                        f"(attempt {attempt}/{MAX_RETRIES})"
+                    );
                 }
             }
-            self._txn_changed.clear();
         } else {
             self._dirty.clear();
             self._deleted.clear();
@@ -567,40 +731,31 @@ impl Session.commit(anchor: (Anchor | None) = None) -> None {
 
 
 impl Session.abort -> None {
-    if self._store is not None {
-        self._store.rollback();
+    with self._lock {
+        self._contended |= self._last_conflict;
+        self._last_conflict = set();
+        self._rollback_txn();
+        self._forget_loaded();
+        self._dirty.clear();
+        self._deleted.clear();
+        self._snapshot_reads.clear();
+        self._on_commit = [];
+        self._lost = False;
     }
-    self._evict_uncommitted();
-    self._dirty.clear();
-    self._deleted.clear();
-    self._drop_snapshot_reads();
-    self._on_commit = [];
 }
 
 
-impl Session._evict_uncommitted -> None {
-    import from jaclang.data.serializer { Serializer }
+impl Session._forget_loaded -> None {
+    import from jaclang.runtime.osp_graph_sv { sv_forget_edge }
     for (id, anchor) in list(self.__mem__.items()) {
-        if not anchor.persistent or not anchor.is_populated() {
+        if not anchor.is_populated() or not anchor.persistent {
             continue;
         }
-        known = self._flushed_hash.get(id);
-        dirty = known is None;
-        if not dirty {
-            try {
-                dirty = Serializer._compute_hash(anchor) != known;
-            } except Exception {
-                dirty = True;
-            }
+        if isinstance(anchor, EdgeAnchor) {
+            sv_forget_edge(anchor, self);
         }
-        if dirty {
-            if isinstance(anchor, EdgeAnchor) {
-                import from jaclang.runtime.osp_graph_sv { sv_forget_edge }
-                sv_forget_edge(anchor, self);
-            }
-            self.__mem__.pop(id, None);
-            self._flushed_hash.pop(id, None);
-        }
+        self.__mem__.pop(id, None);
+        self._rows.forget(id);
     }
 }
 
@@ -653,7 +808,7 @@ impl Session._register_ro_writers -> str {
 impl Session._raise_ro_retry -> None {
     import from uuid { UUID as _UUID }
     last = self._register_ro_writers();
-    self._rollback_quiet();
+    self._rollback_txn();
     raise ReadOnlyRetry(anchor_id=_UUID(int=0), unit_key=last);
 }
 
@@ -665,7 +820,7 @@ impl Session._drop_snapshot_reads -> None {
             continue;
         }
         stale = self.__mem__.pop(id, None);
-        self._flushed_hash.pop(id, None);
+        self._rows.forget(id);
         if isinstance(stale, EdgeAnchor) {
             sv_forget_edge(stale, self);
         }
@@ -679,19 +834,12 @@ impl Session._ensure_txn -> None {
         if self._store is None {
             return;
         }
+        self._reclaim_dead_txn();
         wanted = self._txn_isolation();
         if not self._store.in_txn() {
-            self._store.begin(wanted);
-            return;
-        }
-        if wanted is TxnIsolation.SERIALIZABLE
-            and self._store.txn_isolation() is TxnIsolation.SNAPSHOT_READ_ONLY {
-            if self._ro_units > 0 {
-                self._raise_ro_retry();
-            }
-            self._store.commit();
-            self._drop_snapshot_reads();
-            self._store.begin(TxnIsolation.SERIALIZABLE);
+            self._begin_txn(wanted);
+        } elif wanted is TxnIsolation.SERIALIZABLE {
+            self._begin_writable();
         }
     }
 }
@@ -729,12 +877,12 @@ impl Session.read_scope_exit -> None {
             return;
         }
         try {
-            self._store.commit();
+            self._commit_txn();
         } except Exception as e {
             logger.warning(
                 f"read snapshot close failed; rolling back: {type(e).__name__}: {e}"
             );
-            self._rollback_quiet();
+            self._rollback_txn();
         }
         self._drop_snapshot_reads();
     }
@@ -748,19 +896,24 @@ impl Session.unit_exit -> None {
             if self._active_units > 0 {
                 return;
             }
+            if self._lost {
+                self.abort();
+                raise TransactionLost(anchor_id=UUID(int=0));
+            }
             if self._store is None or not self._store.in_txn() {
                 return;
             }
             try {
                 self.commit();
+            } except TransactionLost {
+                self.abort();
+                raise;
             } except WriteConflict {
-                self._rollback_quiet();
                 raise;
             } except Exception as e {
                 logger.warning(
-                    f"unit close commit failed; rolling back: {type(e).__name__}: {e}"
+                    f"unit close commit failed; rolled back: {type(e).__name__}: {e}"
                 );
-                self._rollback_quiet();
             }
         } finally {
             if self._unit_stack {
@@ -789,24 +942,61 @@ impl Session.get_fetch_count -> int {
 }
 
 
-impl Session._rollback_quiet -> None {
+impl Session._commit_txn -> None {
     if self._store is not None {
-        try {
-            self._store.rollback();
-        } except Exception {}
+        self._store.commit();
+        self._rows.promote();
     }
 }
 
 
-impl Session._recover_conflict -> None {
-    self._rollback_quiet();
-    for id in list(self._txn_changed) {
-        if id in self.__mem__ {
-            self._flushed_hash.pop(id, None);
-            self._dirty[id] = None;
-        } else {
+impl Session._rollback_txn -> None {
+    if self._store is not None {
+        try {
+            self._store.rollback();
+        } except Exception as e {
+            logger.debug(f"rollback failed: {type(e).__name__}: {e}");
+        }
+    }
+    lost = self._rows.discard();
+    if lost.joined {
+        self._lost = True;
+    }
+    for id in lost.upserted {
+        anchor = self.__mem__.get(id);
+        if anchor is None {
+            continue;
+        }
+        prior = self._rows.current(id);
+        anchor.hash = prior.hash if prior is not None else 0;
+        self._dirty[id] = None;
+    }
+    for id in lost.removed {
+        if id not in self.__mem__ {
             self._deleted.add(id);
         }
+    }
+}
+
+
+impl Session._replay_txn(cause: Exception, exhausted: bool = False) -> None {
+    self._rollback_txn();
+    if exhausted {
+        self._lost = True;
+    }
+    if self._lost {
+        raise TransactionLost(anchor_id=UUID(int=0)) from cause;
+    }
+}
+
+
+impl Session._reclaim_dead_txn -> None {
+    if not self._rows.in_flight() or self._store is None or self._store.in_txn() {
+        return;
+    }
+    self._rollback_txn();
+    if self._lost {
+        raise TransactionLost(anchor_id=UUID(int=0));
     }
 }
 
@@ -822,7 +1012,7 @@ impl Session.read_barrier -> None {
         if not _is_serialization_conflict(e) {
             raise;
         }
-        self._recover_conflict();
+        self._replay_txn(e);
         self._ensure_txn();
         self.flush();
     }
@@ -830,9 +1020,6 @@ impl Session.read_barrier -> None {
 
 
 impl Session.flush(full: bool = False) -> None {
-    import threading;
-    import from jaclang.data.serializer { Serializer }
-
     if self._store is None {
         return;
     }
@@ -851,79 +1038,114 @@ impl Session.flush(full: bool = False) -> None {
 
 
 impl Session._flush_locked(full: bool) -> None {
-    if self._store is not None {
-        candidates: list[UUID];
-        if full {
-            candidates = list(self.__mem__.keys());
-        } else {
-            candidates = list(self._dirty.keys());
-        }
-        import from jaclang.data.serializer { Serializer }
-        rows: list[AnchorRow] = [];
-        pending: list[tuple[Anchor, int]] = [];
-        for id in candidates {
-            anchor = self.__mem__.get(id);
-            if anchor is None or not anchor.persistent or not anchor.is_populated() {
-                continue;
-            }
-            props: any = None;
-            try {
-                props = Serializer.serialize(anchor, include_type=True);
-            } except Exception {}
-            h = _persist_hash(anchor, props);
-            if h != 0 and self._flushed_hash.get(id) == h and id not in self._dirty {
-                continue;
-            }
-
-            import from jaclang { JacRuntimeInterface as JacRI }
-            if not JacRI.check_write_access(anchor, op_hint="field_write") {
-                continue;
-            }
-            rows.append(self._serialize(anchor, props));
-            pending.append((anchor, h));
-        }
-        if rows or self._deleted {
-            self.ensure_writable_txn();
-        }
-        if rows {
-            self._store.upsert(rows);
-            for (i, (anchor, h)) in enumerate(pending) {
-                aid = anchor.ensure_id();
-                self._flushed_hash[aid] = h;
-                anchor.hash = h;
-                self._version_seen[aid] = rows[i].version;
-                self._txn_changed.add(aid);
-            }
-        }
-        if self._deleted {
-            self._store.delete(list(self._deleted));
-            for id in self._deleted {
-                self._flushed_hash.pop(id, None);
-                self._txn_changed.add(id);
-            }
-            self._deleted.clear();
-        }
-        self._dirty.clear();
+    store = self._store;
+    if store is None {
+        return;
     }
+    self._reclaim_dead_txn();
+    unflushed: list[UnflushedAnchor] = [];
+    while True {
+        epoch = self._rows.rollbacks;
+        unflushed = self._unflushed(full);
+        if unflushed or self._deleted {
+            self._begin_writable();
+        }
+        if self._rows.rollbacks == epoch {
+            break;
+        }
+    }
+    if unflushed {
+        rows = [self._serialize(u.anchor, u.stored) for u in unflushed];
+        try {
+            store.upsert(rows);
+        } except WriteConflict as wc {
+            self._last_conflict = {wc.anchor_id};
+            raise;
+        } except Exception as e {
+            if self._queued or not _is_lock_timeout(e) {
+                raise;
+            }
+            self._last_conflict = {row.id for row in rows};
+            raise WriteConflict(anchor_id=rows[0].id) from e;
+        }
+        for (row, u) in zip(rows, unflushed) {
+            self._rows.upserted(row.id, RowState(hash=u.hash, version=row.version));
+            u.anchor.hash = u.hash;
+            _settle_written(u.anchor, u.written);
+        }
+    }
+    if self._deleted {
+        try {
+            store.delete(list(self._deleted));
+        } except Exception as e {
+            if self._queued or not _is_lock_timeout(e) {
+                raise;
+            }
+            self._last_conflict = set(self._deleted);
+            raise WriteConflict(anchor_id=sorted(self._deleted)[0]) from e;
+        }
+        for id in self._deleted {
+            self._rows.removed(id);
+        }
+        self._deleted.clear();
+    }
+    self._dirty.clear();
 }
 
 
-impl Session._serialize(anchor: Anchor, props: (any | None) = None) -> AnchorRow {
+impl Session._unflushed(full: bool) -> list[UnflushedAnchor] {
+    import from jaclang { JacRuntimeInterface as JacRI }
     import from jaclang.data.serializer { Serializer }
-    if props is None {
-        props = Serializer.serialize(anchor, include_type=True);
-        if isinstance(props, dict) {
-            props.pop('edges', None);
+    candidates = list(self.__mem__.keys()) if full else list(self._dirty.keys());
+    out: list[UnflushedAnchor] = [];
+    for id in candidates {
+        anchor = self.__mem__.get(id);
+        if anchor is None or not anchor.persistent or not anchor.is_populated() {
+            continue;
         }
+        known = self._rows.current(id);
+        if full
+            and id not in self._dirty
+            and known is not None
+            and known.hash != 0
+            and _frozen_fields(anchor) {
+            continue;
+        }
+        written = anchor.__dict__.get('_field_written', 0);
+        stored: (dict[str, object] | None) = None;
+        try {
+            stored = Serializer.stored_form(anchor);
+        } except Exception {}
+        h = Serializer.stored_hash(anchor, stored);
+        if h != 0 and known is not None and known.hash == h and id not in self._dirty {
+            _settle_written(anchor, written);
+            continue;
+        }
+        if not JacRI.check_write_access(anchor, op_hint="field_write") {
+            continue;
+        }
+        out.append(
+            UnflushedAnchor(anchor=anchor, stored=stored, hash=h, written=written)
+        );
+    }
+    return out;
+}
+
+
+impl Session._serialize(
+    anchor: Anchor, stored: (dict[str, object] | None) = None
+) -> AnchorRow {
+    import from jaclang.data.serializer { Serializer }
+    import from jaclang.data.type_identity { storage_type, type_module }
+    if stored is None {
+        stored = Serializer.stored_form(anchor);
     }
     arch = anchor.archetype;
     arch_type = '';
     arch_module = '';
     fingerprint = '';
     if anchor.is_populated() and arch is not None {
-        import from jaclang.data.type_identity { storage_type }
         arch_type = storage_type(type(arch));
-        import from jaclang.data.type_identity { type_module }
         arch_module = type_module(type(arch));
         fp = type(arch)?.__jac_fingerprint__;
         fingerprint = fp if isinstance(fp, str) else '';
@@ -944,8 +1166,8 @@ impl Session._serialize(anchor: Anchor, props: (any | None) = None) -> AnchorRow
         arch_module=arch_module,
         fingerprint=fingerprint,
         root_id=anchor.root,
-        version=self._version_seen.get(row_id, 0),
-        props=props if isinstance(props, dict) else {},
+        version=self._rows.write_version(row_id),
+        props=stored,
         src=src,
         dst=dst,
         undirected=undirected,
@@ -994,10 +1216,8 @@ impl Session._materialize(row: AnchorRow) -> (Anchor | None) {
         }
         anchor.version = row.version;
     }
-    self._version_seen[row.id] = row.version;
     self.__mem__[row.id] = anchor;
-    self._flushed_hash[row.id] = _persist_hash(anchor);
-    anchor.hash = self._flushed_hash[row.id];
+    self._rows.loaded(row.id, RowState(hash=anchor.hash, version=row.version));
     if self._store is not None
         and self._store.txn_isolation() is TxnIsolation.SNAPSHOT_READ_ONLY {
         self._snapshot_reads.add(row.id);
@@ -1048,16 +1268,132 @@ impl Session.ensure_writable_txn -> None {
         if self._store is None {
             return;
         }
+        self._begin_writable();
+        self._rows.joined();
+    }
+}
+
+
+impl Session._begin_writable -> None {
+    with self._lock {
+        if self._store is None {
+            return;
+        }
+        self._reclaim_dead_txn();
         if self._store.txn_isolation() is TxnIsolation.SNAPSHOT_READ_ONLY {
             if self._ro_units > 0 {
                 self._raise_ro_retry();
             }
-            self._store.commit();
+            self._commit_txn();
             self._drop_snapshot_reads();
-            self._store.begin(TxnIsolation.SERIALIZABLE);
+            self._begin_txn(TxnIsolation.SERIALIZABLE);
         } elif not self._store.in_txn() {
-            self._store.begin(TxnIsolation.SERIALIZABLE);
+            self._begin_txn(TxnIsolation.SERIALIZABLE);
         }
+    }
+}
+
+
+impl Session._begin_txn(isolation: TxnIsolation) -> None {
+    backing = self._store;
+    if backing is None {
+        return;
+    }
+    backing.begin(isolation);
+    if not self._queued and isolation is TxnIsolation.SERIALIZABLE {
+        backing.lock_wait(FIRST_LOCK_WAIT);
+    }
+}
+
+
+impl Session.wait_turn -> None {
+    with self._lock {
+        backing = self._store;
+        if backing is None or not self._contended {
+            return;
+        }
+        wanted = sorted(self._contended);
+        if wanted != sorted(self._queued) {
+            if self._queued {
+                held = self._queued;
+                self._queued = [];
+                backing.queue_exit(held);
+            }
+            if not backing.queue_enter(wanted) {
+                self._contended.clear();
+                return;
+            }
+            self._queued = wanted;
+        }
+        if backing.in_txn() {
+            return;
+        }
+        pinned = sorted(self._queued);
+        for _ in range(PIN_ATTEMPTS) {
+            backing.begin(TxnIsolation.SERIALIZABLE);
+            try {
+                backing.lock_rows(pinned);
+                return;
+            } except Exception as e {
+                if not _is_serialization_conflict(e) {
+                    raise;
+                }
+                backing.rollback();
+            }
+        }
+    }
+}
+
+
+glob _SESSION_POOL: list[any] = [];
+
+
+def _session_pool -> any {
+    if not _SESSION_POOL {
+        import from concurrent.futures { ThreadPoolExecutor }
+        _SESSION_POOL.append(
+            ThreadPoolExecutor(
+                max_workers=SESSION_THREADS, thread_name_prefix="jac-session-io"
+            )
+        );
+    }
+    return _SESSION_POOL[0];
+}
+
+
+async def _off_loop(work: Callable) -> any {
+    import asyncio;
+    import contextvars;
+    context = contextvars.copy_context();
+    def in_context -> any {
+        return context.run(work);
+    }
+    return await asyncio.get_running_loop().run_in_executor(
+        _session_pool(), in_context
+    );
+}
+
+
+impl Session.acommit(anchor: (Anchor | None) = None) -> None {
+    def settle {
+        self.commit(anchor);
+    }
+    await _off_loop(settle);
+}
+
+
+impl Session._leave_queue -> None {
+    self._contended.clear();
+    self._last_conflict = set();
+    held = self._queued;
+    self._queued = [];
+    if not held or self._store is None {
+        return;
+    }
+    try {
+        self._store.queue_exit(held);
+    } except Exception as e {
+        logger.warning(f"releasing the write queue failed: {type(e).__name__}: {e}");
     }
 }
 
@@ -1071,12 +1407,12 @@ impl Session.run_request(body: Callable) -> any {
         } except Exception as e {
             if (
                 self._store is not None
-                and _is_serialization_conflict(e)
+                and (isinstance(e, WriteConflict) or _is_serialization_conflict(e))
                 and attempt < MAX_RETRIES
             ) {
                 attempt += 1;
                 logger.info(
-                    f"serialization conflict; re-running request "
+                    "serialization conflict; re-running request "
                     f"(attempt {attempt}/{MAX_RETRIES})"
                 );
                 self.abort();
@@ -1095,14 +1431,15 @@ impl Session.close -> None {
     } except Exception as e {
         logger.warning(f"commit on close failed: {type(e).__name__}: {e}");
     }
-
+    self._leave_queue();
     if self._store is not None {
         self._store.close();
     }
     self.__mem__.clear();
     self._dirty.clear();
     self._deleted.clear();
-    self._flushed_hash.clear();
+    self._rows.clear();
+    self._lost = False;
     import from jaclang.runtime.osp_graph_sv { sv_store_closed }
     sv_store_closed(self);
 }

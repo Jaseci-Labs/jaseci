@@ -3,7 +3,8 @@ glob SHARED_INIT_SYMBOL: str = "__jac_shared_init",
      ENTRY_SYMBOL: str = "jac_entry",
      WASM_INIT_SYMBOL: str = "__jac_glob_init",
      REGION_DIED_HOOK: str = "__jac_region_died_hook",
-     STR_NEW_SYMBOL: str = "__jac_str_new";
+     STR_NEW_SYMBOL: str = "__jac_str_new",
+     RC_THREADED_SYMBOL: str = "__jac_rc_threaded";
 
 obj GlueUnit {
     has prefix: str,
@@ -49,6 +50,15 @@ def entry_preamble_ir(spec: GlueSpec) -> str {
     if not spec.shared and root_unit is not None and root_unit.entry_symbol {
         decls.append(_decl_void_fn(root_unit.entry_symbol));
         calls.append(f'  call void @"{root_unit.entry_symbol}"()');
+    }
+    if spec.shared {
+        decls.append(f"@{RC_THREADED_SYMBOL} = weak global i8 0\n");
+        calls.insert(
+            0, f"  store atomic i8 1, ptr @{RC_THREADED_SYMBOL} monotonic, align 1"
+        );
+    }
+    if spec.shared and spec.platform == "pe" {
+        calls.insert(0, "  call void @__jac_win_floor_init()");
     }
     name = SHARED_INIT_SYMBOL if spec.shared else ENTRY_SYMBOL;
     body = "\n".join(calls) + "\n" if calls else "";
@@ -216,7 +226,10 @@ def entry_pe_ir -> str {
         + argv_globals_ir()
         + "declare void @exit(i32)\n\n"
         + "@_fltused = weak global i32 0\n\n"
-        + "declare i32 @__getmainargs(ptr, ptr, ptr, i32, ptr)\n\n"
+        + "declare i32 @_configure_narrow_argv(i32)\n"
+        + "declare i32 @_initialize_narrow_environment()\n"
+        + "declare ptr @__p___argc()\n"
+        + "declare ptr @__p___argv()\n\n"
         + "define i32 @main(i32 %argc, ptr %argv) {\n"
         + "entry:\n"
         + "    store i32 %argc, ptr @__jac_argc\n"
@@ -226,12 +239,11 @@ def entry_pe_ir -> str {
         + "}\n\n"
         + "define void @_jac_win_start() {\n"
         + "entry:\n"
-        + "    %argc.addr = alloca i32\n"
-        + "    %argv.addr = alloca ptr\n"
-        + "    %env.addr = alloca ptr\n"
-        + "    %si = alloca i32\n"
-        + "    store i32 0, ptr %si\n"
-        + "    %gr = call i32 @__getmainargs(ptr %argc.addr, ptr %argv.addr, ptr %env.addr, i32 0, ptr %si)\n"
+        + "    call void @__jac_win_floor_init()\n"
+        + "    %cfg = call i32 @_configure_narrow_argv(i32 1)\n"
+        + "    %env = call i32 @_initialize_narrow_environment()\n"
+        + "    %argc.addr = call ptr @__p___argc()\n"
+        + "    %argv.addr = call ptr @__p___argv()\n"
         + "    %ac = load i32, ptr %argc.addr\n"
         + "    %av = load ptr, ptr %argv.addr\n"
         + "    %r = call i32 @main(i32 %ac, ptr %av)\n"
@@ -281,6 +293,10 @@ def link_glue_ir(spec: GlueSpec) -> tuple[str, list[str]] {
     }
     if spec.needs_atexit_shim {
         parts.append(atexit_shim_ir());
+    }
+    if spec.platform == "pe" {
+        import from jaclang.compiler.backends.native.win_floor { win_floor_ir }
+        parts.append(win_floor_ir());
     }
     if spec.shared {
         exports.append(SHARED_INIT_SYMBOL);

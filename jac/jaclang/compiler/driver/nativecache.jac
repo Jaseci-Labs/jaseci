@@ -34,6 +34,8 @@ import from jaclang.compiler.driver.jir {
 import from jaclang.compiler.driver.compile_options { CompileOptions }
 import from jaclang.compiler.driver.native_iface { NativeIface }
 
+glob SLOW_STEP_SECONDS: float = 2.0;
+
 obj NativeUnitEntry {
     has path: str,
         digest: str,
@@ -57,11 +59,39 @@ obj NativeUnitRegistry {
         not_native: dict[str, str] = {},
         failures: dict[str, str] = {},
         compiled_paths: list[str] = [],
-        verdicts: dict[str, tuple[str, NativeVerdict]] = {};
+        verdicts: dict[str, tuple[str, NativeVerdict]] = {},
+        progress: (Callable[[str], None] | None) = None,
+        progress_steps: int = 0;
 
     def postinit {
         self.building = set();
         self.checking = set();
+    }
+
+    def note_step(verb: str, path: str = "", detail: str = "") -> float {
+        if self.progress is not None {
+            self.progress_steps += 1;
+            label = detail;
+            if path {
+                import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
+                try {
+                    label = native_unit_identity(path);
+                } except Exception {
+                    label = os.path.basename(path);
+                }
+            }
+            self.progress(f"  [{self.progress_steps:>4}] {verb:<9} {label}");
+        }
+        return time.perf_counter();
+    }
+
+    def note_slow_step(verb: str, path: str, started: float) {
+        elapsed = time.perf_counter() - started;
+        if self.progress is not None and elapsed >= SLOW_STEP_SECONDS {
+            self.progress(
+                f"         {verb} {os.path.basename(path) or 'units'} took {elapsed:.1f}s"
+            );
+        }
     }
 
     def clear {
@@ -89,6 +119,23 @@ obj NativeUnitRegistry {
         self.entries.pop(real, None);
         self.not_native.pop(real, None);
         self.failures.pop(real, None);
+    }
+
+    def adopt_dep_digests(path: str, digests: dict[str, str]) -> bool {
+        real = os.path.realpath(path);
+        session = self.session;
+        if session is None or real not in session.lowered {
+            return False;
+        }
+        ent = self.entries.get(real);
+        if ent is None {
+            return False;
+        }
+        for (dep, digest) in digests.items() {
+            ent.dep_digests[os.path.realpath(dep)] = digest;
+        }
+        self._event("native_dep_adopt");
+        return True;
     }
 
     static def _source_key(path: str) -> (str | None) {
@@ -579,6 +626,70 @@ obj NativeUnitRegistry {
         }
     }
 
+    def adopt_lowered(
+        path: str,
+        ir_text: str,
+        iface_text: str,
+        layout_json: str,
+        deps: list[str],
+        compile_deps: bytes,
+        options: (CompileOptions | None) = None
+    ) -> (NativeUnitEntry | None) {
+        import json;
+        import from jaclang.compiler.backends.native.na_compile_pass {
+            emit_unit_object,
+            optimize_unit_texts,
+            require_native_ir
+        }
+        import from jaclang.compiler.driver.native_iface { native_layout_from_dict }
+        import from jaclang.compiler.frontend.codeinfo { CodeGenTarget }
+        opts = options if options is not None else self._options();
+        resolved = os.path.realpath(path);
+        iface = NativeIface.from_bytes(iface_text.encode("utf-8"));
+        if iface is None {
+            self.failures[resolved] = (
+                "the kernel returned a native interface that does not decode"
+            );
+            return None;
+        }
+        iface.resolve_deps(resolved);
+        if opts.native_required_for(resolved) {
+            require_native_ir(ir_text);
+        }
+        if opts.debug_ir {
+            import from jaclang.compiler.frontend.host { active_host }
+            active_host().save_native_debug_ir(resolved, ir_text);
+        }
+        debug = bool(opts.native_debug);
+        bitcode = optimize_unit_texts(
+            [ir_text], opts, 0 if debug else int(opts.opt_level or 0)
+        )[0];
+        carrier = self.prog.hub.artifacts.get(resolved);
+        if carrier is None {
+            carrier = CodeGenTarget();
+            self.prog.hub.artifacts[resolved] = carrier;
+        }
+        carrier.llvm_ir = ir_text;
+        carrier.native_iface = iface;
+        carrier.native_bitcode = bitcode;
+        carrier.native_object = emit_unit_object(bitcode, opts) if debug else None;
+        carrier.native_layout = native_layout_from_dict(json.loads(layout_json))
+            if layout_json
+            else None;
+        carrier.native_deps = list(deps);
+        ent = self.record(
+            resolved,
+            iface,
+            opts,
+            dep_digests=self.dep_digests(list(deps)),
+            compile_deps=compile_deps
+        );
+        ent.bitcode = bitcode;
+        ent.object_bytes = carrier.native_object;
+        self.note_codegen(resolved, debug);
+        return ent;
+    }
+
     def _stash_products(resolved: str, gen: CodeGenTarget) {
         ent = self.entries.get(resolved);
         if ent is not None {
@@ -650,9 +761,10 @@ obj NativeUnitRegistry {
         }
         import from jaclang.compiler.driver.jir { write_module_cache }
         opts = options if options is not None else self._options();
-        started = time.perf_counter();
+        started = self.note_step("emit", detail=f"{len(pending)} objects in parallel");
         objects = emit_unit_objects(bitcodes, opts);
         self._timed("NATIVE_EMIT", started);
+        self.note_slow_step("emitting", "", started);
         for (ent, object_bytes) in zip(pending, objects) {
             ent.object_bytes = object_bytes;
             self._event("native_object_emit");
@@ -676,9 +788,10 @@ obj NativeUnitRegistry {
                 }
                 import from jaclang.compiler.driver.jir { write_module_cache }
                 opts = options if options is not None else self._options();
-                started = time.perf_counter();
+                started = self.note_step("emit", ent.path);
                 ent.object_bytes = emit_unit_object(ent.bitcode, opts);
                 self._timed("NATIVE_EMIT", started);
+                self.note_slow_step("emitting", ent.path, started);
                 self._event("native_object_emit");
                 write_module_cache(
                     ent.path, None, extra_sections=self.product_sections(ent.path)
@@ -800,10 +913,11 @@ obj NativeBuildSession {
             if mod is None {
                 self.source_keys[resolved] = NativeUnitRegistry._source_key(resolved);
                 opts.no_cgen = True;
-                started = time.perf_counter();
+                started = self.registry.note_step("analyze", resolved);
                 mod = self.prog.compile(resolved, use_str=use_str, options=opts);
                 self.registry._timed("NATIVE_ANALYSIS", started);
                 self.registry._event("native_unit_analysis");
+                self.registry.note_slow_step("analyzing", resolved, started);
             }
             if len(self.prog.errors_had) > errors_before {
                 return None;
@@ -823,14 +937,15 @@ obj NativeBuildSession {
             if tasks is not None {
                 tasks.pop(CompilationProduct.NATIVE_IR, None);
             }
-            mod.gen.llvm_ir = None;
+            mod.gen.drop_native_ir();
             mod.gen.native_iface = None;
             mod.gen.native_bitcode = None;
             mod.gen.native_object = None;
-            started = time.perf_counter();
+            started = self.registry.note_step("lower", resolved);
             self.prog.run_schedule(mod, [RcFactsPass, NaIRGenPass]);
             self.registry._timed("NATIVE_LOWER", started);
             self.registry._event("native_unit_lower");
+            self.registry.note_slow_step("lowering", resolved, started);
             if len(self.prog.errors_had) > errors_before
                 or mod.gen.native_iface is None {
                 return None;
@@ -880,6 +995,52 @@ obj NativeBuildSession {
         }
     }
 
+    def _optimize_in_parallel(paths: list[str]) -> set[str] {
+        """Ahead-of-time units with no cached bitcode are optimized together
+        on a thread pool; each worker parses into its own LLVM context.""";
+        import from jaclang.compiler.backends.native.na_compile_pass {
+            optimize_unit_texts,
+            require_native_ir
+        }
+        opts = self.prog.options;
+        if opts.native_debug
+            or opts.dump_ir_path
+            or not (opts.aot_mode or opts.skip_native_engine) {
+            return set();
+        }
+        todo: list[tuple[str, Module]] = [];
+        for path in paths {
+            mod = self.lowered.get(path);
+            if mod is None or mod.gen.llvm_ir is None {
+                continue;
+            }
+            cached = self.registry.ensure(path, compile_on_miss=False, options=opts);
+            if cached is not None and cached.bitcode is not None {
+                continue;
+            }
+            if opts.native_required_for(path) {
+                require_native_ir(str(mod.gen.llvm_ir));
+            }
+            todo.append((path, mod));
+        }
+        if len(todo) < 2 {
+            return set();
+        }
+        started = self.registry.note_step(
+            "optimize", detail=f"{len(todo)} units in parallel"
+        );
+        bitcodes = optimize_unit_texts(
+            [str(mod.gen.llvm_ir) for (_, mod) in todo], opts, int(opts.opt_level or 0)
+        );
+        self.registry._timed("NATIVE_OPTIMIZE", started);
+        self.registry.note_slow_step("optimizing", "", started);
+        for ((path, mod), bitcode) in zip(todo, bitcodes) {
+            mod.gen.native_bitcode = bitcode;
+            self.registry.note_codegen(path, False);
+        }
+        return {path for (path, _) in todo};
+    }
+
     def _finish(paths: list[str]) {
         """Optimize and persist only after every consumed interface agrees.
         Cyclic interface settlement reuses the analyzed trees and never emits
@@ -894,6 +1055,7 @@ obj NativeBuildSession {
                 raise RuntimeError(f"native source changed during analysis: {path}");
             }
         }
+        optimized = self._optimize_in_parallel(paths);
         for path in paths {
             mod = self.lowered.get(path);
             if mod is None {
@@ -912,12 +1074,21 @@ obj NativeBuildSession {
                 }
             }
             errors_before = len(self.prog.errors_had);
-            started = time.perf_counter();
-            self.prog.run_schedule(mod, [NativeCompilePass]);
-            self.registry._timed("NATIVE_OPTIMIZE", started);
+            if path not in optimized {
+                started = self.registry.note_step("optimize", path);
+                self.prog.run_schedule(mod, [NativeCompilePass]);
+                self.registry._timed("NATIVE_OPTIMIZE", started);
+                self.registry.note_slow_step("optimizing", path, started);
+            }
             if len(self.prog.errors_had) > errors_before
                 or mod.gen.native_bitcode is None {
-                raise RuntimeError(f"native product emission failed for {path}");
+                reasons = "\n".join(
+                    str(err) for err in self.prog.errors_had[errors_before:]
+                );
+                raise RuntimeError(
+                    f"native product emission failed for {path}"
+                        + (f":\n{reasons}" if reasons else "")
+                );
             }
             self.registry.record_module(mod, self.prog.options);
             self.registry._stash_products(path, mod.gen);
