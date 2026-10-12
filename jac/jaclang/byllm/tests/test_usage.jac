@@ -13,7 +13,7 @@ import types;
 import dataclasses;
 import litellm;
 import jaclang.byllm.llm as _byllm_llm_mod;
-import from jaclang.byllm.lib { Model, MockLLM }
+import from jaclang.byllm.lib { Model, MockLLM, OutputTruncatedError }
 import from jaclang.byllm.mtir { MTRuntime }
 import from jaclang.byllm.types {
     Tool,
@@ -65,14 +65,17 @@ class _FakeStreamResp {
 
 
 def _response(
-    usage: dict | None = None, model: str = MODEL, content: str = "hi"
+    usage: dict | None = None,
+    model: str = MODEL,
+    content: str = "hi",
+    finish_reason: str = "stop"
 ) -> dict {
     return {
         "model": model,
         "choices": [
             {
                 "message": {"role": "assistant", "content": content, "tool_calls": []},
-                "finish_reason": "stop"
+                "finish_reason": finish_reason
             }
         ],
         "usage": dict(TOKENS) if usage is None else usage
@@ -641,7 +644,9 @@ def _recovery_case -> MTRuntime {
 }
 
 
-def _compaction_case -> MTRuntime {
+def _compaction_case(
+    content: str = "a summary", finish_reason: str = "stop"
+) -> MTRuntime {
     sys_msg = {"role": "system", "content": "You are a helpful assistant."};
     user_msg = {"role": "user", "content": "Do the thing."};
     round1 = [
@@ -674,12 +679,20 @@ def _compaction_case -> MTRuntime {
         "model_call_no_stream",
         return_value=_response(
             {"prompt_tokens": 200, "completion_tokens": 20, "total_tokens": 220},
-            content="a summary"
+            content=content,
+            finish_reason=finish_reason
         )
     ) {
-        _byllm_llm_mod._default_compact(messages, 1, summariser, parent_mt);
+        try {
+            _byllm_llm_mod._default_compact(messages, 1, summariser, parent_mt);
+        } except OutputTruncatedError { }
     }
     return parent_mt;
+}
+
+
+def _cut_off_compaction_case -> MTRuntime {
+    return _compaction_case(content="", finish_reason="length");
 }
 
 
@@ -687,12 +700,13 @@ test "byLLM's own follow-up calls get a call_kind distinct from react_iteration"
     cases = [
         ("final_answer_restream", _restream_case),
         ("recovery", _recovery_case),
-        ("compaction", _compaction_case)
+        ("compaction", _compaction_case),
+        ("compaction", _cut_off_compaction_case)
     ];
     for (expected_kind, run) in cases {
         mt_run = run();
         assert len(mt_run._usage_history) == 1 , (
-            f"{expected_kind}: expected exactly one recorded call"
+            f"{run.__name__}: expected exactly one recorded call"
         );
         assert mt_run._usage_history[0]["call_kind"] == expected_kind;
         assert mt_run._call_kind == "react_iteration" , (
