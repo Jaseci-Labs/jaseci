@@ -6,6 +6,22 @@ import from pathlib { Path }
 import from tempfile { TemporaryDirectory }
 import from jaclang.scale.tests.support { get_free_port, start_server, stop_server }
 
+"""Whether `pid` is the server process `server_pid` or one of its workers."""
+def _served_by(pid: int, server_pid: int) -> bool {
+    if pid == server_pid {
+        return True;
+    }
+    try {
+        for line in Path(f"/proc/{pid}/status").read_text().splitlines() {
+            if line.startswith("PPid:") {
+                return int(line.split()[1]) == server_pid;
+            }
+        }
+    } except OSError {}
+    return False;
+}
+
+
 test "split services recursively reconstruct returned archetypes" {
     fixture = Path(__file__).parent.parent / "fixtures" / "typed_boundary";
     with TemporaryDirectory() as tmp {
@@ -58,8 +74,16 @@ test "split services recursively reconstruct returned archetypes" {
             assert body["ok"] , body;
             result = body["data"]["result"];
             assert result["owner"] == "jaseci-labs";
-            assert result["provider_pid"] == provider.pid;
-            assert result["consumer_pid"] == consumer.pid;
+            provider_pid = result["provider_pid"];
+            consumer_pid = result["consumer_pid"];
+            assert _served_by(provider_pid, provider.pid) , (
+                f"the provider call ran in pid {provider_pid}, not in the provider "
+                f"service ({provider.pid}) or one of its workers"
+            );
+            assert _served_by(consumer_pid, consumer.pid) , (
+                f"the consumer ran in pid {consumer_pid}, not in the consumer "
+                f"service ({consumer.pid}) or one of its workers"
+            );
             assert provider.pid != consumer.pid;
             assert result["provider_loaded"] is False;
             errors: list[str] = [];
