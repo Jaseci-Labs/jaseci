@@ -219,11 +219,14 @@ def dependency_summary(prog: JacProgram, path: str) -> (PlacementSummary | None)
         return store[key];
     }
     mod = hub_module_for_path(key, prog);
-    if mod is None or mod.stub_only {
+    if mod is None {
         try {
-            mod = prog.load_dependency_module(key, need_tree=True);
+            mod = prog.load_dependency_module(key);
         } except Exception {
             return store.get(key);
+        }
+        if key in store {
+            return store[key];
         }
     }
     if mod is None or mod.stub_only or mod.loc is None or not mod.loc.mod_path {
