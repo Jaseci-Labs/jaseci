@@ -197,16 +197,32 @@ obj ModuleCompilation {
             analysis.blocked = True;
             return;
         }
-        program.run_schedule(
-            mod=module,
-            passes=get_py_code_gen(
-                native=needs_native,
-                provided=program.analysis.analyses_run.provided(module)
-            ),
-            cancel_token=options.cancel_token
+        schedule = get_py_code_gen(
+            native=needs_native, provided=program.analysis.analyses_run.provided(module)
         );
+        python_start = len(schedule);
+        for (index, step) in enumerate(schedule) {
+            if step is NativeImportFactsPass {
+                python_start = index;
+                break;
+            }
+        }
+        if python_start > 0 {
+            program.run_schedule(
+                mod=module,
+                passes=schedule[:python_start],
+                cancel_token=options.cancel_token
+            );
+        }
         if module.gen.has_native_ir() {
             self.session.assemble_native(program, module, False);
+        }
+        if python_start < len(schedule) {
+            program.run_schedule(
+                mod=module,
+                passes=schedule[python_start:],
+                cancel_token=options.cancel_token
+            );
         }
         self.session.assemble_python(program, module);
         if module.decided_codespace == 'native' {
