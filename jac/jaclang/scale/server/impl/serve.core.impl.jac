@@ -624,7 +624,7 @@ impl JacAPIServerCore._refresh_dev_endpoints -> None {
 
 impl JacAPIServerCore._retry_quarantine -> None {
     import from jaclang.scale.memory.memory_hierarchy { MongoBackend }
-    l3 = getattr(Jac.get_context().mem, 'l3', None);
+    l3 = Jac.get_context().mem?.l3;
     if not isinstance(l3, MongoBackend) {
         return;
     }
