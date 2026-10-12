@@ -102,7 +102,13 @@ def _cmd_model(action: str = "list", alias: str = "") -> int {
 
     if action in ("rm", "remove", "delete") {
         norm = alias.strip().lower();
-        if remove_alias(norm) {
+        try {
+            removed = remove_alias(norm);
+        } except ValueError as e {
+            console.error(f"{e}", hint="run `jac model list` for choices");
+            return 2;
+        }
+        if removed {
             console.info(f"removed cached weights for '{norm}'");
             return 0;
         }

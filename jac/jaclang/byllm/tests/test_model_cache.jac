@@ -42,10 +42,14 @@ def use_fixture_cache(
     payload: bytes,
     calls: list[str],
     consent: bool,
-    delay: float = 0.0
+    delay: float = 0.0,
+    started: threading.Event | None = None
 ) {
     def fake_download(alias: str, spec: dict[str, any]) -> Path {
         calls.append(alias);
+        if started is not None {
+            started.set();
+        }
         assert not gguf_path(alias, spec).exists()
             or weight_status(alias, spec) != "valid" , "downloaded over a valid weight";
         staging = cache_dir / alias / ".jac_partial";
@@ -195,6 +199,51 @@ test "concurrent pulls download once and never expose a partial target" {
         assert calls == [ALIAS] , f"expected one download, got {calls}";
         assert results == [str(gguf_path(ALIAS, SPEC))] * 2;
         assert gguf_path(ALIAS, SPEC).read_bytes() == GOOD;
+    }
+}
+
+test "removing a model waits for an in-progress pull instead of breaking it" {
+    with tempfile.TemporaryDirectory() as tmp, ExitStack() as stack {
+        started = threading.Event();
+        use_fixture_cache(
+            stack, Path(tmp), GOOD, [], consent=True, delay=0.5, started=started
+        );
+        errors: list[str] = [];
+        def pull {
+            try {
+                force_pull(ALIAS, SPEC);
+            } except Exception as err {
+                errors.append(repr(err));
+            }
+        }
+        worker = threading.Thread(target=pull);
+        worker.start();
+        assert started.wait(5) , "the pull never started downloading";
+        assert model_cache.remove_alias(ALIAS);
+        worker.join();
+        assert errors == [] , f"removal broke the pull in progress: {errors}";
+        assert weight_status(ALIAS, SPEC) == "missing";
+        assert (Path(tmp) / ".locks").is_dir() , "the lock must outlive the alias directory";
+    }
+}
+
+test "jac model rm refuses a name that is not an alias" {
+    with tempfile.TemporaryDirectory() as tmp, ExitStack() as stack {
+        cache = Path(tmp) / "models";
+        cache.mkdir();
+        keep = Path(tmp) / "keep.txt";
+        keep.write_text("other cache data\n");
+        use_fixture_cache(stack, cache, GOOD, [], consent=False);
+        for name in ["..", ".", "../models", ".locks", "a/b"] {
+            try {
+                model_cache.remove_alias(name);
+                assert False , f"remove_alias accepted {name!r}";
+            } except ValueError {}
+        }
+        assert keep.read_text() == "other cache data\n";
+        stack.enter_context(patch.object(console, "error"));
+        assert model(action="rm", alias="..") == 2;
+        assert keep.exists() and cache.is_dir();
     }
 }
 

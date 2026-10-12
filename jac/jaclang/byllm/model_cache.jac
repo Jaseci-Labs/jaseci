@@ -11,7 +11,7 @@ import from jaclang.cache.locking { FileLock }
 glob _logger: logging.Logger = logging.getLogger("byllm.model_cache"),
      _STAGING_DIR: str = ".jac_partial",
      _STAMP_FILE: str = ".jac_verified",
-     _LOCK_FILE: str = ".jac_download.lock";
+     _LOCK_DIR: str = ".locks";
 
 def _is_interactive -> bool {
     try {
@@ -209,12 +209,32 @@ def _download(alias: str, spec: dict[str, any]) -> Path {
     return Path(path);
 }
 
+def _check_alias_name(alias: str) {
+    if (
+        not alias
+        or alias.startswith(".")
+        or "/" in alias
+        or "\\" in alias
+        or Path(alias).name != alias
+    ) {
+        raise ValueError(f"'{alias}' is not a local model alias");
+    }
+}
+
+def _alias_lock(alias: str) -> FileLock {
+    lock = FileLock(path=get_cache_dir() / _LOCK_DIR / f"{alias}.lock");
+    if not lock.acquire() {
+        _emit(f"[byllm] Waiting for another process using '{alias}' to finish...\n");
+        while not lock.acquire() {
+            time.sleep(0.2);
+        }
+    }
+    return lock;
+}
+
 def _install(alias: str, spec: dict[str, any]) -> Path {
     target = gguf_path(alias, spec);
-    lock = FileLock(path=alias_dir(alias) / _LOCK_FILE);
-    while not lock.acquire() {
-        time.sleep(0.2);
-    }
+    lock = _alias_lock(alias);
     try {
         if weight_status(alias, spec) == "valid" {
             return target;
@@ -263,13 +283,18 @@ def force_pull(alias: str, spec: dict[str, any]) -> str {
 }
 
 def remove_alias(alias: str) -> bool {
-    import shutil;
-    d = alias_dir(alias);
-    if not d.exists() {
-        return False;
+    _check_alias_name(alias);
+    lock = _alias_lock(alias);
+    try {
+        d = alias_dir(alias);
+        if not d.exists() {
+            return False;
+        }
+        shutil.rmtree(d);
+        return True;
+    } finally {
+        lock.release();
     }
-    shutil.rmtree(d);
-    return True;
 }
 
 def list_downloaded -> list[dict[str, any]] {
@@ -279,7 +304,7 @@ def list_downloaded -> list[dict[str, any]] {
     }
     out: list[dict[str, any]] = [];
     for child in cache_root.iterdir() {
-        if not child.is_dir() {
+        if not child.is_dir() or child.name.startswith(".") {
             continue;
         }
         total = 0;
