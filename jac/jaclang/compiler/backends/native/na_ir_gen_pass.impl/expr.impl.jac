@@ -622,12 +622,13 @@ impl NaIRGenPass._codegen_name(nd: uni.Name) -> (ir.Value | None) {
 
     if var_name in self.global_vars {
         global_var = self.global_vars[var_name];
-        if isinstance(
-            global_var.value_type, (ir.LiteralStructType, ir.IdentifiedStructType)
+        if (
+            isinstance(global_var.type, ir.PointerType)
+            and isinstance(global_var.type.pointee, ir.IdentifiedStructType)
+            and global_var.type.pointee.name in self.clib_struct_names
         ) {
-            """Static struct-layout globals are used through their address
-            (the symbol IS the struct), matching C `extern struct` semantics
-            and the pointer-flavoured uses of boxed struct globs.""";
+            """Static C-layout struct globals are used through their address
+            (the symbol IS the struct), matching C `extern struct` semantics.""";
             return global_var;
         }
         return self.builder.load(global_var, name=f"glob.{var_name}");

@@ -161,8 +161,12 @@ Status of the gap closures:
   `na_ir_gen_pass.jac` (state + decls), `globals.impl.jac` (builders),
   `expr.impl.jac` (use path), `core.impl.jac` (finalize flush).
   `ir.GlobalVariable.type` is always a `PointerType` (llvmlite >= 0.44), so
-  a struct global is detected through `gv.value_type` (or
-  `gv.type.pointee`), never `isinstance(gv.type, …)`; the trailer field path
+  a struct pointee is inspected through `gv.type.pointee` (or
+  `gv.value_type`), never `isinstance(gv.type, …)`. Address-style use (no
+  load) stays gated on `clib_struct_names`: a clib archetype's inline
+  C-layout struct global is the C `extern struct` symbol itself, while a
+  boxed struct glob (e.g. `str`) stores a `%"JacStr"*` that must be loaded
+  like any pointer-valued global. The trailer field path
   falls back to the same check when the checker-side base type is missing.
   Static member lowering accepts `uni.String`/`MultiString` literals, and
   E5092 for a failed member names the field's LLVM type and the member AST
