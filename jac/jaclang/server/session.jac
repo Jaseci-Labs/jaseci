@@ -50,6 +50,7 @@ glob logger = logging.getLogger(__name__),
          'ro_units_enabled',
          'unit_writes_recorded',
          'record_unit_writes',
+         'transient_db_error',
          'SCRATCH_ENV',
          'SCRATCH_OWNER_ENV',
          'RETENTION_ENV',
@@ -84,6 +85,9 @@ def unit_writes_recorded(key: str) -> bool {
     }
     return True;
 }
+
+
+def transient_db_error(e: Exception) -> bool;
 
 
 def record_unit_writes(key: str) {
