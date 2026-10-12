@@ -54,8 +54,13 @@ fn hostPlatform() []const u8 {
 pub fn main(init: std.process.Init) !void {
     const io = init.io;
     const a = init.arena.allocator();
-    const args = try init.minimal.args.toSlice(a);
-    const mode = parseMode(args) catch seed.die("usage: build_python <os-arch> <destination> <jac-root> <zig> [--host]", .{});
+    var reuse = false;
+    var kept: std.ArrayList([]const u8) = .empty;
+    for (try init.minimal.args.toSlice(a)) |arg| {
+        if (std.mem.eql(u8, arg, "--reuse-lowered")) reuse = true else try kept.append(a, arg);
+    }
+    const args = kept.items;
+    const mode = parseMode(args) catch seed.die("usage: build_python <os-arch> <destination> <jac-root> <zig> [--host] [--reuse-lowered]", .{});
     const platform = args[1];
     if (!supported(platform)) seed.die("build-python: unsupported platform {s}", .{platform});
     if (!std.mem.eql(u8, platform, hostPlatform()))
@@ -79,7 +84,6 @@ pub fn main(init: std.process.Init) !void {
         return;
     }
     const sources_stamp = try std.fs.path.join(a, &.{ dest, "build-key-sources" });
-    const reuse = if (init.environ_map.get("JAC_JACPYTHON_REUSE")) |v| std.mem.eql(u8, v, "1") else false;
     if (mode == .jacpython and reuse and seed.fileExists(io, python)) {
         if (try sourcesKey(io, a, platform, root, host_dest, dest)) |lowered| {
             const recorded = Io.Dir.cwd().readFileAlloc(io, sources_stamp, a, .limited(128)) catch "";

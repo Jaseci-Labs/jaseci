@@ -241,7 +241,7 @@ platform, compiler-probe output, and a minimal reproducer when reporting an issu
 Older releases may use CPython's C compiler; the probe above distinguishes them.
 
 For changes to the JacPython implementation, rebuild with
-`cd jac && JACPYTHON=1 zig build` and use the resulting `zig-out/bin/jac`.
+`cd jac && zig build -Dpython=jacpython` and use the resulting `zig-out/bin/jac`.
 Its native compiler object is linked at build time: editing source through the
 dev loop does not replace that object in an existing binary. Plain `zig build`
 produces the stock CPython variant. A separate build-only CPython host

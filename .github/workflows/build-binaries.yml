@@ -226,7 +226,8 @@ jobs:
     # without the key resolve to false and keep vetoing as they always have.
     continue-on-error: ${{ matrix.optional || false }}
     env:
-      JACPYTHON: ${{ matrix.jacpython }}
+      # -Dpython flag for zig build: the interpreter this leg bundles.
+      DPYTHON: ${{ matrix.jacpython == '1' && '-Dpython=jacpython' || '-Dpython=cpython' }}
       # -Dtarget flag for zig build: set on release-channel Linux legs, empty
       # (host-native) on the dev channel and macOS.
       DTARGET: ${{ inputs.channel != 'dev' && matrix.zig_target && format('-Dtarget={0}', matrix.zig_target) || '' }}
@@ -335,7 +336,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: jac/.bun-build
-          key: bun-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('jac/jaclang/client/bun_installer.jac') }}
+          key: bun-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('jac/jaclang/client/js_runtime.jac') }}
 
       # The payload's compressed deps-layer frame (mkpayload --layer-cache):
       # content-addressed and verified by decompress + byte-compare before
@@ -470,7 +471,7 @@ jobs:
           elif [ "${{ steps.shim-fetch.outputs.hit }}" = "true" ]; then
             SHIM_ARG=(-Dshim-bin="${{ steps.shim-fetch.outputs.file }}")
           fi
-          zig build $DTARGET "${SHIM_ARG[@]}" --summary all
+          zig build $DTARGET $DPYTHON "${SHIM_ARG[@]}" --summary all
 
       # Launcher unit tests (`zig build test`) live in ci.yml's `test-launcher`
       # job so they gate every PR on Linux + macOS, not just release time. The
@@ -495,7 +496,7 @@ jobs:
           import ctypes;
           import os;
           with entry {
-              if os.environ.get("JACPYTHON") == "1" {
+              if "${{ matrix.jacpython }}" == "1" {
                   assert ctypes.pythonapi._PyJac_CompilerRequired() == 1;
                   assert ctypes.pythonapi._PyJac_CompilerBridgeVersion() == 4;
               } else {

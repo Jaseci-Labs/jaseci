@@ -1216,7 +1216,7 @@ test "build_expo_start_argv emits expected metro flags" {
         rn_dir = Path(tmp);
         `entry = _stub_node_tool(rn_dir, "expo", "expo");
         with unittest.mock.patch(
-            "jaclang.client.targets.node_tooling_common.get_bun",
+            "jaclang.client.targets.node_tooling_common.js_runtime_path",
             side_effect=_fake_get_bun
         ) {
             argv = build_expo_start_argv(rn_dir, 8081, clear_cache=True);
@@ -1560,7 +1560,7 @@ test "node tooling runs installs and tools on the bundled bun only" {
         `entry = _stub_node_tool(project_dir, "expo", "expo");
         with unittest.mock.patch("subprocess.run", side_effect=_fake_run) {
             with unittest.mock.patch(
-                "jaclang.client.targets.node_tooling_common.get_bun",
+                "jaclang.client.targets.node_tooling_common.js_runtime_path",
                 side_effect=_fake_get_bun
             ) {
                 run_manifest_install(project_dir);
@@ -1614,7 +1614,7 @@ test "run_manifest_install skips bun install while the stamp is current" {
                 '{"dependencies": {"expo": "1.0.0"}}\n', encoding="utf-8"
             );
             with unittest.mock.patch("subprocess.run", side_effect=_fake_run), unittest.mock.patch(
-                "jaclang.client.targets.node_tooling_common.get_bun",
+                "jaclang.client.targets.node_tooling_common.js_runtime_path",
                 side_effect=_fake_get_bun
             ) {
                 run_manifest_install(project_dir);
@@ -1663,7 +1663,7 @@ test "node tooling refuses to run a tool that is not installed locally" {
     # falling back to `bun x` would silently reintroduce the node dependency.
     with tempfile.TemporaryDirectory() as tmp {
         with unittest.mock.patch(
-            "jaclang.client.targets.node_tooling_common.get_bun",
+            "jaclang.client.targets.node_tooling_common.js_runtime_path",
             side_effect=_fake_get_bun
         ) {
             try {
@@ -1682,23 +1682,28 @@ test "node tooling raises actionably when the bundled bun is missing" {
     import unittest.mock;
     import from jaclang.client.targets.node_tooling_common { resolve_node_tool }
 
-    def _no_bun -> None {
-        return None;
-    }
+    import jaclang.artifacts.router as router;
+    import from jaclang.artifacts.model { Probe }
+    import from jaclang.client.js_runtime { BunArtifact }
 
+    router.forget();
     with tempfile.TemporaryDirectory() as tmp {
-        with unittest.mock.patch(
-            "jaclang.client.targets.node_tooling_common.get_bun", side_effect=_no_bun
+        with unittest.mock.patch.object(
+            BunArtifact, "probe_sealed", return_value=None
+        ), unittest.mock.patch.object(
+            BunArtifact, "probe_checkout", return_value=Probe.missing()
+        ), unittest.mock.patch.object(
+            BunArtifact, "probe_kit", return_value=Probe.missing()
         ) {
             try {
                 resolve_node_tool(Path(tmp), "expo");
                 assert False , "expected RuntimeError when bundled bun is absent";
             } except RuntimeError as e {
-                assert "fetch-bun" in str(e);
-                assert "JAC_BUN" in str(e);
+                assert "jac native build bun" in str(e) , str(e);
             }
         }
     }
+    router.forget();
 }
 
 test "expo prebuild runs even when native tree and prebuild state exist" {

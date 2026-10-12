@@ -30,7 +30,7 @@ import from jaclang.dist.payload.pins {
     py_minor,
     py_ver
 }
-import from jaclang.client.bun_installer { BUN_VERSION as INSTALLER_BUN_VERSION }
+import from jaclang.client.js_runtime { BUN_VERSION as INSTALLER_BUN_VERSION }
 
 # zipfile's method constants are typed `Final` in typeshed, which the checker
 # cannot assign from; spell them as the ints they are and pin them below.

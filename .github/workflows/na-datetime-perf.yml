@@ -38,13 +38,12 @@ jobs:
 
       - name: Materialize typeshed + vendored runtimes
         working-directory: jac
-        env:
-          JACPYTHON: "1"
         run: |
-          zig build fetch-typeshed --summary all
-          zig build vendor-musl --summary all
-          zig build vendor-musl-linux-aarch64 --summary all
-          zig build vendor-wasm-libc --summary all
+          PY=(-Dpython=jacpython)
+          zig build fetch-typeshed "${PY[@]}" --summary all
+          zig build vendor-musl "${PY[@]}" --summary all
+          zig build vendor-musl-linux-aarch64 "${PY[@]}" --summary all
+          zig build vendor-wasm-libc "${PY[@]}" --summary all
 
       - name: Smoke the binary
         run: |

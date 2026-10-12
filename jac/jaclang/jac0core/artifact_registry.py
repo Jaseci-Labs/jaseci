@@ -24,6 +24,9 @@ ARTIFACTS: dict[str, str] = {
     "precompiled": "jaclang.compiler.driver.precompiled:PrecompiledArtifact",
     "kernel": "jaclang.compiler.backends.native.kernel_resolve:KernelArtifact",
     "llvm-cbe": "jaclang.toolchains.c_backend:CBackendArtifact",
+    "bun": "jaclang.client.js_runtime:BunArtifact",
+    "js-engine": "jaclang.client.js_runtime:JsEngineArtifact",
+    "jacpython": "jaclang.dist.interpreter:JacPythonArtifact",
 }
 
 ROUTER_MODULES: tuple[str, ...] = (

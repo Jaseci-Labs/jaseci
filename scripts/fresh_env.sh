@@ -34,7 +34,7 @@ cd "$(git rev-parse --show-toplevel)"
 
 # Place the pinned, contained bun runtime into the source tree
 # (jac/jaclang/client/_bun) so the -Ddev linked binary below can
-# resolve it for client/cl work via get_bun(). Release binaries bundle bun into
+# resolve it as the bun artifact for client/cl work. Release binaries bundle bun into
 # the payload instead; this is the editable/source-checkout equivalent.
 ( cd jac && zig build fetch-bun )
 

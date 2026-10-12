@@ -1878,14 +1878,13 @@ def _run_entry_point(
 def _run_node_tool(name: str, bin_path: Path, args: list[str]) -> int {
     import subprocess;
     import from jaclang.project.config { get_config }
-    import from jaclang.client.bun_installer { get_bun }
+    import from jaclang.artifacts.model { ArtifactUnavailable }
+    import from jaclang.client.js_runtime { js_runtime_path }
 
-    bun = get_bun();
-    if bun is None {
-        console.error(
-            f"Cannot run npm tool '{name}': the bun runtime is unavailable.",
-            hint="Install bun, or run the project once (e.g. 'jac run') to let jac provision it."
-        );
+    try {
+        bun = js_runtime_path();
+    } except ArtifactUnavailable as e {
+        console.error(f"Cannot run npm tool '{name}': {e}");
         return 1;
     }
     config = get_config();

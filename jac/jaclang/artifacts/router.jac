@@ -77,7 +77,9 @@ def _decide(artifact: Artifact) -> Resolution {
 }
 
 def _announce(artifact: Artifact, resolution: Resolution) {
-    if artifact.name in _ANNOUNCED or artifact.kind != ArtifactKind.ACCELERATOR {
+    if artifact.name in _ANNOUNCED
+        or artifact.kind != ArtifactKind.ACCELERATOR
+        or artifact.release == ReleasePolicy.FLOOR {
         return;
     }
     _ANNOUNCED.add(artifact.name);

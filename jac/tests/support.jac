@@ -22,6 +22,19 @@ glob TESTS_DIR: str = str(Path(__file__).resolve().parent),
      # Repo root (the `jac/` dir): the parent of `tests/`.
      JAC_ROOT: str = str(Path(__file__).resolve().parent.parent);
 
+"""The JavaScript runtime this process runs (js_engine or bun), or None when
+neither is built: suites that need one skip on None, and strict lanes, which
+ship a kit with bun, never see it."""
+def js_runtime_or_none -> (str | None) {
+    import from jaclang.artifacts.model { ArtifactUnavailable }
+    import from jaclang.client.js_runtime { js_runtime_path }
+    try {
+        return js_runtime_path();
+    } except ArtifactUnavailable {
+        return None;
+    }
+}
+
 """Environment overrides isolating every machine-wide cache family."""
 def cache_env(cache_dir: Path | str) -> dict[str, str] {
     import from jaclang.cache.registry { BUCKETS }

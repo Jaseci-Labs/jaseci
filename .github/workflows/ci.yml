@@ -134,11 +134,6 @@ jobs:
       # honors this only for pull_request events, and the kit's manifest
       # records the omission for the runtime to read.
       JAC_PR_KIT_KERNEL: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'build-kernel') && 'none' || '' }}
-      # A pull request reuses a JacPython whose lowered sources are unchanged.
-      # Every step that runs build_python needs it, not only the jac binary
-      # build: the vendor step's zig build depends on the runtime too, and
-      # without it rebuilt JacPython from scratch after the kit was built.
-      JAC_JACPYTHON_REUSE: ${{ github.event_name == 'pull_request' && '1' || '' }}
     steps:
       - uses: actions/checkout@v5
 
@@ -174,15 +169,17 @@ jobs:
       # cache hit does not, so leaving it implicit made the kit's contents a
       # function of cache state -- present on a miss, missing on a hit, with
       # if-no-files-found blind to it because the other paths matched.
+      # Every zig build here depends on the source-built runtime, so each names
+      # the kit's interpreter; a pull request reuses a JacPython whose lowered
+      # sources are unchanged instead of rebuilding it after the kit was built.
       - name: Materialize typeshed + vendored runtimes
         working-directory: jac
-        env:
-          JACPYTHON: "1"
         run: |
-          zig build fetch-typeshed --summary all
-          zig build vendor-musl --summary all
-          zig build vendor-musl-linux-aarch64 --summary all
-          zig build vendor-wasm-libc --summary all
+          PY=(-Dpython=jacpython -Dreuse-python=${{ github.event_name == 'pull_request' }})
+          zig build fetch-typeshed "${PY[@]}" --summary all
+          zig build vendor-musl "${PY[@]}" --summary all
+          zig build vendor-musl-linux-aarch64 "${PY[@]}" --summary all
+          zig build vendor-wasm-libc "${PY[@]}" --summary all
 
       - name: Hermeticity + smoke (no system Python)
         working-directory: jac

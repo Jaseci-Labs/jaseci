@@ -30,7 +30,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     env:
-      JACPYTHON: "1"
+      DPYTHON: -Dpython=jacpython
       DTARGET: ${{ matrix.zig_target && format('-Dtarget={0}', matrix.zig_target) || '' }}
     steps:
       - uses: actions/checkout@v5
@@ -61,13 +61,13 @@ jobs:
             jac-precompiled-jacpython-c${{ steps.inputs.outputs.compiler }}-
       - name: Build and smoke-test the native JacPython runtime
         working-directory: jac
-        run: zig build build-python $DTARGET --summary all
+        run: zig build build-python $DTARGET $DPYTHON --summary all
       - name: Build and probe the packaged native JacPython binary
         working-directory: jac
         env:
           JAC_NO_DEV_SOURCE: "1"
         run: |
-          zig build $DTARGET --summary all
+          zig build $DTARGET $DPYTHON --summary all
           zig-out/bin/jac -c '
           import ast, ctypes, sys
           assert ctypes.pythonapi._PyJac_CompilerBridgeVersion() == 4

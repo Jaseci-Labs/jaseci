@@ -23,7 +23,7 @@
 //!   zig build test                # offline bootstrap tests
 //!   zig build stub                # just the launcher
 //!   zig build                     # complete binary -> zig-out/bin/jac
-//!   JACPYTHON=1 zig build         # opt in to the native Python compiler
+//!   zig build -Dpython=jacpython  # opt in to the native Python compiler
 //!   zig build -Ddev               # link compiler sources from this checkout
 //!   zig build -Djaclang-dir=PATH   # link another compiler source tree
 //!   zig build -Dpayload=PATH       # pack an existing payload
@@ -134,9 +134,12 @@ pub fn build(b: *std.Build) void {
     else
         b.resolveTargetQuery(.{ .cpu_model = .baseline });
     const optimize = b.standardOptimizeOption(.{ .preferred_optimize_mode = .ReleaseSmall });
-    // Opt in at build time; each binary bundles exactly one Python runtime.
-    const jacpython = std.mem.eql(u8, b.graph.environ_map.get("JACPYTHON") orelse "0", "1");
-    const python_variant = if (jacpython) "jacpython" else "cpython";
+    // Chosen at build time; each binary bundles exactly one Python runtime.
+    const python_variant = b.option([]const u8, "python", "Python runtime to bundle: cpython (default) or jacpython") orelse "cpython";
+    if (!std.mem.eql(u8, python_variant, "cpython") and !std.mem.eql(u8, python_variant, "jacpython"))
+        std.debug.panic("-Dpython must be cpython or jacpython, not {s}", .{python_variant});
+    const jacpython = std.mem.eql(u8, python_variant, "jacpython");
+    const reuse_python = b.option(bool, "reuse-python", "Reuse a JacPython runtime whose lowered sources are unchanged (pull-request builds)") orelse false;
 
     // --- LLVMPY_* shim: compile jac/native/*.cpp + statically link host LLVM ---
     // Replaces the bundled libllvmlite.so (llvmlite wheel). Gated on -Dllvm-dir
@@ -169,6 +172,7 @@ pub fn build(b: *std.Build) void {
     const fetch_host = b.addRunArtifact(seed);
     fetch_host.addArgs(&.{ host_osarch, host_python_dir, b.pathFromRoot("."), b.graph.zig_exe });
     if (!jacpython) fetch_host.addArg("--host");
+    if (reuse_python) fetch_host.addArg("--reuse-lowered");
     fetch_host.has_side_effects = true;
     b.step("build-python", "Build the source-pinned Python runtime and native libraries").dependOn(&fetch_host.step);
     const root = b.pathFromRoot(".");
@@ -242,8 +246,8 @@ pub fn build(b: *std.Build) void {
 
     // Standalone: place the pinned, contained bun runtime into the source tree at
     // jaclang/client/_bun/ for the HOST. Editable/source checkouts,
-    // the test suite, and -Ddev linked binaries resolve it there via get_bun()'s
-    // __file__-relative lookup. (Normal/release builds instead bundle a
+    // the test suite, and -Ddev linked binaries resolve it there through the bun
+    // artifact's checkout tier. (Normal/release builds instead bundle a
     // target-matched bun into the payload; see the payload block below.)
     {
         const fetch_bun = tool.run("payload", &.{ "fetch-bun", host_osarch, b.pathFromRoot("jaclang/client/_bun") });
@@ -403,7 +407,7 @@ pub fn build(b: *std.Build) void {
 
         // Contained bun runtime: fetch the pinned bun for the target and bundle
         // it inside the client package via --bun. In linked-source/dev mode
-        // there is no bundled copy to fall back on -- get_bun() resolves from
+        // there is no bundled copy to fall back on -- the bun artifact resolves from
         // the linked tree -- so place bun INTO that tree instead.
         if (link_dir == null) {
             const bun_dir = b.pathFromRoot(b.fmt(".bun-build/{s}", .{osarch}));
@@ -620,7 +624,7 @@ fn addLlvmShim(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.bu
 
     // Also write the built shim back into the source tree (gitignored) so the
     // editable dev loop -- which runs jaclang from source, not from the binary's
-    // payload -- finds it via ffi.jac's __file__-relative lookup. Mirrors how
+    // payload -- finds it through the llvm-shim artifact's checkout tier. Mirrors how
     // fetch-typeshed materializes gitignored stubs into the tree. mkpayload's
     // jaclang copy skips this file (it ships the shim via --shim instead).
     const place = placeShim(b, bin, shim_file);

@@ -138,7 +138,7 @@ runs:
     # The contained bun runtime is fetched + sha256-verified and bundled into the
     # payload during `zig build`. Cache the extracted tree (~58 MB) so a binary
     # miss does not re-download it, keyed on the resolver pin in
-    # bun_installer.jac (the one definition; the Jac payload tool imports it, so no lockstep
+    # client/js_runtime.jac (the one definition; the Jac payload tool imports it, so no lockstep
     # check). Only engaged on a binary miss.
     - name: Restore cached bun runtime
       id: bun-cache
@@ -146,7 +146,7 @@ runs:
       uses: actions/cache/restore@v4
       with:
         path: jac/.bun-build
-        key: bun-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('jac/jaclang/client/bun_installer.jac') }}
+        key: bun-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('jac/jaclang/client/js_runtime.jac') }}
 
     # The JIR precompile is mkpayload's single most expensive stage (~24 min:
     # it compiles every bundled jaclang module). ONE tree per (code version,
@@ -256,19 +256,17 @@ runs:
       if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
       working-directory: jac
-      env:
-        # The shared CI kit exercises the native Python compiler.
-        JACPYTHON: "1"
-        # A PR reuses the JacPython runtime main last built when the sources it
-        # was lowered from are unchanged (build_python.zig sourcesKey). Main
-        # keeps the full key, so the runtime is at most one main build behind.
-        JAC_JACPYTHON_REUSE: ${{ github.event_name == 'pull_request' && '1' || '' }}
       # On a shim-cache hit, stage the restored shim OUTSIDE its in-tree place
       # path before passing it via -Dshim-bin: the build's place step copies
       # -Dshim-bin back to that path, and a self-copy would read the file it is
       # truncating. On a shim miss the plain build links it from source, the
       # place step writes it in-tree, and the shim cache saves it at job end.
+      # The shared CI kit exercises the native Python compiler. A PR reuses the
+      # JacPython runtime main last built when the sources it was lowered from
+      # are unchanged (build_python.zig sourcesKey); main keeps the full key, so
+      # the runtime is at most one main build behind.
       run: |
+        PY=(-Dpython=jacpython -Dreuse-python=${{ github.event_name == 'pull_request' }})
         SHIM_ARG=()
         if [ "${{ steps.shim-cache.outputs.cache-hit }}" = "true" ]; then
           mkdir -p .shim-build
@@ -287,7 +285,7 @@ runs:
         set -o pipefail
         LOG="$(mktemp)"
         for attempt in 1 2 3; do
-          if zig build "${TARGET_ARG[@]}" "${SHIM_ARG[@]}" --summary all 2>&1 | tee "$LOG"; then
+          if zig build "${PY[@]}" "${TARGET_ARG[@]}" "${SHIM_ARG[@]}" --summary all 2>&1 | tee "$LOG"; then
             exit 0
           fi
           if grep -qE 'Seal aborted|Seal incomplete|seal-finalize failed' "$LOG"; then
@@ -356,7 +354,7 @@ runs:
       uses: actions/cache/save@v4
       with:
         path: jac/.bun-build
-        key: bun-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('jac/jaclang/client/bun_installer.jac') }}
+        key: bun-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('jac/jaclang/client/js_runtime.jac') }}
 
     # cache-hit is only 'true' on an exact-key match, so a restore-keys prefix
     # hit still saves here -- that is what keeps the entry tracking HEAD (each

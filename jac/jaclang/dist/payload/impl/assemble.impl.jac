@@ -185,7 +185,10 @@ impl _bundle_bun(site: str, opts: MkPayloadOpts) {
         bun_dir = os.path.join(site, "jaclang", "client", "_bun");
         make_dirs(bun_dir);
         log(f"==> bundling contained bun runtime ({bb})");
-        copy_file(bb, os.path.join(bun_dir, os.path.basename(bb)));
+        staged = os.path.join(bun_dir, os.path.basename(bb));
+        copy_file(bb, staged);
+        import from jaclang.client.js_runtime { write_bun_record }
+        write_bun_record(staged);
     }
 }
 

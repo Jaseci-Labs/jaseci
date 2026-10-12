@@ -236,6 +236,7 @@ obj ClientConfig {
 
 obj DevConfig {
     has jaclang_source: str = "",
+        exact: bool = False,
         jobs: str = "",
         test_jobs: str = "",
         check_jobs: str = "",
