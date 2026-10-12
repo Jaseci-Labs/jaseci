@@ -95,7 +95,7 @@ obj TestConfig {
 }
 
 obj ServeWorkersConfig {
-    has count: str = "1",
+    has count: str = "",
         threads: str = "auto",
         max_requests: int = 0,
         max_requests_jitter: int = 0,

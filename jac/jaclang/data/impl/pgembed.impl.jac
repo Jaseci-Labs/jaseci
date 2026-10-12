@@ -294,6 +294,28 @@ impl PgRuntime._initdb_if_needed(bin_dir: str) -> None {
 }
 
 
+impl predicate_lock_shortfall(settings: dict[str, int]) -> (str | None) {
+    per_txn = settings.get('max_pred_locks_per_transaction', 0);
+    slots = settings.get('max_connections', 0)
+        + settings.get('max_prepared_transactions', 0);
+    pool = per_txn * slots;
+    if per_txn >= PG_MAX_PRED_LOCKS_PER_TXN
+        or pool >= PG_MAX_PRED_LOCKS_PER_TXN * PG_MAX_CONNECTIONS {
+        return None;
+    }
+    return (
+        f"max_pred_locks_per_transaction is {per_txn}, a predicate-lock pool of "
+        f"{pool:,} entries for {slots} connections. jac runs request transactions "
+        "SERIALIZABLE, and under concurrent load (most of all with more than one "
+        "serve worker) that pool runs out and requests fail with '53200 out of "
+        "shared memory'. The Postgres jac starts itself uses "
+        f"max_pred_locks_per_transaction = {PG_MAX_PRED_LOCKS_PER_TXN}: run "
+        f"ALTER SYSTEM SET max_pred_locks_per_transaction = {PG_MAX_PRED_LOCKS_PER_TXN} "
+        "and restart Postgres."
+    );
+}
+
+
 impl pg_tuning_settings -> dict[str, str] {
     return {
         'max_connections': str(PG_MAX_CONNECTIONS),

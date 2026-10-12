@@ -342,7 +342,7 @@ def _is_serialization_conflict(e: Exception) -> bool {
         c: BaseException = cur;
         for arg in getattr(c, 'args', ()) {
             if isinstance(arg, dict)
-                and arg.get('C') in ('40001', '40P01', '55P03', '08006') {
+                and arg.get('C') in ('40001', '40P01', '53200', '55P03', '08006') {
                 return True;
             }
         }
@@ -350,6 +350,11 @@ def _is_serialization_conflict(e: Exception) -> bool {
         seen += 1;
     }
     return False;
+}
+
+
+impl transient_db_error(e: Exception) -> bool {
+    return _is_serialization_conflict(e);
 }
 
 
