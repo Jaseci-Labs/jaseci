@@ -168,10 +168,18 @@ test "direct, aliased and re-imported client RPC calls retain the service route"
     js = mod.gen.js;
     calls = re.findall(r'__jacCallFunction\("greet",[^\n]+', js);
     assert len(calls) == 4 , js;
-    calls += re.findall(r'__jacCallFunction\("relay",[^\n]+', js);
-    assert len(calls) > 4 , (
-        "a def:pub the entry re-imports from social_ops bridges like greet; got:\n" + js
+    relayed = re.findall(r'__jacCallFunction\("relay",[^\n]+', js);
+    assert len(relayed) == 2 , (
+        "a def:pub the entry re-imports from social_ops bridges like greet: one "
+        "stub and one call site; got:\n"
+        + js
     );
+    for call in relayed {
+        assert '"name":' in call , (
+            "the re-imported def's signature reaches the bridge binding; got: " + call
+        );
+    }
+    calls += relayed;
     for call in calls {
         assert '"app": "social"' in call , call;
         assert '"route": "/api/social"' in call , call;
