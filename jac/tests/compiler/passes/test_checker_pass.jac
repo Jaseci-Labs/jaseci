@@ -910,6 +910,23 @@ Cannot return int, expected bool
              ]
          ),
          (
+             "exception_obj_constructs_through_field_init",
+             "checker",
+             "checker_exception_fields_init.jac",
+             2,
+             True,
+             [
+                 (
+                     0,
+                     """Cannot assign Literal["not a code"] to parameter 'code' of type int"""
+                 ),
+                 (
+                     1,
+                     """Cannot assign Literal["not a code either"] to parameter 'code' of type int"""
+                 )
+             ]
+         ),
+         (
              "nested_functions_in_impl_blocks",
              "checker",
              "checker_nested_impldef.jac",
