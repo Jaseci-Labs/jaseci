@@ -12,11 +12,15 @@ enum CauseKind(StrEnum) {
 obj Term {
     has package: str,
         versions: VersionSet,
-        positive: bool = True;
+        positive: bool = True,
+        names_prerelease: bool = False;
 
     def negate -> Term {
         return Term(
-            package=self.package, versions=self.versions, positive=not self.positive
+            package=self.package,
+            versions=self.versions,
+            positive=not self.positive,
+            names_prerelease=self.names_prerelease
         );
     }
 
@@ -49,23 +53,30 @@ obj Term {
     def intersect(other: Term) -> Term {
         if self.positive and other.positive {
             return Term(
-                package=self.package, versions=self.versions.intersect(other.versions)
+                package=self.package,
+                versions=self.versions.intersect(other.versions),
+                names_prerelease=self.names_prerelease or other.names_prerelease
             );
         }
         if self.positive {
             return Term(
-                package=self.package, versions=self.versions.difference(other.versions)
+                package=self.package,
+                versions=self.versions.difference(other.versions),
+                names_prerelease=self.names_prerelease
             );
         }
         if other.positive {
             return Term(
-                package=self.package, versions=other.versions.difference(self.versions)
+                package=self.package,
+                versions=other.versions.difference(self.versions),
+                names_prerelease=other.names_prerelease
             );
         }
         return Term(
             package=self.package,
             versions=self.versions.union(other.versions),
-            positive=False
+            positive=False,
+            names_prerelease=self.names_prerelease or other.names_prerelease
         );
     }
 
@@ -404,7 +415,7 @@ obj Solver {
     }
 
     def _allowed(name: str, term: Term) -> list[Version] {
-        pre = self.source.allows_prerelease(name);
+        pre = self.source.allows_prerelease(name) or term.names_prerelease;
         return [
             v
             for v in self._candidates_for(name)
@@ -465,7 +476,12 @@ obj Solver {
             incompat = Incompatibility.of(
                 [
                     Term(package=name, versions=VersionSet.exact(version)),
-                    Term(package=dep, versions=req.versions, positive=False)
+                    Term(
+                        package=dep,
+                        versions=req.versions,
+                        positive=False,
+                        names_prerelease=req.names_prerelease
+                    )
                 ],
                 CauseKind.DEPENDENCY
             );
