@@ -35,6 +35,18 @@ glob FIXTURES = os.path.join(
      FIXTURE = "wasm_host_probe.jac";
 
 # ─── helpers ─────────────────────────────────────────────────────────────────
+"""A wasm libc floor that carries its source manifest: this checkout's (a kit
+lane downloads it beside the tree), else the one the router resolves. A
+sealed image's own floor has no manifest to check against wasm_rt/."""
+def _manifested_libc_dir -> (str | None) {
+    import from jaclang.compiler.backends.native.floors { WASM_FLOOR_MANIFEST }
+    checkout = os.path.join(os.path.dirname(TESTS_DIR), ".pbs-build", "wasm32", "libc");
+    if os.path.isfile(os.path.join(checkout, WASM_FLOOR_MANIFEST)) {
+        return checkout;
+    }
+    return _wasm_libc_dir();
+}
+
 def _require_libc {
     if _wasm_libc_dir() is None {
         testskip("vendored wasm libc not present (run `zig build vendor-wasm-libc`)");
@@ -238,7 +250,7 @@ console.log(`out=${JSON.stringify(out)} compute=${c}`);
 # syscalls only). These pin the two guards that now catch it up front.
 test "abi64 adapter gap is reported against the floor, not the app" {
     _require_libc();
-    src = _wasm_libc_dir();
+    src = _manifested_libc_dir();
     assert src is not None;
     d = tempfile.mkdtemp();
     floor = os.path.join(d, "libc");
@@ -328,10 +340,10 @@ test "a floor built from different wasm_rt sources is refused" {
     import from jaclang.compiler.backends.native.floors {
         WASM_FLOOR_MANIFEST as FLOOR_MANIFEST
     }
-    src = _wasm_libc_dir();
+    src = _manifested_libc_dir();
     assert src is not None;
     if not os.path.isfile(os.path.join(src, FLOOR_MANIFEST)) {
-        testskip("floor predates SOURCES.sha256");
+        testskip("no floor with a SOURCES.sha256 here");
     }
     d = tempfile.mkdtemp();
     floor = os.path.join(d, "libc");

@@ -157,17 +157,9 @@ obj JdkArtifact(ToolArtifact) {
     }
 
     override def on_system -> str {
-        import from jaclang.cli.console { console }
         requested = os.environ.get("JAVA_HOME", "");
-        if requested {
-            home = Path(requested).expanduser();
-            if compatible_jdk(home) {
-                return str(home);
-            }
-            console.print(
-                "JAVA_HOME does not contain a compatible JDK 21; using a managed JDK.",
-                style="muted"
-            );
+        if requested and compatible_jdk(Path(requested).expanduser()) {
+            return str(Path(requested).expanduser());
         }
         found = shutil.which(executable("javac"));
         if found {

@@ -46,12 +46,13 @@ def kit_path(rel: str) -> str {
 }
 
 def _find_kit -> tuple[str, (SealedImage | None)] {
-    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
+    import jaclang;
     site_pkg = os.path.join(os.path.dirname(sys.prefix), "site", "jaclang");
     if not os.path.isdir(os.path.join(site_pkg, "_precompiled")) {
         return ("", None);
     }
-    if os.path.realpath(site_pkg) == os.path.realpath(jaclang_pkg_root()) {
+    if os.path.realpath(site_pkg)
+        == os.path.realpath(os.path.dirname(str(jaclang.__file__))) {
         return ("", None);
     }
     try {

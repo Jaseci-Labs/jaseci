@@ -736,6 +736,19 @@ def _resolve_plan(
     return (plan, cfg, app, file, 0);
 }
 
+def _in_compiler_tree(file: Path, project_root: Path) -> bool {
+    project = project_root.resolve();
+    for parent in file.resolve().parents {
+        if not parent.is_relative_to(project) {
+            return False;
+        }
+        if parent.name == 'jaclang' and (parent / 'jac0core').is_dir() {
+            return True;
+        }
+    }
+    return False;
+}
+
 def _load_executable(
     filename: str, base: str, main: bool, force_codespace: str = ''
 ) -> types.ModuleType {
@@ -750,17 +763,9 @@ def _load_executable(
         compiler.selfhost.resolve(filename, program)
     );
     config = get_config_for_path(Path(filename));
-    if config is not None
-        and config.project_root is not None
-        and config.dev.jaclang_source {
-        source_root = (
-            config.project_root / config.dev.jaclang_source / 'jaclang'
-        ).resolve();
+    if config is not None and config.project_root is not None {
         compiler_owned = compiler_owned
-            or (
-                source_root.is_relative_to(config.project_root.resolve())
-                and Path(filename).resolve().is_relative_to(source_root)
-            );
+            or _in_compiler_tree(Path(filename), config.project_root);
     }
     if compiler_owned {
         modules = Jac.jac_import(
