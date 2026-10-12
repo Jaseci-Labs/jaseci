@@ -301,7 +301,8 @@ glob _SCHEMA_LOCK_TAG = 'jac:ensure_schema',
      _SCHEMA_LOCK_WAIT_SECONDS = 30.0,
      _SCHEMA_LOCK_POLL_SECONDS = 0.05,
      _SCHEMA_LOCK_POLL_MAX_SECONDS = 0.5,
-     _CONCURRENT_CREATE_STATES = ('23505', '42P07', '42710');
+     _CONCURRENT_CREATE_STATES = ('23505', '42P07', '42710'),
+     _QUEUE_WAIT_SECONDS = 30;
 
 
 def _schema_lock_key -> int {
@@ -1115,6 +1116,61 @@ impl PgStore.rows(sql: str, params: dict[str, any]) -> list[tuple[any, ...]] {
 }
 
 
+impl PgStore.queue_enter(ids: list[UUID]) -> bool {
+    with self._lock {
+        self._run('BEGIN', {});
+        try {
+            self._run(f"SET LOCAL lock_timeout = '{_QUEUE_WAIT_SECONDS}s'", {});
+            self._run(
+                """
+                SELECT pg_advisory_lock(k) FROM (
+                    SELECT hashtextextended(x, 0) AS k
+                    FROM unnest(CAST(:ids AS text[])) AS x
+                    ORDER BY 1
+                ) AS keys
+                """,
+                {'ids': sorted(str(i) for i in ids)}
+            );
+            self._run('COMMIT', {});
+            return True;
+        } except Exception as e {
+            try {
+                self._run('ROLLBACK', {});
+            } except Exception {}
+            try {
+                self.queue_exit(ids);
+            } except Exception {}
+            if _sqlstate(e) in ('55P03', '40P01') {
+                return False;
+            }
+            raise;
+        }
+    }
+}
+
+
+impl PgStore.queue_exit(ids: list[UUID]) -> None {
+    self._run(
+        """
+        SELECT pg_advisory_unlock(hashtextextended(x, 0))
+        FROM unnest(CAST(:ids AS text[])) AS x
+        """,
+        {'ids': [str(i) for i in ids]}
+    );
+}
+
+
+impl PgStore.lock_rows(ids: list[UUID]) -> None {
+    self._run(
+        """
+        SELECT id FROM anchors WHERE id = ANY(CAST(:ids AS uuid[]))
+        ORDER BY id FOR UPDATE
+        """,
+        {'ids': [str(i) for i in ids]}
+    );
+}
+
+
 impl PgStore.kv_get(key: str) -> (str | None) {
     rows = self._run(
         """
@@ -1506,4 +1562,13 @@ impl PgStore.close -> None {
     self._join_listen_thread(parked);
     _park_conn(self.conninfo, main_conn, was_txn, False);
     _park_conn(self.conninfo, side_conn, False, listened);
+}
+
+
+impl PgStore.lock_wait(timeout: str) -> None {
+    with self._lock {
+        if self._in_txn {
+            self._run(f"SET LOCAL lock_timeout = '{timeout}'", {});
+        }
+    }
 }

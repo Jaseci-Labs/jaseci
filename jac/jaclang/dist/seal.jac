@@ -69,7 +69,7 @@ def resolve_entry_file(config: any, app: str = "") -> (Path | None) {
     return None;
 }
 
-def _without_key(record: dict[str, any], dropped: str) -> dict[str, any] {
+def _without_keys(record: dict[str, any], dropped: str) -> dict[str, any] {
     return {
         key: value
         for (key, value) in record.items()
@@ -78,10 +78,10 @@ def _without_key(record: dict[str, any], dropped: str) -> dict[str, any] {
 }
 
 def _portable_manifest(manifest: dict[str, any]) -> dict[str, any] {
-    result = _without_key(manifest, 'root');
+    result = _without_keys(manifest, 'root');
     if result.get('surface') {
         result['surface'] = {
-            name: _without_key(rec, 'module')
+            name: _without_keys(rec, 'module')
             for (name, rec) in result['surface'].items()
         };
     }
