@@ -1592,8 +1592,7 @@ impl JacAPIServer._register_scheduled_tasks -> None {
     }
 }
 
-impl JacAPIServer._validate_or_raise -> None {
-    import from jaclang.server.settings { ServeConfigError }
+impl JacAPIServer._start_problems -> list[str] {
     settings = self.resolved_settings();
     problems = settings.validate();
     transport: any = None;
@@ -1604,9 +1603,6 @@ impl JacAPIServer._validate_or_raise -> None {
         }
     }
     problems.extend(verification_problems(settings.auth.email.verification, transport));
-    for warning in settings.warnings() {
-        logger.warning(warning);
-    }
     if not settings.static_only {
         import from jaclang.server.task_scheduler { schedule_problems }
         for (name, spec, _is_walker) in self._scheduled_targets() {
@@ -1614,6 +1610,37 @@ impl JacAPIServer._validate_or_raise -> None {
                 problems.append(f"@schedule on '{name}': {problem}");
             }
         }
+    }
+    return problems;
+}
+
+impl JacAPIServer._validate_or_raise -> None {
+    import from jaclang.cli.workpool { cpu_quota }
+    import from jaclang.server.settings { ServeConfigError, default_threads }
+    settings = self.resolved_settings();
+    problems = self._start_problems();
+    workers = settings.workers;
+    if problems and workers.count_by_default and workers.multi_process() {
+        (count, threads) = (workers.count, workers.threads);
+        workers.count = 1;
+        if workers.threads_by_default {
+            workers.threads = default_threads(1, cpu_quota());
+        }
+        single = self._start_problems();
+        if len(single) < len(problems) {
+            dropped = [
+                p
+                for p in problems
+                if p not in single
+            ];
+            logger.info(f"Serving with one worker instead of {count}: {dropped[0]}");
+            problems = single;
+        } else {
+            (workers.count, workers.threads) = (count, threads);
+        }
+    }
+    for warning in settings.warnings() {
+        logger.warning(warning);
     }
     if problems {
         raise ServeConfigError(
@@ -1653,6 +1680,15 @@ impl JacAPIServer.serve_background(
     port_retries: int = 0
 ) -> Callable[[], None] {
     import from jaclang.server.outbox { start_worker_if_bridging, stop_worker }
+    import from jaclang.cli.workpool { cpu_quota }
+    import from jaclang.server.settings { default_threads }
+    workers = self.resolved_settings().workers;
+    if workers.count_by_default and workers.multi_process() {
+        workers.count = 1;
+        if workers.threads_by_default {
+            workers.threads = default_threads(1, cpu_quota());
+        }
+    }
     settings = self._prepare_to_serve(dev, no_client);
     serving = ServingServer(
         app=self.require_app(), settings=settings, drain=self.drain
