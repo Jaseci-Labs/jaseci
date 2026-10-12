@@ -95,6 +95,23 @@ jobs:
             test_types test_scope test_funcattrs test_itertools test_contains \
             test_index test_int test_long test_list test_tuple test_builtin
 
+      # Non-blocking must not shade into unnoticed. The test step is
+      # continue-on-error (a ported-object regression must not block the
+      # perf table), so a failure needs to surface in the run summary and
+      # as an annotation, not just as a red step somebody has to look for.
+      - name: Say plainly that the ported-object tests failed
+        if: failure()
+        run: |
+          {
+            echo "### Ported-object CPython tests failed (non-blocking)"
+            echo ""
+            echo "The branch JacPython runtime did not pass the CPython test"
+            echo "suite for the ported Objects/*.c files. The benchmark below"
+            echo "still ran, but its numbers measure a runtime with a known"
+            echo "behavioral regression."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::warning title=Ported-object tests failed::Branch JacPython failed the ported-object CPython suite. See the job summary."
+
       - name: Benchmark C vs main JacPython vs branch JacPython
         run: |
           set -euo pipefail

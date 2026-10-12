@@ -15,30 +15,40 @@ import from c {
     }  def _Py_Dealloc(o: ptr[PyObject]) -> None;
 }
 
-def py_incref(o: ptr) -> None {
+# 64-bit refcount field facts (Include/refcount.h, GIL build): the live count
+# is the low 32 bits; _Py_IMMORTAL_INITIAL_REFCNT is 3 << 30; the immortal
+# flag is bit 31 of the low half.
+glob _REFCNT_MASK: i64 = 4294967295,  # 0xFFFFFFFF
+     _IMMORTAL_INITIAL: i64 = 3221225472,  # 3 << 30
+     _IMMORTAL_FLAG: i64 = 2147483648,  # 1 << 31
+     # _Py_STATIC_IMMORTAL_INITIAL_REFCNT: (5 << 48) | (3 << 30). Shared by
+     # every static object's ob_refcnt (PyBool_Type, _Py_TrueStruct, ...).
+     IMMORTAL_STATIC_REFCNT: i64 = 1407378104778752;
+
+def py_xincref(o: ptr) -> None {
     if o == ptr() {
         return;
     }
     h = ptr[PyRefHead](o);
     rc = h.ob_refcnt;
-    if (rc & 4294967295) >= 3221225472 {
+    if (rc & _REFCNT_MASK) >= _IMMORTAL_INITIAL {
         return;
     }
     h.ob_refcnt = wrapping_add(rc, 1);
 }
 
-def py_decref(o: ptr) -> None {
+def py_xdecref(o: ptr) -> None {
     if o == ptr() {
         return;
     }
     h = ptr[PyRefHead](o);
     rc = h.ob_refcnt;
-    if (rc & 2147483648) != 0 {
+    if (rc & _IMMORTAL_FLAG) != 0 {
         return;
     }
     rc = wrapping_sub(rc, 1);
     h.ob_refcnt = rc;
-    if (rc & 4294967295) == 0 {
+    if (rc & _REFCNT_MASK) == 0 {
         _Py_Dealloc(ptr[PyObject](o));
     }
 }

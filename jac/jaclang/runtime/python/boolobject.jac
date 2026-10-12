@@ -170,15 +170,7 @@ import from c {
             ob_digit0: u32 = 0;
     }  glob PyType_Type: PyTypeObject_Layout; glob PyLong_Type:
              PyTypeObject_Layout; glob PyExc_DeprecationWarning: ptr[PyObject];
-    # The long type's number-slot fallback calls stay C: calling through a
-    # function pointer loaded from a struct does not lower natively.
-    def jacpy_bool_fallback_invert(v: ptr[PyObject]) -> ptr[PyObject];  def jacpy_bool_fallback_and(
-        a: ptr[PyObject], b: ptr[PyObject]
-    ) -> ptr[PyObject];  def jacpy_bool_fallback_or(
-        a: ptr[PyObject], b: ptr[PyObject]
-    ) -> ptr[PyObject];  def jacpy_bool_fallback_xor(
-        a: ptr[PyObject], b: ptr[PyObject]
-    ) -> ptr[PyObject];  def PyObject_IsTrue(o: ptr[PyObject]) -> i32;  def PyTuple_Size(
+    def PyObject_IsTrue(o: ptr[PyObject]) -> i32;  def PyTuple_Size(
         p: ptr[PyObject]
     ) -> i64;  def PyTuple_GetItem(p: ptr[PyObject], index: i64) -> ptr[PyObject];  def _PyArg_NoKeywords(
         fname: ptr[u8], kwargs: ptr[PyObject]
@@ -228,10 +220,12 @@ glob bool_as_number: PyNumberMethods = PyNumberMethods(
 # _PyLong_FALSE_TAG = TAG_FROM_SIGN_AND_SIZE(0, 0) = 1,
 # _PyLong_TRUE_TAG  = TAG_FROM_SIGN_AND_SIZE(1, 1) = 8.
 glob:pub _Py_FalseStruct: PyLongObject_Layout = PyLongObject_Layout(
-         ob_refcnt=1407378104778752, ob_type=PyBool_Type, lv_tag=1, ob_digit0=0
+         ob_refcnt=1407378104778752,  # _Py_STATIC_IMMORTAL_INITIAL_REFCNT
+         ob_type=PyBool_Type, lv_tag=1, ob_digit0=0
      ),
      _Py_TrueStruct: PyLongObject_Layout = PyLongObject_Layout(
-         ob_refcnt=1407378104778752, ob_type=PyBool_Type, lv_tag=8, ob_digit0=1
+         ob_refcnt=1407378104778752,  # _Py_STATIC_IMMORTAL_INITIAL_REFCNT
+         ob_type=PyBool_Type, lv_tag=8, ob_digit0=1
      );
 
 def bool_is_bool(op: ptr[PyObject]) -> i32 {
@@ -320,6 +314,13 @@ def bool_vectorcall(
 
 # Arithmetic operations redefined to return bool if both args are bool.
 
+# PyLong_Type's number table, reached through the tp_as_number pointer:
+# the fallback for any operand that is not a bool.
+def _long_number_methods() -> ptr[PyNumberMethods] {
+    lt = ptr[PyTypeObject_Layout](PyLong_Type);
+    return ptr[PyNumberMethods](lt.tp_as_number);
+}
+
 def bool_invert(v: ptr[PyObject]) -> ptr[PyObject] {
     if PyErr_WarnEx(
         PyExc_DeprecationWarning,
@@ -329,12 +330,12 @@ def bool_invert(v: ptr[PyObject]) -> ptr[PyObject] {
         < 0 {
         return ptr[PyObject]();
     }
-    return jacpy_bool_fallback_invert(v);
+    return _long_number_methods().nb_invert(v);
 }
 
 def bool_and(a: ptr[PyObject], b: ptr[PyObject]) -> ptr[PyObject] {
     if not bool_is_bool(a) or not bool_is_bool(b) {
-        return jacpy_bool_fallback_and(a, b);
+        return _long_number_methods().nb_and(a, b);
     }
     ta: ptr[PyObject] = _Py_TrueStruct;
     tb: ptr[PyObject] = _Py_TrueStruct;
@@ -349,7 +350,7 @@ def bool_and(a: ptr[PyObject], b: ptr[PyObject]) -> ptr[PyObject] {
 
 def bool_or(a: ptr[PyObject], b: ptr[PyObject]) -> ptr[PyObject] {
     if not bool_is_bool(a) or not bool_is_bool(b) {
-        return jacpy_bool_fallback_or(a, b);
+        return _long_number_methods().nb_or(a, b);
     }
     ta: ptr[PyObject] = _Py_TrueStruct;
     tb: ptr[PyObject] = _Py_TrueStruct;
@@ -365,7 +366,7 @@ def bool_or(a: ptr[PyObject], b: ptr[PyObject]) -> ptr[PyObject] {
 
 def bool_xor(a: ptr[PyObject], b: ptr[PyObject]) -> ptr[PyObject] {
     if not bool_is_bool(a) or not bool_is_bool(b) {
-        return jacpy_bool_fallback_xor(a, b);
+        return _long_number_methods().nb_xor(a, b);
     }
     ta: ptr[PyObject] = _Py_TrueStruct;
     tb: ptr[PyObject] = _Py_TrueStruct;

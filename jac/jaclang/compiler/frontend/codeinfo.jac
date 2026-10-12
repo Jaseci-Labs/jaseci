@@ -451,6 +451,15 @@ def native_module_key(path: str) -> str {
     return f"{stem}:{hashlib.sha1(ident.encode()).hexdigest()[:12]}";
 }
 
+def is_jacpython_runtime_unit(mod_path: str) -> bool {
+    """Units under jaclang/runtime/python/ export their pub defs and globs
+    under bare CPython symbol names (PyBool_FromLong, PyBool_Type, ...) so
+    the bundled C objects and foreign code resolve them un-prefixed.""";
+    return bool(mod_path) and native_unit_identity(mod_path).startswith(
+        "jaclang/runtime/python/"
+    );
+}
+
 def native_unit_prefix(path: str) -> str {
     return native_safe_sym(native_module_key(path));
 }

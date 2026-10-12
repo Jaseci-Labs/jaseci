@@ -13,12 +13,12 @@
 # sign as (1 - sign) → 0: positive, 1: zero, 2: negative.
 #
 # Residue: jacpy_slice_repr/indices_tuple/reduce_tuple/pack3 (%R/%O
-# formatters), jacpy_slice_too_few/too_many (UnpackTuple arg-count errors),
-# and jacpy_slice_hash (u64 xxHash rotation).
+# formatters) and jacpy_slice_too_few/too_many (UnpackTuple arg-count
+# errors). slice_hash is Jac (u64 wrapping ops express the xxHash lanes).
 
 import from jaclang.runtime.python.boolobject { PyLongObject_Layout, PyNumberMethods }
 
-import from jaclang.runtime.python.refcount { py_incref, py_decref }
+import from jaclang.runtime.python.refcount { py_xincref, py_xdecref }
 
 import from c {
     obj PyObject;
@@ -164,31 +164,27 @@ import from c {
     # Py_VISIT: `visit` is a C function pointer, not a Jac Callable.
     def jacpy_visit(visitf: ptr, o: ptr[PyObject], arg: ptr) -> i32;  def PyErr_SetString(
         exc: ptr[PyObject], msg: ptr[u8]
-    ) -> None;  def PyErr_Clear -> None;  def PyErr_ExceptionMatches(
-        exc: ptr[PyObject]
-    ) -> i32;  def _Py_SetImmortal(o: ptr[PyObject]) -> None;  def PyObject_GC_UnTrack(
+    ) -> None;  def _Py_SetImmortal(o: ptr[PyObject]) -> None;  def PyObject_GC_UnTrack(
         o: ptr[PyObject]
     ) -> None;  def PyObject_GenericGetAttr(
         o: ptr[PyObject], name: ptr[PyObject]
-    ) -> ptr[PyObject];  def PyObject_RichCompare(
+    ) -> ptr[PyObject];  def PyObject_Hash(o: ptr[PyObject]) -> i64;  def PyObject_RichCompare(
         a: ptr[PyObject], b: ptr[PyObject], op: i32
-    ) -> ptr[PyObject];  def PyObject_RichCompareBool(
-        a: ptr[PyObject], b: ptr[PyObject], op: i32
-    ) -> i32;  def PyType_IsSubtype(
+    ) -> ptr[PyObject];  def PyType_IsSubtype(
         a: ptr[PyTypeObject_Layout], b: ptr[PyTypeObject_Layout]
     ) -> i32;  def PyUnicode_FromString(s: ptr[u8]) -> ptr[PyObject];  def PyLong_FromSsize_t(
         v: i64
     ) -> ptr[PyObject];  def PyLong_AsSsize_t(v: ptr[PyObject]) -> i64;  def PyNumber_Index(
         o: ptr[PyObject]
-    ) -> ptr[PyObject];  def PyNumber_Add(
-        a: ptr[PyObject], b: ptr[PyObject]
     ) -> ptr[PyObject];  def PyDict_Size(d: ptr[PyObject]) -> i64;  def PyTuple_Size(
         p: ptr[PyObject]
-    ) -> i64;  def PyTuple_GetItem(p: ptr[PyObject], index: i64) -> ptr[PyObject];  def _PyEval_SliceIndex(
+    ) -> i64;  def _PyEval_SliceIndex(
         v: ptr[PyObject], out: ptr[i64]
     ) -> i32;  def _PyArg_NoKeywords(fname: ptr[u8], kwargs: ptr[PyObject]) -> i32;  def jacpy_is_tuple(
         handle: ptr[PyObject]
-    ) -> i64;  def jacpy_exception_type(kind: ptr[u8]) -> ptr[PyObject];  def jacpy_capsule_track(
+    ) -> i64;  def jacpy_exception_type(
+        kind: ptr[u8]
+    ) -> ptr[PyObject];  def jacpy_gc_track(
         o: ptr[PyObject]
     ) -> None;
     # The `slices` freelist (per-thread interpreter state, reached through
@@ -208,7 +204,7 @@ import from c {
         step: ptr[PyObject]
     ) -> ptr[PyObject];  def jacpy_slice_pack3(
         a: ptr[PyObject], b: ptr[PyObject], c: ptr[PyObject]
-    ) -> ptr[PyObject];  def jacpy_slice_hash(o: ptr[PyObject]) -> i64;
+    ) -> ptr[PyObject];
     # Defined natively in slicelongindices.jac.
     def _PySlice_GetLongIndices(
         self_op: ptr[PyObject],
@@ -289,7 +285,7 @@ glob ellipsis_methods: _Ellipsis_Methods = _Ellipsis_Methods(
      );
 
 glob:pub PyEllipsis_Type: PyTypeObject_Layout = PyTypeObject_Layout(
-         ob_refcnt=1407378104778752,
+         ob_refcnt=1407378104778752,  # _Py_STATIC_IMMORTAL_INITIAL_REFCNT
          ob_type=PyType_Type,
          ob_size=0,
          tp_name="ellipsis",
@@ -304,7 +300,7 @@ glob:pub PyEllipsis_Type: PyTypeObject_Layout = PyTypeObject_Layout(
          tp_new=ellipsis_new
      ),
      _Py_EllipsisObject: PyObject_Layout = PyObject_Layout(
-         ob_refcnt=1407378104778752, ob_type=PyEllipsis_Type
+         ob_refcnt=1407378104778752, ob_type=PyEllipsis_Type  # _Py_STATIC_IMMORTAL_INITIAL_REFCNT
      );
 
 # ------------------------------ slice object --------------------------------
@@ -315,16 +311,16 @@ def _PyBuildSlice_Consume2(
 ) -> ptr[PyObject] {
     allocated = jacpy_slice_alloc();
     if allocated == ptr[PyObject]() {
-        py_decref(start);
-        py_decref(stop);
+        py_xdecref(start);
+        py_xdecref(stop);
         return ptr[PyObject]();
     }
     r = ptr[PySliceObject_Layout](allocated);
     r.start = start;
     r.stop = stop;
     r.step = step;
-    py_incref(step);
-    jacpy_capsule_track(allocated);
+    py_xincref(step);
+    jacpy_gc_track(allocated);
     return allocated;
 }
 
@@ -341,8 +337,8 @@ def:pub PySlice_New(
     if stop == ptr[PyObject]() {
         stop = none_obj;
     }
-    py_incref(start);
-    py_incref(stop);
+    py_xincref(start);
+    py_xincref(stop);
     return _PyBuildSlice_Consume2(start, stop, step);
 }
 
@@ -361,12 +357,12 @@ def:pub _PySlice_FromIndices(istart: i64, istop: i64) -> ptr[PyObject] {
     }
     end = PyLong_FromSsize_t(istop);
     if end == ptr[PyObject]() {
-        py_decref(start);
+        py_xdecref(start);
         return ptr[PyObject]();
     }
     slice = PySlice_New(start, end, ptr[PyObject]());
-    py_decref(start);
-    py_decref(end);
+    py_xdecref(start);
+    py_xdecref(end);
     return slice;
 }
 
@@ -559,8 +555,8 @@ def slice_new(
         return ptr[PyObject]();
     }
     targs = ptr[PyTupleArgs3_Layout](args);
-    ty = ptr[PyTypeObject_Layout](targs.ob_type);
-    if (ty.tp_flags & u64(67108864)) == u64(0) {
+    # PyTuple_Check(args) — the tuple-subclass flag test the C code inlines.
+    if not jacpy_is_tuple(args) {
         PyErr_SetString(
             jacpy_exception_type("TypeError"),
             "PyArg_UnpackTuple() argument list is not a tuple"
@@ -596,9 +592,9 @@ def slice_new(
 def slice_dealloc(op: ptr[PyObject]) {
     r = ptr[PySliceObject_Layout](op);
     PyObject_GC_UnTrack(op);
-    py_decref(r.step);
-    py_decref(r.start);
-    py_decref(r.stop);
+    py_xdecref(r.step);
+    py_xdecref(r.start);
+    py_xdecref(r.stop);
     jacpy_slice_free(op);
 }
 
@@ -623,7 +619,7 @@ def slice_indices(
     }
     if long_is_negative(length) {
         PyErr_SetString(PyExc_ValueError, "length should not be negative");
-        py_decref(length);
+        py_xdecref(length);
         return ptr[PyObject]();
     }
 
@@ -631,7 +627,7 @@ def slice_indices(
     stop: ptr[PyObject] = ptr[PyObject]();
     step: ptr[PyObject] = ptr[PyObject]();
     error = _PySlice_GetLongIndices(op, length, &mut start, &mut stop, &mut step);
-    py_decref(length);
+    py_xdecref(length);
     if error == -1 {
         return ptr[PyObject]();
     }
@@ -671,7 +667,7 @@ def slice_reduce(
 def slice_richcompare(v: ptr[PyObject], w: ptr[PyObject], op: i32) -> ptr[PyObject] {
     notimpl_obj: ptr[PyObject] = _Py_NotImplementedStruct;
     if not slice_is_slice(v) or not slice_is_slice(w) {
-        py_incref(notimpl_obj);
+        py_xincref(notimpl_obj);
         return notimpl_obj;
     }
 
@@ -691,12 +687,12 @@ def slice_richcompare(v: ptr[PyObject], w: ptr[PyObject], op: i32) -> ptr[PyObje
     }
     t2 = jacpy_slice_pack3(s2.start, s2.stop, s2.step);
     if t2 == ptr[PyObject]() {
-        py_decref(t1);
+        py_xdecref(t1);
         return ptr[PyObject]();
     }
     res = PyObject_RichCompare(t1, t2, op);
-    py_decref(t1);
-    py_decref(t2);
+    py_xdecref(t1);
+    py_xdecref(t2);
     return res;
 }
 
@@ -708,6 +704,53 @@ def slice_is_slice(v: ptr) -> i32 {
     }
     return 0;
 }
+
+# CPython slice_hash: one xxHash lane per member, u64 wrapping arithmetic.
+# PyObject_Hash yields -1 on error (and never a real -1); the C code checked
+# the lane for (Py_uhash_t)-1, which Jac spells u64.wrap(-1).
+glob XXPRIME1: u64 = 11400714785074694791,
+     XXPRIME2: u64 = 14029467366897019727,
+     XXPRIME5: u64 = 2870177450012600261;
+
+def _slice_hash_lane(member: ptr[PyObject]) -> u64 {
+    # PyObject_Hash yields -1 on error (and never a real -1 hash).
+    return u64.wrap(PyObject_Hash(member));
+}
+
+def slice_hash(op: ptr[PyObject]) -> i64 {
+    v = ptr[PySliceObject_Layout](op);
+    acc: u64 = XXPRIME5;
+
+    lane: u64 = _slice_hash_lane(v.start);
+    if lane == u64.wrap(-1) {
+        return -1;
+    }
+    acc = wrapping_add(acc, wrapping_mul(lane, XXPRIME2));
+    acc = acc << 31 | acc >> 33;
+    acc = wrapping_mul(acc, XXPRIME1);
+
+    lane = _slice_hash_lane(v.stop);
+    if lane == u64.wrap(-1) {
+        return -1;
+    }
+    acc = wrapping_add(acc, wrapping_mul(lane, XXPRIME2));
+    acc = acc << 31 | acc >> 33;
+    acc = wrapping_mul(acc, XXPRIME1);
+
+    lane = _slice_hash_lane(v.step);
+    if lane == u64.wrap(-1) {
+        return -1;
+    }
+    acc = wrapping_add(acc, wrapping_mul(lane, XXPRIME2));
+    acc = acc << 31 | acc >> 33;
+    acc = wrapping_mul(acc, XXPRIME1);
+
+    if acc == u64.wrap(-1) {
+        return 1546275796;
+    }
+    return i64.wrap(acc);
+}
+
 
 def slice_traverse(op: ptr[PyObject], visitf: ptr, arg: ptr[PyObject]) -> i32 {
     v = ptr[PySliceObject_Layout](op);
@@ -733,7 +776,7 @@ def slice_traverse(op: ptr[PyObject], visitf: ptr, arg: ptr[PyObject]) -> i32 {
 }
 
 glob:pub PySlice_Type: PyTypeObject_Layout = PyTypeObject_Layout(
-         ob_refcnt=1407378104778752,
+         ob_refcnt=1407378104778752,  # _Py_STATIC_IMMORTAL_INITIAL_REFCNT
          ob_type=PyType_Type,
          ob_size=0,
          tp_name="slice",
@@ -741,7 +784,7 @@ glob:pub PySlice_Type: PyTypeObject_Layout = PyTypeObject_Layout(
          tp_itemsize=0,
          tp_dealloc=slice_dealloc,
          tp_repr=slice_repr,
-         tp_hash=jacpy_slice_hash,
+         tp_hash=slice_hash,
          tp_getattro=PyObject_GenericGetAttr,
          tp_flags=16384,
          tp_doc=(

@@ -779,13 +779,12 @@ void jacpy_namespace_replace_type_error(PyObject *ns_type, PyObject *self,
                  ns_type, self, result);
 }
 
-/* capsule: GC-track macros write GC header bits; keep them beside the other
- * pycore accessors here. */
-int jacpy_capsule_is_tracked(PyObject *op) {
+/* GC-track macros write GC header bits; capsule/iter/slice share these. */
+int jacpy_gc_is_tracked(PyObject *op) {
     return _PyObject_GC_IS_TRACKED(op);
 }
 
-void jacpy_capsule_track(PyObject *op) { _PyObject_GC_TRACK(op); }
+void jacpy_gc_track(PyObject *op) { _PyObject_GC_TRACK(op); }
 
 /* capsule: PyCapsule_Import mangles the duplicated name in place. */
 char *jacpy_capsule_split(char *trace) {
@@ -981,45 +980,6 @@ PyObject *jacpy_slice_reduce_tuple(PyObject *tp, PyObject *start,
 PyObject *jacpy_slice_pack3(PyObject *a, PyObject *b, PyObject *c) {
     return PyTuple_Pack(3, a, b, c);
 }
-
-Py_hash_t jacpy_slice_hash(PyObject *op) {
-    typedef struct {
-        PyObject_HEAD
-        PyObject *start;
-        PyObject *stop;
-        PyObject *step;
-    } _jacpy_PySliceObject;
-    _jacpy_PySliceObject *v = (_jacpy_PySliceObject *)op;
-    const Py_uhash_t xxprime1 = 11400714785074694791ULL;
-    const Py_uhash_t xxprime2 = 14029467366897019727ULL;
-    const Py_uhash_t xxprime5 = 2870177450012600261ULL;
-    Py_uhash_t acc = xxprime5;
-    Py_uhash_t lane;
-
-    lane = (Py_uhash_t)PyObject_Hash(v->start);
-    if (lane == (Py_uhash_t)-1) return -1;
-    acc += lane * xxprime2;
-    acc = (acc << 31) | (acc >> 33);
-    acc *= xxprime1;
-
-    lane = (Py_uhash_t)PyObject_Hash(v->stop);
-    if (lane == (Py_uhash_t)-1) return -1;
-    acc += lane * xxprime2;
-    acc = (acc << 31) | (acc >> 33);
-    acc *= xxprime1;
-
-    lane = (Py_uhash_t)PyObject_Hash(v->step);
-    if (lane == (Py_uhash_t)-1) return -1;
-    acc += lane * xxprime2;
-    acc = (acc << 31) | (acc >> 33);
-    acc *= xxprime1;
-
-    if (acc == (Py_uhash_t)-1) {
-        return 1546275796;
-    }
-    return (Py_hash_t)acc;
-}
-
 /* cell_repr: varargs PyUnicode_FromFormat plus a tp_name read through the
  * opaque type stay C (see the residue table in the migration doc). */
 PyObject *jacpy_cell_repr(PyObject *self) {
@@ -1034,25 +994,9 @@ PyObject *jacpy_cell_repr(PyObject *self) {
     return res;
 }
 
-/* boolobject: the long type's number-slot fallbacks call through function
- * pointers loaded from PyLong_Type.tp_as_number (un-lowerable indirect
- * calls), and Py_True/Py_False are macros over the Jac-owned structs (no
- * linkable symbol), so the singleton getters return new references. */
-PyObject *jacpy_bool_fallback_invert(PyObject *v) {
-    return PyLong_Type.tp_as_number->nb_invert(v);
-}
-
-PyObject *jacpy_bool_fallback_and(PyObject *a, PyObject *b) {
-    return PyLong_Type.tp_as_number->nb_and(a, b);
-}
-
-PyObject *jacpy_bool_fallback_or(PyObject *a, PyObject *b) {
-    return PyLong_Type.tp_as_number->nb_or(a, b);
-}
-
-PyObject *jacpy_bool_fallback_xor(PyObject *a, PyObject *b) {
-    return PyLong_Type.tp_as_number->nb_xor(a, b);
-}
+/* Py_True/Py_False are macros over the Jac-owned structs (no linkable
+ * symbol), so the singleton getters return new references. The interned
+ * "True"/"False" identifiers (_Py_ID) likewise have no exported name. */
 
 PyObject *jacpy_bool_repr_str(int value) {
     return value ? &_Py_ID(True) : &_Py_ID(False);
@@ -1101,16 +1045,6 @@ PyObject *jacpy_rangeiter_alloc(void) {
 
 void jacpy_rangeiter_free(PyObject *op) {
     _Py_FREELIST_FREE(range_iters, op, PyObject_Free);
-}
-
-PyObject *jacpy_range_alloc(PyTypeObject *type, Py_ssize_t size) {
-    PyObject *op = PyObject_Malloc((size_t)size);
-    if (op == NULL) return NULL;
-    return PyObject_Init(op, type);
-}
-
-int64_t jacpy_range_index_check(PyObject *item) {
-    return _PyIndex_Check(item);
 }
 
 void jacpy_range_new_too_many(Py_ssize_t nargs) {

@@ -12,7 +12,7 @@
 # pointers (jacpy_capsule_call_*: indirect calls do not lower natively, so
 # those fields are opaque `ptr` here). strcmp/strlen stay extern libc calls.
 
-import from jaclang.runtime.python.refcount { py_incref, py_decref }
+import from jaclang.runtime.python.refcount { py_xincref, py_xdecref }
 
 import from c {
     obj PyObject;
@@ -108,7 +108,6 @@ import from c {
             traverse_func: ptr = ptr(),
             clear_func: ptr = ptr();
     }  glob PyType_Type: PyTypeObject_Layout; glob PyExc_ValueError:
-             ptr[PyObject]; glob PyExc_ImportError: ptr[PyObject]; glob PyExc_AttributeError:
              ptr[PyObject]; def PyErr_SetString(
         exc: ptr[PyObject], msg: ptr[u8]
     ) -> None;  def PyErr_NoMemory -> ptr[PyObject];  def _PyObject_GC_New(
@@ -123,7 +122,7 @@ import from c {
         name: ptr[u8]
     ) -> ptr[PyObject];  def PyObject_GetAttrString(
         o: ptr[PyObject], attr: ptr[u8]
-    ) -> ptr[PyObject];  def jacpy_capsule_is_tracked(o: ptr[PyObject]) -> i32;  def jacpy_capsule_track(
+    ) -> ptr[PyObject];  def jacpy_gc_is_tracked(o: ptr[PyObject]) -> i32;  def jacpy_gc_track(
         o: ptr[PyObject]
     ) -> None;  def jacpy_capsule_split(trace: ptr[u8]) -> ptr[u8];  def jacpy_capsule_repr(
         o: ptr[PyObject], name: ptr[u8], quote: ptr[u8]
@@ -320,8 +319,8 @@ def:pub _PyCapsule_SetTraverse(
         );
         return -1;
     }
-    if not jacpy_capsule_is_tracked(op) {
-        jacpy_capsule_track(op);
+    if not jacpy_gc_is_tracked(op) {
+        jacpy_gc_track(op);
     }
     capsule.traverse_func = traverse_func;
     capsule.clear_func = clear_func;
@@ -352,7 +351,7 @@ def:pub PyCapsule_Import(name: ptr[u8], no_block: i32) -> ptr {
         } else {
             object2 = PyObject_GetAttrString(mod, trace);
             # Py_SETREF(obj, object2)
-            py_decref(mod);
+            py_xdecref(mod);
             mod = object2;
         }
         if mod == ptr[PyObject]() {
@@ -370,7 +369,7 @@ def:pub PyCapsule_Import(name: ptr[u8], no_block: i32) -> ptr {
         jacpy_capsule_import_attr_error(name);
     }
 
-    py_decref(mod);
+    py_xdecref(mod);
     PyMem_Free(ptr(name_dup));
     return return_value;
 }

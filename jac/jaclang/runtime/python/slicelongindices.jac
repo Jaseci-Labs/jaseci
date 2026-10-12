@@ -6,7 +6,7 @@
 
 import from jaclang.runtime.python.boolobject { PyLongObject_Layout, PyNumberMethods }
 
-import from jaclang.runtime.python.refcount { py_incref, py_decref }
+import from jaclang.runtime.python.refcount { py_xincref, py_xdecref }
 
 import from c {
     obj PyObject;  obj PyObject_Layout {
@@ -77,30 +77,30 @@ def gli_clip(
 ) -> ptr[PyObject] {
     if gli_long_sign(v) < 0 {
         tmp = PyNumber_Add(v, length);
-        py_decref(v);
+        py_xdecref(v);
         if tmp == ptr[PyObject]() {
             return ptr[PyObject]();
         }
         cmp_result = PyObject_RichCompareBool(tmp, lower, 0);
         if cmp_result < 0 {
-            py_decref(tmp);
+            py_xdecref(tmp);
             return ptr[PyObject]();
         }
         if cmp_result != 0 {
-            py_decref(tmp);
-            py_incref(lower);
+            py_xdecref(tmp);
+            py_xincref(lower);
             return lower;
         }
         return tmp;
     }
     cmp_result = PyObject_RichCompareBool(v, upper, 4);
     if cmp_result < 0 {
-        py_decref(v);
+        py_xdecref(v);
         return ptr[PyObject]();
     }
     if cmp_result != 0 {
-        py_decref(v);
-        py_incref(upper);
+        py_xdecref(v);
+        py_xincref(upper);
         return upper;
     }
     return v;
@@ -118,10 +118,10 @@ def gli_fail(
     ptr[PyObjectSlot](start_ptr).v = ptr[PyObject]();
     ptr[PyObjectSlot](stop_ptr).v = ptr[PyObject]();
     ptr[PyObjectSlot](step_ptr).v = ptr[PyObject]();
-    py_decref(start);
-    py_decref(step);
-    py_decref(lower);
-    py_decref(upper);
+    py_xdecref(start);
+    py_xdecref(step);
+    py_xdecref(lower);
+    py_xdecref(upper);
     return -1;
 }
 
@@ -138,6 +138,7 @@ def:pub _PySlice_GetLongIndices(
     step_is_negative = False;
     if self.step == none_obj {
         step = jacpy_small_one;
+        py_xincref(step);
     } else {
         step = gli_evaluate_index(self.step);
         if step == nul {
@@ -163,14 +164,15 @@ def:pub _PySlice_GetLongIndices(
         }
     } else {
         lower = jacpy_small_zero;
+        py_xincref(lower);
         upper = length;
-        py_incref(upper);
+        py_xincref(upper);
     }
 
     # Compute start.
     if self.start == none_obj {
         start = upper if step_is_negative else lower;
-        py_incref(start);
+        py_xincref(start);
     } else {
         start = gli_evaluate_index(self.start);
         if start != nul {
@@ -184,7 +186,7 @@ def:pub _PySlice_GetLongIndices(
     # Compute stop.
     if self.stop == none_obj {
         stop = lower if step_is_negative else upper;
-        py_incref(stop);
+        py_xincref(stop);
     } else {
         stop = gli_evaluate_index(self.stop);
         if stop != nul {
@@ -198,7 +200,7 @@ def:pub _PySlice_GetLongIndices(
     ptr[PyObjectSlot](start_ptr).v = start;
     ptr[PyObjectSlot](stop_ptr).v = stop;
     ptr[PyObjectSlot](step_ptr).v = step;
-    py_decref(upper);
-    py_decref(lower);
+    py_xdecref(upper);
+    py_xdecref(lower);
     return 0;
 }

@@ -16,10 +16,16 @@
 # PyUnicode_FromFormat plus a tp_name read), jacpy_is_cell (PyCell_Check),
 # jacpy_not_implemented and jacpy_exception_type (data symbols).
 
-import from jaclang.runtime.python.refcount { py_incref, py_decref }
+import from jaclang.runtime.python.refcount { py_xincref, py_xdecref }
 
 import from c {
-    obj PyObject;  obj PyUnicodeWriter;  obj PyModuleDef;  obj PyTypeObject_Layout {
+    obj PyObject;
+    # The canonical 53-field PyTypeObject spelling. Every ported object file
+    # keeps a verbatim copy (imported obj types only lower behind ptr[...],
+    # while extern struct globals need a same-module layout), so an edit here
+    # must be mirrored to boolobject/capsule/enumobject/iterobject/
+    # namespaceobject/rangeobject/sliceobject.jac.
+    obj PyTypeObject_Layout {
         has ob_refcnt: i64 = 0,
             ob_type: ptr[PyObject] = ptr[PyObject](),
             ob_size: i64 = 0,
@@ -251,7 +257,7 @@ def:pub PyCell_New(ob: ptr[PyObject]) -> ptr[PyObject] {
     }
     cell = ptr[PyCellObject](op);
     if ob {
-        py_incref(ob);
+        py_xincref(ob);
     }
     cell.ob_ref = ob;
     PyObject_GC_Track(op);
@@ -266,7 +272,7 @@ def:pub PyCell_Get(op: ptr[PyObject]) -> ptr[PyObject] {
     cell = ptr[PyCellObject](op);
     res = cell.ob_ref;
     if res {
-        py_incref(res);
+        py_xincref(res);
     }
     return res;
 }
@@ -278,12 +284,12 @@ def:pub PyCell_Set(op: ptr[PyObject], value: ptr[PyObject]) -> i32 {
     }
     cell = ptr[PyCellObject](op);
     if value {
-        py_incref(value);
+        py_xincref(value);
     }
     old_value = cell.ob_ref;
     cell.ob_ref = value;
     if old_value {
-        py_decref(old_value);
+        py_xdecref(old_value);
     }
     return 0;
 }
@@ -293,7 +299,7 @@ def cell_dealloc(self: ptr[PyObject]) {
     cell = ptr[PyCellObject](self);
     old_ref = cell.ob_ref;
     if old_ref {
-        py_decref(old_ref);
+        py_xdecref(old_ref);
     }
     PyObject_GC_Del(self);
 }
@@ -321,7 +327,7 @@ def cell_clear(self: ptr[PyObject]) -> i32 {
     old_value = cell.ob_ref;
     cell.ob_ref = ptr[PyObject]();
     if old_value {
-        py_decref(old_value);
+        py_xdecref(old_value);
     }
     return 0;
 }
@@ -361,10 +367,10 @@ def cell_richcompare(a: ptr[PyObject], b: ptr[PyObject], opid: i32) -> ptr[PyObj
         }
     }
     if a_ref {
-        py_decref(a_ref);
+        py_xdecref(a_ref);
     }
     if b_ref {
-        py_decref(b_ref);
+        py_xdecref(b_ref);
     }
     return res;
 }
@@ -373,7 +379,7 @@ def cell_get_contents(self: ptr[PyObject], closure: ptr) -> ptr[PyObject] {
     cell = ptr[PyCellObject](self);
     res = cell.ob_ref;
     if res {
-        py_incref(res);
+        py_xincref(res);
         return res;
     }
     PyErr_SetString(jacpy_exception_type("ValueError"), "Cell is empty");
@@ -383,12 +389,12 @@ def cell_get_contents(self: ptr[PyObject], closure: ptr) -> ptr[PyObject] {
 def cell_set_contents(self: ptr[PyObject], value: ptr[PyObject], closure: ptr) -> i32 {
     cell = ptr[PyCellObject](self);
     if value {
-        py_incref(value);
+        py_xincref(value);
     }
     old_value = cell.ob_ref;
     cell.ob_ref = value;
     if old_value {
-        py_decref(old_value);
+        py_xdecref(old_value);
     }
     return 0;
 }

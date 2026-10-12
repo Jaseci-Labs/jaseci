@@ -416,6 +416,7 @@ impl NaIRGenPass._symbol_for(
     name: str, owner: (uni.Module | None) = None, is_pub: bool = False
 ) -> str {
     import from jaclang.compiler.frontend.codeinfo {
+        is_jacpython_runtime_unit,
         native_def_symbol,
         native_symbol_name,
         native_unit_identity,
@@ -424,7 +425,7 @@ impl NaIRGenPass._symbol_for(
     module = owner if owner is not None else self.module;
     name = native_unit_spelling(name, module.loc.mod_path);
     unit_id = native_unit_identity(module.loc.mod_path);
-    if is_pub and unit_id.startswith("jaclang/runtime/python/") {
+    if is_pub and is_jacpython_runtime_unit(module.loc.mod_path) {
         return name;
     }
     bundled_library = unit_id.startswith("jaclang/runtime/na_stdlib/");

@@ -16,7 +16,7 @@
 # "%.200s is not reversible"/"'%S' is an invalid keyword"/"(N given)"
 # formatters, and the (None, None) result tuple seed.
 
-import from jaclang.runtime.python.refcount { py_incref, py_decref }
+import from jaclang.runtime.python.refcount { py_xincref, py_xdecref }
 
 import from c {
     obj PyObject;
@@ -166,7 +166,7 @@ import from c {
         exc: ptr[PyObject], msg: ptr[u8]
     ) -> None;  def PyErr_Clear -> None;  def PyErr_Occurred -> ptr[PyObject];  def PyErr_ExceptionMatches(
         exc: ptr[PyObject]
-    ) -> i32;  def _PyObject_GC_New(tp: ptr[PyTypeObject_Layout]) -> ptr[PyObject];  def PyObject_GC_UnTrack(
+    ) -> i32;  def PyObject_GC_UnTrack(
         o: ptr[PyObject]
     ) -> None;  def PyObject_GC_Del(o: ptr[PyObject]) -> None;  def PyType_GenericAlloc(
         tp: ptr[PyTypeObject_Layout], nitems: i64
@@ -188,9 +188,9 @@ import from c {
         len: i64
     ) -> ptr[PyObject];  def PyTuple_Size(p: ptr[PyObject]) -> i64;  def PyTuple_GetItem(
         p: ptr[PyObject], index: i64
-    ) -> ptr[PyObject];  def PyDict_Size(d: ptr[PyObject]) -> i64;  def _PyArg_NoKeywords(
-        fname: ptr[u8], kwargs: ptr[PyObject]
-    ) -> i32;  def _PyArg_NoKwnames(fname: ptr[u8], kwnames: ptr[PyObject]) -> i32;  def _PyArg_CheckPositional(
+    ) -> ptr[PyObject];  def PyDict_Size(d: ptr[PyObject]) -> i64;  def _PyArg_NoKwnames(
+        fname: ptr[u8], kwnames: ptr[PyObject]
+    ) -> i32;  def _PyArg_CheckPositional(
         fname: ptr[u8], nargs: i64, min: i64, max: i64
     ) -> i32;  def jacpy_is_tuple(handle: ptr[PyObject]) -> i64;  def jacpy_exception_type(
         kind: ptr[u8]
@@ -201,8 +201,8 @@ import from c {
     ) -> i32;  def Py_GenericAlias(
         a: ptr[PyObject], b: ptr[PyObject]
     ) -> ptr[PyObject];  def jacpy_tuple_recycle(op: ptr[PyObject]) -> None;
-    # The cached small ints 0 and 1 (borrowed, immortal).
-    glob jacpy_small_zero: ptr[PyObject]; glob jacpy_small_one: ptr[PyObject]; def jacpy_tuple_borrow(
+    # The cached small int 1 (borrowed, immortal).
+    glob jacpy_small_one: ptr[PyObject]; def jacpy_tuple_borrow(
         t: ptr[PyObject], index: i64
     ) -> ptr[PyObject];
     # (iterable,) or (iterable, start) from enumerate(*args, **kwargs).
@@ -210,15 +210,11 @@ import from c {
         args: ptr[PyObject], kwargs: ptr[PyObject]
     ) -> ptr[PyObject];  def jacpy_reversed_reject_kwargs(
         tp: ptr[PyTypeObject_Layout], kwargs: ptr[PyObject]
-    ) -> i32;  def jacpy_tuple_set_item(
-        t: ptr[PyObject], index: i64, v: ptr[PyObject]
-    ) -> None;  def jacpy_enum_result_tuple -> ptr[PyObject];  def jacpy_enum_bad_keyword(
+    ) -> i32;  def jacpy_enum_result_tuple -> ptr[PyObject];  def jacpy_enum_bad_keyword(
         kw: ptr[PyObject]
     ) -> None;  def jacpy_enum_too_many(nargs: i64) -> None;  def jacpy_enum_not_reversible(
         tp_name: ptr[u8]
-    ) -> None;  def jacpy_reversed_lookup(seq: ptr[PyObject]) -> ptr[PyObject];  def jacpy_iter_reduce_seq(
-        iter: ptr[PyObject], seq: ptr[PyObject], index: i64
-    ) -> ptr[PyObject];  def jacpy_enum_reduce_long(
+    ) -> None;  def jacpy_reversed_lookup(seq: ptr[PyObject]) -> ptr[PyObject];  def jacpy_enum_reduce_long(
         tp: ptr[PyObject], sit: ptr[PyObject], longindex: ptr[PyObject]
     ) -> ptr[PyObject];  def jacpy_enum_reduce_plain(
         tp: ptr[PyObject], sit: ptr[PyObject], index: i64
@@ -226,9 +222,7 @@ import from c {
         tp: ptr[PyObject], seq: ptr[PyObject], index: i64
     ) -> ptr[PyObject];  def jacpy_reversed_reduce_empty(
         tp: ptr[PyObject]
-    ) -> ptr[PyObject];  def jacpy_capsule_is_tracked(o: ptr[PyObject]) -> i32;  def jacpy_capsule_track(
-        o: ptr[PyObject]
-    ) -> None;
+    ) -> ptr[PyObject];
 }
 
 # ------------------------------- enumerate ----------------------------------
@@ -247,7 +241,7 @@ def enum_new(
             kw_start = PyTuple_GetItem(parsed, 1);
         }
         result = enum_new_impl(type_, PyTuple_GetItem(parsed, 0), kw_start);
-        py_decref(parsed);
+        py_xdecref(parsed);
         return result;
     }
     if not jacpy_is_tuple(args) {
@@ -293,7 +287,7 @@ def enum_new_impl(
     if start != ptr[PyObject]() {
         start = PyNumber_Index(start);
         if start == ptr[PyObject]() {
-            py_decref(en_obj);
+            py_xdecref(en_obj);
             return ptr[PyObject]();
         }
         en.en_index = PyLong_AsSsize_t(start);
@@ -303,7 +297,7 @@ def enum_new_impl(
             en.en_longindex = start;
         } else {
             en.en_longindex = ptr[PyObject]();
-            py_decref(start);
+            py_xdecref(start);
         }
     } else {
         en.en_index = 0;
@@ -311,12 +305,12 @@ def enum_new_impl(
     }
     en.en_sit = PyObject_GetIter(iterable);
     if en.en_sit == ptr[PyObject]() {
-        py_decref(en_obj);
+        py_xdecref(en_obj);
         return ptr[PyObject]();
     }
     en.en_result = jacpy_enum_result_tuple();
     if en.en_result == ptr[PyObject]() {
-        py_decref(en_obj);
+        py_xdecref(en_obj);
         return ptr[PyObject]();
     }
     en.one = jacpy_small_one;
@@ -389,13 +383,13 @@ def enum_dealloc(op: ptr[PyObject]) {
     en = ptr[_Enum_Layout](op);
     PyObject_GC_UnTrack(op);
     if en.en_sit != ptr[PyObject]() {
-        py_decref(en.en_sit);
+        py_xdecref(en.en_sit);
     }
     if en.en_result != ptr[PyObject]() {
-        py_decref(en.en_result);
+        py_xdecref(en.en_result);
     }
     if en.en_longindex != ptr[PyObject]() {
-        py_decref(en.en_longindex);
+        py_xdecref(en.en_longindex);
     }
     head = ptr[PyObject_Layout](op);
     ty = ptr[PyTypeObject_Layout](head.ob_type);
@@ -457,20 +451,20 @@ def enum_next_long(en: ptr[_Enum_Layout], next_item: ptr[PyObject]) -> ptr[PyObj
     result = en.en_result;
     next_index = increment_longindex_lock_held(en);
     if next_index == ptr[PyObject]() {
-        py_decref(next_item);
+        py_xdecref(next_item);
         return ptr[PyObject]();
     }
 
     head = ptr[PyObject_Layout](result);
     if head.ob_refcnt == 1 {
-        py_incref(result);
+        py_xincref(result);
         pair = ptr[PyTuple2_Layout](result);
         old_index = pair.item0;
         old_item = pair.item1;
         pair.item0 = next_index;
         pair.item1 = next_item;
-        py_decref(old_index);
-        py_decref(old_item);
+        py_xdecref(old_index);
+        py_xdecref(old_item);
         # The GC may have untracked this result tuple; since we're
         # recycling it, make sure it's tracked again.
         tuple_recycle(result);
@@ -478,8 +472,8 @@ def enum_next_long(en: ptr[_Enum_Layout], next_item: ptr[PyObject]) -> ptr[PyObj
     }
     result = PyTuple_New(2);
     if result == ptr[PyObject]() {
-        py_decref(next_index);
-        py_decref(next_item);
+        py_xdecref(next_index);
+        py_xdecref(next_item);
         return ptr[PyObject]();
     }
     fresh = ptr[PyTuple2_Layout](result);
@@ -507,7 +501,7 @@ def enum_next(op: ptr[PyObject]) -> ptr[PyObject] {
 
     next_index = PyLong_FromSsize_t(en_index);
     if next_index == ptr[PyObject]() {
-        py_decref(next_item);
+        py_xdecref(next_item);
         return ptr[PyObject]();
     }
     # en_index < PY_SSIZE_T_MAX here (the max case took the long path).
@@ -515,21 +509,21 @@ def enum_next(op: ptr[PyObject]) -> ptr[PyObject] {
 
     head = ptr[PyObject_Layout](result);
     if head.ob_refcnt == 1 {
-        py_incref(result);
+        py_xincref(result);
         pair = ptr[PyTuple2_Layout](result);
         old_index = pair.item0;
         old_item = pair.item1;
         pair.item0 = next_index;
         pair.item1 = next_item;
-        py_decref(old_index);
-        py_decref(old_item);
+        py_xdecref(old_index);
+        py_xdecref(old_item);
         tuple_recycle(result);
         return result;
     }
     result = PyTuple_New(2);
     if result == ptr[PyObject]() {
-        py_decref(next_index);
-        py_decref(next_item);
+        py_xdecref(next_index);
+        py_xdecref(next_item);
         return ptr[PyObject]();
     }
     fresh = ptr[PyTuple2_Layout](result);
@@ -565,7 +559,7 @@ glob enum_methods: _Enum_Methods = _Enum_Methods(
      );
 
 glob:pub PyEnum_Type: PyTypeObject_Layout = PyTypeObject_Layout(
-         ob_refcnt=1407378104778752,
+         ob_refcnt=1407378104778752,  # _Py_STATIC_IMMORTAL_INITIAL_REFCNT
          ob_type=PyType_Type,
          ob_size=0,
          tp_name="enumerate",
@@ -640,7 +634,7 @@ def reversed_new_impl(
     none_obj: ptr[PyObject] = _Py_NoneStruct;
     reversed_meth = jacpy_reversed_lookup(seq);
     if reversed_meth == none_obj {
-        py_decref(reversed_meth);
+        py_xdecref(reversed_meth);
         shead = ptr[PyObject_Layout](seq);
         sty = ptr[PyTypeObject_Layout](shead.ob_type);
         jacpy_enum_not_reversible(sty.tp_name);
@@ -648,7 +642,7 @@ def reversed_new_impl(
     }
     if reversed_meth != ptr[PyObject]() {
         res = PyObject_CallNoArgs(reversed_meth);
-        py_decref(reversed_meth);
+        py_xdecref(reversed_meth);
         return res;
     }
     if PyErr_Occurred() != ptr[PyObject]() {
@@ -674,7 +668,7 @@ def reversed_new_impl(
     ro = ptr[_Reversed_Layout](ro_obj);
     ro.index = n - 1;
     ro.seq = seq;
-    py_incref(seq);
+    py_xincref(seq);
     return ro_obj;
 }
 
@@ -695,7 +689,7 @@ def reversed_dealloc(op: ptr[PyObject]) {
     ro = ptr[_Reversed_Layout](op);
     PyObject_GC_UnTrack(op);
     if ro.seq != ptr[PyObject]() {
-        py_decref(ro.seq);
+        py_xdecref(ro.seq);
     }
     head = ptr[PyObject_Layout](op);
     ty = ptr[PyTypeObject_Layout](head.ob_type);
@@ -731,7 +725,7 @@ def reversed_next(op: ptr[PyObject]) -> ptr[PyObject] {
     ro.index = -1;
     # Py_CLEAR(ro->seq) (GIL build)
     if ro.seq != ptr[PyObject]() {
-        py_decref(ro.seq);
+        py_xdecref(ro.seq);
         ro.seq = ptr[PyObject]();
     }
     return ptr[PyObject]();
@@ -793,7 +787,7 @@ def reversed_setstate(
         }
         ro.index = index;
     }
-    py_incref(none_obj);
+    py_xincref(none_obj);
     return none_obj;
 }
 
@@ -819,7 +813,7 @@ glob reversediter_methods: _ReversedIter_Methods = _ReversedIter_Methods(
      );
 
 glob:pub PyReversed_Type: PyTypeObject_Layout = PyTypeObject_Layout(
-         ob_refcnt=1407378104778752,
+         ob_refcnt=1407378104778752,  # _Py_STATIC_IMMORTAL_INITIAL_REFCNT
          ob_type=PyType_Type,
          ob_size=0,
          tp_name="reversed",

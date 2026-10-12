@@ -22,7 +22,7 @@
 # C residue: the varargs formatters (jacpy_namespace_* below) and the
 # too-many-args TypeError; same residue rules as cellobject.jac.
 
-import from jaclang.runtime.python.refcount { py_incref, py_decref }
+import from jaclang.runtime.python.refcount { py_xincref, py_xdecref }
 
 import from c {
     obj PyObject;
@@ -151,8 +151,7 @@ import from c {
             ob_type: ptr[PyObject] = ptr[PyObject](),
             ns_dict: ptr[PyObject] = ptr[PyObject]();
     }  glob PyType_Type: PyTypeObject_Layout; glob PyDict_Type:
-             PyTypeObject_Layout; glob PyUnicode_Type: PyTypeObject_Layout; glob PyExc_TypeError:
-             ptr[PyObject];
+             PyTypeObject_Layout; glob PyUnicode_Type: PyTypeObject_Layout;
     # Py_NotImplemented is a macro over this exported struct.
     glob _Py_NotImplementedStruct: PyObject_Layout;
     # Py_VISIT: `visit` is a C function pointer, not a Jac Callable.
@@ -237,7 +236,7 @@ def namespace_new(
         ns = ptr[_PyNamespaceObject_Layout](self);
         ns.ns_dict = PyDict_New();
         if ns.ns_dict == ptr[PyObject]() {
-            py_decref(self);
+            py_xdecref(self);
             return ptr[PyObject]();
         }
     }
@@ -270,7 +269,7 @@ def namespace_init(op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]) 
         # PyDict_CheckExact(f)
         if ob_type_of(f) == dt {
             d = f;
-            py_incref(d);
+            py_xincref(d);
         } else {
             d = PyObject_CallOneArg(dt, f);
             if d == ptr[PyObject]() {
@@ -278,10 +277,10 @@ def namespace_init(op: ptr[PyObject], args: ptr[PyObject], kwds: ptr[PyObject]) 
             }
         }
         if PyArg_ValidateKeywordArguments(d) == 0 or PyDict_Update(ns.ns_dict, d) < 0 {
-            py_decref(d);
+            py_xdecref(d);
             return -1;
         }
-        py_decref(d);
+        py_xdecref(d);
     }
     if kwds == ptr[PyObject]() {
         return 0;
@@ -299,7 +298,7 @@ def namespace_dealloc(op: ptr[PyObject]) {
     tmp = ns.ns_dict;
     ns.ns_dict = ptr[PyObject]();
     if tmp != ptr[PyObject]() {
-        py_decref(tmp);
+        py_xdecref(tmp);
     }
     # Py_TYPE(ns)->tp_free(ns)
     ty = ptr[PyTypeObject_Layout](ns.ob_type);
@@ -331,21 +330,21 @@ def namespace_repr(ns: ptr[PyObject]) -> ptr[PyObject] {
     }
 
     d = head.ns_dict;
-    py_incref(d);
+    py_xincref(d);
 
     keys = PyDict_Keys(d);
     if keys == ptr[PyObject]() {
-        py_decref(d);
-        py_decref(pairs);
+        py_xdecref(d);
+        py_xdecref(pairs);
         Py_ReprLeave(ns);
         return ptr[PyObject]();
     }
 
     keys_iter = PyObject_GetIter(keys);
     if keys_iter == ptr[PyObject]() {
-        py_decref(keys);
-        py_decref(d);
-        py_decref(pairs);
+        py_xdecref(keys);
+        py_xdecref(d);
+        py_xdecref(pairs);
         Py_ReprLeave(ns);
         return ptr[PyObject]();
     }
@@ -358,21 +357,21 @@ def namespace_repr(ns: ptr[PyObject]) -> ptr[PyObject] {
             if u.length > 0 {
                 value = PyDict_GetItemWithError(d, key);
                 if value != ptr[PyObject]() {
-                    py_incref(value);
+                    py_xincref(value);
                     item = jacpy_namespace_pair(key, value);
-                    py_decref(value);
+                    py_xdecref(value);
                     if item == ptr[PyObject]() {
                         loop_error = 1;
                     } else {
                         loop_error = PyList_Append(pairs, item);
-                        py_decref(item);
+                        py_xdecref(item);
                     }
                 } elif PyErr_Occurred() != ptr[PyObject]() {
                     loop_error = 1;
                 }
             }
         }
-        py_decref(key);
+        py_xdecref(key);
         if loop_error != 0 {
             break;
         }
@@ -384,18 +383,18 @@ def namespace_repr(ns: ptr[PyObject]) -> ptr[PyObject] {
         separator = PyUnicode_FromString(", ");
         if separator != ptr[PyObject]() {
             pairsrepr = PyUnicode_Join(separator, pairs);
-            py_decref(separator);
+            py_xdecref(separator);
             if pairsrepr != ptr[PyObject]() {
                 rval = jacpy_namespace_repr_closed(name, pairsrepr);
-                py_decref(pairsrepr);
+                py_xdecref(pairsrepr);
             }
         }
     }
 
-    py_decref(keys_iter);
-    py_decref(keys);
-    py_decref(d);
-    py_decref(pairs);
+    py_xdecref(keys_iter);
+    py_xdecref(keys);
+    py_xdecref(d);
+    py_xdecref(pairs);
     Py_ReprLeave(ns);
     return rval;
 }
@@ -416,7 +415,7 @@ def namespace_clear(op: ptr[PyObject]) -> i32 {
     tmp = ns.ns_dict;
     ns.ns_dict = ptr[PyObject]();
     if tmp != ptr[PyObject]() {
-        py_decref(tmp);
+        py_xdecref(tmp);
     }
     return 0;
 }
@@ -430,7 +429,7 @@ def namespace_richcompare(
         o = ptr[_PyNamespaceObject_Layout](other);
         return PyObject_RichCompare(s.ns_dict, o.ns_dict, op);
     }
-    py_incref(notimpl_obj);
+    py_xincref(notimpl_obj);
     return notimpl_obj;
 }
 
@@ -444,7 +443,7 @@ def namespace_reduce(
     }
     t: ptr[PyObject] = ns.ob_type;
     result = jacpy_namespace_reduce_pack(t, args, ns.ns_dict);
-    py_decref(args);
+    py_xdecref(args);
     return result;
 }
 
@@ -463,17 +462,17 @@ def namespace_replace(
     if not namespace_is_ns_sub(result) {
         ns_type: ptr[PyObject] = _PyNamespace_Type;
         jacpy_namespace_replace_type_error(ns_type, self, result);
-        py_decref(result);
+        py_xdecref(result);
         return ptr[PyObject]();
     }
     r = ptr[_PyNamespaceObject_Layout](result);
     if PyDict_Update(r.ns_dict, s.ns_dict) < 0 {
-        py_decref(result);
+        py_xdecref(result);
         return ptr[PyObject]();
     }
     if kwargs != ptr[PyObject]() {
         if PyDict_Update(r.ns_dict, kwargs) < 0 {
-            py_decref(result);
+            py_xdecref(result);
             return ptr[PyObject]();
         }
     }
@@ -546,7 +545,7 @@ def:pub _PyNamespace_New(kwds: ptr[PyObject]) -> ptr[PyObject] {
     }
     n = ptr[_PyNamespaceObject_Layout](ns);
     if PyDict_Update(n.ns_dict, kwds) != 0 {
-        py_decref(ns);
+        py_xdecref(ns);
         return ptr[PyObject]();
     }
     return ns;

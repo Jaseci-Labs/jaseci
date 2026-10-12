@@ -1,6 +1,6 @@
 import from jaclang.runtime.python.boolobject { PyLongObject_Layout, PyNumberMethods }
 
-import from jaclang.runtime.python.refcount { py_incref, py_decref }
+import from jaclang.runtime.python.refcount { py_xincref, py_xdecref }
 
 import from c {
     obj PyObject;  obj ArgVec3 {
@@ -18,7 +18,12 @@ import from c {
     }  obj PyObject_Layout {
         has ob_refcnt: i64 = 0,
             ob_type: ptr[PyObject] = ptr[PyObject]();
-    }  obj PyTypeObject_Layout {
+    }
+    # Local copy of the 53-field type layout (cellobject.jac owns the
+    # reference spelling): extern struct globals need a same-module
+    # layout for native lowering; imported obj types only lower
+    # behind ptr[...].
+    obj PyTypeObject_Layout {
         has ob_refcnt: i64 = 0,
             ob_type: ptr[PyObject] = ptr[PyObject](),
             ob_size: i64 = 0,
@@ -159,16 +164,14 @@ import from c {
     }  glob PyType_Type: PyTypeObject_Layout; glob PyLong_Type:
              PyTypeObject_Layout; glob PyBool_Type: PyTypeObject_Layout; glob PyExc_TypeError:
              ptr[PyObject]; glob PyExc_ValueError: ptr[PyObject]; glob PyExc_IndexError:
-             ptr[PyObject]; glob PyExc_OverflowError: ptr[PyObject]; glob _Py_NoneStruct:
+             ptr[PyObject]; glob _Py_NoneStruct:
              PyObject_Layout; glob _Py_NotImplementedStruct: PyObject_Layout; def PyObject_Free(
         o: ptr
     ) -> None;  def PyObject_GenericGetAttr(
         o: ptr[PyObject], name: ptr[PyObject]
     ) -> ptr[PyObject];  def PyObject_IsTrue(o: ptr[PyObject]) -> i32;  def PyObject_Not(
         o: ptr[PyObject]
-    ) -> i32;  def PyObject_Hash(o: ptr[PyObject]) -> i64;  def PyObject_RichCompare(
-        a: ptr[PyObject], b: ptr[PyObject], op: i32
-    ) -> ptr[PyObject];  def PyObject_RichCompareBool(
+    ) -> i32;  def PyObject_Hash(o: ptr[PyObject]) -> i64;  def PyObject_RichCompareBool(
         a: ptr[PyObject], b: ptr[PyObject], op: i32
     ) -> i32;  def PyObject_SelfIter(o: ptr[PyObject]) -> ptr[PyObject];  def PyErr_Clear -> None;  def PyErr_Occurred -> ptr[
         PyObject
@@ -201,8 +204,8 @@ import from c {
         PyObject
     ];  def jacpy_tuple_set_item(
         t: ptr[PyObject], index: i64, v: ptr[PyObject]
-    ) -> None;  def jacpy_range_alloc(
-        tp: ptr[PyTypeObject_Layout], size: i64
+    ) -> None;  def PyObject_Malloc(n: i64) -> ptr;  def PyObject_Init(
+        op: ptr[PyObject], type_: ptr[PyTypeObject_Layout]
     ) -> ptr[PyObject];  def jacpy_range_obj_alloc(
         tp: ptr[PyTypeObject_Layout]
     ) -> ptr[PyObject];  def jacpy_range_obj_free(o: ptr[PyObject]) -> None;  def jacpy_rangeiter_alloc -> ptr[
@@ -213,7 +216,7 @@ import from c {
         start_ptr: &mut ptr[PyObject],
         stop_ptr: &mut ptr[PyObject],
         step_ptr: &mut ptr[PyObject]
-    ) -> i32;  def jacpy_range_index_check(item: ptr[PyObject]) -> i32;  def jacpy_range_new_too_many(
+    ) -> i32;  def jacpy_range_new_too_many(
         nargs: i64
     ) -> None;  def jacpy_range_bad_index(item: ptr[PyObject]) -> None;  def jacpy_range_repr(
         start: ptr[PyObject],
@@ -297,7 +300,7 @@ def range_length_value(
         return ptr[PyObject]();
     }
     if cmp != 0 {
-        py_incref(zero);
+        py_xincref(zero);
         return zero;
     }
     diff = PyNumber_Subtract(hi, lo);
@@ -305,7 +308,7 @@ def range_length_value(
         return ptr[PyObject]();
     }
     numerator = PyNumber_Subtract(diff, one);
-    py_decref(diff);
+    py_xdecref(diff);
     if numerator == ptr[PyObject]() {
         return ptr[PyObject]();
     }
@@ -313,20 +316,20 @@ def range_length_value(
     if positive == 0 {
         divisor = PyNumber_Negative(step);
         if divisor == ptr[PyObject]() {
-            py_decref(numerator);
+            py_xdecref(numerator);
             return ptr[PyObject]();
         }
     } else {
-        py_incref(divisor);
+        py_xincref(divisor);
     }
     quotient = PyNumber_FloorDivide(numerator, divisor);
-    py_decref(numerator);
-    py_decref(divisor);
+    py_xdecref(numerator);
+    py_xdecref(divisor);
     if quotient == ptr[PyObject]() {
         return ptr[PyObject]();
     }
     result = PyNumber_Add(quotient, one);
-    py_decref(quotient);
+    py_xdecref(quotient);
     return result;
 }
 
@@ -342,7 +345,7 @@ def range_make(
     }
     allocated = jacpy_range_obj_alloc(type_);
     if allocated == ptr[PyObject]() {
-        py_decref(length);
+        py_xdecref(length);
         return ptr[PyObject]();
     }
     r = ptr[PyRangeObject_Layout](allocated);
@@ -365,7 +368,7 @@ def range_item_value(
         return ptr[PyObject]();
     }
     result = PyNumber_Add(r.start, product);
-    py_decref(product);
+    py_xdecref(product);
     return result;
 }
 
@@ -374,14 +377,14 @@ def range_index_value(
 ) -> ptr[PyObject] {
     zero = jacpy_small_zero;
     normalized = index;
-    py_incref(normalized);
+    py_xincref(normalized);
     negative = PyObject_RichCompareBool(index, zero, Py_LT);
     if negative < 0 {
-        py_decref(normalized);
+        py_xdecref(normalized);
         return ptr[PyObject]();
     }
     if negative != 0 {
-        py_decref(normalized);
+        py_xdecref(normalized);
         normalized = PyNumber_Add(r.length, index);
         if normalized == ptr[PyObject]() {
             return ptr[PyObject]();
@@ -392,16 +395,16 @@ def range_index_value(
         before = PyObject_RichCompareBool(normalized, r.length, Py_GE);
     }
     if before < 0 {
-        py_decref(normalized);
+        py_xdecref(normalized);
         return ptr[PyObject]();
     }
     if before != 0 {
-        py_decref(normalized);
+        py_xdecref(normalized);
         PyErr_SetString(PyExc_IndexError, "range object index out of range");
         return ptr[PyObject]();
     }
     result = range_item_value(r, normalized);
-    py_decref(normalized);
+    py_xdecref(normalized);
     return result;
 }
 
@@ -415,33 +418,33 @@ def range_compute_slice(
         return ptr[PyObject]();
     }
     substep = PyNumber_Multiply(r.step, step);
-    py_decref(step);
+    py_xdecref(step);
     if substep == ptr[PyObject]() {
-        py_decref(start);
-        py_decref(stop);
+        py_xdecref(start);
+        py_xdecref(stop);
         return ptr[PyObject]();
     }
     substart = range_item_value(r, start);
-    py_decref(start);
+    py_xdecref(start);
     if substart == ptr[PyObject]() {
-        py_decref(stop);
-        py_decref(substep);
+        py_xdecref(stop);
+        py_xdecref(substep);
         return ptr[PyObject]();
     }
     substop = range_item_value(r, stop);
-    py_decref(stop);
+    py_xdecref(stop);
     if substop == ptr[PyObject]() {
-        py_decref(substart);
-        py_decref(substep);
+        py_xdecref(substart);
+        py_xdecref(substep);
         return ptr[PyObject]();
     }
     result = range_make(
         ptr[PyTypeObject_Layout](PyRange_Type), substart, substop, substep
     );
     if result == ptr[PyObject]() {
-        py_decref(substart);
-        py_decref(substop);
-        py_decref(substep);
+        py_xdecref(substart);
+        py_xdecref(substop);
+        py_xdecref(substep);
     }
     return result;
 }
@@ -482,12 +485,12 @@ def range_contains_long(r: ptr[PyRangeObject_Layout], value: ptr[PyObject]) -> i
         return -1;
     }
     remainder = PyNumber_Remainder(diff, r.step);
-    py_decref(diff);
+    py_xdecref(diff);
     if remainder == ptr[PyObject]() {
         return -1;
     }
     result = PyObject_RichCompareBool(remainder, zero, Py_EQ);
-    py_decref(remainder);
+    py_xdecref(remainder);
     return result;
 }
 
@@ -529,11 +532,11 @@ def range_richcompare(
     notimpl_obj: ptr[PyObject] = _Py_NotImplementedStruct;
     range_type: ptr[PyObject] = PyRange_Type;
     if ptr[PyRangeObject_Layout](other).ob_type != range_type {
-        py_incref(notimpl_obj);
+        py_xincref(notimpl_obj);
         return notimpl_obj;
     }
     if op != Py_EQ and op != Py_NE {
-        py_incref(notimpl_obj);
+        py_xincref(notimpl_obj);
         return notimpl_obj;
     }
     equal = range_equals(
@@ -555,37 +558,37 @@ def range_hash(self: ptr[PyObject]) -> i64 {
     if tuple == ptr[PyObject]() {
         return -1;
     }
-    py_incref(r.length);
+    py_xincref(r.length);
     jacpy_tuple_set_item(tuple, 0, r.length);
     empty = PyObject_Not(r.length);
     if empty < 0 {
-        py_decref(tuple);
+        py_xdecref(tuple);
         return -1;
     }
     if empty != 0 {
-        py_incref(none_obj);
-        py_incref(none_obj);
+        py_xincref(none_obj);
+        py_xincref(none_obj);
         jacpy_tuple_set_item(tuple, 1, none_obj);
         jacpy_tuple_set_item(tuple, 2, none_obj);
     } else {
-        py_incref(r.start);
+        py_xincref(r.start);
         jacpy_tuple_set_item(tuple, 1, r.start);
         one = jacpy_small_one;
         single = PyObject_RichCompareBool(r.length, one, Py_EQ);
         if single < 0 {
-            py_decref(tuple);
+            py_xdecref(tuple);
             return -1;
         }
         if single != 0 {
-            py_incref(none_obj);
+            py_xincref(none_obj);
             jacpy_tuple_set_item(tuple, 2, none_obj);
         } else {
-            py_incref(r.step);
+            py_xincref(r.step);
             jacpy_tuple_set_item(tuple, 2, r.step);
         }
     }
     hash = PyObject_Hash(tuple);
-    py_decref(tuple);
+    py_xdecref(tuple);
     return hash;
 }
 
@@ -634,7 +637,7 @@ def range_index(
         return delta;
     }
     index_result = PyNumber_FloorDivide(delta, r.step);
-    py_decref(delta);
+    py_xdecref(delta);
     return index_result;
 }
 
@@ -659,7 +662,7 @@ def range_subscript(self: ptr[PyObject], item: ptr[PyObject]) -> ptr[PyObject] {
             return ptr[PyObject]();
         }
         result = range_index_value(ptr[PyRangeObject_Layout](self), index);
-        py_decref(index);
+        py_xdecref(index);
         return result;
     }
     if slice_is_slice(item) != 0 {
@@ -691,10 +694,10 @@ def range_bool(self: ptr[PyObject]) -> i32 {
 
 def range_dealloc(self: ptr[PyObject]) {
     r = ptr[PyRangeObject_Layout](self);
-    py_decref(r.start);
-    py_decref(r.stop);
-    py_decref(r.step);
-    py_decref(r.length);
+    py_xdecref(r.start);
+    py_xdecref(r.stop);
+    py_xdecref(r.step);
+    py_xdecref(r.length);
     jacpy_range_obj_free(self);
 }
 
@@ -708,7 +711,7 @@ def range_item(self: ptr[PyObject], index: i64) -> ptr[PyObject] {
         return ptr[PyObject]();
     }
     result = range_index_value(ptr[PyRangeObject_Layout](self), value);
-    py_decref(value);
+    py_xdecref(value);
     return result;
 }
 
@@ -734,7 +737,7 @@ def range_from_args(
         }
         stop = PyNumber_Index(a1);
         if stop == ptr[PyObject]() {
-            py_decref(start);
+            py_xdecref(start);
             return ptr[PyObject]();
         }
 
@@ -742,15 +745,15 @@ def range_from_args(
             step = PyNumber_Index(a2);
             if step != ptr[PyObject]() and range_long_is_zero(step) {
                 PyErr_SetString(PyExc_ValueError, "range() arg 3 must not be zero");
-                py_decref(step);
+                py_xdecref(step);
                 step = ptr[PyObject]();
             }
         } else {
             step = PyLong_FromLong(1);
         }
         if step == ptr[PyObject]() {
-            py_decref(start);
-            py_decref(stop);
+            py_xdecref(start);
+            py_xdecref(stop);
             return ptr[PyObject]();
         }
     } elif nargs == 1 {
@@ -771,9 +774,9 @@ def range_from_args(
     if result != ptr[PyObject]() {
         return result;
     }
-    py_decref(start);
-    py_decref(stop);
-    py_decref(step);
+    py_xdecref(start);
+    py_xdecref(stop);
+    py_xdecref(step);
     return ptr[PyObject]();
 }
 
@@ -862,7 +865,7 @@ glob range_methods: RangeMethods_Layout = RangeMethods_Layout(
      range_as_number: PyNumberMethods = PyNumberMethods(nb_bool=range_bool);
 
 glob:pub PyRange_Type: PyTypeObject_Layout = PyTypeObject_Layout(
-         ob_refcnt=1407378104778752,
+         ob_refcnt=1407378104778752,  # _Py_STATIC_IMMORTAL_INITIAL_REFCNT
          ob_type=PyType_Type,
          tp_name="range",
          tp_basicsize=48,
@@ -922,16 +925,25 @@ def fast_range_iter(start: i64, step: i64, length: i64) -> ptr[PyObject] {
     return allocated;
 }
 
+def _range_iter_alloc() -> ptr[PyObject] {
+    # PyObject_Malloc + PyObject_Init (40 bytes: PyLongRangeIterObject).
+    op: ptr[PyObject] = ptr[PyObject](PyObject_Malloc(40));
+    if op == ptr[PyObject]() {
+        return ptr[PyObject]();
+    }
+    return PyObject_Init(op, ptr[PyTypeObject_Layout](PyLongRangeIter_Type));
+}
+
 def long_range_iter(
     start: ptr[PyObject], step: ptr[PyObject], length: ptr[PyObject]
 ) -> ptr[PyObject] {
-    allocated = jacpy_range_alloc(ptr[PyTypeObject_Layout](PyLongRangeIter_Type), 40);
+    allocated = _range_iter_alloc();
     if allocated == ptr[PyObject]() {
         return ptr[PyObject]();
     }
-    py_incref(start);
-    py_incref(step);
-    py_incref(length);
+    py_xincref(start);
+    py_xincref(step);
+    py_xincref(length);
     it = ptr[PyLongRangeIterObject_Layout](allocated);
     it.start = start;
     it.step = step;
@@ -1020,27 +1032,27 @@ def range_reverse_long(r: ptr[PyRangeObject_Layout]) -> ptr[PyObject] {
         return ptr[PyObject]();
     }
     offset = PyNumber_Multiply(n_minus_one, r.step);
-    py_decref(n_minus_one);
+    py_xdecref(n_minus_one);
     if offset == ptr[PyObject]() {
         return ptr[PyObject]();
     }
     start = PyNumber_Add(r.start, offset);
-    py_decref(offset);
+    py_xdecref(offset);
     if start == ptr[PyObject]() {
         return ptr[PyObject]();
     }
     step = PyNumber_Negative(r.step);
     if step == ptr[PyObject]() {
-        py_decref(start);
+        py_xdecref(start);
         return ptr[PyObject]();
     }
-    allocated = jacpy_range_alloc(ptr[PyTypeObject_Layout](PyLongRangeIter_Type), 40);
+    allocated = _range_iter_alloc();
     if allocated == ptr[PyObject]() {
-        py_decref(start);
-        py_decref(step);
+        py_xdecref(start);
+        py_xdecref(step);
         return ptr[PyObject]();
     }
-    py_incref(r.length);
+    py_xincref(r.length);
     it = ptr[PyLongRangeIterObject_Layout](allocated);
     it.start = start;
     it.step = step;
@@ -1071,14 +1083,14 @@ def longrangeiter_next(self: ptr[PyObject]) -> ptr[PyObject] {
     }
     next_len = PyNumber_Subtract(it.len, jacpy_small_one);
     if next_len == ptr[PyObject]() {
-        py_decref(next_start);
+        py_xdecref(next_start);
         return ptr[PyObject]();
     }
     result = it.start;
     it.start = next_start;
     old_len = it.len;
     it.len = next_len;
-    py_decref(old_len);
+    py_xdecref(old_len);
     return result;
 }
 
@@ -1087,7 +1099,7 @@ def longrangeiter_length(
     self: ptr[PyObject], ignored: ptr[PyObject], extra: ptr[PyObject]
 ) -> ptr[PyObject] {
     length = ptr[PyLongRangeIterObject_Layout](self).len;
-    py_incref(length);
+    py_xincref(length);
     return length;
 }
 
@@ -1097,9 +1109,9 @@ def rangeiter_dealloc(self: ptr[PyObject]) {
 
 def longrangeiter_dealloc(self: ptr[PyObject]) {
     it = ptr[PyLongRangeIterObject_Layout](self);
-    py_decref(it.start);
-    py_decref(it.step);
-    py_decref(it.len);
+    py_xdecref(it.start);
+    py_xdecref(it.step);
+    py_xdecref(it.len);
     PyObject_Free(ptr(self));
 }
 
@@ -1134,7 +1146,7 @@ def rangeiter_setstate(
     # reason).
     it.start = wrapping_add(it.start, wrapping_mul(index, it.step));
     it.len = wrapping_sub(it.len, index);
-    py_incref(none_obj);
+    py_xincref(none_obj);
     return none_obj;
 }
 
@@ -1169,22 +1181,22 @@ def longrangeiter_setstate(
         return ptr[PyObject]();
     }
     start = PyNumber_Add(it.start, product);
-    py_decref(product);
+    py_xdecref(product);
     if start == ptr[PyObject]() {
         return ptr[PyObject]();
     }
     length = PyNumber_Subtract(it.len, clipped);
     if length == ptr[PyObject]() {
-        py_decref(start);
+        py_xdecref(start);
         return ptr[PyObject]();
     }
     old_start = it.start;
     old_length = it.len;
     it.start = start;
     it.len = length;
-    py_decref(old_start);
-    py_decref(old_length);
-    py_incref(none_obj);
+    py_xdecref(old_start);
+    py_xdecref(old_length);
+    py_xincref(none_obj);
     return none_obj;
 }
 
@@ -1198,34 +1210,34 @@ def rangeiter_reduce(
     }
     length = PyLong_FromLong(it.len);
     if length == ptr[PyObject]() {
-        py_decref(start);
+        py_xdecref(start);
         return ptr[PyObject]();
     }
     step = PyLong_FromLong(it.step);
     if step == ptr[PyObject]() {
-        py_decref(start);
-        py_decref(length);
+        py_xdecref(start);
+        py_xdecref(length);
         return ptr[PyObject]();
     }
     product = PyNumber_Multiply(length, step);
-    py_decref(length);
+    py_xdecref(length);
     if product == ptr[PyObject]() {
-        py_decref(start);
-        py_decref(step);
+        py_xdecref(start);
+        py_xdecref(step);
         return ptr[PyObject]();
     }
     stop = PyNumber_Add(start, product);
-    py_decref(product);
+    py_xdecref(product);
     if stop == ptr[PyObject]() {
-        py_decref(start);
-        py_decref(step);
+        py_xdecref(start);
+        py_xdecref(step);
         return ptr[PyObject]();
     }
     range = range_make(ptr[PyTypeObject_Layout](PyRange_Type), start, stop, step);
     if range == ptr[PyObject]() {
-        py_decref(start);
-        py_decref(stop);
-        py_decref(step);
+        py_xdecref(start);
+        py_xdecref(stop);
+        py_xdecref(step);
         return ptr[PyObject]();
     }
     return jacpy_range_iter_reduce(range);
@@ -1240,17 +1252,17 @@ def longrangeiter_reduce(
         return ptr[PyObject]();
     }
     stop = PyNumber_Add(it.start, product);
-    py_decref(product);
+    py_xdecref(product);
     if stop == ptr[PyObject]() {
         return ptr[PyObject]();
     }
-    py_incref(it.start);
-    py_incref(it.step);
+    py_xincref(it.start);
+    py_xincref(it.step);
     range = range_make(ptr[PyTypeObject_Layout](PyRange_Type), it.start, stop, it.step);
     if range == ptr[PyObject]() {
-        py_decref(it.start);
-        py_decref(stop);
-        py_decref(it.step);
+        py_xdecref(it.start);
+        py_xdecref(stop);
+        py_xdecref(it.step);
         return ptr[PyObject]();
     }
     return jacpy_range_iter_reduce(range);
@@ -1300,7 +1312,7 @@ glob rangeiter_methods: RangeIterMethods_Layout = RangeIterMethods_Layout(
      );
 
 glob:pub PyRangeIter_Type: PyTypeObject_Layout = PyTypeObject_Layout(
-         ob_refcnt=1407378104778752,
+         ob_refcnt=1407378104778752,  # _Py_STATIC_IMMORTAL_INITIAL_REFCNT
          ob_type=PyType_Type,
          tp_name="range_iterator",
          tp_basicsize=40,
@@ -1312,7 +1324,7 @@ glob:pub PyRangeIter_Type: PyTypeObject_Layout = PyTypeObject_Layout(
          tp_methods=rangeiter_methods
      ),
      PyLongRangeIter_Type: PyTypeObject_Layout = PyTypeObject_Layout(
-         ob_refcnt=1407378104778752,
+         ob_refcnt=1407378104778752,  # _Py_STATIC_IMMORTAL_INITIAL_REFCNT
          ob_type=PyType_Type,
          tp_name="longrange_iterator",
          tp_basicsize=40,

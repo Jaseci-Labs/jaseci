@@ -586,11 +586,12 @@ impl NaIRGenPass._codegen_c_fnfield_call(
         args.append(self._coerce_type(v, want));
     }
     b = self.builder;
-    i64 = ir.IntType(64);
-    offset = self._clib_struct_layout(sname)[2][order.index(method)][0];
-    field_addr = b.add(addr, ir.Constant(i64, offset), name=f"c.fn.{method}.addr");
-    slot = b.inttoptr(field_addr, fty.as_pointer(), name=f"c.fn.{method}.slot");
-    fn = b.load(slot, name=f"c.fn.{method}");
+    # The field slot helper resolves name→offset and loads the fn pointer.
+    fn_i64 = self._foreign_ptr_field_slot(addr, recv.type, method);
+    if fn_i64 is None {
+        return None;
+    }
+    fn = b.inttoptr(fn_i64, fty, name=f"c.fn.{method}");
     return b.call(fn, args, name=f"c.fn.{method}.ret")
         if not isinstance(fn_ty.return_type, ir.VoidType)
         else b.call(fn, args);

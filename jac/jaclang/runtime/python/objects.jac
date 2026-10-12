@@ -14,7 +14,6 @@ import from jaclang.runtime.python.cpython_api {
     PySequence_Fast,
     PySequence_GetItem,
     PySequence_Tuple,
-    PySlice_AdjustIndices,
     PyUnicode_Format,
     _Py_c_pow,
     _Py_c_quot
@@ -365,15 +364,16 @@ obj PyStr(PyObj) {
             return PyStr(t="str", val=self.val + (other as PyStr).val);
         }
         if kind == NB_MULTIPLY {
-            # str * n -- unicode_repeat; elements shared, count via nb_index
-            # so bool counts as int like CPython.
-            if not isinstance(other, (PyInt, PyBool)) {
+            # str * n -- unicode_repeat; count via nb_index like the
+            # tuple/list siblings, so __index__-only operands work too.
+            idx = other.to_index();
+            if is_error(idx) {
                 return py_error(
                     "TypeError",
                     "can't multiply sequence by non-int of type '" + other.t + "'",
                 );
             }
-            n = (other.to_index() as PyInt).val;
+            n = (idx as PyInt).val;
             repeated = "";
             while n > 0 {
                 repeated += self.val;
@@ -450,13 +450,16 @@ obj PyBytes(PyObj) {
             return PyBytes(t="bytes", val=joined);
         }
         if kind == NB_MULTIPLY {
-            if not isinstance(other, (PyInt, PyBool)) {
+            # bytes * n -- count via nb_index like the tuple/list siblings,
+            # so __index__-only operands work too.
+            idx = other.to_index();
+            if is_error(idx) {
                 return py_error(
                     "TypeError",
                     "can't multiply sequence by non-int of type '" + other.t + "'",
                 );
             }
-            n = (other.to_index() as PyInt).val;
+            n = (idx as PyInt).val;
             repeated: list[int] = [];
             while n > 0 {
                 repeated.extend(self.val);

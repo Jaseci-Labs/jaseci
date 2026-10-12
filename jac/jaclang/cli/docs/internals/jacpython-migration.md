@@ -119,39 +119,33 @@ The ports so far needed these, each worked around in C or by a pattern:
    fn-pointer FIELDS (`obj ops { has do_it: def(i32) -> i32 }`) are already
    callable: the generic call path evaluates a non-name callee and
    `_codegen_callable_value` (calls.impl.jac) calls any `ptr→FunctionType`
-   value with coercion; a runtime smoke test is pending
-   (`/tmp/gap4test/gap3_smoke.jac`). Still missing: calling an ERASED address
+   value with coercion. Still missing: calling an ERASED address
    (`p: ptr`, i64), as atexit does, which needs explicit cast syntax to a
-   function type (e.g. the gap-1 conversion form against a `def` target);
-   design when gap 3 activates.
+   function type (e.g. the gap-1 conversion form against a `def` target).
 4. **Exporting data symbols.** A static `PyTypeObject` is a C variable other C
    code takes the address of.
 5. **Varargs calls.**
 
 Gaps 1 to 4 block the object model and the evaluator.
 
-Status of the gap closures (2026-10-06, branch-local, uncommitted):
+Status of the gap closures:
 
 - **Gap 1 (pointer arithmetic / integer conversion): done.** Checker in
   `types/operations.jac` (`get_pointer_arith_result_type`): `p+n`/`p-n` scale
   by `sizeof(T)`, `p-q` yields element count as `int`, `n+p` stays E1055;
   `int(p)` and `ptr[T](i)` are identities (values are i64 addresses in the
   native IR). Native lowering in `na_ir_gen_pass.impl/c_interop.impl.jac`
-  (`_codegen_ptr_arith`). Verified on clarity2: checker positives and native
-  smoke (`2 / 8 / 4 / 4 / done`).
+  (`_codegen_ptr_arith`).
 - **Gap 2 (`ptr[T].field` without copy): done.**
   Checker resolves the field via `foreign_struct_of_type` +
   `_lookup_object_member`, normalized to instance type; native loads/stores go
   through `inttoptr(addr+offset)` with augmented-assignment support.
-  Checker fix re-verified on clarity2 (`1 passed`); native smoke green
-  (`42 / 2.5 / 7 / 1`).
-- **Gap 3 (typed fn-ptr fields): done.** Runtime smoke green on clarity2
-  (`/tmp/gap4test/gap3_smoke.jac` prints `15` / `gap3 done`): a
-  `Callable[[i32], i32]` field is assigned a named function and called
-  through the instance. Still missing: calling an ERASED address
+- **Gap 3 (typed fn-ptr fields): done.** A `Callable` field on a clib
+  archetype is assigned a named function and called through the instance
+  (`ty.tp_iternext(it)` lowers to a field load and indirect call via
+  `_codegen_c_fnfield_call`). Still missing: calling an ERASED address
   (`p: ptr`, i64), as atexit does, which needs explicit cast syntax to a
-  function type (e.g. the gap-1 conversion form against a `def` target);
-  design when gap 3 activates.
+  function type (e.g. the gap-1 conversion form against a `def` target).
 - **Gap 4 (export data symbols): done.**
   `glob [access] X: SomeCStruct = SomeCStruct(args...);` with all-constant
   members emits the clib archetype's inline C-layout struct as the global
@@ -166,71 +160,13 @@ Status of the gap closures (2026-10-06, branch-local, uncommitted):
   `shared_glob_struct.jac` fixture path) keep `__jac_glob_init`. Files:
   `na_ir_gen_pass.jac` (state + decls), `globals.impl.jac` (builders),
   `expr.impl.jac` (use path), `core.impl.jac` (finalize flush).
-  Verified on clarity2: checker clean on `/tmp/gap4test/gap4_smoke.jac`
-  (scalars, C strings, nested struct, fn-ptr and fn-ref relocations) and
-  runtime prints `7 / 1 / done`; direct `THE_THING.count` use works.
-  llvmlite >= 0.44 gotcha (cost a day): `ir.GlobalVariable.type` returns a
-  `PointerType`, so `isinstance(gv.type, IdentifiedStructType)` NEVER
-  matches and struct-typed globs were silently `load`ed as scalar garbage.
-  Struct globs are detected via `gv.type.pointee` +
-  `pointee.name in self.clib_struct_names` (expr NameAtom returns the
-  global itself; the trailer field path falls back to the same name check
-  when the checker-side base type is missing). Static member lowering
-  accepts `uni.String`/`MultiString` literals, and E5092 for a failed
-  member names the field's LLVM type and the member AST node class.
-
-## Verification environment (clarity2)
-
-- Box: Ubuntu 20.04 (glibc 2.31, no sudo), 20 cores. Repo at
-  `~/repos/jacpy-comp`. Build: `cd jac && ~/tools/zig/zig build fetch-llvm
-  && ~/tools/zig/zig build -Ddev -j8` (`-Ddev` links the compiler live from
-  the checkout: rsync the edited files, no rebuild needed). glibc workaround:
-  `python3 ~/repos/fixinterp.py zig-out/bin/jac` (PT_INTERP patch), then run
-  through `~/g/jacpy`, a wrapper exporting
-  `LD_LIBRARY_PATH=/home/madhu/sysroot/noble/...`. Never export that
-  `LD_LIBRARY_PATH` globally (it breaks system tools).
-- **Any edit under `jaclang/compiler/types/` invalidates the stub catalog.**
-  The next invocation pays a one-time ~13 min rebuild; batch all type-file
-  edits into one sync before testing.
-- **Never run two `jac` invocations concurrently on the box.** They thrash
-  the stub/cache files: warm 2-second checks have timed out at 300 s when
-  raced against a test run. Serialize remote jobs.
-- **Backend/`types/` edits invalidate the native-units kernel**: the next
-  invocation rebuilds `libjac_compiler.so` (~30 min at O2). `kernel_options`
-  (`kernel_resolve.jac`) is pinned to `opt_level=0`, `native_threads=1`:
-  the O2 build peaks at ~50 GB RSS and the OOM killer takes `jac` down
-  (62 GB box, training jobs resident); O0 fits. Flip back only when >55 GB
-  is free.
-- **Long remote jobs must run server-side under `nohup`** writing a done
-  sentinel; poll with short ssh. Never pipe a live `jac` build/check into
-  `head`: after head exits, the writer gets SIGPIPE and `jac` dies
-  mid-build with the cache half-written (redirect to a file, then grep).
-  Killed sessions can leave orphaned `build_kernel` processes burning a
-  core for hours; check `ps aux | grep build_kernel` and kill them.
-- **`glob:pub` / `def:pub` route `jac run` into app preparation** (silent
-  exit, no program output). For plain native smokes use `glob`/`def`.
-- **Importing a clib by absolute path segfaults the native binary at its
-  first imported call** (verified 2026-10-07: `import from
-  "/usr/lib/x86_64-linux-gnu/libc.so.6"` crashes before any output, the
-  same body with `import from "libc.so.6"` runs green). Use the soname in
-  fixtures; file upstream against the ELF/link lane. Output lost to
-  buffering on a crash looks like "no output"; run `stdbuf -o0`.
-- The `opt_level=0` kernel also links in ~100 s (was ~30 min at O2), so
-  backend-edit rebuilds are cheap enough for bisection again. A reboot
-  wipes `/tmp` (keep fixture copies on the workstation) and leaves `git`
-  crashing under the `~/g/jacpy` LD_LIBRARY_PATH wrapper (kernel derivation
-  falls back to a full rebuild, noisy but harmless).
-- `-j16` locally OOMs 14 GB and the workstation disk has no headroom; the
-  full compiler suite (`JAC_TEST_JOBS=auto jac test tests`) is ~90 min there
-  and has no clean baseline yet (500 failed / 295 error on the first-ever
-  run, likely environmental: no postgres 19, absent services).
-- **The 11 pointer/clib subset failures are environmental, not code**
-  (2026-10-07): the 5 subset files give `15 passed, 11 failed, 1 skipped`
-  and every failure is `/usr/bin/cc: symbol lookup error: sysroot libc
-  _dl_audit_symbind_alt`: tests that shell out to `cc` inherit the
-  `~/g/jacpy` focal-sysroot `LD_LIBRARY_PATH` and the noble `cc` refuses
-  it. Same failures at HEAD; identical under a baseline tree. A CI-style
-  container would not see them.
+  `ir.GlobalVariable.type` is always a `PointerType` (llvmlite >= 0.44), so
+  a struct global is detected through `gv.value_type` (or
+  `gv.type.pointee`), never `isinstance(gv.type, …)`; the trailer field path
+  falls back to the same check when the checker-side base type is missing.
+  Static member lowering accepts `uni.String`/`MultiString` literals, and
+  E5092 for a failed member names the field's LLVM type and the member AST
+  node class.
 
 ## Object model (`Objects/`, 143k lines)
 
@@ -282,10 +218,7 @@ bytes of `PyGetSetDef[2]`. C residue: `jacpy_cell_repr` (varargs
 `PyUnicode_FromFormat` + `tp_name` read), `jacpy_is_cell`, and
 `jacpy_cell_new_too_many` (formatted TypeError). Registration: import the
 type in `native_api.jac`; `Objects/cellobject.c` is commented out in
-`cpython-sources.txt`. Verified on clarity2: single-file check passes
-(`JAC_NO_DEV_SOURCE=1 jac check jaclang/runtime/python/cellobject.jac`) and
-the `native_api.jac` closure check passes with the type in it; runtime
-verification waits on the first full `build.sh` run. The port forced four
+`cpython-sources.txt`. The port forced four
 shared-infra fixes: extern `glob` declarations inside clib imports (AST
 validator), the address-decay assignment rule (checker, native context),
 extern-glob registration for clib data symbols, and null-pointer calls
@@ -336,9 +269,9 @@ native shape yet; `_PyType_Name` supplies the subtype name for the
 unpack error. New residue: `jacpy_namespace_too_many`, `jacpy_namespace_pair`
 (`%U=%R`), `jacpy_namespace_repr_closed` (`%s(%S)`),
 `jacpy_namespace_repr_selfref` (`%s(...)`), `jacpy_namespace_reduce_pack`
-(`PyTuple_Pack(3, …)`), `jacpy_namespace_replace_type_error` (`%N`/`%T`),
-and `jacpy_vectorcall_arg` (bool's `PyObject *const *` element load; the
-native checker does not type pointer-to-pointer subscripts yet, E1001).
+(`PyTuple_Pack(3, …)`), `jacpy_namespace_replace_type_error` (`%N`/`%T`).
+The `PyObject *const *` vectorcall args are read through the `ArgVec3`
+layout cast, the same idiom bool and enum use.
 
 `capsule.c` is the fourth port (`runtime/python/capsule.jac`). The
 `PyCapsule` layout (head + pointer + name + context + destructor +
@@ -347,8 +280,8 @@ the whole API surface (`PyCapsule_New/IsValid/Get*/Set*/Import`,
 `_PyCapsule_SetTraverse`) is `def:pub` in Jac, so gen_capi stops declaring
 them. `_PyCapsule_SetTraverse` stores a `traverseproc`/`inquiry` pair and
 tracks the object through two C residue helpers
-(`jacpy_capsule_is_tracked`/`jacpy_capsule_track`, because the GC macros write GC
-header bits). `PyCapsule_Import` walks dotted names over a `PyMem_Malloc`ed
+(`jacpy_gc_is_tracked`/`jacpy_gc_track`, because the GC macros write GC
+header bits; the names are gc_* since iter/slice share them). `PyCapsule_Import` walks dotted names over a `PyMem_Malloc`ed
 copy; the in-place `*dot++ = 0` split is residue
 (`jacpy_capsule_split`), as are the repr (`%p`) and the two PyErr_Format
 errors. The destructor/traverse/clear fields are opaque `ptr` in the Jac
@@ -361,11 +294,10 @@ externs.
 GC iterator types: `PySeqIter_Type` ("iterator"), `PyCallIter_Type`
 ("callable_iterator"), and `_PyAnextAwaitable_Type` ("anext_awaitable",
 which carries a defined static `PyAsyncMethods` record decayed into
-`tp_as_async`). All slot bodies are Jac except the indirect slot calls:
-`tp_iternext` and `am_await` dispatch go through `jacpy_type_call_iternext`
-and `jacpy_type_call_am_await` (enumobject and namespaceobject use the same
-family for `tp_alloc`/`tp_free`), `_PyObject_HasLen` reads `tp_as_sequence->sq_length` through a
-cast, and the GC track/untrack reuse the capsule residue helpers. Residue:
+`tp_as_async`). `tp_iternext`/`am_await`/`tp_alloc`/`tp_free` dispatch is a
+typed field call (gap 3), so all slot bodies are Jac; `_PyObject_HasLen`
+reads `tp_as_sequence->sq_length` through a cast, and the GC track/untrack
+use the `jacpy_gc_track` residue helper. Residue:
 the `Py_BuildValue` formats for `__reduce__`, the `PyObject_CallMethod`
 proxy for send/throw/close, and `jacpy_iter_builtin`
 (`_PyEval_GetBuiltin(&_Py_ID(iter))`; the static-identifier machinery
@@ -377,7 +309,7 @@ plain extern (real symbol, pycore_genobject).
 `PyReversed_Type` ("reversed", 32-byte `reversedobject`), both with the
 clinic `__new__` wrappers re-expressed as Jac arg parsing plus
 `vectorcall` constructors (the inlined `PyVectorcall_NARGS` mask and
-`jacpy_vectorcall_arg` element loads). The C critical sections and
+`ArgVec3` element reads). The C critical sections and
 `FT_ATOMIC_*` accessors are GIL-build no-ops, so `enum_next`'s
 uniquely-referenced tuple recycling path (`_PyObject_IsUniquelyReferenced`
 → refcount read, static inline `_PyTuple_Recycle` → `jacpy_tuple_recycle`
@@ -386,8 +318,8 @@ residue, macro `PyTuple_SET_ITEM` →
 inline), the `__class_getitem__` = `Py_GenericAlias` method, the
 `_PyObject_LookupSpecial(&_Py_ID(__reversed__))` static identifier, and the
 `Py_BuildValue`/`%.200s` formatters are residue helpers
-(`jacpy_enum_*`, `jacpy_reversed_*`, `jacpy_long_one`,
-`jacpy_tuple_item/set_item`, `jacpy_enum_result_tuple`).
+(`jacpy_enum_*`, `jacpy_reversed_*`, `jacpy_small_one`,
+`jacpy_tuple_item`, `jacpy_enum_result_tuple`).
 
 `sliceobject.c` is the seventh port (`runtime/python/sliceobject.jac`):
 the Ellipsis singleton (`PyEllipsis_Type` + `_Py_EllipsisObject`, the
@@ -402,10 +334,10 @@ keep their exact ABI (`def:pub`) and write through the caller's
 check, matching the C macro). The freelist was first dropped (allocations went
 straight through `PyObject_GC_New`/`Del`; the perf pass below restored it
 through C helpers). Long sign/tag logic (`lv_tag & 3`) is shared logic
-with boolobject.jac; residue: the `%R`/`%O` formatters, the UnpackTuple
-arg-count errors, `jacpy_long_zero` (static inline), and `jacpy_slice_hash`
-(the u64 xxHash rotation; `u64.wrap` and the `wrapping_*` builtins could
-now express it in Jac).
+with boolobject.jac. `slice_hash` is Jac: the u64 xxHash rotation uses
+`u64.wrap`/`wrapping_*` against `PySliceObject_Layout` fields. Residue: the
+`%R`/`%O` formatters, the UnpackTuple arg-count errors, and the
+`jacpy_small_zero`/`jacpy_small_one` small-int globals.
 
 `rangeobject.c` is the eighth port (`runtime/python/rangeobject.jac`).
 `PyRange_Type` keeps the four owned `PyLong` fields and exact 48-byte layout;
@@ -416,8 +348,10 @@ arbitrary-precision arithmetic. The 40-byte `range_iterator` and
 `longrange_iterator` layouts cover both representations, including
 `__length_hint__`, `__reduce__`, and `__setstate__`. Range objects and
 range iterators allocate through the `ranges` / `range_iters` freelists, as
-in C. C residue is limited to allocation, `_PyIndex_Check`, formatted range
-errors/repr/reduce, and the `iter` builtin lookup/reduction formatter.
+in C. `longrange_iterator` allocation composes `PyObject_Malloc` and
+`PyObject_Init` in Jac. C residue is limited to the freelist allocators,
+formatted range errors/repr/reduce, and the `iter` builtin
+lookup/reduction formatter.
 
 `Py_None` and `Py_NotImplemented` are macros with no exported symbol of their
 own, so the ports declare the real data symbols (`_Py_NoneStruct`,
@@ -436,7 +370,7 @@ casts and arithmetic are checked, so C's unsigned-wraparound code
 function-pointer field (`ty.tp_iternext(it)` on a `ptr[T]`) lower to a direct
 load and indirect call.
 
-Refcounting goes through `refcount.jac` (`py_incref`/`py_decref`, the
+Refcounting goes through `refcount.jac` (`py_xincref`/`py_xdecref`, the
 3.14 64-bit logic) so it inlines: the native object is linked as machine
 code, so `Py_IncRef`/`Py_DecRef` would be real calls where C inlines its
 macros. The slice and range freelists are restored through small C helpers

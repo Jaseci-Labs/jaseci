@@ -355,15 +355,7 @@ import from c {
         interp: ptr[PyInterpreterState], func: ptr, data: ptr
     ) -> i32;  def jacpy_atexit_release_callbacks(interp: ptr[PyInterpreterState]);  def jacpy_audit_pickle_find(
         module: ptr[PyObject], name: ptr[PyObject]
-    ) -> i64;  def jacpy_bool_fallback_and(
-        a: ptr[PyObject], b: ptr[PyObject]
-    ) -> ptr[PyObject];  def jacpy_bool_fallback_invert(
-        v: ptr[PyObject]
-    ) -> ptr[PyObject];  def jacpy_bool_fallback_or(
-        a: ptr[PyObject], b: ptr[PyObject]
-    ) -> ptr[PyObject];  def jacpy_bool_fallback_xor(
-        a: ptr[PyObject], b: ptr[PyObject]
-    ) -> ptr[PyObject];  def jacpy_bool_false -> ptr[PyObject];  def jacpy_bool_new_too_many(
+    ) -> i64;  def jacpy_bool_false -> ptr[PyObject];  def jacpy_bool_new_too_many(
         nargs: i64
     );  def jacpy_bool_repr_str(value: i32) -> ptr[PyObject];  def jacpy_bool_true -> ptr[
         PyObject
@@ -403,11 +395,11 @@ import from c {
         fn: ptr, op: ptr[PyObject], visit_: ptr, arg: ptr
     ) -> i32;  def jacpy_capsule_import_attr_error(name: str);  def jacpy_capsule_import_module_error(
         trace: str
-    );  def jacpy_capsule_is_tracked(op: ptr[PyObject]) -> i32;  def jacpy_capsule_repr(
+    );  def jacpy_capsule_repr(
         o: ptr[PyObject], name: str, quote: str
-    ) -> ptr[PyObject];  def jacpy_capsule_split(trace: bytes) -> ptr[u8];  def jacpy_capsule_track(
-        op: ptr[PyObject]
-    );  def jacpy_cell_new_too_many(nargs: i64);  def jacpy_cell_repr(
+    ) -> ptr[PyObject];  def jacpy_capsule_split(trace: bytes) -> ptr[u8];  def jacpy_cell_new_too_many(
+        nargs: i64
+    );  def jacpy_cell_repr(
         self_: ptr[PyObject]
     ) -> ptr[PyObject];  def jacpy_clear_errno;  def jacpy_code_new(
         argcount: i64,
@@ -474,7 +466,9 @@ import from c {
         address: ptr, size: i64, little: i64
     ) -> f64;  def jacpy_float_value(handle: ptr[PyObject]) -> f64;  def jacpy_fs_text(
         text: ptr
-    ) -> ptr[PyObject];  def jacpy_hacl_simd_features -> i64;  def jacpy_hash_unsigned(
+    ) -> ptr[PyObject];  def jacpy_gc_is_tracked(op: ptr[PyObject]) -> i32;  def jacpy_gc_track(
+        op: ptr[PyObject]
+    );  def jacpy_hacl_simd_features -> i64;  def jacpy_hash_unsigned(
         handle: ptr[PyObject]
     ) -> ptr[PyObject];  def jacpy_insert(
         handle: ptr[PyObject], index: i64, value: ptr[PyObject]
@@ -590,9 +584,9 @@ import from c {
         kind: str, message: ptr[PyObject], location: ptr[PyObject]
     );  def jacpy_raise_error(kind: str, message: str, size: i64);  def jacpy_raise_value(
         kind: str, value: ptr[PyObject]
-    );  def jacpy_range_alloc(type_: ptr[PyObject], size: i64) -> ptr[PyObject];  def jacpy_range_bad_index(
+    );  def jacpy_range_bad_index(
         item: ptr[PyObject]
-    );  def jacpy_range_index_check(item: ptr[PyObject]) -> i64;  def jacpy_range_iter_bad_state(
+    );  def jacpy_range_iter_bad_state(
         state: ptr[PyObject]
     );  def jacpy_range_iter_reduce(range: ptr[PyObject]) -> ptr[PyObject];  def jacpy_range_new_too_many(
         nargs: i64
@@ -636,7 +630,7 @@ import from c {
         length: i64, bounds: SliceBounds
     ) -> SliceBounds;  def jacpy_slice_alloc -> ptr[PyObject];  def jacpy_slice_free(
         op: ptr[PyObject]
-    );  def jacpy_slice_hash(op: ptr[PyObject]) -> i64;  def jacpy_slice_indices_tuple(
+    );  def jacpy_slice_indices_tuple(
         start: ptr[PyObject], stop: ptr[PyObject], step: ptr[PyObject]
     ) -> ptr[PyObject];  def jacpy_slice_pack3(
         a: ptr[PyObject], b: ptr[PyObject], c: ptr[PyObject]

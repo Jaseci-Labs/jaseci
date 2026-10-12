@@ -442,39 +442,32 @@ impl NaIRGenPass._build_static_field_const(
         }
         return None;
     }
-    cv = nd.ct_value if isinstance(nd, uni.Expr) else None;
-    if cv is not None and not cv.is_deferred {
-        if isinstance(cv, CtBool) {
-            return ir.Constant(ftype, 1 if cv.value else 0);
-        }
-        if isinstance(cv, CtInt) and not cv.mag {
-            if isinstance(ftype, ir.PointerType) {
-                if cv.small == 0 {
-                    return ir.Constant(ftype, None);
-                }
-                return ir.Constant(ir.IntType(64), cv.small).inttoptr(ftype);
-            }
-            return ir.Constant(ftype, cv.small);
-        }
-        if isinstance(cv, CtFloat) {
-            return ir.Constant(ftype, cv.value);
+    if not isinstance(ftype, ir.PointerType) {
+        # Scalar fields delegate to the shared const-expr builder
+        # (CtBool/CtInt/CtFloat, then the fold_const fallback).
+        sc = self._codegen_const_expr(nd, ftype);
+        if sc is not None {
+            return sc;
         }
     }
+    # Pointer fields take integer addresses: 0 is null, nonzero inttoptr.
     import from jaclang.compiler.frontend.const_fold { fold_const }
-    (ok, v) = fold_const(nd);
-    if ok {
-        if isinstance(v, bool) {
-            return ir.Constant(ftype, 1 if v else 0);
+    cv = nd.ct_value if isinstance(nd, uni.Expr) else None;
+    pv: (int | None) = None;
+    if cv is not None and not cv.is_deferred and isinstance(cv, CtInt)
+        and not cv.mag {
+        pv = cv.small;
+    } else {
+        (ok, fv) = fold_const(nd);
+        if ok and isinstance(fv, int) and not isinstance(fv, bool) {
+            pv = fv;
         }
-        if isinstance(v, int) and isinstance(ftype, ir.PointerType) {
-            if v == 0 {
-                return ir.Constant(ftype, None);
-            }
-            return ir.Constant(ir.IntType(64), v).inttoptr(ftype);
+    }
+    if pv is not None and isinstance(ftype, ir.PointerType) {
+        if pv == 0 {
+            return ir.Constant(ftype, None);
         }
-        if isinstance(v, (int, float)) {
-            return ir.Constant(ftype, v);
-        }
+        return ir.Constant(ir.IntType(64), pv).inttoptr(ftype);
     }
     if nm is not None {
         fn = self.func_symtab.get(nm);
