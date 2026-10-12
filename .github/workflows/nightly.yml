@@ -22,6 +22,12 @@ jobs:
     with:
       runners: '["blacksmith-8vcpu-ubuntu-2404", "ubuntu-24.04-arm", "macos-14"]'
 
+  # The js_engine accelerator: releases ship bun, so this is where the engine
+  # is built and gated without a pull request asking.
+  js-engine:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '0 3 * * *' }}
+    uses: ./.github/workflows/_js_engine.yml
+
   notes-app-cef-smoke:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '0 3 * * *' }}
     runs-on: blacksmith-4vcpu-ubuntu-2404
