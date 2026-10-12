@@ -42,8 +42,8 @@ glob PAYLOAD_ZSTD_LEVEL: int = 19,
      ),
      STUBCAT_BOOT_SRC: str = (
          "import sys\n"
-         "from jaclang.jac0core.artifact_registry import begin; begin(['stubcat'])\n"
          "import _jac_finder; _jac_finder.install()\n"
+         "from jaclang.jac0core.artifact_registry import begin; begin(['stubcat'])\n"
          "from jaclang.compiler.types.stubcat.build import main\n"
          "sys.exit(main(sys.argv[1:] + ['--cache']))\n"
      );
