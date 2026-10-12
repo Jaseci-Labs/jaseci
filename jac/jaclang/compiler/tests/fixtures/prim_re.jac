@@ -73,33 +73,131 @@ def re_py -> dict[any, any] {
     e1: str = "no raise";
     try {
         re.compile("(");
-    } except Exception {
-        e1 = "err";
+    } except Exception as e {
+        e1 = str(e);
     }
     e2: str = "no raise";
     try {
         re.compile("a**");
-    } except Exception {
-        e2 = "err";
+    } except Exception as e {
+        e2 = str(e);
     }
     e3: str = "no raise";
     try {
         re.compile("(?i)x(?i)y");
-    } except Exception {
-        e3 = "err";
+    } except Exception as e {
+        e3 = str(e);
     }
     e4: str = "no raise";
     try {
         re.compile("[z-a]");
-    } except Exception {
-        e4 = "err";
+    } except Exception as e {
+        e4 = str(e);
     }
     e5: str = "no raise";
     try {
         re.compile("(a)\\2");
-    } except Exception {
-        e5 = "err";
+    } except Exception as e {
+        e5 = str(e);
     }
+    e6: str = "no raise";
+    try {
+        re.compile("\\123");
+        m123 = re.match("\\123", "S");
+        e6 = m123.group(0) if m123 is not None else "nomatch";
+    } except Exception as e {
+        e6 = str(e);
+    }
+    e7: str = "no raise";
+    try {
+        re.compile("\\777");
+    } except Exception as e {
+        e7 = str(e);
+    }
+    e8: str = "no raise";
+    try {
+        re.compile("\\128");
+    } except Exception as e {
+        e8 = str(e);
+    }
+    e9: str = "no raise";
+    try {
+        re.compile("\\x0g");
+    } except Exception as e {
+        e9 = str(e);
+    }
+    e10: str = "no raise";
+    try {
+        re.compile("a{3,2}");
+    } except Exception as e {
+        e10 = str(e);
+    }
+    e11: str = "no raise";
+    try {
+        re.compile("(\\1)");
+    } except Exception as e {
+        e11 = str(e);
+    }
+    e12: str = "no raise";
+    try {
+        re.sub("(a)", "\\g<1a>", "a");
+    } except Exception as e {
+        e12 = str(e);
+    }
+    e13: str = "no raise";
+    try {
+        re.sub("(a)", "\\g<>", "a");
+    } except Exception as e {
+        e13 = str(e);
+    }
+    e14: str = "no raise";
+    try {
+        re.sub("(a)", "\\g<", "a");
+    } except Exception as e {
+        e14 = str(e);
+    }
+    e15: str = "no raise";
+    try {
+        re.sub("(a)", "\\g<2>", "a");
+    } except Exception as e {
+        e15 = str(e);
+    }
+    e16: str = "no raise";
+    try {
+        re.sub("(a)", "\\9", "a");
+    } except Exception as e {
+        e16 = str(e);
+    }
+    e17: str = "no raise";
+    try {
+        re.compile("(a)(b)(c)(d)(e)(f)(g)(h)(i)\\12");
+    } except Exception as e {
+        e17 = str(e);
+    }
+    e18: str = "no raise";
+    try {
+        re.compile("[\\400]");
+    } except Exception as e {
+        e18 = str(e);
+    }
+    e19: str = "no raise";
+    try {
+        re.compile("a\\");
+    } except Exception as e {
+        e19 = str(e);
+    }
+    e20: str = "no raise";
+    try {
+        re.compile("(a)\\1234");
+        m12 = re.match("(a)\\1234", "aS4");
+        e20 = m12.group(0) if m12 is not None else "nomatch";
+    } except Exception as e {
+        e20 = str(e);
+    }
+    moct = re.match("\\101", "A");
+    moctv: str = moct.group(0) if moct is not None else "nomatch";
+    mb0 = re.match("\\0", chr(0));
+    mb0v: str = "hit" if mb0 is not None else "nomatch";
     mb = re.search("ABC", "xabcy", re.I);
     ifs: int = -1;
     if mb is not None {
@@ -339,7 +437,25 @@ def re_py -> dict[any, any] {
         "e2": e2,
         "e3": e3,
         "e4": e4,
-        "e5": e5
+        "e5": e5,
+        "e6": e6,
+        "e7": e7,
+        "e8": e8,
+        "e9": e9,
+        "e10": e10,
+        "e11": e11,
+        "e12": e12,
+        "e21": "hit" if re.search("(a)\\1", "aa") is not None else "nomatch",
+        "e13": e13,
+        "e14": e14,
+        "e15": e15,
+        "e16": e16,
+        "e17": e17,
+        "e18": e18,
+        "e19": e19,
+        "e20": e20,
+        "moct": moctv,
+        "mb0": mb0v
     };
 }
 
@@ -396,33 +512,131 @@ def re_na -> dict[str, any] {
     e1: str = "no raise";
     try {
         re.compile("(");
-    } except Exception {
-        e1 = "err";
+    } except Exception as e {
+        e1 = str(e);
     }
     e2: str = "no raise";
     try {
         re.compile("a**");
-    } except Exception {
-        e2 = "err";
+    } except Exception as e {
+        e2 = str(e);
     }
     e3: str = "no raise";
     try {
         re.compile("(?i)x(?i)y");
-    } except Exception {
-        e3 = "err";
+    } except Exception as e {
+        e3 = str(e);
     }
     e4: str = "no raise";
     try {
         re.compile("[z-a]");
-    } except Exception {
-        e4 = "err";
+    } except Exception as e {
+        e4 = str(e);
     }
     e5: str = "no raise";
     try {
         re.compile("(a)\\2");
-    } except Exception {
-        e5 = "err";
+    } except Exception as e {
+        e5 = str(e);
     }
+    e6: str = "no raise";
+    try {
+        re.compile("\\123");
+        m123 = re.match("\\123", "S");
+        e6 = m123.group(0) if m123 is not None else "nomatch";
+    } except Exception as e {
+        e6 = str(e);
+    }
+    e7: str = "no raise";
+    try {
+        re.compile("\\777");
+    } except Exception as e {
+        e7 = str(e);
+    }
+    e8: str = "no raise";
+    try {
+        re.compile("\\128");
+    } except Exception as e {
+        e8 = str(e);
+    }
+    e9: str = "no raise";
+    try {
+        re.compile("\\x0g");
+    } except Exception as e {
+        e9 = str(e);
+    }
+    e10: str = "no raise";
+    try {
+        re.compile("a{3,2}");
+    } except Exception as e {
+        e10 = str(e);
+    }
+    e11: str = "no raise";
+    try {
+        re.compile("(\\1)");
+    } except Exception as e {
+        e11 = str(e);
+    }
+    e12: str = "no raise";
+    try {
+        re.sub("(a)", "\\g<1a>", "a");
+    } except Exception as e {
+        e12 = str(e);
+    }
+    e13: str = "no raise";
+    try {
+        re.sub("(a)", "\\g<>", "a");
+    } except Exception as e {
+        e13 = str(e);
+    }
+    e14: str = "no raise";
+    try {
+        re.sub("(a)", "\\g<", "a");
+    } except Exception as e {
+        e14 = str(e);
+    }
+    e15: str = "no raise";
+    try {
+        re.sub("(a)", "\\g<2>", "a");
+    } except Exception as e {
+        e15 = str(e);
+    }
+    e16: str = "no raise";
+    try {
+        re.sub("(a)", "\\9", "a");
+    } except Exception as e {
+        e16 = str(e);
+    }
+    e17: str = "no raise";
+    try {
+        re.compile("(a)(b)(c)(d)(e)(f)(g)(h)(i)\\12");
+    } except Exception as e {
+        e17 = str(e);
+    }
+    e18: str = "no raise";
+    try {
+        re.compile("[\\400]");
+    } except Exception as e {
+        e18 = str(e);
+    }
+    e19: str = "no raise";
+    try {
+        re.compile("a\\");
+    } except Exception as e {
+        e19 = str(e);
+    }
+    e20: str = "no raise";
+    try {
+        re.compile("(a)\\1234");
+        m12 = re.match("(a)\\1234", "aS4");
+        e20 = m12.group(0) if m12 is not None else "nomatch";
+    } except Exception as e {
+        e20 = str(e);
+    }
+    moct = re.match("\\101", "A");
+    moctv: str = moct.group(0) if moct is not None else "nomatch";
+    mb0 = re.match("\\0", chr(0));
+    mb0v: str = "hit" if mb0 is not None else "nomatch";
     mb = re.search("ABC", "xabcy", re.I);
     ifs: int = -1;
     if mb is not None {
@@ -662,6 +876,24 @@ def re_na -> dict[str, any] {
         "e2": e2,
         "e3": e3,
         "e4": e4,
-        "e5": e5
+        "e5": e5,
+        "e6": e6,
+        "e7": e7,
+        "e8": e8,
+        "e9": e9,
+        "e10": e10,
+        "e11": e11,
+        "e12": e12,
+        "e21": "hit" if re.search("(a)\\1", "aa") is not None else "nomatch",
+        "e13": e13,
+        "e14": e14,
+        "e15": e15,
+        "e16": e16,
+        "e17": e17,
+        "e18": e18,
+        "e19": e19,
+        "e20": e20,
+        "moct": moctv,
+        "mb0": mb0v
     };
 }

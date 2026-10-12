@@ -169,47 +169,61 @@ def _name_index(names: dict[str, int], nm: str) -> int {
 def _num_esc(cps: list[int], i: int, e: int, bp: int) -> tuple[(int, int)] {
     n: int = len(cps);
     if e == 120 {
-        if i + 1 >= n {
-            raise ValueError("bad escape \\x at position " + str(bp));
+        v: int = 0;
+        got: int = 0;
+        while got < 2 and i < n {
+            hv: int = hexv(cps[i]);
+            if hv < 0 {
+                break;
+            }
+            v = v * 16 + hv;
+            i += 1;
+            got += 1;
         }
-        h1: int = hexv(cps[i]);
-        h2: int = hexv(cps[i + 1]);
-        if h1 < 0 or h2 < 0 {
-            raise ValueError("bad escape \\x at position " + str(bp));
+        if got < 2 {
+            raise ValueError(
+                "incomplete escape " + cps_str(cps, bp, i) + " at position " + str(bp)
+            );
         }
-        return (h1 * 16 + h2, i + 2);
+        return (v, i);
     }
     if e == 117 {
-        if i + 3 >= n {
-            raise ValueError("bad escape \\u at position " + str(bp));
-        }
-        v: int = 0;
-        k: int = 0;
-        while k < 4 {
-            hv: int = hexv(cps[i + k]);
+        v = 0;
+        got = 0;
+        while got < 4 and i < n {
+            hv = hexv(cps[i]);
             if hv < 0 {
-                raise ValueError("bad escape \\u at position " + str(bp));
+                break;
             }
             v = v * 16 + hv;
-            k += 1;
+            i += 1;
+            got += 1;
         }
-        return (v, i + 4);
+        if got < 4 {
+            raise ValueError(
+                "incomplete escape " + cps_str(cps, bp, i) + " at position " + str(bp)
+            );
+        }
+        return (v, i);
     }
     if e == 85 {
-        if i + 7 >= n {
-            raise ValueError("bad escape \\U at position " + str(bp));
-        }
         v = 0;
-        k = 0;
-        while k < 8 {
-            hv = hexv(cps[i + k]);
+        got = 0;
+        while got < 8 and i < n {
+            hv = hexv(cps[i]);
             if hv < 0 {
-                raise ValueError("bad escape \\U at position " + str(bp));
+                break;
             }
             v = v * 16 + hv;
-            k += 1;
+            i += 1;
+            got += 1;
         }
-        return (v, i + 8);
+        if got < 8 {
+            raise ValueError(
+                "incomplete escape " + cps_str(cps, bp, i) + " at position " + str(bp)
+            );
+        }
+        return (v, i);
     }
     v = e - 48;
     cnt: int = 1;
@@ -222,7 +236,15 @@ def _num_esc(cps: list[int], i: int, e: int, bp: int) -> tuple[(int, int)] {
         i += 1;
         cnt += 1;
     }
-    return (v & _MAXCP, i);
+    if v > 255 {
+        raise ValueError(
+            "octal escape value "
+                + cps_str(cps, bp, i)
+                + " outside of range 0-0o377 at position "
+                + str(bp)
+        );
+    }
+    return (v, i);
 }
 
 
@@ -280,8 +302,6 @@ obj _P {
         flags: int = 0,
         ngroups: int = 0,
         names: dict[str, int] = {},
-        pending: list[int] = [],
-        pendingpos: list[int] = [],
         opengroups: list[int] = [],
         depth: int = 0,
         top_items: int = 0;
@@ -358,7 +378,7 @@ obj _P {
         }
         self.i = j + 1;
         if hi >= 0 and lo > hi {
-            self._err("min repeat greater than max repeat", pos);
+            self._err("min repeat greater than max repeat", pos + 1);
         }
         return [lo, hi];
     }
@@ -666,6 +686,21 @@ obj _P {
                 }
                 nm2: str = cps_str(self.cps, ns2, self.i);
                 self.i += 1;
+                if len(nm2) == 0 {
+                    self._err("missing group name", ns2);
+                }
+                k2: int = 0;
+                bad2: bool = False;
+                while k2 < len(nm2) {
+                    cc2: int = ord(nm2[k2]);
+                    if not is_word(cc2) or (k2 == 0 and is_digit(cc2)) {
+                        bad2 = True;
+                    }
+                    k2 += 1;
+                }
+                if bad2 {
+                    self._err("bad character in group name '" + nm2 + "'", ns2);
+                }
                 gnum2: int = _name_index(self.names, nm2);
                 if gnum2 < 0 {
                     self._err("unknown group name '" + nm2 + "'", ns2);
@@ -953,22 +988,49 @@ obj _P {
                 return nd;
             }
             num: int = e - 48;
-            while self.i < self.n and is_digit(self.cps[self.i]) {
+            ndig: int = 1;
+            while ndig < 2 and self.i < self.n and is_digit(self.cps[self.i]) {
                 num = num * 10 + (self.cps[self.i] - 48);
                 self.i += 1;
+                ndig += 1;
             }
-            og: int = 0;
-            while og < len(self.opengroups) {
-                if self.opengroups[og] == num {
-                    self._err("cannot refer to an open group", bp);
+            if ndig == 2
+                and e >= 48
+                and e <= 55
+                and self.cps[self.i - 1] >= 48
+                and self.cps[self.i - 1] <= 55
+                and self.i < self.n
+                and self.cps[self.i] >= 48
+                and self.cps[self.i] <= 55 {
+                v8: int = (e - 48) * 64
+                    + (self.cps[self.i - 1] - 48) * 8
+                    + (self.cps[self.i] - 48);
+                if v8 > 255 {
+                    raise ValueError(
+                        "octal escape value "
+                            + cps_str(self.cps, bp, self.i + 1)
+                            + " outside of range 0-0o377 at position "
+                            + str(bp)
+                    );
                 }
-                og += 1;
+                self.i += 1;
+                nd.kind = _K.CHAR;
+                nd.ch = v8;
+                return nd;
             }
-            self.pending.append(num);
-            self.pendingpos.append(bp);
-            nd.kind = _K.BACKREF;
-            nd.lo = num;
-            return nd;
+            if num <= self.ngroups {
+                og: int = 0;
+                while og < len(self.opengroups) {
+                    if self.opengroups[og] == num {
+                        self._err("cannot refer to an open group", bp);
+                    }
+                    og += 1;
+                }
+                nd.kind = _K.BACKREF;
+                nd.lo = num;
+                return nd;
+            }
+            self._err("invalid group reference " + str(num), self.i - ndig);
         }
         if e == 120 or e == 117 or e == 85 {
             r = _num_esc(self.cps, self.i, e, bp);
@@ -1033,16 +1095,7 @@ obj _P {
         if self.i < self.n {
             self._err("unbalanced parenthesis", self.i);
         }
-        k: int = 0;
-        while k < len(self.pending) {
-            if self.pending[k] > self.ngroups {
-                self._err(
-                    "invalid group reference " + str(self.pending[k]),
-                    self.pendingpos[k]
-                );
-            }
-            k += 1;
-        }
+
         return nd;
     }
 }
@@ -2112,29 +2165,39 @@ def _expand_repl(template: str, m: Match, re: _Re) -> str {
                 j += 1;
             }
             if j >= n {
-                raise ValueError("missing unterminated name at position " + str(i));
+                raise ValueError("missing group name at position " + str(i));
             }
             nm: str = cps_str(tps, i, j);
-            i = j + 1;
+            if len(nm) == 0 {
+                raise ValueError("missing group name at position " + str(i));
+            }
+            alldig: bool = True;
+            idname: bool = True;
+            k: int = 0;
+            while k < len(nm) {
+                cc: int = ord(nm[k]);
+                if not is_digit(cc) {
+                    alldig = False;
+                }
+                if not is_word(cc) or (k == 0 and is_digit(cc)) {
+                    idname = False;
+                }
+                k += 1;
+            }
             num: int = -1;
-            if len(nm) > 0 {
-                alldig: bool = True;
-                k: int = 0;
+            if alldig {
+                num = 0;
+                k = 0;
                 while k < len(nm) {
-                    if not is_digit(ord(nm[k])) {
-                        alldig = False;
-                    }
+                    num = num * 10 + (ord(nm[k]) - 48);
                     k += 1;
                 }
-                if alldig {
-                    num = 0;
-                    k = 0;
-                    while k < len(nm) {
-                        num = num * 10 + (ord(nm[k]) - 48);
-                        k += 1;
-                    }
-                }
+            } elif not idname {
+                raise ValueError(
+                    "bad character in group name '" + nm + "' at position " + str(i)
+                );
             }
+            i = j + 1;
             if num < 0 {
                 num = _name_index(re.names, nm);
                 if num < 0 {
@@ -2143,7 +2206,10 @@ def _expand_repl(template: str, m: Match, re: _Re) -> str {
             }
             if num > re.ngroups {
                 raise ValueError(
-                    "invalid group reference " + str(num) + " at position " + str(j)
+                    "invalid group reference "
+                        + str(num)
+                        + " at position "
+                        + str(j - len(nm))
                 );
             }
             out += m._gtext(num);
