@@ -2,6 +2,13 @@ import from jaclang.scale.deploy.target.kubernetes.ops_rbac {
     build_ops_rbac,
     ops_role_name
 }
+import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
+    KubernetesConfig
+}
+import from jaclang.scale.deploy.target.kubernetes.manifest_builder { ManifestBuilder }
+import from jaclang.scale.config.app_config { AppConfig }
+import from jaclang.scale.runtime.context.util { GATEWAY_NAME }
+import from jaclang.scale.runtime.fleet { fleet_of }
 
 
 def _all_verbs(role: dict[str, any]) -> list[str] {
@@ -32,6 +39,11 @@ test "build_ops_rbac: read-only Role (no mutating verbs) bound to the SA" {
     assert "configmaps" not in resources , "configmaps excluded (may hold secrets)";
     assert binding["subjects"][0]["name"] == "myapp-sa";
     assert binding["roleRef"]["name"] == ops_role_name("myapp");
+    account = out["service_account"];
+    assert account["kind"] == "ServiceAccount";
+    assert account["metadata"]["name"] == "myapp-sa";
+    assert account["metadata"]["namespace"] == "myns";
+    assert account["metadata"]["labels"] == role["metadata"]["labels"] , "teardown finds it by the Role's labels";
 }
 
 
@@ -61,7 +73,80 @@ test "build_ops_rbac: mutations append patch/delete verbs" {
     mverbs = _all_verbs(mut_rb["role"]);
     assert "patch" in mverbs and "delete" in mverbs;
     assert len(mut_rb["role"]["rules"]) > len(ro["role"]["rules"]) , "mutation rules are appended";
+}
 
-    assert build_ops_rbac("a", "n", "", False)["role_binding"]["subjects"][0]["name"]
-        == "default";
+
+test "build_ops_rbac refuses to bind the console to the namespace default account" {
+    # Every pod that names no ServiceAccount runs as `default`, so a Role bound
+    # there is a grant to the whole namespace, not to the console.
+    for sa in ["", "default"] {
+        refused = False;
+        try {
+            build_ops_rbac("a", "n", sa, True);
+        } except ValueError {
+            refused = True;
+        }
+        assert refused , f"bound the console Role to '{sa}'";
+    }
+}
+
+
+def _bundle(ops_console: bool, service_account_name: str) -> dict[str, any] {
+    import tempfile;
+    import from pathlib { Path }
+    with tempfile.TemporaryDirectory() as project {
+        for name in ["orders_app", "main"] {
+            (Path(project) / f"{name}.jac").write_text("");
+        }
+        builder = ManifestBuilder(
+            k8s_config=KubernetesConfig(
+                app_name="shop",
+                namespace="shop-ns",
+                bundle_storage_class="standard",
+                ops_console=ops_console,
+                service_account_name=service_account_name
+            ),
+            fleet=fleet_of(
+                {"orders_app": "/orders_app"},
+                root_app="main",
+                overrides={"orders_app": {"replicas": 1}}
+            ),
+            dry_run=True
+        );
+        return builder.generate_manifests(
+            AppConfig(code_folder=project, app_name="shop"), ""
+        );
+    }
+}
+
+
+def _runs_as(bundle: dict[str, any], svc: str) -> (str | None) {
+    pod = bundle["deployments"][svc]["spec"]["template"]["spec"];
+    return pod.get("serviceAccountName");
+}
+
+
+test "only the gateway runs as the console's ServiceAccount, and the Role is never bound to default" {
+    # (ops_console, service_account_name, gateway runs as, service runs as)
+    cases = [
+        (False, "", None, None),
+        (False, "custom-sa", "custom-sa", "custom-sa"),
+        (True, "", "shop-ops", None),
+        (True, "custom-sa", "shop-ops", "custom-sa"),
+        (True, "default", "shop-ops", "default")
+    ];
+    for (console, sa, gateway_sa, service_sa) in cases {
+        bundle = _bundle(console, sa);
+        label = f"ops_console={console} service_account_name={sa!r}";
+        assert _runs_as(bundle, GATEWAY_NAME) == gateway_sa , label;
+        assert _runs_as(bundle, "orders_app") == service_sa , label;
+        if not console {
+            assert "ops_rbac" not in bundle , label;
+            continue;
+        }
+        rbac = bundle["ops_rbac"];
+        assert rbac["service_account"]["metadata"]["name"] == "shop-ops" , label;
+        subjects = rbac["role_binding"]["subjects"];
+        assert [s["name"] for s in subjects] == ["shop-ops"] , label;
+    }
 }

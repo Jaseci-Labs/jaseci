@@ -24,6 +24,7 @@ import from jaclang.scale.deploy.target.kubernetes.utils.kubernetes_utils {
     _resolve_current_rs_hashes,
     _refresh_rs_hashes
 }
+import from jaclang.scale.deploy.target.kubernetes.ops_rbac { ops_sa_name }
 import from jaclang.scale.deploy.target.kubernetes.kubernetes_config {
     KubernetesConfig
 }
@@ -1363,6 +1364,9 @@ obj KubernetesTarget(KubernetesTargetBase) {
     }
 
     def _apply_ops_rbac(namespace: str, ops_rbac: dict[str, any]) {
+        self._apply_provider_service_account(
+            ops_rbac["service_account"], namespace, client.CoreV1Api()
+        );
         try {
             rbac_v1 = client.RbacAuthorizationV1Api();
             role = ops_rbac["role"];
@@ -2114,6 +2118,12 @@ obj KubernetesTarget(KubernetesTargetBase) {
 
     def _destroy_ops_rbac(app_name: str, namespace: str) {
         rbac_v1 = client.RbacAuthorizationV1Api();
+        delete_if_exists(
+            client.CoreV1Api().delete_namespaced_service_account,
+            ops_sa_name(app_name),
+            namespace,
+            'ServiceAccount'
+        );
         ms_selector: str = f"managed=jac-scale,app={app_name}";
         for delete_collection in [
             rbac_v1.delete_collection_namespaced_role_binding,
