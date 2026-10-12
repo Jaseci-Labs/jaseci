@@ -737,11 +737,17 @@ def _resolve_plan(
 }
 
 def _load_executable(
-    filename: str,
-    base: str,
-    main: bool,
-    force_codespace: str = '',
-    native_entry: bool = False
+    filename: str, base: str, main: bool, force_codespace: str = ''
+) -> types.ModuleType {
+    loaded = _run_executable(filename, base, main, force_codespace, False);
+    if loaded is None {
+        raise RuntimeError(f'No executable module produced for {filename}');
+    }
+    return loaded;
+}
+
+def _run_executable(
+    filename: str, base: str, main: bool, force_codespace: str, native_entry: bool
 ) -> (types.ModuleType | None) {
     import from jaclang.runtime.runtime { JacRuntime as Jac }
     import from jaclang.compiler.driver.application { prepare_application }
@@ -1098,12 +1104,12 @@ def _exec_file(
                 }
             }
             if not native_executed {
-                _load_executable(
+                _run_executable(
                     filename,
                     base,
                     main,
                     'server' if backend == 'python' else '',
-                    native_entry=backend != "python" and prepared_entry
+                    backend != "python" and prepared_entry
                 );
             }
         } else {
