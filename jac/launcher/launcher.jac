@@ -31,14 +31,12 @@ re-spawns it must come back through this binary -- worker mode is what makes
 multiprocessing re-spawns land on the right interpreter), install the lazy
 `.jac` finder, then hand off to the jaclang CLI, which reads `sys.argv`."""
 glob BOOT_SRC: str = (
-         "import sys, os\n"
-         + "_exe = os.environ.get('JAC_EXECUTABLE')\n"
-         + "if _exe:\n"
-         + "    sys.executable = _exe\n"
-         + "    sys._base_executable = _exe\n"
+         "import sys\n"
          + "import _jac_finder as _jf\n"
          + "_jf.apply_dev_source_override()\n"
          + "_jf.install()\n"
+         + "from jaclang.jac0core.handoff import process_executable\n"
+         + "sys.executable = sys._base_executable = process_executable()\n"
          + "from jaclang.cli.cli_boot import start_cli\n"
          + "start_cli()\n"
      );

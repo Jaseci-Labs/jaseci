@@ -315,7 +315,7 @@ impl precompile_env(python_dir: str, site: str) -> dict[str, str] {
     make_dirs(scratch_home);
     env["HOME"] = scratch_home;
     env["PATH"] = "/usr/bin:/bin";
-    env["JAC_NO_DEV_SOURCE"] = "1";
+    env.pop("JAC_HANDOFF", None);
     return env;
 }
 

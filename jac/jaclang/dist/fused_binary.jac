@@ -134,7 +134,15 @@ def stubcat_region(exe: str = "") -> (Region | None) {
 
 
 def running_executable -> str {
-    return os.environ.get("JAC_EXECUTABLE", "") or os.path.realpath(sys.executable);
+    import from jaclang.jac0core.handoff { process_executable }
+    return process_executable();
+}
+
+
+def jac_binary -> str {
+    """This process's executable when it is a fused jac binary, else empty.""";
+    exe = running_executable();
+    return exe if runtime_trailer(exe) is not None else "";
 }
 
 

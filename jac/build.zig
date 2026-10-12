@@ -79,15 +79,16 @@ const Shim = struct { bin: std.Build.LazyPath, place: *std.Build.Step };
 /// `-I` keeps the interpreter isolated from the ambient environment; the
 /// checkout root is put on sys.path explicitly and the lazy `.jac` finder
 /// installed, which is all importing the compiler from source takes (jaclang
-/// has no third-party runtime dependencies). JAC_NO_DEV_SOURCE pins the build
-/// to this checkout: it must never be rerouted to a dev-source tree or a
-/// project venv, because this checkout IS the source being built.
+/// has no third-party runtime dependencies). The handoff record pins the
+/// build's process tree to this checkout's compiler: a child must never be
+/// rerouted to a dev-source tree or a project venv, because this checkout IS
+/// the source being built.
 const JACBOOT_SRC =
     "import os, sys\n" ++
     "root, mode, argv = sys.argv[1], sys.argv[2], sys.argv[3:]\n" ++
     "sys.path.insert(0, root)\n" ++
-    "os.environ['JAC_NO_DEV_SOURCE'] = '1'\n" ++
     "import _jac_finder\n" ++
+    "_jac_finder.update_handoff(compiler_source='')\n" ++
     "_jac_finder.install()\n" ++
     "if mode == 'payload':\n" ++
     "    from jaclang.dist.payload.cli import main\n" ++

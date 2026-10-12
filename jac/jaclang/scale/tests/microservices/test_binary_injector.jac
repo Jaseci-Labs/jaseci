@@ -209,12 +209,11 @@ test "shared pip cache is opened cross-uid, probed, with pod-local fallback" {
 }
 
 
-test "runtime_container_env exposes HOME + PATH, no precompile flags" {
+test "runtime_container_env exposes HOME + PATH, never the handoff" {
     names = [e["name"] for e in runtime_container_env()];
     assert "HOME" in names;
     assert "PATH" in names;
-    assert "JAC_NO_PRECOMPILE" not in names;
-    assert "JAC_PRECOMPILE_REQUIRED" not in names;
+    assert "JAC_HANDOFF" not in names;
 }
 
 

@@ -741,8 +741,7 @@ impl JacCompiler._get_precompiled_jir_bytecode(
         SEC_CTDEPS,
         absolutize_ct_deps_section,
         bundle_dir_allowed,
-        cache_mode,
-        precompile_required
+        cache_mode
     }
     import from jaclang.jac0core { sealed as _sealed }
     (rebuild_flag, no_precompile) = cache_mode();
@@ -798,15 +797,6 @@ impl JacCompiler._get_precompiled_jir_bytecode(
                 } except Exception {}
                 if served is not None {
                     return served;
-                }
-                if precompile_required() {
-                    raise RuntimeError(
-                        f"JAC_PRECOMPILE_REQUIRED: {norm_file} has a bundled unit at "
-                        f"{jir_path} that this compiler will not reuse, so it would be "
-                        "recompiled from source. The bundle was built by a different "
-                        "compiler generation, jaclang version, Python minor or runtime "
-                        "variant than the one now running."
-                    );
                 }
             }
             break;

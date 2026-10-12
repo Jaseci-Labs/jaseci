@@ -83,22 +83,6 @@ runs:
         # file removes the question entirely and leaves the key check as the one
         # reachable path.
         rm -f "$BUNDLE/MANIFEST.json"
-        DIR="$(find "$BUNDLE" -maxdepth 1 -type d -name 'cpython-*' | head -1)"
-        if [ -z "$DIR" ]; then
-          echo "::error::precompile bundle has no cpython-<ver> tree; build-kit published a malformed artifact"
-          exit 1
-        fi
-        UNITS="$(find "$DIR" -name '*.jir' | wc -l | tr -d ' ')"
-        # The tree carries ~750+ units. A floor well under that catches an empty
-        # or truncated artifact without tracking the exact module count.
-        if [ "$UNITS" -lt 400 ]; then
-          echo "::error::precompile bundle has only $UNITS units; expected the full jaclang tree"
-          exit 1
-        fi
-        echo "seeded $UNITS precompiled units from ${DIR#"$GITHUB_WORKSPACE/"}"
-        # Strict: from here a bundled unit this compiler declines to reuse is a
-        # hard failure, not a silent 20-minute recompile. See jir.precompile_required.
-        echo "JAC_PRECOMPILE_REQUIRED=1" >> "$GITHUB_ENV"
 
     # First use unpacks the payload (sealed lanes) or binds the seeded bundle
     # (reroute lanes). Both are seconds now; this step exists to pay it once,
@@ -127,7 +111,10 @@ runs:
         if [ "$REROUTE" != "true" ]; then
           exit 0
         fi
-        if grep -q "running from bytecode" <<<"$out"; then
+        # Every compiler module must load from the bundle: a unit this compiler
+        # declines to reuse would otherwise be a silent recompile in every lane.
+        jac native status --require precompiled
+        if grep -q "kernel runs on its floor" <<<"$out"; then
           echo "::error::the first run fell back to bytecode instead of loading the kit's kernel"
           exit 1
         fi

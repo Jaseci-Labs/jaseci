@@ -384,6 +384,10 @@ obj KernelArtifact(Artifact) {
     }
 
     override def build(log: Callable[[str], None], force: bool, exact: bool) {
+        if exact {
+            import from jaclang.compiler.driver.jir { require_exact_compiler_products }
+            require_exact_compiler_products();
+        }
         build_kernel(source_tree_kernel_path(), log=log);
     }
 }

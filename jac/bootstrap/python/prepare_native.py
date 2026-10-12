@@ -21,7 +21,7 @@ pin = json.loads((root / "bootstrap/python/sources.json").read_text())["cpython"
 if tuple(map(int, pin["version"].split("."))) != sys.version_info[:3]:
     raise RuntimeError("Build JacPython with pinned CPython " + pin["version"])
 sys.path.insert(0, str(root))
-os.environ["JAC_NO_DEV_SOURCE"] = "1"
+os.environ.pop("JAC_HANDOFF", None)
 output.mkdir(parents=True, exist_ok=True)
 
 import jaclang
