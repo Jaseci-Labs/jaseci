@@ -11,11 +11,30 @@ import from typing { AsyncGenerator, Generator, cast }
 import type from litellm { Router }
 import type from llama_cpp { Llama }
 import from jaclang.byllm.mtir { MTRuntime }
-import from jaclang.byllm._optdeps.litellm { litellm, _disable_debugging }
+import from jaclang.byllm._optdeps.litellm {
+    litellm,
+    _disable_debugging,
+    when_litellm_loaded
+}
 import from jaclang.byllm._optdeps.openai { openai, OpenAI, AsyncOpenAI }
 import from jaclang.project.capabilities { require_optional }
+import from jaclang.byllm.systemone {
+    Decision,
+    SYSTEMONE_PREFIX,
+    ProviderCaps,
+    SystemOneSpec,
+    assemble,
+    caps_for,
+    distribution,
+    lower,
+    resolve_api_key,
+    resolve_model_name,
+    wrap_result
+}
 import from jaclang.byllm.exceptions {
+    ByLLMError,
     AuthenticationError,
+    LLMTimeout,
     FinishToolError,
     OutputConversionError,
     RateLimitError,
@@ -68,11 +87,15 @@ glob _byllm_config = get_byllm_config(),
      _streaming_config = _byllm_config.get_streaming_config(),
      _CACHE_CONTROL_EPHEMERAL: dict[str, any] = {"type": "ephemeral"};
 
+def _apply_litellm_debug_setting(module: any) {
+    module.suppress_debug_info = not _litellm_config.get("debug", False);
+}
+
 with entry {
     if _litellm_config['local_cost_map'] {
         os.environ["LITELLM_LOCAL_MODEL_COST_MAP"] = "True";
     }
-    litellm.suppress_debug_info = not _litellm_config.get("debug", False);
+    when_litellm_loaded(_apply_litellm_debug_setting);
 }
 
 glob _TOOL_DELTA_MIN_CHARS = 48,
@@ -95,9 +118,18 @@ def _stream_chunk_builder_accepts_logging_obj -> bool {
     }
 }
 
-glob _STREAM_CHUNK_BUILDER_ACCEPTS_LOGGING_OBJ: bool = (
-         _stream_chunk_builder_accepts_logging_obj()
-     );
+glob _STREAM_CHUNK_BUILDER_ACCEPTS_LOGGING_OBJ: bool | None = None,
+     _stream_builder_probe_cache: dict[str, bool] = {};
+
+def _stream_builder_accepts_logging_obj -> bool {
+    if _STREAM_CHUNK_BUILDER_ACCEPTS_LOGGING_OBJ is not None {
+        return _STREAM_CHUNK_BUILDER_ACCEPTS_LOGGING_OBJ;
+    }
+    if "accepts" not in _stream_builder_probe_cache {
+        _stream_builder_probe_cache["accepts"] = _stream_chunk_builder_accepts_logging_obj();
+    }
+    return _stream_builder_probe_cache["accepts"];
+}
 
 obj BaseLLM {
     has model_name: str,
@@ -106,13 +138,15 @@ obj BaseLLM {
         api_base: str = "",
         call_params: dict[(str, object)] = {},
         ctx_window: int = 0,
-        supports_native_tools: bool = True;
+        supports_native_tools: bool = True,
+        timeout: float | None = None;
 
     def __call__(**kwargs: object) -> BaseLLM;
     def invoke(mt_run: MTRuntime) -> any;
     async def ainvoke(mt_run: MTRuntime) -> any;
     def _resolve_output_attempts(mt_run: MTRuntime) -> int;
     def _resolve_stream_retries(mt_run: MTRuntime) -> int;
+    def _resolve_timeout(mt_run: MTRuntime) -> float | None;
     def _should_retry_stream(
         mt_run: MTRuntime, e: Exception, attempt: int, usage_base: int = -1
     ) -> bool;
@@ -192,9 +226,7 @@ obj BaseLLM {
         mt_run: MTRuntime, just_compacted: bool, cp: dict[str, any]
     ) -> CompletionResult;
 
-    def _compact_messages(
-        mt_run: MTRuntime, keep_recent: int, comp_model: str | None
-    ) -> None;
+    def _compact_messages(mt_run: MTRuntime, cp: dict[str, any]) -> bool;
 }
 
 obj MockLLM(BaseLLM) {
@@ -242,6 +274,7 @@ obj ModelPool(BaseLLM) {
     override def model_call_no_stream(params: dict[str, any]) -> dict[str, any];
     override def model_call_with_stream(params: dict[str, any]) -> Iterable[object];
     override def _get_ctx_window(call_params: dict[str, any]) -> int;
+    override def _resolve_timeout(mt_run: MTRuntime) -> float | None;
 }
 
 obj Model(BaseLLM) {
@@ -249,7 +282,8 @@ obj Model(BaseLLM) {
         http_client: bool = False,
         _mock_delegate: MockLLM | None = None,
         _local_delegate: BaseLLM | None = None,
-        _async_proxy_client: AsyncOpenAI | None = None;
+        _so1_delegate: BaseLLM | None = None,
+        _async_proxy_client: any = None;
 
     def postinit -> None;
     override def invoke(mt_run: MTRuntime) -> any;
@@ -270,4 +304,53 @@ obj Model(BaseLLM) {
     async def model_call_http_async(
         url: str, token: str, payload: dict[str, any], ca_bundle: (str | bool | None)
     ) -> dict[str, any];
+}
+
+
+obj SystemOneModel(BaseLLM) {
+    has model_name: str = "systemone:typesafe/jev-latest",
+        provider: str = "",
+        fallback: BaseLLM | None = None,
+        min_confidence: float = 0.0,
+        route: str = "",
+        _caps: ProviderCaps | None = None,
+        _so1_model: str = "",
+        _max_retries: int = 2;
+
+    def postinit -> None;
+    override def invoke(mt_run: MTRuntime) -> any;
+    override async def ainvoke(mt_run: MTRuntime) -> any;
+    def _request(payload: dict[str, any]) -> tuple[int, dict[str, any]];
+    async def _arequest(payload: dict[str, any]) -> tuple[int, dict[str, any]];
+    def _post(payload: dict[str, any]) -> dict[str, any];
+    async def _apost(payload: dict[str, any]) -> dict[str, any];
+    def _endpoint -> str;
+    def _headers -> dict[str, str];
+    def _map_status(status: int, body: dict[str, any]) -> None;
+    def _finish(
+        mt_run: MTRuntime, spec: SystemOneSpec, body: dict[str, any]
+    ) -> tuple[object, bool];
+
+    def _record(
+        mt_run: MTRuntime,
+        body: dict[str, any],
+        confidence: float,
+        probs: dict[str, any]
+    ) -> None;
+
+    def _no_fallback(reason: str) -> ConfigurationError;
+    def _unwrap_for_fallback(mt_run: MTRuntime) -> (type | None);
+    def _rewrap(original: (type | None), value: object, confidence: float) -> object;
+    def _via_fallback(fb: BaseLLM, mt_run: MTRuntime, confidence: float) -> any;
+    async def _avia_fallback(fb: BaseLLM, mt_run: MTRuntime, confidence: float) -> any;
+}
+
+
+obj MockSystemOne(SystemOneModel) {
+    has model_name: str = "systemone:typesafe/mock",
+        answers: list[any] = [],
+        seen: list[dict[str, any]] = [];
+
+    override def _request(payload: dict[str, any]) -> tuple[int, dict[str, any]];
+    def exhausted -> bool;
 }

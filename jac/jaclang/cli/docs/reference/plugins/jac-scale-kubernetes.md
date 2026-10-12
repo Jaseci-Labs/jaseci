@@ -349,7 +349,7 @@ Kubernetes uses readiness and liveness probes to decide when a pod is ready to s
 | TOML Key | Default | Description |
 |----------|---------|-------------|
 | `health_check_path` | `"/docs"` | Endpoint probed by both readiness and liveness checks |
-| `readiness_initial_delay` | `10` | Seconds to wait before first readiness check |
+| `readiness_initial_delay` | `0`  | Seconds to wait before first readiness check (the startup probe already gates readiness) |
 | `readiness_period` | `20` | Seconds between readiness checks |
 | `liveness_initial_delay`  | `10` | Seconds to wait before first liveness check |
 | `liveness_period`  | `20` | Seconds between liveness checks |
@@ -387,7 +387,7 @@ jac-scale supports two autoscaler engines selected via `autoscaler_engine`. Both
 | `autoscaler_scale_up_stabilization` | `60` | Scale-up stabilization window in seconds (HPA `behavior.scaleUp`), applied under both engines. |
 | `autoscaler_scale_up_max_pods` | `2` | Maximum pods added per scale-up step, applied under both engines. |
 
-> **Note:** CPU-based scaling requires `cpu_request` to be set. Without a CPU request, Kubernetes cannot compute a utilization percentage. Likewise, memory triggers require `memory_request`; a memory trigger whose resolved request is empty is skipped with a warning under both deploy paths. In microservice deployments the request defaults to `1Gi` (`2Gi` for the gateway), so the skip only occurs when `memory_request` is explicitly set to `""`.
+> **Note:** CPU-based scaling requires `cpu_request` to be set. Without a CPU request, Kubernetes cannot compute a utilization percentage. Likewise, memory triggers require `memory_request`; a memory trigger whose resolved request is empty is skipped with a warning under both deploy paths. The default memory trigger is added only when `memory_request` is set for the app or under `[scale.kubernetes]`; the `1Gi` (`2Gi` for the gateway) fallback request never adds one, because a jac server can idle above 80% of it and pin the HPA at `max_replicas`.
 
 #### HPA Engine (Default)
 
@@ -628,7 +628,7 @@ Controls the base images used for the application pod and init containers. Overr
 | TOML Key  | Default | Description |
 |----------|---------|-------------|
 | `python_image` | `""` (auto) | Base image for the application pod. When empty, the deploy resolves the official image matching the runtime channel -- `jaseci/jaclang:latest` (stable), `:dev`, `:experimental-<PR#>`, or `:<x.y.z>` for a `jac-version` pin -- and pins it to an immutable `@sha256:` digest when Docker Hub is reachable (experimental builds are deliberately not digest-pinned). Falls back to `python:3.12-slim` when the registry is unreachable and always on the local-binary channel |
-| `wait_image` | `busybox` | Init container image used for dependency wait checks (Postgres readiness) |
+| `wait_image` | `busybox:1.36` | Init container image used for dependency wait checks (Postgres readiness) |
 
 **To change in `jac.toml`:**
 
@@ -1246,7 +1246,7 @@ Each app takes optional scale overrides in its `[apps.<name>.scale]` overlay (th
 | `hpa.enabled` | bool | Set to `false` to fix replicas at the configured `replicas` count. Applies to both `"hpa"` and `"keda"` engines. |
 | `hpa.min` / `hpa.max` | int | Autoscaler replica bounds. Applies to both engines. |
 | `hpa.cpu_target` | int (percent) | Target CPU utilization percentage. Default 50%. Applies to both engines. |
-| `hpa.memory_target` | int (percent) | Target memory utilization percentage (default 80). A memory trigger is added alongside CPU whenever the app resolves a memory request -- always, unless `memory_request` is explicitly set to `""`. |
+| `hpa.memory_target` | int (percent) | Target memory utilization percentage (default 80). A memory trigger is added alongside CPU only when `memory_request` is set for the app or under `[scale.kubernetes]`. |
 | `pdb.enabled` / `pdb.max_unavailable` | bool / int | PodDisruptionBudget controls for this app. |
 | `deployment_overlay` | table | Raw manifest fragment deep-merged onto the generated Deployment (escape hatch for fields not exposed above). |
 | `[[apps.NAME.scale.triggers]]` | list | Per-app KEDA event-driven triggers. Each entry: `type` (str), `metadata` (dict), optional `name` (str), optional `auth.secret_refs` (dict). Requires `autoscaler_engine = "keda"` in `[scale.kubernetes]`. |

@@ -1722,6 +1722,12 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
          "inside '{owner}' and its subclasses.",
          help="Access protected (`:protect`) members from within the declaring class or a subclass, or mark the member `:pub` to expose it more broadly."
      ),
+     E2036 = _err(
+         "E2036",
+         Category.SEMANTIC,
+         "Duplicate definition of '{name}': it replaces the definition on line {line}.",
+         help="A module-level name can be defined once. The later definition is the one that runs, while calls are checked against the earlier one, so rename or remove one of them. Use `impl {name}` to give a declaration its body, or `@overload` for alternative signatures."
+     ),
      E2037 = _err(
          "E2037",
          Category.SEMANTIC,
@@ -2332,6 +2338,12 @@ glob E0001 = _err("E0001", Category.SYNTAX, "Expected '{expected}', got '{got}'"
          Category.CODEGEN,
          "Constructing '{cls}' would run '{owner}.postinit' on a Python shadow the native object cannot see",
          help="A native class over a Python-side base owns two halves: its own slots live in the native struct, the base's live on a Python shadow instance the bridge keeps beside it. Construction runs the base's `__post_init__` on that shadow, where the subclass's native slots do not exist and its method overrides are not on the shadow's class -- so a store the base initializer makes is invisible natively, and a call it dispatches reaches the base's body rather than the override. The object comes out with its declared defaults and nothing says so. Give '{cls}' a `postinit` of its own -- it suppresses the base's and can chain into it with `super.postinit()`, which does bridge -- or bring the base into the native unit so the whole chain lowers."
+     ),
+     E5113 = _err(
+         "E5113",
+         Category.CODEGEN,
+         "'{cls}.{meth}' overrides '{base}.{meth}', but '{base}.{caller}' calls '{base}.{meth}' for a '{cls}' too: '{base}' is compiled in '{module}' without dispatch",
+         help="Which classes carry a vtable is decided per module, and '{base}' is nobody's parent in '{module}', so it was lowered flat: '{base}.{caller}' binds its `self.{meth}()` straight to '{base}.{meth}'. '{cls}' inherits '{caller}', so calling it on a '{cls}' runs the base's '{meth}', not this override -- the wrong body runs and nothing else says so. Declare '{base}.{meth}' abstract (`def {meth}(...) abst;`) so '{base}' reserves dispatch for implementations in other modules, override '{caller}' on '{cls}' as well, or keep '{cls}' in the module that declares '{base}'."
      ),
      E5112 = _err(
          "E5112",

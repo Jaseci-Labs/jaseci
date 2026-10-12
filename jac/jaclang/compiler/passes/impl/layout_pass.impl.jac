@@ -9,6 +9,7 @@ impl LayoutPass.postinit -> None {
 impl LayoutPass._run_impl(ir_in: Module) -> Module {
     module = self.module;
 
+    self._type_declaration_surface(module);
     self._build_enum_layouts(module);
 
     arch_map = self._collect_archetypes(module);
@@ -47,6 +48,38 @@ impl LayoutPass._run_impl(ir_in: Module) -> Module {
 
     module.gen.layout_registry = self.registry;
     return ir_in;
+}
+
+impl LayoutPass._type_declaration_surface(module: Module) -> None {
+    annotations: list[Expr] = [];
+    for typed in module.get_all_sub_nodes(HasVar)
+        + module.get_all_sub_nodes(ParamVar) {
+        if typed.type_tag is not None {
+            annotations.append(typed.type_tag.tag);
+        }
+    }
+    for sig in module.get_all_sub_nodes(FuncSignature) {
+        if sig.return_type is not None {
+            annotations.append(sig.return_type);
+        }
+    }
+    for decl in module.get_all_sub_nodes(GlobalVars) {
+        for assign in decl.assignments {
+            if assign.type_tag is not None {
+                annotations.append(assign.type_tag.tag);
+            }
+        }
+    }
+    evaluator = self.prog.get_type_evaluator();
+    for annotation in annotations {
+        for nd in reversed(annotation.flatten()) {
+            if isinstance(nd, Expr) and nd.type is None {
+                try {
+                    evaluator.get_type_of_expression(nd);
+                } except Exception {}
+            }
+        }
+    }
 }
 
 impl LayoutPass._collect_archetypes(module: Module) -> dict[str, Archetype] {
@@ -105,15 +138,14 @@ impl LayoutPass._build_hierarchy(archetypes: dict[str, Archetype]) -> None {
                 } elif isinstance(base_expr, AstSymbolNode) {
                     pname = base_expr.sym_name;
                 }
-                if pname is None {
-                    continue;
+                parent = referenced_native_name(base_expr);
+                if parent is None {
+                    if pname is None or is_erased_base_name(pname, archetypes) {
+                        continue;
+                    }
+                    parent = pname;
                 }
-                _pnative = referenced_native_name(base_expr);
-                if _pnative is None and is_erased_base_name(pname, archetypes) {
-                    continue;
-                }
-                pname = _pnative or pname;
-                parents.append(pname);
+                parents.append(parent);
                 parent_mods.append(declaring_module_path(base_expr));
             }
             if parents {
@@ -419,11 +451,12 @@ impl LayoutPass._build_layout(arch: Archetype) -> ArchetypeLayout {
 impl LayoutPass._build_enum_layouts(module: Module) -> None {
     for nd in module.get_all_sub_nodes(Enum) {
         ename = nd.name.value if nd.name else None;
-        if ename is None or ename in self.registry.enums or nd.body is None {
+        body = ModuleFacts.unwrap_body(nd);
+        if ename is None or ename in self.registry.enums or body is None {
             continue;
         }
         raw_members: list[tuple[(str, (UniNode | None))]] = [];
-        for stmt in nd.body {
+        for stmt in body {
             if isinstance(stmt, Assignment) {
                 targets = stmt.target
                     if isinstance(stmt.target, (list, tuple))

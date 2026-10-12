@@ -1,4 +1,5 @@
 import ctypes;
+import ctypes.util;
 import json;
 import os;
 import sys;
@@ -499,7 +500,32 @@ def _load_library(desc: dict[str, any], module_file: str) -> any {
         _LIBS[cand] = lib;
         return lib;
     }
+    found = _system_library(desc);
+    if found is not None {
+        lib = _LIBS.get(found);
+        if lib is not None {
+            return lib;
+        }
+        try {
+            lib = ctypes.CDLL(found);
+            _LIBS[found] = lib;
+            return lib;
+        } except OSError as e {
+            errors.append(str(e));
+        }
+    }
     raise ImportError(f"cannot load C library: {'; '.join(errors)}");
+}
+
+def _system_library(desc: dict[str, any]) -> (str | None) {
+    if "path" in desc or desc.get("level", 0) > 0 {
+        return None;
+    }
+    names: list[str] = desc["names"];
+    if len(names) != 1 {
+        return None;
+    }
+    return ctypes.util.find_library(names[0]);
 }
 
 class CFunction {
@@ -615,9 +641,27 @@ class CFunction {
     }
 }
 
+class _LazyLibrary {
+    def init(self: _LazyLibrary, desc: dict[str, any], module_file: str) {
+        self._desc = desc;
+        self._module_file = module_file;
+        self._lib = None;
+    }
+
+    def __getattr__(self: _LazyLibrary, name: str) -> any {
+        if name.startswith("_") {
+            raise AttributeError(name);
+        }
+        if self._lib is None {
+            self._lib = _load_library(self._desc, self._module_file);
+        }
+        return getattr(self._lib, name);
+    }
+}
+
 def clib_bind(scope: any, desc_json: str) -> dict[str, any] {
     desc = json.loads(desc_json);
-    lib = _load_library(desc["lib"], scope.get("__file__") or "");
+    lib = _LazyLibrary(desc["lib"], scope.get("__file__") or "");
     local: dict[str, any] = {};
     lookup = _ChainScope(local, scope);
     for name in desc.get("opaque", []) {

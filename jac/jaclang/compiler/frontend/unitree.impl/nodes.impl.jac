@@ -515,6 +515,21 @@ impl Module.record_comptime_dependency(path: str, body: bool = False) -> None {
     }
 }
 
+impl Module.record_comptime_definition(path: str, qualname: str) -> None {
+    import os;
+    if not path or not qualname {
+        return;
+    }
+    resolved = os.path.realpath(path);
+    if self.loc and os.path.realpath(self.loc.mod_path) == resolved {
+        return;
+    }
+    row = (resolved, qualname);
+    if row not in self.ct_def_deps {
+        self.ct_def_deps.append(row);
+    }
+}
+
 impl Module.declares_codespace(ctx: CodeContext, path_hint: str = '') -> bool {
     if ctx != CodeContext.SERVER and self.decided_codespace == ctx.value {
         return True;
@@ -665,6 +680,14 @@ impl Symbol.storage.getter -> SymbolStorage {
         }
         return SymbolStorage.CAPTURED;
     }
+    if (
+        def_scope is not owner
+        and not self.imported
+        and isinstance(owner, Ability)
+        and owner.is_method
+    ) {
+        return SymbolStorage.PARAM;
+    }
     return SymbolStorage.LOCAL;
 }
 
@@ -795,7 +818,7 @@ impl UniScopeNode.lookup(
     if decl is not None {
         decl_scope = decl.sym_tab;
         if decl_scope is not None {
-            return decl_scope.lookup(name, deep=True, incl_inner_scope=False);
+            return decl_scope.lookup(name, deep=deep, incl_inner_scope=False);
         }
     }
     return None;
@@ -896,11 +919,14 @@ impl UniScopeNode.get_enclosing_captures -> list[Symbol] {
                 tab = sym.parent_tab;
             }
         }
-        if (
-            (tab is None)
-            or same_lexical_scope(tab, self)
-            or not isinstance(tab, (Ability, ImplDef, LambdaExpr, Test))
-        ) {
+        if (tab is None) or same_lexical_scope(tab, self) {
+            continue;
+        }
+        frame: (UniScopeNode | None) = tab;
+        while frame is not None and not UniScopeNode.is_python_scoping(frame) {
+            frame = frame.parent_scope;
+        }
+        if not isinstance(frame, (Ability, ImplDef, LambdaExpr, Test)) {
             continue;
         }
 
@@ -1444,6 +1470,7 @@ impl Module.postinit -> None {
     self.persistence = [];
     self.ct_file_deps = [];
     self.ct_body_deps = [];
+    self.ct_def_deps = [];
     self.rc_last_use = {};
     self.rc_scope_cleanup = {};
     _rc_move_in: set[int] = set();
@@ -2301,6 +2328,16 @@ impl FuncSignature.postinit -> None {
     UniNode.postinit(self);
 }
 
+
+impl FuncSignature.get_named_parameters -> list[ParamVar] {
+    params: list[ParamVar] = [];
+    params.extend(self.posonly_params);
+    if self.params is not None {
+        params.extend(self.params);
+    }
+    params.extend(self.kwonlyargs);
+    return params;
+}
 
 impl FuncSignature.get_parameters -> list[ParamVar] {
     params: list[ParamVar] = [];
@@ -3498,6 +3535,18 @@ impl FuncCall.callee_decl.setter(callee_decl: (Ability | None)) {
     }
 }
 
+impl FuncCall.callee_signature.getter -> (TypeBase | None) {
+    found = [self->:CalleeSignature:->];
+    return found[0] if found else None;
+}
+
+impl FuncCall.callee_signature.setter(callee_signature: (TypeBase | None)) {
+    del [edge self->:CalleeSignature:->];
+    if callee_signature is not None {
+        self +>:CalleeSignature:+> callee_signature;
+    }
+}
+
 impl Import.absorbed_mod.getter -> (Module | None) {
     found = [self->:Absorbs:->];
     return found[0] if found else None;
@@ -3752,6 +3801,28 @@ impl has_runtime_binding(sym: Symbol, space: CodeContext) -> bool {
     return kind_has_runtime_binding(sym.binding_kind, resolved_decl_of(sym), space);
 }
 
+impl is_comptime_stmt(nd: UniNode) -> bool {
+    if isinstance(nd, Ability) {
+        return nd.is_comptime;
+    }
+    if isinstance(nd, Assignment) {
+        return nd.is_comptime;
+    }
+    if isinstance(nd, IfStmt) {
+        return nd.is_comptime;
+    }
+    if isinstance(nd, InForStmt) {
+        return nd.is_comptime;
+    }
+    if isinstance(nd, AssertStmt) {
+        return nd.is_comptime;
+    }
+    if isinstance(nd, Import) {
+        return nd.is_comptime;
+    }
+    return False;
+}
+
 impl is_client_destined(nd: UniNode) -> bool {
     cur: (UniNode | None) = nd;
     while cur is not None {
@@ -3803,6 +3874,25 @@ impl in_type_position(nd: UniNode, include_subscripts: bool = True) -> bool {
         parent = cur.parent;
     }
     return False;
+}
+
+impl definition_qualname(decl: UniNode) -> str {
+    if not isinstance(decl, (Ability, Archetype, Enum)) {
+        return "";
+    }
+    name = decl.sym_name;
+    if not name {
+        return "";
+    }
+    parts: list[str] = [name];
+    cur = decl.parent;
+    while cur is not None and not isinstance(cur, Module) {
+        if isinstance(cur, (Archetype, Enum)) {
+            parts.insert(0, cur.sym_name);
+        }
+        cur = cur.parent;
+    }
+    return ".".join(parts);
 }
 
 impl bind_assignment_targets(nd: Assignment) -> None {

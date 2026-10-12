@@ -667,6 +667,7 @@ impl JacProgram.stamp_access_check_facts(self: JacProgram, mod: uni.Module) -> N
 
 impl JacProgram.stamp_native_import_facts(self: JacProgram, mod: uni.Module) -> None {
     import from jaclang.compiler.driver.boundary_classify {
+        clib_decl_type_names,
         import_bound_names,
         native_only_import_target,
         python_side_name_refs
@@ -676,18 +677,49 @@ impl JacProgram.stamp_native_import_facts(self: JacProgram, mod: uni.Module) -> 
     needs_native = mod.decided_codespace == 'native'
         or ModuleFacts.has_native_context_stmts(mod);
     py_refs: (set[str] | None) = None;
-    for imp in mod.get_all_sub_nodes(uni.Import) {
+    imports = list(mod.get_all_sub_nodes(uni.Import));
+    for imp in imports {
         target = native_only_import_target(imp, self);
         drop = needs_native
-            and target is not None
-            and (os.sep + 'jaclang' + os.sep) not in os.path.abspath(target);
+            and (
+                bool(imp.clib_decls)
+                or (
+                    target is not None
+                    and (os.sep + 'jaclang' + os.sep) not in os.path.abspath(target)
+                )
+            );
         if drop {
             if py_refs is None {
                 py_refs = python_side_name_refs(mod);
             }
             drop = not any(name in py_refs for name in import_bound_names(imp));
         }
+        if drop and mod.decided_codespace == 'native' {
+            for decl in imp.clib_decls or [] {
+                if isinstance(decl, uni.Archetype) {
+                    drop = False;
+                }
+            }
+        }
         imp.native_only_drop = drop;
+    }
+
+    settled = False;
+    while not settled {
+        settled = True;
+        kept: set[str] = set();
+        for imp in imports {
+            if imp.clib_decls and not imp.native_only_drop {
+                kept.update(clib_decl_type_names(imp));
+            }
+        }
+        for imp in imports {
+            if imp.native_only_drop
+                and any(name in kept for name in import_bound_names(imp)) {
+                imp.native_only_drop = False;
+                settled = False;
+            }
+        }
     }
 }
 
@@ -786,6 +818,7 @@ impl JacProgram.stamp_boundary_facts(self: JacProgram, mod: uni.Module) -> None 
                 and _default_codespace_for(self) == 'native'
             )
         );
+    mod.gen.native_codespace = in_native_mod;
 
     def resolve_native(module_name: str, inferred_ok: bool) -> (str | None) {
         (src_mod_str, full_path) = resolve_native_module(
@@ -894,6 +927,7 @@ impl JacProgram.stamp_boundary_facts(self: JacProgram, mod: uni.Module) -> None 
         }
     }
 
+    client_tops: dict[str, bool] = {};
     for nd in mod.get_all_sub_nodes(uni.Import) {
         facts = uni.ImportBoundaryFacts();
         nd.boundary_facts = facts;
@@ -905,7 +939,7 @@ impl JacProgram.stamp_boundary_facts(self: JacProgram, mod: uni.Module) -> None 
                 module_name = '.'.join(p.value for p in nd.from_loc.path);
             }
             if module_name {
-                cl_na_edge = is_client_native_edge_import(nd, self);
+                cl_na_edge = is_client_native_edge_import(nd, self, client_tops);
                 facts.client_native_edge = cl_na_edge;
                 na_intent = (
                     native_ctx
@@ -920,7 +954,26 @@ impl JacProgram.stamp_boundary_facts(self: JacProgram, mod: uni.Module) -> None 
                     facts.from_loc_resolved = None;
                 }
                 facts.is_service = nd.is_service_import;
-                if (facts.is_service and not facts.native_from_path) {
+                if (
+                    nd.items
+                    and not facts.is_service
+                    and (nd.in_client_context() or native_ctx or in_native_mod)
+                ) {
+                    resolved = facts.from_loc_resolved;
+                    if (resolved is not None and resolved.endswith('.jac')) {
+                        try {
+                            facts.pinned_server = (
+                                config_module_pin(resolved) == 'server'
+                            );
+                        } except Exception {
+                            facts.pinned_server = False;
+                        }
+                    }
+                }
+                if (
+                    (facts.is_service and not facts.native_from_path)
+                    or (nd.items and not facts.is_service and facts.pinned_server)
+                ) {
                     stamp_sv_decls(nd, facts);
                 }
                 if (cl_na_edge and nd.items) {
@@ -929,6 +982,7 @@ impl JacProgram.stamp_boundary_facts(self: JacProgram, mod: uni.Module) -> None 
                 if (
                     nd.items
                     and not facts.is_service
+                    and not facts.pinned_server
                     and not cl_na_edge
                     and is_client_boundary_import(nd)
                 ) {

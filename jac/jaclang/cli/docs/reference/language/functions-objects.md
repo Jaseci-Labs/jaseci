@@ -406,6 +406,8 @@ glob add_five = make_adder(5);  # add_five(10) returns 15
 
     Captured values are read freely. To mutate state across calls, prefer returning a configured object (see [IIFE & Anonymous Factories](#8-iife-anonymous-factories) below) over rebinding a captured local.
 
+    A closure captures the *binding*, not the value it holds at that moment. A closure created in a loop body is the exception for names local to the loop: it keeps its own iteration's values once that iteration ends. See [Variables and Scope](variables-and-scope.md#4-scope-rules).
+
 ### 8 IIFE & Anonymous Factories
 
 An *Immediately Invoked Function Expression* defines a function and calls it in the same expression -- useful for inlining a one-shot computation, or for producing a configured value from a private scope.

@@ -2,7 +2,10 @@ impl NaIRGenPass._get_exception_state_type -> ir.Type {
     if self._exc_state_type is not None {
         return self._exc_state_type;
     }
-    jmp_buf_type = ir.ArrayType(ir.IntType(8), 200);
+    """The Windows floor's pair saves xmm6-xmm15 as well: 240 bytes.""";
+    jmp_buf_type = ir.ArrayType(
+        ir.IntType(8), 256 if self._exc_jmp_symbols()[0] == "__jac_setjmp" else 200
+    );
     exc_state = self.llvm_module.context.get_identified_type("JacExceptionState");
 
     exc_state.set_body(
@@ -46,15 +49,19 @@ impl NaIRGenPass._exc_jmp_symbols -> tuple[str, str] {
     so that is dead work on every `try`, walker spawn and guarded call.
     `_setjmp`/`_longjmp` leave the mask alone. They only work as a pair --
     Darwin's `longjmp` restores the mask from a buffer slot `_setjmp` never
-    writes -- so every frame raises through the matching `_longjmp`. Windows
-    and wasm keep the portable names: neither saves a mask, and wasm's SjLj
-    lowering matches the names.
+    writes -- so every frame raises through the matching `_longjmp`. wasm
+    keeps the portable names, which its SjLj lowering matches. Windows raises
+    through the floor's own pair (win_floor.jac): the UCRT's `longjmp` unwinds
+    through exception tables a Jac image does not carry.
     """;
     triple = str(self.llvm_module.triple or "").lower();
-    if any(
-        os_name in triple for os_name in ("wasm", "windows", "win32", "mingw", "msvc")
-    ) {
+    if "wasm" in triple {
         return ("setjmp", "longjmp");
+    }
+    for os_name in ["windows", "win32", "mingw", "msvc"] {
+        if os_name in triple {
+            return ("__jac_setjmp", "__jac_longjmp");
+        }
     }
     return ("_setjmp", "_longjmp");
 }
@@ -214,7 +221,6 @@ impl NaIRGenPass._emit_runtime_raise(
         self._declare_exception_runtime();
     }
     i8p = ir.IntType(8).as_pointer();
-    i32 = ir.IntType(32);
     func = self.builder.function;
     raise_bb = func.append_basic_block(name=f"raise.{exc_type_name}");
     ok_bb = func.append_basic_block(name=f"ok.{exc_type_name}");
@@ -229,7 +235,6 @@ impl NaIRGenPass._emit_runtime_raise(
             self._emit_rc_release_simple(value, op="read_error");
         }
     }
-    exc_type_id = self._get_or_register_exc_type(exc_type_name);
 
     if msg in self._rt_error_msgs {
         global_str = self._rt_error_msgs[msg];
@@ -246,16 +251,34 @@ impl NaIRGenPass._emit_runtime_raise(
         self._rt_error_msgs[msg] = global_str;
     }
     msg_val = self.builder.bitcast(global_str, i8p, name="rt.msg.cast");
-    if self._slot_lowering_active() {
-        self._codegen_raise_slot(msg_val, exc_type_id, msg_val);
-    } else {
-        self.builder.call(
-            self._exc_raise_fn, [msg_val, ir.Constant(i32, exc_type_id), msg_val]
-        );
-        self.builder.unreachable();
-    }
+    self._emit_raise_value(exc_type_name, msg_val);
 
     self.builder.position_at_end(ok_bb);
+}
+
+impl NaIRGenPass._emit_raise_value(exc_type_name: str, msg_val: ir.Value) -> None {
+    """Raise `exc_type_name` here with a message computed at run time.
+
+    The block ends at the raise, so the caller positions the builder elsewhere
+    before emitting more code.
+    """;
+    if not self._slot_lowering_active() and self._exc_raise_fn is None {
+        self._declare_exception_runtime();
+    }
+    i8p = ir.IntType(8).as_pointer();
+    i32 = ir.IntType(32);
+    if msg_val.type != i8p {
+        msg_val = self.builder.bitcast(msg_val, i8p, name="rt.msg.cast");
+    }
+    exc_type_id = self._get_or_register_exc_type(exc_type_name);
+    if self._slot_lowering_active() {
+        self._codegen_raise_slot(msg_val, exc_type_id, msg_val);
+        return;
+    }
+    self.builder.call(
+        self._exc_raise_fn, [msg_val, ir.Constant(i32, exc_type_id), msg_val]
+    );
+    self.builder.unreachable();
 }
 
 impl NaIRGenPass._get_or_register_exc_type(exc_name: str) -> int {
@@ -568,9 +591,10 @@ impl NaIRGenPass._exc_bound_struct(ex: (uni.Expr | None)) -> (str | None) {
 
 impl NaIRGenPass._reraise_caught(values: tuple[ir.Value, ir.Value, ir.Value]) -> None {
     if self._slot_lowering_active() {
-        for (slot, value) in zip(self._nogc_err_slot(), values) {
-            self.builder.store(value, slot);
-        }
+        (_slot_t, _slot_o, _slot_m) = self._nogc_err_slot();
+        self.builder.store(values[0], _slot_t);
+        self.builder.store(values[1], _slot_o);
+        self.builder.store(values[2], _slot_m);
         self._emit_err_propagate(loc="reraise");
     } else {
         self.builder.call(self._exc_raise_fn, [values[1], values[0], values[2]]);
@@ -1155,10 +1179,7 @@ impl NaIRGenPass._codegen_try_unwind(
 }
 
 impl NaIRGenPass._slot_lowering_active -> bool {
-    return (
-        bool(getattr(self.module.gen, "nogc_enforced", False))
-        or "wasm" in str(self.llvm_module.triple)
-    )
+    return (self.module.gen.nogc_enforced or "wasm" in str(self.llvm_module.triple))
         and self._gen_ctx is None;
 }
 
@@ -1336,7 +1357,7 @@ impl NaIRGenPass._codegen_try_slot(nd: uni.TryStmt) -> None {
     }
     self.builder.position_at_end(dispatch_bb);
     err_type = self.builder.load(tglob, name="err.type");
-    for (i, except_node) in enumerate(nd.excepts or []) {
+    for (i, except_node) in enumerate(nd.excepts) {
         ex = except_node.ex_type;
         caught = self._exc_bound_struct(ex);
         targets = self._exception_handler_targets(ex);
@@ -1421,9 +1442,10 @@ impl NaIRGenPass._codegen_try_slot(nd: uni.TryStmt) -> None {
         prop_bb = func.append_basic_block("try.propagate");
         self.builder.cbranch(is_prop, prop_bb, merge_bb);
         self.builder.position_at_end(prop_bb);
-        for (slot, value) in zip(self._nogc_err_slot(), pending) {
-            self.builder.store(value, slot);
-        }
+        (_slot_t, _slot_o, _slot_m) = self._nogc_err_slot();
+        self.builder.store(pending[0], _slot_t);
+        self.builder.store(pending[1], _slot_o);
+        self.builder.store(pending[2], _slot_m);
         self._emit_err_propagate(loc="try.propagate");
     }
     self.builder.position_at_end(merge_bb);
@@ -1432,6 +1454,7 @@ impl NaIRGenPass._codegen_try_slot(nd: uni.TryStmt) -> None {
 impl NaIRGenPass._emit_finalizers(loop_depth: int = 0) -> bool {
     saved_finalizers = self._finally_stack;
     saved_handlers = self._slot_try_stack;
+    saved_loops = self.loop_stack;
     try {
         for index in range(len(saved_finalizers) - 1, -1, -1) {
             frame = saved_finalizers[index];
@@ -1441,6 +1464,7 @@ impl NaIRGenPass._emit_finalizers(loop_depth: int = 0) -> bool {
             }
             self._finally_stack = saved_finalizers[:index];
             self._slot_try_stack = saved_handlers[:frame.handler_depth];
+            self.loop_stack = saved_loops[:frame.loop_depth];
             if frame.pop_handler {
                 self.builder.call(self._exc_pop_fn, []);
             }
@@ -1463,6 +1487,7 @@ impl NaIRGenPass._emit_finalizers(loop_depth: int = 0) -> bool {
     } finally {
         self._finally_stack = saved_finalizers;
         self._slot_try_stack = saved_handlers;
+        self.loop_stack = saved_loops;
     }
 }
 
@@ -1546,7 +1571,7 @@ impl NaIRGenPass._codegen_finally_guard(nd: uni.TryStmt) -> None {
     self.builder.call(self._exc_pop_fn, []);
     _spill: list[ir.Value] = [];
     if _in_gen {
-        for (_si, _sv) in enumerate(values) {
+        for (_si, _sv) in enumerate([values[0], values[1], values[2]]) {
             _slot = self._entry_alloca(_sv.type, f"finally.exc.{_si}");
             self.builder.store(_sv, _slot);
             _spill.append(_slot);

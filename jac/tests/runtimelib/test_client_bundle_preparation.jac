@@ -77,3 +77,69 @@ test "a failed production client build prevents initialization and a corrected r
         }
     }
 }
+
+
+"""Prepare the web app at `path` and report whether it restored the recorded application."""
+def _restored(path: Path, `root: str) -> bool {
+    import contextlib;
+    import io;
+    import from jaclang.compiler.driver.application { prepare_application }
+    import from jaclang.compiler.driver.program { JacProgram }
+    import from jaclang.runtime.prepared { forget }
+    err = io.StringIO();
+    try {
+        with contextlib.redirect_stderr(err) {
+            prepare_application(str(path), JacProgram(), `root, client=True);
+        }
+    } finally {
+        forget(str(path));
+    }
+    return 'Restoring prepared application' in err.getvalue();
+}
+
+
+test "files a web app writes at runtime do not invalidate its prepared record" {
+    import from jaclang.testing.requires { require_tool }
+    require_tool('bun');
+    with TemporaryDirectory(prefix='jac-prepared-data-') as tmp {
+        base = Path(tmp);
+        path = base / 'main.jac';
+        path.write_text(
+            'import from "@jac/runtime" { renderJsxTree, }\n\n'
+            'def:pub app(children: any) -> JsxElement {\n    <div class="root">{children}</div>\n}\n'
+        );
+        asset = base / 'assets' / 'brand.css';
+        asset.parent.mkdir();
+        asset.write_text('.root { color: red; }');
+        assert not _restored(path, tmp);
+        data = base / 'storage' / 'orgs' / 'state.json';
+        data.parent.mkdir(parents=True);
+        data.write_text('{"n": 1}');
+        assert _restored(path, tmp) , (
+            "a data file the app wrote at runtime discarded the prepared application"
+        );
+        data.write_text('{"n": 2}');
+        (base / 'server.log').write_text('serving\n');
+        assert _restored(path, tmp) , "a server log at the project root re-prepared";
+        asset.write_text('.root { color: blue; }');
+        assert not _restored(path, tmp) , "a change to a client asset must still re-prepare";
+        assert _restored(path, tmp);
+        page = base / 'pages' / 'about.jac';
+        page.parent.mkdir();
+        page.write_text('def:pub page -> JsxPage {\n    return <div>about</div>;\n}\n');
+        assert not _restored(path, tmp) , "a new page must re-prepare";
+        import os;
+        import from jaclang.compiler.driver.application { prepare_application }
+        import from jaclang.compiler.driver.program { JacProgram }
+        import from jaclang.runtime.prepared { forget }
+        try {
+            prepared = prepare_application(str(path), JacProgram(), tmp, client=True);
+            routes = str(
+                prepared.manifests[os.path.realpath(str(path))].get('spa_routes')
+            );
+            assert 'about' in routes , f"the first page is not routed: {routes}";
+        } finally {
+            forget(str(path));
+        }
+    }
+}

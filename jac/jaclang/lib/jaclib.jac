@@ -7,6 +7,7 @@ import from jaclang.runtime.constructs { JsxElement }
 import from jaclang.runtime.constructs { NodeArchetype as Node }
 import from jaclang.runtime.constructs { WalkerArchetype as Walker }
 import from jaclang.runtime.graph_query { GraphQuery, QHop, QOrder, QPred }
+import from jaclang.runtime.pass_link { PassLink }
 import from jaclang.runtime.runtime { JacRuntimeInterface }
 glob __all__ = [
          'GraphQuery',
@@ -20,6 +21,7 @@ glob __all__ = [
          'Root',
          'GenericEdge',
          'JsxElement',
+         'PassLink',
          'DSFunc',
          'EdgeDir',
          'root',

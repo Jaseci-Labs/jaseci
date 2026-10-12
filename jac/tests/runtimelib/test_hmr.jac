@@ -13,7 +13,12 @@ import watchdog;
 
 import from jaclang.server.hmr { HotReloader }
 import from jaclang.server.build_status { get_build_status }
-import from jaclang.server.watcher { ChangeType, FileChangeEvent, JacFileWatcher }
+import from jaclang.server.watcher {
+    ChangeType,
+    FileChangeEvent,
+    JacFileWatcher,
+    watch_roots
+}
 
 def _as_any(v: any) -> any {
     return v;
@@ -55,6 +60,128 @@ test "prepared namespaced modules reload through their source source_path" {
                 }
             }
         }
+    }
+}
+
+test "a stylesheet change in a prepared app is copied, not re-prepared" {
+    import io;
+    import sys;
+    import from contextlib { redirect_stderr }
+    import from jaclang.runtime.runtime { JacRuntime as Jac }
+    import from jaclang.compiler.driver.application { prepare_application }
+    import from jaclang.runtime.prepared { initialize_application, forget }
+    with tempfile.TemporaryDirectory() as tmp {
+        source_path = Path(tmp) / 'main.jac';
+        source_path.write_text('def value -> int { return 1; }\n');
+        application = prepare_application(str(source_path), Jac.get_program(), tmp);
+        module = initialize_application(application);
+        prefix = module.__name__.split('.')[0];
+        try {
+            reloader = HotReloader(
+                base_path=tmp,
+                module_name=module.__name__,
+                entry_path=str(source_path),
+                watcher=JacFileWatcher(watch_paths=[tmp])
+            );
+            sheet = Path(tmp) / 'styles.css';
+            sheet.write_text('.root { color: red; }');
+            err = io.StringIO();
+            with redirect_stderr(err) {
+                reloader._process_change(str(sheet));
+            }
+            assert not reloader.diagnostics() , reloader.diagnostics();
+            assert "Preparing application" not in err.getvalue() , (
+                "a stylesheet change re-prepared the whole application"
+            );
+            copied = Path(tmp) / reloader._client_output_dir / 'styles.css';
+            assert copied.read_text() == '.root { color: red; }';
+            compiled = Path(tmp) / 'build' / 'web' / 'compiled';
+            reloader.client_compiler = _FakeCompiler(
+                jac_client_compiler=_FakeJcc(
+                    out_path=compiled / 'main.js',
+                    next_code='',
+                    compiled_dir=str(compiled)
+                )
+            );
+            sheet.write_text('.root { color: blue; }');
+            reloader._process_change(str(sheet));
+            served = compiled / 'styles.css';
+            assert served.read_text() == '.root { color: blue; }' , (
+                "the edit was not copied to the client compiler's output"
+            );
+            reloader._process_change(str(served));
+            assert not (compiled / 'build').exists() , "a copied asset was copied again";
+            sheet.unlink();
+            reloader._process_change(str(sheet));
+            assert not served.exists() , "a deleted stylesheet stayed in the served output";
+        } finally {
+            forget(str(source_path));
+            for name in list(sys.modules) {
+                if name == prefix or name.startswith(prefix + '.') {
+                    sys.modules.pop(name, None);
+                }
+            }
+        }
+    }
+}
+
+# A workspace app's entry sits in its own directory while the modules it
+# imports live in sibling directories under the application root. Watching
+# only the entry's directory left edits to those modules unnoticed.
+test "watch roots cover the directories the application's modules come from" {
+    import os;
+    with tempfile.TemporaryDirectory() as tmp {
+        top = os.path.realpath(tmp);
+        for rel in [
+            "web/pages",
+            "core/site/ui",
+            "cli",
+            ".jac/client",
+            "node_modules/pkg"
+        ] {
+            os.makedirs(os.path.join(top, rel));
+        }
+        base = os.path.join(top, "web");
+        sources = [
+            os.path.join(top, "web", "main.jac"),
+            os.path.join(top, "web", "pages", "index.jac"),
+            os.path.join(top, "core", "site", "ui", "empty.jac"),
+            os.path.join(top, "core", "life.jac"),
+            os.path.join(top, ".jac", "client", "gen.jac"),
+            os.path.join(top, "node_modules", "pkg", "x.jac"),
+            "/elsewhere/lib.jac"
+        ];
+        assert watch_roots(base, top, sources) == [base, os.path.join(top, "core")];
+        assert watch_roots(top, top, sources) == [top];
+        shared = sources + [os.path.join(top, "shared.jac")];
+        assert watch_roots(base, top, shared)
+            == [base, os.path.join(top, "core"), os.path.join(top, "shared.jac")];
+        nested = os.path.join(top, "web", "pages");
+        assert watch_roots(nested, top, sources)
+            == [os.path.join(top, "core"), os.path.join(top, "web")];
+    }
+}
+
+test "a watched directory outside the first one delivers its changes" {
+    with tempfile.TemporaryDirectory() as tmp {
+        entry_dir = Path(tmp) / "web";
+        shared_dir = Path(tmp) / "core";
+        entry_dir.mkdir();
+        shared_dir.mkdir();
+        seen: list[str] = [];
+        watcher = JacFileWatcher(watch_paths=[str(entry_dir), str(shared_dir)]);
+        watcher.add_callback(lambda (e: FileChangeEvent) { seen.append(e.path); });
+        watcher.start();
+        try {
+            (shared_dir / "life.jac").write_text("glob x = 1;\n");
+            deadline = time.time() + 5;
+            while not seen and time.time() < deadline {
+                time.sleep(0.05);
+            }
+        } finally {
+            watcher.stop();
+        }
+        assert any(p.endswith("life.jac") for p in seen) , f"no event for the shared module: {seen}";
     }
 }
 
