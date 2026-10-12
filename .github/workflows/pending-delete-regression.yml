@@ -1,0 +1,342 @@
+name: Pending-delete regression
+
+on:
+  push:
+    branches: [fix/9842-pending-delete]
+  pull_request:
+    branches: [release/jaclang-0.34.21-prep]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      runtime:
+        description: Runtime to validate with the same regression commands
+        type: choice
+        options: [release, source]
+        default: release
+
+permissions:
+  contents: read
+
+env:
+  # Change this fallback to source only after recording the release-binary red.
+  JAC_RUNTIME: ${{ inputs.runtime || 'release' }}
+  JAC_NO_DEV_SOURCE: "1"
+  JAC_TEST_NATIVE: "1"
+  JAC_TEST_JOBS: "0"
+  NO_COLOR: "1"
+  NO_EMOJI: "1"
+
+jobs:
+  pending-delete:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    services:
+      mongodb:
+        image: mongo:7
+        ports: [27017:27017]
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok'"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7
+        ports: [6379:6379]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      MONGODB_URI: mongodb://localhost:27017
+      REDIS_URL: redis://localhost:6379
+    steps:
+      - name: Check out the exact regression or repair commit
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install the official 0.34.21 binary
+        if: env.JAC_RUNTIME == 'release'
+        shell: bash
+        run: |
+          set -euo pipefail
+          install_dir="$RUNNER_TEMP/jac-9842-release"
+          mkdir -p "$install_dir"
+          cd "$install_dir"
+          asset=jac-0.34.21-linux-x86_64
+          url="https://github.com/jaseci-labs/jac/releases/download/v0.34.21/$asset"
+          curl --fail --location --retry 3 "$url" --output "$asset"
+          curl --fail --location --retry 3 "$url.sha256" --output "$asset.sha256"
+          sha256sum --check "$asset.sha256"
+          chmod +x "$asset"
+          ln -s "$asset" jac
+          echo "$install_dir" >> "$GITHUB_PATH"
+
+      - name: Build the exact checked-out source binary
+        if: env.JAC_RUNTIME == 'source'
+        uses: ./.github/actions/setup-jac
+
+      - name: Record and stage the exact runtime artifact
+        id: runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$JAC_RUNTIME" = release || test "$JAC_RUNTIME" = source
+          checkout_sha="$(git rev-parse HEAD)"
+          test "$checkout_sha" = "$GITHUB_SHA"
+          artifact_dir="$RUNNER_TEMP/jac-9842-artifact"
+          mkdir -p "$artifact_dir"
+          cp -L "$(command -v jac)" "$artifact_dir/jac"
+          cd "$artifact_dir"
+          sha256sum jac > jac.sha256
+          ./jac --version | tee version.txt
+          grep -Eq '(^|[^0-9])0\.34\.21([^0-9]|$)' version.txt
+          export CHECKOUT_SHA="$checkout_sha" ARTIFACT_DIR="$artifact_dir"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          artifact = Path(os.environ["ARTIFACT_DIR"])
+          runtime = os.environ["JAC_RUNTIME"]
+          provenance = {
+              "runtime": runtime,
+              "checkout_repository": os.environ["GITHUB_REPOSITORY"],
+              "checkout_sha": os.environ["CHECKOUT_SHA"],
+              "source_sha": os.environ["CHECKOUT_SHA"] if runtime == "source" else None,
+              "maintenance_base_sha": "3b8b97b889a74ee48fc00839fc64976c3c7a07e3",
+              "release_tag": "v0.34.21" if runtime == "release" else None,
+              "release_repository": "jaseci-labs/jac" if runtime == "release" else None,
+              "binary_sha256": (artifact / "jac.sha256").read_text().split()[0],
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "runner_os": os.environ["RUNNER_OS"],
+              "runner_arch": os.environ["RUNNER_ARCH"],
+          }
+          (artifact / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
+          PY
+          if [ "$JAC_RUNTIME" = source ]; then
+            typeshed="$GITHUB_WORKSPACE/jac/jaclang/vendor/typeshed/stdlib"
+            test -f "$typeshed/VERSIONS"
+            tar -C "$typeshed" -czf "$artifact_dir/typeshed-stdlib.tar.gz" .
+            sha256sum typeshed-stdlib.tar.gz > typeshed-stdlib.sha256
+          fi
+          echo "artifact_dir=$artifact_dir" >> "$GITHUB_OUTPUT"
+
+      - name: Upload the binary and provenance used by this run
+        uses: actions/upload-artifact@v4
+        with:
+          name: jac-9842-${{ env.JAC_RUNTIME }}-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ steps.runtime.outputs.artifact_dir }}/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Install the existing scale CI dependencies
+        id: dependencies
+        shell: bash
+        run: |
+          # Pins and dependency surface mirror the owning scale CI job.
+          jac install \
+            "fastapi>=0.121.3,<0.122.0" "uvicorn[standard]>=0.38.0,<0.39.0" \
+            "pyjwt>=2.10.1,<2.11.0" "fastapi-sso>=0.21.0,<1.0.0" \
+            "python-multipart>=0.0.21,<1.0.0" "bcrypt>=4.0.0,<5.0.0" \
+            "aiohttp>=3.9.0,<4.0.0" "sqlalchemy>=2.0.0,<3.0.0" \
+            "email-validator>=2.3.0,<3.0.0" "python-dotenv>=1.2.1,<2.0.0" \
+            "pymongo>=4.15.4,<5.0.0" "redis>=7.1.0,<8.0.0" \
+            "prometheus-client>=0.21.0,<1.0.0" \
+            "opentelemetry-sdk>=1.27.0,<2.0.0" \
+            "opentelemetry-exporter-otlp-proto-http>=1.27.0,<2.0.0" \
+            "apscheduler>=3.11.2,<4.0.0" "kubernetes>=34.1.0,<35.0.0" \
+            "docker>=7.1.0,<8.0.0" "boto3>=1.40.0,<2.0.0" \
+            requests "testcontainers[mongodb,redis]>=4.15,<5" "moto[s3]>=5.0.0" \
+            --global
+
+      - name: Check the frozen fixture syntax before execution
+        id: syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_dir="$RUNNER_TEMP/jac-9842-evidence"
+          mkdir -p "$evidence_dir"
+          for file in \
+            jac/jaclang/scale/tests/fixtures/pending_delete/pending_delete_query_test.jac \
+            jac/jaclang/scale/tests/fixtures/pending_delete/pending_delete_traversal_test.jac \
+            jac/jaclang/scale/tests/fixtures/pending_delete/pending_delete_contextual_reads_test.jac; do
+            timeout 600 jac check "$file" -p --nowarn 2>&1 \
+              | tee "$evidence_dir/$(basename "$file").syntax.log"
+          done
+
+      - name: Compare changed Jac diagnostics against the maintenance base
+        id: differential
+        # Existing type noise must not suppress the focused reproduction below.
+        # The final gate enforces this step's outcome after regression execution.
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          base_dir="$RUNNER_TEMP/jac-9842-base"
+          git worktree add --detach "$base_dir" 3b8b97b889a74ee48fc00839fc64976c3c7a07e3
+          export BASE_DIR="$base_dir"
+          python3 - <<'PY'
+          from collections import Counter
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import subprocess
+
+          head = Path(os.environ["GITHUB_WORKSPACE"])
+          base = Path(os.environ["BASE_DIR"])
+          evidence = Path(os.environ["RUNNER_TEMP"]) / "jac-9842-evidence"
+          evidence.mkdir(exist_ok=True)
+          changed = subprocess.check_output([
+              "git", "diff", "--name-only", "--diff-filter=ACMR",
+              "3b8b97b889a74ee48fc00839fc64976c3c7a07e3", "HEAD", "--", "*.jac",
+          ], text=True, cwd=head).splitlines()
+          surface = set(changed)
+          # jac check on an annex filters to that annex. Also check its owning
+          # declaration to cover the complete module, as the CLI resolver does.
+          for name in changed:
+              path = Path(name)
+              if not path.name.endswith((".impl.jac", ".test.jac")):
+                  continue
+              stem = path.name.split(".")[0]
+              candidates = [(path.parent, stem)]
+              if path.parent.name in {"impl", "test"}:
+                  candidates.append((path.parent.parent, stem))
+              for suffix in (".impl", ".test"):
+                  if path.parent.name.endswith(suffix):
+                      candidates.append((path.parent.parent, path.parent.name[:-len(suffix)]))
+              for directory, stem in candidates:
+                  found = [directory / (stem + suffix) for suffix in
+                           (".jac", ".cl.jac", ".sv.jac", ".na.jac")
+                           if (head / directory / (stem + suffix)).is_file()]
+                  if found:
+                      surface.update(str(owner) for owner in found)
+                      break
+          if not surface:
+              raise SystemExit("No changed Jac surface was found; refusing an empty check")
+          (evidence / "jac-check-surface.json").write_text(json.dumps(sorted(surface), indent=2) + "\n")
+          ansi = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+          header = re.compile(r"^(?:\[ERROR\]\s*)?(?:Error:\s*)?error\[(E\d+)\]:\s*(.*)$")
+          location = re.compile(r"^\s*-->\s*(.*\.jac):\d+:\d+\s*$")
+          legacy = re.compile(r"^\[ERROR\]\s*(.*\.jac):\d+:\d+\s+(.*)$")
+
+          def check(root, name, label):
+              if not (root / name).is_file():
+                  return Counter()
+              result = subprocess.run(
+                  ["timeout", "600", "jac", "check", name, "--nowarn"],
+                  cwd=root, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+              )
+              text = ansi.sub("", result.stdout)
+              log = evidence / (label + "-" + name.replace("/", "__") + ".check.log")
+              log.write_text(text)
+              print(f"{label}: {name}: exit {result.returncode}; log {log.name}", flush=True)
+              lines = text.splitlines()
+              errors = Counter()
+              for index, line in enumerate(lines):
+                  match = header.match(line)
+                  if match:
+                      loc = location.match(lines[index + 1]) if index + 1 < len(lines) else None
+                      if loc is None:
+                          raise RuntimeError(f"Unlocated diagnostic in {log.name}: {line}")
+                      file = loc.group(1).replace(str(root) + "/", "")
+                      message = match.group(2).replace(str(root) + "/", "")
+                      errors[(file, match.group(1), message)] += 1
+                  elif legacy.match(line):
+                      match = legacy.match(line)
+                      errors[(match.group(1).replace(str(root) + "/", ""), "uncoded", match.group(2))] += 1
+                  elif line.startswith("[ERROR]"):
+                      raise RuntimeError(f"Unparsed checker error in {log.name}: {line}")
+              if result.returncode not in (0, 1) or (result.returncode != 0 and not errors):
+                  raise RuntimeError(f"Checker did not produce a comparable result: {log.name}")
+              if not re.search(r"\b[1-9][0-9]* (?:passed|failed) in [0-9.]+s", text):
+                  raise RuntimeError(f"Checker did not report execution: {log.name}")
+              return errors
+
+          added = []
+          for name in sorted(surface):
+              before = check(base, name, "base")
+              after = check(head, name, "head")
+              for (file, code, message), count in sorted((after - before).items()):
+                  added.append({"checked_file": name, "file": file, "code": code,
+                                "message": message, "count": count})
+          (evidence / "jac-check-new-errors.json").write_text(json.dumps(added, indent=2) + "\n")
+          print(f"Differential Jac check: {len(surface)} files; {sum(item['count'] for item in added)} new errors")
+          if added:
+              print(json.dumps(added, indent=2))
+              raise SystemExit(1)
+          PY
+
+      - name: Run frozen regressions and owning changeset controls
+        id: regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_dir="$RUNNER_TEMP/jac-9842-evidence"
+          mkdir -p "$evidence_dir"
+          tests=(
+            jac/jaclang/scale/tests/fixtures/pending_delete/pending_delete_query_test.jac
+            jac/jaclang/scale/tests/fixtures/pending_delete/pending_delete_traversal_test.jac
+            jac/jaclang/scale/tests/fixtures/pending_delete/pending_delete_contextual_reads_test.jac
+            jac/tests/runtimelib/test_changeset.jac
+          )
+          sha256sum "${tests[@]}" > "$evidence_dir/test-inputs.sha256"
+          cp "${{ steps.runtime.outputs.artifact_dir }}/provenance.json" "$evidence_dir/runtime-provenance.json"
+          failed=0
+          for file in "${tests[@]}"; do
+            echo "::group::$file"
+            log="$evidence_dir/$(basename "$file").log"
+            case "$(basename "$file")" in
+              pending_delete_query_test.jac) expected=2 ;;
+              pending_delete_traversal_test.jac) expected=1 ;;
+              pending_delete_contextual_reads_test.jac) expected=1 ;;
+              test_changeset.jac) expected=11 ;;
+              *) echo "::error::No expected test count for $file"; exit 1 ;;
+            esac
+            command=(timeout 600 jac test "$file")
+            if [ "$file" = jac/tests/runtimelib/test_changeset.jac ]; then
+              # These controls own SQLite semantics; Scale env changes their backend.
+              command=(env -u MONGODB_URI -u REDIS_URL "${command[@]}")
+            fi
+            set +e
+            "${command[@]}" 2>&1 | tee "$log"
+            statuses=("${PIPESTATUS[@]}")
+            set -e
+            if [ "${statuses[0]}" -ne 0 ] || [ "${statuses[1]}" -ne 0 ]; then
+              echo "::error::$file exited unsuccessfully (${statuses[*]})"
+              failed=1
+            fi
+            # Jac #9843 can return zero after errors. Require exactly one summary
+            # with the complete frozen count, and independently reject FAILED.
+            mapfile -t summaries < <(grep -E '^Ran [0-9]+ tests? in ' "$log" || true)
+            if [ "${#summaries[@]}" -ne 1 ] || \
+               ! grep -Eq "^Ran $expected tests? in " "$log"; then
+              echo "::error::$file did not report exactly one complete $expected-test run"
+              failed=1
+            fi
+            if grep -Eq '^FAILED([[:space:](]|$)' "$log"; then
+              echo "::error::$file reported a FAILED summary"
+              failed=1
+            fi
+            if ! grep -Eq '^OK$' "$log"; then
+              echo "::error::$file did not report an OK summary without skipped tests"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "$failed"
+
+      - name: Enforce the differential Jac check
+        if: always() && steps.differential.outcome == 'failure'
+        shell: bash
+        run: |
+          echo "::error::Differential Jac check introduced diagnostics or could not establish a comparable result; see retained check logs."
+          exit 1
+
+      - name: Upload regression execution evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jac-9842-evidence-${{ env.JAC_RUNTIME }}-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/jac-9842-evidence/
+          if-no-files-found: warn
+          retention-days: 14

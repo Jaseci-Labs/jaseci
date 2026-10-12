@@ -18,6 +18,7 @@ import from jaclang.jac0core.archetype { EdgeAnchor, GenericEdge, NodeAnchor, Ro
 import from jaclang.jac0core.runtime { JacRuntime }
 import from jaclang.runtimelib.changeset { ChangeSet }
 import from jaclang.runtimelib.context { ExecutionContext }
+import from jaclang.runtimelib.exceptions { MissingAnchorError }
 import from jaclang.runtimelib.memory { SqliteMemory, TieredMemory }
 
 
@@ -455,6 +456,167 @@ test "abort discards the uncommitted unit of work" {
             assert _integrity_violations(db_path) == [];
         } finally {
             JacRuntime.exec_ctx = old_ctx;
+        }
+    }
+}
+
+
+test "a held deleted node cannot gain a new edge before commit" {
+    with TemporaryDirectory() as tmpdir {
+        ctx = _make_ctx(tmpdir);
+        token = JacRuntime.push_request_context(ctx);
+        try {
+            mem = ctx.mem;
+            assert isinstance(mem, TieredMemory);
+            (ranch, ianch, eanch) = _seed_graph(mem);
+            mem.commit();
+            db_path = mem.l3.path;
+
+            # A caller can retain the archetype even after destroy removes
+            # its cache entry. Refusing the connection must precede both
+            # endpoint mutations and recording a persistent new edge.
+            held = ianch.archetype;
+            JacRuntime.destroy(held);
+            try {
+                JacRuntime.connect(ranch.archetype, held, edges_only=True);
+            } except MissingAnchorError { }
+            assert ranch.edges == [] , (
+                "connecting a deleted handle must not mutate the live endpoint"
+            );
+            assert ianch.edges == [] , (
+                "connecting a deleted handle must not add an incident edge"
+            );
+            mem.commit();
+            fresh = SqliteMemory(path=db_path);
+            assert not fresh.`has(ianch.id);
+            assert not fresh.`has(eanch.id);
+            assert _integrity_violations(db_path) == [];
+            mem.commit();
+            assert not fresh.`has(ianch.id) , (
+                "a later commit must not recreate the deleted handle"
+            );
+        } finally {
+            try { ctx.mem.abort(); }
+            finally {
+                try { ctx.close(); }
+                finally { JacRuntime.reset_request_context(token); }
+            }
+        }
+    }
+}
+
+
+test "an applied deletion retires cached handles and traversal read versions" {
+    with TemporaryDirectory() as tmpdir {
+        ctx = _make_ctx(tmpdir);
+        token = JacRuntime.push_request_context(ctx);
+        try {
+            mem = ctx.mem;
+            assert isinstance(mem, TieredMemory);
+            (ranch, ianch, eanch) = _seed_graph(mem);
+            mem.commit();
+            db_path = mem.l3.path;
+            ctx.note_traversal_reads([ianch]);
+            assert ctx.read_versions.get(ianch.id) == ianch.version;
+            JacRuntime.destroy(ianch.archetype);
+            # Repeating an ordinary delete of the retained handle is harmless.
+            JacRuntime.destroy(ianch.archetype);
+
+            # Saving a retained handle must not undo its delete intent. A
+            # runtime may refuse this explicitly or retain the delete until
+            # commit; the durable and request-local outcome is the same.
+            try { JacRuntime.save(ianch.archetype); }
+            except MissingAnchorError { }
+            intent = mem.changes.intents.get(ianch.id);
+            assert intent is not None and intent.is_delete();
+            mem.commit();
+            fresh = SqliteMemory(path=db_path);
+            assert not fresh.`has(ianch.id) , "the delete must be applied";
+            assert ianch.id not in mem.__mem__ , (
+                "an applied deletion must not retain a cached handle"
+            );
+            assert ianch.id not in ctx.read_versions , (
+                "an applied deletion must retire its traversal read dependency"
+            );
+            mem.commit();
+            assert not fresh.`has(ianch.id);
+            assert _integrity_violations(db_path) == [];
+        } finally {
+            try { ctx.mem.abort(); }
+            finally {
+                try { ctx.close(); }
+                finally { JacRuntime.reset_request_context(token); }
+            }
+        }
+    }
+}
+
+
+test "a failed deletion stays pending until a successful retry" {
+    import from unittest.mock { patch }
+    with TemporaryDirectory() as tmpdir {
+        ctx = _make_ctx(tmpdir);
+        token = JacRuntime.push_request_context(ctx);
+        try {
+            mem = ctx.mem;
+            assert isinstance(mem, TieredMemory);
+            (ranch, ianch, eanch) = _seed_graph(mem);
+            mem.commit();
+            db_path = mem.l3.path;
+            ctx.note_traversal_reads([ianch]);
+            read_version = ctx.read_versions[ianch.id];
+            JacRuntime.destroy(ianch.archetype);
+            ghost = CsItem(name="independent").__jac__;
+            ghost.persistent = True;
+            mem.put(ghost);
+            mem.changes.record_create(ghost);
+            original_apply = mem.l3._apply_one;
+
+            # Leave the real transaction, independent create, edge-list
+            # repair and edge deletion intact. Only this NODE_DELETE fails,
+            # producing an actual partial ApplyReport from the backend.
+            def fail_delete(conn: any, intent: any) -> None {
+                if intent.anchor.id == ianch.id and intent.is_delete() {
+                    raise RuntimeError("forced node-delete failure");
+                }
+                original_apply(conn, intent);
+            }
+            with patch.object(mem.l3, "_apply_one", side_effect=fail_delete) {
+                mem.commit();
+            }
+            fresh = SqliteMemory(path=db_path);
+            assert fresh.`has(ghost.id) , (
+                "the fault must allow an independent write to apply"
+            );
+            assert fresh.`has(ianch.id) , "the failed delete must remain durable";
+            assert not fresh.`has(eanch.id) , "the edge deletion must have applied";
+            intent = mem.changes.intents.get(ianch.id);
+            assert intent is not None and intent.is_delete() , (
+                "an unconfirmed delete must remain pending for retry"
+            );
+            assert ctx.read_versions.get(ianch.id) == read_version , (
+                "a failed deletion must not retire the read dependency"
+            );
+            assert ianch.id not in mem.__mem__;
+            assert mem.get(ianch.id) is None , (
+                "a pending retry must not reload the deleted handle"
+            );
+            assert not mem.`has(ianch.id);
+            assert ianch.id not in mem.batch_get([ianch.id]);
+
+            mem.commit();
+            assert not fresh.`has(ianch.id) , "retry must apply the retained delete";
+            assert ianch.id not in ctx.read_versions;
+            assert ianch.id not in mem.changes.intents;
+            assert _integrity_violations(db_path) == [];
+            mem.commit();
+            assert fresh.`has(ghost.id);
+        } finally {
+            try { ctx.mem.abort(); }
+            finally {
+                try { ctx.close(); }
+                finally { JacRuntime.reset_request_context(token); }
+            }
         }
     }
 }
