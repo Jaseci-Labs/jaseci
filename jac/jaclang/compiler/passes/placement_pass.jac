@@ -16,7 +16,7 @@ import from jaclang.compiler.frontend.unitree {
     UniNode
 }
 import from jaclang.compiler.frontend.constant { CodeContext }
-import from jaclang.compiler.frontend.diagnostics { DIAGNOSTICS, E5090, E5114 }
+import from jaclang.compiler.frontend.diagnostics { DIAGNOSTICS, E5090, E5116 }
 import from jaclang.compiler.frontend.module_facts { ModuleFacts }
 import from jaclang.compiler.placement.placement_facts { native_placement_soft }
 import type from jaclang.compiler.driver.program { JacProgram }
@@ -1152,7 +1152,7 @@ impl PlacementPass._check_conformance(ir_in: Module) -> None {
         variant_mismatches
     }
     for (decl, why) in variant_mismatches(ir_in, self.prog) {
-        self.ctx.emit(E5114, node_override=decl, reason=why);
+        self.ctx.emit(E5116, node_override=decl, reason=why);
     }
     lib_name = native_library_module_name(mod_path) if mod_path else None;
     if lib_name is None {
@@ -1164,7 +1164,7 @@ impl PlacementPass._check_conformance(ir_in: Module) -> None {
     }
     stub_mod = self.prog.load_dependency_module(stub_path, need_tree=True);
     for (decl, why) in conformance_mismatches(stub_mod, ir_in, self.prog) {
-        self.ctx.emit(E5114, node_override=decl, reason=why);
+        self.ctx.emit(E5116, node_override=decl, reason=why);
     }
 }
 

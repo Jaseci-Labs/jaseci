@@ -318,7 +318,7 @@ The placement is final when the pass returns (`gen.placement_mode` is
 `inferred`): the solver adds nothing afterwards, and nothing types the
 module again. The native backend lowers the neutrally typed tree, binding
 interface declarations to the native library, whose conformance to those
-interfaces is checked (`E5114`). A refusal only the backend can see places
+interfaces is checked (`E5116`). A refusal only the backend can see places
 the module on the server in place (`settle_native_module`): the tree was
 typed for no codespace, so the Python backend, which runs after the native
 one in the same schedule, emits it as it is. A backend exception is a
@@ -378,7 +378,7 @@ on every compile:
 | `StaticAnalysisPass` | [`compiler/passes/static_analysis_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/static_analysis_pass.jac) | Unreachable code, unused variables, import refusals (`E1122`-`E1125`) |
 | `AccessCheckPass` | [`compiler/passes/access_check_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/access_check_pass.jac) | Access-modifier (`:pub`/`:protect`/`:priv`) enforcement |
 | `OwnershipCheckPass` | [`compiler/passes/ownership_check_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/ownership_check_pass.jac) | Ownership and borrow analysis (see the [Ownership Fact Schema](ownership-checker-spec.md)) |
-| `PlacementPass` | [`compiler/passes/placement_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/placement_pass.jac) | Decides, after typing, whether each top-level element of a module that may prefer native is placed native: reads the requirements and refusals the checker recorded, applies the capability rules and the boundary rule, marks the placement final, and reports a required placement that is refused. For a decided module it holds the placement to account and checks native library conformance (`E5114`) |
+| `PlacementPass` | [`compiler/passes/placement_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/placement_pass.jac) | Decides, after typing, whether each top-level element of a module that may prefer native is placed native: reads the requirements and refusals the checker recorded, applies the capability rules and the boundary rule, marks the placement final, and reports a required placement that is refused. For a decided module it holds the placement to account and checks native library conformance (`E5116`) |
 | `PortabilityWarnPass` | [`compiler/passes/capability_check_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/passes/capability_check_pass.jac) | Emits portability warnings (W6001-W6004) for JS-idiom violations; diagnostic-only |
 | `JacLintCheckPass` | [`compiler/tools/jac_auto_lint_pass.jac`](https://github.com/Jaseci-Labs/jaseci/blob/main/jac/jaclang/compiler/tools/jac_auto_lint_pass.jac) | Lint rules (W3xxx / E3xxx) |
 

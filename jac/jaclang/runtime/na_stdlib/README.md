@@ -8,7 +8,7 @@ linked like user code, with zero per-module backend work.
 ## The interface is Python's
 
 Each public module here implements the interface the Python stub of the same
-name declares. That is the rule the compiler checks (`E5114`):
+name declares. That is the rule the compiler checks (`E5116`):
 
 - A name is public (`def:pub`, `obj:pub`) only if the interface declares it,
   and its parameters and members are ones the interface declares. A parameter
