@@ -74,7 +74,9 @@ import from engine.src.runtime.jsobject {
     js_object_brand,
     js_object_dense_elem,
     KEY_LENGTH,
-    js_object_dense_set_present
+    js_object_dense_set_present,
+    js_object_array_shape,
+    js_object_new_array
 }
 import from engine.src.runtime.jsobj_type {
     JSObject,
@@ -105,6 +107,7 @@ import from engine.src.runtime.jsobj_type {
 }
 import from engine.src.runtime.jsstring {
     str_intern_index,
+    str_id_array_index_value,
     str_intern,
     str_heap,
     str_from_id,
@@ -136,7 +139,8 @@ import from engine.src.builtins.markers { _KEY_IS_ARRAY }
 import from engine.src.runtime.gc_pin { gc_pin_value }
 
 """Internal: object-table index of Array.prototype, wired by init_global."""
-glob _ARRAY_PROTO: JSValue = jsv_undefined();
+glob _ARRAY_PROTO: JSValue = jsv_undefined(),
+     _ARRAY_SHAPE: int = -1;  # js_array_create's result shape, learned
 
 """Called once by init_global to wire Array.prototype onto all future arrays."""
 def:pub js_array_set_proto(proto: JSValue) {
@@ -164,11 +168,18 @@ KEY_LENGTH.  Returns a JSValue with tag=Object pointing into _OBJECT_TABLE.
 ECMAScript §23.1.1.1
 """
 def:pub js_array_create(elements: list[JSValue]) -> JSValue {
+    n: int = len(elements);
+    # The shape the first array built below reached (marker, then length) is
+    # every later one's: build at it directly.
+    if _ARRAY_SHAPE > 0 and jsv_is_object_cell(_ARRAY_PROTO) and dense_gate_enabled() {
+        return js_object_new_array(
+            jsv_to_table_id(_ARRAY_PROTO), _ARRAY_SHAPE, elements, js_array_len_value(n)
+        );
+    }
     arr: JSValue = js_object_create(_ARRAY_PROTO)
         if jsv_is_object_cell(_ARRAY_PROTO)
         else js_object_create_null();
     js_object_set(arr, _KEY_IS_ARRAY, js_true());
-    n: int = len(elements);
     if dense_gate_enabled() {
         arr_raw: JSObject = js_object_table_get(jsv_to_table_id(arr));
         arr_raw.elems_kind = ELEMS_DENSE;
@@ -191,6 +202,9 @@ def:pub js_array_create(elements: list[JSValue]) -> JSValue {
         }
     }
     js_object_set_flags(arr, WK_LENGTH, js_array_len_value(n), PROP_WRITABLE);
+    if _ARRAY_SHAPE < 0 and jsv_is_object_cell(_ARRAY_PROTO) and dense_gate_enabled() {
+        _ARRAY_SHAPE = js_object_array_shape(arr, _KEY_IS_ARRAY);
+    }
     return arr;
 }
 
@@ -470,38 +484,7 @@ An array index is a canonical decimal string for an integer in [0, 2^32-2]
 (ECMAScript §6.1.7: array index < 2^32-1).
 """
 def:pub _array_index_key_numeric(kid: int) -> int {
-    if kid < 0 {
-        return -1;
-    }
-    s: str = str_from_id(kid);
-    sn: int = len(s);
-    if sn == 0 {
-        return -1;
-    }
-    # Byte reads, no substrings: this runs on every property get on a string
-    # (String-exotic index check) and on array index probes, and a method name
-    # like `charCodeAt` used to cost two 1-char substring allocations to reject.
-    c0: int = ord(s[0]);
-    if c0 < 48 or c0 > 57 {
-        return -1;
-    }
-    if c0 == 48 {
-        return 0 if sn == 1 else -1;
-    }  # "0" only; no leading zeros
-    np: int = 0;
-    pi: int = 0;
-    while pi < sn {
-        pc: int = ord(s[pi]);
-        if pc < 48 or pc > 57 {
-            return -1;
-        }
-        np = np * 10 + (pc - 48);
-        if np >= 4294967295 {
-            return -1;
-        }
-        pi = pi + 1;
-    }
-    return np;
+    return str_id_array_index_value(kid);
 }
 
 """Stable ascending merge sort of `payload` by parallel integer `keys`.
@@ -652,6 +635,51 @@ def:pub js_array_own_key_ids(arr: JSValue) -> list[int] {
 
 """Own array-index keys with numeric value >= threshold, sorted descending."""
 def:pub _array_collect_index_keys_desc(arr: JSValue, threshold: int) -> list[int] {
+    # An element-backed array keeps its index keys in the element buffer (the
+    # property map holds none while dense, or only ones the buffer could not):
+    # the deletion candidates are its non-hole slots from the end down to
+    # `threshold`. Listing every own key instead -- each index interned and
+    # parsed back -- made `arr.length = n` cost O(length) even when it drops
+    # one element, i.e. quadratic for stack-style truncation.
+    if jsv_is_object_cell(arr) and jsv_to_table_id(arr) > 0 {
+        ck_raw: JSObject = js_object_table_get(jsv_to_table_id(arr));
+        if ck_raw.elems_kind != ELEMS_NONE {
+            ck_out: list[int] = [];
+            ck_i: int = ck_raw.elen() - 1;
+            while ck_i >= threshold {
+                if not jsv_is_hole(ck_raw.eget(ck_i)) {
+                    ck_out.append(str_intern_index(ck_i));
+                }
+                ck_i = ck_i - 1;
+            }
+            ck_ex_idx: list[int] = [];
+            ck_ex_kid: list[int] = [];
+            for ck_k in ck_raw.all_keys() {
+                ck_n: int = _array_index_key_numeric(ck_k);
+                if ck_n >= threshold {
+                    ck_ex_idx.append(ck_n);
+                    ck_ex_kid.append(ck_k);
+                }
+            }
+            if len(ck_ex_kid) == 0 {
+                return ck_out;
+            }
+            # Index keys outside the buffer (rare): merge them into the
+            # descending order with the buffer's.
+            for ck_e in ck_out {
+                ck_ex_idx.append(_array_index_key_numeric(ck_e));
+                ck_ex_kid.append(ck_e);
+            }
+            ck_asc: list[int] = _sort_payload_by_int_key(ck_ex_idx, ck_ex_kid);
+            ck_desc: list[int] = [];
+            ck_r: int = len(ck_asc) - 1;
+            while ck_r >= 0 {
+                ck_desc.append(ck_asc[ck_r]);
+                ck_r = ck_r - 1;
+            }
+            return ck_desc;
+        }
+    }
     all_ks: list[int] = js_object_all_keys(arr);
     idxs: list[int] = [];
     kids: list[int] = [];

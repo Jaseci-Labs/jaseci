@@ -36,10 +36,17 @@ import from engine.src.runtime.jsvalue {
     js_int,
     jsv_hole,
     jsv_is_hole,
-    jsv_is_cell
+    jsv_is_cell,
+    jsv_cell_kind,
+    js_true,
+    JS_CELL_KIND_OBJECT,
+    JS_CELL_KIND_HTMLDDA,
+    JS_CELL_KIND_STRING,
+    JS_CELL_KIND_NATIVE
 }
 import from engine.src.runtime.jsobj_type {
     proto_epoch_bump,
+    proto_epoch_bump_gc,
     global_obj_note_write,
     JSProperty,
     JSObject,
@@ -84,7 +91,8 @@ import from engine.src.runtime.shape {
     shape_change_attrs,
     SHAPE_ATTR_ACCESSOR
 }
-import from engine.src.runtime.realm { Realm, gc_note_alloc }
+import from engine.src.runtime.realm { Realm, gc_note_alloc, gc_mark_byte, objmark_push }
+import from engine.src.runtime.mem { read_byte, write_byte }
 import from engine.src.ffi.libc { getenv, write }
 import from engine.src.runtime.encoding {
     PROTO_MAX_DEPTH,
@@ -98,7 +106,9 @@ import from engine.src.runtime.jsstring {
     str_intern_lookup,
     str_substr,
     str_id_is_array_index,
-    str_id_is_brand_key
+    str_id_array_index_value,
+    str_id_is_brand_key,
+    HEAP_STRING_BASE
 }
 import from engine.src.runtime.gc_pin { gc_pin_value }
 
@@ -198,6 +208,20 @@ def _obj_alloc(prototype_idx: int) -> int {
         # here (re-emptying would just churn empty containers). Every OTHER field
         # is reset to its fresh-JSObject default (gc_sweep does not touch them).
         ro: JSObject = _OBJ_REALM.objects[idx - 1];
+        # The sweep parks a dead row without reading it (lazy sweep), so the
+        # old tenant's payload is released here, where the row is read anyway:
+        # a freed prototype's id is about to name an unrelated object (the
+        # inherited-read ICs key on it), and a minimal slot buffer (cap <= 4)
+        # is kept for the new tenant while a larger one is freed.
+        if (ro.cell_flags & FLAG_IS_PROTO) != 0 {
+            proto_epoch_bump_gc();
+        }
+        if ro.scap() <= 4 {
+            ro.sreset();
+        } else {
+            ro.sclear();
+        }
+        ro.elems_kind = 0;  # ELEMS_NONE
         ro.prototype_idx = prototype_idx;
         ro.version = 0;
         ro.shape_id = 0;
@@ -222,7 +246,7 @@ def _obj_alloc(prototype_idx: int) -> int {
         ro.binary_slot = -1;
         ro.cell_flags = 0;  # clears FLAG_MODULE_NS (former is_module_namespace) too
         ro.brand = 0;
-        _OBJ_REALM.objects_mark_epoch[idx - 1] = 0;
+        write_byte(_OBJ_REALM.objmark_ptr, idx - 1, 0);
         return idx;
     }
     idx: int = len(_OBJ_REALM.objects) + 1;  # reserve 0 as null sentinel
@@ -257,7 +281,7 @@ def _obj_alloc(prototype_idx: int) -> int {
             elems_kind=0
         )
     );
-    _OBJ_REALM.objects_mark_epoch.append(0);  # A2.2 GC mark bitmap
+    objmark_push(_OBJ_REALM, 0);  # GC mark byte
     return idx;
 }
 
@@ -275,6 +299,54 @@ def:pub js_object_new_shaped2(
     _OBJ_REALM.objects[sh2_idx - 1].spush(v1);
     _OBJ_REALM.objects[sh2_idx - 1].version = 2;
     return _obj_wrap(sh2_idx);
+}
+
+"""The shape of `v` when it is the shape-mode Array js_array_create builds:
+the array marker `mk` (slot 0, a data property) then a writable-only
+`length` (slot 1), nothing else. -1 otherwise."""
+def:pub js_object_array_shape(v: JSValue, mk: int) -> int {
+    as_sid: int = js_object_ic_shape(v);
+    if as_sid < 0 or _OBJ_REALM.objects[jsv_to_table_id(v) - 1].mode != MAP_MODE_SHAPE {
+        return -1;
+    }
+    if shape_key_count(as_sid) != 2 {
+        return -1;
+    }
+    as_m: int = shape_lookup(as_sid, mk);
+    as_l: int = shape_lookup(as_sid, KEY_LENGTH);
+    if as_m < 0 or as_m // 16 != 0 or (as_m & SHAPE_ATTR_ACCESSOR) != 0 {
+        return -1;
+    }
+    if as_l < 0 or as_l // 16 != 1 or (as_l & 15) != PROP_WRITABLE {
+        return -1;
+    }
+    return as_sid;
+}
+
+"""A fresh Array with [[Prototype]] table id `proto_idx`, already at shape
+`sid` (js_object_array_shape) with the marker true, `length` `len_v` and
+`elements` as its dense elements: what js_array_create's marker add, length
+add and per-element pushes build, without the transitions."""
+def:pub js_object_new_array(
+    proto_idx: int, sid: int, elements: list[JSValue], len_v: JSValue
+) -> JSValue {
+    na_idx: int = _obj_alloc(proto_idx);
+    _OBJ_REALM.objects[na_idx - 1].shape_id = sid;
+    _OBJ_REALM.objects[na_idx - 1].spush(js_true());
+    _OBJ_REALM.objects[na_idx - 1].spush(len_v);
+    _OBJ_REALM.objects[na_idx - 1].version = 2;
+    _OBJ_REALM.objects[na_idx - 1].brand = BRAND_ARRAY;
+    _OBJ_REALM.objects[na_idx - 1].elems_kind = _OBJ_REALM.objects[na_idx - 1].einit(
+        elements
+    );
+    return _obj_wrap(na_idx);
+}
+
+"""Record that the object with table id `id` is an ArrayBuffer: the lazy
+object sweep does not read dead rows, so it checks these for an external
+buffer's finalizer (gc_sweep_objects)."""
+def:pub js_object_note_array_buffer(id: int) -> None {
+    _OBJ_REALM.gc_ab_rows[id] = True;
 }
 
 """Retrieve a JSObject from the global table by index (for Proxy / internal use)."""
@@ -412,6 +484,53 @@ def:pub js_object_dense_put(v: JSValue, i: int, val: JSValue) -> bool {
         }
     }
     return False;
+}
+
+"""Array.prototype.shift on a plain extensible Array whose dense elements
+are all of it (a writable data `length` equal to their count, > 0), while no
+prototype carries an index property (idx_protector_ok, checked by the
+caller): moving the element words down one is the spec's Get / Set /
+DeletePropertyOrThrow sequence, with nothing able to observe it — a hole
+moves down as a hole, and a hole at 0 reads as undefined. Returns the
+removed element (undefined for a hole), or the hole when `v` does not
+qualify — the caller then takes the generic path."""
+def:pub js_object_dense_shift(v: JSValue) -> JSValue {
+    if not jsv_is_object_cell(v) {
+        return jsv_hole();
+    }
+    ds_id: int = jsv_to_table_id(v);
+    if ds_id <= 0 {
+        return jsv_hole();
+    }
+    ds_raw: JSObject = _obj_get(ds_id);
+    if ds_raw.class_id != 0
+        or ds_raw.elems_kind == ELEMS_NONE
+        or (ds_raw.brand & BRAND_ARRAY) == 0
+        or ds_raw.mode != MAP_MODE_SHAPE {
+        return jsv_hole();
+    }
+    if (ds_raw.cell_flags & (FLAG_FROZEN | FLAG_SEALED | FLAG_NON_EXTENSIBLE)) != 0 {
+        return jsv_hole();
+    }
+    ds_n: int = ds_raw.elen();
+    if ds_n == 0 {
+        return jsv_hole();
+    }
+    ds_lk: int = shape_lookup(ds_raw.shape_id, KEY_LENGTH);
+    if ds_lk < 0 or (ds_lk & SHAPE_ATTR_ACCESSOR) != 0 or (ds_lk & PROP_WRITABLE) == 0 {
+        return jsv_hole();
+    }
+    ds_len: JSValue = ds_raw.sget(ds_lk // 16);
+    if not jsv_is_int32(ds_len) or jsv_to_int32(ds_len) != ds_n {
+        return jsv_hole();
+    }
+    ds_first: JSValue = ds_raw.eget(0);
+    ds_raw.eshift();
+    ds_raw.sset(ds_lk // 16, js_int(ds_n - 1));
+    if jsv_is_hole(ds_first) {
+        return js_undefined();
+    }
+    return ds_first;
 }
 
 """True for an ordinary object cell: no class (Proxy, String / Date …
@@ -796,31 +915,28 @@ def:pub js_object_get(jsobj: JSValue, key: int) -> JSValue {
     # Guard <= 0: -1 is the null-proto sentinel; any other non-positive value
     # (e.g. a fn_val as_ptr leaked via a buggy set_prototype call) must also
     # terminate the walk rather than being passed to _obj_get.
+    # The array index `key` names (-1: none), found on the first level that
+    # has dense elements (-2: none yet).
+    gt_dix: int = -2;
     for _depth in range(PROTO_MAX_DEPTH) {
         if current_idx <= 0 {
             return js_undefined();
         }
-        current: JSObject = _obj_get(current_idx);
+        # Each level is read through its table row, a borrowed reference (an
+        # owned _obj_get handle cost a retain and a release per level).
         # Dense elements: an in-range non-hole element is the own property.
         # Holes/out-of-range fall through (the map holds no index keys while
-        # dense — invariant) and continue up the prototype chain.
-        if current.elems_kind != ELEMS_NONE and _obj_is_array_index_key_id(key) {
-            dgi: int = _obj_array_index_sort_key(key);
-            if dgi < current.elen() {
-                dgv: JSValue = current.eget(dgi);
-                if not jsv_is_hole(dgv) {
-                    return dgv;
-                }
-            }
+        # dense — invariant) and continue up the prototype chain. The own-data
+        # read is non-materializing: get_property() allocates a JSProperty.
+        if gt_dix == -2 and _OBJ_REALM.objects[current_idx - 1].elems_kind != ELEMS_NONE {
+            gt_dix = _obj_index_of_key(key);
         }
-        # Non-materializing own-data read: get_property() allocates a fresh
-        # JSProperty per hit in shape mode and the owned result local leaked on
-        # this hot read path (see js_object_get_own_data_ic). has_own_data() +
-        # get() are scalar and allocation-free.
-        gt_own: JSValue = current.get_own_data_or_hole(key);
+        gt_own: JSValue = _OBJ_REALM.objects[current_idx - 1].own_elem_or_data(
+            key, gt_dix
+        );
         if not jsv_is_hole(gt_own) {
             # Mapped arguments: an aliased index reads the live parameter slot.
-            if current.mapped_args() {
+            if _OBJ_REALM.objects[current_idx - 1].mapped_args() {
                 gt_ars: ArgsState = _args_row(current_idx);
                 if key in gt_ars.slot_map {
                     ms: int = gt_ars.slot_map[key];
@@ -831,7 +947,7 @@ def:pub js_object_get(jsobj: JSValue, key: int) -> JSValue {
             }
             return gt_own;
         }
-        current_idx = current.prototype_idx;
+        current_idx = _OBJ_REALM.objects[current_idx - 1].prototype_idx;
     }
     return js_undefined();
 }
@@ -854,40 +970,45 @@ def:pub js_object_get_ordinary(jsobj: JSValue, key: int) -> JSValue {
         if go_idx <= 0 {
             return js_undefined();
         }
-        go_raw: JSObject = _obj_get(go_idx);
         # A String wrapper is exotic only for `length` and integer-index keys
         # (ES §10.4.3); any other key — every String.prototype method name —
         # resolves like an ordinary object's.
-        if go_raw.class_id != 0
-            or go_raw.bkind() != 0
-            or go_raw.elems_kind != ELEMS_NONE
-            or (go_raw.cell_flags & (FLAG_MODULE_NS | FLAG_MAPPED_ARGS)) != 0
-            or (
-                (go_raw.brand & BRAND_STRING_OBJ) != 0
-                and (key == KEY_LENGTH or _obj_is_array_index_key_id(key))
-            ) {
+        if (_OBJ_REALM.objects[go_idx - 1].brand & BRAND_STRING_OBJ) != 0
+            and (key == KEY_LENGTH or _obj_is_array_index_key_id(key)) {
             return jsv_hole();
         }
-        # Accessors first, as the full [[Get]] does: a key can be in both the
-        # accessor tables and `entries`, and the accessor wins.
-        if go_raw.has_acc() and _go_acc_tables_have(go_raw, key) {
+        # The common level (shape mode, no accessor tables) is read through
+        # the table row, a borrowed reference; see JSObject.ord_slot.
+        go_c: int = _OBJ_REALM.objects[go_idx - 1].ord_slot(key);
+        if go_c >= 0 {
+            return _OBJ_REALM.objects[go_idx - 1].sget(go_c);
+        }
+        if go_c == -2 {
             return jsv_hole();
         }
-        if go_raw.mode == MAP_MODE_SHAPE {
-            go_packed: int = shape_lookup(go_raw.shape_id, key);
-            if go_packed >= 0 {
-                if (go_packed & SHAPE_ATTR_ACCESSOR) != 0 {
-                    return jsv_hole();
+        if go_c <= -3 {
+            go_raw: JSObject = _obj_get(go_idx);
+            # Accessors first, as the full [[Get]] does: a key can be in both
+            # the accessor tables and `entries`, and the accessor wins.
+            if go_raw.has_acc() and _go_acc_tables_have(go_raw, key) {
+                return jsv_hole();
+            }
+            if go_raw.mode == MAP_MODE_SHAPE {
+                go_packed: int = shape_lookup(go_raw.shape_id, key);
+                if go_packed >= 0 {
+                    if (go_packed & SHAPE_ATTR_ACCESSOR) != 0 {
+                        return jsv_hole();
+                    }
+                    return go_raw.sget(go_packed // 16);
                 }
-                return go_raw.sget(go_packed // 16);
-            }
-        } else {
-            go_ent: dict[int, JSProperty] = go_raw.ent_ro();
-            if key in go_ent {
-                return go_ent[key].value;
+            } else {
+                go_ent: dict[int, JSProperty] = go_raw.ent_ro();
+                if key in go_ent {
+                    return go_ent[key].value;
+                }
             }
         }
-        go_idx = go_raw.prototype_idx;
+        go_idx = _OBJ_REALM.objects[go_idx - 1].prototype_idx;
     }
     return jsv_hole();
 }
@@ -1129,7 +1250,10 @@ def:pub obj_stats_report {
     n: int = len(_OBJ_REALM.objects);
     while i < n {
         os_o: JSObject = _OBJ_REALM.objects[i];
-        if os_o.cell_flags != CELL_FLAG_DEAD {
+        if os_o.cell_flags != CELL_FLAG_DEAD and (
+            i >= _OBJ_REALM.objmark_len
+            or read_byte(_OBJ_REALM.objmark_ptr, i) != 255
+        ) {
             live = live + 1;
             if os_o.mode == 0 {
                 dictm = dictm + 1;
@@ -1169,7 +1293,7 @@ def:pub obj_stats_report {
     }
     heap_live: int = len(_OBJ_REALM.heap_strings)
         - len(_OBJ_REALM.free_heap_string_slots);
-    intern_n: int = len(_OBJ_REALM.intern_by_id);
+    intern_n: int = len(_OBJ_REALM.intern_by_str);
     # Base per-object container (the shape-mode `slots` list, P4) + the 2-container
     # ArgsState row each mapped-args object carries (P1) + each accessor object's
     # lazy AccessorTable (1 struct + 4 dicts = 5, P2) + the 2 lazy dict-mode maps
@@ -1320,6 +1444,21 @@ def:pub js_object_set(jsobj: JSValue, key: int, val: JSValue) -> int {
         sgp: int = shape_lookup(raw.shape_id, key);
         w_acc: bool = sgp >= 0 and (sgp & SHAPE_ATTR_ACCESSOR) != 0;
         w_idx: bool = _obj_is_array_index_key_id(key);
+        # An existing writable data property: [[Set]] only replaces the
+        # value, so write its slot. The general path below looked the key up
+        # three more times (has_key, get_property -- which allocates -- and
+        # set) for the same answer, on ~113M writes in a vite build.
+        if sgp >= 0
+            and not w_acc
+            and not w_idx
+            and not raw.mapped_args()
+            and not raw.has_acc() {
+            if (sgp & PROP_WRITABLE) == 0 {
+                return 1;
+            }
+            raw.sset(sgp // 16, val);
+            return 0;
+        }
         if w_acc or w_idx {
             if _DEOPT_DBG < 0 {
                 if getenv("JAC_DEOPT_STATS") != None {
@@ -1413,6 +1552,26 @@ def:pub js_object_set_flags(jsobj: JSValue, key: int, val: JSValue, flags: int) 
         if (sgf >= 0 and (sgf & SHAPE_ATTR_ACCESSOR) != 0)
             or _obj_is_array_index_key_id(key) {
             raw.pm_ensure_dict();
+        } else {
+            # A data property or a new key: the shape entry is the property
+            # record. has_key + get_property (which built a JSProperty) +
+            # set's own lookup cost three more lookups and an allocation.
+            if sgf >= 0 {
+                if (sgf & PROP_WRITABLE) == 0 {
+                    return 1;
+                }
+                if (sgf & 15) == (flags & 7) {
+                    raw.sset(sgf // 16, val);
+                    return 0;
+                }
+            } elif not raw.is_ext() {
+                return 1;
+            }
+            if raw.set(key, val, flags) != 0 {
+                raw.pm_ensure_dict();
+                raw.set(key, val, flags);
+            }
+            return 0;
         }
     }
     if raw.has_key(key) {
@@ -1652,25 +1811,26 @@ def:pub js_object_has_own(jsobj: JSValue, key: int) -> bool {
     if not jsv_is_object_cell(jsobj) {
         return False;
     }
-    if jsv_to_table_id(jsobj) <= 0 {
+    ho_id: int = jsv_to_table_id(jsobj);
+    if ho_id <= 0 {
         return False;
     }
-    raw: JSObject = _obj_get(jsv_to_table_id(jsobj));
-    if raw.elems_kind != ELEMS_NONE and _obj_is_array_index_key_id(key) {
-        dho: int = _obj_array_index_sort_key(key);
-        if dho < raw.elen() and not jsv_is_hole(raw.eget(dho)) {
-            return True;
-        }
+    # Read through the table row (borrowed) unless the accessor tables are
+    # needed: an owned _obj_get handle cost a retain and a release per call.
+    ho_dix: int = -1;
+    if _OBJ_REALM.objects[ho_id - 1].elems_kind != ELEMS_NONE {
+        ho_dix = _obj_index_of_key(key);
     }
-    if raw.has_key(key) {
+    if _OBJ_REALM.objects[ho_id - 1].has_own_plain(key, ho_dix) {
         return True;
     }
     # No accessor side table: nothing else can hold the key. (The common
     # miss — marker-key probes on plain objects — paid four empty-table
     # lookups, each through its own AccessorTable reference.)
-    if not raw.has_acc() {
+    if not _OBJ_REALM.objects[ho_id - 1].has_acc() {
         return False;
     }
+    raw: JSObject = _obj_get(ho_id);
     return (
         key in _acc_ro(raw).getters
         or key in _acc_ro(raw).setters
@@ -1762,7 +1922,22 @@ def _obj_is_array_index_key_id(kid: int) -> bool {
     return str_id_is_array_index(kid);
 }
 
+"""The array index key id `kid` names, or -1 when it is not an array-index
+key (_obj_is_array_index_key_id then _obj_array_index_sort_key)."""
+def _obj_index_of_key(kid: int) -> int {
+    if not _obj_is_array_index_key_id(kid) {
+        return -1;
+    }
+    return _obj_array_index_sort_key(kid);
+}
+
 def _obj_array_index_sort_key(kid: int) -> int {
+    # Canonical index keys (all the dense-element paths pass) read the
+    # per-id memo instead of re-parsing the key text on every lookup.
+    sk_v: int = str_id_array_index_value(kid);
+    if sk_v >= 0 {
+        return sk_v;
+    }
     s: str = str_from_id(kid);
     np: int = 0;
     pi: int = 0;
@@ -2297,6 +2472,28 @@ def:pub js_object_all_keys(jsobj: JSValue) -> list[int] {
     return result;
 }
 
+"""Whether the marker must still visit `v`, a value held by an object. An
+object child already marked this cycle is (being) traced: pushing it only
+made _gc_trace_one pop it, decode it and find the mark. Objects share
+prototypes, constructors and module records heavily, so most object edges in
+a big heap lead somewhere already marked. Non-cells, interned strings (never
+collected), symbols and bigints have nothing to mark; heap strings and
+functions are left to _gc_trace_one."""
+def _gc_child_pending(v: JSValue, mp: int, mn: int, epoch: int) -> bool {
+    if not jsv_is_cell(v) {
+        return False;
+    }
+    gcp_k: int = jsv_cell_kind(v);
+    if gcp_k == JS_CELL_KIND_OBJECT or gcp_k == JS_CELL_KIND_HTMLDDA {
+        gcp_i: int = jsv_to_table_id(v) - 1;
+        return gcp_i < 0 or gcp_i >= mn or read_byte(mp, gcp_i) != epoch;
+    }
+    if gcp_k == JS_CELL_KIND_STRING {
+        return jsv_to_table_id(v) >= HEAP_STRING_BASE;
+    }
+    return gcp_k == JS_CELL_KIND_NATIVE;
+}
+
 """js_object_gc_children's walk, appending to the GC's work list directly and
 skipping non-cells (the tracer drops them on pop anyway): no per-object
 result list — that was one allocation plus regrowth for every traced object
@@ -2306,19 +2503,25 @@ def:pub js_object_gc_push_children(idx: int, work: list[JSValue]) -> None {
         return;
     }
     raw: JSObject = _obj_get(idx);
+    pc_mp: int = _OBJ_REALM.objmark_ptr;
+    pc_mn: int = _OBJ_REALM.objmark_len;
+    pc_epoch: int = gc_mark_byte(_OBJ_REALM);
     si: int = 0;
     sn: int = raw.slen();
     while si < sn {
-        if jsv_is_cell(raw.sget(si)) {
-            work.append(raw.sget(si));
+        pc_sv: JSValue = raw.sget(si);
+        if _gc_child_pending(pc_sv, pc_mp, pc_mn, pc_epoch) {
+            work.append(pc_sv);
         }
         si = si + 1;
     }
     if raw.ep != 0 {
         ei: int = 0;
-        while ei < raw.elen() {
-            if jsv_is_cell(raw.eget(ei)) {
-                work.append(raw.eget(ei));
+        en: int = raw.elen();
+        while ei < en {
+            pc_ev: JSValue = raw.eget(ei);
+            if _gc_child_pending(pc_ev, pc_mp, pc_mn, pc_epoch) {
+                work.append(pc_ev);
             }
             ei = ei + 1;
         }
@@ -2640,8 +2843,13 @@ def:pub js_is_module_namespace(jsobj: JSValue) -> bool {
     if jsv_to_table_id(jsobj) <= 0 {
         return False;
     }
-    raw: JSObject = _obj_get(jsv_to_table_id(jsobj));
-    return (raw.cell_flags & FLAG_MODULE_NS) != 0;
+    # Scalar read of the flags (no owned JSObject handle): asked ~50M times in a
+    # vite build, on every namespace-sensitive property access.
+    mn_id: int = jsv_to_table_id(jsobj);
+    if mn_id > len(_OBJ_REALM.objects) {
+        return False;
+    }
+    return (_OBJ_REALM.objects[mn_id - 1].cell_flags & FLAG_MODULE_NS) != 0;
 }
 
 """

@@ -14,6 +14,8 @@ the Jac call stack; C-level libuv callbacks read _DEFAULT_REALM.
 """
 
 import from engine.src.runtime.jsvalue { JSValue }
+import from engine.src.runtime.mem { write_byte }
+import from engine.src.ffi.libc { realloc, abort }
 
 # GC collection-frequency floor (allocations between collections, before the
 # adaptive proportional-heap growth kicks in). Default 10000; override via the
@@ -48,8 +50,11 @@ def:pub gc_growth_pct_set(n: int) {
     }
 }
 
-# Floor the growth tapers to at 8M live objects (JAC_GC_FLOOR, main.jac).
-glob:pub _GC_FLOOR_PCT: int = 50;
+# Floor the growth tapers to at 8M live objects (JAC_GC_FLOOR, main.jac). A
+# site-sized vite build (~11M live objects) spent 27% of its time in 55
+# collections at 50; 100 takes ~12% off its wall time for ~+1.2 GB of peak
+# (200: ~18% for ~+3.7 GB). JAC_GC_FLOOR=50 restores the leaner heap.
+glob:pub _GC_FLOOR_PCT: int = 100;
 
 """Set the taper floor percentage (see _GC_FLOOR_PCT). No-op for non-positive values."""
 def:pub gc_floor_pct_set(n: int) {
@@ -116,7 +121,7 @@ obj:pub Realm {
     # ── String interning (from jsstring.na.jac) ──────────────────────────────
     # Maps raw Jac str ↔ integer key-ID used by JSValue string cells.
     has intern_by_str: dict[str, int] = {},
-        intern_by_id: dict[int, str] = {},
+        intern_by_id: list[str] = [],
         intern_next_id: int = 0,
         intern_seeded: bool = False,
         symbols: list[str] = [],
@@ -141,7 +146,9 @@ obj:pub Realm {
         timers: list[TimerEntry] = [],
         free_object_slots: list[int] = [],
         free_closure_slots: list[int] = [],
-        objects_mark_epoch: list[int] = [],
+        objmark_ptr: int = 0,
+        objmark_cap: int = 0,
+        objmark_len: int = 0,
         closures_mark_epoch: list[int] = [],
         functions_mark_epoch: list[int] = [],
         builtins_mark_epoch: list[int] = [],
@@ -182,7 +189,7 @@ obj:pub Realm {
         rope_left: list[int] = [],
         rope_right: list[int] = [],
         rope_len: list[int] = [],
-        intern_ascii: dict[int, int] = {},
+        intern_ascii: list[int] = [],
         heap_ascii: list[int] = [],
         free_generator_slots: list[int] = [],
         import_meta_cache: dict[str, JSValue] = {},
@@ -193,6 +200,8 @@ obj:pub Realm {
         gc_epoch: int = 1,
         gc_scan_weakmaps: list[int] = [],
         gc_scan_weaksets: list[int] = [],
+        gc_young_objs: list[int] = [],
+        gc_ab_rows: dict[int, bool] = {},
         heap_strings_mark_epoch: list[int] = [],
         free_heap_string_slots: list[int] = [],
         proxy_slots: dict[int, ProxyState] = {},
@@ -405,14 +414,14 @@ def:pub realm_new -> Realm {
 
     # String interning
     r.intern_by_str = {};
-    r.intern_by_id = {};
+    r.intern_by_id = [];
     r.intern_next_id = 0;
     r.intern_seeded = False;
     r.heap_strings = [];
     r.rope_left = [];
     r.rope_right = [];
     r.rope_len = [];
-    r.intern_ascii = {};
+    r.intern_ascii = [];
     r.heap_ascii = [];
 
     # Symbol table
@@ -455,7 +464,9 @@ def:pub realm_new -> Realm {
     r.timers = [];
 
     # GC mark epochs (A2.2/A2.2b; G1.1) — parallel to cell tables; 0 = unmarked
-    r.objects_mark_epoch = [];
+    r.objmark_ptr = 0;  # object mark bytes (objmark_push)
+    r.objmark_cap = 0;
+    r.objmark_len = 0;
     r.closures_mark_epoch = [];
     r.functions_mark_epoch = [];
     r.builtins_mark_epoch = [];
@@ -468,6 +479,8 @@ def:pub realm_new -> Realm {
     r.gc_epoch = 1;  # G1.1: first live epoch (0 = never-marked stamp)
     r.gc_scan_weakmaps = [];  # G1.3: live weakmap store indices (per cycle)
     r.gc_scan_weaksets = [];  # G1.3: live weakset store indices (per cycle)
+    r.gc_young_objs = [];  # objects marked for the first time (per cycle)
+    r.gc_ab_rows = {};  # object rows holding an ArrayBuffer (lazy sweep)
     r.heap_strings_mark_epoch = [];  # G1.4: heap-string mark epochs (0=unmarked,-1=dead)
     r.free_heap_string_slots = [];  # G1.4: recycled heap-string slots
 
@@ -549,4 +562,34 @@ def:pub realm_lookup(id: int) -> Realm {
 """True if `id` refers to a registered realm."""
 def:pub realm_is_registered(id: int) -> bool {
     return id in _REALM_REGISTRY;
+}
+
+# Object GC marks: one byte per object-table row in a raw buffer (objmark_ptr,
+# objmark_len rows, kept equal to len(objects) by _obj_alloc). 0 = not marked
+# since the row was (re)allocated, 255 = dead (parked on the free list), else
+# the epoch byte (gc_mark_byte) of the collection that last marked the row.
+# Every live row is re-marked by each collection, so at a cycle's start a row
+# holds 0, 255 or the previous cycle's byte: the byte can wrap (1..250).
+
+"""The mark byte of the current collection epoch (1..250)."""
+def:pub gc_mark_byte(r: Realm) -> int {
+    return 1 + (r.gc_epoch % 250);
+}
+
+"""Append a mark row with value `v` (a new object-table row)."""
+def:pub objmark_push(r: Realm, v: int) {
+    if r.objmark_len >= r.objmark_cap {
+        om_nc: int = 65536;
+        if r.objmark_cap > 0 {
+            om_nc = r.objmark_cap * 2;
+        }
+        om_p: int = realloc(r.objmark_ptr, om_nc);
+        if om_p == 0 {
+            abort();
+        }
+        r.objmark_ptr = om_p;
+        r.objmark_cap = om_nc;
+    }
+    write_byte(r.objmark_ptr, r.objmark_len, v);
+    r.objmark_len = r.objmark_len + 1;
 }

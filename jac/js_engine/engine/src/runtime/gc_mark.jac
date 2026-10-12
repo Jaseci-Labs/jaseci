@@ -23,7 +23,8 @@ with a per-slot reset loop in gc_clear_marks.)
 Phase: A2.2 / A2.2b
 """
 
-import from engine.src.runtime.realm { Realm }
+import from engine.src.runtime.realm { Realm, gc_mark_byte }
+import from engine.src.runtime.mem { read_byte, write_byte }
 import from engine.src.runtime.jsobj_type { JSObject }
 import from engine.src.vm.closure_type { JSClosure }
 import from engine.src.builtins.function_type { JSFunctionMeta, BuiltinFn }
@@ -60,11 +61,8 @@ Unknown kinds are silently ignored (forward-compat with future cell types).
 def:pub gc_mark(realm: Realm, kind: int, idx: int) {
     if kind == CELL_KIND_OBJECT {
         bi: int = idx - 1;  # 1-based → 0-based
-        while len(realm.objects_mark_epoch) < len(realm.objects) {
-            realm.objects_mark_epoch.append(0);
-        }
-        if bi >= 0 and bi < len(realm.objects_mark_epoch) {
-            realm.objects_mark_epoch[bi] = realm.gc_epoch;
+        if bi >= 0 and bi < realm.objmark_len {
+            write_byte(realm.objmark_ptr, bi, gc_mark_byte(realm));
         }
     } elif kind == CELL_KIND_CLOSURE {
         while len(realm.closures_mark_epoch) < len(realm.closures) {
@@ -141,10 +139,10 @@ GC cycle.  Returns False for out-of-range indices and unknown kinds."""
 def:pub gc_is_marked(realm: Realm, kind: int, idx: int) -> bool {
     if kind == CELL_KIND_OBJECT {
         bi: int = idx - 1;
-        if bi < 0 or bi >= len(realm.objects_mark_epoch) {
+        if bi < 0 or bi >= realm.objmark_len {
             return False;
         }
-        return realm.objects_mark_epoch[bi] == realm.gc_epoch;
+        return read_byte(realm.objmark_ptr, bi) == gc_mark_byte(realm);
     } elif kind == CELL_KIND_CLOSURE {
         if idx < 0 or idx >= len(realm.closures_mark_epoch) {
             return False;

@@ -39,7 +39,7 @@ import from engine.src.runtime.jsvalue {
     JS_CELL_KIND_STRING,
     JS_CELL_KIND_SYMBOL
 }
-import from engine.src.runtime.realm { Realm }
+import from engine.src.runtime.realm { Realm, gc_mark_byte }
 import from engine.src.runtime.jscell {
     CELL_KIND_OBJECT,
     CELL_KIND_CLOSURE,
@@ -106,6 +106,7 @@ import from engine.src.runtime.jsobj_type {
 }
 import from engine.src.ffi.libc { write, getenv }
 import from engine.src.ffi.libuv { uv_hrtime }
+import from engine.src.runtime.mem { read_byte, write_byte }
 # Pin registry lives in its own leaf module so any module can pin glob-held
 # singletons without an import cycle through this file.
 import from engine.src.runtime.gc_pin {
@@ -116,7 +117,8 @@ import from engine.src.runtime.gc_pin {
 
 # ── Diagnostic counters ───────────────────────────────────────────────────────
 glob:pub gc_total_cycles: int = 0,
-     gc_total_freed: int = 0;  # total full collections run since startup
+     gc_total_freed: int = 0,
+     gc_total_ns: int = 0;  # total full collections run since startup
 
 # total cells reclaimed across all cycles
 # TEMP GC-sweep diagnostic (env JAC_GC_TRACE=1): per-collection print of the
@@ -151,6 +153,11 @@ def:pub gc_start_monitor {
     gc_monitor_start_freed = gc_total_freed;
     gc_monitor_cycles = 0;
     gc_monitor_freed = 0;
+}
+
+"""Wall time spent in collections so far, in ns."""
+def:pub gc_time_ns -> int {
+    return gc_total_ns;
 }
 
 """End the monitoring window and snapshot the deltas."""
@@ -216,10 +223,22 @@ def _gc_trace_one(realm: Realm, v: JSValue, work: list[JSValue]) -> None {
         if idx <= 0 or idx > len(realm.objects) {
             return;
         }
-        if gc_is_marked(realm, CELL_KIND_OBJECT, idx) {
+        # gc_is_marked + gc_mark on the epoch row, read once. A row still 0 was
+        # allocated since the last cycle: record it, the sweep trims the
+        # buffers of these first-time survivors only.
+        gc_mp: int = realm.objmark_ptr;
+        gc_eb: int = gc_mark_byte(realm);
+        if idx > realm.objmark_len {
             return;
-        }  # cycle guard
-        gc_mark(realm, CELL_KIND_OBJECT, idx);
+        }
+        gc_old: int = read_byte(gc_mp, idx - 1);
+        if gc_old == gc_eb or gc_old == 255 {
+            return;
+        }  # cycle guard; 255: a dead row the sweep parked
+        write_byte(gc_mp, idx - 1, gc_eb);
+        if gc_old == 0 {
+            realm.gc_young_objs.append(idx);
+        }
         # Check tombstone via int field read (avoids typed-local JSObject issue)
         gc_obj_cf: int = realm.objects[idx - 1].cell_flags;
         if gc_obj_cf == CELL_FLAG_DEAD {
@@ -231,7 +250,11 @@ def _gc_trace_one(realm: Realm, v: JSValue, work: list[JSValue]) -> None {
 
         # Follow prototype chain
         gc_proto_idx: int = realm.objects[idx - 1].prototype_idx;
-        if gc_proto_idx > 0 {
+        if gc_proto_idx > 0
+            and (
+                gc_proto_idx > realm.objmark_len
+                or read_byte(gc_mp, gc_proto_idx - 1) != gc_eb
+            ) {
             work.append(jsv_from_object_id(gc_proto_idx));
         }
         # Walk all property values + accessor getters/setters via a helper
@@ -692,59 +715,40 @@ def:pub gc_sweep_objects(realm: Realm) -> int {
     freed: int = 0;
     i: int = 0;
     n: int = len(realm.objects);
+    sw_mp: int = realm.objmark_ptr;
+    sw_epoch: int = gc_mark_byte(realm);
+    # ArrayBuffers dying this cycle (rows still unmarked): an external one's
+    # addon finalizer fires now, as the eager sweep did for every dead row.
+    if len(realm.gc_ab_rows) > 0 {
+        _gc_sweep_ab_rows(realm, sw_mp, n, sw_epoch);
+    }
     while i < n {
-        gc_sw_cf: int = realm.objects[i].cell_flags;
-        if gc_sw_cf != CELL_FLAG_DEAD {
-            # External 1-based index = i + 1
-            if not gc_is_marked(realm, CELL_KIND_OBJECT, i + 1) {
-                # NAPI external ArrayBuffer: fire the addon's finalize_cb for
-                # the backing memory exactly once (no-op for non-external ABs
-                # — the registry only holds napi_create_external_* entries).
-                if realm.objects[i].bkind() == BINARY_KIND_ARRAY_BUFFER {
-                    gc_ab_ptr: int = binary_store_ptr_for_slot(
-                        realm.objects[i].bslot()
-                    );
-                    napi_binary_on_arraybuffer_swept(gc_ab_ptr);
-                }
-                # A freed prototype's slot can be reused by an unrelated object:
-                # inherited-read ICs key on the prototype's table id.
-                if (gc_sw_cf & FLAG_IS_PROTO) != 0 {
-                    proto_epoch_bump_gc();
-                }
-                realm.objects[i].cell_flags = CELL_FLAG_DEAD;
-                # Release the payload NOW. Tombstoning the slot and pushing its
-                # index only makes the slot reusable — it does not free the
-                # property map, key order or accessor tables, which stay live
-                # until some later allocation happens to reuse this exact slot.
-                # For a workload that allocates more than it reuses, that meant
-                # a sweep reclaimed no memory at all (gc_sweep_maps already
-                # clears its backing stores for the same reason).
-                # Release the extension record (dict maps, accessor table:
-                # P2/P3b) now, not when the slot is reused.
-                realm.objects[i].ext = None;
-                # A minimal slot buffer (cap <= 4) is emptied in place for the
-                # slot's next tenant; a larger one is freed now — parked dead
-                # objects (millions at a vite build's peak) held up to 16
-                # slots each.
-                if realm.objects[i].scap() <= 4 {
-                    realm.objects[i].sreset();
-                } else {
-                    realm.objects[i].sclear();
-                }
-                realm.objects[i].shape_id = 0;
-                realm.objects[i].mode = 0;  # MAP_MODE_DICT
-                realm.objects[i].eclear();  # release dense elements (P4)
-                realm.objects[i].elems_kind = 0;  # ELEMS_NONE
-                realm.objects[i].brand = 0;  # its marker keys are gone
-                realm.free_object_slots.append(i + 1);  # push 1-based index
-                freed += 1;
-            } else {
-                realm.objects[i].strim();
-                realm.objects[i].etrim();
-            }
+        # Decided from the epoch row alone for a marked (live) row and a -1 row
+        # (parked dead by an earlier sweep): reading the object itself cost a
+        # cache miss per row, millions of rows per cycle in a big heap.
+        sw_m: int = read_byte(sw_mp, i);
+        if sw_m == sw_epoch or sw_m == 255 {
+            i += 1;
+            continue;
         }
+        # Dead: park the row. Its payload (slots, elements, property maps) is
+        # released by _obj_alloc when it reuses the row — reading every dead
+        # object here, millions per cycle, was most of the sweep.
+        write_byte(sw_mp, i, 255);  # _obj_alloc stamps 0 again when it reuses the row
+        realm.free_object_slots.append(i + 1);  # push 1-based index
+        freed += 1;
         i += 1;
     }
+    # Give back the slack in the slot / element buffers of the objects that
+    # survived their first collection: objects are mostly built up while
+    # young, and trimming every live object each cycle read each one.
+    for sw_y in realm.gc_young_objs {
+        if read_byte(sw_mp, sw_y - 1) == sw_epoch {
+            realm.objects[sw_y - 1].strim();
+            realm.objects[sw_y - 1].etrim();
+        }
+    }
+    realm.gc_young_objs = [];
     # Side-table rows (Phase 1) of the objects swept above are pruned in ONE
     # pass per table, never with a per-row `del` inside the loop: a jac `del
     # d[k]` removes k from the dict's insertion-ordered key list by linear scan
@@ -760,12 +764,35 @@ def:pub gc_sweep_objects(realm: Realm) -> int {
     return freed;
 }
 
+"""The ArrayBuffer rows (js_object_note_array_buffer) unmarked this cycle:
+fire the NAPI external-buffer finalizer of each and forget the row; a row
+since reused by a non-ArrayBuffer is forgotten too."""
+def _gc_sweep_ab_rows(realm: Realm, mp: int, n: int, epoch: int) {
+    ab_kept: dict[int, bool] = {};
+    for ab_id in realm.gc_ab_rows {
+        if ab_id <= 0 or ab_id > n or read_byte(mp, ab_id - 1) == 255 {
+            continue;
+        }
+        if realm.objects[ab_id - 1].bkind() != BINARY_KIND_ARRAY_BUFFER {
+            continue;
+        }
+        if read_byte(mp, ab_id - 1) == epoch {
+            ab_kept[ab_id] = True;
+            continue;
+        }
+        napi_binary_on_arraybuffer_swept(
+            binary_store_ptr_for_slot(realm.objects[ab_id - 1].bslot())
+        );
+    }
+    realm.gc_ab_rows = ab_kept;
+}
+
 """Drop mapped-arguments side-table rows whose owner slot is dead. Rebuilds
 the table (O(rows)) instead of deleting rows one by one (O(rows) each)."""
 def _gc_prune_args_rows(realm: Realm) {
     kept: dict[int, ArgsState] = {};
     for ak in realm.args_slots {
-        if realm.objects[ak - 1].cell_flags != CELL_FLAG_DEAD {
+        if read_byte(realm.objmark_ptr, ak - 1) != 255 {
             kept[ak] = realm.args_slots[ak];
         }
     }
@@ -776,7 +803,7 @@ def _gc_prune_args_rows(realm: Realm) {
 def _gc_prune_proxy_rows(realm: Realm) {
     kept: dict[int, ProxyState] = {};
     for pk in realm.proxy_slots {
-        if realm.objects[pk - 1].cell_flags != CELL_FLAG_DEAD {
+        if read_byte(realm.objmark_ptr, pk - 1) != 255 {
             kept[pk] = realm.proxy_slots[pk];
         }
     }
@@ -788,24 +815,35 @@ def:pub gc_sweep_maps(realm: Realm) -> int {
     freed: int = 0;
     i: int = 0;
     n: int = len(realm.maps);
+    mp_marks: list[int] = realm.maps_mark_epoch;
+    while len(mp_marks) < n {
+        mp_marks.append(0);
+    }
+    mp_epoch: int = realm.gc_epoch;
     while i < n {
+        # Live and parked-dead (-1) rows are decided from the epoch row, as in
+        # gc_sweep_objects; both reuse sites stamp the row 0 again.
+        mp_m: int = mp_marks[i];
+        if mp_m == mp_epoch or mp_m == -1 {
+            i += 1;
+            continue;
+        }
+        mp_marks[i] = -1;
         # G0.5: only sweep a live (non-tombstoned) unmarked slot ONCE — otherwise
         # a swept-but-not-yet-reused slot would be re-pushed every cycle,
         # duplicating it in free_map_slots (mirrors gc_sweep_objects).
         if realm.maps[i].cell_flags != CELL_FLAG_DEAD {
-            if not gc_is_marked(realm, CELL_KIND_MAP, i) {
-                realm.maps[i].ekeys = MAP_NO_VALS;
-                realm.maps[i].evals = MAP_NO_VALS;
-                realm.maps[i].key_index = MAP_NO_INDEX;
-                realm.maps[i].keys = MAP_NO_VALS;
-                realm.maps[i].vals = MAP_NO_VALS;
-                realm.maps[i].owned = False;
-                realm.maps[i].head = -1;
-                realm.maps[i].live_count = 0;
-                realm.maps[i].cell_flags = CELL_FLAG_DEAD;  # tombstone
-                realm.free_map_slots.append(i);  # G0.5: reusable slot
-                freed += 1;
-            }
+            realm.maps[i].ekeys = MAP_NO_VALS;
+            realm.maps[i].evals = MAP_NO_VALS;
+            realm.maps[i].key_index = MAP_NO_INDEX;
+            realm.maps[i].keys = MAP_NO_VALS;
+            realm.maps[i].vals = MAP_NO_VALS;
+            realm.maps[i].owned = False;
+            realm.maps[i].head = -1;
+            realm.maps[i].live_count = 0;
+            realm.maps[i].cell_flags = CELL_FLAG_DEAD;  # tombstone
+            realm.free_map_slots.append(i);  # G0.5: reusable slot
+            freed += 1;
         }
         i += 1;
     }
@@ -932,14 +970,26 @@ def:pub gc_sweep_closures(realm: Realm) -> int {
     freed: int = 0;
     i: int = 0;
     n: int = len(realm.closures);
+    cl_marks: list[int] = realm.closures_mark_epoch;
+    while len(cl_marks) < n {
+        cl_marks.append(0);
+    }
+    cl_epoch: int = realm.gc_epoch;
     while i < n {
+        # Same as gc_sweep_objects: live and parked-dead (-1) rows are decided
+        # from the epoch row without reading the closure; both reuse sites
+        # stamp the row 0 again.
+        cl_m: int = cl_marks[i];
+        if cl_m == cl_epoch or cl_m == -1 {
+            i += 1;
+            continue;
+        }
+        cl_marks[i] = -1;
         gc_cl_sw_cf: int = realm.closures[i].cell_flags;
         if gc_cl_sw_cf != CELL_FLAG_DEAD {
-            if not gc_is_marked(realm, CELL_KIND_CLOSURE, i) {
-                realm.closures[i].cell_flags = CELL_FLAG_DEAD;
-                realm.free_closure_slots.append(i);  # 0-based index
-                freed += 1;
-            }
+            realm.closures[i].cell_flags = CELL_FLAG_DEAD;
+            realm.free_closure_slots.append(i);  # 0-based index
+            freed += 1;
         }
         i += 1;
     }
@@ -1124,7 +1174,8 @@ def _gc_type_breakdown(realm: Realm) {
     _bn: int = len(realm.objects);
     while _bi < _bn {
         _bo: JSObject = realm.objects[_bi];
-        if _bo.cell_flags == CELL_FLAG_DEAD {
+        if _bo.cell_flags == CELL_FLAG_DEAD
+            or (_bi < realm.objmark_len and read_byte(realm.objmark_ptr, _bi) == 255) {
             _bi = _bi + 1;
             continue;
         }
@@ -1366,18 +1417,23 @@ def:pub gc_collect(realm: Realm, extras: list[JSValue]) -> int {
     _gc_weak_clear(realm);
 
     freed: int = 0;
+    gc_t_mark: int = uv_hrtime();
     freed = freed + gc_sweep_objects(realm);
+    gc_t_swo: int = uv_hrtime();
     freed = freed + gc_sweep_closures(realm);
     freed = freed + gc_sweep_maps(realm);
     freed = freed + gc_sweep_sets(realm);
     freed = freed + gc_sweep_generators(realm);
     freed = freed + gc_sweep_regexps(realm);  # G0.5
+    gc_t_swc: int = uv_hrtime();
     freed = freed + gc_sweep_heap_strings(realm);  # G1.4
+    gc_t_sws: int = uv_hrtime();
 
     gc_clear_marks(realm, -1);  # -1 clears ALL tables at once
 
     realm.gc_in_progress = False;
     gc_total_cycles = gc_total_cycles + 1;
+    gc_total_ns = gc_total_ns + (uv_hrtime() - gc_t0);
     gc_total_freed = gc_total_freed + freed;
     # Update live monitor deltas (gc_monitor_cycles/freed computed lazily in gc_live_monitor_stats).
 
@@ -1410,6 +1466,14 @@ def:pub gc_collect(realm: Realm, extras: list[JSValue]) -> int {
                 + str(gc_total_cycles)
                 + " ms="
                 + str((uv_hrtime() - gc_t0) // 1000000)
+                + " mark="
+                + str((gc_t_mark - gc_t0) // 1000000)
+                + " swo="
+                + str((gc_t_swo - gc_t_mark) // 1000000)
+                + " swc="
+                + str((gc_t_swc - gc_t_swo) // 1000000)
+                + " sws="
+                + str((gc_t_sws - gc_t_swc) // 1000000)
                 + " objspan="
                 + str(_gc_span)
                 + " objlive="

@@ -25,6 +25,7 @@ import from engine.src.runtime.jsvalue {
 }
 import from engine.src.runtime.jsobj_type { JSObject }
 import from engine.src.runtime.jsobject {
+    js_object_note_array_buffer,
     js_object_table_get,
     js_object_binary_kind_id,
     js_object_binary_slot_id
@@ -222,6 +223,9 @@ def:pub binary_register_buffer(args: list[JSValue]) -> JSValue {
         BINARY_KIND_SHARED_ARRAY_BUFFER if store.shared else BINARY_KIND_ARRAY_BUFFER
     );
     raw.set_bkind(ab_kind);
+    if ab_kind == BINARY_KIND_ARRAY_BUFFER {
+        js_object_note_array_buffer(jsv_to_table_id(buffer));
+    }
     return js_true();
 }
 

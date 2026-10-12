@@ -264,10 +264,22 @@ def:pub str_intern(s: str) -> int {
     }
     _STR_REALM.intern_next_id = id + 1;
     _STR_REALM.intern_by_str[s] = id;
+    _intern_row(id);
     _STR_REALM.intern_by_id[id] = s;
     # Record ASCII-ness for O(1) charAt/charCodeAt indexing.
     _STR_REALM.intern_ascii[id] = _ascii_flag(s);
     return id;
+}
+
+"""Grow the id-indexed intern tables to hold row `id` (unused ids — the
+reserved range, 0 and 7..9 — read as "" / unknown ASCII-ness)."""
+def _intern_row(id: int) {
+    while len(_STR_REALM.intern_by_id) <= id {
+        _STR_REALM.intern_by_id.append("");
+    }
+    while len(_STR_REALM.intern_ascii) <= id {
+        _STR_REALM.intern_ascii.append(0);
+    }
 }
 
 # Per-intern-id answer to "is this key a canonical array index" (ES §6.1.7:
@@ -278,6 +290,7 @@ def:pub str_intern(s: str) -> int {
 # array-like object; scanning the text each time (str_from_id + parse, in two
 # copies a substring per digit) was ~2% of a vite build.
 glob _AIX_BITS: list[int] = [],
+     _AIX_VAL: dict[int, int] = {},
      _AIX_ID_LIMIT: int = 10000000,
      _KCLS_BITS: list[int] = [],
      _KCLS_ID_LIMIT: int = 1000000;
@@ -377,6 +390,52 @@ def:pub str_id_is_array_index(kid: int) -> bool {
         _AIX_BITS[ax_w] = _AIX_BITS[ax_w] | (1 << ax_sh);
     }
     return ax_r;
+}
+
+"""The value of key id `kid` as a canonical array index, else -1. Memoised per
+id like str_id_is_array_index (ids are never reused): array lookups ask it on
+every element access, and re-reading the key's text (str_from_id + a digit
+parse) per access was ~1.5% of a vite build. Ids past _AIX_ID_LIMIT parse
+uncached."""
+def:pub str_id_array_index_value(kid: int) -> int {
+    if kid < 0 {
+        return -1;
+    }
+    if kid < _AIX_ID_LIMIT {
+        if not str_id_is_array_index(kid) {
+            return -1;
+        }
+        av_hit: int = _AIX_VAL.get(kid, -1);
+        if av_hit >= 0 {
+            return av_hit;
+        }
+    }
+    av_s: str = str_from_id(kid);
+    av_n: int = len(av_s);
+    if av_n == 0 {
+        return -1;
+    }
+    av_c0: int = ord(av_s[0]);
+    if av_c0 < 48 or av_c0 > 57 or (av_c0 == 48 and av_n > 1) {
+        return -1;
+    }
+    av_v: int = 0;
+    av_i: int = 0;
+    while av_i < av_n {
+        av_c: int = ord(av_s[av_i]);
+        if av_c < 48 or av_c > 57 {
+            return -1;
+        }
+        av_v = av_v * 10 + (av_c - 48);
+        if av_v >= 4294967295 {
+            return -1;
+        }
+        av_i = av_i + 1;
+    }
+    if kid < _AIX_ID_LIMIT {
+        _AIX_VAL[kid] = av_v;
+    }
+    return av_v;
 }
 
 """Canonical array-index text: "0", or a digit 1-9 then digits, below 2^32 − 1."""
@@ -603,7 +662,7 @@ def:pub str_cell_ascii(id: int) -> int {
         }
         return 0;
     }
-    if id in _STR_REALM.intern_ascii {
+    if id >= 0 and id < len(_STR_REALM.intern_ascii) {
         return _STR_REALM.intern_ascii[id];
     }
     return 0;
@@ -766,7 +825,7 @@ def:pub str_from_id(id: int) -> str {
         }
         return "";
     }
-    if id in _STR_REALM.intern_by_id {
+    if id >= 0 and id < len(_STR_REALM.intern_by_id) {
         return _STR_REALM.intern_by_id[id];
     }
     return "";
@@ -796,16 +855,22 @@ def:pub str_intern_seed_well_known -> None {
     # JSValue 0 (NULL napi_value) for any valid string — keeps NAPI ABI sound.
     # "" is assigned ID 6; jsv_coerce_to_bool checks id == 6 for string falsiness.
     _STR_REALM.intern_by_str["__proto__"] = 1;
+    _intern_row(1);
     _STR_REALM.intern_by_id[1] = "__proto__";
     _STR_REALM.intern_by_str["constructor"] = 2;
+    _intern_row(2);
     _STR_REALM.intern_by_id[2] = "constructor";
     _STR_REALM.intern_by_str["length"] = 3;
+    _intern_row(3);
     _STR_REALM.intern_by_id[3] = "length";
     _STR_REALM.intern_by_str["name"] = 4;
+    _intern_row(4);
     _STR_REALM.intern_by_id[4] = "name";
     _STR_REALM.intern_by_str["value"] = 5;
+    _intern_row(5);
     _STR_REALM.intern_by_id[5] = "value";
     _STR_REALM.intern_by_str[""] = 6;
+    _intern_row(6);
     _STR_REALM.intern_by_id[6] = "";
     # IDs 7-9 reserved; KEY_BASE=10 is first dynamic ID.
     _STR_REALM.intern_next_id = 10;
@@ -1590,24 +1655,20 @@ def:pub js_string_byte_to_unit(s: str, byte_off: int) -> int {
     units: int = 0;
     i: int = 0;
     while i < lim {
-        if _str_is_nul_escape(s, i) {
+        # (the C0 80 NUL sentinel is a 2-byte, 1-unit lead like any < 224)
+        b: int = ord(s[i]);
+        if b < 128 {
+            i = i + 1;
+            units = units + 1;
+        } elif b < 224 {
             i = i + 2;
             units = units + 1;
+        } elif b < 240 {
+            i = i + 3;
+            units = units + 1;
         } else {
-            b: int = ord(s[i]);
-            if b < 128 {
-                i = i + 1;
-                units = units + 1;
-            } elif b < 224 {
-                i = i + 2;
-                units = units + 1;
-            } elif b < 240 {
-                i = i + 3;
-                units = units + 1;
-            } else {
-                i = i + 4;
-                units = units + 2;
-            }
+            i = i + 4;
+            units = units + 2;
         }
     }
     return units;
@@ -1620,24 +1681,20 @@ def:pub js_string_unit_to_byte(s: str, unit_off: int) -> int {
     units: int = 0;
     i: int = 0;
     while i < n and units < unit_off {
-        if _str_is_nul_escape(s, i) {
+        # (the C0 80 NUL sentinel is a 2-byte, 1-unit lead like any < 224)
+        b: int = ord(s[i]);
+        if b < 128 {
+            i = i + 1;
+            units = units + 1;
+        } elif b < 224 {
             i = i + 2;
             units = units + 1;
+        } elif b < 240 {
+            i = i + 3;
+            units = units + 1;
         } else {
-            b: int = ord(s[i]);
-            if b < 128 {
-                i = i + 1;
-                units = units + 1;
-            } elif b < 224 {
-                i = i + 2;
-                units = units + 1;
-            } elif b < 240 {
-                i = i + 3;
-                units = units + 1;
-            } else {
-                i = i + 4;
-                units = units + 2;
-            }
+            i = i + 4;
+            units = units + 2;
         }
     }
     return i;
@@ -1655,24 +1712,20 @@ def:pub js_string_unit_to_byte_from(
     units: int = unit_from;
     i: int = byte_from;
     while i < n and units < unit_to {
-        if _str_is_nul_escape(s, i) {
+        # (the C0 80 NUL sentinel is a 2-byte, 1-unit lead like any < 224)
+        b: int = ord(s[i]);
+        if b < 128 {
+            i = i + 1;
+            units = units + 1;
+        } elif b < 224 {
             i = i + 2;
             units = units + 1;
+        } elif b < 240 {
+            i = i + 3;
+            units = units + 1;
         } else {
-            b: int = ord(s[i]);
-            if b < 128 {
-                i = i + 1;
-                units = units + 1;
-            } elif b < 224 {
-                i = i + 2;
-                units = units + 1;
-            } elif b < 240 {
-                i = i + 3;
-                units = units + 1;
-            } else {
-                i = i + 4;
-                units = units + 2;
-            }
+            i = i + 4;
+            units = units + 2;
         }
     }
     return i;
@@ -1957,16 +2010,22 @@ def:pub js_string_utf16_len(s: str) -> int {
     i: int = 0;
     units: int = 0;
     while i < n {
-        if ord(s[i]) >= 128 {
-            return len(codepoints_to_utf16_units(utf8_decode_str_to_codepoints(s)));
-        }
-        if _str_is_nul_escape(s, i) {
+        if ord(s[i]) < 128 {
             units = units + 1;
-            i = i + 2;
+            i = i + 1;
             continue;
         }
-        units = units + 1;
-        i = i + 1;
+        # Non-ASCII (or the C0 80 NUL sentinel): count units per character in
+        # the same pass. Decoding the whole string into code points and then
+        # UTF-16 units just to take a length cost ~18M instructions per call on
+        # a bundle-sized string (regexp exec asked it per call). Only a
+        # sequence the decoder could read differently takes the full decode.
+        lw: int = _u16_step(s, i, n);
+        if lw == 0 {
+            return len(codepoints_to_utf16_units(utf8_decode_str_to_codepoints(s)));
+        }
+        i = i + (lw >> 2);
+        units = units + (lw & 3);
     }
     return units;
 }

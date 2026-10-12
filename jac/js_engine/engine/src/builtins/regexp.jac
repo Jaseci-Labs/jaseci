@@ -68,6 +68,10 @@ import from engine.src.runtime.jsstring {
     js_string_byte_to_unit,
     js_string_unit_to_byte,
     js_string_utf16_len,
+    js_string_u16ix,
+    u16ix_byte_to_unit,
+    u16ix_unit_to_byte,
+    U16Index,
     utf8_encode_scalar
 }
 import from engine.src.runtime.jsobject {
@@ -2342,7 +2346,22 @@ def _re_b2u(s: str, byte_off: int, asc: bool) -> int {
     if asc or byte_off <= 0 {
         return byte_off;
     }
+    if _re_subject_indexed(s) {
+        b2u_ix: U16Index = js_string_u16ix(_DM_SUBJ_ID, s);
+        if b2u_ix.regular {
+            return u16ix_byte_to_unit(b2u_ix, s, byte_off);
+        }
+    }
     return js_string_byte_to_unit(s, byte_off);
+}
+
+"""True when `s` is the subject string cell _dm_subject_ascii last recorded
+(checked by length, as the id is set right before each conversion), so its
+cached U16Index can map offsets: a checkpoint lookup instead of a walk from
+byte 0, which made each exec / match result on a large non-ASCII subject cost
+O(subject) (~4% of a vite build)."""
+def _re_subject_indexed(s: str) -> bool {
+    return _DM_SUBJ_ID >= 0 and len(str_from_id(_DM_SUBJ_ID)) == len(s);
 }
 
 """UTF-16 unit index → byte offset; -1 when the index lies past the end (a
@@ -2356,6 +2375,18 @@ def _re_u2b(s: str, units: int, asc: bool) -> int {
             return -1;
         }
         return units;
+    }
+    if _re_subject_indexed(s) {
+        u2b_ix: U16Index = js_string_u16ix(_DM_SUBJ_ID, s);
+        if u2b_ix.regular {
+            if units > u2b_ix.total {
+                return -1;
+            }
+            u2b_b: int = u16ix_unit_to_byte(u2b_ix, s, units);
+            if u2b_b >= 0 {
+                return u2b_b;
+            }
+        }
     }
     if units > js_string_utf16_len(s) {
         return -1;

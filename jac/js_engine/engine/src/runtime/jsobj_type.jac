@@ -42,7 +42,7 @@ import from engine.src.builtins.markers {
     _KEY_IS_REGEXP_MARK
 }
 import from engine.src.runtime.mem { read_u64, write_i64 }
-import from engine.src.ffi.libc { realloc, free, write, abort, getenv }
+import from engine.src.ffi.libc { realloc, free, write, abort, getenv, memmove }
 
 # JAC_SLOT_CHECK=1: bounds-check every JSObject slot read/write and abort on a
 # violation (debug gate for the raw slot buffers; -1 = env not read yet).
@@ -627,6 +627,58 @@ obj:pub JSObject {
         return read_u64(self.ep, 16 + i * 8);
     }
 
+    """Own element `dix` when `dix` >= 0 (the array index the key names) and
+    it is present, else the own data property `key`, else the hole: one
+    level of js_object_get."""
+    def:pub own_elem_or_data(key: int, dix: int) -> JSValue {
+        if dix >= 0 and self.elems_kind != ELEMS_NONE {
+            oe_v: JSValue = self.elem_or_hole(dix);
+            if not jsv_is_hole(oe_v) {
+                return oe_v;
+            }
+        }
+        return self.get_own_data_or_hole(key);
+    }
+
+    """An own present element `dix` (>= 0, see own_elem_or_data) or an own
+    property `key` in the shape / property map; the accessor side tables are
+    the caller's."""
+    def:pub has_own_plain(key: int, dix: int) -> bool {
+        if dix >= 0 and dix < self.elen() and not jsv_is_hole(self.eget(dix)) {
+            return True;
+        }
+        return self.has_key(key);
+    }
+
+    """One level of js_object_get_ordinary: the slot of own data property
+    `key` (>= 0), -1 when a shape-mode object without accessor tables does not
+    have it, -2 when the read is not ordinary here (a class / binary / dense
+    / namespace / mapped-arguments object, or `key` is an accessor), -3 for a
+    property map and -4 when there are accessor tables — both read by the
+    caller. A String wrapper's `length` / index keys are the caller's too."""
+    def:pub ord_slot(key: int) -> int {
+        if self.class_id != 0
+            or self.bkind() != 0
+            or self.elems_kind != ELEMS_NONE
+            or (self.cell_flags & (FLAG_MODULE_NS | FLAG_MAPPED_ARGS)) != 0 {
+            return -2;
+        }
+        if self.has_acc() {
+            return -4;
+        }
+        if self.mode != MAP_MODE_SHAPE {
+            return -3;
+        }
+        os_p: int = shape_lookup(self.shape_id, key);
+        if os_p < 0 {
+            return -1;
+        }
+        if (os_p & SHAPE_ATTR_ACCESSOR) != 0 {
+            return -2;
+        }
+        return os_p // 16;
+    }
+
     """The property-IC hit test and read in one: slots[si] when this is an
     ordinary shape-mode object of shape `sid` (the js_object_ic_shape
     conditions), else the hole."""
@@ -705,6 +757,43 @@ obj:pub JSObject {
         }
         write_i64(self.ep, 16 + ep_n * 8, v);
         write_i64(self.ep, 0, ep_n + 1);
+    }
+
+    """Make `vals` the elements of an object that has none, in a buffer of
+    exactly their size; ELEMS_HOLEY when one of them is the hole, else
+    ELEMS_DENSE (what an epush per element builds, without the regrowth)."""
+    def:pub einit(vals: list[JSValue]) -> int {
+        ei_n: int = len(vals);
+        if ei_n == 0 {
+            return ELEMS_DENSE;
+        }
+        ei_p: int = realloc(self.ep, 16 + ei_n * 8);
+        if ei_p == 0 {
+            _slot_oom(16 + ei_n * 8);
+        }
+        write_i64(ei_p, 0, ei_n);
+        write_i64(ei_p, 8, ei_n);
+        ei_kind: int = ELEMS_DENSE;
+        ei_k: int = 0;
+        while ei_k < ei_n {
+            ei_v: JSValue = vals[ei_k];
+            if jsv_is_hole(ei_v) {
+                ei_kind = ELEMS_HOLEY;
+            }
+            write_i64(ei_p, 16 + ei_k * 8, ei_v);
+            ei_k = ei_k + 1;
+        }
+        self.ep = ei_p;
+        return ei_kind;
+    }
+
+    """Remove element 0, moving the rest down one; elen() must be > 0."""
+    def:pub eshift -> None {
+        es_n: int = read_u64(self.ep, 0);
+        if es_n > 1 {
+            memmove(self.ep + 16, self.ep + 24, (es_n - 1) * 8);
+        }
+        write_i64(self.ep, 0, es_n - 1);
     }
 
     """Drop every element and free the buffer."""

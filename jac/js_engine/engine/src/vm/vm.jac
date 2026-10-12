@@ -355,7 +355,7 @@ import from engine.src.runtime.realm {
 }
 import from engine.src.builtins.regexp_type { JSRegExpState }
 import from engine.src.runtime.realm_bootstrap { realm_bootstrap_secondary }
-import from engine.src.runtime.gc { gc_tick, gc_collect }  # A2.4b: threshold-based GC auto-trigger
+import from engine.src.runtime.gc { gc_tick, gc_collect, gc_time_ns }  # A2.4b: threshold-based GC auto-trigger
 import from engine.src.runtime.gc_pin {
     gc_pin_value,
     gc_unpin_value,
@@ -425,6 +425,7 @@ import from engine.src.runtime.jsobject {
     js_object_dense_elem,
     js_object_own_data_slot,
     js_object_dense_put,
+    js_object_dense_shift,
     js_object_proto_idx_id,
     js_object_cell_flags_id,
     js_object_own_int_add,
@@ -1381,6 +1382,25 @@ def _vm_set_probe(ins: Instruction, rv: JSValue, val: JSValue) -> bool {
         return True;
     }
     return _vm_set_mega(ins, rv, val, sp_sid);
+}
+
+"""The accessor a GET_PROP / SET_PROP site's getter / setter IC holds when
+receiver `rv` hits it (same shape, prototype epoch and holder), else the
+hole. Nothing is filled: a miss is left to the ordinary paths."""
+def _vm_accessor_ic_hit(ins: Instruction, rv: JSValue) -> JSValue {
+    if not VM_IC_ENABLED or ins.ic_holder > 0 - _GETTER_IC_TAG {
+        return jsv_hole();
+    }
+    ah_sid: int = js_object_ic_shape(rv);
+    if ah_sid < 0 or ah_sid != ins.ic_obj or ins.ic_epoch != proto_epoch() {
+        return jsv_hole();
+    }
+    if not js_object_proto_ic_ok(
+        jsv_to_table_id(rv), 0 - ins.ic_holder - _GETTER_IC_TAG
+    ) {
+        return jsv_hole();
+    }
+    return ins.ic_ver;
 }
 
 """SET_PROP's megamorphic caches on receiver `rv` for a plain, cached-key
@@ -32983,6 +33003,17 @@ obj VM {
                         + _reg_stat_recv_kind(v1)
                 );
             }
+            if frame.func.code[orig].opcode == Opcode.SET_PROP {
+                _reg_stat_name(
+                    _REG_BRIDGE_GPKEYS,
+                    "SET "
+                        + frame.func.constants.get(frame.func.code[orig].arg)
+                        + " arg3&3="
+                        + str(frame.func.code[orig].arg3 & 3)
+                        + " @"
+                        + _reg_stat_recv_kind(v1)
+                );
+            }
             if n >= 2
                 and (
                     frame.func.code[orig].opcode == Opcode.GET_INDEX
@@ -35039,6 +35070,17 @@ obj VM {
     def _reg_getfield_slow(
         frame: CallFrame, st: ExecState, w: int, c: int, va: JSValue, pc: int
     ) -> int {
+        # A hit of this site's getter IC is what the reads below find only
+        # after walking the prototype chain to the accessor.
+        gs_g0: JSValue = _vm_accessor_ic_hit(frame.func.code[c], va);
+        if not jsv_is_hole(gs_g0) {
+            gs_r0: int = self._reg_call_enter(
+                frame, st, gs_g0, va, (w >> 8) & 65535, pc, 0, c, pc
+            );
+            if gs_r0 != 0 {
+                return gs_r0;
+            }
+        }
         gs_key: int = frame.func.code[c].arg2;
         gs_v: JSValue = _vm_prim_get(gs_key, va);
         if jsv_is_hole(gs_v) and gs_key != 0 and _vm_ic_key_ok_obj(gs_key, va) {
@@ -35194,6 +35236,25 @@ obj VM {
         pc: int
     ) -> int {
         ss_a3: int = frame.func.code[c].arg3;
+        # A hit of this site's setter IC: enter it before the ordinary [[Set]],
+        # which fails on the accessor only after walking the prototype chain.
+        ss_s0: JSValue = jsv_hole();
+        if ss_a3 >= 2 and (ss_a3 & 3) == 0 {
+            ss_s0 = _vm_accessor_ic_hit(frame.func.code[c], va);
+        }
+        if not jsv_is_hole(ss_s0) {
+            self.reg_arg1 = vb;
+            ss_r0: int = self._reg_call_enter(
+                frame, st, ss_s0, va, frame.func.num_locals - 1, pc, -1, c, pc
+            );
+            if ss_r0 == 1 {
+                self.frames[len(self.frames) - 1].discard_ret = True;
+                return 1;
+            }
+            if ss_r0 != 0 {
+                return ss_r0;
+            }
+        }
         if ss_a3 >= 2
             and (ss_a3 & 3) == 0
             and (ss_a3 >> 2) != WK_EXPORTS
@@ -35201,6 +35262,18 @@ obj VM {
             and _vm_ic_key_ok_obj(ss_a3 >> 2, va)
             and jsv_is_object_cell(va)
             and self._reg_set_plain(frame, frame.func.code[c], c, va, vb) {
+            return 0;
+        }
+        # An `export let` binding update: a define-own store onto a module
+        # namespace object, which _op_set_prop hands to the namespace install
+        # (no [[HomeObject]] wiring for a non-function value, and the ordinary
+        # add refuses namespaces). In a vite build 14.5M of the 17M bridged
+        # SET_PROPs were one module's exported binding.
+        if ss_a3 >= 2
+            and (ss_a3 & 3) == 1
+            and not is_fn_val(vb)
+            and js_is_module_namespace(va) {
+            _ = js_object_namespace_export_set(va, ss_a3 >> 2, vb);
             return 0;
         }
         if jsv_is_object_cell(va) {
@@ -35736,6 +35809,7 @@ obj VM {
         }
         rlm: Realm = self.realm;
         dbg: bool = VM_DEBUG_MODE;
+        tprof: bool = _TPROF_ON;
         w: int = 0;
         op: int = 0;
         a: int = 0;
@@ -35756,7 +35830,7 @@ obj VM {
         # One flag for the rare per-dispatch work (V4.25): realm.safepoint_req
         # (GC / exit safepoint), also raised by _unwind_in_frame for a catch
         # in this frame and held while the debug trace runs.
-        if dbg {
+        if dbg or tprof {
             rlm.safepoint_req = True;
         }
         while st.running {
@@ -35770,6 +35844,10 @@ obj VM {
                 self._loop_safepoint(st);
                 if dbg {
                     self._reg_trace(frame, pc, rc[pc]);
+                    rlm.safepoint_req = True;
+                }
+                if tprof {
+                    _tprof_tick(frame.func, pc);
                     rlm.safepoint_req = True;
                 }
             }
@@ -44414,6 +44492,14 @@ def _vm_array_shift(vm: VM, this_val: JSValue) -> JSValue {
     if vm_has_native_exc() {
         return js_undefined();
     }
+    # Dense fast arm: a queue drained with shift() moved every element through
+    # the generic per-index path below on each call.
+    if idx_protector_ok() {
+        sh_first: JSValue = js_object_dense_shift(o);
+        if not jsv_is_hole(sh_first) {
+            return sh_first;
+        }
+    }
     len_: int = _length_of(o);
     if vm_has_native_exc() {
         return js_undefined();
@@ -50132,6 +50218,89 @@ glob _PAIR_STATS_ON: bool = False,
      _FN_PROF_FNS: dict[str, int] = {},
      _FN_PROF_LINES: dict[str, int] = {};
 
+# JS_FN_PROF=2: time-weighted profile of the register loop. Every
+# _TPROF_EVERY-th dispatch charges the wall time since the previous sample,
+# less collection time, to the running function and source line — time in a
+# native builtin lands on the JS function that called it. A gap over 2 ms
+# (idle event loop, a long native) is charged to the "long" tables instead.
+glob _TPROF_ON: bool = False,
+     _TPROF_EVERY: int = 64,
+     _TPROF_CTR: list[int] = [64],
+     _TPROF_LAST: list[int] = [0, 0],
+     _TPROF_FNS: dict[str, int] = {},
+     _TPROF_LINES: dict[str, int] = {},
+     _TPROF_LONG: dict[str, int] = {};
+
+def _tprof_tick(fn: CompiledFunction, pc: int) {
+    _TPROF_CTR[0] = _TPROF_CTR[0] - 1;
+    if _TPROF_CTR[0] > 0 {
+        return;
+    }
+    _TPROF_CTR[0] = _TPROF_EVERY;
+    tp_now: int = uvhrtime();
+    tp_gc: int = gc_time_ns();
+    tp_d: int = (tp_now - _TPROF_LAST[0]) - (tp_gc - _TPROF_LAST[1]);
+    tp_first: bool = _TPROF_LAST[0] == 0;
+    _TPROF_LAST[0] = tp_now;
+    _TPROF_LAST[1] = tp_gc;
+    if tp_first or tp_d <= 0 {
+        return;
+    }
+    tp_line: int = 0;
+    if pc >= 1 and pc - 1 < len(fn.rorig) {
+        tp_oi: int = fn.rorig[pc - 1];
+        if tp_oi >= 0 and tp_oi < len(fn.code) {
+            tp_line = fn.code[tp_oi].line;
+        }
+    }
+    tp_fk: str = fn.name + "  (" + fn.file + ")";
+    if tp_d > 2000000 {
+        _TPROF_LONG[tp_fk] = _TPROF_LONG.get(tp_fk, 0) + tp_d;
+        return;
+    }
+    _TPROF_FNS[tp_fk] = _TPROF_FNS.get(tp_fk, 0) + tp_d;
+    tp_lk: str = fn.file + ":" + str(tp_line) + "  " + fn.name;
+    _TPROF_LINES[tp_lk] = _TPROF_LINES.get(tp_lk, 0) + tp_d;
+}
+
+def _tprof_print_top(title: str, d: dict[str, int], k: int) {
+    total: int = 0;
+    for tk in d {
+        total = total + d[tk];
+    }
+    print("== " + title + " (" + str(total // 1000000) + " ms) ==");
+    taken: dict[str, int] = {};
+    r: int = 0;
+    while r < k {
+        best: str = "";
+        best_n: int = -1;
+        for ck in d {
+            if ck in taken {
+                continue;
+            }
+            if d[ck] > best_n {
+                best_n = d[ck];
+                best = ck;
+            }
+        }
+        if best_n < 0 {
+            break;
+        }
+        taken[best] = 1;
+        pct: int = (best_n * 1000) // (total if total > 0 else 1);
+        print(
+            str(best_n // 1000000)
+                + " ms  "
+                + str(pct // 10)
+                + "."
+                + str(pct % 10)
+                + "%  "
+                + best
+        );
+        r = r + 1;
+    }
+}
+
 # JS_FN_PROF=1: sampling JS profiler. Every _FN_PROF_EVERY-th dispatch charges
 # one sample to the running function and to its source line; the top entries
 # print at exit (vm_dump_pair_stats). Counts bytecode dispatches, so time inside
@@ -50226,7 +50395,7 @@ def:pub vm_dump_pair_stats -> None {
                 + ")"
         );
         rs_gkeys: list[str] = _reg_stats_sorted_names(_REG_BRIDGE_GPKEYS, 40);
-        print("register loop: bridged GET_PROP by property name @ receiver kind");
+        print("register loop: bridged GET_PROP / SET_PROP by property name @ receiver kind");
         rs_i = 0;
         while rs_i < len(rs_gkeys) and rs_i < 40 {
             print(
@@ -50266,6 +50435,11 @@ def:pub vm_dump_pair_stats -> None {
     if _FN_PROF_ON {
         _fn_prof_print_top("JS functions by dispatches", _FN_PROF_FNS, 40);
         _fn_prof_print_top("JS lines by dispatches", _FN_PROF_LINES, 40);
+    }
+    if _TPROF_ON {
+        _tprof_print_top("JS functions by time, register loop", _TPROF_FNS, 60);
+        _tprof_print_top("JS lines by time, register loop", _TPROF_LINES, 60);
+        _tprof_print_top("gaps over 2 ms, by function", _TPROF_LONG, 25);
     }
     if _PAIR_STATS_ON {
         print("inline calls: " + str(_INLINE_CALL_COUNT));
@@ -50379,6 +50553,7 @@ def:pub init_opcode_table {
     _dbg_env_init();
     _PAIR_STATS_ON = getenv("JS_PAIR_STATS") == "1";
     _FN_PROF_ON = getenv("JS_FN_PROF") == "1";
+    _TPROF_ON = getenv("JS_FN_PROF") == "2";
     _nf_init();
     _OPCODE_TABLE = {};
     _OPCODE_TABLE[Opcode.IMPORT] = _vm_op_import;
