@@ -24,6 +24,7 @@ glob ADMIN_PASSWORD_ENV: str = "JAC_SCALE_ADMIN_PASSWORD",
          "triggers",
          "http_activation",
          "read_cache",
+         "host",
          "workers",
          "threads"
      ),
