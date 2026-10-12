@@ -930,8 +930,8 @@ test "internal get_bytecode evicts unit AST after compile" {
     for p in samples {
         assert os.path.isfile(p) , f"missing fixture {p}";
     }
-    old_rebuild = os.environ.get("JAC_REBUILD");
-    os.environ["JAC_REBUILD"] = "1";
+    import from jaclang.compiler.driver.jir { set_cache_mode }
+    set_cache_mode(rebuild=True);
     try {
         for p in samples {
             code = compiler.get_bytecode(p, prog);
@@ -948,10 +948,6 @@ test "internal get_bytecode evicts unit AST after compile" {
             );
         }
     } finally {
-        if old_rebuild is None {
-            os.environ.pop("JAC_REBUILD", None);
-        } else {
-            os.environ["JAC_REBUILD"] = old_rebuild;
-        }
+        set_cache_mode(rebuild=False);
     }
 }

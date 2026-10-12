@@ -908,6 +908,8 @@ def _vote_app(td: str) -> tuple[any, dict[str, any], any] {
     mod.rival_commits.clear();
     mod.commit_faults.clear();
     mod.failed_commits.clear();
+    mod.lock_exhaustions.clear();
+    mod.exhausted_queries.clear();
     return (exec_mgr, walkers, mod);
 }
 
@@ -996,6 +998,30 @@ test "request loop: a COMMIT conflict the session retries does not cost a re-run
 }
 
 
+test "request loop: a read that runs out of predicate locks is retried, not a 500" {
+    prior = _without_read_tier();
+    try {
+        with TemporaryDirectory() as td {
+            (exec_mgr, walkers, mod) = _vote_app(td);
+            seeded = _spawn(exec_mgr, walkers["Seed"]);
+            assert "error" not in seeded , f"seeding failed: {seeded}";
+            mod.lock_exhaustions.append(1);
+            read = _spawn(exec_mgr, walkers["ReadPoll"]);
+            assert mod.lock_exhaustions == [] , "the exhaustion was never armed";
+            assert len(mod.exhausted_queries) == 1 , (
+                "the read never reached the database, so nothing was exhausted"
+            );
+            assert "error" not in read , (
+                f"an exhausted predicate-lock table failed the request: {read}"
+            );
+            assert read.get("reports") == [0] , f"{read}";
+        }
+    } finally {
+        _restore_read_tier(prior);
+    }
+}
+
+
 test "request loop: a COMMIT that never succeeds is re-run up to conflict_max_attempts, then 409" {
     import from jaclang.server.server { _occ_policy }
     prior = _without_read_tier();
@@ -1027,5 +1053,49 @@ test "request loop: a COMMIT that never succeeds is re-run up to conflict_max_at
         }
     } finally {
         _restore_read_tier(prior);
+    }
+}
+
+
+def _bump_burst(busy: bool) -> tuple[list[any], int] {
+    with TemporaryDirectory() as td {
+        (exec_mgr, walkers, mod) = _vote_app(td);
+        seeded = _spawn(exec_mgr, walkers["SeedCounter"]);
+        assert "error" not in seeded , f"seeding failed: {seeded}";
+        start = _spawn(exec_mgr, walkers["ReadCounter"])["reports"][0];
+        ambient = JacRuntime.get_context();
+        async def one -> any {
+            with RequestScope.open(ambient.base_path_dir, ambient.full_target_path) {
+                return await exec_mgr.spawn_walker(
+                    walkers["Bump"], {"hold": 0.05, "busy": busy}, "voter"
+                );
+            }
+        }
+        async def burst -> any {
+            return await asyncio.gather(*[one() for _ in range(10)]);
+        }
+        results = _as_any(asyncio.run(burst()));
+        final = _spawn(exec_mgr, walkers["ReadCounter"])["reports"][0];
+        return (list(results), final - start);
+    }
+}
+
+
+test "request loop: ten concurrent writers to one node all land" {
+    for busy in (False, True) {
+        (results, landed) = _bump_burst(busy);
+        refused = [
+            r
+            for r in results
+            if "error" in r
+        ];
+        assert not refused , (
+            f"{len(refused)} of 10 writers to one counter were refused "
+            f"(busy={busy}): losers raced again instead of waiting their turn. "
+            f"First: {refused[0]}"
+        );
+        assert landed == 10 , (
+            f"10 accepted writes moved the counter by {landed} (busy={busy})"
+        );
     }
 }

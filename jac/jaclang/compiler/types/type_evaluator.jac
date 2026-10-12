@@ -360,7 +360,8 @@ obj NarrowingPredicate {
         attr_name: str | None = None,
         narrows_on_true: bool = True,
         narrows_on_false: bool = True,
-        replaces_declared: bool = False;
+        replaces_declared: bool = False,
+        by_equality: bool = False;
 }
 
 enum NarrowingKind {
@@ -420,8 +421,8 @@ walker TypeEvaluator {
         builtins_module: Module | None = None,
         _flow_node_type_cache: dict[tuple[int, int], TypeBase | None] = {},
         _flow_key_type_cache: dict[tuple[int, str], TypeBase | None] = {},
-        _flow_pending_symbols: set[int] postinit,
-        _flow_pending_keys: set[str] postinit,
+        _flow_pending_symbols: set[tuple[int, int]] postinit,
+        _flow_pending_keys: set[tuple[str, int]] postinit,
         _module_type_cache: dict[str, ModuleType] = {},
         _modules_in_compile: set[str] postinit,
         _mobui_module_cache: dict[str, bool] = {},
@@ -1005,6 +1006,11 @@ walker TypeEvaluator {
 
     def _narrow_type_to(base_type: TypeBase, narrow_type: TypeBase) -> TypeBase | None;
     def _narrow_member_to(member: TypeBase, narrow_type: TypeBase) -> TypeBase | None;
+    def _narrow_type_by_equality(
+        base_type: TypeBase, compared: TypeBase
+    ) -> TypeBase | None;
+
+    def _may_equal(member: TypeBase, compared: TypeBase) -> bool;
     def _specialize_narrow_from_base(
         base_type: TypeBase, narrow_type: TypeBase
     ) -> TypeBase;

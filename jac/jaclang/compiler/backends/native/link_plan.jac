@@ -1197,10 +1197,10 @@ def link_artifact(
     runtime = load_musl_static(plan.triple) if static_musl else None;
     if static_musl {
         if runtime is None {
+            import from jaclang.artifacts.kit { osarch }
             raise LinkPlanError(
-                "Static musl runtime not found. Expected a vendored musl "
-                "libc.a under .pbs-build/<arch>/musl/lib (run `zig build "
-                "vendor-musl`) or set JAC_NATIVE_MUSL_DIR."
+                "the static musl runtime is not built for this target: run "
+                f"`jac native build musl@{osarch(plan.triple)}`"
             );
         }
         inputs.archive_members = inputs.archive_members + runtime.archives;
@@ -1219,10 +1219,11 @@ def link_artifact(
             }
         );
         if missing_atomics {
+            import from jaclang.artifacts.kit { osarch }
             raise LinkPlanError(
                 "AArch64 compiler runtime archive not found for floor symbols: "
                     + ", ".join(missing_atomics)
-                    + ". Run `zig build vendor-musl` for the target or set JAC_NATIVE_MUSL_DIR."
+                    + f". Run `jac native build musl@{osarch(plan.triple)}`."
             );
         }
     }

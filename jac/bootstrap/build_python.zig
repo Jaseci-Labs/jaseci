@@ -1,6 +1,7 @@
 //! Build the release Python before any Jac tooling can run. Sources are
 //! checksum-pinned. A build-only CPython host emits the native JacPython replacement object.
 const std = @import("std");
+const native_inputs = @import("native_inputs.zig");
 const builtin = @import("builtin");
 const seed = @import("seed.zig");
 const Io = std.Io;
@@ -19,7 +20,6 @@ const inputs = [_][]const u8{
 };
 const Source = struct { url: []const u8, sha256: []const u8, version: ?[]const u8 = null };
 const Mode = enum { host, jacpython };
-const native_toolchain_inputs = [_][]const u8{ "build.zig", "build.zig.zon", "bootstrap/pins.json" };
 
 fn parseMode(args: []const []const u8) !Mode {
     if (args.len == 5) return .jacpython;
@@ -55,8 +55,13 @@ fn hostPlatform() []const u8 {
 pub fn main(init: std.process.Init) !void {
     const io = init.io;
     const a = init.arena.allocator();
-    const args = try init.minimal.args.toSlice(a);
-    const mode = parseMode(args) catch seed.die("usage: build_python <os-arch> <destination> <jac-root> <zig> [--host]", .{});
+    var reuse = false;
+    var kept: std.ArrayList([]const u8) = .empty;
+    for (try init.minimal.args.toSlice(a)) |arg| {
+        if (std.mem.eql(u8, arg, "--reuse-lowered")) reuse = true else try kept.append(a, arg);
+    }
+    const args = kept.items;
+    const mode = parseMode(args) catch seed.die("usage: build_python <os-arch> <destination> <jac-root> <zig> [--host] [--reuse-lowered]", .{});
     const platform = args[1];
     if (!supported(platform)) seed.die("build-python: unsupported platform {s}", .{platform});
     if (!std.mem.eql(u8, platform, hostPlatform()))
@@ -80,7 +85,6 @@ pub fn main(init: std.process.Init) !void {
         return;
     }
     const sources_stamp = try std.fs.path.join(a, &.{ dest, "build-key-sources" });
-    const reuse = if (init.environ_map.get("JAC_JACPYTHON_REUSE")) |v| std.mem.eql(u8, v, "1") else false;
     if (mode == .jacpython and reuse and seed.fileExists(io, python)) {
         if (try sourcesKey(io, a, platform, root, host_dest, dest)) |lowered| {
             const recorded = Io.Dir.cwd().readFileAlloc(io, sources_stamp, a, .limited(128)) catch "";
@@ -254,11 +258,7 @@ fn hashRecipe(io: Io, a: std.mem.Allocator, platform: []const u8, root: []const 
         }
         // prepare_native emits through the LLVM shim. Prefix-restored runtime
         // trees must reject changes to that toolchain even when Jac is unchanged.
-        for (native_toolchain_inputs) |path| {
-            hash.update(path);
-            hash.update(try Io.Dir.cwd().readFileAlloc(io, try std.fs.path.join(a, &.{ root, path }), a, .unlimited));
-        }
-        try hashNativeSources(io, a, root, hash);
+        try native_inputs.hashShimInputs(io, a, root, hash);
     }
 }
 
@@ -292,33 +292,6 @@ fn hashCompilerTree(io: Io, a: std.mem.Allocator, root: []const u8, hash: *std.c
     for (paths.items) |path| {
         hash.update(path);
         hash.update(try package.readFileAlloc(io, path, a, .unlimited));
-    }
-}
-
-fn hashNativeSources(io: Io, a: std.mem.Allocator, root: []const u8, hash: *std.crypto.hash.sha2.Sha256) !void {
-    var dir = try Io.Dir.cwd().openDir(io, try std.fs.path.join(a, &.{ root, "native" }), .{ .iterate = true });
-    defer dir.close(io);
-    var walker = try dir.walkSelectively(a);
-    defer walker.deinit();
-    var paths: std.ArrayList([]const u8) = .empty;
-    while (try walker.next(io)) |entry| {
-        if (entry.kind == .directory) {
-            if (!std.mem.startsWith(u8, entry.basename, ".")) try walker.enter(io, entry);
-        } else if (entry.kind == .file and (std.mem.endsWith(u8, entry.path, ".cpp") or
-            std.mem.endsWith(u8, entry.path, ".h") or std.mem.endsWith(u8, entry.path, ".hpp")))
-        {
-            try paths.append(a, try a.dupe(u8, entry.path));
-        }
-    }
-    std.mem.sort([]const u8, paths.items, {}, struct {
-        fn less(_: void, left: []const u8, right: []const u8) bool {
-            return std.mem.lessThan(u8, left, right);
-        }
-    }.less);
-    for (paths.items) |path| {
-        hash.update("native/");
-        hash.update(path);
-        hash.update(try dir.readFileAlloc(io, path, a, .unlimited));
     }
 }
 
@@ -572,7 +545,7 @@ test "compiler modes isolate caches; native adapter edits invalidate only JacPyt
         if (std.fs.path.dirname(path)) |parent| try tmp.dir.createDirPath(io, parent);
         try tmp.dir.writeFile(io, .{ .sub_path = path, .data = "recipe" });
     }
-    for (native_toolchain_inputs) |path| {
+    for (native_inputs.toolchain_inputs) |path| {
         try tmp.dir.writeFile(io, .{ .sub_path = path, .data = "toolchain" });
     }
     try tmp.dir.createDirPath(io, "native");
@@ -633,7 +606,7 @@ test "a PR may reuse a runtime whose recorded lowered sources are unchanged" {
         if (std.fs.path.dirname(path)) |parent| try tmp.dir.createDirPath(io, parent);
         try tmp.dir.writeFile(io, .{ .sub_path = path, .data = "recipe" });
     }
-    for (native_toolchain_inputs) |path| {
+    for (native_inputs.toolchain_inputs) |path| {
         try tmp.dir.writeFile(io, .{ .sub_path = path, .data = "toolchain" });
     }
     try tmp.dir.createDirPath(io, "native");
@@ -666,7 +639,7 @@ test "a PR may reuse a runtime whose recorded lowered sources are unchanged" {
     const edited = (try sourcesKey(io, a, hostPlatform(), root, host, built)).?;
     try std.testing.expect(!std.mem.eql(u8, &lowered, &edited));
     // Nor does a recipe or toolchain change.
-    try tmp.dir.writeFile(io, .{ .sub_path = native_toolchain_inputs[0], .data = "new toolchain" });
+    try tmp.dir.writeFile(io, .{ .sub_path = native_inputs.toolchain_inputs[0], .data = "new toolchain" });
     try std.testing.expect(!std.mem.eql(u8, &edited, &(try sourcesKey(io, a, hostPlatform(), root, host, built)).?));
 }
 

@@ -46,8 +46,9 @@ Rebuild after editing the replacement:
 
 ```sh
 cd jac
-JACPYTHON=1 zig build
-JAC_NO_DEV_SOURCE=1 zig-out/bin/jac -c 'assert eval("6 * 7") == 42'
+zig build -Dpython=jacpython
+BIN="$PWD/zig-out/bin/jac"
+(cd "$(mktemp -d)" && "$BIN" -c 'assert eval("6 * 7") == 42')
 ```
 
 See [CONTRIBUTING.md](../../../../CONTRIBUTING.md#trying-the-jacpython-release-binary)
