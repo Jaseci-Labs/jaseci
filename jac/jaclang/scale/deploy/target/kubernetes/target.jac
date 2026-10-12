@@ -2121,6 +2121,20 @@ obj KubernetesTarget(KubernetesTargetBase) {
 
     def _destroy_ops_rbac(app_name: str, namespace: str) {
         rbac_v1 = client.RbacAuthorizationV1Api();
+        ms_selector: str = f"managed=jac-scale,app={app_name}";
+        for delete_collection in [
+            rbac_v1.delete_collection_namespaced_role_binding,
+            rbac_v1.delete_collection_namespaced_role
+        ] {
+            try {
+                delete_collection(namespace=namespace, label_selector=ms_selector);
+            } except ApiException as e {
+                if e.status != 404 {
+                    raise;
+                }
+            }
+        }
+
         core_v1 = client.CoreV1Api();
         sa_name = ops_sa_name(app_name);
         try {
@@ -2138,21 +2152,11 @@ obj KubernetesTarget(KubernetesTargetBase) {
                 );
             }
         } except ApiException as e {
-            if e.status != 404 {
-                raise;
-            }
-        }
-        ms_selector: str = f"managed=jac-scale,app={app_name}";
-        for delete_collection in [
-            rbac_v1.delete_collection_namespaced_role_binding,
-            rbac_v1.delete_collection_namespaced_role
-        ] {
-            try {
-                delete_collection(namespace=namespace, label_selector=ms_selector);
-            } except ApiException as e {
-                if e.status != 404 {
-                    raise;
-                }
+            if e.status != 404 and self.logger {
+                self.logger.warning(
+                    f"Could not remove ServiceAccount '{sa_name}' ({e.status}); "
+                    f"delete it by hand if the Ops Console was enabled"
+                );
             }
         }
     }

@@ -690,6 +690,15 @@ obj ManifestBuilder {
             import from jaclang.scale.deploy.target.kubernetes.ops_rbac {
                 build_ops_rbac
             }
+            if self._service_account_name() == ops_sa_name(self.k8s_config.app_name) {
+                raise ValueError(
+                    f"[scale.kubernetes].service_account_name = "
+                    f"'{self._service_account_name()}' is the ServiceAccount the "
+                    f"Ops Console Role is bound to, so every pod would run as it "
+                    f"and inherit the console's rights. Set service_account_name "
+                    f"to another account, or leave it empty."
+                );
+            }
             if self._service_account_name() and self.logger {
                 self.logger.warning(
                     f"[scale.kubernetes].service_account_name = "

@@ -153,17 +153,30 @@ test "only the gateway runs as the console's ServiceAccount, and the Role is nev
         subjects = rbac["role_binding"]["subjects"];
         assert [s["name"] for s in subjects] == ["shop-ops"] , label;
     }
+
+    # The console's own account cannot also be the workloads' account: every
+    # pod would run as it and inherit the Role.
+    refused = False;
+    try {
+        _bundle(True, "shop-ops");
+    } except ValueError {
+        refused = True;
+    }
+    assert refused , "the console account was accepted as service_account_name";
 }
 
 
-test "the console's account and Role carry names Kubernetes accepts for any app name" {
-    # (app_name, ServiceAccount, Role). An app name is free text; the account
-    # is applied outside the handler that logs RBAC failures, so an invalid
-    # name would abort the deploy rather than just leave the console a 403.
+test "the console's account is a valid name for any app name, and its Role keeps the app's spelling" {
+    # (app_name, ServiceAccount, Role). An app name is free text. An account
+    # name must be RFC 1123 and the account is applied outside the handler that
+    # logs RBAC failures, so an invalid one would abort the deploy. Role and
+    # RoleBinding names are path-segment names and stay as the app spelled
+    # them: renaming them would leave an existing binding, and the grant it
+    # holds, in place beside the new one.
     cases = [
         ("shop", "shop-ops", "shop-ops-console"),
-        ("my_app", "my-app-ops", "my-app-ops-console"),
-        ("MyApp", "myapp-ops", "myapp-ops-console")
+        ("my_app", "my-app-ops", "my_app-ops-console"),
+        ("MyApp", "myapp-ops", "MyApp-ops-console")
     ];
     for (app, account, role) in cases {
         assert ops_sa_name(app) == account , app;
