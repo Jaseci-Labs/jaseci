@@ -190,8 +190,7 @@ impl build(
             log(f"skipped {name}: {why}");
             continue;
         }
-        if not (force and name in requested)
-            and artifact.probe_checkout().found is not None {
+        if not (force and name in requested) and artifact.built().found is not None {
             log(f"{name}: current");
             continue;
         }
@@ -200,7 +199,7 @@ impl build(
             artifact.build(log, force, exact);
         }
         forget(name);
-        after = artifact.probe_checkout();
+        after = artifact.built();
         if after.found is None {
             raise ArtifactUnavailable(
                 f"{name} was built but does not match its inputs: "
