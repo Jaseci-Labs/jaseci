@@ -149,12 +149,12 @@ def app_scale_schema -> dict[str, any] {
         "rpc_timeout": {
             "type": "float",
             "default": 10.0,
-            "description": "App-to-app RPC call timeout in seconds"
+            "description": "App-to-app RPC call timeout in seconds. Unset on an HTTP-activated app, it is 300 so a call can wait out a cold wake."
         },
         "http_forward_timeout": {
             "type": "float",
             "default": 30.0,
-            "description": "Gateway-to-app forward timeout in seconds"
+            "description": "Gateway-to-app forward timeout in seconds. Unset on an HTTP-activated app, it is at least 300 so a request can wait out a cold wake."
         },
         "replicas": {
             "type": "int",
@@ -524,8 +524,8 @@ class JacScalePluginConfig {
                         },
                         "readiness_initial_delay": {
                             "type": "int",
-                            "default": 10,
-                            "description": "Readiness probe initialDelaySeconds"
+                            "default": 0,
+                            "description": "Readiness probe initialDelaySeconds. The startup probe already holds readiness until the server answers, so any delay here only postpones the first Ready."
                         },
                         "readiness_period": {
                             "type": "int",
@@ -559,7 +559,7 @@ class JacScalePluginConfig {
                         },
                         "wait_image": {
                             "type": "string",
-                            "default": "busybox",
+                            "default": "busybox:1.36",
                             "description": "Image used by init/wait containers"
                         },
                         "bundle_storage_class": {
@@ -1205,8 +1205,8 @@ class JacScalePluginConfig {
                         },
                         "default_password": {
                             "type": "string",
-                            "default": "changeme",
-                            "description": "Initial admin password; must be rotated on first login by default"
+                            "default": "",
+                            "description": "Initial admin password, held to [serve.auth.password]. Unset: a dev server mints a one-time password and logs it once; a cluster needs one configured"
                         },
                         "session_expiry_hours": {
                             "type": "int",
@@ -1367,58 +1367,6 @@ class JacScalePluginConfig {
                                     "description": "SMTP connection timeout in seconds"
                                 }
                             }
-                        }
-                    }
-                },
-                "auth": {
-                    "type": "dict",
-                    "default": {},
-                    "description": "Password-auth token and rate-limit configuration",
-                    "nested": {
-                        "reset_token_ttl_seconds": {
-                            "type": "int",
-                            "default": 1800,
-                            "description": "Password-reset token lifetime in seconds"
-                        },
-                        "verify_token_ttl_seconds": {
-                            "type": "int",
-                            "default": 86400,
-                            "description": "Email-verification token lifetime in seconds"
-                        },
-                        "reset_url_template": {
-                            "type": "string",
-                            "default": "",
-                            "description": "URL template embedded in password-reset emails"
-                        },
-                        "verify_url_template": {
-                            "type": "string",
-                            "default": "",
-                            "description": "URL template embedded in verification emails"
-                        },
-                        "token_collection": {
-                            "type": "string",
-                            "default": "auth_tokens",
-                            "description": "Collection name where auth tokens are persisted"
-                        },
-                        "forgot_password_rate_per_hour": {
-                            "type": "int",
-                            "default": 3,
-                            "description": "Forgot-password requests allowed per hour per account"
-                        },
-                        "forgot_password_burst": {
-                            "type": "int",
-                            "default": 3,
-                            "description": "Forgot-password burst allowance"
-                        },
-                        "send_verification_rate_per_hour": {
-                            "type": "int",
-                            "default": 5,
-                            "description": "Verification emails allowed per hour per account"
-                        },
-                        "send_verification_burst": {
-                            "type": "int",
-                            "default": 5,
-                            "description": "Verification email burst allowance"
                         }
                     }
                 },

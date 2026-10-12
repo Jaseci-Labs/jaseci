@@ -42,7 +42,8 @@ Steps for a module `_foo` built from `Modules/_foomodule.c`:
 5. Import `PyInit__foo` in `compiler/backends/py/jacpython/native_api.jac`,
    add the registry line, comment the C files in `cpython-sources.txt` as
    `# removed: 0 source lines`, and run `jac run scripts/jacpython_manifest.jac --write`.
-6. `JAC_NO_DEV_SOURCE=1 jac check` each new file. A single-file check reports
+6. `jac check` each new file with the binary's own compiler (from outside the
+   checkout, so its `[dev]` stanza does not reroute it). A single-file check reports
    native lowering failures (E5092) and native placement errors (E5090) for
    the file itself; `jac check native_api.jac` checks the closure's lowering.
 

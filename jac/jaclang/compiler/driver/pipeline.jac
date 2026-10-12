@@ -92,12 +92,25 @@ glob PASS_CONTRACTS: dict[str, PassContract] = {
          'TypeCheckPass': PassContract((), (AnalysisFact.TYPE_OF, )),
          'VariantAgreementPass': PassContract((), (AnalysisFact.VARIANT_AGREEMENT, ))
      },
-     _PRODUCT_SCHEDULES: dict[CompilationProduct, Callable[[], PassSchedule]] = {};
+     _PRODUCT_SCHEDULES: dict[CompilationProduct, Callable[[], PassSchedule]] = {},
+     _CODEGEN_BACKENDS: dict[str, Callable[[], PassSchedule]] = {};
 
 def register_product_schedule(
     product: CompilationProduct, schedule: Callable[[], PassSchedule]
 ) {
     _PRODUCT_SCHEDULES[product] = schedule;
+}
+
+def register_codegen_backend(name: str, schedule: Callable[[], PassSchedule]) {
+    _CODEGEN_BACKENDS[name] = schedule;
+}
+
+def codegen_backend_passes(name: str) -> (PassSchedule | None) {
+    registered = _CODEGEN_BACKENDS.get(name);
+    if registered is not None {
+        return registered();
+    }
+    return None;
 }
 
 def product_pipeline(product: CompilationProduct) -> PassSchedule {
@@ -121,6 +134,12 @@ def product_pipeline(product: CompilationProduct) -> PassSchedule {
     registered = _PRODUCT_SCHEDULES.get(product);
     if registered is not None {
         return registered();
+    }
+    if product == CompilationProduct.CLIENT {
+        """The client schedule is registered when the module-compile driver
+        is first run, and the native kernel runs no module entry.""";
+        import from jaclang.compiler.driver.module_compile { client_product_schedule }
+        return client_product_schedule();
     }
     raise ValueError(f"Product {product.value} requires an entry compilation");
 }
@@ -322,6 +341,9 @@ glob _ir_sched_loading: ContextVar[bool] = ContextVar(
      ),
      _analysis_sched_loading: ContextVar[bool] = ContextVar(
          'jac_analysis_sched_loading', `default=False
+     ),
+     _codegen_sched_loading: ContextVar[bool] = ContextVar(
+         'jac_codegen_sched_loading', `default=False
      );
 
 glob SYMTAB_SCHED_DEPS: tuple[str, ...] = ('jaclang.compiler.symbol_utils', ),
@@ -486,24 +508,17 @@ def get_ir_gen_sched(is_internal: bool = False, gen_mtir: bool = True) -> PassSc
     }
 }
 
-def typeshed_stubs_available -> bool {
-    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
-    return os.path.exists(
-        os.path.join(jaclang_pkg_root(), 'vendor', 'typeshed', 'stdlib', 'builtins.pyi')
-    );
-}
-
 def require_typeshed_stubs -> None {
-    if active_host().has_active_stub_catalog() or typeshed_stubs_available() {
+    if active_host().has_active_stub_catalog() {
         return;
     }
-    raise TypeshedUnavailableError(
-        "type inference is on the critical path of every compilation, but this "
-        "environment has neither a stub catalog nor the vendored typeshed stdlib "
-        "stubs, so no module can be compiled. In a source checkout run "
-        "'zig build fetch-typeshed'; in an installed environment reinstall the "
-        "jac distribution, whose payload carries the catalog."
-    );
+    why = active_host().typeshed_unavailable_reason();
+    if why {
+        raise TypeshedUnavailableError(
+            "type inference is on the critical path of every compilation, but "
+            f"this environment has neither a stub catalog nor typeshed: {why}"
+        );
+    }
 }
 
 def get_analysis_sched -> PassSchedule {

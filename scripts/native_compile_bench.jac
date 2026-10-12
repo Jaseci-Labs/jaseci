@@ -1,9 +1,9 @@
 """Measure uncached AOT builds with a warm compiler.
 
-    JAC_COMPILER_LIB=/path/to/kernel.so jac run scripts/native_compile_bench.jac \
-        jac/examples/chess/chess.jac --rounds 5
+    jac native build kernel
+    jac run scripts/native_compile_bench.jac jac/examples/chess/chess.jac --rounds 5
 
-Run each kernel in a fresh process. Compiler startup and warmup are excluded;
+Compiler startup and warmup are excluded;
 each measured build reparses the application and emits and links an executable.
 Runtime-unit IR is rebuilt as part of each measured build.
 """
@@ -11,7 +11,6 @@ Runtime-unit IR is rebuilt as part of each measured build.
 import argparse;
 import gc;
 import json;
-import os;
 import statistics;
 import tempfile;
 import time;
@@ -36,7 +35,9 @@ def main -> None {
 
     kernel = ensure_loaded();
     if kernel is None {
-        parser.error("set JAC_COMPILER_LIB to a built compiler kernel");
+        parser.error(
+            "no compiler kernel is loaded; run `jac native build kernel` first"
+        );
         return;
     }
     times: list[float] = [];
@@ -63,7 +64,7 @@ def main -> None {
         json.dumps(
             {
                 "source": str(args.source),
-                "kernel": os.environ.get("JAC_COMPILER_LIB", "auto"),
+                "kernel": kernel.lib_path,
                 "seconds": times,
                 "median_seconds": statistics.median(times),
                 "min_seconds": min(times),

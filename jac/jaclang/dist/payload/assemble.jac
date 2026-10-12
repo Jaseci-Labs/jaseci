@@ -43,6 +43,7 @@ glob PAYLOAD_ZSTD_LEVEL: int = 19,
      STUBCAT_BOOT_SRC: str = (
          "import sys\n"
          "import _jac_finder; _jac_finder.install()\n"
+         "from jaclang.jac0core.artifact_registry import begin; begin(['stubcat'])\n"
          "from jaclang.compiler.types.stubcat.build import main\n"
          "sys.exit(main(sys.argv[1:] + ['--cache']))\n"
      );
@@ -50,16 +51,14 @@ glob PAYLOAD_ZSTD_LEVEL: int = 19,
 obj MkPayloadOpts {
     has shim_so: str | None = None,
         bun_bin: str | None = None,
-        skip_precompile: bool = False,
         link_source: str | None = None,
-        musl_dir: str | None = None,
+        musl_dirs: list[str] = [],
         wasm_libc_dir: str | None = None,
         precompiled_cache: str | None = None,
         layer_cache: str | None = None,
         seal: bool = False,
         debug_src: bool = False,
-        stubcat_out: str | None = None,
-        skip_stubcat: bool = False;
+        stubcat_out: str | None = None;
 }
 
 obj FoundLib {
@@ -82,14 +81,7 @@ def run_precompile_stage(py: str, python_dir: str, site: str, opts: MkPayloadOpt
 def run_stubcat_stage(py: str, python_dir: str, site: str, opts: MkPayloadOpts);
 def run_stubcat(py: str, python_dir: str, site: str, out: str) -> bool;
 def cached_stubcat(pkg_dir: str) -> str;
-def precompile(
-    py: str,
-    python_dir: str,
-    site: str,
-    seal: bool,
-    debug_src: bool,
-    skip_stubcat: bool = False
-);
+def precompile(py: str, python_dir: str, site: str, seal: bool, debug_src: bool);
 
 def precompile_env(python_dir: str, site: str) -> dict[str, str];
 def stage_python_bin(python_dir: str, stage: str);
@@ -97,7 +89,7 @@ def stage_tree(
     python_dir: str,
     site: str,
     stage: str,
-    musl_dir: str | None,
+    musl_dirs: list[str],
     wasm_libc_dir: str | None
 );
 

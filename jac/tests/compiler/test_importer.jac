@@ -231,7 +231,9 @@ test "compiler separates internal from user modules" {
         internal_hub_paths = list(compiler.selfhost.program.mod.hub.keys());
         user_hub_paths = list(user_program.mod.hub.keys());
 
-        assert len(user_hub_paths) > 0 , "User program hub should not be empty";
+        assert not any(path.startswith(user_file) for path in internal_hub_paths) , (
+            "the user module was compiled in the compiler's internal program"
+        );
 
         for path in internal_hub_paths {
             assert path.startswith(jaclang_root) , (
@@ -928,8 +930,8 @@ test "internal get_bytecode evicts unit AST after compile" {
     for p in samples {
         assert os.path.isfile(p) , f"missing fixture {p}";
     }
-    old_rebuild = os.environ.get("JAC_REBUILD");
-    os.environ["JAC_REBUILD"] = "1";
+    import from jaclang.compiler.driver.jir { set_cache_mode }
+    set_cache_mode(rebuild=True);
     try {
         for p in samples {
             code = compiler.get_bytecode(p, prog);
@@ -946,10 +948,6 @@ test "internal get_bytecode evicts unit AST after compile" {
             );
         }
     } finally {
-        if old_rebuild is None {
-            os.environ.pop("JAC_REBUILD", None);
-        } else {
-            os.environ["JAC_REBUILD"] = old_rebuild;
-        }
+        set_cache_mode(rebuild=False);
     }
 }

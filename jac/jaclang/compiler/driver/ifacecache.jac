@@ -18,7 +18,7 @@ import from jaclang.compiler.driver.jir {
     SEC_PATH_ROOT,
     JirPaths,
     cache_mode,
-    ct_deps_section,
+    module_ct_deps_section,
     deps_section,
     get_module_cache_path,
     is_compiler_tree_path,
@@ -991,13 +991,15 @@ obj IfaceRegistry(CatalogResolver) {
                 get_module_summary(mod, self.prog)
             );
         } except Exception {}
-        if mod.ct_file_deps {
-            sections[SEC_CTDEPS] = ct_deps_section(mod.ct_file_deps, mod.ct_body_deps);
+        ct_rows = module_ct_deps_section(mod);
+        if ct_rows is not None {
+            sections[SEC_CTDEPS] = ct_rows;
         }
         if not options.symtab_ir_only {
             try {
                 import from jaclang.compiler.driver.jir { SEC_INTEROP }
-                interop_dict = self.prog._get_compiler()._build_interop_dict(mod);
+                import from jaclang.compiler.driver.unit_products { interop_record }
+                interop_dict = interop_record(mod);
                 sections[SEC_INTEROP] = json.dumps(interop_dict).encode("utf-8");
             } except Exception {}
         }
@@ -1096,9 +1098,10 @@ obj IfaceRegistry(CatalogResolver) {
         }
         if interop.get("bindings") {
             try {
-                manifest = self.prog._get_compiler()._deserialize_interop_table(
-                    interop
-                );
+                import from jaclang.compiler.driver.unit_products {
+                    interop_manifest_of
+                }
+                manifest = interop_manifest_of(interop);
             } except Exception {
                 return None;
             }

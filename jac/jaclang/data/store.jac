@@ -106,6 +106,10 @@ obj Store {
     def root_ids -> list[UUID] abst;
     def subtype_names(type_name: str) -> list[str] abst;
     def rows(sql: str, params: dict[str, any]) -> list[tuple[any, ...]] abst;
+    def queue_enter(ids: list[UUID]) -> bool abst;
+    def queue_exit(ids: list[UUID]) -> None abst;
+    def lock_rows(ids: list[UUID]) -> None abst;
+    def lock_wait(timeout: str) -> None abst;
     def kv_get(key: str) -> (str | None) abst;
     def kv_put(key: str, value: str) -> None abst;
     def kv_put_ttl(key: str, value: str, ttl_seconds: int) -> None abst;
@@ -144,6 +148,7 @@ obj PgStore(Store) {
         _in_txn: bool postinit,
         _isolation: (TxnIsolation | None) postinit,
         _known_types: set[str] postinit,
+        _txn_types: set[str] postinit,
         _listeners: list[ChannelListener] postinit,
         _listen_thread: (any | None) postinit,
         _listen_stop: (any | None) postinit,
@@ -175,6 +180,10 @@ obj PgStore(Store) {
     def root_ids -> list[UUID];
     def subtype_names(type_name: str) -> list[str];
     def rows(sql: str, params: dict[str, any]) -> list[tuple[any, ...]];
+    def queue_enter(ids: list[UUID]) -> bool;
+    def queue_exit(ids: list[UUID]) -> None;
+    def lock_rows(ids: list[UUID]) -> None;
+    def lock_wait(timeout: str) -> None;
     def kv_get(key: str) -> (str | None);
     def kv_put(key: str, value: str) -> None;
     def kv_put_ttl(key: str, value: str, ttl_seconds: int) -> None;

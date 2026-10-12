@@ -60,14 +60,8 @@ def preferred_port(app_name: str) -> int {
 
 
 def host_executable -> str {
-    if os.path.isfile("/proc/self/exe") {
-        return os.path.realpath("/proc/self/exe");
-    }
-    exe = os.environ.get("JAC_EXECUTABLE", "");
-    if exe and os.path.isfile(exe) {
-        return os.path.realpath(exe);
-    }
-    return os.path.abspath(sys.argv[0]);
+    import from jaclang.jac0core.handoff { process_executable }
+    return process_executable();
 }
 
 
@@ -195,7 +189,7 @@ def serve_program(
         bound: list[int] = [];
         try {
             stop = runtime.server.serve_background(
-                on_ready=lambda (p: int) { bound.append(p); }, port_retries=retries
+                on_ready=bound.append, port_retries=retries
             );
         } except OSError as e {
             last_error = e;

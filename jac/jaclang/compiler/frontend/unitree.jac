@@ -132,6 +132,7 @@ import from jaclang.compiler.frontend.roles {
 import from jaclang.compiler.frontend.relations {
     Absorbs,
     CalleeDecl,
+    CalleeSignature,
     EventTriggerOf,
     NarrowedTypeOf,
     TypeOf,
@@ -665,6 +666,7 @@ node Module(AstDocNode, UniScopeNode) {
         ct_resolved: bool = False,
         ct_file_deps: list[str] postinit,
         ct_body_deps: list[str] postinit,
+        ct_def_deps: list[tuple[str, str]] postinit,
         native_viols_reported: bool = False,
         client_viols_reported: bool = False,
         rc_last_use: dict[int, list[str]] postinit,
@@ -704,6 +706,7 @@ node Module(AstDocNode, UniScopeNode) {
 
     def declares_codespace(ctx: CodeContext, path_hint: str = '') -> bool;
     def record_comptime_dependency(path: str, body: bool = False) -> None;
+    def record_comptime_definition(path: str, qualname: str) -> None;
     static def make_stub(
         inject_name: (str | None) = None, inject_src: (Source | None) = None
     ) -> Module {
@@ -850,6 +853,7 @@ obj ImportBoundaryFacts {
     has native_from_path: (str | None) = None,
         from_loc_resolved: (str | None) = None,
         is_service: bool = False,
+        pinned_server: bool = False,
         client_native_edge: bool = False,
         sv_abilities: dict[(str, Ability)] = {},
         sv_walkers: dict[(str, Archetype)] = {},
@@ -1249,6 +1253,7 @@ node FuncSignature(UniNode) {
 
     def postinit -> None;
     def get_parameters -> list[ParamVar];
+    def get_named_parameters -> list[ParamVar];
 
     has is_static: bool { getter; }
     has is_in_py_class: bool { getter; }
@@ -2035,6 +2040,11 @@ node FuncCall(Expr) {
     has callee_decl: (Ability | None) {
         getter;
         setter(callee_decl: (Ability | None));
+    }
+
+    has callee_signature: (TypeBase | None) {
+        getter;
+        setter(callee_signature: (TypeBase | None));
     }
 
     has target: Expr { getter; }
@@ -2927,6 +2937,7 @@ def def_insert_unpacking(
 ) -> None;
 
 def bind_assignment_targets(nd: Assignment) -> None;
+def definition_qualname(decl: UniNode) -> str;
 
 def lookup_enclosing_binding(from_scope: UniScopeNode, name: str) -> (Symbol | None);
 
@@ -2953,6 +2964,8 @@ def kind_has_runtime_binding(
 def has_runtime_binding(sym: Symbol, space: CodeContext) -> bool;
 
 def is_client_destined(nd: UniNode) -> bool;
+
+def is_comptime_stmt(nd: UniNode) -> bool;
 
 def type_only_import_of(nd: NameAtom) -> (ModuleItem | None);
 

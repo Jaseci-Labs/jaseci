@@ -1,6 +1,7 @@
 import os;
 import from jaclang.compiler.frontend.unitree {
     Ability,
+    definition_qualname,
     Archetype,
     AssertStmt,
     Assignment,
@@ -167,6 +168,7 @@ import from jaclang.compiler.types.type_utils { lookup_symtab }
 import type from jaclang.compiler.types.type_evaluator { TypeEvaluator }
 
 glob CT_FUEL_DEFAULT: int = 50000000,
+     CT_CALL_DEPTH_LIMIT: int = 200,
      CT_MODULE_SUFFIX: str = "jaclang/comptime.jac",
      CT_INTRINSICS: frozenset[str] = frozenset(
          {
@@ -280,6 +282,7 @@ obj CtEvaluator(CtCaller) {
     has evaluator: TypeEvaluator,
         env: CtEnvironment = CtEnvironment(),
         fuel: int = CT_FUEL_DEFAULT,
+        call_depth: int = 0,
         frames: list[dict[str, CtValue]] = [],
         barriers: list[bool] = [],
         call_stack: list[str] = [],
@@ -318,6 +321,30 @@ obj CtEvaluator(CtCaller) {
         }
         try {
             self._note_ct_path(os.path.realpath(path), body=body);
+        } except OSError {}
+    }
+
+    def _note_definition(nd: UniNode) {
+        home = nd.find_parent_of_type(Module);
+        evaluated = self._ct_root;
+        if home is None or evaluated is None or home is evaluated {
+            return;
+        }
+        path = _norm_path(home.loc.mod_path if home.loc else "");
+        if not path.endswith(".jac") {
+            return;
+        }
+        owner: (UniNode | None) = nd;
+        while owner is not None and not isinstance(owner, (Ability, Archetype, Enum)) {
+            owner = owner.parent;
+        }
+        qualname = definition_qualname(owner) if owner is not None else "";
+        try {
+            if qualname {
+                evaluated.record_comptime_definition(os.path.realpath(path), qualname);
+            } else {
+                self._note_ct_path(os.path.realpath(path), body=True);
+            }
         } except OSError {}
     }
 
@@ -1220,7 +1247,7 @@ obj CtEvaluator(CtCaller) {
     }
 
     def _enum_members(nd: Enum) -> list[CtEnumMember] {
-        self._note_producer(nd.find_parent_of_type(Module), body=True);
+        self._note_definition(nd);
         key = id(nd);
         if key in self._enum_cache {
             return self._enum_cache[key];
@@ -1823,6 +1850,18 @@ obj CtEvaluator(CtCaller) {
     }
 
     def _eval_call(nd: FuncCall) -> CtValue {
+        if self.call_depth >= CT_CALL_DEPTH_LIMIT {
+            raise CtError("comptime evaluation recursed too deeply");
+        }
+        self.call_depth += 1;
+        try {
+            return self._eval_call_counted(nd);
+        } finally {
+            self.call_depth -= 1;
+        }
+    }
+
+    def _eval_call_counted(nd: FuncCall) -> CtValue {
         if nd.genai_call is not None {
             raise CtError("'by llm' calls cannot run at compile time");
         }
@@ -2028,7 +2067,7 @@ obj CtEvaluator(CtCaller) {
             for hv in self._has_vars_of(ct)
             if not hv.accessors
         ];
-        self._note_producer(node_.find_parent_of_type(Module), body=True);
+        self._note_definition(node_);
         fields: dict[str, CtValue] = {};
         init_ab = self._user_method(ct, "init") or self._user_method(ct, "__init__");
         if init_ab is not None {
@@ -2128,7 +2167,7 @@ obj CtEvaluator(CtCaller) {
         }
         params = ability.signature.get_parameters();
         kw: dict[str, CtValue] = `dict(kwargs);
-        self._note_producer(ability.find_parent_of_type(Module), body=True);
+        self._note_definition(ability);
         self.push_frame(barrier=True);
         self.call_stack.append(name);
         try {
@@ -2582,7 +2621,7 @@ obj CtEvaluator(CtCaller) {
             }
             rec_asn = self._class_binding(base.class_type, name);
             if rec_asn is not None and rec_asn.value is not None {
-                self._note_producer(rec_asn.find_parent_of_type(Module), body=True);
+                self._note_definition(rec_asn);
                 return self.eval_with_bindings(rec_asn.value, base.ct_args or {});
             }
             m = self._find_method(base.class_type, name);
@@ -2616,7 +2655,7 @@ obj CtEvaluator(CtCaller) {
             }
             bound_asn = self._class_binding(self._class_type_of(base), name);
             if bound_asn is not None and bound_asn.value is not None {
-                self._note_producer(bound_asn.find_parent_of_type(Module), body=True);
+                self._note_definition(bound_asn);
                 return self.eval_with_bindings(bound_asn.value, base.ct_args or {});
             }
             meth = self._find_method(self._class_type_of(base), name);

@@ -1,3 +1,13 @@
+glob FACT_SEP: str = "\x1e",
+     FACT_TARGET: str = "target",
+     FACT_OS: str = "os",
+     FACT_STRUCT_LAYOUTS: str = "struct_layouts",
+     FACT_CODEC_TABLES: str = "codec_tables",
+     FACT_CODEC_NAME: str = "codec_name",
+     FACT_PRIMITIVE_METHODS: str = "primitive_methods",
+     FACT_SEALED_RUNTIME: str = "sealed_runtime",
+     FACT_IMPORT_PATHS: str = "import_paths";
+
 glob NATIVE_COPY_FUNCS: set[str] = {"copy", "deepcopy"};
 glob NATIVE_OS_FUNCS: set[str] = {
          "getpid",
@@ -49,8 +59,10 @@ glob RC_COLOR_BLACK: int = 0,
      RC_COLOR_GRAY: int = 2,
      RC_COLOR_PURPLE: int = 3,
      RC_BUFFERED_BIT: int = 4,
+     RC_UNTRACED_BIT: int = 8,
      RC_COLOR_SHIFT: int = 48,
-     RC_CYCLE_THRESHOLD: int = 1000;
+     RC_CYCLE_THRESHOLD: int = 1000,
+     RC_CYCLE_PACE: int = 4;
 
 glob JACVAL_ELLIPSIS_TAG: int = 9;
 

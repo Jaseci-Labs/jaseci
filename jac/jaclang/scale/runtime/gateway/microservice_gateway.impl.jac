@@ -561,6 +561,7 @@ impl MicroserviceGateway.probe_services(
     request: Request, path: str, candidates: list[tuple[str, ServiceEntry]]
 ) -> Response {
     import from jaclang.scale.runtime.context.util { http_forward_timeout }
+    import from jaclang.server.serving.client { ClientReadTimeout }
     import from jaclang.scale.runtime.transport.http_forward { stream_forward }
 
     fwd_headers = self.build_forward_headers(request);
@@ -588,13 +589,19 @@ impl MicroserviceGateway.probe_services(
         if svc_entry.host_override {
             per_svc_headers["Host"] = svc_entry.host_override;
         }
-        fr = await stream_forward(
-            request.method,
-            target_url,
-            per_svc_headers,
-            body,
-            timeout=int(http_forward_timeout(svc_name))
-        );
+        try {
+            fr = await stream_forward(
+                request.method,
+                target_url,
+                per_svc_headers,
+                body,
+                timeout=int(http_forward_timeout(svc_name))
+            );
+        } except ClientReadTimeout as timed_out {
+            import from jaclang.scale.runtime.context.errors { gateway_timeout }
+            logger.info(f"Probe: {svc_name} timed out: {timed_out}");
+            return gateway_timeout(svc_name);
+        }
         if fr is None {
             import from jaclang.scale.runtime.context.errors { service_unavailable }
             return service_unavailable(svc_name, "transport_error");
@@ -625,9 +632,11 @@ impl MicroserviceGateway.forward_to(
     request: Request, service_entry: ServiceEntry, target_url: str
 ) -> Response | None {
     import from jaclang.scale.runtime.context.errors {
+        bad_gateway,
         service_unavailable,
         gateway_timeout
     }
+    import from jaclang.server.serving.client { ClientReadTimeout }
     import from jaclang.scale.runtime.transport.http_forward { stream_forward }
     import from jaclang.scale.runtime.context.util { http_forward_timeout }
 
@@ -642,11 +651,15 @@ impl MicroserviceGateway.forward_to(
     body: bytes = request.body;
 
     timeout = http_forward_timeout(service_entry.name);
-    fr = await stream_forward(
-        request.method, target_url, fwd_headers, body, timeout=int(timeout)
-    );
-    if fr is None {
+    try {
+        fr = await stream_forward(
+            request.method, target_url, fwd_headers, body, timeout=int(timeout)
+        );
+    } except ClientReadTimeout {
         return gateway_timeout(service_entry.name);
+    }
+    if fr is None {
+        return bad_gateway(service_entry.name);
     }
     return fr.to_response();
 }
@@ -1107,10 +1120,21 @@ impl MicroserviceGateway._install_admin_api -> None {
     import from jaclang.server.endpoints.auth { register_auth_endpoints }
     import from jaclang.server.middleware { jwt_middleware }
     import from jaclang.server.identity.config { configure_identity }
-    import from jaclang.server.settings { ServeSettings }
+    import from jaclang.server.settings { ServeConfigError, ServeSettings }
+    import from jaclang.scale.emailer.factory { configured as configured_emailer }
+    import from jaclang.server.identity.mail { verification_problems }
 
     settings = ServeSettings.load(self.base_path);
     configure_identity(settings.auth, self.base_path);
+    self.emailer = configured_emailer();
+    problems = settings.auth.problems()
+        + verification_problems(settings.auth.email.verification, self.emailer);
+    if problems {
+        raise ServeConfigError('\n'.join(f"- {p}" for p in problems));
+    }
+    for warning in settings.warnings() {
+        logger.warning(warning);
+    }
     self.server = self;
     self.user_manager = self.identity();
     self.app.add_middleware(jwt_middleware(self.user_manager));

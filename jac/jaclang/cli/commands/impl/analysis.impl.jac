@@ -167,7 +167,12 @@ def _check_file_job(request: dict[(str, any)]) -> dict[(str, any)] {
                 kernel_view: any = None;
                 if not opts.get("placements") and not opts.get("native_coverage") {
                     import from jaclang.project.kernel_check { kernel_check }
-                    kernel_view = kernel_check(prog, file_path, compile_options);
+                    kernel_view = kernel_check(
+                        prog,
+                        file_path,
+                        compile_options,
+                        parity=bool(opts.get("kernel_parity"))
+                    );
                 }
                 adopted = kernel_view is not None and kernel_view.adopted;
                 if not adopted {
@@ -208,8 +213,8 @@ def _check_file_job(request: dict[(str, any)]) -> dict[(str, any)] {
             result['placements'] = collect_placement_rows(prog);
         }
         if opts.get("native_coverage") {
-            import from jaclang.compiler.driver.na_coverage { _na_coverage }
-            result['coverage'] = dict(_na_coverage);
+            import from jaclang.compiler.driver.na_coverage { na_coverage_snapshot }
+            result['coverage'] = na_coverage_snapshot();
         }
         for m in prog.mod.hub.values() {
             m.terminals = [];
@@ -289,7 +294,8 @@ impl check(
     native_coverage: bool = False,
     placements: bool = False,
     jobs: str = "",
-    app: str = ""
+    app: str = "",
+    kernel_parity: bool = False
 ) -> int {
     import from jaclang.compiler.frontend.diagnostic_utils { resolve_diagnostic_tokens }
     import from jaclang.cli.workpool {
@@ -432,6 +438,7 @@ impl check(
         'parse_only': parse_only,
         'native_coverage': native_coverage,
         'placements': placements,
+        'kernel_parity': kernel_parity,
         'suppress_codes': list(suppressed_codes),
         'ignore': list(ignore_list)
     };
@@ -1221,38 +1228,36 @@ impl format(
                 {'path': res['path'], 'errors': res['syntax_errors'], 'warnings': []}
             );
         } elif res['changed'] {
-            changed_files += 1;
             if check {
+                changed_files += 1;
                 unformatted_files.append(res['path']);
             } else {
+                outputs: list[tuple[str, str]] = [];
                 if res['formatted_code'] is not None {
+                    outputs.append((res['path'], res['formatted_code']));
+                }
+                outputs.extend(res['impl_results']);
+                write_errors: list[str] = [];
+                for (out_path, code) in outputs {
                     try {
                         if to_screen {
-                            console.print(
-                                res['formatted_code'], markup=False, highlight=False
-                            );
+                            console.print(code, markup=False, highlight=False);
                         } else {
-                            with open(res['path'], 'w', encoding='utf-8') as f {
-                                f.write(res['formatted_code']);
+                            with open(out_path, 'w', encoding='utf-8') as f {
+                                f.write(code);
                             }
                         }
                     } except Exception as e {
-                        console.error(f"Error writing to '{res['path']}': {e}");
+                        write_errors.append(f"Error writing to '{out_path}': {e}");
                     }
                 }
-                impl_pairs: list[tuple[str, str]] = res['impl_results'];
-                for (impl_path, impl_code) in impl_pairs {
-                    try {
-                        if to_screen {
-                            console.print(impl_code, markup=False, highlight=False);
-                        } else {
-                            with open(impl_path, 'w', encoding='utf-8') as f {
-                                f.write(impl_code);
-                            }
-                        }
-                    } except Exception as e {
-                        console.error(f"Error writing to '{impl_path}': {e}");
-                    }
+                if write_errors {
+                    failed_files += 1;
+                    failed_results.append(
+                        {'path': res['path'], 'errors': write_errors, 'warnings': []}
+                    );
+                } else {
+                    changed_files += 1;
                 }
             }
         }
