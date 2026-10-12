@@ -87,14 +87,6 @@ glob RETIRED: tuple[str, ...] = (
              summary="compiler source digests, one per checkout"
          ),
          Bucket(
-             name="stage0",
-             relpath="stage0",
-             policy=Policy(
-                 ttl_days=30.0, pattern="[0-9a-f]" * 40, markers=[".stage0.json"]
-             ),
-             summary="pinned stage-0 compiler snapshots that build the kernel, one per commit"
-         ),
-         Bucket(
              name="apps",
              relpath="apps",
              policy=Policy(ttl_days=30.0, markers=[".used"]),
@@ -148,9 +140,7 @@ glob RETIRED: tuple[str, ...] = (
              policy=Policy(
                  ttl_days=14.0, temp_patterns=["*.part"], temp_lock=TempLock.SUFFIX
              ),
-             summary="verified toolchain archives (extracted into installed/)",
-             root_env="JAC_TOOLCHAIN_DIR",
-             root_prefix="toolchains"
+             summary="verified toolchain archives (extracted into installed/)"
          ),
          Bucket(
              name="toolchains-installed",
@@ -162,9 +152,7 @@ glob RETIRED: tuple[str, ...] = (
                  temp_patterns=[".install-*"],
                  temp_lock=TempLock.SIBLINGS
              ),
-             summary="installed toolchains by name, version and platform",
-             root_env="JAC_TOOLCHAIN_DIR",
-             root_prefix="toolchains"
+             summary="installed toolchains by name, version and platform"
          ),
          Bucket(
              name="toolchains-build",
@@ -176,25 +164,19 @@ glob RETIRED: tuple[str, ...] = (
                  temp_patterns=["tmp????????"],
                  temp_lock=TempLock.SIBLINGS
              ),
-             summary="toolchain builds by source digest",
-             root_env="JAC_TOOLCHAIN_DIR",
-             root_prefix="toolchains"
+             summary="toolchain builds by source digest"
          ),
          Bucket(
              name="toolchains-gradle",
              relpath="toolchains/gradle",
              policy=Policy(retention=Retention.EXTERNAL),
-             summary="Gradle's own home (GRADLE_USER_HOME)",
-             root_env="JAC_TOOLCHAIN_DIR",
-             root_prefix="toolchains"
+             summary="Gradle's own home (GRADLE_USER_HOME)"
          ),
          Bucket(
              name="toolchains-android-sdk",
              relpath="toolchains/android-sdk",
              policy=Policy(retention=Retention.EXTERNAL),
-             summary="the Android SDK (sdkmanager-managed)",
-             root_env="JAC_TOOLCHAIN_DIR",
-             root_prefix="toolchains"
+             summary="the Android SDK (sdkmanager-managed)"
          ),
          Bucket(
              name="pg",

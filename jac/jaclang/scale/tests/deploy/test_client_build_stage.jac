@@ -5,8 +5,9 @@ build inputs equal pod inputs by construction. A build that references a file
 outside membership fails loud on the host, naming the file and the exclusion.
 
 These drive the real ManifestBuilder; the recording builds use the codebase's
-own JAC_EXECUTABLE substitution seam, not a mock."""
+own jac_executable substitution seam, not a mock."""
 
+import from unittest.mock { patch }
 import io;
 import os;
 import shutil;
@@ -141,16 +142,14 @@ def _with_recording_build(
 ) -> tuple[(Exception | None), str] {
     tmp = tempfile.mkdtemp(prefix="client-stage-rec-");
     script = _recording_jac(tmp, tmp, build_exit);
-    saved = os.environ.get("JAC_EXECUTABLE");
-    os.environ["JAC_EXECUTABLE"] = script;
+    _seam = patch(
+        "jaclang.scale.runtime.context.util.jac_executable", return_value=script
+    );
+    _seam.start();
     try {
         raised = _run_build(_builder(project_dir), project_dir, tmp);
     } finally {
-        if saved is None {
-            os.environ.pop("JAC_EXECUTABLE", None);
-        } else {
-            os.environ["JAC_EXECUTABLE"] = saved;
-        }
+        _seam.stop();
     }
     return (raised, tmp);
 }
@@ -695,7 +694,9 @@ test "workspace served web app declares its client even without root client hint
                 )
             );
             mb.dry_run = False;
-            with patch.dict(os.environ, {"JAC_EXECUTABLE": script}) {
+            with patch(
+                "jaclang.scale.runtime.context.util.jac_executable", return_value=script
+            ) {
                 raised = _run_build(mb, project_dir, record_dir);
             }
             assert raised is None , str(raised);

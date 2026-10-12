@@ -888,29 +888,6 @@ def plan_objects(
     return ([object_bytes], exports);
 }
 
-def units_source_key(paths: list[str], options: CompileOptions) -> str {
-    import from jaclang.compiler.driver.jir { module_cache_key, native_producer_digest }
-    import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
-    h = hashlib.sha256();
-    h.update(native_producer_digest(options.kernel_build).encode("utf-8"));
-    h.update(options.codegen_identity().encode("utf-8"));
-    h.update(options.effective_triple().encode("utf-8"));
-    import from jaclang.compiler.driver.compilation_context { cache_scope }
-
-    with cache_scope(options) {
-        for path in sorted(os.path.realpath(p) for p in paths) {
-            h.update(native_unit_identity(path).encode("utf-8"));
-            try {
-                h.update(module_cache_key(path).encode("utf-8"));
-            } except OSError {
-                h.update(b"missing");
-            }
-        }
-    }
-    return h.hexdigest();
-}
-
-
 def _write_sidecar(
     plan: LinkPlan,
     output_path: str,
@@ -929,7 +906,6 @@ def _write_sidecar(
         "layout_digest": ldigest,
         "units": unit_paths,
         "unit_ids": [native_unit_identity(p) for p in unit_paths],
-        "source_key": units_source_key(unit_paths, plan.options),
         "compiler_digest": native_producer_digest(plan.options.kernel_build),
         "codegen_identity": plan.options.base_codegen_identity(),
         "triple": plan.triple,
@@ -1037,7 +1013,8 @@ def link_artifact(
     }
     needed_libs: list[str] = [];
     if is_windows {
-        needed_libs = ["msvcrt.dll"];
+        import from jaclang.compiler.backends.native.win_floor { WIN_CRT_DLL }
+        needed_libs = [WIN_CRT_DLL];
     } elif is_macos {
         needed_libs = ["/usr/lib/libSystem.B.dylib"];
     }
@@ -1117,10 +1094,10 @@ def link_artifact(
     runtime = load_musl_static(plan.triple) if static_musl else None;
     if static_musl {
         if runtime is None {
+            import from jaclang.artifacts.kit { osarch }
             raise LinkPlanError(
-                "Static musl runtime not found. Expected a vendored musl "
-                "libc.a under .pbs-build/<arch>/musl/lib (run `zig build "
-                "vendor-musl`) or set JAC_NATIVE_MUSL_DIR."
+                "the static musl runtime is not built for this target: run "
+                f"`jac native build musl@{osarch(plan.triple)}`"
             );
         }
         inputs.archive_members = inputs.archive_members + runtime.archives;
@@ -1139,10 +1116,11 @@ def link_artifact(
             }
         );
         if missing_atomics {
+            import from jaclang.artifacts.kit { osarch }
             raise LinkPlanError(
                 "AArch64 compiler runtime archive not found for floor symbols: "
                     + ", ".join(missing_atomics)
-                    + ". Run `zig build vendor-musl` for the target or set JAC_NATIVE_MUSL_DIR."
+                    + f". Run `jac native build musl@{osarch(plan.triple)}`."
             );
         }
     }

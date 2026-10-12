@@ -3,12 +3,7 @@ import hashlib;
 import os;
 import from pathlib { Path }
 import from types { ModuleType }
-import from jaclang.client.artifact {
-    ClientBundle,
-    ClientBundleError,
-    MissingBunError,
-    prebuilt_bundle
-}
+import from jaclang.client.artifact { ClientBundle, ClientBundleError, prebuilt_bundle }
 import type from jaclang.compiler.frontend.codeinfo { ClientArtifact, ClientManifest }
 import type from jaclang.compiler.frontend.unitree { Module }
 

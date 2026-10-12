@@ -1,33 +1,12 @@
-def _toml_section(base_path: (str | None), section: str) -> dict[str, any] {
-    if not base_path {
-        return {};
-    }
-    manifest = os.path.join(base_path, 'jac.toml');
-    if not os.path.isfile(manifest) {
-        return {};
-    }
-    try {
-        import tomllib;
-        with open(manifest, 'rb') as f {
-            data = tomllib.load(f);
-        }
-        return data.get(section) or {};
-    } except Exception as e {
-        logger.warning(f"could not read [{section}] from {manifest}: {e}");
-        return {};
-    }
+def _database_config(base_path: (str | None)) -> DatabaseConfig {
+    import from jaclang.project.config { DatabaseConfig, get_config_for_dir }
+    config = get_config_for_dir(base_path) if base_path else None;
+    return config.database if config is not None else DatabaseConfig();
 }
 
 
 impl promotions_for(base_path: (str | None)) -> dict[str, list[str]] {
-    raw: any = _toml_section(base_path, 'database').get('indexes') or {};
-    out: dict[str, list[str]] = {};
-    for (arch, fields_l) in raw.items() {
-        if isinstance(fields_l, list) {
-            out[str(arch)] = [str(x) for x in fields_l];
-        }
-    }
-    return out;
+    return dict(_database_config(base_path).indexes);
 }
 
 
@@ -45,8 +24,8 @@ impl conninfo_from_url(url: str) -> ConnInfo {
 
 
 impl shared_pg_data_dir -> str {
-    import from jaclang.data.pgembed { dist_cache_dir }
-    return os.path.join(os.path.dirname(dist_cache_dir()), 'main');
+    import from jaclang.cache.registry { bucket }
+    return str(bucket("pg").path() / 'main');
 }
 
 
@@ -213,10 +192,7 @@ impl drop_owned_databases(data_dir: str = '') -> int {
 impl retention_days_for(base_path: (str | None)) -> int {
     raw: str = os.environ.get(RETENTION_ENV, '').strip();
     if not raw {
-        raw = str(_toml_section(base_path, 'database').get('retention_days') or '');
-    }
-    if not raw {
-        return 0;
+        return _database_config(base_path).retention_days;
     }
     try {
         days = int(raw);
@@ -294,6 +270,68 @@ def _ancestry_of(arch: (object | None)) -> list[str] {
 }
 
 
+def _frozen_value(value: any) -> bool {
+    import datetime;
+    import decimal;
+    import enum;
+    import uuid;
+    if value is None
+        or isinstance(
+            value,
+            (
+                bool,
+                int,
+                float,
+                complex,
+                str,
+                bytes,
+                decimal.Decimal,
+                uuid.UUID,
+                datetime.date,
+                datetime.time,
+                datetime.timedelta
+            )
+        ) {
+        return True;
+    }
+    if isinstance(value, enum.Enum) {
+        return _frozen_value(value.value);
+    }
+    if isinstance(value, (tuple, frozenset)) {
+        return all(_frozen_value(item) for item in value);
+    }
+    return False;
+}
+
+
+def _settle_written(anchor: Anchor, seen: int) {
+    if seen and anchor.__dict__.get('_field_written', 0) == seen {
+        anchor.__dict__.pop('_field_written', None);
+    }
+}
+
+
+def _frozen_fields(anchor: Anchor) -> bool {
+    if anchor.__dict__.get('_field_written') {
+        return False;
+    }
+    arch = anchor.archetype;
+    if not type(arch).__dict__.get('__jac_tracked__', False) {
+        return False;
+    }
+    fields = arch?.__dict__;
+    if not isinstance(fields, dict) {
+        return False;
+    }
+    for (name, value) in fields.items() {
+        if name != '__jac__' and not _frozen_value(value) {
+            return False;
+        }
+    }
+    return True;
+}
+
+
 def _is_serialization_conflict(e: Exception) -> bool {
     if isinstance(e, WriteConflict) {
         return False;
@@ -305,6 +343,23 @@ def _is_serialization_conflict(e: Exception) -> bool {
         for arg in getattr(c, 'args', ()) {
             if isinstance(arg, dict)
                 and arg.get('C') in ('40001', '40P01', '55P03', '08006') {
+                return True;
+            }
+        }
+        cur = c.__cause__ or c.__context__;
+        seen += 1;
+    }
+    return False;
+}
+
+
+def _is_lock_timeout(e: Exception) -> bool {
+    seen = 0;
+    cur: (BaseException | None) = e;
+    while cur is not None and seen < 8 {
+        c: BaseException = cur;
+        for arg in getattr(c, 'args', ()) {
+            if isinstance(arg, dict) and arg.get('C') == '55P03' {
                 return True;
             }
         }
@@ -422,6 +477,9 @@ impl Session.postinit -> None {
     self._unit_stack = [];
     self._snapshot_reads = set();
     self._foreign_refs = set();
+    self._contended = set();
+    self._queued = [];
+    self._last_conflict = set();
 }
 
 
@@ -624,6 +682,7 @@ impl Session.commit(anchor: (Anchor | None) = None) -> None {
                 try {
                     self.flush(full=True);
                     self._commit_txn();
+                    self._leave_queue();
                     break;
                 } except Exception as e {
                     if not _is_serialization_conflict(e) {
@@ -649,6 +708,8 @@ impl Session.commit(anchor: (Anchor | None) = None) -> None {
 
 impl Session.abort -> None {
     with self._lock {
+        self._contended |= self._last_conflict;
+        self._last_conflict = set();
         self._rollback_txn();
         self._forget_loaded();
         self._dirty.clear();
@@ -752,7 +813,7 @@ impl Session._ensure_txn -> None {
         self._reclaim_dead_txn();
         wanted = self._txn_isolation();
         if not self._store.in_txn() {
-            self._store.begin(wanted);
+            self._begin_txn(wanted);
         } elif wanted is TxnIsolation.SERIALIZABLE {
             self._begin_writable();
         }
@@ -971,14 +1032,34 @@ impl Session._flush_locked(full: bool) -> None {
     }
     if unflushed {
         rows = [self._serialize(u.anchor, u.stored) for u in unflushed];
-        store.upsert(rows);
+        try {
+            store.upsert(rows);
+        } except WriteConflict as wc {
+            self._last_conflict = {wc.anchor_id};
+            raise;
+        } except Exception as e {
+            if self._queued or not _is_lock_timeout(e) {
+                raise;
+            }
+            self._last_conflict = {row.id for row in rows};
+            raise WriteConflict(anchor_id=rows[0].id) from e;
+        }
         for (row, u) in zip(rows, unflushed) {
             self._rows.upserted(row.id, RowState(hash=u.hash, version=row.version));
             u.anchor.hash = u.hash;
+            _settle_written(u.anchor, u.written);
         }
     }
     if self._deleted {
-        store.delete(list(self._deleted));
+        try {
+            store.delete(list(self._deleted));
+        } except Exception as e {
+            if self._queued or not _is_lock_timeout(e) {
+                raise;
+            }
+            self._last_conflict = set(self._deleted);
+            raise WriteConflict(anchor_id=sorted(self._deleted)[0]) from e;
+        }
         for id in self._deleted {
             self._rows.removed(id);
         }
@@ -998,19 +1079,30 @@ impl Session._unflushed(full: bool) -> list[UnflushedAnchor] {
         if anchor is None or not anchor.persistent or not anchor.is_populated() {
             continue;
         }
+        known = self._rows.current(id);
+        if full
+            and id not in self._dirty
+            and known is not None
+            and known.hash != 0
+            and _frozen_fields(anchor) {
+            continue;
+        }
+        written = anchor.__dict__.get('_field_written', 0);
         stored: (dict[str, object] | None) = None;
         try {
             stored = Serializer.stored_form(anchor);
         } except Exception {}
         h = Serializer.stored_hash(anchor, stored);
-        known = self._rows.current(id);
         if h != 0 and known is not None and known.hash == h and id not in self._dirty {
+            _settle_written(anchor, written);
             continue;
         }
         if not JacRI.check_write_access(anchor, op_hint="field_write") {
             continue;
         }
-        out.append(UnflushedAnchor(anchor=anchor, stored=stored, hash=h));
+        out.append(
+            UnflushedAnchor(anchor=anchor, stored=stored, hash=h, written=written)
+        );
     }
     return out;
 }
@@ -1170,10 +1262,114 @@ impl Session._begin_writable -> None {
             }
             self._commit_txn();
             self._drop_snapshot_reads();
-            self._store.begin(TxnIsolation.SERIALIZABLE);
+            self._begin_txn(TxnIsolation.SERIALIZABLE);
         } elif not self._store.in_txn() {
-            self._store.begin(TxnIsolation.SERIALIZABLE);
+            self._begin_txn(TxnIsolation.SERIALIZABLE);
         }
+    }
+}
+
+
+impl Session._begin_txn(isolation: TxnIsolation) -> None {
+    backing = self._store;
+    if backing is None {
+        return;
+    }
+    backing.begin(isolation);
+    if not self._queued and isolation is TxnIsolation.SERIALIZABLE {
+        backing.lock_wait(FIRST_LOCK_WAIT);
+    }
+}
+
+
+impl Session.wait_turn -> None {
+    with self._lock {
+        backing = self._store;
+        if backing is None or not self._contended {
+            return;
+        }
+        wanted = sorted(self._contended);
+        if wanted != sorted(self._queued) {
+            if self._queued {
+                held = self._queued;
+                self._queued = [];
+                backing.queue_exit(held);
+            }
+            if not backing.queue_enter(wanted) {
+                self._contended.clear();
+                return;
+            }
+            self._queued = wanted;
+        }
+        if backing.in_txn() {
+            return;
+        }
+        pinned = sorted(self._queued);
+        for _ in range(PIN_ATTEMPTS) {
+            backing.begin(TxnIsolation.SERIALIZABLE);
+            try {
+                backing.lock_rows(pinned);
+                return;
+            } except Exception as e {
+                if not _is_serialization_conflict(e) {
+                    raise;
+                }
+                backing.rollback();
+            }
+        }
+    }
+}
+
+
+glob _SESSION_POOL: list[any] = [];
+
+
+def _session_pool -> any {
+    if not _SESSION_POOL {
+        import from concurrent.futures { ThreadPoolExecutor }
+        _SESSION_POOL.append(
+            ThreadPoolExecutor(
+                max_workers=SESSION_THREADS, thread_name_prefix="jac-session-io"
+            )
+        );
+    }
+    return _SESSION_POOL[0];
+}
+
+
+async def _off_loop(work: Callable) -> any {
+    import asyncio;
+    import contextvars;
+    context = contextvars.copy_context();
+    def in_context -> any {
+        return context.run(work);
+    }
+    return await asyncio.get_running_loop().run_in_executor(
+        _session_pool(), in_context
+    );
+}
+
+
+impl Session.acommit(anchor: (Anchor | None) = None) -> None {
+    def settle {
+        self.commit(anchor);
+    }
+    await _off_loop(settle);
+}
+
+
+impl Session._leave_queue -> None {
+    self._contended.clear();
+    self._last_conflict = set();
+    held = self._queued;
+    self._queued = [];
+    if not held or self._store is None {
+        return;
+    }
+    try {
+        self._store.queue_exit(held);
+    } except Exception as e {
+        logger.warning(f"releasing the write queue failed: {type(e).__name__}: {e}");
     }
 }
 
@@ -1211,7 +1407,7 @@ impl Session.close -> None {
     } except Exception as e {
         logger.warning(f"commit on close failed: {type(e).__name__}: {e}");
     }
-
+    self._leave_queue();
     if self._store is not None {
         self._store.close();
     }

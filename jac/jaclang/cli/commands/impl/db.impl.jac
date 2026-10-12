@@ -288,9 +288,8 @@ def _db_sql(data_dir: str, query: str, entry_file: str) -> int {
 
 
 def _db_fetch -> int {
-    import from jaclang.data.pgembed { PgRuntime, dist_cache_dir }
-    bin_dir = PgRuntime(data_dir=dist_cache_dir()).fetch_dist();
-    console.success(f"embedded postgres binaries ready at {bin_dir}");
+    import from jaclang.data.pg_dist { download_dist }
+    console.success(f"embedded postgres binaries ready at {download_dist()}");
     return 0;
 }
 

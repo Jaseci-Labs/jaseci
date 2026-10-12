@@ -6,73 +6,10 @@ import type from jaclang.compiler.backends.native.llvm.binding {
 }
 import type from jaclang.compiler.frontend.unitree { Module as UniModule }
 
-def _wasm_rt_src_dir -> str {
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "wasm_rt");
-}
-
 def _wasm_libc_dir -> (str | None) {
-    import from jaclang.compiler.driver.compile_options { env_wasm_libc_dir }
-    env = env_wasm_libc_dir();
-    if env {
-        return env if os.path.isdir(env) else None;
-    }
-    import jaclang;
-    pkg_root = os.path.dirname(os.path.dirname(os.path.abspath(jaclang.__file__)));
-    dev = os.path.join(pkg_root, ".pbs-build", "wasm32", "libc");
-    if os.path.isdir(dev) and os.listdir(dev) {
-        return dev;
-    }
-    import from jaclang.dist.fused_binary { bundled_floor_roots }
-    for floor in bundled_floor_roots(pkg_root) {
-        shipped = os.path.join(floor, "wasm32", "libc");
-        if os.path.isdir(shipped) and os.listdir(shipped) {
-            return shipped;
-        }
-    }
-    return None;
-}
-
-def _is_dev_libc_dir(libc_dir: str) -> bool {
-    return os.path.basename(os.path.dirname(os.path.dirname(libc_dir))) == ".pbs-build";
-}
-
-glob FLOOR_MANIFEST: str = "SOURCES.sha256";
-
-def _floor_source_drift(libc_dir: str) -> list[str] | None {
-    import hashlib;
-    manifest = os.path.join(libc_dir, FLOOR_MANIFEST);
-    if not os.path.isfile(manifest) {
-        return None;
-    }
-    src_root = _wasm_rt_src_dir();
-    drifted: list[str] = [];
-    try {
-        with open(manifest, "r", encoding="utf-8") as fh {
-            rows = fh.read().splitlines();
-        }
-    } except OSError {
-        return None;
-    }
-    for row in rows {
-        line = row.strip();
-        if not line or " " not in line {
-            continue;
-        }
-        (want, rel) = line.split(" ", 1);
-        path = os.path.join(src_root, rel.strip());
-        try {
-            with open(path, "rb") as src {
-                got = hashlib.sha256(src.read()).hexdigest();
-            }
-        } except OSError {
-            drifted.append(rel.strip());
-            continue;
-        }
-        if got != want {
-            drifted.append(rel.strip());
-        }
-    }
-    return drifted;
+    import from jaclang.artifacts.router { resolve }
+    found = resolve("wasm-libc").found;
+    return found.path if found is not None else None;
 }
 
 def _mod_functions(mod: ModuleRef) -> list[ValueRef] {
@@ -190,13 +127,6 @@ glob _LATE_BOUND: set = {
 
      };
 
-def _rebuild_hint(libc_dir: str) -> str {
-    if _is_dev_libc_dir(libc_dir) {
-        return "run `zig build vendor-wasm-libc` to rebuild it";
-    }
-    return "reinstall jac, or point JAC_NATIVE_WASM_LIBC_DIR at a floor built "
-        + "from this source tree";
-}
 
 def _assert_abi64_adapters(
     needed: list[str], provided: set[str], libc_dir: str
@@ -219,43 +149,15 @@ def _assert_abi64_adapters(
             + f"rewrites {', '.join(missing)} to {adapters}, which the linked "
             + "bitcode does not define (see _ABI64_ADAPTED and "
             + "wasm_rt/jac_abi64.c). The adapters exist in source; the compiled "
-            + f"bitcode predates them -- {_rebuild_hint(libc_dir)}."
+            + "bitcode predates them -- run `jac native build wasm-libc`."
     );
 }
 
 def _link_wasm_libc(mod: ModuleRef) -> bool {
-    libc_dir = _wasm_libc_dir();
-    if libc_dir is None {
-        import from jaclang.compiler.frontend.host { active_host }
-        active_host().note(
-            "vendored wasm libc not found (run `zig build vendor-wasm-libc`); "
-                + "libc symbols stay as raw env imports and the jac_host1 import "
-                + "contract is NOT enforced",
-            style="warning"
-        );
-        return False;
-    }
-    drift = _floor_source_drift(libc_dir);
-    if drift is None {
-        if _is_dev_libc_dir(libc_dir) {
-            import from jaclang.compiler.frontend.host { active_host }
-            active_host().note(
-                f"vendored wasm libc at {libc_dir} carries no {FLOOR_MANIFEST}, "
-                    + "so it cannot be checked against wasm_rt/; it predates the "
-                    + f"manifest -- {_rebuild_hint(libc_dir)}.",
-                style="warning"
-            );
-        }
-    } elif drift {
-        shown = ', '.join(drift[0:4])
-            + (f" (+{len(drift) - 4} more)" if len(drift) > 4 else "");
-        raise RuntimeError(
-            f"vendored wasm libc at {libc_dir} was built from different "
-                + f"wasm_rt sources than this tree: {shown}. Linking it would fold "
-                + "the old floor into the module and ship behaviour that no longer "
-                + f"matches the source -- {_rebuild_hint(libc_dir)}."
-        );
-    }
+    import from jaclang.artifacts.router { require }
+    found = require("wasm-libc").found;
+    assert found is not None;
+    libc_dir = found.path;
     libc = _load_libc_module(libc_dir, str(mod.triple));
     if libc is None {
         return False;

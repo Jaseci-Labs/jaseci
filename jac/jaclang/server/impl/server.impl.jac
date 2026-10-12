@@ -7,7 +7,8 @@ import os;
 import from inspect { iscoroutine }
 import from typing { get_type_hints }
 import from jaclang.data.serializer { Serializer }
-import from jaclang.client.artifact { ClientBundleError, MissingBunError }
+import from jaclang.artifacts.model { ArtifactUnavailable }
+import from jaclang.client.artifact { ClientBundleError }
 import from jaclang.runtime.exceptions { ReadOnlyRetry, WriteConflict }
 import from jaclang.runtime.constants { Constants as Con }
 import from jaclang.server.exchange { forget_response_choice }
@@ -40,8 +41,9 @@ async def _begin_request_context(
     user_root_id: str, target: object | None = None
 ) -> tuple[(ExecutionContext, any)] {
     import from jaclang.runtime.osp_kernel_sv { isolate_request_walk_stack }
-    parent = Jac.get_context();
-    req_ctx = await ExecutionContext.for_target(target, parent, user_root_id);
+    req_ctx = await ExecutionContext.for_target(
+        target, RequestScope.current(), user_root_id
+    );
     token = Jac.push_request_context(req_ctx);
 
     isolate_request_walk_stack();
@@ -133,6 +135,20 @@ def _unit_key_for(target: any) -> (str | None) {
         return None;
     }
     return f"{mod}.{name}";
+}
+
+
+glob _TURN_POOL: list[any] = [];
+
+
+def _conflict_turn_pool -> any {
+    if not _TURN_POOL {
+        import from concurrent.futures { ThreadPoolExecutor }
+        _TURN_POOL.append(
+            ThreadPoolExecutor(max_workers=8, thread_name_prefix="jac-conflict-turn")
+        );
+    }
+    return _TURN_POOL[0];
 }
 
 
@@ -253,6 +269,30 @@ async def _run_function_with_occ(
                 }
                 if occ_backoff_ms > 0 {
                     await asyncio.sleep(occ_backoff_ms * attempt / 1000.0);
+                }
+                import from jaclang.server.session { Session }
+                mem: any = ctx.mem;
+                if isinstance(mem, Session) {
+                    import contextvars;
+                    turn_context = contextvars.copy_context();
+                    def take_turn {
+                        turn_context.run(mem.wait_turn);
+                    }
+                    turn = asyncio.get_running_loop().run_in_executor(
+                        _conflict_turn_pool(), take_turn
+                    );
+                    try {
+                        await asyncio.shield(turn);
+                    } except asyncio.CancelledError {
+                        while not turn.done() {
+                            try {
+                                await asyncio.shield(turn);
+                            } except asyncio.CancelledError {
+                                continue;
+                            }
+                        }
+                        raise;
+                    }
                 }
                 await ctx.aset_user_root(root_id);
             } except Exception as e {
@@ -902,7 +942,7 @@ impl ModuleIntrospector.ensure_bundle -> str {
             self._bundle_error = None;
             self._bundle_epoch += 1;
             return self._bundle.hash;
-        } except MissingBunError {
+        } except ArtifactUnavailable {
             self._bundle_epoch += 1;
             raise;
         } except Exception as exc {
@@ -1162,14 +1202,21 @@ impl JacAPIServer.add_shutdown_hook(fn: Callable[..., any]) -> None {
     self.require_app().add_shutdown_hook(fn);
 }
 
+impl JacAPIServer.request_scope -> RequestScope {
+    return RequestScope.open(
+        base_path_dir=self._context_base_path,
+        full_target_path=self._context_target_path
+    );
+}
+
 impl JacAPIServer._install_middleware -> None {
     import from jaclang.server.middleware { jwt_middleware, request_context_middleware }
 
+    self._context_base_path = Jac.get_base_path_dir() or self.base_path or None;
+    self._context_target_path = Jac.get_full_target_path() or self.module_file;
     self.add_middleware(
         request_context_middleware(
-            base_path_dir=Jac.get_base_path_dir() or self.base_path or None,
-            full_target_path=Jac.get_full_target_path() or self.module_file,
-            public_origin=self.resolved_settings().public_origin
+            self.request_scope, public_origin=self.resolved_settings().public_origin
         )
     );
     self.add_middleware(jwt_middleware(self.user_manager));
@@ -1489,9 +1536,7 @@ impl JacAPIServer._register_scheduled_tasks -> None {
             if name not in registry {
                 return {'error': f"'{name}' is no longer registered"};
             }
-            ctx = Jac.create_j_context(user_root=None);
-            token = Jac.push_request_context(ctx);
-            try {
+            with _self.request_scope() {
                 if is_walker {
                     return await _self.execution_manager.spawn_walker(
                         registry[name], {}, SYSTEM_USER
@@ -1500,12 +1545,6 @@ impl JacAPIServer._register_scheduled_tasks -> None {
                 return await _self.execution_manager.execute_function(
                     registry[name], {}, SYSTEM_USER
                 );
-            } finally {
-                try {
-                    ctx.close();
-                } finally {
-                    Jac.reset_request_context(token);
-                }
             }
         }
         def target {
@@ -1540,7 +1579,15 @@ impl JacAPIServer._register_scheduled_tasks -> None {
         def _claim(key: str, tick: int) -> bool {
             return bool(_store.kv_claim_tick(key, tick));
         }
+        def _hold(key: str, ttl: int, owner: str) -> bool {
+            return bool(_store.kv_acquire_lease(key, ttl, owner));
+        }
+        def _release(key: str, owner: str) -> bool {
+            return bool(_store.kv_release_lease(key, owner));
+        }
         self.scheduler.claim = _claim;
+        self.scheduler.hold = _hold;
+        self.scheduler.release = _release;
         self.scheduler.namespace = schedule_namespace(self.module_name);
     }
 }
@@ -1549,8 +1596,16 @@ impl JacAPIServer._validate_or_raise -> None {
     import from jaclang.server.settings { ServeConfigError }
     settings = self.resolved_settings();
     problems = settings.validate();
+    transport: any = None;
     for ext in (self.extensions or []) {
         problems.extend(ext.validate(self));
+        if transport is None {
+            transport = ext.mail_transport();
+        }
+    }
+    problems.extend(verification_problems(settings.auth.email.verification, transport));
+    for warning in settings.warnings() {
+        logger.warning(warning);
     }
     if not settings.static_only {
         import from jaclang.server.task_scheduler { schedule_problems }

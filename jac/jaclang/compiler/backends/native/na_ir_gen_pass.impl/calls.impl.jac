@@ -1531,22 +1531,31 @@ impl NaIRGenPass._emit_intrinsic_region_tls(
 impl NaIRGenPass._emit_intrinsic_alloca(
     nd: uni.FuncCall, intr: IntrinsicEntry, args: list[uni.Expr]
 ) -> (ir.Value | None) {
+    """`__alloca(n)` reserves `n` bytes of scratch. A constant `n` lowers to an
+    i64-array alloca in the entry block (8-byte ABI alignment for the `__mem_*`
+    i64 accessors), so a call inside a loop reuses one slot instead of churning
+    stack per iteration; a runtime `n` lowers to a call-site dynamic alloca,
+    since an entry-block slot cannot reference a size computed later in the
+    function. Either way the buffer is per-call scratch that must not outlive
+    the invocation (the bundled floors' timespecs).
+    """;
     n = self._intrinsic_operand(nd, intr, args[0], intr.param_specs[0]);
     if n is None {
         return None;
     }
-    i8 = ir.IntType(8);
-    func = self.builder.function;
-    entry_block = func.entry_basic_block;
-    cur_block = self.builder.block;
-    if entry_block.instructions {
-        self.builder.position_before(entry_block.instructions[0]);
+    i64 = ir.IntType(64);
+    if isinstance(n, ir.Constant) {
+        words = (n.constant + 7) // 8;
+        slot = self._stack_entry_alloca(ir.ArrayType(i64, words), "alloca.buf");
     } else {
-        self.builder.position_at_start(entry_block);
+        words_dyn = self.builder.sdiv(
+            self.builder.add(n, ir.Constant(i64, 7), name="alloca.pad"),
+            ir.Constant(i64, 8),
+            name="alloca.words"
+        );
+        slot = self.builder.alloca(i64, size=words_dyn, name="alloca.buf");
     }
-    slot = self.builder.alloca(i8, size=n, name="alloca.buf");
-    self.builder.position_at_end(cur_block);
-    return self.builder.ptrtoint(slot, ir.IntType(64), name="alloca.i64");
+    return self.builder.ptrtoint(slot, i64, name="alloca.i64");
 }
 
 impl NaIRGenPass._codegen_synthetic_call(
@@ -2255,9 +2264,6 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
                     self.llvm_module, stdin_type, name=stdin_name
                 );
                 stdin_global.linkage = "external";
-                if "windows" in str(self.llvm_module.triple or "") {
-                    stdin_global.storage_class = "dllimport";
-                }
             }
             stdin_var = self.llvm_module.globals[stdin_name];
             assert isinstance(stdin_var, ir.GlobalVariable);
@@ -2381,9 +2387,12 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
         return self._codegen_instantiation(nd, type_name_override=func_name);
     }
     _skipped_key = f"{_mod_qual}.{func_name}" if _mod_qual is not None else func_name;
+    declaration = self._callee_ability_of(nd);
+    _var_callee = declaration is None and self._binds_variable(nd.target);
     if (
         _skipped_key in self._native_skipped_methods
         and func_name not in self.generic_fns
+        and not _var_callee
         and not self._skip_is_other_module(nd, func_name, _mod_qual)
     ) {
         self.emit(
@@ -2398,11 +2407,10 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
         );
         return None;
     }
-    if func_name in self.decorated_fns {
+    if func_name in self.decorated_fns and not _var_callee {
         return self._codegen_decorated_call(nd, func_name);
     }
-    func: ir.Function | None = self.func_symtab.get(func_name);
-    declaration = self._callee_ability_of(nd);
+    func: ir.Function | None = None if _var_callee else self.func_symtab.get(func_name);
     if declaration is not None and declaration.name_ref is not None {
         declaring_module = declaration.parent_scope;
         if isinstance(declaring_module, uni.Module) {
@@ -2432,7 +2440,7 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
             if source is not None
             else None;
     }
-    if func is None {
+    if func is None and not _var_callee {
         manifest = self.module.gen.interop_manifest;
         binding = manifest.bindings.get(func_name);
         _src_ab: (uni.Ability | None) = None;
@@ -2499,7 +2507,7 @@ impl NaIRGenPass._codegen_call(nd: uni.FuncCall) -> (ir.Value | None) {
             );
         }
     }
-    if func is None and func_name in self.generic_fns {
+    if func is None and func_name in self.generic_fns and not _var_callee {
         func = self._instantiate_generic(nd, func_name);
         if func is None {
             return None;

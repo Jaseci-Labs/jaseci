@@ -13,11 +13,15 @@ import from jaclang.data.dbcatalog {
     stop_heartbeat
 }
 import from jaclang.data.pgembed { PgRuntime }
+import type from jaclang.project.config { DatabaseConfig }
 import from jaclang.runtime.exceptions { ReadOnlyRetry, TransactionLost, WriteConflict }
 import from jaclang.data.store { AnchorRow, ConnInfo, PgStore, Store, TxnIsolation }
 
 glob logger = logging.getLogger(__name__),
      MAX_RETRIES = 5,
+     PIN_ATTEMPTS = 20,
+     FIRST_LOCK_WAIT = '250ms',
+     SESSION_THREADS = 16,
      EDGE_PAGE = 1000,
      SCRATCH_ENV = 'JAC_DB_SCRATCH',
      SCRATCH_OWNER_ENV = 'JAC_DB_SCRATCH_OWNER',
@@ -147,7 +151,8 @@ obj TxnWrites {
 obj UnflushedAnchor {
     has anchor: Anchor,
         stored: (dict[str, object] | None),
-        hash: int;
+        hash: int,
+        written: int = 0;
 }
 
 
@@ -187,7 +192,10 @@ obj Session(Memory) {
         _ro_units: int postinit,
         _unit_stack: list[tuple[(str | None), bool]] postinit,
         _snapshot_reads: set[UUID] postinit,
-        _foreign_refs: set[UUID] postinit;
+        _foreign_refs: set[UUID] postinit,
+        _contended: set[UUID] postinit,
+        _queued: list[UUID] postinit,
+        _last_conflict: set[UUID] postinit;
 
     override def new_session(target_path: str) -> Session {
         if self.store is None {
@@ -251,6 +259,10 @@ obj Session(Memory) {
     def ensure_writable_txn -> None;
     def read_barrier -> None;
     def _begin_writable -> None;
+    def wait_turn -> None;
+    def _begin_txn(isolation: TxnIsolation) -> None;
+    override async def acommit(anchor: (Anchor | None) = None) -> None;
+    def _leave_queue -> None;
     def _commit_txn -> None;
     def _rollback_txn -> None;
     def _replay_txn(cause: Exception, exhausted: bool = False) -> None;

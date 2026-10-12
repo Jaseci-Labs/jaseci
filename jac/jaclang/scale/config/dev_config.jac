@@ -1,8 +1,6 @@
 import os;
 import from pathlib { Path }
 
-glob BINARY_PATH_ENV: str = "JAC_SCALE_BINARY_PATH";
-
 
 enum Channel {
     STABLE = "stable",
@@ -12,8 +10,19 @@ enum Channel {
 }
 
 
+def local_pod_binary(project_dir: str) -> str {
+    import from jaclang.project.config { get_config_for_path }
+    config = get_config_for_path(Path(project_dir));
+    if config is None or not config.dev.pod_binary {
+        return "";
+    }
+    base = config.project_root or Path(project_dir);
+    return str(Path(base) / os.path.expanduser(config.dev.pod_binary));
+}
+
+
 def resolve_dev_channel(project_dir: str) -> Channel {
-    if os.environ.get(BINARY_PATH_ENV, "") {
+    if local_pod_binary(project_dir) {
         return Channel.LOCAL;
     }
     import from jaclang.project.config { get_config_for_path }
