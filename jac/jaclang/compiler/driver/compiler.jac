@@ -297,6 +297,7 @@ obj JacCompiler(SessionHooks) {
         full_target: str, target_program: JacProgram, options: (CompileOptions | None)
     ) -> tuple[bool, any];
 
+    def native_entry_engine(full_target: str, target_program: JacProgram) -> any;
     def _adopt_native_unit(
         unit: UnitProducts,
         program: JacProgram,

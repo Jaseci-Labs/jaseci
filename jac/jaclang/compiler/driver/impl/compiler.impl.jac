@@ -399,6 +399,26 @@ impl JacCompiler._adopt_kernel_compile(
     return (True, adopted);
 }
 
+impl JacCompiler.native_entry_engine(
+    full_target: str, target_program: JacProgram
+) -> any {
+    """The engine that runs `full_target`'s entry natively, or None when the
+    module was not placed native. It compiles through the module cache, so a
+    warm run compiles nothing, and an entry placed native is compiled once.""";
+    import from jaclang.compiler.placement.placement { summary_store }
+    path = JacProgram.hub_key(full_target);
+    if self.get_bytecode(full_target=path, target_program=target_program) is None {
+        return None;
+    }
+    actual = self.selfhost.resolve(path, target_program, execution=True);
+    placed = summary_store(actual).get(os.path.abspath(path));
+    if placed is None or placed.decided != 'native' {
+        return None;
+    }
+    (engine, _callbacks) = self.get_native_interop_setup(path, target_program);
+    return engine;
+}
+
 impl JacCompiler.kernel_native_entry(
     full_target: str, target_program: JacProgram, options: (CompileOptions | None)
 ) -> tuple[bool, any] {
