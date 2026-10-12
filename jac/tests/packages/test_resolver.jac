@@ -142,3 +142,29 @@ test "a transitive prerelease requirement can replace a stable decision" {
     assert _solve(registry, {"a/tool": "^1", "a/lib": "^1"})
         == {"a/tool": "1.0.0", "a/lib": "1.5.0-beta.1"};
 }
+
+test "a redundant prerelease opt-in survives later range narrowing" {
+    registry = {
+        "a/tool": {"1.0.0": {"a/lib": ">=1.0.0-beta.1", "a/zconstraint": "^1"}},
+        "a/zconstraint": {"1.0.0": {"a/lib": ">=1.4.0"}},
+        "a/lib": {"1.0.0": {}, "1.2.0": {}, "1.5.0-beta.1": {}}
+    };
+    assert _solve(registry, {"a/tool": "^1", "a/lib": "^1"})
+        == {"a/tool": "1.0.0", "a/zconstraint": "1.0.0", "a/lib": "1.5.0-beta.1"};
+    registry["a/tool"]["1.1.0"] = registry["a/tool"]["1.0.0"];
+    assert _solve(registry, {"a/tool": "^1", "a/lib": "^1"})
+        == {"a/tool": "1.1.0", "a/zconstraint": "1.0.0", "a/lib": "1.5.0-beta.1"};
+}
+
+test "a missing prerelease opt-in can backtrack to an older provider" {
+    registry = {
+        "a/tool": {
+            "1.0.0": {"a/lib": ">=1.0.0-beta.1"},
+            "2.0.0": {},
+            "3.0.0": {"a/lib": ">=1.0.0-beta.1", "a/missing": "^1"}
+        },
+        "a/lib": {"1.2.0": {}, "1.5.0-beta.1": {}}
+    };
+    assert _solve(registry, {"a/tool": "*", "a/lib": ">=1.4.0"})
+        == {"a/tool": "1.0.0", "a/lib": "1.5.0-beta.1"};
+}

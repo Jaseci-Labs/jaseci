@@ -276,7 +276,9 @@ obj Solver {
                 continue;
             }
             if acc is not None and acc.is_disjoint(t) {
-                return ("contradicted", None);
+                if t.positive or not t.names_prerelease or acc.names_prerelease {
+                    return ("contradicted", None);
+                }
             }
             if unresolved is not None {
                 return ("inconclusive", None);
@@ -423,8 +425,16 @@ obj Solver {
         ];
     }
 
+    def _has_prerelease_candidate(name: str, term: Term) -> bool {
+        return any(
+            v.is_prerelease() and term.versions.contains(v)
+            for v in self._candidates_for(name)
+        );
+    }
+
     def _decide -> str | None {
         pending: list[tuple[int, str, Term]] = [];
+        deferred: list[tuple[int, str, Term]] = [];
         seen: set[str] = set();
         for a in self.assignments {
             name = a.term.package;
@@ -434,8 +444,16 @@ obj Solver {
             seen.add(name);
             acc = self._accumulated(name);
             if acc is not None and acc.positive {
-                pending.append((len(self._allowed(name, acc)), name, acc));
+                item = (len(self._allowed(name, acc)), name, acc);
+                if item[0] == 0 and self._has_prerelease_candidate(name, acc) {
+                    deferred.append(item);
+                } else {
+                    pending.append(item);
+                }
             }
+        }
+        if not pending {
+            pending = deferred;
         }
         if not pending {
             return None;
@@ -448,7 +466,17 @@ obj Solver {
         }
         allowed = self._allowed(name, term);
         if not allowed {
-            self._add(Incompatibility.of([term], CauseKind.NO_VERSIONS));
+            terms = [term];
+            if self._has_prerelease_candidate(name, term) {
+                for (decided, version) in self.decisions.items() {
+                    if decided != self.root_name {
+                        terms.append(
+                            Term(package=decided, versions=VersionSet.exact(version))
+                        );
+                    }
+                }
+            }
+            self._add(Incompatibility.of(terms, CauseKind.NO_VERSIONS));
             return name;
         }
         preferred = self.source.preferred(name);
