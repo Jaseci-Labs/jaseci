@@ -145,6 +145,8 @@ obj ModuleAnalysis {
             import from jaclang.compiler.placement.placement_facts { settle_server }
             del self.program.errors_had[errors_mark:];
             settle_server(self.module);
+            import from jaclang.compiler.placement.placement { record_decided }
+            record_decided(self.program, self.module);
             self.blocked = False;
         }
 

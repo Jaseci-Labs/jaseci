@@ -788,6 +788,16 @@ def summary_store(prog: JacProgram) -> dict[str, PlacementSummary] {
     return prog.analysis.placement_summaries;
 }
 
+def record_decided(prog: JacProgram, module: uni.Module) {
+    if module.loc is None or not module.loc.mod_path {
+        return;
+    }
+    held = summary_store(prog).get(os.path.abspath(module.loc.mod_path));
+    if held is not None {
+        held.decided = module.decided_codespace or '';
+    }
+}
+
 def jac_import_targets(module: uni.Module) -> list[str] {
     targets: list[str] = [];
     for imp in module.get_all_sub_nodes(uni.Import) {

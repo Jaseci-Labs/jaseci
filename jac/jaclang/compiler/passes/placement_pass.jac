@@ -821,6 +821,8 @@ impl settle_native_module(
     gen.native_layout = None;
     gen.native_deps = [];
     settle_server(mod);
+    import from jaclang.compiler.placement.placement { record_decided }
+    record_decided(prog, mod);
     mod_path = mod.loc.mod_path if mod.loc is not None else "";
     resolved = os.path.realpath(mod_path);
     for stale in invalidate_importers_es(prog, resolved) {
@@ -1121,6 +1123,8 @@ impl PlacementPass._run_undecided(ir_in: Module) -> Module {
     }
     report_serverless_kind_errors(self, ir_in);
     ir_in.gen.placement_mode = 'inferred';
+    import from jaclang.compiler.placement.placement { record_decided }
+    record_decided(self.prog, ir_in);
     return ir_in;
 }
 
