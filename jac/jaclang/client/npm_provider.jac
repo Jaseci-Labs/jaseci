@@ -112,13 +112,9 @@ def app_npm_deps(config: JacConfig) -> list[tuple[str, str, str, bool]] {
 
 def regenerate_and_install(project_dir: Path) {
     import from jaclang.client.vite_bundler { ViteBundler }
-    import from jaclang.client { get_bun }
-    import from jaclang.client.bun_installer { bun_unavailable_message }
+    import from jaclang.client.js_runtime { js_runtime_path }
 
-    bun = get_bun();
-    if not bun {
-        raise RuntimeError(bun_unavailable_message()) from None;
-    }
+    bun = js_runtime_path();
 
     bundler = ViteBundler(project_dir);
     bundler.create_package_json();

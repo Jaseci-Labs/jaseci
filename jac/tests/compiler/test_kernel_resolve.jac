@@ -1,101 +1,244 @@
-"""`resolve_kernel()` is the one kernel lookup (#8943).
+"""The kernel is one artifact the router resolves: the sealed image's
+kernel, then the checkout's, then the kit's in place, each accepted only
+when it was built from the sources this process runs; otherwise the
+bytecode compiler serves and the router says so. Resolving never builds;
+`jac native build kernel` does."""
 
-Its precedence is fixed: the explicit switch, the sealed image, the source
-tree by source key, then the store parser when there is no toolchain. A
-source tree with no kernel derives one on the first parse, in a child
-process; a kernel whose sidecar source key disagrees with the sources now
-is rebuilt; nothing raises about a missing kernel a build could make.
-"""
-
+import io;
 import json;
 import hashlib;
 import os;
+import sys;
 import tempfile;
 import from pathlib { Path }
+import from unittest.mock { patch }
 import from jaclang.compiler.driver.compile_options { CompileOptions }
+import from jaclang.artifacts.model { Probe, Source }
+import jaclang.artifacts.router as router;
 import from jaclang.compiler.backends.native.kernel_resolve {
-    KERNEL_LIB_ENV,
-    KernelUnavailable,
-    _accept_in_tree,
+    KernelArtifact,
+    ResolvedKernel,
+    _inspect,
     kernel_options,
     read_sidecar,
     resolve_kernel,
     source_tree_kernel_path
 }
-import from jaclang.compiler.backends.native.link_plan { units_source_key }
-import from jaclang.compiler.native_compiler { ensure_loaded, reset_loaded }
+import jaclang.compiler.backends.native.kernel_resolve as resolver;
+import from jaclang.compiler.backends.native.link_plan { LinkResult }
+import from jaclang.compiler.native_compiler { reset_loaded }
 
-def _with_env(name: str, value: (str | None), fn: any) -> any {
-    prev = os.environ.get(name);
-    if value is None {
-        os.environ.pop(name, None);
-    } else {
-        os.environ[name] = value;
-    }
+def _never(*args: any, **kwargs: any) -> any {
+    raise AssertionError("resolving a kernel must never build or probe here");
+}
+
+def _toolchain(ok: bool = True) -> any {
+    import jaclang.compiler.driver.toolchain as toolchain;
+    return patch.object(
+        toolchain,
+        "native_pipeline_available",
+        return_value=(ok, "" if ok else "no LLVM shim here")
+    );
+}
+
+"""Resolve the kernel afresh with the sealed image out of the way and return
+what resolved and what the router printed."""
+def _resolve_fresh(sealed: bool = False) -> tuple[(ResolvedKernel | None), str] {
+    err = io.StringIO();
+    router.forget();
+    reset_loaded();
     try {
-        return fn();
+        with patch.object(router, "_omitted", return_value=frozenset()) {
+            with patch.object(
+                resolver,
+                "_from_sealed_image",
+                return_value=(
+                    ResolvedKernel(lib_path="shipped", layout={}, source="sealed")
+                        if sealed
+                        else None
+                )
+            ) {
+                with patch.object(
+                    resolver, "read_sidecar", return_value={"classes": {}}
+                ) {
+                    with patch.object(sys, "stderr", err) {
+                        found = resolve_kernel();
+                    }
+                }
+            }
+        }
     } finally {
-        if prev is None {
-            os.environ.pop(name, None);
-        } else {
-            os.environ[name] = prev;
+        router.forget();
+        reset_loaded();
+    }
+    return (found, err.getvalue());
+}
+
+def _sidecar_for(lib: str, unit: str, **overrides: any) -> dict[str, any] {
+    import from jaclang.compiler.driver.jir {
+        running_compiler_digest,
+        unit_source_digest
+    }
+    import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
+    options = kernel_options();
+    ident = native_unit_identity(unit);
+    record = {
+        "classes": {},
+        "artifact_sha256": hashlib.sha256(Path(lib).read_bytes()).hexdigest(),
+        "plan_digest": "p",
+        "layout_digest": "l",
+        "units": [unit],
+        "unit_ids": [ident],
+        "compiler_digest": running_compiler_digest(),
+        "codegen_identity": options.base_codegen_identity(),
+        "triple": options.effective_triple(),
+        "python": f"{sys.version_info.major}.{sys.version_info.minor}",
+        "unit_sources": {ident: unit_source_digest(unit)},
+        "unit_policy": {ident: 0}
+    };
+    record.update(overrides);
+    return record;
+}
+
+test "a sealed image runs its own kernel and never consults the checkout" {
+    with patch.object(KernelArtifact, "probe_checkout", side_effect=_never) {
+        (found, said) = _resolve_fresh(sealed=True);
+    }
+    assert found is not None
+        and found.lib_path == "shipped"
+        and found.source == "sealed";
+    assert said == "";
+}
+
+"""Write a GitHub Actions pull-request event carrying `labels`."""
+def _pr_event(path: str, labels: list[str]) {
+    import json;
+    with open(path, "w", encoding="utf-8") as f {
+        json.dump({"pull_request": {"labels": [{"name": n} for n in labels]}}, f);
+    }
+}
+
+test "only a pull request's CI kit leaves the kernel out, and its label keeps it" {
+    import tempfile;
+    import from jaclang.artifacts.kit { pr_kit_omits }
+    with tempfile.TemporaryDirectory() as tmp {
+        event = os.path.join(tmp, "event.json");
+        ci = {
+            "GITHUB_ACTIONS": "true",
+            "GITHUB_EVENT_NAME": "pull_request",
+            "GITHUB_EVENT_PATH": event
+        };
+        _pr_event(event, ["docs"]);
+        with patch.dict(os.environ, ci) {
+            assert pr_kit_omits("kernel");
+        }
+        _pr_event(event, ["docs", "native:kernel"]);
+        with patch.dict(os.environ, ci) {
+            assert not pr_kit_omits("kernel") , "the native:kernel label keeps it";
+        }
+        for name in ("push", "release", "workflow_dispatch", "schedule") {
+            with patch.dict(os.environ, dict(ci, GITHUB_EVENT_NAME=name)) {
+                assert not pr_kit_omits("kernel") , f"a {name} kit carries its kernel";
+            }
+        }
+        with patch.dict(os.environ, {"GITHUB_EVENT_NAME": "pull_request"}) {
+            os.environ.pop("GITHUB_ACTIONS", None);
+            assert not pr_kit_omits("kernel") , "a local seal carries its kernel";
         }
     }
 }
 
-test "the off switch selects the store parser only in a kernel build" {
-    import from jaclang.compiler.backends.native.kernel_resolve {
-        KERNEL_BUILDING_ENV,
-        KernelUnavailable
+"""Resolve the kernel when the sealed image (`sealed`) or the kit (`not
+sealed`) leaves it out; return the resolution and what the router printed."""
+def _resolve_omitted(sealed: bool) -> tuple[any, str] {
+    def omitted(sealed_image: bool) -> frozenset[str] {
+        return frozenset({"kernel"}) if sealed_image == sealed else frozenset();
     }
-    def off(fn: any) -> any {
-        return _with_env(KERNEL_LIB_ENV, "off", fn);
-    }
-    reset_loaded();
+    router.forget();
+    err = io.StringIO();
     try {
-        def building(fn: any) -> any {
-            return _with_env(KERNEL_BUILDING_ENV, "1", lambda() { off(fn); });
+        with patch.object(router, "_omitted", side_effect=omitted), patch.object(
+            KernelArtifact, "probe_sealed", return_value=None
+        ), patch.object(
+            KernelArtifact, "probe_checkout", return_value=Probe.missing()
+        ), patch.object(KernelArtifact, "probe_kit", side_effect=_never), patch.object(
+            sys, "stderr", err
+        ), _toolchain() {
+            resolution = router.resolve("kernel");
         }
-        assert building(lambda() { resolve_kernel(); }) is None;
-        assert building(lambda() { ensure_loaded(); }) is None;
-        refused = False;
-        try {
-            _with_env(
-                KERNEL_BUILDING_ENV,
-                None,
-                lambda() { off(lambda() { resolve_kernel(); }); }
-            );
-        } except KernelUnavailable {
-            refused = True;
-        }
-        assert refused , "JAC_COMPILER_LIB=off outside a kernel build must be refused";
     } finally {
-        reset_loaded();
+        router.forget();
+    }
+    return (resolution, err.getvalue());
+}
+
+test "an image that leaves the kernel out runs from bytecode quietly, sealed or rerouted" {
+    for sealed in (True, False) {
+        (resolution, said) = _resolve_omitted(sealed);
+        assert resolution.found is None and resolution.quiet;
+        assert said == "" , "an omitted kernel runs from bytecode by design";
     }
 }
 
 test "the catalog build never loads a kernel" {
-    reset_loaded();
-    try {
-        assert _with_env("JAC_STUBCAT_BUILDING", "1", lambda() { resolve_kernel(); })
-            is None;
-    } finally {
-        reset_loaded();
+    with router.building(["stubcat"]) {
+        with patch.object(KernelArtifact, "probe_checkout", side_effect=_never) {
+            (found, said) = _resolve_fresh();
+        }
     }
+    assert found is None and said == "";
 }
 
-test "an explicit path must carry its sidecar" {
-    with tempfile.TemporaryDirectory(prefix="jac-kernel-") as tmp {
-        bogus = os.path.join(tmp, "libjac_compiler.so");
-        Path(bogus).write_bytes(b"not a library");
-        raised = False;
-        try {
-            _with_env(KERNEL_LIB_ENV, bogus, lambda() { resolve_kernel(); });
-        } except KernelUnavailable {
-            raised = True;
+test "a stale checkout runs from bytecode, says so once, and never builds" {
+    import jaclang.compiler.backends.native.kernel_stage0 as stage0;
+    drift = Probe.stale(
+        [
+            "jaclang/compiler/frontend/unitree.jac changed",
+            "jaclang/compiler/driver/jir.jac changed"
+        ]
+    );
+    with _toolchain() {
+        with patch.object(KernelArtifact, "probe_checkout", return_value=drift) {
+            with patch.object(
+                KernelArtifact, "probe_kit", return_value=Probe.missing()
+            ) {
+                with patch.object(stage0, "link_kernel", side_effect=_never) {
+                    (found, said) = _resolve_fresh();
+                }
+            }
         }
-        assert raised , "a kernel path without its .layout.json sidecar is refused";
     }
+    assert found is None;
+    assert said.count("kernel runs on its floor") == 1 , said;
+    assert "unitree.jac changed (and 1 more)" in said , said;
+    assert "jac native build kernel" in said , said;
+}
+
+test "a checkout without a native toolchain says why it runs from bytecode" {
+    with _toolchain(ok=False) {
+        with patch.object(KernelArtifact, "probe_checkout", side_effect=_never) {
+            (found, said) = _resolve_fresh();
+        }
+    }
+    assert found is None;
+    assert "no LLVM shim here" in said , said;
+}
+
+test "a current checkout kernel loads silently and reports where it came from" {
+    mine = Probe.hit(
+        Source.CHECKOUT, "/tree/libjac_compiler.so", {"classes": {}, "plan_digest": "p"}
+    );
+    with _toolchain() {
+        with patch.object(KernelArtifact, "probe_checkout", return_value=mine) {
+            with patch.object(KernelArtifact, "probe_kit", side_effect=_never) {
+                (found, said) = _resolve_fresh();
+            }
+        }
+    }
+    assert found is not None
+        and found.source == "checkout"
+        and found.plan_digest == "p";
+    assert said == "";
 }
 
 test "the sidecar reader wants a classes map" {
@@ -117,43 +260,58 @@ test "the source-tree kernel lives beside the loader" {
     assert "jac_compiler" in os.path.basename(path);
 }
 
-test "an in-tree kernel is accepted by source key, without a plan" {
+test "a kernel is accepted by its units' content and names what moved" {
     with tempfile.TemporaryDirectory(prefix="jac-kernel-") as tmp {
         unit = os.path.join(tmp, "unit.jac");
         Path(unit).write_text("def one -> int {\n    return 1;\n}\n");
         lib = os.path.join(tmp, "libjac_compiler.dylib");
         Path(lib).write_bytes(b"not a real kernel");
-        key = units_source_key([unit], kernel_options());
-        sidecar = {
-            "classes": {},
-            "artifact_sha256": hashlib.sha256(Path(lib).read_bytes()).hexdigest(),
-            "plan_digest": "p",
-            "layout_digest": "l",
-            "units": [unit],
-            "source_key": key
-        };
-        Path(lib + ".layout.json").write_text(json.dumps(sidecar));
-        found = _accept_in_tree(lib);
-        assert found is not None , "a matching source key accepts the kernel";
-        assert found.source == "tree" and found.plan_digest == "p";
+        sidecar = _sidecar_for(lib, unit);
+        def write(record: dict[str, any]) {
+            Path(lib + ".layout.json").write_text(json.dumps(record));
+        }
+        write(sidecar);
+        (accepted, drift) = _inspect(lib);
+        assert accepted is not None and drift == [] , drift;
         Path(unit).write_text("def one -> int {\n    return 2;\n}\n");
-        assert _accept_in_tree(lib) is None , "an edited unit moves the source key";
-        stale = dict(sidecar);
-        stale.pop("source_key");
-        Path(lib + ".layout.json").write_text(json.dumps(stale));
-        assert _accept_in_tree(lib) is None , "a sidecar without a source key is never accepted";
+        (accepted, drift) = _inspect(lib);
+        assert accepted is None;
+        assert len(drift) == 1 and drift[0].endswith("unit.jac changed") , drift;
+        Path(unit).write_text("def one -> int {\n    return 1;\n}\n");
+        assert _inspect(lib)[0] is not None;
+        for (field, value) in [
+            ("compiler_digest", "another compiler"),
+            ("codegen_identity", "gc=none"),
+            ("triple", "wasm32-unknown-unknown"),
+            ("python", "2.7"),
+            ("unit_policy", {native_unit_ident(unit): 1})
+        ] {
+            write({** sidecar, field: value});
+            (accepted, drift) = _inspect(lib);
+            assert accepted is None and len(drift) == 1 , f"a different {field}: {drift}";
+        }
+        without = dict(sidecar);
+        without.pop("unit_sources");
+        write(without);
+        assert _inspect(lib)[0] is None , "a record without unit sources is never accepted";
+        write(sidecar);
+        Path(lib).write_bytes(b"a library the sidecar never described");
+        assert _inspect(lib)[0] is None , "the sidecar vouches for one library";
+        os.remove(lib);
+        assert _inspect(lib) == (None, ["not built"]);
     }
 }
 
+def native_unit_ident(path: str) -> str {
+    import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
+    return native_unit_identity(path);
+}
 
 test "a kernel built elsewhere is accepted by its units' package identity" {
-    import from jaclang.compiler.backends.native.link_plan { sidecar_unit_paths }
-    import from jaclang.compiler.frontend.codeinfo {
-        jaclang_pkg_root,
-        native_unit_identity
-    }
+    import from jaclang.compiler.driver.jir { sidecar_unit_paths }
+    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
     unit = os.path.join(jaclang_pkg_root(), "compiler", "driver", "jir.jac");
-    ident = native_unit_identity(unit);
+    ident = native_unit_ident(unit);
     assert ident.startswith("jaclang/") , ident;
     elsewhere = os.path.join(
         "/build", "stage", "site", "jaclang", "compiler", "driver", "jir.jac"
@@ -162,152 +320,74 @@ test "a kernel built elsewhere is accepted by its units' package identity" {
     assert resolved == [unit] , (
         "a unit recorded at the build's path is found where this jaclang lives"
     );
-    key_here = units_source_key([unit], kernel_options());
     with tempfile.TemporaryDirectory(prefix="jac-kernel-") as tmp {
         lib = os.path.join(tmp, "libjac_compiler.dylib");
         Path(lib).write_bytes(b"not a real kernel");
-        sidecar = {
-            "classes": {},
-            "artifact_sha256": hashlib.sha256(Path(lib).read_bytes()).hexdigest(),
-            "plan_digest": "p",
-            "layout_digest": "l",
-            "units": [elsewhere],
-            "unit_ids": [ident],
-            "source_key": key_here
-        };
+        sidecar = _sidecar_for(lib, unit, units=[elsewhere]);
         Path(lib + ".layout.json").write_text(json.dumps(sidecar));
-        found = _accept_in_tree(lib);
-        assert found is not None , (
-            "the source key is keyed on package identity, not on the build's paths"
+        assert _inspect(lib)[0] is not None , (
+            "acceptance compares package identity and content, not the build's paths"
         );
     }
 }
 
-test "a kernel built elsewhere is accepted by its units' content, not by its folded key" {
-    import sys;
-    import from jaclang.compiler.backends.native.link_plan { unit_source_digest }
-    import from jaclang.compiler.driver.jir { running_compiler_digest }
-    import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
-    with tempfile.TemporaryDirectory(prefix="jac-kernel-") as tmp {
-        unit = os.path.join(tmp, "unit.jac");
-        Path(unit).write_text("def one -> int {\n    return 1;\n}\n");
-        lib = os.path.join(tmp, "libjac_compiler.dylib");
-        Path(lib).write_bytes(b"not a real kernel");
-        options = kernel_options();
-        ident = native_unit_identity(unit);
-        sidecar = {
-            "classes": {},
-            "artifact_sha256": hashlib.sha256(Path(lib).read_bytes()).hexdigest(),
-            "plan_digest": "p",
-            "layout_digest": "l",
-            "units": [unit],
-            "unit_ids": [ident],
-            "source_key": "folded by the build in the build's own environment",
-            "compiler_digest": running_compiler_digest(),
-            "codegen_identity": options.base_codegen_identity(),
-            "triple": options.effective_triple(),
-            "python": f"{sys.version_info.major}.{sys.version_info.minor}",
-            "unit_sources": {ident: unit_source_digest(unit)},
-            "unit_policy": {ident: 0}
-        };
-        def write(record: dict[str, any]) {
-            Path(lib + ".layout.json").write_text(json.dumps(record));
-        }
-        write(sidecar);
-        assert _accept_in_tree(lib) is not None , (
-            "matching unit content accepts a kernel whose folded key is foreign"
-        );
-        Path(unit).write_text("def one -> int {\n    return 2;\n}\n");
-        assert _accept_in_tree(lib) is None , "an edited unit no longer matches";
-        Path(unit).write_text("def one -> int {\n    return 1;\n}\n");
-        assert _accept_in_tree(lib) is not None;
-        for (field, value) in [
-            ("compiler_digest", "another compiler"),
-            ("codegen_identity", "gc=none"),
-            ("triple", "wasm32-unknown-unknown"),
-            ("python", "2.7"),
-            ("unit_policy", {ident: 1})
-        ] {
-            write({** sidecar, field: value});
-            assert _accept_in_tree(lib) is None , f"a different {field} is another kernel";
-        }
-        without = dict(sidecar);
-        without.pop("unit_sources");
-        write(without);
-        assert _accept_in_tree(lib) is None , (
-            "without recorded unit content the foreign key decides, and it never matches"
-        );
+obj Image {
+    has record: dict[str, any],
+        native: dict[str, any] = {};
+
+    def native_artifact -> dict[str, any] {
+        return self.record;
     }
 }
 
-test "the kit's kernel is adopted although the kit stripped it after its sidecar was written" {
-    import sys;
-    import from unittest.mock { patch }
-    import jaclang.compiler.backends.native.kernel_resolve as kernel_resolve;
-    import from jaclang.compiler.backends.native.kernel_resolve { _adopt_bundled }
-    import from jaclang.compiler.backends.native.link_plan { unit_source_digest }
-    import from jaclang.compiler.driver.jir { running_compiler_digest }
-    import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
+test "the kit's kernel runs in place although the kit stripped it after its sidecar was written" {
     with tempfile.TemporaryDirectory(prefix="jac-kernel-") as tmp {
         unit = os.path.join(tmp, "unit.jac");
         Path(unit).write_text("def one -> int {\n    return 1;\n}\n");
-        kit = os.path.join(tmp, "kit");
-        os.makedirs(kit);
-        bundled = os.path.join(kit, "libjac_compiler.dylib");
+        site = os.path.join(tmp, "site", "jaclang");
+        os.makedirs(os.path.join(site, "compiler"));
+        bundled = os.path.join(site, "compiler", "libjac_compiler.dylib");
         Path(bundled).write_bytes(b"the stripped kernel");
         stripped = hashlib.sha256(Path(bundled).read_bytes()).hexdigest();
-        options = kernel_options();
-        ident = native_unit_identity(unit);
-        sidecar = {
-            "classes": {},
-            "artifact_sha256": hashlib.sha256(b"the kernel before strip").hexdigest(),
-            "plan_digest": "p",
-            "layout_digest": "l",
-            "units": [unit],
-            "unit_ids": [ident],
-            "source_key": "folded elsewhere",
-            "compiler_digest": running_compiler_digest(),
-            "codegen_identity": options.base_codegen_identity(),
-            "triple": options.effective_triple(),
-            "python": f"{sys.version_info.major}.{sys.version_info.minor}",
-            "unit_sources": {ident: unit_source_digest(unit)},
-            "unit_policy": {ident: 0}
-        };
-        Path(bundled + ".layout.json").write_text(json.dumps(sidecar));
-        destination = os.path.join(tmp, "tree", "libjac_compiler.dylib");
-        with patch.object(
-            kernel_resolve,
-            "_bundled_kernel",
-            return_value=(bundled, {"sha256": stripped})
-        ) {
-            adopted = _adopt_bundled(destination);
-        }
-        assert adopted is not None , "the manifest vouches for the stripped library";
-        assert adopted.source == "tree" and adopted.plan_digest == "p";
-        published = read_sidecar(destination);
-        assert published is not None and published["artifact_sha256"] == stripped , (
-            "the adopted copy carries the hash of the library it sits beside"
+        sidecar = _sidecar_for(
+            bundled,
+            unit,
+            artifact_sha256=hashlib.sha256(b"the kernel before strip").hexdigest()
         );
-        assert _accept_in_tree(destination) is not None , "later runs accept it in place";
-        with patch.object(
-            kernel_resolve,
-            "_bundled_kernel",
-            return_value=(bundled, {"sha256": "not the library the kit shipped"})
-        ) {
-            assert _adopt_bundled(os.path.join(tmp, "other", "libjac_compiler.dylib"))
-                is None , (
-                "a kit whose library disagrees with its own manifest is never adopted"
+        Path(bundled + ".layout.json").write_text(json.dumps(sidecar));
+        shipped = Image(
+            record={"path": "compiler/libjac_compiler.dylib", "sha256": stripped}
+        );
+        with patch("jaclang.artifacts.kit.kit_image", return_value=(site, shipped)) {
+            probe = KernelArtifact().probe_kit();
+        }
+        found = probe.found;
+        assert found is not None , probe.drift;
+        assert found.source == Source.KIT and found.path == bundled , (
+            "the kit's kernel is loaded where the kit keeps it"
+        );
+        assert sorted(os.listdir(os.path.join(site, "compiler")))
+            == ["libjac_compiler.dylib", "libjac_compiler.dylib.layout.json"] , (
+            "running the kit's kernel writes nothing"
+        );
+        forged = Image(
+            record={
+                "path": "compiler/libjac_compiler.dylib",
+                "sha256": "not this library"
+            }
+        );
+        with patch("jaclang.artifacts.kit.kit_image", return_value=(site, forged)) {
+            assert KernelArtifact().probe_kit().found is None , (
+                "a kit whose library disagrees with its own manifest is never run"
             );
         }
     }
 }
 
 test "application configuration does not change the compiler kernel" {
-    import from unittest.mock { patch }
     import from jaclang.project.config { JacConfig }
     import from jaclang.project.compiler_host { ProjectHost, project_defaults_of }
     import from jaclang.compiler.driver.compile_options {
-        CompileOptions,
         push_native_target,
         pop_native_target
     }
@@ -335,53 +415,69 @@ test "application configuration does not change the compiler kernel" {
     }
 }
 
-
-test "kernel publication never accepts mismatched library and sidecar images" {
-    import from unittest.mock { patch }
-    import jaclang.compiler.backends.native.kernel_resolve as resolver;
-    import from jaclang.jac0core.cache_paths { atomic_write }
-    with tempfile.TemporaryDirectory() as directory {
-        source = Path(directory) / "new.so";
-        target = Path(directory) / "kernel.so";
-        source.write_bytes(b"new kernel");
-        target.write_bytes(b"old kernel");
-        for path in [source, target] {
-            Path(str(path) + ".layout.json").write_text(
-                json.dumps(
-                    {
-                        "classes": {},
-                        "artifact_sha256": hashlib.sha256(path.read_bytes()).hexdigest()
-                    }
-                )
-            );
-        }
-        observed: list[bool] = [];
-        def publish(path: str, data: bytes, mode: (int | None) = None) {
-            atomic_write(path, data, mode);
-            observed.append(_accept_in_tree(str(target)) is not None);
-        }
-        with patch.object(resolver, "_sidecar_matches_sources", return_value=True) {
-            assert _accept_in_tree(str(target)) is not None;
-            with patch.object(resolver, "atomic_write", side_effect=publish) {
-                resolver._publish_kernel(str(source), str(target));
-            }
-        }
-        assert observed == [False, True];
-    }
-}
-
-
-test "kernel source identity is independent of the caller compilation context" {
+test "kernel unit identity is independent of the caller compilation context" {
     import from jaclang.compiler.driver.compilation_context { cache_scope }
+    import from jaclang.compiler.driver.jir { unit_source_digest }
     with tempfile.TemporaryDirectory() as directory {
         source = Path(directory) / "unit.jac";
         source.write_text("def answer -> int { return 42; }\n");
-        options = kernel_options();
         with cache_scope(CompileOptions(target_app="build-context")) {
-            built = units_source_key([str(source)], options);
+            built = unit_source_digest(str(source));
         }
         with cache_scope(CompileOptions(target_app="application-context")) {
-            assert units_source_key([str(source)], options) == built;
+            assert unit_source_digest(str(source)) == built;
         }
+    }
+}
+
+test "a kernel build publishes its library and sidecar and sweeps its stage" {
+    import jaclang.compiler.backends.native.kernel_stage0 as stage0;
+    with tempfile.TemporaryDirectory(prefix="jac-kernel-") as tmp {
+        lib = os.path.join(tmp, "libjac_compiler.so");
+        def fake_link(destination: str, **kwargs: any) -> LinkResult {
+            Path(destination).write_bytes(b"fresh kernel");
+            Path(destination + ".layout.json").write_text(json.dumps({"classes": {}}));
+            Path(destination + ".target.json").write_text(json.dumps({"units": []}));
+            return LinkResult(
+                output_path=destination, plan_digest="p", layout_digest="l", sha256="s"
+            );
+        }
+        with patch.object(stage0, "link_kernel", side_effect=fake_link) {
+            result = resolver.build_kernel(lib);
+        }
+        assert result.output_path == lib , "the result names the published kernel";
+        assert Path(lib).read_bytes() == b"fresh kernel";
+        assert read_sidecar(lib) is not None , "the published sidecar travels with the library";
+        assert sorted(p.name for p in Path(tmp).iterdir())
+            == [
+                "libjac_compiler.so",
+                "libjac_compiler.so.layout.json",
+                "libjac_compiler.so.lock"
+            ] , ("the stage file, its layout sidecar, and its target spec are swept");
+    }
+}
+
+test "a failed kernel build publishes nothing and sweeps its stage" {
+    import jaclang.compiler.backends.native.kernel_stage0 as stage0;
+    with tempfile.TemporaryDirectory(prefix="jac-kernel-") as tmp {
+        lib = os.path.join(tmp, "libjac_compiler.so");
+        def dead_link(destination: str, **kwargs: any) {
+            Path(destination).write_bytes(b"torn kernel");
+            Path(destination + ".layout.json").write_text(json.dumps({"classes": {}}));
+            Path(destination + ".target.json").write_text(json.dumps({"units": []}));
+            raise RuntimeError("link died");
+        }
+        raised = False;
+        with patch.object(stage0, "link_kernel", side_effect=dead_link) {
+            try {
+                resolver.build_kernel(lib);
+            } except RuntimeError {
+                raised = True;
+            }
+        }
+        assert raised , "a failed build surfaces its error";
+        assert list(Path(tmp).iterdir()) == [] , (
+            "an interrupted build leaves no stage file, sidecar, or target spec behind"
+        );
     }
 }

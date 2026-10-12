@@ -599,12 +599,8 @@ def ensure_loaded -> (NativeCompiler | None) {
     if _RESOLVED or _RESOLVING {
         return None;
     }
-    import sys;
-    resolver = sys.modules.get("jaclang.compiler.backends.native.kernel_resolve");
-    if resolver is not None and not hasattr(resolver, "resolve_kernel") {
-        """The resolver itself is being compiled (a kernel build child imports
-        it first): the store parser serves this compile, and a later call
-        resolves the kernel once the module has finished loading.""";
+    import from jaclang.jac0core.artifact_registry { resolution_in_flight }
+    if resolution_in_flight() {
         return None;
     }
     _RESOLVING.append(1);

@@ -28,6 +28,7 @@ import from jaclang.testing.testkit { ServingTestClient as TestClient }
 import from jaclang.server.endpoints.colocated { register_colocated_endpoints }
 import from jaclang.server.server { JacAPIServer }
 import from jaclang.server.serving.server { ServingServer }
+import from jaclang.server.settings { ServeSettings }
 
 glob _PROVIDER_SRC: str = (
          "import uuid;\n"
@@ -278,6 +279,7 @@ test "scale server: a worker arms the outbox worker for a bridging consumer" {
     try {
         (prov, _prov_srv) = _provider(tmp, "armed_provider");
         (_cons, cons_srv) = _provider(tmp, "armed_consumer");
+        cons_srv.settings = ServeSettings.load(tmp, {"workers": "1"});
         for p in patches {
             p.start();
         }

@@ -23,11 +23,11 @@ def _scan_rc_machinery(llvm_ir_str: str) -> tuple[list[str], list[str]] {
 
 def _application_ir(plan: LinkPlan) -> str {
     import jaclang.compiler.backends.native.llvm.binding as llvm;
-    import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
+    import from jaclang.compiler.frontend.codeinfo { is_toolchain_unit }
     registry = plan.prog.native_units();
     parts: list[str] = [];
     for u in plan.units {
-        if native_unit_identity(u.path).startswith("jaclang/") {
+        if is_toolchain_unit(u.path) {
             continue;
         }
         bc = registry.bitcode_for(u.path, plan.options);
@@ -343,67 +343,4 @@ impl native_build(
 def _restore_target(prev_target: (str | None)) {
     import from jaclang.compiler.driver.compile_options { pop_native_target }
     pop_native_target(prev_target);
-}
-
-
-def _resolve_ca_bundle(pkg_root: str) -> (str | None) {
-    import os;
-
-    cand = os.path.join(os.path.dirname(pkg_root), "python", "floor", "cacert.pem");
-    if os.path.isfile(cand) {
-        return cand;
-    }
-
-    import glob;
-    bundles = sorted(
-        `glob.`glob(
-            os.path.join(
-                pkg_root, ".python-build", "*", "*", "python", "build", "cacert.pem"
-            )
-        )
-    );
-    if bundles {
-        return bundles[0];
-    }
-    source_bundles = sorted(
-        `glob.`glob(
-            os.path.join(
-                pkg_root, ".python-build", "*", "python", "build", "cacert.pem"
-            )
-        )
-    );
-    if source_bundles {
-        return source_bundles[0];
-    }
-    hits = sorted(
-        `glob.`glob(
-            os.path.join(
-                pkg_root,
-                ".python-build",
-                "*",
-                "python",
-                "install",
-                "lib",
-                "python*",
-                "site-packages",
-                "pip",
-                "_vendor",
-                "certifi",
-                "cacert.pem"
-            )
-        )
-    );
-    return hits[0] if hits else None;
-}
-
-
-def _floor_ca_bundle -> (str | None) {
-    import os;
-    env = os.environ.get("JAC_NATIVE_CA_BUNDLE", "");
-    if env and os.path.isfile(env) {
-        return env;
-    }
-    import jaclang;
-    pkg_root = os.path.dirname(os.path.dirname(os.path.abspath(jaclang.__file__)));
-    return _resolve_ca_bundle(pkg_root);
 }

@@ -5,7 +5,7 @@ cache-event counters rather than timing: a warm no-edit check replays
 persisted diagnostics with zero passes; dependency ingestion hydrates
 from SEC_IFACE without touching the dep's source pipeline; a body-only
 dep edit recompiles the dep but does not cascade (interface hash
-cutoff); an interface edit does cascade; JAC_REBUILD recomputes and
+cutoff); an interface edit does cascade; a rebuild recomputes and
 rewrites with identical results; verify mode recomputes what was served
 and fails loudly when the cache lies.
 
@@ -207,26 +207,22 @@ test "an interface edit re-analyzes the importer" {
     );
 }
 
-test "JAC_REBUILD recomputes, rewrites, and matches the cold results" {
+test "a rebuild recomputes, rewrites, and matches the cold results" {
+    import from jaclang.compiler.driver.jir { set_cache_mode }
     (main, dep) = _project();
     (_cold, cold_diags) = _check(main);
-    prior = os.environ.get("JAC_REBUILD");
-    os.environ["JAC_REBUILD"] = "1";
+    set_cache_mode(rebuild=True);
     try {
         (rebuild_prog, rebuild_diags) = _check(main);
     } finally {
-        if prior is None {
-            del os.environ["JAC_REBUILD"];
-        } else {
-            os.environ["JAC_REBUILD"] = prior;
-        }
+        set_cache_mode(rebuild=False);
     }
     events = rebuild_prog.analysis.cache_events;
     assert events.get("analysis_replay", 0) == 0 , (
-        "JAC_REBUILD still served from the analysis cache"
+        "a rebuild still served from the analysis cache"
     );
-    assert rebuild_prog.analysis.pass_runs , "JAC_REBUILD ran no passes";
-    assert rebuild_diags == cold_diags , "JAC_REBUILD changed the results";
+    assert rebuild_prog.analysis.pass_runs , "a rebuild ran no passes";
+    assert rebuild_diags == cold_diags , "a rebuild changed the results";
     (warm_prog, _d) = _check(main);
     assert warm_prog.analysis.cache_events.get("analysis_replay", 0) == 1 , (
         "the rebuild did not leave a hydratable cache behind"

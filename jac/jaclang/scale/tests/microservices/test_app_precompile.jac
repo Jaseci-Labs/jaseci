@@ -1,4 +1,5 @@
 import io;
+import logging;
 import os;
 import shutil;
 import subprocess;
@@ -160,6 +161,58 @@ def _names(raw: bytes) -> list[str] {
 }
 
 
+class _SealLog(logging.Handler) {
+    def init(self: _SealLog) {
+        super.__init__();
+        self.messages: list[str] = [];
+    }
+
+    def emit(self: _SealLog, record: logging.LogRecord) {
+        self.messages.append(record.getMessage());
+    }
+}
+
+
+def _pack_logged(base: Path, binary: bytes) -> tuple[bytes, list[str]] {
+    log = logging.getLogger("jaclang.scale.injector.bundle");
+    seen = _SealLog();
+    previous = log.level;
+    log.setLevel(logging.INFO);
+    log.addHandler(seen);
+    try {
+        raw = pack_jab(str(base), binary);
+    } finally {
+        log.removeHandler(seen);
+        log.setLevel(previous);
+    }
+    return (raw, seen.messages);
+}
+
+
+test "an unchanged project reuses its sealed bundle instead of sealing again" {
+    binary = require_pod_binary().read_bytes();
+    base = Path(_mini_app());
+    (first, first_log) = _pack_logged(base, binary);
+    assert not any("Reusing the sealed bundle" in m for m in first_log);
+    (again, again_log) = _pack_logged(base, binary);
+    assert any("Reusing the sealed bundle" in m for m in again_log) , (
+        f"a deploy of unchanged code sealed the app again: {again_log}"
+    );
+    assert again == first , "the reused bundle differs from the one sealed";
+    (base / "svc.jac").write_text("def:pub ping -> str { return \"pong!\"; }\n");
+    (edited, edited_log) = _pack_logged(base, binary);
+    assert not any("Reusing the sealed bundle" in m for m in edited_log) , (
+        "a source edit reused the previous seal"
+    );
+    assert edited != first;
+    (base / "svc.jac").chmod(0o755);
+    (_, mode_log) = _pack_logged(base, binary);
+    assert not any("Reusing the sealed bundle" in m for m in mode_log) , (
+        "a file mode change reused the previous seal"
+    );
+}
+
+
 test "pack_jab on a nonexistent app directory is a hard error" {
     caught = "";
     try {
@@ -202,7 +255,7 @@ test "the seal and vendor subprocesses run without persistent storage (issue 809
         f"persistent store there is a permanent orphan; {SCRATCH_ENV} was "
         f"{env.get(SCRATCH_ENV)!r}"
     );
-    for banned in ["PYTHONPATH", "JAC_DEV_SOURCE"] {
+    for banned in ["PYTHONPATH", "JAC_HANDOFF"] {
         assert banned not in env , f"{banned} must stay out of the seal env";
     }
 }
@@ -342,7 +395,7 @@ test "a real pod binary seals the app each pod serves and boots it from the seal
                 archive.extractall(tmp, filter="data");
             }
             env = dict(os.environ);
-            env["JAC_NO_DEV_SOURCE"] = "1";
+            env["JAC_HANDOFF"] = '{"compiler_source": ""}';
             for (boot_file, endpoint) in boots.items() {
                 result = subprocess.run(
                     [

@@ -39,7 +39,17 @@ glob CONFIG: str = '[project]\nname="kernel-native"\n',
          'with entry {\n    p = Point(x=3, y=4);\n'
          '    print("sq", square(7), "norm2", p.norm2());\n}\n'
      ),
-     SWITCHES: dict[str, str] = {"JAC_KERNEL_COMPILE": "inprocess"};
+     IN_PROCESS_JAC: str = (
+         "import jaclang.project.kernel_compile as kernel_compile\n"
+         "kernel_compile.run_kernel_in_process()\n"
+         "import runpy\n"
+         "runpy.run_module('jaclang', run_name='__main__', alter_sys=True)"
+     );
+
+"""Serve kernel compiles from the kernel's code run under Python."""
+def in_process_kernel -> any {
+    return patch("jaclang.project.kernel_compile._IN_PROCESS", [True]);
+}
 
 def native_options -> CompileOptions {
     return CompileOptions(
@@ -67,7 +77,7 @@ def host_native(entry_file: str) -> UnitProducts {
 
 """Compile `entry_file` in a kernel session run under Python, native generation on."""
 def kernel_native(entry_file: str) -> CompileReport {
-    with patch.dict(os.environ, SWITCHES) {
+    with in_process_kernel() {
         session = kernel_snapshot(
             active_host(), JacProgram(), entry_file, native_options(), emit_closure=True
         );
@@ -130,7 +140,7 @@ test "the host runs a native module from its kernel record without analysing it"
         entry_file = str(base / 'main.jac');
         program = JacProgram();
         builder = program._get_compiler();
-        with patch.dict(os.environ, SWITCHES) {
+        with in_process_kernel() {
             (in_kernel, engine) = builder.kernel_native_entry(
                 entry_file, program, CompileOptions(default_codespace="native")
             );
@@ -166,7 +176,7 @@ test "a module that cannot be lowered is demoted inside the session" {
                 + 'with entry {\n    print(len([root-->]));\n}\n'
         );
         entry_file = str(base / 'models.jac');
-        with patch.dict(os.environ, SWITCHES) {
+        with in_process_kernel() {
             session = kernel_snapshot(
                 active_host(),
                 JacProgram(),
@@ -213,7 +223,7 @@ test "a default run lowers a bundled native import the way the host does" {
         assert not program.errors_had , [str(e) for e in program.errors_had];
         expected = unit_products(module, program);
         assert expected.native_ir , "the host generated no IR for the fixture";
-        with patch.dict(os.environ, SWITCHES) {
+        with in_process_kernel() {
             session = kernel_snapshot(
                 active_host(),
                 JacProgram(),
@@ -252,7 +262,7 @@ test "a module the host cannot link is demoted and compiled again for the server
         program = JacProgram();
         builder = program._get_compiler();
         refusal = LinkPlanError("helper.jac is not a native unit");
-        with patch.dict(os.environ, SWITCHES) {
+        with in_process_kernel() {
             with patch.object(
                 JacCompiler, "_load_native_from_cache", side_effect=refusal
             ) as link {
@@ -284,7 +294,7 @@ test "a link failure stays an error when native was asked for outright" {
         builder = program._get_compiler();
         refusal = LinkPlanError("helper.jac is not a native unit");
         raised = False;
-        with patch.dict(os.environ, SWITCHES) {
+        with in_process_kernel() {
             with patch.object(
                 JacCompiler, "_load_native_from_cache", side_effect=refusal
             ) {
@@ -310,15 +320,14 @@ by one kernel session, the host adopts the record and runs the entry natively,
 and a second run starts from the cache with no compile at all."""
 test "jac run executes a native program from a kernel session, then from the cache" {
     import subprocess;
-    import from tests.support { jac_command }
+    import from tests.support { compiler_python_command }
     with TemporaryDirectory() as td {
         base = Path(os.path.realpath(td));
         (base / 'fib.jac').write_text(FIB);
         env: dict[str, str] = dict(os.environ);
-        env.update(SWITCHES);
         env["JAC_KERNEL_TIMING"] = "1";
         first = subprocess.run(
-            jac_command("run", "fib.jac"),
+            compiler_python_command(IN_PROCESS_JAC, "run", "fib.jac"),
             cwd=str(base),
             capture_output=True,
             text=True,
@@ -331,7 +340,7 @@ test "jac run executes a native program from a kernel session, then from the cac
             "a native entry fell back to the Python lane:\n" + first.stderr[-1500:]
         );
         again = subprocess.run(
-            jac_command("run", "fib.jac"),
+            compiler_python_command(IN_PROCESS_JAC, "run", "fib.jac"),
             cwd=str(base),
             capture_output=True,
             text=True,

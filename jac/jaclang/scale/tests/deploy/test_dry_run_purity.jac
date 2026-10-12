@@ -292,9 +292,7 @@ test "resolving the pod base image for a dry run makes no network probe" {
     with tempfile.TemporaryDirectory() as tmpdir {
         with unittest.mock.patch(
             "jaclang.scale.injector.binary._http_get_bytes"
-        ) as mock_http, unittest.mock.patch.dict(
-            os.environ, {"JAC_SCALE_BINARY_PATH": ""}
-        ) {
+        ) as mock_http {
             image = binary_mod.resolve_pod_base_image(tmpdir, "", probe=False);
             mock_http.assert_not_called();
         }

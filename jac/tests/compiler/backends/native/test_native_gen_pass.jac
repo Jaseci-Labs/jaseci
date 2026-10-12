@@ -4223,25 +4223,12 @@ test "aarch64 static-musl binary runs (cross vendor-musl, #7626 C1)" {
     # + static ELF emission for a non-host arch.
     import shutil;
     import tempfile;
-    import jaclang;
     qemu = shutil.which("qemu-aarch64-static") or shutil.which("qemu-aarch64");
-    _musl_env = os.environ.get("JAC_NATIVE_MUSL_DIR", "");
-    musl_a64 = os.path.join(_musl_env, "libc.a")
-        if _musl_env
-        else os.path.join(
-            os.path.dirname(jaclang.__file__),
-            "..",
-            ".pbs-build",
-            "linux-aarch64",
-            "musl",
-            "lib",
-            "libc.a"
-        );
-    if not qemu or not os.path.exists(musl_a64) {
+    import from jaclang.compiler.backends.native.static_link { musl_lib_dir }
+    if not qemu or musl_lib_dir("aarch64-unknown-linux-musl") is None {
         testskip(
-            "aarch64 qemu-user or cross vendored musl not present "
-            "(run `zig build vendor-musl-linux-aarch64`, or set "
-            "JAC_NATIVE_MUSL_DIR)"
+            "aarch64 qemu-user or the aarch64 musl runtime is not present "
+            "(run `jac native build musl@linux-aarch64`)"
         );
     }
     fixture = str(os.path.join(FIXTURES, "aarch64_global_roundtrip.jac"));
@@ -6507,7 +6494,13 @@ test "restore-failure falls back to recompile for inferred modules (item #19)" {
             bc2 = comp.get_bytecode(fx, prog2);
         }
         assert bc2 is not None;
-        assert len(loads) == 2 , f"expected a restore and a rebuild, saw {len(loads)}";
+        # Without a kernel the host recompiles and builds the engine in the
+        # pass itself, so the loader sees only the failed restore.
+        import from jaclang.compiler.native_compiler { ensure_loaded }
+        rebuilds = 2 if ensure_loaded() is not None else 1;
+        assert len(loads) == rebuilds , (
+            f"expected {rebuilds} loader call(s), saw {len(loads)}"
+        );
         (eng, _) = comp.get_native_interop_setup(fx, prog2);
         assert eng is not None , (
             "restore failure must trigger recompile for inferred modules"

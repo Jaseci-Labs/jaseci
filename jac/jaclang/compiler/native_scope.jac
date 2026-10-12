@@ -56,6 +56,7 @@ glob NATIVE_SCOPE: tuple[NativeScopeEntry, ...] = (
          NativeScopeEntry(module="jaclang.compiler.frontend.kernel_host"),
          NativeScopeEntry(module="jaclang.compiler.frontend.kernel_inputs"),
          NativeScopeEntry(module="jaclang.compiler.frontend.module_facts"),
+         NativeScopeEntry(module="jaclang.compiler.frontend.loop_links"),
          NativeScopeEntry(module="jaclang.compiler.frontend.parser.frontend"),
          NativeScopeEntry(module="jaclang.compiler.frontend.source_layout"),
          NativeScopeEntry(module="jaclang.compiler.frontend.unparse"),
@@ -193,6 +194,28 @@ def package_host_edge(mod_path: str) -> bool {
 def scope_allows_inferred_path(mod_path: str) -> bool {
     import from jaclang.compiler.frontend.codeinfo { native_unit_compile_active }
     return not native_unit_compile_active() or not package_host_edge(mod_path);
+}
+
+def binds_bare_arch_names(mod_path: str) -> bool {
+    import from jaclang.compiler.kernel_target { target_package_rel }
+    import from jaclang.compiler.frontend.codeinfo { kernel_unit_rels }
+    rel = target_package_rel(mod_path) if mod_path else None;
+    if rel is None {
+        return False;
+    }
+    rel = rel.lstrip("/");
+    if rel.endswith(".pyi")
+        or (rel.startswith("runtime/") and rel.count("/") == 1)
+        or rel in KERNEL_ABI_CONTRACT_REL
+        or rel in kernel_unit_rels() {
+        return True;
+    }
+    if rel.startswith("runtime/") {
+        return False;
+    }
+    import from jaclang.compiler.frontend.host { active_host }
+    host = active_host();
+    return host.is_native_only_source(rel) or host.is_native_lowered_source(rel);
 }
 
 def scope_modules -> list[str] {

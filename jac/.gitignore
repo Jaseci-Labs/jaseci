@@ -100,6 +100,8 @@ jaclang/vendor/typeshed/stdlib
 # Zig-built LLVMPY_* shim, placed in-tree per host platform (see build.zig).
 libjacllvm.so
 libjacllvm.dylib
+libjacllvm.*.artifact.json
+jacllvm.dll.artifact.json
 jacllvm.dll
 # Kit-built native compiler kernel (#8824), staged in-tree by mkpayload.
 libjac_compiler.so
@@ -117,6 +119,6 @@ libjacpyembed.so
 libjacpyembed.dylib
 jacpyembed.dll
 
-# Persistent kernel locks must keep their inode while waiters exist.
+# A kernel publication lock keeps its inode while a build holds it.
 libjac_*.lock
 jac_compiler.dll.lock
