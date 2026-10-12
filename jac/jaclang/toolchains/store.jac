@@ -42,7 +42,8 @@ obj Artifact {
 }
 
 def offline -> bool {
-    return os.environ.get("JAC_OFFLINE", "").lower() in ["1", "true", "yes"];
+    import from jaclang.project.config { offline_mode }
+    return offline_mode();
 }
 
 def file_digest(path: Path, algorithm: str = "sha256") -> str {
@@ -77,7 +78,7 @@ def fetch(
         }
         if offline() {
             raise RuntimeError(
-                f"{artifact.name} {artifact.version} is not cached. Disable JAC_OFFLINE and run setup first."
+                f"{artifact.name} {artifact.version} is not cached. Unset `[network] offline` in jac.toml and run setup first."
             );
         }
         if not allowed_url(artifact.url) {

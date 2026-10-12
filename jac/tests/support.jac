@@ -48,6 +48,12 @@ def cache_env(cache_dir: Path | str) -> dict[str, str] {
     return env;
 }
 
+"""Run as a project whose jac.toml sets `[network] offline`."""
+def offline_project -> any {
+    import from unittest.mock { patch }
+    return patch("jaclang.project.config.offline_mode", return_value=True);
+}
+
 """Select the parent's compiler, or an explicit checkout for comparative tests."""
 def compiler_python_command(
     source: str, *args: str, compiler_root: str | None = None

@@ -1316,6 +1316,14 @@ impl _parse_toml_data(
         client_data = data["client"];
         config.client = ClientConfig(framework=client_data.get("framework", "react"));
     }
+    if isinstance(data.get("network"), dict) {
+        config.network = NetworkConfig(offline=data["network"].get("offline") is True);
+    }
+    if isinstance(data.get("toolchains"), dict) {
+        config.toolchains = ToolchainsConfig(
+            system=data["toolchains"].get("system", True) is not False
+        );
+    }
     if "dev" in data {
         dev_data = data["dev"];
 

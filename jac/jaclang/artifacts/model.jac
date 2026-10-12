@@ -50,7 +50,8 @@ obj Artifact {
         variant: str = "",
         requires: list[str] = [],
         consumes: list[str] = [],
-        hosts: list[str] = [];
+        hosts: list[str] = [],
+        provision: bool = False;
 
     def disabled -> bool;
     def unavailable_reason -> str;

@@ -44,8 +44,14 @@ impl resolve(name: str) -> Resolution {
 
 impl require(name: str) -> Resolution {
     resolution = resolve(name);
+    artifact = artifact_named(name);
+    if resolution.on_floor()
+        and artifact.provision
+        and not resolution.deferred
+        and artifact.host_supported() {
+        resolution = _provision(artifact, resolution);
+    }
     if resolution.on_floor() {
-        artifact = artifact_named(name);
         raise ArtifactUnavailable(
             f"{artifact.summary} is unavailable: {resolution.reason or 'not built'}. "
             f"Run `jac native build {name}`."

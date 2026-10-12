@@ -234,6 +234,14 @@ obj ClientConfig {
     has framework: str = "react";
 }
 
+obj NetworkConfig {
+    has offline: bool = False;
+}
+
+obj ToolchainsConfig {
+    has system: bool = True;
+}
+
 obj DevConfig {
     has jaclang_source: str = "",
         exact: bool = False,
@@ -302,6 +310,8 @@ obj JacConfig {
         client_errors: ClientErrorsConfig = ClientErrorsConfig(),
         client: ClientConfig = ClientConfig(),
         dev: DevConfig = DevConfig(),
+        network: NetworkConfig = NetworkConfig(),
+        toolchains: ToolchainsConfig = ToolchainsConfig(),
         dependencies: dict[str, PackageDep] = {},
         dev_dependencies: dict[str, PackageDep] = {},
         pypi_dependencies: dict[str, str] = {},
@@ -423,5 +433,15 @@ def get_config_for_path(
 ) -> JacConfig | None;
 
 def get_config_for_dir(start_dir: str) -> JacConfig | None;
+
+def offline_mode -> bool {
+    config = get_config();
+    return config is not None and config.network.offline;
+}
+
+def use_system_toolchains -> bool {
+    config = get_config();
+    return config is None or config.toolchains.system;
+}
 
 def active_profile_name(config: JacConfig | None) -> str;

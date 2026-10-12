@@ -109,9 +109,11 @@ jobs:
             done
           done 3< jac/bootstrap/python/jacpython-modules.txt
       - name: Provision managed Ruby, CocoaPods, and native Node
-        env:
-          JAC_TOOLCHAIN_USE_SYSTEM: "0"
-        run: jac setup --toolchain ios
+        run: |
+          mkdir -p "$RUNNER_TEMP/managed-ios"
+          cd "$RUNNER_TEMP/managed-ios"
+          printf '[project]\nname = "managed-ios"\n\n[toolchains]\nsystem = false\n' > jac.toml
+          jac setup --toolchain ios
 
   # The desktop target on its second host. ci.yml smokes the same quickstart
   # scaffold under Xvfb with WebKitGTK; this is the WKWebView twin: the host

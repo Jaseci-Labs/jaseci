@@ -740,6 +740,27 @@ safe to delete at any time. See [`jac fmt --cache`](../cli/index.md#jac-fmt).
 
 ---
 
+### [network]
+
+```toml
+[network]
+offline = false  # true: never download; a missing toolchain, package,
+                 # scaffold or Postgres distribution is an error naming why
+```
+
+### [toolchains]
+
+```toml
+[toolchains]
+system = true    # false: ignore a compatible tool already on the system
+                 # (a JDK 21 at JAVA_HOME, Node 22 on PATH) and use jac's
+                 # pinned managed copy -- reproducible CI setups
+```
+
+See [Toolchains](../../build/toolchains.md).
+
+---
+
 ### [storage]
 
 !!! note "Scale Configuration"

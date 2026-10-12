@@ -1737,7 +1737,6 @@ jobs:
     env:
       JAC_NO_DEV_SOURCE: "1"
       JAC_ACCEPT_ANDROID_LICENSES: "1"
-      JAC_TOOLCHAIN_USE_SYSTEM: "0"
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/jac-kit
@@ -1746,13 +1745,14 @@ jobs:
       - name: Build the JacYac release APK with a fresh managed Android SDK
         run: |
           set -euo pipefail
-          export JAC_TOOLCHAIN_DIR="$RUNNER_TEMP/toolchains"
-          export ANDROID_HOME="$JAC_TOOLCHAIN_DIR/android-sdk/linux-x64"
+          # The runner image ships its own SDK at ANDROID_HOME; point it at an
+          # empty directory so the managed one is provisioned from scratch.
+          export ANDROID_HOME="$RUNNER_TEMP/android-sdk"
           export ANDROID_SDK_ROOT="$ANDROID_HOME"
           cp -r jac/examples/jaclang_org "$RUNNER_TEMP/mobile-app"
-          printf '\n[client.react_native]\nrelease = true\nproject_dir = ".jac/mobile-rn"\n' >> "$RUNNER_TEMP/mobile-app/jac.toml"
-          jac setup --toolchain android
+          printf '\n[client.react_native]\nrelease = true\nproject_dir = ".jac/mobile-rn"\n\n[toolchains]\nsystem = false\n' >> "$RUNNER_TEMP/mobile-app/jac.toml"
           cd "$RUNNER_TEMP/mobile-app"
+          jac setup --toolchain android
           jac build --platform android mobile
           test -n "$(find .jac/mobile-rn/android/app/build/outputs/apk -name '*.apk' -print -quit)"
       - name: Upload the generated APK

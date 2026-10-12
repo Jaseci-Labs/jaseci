@@ -62,7 +62,7 @@ test "native source workspaces never write into installed package assets" {
         source = base / "package";
         source.mkdir();
         (source / "binding.jac").write_text("glob value = 1;");
-        with patch.dict(os.environ, {"JAC_TOOLCHAIN_DIR": str(base / "cache")}) {
+        with patch.dict(os.environ, {"JAC_CACHE_HOME": str(base / "cache")}) {
             first = source_workspace(source, "binding");
             assert first != source;
             (first / ".native-build.lock").touch();

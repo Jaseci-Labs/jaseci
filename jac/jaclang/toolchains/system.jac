@@ -8,7 +8,7 @@ import from jaclang.toolchains.store { offline }
 def install_linux_packages(packages: dict[str, list[str]]) {
     if offline() {
         raise RuntimeError(
-            "Required system libraries are missing and JAC_OFFLINE is enabled. Run setup online first."
+            "Required system libraries are missing and jac.toml sets `[network] offline`. Run setup online first."
         );
     }
     for (manager, names) in packages.items() {

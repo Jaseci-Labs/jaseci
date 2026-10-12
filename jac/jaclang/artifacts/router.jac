@@ -76,6 +76,31 @@ def _decide(artifact: Artifact) -> Resolution {
     return Resolution(name=artifact.name, reason=tree.describe());
 }
 
+def _provision(artifact: Artifact, resolution: Resolution) -> Resolution {
+    import sys;
+    import from jaclang.project.config { offline_mode }
+    if offline_mode() {
+        return Resolution(
+            name=artifact.name,
+            reason=f"{resolution.reason
+                or 'not provisioned'}, and this project is offline ([network] offline)"
+        );
+    }
+    sys.stderr.write(
+        f"jac: provisioning {artifact.summary} ({resolution.reason
+            or 'not provisioned yet'}); "
+        f"`jac native build {artifact.name}` does this ahead of time.\n"
+    );
+    sys.stderr.flush();
+    build([artifact.name], _to_stderr);
+    return resolve(artifact.name);
+}
+
+def _to_stderr(line: str) {
+    import sys;
+    sys.stderr.write(line + "\n");
+}
+
 def _announce(artifact: Artifact, resolution: Resolution) {
     if artifact.name in _ANNOUNCED
         or artifact.kind != ArtifactKind.ACCELERATOR
