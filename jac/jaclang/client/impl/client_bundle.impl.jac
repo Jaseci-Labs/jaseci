@@ -112,9 +112,8 @@ impl ClientBundleBuilder._compile_to_js(source_path: Path) -> ClientArtifact {
         }
         if not formatted {
             formatted = (
-                " it lowers to no client code. Client code imports a runtime "
-                "value from it, but it declares nothing that runs on or is "
-                "exposed to the client."
+                " it lowers to no client code because it declares nothing that runs on "
+                "or is exposed to the client."
             );
         }
         raise ClientBundleError(
