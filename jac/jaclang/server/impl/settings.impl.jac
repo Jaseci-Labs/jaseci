@@ -342,37 +342,6 @@ impl secret_home(base_path: str) -> str {
 }
 
 
-impl cpu_quota -> int {
-    try {
-        text = Path('/sys/fs/cgroup/cpu.max').read_text(encoding='utf-8').strip();
-        parts = text.split();
-        if len(parts) == 2 and parts[0] != 'max' {
-            quota = int(parts[0]);
-            period = int(parts[1]);
-            if quota > 0 and period > 0 {
-                return max(1, -(-quota // period));
-            }
-        }
-    } except (OSError, ValueError) {}
-    try {
-        quota_text = Path('/sys/fs/cgroup/cpu/cpu.cfs_quota_us').read_text(
-            encoding='utf-8'
-        ).strip();
-        period_text = Path('/sys/fs/cgroup/cpu/cpu.cfs_period_us').read_text(
-            encoding='utf-8'
-        ).strip();
-        quota_v1 = int(quota_text);
-        period_v1 = int(period_text);
-        if quota_v1 > 0 and period_v1 > 0 {
-            return max(1, -(-quota_v1 // period_v1));
-        }
-    } except (OSError, ValueError) {}
-    counter: any = os?.process_cpu_count;
-    counted = counter() if counter is not None else os.cpu_count();
-    return max(1, int(counted or 1));
-}
-
-
 impl resolve_count(raw: str, quota: int, label: str) -> int {
     text = str(raw).strip().lower();
     if text == WORKERS_AUTO {

@@ -23,6 +23,7 @@ Bug index:
   #TVAR-3 - Union return types with TypeVars (e.g., V | None) resolve to Unknown
   #TVAR-5 - Module-level TypeVars shadowed by class type parameters
   #IMPL-1 - Has var reassigned in impl body loses its type (shadow local)
+  #IMPL-2 - Local first assigned in a nested block of an impl body taken for the archetype's member
   #BASE-1 - Base class name resolved in class's own scope (should be enclosing)
   #SUPER-1 - super() call returns Unknown instead of parent instance
   #DSTR-1  - Docstring before declaration inside function body triggers W0060 instead of attaching
@@ -690,6 +691,44 @@ test "bug_impl1_has_var_shadow_in_impl_body" {
 }
 
 # =========================================================================
+# Bug #IMPL-2: Local in a nested block of an impl body bound to a member
+#
+# In the body of `impl Arch.method`, a name first assigned inside a nested
+# block (a `for` or `if` body) was bound to the archetype's method or `has`
+# field of that name instead of becoming a local:
+#
+#     impl Shelf.tally(words: list[str]) -> int {
+#         for word in words {
+#             changed = len(word);     # E1001: Cannot assign int to
+#         }                            #        <function changed() -> None>
+#     }
+#
+# The same assignment at the top level of the body was a local, as it is in
+# a method bodied inline.
+#
+# Root cause: binding a target in a nested block asks the enclosing
+# function's scope whether it already has the name, with a shallow lookup
+# (`deep=False`). For an impl, `UniScopeNode.lookup` then falls through to
+# the declaration it implements, and from there it looked deep, climbing
+# from the declaration into the archetype. A shallow lookup came back with
+# the archetype's member.
+#
+# Fix: the lookup through an impl's declaration is as deep as was asked
+# for. A shallow one sees the declaration's own names (its parameters) and
+# no further, so the target is a local; `self.member` reaches the member.
+# =========================================================================
+test "bug_impl2_local_in_nested_block_of_impl_body" {
+    fixture_dir = os.path.join(JAC_ROOT, "tests", "compiler", "passes", "fixtures");
+    program = JacProgram();
+    program.compile(os.path.join(fixture_dir, "impl_nested_local_shadows_member.jac"));
+    assert len(program.errors_had) == 0 , (
+        "Bug #IMPL-2: a local first assigned in a nested block of an impl body "
+        "should be a local, not the archetype's method or field of that name. "
+        f"Got errors: {[str(e) for e in program.errors_had]}"
+    );
+}
+
+# =========================================================================
 # Bug #BASE-1: Base class name resolved in class's own scope
 #
 # For `class Child(Parent) { def Parent -> int {...} }` the name `Parent`
@@ -892,6 +931,52 @@ test "bug_comprehension_narrowing_negative" {
         "must still raise on `r.parts` -- the in-body edge fix must not "
         "over-classify nested comprehension edges as the true branch. "
         f"Got errors: {[str(e) for e in program.errors_had]}"
+    );
+}
+
+# =========================================================================
+# Bug #COMPR-TAIL-NARROW: a statement that ends an `if` body with a
+# comprehension did not flow on to what follows the `if`.
+#
+# `CFGBuildPass._wire_compr_filters` links the enclosing statement to the
+# comprehension's first clause. `_exit_wired` took that link for the
+# statement's way out, so `_connect_tails` never joined the body's last
+# statement to the next one: the only way into it was the edge on which the
+# condition was false. A second `if x is not None` then narrowed `x` from
+# `None` alone, and every use of `x` under it raised E1099.
+# =========================================================================
+test "bug_comprehension_block_tail_narrowing" {
+    program = compile_and_check("checker_bug_compr_block_tail_narrowing.jac");
+
+    assert len(program.errors_had) == 0 , (
+        "A statement that ends a block with a comprehension must flow on to "
+        "what follows the block, so that a guard asked again after it "
+        "narrows as it would after any other statement. "
+        f"Got errors: {[str(e) for e in program.errors_had]}"
+    );
+}
+
+# =========================================================================
+# Bug #COMPR-TAIL-NARROW (true-positive guard): joining the block's tail to
+# what follows must not hide a use that is not guarded, nor one on the
+# branch where the name is None.
+# =========================================================================
+test "bug_comprehension_block_tail_narrowing_negative" {
+    program = compile_and_check("checker_bug_compr_block_tail_narrowing_negative.jac");
+    found = [str(e) for e in program.errors_had];
+    none_lines = [
+        e.loc.first_line
+        for e in program.errors_had
+        if "NoneType" in str(e)
+    ];
+
+    assert 21 in none_lines , (
+        "After the `if`, with no guard, the name may still be None: the "
+        f"use on line 21 must be reported. Got: {found}"
+    );
+    assert 28 in none_lines , (
+        "On the branch where the name is None the use on line 28 must be "
+        f"reported. Got: {found}"
     );
 }
 
@@ -2242,5 +2327,46 @@ test "bug_unbound_1_method_through_class_as_value" {
     assert program.errors_had == [] , (
         "Bug #UNBOUND-1: an unbound method used as a value must take its "
         f"receiver. Got errors: {[str(e) for e in program.errors_had]}"
+    );
+}
+
+# Bug #CTOR-INIT-ARGS: a class whose `__new__` takes anything (`dict`'s is
+# `__new__(cls, *args, **kwargs)`) left its type arguments unsolved, because
+# the `__init__` overloads that carry them were never asked. `dict(x)` was a
+# bare `dict`, and everything read from it untyped.
+test "bug_ctor_init_args_dict_call_is_typed_by_init" {
+    program = compile_and_check("checker_ctor_type_args_from_init.jac");
+    assert program.errors_had == [] , (
+        "Bug #CTOR-INIT-ARGS: each use reads `dict(...)` as the typed dict "
+        f"its arguments make it. Got errors: {[str(e) for e in program.errors_had]}"
+    );
+}
+
+test "bug_ctor_init_args_dict_call_misuse_is_reported" {
+    program = compile_and_check("checker_ctor_type_args_from_init_negative.jac");
+    by_line = {
+        e.loc.first_line: str(e)
+        for e in program.errors_had
+        if e.loc
+    };
+    assert len(program.errors_had) == 4 , (
+        "Bug #CTOR-INIT-ARGS: the four deliberate misuses, and only those, "
+        f"must be reported. Got: {[str(e) for e in program.errors_had]}"
+    );
+    assert "str" in by_line.get(9, "") and "int" in by_line.get(9, "") , (
+        "Bug #CTOR-INIT-ARGS: a value read from `dict(fields)` is a str. "
+        f"Line 9 reported: {by_line.get(9)}"
+    );
+    assert "int" in by_line.get(14, "") and "str" in by_line.get(14, "") , (
+        "Bug #CTOR-INIT-ARGS: a value read from `dict(pairs)` is an int. "
+        f"Line 14 reported: {by_line.get(14)}"
+    );
+    assert "dict[str, int]" in by_line.get(19, "") , (
+        "Bug #CTOR-INIT-ARGS: `dict(a=1, b=2)` is a dict[str, int]. "
+        f"Line 19 reported: {by_line.get(19)}"
+    );
+    assert "dict[int, str]" in by_line.get(24, "") , (
+        "Bug #CTOR-INIT-ARGS: `dict({1: \"one\"})` is a dict[int, str]. "
+        f"Line 24 reported: {by_line.get(24)}"
     );
 }

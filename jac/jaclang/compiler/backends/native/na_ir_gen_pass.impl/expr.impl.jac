@@ -482,6 +482,7 @@ impl NaIRGenPass._codegen_lambda(nd: uni.LambdaExpr) -> (ir.Value | None) {
     fn_type = ir.FunctionType(ret_type, all_param_types);
     anon_fn = ir.Function(self.llvm_module, fn_type, name=anon_name);
     anon_fn.linkage = "private";
+    self._register_pass_links(nd, anon_fn);
     for (i, arg) in enumerate(anon_fn.args) {
         if i < len(all_param_names) {
             arg.name = all_param_names[i];
@@ -543,8 +544,9 @@ impl NaIRGenPass._codegen_lambda(nd: uni.LambdaExpr) -> (ir.Value | None) {
 
     if captures {
         _all_cells = True;
+        _rebinds = self.closure_rebinds.get(anon_fn.name, set());
         for (cap_name, _cap_val, _cap_type) in captures {
-            if cap_name not in self.closure_cell_handles {
+            if cap_name not in self.closure_cell_handles and cap_name not in _rebinds {
                 _all_cells = False;
                 break;
             }
@@ -599,6 +601,19 @@ impl NaIRGenPass._binds_variable(nd: uni.Expr) -> bool {
 }
 
 impl NaIRGenPass._codegen_name(nd: uni.Name) -> (ir.Value | None) {
+    if isinstance(nd, uni.SpecialVarRef) and nd.value == "root" {
+        self.emit(
+            E5092,
+            node_override=nd,
+            kind="expression",
+            name="root",
+            help_text=(
+                "The native tier has no root node yet. Build the graph from a "
+                "node of your own, or keep this module on the server codespace."
+            )
+        );
+        return None;
+    }
     var_name = nd.value;
     _ct_owner = self._ct_type_param_owner(nd);
     if _ct_owner is not None {

@@ -1331,6 +1331,21 @@ impl NaIRGenPass._demote_method_if_unlowerable(
     self._native_skipped_methods.add(full_name);
     self._demoted_names.add(full_name);
     self._unit_exports.pop(full_name, None);
+    if full_name in self.osp_thunk_funcs {
+        self.emit(
+            E5092,
+            node_override=self.module,
+            kind="event ability",
+            name=full_name,
+            help_text=(
+                "This ability could not be lowered ("
+                + str(_own[0]).split("\n")[0]
+                + "). A walker runs its abilities through the native graph "
+                "engine, which has no caller to refuse, so the module cannot "
+                "stay native with it."
+            )
+        );
+    }
     return True;
 }
 
@@ -3588,6 +3603,81 @@ impl NaIRGenPass._emit_subclass_str(val: ir.Value, type_name: str) -> ir.Value {
 }
 
 impl NaIRGenPass._emit_default_obj_repr(val: ir.Value, type_name: str) -> ir.Value {
+    described = self._default_repr_fn(type_name);
+    if described is not None {
+        i8p_text = ir.IntType(8).as_pointer();
+        own_text = self.builder.call(
+            described,
+            [self._coerce_type(val, described.args[0].type)],
+            name="obj.repr.fields"
+        )
+            if not self._arch_has_vtable(type_name)
+            else None;
+        if own_text is not None {
+            return self._mark_owned(own_text);
+        }
+        import from jaclang.compiler.passes.layout_pass { get_layout_registry }
+        subclasses: list[tuple[ir.GlobalVariable, ir.Function]] = [];
+        for cls in get_layout_registry(self.module, self.prog).mro_order {
+            if cls == type_name or type_name not in self._mro_of(cls) {
+                continue;
+            }
+            if cls not in self.struct_types {
+                continue;
+            }
+            sub_vtable = self._vtable_global_for(cls);
+            sub_fn = self._repr_obj_fn(cls);
+            if sub_vtable is not None {
+                subclasses.append((sub_vtable, sub_fn));
+            }
+        }
+        receiver = self._coerce_type(val, described.args[0].type);
+        if not subclasses {
+            return self._mark_owned(
+                self.builder.call(described, [receiver], name="obj.repr.fields")
+            );
+        }
+        zero = ir.Constant(ir.IntType(32), 0);
+        held_vtable = self.builder.load(
+            self.builder.gep(receiver, [zero, zero]), name="obj.repr.vt"
+        );
+        here = self.builder.function;
+        joined_bb = here.append_basic_block(name="obj.repr.done");
+        arrivals: list[tuple[ir.Value, ir.Block]] = [];
+        for (sub_vtable, sub_fn) in subclasses {
+            hit_bb = here.append_basic_block(name="obj.repr.sub");
+            miss_bb = here.append_basic_block(name="obj.repr.next");
+            self.builder.cbranch(
+                self.builder.icmp_unsigned(
+                    "==",
+                    held_vtable,
+                    self.builder.bitcast(sub_vtable, held_vtable.type)
+                ),
+                hit_bb,
+                miss_bb
+            );
+            self.builder.position_at_end(hit_bb);
+            sub_text = self.builder.call(
+                sub_fn,
+                [self._coerce_type(val, sub_fn.args[0].type)],
+                name="obj.repr.subtext"
+            );
+            arrivals.append(
+                (self._coerce_type(sub_text, i8p_text), self.builder.block)
+            );
+            self.builder.branch(joined_bb);
+            self.builder.position_at_end(miss_bb);
+        }
+        base_text = self.builder.call(described, [receiver], name="obj.repr.fields");
+        arrivals.append((self._coerce_type(base_text, i8p_text), self.builder.block));
+        self.builder.branch(joined_bb);
+        self.builder.position_at_end(joined_bb);
+        chosen = self.builder.phi(i8p_text, name="obj.repr.text");
+        for (text_value, from_bb) in arrivals {
+            chosen.add_incoming(text_value, from_bb);
+        }
+        return self._mark_owned(chosen);
+    }
     b = self.builder;
     i8p = ir.IntType(8).as_pointer();
     i64 = ir.IntType(64);
@@ -5039,4 +5129,167 @@ impl NaIRGenPass._build_jc_layout -> dict[str, any] {
         };
     }
     return {"classes": classes};
+}
+
+impl NaIRGenPass._report_unreachable_overrides -> None {
+    """Refuse an override an imported base's own body can never reach (E5113).
+
+    Whether a class carries a vtable is decided in its own module
+    (`LayoutPass`), where subclasses in other modules are not visible. A
+    root class that is nobody's parent there, nor abstract, nor an
+    isinstance or OSP archetype, is lowered flat: its methods bind
+    `self.m()` straight to its own `m`. When an importer subclasses it,
+    `relax_vtable_header` drops the subclass's header to agree, so an
+    override declared here is reachable only through the subclass's own
+    static type -- a base method the subclass inherits still calls the
+    base's body, and nothing says so.
+
+    Like E5089 the check is deliberately narrow: it reports what the tree
+    proves, an inherited method of a flat imported base whose body calls
+    `self.X(...)` for an `X` this class overrides. An override no base body
+    dispatches to diverges only through callers holding the base type,
+    which this unit cannot see, and stays unreported. A base that carries a
+    vtable dispatches through it and is never reported.
+    """;
+    import os;
+    import from jaclang.compiler.passes.layout_pass { get_layout_registry }
+    if self.module is None or self.module.loc is None {
+        return;
+    }
+    home = os.path.realpath(self.module.loc.mod_path);
+    reg = get_layout_registry(self.module, self.prog);
+    for arch in self._native_archetypes(self.module) {
+        if arch.loc is None {
+            continue;
+        }
+        if os.path.realpath(arch.loc.mod_path) != home {
+            continue;
+        }
+        overrides: dict[str, uni.Ability] = {};
+        for stmt in (ModuleFacts.unwrap_body(arch) or []) {
+            if isinstance(stmt, uni.Ability)
+                and not stmt.is_abstract
+                and stmt.name_ref is not None {
+                overrides[stmt.name_ref.sym_name] = stmt;
+            }
+        }
+        if not overrides {
+            continue;
+        }
+        reported: set[str] = set();
+        shadowed: set[str] = set();
+        seen: set[str] = set();
+        ancestors: dict[str, uni.Archetype] = {};
+        spelled: dict[str, str] = {};
+        reached: list[str] = [];
+        queue: list[uni.Expr] = list(arch.base_classes or []);
+        while queue {
+            base_expr = queue.pop(0);
+            if isinstance(base_expr, uni.AtomTrailer)
+                and isinstance(base_expr.right, uni.IndexSlice) {
+                base_expr = base_expr.target;
+            }
+            if isinstance(base_expr, uni.AtomTrailer)
+                and isinstance(base_expr.right, uni.Name) {
+                base_expr = base_expr.right;
+            }
+            bname = self._get_name(base_expr);
+            if bname is None or bname in seen {
+                continue;
+            }
+            seen.add(bname);
+            sym = base_expr.sym if isinstance(base_expr, uni.NameAtom) else None;
+            decl = sym.decl if sym is not None else None;
+            found_arch = decl.find_parent_of_type(uni.Archetype)
+                if decl is not None
+                else None;
+            if found_arch is None {
+                continue;
+            }
+            queue.extend(found_arch.base_classes or []);
+            found_key = self._arch_key(found_arch);
+            if found_key not in ancestors {
+                ancestors[found_key] = found_arch;
+                spelled[found_key] = bname;
+                reached.append(found_key);
+            }
+        }
+        walk: list[str] = [];
+        for ranked in (reg.mro_order.get(self._arch_key(arch)) or []) {
+            if ranked in ancestors and ranked not in walk {
+                walk.append(ranked);
+            }
+        }
+        for found_key in reached {
+            if found_key not in walk {
+                walk.append(found_key);
+            }
+        }
+        for base_key in walk {
+            base_arch = ancestors[base_key];
+            bname = spelled[base_key];
+            members = ModuleFacts.unwrap_body(base_arch) or [];
+            inherited: list[uni.UniNode] = [];
+            for member in members {
+                if isinstance(member, uni.Ability)
+                    and member.name_ref is not None
+                    and member.name_ref.sym_name not in shadowed {
+                    inherited.append(member);
+                }
+            }
+            for member in members {
+                if isinstance(member, uni.Ability) and member.name_ref is not None {
+                    shadowed.add(member.name_ref.sym_name);
+                }
+            }
+            base_lay = reg.get_layout(base_key);
+            if base_lay is None or base_lay.has_vtable or base_lay.is_osp {
+                continue;
+            }
+            if not base_lay.decl_mod or base_lay.decl_mod == home {
+                continue;
+            }
+            for caller in inherited {
+                if not isinstance(caller, uni.Ability) or caller.name_ref is None {
+                    continue;
+                }
+                calling = caller.name_ref.sym_name;
+                if calling in overrides {
+                    continue;
+                }
+                scopes: list[uni.UniNode] = [caller];
+                if isinstance(caller.body, uni.ImplDef) {
+                    scopes.append(caller.body);
+                }
+                for scope in scopes {
+                    for call in scope.get_all_sub_nodes(uni.FuncCall) {
+                        target = call.target;
+                        if not isinstance(target, uni.AtomTrailer)
+                            or not target.is_attr {
+                            continue;
+                        }
+                        if self._get_name(target.target) != "self" {
+                            continue;
+                        }
+                        dispatched = self._get_name(target.right);
+                        if dispatched is None
+                            or dispatched not in overrides
+                            or dispatched in reported {
+                            continue;
+                        }
+                        reported.add(dispatched);
+                        self.emit(
+                            E5113,
+                            node_override=overrides[dispatched],
+                            cls=self._arch_display(self._arch_key(arch)),
+                            meth=dispatched,
+                            base=bname,
+                            caller=calling,
+                            module=os.path.basename(base_lay.decl_mod)
+                        );
+                    }
+                }
+            }
+        }
+    }
 }

@@ -1,6 +1,7 @@
 import logging;
 import os;
 import from jaclang.project.config { JacConfig, ServeConfig }
+import from jaclang.cli.workpool { cpu_quota }
 
 glob ENV_PREFIX: str = 'JAC_SERVE_',
      WORKERS_AUTO: str = 'auto',
@@ -298,6 +299,5 @@ def env_list(name: str, `default: list[str]) -> list[str] {
     ];
 }
 
-def cpu_quota -> int;
 def resolve_count(raw: str, quota: int, label: str) -> int;
 def default_threads(worker_count: int, quota: int) -> int;

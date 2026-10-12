@@ -62,6 +62,8 @@ def _native_emitter_of(suffix: str) -> (object | None) {
 impl NaIRGenPass.postinit -> None {
     import os as _ni_os;
 
+    self.loop_links = LoopLinks.of(self.module);
+
     _ni_opts = self.prog.options;
     self._rc_debug_codegen = bool(_ni_opts.rc_debug_codegen);
     _ni_src: str = self.module.loc.mod_path if self.module.loc else "";
@@ -1223,6 +1225,7 @@ impl NaIRGenPass._register_imported_struct_types -> None {
 
     import from jaclang.compiler.passes.layout_pass { adopt_imported_bases }
     adopt_imported_bases(self.module);
+    self._report_unreachable_overrides();
 
     for (_, imported_mod) in imported_mods {
         self._walk_imported_module_types(imported_mod);

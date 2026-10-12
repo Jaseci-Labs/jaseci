@@ -913,6 +913,7 @@ impl NaIRGenPass._codegen_nested_ability(nd: uni.Ability) -> None {
                 [(cname, cmode) for (cname, cmode, _ct) in captures]
             );
         }
+        self._register_pass_links(nd, fn);
     }
 
     state = self._enter_function(fn);
@@ -1153,6 +1154,7 @@ impl NaIRGenPass._predeclare_nested_siblings(nd: uni.Ability) -> None {
                 [(_c0, _c1) for (_c0, _c1, _c2) in _caps]
             );
         }
+        self._register_pass_links(s, _fn);
         self._nested_predecl[s] = (_fn, _caps, _pnames, _rt);
     }
 }

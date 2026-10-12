@@ -444,6 +444,20 @@ impl JcirGenPass.exit_ability with Ability exit {
         ['name', 'args', 'body', 'decorator_list', 'returns', 'type_params'],
         [func_name_out, func_args_out, body, decorator_list, ast_returns, []]
     );
+    if self._closure_bindings(here) {
+        bound = self.nod(
+            'Name',
+            ['id', 'ctx'],
+            [func_name_out, self.nod('Store', [], [], jac_node=here)],
+            jac_node=here
+        );
+        made = self._linked_closure_factory(func_def, here);
+        self.set_out(
+            here,
+            [self.nod('Assign', ['targets', 'value'], [[bound], made], jac_node=here)]
+        );
+        return;
+    }
     self.set_out(here, [func_def]);
 }
 

@@ -134,6 +134,11 @@ def interface_wanted(path: str) -> bool {
     return path.endswith(".py");
 }
 
+def forget_interface_memo {
+    _IFACE_MEMO.clear();
+    _IFACE_REFUSED.clear();
+}
+
 def file_stamp(path: str) -> str {
     try {
         st = os.stat(path);

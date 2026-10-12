@@ -85,20 +85,12 @@ def format_jac(text: str, target: Path) -> str {
     scratch = tempfile.mkstemp(prefix=".gen_", suffix=".jac", dir=target.parent);
     os.close(scratch[0]);
     path = Path(scratch[1]);
-    # The scratch file sits in the compiler's source tree, so a native
-    # compiler kernel keyed on that tree would be rebuilt for every call.
-    environment = {
-        ** os.environ, "JAC_COMPILER_LIB": "off", "JAC_KERNEL_BUILDING": "1"
-    };
     try {
         path.write_text(text);
         for _ in range(3) {
             before = path.read_text();
             result = subprocess.run(
-                [jac, "fmt", "--lintfix", str(path)],
-                capture_output=True,
-                text=True,
-                env=environment
+                [jac, "fmt", "--lintfix", str(path)], capture_output=True, text=True
             );
             if result.returncode != 0 {
                 sys.exit(

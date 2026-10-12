@@ -68,8 +68,9 @@ impl WorkPool.run -> None {
         self.run_inline();
         return;
     }
-    slots = max(1, min(self.jobs, len(self.items)));
-    for slot in range(slots) {
+    self.target = max(1, min(self.jobs, len(self.items)));
+    self.next_slot = min(self.target, RAMP_START_JOBS);
+    for slot in range(self.next_slot) {
         self.kids.append(self._spawn(slot));
     }
     try {
@@ -166,10 +167,14 @@ impl WorkPool._worker_loop(dispatch_fd: int, result_fd: int) -> None {
             } except Exception {
                 retire_now = False;
             }
+            if not retire_now {
+                rss = worker_rss_mb();
+            }
         }
         record["idx"] = request["idx"];
         record["retire"] = retire_now;
         record["rss"] = rss;
+        record["peak"] = worker_peak_mb();
         record["served"] = served;
         payload = "";
         try {
@@ -255,6 +260,15 @@ impl WorkPool._handle_record(kid: dict[(str, any)], line: str) -> None {
     if done is not None {
         self.on_record(done, record);
     }
+    rss = record.get("rss");
+    if isinstance(rss, int) {
+        kid["rss"] = rss;
+    }
+    peak = record.get("peak") or rss;
+    if isinstance(peak, int) and peak > self.peak_mb {
+        self.peak_mb = peak;
+    }
+    self._widen();
     if record.get("retire") {
         kid["retired"] = True;
         if not self._should_stop() and (self.cursor < len(self.items)) {
@@ -309,6 +323,34 @@ impl WorkPool._reap(kid: dict[(str, any)]) -> None {
         replacement = self._spawn(kid["slot"]);
         self.kids.append(replacement);
         self._dispatch(replacement);
+    }
+}
+
+impl WorkPool._widen -> None {
+    working = [
+        k
+        for k in self.kids
+        if k["alive"] and not k.get("retired")
+    ];
+    if (
+        len(working) >= self.target
+        or self.cursor >= len(self.items)
+        or self.peak_mb <= 0
+        or self._should_stop()
+    ) {
+        return;
+    }
+    measure = self.headroom or memory_headroom_bytes;
+    growth = sum(max(0, self.peak_mb - int(k.get("rss") or 0)) for k in working);
+    room = measure() - growth * 1024 * 1024;
+    fits = int((max(0, room) * MEM_HEADROOM) // (self.peak_mb * 1024 * 1024));
+    for _ in range(min(fits, self.target - len(working))) {
+        kid = self._spawn(self.next_slot);
+        self.next_slot += 1;
+        self.kids.append(kid);
+        if not self._dispatch(kid) {
+            break;
+        }
     }
 }
 
@@ -455,6 +497,19 @@ impl worker_rss_mb -> int {
         else int(peak // 1024);
 }
 
+impl worker_peak_mb -> int {
+    try {
+        with open("/proc/self/status", encoding="utf-8") as status {
+            for line in status {
+                if line.startswith("VmHWM:") {
+                    return int(line.split()[1]) // 1024;
+                }
+            }
+        }
+    } except (OSError, ValueError, IndexError) {}
+    return worker_rss_mb();
+}
+
 impl should_retire(served: int, recycle: int, rss_mb: int, rss_cap: int) -> bool {
     if recycle > 0 and served >= recycle {
         return True;
@@ -481,30 +536,91 @@ impl env_int(name: str, fallback: int) -> int {
     }
 }
 
-impl default_jobs(worker_bytes: int = 0, avail_bytes: int = 0) -> int {
-    cpus = os.cpu_count() or 1;
-    avail = int(avail_bytes or 0);
-    if not avail {
-        try {
-            with open("/proc/meminfo", encoding="utf-8") as f {
-                for line in f {
-                    if line.startswith("MemAvailable:") {
-                        avail = int(line.split()[1]) * 1024;
-                        break;
-                    }
+impl memory_headroom_bytes(
+    cgroup_root: str = "/sys/fs/cgroup", self_cgroup: str = "/proc/self/cgroup"
+) -> int {
+    import from pathlib { Path }
+    known: list[int] = [];
+    try {
+        with open("/proc/meminfo", encoding="utf-8") as f {
+            for line in f {
+                if line.startswith("MemAvailable:") {
+                    known.append(int(line.split()[1]) * 1024);
+                    break;
                 }
             }
-        } except Exception {
-            avail = 0;
         }
-    }
-    if not avail {
+    } except Exception {}
+    try {
+        rel = "";
+        with open(self_cgroup, encoding="utf-8") as f {
+            for line in f {
+                if line.startswith("0::") {
+                    rel = line.strip()[3:];
+                }
+            }
+        }
+        top = Path(cgroup_root);
+        cg = top / rel.lstrip("/") if rel else top;
+        while True {
+            limit = cg / "memory.max";
+            if limit.is_file() {
+                text = limit.read_text(encoding="utf-8").strip();
+                if text and text != "max" {
+                    used = int(
+                        (cg / "memory.current").read_text(encoding="utf-8").strip()
+                    );
+                    known.append(max(1, int(text) - used));
+                }
+            }
+            if cg == top or cg.parent == cg {
+                break;
+            }
+            cg = cg.parent;
+        }
+    } except Exception {}
+    if not known {
         try {
-            avail = os.sysconf("SC_PHYS_PAGES") * os.sysconf("SC_PAGE_SIZE");
-        } except Exception {
-            avail = 0;
-        }
+            known.append(os.sysconf("SC_PHYS_PAGES") * os.sysconf("SC_PAGE_SIZE"));
+        } except (ValueError, OSError, AttributeError) {}
     }
+    return min(known) if known else 0;
+}
+
+impl cpu_quota -> int {
+    import from pathlib { Path }
+    try {
+        text = Path('/sys/fs/cgroup/cpu.max').read_text(encoding='utf-8').strip();
+        parts = text.split();
+        if len(parts) == 2 and parts[0] != 'max' {
+            quota = int(parts[0]);
+            period = int(parts[1]);
+            if quota > 0 and period > 0 {
+                return max(1, -(-quota // period));
+            }
+        }
+    } except (OSError, ValueError) {}
+    try {
+        quota_text = Path('/sys/fs/cgroup/cpu/cpu.cfs_quota_us').read_text(
+            encoding='utf-8'
+        ).strip();
+        period_text = Path('/sys/fs/cgroup/cpu/cpu.cfs_period_us').read_text(
+            encoding='utf-8'
+        ).strip();
+        quota_v1 = int(quota_text);
+        period_v1 = int(period_text);
+        if quota_v1 > 0 and period_v1 > 0 {
+            return max(1, -(-quota_v1 // period_v1));
+        }
+    } except (OSError, ValueError) {}
+    counter: any = os?.process_cpu_count;
+    counted = counter() if counter is not None else os.cpu_count();
+    return max(1, int(counted or 1));
+}
+
+impl default_jobs(worker_bytes: int = 0, avail_bytes: int = 0) -> int {
+    cpus = cpu_quota();
+    avail = int(avail_bytes or 0) or memory_headroom_bytes();
 
     per_worker = max(WORKER_MEM_BYTES, int(worker_bytes or 0));
     cap = cpus;

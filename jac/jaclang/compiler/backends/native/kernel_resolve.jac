@@ -10,12 +10,9 @@ import from jaclang.compiler.driver.compile_options {
 }
 import type from jaclang.compiler.kernel_target { KernelTarget }
 import type from jaclang.compiler.driver.program { JacProgram }
-import type from jaclang.compiler.backends.native.link_plan { LinkPlan }
+import type from jaclang.compiler.backends.native.link_plan { LinkPlan, LinkResult }
 
-glob KERNEL_LIB_ENV: str = "JAC_COMPILER_LIB",
-     KERNEL_BUILDING_ENV: str = "JAC_KERNEL_BUILDING",
-     STUBCAT_BUILDING_ENV: str = "JAC_STUBCAT_BUILDING",
-     KERNEL_OFF_VALUES: tuple[str, ...] = ("none", "off", "disabled", "0"),
+glob STUBCAT_BUILDING_ENV: str = "JAC_STUBCAT_BUILDING",
      LAYOUT_SIDECAR_SUFFIX: str = ".layout.json",
      KERNEL_DEV_LINK_MODE: str = NATIVE_LINK_MODE_OBJECTS,
      SEALED_LINK_MODE: str = NATIVE_LINK_MODE_BITCODE,
@@ -31,10 +28,6 @@ obj ResolvedKernel {
 }
 
 class KernelUnavailable(RuntimeError) {}
-
-def kernel_build_env -> dict[str, str] {
-    return {KERNEL_LIB_ENV: "off", KERNEL_BUILDING_ENV: "1"};
-}
 
 def kernel_lib_name -> str {
     if sys.platform == "darwin" {
@@ -64,22 +57,6 @@ def read_sidecar(lib_path: str) -> (dict[str, any] | None) {
         return None;
     }
     return data;
-}
-
-def _from_explicit(path: str) -> ResolvedKernel {
-    sidecar = read_sidecar(path);
-    if not os.path.isfile(path) or sidecar is None {
-        raise KernelUnavailable(
-            f"{KERNEL_LIB_ENV}={path} does not name a kernel lib with its "
-            f"{LAYOUT_SIDECAR_SUFFIX} sidecar"
-        );
-    }
-    return ResolvedKernel(
-        lib_path=path,
-        layout=sidecar["classes"],
-        source="explicit",
-        plan_digest=str(sidecar.get("plan_digest", ""))
-    );
 }
 
 def seal_omits_kernel -> bool {
@@ -154,11 +131,7 @@ def _from_sealed_image -> (ResolvedKernel | None) {
             f"{LAYOUT_SIDECAR_SUFFIX} sidecar is missing"
         );
     }
-    import hashlib;
-    with open(lib_path, "rb") as f {
-        digest = hashlib.sha256(f.read()).hexdigest();
-    }
-    if digest != record.get("sha256") {
+    if _sha256_file(lib_path) != record.get("sha256") {
         raise KernelUnavailable(
             f"sealed kernel {lib_path} does not match its manifest sha256"
         );
@@ -180,20 +153,7 @@ def _from_sealed_image -> (ResolvedKernel | None) {
     );
 }
 
-def _toolchain_available -> bool {
-    try {
-        import from jaclang.compiler.driver.toolchain { native_pipeline_available }
-        (ok, _why) = native_pipeline_available();
-        return bool(ok);
-    } except Exception {
-        return False;
-    }
-}
-
 def kernel_options -> CompileOptions {
-    """The kernel runs in this process, so it is always the host's: a cross
-    target set for the artifacts being built never reaches the kernel's
-    units, its source key or its plan.""";
     return CompileOptions(
         aot_mode=True,
         native_require=[],
@@ -234,61 +194,6 @@ def kernel_plan(
     return build_link_plan(program, [root_path], options, mode=mode, native_unit=True);
 }
 
-def build_kernel(
-    dst: str, prog: any = None, log: any = None, link_mode: str = KERNEL_DEV_LINK_MODE
-) -> any {
-    import from jaclang.compiler.backends.native.kernel_stage0 { link_kernel }
-    return link_kernel(dst, prog=prog, log=log, link_mode=link_mode);
-}
-
-class _StoreParserSpan {
-    def init(self: _StoreParserSpan) {
-        self.prev: dict[str, (str | None)] = {};
-    }
-
-    def __enter__(self: _StoreParserSpan) -> _StoreParserSpan {
-        self.prev = {key: os.environ.get(key) for key in kernel_build_env()};
-        os.environ.update(kernel_build_env());
-        return self;
-    }
-
-    def __exit__(self: _StoreParserSpan, exc_type: any, exc: any, tb: any) -> bool {
-        for (key, value) in self.prev.items() {
-            if value is None {
-                os.environ.pop(key, None);
-            } else {
-                os.environ[key] = str(value);
-            }
-        }
-        return False;
-    }
-}
-
-def _from_source_tree -> (ResolvedKernel | None) {
-    if not _toolchain_available() {
-        return None;
-    }
-    lib_path = source_tree_kernel_path();
-    found = _accept_in_tree(lib_path);
-    if found is not None {
-        return found;
-    }
-    if _bundled_kit_omits_kernel() {
-        return None;
-    }
-    try {
-        return _derive_in_tree(lib_path);
-    } except KernelUnavailable {
-        raise;
-    } except Exception as e {
-        raise KernelUnavailable(
-            f"the native compiler kernel could not be derived "
-            f"({type(e).__name__}: {e}). Run `jac precompile ./jac --seal` to see "
-            "the full diagnostics."
-        ) from e;
-    }
-}
-
 def _sha256_file(path: str) -> str {
     h = hashlib.sha256();
     with open(path, "rb") as f {
@@ -303,36 +208,18 @@ def _sha256_file(path: str) -> str {
     return h.hexdigest();
 }
 
-def _sidecar_matches_sources(sidecar: dict[str, any]) -> bool {
-    """Acceptance runs while the bootstrap tier is still compiling, so it
-    reaches only the cache-key module; the link plan, which the legacy
-    folded key needs, is imported for that key alone.""";
-    import from jaclang.compiler.driver.jir { sidecar_unit_paths }
-    units = sidecar_unit_paths(sidecar);
-    if not units {
-        return False;
+def _unit_label(path: str) -> str {
+    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
+    try {
+        return os.path.relpath(path, os.path.dirname(jaclang_pkg_root()));
+    } except ValueError {
+        return path;
     }
-    recorded_sources = sidecar.get("unit_sources");
-    if isinstance(recorded_sources, dict) and recorded_sources {
-        return _unit_sources_match(sidecar, recorded_sources, units);
-    }
-    recorded = str(sidecar.get("source_key", ""));
-    if not recorded {
-        return False;
-    }
-    import from jaclang.compiler.backends.native.link_plan { units_source_key }
-    return units_source_key(units, kernel_options()) == recorded;
 }
 
-def _unit_sources_match(
+def unit_drift(
     sidecar: dict[str, any], recorded: dict[str, any], units: list[str]
-) -> bool {
-    """A kernel is its compiler, codegen identity, target, interpreter and
-    the units' sources; comparing those inputs one by one accepts a kernel
-    built at another path, such as the kit's staging directory. The folded
-    source key is what an in-tree build records for itself: the module key
-    of a file outside the running package fingerprints its project, so the
-    key a kit's build folded is never the one a checkout computes.""";
+) -> list[str] {
     import from jaclang.compiler.driver.jir {
         native_producer_digest,
         running_compiler_digest,
@@ -340,16 +227,26 @@ def _unit_sources_match(
     }
     import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
     options = kernel_options();
+    drift: list[str] = [];
     if str(sidecar.get("compiler_digest", ""))
-        not in (running_compiler_digest(), native_producer_digest(options.kernel_build))
-        or str(sidecar.get("codegen_identity", ""))
-            != options.base_codegen_identity() {
-        return False;
+        not in (
+            running_compiler_digest(),
+            native_producer_digest(options.kernel_build)
+        ) {
+        drift.append("the compiler's native ABI changed");
     }
-    if str(sidecar.get("triple", "")) != options.effective_triple()
-        or str(sidecar.get("python", ""))
-            != f"{sys.version_info.major}.{sys.version_info.minor}" {
-        return False;
+    if str(sidecar.get("codegen_identity", "")) != options.base_codegen_identity() {
+        drift.append("native code generation changed");
+    }
+    triple = options.effective_triple();
+    if str(sidecar.get("triple", "")) != triple {
+        drift.append(
+            f"built for {sidecar.get('triple') or 'another target'}, not {triple}"
+        );
+    }
+    python = f"{sys.version_info.major}.{sys.version_info.minor}";
+    if str(sidecar.get("python", "")) != python {
+        drift.append(f"built for Python {sidecar.get('python') or '?'}, not {python}");
     }
     ids = sidecar.get("unit_ids");
     idents = (
@@ -358,54 +255,66 @@ def _unit_sources_match(
             else [native_unit_identity(u) for u in units]
     );
     if len(recorded) != len(idents) {
-        return False;
+        drift.append("the kernel's unit set changed");
+        return drift;
     }
     policy = sidecar.get("unit_policy");
     recorded_policy: dict[str, any] = policy if isinstance(policy, dict) else {};
     for (ident, path) in zip(idents, units) {
         if recorded.get(ident) != unit_source_digest(path) {
-            return False;
-        }
-        if int(recorded_policy.get(ident, 0))
+            drift.append(f"{_unit_label(path)} changed");
+        } elif int(recorded_policy.get(ident, 0))
             != int(options.native_required_for(path)) {
-            return False;
+            drift.append(f"{_unit_label(path)} changed native placement");
         }
     }
-    return True;
+    return drift;
 }
 
-def _accept_in_tree(lib_path: str) -> (ResolvedKernel | None) {
+def _inspect(
+    lib_path: str, expected_sha: str = ""
+) -> tuple[(dict[str, any] | None), list[str]] {
     sidecar = read_sidecar(lib_path);
     if sidecar is None or not os.path.isfile(lib_path) {
-        return None;
+        return (None, ["no kernel has been built"]);
     }
     try {
-        if sidecar.get("artifact_sha256") != _sha256_file(lib_path) {
-            return None;
-        }
-    } except OSError {
-        return None;
+        actual = _sha256_file(lib_path);
+    } except OSError as e {
+        return (None, [f"the kernel is unreadable ({e})"]);
     }
-    if not _sidecar_matches_sources(sidecar) {
-        return None;
+    if actual != (expected_sha or sidecar.get("artifact_sha256")) {
+        return (None, ["the kernel does not match the hash its record carries"]);
     }
+    import from jaclang.compiler.driver.jir { sidecar_unit_paths }
+    units = sidecar_unit_paths(sidecar);
+    recorded = sidecar.get("unit_sources");
+    if not units or not isinstance(recorded, dict) or not recorded {
+        return (None, ["the kernel's record names no unit sources"]);
+    }
+    drift = unit_drift(sidecar, recorded, units);
+    return ((None if drift else sidecar), drift);
+}
+
+def _resolved(lib_path: str, sidecar: dict[str, any], source: str) -> ResolvedKernel {
     return ResolvedKernel(
         lib_path=lib_path,
         layout=sidecar["classes"],
-        source="tree",
+        source=source,
         plan_digest=str(sidecar.get("plan_digest", ""))
     );
 }
 
-def _bundled_kernel_path -> (str | None) {
-    found = _bundled_kernel();
-    return found[0] if found is not None else None;
+def tree_kernel -> tuple[(ResolvedKernel | None), list[str]] {
+    lib_path = source_tree_kernel_path();
+    (sidecar, drift) = _inspect(lib_path);
+    if sidecar is None {
+        return (None, drift);
+    }
+    return (_resolved(lib_path, sidecar, "tree"), []);
 }
 
 def _bundled_image -> (tuple[str, any] | None) {
-    """The sealed jaclang the running kit carries, when this process's
-    compiler is a rerouted checkout rather than that kit: the kit's image
-    sits beside its interpreter.""";
     import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
     site_pkg = os.path.join(os.path.dirname(sys.prefix), "site", "jaclang");
     if not os.path.isdir(os.path.join(site_pkg, "_precompiled")) {
@@ -428,144 +337,77 @@ def _bundled_kit_omits_kernel -> bool {
     return found is not None and kit_omits_kernel(found[1].native);
 }
 
-def _bundled_kernel -> (tuple[str, dict[str, any]] | None) {
-    """The kernel the running kit carries and its manifest record.""";
+def kit_kernel -> tuple[(ResolvedKernel | None), list[str]] {
     found = _bundled_image();
     if found is None {
-        return None;
+        return (None, ["this process runs on no kit"]);
     }
     (site_pkg, image) = found;
     record = image.native_artifact();
     if not record {
-        return None;
+        return (None, ["the kit carries no kernel"]);
     }
     lib_path = os.path.join(site_pkg, str(record.get("path", "")));
-    return (lib_path, dict(record)) if os.path.isfile(lib_path) else None;
+    (sidecar, drift) = _inspect(lib_path, expected_sha=str(record.get("sha256", "")));
+    if sidecar is None {
+        return (None, drift);
+    }
+    return (_resolved(lib_path, sidecar, "kit"), []);
 }
 
-def _adopt_bundled(lib_path: str) -> (ResolvedKernel | None) {
-    """A checkout whose sources are the ones the kit was built from takes
-    the kit's kernel instead of deriving its own: the sidecar's source key
-    is the same compiler digest and unit keys the derivation would settle
-    on. The copy lands beside the loader so later runs accept it in place.""";
-    found = _bundled_kernel();
-    if found is None {
-        return None;
-    }
-    (bundled, record) = found;
-    sidecar = read_sidecar(bundled);
-    if sidecar is None or not _sidecar_matches_sources(sidecar) {
-        return None;
-    }
+def _from_source_tree -> tuple[(ResolvedKernel | None), str] {
+    (ok, why) = (False, "");
     try {
-        actual = _sha256_file(bundled);
-    } except OSError {
-        return None;
+        import from jaclang.compiler.driver.toolchain { native_pipeline_available }
+        (ok, why) = native_pipeline_available();
+    } except Exception as e {
+        why = f"the native toolchain is unavailable ({e})";
     }
-    if str(record.get("sha256", "")) != actual {
-        return None;
+    if not ok {
+        return (None, why or "the native toolchain is unavailable");
     }
-    published = dict(sidecar);
-    published["artifact_sha256"] = actual;
-    try {
-        os.makedirs(os.path.dirname(lib_path) or ".", exist_ok=True);
-        _publish_kernel(bundled, lib_path, sidecar=published);
-    } except OSError {
-        return None;
+    (tree, drift) = tree_kernel();
+    if tree is not None {
+        return (tree, "");
     }
-    return _accept_in_tree(lib_path);
+    if _bundled_kit_omits_kernel() {
+        return (None, "");
+    }
+    (kit, _) = kit_kernel();
+    if kit is not None {
+        return (kit, "");
+    }
+    summary = drift[0];
+    if len(drift) > 1 {
+        summary += f" (and {len(drift) - 1} more)";
+    }
+    if summary != "no kernel has been built" {
+        summary = f"the kernel is stale: {summary}";
+    } else {
+        summary = "no kernel has been built in this checkout";
+    }
+    return (None, summary);
 }
 
-def _publish_kernel(
-    source: str, destination: str, sidecar: (dict[str, any] | None) = None
-) {
-    """Publish the library before its hash-bearing sidecar; readers fail closed
-    until both images agree. The caller holds the destination's build lock.
-    A kit strips its kernel after the sidecar recorded the library's hash and
-    re-stamps only its manifest, so an adopted copy publishes the sidecar the
-    caller re-stamped from that manifest.""";
-    import from pathlib { Path }
-    atomic_write(destination, Path(source).read_bytes(), mode=0o755);
-    payload = (
-        json.dumps(sidecar, sort_keys=True).encode("utf-8")
-            if sidecar is not None
-            else Path(source + LAYOUT_SIDECAR_SUFFIX).read_bytes()
+glob _NOTICE: dict[str, bool] = {"shown": False};
+
+def _announce_bytecode(reason: str) {
+    if _NOTICE["shown"] {
+        return;
+    }
+    _NOTICE["shown"] = True;
+    (on, off) = ("\033[1;33m", "\033[0m") if sys.stderr.isatty() else ("", "");
+    sys.stderr.write(
+        f"{on}jac: the compiler is running from bytecode (slower): {reason}.{off}\n"
+        f"{on}jac: run `jac kernel build` to build the native compiler kernel; "
+        f"`jac kernel status` shows what it is missing.{off}\n"
     );
-    atomic_write(destination + LAYOUT_SIDECAR_SUFFIX, payload, mode=0o644);
-}
-
-def _build_kernel_in_child(dst: str) {
-    import subprocess;
-    env = child_compiler_env(kernel_build_env());
-    code = (
-        "import sys\n"
-        "sys.path.insert(0, sys.argv[-1])\n"
-        "from jaclang.compiler.backends.native.kernel_resolve import build_kernel\n"
-        "build_kernel(sys.argv[1], log=lambda m: sys.stderr.write(m + '\\n'))\n"
-    );
-    proc = subprocess.run(child_compiler_argv(code, [dst]), env=env);
-    if proc.returncode != 0 {
-        raise RuntimeError(f"kernel build exited with status {proc.returncode}");
-    }
-}
-
-def _derive_in_tree(lib_path: str) -> (ResolvedKernel | None) {
-    found = _accept_in_tree(lib_path);
-    if found is not None {
-        return found;
-    }
-    lock = FileLock(lib_path + ".lock");
-    lock.acquire();
-    try {
-        found = _accept_in_tree(lib_path) or _adopt_bundled(lib_path);
-        if found is not None {
-            return found;
-        }
-        import from jaclang.compiler.driver.setup_progress { setup_progress }
-        setup_progress.on_kernel_build(lib_path);
-        tmp = f"{lib_path}.{os.getpid()}.tmp";
-        try {
-            _build_kernel_in_child(tmp);
-            _publish_kernel(tmp, lib_path);
-        } finally {
-            for leftover in (tmp, tmp + LAYOUT_SIDECAR_SUFFIX, tmp + ".target.json") {
-                try {
-                    os.remove(leftover);
-                } except OSError {}
-            }
-        }
-        sidecar = read_sidecar(lib_path);
-        if sidecar is None {
-            raise RuntimeError("the kernel build left no layout sidecar");
-        }
-        return ResolvedKernel(
-            lib_path=lib_path,
-            layout=sidecar["classes"],
-            source="tree",
-            plan_digest=str(sidecar.get("plan_digest", ""))
-        );
-    } finally {
-        lock.release();
-    }
+    sys.stderr.flush();
 }
 
 def resolve_kernel -> (ResolvedKernel | None) {
     if os.environ.get(STUBCAT_BUILDING_ENV) {
         return None;
-    }
-    lib_setting = os.environ.get(KERNEL_LIB_ENV, "");
-    if lib_setting.strip().lower() in KERNEL_OFF_VALUES {
-        if os.environ.get(KERNEL_BUILDING_ENV) {
-            return None;
-        }
-        raise KernelUnavailable(
-            f"{KERNEL_LIB_ENV}={lib_setting} is not supported: the native compiler "
-            "kernel compiles and analyzes every program (only a kernel build "
-            "parses with the store parser)"
-        );
-    }
-    if lib_setting {
-        return _from_explicit(lib_setting);
     }
     if _sealed_kit_omits_kernel() {
         return None;
@@ -574,38 +416,41 @@ def resolve_kernel -> (ResolvedKernel | None) {
     if sealed is not None {
         return sealed;
     }
-    return _from_source_tree();
-}
-
-def compiler_package_parent -> str {
-    """The directory holding the `jaclang` package this process runs: what a
-child must put first on its path to run the same compiler. A build boots
-its interpreter with `-I` and an explicit `sys.path`, which a child does
-not inherit, and `python -c` would otherwise put the working directory
-first, where a checkout's own `jaclang` shadows the tree being built.""";
-    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
-    return os.path.dirname(jaclang_pkg_root());
-}
-
-def child_compiler_argv(code: str, args: list[str]) -> list[str] {
-    """The command line of a child compiler process: this interpreter, safe
-path mode so the working directory never joins `sys.path`, the driver
-code, its arguments, and the package parent for the driver to insert
-first. `import jaclang` registers the `.jac` importer itself.""";
-    import sys;
-    return [sys.executable, "-P", "-c", code]
-        + list(args)
-        + [compiler_package_parent()];
-}
-
-def child_compiler_env(extra: (dict[str, str] | None) = None) -> dict[str, str] {
-    env = dict(os.environ);
-    pkg_parent = compiler_package_parent();
-    prior = env.get("PYTHONPATH", "");
-    parts = [pkg_parent] + ([prior] if prior else []);
-    env["PYTHONPATH"] = os.pathsep.join(parts);
-    if extra {
-        env.update(extra);
+    (found, reason) = _from_source_tree();
+    if found is None and reason {
+        _announce_bytecode(reason);
     }
-    return env;
+    return found;
+}
+
+def _publish_kernel(source: str, destination: str) {
+    import from pathlib { Path }
+    library = Path(source).read_bytes();
+    sidecar = Path(source + LAYOUT_SIDECAR_SUFFIX).read_bytes();
+    with FileLock(destination + ".lock") {
+        atomic_write(destination, library, mode=0o755);
+        atomic_write(destination + LAYOUT_SIDECAR_SUFFIX, sidecar, mode=0o644);
+    }
+}
+
+def build_kernel(
+    dst: str = "",
+    log: (Callable[[str], None] | None) = None,
+    link_mode: str = KERNEL_DEV_LINK_MODE
+) -> LinkResult {
+    import from jaclang.compiler.backends.native.kernel_stage0 { link_kernel }
+    destination = dst or source_tree_kernel_path();
+    tmp = f"{destination}.{os.getpid()}.tmp";
+    try {
+        result = link_kernel(tmp, log=log, link_mode=link_mode);
+        _publish_kernel(tmp, destination);
+        result.output_path = destination;
+    } finally {
+        for leftover in (tmp, tmp + LAYOUT_SIDECAR_SUFFIX, tmp + ".target.json") {
+            try {
+                os.remove(leftover);
+            } except OSError {}
+        }
+    }
+    return result;
 }
