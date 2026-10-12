@@ -2550,7 +2550,9 @@ test "a [serve] table without a worker count leaves the count unset" {
     import from jaclang.server.settings { ServeSettings }
     with TemporaryDirectory() as tmpdir {
         manifest = Path(tmpdir) / "jac.toml";
-        manifest.write_text('[project]\nname = "workers-unset"\n\n[serve]\nport = 9123\n');
+        manifest.write_text(
+            '[project]\nname = "workers-unset"\n\n[serve]\nport = 9123\n'
+        );
         config = JacConfig.load(manifest);
         assert config.serve.port == 9123;
         assert config.serve.workers.count == "" , (
