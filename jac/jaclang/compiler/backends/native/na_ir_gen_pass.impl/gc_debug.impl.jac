@@ -48,9 +48,6 @@ impl NaIRGenPass._emit_rc_debug_globals -> None {
                     self.llvm_module, i8_ptr, name=_stderr_name
                 );
                 _stderr_gv.linkage = "external";
-                if "windows" in _triple {
-                    _stderr_gv.storage_class = "dllimport";
-                }
             }
             _fprintf_fn = self._get_or_declare_extern(
                 "fprintf", i32, [i8_ptr, i8_ptr], var_arg=True
