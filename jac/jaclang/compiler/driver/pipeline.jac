@@ -508,24 +508,17 @@ def get_ir_gen_sched(is_internal: bool = False, gen_mtir: bool = True) -> PassSc
     }
 }
 
-def typeshed_stubs_available -> bool {
-    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
-    return os.path.exists(
-        os.path.join(jaclang_pkg_root(), 'vendor', 'typeshed', 'stdlib', 'builtins.pyi')
-    );
-}
-
 def require_typeshed_stubs -> None {
-    if active_host().has_active_stub_catalog() or typeshed_stubs_available() {
+    if active_host().has_active_stub_catalog() {
         return;
     }
-    raise TypeshedUnavailableError(
-        "type inference is on the critical path of every compilation, but this "
-        "environment has neither a stub catalog nor the vendored typeshed stdlib "
-        "stubs, so no module can be compiled. In a source checkout run "
-        "'zig build fetch-typeshed'; in an installed environment reinstall the "
-        "jac distribution, whose payload carries the catalog."
-    );
+    why = active_host().typeshed_unavailable_reason();
+    if why {
+        raise TypeshedUnavailableError(
+            "type inference is on the critical path of every compilation, but "
+            f"this environment has neither a stub catalog nor typeshed: {why}"
+        );
+    }
 }
 
 def get_analysis_sched -> PassSchedule {

@@ -6,41 +6,28 @@ import tempfile;
 import threading;
 import from functools { cache }
 
-import from jaclang.dist.fused_binary { interpreter_runtime_dir }
-
 def engine_dir -> str {
-    """The bundled JavaScript engine's directory in the runtime tree: its
-    libraries, its builtins pack and `bin/node`.""";
-    rt = interpreter_runtime_dir();
-    if rt is None {
-        raise RuntimeError(
-            "the JavaScript engine ships inside the jac binary; run jac from it"
-        );
-    }
-    return os.path.join(rt, "js");
+    import from jaclang.artifacts.router { require }
+    found = require("js-engine").found;
+    assert found is not None;
+    return found.path;
 }
 
 def node_executable -> str {
-    """This binary under the name `node`: running it runs the bundled engine
-    (the launcher keeps the link pointing here).""";
-    return os.path.join(engine_dir(), "bin", "node");
+    import from jaclang.client.js_runtime { ensure_node_link }
+    return ensure_node_link(engine_dir());
 }
 
 @cache
-def _library -> ctypes.CDLL {
-    lib = ctypes.CDLL(os.path.join(engine_dir(), "libjs_engine.so"));
+def _library(engine: str) -> ctypes.CDLL {
+    lib = ctypes.CDLL(os.path.join(engine, "libjs_engine.so"));
     lib.js_pm.argtypes = [ctypes.c_int64, ctypes.POINTER(ctypes.c_char_p)];
     lib.js_pm.restype = ctypes.c_int64;
     return lib;
 }
 
 def run_pm(args: list[str], cwd: str, capture: bool = False) -> tuple[int, str] {
-    """Run a package-manager command (`["install"]`, `["add", "-d", "vite"]`)
-    in `cwd` inside this process and return its exit code, plus its output
-    when `capture` is set (it otherwise streams to this process's stdout and
-    stderr). The process's directory and umask are restored afterwards, and
-    Ctrl+C stops the command the way it stops a standalone one.""";
-    lib = _library();
+    lib = _library(engine_dir());
     argv = (ctypes.c_char_p * (len(args) + 1))(b"node", *[a.encode() for a in args]);
     sys.stdout.flush();
     sys.stderr.flush();

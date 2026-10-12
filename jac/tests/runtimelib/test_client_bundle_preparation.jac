@@ -8,8 +8,10 @@ import from pathlib { Path }
 import from tempfile { TemporaryDirectory }
 
 test "a failed production client build prevents initialization and a corrected run succeeds" {
+    import from jaclang.testing.requires { require_tool }
     import from jaclang.scale.runtime.context.util { jac_executable }
     import from urllib.request { urlopen }
+    require_tool('bun');
     with TemporaryDirectory(prefix='jac-bundle-preparation-') as tmp {
         project = Path(tmp);
         (project / 'jac.toml').write_text(

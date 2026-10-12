@@ -13,9 +13,9 @@ Dispatch, before any Python bring-up:
   * a trailing `.jab` overlay (a `jac build --as binary` app) exports its
     [offset, len] so the CPython boot can mount the app image out of this
     binary, and the app then owns ALL of argv;
-  * node mode: invoked as `node` (the runtime's `js/bin/node` link, or any
-    `node` on PATH that resolves here), run the bundled JavaScript engine
-    in-process -- no CPython at all;
+  * node mode: invoked as `node` (an engine's `bin/node` link, or a `node`
+    on PATH that resolves here), run the JavaScript engine in-process -- no
+    CPython at all;
   * worker mode: re-invoked as a Python interpreter (multiprocessing re-spawns
     `sys.executable` with `-u -c ...`), behave exactly like `python`;
   * otherwise boot the jaclang CLI.
@@ -23,13 +23,9 @@ Dispatch, before any Python bring-up:
 
 import os;
 import sys;
-import from jaclang.dist.fused.embed { open_tree }
-import from jaclang.dist.fused.materialize {
-    materialize,
-    overlay_for_path,
-    stubcat_for_path
-}
-import from jaclang.dist.fused.js_engine { is_node_name, link_node, run_node }
+import from jaclang.dist.fused.bringup { open_runtime }
+import from jaclang.dist.fused.js_engine { is_node_name, run_node }
+import from jaclang.dist.fused.materialize { materialize, overlay_for_path }
 import from jaclang.dist.fused.report { die }
 import from _exec_native { executable_path }
 
@@ -39,14 +35,12 @@ re-spawns it must come back through this binary -- worker mode is what makes
 multiprocessing re-spawns land on the right interpreter), install the lazy
 `.jac` finder, then hand off to the jaclang CLI, which reads `sys.argv`."""
 glob BOOT_SRC: str = (
-         "import sys, os\n"
-         + "_exe = os.environ.get('JAC_EXECUTABLE')\n"
-         + "if _exe:\n"
-         + "    sys.executable = _exe\n"
-         + "    sys._base_executable = _exe\n"
+         "import sys\n"
          + "import _jac_finder as _jf\n"
          + "_jf.apply_dev_source_override()\n"
          + "_jf.install()\n"
+         + "from jaclang.jac0core.handoff import process_executable\n"
+         + "sys.executable = sys._base_executable = process_executable()\n"
          + "from jaclang.cli.cli_boot import start_cli\n"
          + "start_cli()\n"
      );
@@ -71,10 +65,8 @@ with entry {
     if exe_path == "" {
         die("cannot resolve executable path");
     }
-    rt = materialize(exe_path);
-    link_node(rt, exe_path);
     if is_node_name(sys.argv[0]) {
-        sys.`exit(run_node(rt, sys.argv));
+        sys.`exit(run_node(materialize(exe_path), sys.argv, exe_path));
     }
 
     # An overlay means this is an app binary: export its coordinates for
@@ -92,20 +84,7 @@ with entry {
         os.environ.pop("JAC_APP_OVERLAY_LEN", "");
     }
 
-    # The stub catalog region (pre-resolved typeshed types) follows the same
-    # export-or-clear discipline: the type checker maps it straight out of
-    # this binary, and a child that is a different jac must not inherit
-    # coordinates that only make sense for this file.
-    cat = stubcat_for_path(exe_path);
-    if cat is not None {
-        os.environ["JAC_STUBCAT_OFF"] = str(cat.off);
-        os.environ["JAC_STUBCAT_LEN"] = str(cat.length);
-    } else {
-        os.environ.pop("JAC_STUBCAT_OFF", "");
-        os.environ.pop("JAC_STUBCAT_LEN", "");
-    }
-
-    emb = open_tree(rt, exe_path);
+    emb = open_runtime(exe_path);
 
     argv = sys.argv;
     worker = len(argv) > 1 and is_python_first_arg(argv[1]);

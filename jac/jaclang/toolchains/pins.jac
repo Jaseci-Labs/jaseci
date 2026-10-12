@@ -116,3 +116,50 @@ glob RUBY_ARTIFACTS: dict[str, Artifact] = {
          ),
 
      };
+
+glob NODE_VERSION: str = "v22.23.2";
+glob NODE_ARTIFACTS: dict[str, Artifact] = {
+         "linux-x64": Artifact(
+             "node",
+             NODE_VERSION,
+             "linux-x64",
+             "https://nodejs.org/dist/v22.23.2/node-v22.23.2-linux-x64.tar.xz",
+             "d60acfe00a2932254bb0ad20e01b0d74397a0875595de719654b214f4b03f307"
+         ),
+         "linux-aarch64": Artifact(
+             "node",
+             NODE_VERSION,
+             "linux-aarch64",
+             "https://nodejs.org/dist/v22.23.2/node-v22.23.2-linux-arm64.tar.xz",
+             "fff4078c5def658577f92c88db7db3bc0072924bfb93fe52c1e744a54e94abb8"
+         ),
+         "mac-x64": Artifact(
+             "node",
+             NODE_VERSION,
+             "mac-x64",
+             "https://nodejs.org/dist/v22.23.2/node-v22.23.2-darwin-x64.tar.gz",
+             "58e99022c2ff89395576cc7fd4d98cea24bb68081475d5f88b801ee8729fb026"
+         ),
+         "mac-aarch64": Artifact(
+             "node",
+             NODE_VERSION,
+             "mac-aarch64",
+             "https://nodejs.org/dist/v22.23.2/node-v22.23.2-darwin-arm64.tar.gz",
+             "61130f394c1630d211dd50aecc4353d379480f36d3ac913cd85dbba1aed585c6"
+         ),
+         "windows-x64": Artifact(
+             "node",
+             NODE_VERSION,
+             "windows-x64",
+             "https://nodejs.org/dist/v22.23.2/node-v22.23.2-win-x64.zip",
+             "1177b4137ba5adaa56354ae40f1080c7450e8ae09cecb47da459d1c52ac99f97"
+         ),
+         "windows-aarch64": Artifact(
+             "node",
+             NODE_VERSION,
+             "windows-aarch64",
+             "https://nodejs.org/dist/v22.23.2/node-v22.23.2-win-arm64.zip",
+             "fec025a6da31757e3b6af84c5a1628e9d38442ca99a2161091d78f2fcfa35ef3"
+         ),
+
+     };

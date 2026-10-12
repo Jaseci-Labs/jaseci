@@ -112,6 +112,9 @@ def app_npm_deps(config: JacConfig) -> list[tuple[str, str, str, bool]] {
 
 def regenerate_and_install(project_dir: Path) {
     import from jaclang.client.vite_bundler { ViteBundler }
+    import from jaclang.client.js_runtime { js_runtime_path }
+
+    bun = js_runtime_path();
 
     bundler = ViteBundler(project_dir);
     bundler.create_package_json();

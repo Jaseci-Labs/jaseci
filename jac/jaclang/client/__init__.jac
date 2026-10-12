@@ -1,4 +1,6 @@
 glob __all__ = [
+         'js_runtime_path',
+         'BUN_VERSION',
          'ensure_client_deps',
          'AssetProcessor',
          'JacClientConfig',
@@ -12,6 +14,8 @@ glob __all__ = [
          'make_client_bundle_builder'
      ],
      _LAZY_EXPORTS: dict[str, str] = {
+         'js_runtime_path': 'jaclang.client.js_runtime',
+         'BUN_VERSION': 'jaclang.client.js_runtime',
          'ensure_client_deps': 'jaclang.client.client_deps',
          'AssetProcessor': 'jaclang.client.asset_processor',
          'JacClientConfig': 'jaclang.client.config_loader',

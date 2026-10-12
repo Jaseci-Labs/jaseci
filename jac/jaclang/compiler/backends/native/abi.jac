@@ -220,11 +220,41 @@ def classify_struct_aapcs(
     };
 }
 
+def classify_struct_win64(
+    size: int, align: int, scalars: list[tuple[int, bool, int]]
+) -> dict[str, any] {
+    """The Microsoft x64 convention: a record of exactly 1, 2, 4 or 8 bytes
+    travels in one integer register whatever its fields are, floats included;
+    any other is passed as a pointer to a copy the caller owns, and returned
+    through a hidden pointer.""";
+    if size in (1, 2, 4, 8) {
+        return {
+            "size": size,
+            "align": align,
+            "memory": False,
+            "coerce": [ir.IntType(size * 8)],
+            "byval": False,
+            "safe": False
+        };
+    }
+    return {
+        "size": size,
+        "align": align if size else 1,
+        "memory": True,
+        "coerce": [],
+        "byval": False,
+        "safe": False
+    };
+}
+
 def classify_struct(
     size: int, align: int, scalars: list[tuple[int, bool, int]], triple: str
 ) -> dict[str, any] {
     if "aarch64" in triple or "arm64" in triple {
         return classify_struct_aapcs(size, align, scalars);
+    }
+    if "windows" in triple or "msvc" in triple or "mingw" in triple {
+        return classify_struct_win64(size, align, scalars);
     }
     return classify_struct_sysv(size, align, scalars);
 }

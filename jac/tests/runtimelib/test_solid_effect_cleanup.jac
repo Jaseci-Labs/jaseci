@@ -3,11 +3,11 @@ import subprocess;
 import shutil;
 import from pathlib { Path }
 import from tempfile { TemporaryDirectory }
-import from jaclang.client.js_engine { node_executable }
+import from tests.support { js_runtime_or_none }
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.backends.es.backends.solid { SolidBackend }
 import from tests.compiler.backends.es.codegen_helpers { es_js_with_backend }
-import from .react_jsdom_harness { npm_install }
+import from .react_jsdom_harness { bun_install, require_client_integration }
 import from jaclang.compiler.backends.es.jac_runtime_js {
     point_jac_prelude_at,
     write_jac_prelude_file
@@ -36,7 +36,11 @@ console.log('PASS Solid closure-local cleanup');
 """;
 
 test "solid returned cleanup runs on invalidation and disposal" {
-    js_engine = node_executable();
+    require_client_integration("Solid lifecycle cleanup");
+    bun = js_runtime_or_none();
+    if bun is None {
+        testskip("bun is required");
+    }
     fixture = Path(__file__).parent.parent
         / "compiler"
         / "backends"
@@ -52,11 +56,10 @@ test "solid returned cleanup runs on invalidation and disposal" {
         write_jac_prelude_file(str(work));
         (work / "component.js").write_text(point_jac_prelude_at(js), encoding="utf-8");
         (work / "harness.mjs").write_text(HARNESS, encoding="utf-8");
-        npm_install(
-            js_engine, work, "solid-effect-cleanup-test", {"solid-js": "^1.9.13"}
-        );
+        bun_install(bun, work, "solid-effect-cleanup-test", {"solid-js": "^1.9.13"});
+        runner = shutil.which("node") or bun;
         result = subprocess.run(
-            [js_engine, "--conditions=browser", str(work / "harness.mjs")],
+            [runner, "--conditions=browser", str(work / "harness.mjs")],
             cwd=str(work),
             capture_output=True,
             text=True,

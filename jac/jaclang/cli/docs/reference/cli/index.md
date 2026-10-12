@@ -1130,7 +1130,15 @@ Download the embedded Postgres distribution into the cache and print where it la
 jac db fetch
 ```
 
-Set `JAC_PG_DIST` to an already-populated distribution directory (one containing `bin/postgres`) to use it instead of the cache -- that is how the official image ships the binaries. See [Persistence & Schema Migration](../persistence.md#the-embedded-engine-in-containers) for the container rules.
+The runtime looks for a distribution in this order: the project's `[database] postgres_dist` (a directory containing `bin/postgres`, relative to the project), a distribution already in the cache (the pinned major first), a Postgres installed on the system, and only then a download -- which it announces, and which an offline project (`[network] offline = true`) refuses. `[database] postgres_version` picks the major:
+
+```toml
+[database]
+postgres_dist = "/opt/pg"     # use these binaries, never download
+postgres_version = "19"       # the major to provision (default 19)
+```
+
+The official image runs `jac db fetch` at build time, so its cache already holds the distribution. See [Persistence & Schema Migration](../persistence.md#the-embedded-engine-in-containers) for the container rules.
 
 ## Configuration Management
 
@@ -1434,7 +1442,7 @@ Optional groups are declared under `[optional-dependencies]` in `jac.toml`. See 
 
 ### jac x
 
-`jac x <tool>` runs an installed command-line tool under the `jac` runtime -- the Jac-native, cross-ecosystem equivalent of `pipx run` / `npx`. It resolves a **Python console-script** (from an installed package's entry points) or an **npm tool** (from `node_modules/.bin`) and runs it. Python tools execute in-process under the bundled interpreter; npm tools run through the jac-managed **js_engine** runtime -- so **neither a system Python nor a system Node is required**.
+`jac x <tool>` runs an installed command-line tool under the `jac` runtime -- the Jac-native, cross-ecosystem equivalent of `pipx run` / `npx`. It resolves a **Python console-script** (from an installed package's entry points) or an **npm tool** (from `node_modules/.bin`) and runs it. Python tools execute in-process under the bundled interpreter; npm tools run through the jac-managed **bun** runtime -- so **neither a system Python nor a system Node is required**.
 
 The CLI tools you install with `jac install` are therefore runnable without putting anything on your shell `PATH`, and resolution is project-aware: inside a project, a tool installed in that project shadows a global one of the same name. `jac x <name>` also runs custom scripts defined in the `[scripts]` section of `jac.toml` -- this absorbs the former `jac script`. A bare `jac x` (or `jac x --list`) lists everything runnable.
 
@@ -1467,7 +1475,7 @@ jac x hf download gpt2
 # Run an installed formatter on the current directory
 jac x black .
 
-# Run a project npm tool (node_modules/.bin) through js_engine -- no system Node needed
+# Run a project npm tool (node_modules/.bin) through bun -- no system Node needed
 jac x eslint .
 jac x vite build
 
@@ -1479,7 +1487,7 @@ jac x --node vite build       # the project's npm copy
 jac x --list
 ```
 
-> **No system Python or Node required.** Python tools run in-process under the `jac` binary's bundled interpreter; npm tools run under the `jac` binary's own `node` (its bundled `js_engine` runtime), which executes the `node_modules/.bin` shims directly. Arguments after the tool name -- including flags like `--help` -- pass straight through, and the tool's exit code becomes `jac x`'s exit code.
+> **No system Python or Node required.** Python tools run in-process under the `jac` binary's bundled interpreter; npm tools run via the jac-managed `bun` (resolved from the system `PATH`, the project's `.jac/bin/bun`, or auto-downloaded), which executes the `node_modules/.bin` shims directly. Arguments after the tool name -- including flags like `--help` -- pass straight through, and the tool's exit code becomes `jac x`'s exit code.
 
 ---
 
@@ -1781,7 +1789,7 @@ python build.py
 python main.py
 ```
 
-JavaScript builds use Node/npm or js_engine. Native code is emitted as C from the
+JavaScript builds use Node/npm or Bun. Native code is emitted as C from the
 existing native lowering and built with Clang; browser native modules also need
 a WASI sysroot. Exporting native source requires LLVM 22 development files and
 CMake, or a configured `JAC_LLVM_CBE`. Generated C retains the selected target's
@@ -2055,7 +2063,7 @@ jac setup [app]
 | `--toolchain <name>` | Provision build tools without a project: `android`, `ios`, `desktop`, `cef` |
 | `--platform <name>` | Also provision the app's build platform toolchain: `android` or `ios` |
 
-What it does depends on the app's kind: a `mobile` app gets its Expo/Metro scaffold at `.jac/mobile-rn/` (with `[dependencies.npm.native]` merged in) and its packages installed; a `web-app` with a `[client.pwa]` table gets a `pwa_icons/` directory with placeholder icons; `desktop` apps need no setup (the native host is generated at build time). Under `JAC_OFFLINE=1` a run cannot provision, so a missing mobile scaffold or stale packages stop with `jac setup <app>` as the hint.
+What it does depends on the app's kind: a `mobile` app gets its Expo/Metro scaffold at `.jac/mobile-rn/` (with `[dependencies.npm.native]` merged in) and its packages installed; a `web-app` with a `[client.pwa]` table gets a `pwa_icons/` directory with placeholder icons; `desktop` apps need no setup (the native host is generated at build time). In an offline project (`[network] offline = true` in `jac.toml`) a run cannot provision, so a missing mobile scaffold or stale packages stop with `jac setup <app>` as the hint.
 
 **Examples:**
 

@@ -293,7 +293,7 @@ test "_tool_site_dirs with use_global skips the project tier" {
 }
 
 
-# ===== npm tier: discovery, tier ordering, routing, and node exec =====
+# ===== npm tier: discovery, tier ordering, routing, and bun exec =====
 """Create a node_modules/.bin shim named `tool` in `bin_dir`."""
 def make_fake_node_bin(bin_dir: Path, tool: str) -> Path {
     bin_dir.mkdir(parents=True, exist_ok=True);
@@ -451,19 +451,35 @@ test "x routes an npm-tier match to the node runner" {
     }
 }
 
-test "_run_node_tool runs the shim under node and forwards args" {
+test "_run_node_tool invokes bun with the shim and forwards args" {
     tmp = tempfile.mkdtemp(prefix="jac_x_test_");
     try {
         bin_dir = Path(tmp) / "bin";
         shim = make_fake_node_bin(bin_dir, "demo");
         with patch(
-            "jaclang.client.js_engine.node_executable", return_value="/rt/js/bin/node"
+            "jaclang.client.js_runtime.js_runtime_path", return_value="/fake/bun"
         ), patch("subprocess.run") as mock_run {
             mock_run.return_value = MagicMock(returncode=3);
             rc = exec_cmds._run_node_tool("demo", shim, ["a", "b"]);
         }
         assert rc == 3;
-        assert mock_run.call_args[0][0] == ["/rt/js/bin/node", str(shim), "a", "b"];
+        assert mock_run.call_args[0][0] == ["/fake/bun", str(shim), "a", "b"];
+    } finally {
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
+test "_run_node_tool errors cleanly when bun is unavailable" {
+    tmp = tempfile.mkdtemp(prefix="jac_x_test_");
+    try {
+        shim = make_fake_node_bin(Path(tmp) / "bin", "demo");
+        import from jaclang.artifacts.model { ArtifactUnavailable }
+        with patch(
+            "jaclang.client.js_runtime.js_runtime_path",
+            side_effect=ArtifactUnavailable("bun is unavailable")
+        ) {
+            assert exec_cmds._run_node_tool("demo", shim, []) == 1;
+        }
     } finally {
         shutil.rmtree(tmp, ignore_errors=True);
     }
@@ -522,7 +538,7 @@ test "x --global resolves a global npm tool through the node runner" {
     }
 }
 
-test "run_npm_add --global installs into the jac global npm dir via the package manager" {
+test "run_npm_add --global installs into the jac global npm dir via bun add" {
     import from jaclang.client { cli as npm_cli }
     tmp = tempfile.mkdtemp(prefix="jac_x_test_");
     old_env = os.environ.get("JAC_GLOBAL_DIR");
@@ -530,17 +546,19 @@ test "run_npm_add --global installs into the jac global npm dir via the package 
         gdir = Path(tmp) / "gdir";
         os.environ["JAC_GLOBAL_DIR"] = str(gdir);
         with patch(
-            "jaclang.client.js_engine.run_pm", return_value=(0, "")
-        ) as mock_pm {
+            "jaclang.client.js_runtime.js_runtime_path", return_value="/fake/bun"
+        ), patch("subprocess.run") as mock_run {
+            mock_run.return_value = MagicMock(returncode=0);
             rc = npm_cli.run_npm_add(["eslint@9"], False, True);
         }
         assert rc == 0;
-        # `add <specs>` ran in the jac-owned global npm root (no project needed).
-        (args, cwd) = mock_pm.call_args[0];
-        assert args[0] == "add";
-        assert "eslint@9" in args;
+        # `bun add <specs>` ran in the jac-owned global npm root (no project needed).
+        argv = mock_run.call_args[0][0];
+        assert argv[0] == "/fake/bun";
+        assert argv[1] == "add";
+        assert "eslint@9" in argv;
         npm_root = gdir / "npm";
-        assert cwd == str(npm_root);
+        assert mock_run.call_args[1]["cwd"] == str(npm_root);
         assert (npm_root / "package.json").exists();
     } finally {
         if old_env is None {
@@ -552,19 +570,20 @@ test "run_npm_add --global installs into the jac global npm dir via the package 
     }
 }
 
-test "run_npm_add --global --dev forwards --dev to the package manager's add" {
+test "run_npm_add --global --dev forwards --dev to bun add" {
     import from jaclang.client { cli as npm_cli }
     tmp = tempfile.mkdtemp(prefix="jac_x_test_");
     old_env = os.environ.get("JAC_GLOBAL_DIR");
     try {
         os.environ["JAC_GLOBAL_DIR"] = str(Path(tmp) / "gdir");
         with patch(
-            "jaclang.client.js_engine.run_pm", return_value=(0, "")
-        ) as mock_pm {
+            "jaclang.client.js_runtime.js_runtime_path", return_value="/fake/bun"
+        ), patch("subprocess.run") as mock_run {
+            mock_run.return_value = MagicMock(returncode=0);
             rc = npm_cli.run_npm_add(["typescript"], True, True);
         }
         assert rc == 0;
-        assert "--dev" in mock_pm.call_args[0][0];
+        assert "--dev" in mock_run.call_args[0][0];
     } finally {
         if old_env is None {
             os.environ.pop("JAC_GLOBAL_DIR", None);

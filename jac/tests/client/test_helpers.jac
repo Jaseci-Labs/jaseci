@@ -32,6 +32,27 @@ def get_jac_command -> list[str] {
     return jac_command();
 }
 
+"""Get environment dict with bun in PATH."""
+def get_env_with_bun -> dict[str, str] {
+    import from tests.support { js_runtime_or_none }
+    env = os.environ.copy();
+    bun_path = js_runtime_or_none();
+    if not bun_path {
+        bun_path = shutil.which("bun");
+    }
+    if bun_path {
+        bun_dir = str(Path(bun_path).parent);
+        current_path = env.get("PATH", "");
+        if bun_dir not in current_path {
+            env["PATH"] = f"{bun_dir}:{current_path}";
+        }
+    }
+    return env;
+}
+
+# Backward compatibility alias
+glob get_env_with_npm = get_env_with_bun;
+
 """Block until a TCP port is accepting connections or timeout."""
 def wait_for_port(
     host: str, port: int, timeout: float = 60.0, server: (Popen | None) = None
@@ -131,7 +152,7 @@ def start_app_server(
     import tempfile;
     port = get_free_port();
     jac_cmd = get_jac_command();
-    env = os.environ.copy();
+    env = get_env_with_bun();
     args = [*jac_cmd, "run", "--serve"];
     if extra_args {
         args = [*args, *extra_args];

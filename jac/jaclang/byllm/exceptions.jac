@@ -55,3 +55,5 @@ obj ConfigurationError(ByLLMError) {}
 obj McpError(ByLLMError) {}
 
 obj CompactionNotEffectiveError(ByLLMError) {}
+
+obj OutputTruncatedError(ByLLMError) {}

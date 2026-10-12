@@ -50,7 +50,7 @@ runs:
     # neither jaclang nor the launcher would hit it) yet a high pool cost
     # (~0.1-0.2 GB each). Left unbounded it dominated the 10 GB pool -- dozens of
     # per-branch binaries -- and its LRU churn evicted the Linux read-mostly
-    # caches (Python) this action relies on. PR jobs still build their own
+    # caches (Python/bun) this action relies on. PR jobs still build their own
     # binary on a miss (and ci.yml publishes it as an artifact for the same-run
     # test jobs); only main seeds the shared copy. Exact-key match only (no
     # restore-keys), so a stale binary can never be served.
@@ -65,8 +65,8 @@ runs:
         #
         # .precompiled-build/jacpython rides WITH the binary, not beside it.
         # ci.yml publishes that tree as the `jac-precompiled` artifact and every
-        # reroute lane runs against it under JAC_PRECOMPILE_REQUIRED=1, so a
-        # tree that does not match this checkout is a hard failure, not a slow
+        # reroute lane requires it (`jac native status --require precompiled`), so
+        # a tree that does not match this checkout is a hard failure, not a slow
         # lane. Keyed together, a hit restores the exact pair that was built;
         # keyed apart, a hit on one with a restore-keys prefix hit on the other
         # could ship a bundle one payload fingerprint stale. The read-mostly
@@ -85,7 +85,7 @@ runs:
         path: jac/jaclang/vendor/typeshed/stdlib
         key: typeshed-stdlib-${{ hashFiles('jac/jaclang/vendor/typeshed/PIN', 'jac/jaclang/vendor/typeshed/TARBALL_SHA256', 'jac/launcher/payload.zig') }}
 
-    # The three caches below (Python, shim, LLVM) are big (0.2-0.6 GB each).
+    # The four caches below (Python, shim, LLVM, bun) are big (0.2-0.6 GB each).
     # They use restore/save split with SAVES GATED TO MAIN: PR
     # branches read main's entries (cross-branch restore from the default
     # branch), and a per-PR save would only duplicate ~1.2 GB per ref into the repo's 10 GB
@@ -110,35 +110,22 @@ runs:
     # native/**, build.zig, and the pinned slice (bootstrap/pins.json) -- NOT on
     # jaclang/**. Cache the built shim itself so compiler-only merges (the
     # common case for a binary-cache miss) skip both the LLVM fetch below and
-    # the link: the build step passes the restored file via `-Dshim-bin`. The
-    # cache path is the shim's in-tree place path, which a from-source build
-    # populates, so a main-branch miss self-seeds when the job ends.
+    # the link. The cache path is the shim's in-tree place path, record
+    # included: `zig build` reuses a placed shim whose record names these
+    # inputs and this target. A from-source build populates it, so a
+    # main-branch miss self-seeds when the job ends.
     - name: Restore cached LLVMPY shim
       id: shim-cache
       if: steps.cache.outputs.cache-hit != 'true' || inputs.need-build-inputs == 'true'
       uses: actions/cache/restore@v4
       with:
         path: jac/jaclang/compiler/backends/native/llvm/libjacllvm.*
-        key: jac-shim-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('jac/native/**', 'jac/build.zig', 'jac/bootstrap/pins.json') }}
-
-    # The JavaScript engine (zig-out/js: libjs_engine.so, the Zig-built native
-    # libraries and the builtins pack) is the other expensive artifact -- a
-    # whole-program native link of js_engine/, plus ICU -- and depends on
-    # js_engine/**, its build.zig.zon sources and the native backend, not on the
-    # rest of jaclang. Reused like the shim: the build passes the restored tree
-    # via -Djs-engine-dir. The engine builds on Linux x86_64 only.
-    - name: Restore cached JavaScript engine
-      id: js-engine-cache
-      if: steps.cache.outputs.cache-hit != 'true' && runner.os == 'Linux' && runner.arch == 'X64'
-      uses: actions/cache/restore@v4
-      with:
-        path: jac/zig-out/js
-        key: jac-js-engine-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('jac/js_engine/**', 'jac/build.zig', 'jac/build.zig.zon', 'jac/jaclang/compiler/backends/native/**') }}
+        key: jac-shim-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('jac/native/**', 'jac/build.zig', 'jac/build.zig.zon', 'jac/bootstrap/pins.json') }}
 
     # The native (na) backend statically links a pinned LLVM into the LLVMPY_*
     # shim, so `zig build` needs that LLVM extracted first (there is no llvmlite
     # wheel anymore). Cache the pruned ~0.5 GB tree, keyed on the single-sourced
-    # slice pin (bootstrap/pins.json) so unrelated payload-tool churn (Python/pip
+    # slice pin (bootstrap/pins.json) so unrelated payload-tool churn (bun/Python/pip
     # pins) does not orphan a 0.5 GB entry. Only engaged on a binary miss AND a
     # shim miss (a cached shim needs no LLVM at all).
     - name: Restore cached LLVM (jacllvm shim deps)
@@ -148,6 +135,19 @@ runs:
       with:
         path: jac/.llvm-build
         key: llvm-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('jac/bootstrap/pins.json') }}
+
+    # The contained bun runtime is fetched + sha256-verified and bundled into the
+    # payload during `zig build`. Cache the extracted tree (~58 MB) so a binary
+    # miss does not re-download it, keyed on the resolver pin in
+    # client/js_runtime.jac (the one definition; the Jac payload tool imports it, so no lockstep
+    # check). Only engaged on a binary miss.
+    - name: Restore cached bun runtime
+      id: bun-cache
+      if: steps.cache.outputs.cache-hit != 'true'
+      uses: actions/cache/restore@v4
+      with:
+        path: jac/.bun-build
+        key: bun-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('jac/jaclang/client/js_runtime.jac') }}
 
     # The JIR precompile is mkpayload's single most expensive stage (~24 min:
     # it compiles every bundled jaclang module). ONE tree per (code version,
@@ -238,7 +238,7 @@ runs:
     # Download + extract the pinned LLVM into jac/.llvm-build (idempotent: a no-op
     # when the cache above restored it). Must run before `zig build` so the shim's
     # static archives exist when build.zig configures the jacllvm step. Skipped
-    # entirely when a cached shim was restored (-Dshim-bin needs no LLVM).
+    # entirely when a cached shim was restored (a current shim needs no LLVM).
     - name: Fetch LLVM for the jacllvm shim
       if: steps.cache.outputs.cache-hit != 'true' && steps.shim-cache.outputs.cache-hit != 'true'
       shell: bash
@@ -257,33 +257,15 @@ runs:
       if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
       working-directory: jac
-      env:
-        # The shared CI kit exercises the native Python compiler.
-        JACPYTHON: "1"
-        # A PR reuses the JacPython runtime main last built when the sources it
-        # was lowered from are unchanged (build_python.zig sourcesKey). Main
-        # keeps the full key, so the runtime is at most one main build behind.
-        JAC_JACPYTHON_REUSE: ${{ github.event_name == 'pull_request' && '1' || '' }}
-      # On a shim-cache hit, stage the restored shim OUTSIDE its in-tree place
-      # path before passing it via -Dshim-bin: the build's place step copies
-      # -Dshim-bin back to that path, and a self-copy would read the file it is
-      # truncating. On a shim miss the plain build links it from source, the
-      # place step writes it in-tree, and the shim cache saves it at job end.
+      # On a shim-cache hit the build reuses the restored shim in place. On a
+      # miss it links the shim from source, the place step writes it in-tree,
+      # and the shim cache saves it at job end.
+      # The shared CI kit exercises the native Python compiler. A PR reuses the
+      # JacPython runtime main last built when the sources it was lowered from
+      # are unchanged (build_python.zig sourcesKey); main keeps the full key, so
+      # the runtime is at most one main build behind.
       run: |
-        SHIM_ARG=()
-        if [ "${{ steps.shim-cache.outputs.cache-hit }}" = "true" ]; then
-          mkdir -p .shim-build
-          cp jaclang/compiler/backends/native/llvm/libjacllvm.* .shim-build/
-          SHIM_ARG=(-Dshim-bin=".shim-build/$(ls .shim-build | head -1)")
-        fi
-        # Staged outside zig-out/js for the same reason as the shim: the build
-        # installs -Djs-engine-dir back into zig-out/js.
-        JS_ENGINE_ARG=()
-        if [ "${{ steps.js-engine-cache.outputs.cache-hit }}" = "true" ]; then
-          rm -rf .js-engine-build
-          cp -r zig-out/js .js-engine-build
-          JS_ENGINE_ARG=(-Djs-engine-dir=.js-engine-build)
-        fi
+        PY=(-Dpython=jacpython -Dreuse-python=${{ github.event_name == 'pull_request' }})
         TARGET_ARG=()
         case "$RUNNER_OS/$RUNNER_ARCH" in
           Linux/X64) TARGET_ARG=(-Dtarget=x86_64-linux-gnu.2.17) ;;
@@ -296,7 +278,7 @@ runs:
         set -o pipefail
         LOG="$(mktemp)"
         for attempt in 1 2 3; do
-          if zig build "${TARGET_ARG[@]}" "${SHIM_ARG[@]}" "${JS_ENGINE_ARG[@]}" --summary all 2>&1 | tee "$LOG"; then
+          if zig build "${PY[@]}" "${TARGET_ARG[@]}" --summary all 2>&1 | tee "$LOG"; then
             exit 0
           fi
           if grep -qE 'Seal aborted|Seal incomplete|seal-finalize failed' "$LOG"; then
@@ -344,18 +326,7 @@ runs:
       uses: actions/cache/save@v4
       with:
         path: jac/jaclang/compiler/backends/native/llvm/libjacllvm.*
-        key: jac-shim-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('jac/native/**', 'jac/build.zig', 'jac/bootstrap/pins.json') }}
-
-    - name: Save JavaScript engine cache (trusted refs only)
-      if: >-
-        github.ref == 'refs/heads/main' &&
-        steps.cache.outputs.cache-hit != 'true' &&
-        runner.os == 'Linux' && runner.arch == 'X64' &&
-        steps.js-engine-cache.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
-      with:
-        path: jac/zig-out/js
-        key: jac-js-engine-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('jac/js_engine/**', 'jac/build.zig', 'jac/build.zig.zon', 'jac/jaclang/compiler/backends/native/**') }}
+        key: jac-shim-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('jac/native/**', 'jac/build.zig', 'jac/build.zig.zon', 'jac/bootstrap/pins.json') }}
 
     - name: Save LLVM cache (trusted refs only)
       if: >-
@@ -367,6 +338,16 @@ runs:
       with:
         path: jac/.llvm-build
         key: llvm-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('jac/bootstrap/pins.json') }}
+
+    - name: Save bun cache (trusted refs only)
+      if: >-
+        github.ref == 'refs/heads/main' &&
+        steps.cache.outputs.cache-hit != 'true' &&
+        steps.bun-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: jac/.bun-build
+        key: bun-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('jac/jaclang/client/js_runtime.jac') }}
 
     # cache-hit is only 'true' on an exact-key match, so a restore-keys prefix
     # hit still saves here -- that is what keeps the entry tracking HEAD (each

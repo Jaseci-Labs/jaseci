@@ -359,7 +359,8 @@ obj NarrowingPredicate {
         attr_name: str | None = None,
         narrows_on_true: bool = True,
         narrows_on_false: bool = True,
-        replaces_declared: bool = False;
+        replaces_declared: bool = False,
+        by_equality: bool = False;
 }
 
 enum NarrowingKind {
@@ -419,8 +420,8 @@ walker TypeEvaluator {
         builtins_module: Module | None = None,
         _flow_node_type_cache: dict[tuple[int, int], TypeBase | None] = {},
         _flow_key_type_cache: dict[tuple[int, str], TypeBase | None] = {},
-        _flow_pending_symbols: set[int] postinit,
-        _flow_pending_keys: set[str] postinit,
+        _flow_pending_symbols: set[tuple[int, int]] postinit,
+        _flow_pending_keys: set[tuple[str, int]] postinit,
         _module_type_cache: dict[str, ModuleType] = {},
         _modules_in_compile: set[str] postinit,
         _mobui_module_cache: dict[str, bool] = {},
@@ -904,6 +905,10 @@ walker TypeEvaluator {
     ) -> None;
 
     def _member_is_metaclass_only(cls_type: ClassType, expr: FuncCall) -> bool;
+    def _type_args_from_init_overload(
+        caller_type: ClassType, expr: FuncCall, raw_ctor: FunctionType
+    ) -> list[TypeBase];
+
     def class_constructor_callables(cls_type: ClassType) -> list[FunctionType];
     def _infer_type_args_from_method(
         caller_type: ClassType, expr: FuncCall, matched_method: FunctionType | None
@@ -998,6 +1003,11 @@ walker TypeEvaluator {
 
     def _narrow_type_to(base_type: TypeBase, narrow_type: TypeBase) -> TypeBase | None;
     def _narrow_member_to(member: TypeBase, narrow_type: TypeBase) -> TypeBase | None;
+    def _narrow_type_by_equality(
+        base_type: TypeBase, compared: TypeBase
+    ) -> TypeBase | None;
+
+    def _may_equal(member: TypeBase, compared: TypeBase) -> bool;
     def _specialize_narrow_from_base(
         base_type: TypeBase, narrow_type: TypeBase
     ) -> TypeBase;

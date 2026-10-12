@@ -2,7 +2,7 @@ import subprocess;
 import tempfile;
 import from pathlib { Path }
 import from tests.support { TESTS_DIR }
-import from jaclang.client.js_engine { node_executable }
+import from tests.support { js_runtime_or_none }
 import from tests.compiler.backends.es.codegen_helpers { stage_prelude_dir }
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.driver.compile_options { CompileOptions }
@@ -32,7 +32,8 @@ test "arena host scalar boundary input and asynchronous lifecycle" {
     } finally {
         set_config(previous);
     }
-    runtime = node_executable();
+    runtime = js_runtime_or_none();
+    assert runtime is not None;
     fixtures = Path(TESTS_DIR) / "compiler" / "backends" / "es" / "fixtures";
     with tempfile.TemporaryDirectory() as tmp {
         target = Path(tmp);

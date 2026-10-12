@@ -96,6 +96,13 @@ class ViteBundler {
         clean_stale: bool = False
     ) -> None;
 
+    def add_packages(
+        self: ViteBundler,
+        packages: list[str],
+        install_dir: Optional[Path] = None,
+        dev: bool = False
+    ) -> None;
+
     def _generate_vite_config_content(
         self: ViteBundler,
         is_dev: bool,

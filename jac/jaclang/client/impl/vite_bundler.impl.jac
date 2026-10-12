@@ -1,12 +1,18 @@
 import threading;
 import from jaclang.cli.console { console }
-import from jaclang.client.js_engine { node_executable, run_pm }
 import from jaclang.client.client_bundle { ClientBundleError }
+import from jaclang.client.js_runtime { js_runtime_path, run_pm }
+
+
+def _require_bun -> str {
+    return js_runtime_path();
+}
 
 
 def _build_vite_command(build_dir: Path, args: list[str]) -> list[str] {
     import from jaclang.client.targets.node_tooling_common { resolve_node_tool_entry }
 
+    bun = _require_bun();
     `entry = resolve_node_tool_entry(build_dir, 'vite');
     if `entry is None {
         raise ClientBundleError(
@@ -15,7 +21,7 @@ def _build_vite_command(build_dir: Path, args: list[str]) -> list[str] {
             "vite means that install did not complete."
         ) from None;
     }
-    return [node_executable(), str(`entry)] + args;
+    return [bun, str(`entry)] + args;
 }
 
 impl ViteBundler._get_client_dir(self: ViteBundler) -> Path {
@@ -213,6 +219,7 @@ impl ViteBundler.install_packages(
 ) -> None {
     import time;
     import shutil;
+    _require_bun();
     build_dir = install_dir if install_dir is not None else self._get_client_dir();
     node_modules = build_dir / 'node_modules';
 
@@ -245,14 +252,14 @@ impl ViteBundler.install_packages(
     try {
         console.print("\n  ⏳ Installing dependencies...\n");
         start_time = time.time();
-        (returncode, output) = run_pm(
+        (returncode, error_output) = run_pm(
             ['install'], str(build_dir), capture=capture_output
         );
         elapsed = time.time() - start_time;
         if returncode != 0 {
             if capture_output {
                 raise ClientBundleError(
-                    f"Dependency installation failed after {elapsed:.1f}s\n\n{output}"
+                    f"Dependency installation failed after {elapsed:.1f}s\n\n{error_output}"
                 ) from None;
             }
             console.error(f"\n  ✖ Dependency installation failed after {elapsed:.1f}s");
@@ -273,6 +280,45 @@ impl ViteBundler.install_packages(
         if build_npmrc.exists() {
             build_npmrc.unlink();
         }
+
+        build_bun_lockb = build_dir / 'bun.lockb';
+        if build_bun_lockb.exists() {
+            configs_bun_lockb = build_dir / 'configs' / 'bun.lockb';
+            if configs_bun_lockb.exists() {
+                configs_bun_lockb.unlink();
+            }
+            shutil.move(str(build_bun_lockb), str(configs_bun_lockb));
+        }
+    }
+}
+
+impl ViteBundler.add_packages(
+    self: ViteBundler,
+    packages: list[str],
+    install_dir: Optional[Path] = None,
+    dev: bool = False
+) -> None {
+    import json;
+    import subprocess;
+    target_dir = install_dir if install_dir is not None else self.project_dir;
+    pkg_json = target_dir / 'package.json';
+    if not pkg_json.exists() {
+        pkg_data = {
+            'name': 'jac-mobile-app',
+            'version': '1.0.0',
+            'private': True,
+            'type': 'module'
+        };
+        pkg_json.write_text(json.dumps(pkg_data, indent=2), encoding='utf-8');
+        console.print("  ✔ Created package.json");
+    }
+
+    console.print(f"  Installing: {' '.join(packages)}");
+    (returncode, _) = run_pm(
+        ['add'] + (['--dev'] if dev else []) + packages, str(target_dir)
+    );
+    if returncode != 0 {
+        raise RuntimeError(f"installing {', '.join(packages)} failed ({returncode})");
     }
 }
 
@@ -1021,6 +1067,8 @@ impl ViteBundler.build(self: ViteBundler, entry_file: Optional[Path] = None) -> 
     import time;
     import from jaclang.client { ensure_client_deps }
 
+    bun = _require_bun();
+
     if not ensure_client_deps(self.config_loader) {
         raise ClientBundleError(
             'Client dependencies not configured. Add [dependencies.npm] to jac.toml '
@@ -1047,7 +1095,7 @@ impl ViteBundler.build(self: ViteBundler, entry_file: Optional[Path] = None) -> 
             build_dir, ['build', '--config', str(config_rel)]
         );
     } else {
-        command = [node_executable(), 'run', 'build'];
+        command = [bun, 'run', 'build'];
     }
 
     console.print("\n  ⏳ Building client bundle...\n");
@@ -1272,7 +1320,7 @@ impl ViteBundler.start_dev_server(
     import sys;
     import time;
     import threading;
-
+    js_runtime_path();
     build_dir = self._get_client_dir();
     self._ensure_dev_index_html(build_dir);
     self._ensure_dev_dependencies(build_dir);

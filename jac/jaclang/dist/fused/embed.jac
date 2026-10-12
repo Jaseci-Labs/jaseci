@@ -243,7 +243,6 @@ def:pub export_ca_bundle(rt: str) {
 
 def:pub open_tree(rt: str, exe_path: str) -> Embed {
     os.environ["JAC_STANDALONE"] = "1";
-    os.environ["JAC_EXECUTABLE"] = exe_path;
 
     if not os.environ.get("MIMALLOC_PURGE_DELAY", "") {
         os.environ["MIMALLOC_PURGE_DELAY"] = "0";

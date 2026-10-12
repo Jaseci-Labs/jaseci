@@ -51,6 +51,18 @@ def _persist_system_root {
     ambient.mem.commit();
 }
 
+"""Skip a test unless client integration is explicitly enabled.
+
+Rendering a client page now runs the real Vite/Bun pipeline (bun + npm install
++ vite build), so these are integration tests rather than fast unit tests. They
+run only when JAC_CLIENT_INTEGRATION is set (and are covered by jac-client's own
+suite); core CI skips them.
+"""
+def _require_client_integration {
+    import from jaclang.testing.requires { require_tool }
+    require_tool("bun");
+}
+
 def fixture_abs_path(filename: str) -> str {
     return str((Path(FIXTURES) / filename).resolve());
 }
@@ -1221,6 +1233,7 @@ test "serve mixed access levels" {
 # TestClientRendering (2 tests)
 # =============================================================================
 test "serve render client page returns html" {
+    _require_client_integration();
     with TemporaryDirectory() as tmpdir {
         client = make_client_app_client(tmpdir);
         client.register_user("tester", "pass_Secure1");
@@ -1260,6 +1273,7 @@ test "serve render unknown page returns error" {
 # TestFullstackClientApp (1 test)
 # =============================================================================
 test "serve client page html and bundle" {
+    _require_client_integration();
     with TemporaryDirectory() as tmpdir {
         client = make_fullstack_app_client(tmpdir);
         response = client.get("/cl/app");
@@ -1629,6 +1643,7 @@ test "serve mixed local and imported function access" {
 # TestSPACatchAll (7 tests)
 # =============================================================================
 test "serve spa catchall serves html for clean urls" {
+    _require_client_integration();
     with TemporaryDirectory() as tmpdir {
         spa = make_spa_client(tmpdir);
         response = spa.get("/about");
@@ -1643,6 +1658,7 @@ test "serve spa catchall serves html for clean urls" {
 }
 
 test "serve spa catchall root serves html" {
+    _require_client_integration();
     with TemporaryDirectory() as tmpdir {
         spa = make_spa_client(tmpdir);
         response = spa.get("/");
@@ -1655,6 +1671,7 @@ test "serve spa catchall root serves html" {
 }
 
 test "serve spa catchall nested path" {
+    _require_client_integration();
     with TemporaryDirectory() as tmpdir {
         spa = make_spa_client(tmpdir);
         response = spa.get("/dashboard/settings");
@@ -1681,6 +1698,7 @@ test "serve spa catchall api paths unaffected" {
 }
 
 test "serve spa catchall cl route still works" {
+    _require_client_integration();
     with TemporaryDirectory() as tmpdir {
         spa = make_spa_client(tmpdir);
         response = spa.get("/cl/client_page");
@@ -2326,21 +2344,37 @@ test "stdlib server answers health endpoints" {
     }
 }
 
-"""A client build failure must not be memoized: the bundle layer retries it on
-every request, so a fixed build serves without a restart."""
-test "ensure_bundle retries a build error" {
+"""A missing bun is an environmental precondition, cheap to re-check - the
+bundle layer must retry it on every request (so fetching bun fixes serving
+without a restart), while genuine build failures stay memoized."""
+test "ensure_bundle retries a missing-bun failure and a build error alike" {
     import from unittest.mock { MagicMock }
     import from jaclang.server.server { ModuleIntrospector }
+    import from jaclang.artifacts.model { ArtifactUnavailable }
     import from jaclang.client.client_bundle { ClientBundleError }
     intro = ModuleIntrospector("serve_api", FIXTURES);
     intro._module = types.ModuleType("serve_api");
     intro._module.__file__ = fixture_abs_path("serve_api.jac");
-    broken = MagicMock();
-    broken.build.side_effect = RuntimeError("vite exploded");
-    intro._bundle_builder = broken;
+    bun_missing = MagicMock();
+    bun_missing.build.side_effect = ArtifactUnavailable("bun is not available");
+    intro._bundle_builder = bun_missing;
     for _ in range(2) {
         try {
             intro.ensure_bundle();
+            assert False , "ensure_bundle should raise while bun is missing";
+        } except ArtifactUnavailable {}
+    }
+    assert bun_missing.build.call_count == 2 , "missing bun must be re-checked on every call, not memoized";
+
+    intro2 = ModuleIntrospector("serve_api", FIXTURES);
+    intro2._module = types.ModuleType("serve_api");
+    intro2._module.__file__ = fixture_abs_path("serve_api.jac");
+    broken = MagicMock();
+    broken.build.side_effect = RuntimeError("vite exploded");
+    intro2._bundle_builder = broken;
+    for _ in range(2) {
+        try {
+            intro2.ensure_bundle();
             assert False , "ensure_bundle should raise for a broken build";
         } except ClientBundleError {}
     }
@@ -2479,12 +2513,79 @@ for (const row of ROWS) {
 process.exit(failed ? 1 : 0);
 """;
 
+test "an unset worker count picks as many as fit; an explicit one is kept" {
+    import from jaclang.server.settings {
+        ServeSettings,
+        WORKER_MEMORY_BUDGET,
+        default_worker_count
+    }
+    budget = WORKER_MEMORY_BUDGET;
+    cases = [
+        (8, 64 * budget, False, True, 8, "ample memory gives one worker per core"),
+        (8, 2 * budget, False, True, 2, "two budgets of memory give two workers"),
+        (8, 2 * budget - 1, False, True, 1, "just under two budgets gives one"),
+        (8, budget // 2, False, True, 1, "less than one budget gives one"),
+        (8, 0, False, True, 1, "no free memory gives one"),
+        (8, 64 * budget, True, True, 1, "a cluster pod gives one"),
+        (8, 64 * budget, False, False, 1, "no fork gives one"),
+        (1, 64 * budget, False, True, 1, "one core gives one")
+    ];
+    for (quota, headroom, clustered, can_fork, expected, why) in cases {
+        got = default_worker_count(quota, headroom, clustered, can_fork);
+        assert got == expected , f"{why}: expected {expected}, got {got}";
+    }
+    with TemporaryDirectory() as tmpdir {
+        unset = ServeSettings.load(tmpdir, {"workers": ""});
+        assert unset.workers.count_by_default;
+        assert unset.workers.count >= 1;
+        pinned = ServeSettings.load(tmpdir, {"workers": "3"});
+        assert not pinned.workers.count_by_default;
+        assert pinned.workers.count == 3;
+    }
+}
+
+
+test "an unset worker count falls back to one worker where more would be refused" {
+    import from jaclang.server.settings { ServeConfigError, ServeSettings }
+    with TemporaryDirectory() as tmpdir {
+        client = JacTestClient.from_file(
+            fixture_abs_path("serve_shared_root.jac"), base_path=tmpdir
+        );
+        try {
+            chosen = ServeSettings.load(tmpdir, {"workers": ""});
+            chosen.workers.count = 4;
+            chosen.dev = True;
+            client.server.settings = chosen;
+            client.server._validate_or_raise();
+            assert chosen.workers.count == 1 , (
+                f"--dev kept {chosen.workers.count} default workers"
+            );
+            pinned = ServeSettings.load(tmpdir, {"workers": "2"});
+            pinned.dev = True;
+            client.server.settings = pinned;
+            refused = "";
+            try {
+                client.server._validate_or_raise();
+            } except ServeConfigError as e {
+                refused = str(e);
+            }
+            assert "workers = 1 for development" in refused , (
+                f"an explicit count of 2 with --dev was not refused: {refused!r}"
+            );
+            assert pinned.workers.count == 2 , "an explicit count was lowered";
+        } finally {
+            client.close();
+        }
+    }
+}
+
+
 """The stdlib server serves /graph, /graph/data and /docs, and the /graph login
 modal signs in against it (#8951)."""
 test "stdlib server serves graph visualizer and docs" {
-    import from jaclang.client.js_engine { node_executable }
+    import from tests.support { js_runtime_or_none }
     import from jaclang.server.settings { ServeSettings }
-    import from .react_jsdom_harness { REACT_JSDOM_DEPS, npm_install, run_harness }
+    import from .react_jsdom_harness { REACT_JSDOM_DEPS, bun_install, run_harness }
 
     with TemporaryDirectory() as tmpdir {
         client = JacTestClient.from_file(
@@ -2508,7 +2609,9 @@ test "stdlib server serves graph visualizer and docs" {
         paths = spec.json()["paths"];
         assert "/walker/leave_note" in paths , "openapi should list the module's walkers";
         assert "/user/login" in paths , "openapi should list auth endpoints";
-        js_engine = node_executable();
+        _require_client_integration();
+        bun = js_runtime_or_none();
+        assert bun is not None , "bun is on PATH but js_runtime_or_none() could not locate it";
         registered = client.register_user("graph_viewer", "pw12345678");
         assert registered.ok , f"register failed: {registered.text}";
         client.server.settings = ServeSettings.load(
@@ -2518,12 +2621,10 @@ test "stdlib server serves graph visualizer and docs" {
         try {
             work = Path(tmpdir) / "graph_login";
             work.mkdir();
-            npm_install(
-                js_engine, work, "graph-login", {"jsdom": REACT_JSDOM_DEPS["jsdom"]}
-            );
+            bun_install(bun, work, "graph-login", {"jsdom": REACT_JSDOM_DEPS["jsdom"]});
             (work / "harness.mjs").write_text(_GRAPH_LOGIN_HARNESS, encoding="utf-8");
             run_harness(
-                js_engine,
+                bun,
                 work,
                 [
                     f"http://127.0.0.1:{client.server.port}",
@@ -2607,6 +2708,7 @@ def pin_routes(spa: JacTestClient) {
 }
 
 test "serve spa fallback 404s unknown paths but still serves the app html" {
+    _require_client_integration();
     with TemporaryDirectory() as tmpdir {
         spa = make_spa_client(tmpdir);
         pin_routes(spa);
@@ -2624,6 +2726,7 @@ test "serve spa fallback 404s unknown paths but still serves the app html" {
 }
 
 test "serve spa fallback keeps 200 for known page routes" {
+    _require_client_integration();
     with TemporaryDirectory() as tmpdir {
         spa = make_spa_client(tmpdir);
         pin_routes(spa);

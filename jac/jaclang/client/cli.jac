@@ -364,7 +364,8 @@ def run_npm_add(packages: list[str], dev: bool, install_global: bool = False) ->
 
 def run_npm_add_global(packages: list[str], dev: bool) -> int {
     import from jaclang.cli.console { console }
-    import from jaclang.client.js_engine { run_pm }
+    import from jaclang.artifacts.model { ArtifactUnavailable }
+    import from jaclang.client.js_runtime { js_runtime_path, run_pm }
     import from jaclang.project.tool_paths { node_root }
 
     if not packages {
@@ -372,6 +373,12 @@ def run_npm_add_global(packages: list[str], dev: bool) -> int {
             "Provide at least one npm package to install globally.",
             hint="e.g. 'jac install --npm --global eslint'"
         );
+        return 1;
+    }
+    try {
+        js_runtime_path();
+    } except ArtifactUnavailable as e {
+        console.error(str(e));
         return 1;
     }
     dest = node_root("global");

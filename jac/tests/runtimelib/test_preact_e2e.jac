@@ -20,6 +20,12 @@ def _as_any(v: any) -> any {
     return v;
 }
 
+"""Skip unless the Vite/Bun client toolchain is available."""
+def _require_client_integration {
+    import from jaclang.testing.requires { require_tool }
+    require_tool("bun");
+}
+
 def _get_free_port -> int {
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s {
         s.bind(("", 0));
@@ -84,7 +90,7 @@ def _start_preact_server(project_dir: Path) -> tuple[any, ...] {
         [*jac_cmd, "run", "--serve", "-p", str(port)], cwd=str(project_dir), env=env,
     );
     _wait_for_port("127.0.0.1", port);
-    # First client bundle can take a while (js_engine install + vite build).
+    # First client bundle can take a while (bun install + vite build).
     time.sleep(8);
     return (proc, port, f"http://127.0.0.1:{port}");
 }
@@ -100,6 +106,7 @@ def _stop_server(proc: Popen) {
 }
 
 test "preact backend bundles client page with preact hooks" {
+    _require_client_integration();
     with TemporaryDirectory() as tmpdir {
         project = Path(tmpdir) / "preact_bundle";
         _write_preact_project(project);
@@ -144,6 +151,7 @@ test "preact backend bundles client page with preact hooks" {
 }
 
 test "preact counter increments in browser" {
+    _require_client_integration();
     try {
         import from playwright.sync_api { sync_playwright }
     } except ImportError {

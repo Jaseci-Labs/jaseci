@@ -4,15 +4,9 @@ import from .report { die }
 import from _dl_native { dlopen, dlsym, dl_error, RTLD_NOW, RTLD_GLOBAL }
 
 import from c {
-    def readlink(path: str, buf: bytes, bufsiz: int) -> int;  def symlink(
-        target: str, linkpath: str
-    ) -> i32;  obj EngineApi {
+    def readlink(path: str, buf: bytes, bufsiz: int) -> int;  obj EngineApi {
         has jac_main: Callable[[i32, int], i32] = 0;
     }
-}
-
-def:pub node_path(rt: str) -> str {
-    return rt + "/js/bin/node";
 }
 
 def:pub is_node_name(argv0: str) -> bool {
@@ -28,33 +22,32 @@ def link_target(path: str) -> str {
     return buf[0:n].decode();
 }
 
-def:pub link_node(rt: str, exe_path: str) {
-    """Keep `<rt>/js/bin/node` pointing at this binary: it is the engine's
-    `process.execPath` and the `node` its child processes exec, so a binary
-    that runs from this runtime re-points a link another copy left behind.""";
-    if not os.path.isdir(rt + "/js") {
-        return;
+def:pub engine_dir(rt: str, argv0: str, exe_path: str) -> str {
+    candidates: list[str] = [];
+    if "/" in argv0 {
+        candidates.append(argv0);
+    } else {
+        for d in os.environ.get("PATH", "").split(":") {
+            if d and link_target(d + "/node") == exe_path {
+                candidates.append(d + "/node");
+            }
+        }
     }
-    link = node_path(rt);
-    if link_target(link) == exe_path {
-        return;
+    for link in candidates {
+        js = os.path.dirname(os.path.dirname(link));
+        if os.path.isfile(js + "/libjs_engine.so") {
+            return js;
+        }
     }
-    os.makedirs(os.path.dirname(link), exist_ok=True);
-    tmp = f"{link}.{os.getpid()}";
-    if symlink(exe_path, tmp) == i32(0) {
-        os.rename(tmp, link);
-    }
+    return rt + "/js";
 }
 
-def:pub run_node(rt: str, argv: list[str]) -> int {
-    """Run the JavaScript engine as `node` in this process: load the engine
-    library from the runtime tree and hand it argv, with argv[0] the runtime's
-    `node` so the engine's execPath names an executable that runs it again,
-    and that `node` first on PATH so a tool that spawns `node` by name does too.""";
+def:pub run_node(rt: str, argv: list[str], exe_path: str) -> int {
     export_ca_bundle(rt);
-    node_dir = os.path.dirname(node_path(rt));
-    os.environ["PATH"] = node_dir + ":" + os.environ.get("PATH", "");
-    lib = rt + "/js/libjs_engine.so";
+    js = engine_dir(rt, argv[0], exe_path);
+    node_link = js + "/bin/node";
+    os.environ["PATH"] = js + "/bin:" + os.environ.get("PATH", "");
+    lib = js + "/libjs_engine.so";
     handle = dlopen(lib, i32(RTLD_NOW | RTLD_GLOBAL));
     if handle == 0 {
         die(f"cannot load the JavaScript engine {lib}: {dl_error()}");
@@ -64,6 +57,6 @@ def:pub run_node(rt: str, argv: list[str]) -> int {
         die(f"{lib} has no jac_main entry");
     }
     api = EngineApi(jac_main=main_fn);
-    args = CStrArray([node_path(rt)] + argv[1:]);
+    args = CStrArray([node_link] + argv[1:]);
     return int(api.jac_main(i32(args.count), args.ptrs));
 }

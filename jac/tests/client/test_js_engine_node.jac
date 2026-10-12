@@ -1,5 +1,6 @@
-"""The bundled engine run as `node`: the Node.js behaviors npm tooling (expo,
-chalk, bin scripts) relies on."""
+"""The engine run as `node`: the Node.js behaviors npm tooling (expo, chalk,
+bin scripts) relies on. It runs where an engine is built (`jac native build
+js-engine`, the `native:js-engine` CI lane) and skips elsewhere."""
 
 import json;
 import subprocess;
@@ -9,6 +10,10 @@ import from jaclang.client.js_engine { node_executable }
 
 """Run `script` (a file in `work`) under the engine and return its stdout."""
 def run_script(work: Path, script: str) -> str {
+    import from jaclang.artifacts.router { resolve }
+    if resolve("js-engine").found is None {
+        testskip("no js_engine is built here (jac native build js-engine)");
+    }
     result = subprocess.run(
         [node_executable(), str(work / script)],
         cwd=str(work),

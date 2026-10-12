@@ -14,7 +14,7 @@ the broken code. Every scenario runs in both auth states (logged out must land o
     /layout-guarded  layout wraps `<Outlet/>` in the guard -> child renders
     /bare            neither children nor child routes -> no crash
 
-Real `js_engine install`, so this runs only under `JAC_CLIENT_INTEGRATION`; the entry
+Real `bun install`, so this runs only under `JAC_CLIENT_INTEGRATION`; the entry
 (`test_react_backend.jac`) and react-native (`test_client_runtime_parity.jac`)
 are covered ungated elsewhere.
 """
@@ -24,10 +24,11 @@ import from pathlib { Path }
 import from tempfile { TemporaryDirectory }
 
 import from jaclang.compiler.backends.es.backends.react { ReactBackend }
-import from jaclang.client.js_engine { node_executable }
+import from tests.support { js_runtime_or_none }
 import from .react_jsdom_harness {
-    npm_install,
+    bun_install,
     compile_page,
+    require_client_integration,
     run_harness,
     write_runtime
 }
@@ -139,14 +140,18 @@ finish();
 
 """One fresh process per scenario, so each starts at its own URL and auth state
 with a clean module graph."""
-def _run_scenarios(js_engine: str, work: Path, scenarios: list[any], label: str) {
+def _run_scenarios(bun: str, work: Path, scenarios: list[any], label: str) {
     for sc in scenarios {
-        run_harness(js_engine, work, [sc[0], sc[1]], f"{label} {sc}");
+        run_harness(bun, work, [sc[0], sc[1]], f"{label} {sc}");
     }
 }
 
 test "react AuthGuard renders children, child routes, and nothing -- in jsdom" {
-    js_engine = node_executable();
+    require_client_integration("React AuthGuard");
+    bun = js_runtime_or_none();
+    if bun is None {
+        testskip("bun is required but could not be located/installed");
+    }
 
     backend = ReactBackend();
     component_js = compile_page(
@@ -158,9 +163,9 @@ test "react AuthGuard renders children, child routes, and nothing -- in jsdom" {
         (work / "component.js").write_text(component_js, encoding="utf-8");
         write_runtime(work);
         (work / "harness.mjs").write_text(_MANUAL_HARNESS, encoding="utf-8");
-        npm_install(js_engine, work, "react-authguard-jsdom-test");
+        bun_install(bun, work, "react-authguard-jsdom-test");
         _run_scenarios(
-            js_engine,
+            bun,
             work,
             [
                 ["/wrapped", "loggedIn"],

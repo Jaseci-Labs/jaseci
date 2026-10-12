@@ -95,7 +95,7 @@ obj TestConfig {
 }
 
 obj ServeWorkersConfig {
-    has count: str = "1",
+    has count: str = "",
         threads: str = "auto",
         max_requests: int = 0,
         max_requests_jitter: int = 0,
@@ -234,8 +234,25 @@ obj ClientConfig {
     has framework: str = "react";
 }
 
+obj DatabaseConfig {
+    has indexes: dict[str, list[str]] = {},
+        retention_days: int = 0,
+        postgres_dist: str = "",
+        postgres_version: str = "";
+}
+
+obj NetworkConfig {
+    has offline: bool = False;
+}
+
+obj ToolchainsConfig {
+    has system: bool = True;
+}
+
 obj DevConfig {
     has jaclang_source: str = "",
+        exact: bool = False,
+        pod_binary: str = "",
         jobs: str = "",
         test_jobs: str = "",
         check_jobs: str = "",
@@ -301,6 +318,9 @@ obj JacConfig {
         client_errors: ClientErrorsConfig = ClientErrorsConfig(),
         client: ClientConfig = ClientConfig(),
         dev: DevConfig = DevConfig(),
+        database: DatabaseConfig = DatabaseConfig(),
+        network: NetworkConfig = NetworkConfig(),
+        toolchains: ToolchainsConfig = ToolchainsConfig(),
         dependencies: dict[str, PackageDep] = {},
         dev_dependencies: dict[str, PackageDep] = {},
         pypi_dependencies: dict[str, str] = {},
@@ -422,5 +442,15 @@ def get_config_for_path(
 ) -> JacConfig | None;
 
 def get_config_for_dir(start_dir: str) -> JacConfig | None;
+
+def offline_mode -> bool {
+    config = get_config();
+    return config is not None and config.network.offline;
+}
+
+def use_system_toolchains -> bool {
+    config = get_config();
+    return config is None or config.toolchains.system;
+}
 
 def active_profile_name(config: JacConfig | None) -> str;

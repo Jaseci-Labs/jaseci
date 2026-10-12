@@ -77,6 +77,11 @@ zig-out/
 /dist/
 .pbs-build/
 .python-build/
+# Pinned bun fetched per target by the payload tool's fetch-bun subcommand
+# (jaclang/dist/payload/) and bundled into the payload (never committed). See
+# build.zig's fetch-bun step.
+.bun-build/
+jaclang/client/_bun/
 # Zig's unpacked build.zig.zon dependencies (the JavaScript engine's foreign
 # sources).
 zig-pkg/
@@ -87,10 +92,8 @@ zig-pkg/
 # the stubs are tracked.
 jaclang/vendor/typeshed/stdlib
 .llvm-build/
-# CI staging dirs for a cache-restored prebuilt shim and engine (setup-jac
-# -Dshim-bin, -Djs-engine-dir).
+# CI staging dir for a cache-restored prebuilt shim.
 .shim-build/
-.js-engine-build/
 # Persistent JIR precompile cache: mkpayload seeds site/_precompiled from it
 # and writes the refreshed tree back (see build.zig --precompiled-cache).
 .precompiled-build/
@@ -100,6 +103,8 @@ jaclang/vendor/typeshed/stdlib
 # Zig-built LLVMPY_* shim, placed in-tree per host platform (see build.zig).
 libjacllvm.so
 libjacllvm.dylib
+libjacllvm.*.artifact.json
+jacllvm.dll.artifact.json
 jacllvm.dll
 # Kit-built native compiler kernel (#8824), staged in-tree by mkpayload.
 libjac_compiler.so
@@ -117,6 +122,6 @@ libjacpyembed.so
 libjacpyembed.dylib
 jacpyembed.dll
 
-# Persistent kernel locks must keep their inode while waiters exist.
+# A kernel publication lock keeps its inode while a build holds it.
 libjac_*.lock
 jac_compiler.dll.lock

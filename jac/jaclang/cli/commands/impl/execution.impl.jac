@@ -548,7 +548,11 @@ impl run_jab_image(
     }
     servable = kind in ["service", "service-mesh", "web-app", "web-static"];
     if serve_only or servable {
-        serve_port = port;
+        (arg_port, accepted) = _bundle_serve_args(args, label);
+        if not accepted {
+            return 1;
+        }
+        serve_port = arg_port if arg_port is not None else port;
         if serve_port is None {
             import from jaclang.project.config { get_config_for_path }
             img_cfg = get_config_for_path(img_root);
@@ -578,6 +582,48 @@ impl run_jab_image(
         "(build its platform projection instead)."
     );
     return 1;
+}
+
+def _bundle_serve_args(args: list[str], label: str) -> tuple[(int | None), bool] {
+    rest = [str(a) for a in args];
+    if rest and rest[0] == "--" {
+        rest = rest[1:];
+    }
+    port: (int | None) = None;
+    i = 0;
+    while i < len(rest) {
+        arg = rest[i];
+        value: (int | None) = None;
+        if arg == "--port" and i + 1 < len(rest) {
+            value = _cli_port(rest[i + 1]);
+            i += 2;
+        } elif arg.startswith("--port=") {
+            value = _cli_port(arg[len("--port="):]);
+            i += 1;
+        }
+        if value is None {
+            example = (
+                f"{os.path.basename(sys.executable)} --port 8080"
+                    if label == "<app binary>"
+                    else f"jac run --port 8080 {label}"
+            );
+            console.error(
+                f"{label} serves, so the only argument it takes is --port N "
+                f"(got '{arg}'). For example: {example}"
+            );
+            return (None, False);
+        }
+        port = value;
+    }
+    return (port, True);
+}
+
+def _cli_port(text: str) -> (int | None) {
+    if not (text.isascii() and text.isdigit()) {
+        return None;
+    }
+    value = int(text);
+    return value if 0 < value < 65536 else None;
 }
 
 def _jab_native_bin(img_root: Path, entry_rel: str) -> (str | None) {
@@ -736,6 +782,19 @@ def _resolve_plan(
     return (plan, cfg, app, file, 0);
 }
 
+def _in_compiler_tree(file: Path, project_root: Path) -> bool {
+    project = project_root.resolve();
+    for parent in file.resolve().parents {
+        if not parent.is_relative_to(project) {
+            return False;
+        }
+        if parent.name == 'jaclang' and (parent / 'jac0core').is_dir() {
+            return True;
+        }
+    }
+    return False;
+}
+
 def _load_executable(
     filename: str, base: str, main: bool, force_codespace: str = ''
 ) -> types.ModuleType {
@@ -750,17 +809,9 @@ def _load_executable(
         compiler.selfhost.resolve(filename, program)
     );
     config = get_config_for_path(Path(filename));
-    if config is not None
-        and config.project_root is not None
-        and config.dev.jaclang_source {
-        source_root = (
-            config.project_root / config.dev.jaclang_source / 'jaclang'
-        ).resolve();
+    if config is not None and config.project_root is not None {
         compiler_owned = compiler_owned
-            or (
-                source_root.is_relative_to(config.project_root.resolve())
-                and Path(filename).resolve().is_relative_to(source_root)
-            );
+            or _in_compiler_tree(Path(filename), config.project_root);
     }
     if compiler_owned {
         modules = Jac.jac_import(
@@ -1878,11 +1929,18 @@ def _run_entry_point(
 def _run_node_tool(name: str, bin_path: Path, args: list[str]) -> int {
     import subprocess;
     import from jaclang.project.config { get_config }
-    import from jaclang.client.js_engine { node_executable }
+    import from jaclang.artifacts.model { ArtifactUnavailable }
+    import from jaclang.client.js_runtime { js_runtime_path }
 
+    try {
+        bun = js_runtime_path();
+    } except ArtifactUnavailable as e {
+        console.error(f"Cannot run npm tool '{name}': {e}");
+        return 1;
+    }
     config = get_config();
     cwd = str(config.project_root) if config and config.project_root else None;
-    result = subprocess.run([node_executable(), str(bin_path)] + list(args), cwd=cwd);
+    result = subprocess.run([bun, str(bin_path)] + list(args), cwd=cwd);
     return result.returncode;
 }
 

@@ -7,7 +7,8 @@ impl start_cli -> None {
 
     raw_argv = sys.argv[1:];
 
-    dev_source = os.environ.get('JAC_DEV_SOURCE');
+    import from jaclang.jac0core.handoff { handoff }
+    dev_source = str(handoff().get('compiler_source') or '');
     if dev_source {
         notice = (
             f"🛠  jac dev mode — using compiler source at {dev_source}"
