@@ -225,7 +225,7 @@ impl EsastGenPass._partition_client_import_items(
                 continue;
             }
         }
-        verdict = classify_client_import_item(source_mod, item);
+        verdict = classify_client_import_item(source_mod, item, self.prog);
         if verdict == ClientImportVerdict.BRIDGED {
             bridged.append(item);
         } elif verdict == ClientImportVerdict.DEAD {

@@ -964,11 +964,13 @@ impl JacProgram.stamp_boundary_facts(self: JacProgram, mod: uni.Module) -> None 
                             if not isinstance(item, uni.ModuleItem) {
                                 continue;
                             }
-                            verdict = classify_client_import_item(linked_mod, item);
+                            verdict = classify_client_import_item(
+                                linked_mod, item, self
+                            );
                             if verdict != ClientImportVerdict.BRIDGED {
                                 continue;
                             }
-                            decl = import_item_declaration(linked_mod, item);
+                            decl = import_item_declaration(linked_mod, item, self);
                             if isinstance(decl, uni.Ability) {
                                 facts.bridged_decls[item.name.value] = decl;
                             }
