@@ -94,6 +94,14 @@ test "a reply cut off at max_tokens never passes as a finished answer" {
             "tool_error": False,
             "modes": ["plain", "streamed", "events"]
         },
+        # An empty committed answer is still an answer.
+        {
+            "case": "empty committed answer, empty cut-off narration",
+            "replies": [finish(""), say("", finish_reason="length")],
+            "answer": "",
+            "tool_error": False,
+            "modes": ["plain", "streamed", "events"]
+        },
         # The tool loop hit its cap and the forced final answer came back empty.
         {
             "case": "empty cut-off final answer",

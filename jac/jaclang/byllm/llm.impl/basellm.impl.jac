@@ -2152,7 +2152,7 @@ impl BaseLLM._force_final_answer(mt_run: MTRuntime) -> object {
 
 
 impl BaseLLM._stream_final_answer(
-    mt_run: MTRuntime, fallback: str = ""
+    mt_run: MTRuntime, fallback: str | None = None
 ) -> Generator[str, None, None] {
     final_instruction = Message(
         role=MessageRole.USER,
@@ -2173,7 +2173,7 @@ impl BaseLLM._stream_final_answer(
             yield token;
         }
     } except OutputTruncatedError {
-        if not fallback {
+        if fallback is None {
             raise;
         }
         accumulated = fallback;
