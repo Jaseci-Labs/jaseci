@@ -739,16 +739,6 @@ def _resolve_plan(
 def _load_executable(
     filename: str, base: str, main: bool, force_codespace: str = ''
 ) -> types.ModuleType {
-    loaded = _run_executable(filename, base, main, force_codespace, False);
-    if loaded is None {
-        raise RuntimeError(f'No executable module produced for {filename}');
-    }
-    return loaded;
-}
-
-def _run_executable(
-    filename: str, base: str, main: bool, force_codespace: str, native_entry: bool
-) -> (types.ModuleType | None) {
     import from jaclang.runtime.runtime { JacRuntime as Jac }
     import from jaclang.compiler.driver.application { prepare_application }
     import from jaclang.runtime.prepared { load_prepared_module }
@@ -788,18 +778,6 @@ def _run_executable(
     prepared = prepare_application(
         filename, program, project_root, force_codespace=force_codespace
     );
-    if native_entry and main {
-        engine = compiler.prepared_native_entry(prepared, program);
-        if engine is not None {
-            import ctypes;
-            addr = engine.get_function_address("jac_entry");
-            if addr != 0 {
-                _populate_native_argv(engine, sys.argv);
-                ctypes.CFUNCTYPE(None)(addr)();
-                return None;
-            }
-        }
-    }
     return load_prepared_module(prepared.entry, prepared, as_main=main);
 }
 
@@ -1034,7 +1012,6 @@ def _exec_file(
         }
         if filename.endswith('.jac') {
             native_executed = False;
-            prepared_entry = False;
 
             _cfg_kind = get_config();
             _kind_forced = False;
@@ -1067,8 +1044,7 @@ def _exec_file(
                 (in_kernel, engine) = program._get_compiler().kernel_native_entry(
                     full_path, program, _run_options
                 );
-                prepared_entry = not in_kernel and _run_options is None;
-                if not in_kernel and _run_options is not None {
+                if not in_kernel {
                     ir_mod = program.compile(file_path=full_path, options=_run_options);
                     if (
                         ir_mod
@@ -1104,12 +1080,8 @@ def _exec_file(
                 }
             }
             if not native_executed {
-                _run_executable(
-                    filename,
-                    base,
-                    main,
-                    'server' if backend == 'python' else '',
-                    backend != "python" and prepared_entry
+                _load_executable(
+                    filename, base, main, 'server' if backend == 'python' else ''
                 );
             }
         } else {

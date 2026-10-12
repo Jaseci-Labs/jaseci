@@ -59,13 +59,11 @@ obj NativeUnitRegistry {
         failures: dict[str, str] = {},
         compiled_paths: list[str] = [],
         progress: (Callable[[str], None] | None) = None,
-        progress_steps: int = 0,
-        lowered_here: set[str] postinit;
+        progress_steps: int = 0;
 
     def postinit {
         self.building = set();
         self.checking = set();
-        self.lowered_here = set();
     }
 
     def note_step(verb: str, path: str = "", detail: str = "") -> float {
@@ -111,7 +109,6 @@ obj NativeUnitRegistry {
         }
         self.failures.clear();
         self.compiled_paths.clear();
-        self.lowered_here.clear();
     }
 
     def forget(path: str) {
@@ -119,14 +116,12 @@ obj NativeUnitRegistry {
         self.entries.pop(real, None);
         self.not_native.pop(real, None);
         self.failures.pop(real, None);
-        self.lowered_here.discard(real);
     }
 
     def adopt_dep_digests(path: str, digests: dict[str, str]) -> bool {
         real = os.path.realpath(path);
         session = self.session;
-        lowered_in_session = session is not None and real in session.lowered;
-        if not lowered_in_session and real not in self.lowered_here {
+        if session is None or real not in session.lowered {
             return False;
         }
         ent = self.entries.get(real);
@@ -344,7 +339,6 @@ obj NativeUnitRegistry {
         );
         ent.object_bytes = gen.native_object;
         ent.bitcode = gen.native_bitcode;
-        self.lowered_here.add(os.path.realpath(module.loc.mod_path));
         return ent;
     }
 
