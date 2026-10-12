@@ -1,9 +1,10 @@
 # Python compiler replacement
 
-`JACPYTHON=1 zig build` compiles Python source and ASTs using native Jac machine
-code. CPython still provides Python objects, the execution engine, and the
-standard library. Plain `zig build` uses stock CPython. The environment variable
-selects the compiler at build time; each binary contains one runtime.
+`jac native build jacpython` builds a jac whose interpreter compiles Python
+source and ASTs using native Jac machine code. CPython still provides Python
+objects, the execution engine, and the standard library. Plain `zig build`
+uses stock CPython; the interpreter is chosen at build time and each binary
+contains one runtime.
 
 | Location (from repository root) | Responsibility |
 | --- | --- |
@@ -45,14 +46,14 @@ JacPython build cache.
 Rebuild after editing the replacement:
 
 ```sh
-cd jac
-zig build -Dpython=jacpython
-BIN="$PWD/zig-out/bin/jac"
+jac native build jacpython
+BIN="$PWD/jac/zig-out/jacpython/bin/jac"
 (cd "$(mktemp -d)" && "$BIN" -c 'assert eval("6 * 7") == 42')
 ```
 
-See [CONTRIBUTING.md](../../../../CONTRIBUTING.md#trying-the-jacpython-release-binary)
-for downloading release binaries. The upstream compatibility
+Releases ship stock CPython; see
+[CONTRIBUTING.md](../../../../CONTRIBUTING.md#building-jacpython) for the
+JacPython build and its CI lane. The upstream compatibility
 runner, `scripts/run_cpython_compiler_tests.jac`, downloads checksum-pinned
 CPython tests and requires the native JacPython runtime. Build and test drivers
 may use Python; replacement algorithms execute natively.
