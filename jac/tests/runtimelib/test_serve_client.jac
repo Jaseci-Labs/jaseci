@@ -2545,6 +2545,25 @@ test "an unset worker count picks as many as fit; an explicit one is kept" {
 }
 
 
+test "a [serve] table without a worker count leaves the count unset" {
+    import from jaclang.project.config { JacConfig }
+    import from jaclang.server.settings { ServeSettings }
+    with TemporaryDirectory() as tmpdir {
+        manifest = Path(tmpdir) / "jac.toml";
+        manifest.write_text('[project]\nname = "workers-unset"\n\n[serve]\nport = 9123\n');
+        config = JacConfig.load(manifest);
+        assert config.serve.port == 9123;
+        assert config.serve.workers.count == "" , (
+            f"an absent worker count loaded as {config.serve.workers.count!r}"
+        );
+        settings = ServeSettings.load(tmpdir, config=config);
+        assert settings.workers.count_by_default , (
+            "a [serve] port pinned the app to an explicit worker count"
+        );
+    }
+}
+
+
 test "an unset worker count falls back to one worker where more would be refused" {
     import from jaclang.server.settings { ServeConfigError, ServeSettings }
     with TemporaryDirectory() as tmpdir {
