@@ -1843,6 +1843,10 @@ def summarise(brief: Document) -> str by llm();
 
 with entry {
     print(summarise(Document("brief.pdf")));
+
+    with open("brief.pdf", "rb") as f {
+        pdf_bytes = f.read();
+    }
     print(summarise(Document(pdf_bytes, filename="brief.pdf")));
 }
 ```
@@ -1856,10 +1860,10 @@ with entry {
 
 `Document` checks the content, not the extension: a `.pdf` file that is not a PDF is refused with a `ValueError` before any call is made, and a PDF without an extension is accepted. A missing file raises `ValueError` and an unsupported input type raises `TypeError`.
 
-Only PDF is accepted, because providers reject other file types. Pass text-like files (`.md`, `.txt`, source code, `.csv`) as `Text`, which `jaclang.byllm.lib` exports:
+Only PDF is accepted, because providers reject other file types. Pass text-like files (`.md`, `.txt`, source code, `.csv`) as `Text`:
 
 ```jac
-import from jaclang.byllm.lib { Text }
+import from jaclang.byllm.types { Text }
 
 """Read the note and report any action items."""
 def read_note(note: Text) -> list[str] by llm();
