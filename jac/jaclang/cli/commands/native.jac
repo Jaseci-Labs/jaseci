@@ -43,7 +43,7 @@ comptime SPEC_NATIVE: CommandSpec = CommandSpec(
              Arg.create(
                  "require",
                  `default="",
-                 help="With status: exit non-zero unless these comma-separated artifacts (or 'release') are built and current",
+                 help="With status: exit non-zero unless these comma-separated artifacts are built and current; 'release' is the release set, 'kit' the release set less what this image declares it leaves out",
                  short=""
              ),
 
@@ -66,6 +66,10 @@ comptime SPEC_NATIVE: CommandSpec = CommandSpec(
              (
                  "jac native status --require release",
                  "Fail unless the release set is in place"
+             ),
+             (
+                 "jac native status --require kit",
+                 "Fail unless this kit carries everything it does not declare it omits"
              ),
 
          ],

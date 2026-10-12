@@ -216,6 +216,9 @@ impl unmet(required: list[str]) -> list[str] {
     problems: list[str] = [];
     for name in required {
         artifact = artifact_named(name);
+        if not artifact.host_supported() {
+            continue;
+        }
         if artifact.release == ReleasePolicy.FLOOR {
             if not artifact.floor_present() {
                 problems.append(

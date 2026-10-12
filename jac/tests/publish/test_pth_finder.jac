@@ -205,9 +205,10 @@ test "a bare checkout (no typeshed stubs) is refused as a dev source; a baked li
     # (zig build fetch-typeshed materializes it), and rerouting into it breaks
     # the first compile with "Stub file not found at .../typing.pyi" -- a
     # released binary run inside a repo whose jac.toml ships a [dev] stanza
-    # for its contributors. The toml and inherited loops refuse such a tree
-    # with a note naming the fix; the baked link still applies, because a
-    # linked binary has no bundled compiler to fall back on.
+    # for its contributors. The top-level process refuses such a tree with a
+    # note naming the fix; the baked link still applies, because a linked
+    # binary has no bundled compiler to fall back on. A child runs whatever
+    # the top of its tree chose: an inherited record is not re-judged.
     import io;
     import from contextlib { redirect_stderr }
     bare = _fake_source(stubs=False);
@@ -220,7 +221,7 @@ test "a bare checkout (no typeshed stubs) is refused as a dev source; a baked li
         }
         assert "typeshed" in err.getvalue() and "fetch-typeshed" in err.getvalue() , f"the refusal must say what is missing and how to fix it, got: {err.getvalue()!r}";
         assert _override_result(baked, bare)[0] == baked , "a refused stanza falls through to the baked link";
-        assert _override_result(None, None, inherited=bare)[0] != bare , "an inherited source without stubs is refused the same way";
+        assert _override_result(None, None, inherited=bare)[0] == bare , "a child runs the compiler the top of its tree chose";
         assert _override_result(bare_baked, None)[0] == bare_baked , "a baked link is never refused: a linked binary has nothing else to run";
     } finally {
         shutil.rmtree(bare, ignore_errors=True);

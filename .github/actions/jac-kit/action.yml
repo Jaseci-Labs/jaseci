@@ -122,36 +122,15 @@ runs:
         if [ "$REROUTE" != "true" ]; then
           exit 0
         fi
-        # Every compiler module must load from the bundle: a unit this compiler
-        # declines to reuse would otherwise be a silent recompile in every lane.
-        jac native status --require precompiled
-        if grep -q "kernel runs on its floor" <<<"$out"; then
-          echo "::error::the first run fell back to bytecode instead of loading the kit's kernel"
+        # The reroute runs this checkout on the kit, which was built from it:
+        # every artifact a kit carries must resolve -- the kernel, shim and
+        # floors from the kit, loaded in place; every compiler module from the
+        # seeded bundle, or it would be a silent recompile in every lane --
+        # except what the kit's manifest declares it leaves out (a pull
+        # request's kit omits the kernel and runs the bytecode compiler).
+        jac native status
+        jac native status --require kit
+        if compgen -G "$GITHUB_WORKSPACE/jac/jaclang/compiler/libjac_compiler.*" >/dev/null; then
+          echo "::error::resolving the kernel wrote one beside the loader"
           exit 1
         fi
-        resolved="$(jac -c 'from jaclang.compiler.backends.native.kernel_resolve import resolve_kernel; k = resolve_kernel(); print("KERNEL", k.source if k else "none", k.lib_path if k else "")' 2>&1 | grep '^KERNEL ' | tail -1)"
-        KIT_SITE="$(jac -c 'import os, sys; print(os.path.join(os.path.dirname(sys.prefix), "site", "jaclang"))' | tail -1)"
-        python3 - "$GITHUB_WORKSPACE/jac/jaclang/compiler" "$KIT_SITE" "$resolved" <<'PY'
-        import glob, json, os, sys
-        def fail(message):
-            print(f"::error::{message}")
-            sys.exit(1)
-        tree, kit, resolved = sys.argv[1:]
-        found = glob.glob(os.path.join(tree, "libjac_compiler.*"))
-        if found:
-            fail(f"resolving a kernel wrote {found} beside the loader")
-        manifest = os.path.join(kit, "_precompiled", "MANIFEST.json")
-        native = json.load(open(manifest)).get("native") or {}
-        _, source, *path = resolved.split(" ", 2) + [""]
-        if native.get("kernel") == "none" and not native.get("artifact"):
-            if source != "none":
-                fail(f"the kit carries no kernel, but the lane resolved {resolved!r}")
-            print("kit carries no kernel: the lane runs the bytecode compiler")
-            sys.exit(0)
-        if source != "kit":
-            fail(f"the lane resolved {resolved!r}, not the kit's kernel built from these sources")
-        lib = path[0] if path else ""
-        if os.path.realpath(os.path.dirname(os.path.dirname(lib))) != os.path.realpath(kit):
-            fail(f"the kit's kernel resolved at {lib}, outside the kit at {kit}")
-        print(f"the lane runs the kit's kernel in place: {lib}")
-        PY

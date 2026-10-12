@@ -428,10 +428,11 @@ pub fn build(b: *std.Build) void {
             }
         }
 
-        // Wasm32 libc bitcode: runs for EVERY build, dev included (a -Ddev
-        // binary reads .pbs-build/wasm32/libc directly); only the bundling
-        // stays conditional -- a linked binary has no payload to carry it in.
-        {
+        // Wasm32 libc bitcode, bundled into the payload. A linked dev binary
+        // has no payload to carry it in and builds nothing implicitly: it
+        // reads .pbs-build/wasm32/libc, which `jac native build wasm-libc`
+        // (the vendor-wasm-libc step) fills on request.
+        if (link_dir == null) {
             const wasm_libc = b.pathFromRoot(".pbs-build/wasm32/libc");
             const vendor_wasm = tool.run("payload", &.{
                 "build-wasm-libc",
@@ -445,9 +446,7 @@ pub fn build(b: *std.Build) void {
             vendor_wasm.has_side_effects = true;
             addTreeInputs(b, vendor_wasm, "jaclang/compiler/backends/native/wasm_rt");
             mk.step.dependOn(&vendor_wasm.step);
-            if (link_dir == null) {
-                mk.addArg(b.fmt("--wasm-libc={s}", .{wasm_libc}));
-            }
+            mk.addArg(b.fmt("--wasm-libc={s}", .{wasm_libc}));
         }
 
         // Track the payload's real inputs so it repacks when any source changes.

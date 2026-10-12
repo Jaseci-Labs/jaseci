@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Shared helpers for the real-cluster e2e scripts
-# (k8s_microservice_real_e2e.sh and tests/deploy/sdk_deploy_real_e2e.sh).
+# Shared helpers for the real-cluster e2e scripts (scripts/ and tests/deploy/).
 
 # --- the jac under test ------------------------------------------------------
 # Name this checkout's jac binary as the project's [dev] pod_binary, so the

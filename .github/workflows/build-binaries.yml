@@ -502,8 +502,6 @@ jobs:
               assert not hasattr(sys, "_jacpython_compile");
               assert not hasattr(sys, "_jacpython_image");
               assert eval("6 * 7") == 42;
-              import from jaclang.compiler.native_compiler { ensure_loaded }
-              assert ensure_loaded() is not None , "a shipped binary carries the native compiler kernel";
               print("Python compiler verified");
           }
           EOF
@@ -511,6 +509,9 @@ jobs:
           # this tree's compiler source.
           BIN="$PWD/zig-out/bin/jac"
           (cd "$WORK" && "$BIN" run "$WORK/native_compiler.jac")
+          # A release never runs a required artifact on its floor, and ships
+          # every floor its policy names (CPython, bun).
+          (cd "$WORK" && "$BIN" native status && "$BIN" native status --require release)
 
       # Guards #7047: the binary must not leak PYTHONHOME/PYTHONPATH (or any
       # interpreter config) into subprocesses -- a python-based child spawned

@@ -121,7 +121,8 @@ obj MuslArtifact(Artifact) {
     has name: str = "musl",
         kind: ArtifactKind = ArtifactKind.CAPABILITY,
         release: ReleasePolicy = ReleasePolicy.REQUIRED,
-        summary: str = "the static musl runtime (statically linked native binaries)";
+        summary: str = "the static musl runtime (statically linked native binaries)",
+        hosts: list[str] = ["linux"];
 
     def target -> str {
         return self.variant or osarch();

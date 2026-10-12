@@ -183,7 +183,8 @@ def apply_dev_source_override() -> None:
 
     A ``jac.toml`` source is applied only when its tree is materialized (see
     ``_is_bare_checkout``); a bare clone is refused with a note and the
-    bundled compiler serves.
+    bundled compiler serves. An inherited record is not re-judged: the top of
+    the tree already chose.
 
     The decision is recorded in the handoff (``compiler_source``, empty for the
     bundled compiler, and ``exact``). ``compiler_source`` is also the scope of
@@ -197,18 +198,19 @@ def apply_dev_source_override() -> None:
     try:
         inherited = handoff()
         if "compiler_source" in inherited:
+            # The top of this process tree already chose; its children run it.
             src_dir = str(inherited.get("compiler_source") or "") or None
             exact = bool(inherited.get("exact"))
         else:
             (src_dir, exact) = _dev_table()
-        if src_dir is not None and _is_bare_checkout(src_dir):
-            sys.stderr.write(
-                f"jac: ignoring the dev compiler source {src_dir}: the tree has "
-                "no typeshed stdlib stubs (run `zig build fetch-typeshed` in "
-                "that checkout to use its compiler); the bundled compiler "
-                "serves this run.\n"
-            )
-            src_dir = None
+            if src_dir is not None and _is_bare_checkout(src_dir):
+                sys.stderr.write(
+                    f"jac: ignoring the dev compiler source {src_dir}: the tree "
+                    "has no typeshed stdlib stubs (run `zig build fetch-typeshed` "
+                    "in that checkout to use its compiler); the bundled compiler "
+                    "serves this run.\n"
+                )
+                src_dir = None
         src_dir = src_dir or _baked_source_dir()
         if src_dir is not None and not os.path.isdir(os.path.join(src_dir, "jaclang")):
             src_dir = None

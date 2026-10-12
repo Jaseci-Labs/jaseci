@@ -113,7 +113,14 @@ obj NodeArtifact(ToolArtifact) {
     }
 
     override def works(path: Path) -> bool {
-        return bool(_runs([str(path), "--version"]));
+        try {
+            subprocess.run(
+                [str(path), "--version"], check=True, capture_output=True, timeout=15
+            );
+        } except (OSError, subprocess.SubprocessError) {
+            return False;
+        }
+        return True;
     }
 }
 

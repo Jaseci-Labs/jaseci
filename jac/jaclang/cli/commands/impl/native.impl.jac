@@ -63,13 +63,21 @@ def _status(names: list[str]) -> int {
 
 
 def _require(spec: str) -> int {
-    wanted = (router.release_set() + router.shipped_floors())
-        if spec == "release"
-        else [
+    if spec in ("release", "kit") {
+        omitted = router.omitted_by_image() if spec == "kit" else frozenset();
+        wanted = [
+            n
+            for n in router.release_set()
+            if n not in omitted
+        ]
+            + router.shipped_floors();
+    } else {
+        wanted = [
             part.strip()
             for part in spec.split(",")
             if part.strip()
         ];
+    }
     problems = router.unmet(wanted);
     for problem in problems {
         console.error(problem);

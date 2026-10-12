@@ -49,6 +49,12 @@ echo "Built: $JAC_BIN"
 echo "Add it to PATH, e.g.:  export PATH=\"$PWD/jac/zig-out/bin:\$PATH\""
 export PATH="$PWD/jac/zig-out/bin:$PATH"
 
+# Native artifacts are built only on request; `jac native status` shows what
+# is in place. The quick ones: the stub catalog the type checker reads and the
+# static musl / wasm runtimes native targets link against. `jac native build
+# kernel` adds the native compiler kernel (much faster compiles; a long build).
+jac native build stubcat musl wasm-libc
+
 # byLLM's `llm` capability deps (global so they're importable from anywhere).
 # Pins mirror jac/jaclang/project/capabilities.jac. Optional: drop this line if
 # you don't need to run `by llm()` flows in this env.

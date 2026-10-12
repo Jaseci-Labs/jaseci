@@ -185,15 +185,11 @@ jobs:
           ldd "$BIN" || true
           ! ldd "$BIN" | grep -qi python
           "$BIN" -c 'import ctypes; assert ctypes.pythonapi._PyJac_CompilerRequired() == 1; assert ctypes.pythonapi._PyJac_CompilerBridgeVersion() == 4'
-          # Only a pull request's kit may omit the kernel. A pull request whose
-          # sources match a main build restores that kit, kernel included, so
-          # the pull-request side is reported, not asserted.
-          KERNEL="$("$BIN" -c 'from jaclang.compiler.native_compiler import ensure_loaded; print("present" if ensure_loaded() is not None else "omitted")' | tail -1)"
-          echo "::notice title=kit kernel::$KERNEL"
-          if [ "$GITHUB_EVENT_NAME" != pull_request ] && [ "$KERNEL" != present ]; then
-            echo "::error::a $GITHUB_EVENT_NAME kit must carry the native compiler kernel"
-            exit 1
-          fi
+          # The kit carries every artifact a release does, less what its
+          # manifest declares it leaves out -- only a pull request's kit may
+          # (the seal decides that, artifacts/kit.jac pr_kit_omits).
+          "$BIN" native status
+          "$BIN" native status --require kit
           printf 'obj P { has x:int=0; def sq->int { return self.x*self.x; } }\nwith entry { print(P(x=7).sq()); }\n' > "$WORK/obj.jac"
           env -i HOME="$WORK" PATH=/usr/bin:/bin "$BIN" --version
           env -i HOME="$WORK" PATH=/usr/bin:/bin "$BIN" -c 'import os, ssl; assert os.path.isfile(os.environ["SSL_CERT_FILE"]); assert ssl.create_default_context().cert_store_stats()["x509_ca"] > 0'

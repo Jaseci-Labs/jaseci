@@ -86,6 +86,10 @@ def _decide(artifact: Artifact) -> Resolution {
     return Resolution(name=artifact.name, reason=tree.describe());
 }
 
+def omitted_by_image -> frozenset[str] {
+    return _omitted(sealed_image=True) | _omitted(sealed_image=False);
+}
+
 def _omitted(sealed_image: bool) -> frozenset[str] {
     if sealed_image {
         import from jaclang.jac0core { sealed }
