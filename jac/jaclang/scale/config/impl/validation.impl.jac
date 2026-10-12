@@ -113,6 +113,11 @@ impl jobs_poll_seconds(raw: any) -> float | None {
     return value if value is not None and value > 0.0 else None;
 }
 
+impl jobs_retention_seconds(raw: any) -> float | None {
+    value = _as_number(raw);
+    return value if value is not None and value >= 0.0 else None;
+}
+
 impl _jobs_bound_findings(raw: dict[str, any]) -> list[str] {
     cfg = raw.get("jobs");
     if not isinstance(cfg, dict) {
@@ -123,6 +128,15 @@ impl _jobs_bound_findings(raw: dict[str, any]) -> list[str] {
         out.append(
             f"jac.toml [scale.jobs] poll_seconds {cfg.get('poll_seconds')!r} must be"
             " a finite number greater than 0; the 1.0 second default is used instead"
+        );
+    }
+    if "retention_seconds" in cfg
+        and jobs_retention_seconds(cfg.get("retention_seconds")) is None {
+        out.append(
+            "jac.toml [scale.jobs] retention_seconds "
+            f"{cfg.get('retention_seconds')!r} must be a finite number 0 or more,"
+            " where 0 keeps finished jobs forever; the 604800 second default is"
+            " used instead"
         );
     }
     queues = cfg.get("queues");

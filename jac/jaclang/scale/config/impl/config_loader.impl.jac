@@ -443,7 +443,8 @@ impl JacScaleConfig.get_jobs_config(self: JacScaleConfig) -> dict[str, any] {
     import from jaclang.scale.config.validation {
         jobs_concurrency,
         jobs_lease_seconds,
-        jobs_poll_seconds
+        jobs_poll_seconds,
+        jobs_retention_seconds
     }
     config = self.load();
     jobs_config: any = config.get('jobs', {}) or {};
@@ -463,11 +464,14 @@ impl JacScaleConfig.get_jobs_config(self: JacScaleConfig) -> dict[str, any] {
         };
     }
     poll: any = jobs_poll_seconds(jobs_config.get('poll_seconds', 1.0));
+    retention: any = jobs_retention_seconds(
+        jobs_config.get('retention_seconds', 604800.0)
+    );
     return {
         'enabled': bool(jobs_config.get('enabled', False)),
         'queues': queues,
         'poll_seconds': poll if poll is not None else 1.0,
-        'retention_seconds': float(jobs_config.get('retention_seconds', 604800.0))
+        'retention_seconds': retention if retention is not None else 604800.0
     };
 }
 
