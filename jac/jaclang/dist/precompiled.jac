@@ -23,17 +23,17 @@ def _python_tag -> str {
 
 def bundle_misses(pkg_dir: str) -> list[str] {
     import from jaclang.compiler.driver.jir {
-        compiler_source_files,
         jir_cacheable_source_path,
         precompiled_jir_matches_source
     }
+    import from jaclang.dist.precompile_bytecode { sealable_sources }
     units = os.path.join(bundle_root(pkg_dir), _python_tag());
     misses: list[str] = [];
-    for rel in compiler_source_files(pkg_dir) {
-        source = os.path.join(pkg_dir, rel.replace("/", os.sep));
+    for source in sealable_sources(pkg_dir) {
         if not jir_cacheable_source_path(source) {
             continue;
         }
+        rel = os.path.relpath(source, pkg_dir).replace(os.sep, "/");
         unit = os.path.join(units, os.path.splitext(rel)[0] + ".jir");
         try {
             with open(unit, "rb") as f {

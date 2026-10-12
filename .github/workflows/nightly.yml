@@ -62,10 +62,9 @@ jobs:
       - name: Build and smoke-test the native JacPython runtime
         working-directory: jac
         run: zig build build-python $DTARGET $DPYTHON --summary all
+      - uses: ./.github/actions/seal-checkout
       - name: Build and probe the packaged native JacPython binary
         working-directory: jac
-        env:
-          JAC_NO_DEV_SOURCE: "1"
         run: |
           zig build $DTARGET $DPYTHON --summary all
           zig-out/bin/jac -c '
@@ -80,8 +79,6 @@ jobs:
         if: failure() && runner.os == 'macOS'
         continue-on-error: true
         working-directory: jac
-        env:
-          JAC_NO_DEV_SOURCE: "1"
         run: |
           if [ -x zig-out/bin/jac ]; then
             lldb --batch -o 'settings set target.disable-aslr false' -o run \
@@ -214,7 +211,6 @@ jobs:
       matrix:
         base: [slim, official-image]
     env:
-      JAC_NO_DEV_SOURCE: "1"
       # The jac built from this checkout: the deploy driver here, and the
       # binary the e2e harness ships to the pods as [dev] pod_binary.
       JAC_UNDER_TEST: ${{ github.workspace }}/jac/zig-out/bin/jac
@@ -225,6 +221,7 @@ jobs:
 
       - name: Set up jac (sealed binary)
         uses: ./.github/actions/setup-jac
+      - uses: ./.github/actions/seal-checkout
 
       - name: Install the jac binary as the deploy driver
         run: |

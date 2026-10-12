@@ -65,8 +65,8 @@ runs:
         #
         # .precompiled-build/jacpython rides WITH the binary, not beside it.
         # ci.yml publishes that tree as the `jac-precompiled` artifact and every
-        # reroute lane runs against it under JAC_PRECOMPILE_REQUIRED=1, so a
-        # tree that does not match this checkout is a hard failure, not a slow
+        # reroute lane requires it (`jac native status --require precompiled`), so
+        # a tree that does not match this checkout is a hard failure, not a slow
         # lane. Keyed together, a hit restores the exact pair that was built;
         # keyed apart, a hit on one with a restore-keys prefix hit on the other
         # could ship a bundle one payload fingerprint stale. The read-mostly

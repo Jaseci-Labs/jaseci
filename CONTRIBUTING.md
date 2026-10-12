@@ -68,7 +68,7 @@ An edit recompiles what it touched, not the whole compiler. Every edit under jac
 
 **Faster builds: `zig build -Ddev`.** `fresh_env.sh` builds with `zig build -Ddev`, which *bakes* this link into the binary: the compiler is not bundled at all (no ~100 MB tree copy, no JIR precompile -- a much smaller, faster build), and the binary reroutes `import jaclang` to the build-root source from any directory, so the loop holds with no `[dev]` stanza in scope. It's the fastest build and the right default for compiler work; the tradeoff is the binary hard-depends on that source dir, so it's dev-only and not distributable. Use `-Djaclang-dir=PATH` to bake an explicit compiler dir, or a plain `zig build` for the fully self-contained release binary. Because the compiler imports the native passes at startup, a `-Ddev` binary still needs the LLVMPY_* shim **placed in the linked tree** (the same `zig build fetch-llvm` prerequisite as a release build -- `-Ddev` then compiles and places it automatically; without it the build stops with a clear message). `fresh_env.sh` runs `fetch-llvm` for you.
 
-The stanza is read from the **nearest ancestor `jac.toml`** (like every other config setting), so the single root `jac.toml` covers every directory in the repo -- the loop is active whether you work from the repo root or `cd jac` to run the suite. Other subprojects (`jac-byllm/`, `jac-mcp/`, ...) opt in by adding their own `[dev]` stanza. To force the loop *off* for a single command -- e.g. to test the shipped binary's bundled + precompiled jaclang instead of your edits -- set `JAC_NO_DEV_SOURCE=1` (CI's binary self-test does this).
+The stanza is read from the **nearest ancestor `jac.toml`** (like every other config setting), so the single root `jac.toml` covers every directory in the repo -- the loop is active whether you work from the repo root or `cd jac` to run the suite. Other subprojects (`jac-byllm/`, `jac-mcp/`, ...) opt in by adding their own `[dev]` stanza. To run the shipped binary's bundled + precompiled jaclang instead of your edits, start it from outside the repo (`cd "$(mktemp -d)"`): a jac started where no `[dev]` stanza is in scope runs its bundled compiler, and every process it starts inherits that choice. CI's sealed lanes get the same effect by dropping the stanza from their checkout (`.github/actions/seal-checkout`).
 
 You still need to `zig build` again when you change the parts that live *inside* the binary rather than in jaclang source: the launcher (`jac/launcher/*.zig`, `jac/build.zig`), the payload bootstrap (`jac/sitecustomize.py`, `jac/_jac_finder.py`), or the bundled CPython version.
 
@@ -203,7 +203,8 @@ curl -fL --retry 3 "$BASE/$ASSET.sha256" -o "$TRIAL/$ASSET.sha256" &&
 (cd "$TRIAL" && shasum -a 256 -c "$ASSET.sha256") &&
 chmod +x "$TRIAL/$ASSET" &&
 JACPYTHON_BIN="$TRIAL/$ASSET" &&
-JAC_NO_DEV_SOURCE=1 "$JACPYTHON_BIN" --version
+cd "$TRIAL" &&
+"$JACPYTHON_BIN" --version
 ```
 
 Continue only if the download and checksum check succeed. A 404 means the
@@ -214,7 +215,7 @@ selected tag/platform does not have that asset; check the release's asset list.
 Verify the active compiler and exercise Python source and AST compilation:
 
 ```bash
-JAC_NO_DEV_SOURCE=1 "$JACPYTHON_BIN" -c '
+"$JACPYTHON_BIN" -c '
 import ast, ctypes, sys
 assert ctypes.pythonapi._PyJac_CompilerBridgeVersion() == 4
 assert not hasattr(sys, "_jacpython_compile")
@@ -225,16 +226,16 @@ exec(compile(ast.parse("print(6 * 7)"), "<jacpython-trial>", "exec"))
 '
 
 printf 'with entry { print(6 * 7); }\n' > "$TRIAL/hello.jac"
-JAC_NO_DEV_SOURCE=1 "$JACPYTHON_BIN" run "$TRIAL/hello.jac"
+"$JACPYTHON_BIN" run "$TRIAL/hello.jac"
 ```
 
 Both examples should print `42`; the compiler probe should report native
 JacPython. The replacement executes as native machine code, while CPython
 provides the object runtime and executes the resulting Python bytecode.
 The `-c` probe exercises the Python replacement directly;
-`run` retains Jac's normal backend selection. Keep `JAC_NO_DEV_SOURCE=1` when
-testing a downloaded release inside this repository so its `[dev]` setting
-does not substitute the checkout's Jac compiler.
+`run` retains Jac's normal backend selection. Keep running from `$TRIAL`, outside
+this repository, so the repository's `[dev]` setting does not substitute the
+checkout's Jac compiler.
 
 Use the explicit `$JACPYTHON_BIN` path for further experiments. Include the tag,
 platform, compiler-probe output, and a minimal reproducer when reporting an issue.
@@ -335,8 +336,8 @@ the MCP server, and the client/desktop runtimes are all bundled into the binary.
 5. Once the checks attach, enable **auto-merge** on the PR (or approve and merge manually when CI passes)
 
 PR preparation downloads the latest released Jac binary to run the version and
-release-note scripts. It sets `JAC_NO_DEV_SOURCE=1` to use the bundled compiler,
-so this job does not build Jac from source.
+release-note scripts. It runs them from outside the checkout so the bundled
+compiler serves, and this job does not build Jac from source.
 
 ### Step 2: Approve the Release
 

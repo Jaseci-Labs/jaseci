@@ -370,7 +370,7 @@ test "timing subprocess selects each requested compiler checkout" {
                 "import json, os, sys\nfrom pathlib import Path\n"
                     + "print('TIMING_ROW ' + json.dumps({"
                     + "'compiler': str(Path(__file__).resolve().parent.parent),"
-                    + "'dev_source': __import__('jaclang.jac0core.handoff', fromlist=['handoff']).handoff().get('compiler_source'),"
+                    + "'dev_source': json.loads(os.environ.get('JAC_HANDOFF') or '{}').get('compiler_source'),"
                     + "'args': sys.argv[1:]}))\n"
             );
             rows = run_probe(str(tree), str(Path(tmp) / "cache"));

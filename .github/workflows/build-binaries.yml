@@ -510,7 +510,10 @@ jobs:
               print("Python compiler verified");
           }
           EOF
-          JAC_NO_DEV_SOURCE=1 zig-out/bin/jac run "$WORK/native_compiler.jac"
+          # From $WORK: the checkout's jac.toml would reroute the binary to
+          # this tree's compiler source.
+          BIN="$PWD/zig-out/bin/jac"
+          (cd "$WORK" && "$BIN" run "$WORK/native_compiler.jac")
 
       # Guards #7047: the binary must not leak PYTHONHOME/PYTHONPATH (or any
       # interpreter config) into subprocesses -- a python-based child spawned
