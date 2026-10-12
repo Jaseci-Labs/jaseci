@@ -36,7 +36,7 @@ async def run_sync(fn: Callable[..., any], *args: any) -> any {
 
 
 async def iterate_sync(source: any) -> AsyncIterator[any] {
-    iterator = iter(source);
+    iterator = await run_sync(iter, source);
     while True {
         item = await run_sync(next, iterator, _STREAM_STOP);
         if item is _STREAM_STOP {

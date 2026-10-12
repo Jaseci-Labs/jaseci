@@ -78,6 +78,15 @@ obj _Writer {
 }
 
 
+obj _BlockingIterable {
+    has source: any;
+
+    def __iter__ -> Iterator[any] {
+        return iter([next(self.source)]);
+    }
+}
+
+
 async def _async_producer -> AsyncIterator[dict[str, any]] {
     yield {"n": 0};
     yield {"n": 1};
@@ -140,6 +149,22 @@ test "direct streaming responses keep the event loop responsive while a sync pro
     writer: any = _Writer();
     async def consume(source: any) -> int {
         return await server._write_stream(writer, source, chunked=True);
+    }
+    (sent, resumed) = _run(_drive_blocking_sync(consume, b'hello'));
+
+    assert resumed == [True];
+    assert sent == 5;
+    assert writer.chunks == [b'5\r\n', b'hello', b'\r\n'];
+}
+
+
+test "direct streaming responses keep the event loop responsive during iterator setup" {
+    server = ServingServer(app=ServingApp());
+    writer: any = _Writer();
+    async def consume(source: any) -> int {
+        return await server._write_stream(
+            writer, _BlockingIterable(source=source), chunked=True
+        );
     }
     (sent, resumed) = _run(_drive_blocking_sync(consume, b'hello'));
 
