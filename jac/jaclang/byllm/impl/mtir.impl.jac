@@ -9,8 +9,6 @@ glob SYSTEM_PERSONA = """\
     output. Only use tools.
     """;
 
-"""The `media_inputs` entries for one argument: its media, behind the parameter's
-sem once however many items a list holds. Empty when the argument is not media."""
 def _media_entries(value: any, semstr: str) -> list[any] {
     media = as_media_list(value);
     return [] if media is None else [(media[0], semstr), *media[1:]];

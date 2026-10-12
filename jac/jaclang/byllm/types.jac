@@ -203,9 +203,6 @@ def serialize_media_content(content: list[any]) -> list[dict[str, any]] {
 }
 
 
-"""The media a value stands for: one `Media`, or a non-empty list made only of them.
-
-None for any other value, which the prompt describes in text."""
 def as_media_list(value: any) -> list[Media] | None {
     if isinstance(value, Media) {
         return [value];
