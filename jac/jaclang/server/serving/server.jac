@@ -21,7 +21,7 @@ import from jaclang.server.serving.datatypes {
     parse_query_string
 }
 import from jaclang.server.serving.drain { DrainState, HEALTH_PATHS }
-import from jaclang.server.serving.executor { SyncExecutor }
+import from jaclang.server.serving.executor { SyncExecutor, iterate_sync }
 import from jaclang.server.serving.proxy { ProxyResolver }
 import from jaclang.server.serving.ws { WebSocket, compute_accept_key }
 import from jaclang.server.settings { ServeSettings }
@@ -848,7 +848,7 @@ obj ServingServer {
                     continue;
                 }
             } else {
-                for _chunk in stream {
+                async for _chunk in iterate_sync(stream) {
                     continue;
                 }
             }
@@ -865,7 +865,7 @@ obj ServingServer {
                 await writer.drain();
             }
         } else {
-            for chunk in stream {
+            async for chunk in iterate_sync(stream) {
                 sent += self._write_chunk(writer, chunk, chunked);
                 await writer.drain();
             }
