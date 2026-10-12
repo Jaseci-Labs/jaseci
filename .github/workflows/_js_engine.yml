@@ -52,12 +52,15 @@ jobs:
           key: js-engine-${{ runner.os }}-${{ runner.arch }}-c${{ steps.inputs.outputs.compiler }}-${{ hashFiles('jac/js_engine/**', 'jac/build.zig', 'jac/build.zig.zon') }}
 
       # The build runs through this checkout's compiler (the root jac.toml's
-      # reroute), on the bundle the binary was built from.
+      # reroute), on the bundle the binary was built from (setup-jac keeps it
+      # under its interpreter's name).
       - name: Seed the reroute from the binary's precompile bundle
         run: |
           set -euo pipefail
+          BUNDLE="$(ls -d jac/.precompiled-build/*/ | head -1)"
+          [ -n "$BUNDLE" ] || { echo "::error::setup-jac left no precompile bundle"; exit 1; }
           rm -rf jac/jaclang/_precompiled
-          cp -r jac/.precompiled-build/cpython jac/jaclang/_precompiled
+          cp -r "$BUNDLE" jac/jaclang/_precompiled
           rm -f jac/jaclang/_precompiled/MANIFEST.json
 
       - name: Build and install the engine
