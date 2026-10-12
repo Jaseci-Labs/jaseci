@@ -189,3 +189,46 @@ test "jac fix still stops on a jac.toml that is not TOML" {
         assert "jac.toml is malformed" in out , out;
     }
 }
+
+test "jac fix placement refuses an invalid jac.toml before rewriting any source" {
+    with tempfile.TemporaryDirectory() as tmp {
+        proj = Path(tmp);
+        manifest = proj / "jac.toml";
+        manifest.write_text(
+            "[project]\nname = \"repro\"\nversion = \"0.1.0\"\n"
+            "entry-point = \"main\"\n\n[dependencies]\nrequests = \">=2.0\"\n"
+        );
+        main = proj / "main.jac";
+        main.write_text(
+            "sv import from analytics { track }\n\n"
+            "with entry {\n    print(track());\n}\n"
+        );
+        (proj / "analytics.jac").write_text("def track -> int {\n    return 1;\n}\n");
+        source = main.read_text();
+        (code, out) = run_jac(proj, ["fix", "placement"]);
+        assert code == 2 , out;
+        assert "jac.toml is invalid" in out , out;
+        assert main.read_text() == source , "placement stripped markers it could not record";
+        (code, out) = run_jac(proj, ["fix", "dependencies"]);
+        assert code == 0 , out;
+        (code, out) = run_jac(proj, ["fix", "placement"]);
+        assert code == 0 , out;
+        assert "sv import" not in main.read_text();
+        apps = tomllib.loads(manifest.read_text())["apps"];
+        assert apps["analytics"]["kind"] == "service" , apps;
+    }
+}
+
+test "jac fix access refuses an invalid jac.toml" {
+    with tempfile.TemporaryDirectory() as tmp {
+        proj = Path(tmp);
+        (proj / "jac.toml").write_text(
+            "[project]\nname = \"repro\"\nversion = \"0.1.0\"\n\n"
+            "[dependencies]\nrequests = \">=2.0\"\n"
+        );
+        (proj / "main.jac").write_text("def hello -> str {\n    return \"hi\";\n}\n");
+        (code, out) = run_jac(proj, ["fix", "access"]);
+        assert code == 2 , out;
+        assert "jac.toml is invalid" in out , out;
+    }
+}
