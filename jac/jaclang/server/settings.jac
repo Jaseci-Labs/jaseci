@@ -1,10 +1,11 @@
 import logging;
 import os;
 import from jaclang.project.config { JacConfig, ServeConfig }
-import from jaclang.cli.workpool { cpu_quota }
+import from jaclang.cli.workpool { cpu_quota, memory_headroom_bytes }
 
 glob ENV_PREFIX: str = 'JAC_SERVE_',
      WORKERS_AUTO: str = 'auto',
+     WORKER_MEMORY_BUDGET: int = 512 * 1024 * 1024,
      ENV_TRUE: tuple[str, ...] = ('1', 'true', 'yes', 'on'),
      ENV_FALSE: tuple[str, ...] = ('0', 'false', 'no', 'off'),
      IDENTIFIER_KINDS: tuple[str, ...] = ('username', 'email'),
@@ -38,7 +39,9 @@ obj WorkerSettings {
         max_requests_jitter: int = 0,
         request_timeout: float = 0.0,
         boot_timeout: float = 120.0,
-        hang_timeout: float = 30.0;
+        hang_timeout: float = 30.0,
+        count_by_default: bool = False,
+        threads_by_default: bool = False;
 
     def multi_process -> bool {
         return self.count > 1;
@@ -287,3 +290,4 @@ def env_list(name: str, `default: list[str]) -> list[str] {
 
 def resolve_count(raw: str, quota: int, label: str) -> int;
 def default_threads(worker_count: int, quota: int) -> int;
+def default_worker_count(quota: int) -> int;

@@ -2513,6 +2513,58 @@ for (const row of ROWS) {
 process.exit(failed ? 1 : 0);
 """;
 
+test "an unset worker count picks as many as fit; an explicit one is kept" {
+    import from jaclang.cli.workpool { cpu_quota }
+    import from jaclang.server.settings { ServeSettings, default_worker_count }
+    with TemporaryDirectory() as tmpdir {
+        unset = ServeSettings.load(tmpdir, {"workers": ""});
+        assert unset.workers.count_by_default;
+        assert unset.workers.count == default_worker_count(cpu_quota()) , (
+            f"an unset count resolved to {unset.workers.count}"
+        );
+        assert 1 <= unset.workers.count <= cpu_quota();
+        pinned = ServeSettings.load(tmpdir, {"workers": "3"});
+        assert not pinned.workers.count_by_default;
+        assert pinned.workers.count == 3;
+    }
+}
+
+
+test "an unset worker count falls back to one worker where more would be refused" {
+    import from jaclang.server.settings { ServeConfigError, ServeSettings }
+    with TemporaryDirectory() as tmpdir {
+        client = JacTestClient.from_file(
+            fixture_abs_path("serve_shared_root.jac"), base_path=tmpdir
+        );
+        try {
+            chosen = ServeSettings.load(tmpdir, {"workers": ""});
+            chosen.workers.count = 4;
+            chosen.dev = True;
+            client.server.settings = chosen;
+            client.server._validate_or_raise();
+            assert chosen.workers.count == 1 , (
+                f"--dev kept {chosen.workers.count} default workers"
+            );
+            pinned = ServeSettings.load(tmpdir, {"workers": "2"});
+            pinned.dev = True;
+            client.server.settings = pinned;
+            refused = "";
+            try {
+                client.server._validate_or_raise();
+            } except ServeConfigError as e {
+                refused = str(e);
+            }
+            assert "workers = 1 for development" in refused , (
+                f"an explicit count of 2 with --dev was not refused: {refused!r}"
+            );
+            assert pinned.workers.count == 2 , "an explicit count was lowered";
+        } finally {
+            client.close();
+        }
+    }
+}
+
+
 """The stdlib server serves /graph, /graph/data and /docs, and the /graph login
 modal signs in against it (#8951)."""
 test "stdlib server serves graph visualizer and docs" {
