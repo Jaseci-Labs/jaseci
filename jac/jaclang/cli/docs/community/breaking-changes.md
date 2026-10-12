@@ -19,6 +19,34 @@ This page documents significant breaking changes in Jac and Jaseci that may affe
 
 The startup banner lists "Network" URLs only for interfaces the server is bound to, and says when it is listening on this machine only. The dev Vite server and the local fleet gateway (`[scale.gateway] gateway_host`, now unset by default) follow the same default instead of always listening on every interface. A pod never inherits a loopback `[serve] host`: the manifest emits `0.0.0.0` unless the pinned host is a real address.
 
+### A closure kept past its loop iteration cannot capture a local the loop assigns ([#8168](https://github.com/jaseci-labs/jac/issues/8168), unreleased)
+
+A local assigned in a loop body is owned by the enclosing function, so every closure the loop creates over it shares one binding and sees the value the last iteration assigned. That was accepted silently: in a JSX `for` slot every per-item handler acted on the last item. When the loop keeps the closure (a JSX attribute, a container, a field or a subscript that outlives the iteration, a `yield`), it is now `E2097`, reported by `jac check` in every codespace.
+
+Scoping is unchanged. A type annotation is not a scoping construct, so the annotated form is reported exactly like the bare one:
+
+<!-- jac-skip -->
+```jac
+{for item in items {
+    row_id = str(item.id);            # also E2097 as `row_id: str = str(item.id);`
+    <li onClick={lambda { show(row_id); }}>{row_id}</li>;
+}}
+```
+
+Bind the value through a parameter, which is bound per call:
+
+```jac
+def opener(row_id: str, show: Callable[[str], None]) -> Callable[[], None] {
+    return lambda { show(row_id); };
+}
+```
+
+and write `<li onClick={opener(row_id, show)}>` in the loop. The same applies to server code that stores a closure built in a loop (`handlers.append(lambda { ... })`, `table[key] = lambda { ... }`).
+
+A closure that is only handed to a callee the compiler cannot see into (`register(lambda { ... })`) is a warning, `W2084`, not an error: the callee may run it before returning, in which case the code is correct. It does not fail `jac check`, and the same parameter binding removes it.
+
+Closures that cannot outlive their iteration are not reported (called on the spot, a local helper that is only called, the callback of `map` / `filter` / `sorted(key=...)` and similar, or one in a `return`), and neither is a capture of the loop target. See [E2097 and W2084](../reference/diagnostics.md#closures-created-in-a-loop).
+
 ---
 
 ### `[dependencies]` lists Jac packages; Python moves to `[dependencies.pypi]` (unreleased)

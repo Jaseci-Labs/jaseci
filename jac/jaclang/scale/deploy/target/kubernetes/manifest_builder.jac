@@ -1,13 +1,16 @@
 import from jaclang.scale.runtime.context.util { GATEWAY_NAME, k8s_safe_name }
 import from jaclang.server { sv_client }
 import from jaclang.project.config { JacConfig, ServeConfig }
-import from jaclang.server.settings { is_loopback_host, resolve_count }
+import from jaclang.server.settings { AuthSettings, is_loopback_host, resolve_count }
 import from jaclang.scale.config.app_config { AppConfig }
 import from jaclang.scale.config.config_loader {
+    ADMIN_PASSWORD_ENV,
     GATEWAY_POD_KEYS,
+    SIGNING_SECRET_ENV,
     get_scale_config,
     normalize_gateway_config
 }
+import from jaclang.server.serving.authcrypt { PLACEHOLDER_JWT_SECRET }
 import from jaclang.scale.runtime.fleet { FleetSpec, fleet_from_config, solo_fleet }
 import from jaclang.scale.models.deploy_context { DATABASE_URL_ENV, DeployContext }
 import from jaclang.scale.models.resource_status { REPLICA_FLOOR_ANNOTATION }
@@ -259,6 +262,7 @@ obj ManifestBuilder {
         project_dir: str = "",
         _bundle_object_key: str = "",
         _toolchain_object_key: str = "",
+        _pod_binary_sha256: str = "",
         fleet: (FleetSpec | None) = None,
         gateway_config: (dict[str, any] | None) = None,
         app_overrides: dict[str, dict[str, any]] = {},
@@ -342,6 +346,7 @@ obj ManifestBuilder {
         );
         injector: PvcInjector = selection[0];
         self._toolchain_object_key = str(selection[1]);
+        self._pod_binary_sha256 = str(getattr(injector, "_pod_binary_sha256", ""));
         return injector;
     }
 
@@ -670,6 +675,9 @@ obj ManifestBuilder {
         user_secret = self._build_user_secret_manifest();
         if user_secret is not None {
             bundle["user_secret"] = user_secret;
+            bundle["admin_password_rules"] = AuthSettings.from_table(
+                self._serve_config().auth, dict(user_secret["stringData"])
+            ).password;
         }
         ingress_cfg: dict[str, any] = self._gateway_cfg().get("ingress", {});
         ingress = self._build_ingress_manifest(ingress_cfg);
@@ -917,12 +925,11 @@ obj ManifestBuilder {
     }
 
     def _signing_secret -> str {
-        import from jaclang.server.serving.authcrypt { PLACEHOLDER_JWT_SECRET }
-        configured = str(self.secrets.get("JAC_SERVE_AUTH_SECRET") or "").strip();
+        configured = str(self.secrets.get(SIGNING_SECRET_ENV) or "").strip();
         if configured {
             return configured;
         }
-        from_project = self._serve_config().auth.secret.strip();
+        from_project = str(self._serve_config().auth.get('secret') or '').strip();
         if from_project {
             return from_project;
         }
@@ -1174,7 +1181,17 @@ obj ManifestBuilder {
 
     def _build_user_secret_manifest -> dict[str, any] | None {
         data: dict[str, str] = {k: str(v) for (k, v) in self.secrets.items()};
-        data["JAC_SERVE_AUTH_SECRET"] = self._signing_secret();
+        data[SIGNING_SECRET_ENV] = self._signing_secret();
+        import os;
+        admin = get_scale_config().get_admin_config();
+        if admin.get('enabled', True) and ADMIN_PASSWORD_ENV not in data {
+            from_shell = os.environ.get(ADMIN_PASSWORD_ENV) or '';
+            if from_shell.strip() {
+                data[ADMIN_PASSWORD_ENV] = from_shell;
+            } elif not admin.get('default_password') {
+                data[ADMIN_PASSWORD_ENV] = PLACEHOLDER_JWT_SECRET;
+            }
+        }
         return {
             "apiVersion": "v1",
             "kind": "Secret",
@@ -1369,9 +1386,9 @@ obj ManifestBuilder {
         cfg = self.k8s_config;
         return {
             "httpGet": {"path": "/healthz/live", "port": cfg.container_port},
-            "periodSeconds": 10,
+            "periodSeconds": 1,
             "timeoutSeconds": 3,
-            "failureThreshold": 90
+            "failureThreshold": 900
         };
     }
 
@@ -1599,7 +1616,7 @@ obj ManifestBuilder {
                     f"KEDA HTTP Add-on interceptor can't tell which target a "
                     f"matching request belongs to when two InterceptorRoutes "
                     f"share the same match criteria. Set a distinct "
-                    f"[services.NAME.http_activation.rules] for at least all "
+                    f"[apps.NAME.scale.http_activation.rules] for at least all "
                     f"but one of these services."
                 );
             }
@@ -1900,12 +1917,15 @@ obj ManifestBuilder {
             storage_class=self.k8s_config.bundle_storage_class
         );
         injector._toolchain_object_key = self._toolchain_object_key;
+        injector._pod_binary_sha256 = self._pod_binary_sha256;
         injector._object_key = self._injector_object_key();
         spec["_jac_meta"] = {
             "app_name": k8s_safe_name(self.k8s_config.app_name),
             "namespace": self.k8s_config.namespace
         };
-        spec = injector.mutate_pod_spec(spec, self.k8s_config.python_image);
+        spec = injector.mutate_pod_spec(
+            spec, self.k8s_config.python_image, unpack_container=False
+        );
         spec.pop("_jac_meta", None);
 
         import from jaclang.scale.deploy.target.kubernetes.runtime_bootstrap {
@@ -1913,7 +1933,9 @@ obj ManifestBuilder {
         }
         spec["initContainers"].append(
             build_bootstrap_init_container(
-                self.k8s_config, self.k8s_config.python_image
+                self.k8s_config,
+                self.k8s_config.python_image,
+                unpack_script=injector.unpack_script()
             )
         );
         return spec;

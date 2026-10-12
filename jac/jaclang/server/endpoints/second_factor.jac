@@ -1,5 +1,5 @@
 import logging;
-import from jaclang.server.endpoints.auth { fail, ok }
+import from jaclang.server.endpoints.auth { fail, ok, throttled }
 import from jaclang.server.identity.assurance {
     AAL1,
     AAL2,
@@ -16,6 +16,7 @@ import from jaclang.server.identity.auth_models {
     VerifyFactorRequest
 }
 import from jaclang.server.identity.identity_storage { primary_username }
+import from jaclang.server.identity.session_cookie { start_session }
 import from jaclang.server.identity.second_factor {
     FACTOR_VERIFIED,
     SecondFactorUnavailable
@@ -42,13 +43,7 @@ def unavailable -> TransportResponse {
 def refused(result: dict[str, any], proof_status: int) -> TransportResponse {
     code = str(result.get('code') or 'INVALID_CODE');
     if code == 'RATE_LIMITED' {
-        retry = int(result.get('retry_after') or 1);
-        return fail(
-            'RATE_LIMITED',
-            f"Too many attempts. Try again in {retry} seconds.",
-            429,
-            {'retry_after_seconds': retry}
-        );
+        return throttled(int(result.get('retry_after') or 1), 'Sign-in');
     }
     if code == 'NOT_FOUND' {
         return fail('NOT_FOUND', 'Factor not found', 404);
@@ -190,6 +185,7 @@ def register_second_factor_endpoints(server: EndpointHost) {
         if result.get('recovery_codes') {
             payload['recovery_codes'] = result['recovery_codes'];
         }
+        start_session(request, str(payload['token']));
         return ok(payload);
     }
     server.add_endpoint(
@@ -325,8 +321,11 @@ def register_second_factor_endpoints(server: EndpointHost) {
         }
         payload['token'] = users.create_jwt_token(
             user_id,
-            assurance=second_factor_claims([METHOD_PASSWORD, str(result['method'])])
+            assurance=second_factor_claims(
+                [str(result['first_method']), str(result['method'])]
+            )
         );
+        start_session(request, str(payload['token']));
         return ok(dict[(str, JsonValue)](payload));
     }
     server.add_endpoint(

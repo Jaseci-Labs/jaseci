@@ -56,6 +56,12 @@ Bug index:
                     still on the stack fell into a fresh program.compile of the
                     same path instead of answering from the in-flight state
                     (#7853)
+  #CYCLE-IMPORT-2 - the re-entrant import guard looked for the in-flight
+                    module only in the checking program's hub, so a module
+                    compiling in another context program came back as an empty
+                    stub, and the evaluator cached that stub as the module for
+                    every later import: `ir.Module` stayed Unknown for the rest
+                    of a `jac check` worker
   #CYCLE-TAINT-1 - an Unknown born from the symbol-resolution cycle guard was
                    cached on the expression node and diagnosed (W1051 / E1032 /
                    E1053), freezing transient in-flight types that settle once
@@ -1354,6 +1360,60 @@ test "bug_cycimp1_reentrant_import_guard_returns_stub" {
     assert not settled.stub_only and settled.name == "checker_cycle_guard_target" , (
         "Bug #CYCLE-IMPORT-1: once the module is no longer mid-compile, the "
         "same query must compile and return the real module."
+    );
+}
+
+# =========================================================================
+# Bug #CYCLE-IMPORT-2: the guard's stub answer is transient, so the module
+# type cache must not keep it. `jac check` reuses one program per worker; a
+# stub cached for the llvm `ir` package while it was mid-compile turned every
+# later `ir.Module` in that worker into Unknown (E1032 / E1053 across the
+# native backend). The test marks the package in-compile while one module
+# imports it, then checks that a second module importing it after the compile
+# has settled sees the real package.
+# =========================================================================
+test "bug_cycimp2_inflight_stub_is_not_cached" {
+    import from pathlib { Path }
+    import from jaclang.compiler.driver.compile_options { CompileOptions }
+    program = JacProgram();
+    evaluator = program.get_type_evaluator();
+    init = str(
+        Path(
+            os.path.join(
+                JAC_ROOT,
+                "jaclang",
+                "compiler",
+                "backends",
+                "native",
+                "llvm",
+                "ir",
+                "__init__.jac"
+            )
+        ).resolve()
+    );
+    evaluator._modules_in_compile.add(init);
+    try {
+        program.compile(
+            os.path.join(CHECKER_FIXTURES, "checker_cycle_inflight_pkg_first.jac"),
+            options=CompileOptions(default_codespace='server')
+        );
+    } finally {
+        evaluator._modules_in_compile.discard(init);
+    }
+    cached = evaluator._module_type_cache.get(init);
+    assert cached is None or not getattr(cached.symbol_table, "stub_only", False) , (
+        "Bug #CYCLE-IMPORT-2: the stub answered for a mid-compile package "
+        "must not be cached as that package."
+    );
+    pre_errs = len(program.errors_had);
+    program.compile(
+        os.path.join(CHECKER_FIXTURES, "checker_cycle_inflight_pkg_second.jac"),
+        options=CompileOptions(default_codespace='server')
+    );
+    assert program.errors_had[pre_errs:] == [] , (
+        "Bug #CYCLE-IMPORT-2: a module importing the package after its compile "
+        "settled must resolve `ir.Module`. Got errors: "
+        f"{[str(e) for e in program.errors_had[pre_errs:]]}"
     );
 }
 
