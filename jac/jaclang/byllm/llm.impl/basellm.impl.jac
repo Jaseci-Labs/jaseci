@@ -550,9 +550,12 @@ def _default_compact(
         mtir=None,
         _call_kind="compaction"
     );
-    summary = str(model.invoke(comp_mt_run));
-    if parent_mt_run is not None {
-        parent_mt_run._usage_history.extend(comp_mt_run._usage_history);
+    try {
+        summary = str(model.invoke(comp_mt_run));
+    } finally {
+        if parent_mt_run is not None {
+            parent_mt_run._usage_history.extend(comp_mt_run._usage_history);
+        }
     }
     summary_msg = {
         "role": "user",
