@@ -47,7 +47,6 @@ def _turn(
 
 
 test "a reply cut off at max_tokens never passes as a finished answer" {
-    # (label, replies, answer, max_react_iterations); async runs rows without tools.
     rows: list[tuple[str, list[any], any, int]] = [
         (
             "cut-off tool call",
@@ -105,7 +104,6 @@ test "a reply cut off at max_tokens never passes as a finished answer" {
             } else {
                 assert answer == expected , f"{where}: got {answer!r}";
             }
-            # A cut-off tool call gets a max_tokens error instead of running.
             if replies[0].tool_calls and replies[0].finish_reason == "length" {
                 results = [
                     str(m.get("content"))

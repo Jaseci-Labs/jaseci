@@ -569,7 +569,6 @@ def _compaction_case(
 }
 
 
-"""A summary cut off with nothing in it still bills its tokens."""
 def _cut_off_compaction_case -> MTRuntime {
     return _compaction_case(say("", usage=TOKENS, finish_reason="length"));
 }
