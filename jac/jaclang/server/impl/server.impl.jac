@@ -1209,6 +1209,16 @@ impl JacAPIServer.request_scope -> RequestScope {
     );
 }
 
+impl JacAPIServer.run_target(target: any, args: dict[str, any], username: str) -> any {
+    import from jaclang.runtime.constructs { WalkerArchetype }
+    with self.request_scope() {
+        if isinstance(target, type) and issubclass(target, WalkerArchetype) {
+            return await self.execution_manager.spawn_walker(target, args, username);
+        }
+        return await self.execution_manager.execute_function(target, args, username);
+    }
+}
+
 impl JacAPIServer._install_middleware -> None {
     import from jaclang.server.middleware { jwt_middleware, request_context_middleware }
 
@@ -1536,16 +1546,7 @@ impl JacAPIServer._register_scheduled_tasks -> None {
             if name not in registry {
                 return {'error': f"'{name}' is no longer registered"};
             }
-            with _self.request_scope() {
-                if is_walker {
-                    return await _self.execution_manager.spawn_walker(
-                        registry[name], {}, SYSTEM_USER
-                    );
-                }
-                return await _self.execution_manager.execute_function(
-                    registry[name], {}, SYSTEM_USER
-                );
-            }
+            return await _self.run_target(registry[name], {}, SYSTEM_USER);
         }
         def target {
             outcome = asyncio.run(_run());

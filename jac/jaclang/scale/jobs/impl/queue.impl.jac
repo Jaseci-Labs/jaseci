@@ -176,12 +176,13 @@ impl JobQueueStore.cancel(id: str) -> bool {
     rows = self.store.rows(
         """
         UPDATE jac_jobs SET status = :cancelled, updated_at = now()
-        WHERE id = :id AND status IN (:queued, :failed)
+        WHERE id = :id AND service = :svc AND status IN (:queued, :failed)
         RETURNING id
         """,
         {
             'cancelled': STATUS_CANCELLED,
             'id': id,
+            'svc': self.service,
             'queued': STATUS_QUEUED,
             'failed': STATUS_FAILED
         }
@@ -192,7 +193,8 @@ impl JobQueueStore.cancel(id: str) -> bool {
 
 impl JobQueueStore.get(id: str) -> (JobInfo | None) {
     rows = self.store.rows(
-        f"SELECT {JOB_COLUMNS} FROM jac_jobs WHERE id = :id", {'id': id}
+        f"SELECT {JOB_COLUMNS} FROM jac_jobs WHERE id = :id AND service = :svc",
+        {'id': id, 'svc': self.service}
     );
     return _row_to_job(rows[0]) if rows else None;
 }

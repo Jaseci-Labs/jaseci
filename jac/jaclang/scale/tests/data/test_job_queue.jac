@@ -173,17 +173,17 @@ test "a stopped or killed runner's job runs again once its lease expires" {
     assert runs == [job_id] , runs;
     assert info.status == STATUS_DONE , info.status;
     assert info.attempts == 2 , f"expected the retry to be attempt 2, got {info.attempts}";
-    foreign = _job(jobs.get(foreign_id));
+    foreign = _job(billing.get(foreign_id));
     assert foreign.lease_owner == "billing-runner" , "another service's runner reaped its lease";
     assert billing.reap() == [foreign_id] , "the owning service did not reap its job";
-    assert _job(jobs.get(foreign_id)).status == STATUS_DEAD;
+    assert _job(billing.get(foreign_id)).status == STATUS_DEAD;
     pg.rows(
         "UPDATE jac_jobs SET status = :done, updated_at = now() - interval '1 hour' WHERE id IN (:a, :b)",
         {'done': STATUS_DONE, 'a': job_id, 'b': foreign_id}
     );
     jobs.prune(60.0);
     assert jobs.get(job_id) is None , "prune kept its own finished job";
-    assert jobs.get(foreign_id) is not None , "prune deleted another service's job";
+    assert billing.get(foreign_id) is not None , "prune deleted another service's job";
     billing.prune(60.0);
 
     slow_id = jobs.insert(queue, "Work", {});
@@ -305,7 +305,7 @@ test "a second enqueue with the same key is a no-op" {
         theirs = billing.insert(DEFAULT_QUEUE, "RunAgent", {"run_id": 3}, key=key);
         assert theirs != first , "another service's key deduplicated this job";
         assert billing.insert(DEFAULT_QUEUE, "RunAgent", {}, key=key) == theirs;
-        assert _job(job_info(theirs)).service == "billing";
+        assert _job(billing.get(theirs)).service == "billing";
         info = _job(job_info(first));
         assert info.queue == DEFAULT_QUEUE and info.args == {"run_id": 1} , info;
         by_ref = _job(job_info(enqueue(_queue, key=key + ":ref")));
@@ -362,6 +362,11 @@ test "cancel stops only a job that has not started" {
                 job_info(job_id)
             ).status;
         }
+        billing = JobQueueStore(store=pg, service="billing");
+        theirs = billing.insert(queue, "Work", {});
+        assert not cancel(theirs) , "cancel stopped another service's job";
+        assert job_info(theirs) is None , "job_info read another service's job";
+        assert billing.cancel(theirs) , "the owning service could not cancel its job";
         assert _status_count(pg, queue, STATUS_QUEUED) == 0;
     } finally {
         use_store(None);

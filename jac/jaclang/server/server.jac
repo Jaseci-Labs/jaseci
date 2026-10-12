@@ -280,6 +280,7 @@ obj JacAPIServer(EndpointHost) {
     def add_middleware(fn: Callable[..., any]) -> None;
     def add_shutdown_hook(fn: Callable[..., any]) -> None;
     def request_scope -> RequestScope;
+    async def run_target(target: any, args: dict[str, any], username: str) -> any;
     def build_app -> ServingApp;
     def register_endpoints -> None;
     def _install_middleware -> None;

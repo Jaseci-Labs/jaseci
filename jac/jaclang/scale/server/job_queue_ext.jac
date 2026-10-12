@@ -54,38 +54,11 @@ def resolve_job_target(server: JacAPIServer, name: str) -> any {
 
 def job_executor(server: JacAPIServer, run_as: str) -> Callable[[JobInfo], None] {
     def _execute(job: JobInfo) {
-        import from jaclang.runtime.constructs { WalkerArchetype }
         target: any = resolve_job_target(server, job.target);
-        is_walker = isinstance(target, type) and issubclass(target, WalkerArchetype);
-
-        async def _run {
-            import from jaclang.scale.memory.context { JScaleExecutionContext }
-            import from jaclang { JacRuntime as Jac }
-            ctx = JScaleExecutionContext();
-            token = Jac.push_request_context(ctx);
-            try {
-                manager = server.execution_manager;
-                result: any = None;
-                if is_walker {
-                    result = await manager.spawn_walker(target, dict(job.args), run_as);
-                } else {
-                    result = await manager.execute_function(
-                        target, dict(job.args), run_as
-                    );
-                }
-                if isinstance(result, dict) and 'error' in result {
-                    raise RuntimeError(str(result.get('error')));
-                }
-            } finally {
-                try {
-                    ctx.mem.close();
-                } finally {
-                    Jac.reset_request_context(token);
-                }
-            }
+        result: any = asyncio.run(server.run_target(target, dict(job.args), run_as));
+        if isinstance(result, dict) and 'error' in result {
+            raise RuntimeError(str(result.get('error')));
         }
-
-        asyncio.run(_run());
     }
     return _execute;
 }
