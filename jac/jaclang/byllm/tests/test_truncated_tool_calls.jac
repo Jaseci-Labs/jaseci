@@ -1,7 +1,4 @@
-"""A reply truncated at max_tokens (finish_reason == "length") must never pass as a
-finished answer: a cut-off tool call surfaces a max_tokens error instead of running
-with partial arguments, and a reply with no text and no tool call raises
-OutputTruncatedError instead of returning an empty answer."""
+"""A reply cut off at max_tokens never passes as a finished answer."""
 
 import asyncio;
 import from jaclang.byllm.lib { Model, OutputTruncatedError }
@@ -13,16 +10,13 @@ def save_data(name: str, payload: str) -> str {
 }
 
 
-"""Run one scripted turn in `mode` and return (answer or raised error, conversation).
-`iters` caps the tool loop, so the next call is the forced final answer."""
+"""One scripted turn in `mode`: (answer or raised error, conversation)."""
 def _turn(
     replies: list[any], mode: str, iters: int
 ) -> tuple[any, list[dict[str, any]]] {
     conv: list[dict[str, any]] = [];
     llm = Model(model_name="gpt-4o");
 
-    """In "events" mode this is built the way a streaming agent is: tools, streamed,
-    with logging."""
     def run(task: str) -> str by llm(
         tools=[save_data],
         conversation=conv,
@@ -53,40 +47,34 @@ def _turn(
 
 
 test "a reply cut off at max_tokens never passes as a finished answer" {
-    # (label, replies, answer, max_react_iterations). Rows with a tool call skip the
-    # async mode, which is only its own path without tools.
+    # (label, replies, answer, max_react_iterations); async runs rows without tools.
     rows: list[tuple[str, list[any], any, int]] = [
-        # Valid JSON cut off before `payload`: the tool must not run.
         (
             "cut-off tool call",
             [call("save_data", {"name": "x"}, finish_reason="length"), say("done")],
             "done",
             0
         ),
-        # The whole budget went to reasoning: no answer exists.
         (
             "empty cut-off reply",
             [say("", finish_reason="length")],
             OutputTruncatedError,
             0
         ),
-        # The answer is committed; only the streamed restatement of it is empty.
         (
-            "empty cut-off narration",
+            "committed answer, empty cut-off restatement",
             [finish("saved it"), say("", finish_reason="length")],
             "saved it",
             0
         ),
-        # An empty committed answer is still an answer.
         (
-            "empty committed answer, empty cut-off narration",
+            "empty committed answer, empty cut-off restatement",
             [finish(""), say("", finish_reason="length")],
             "",
             0
         ),
-        # The tool loop hit its cap and the forced final answer came back empty.
         (
-            "empty cut-off final answer",
+            "empty cut-off forced final answer",
             [
                 call("save_data", {"name": "x", "payload": "y"}),
                 say("", finish_reason="length")
@@ -94,14 +82,12 @@ test "a reply cut off at max_tokens never passes as a finished answer" {
             OutputTruncatedError,
             1
         ),
-        # Cut-off text is still the model's text.
         (
             "cut-off text",
             [say("partial answer", finish_reason="length")],
             "partial answer",
             0
         ),
-        # An empty reply that stopped normally is the model's choice.
         ("empty stop", [say("", finish_reason="stop")], "", 0)
     ];
     for (label, replies, expected, iters) in rows {
@@ -119,7 +105,7 @@ test "a reply cut off at max_tokens never passes as a finished answer" {
             } else {
                 assert answer == expected , f"{where}: got {answer!r}";
             }
-            # A cut-off tool call is answered with a max_tokens error, not run.
+            # A cut-off tool call gets a max_tokens error instead of running.
             if replies[0].tool_calls and replies[0].finish_reason == "length" {
                 results = [
                     str(m.get("content"))
