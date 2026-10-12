@@ -85,17 +85,12 @@ impl parse_mkpayload_flags(flags: list[str]) -> MkPayloadOpts {
         "--shim=": "shim_so",
         "--bun=": "bun_bin",
         "--link-source=": "link_source",
-        "--musl=": "musl_dir",
         "--wasm-libc=": "wasm_libc_dir",
         "--precompiled-cache=": "precompiled_cache",
         "--layer-cache=": "layer_cache",
         "--stubcat-out=": "stubcat_out"
     };
     for arg in flags {
-        if arg == "--skip-precompile" {
-            opts.skip_precompile = True;
-            continue;
-        }
         if arg == "--seal" {
             opts.seal = True;
             continue;
@@ -104,8 +99,8 @@ impl parse_mkpayload_flags(flags: list[str]) -> MkPayloadOpts {
             opts.debug_src = True;
             continue;
         }
-        if arg == "--skip-stubcat" {
-            opts.skip_stubcat = True;
+        if arg.startswith("--musl=") {
+            opts.musl_dirs.append(arg[len("--musl="):]);
             continue;
         }
         for (prefix, field) in valued.items() {

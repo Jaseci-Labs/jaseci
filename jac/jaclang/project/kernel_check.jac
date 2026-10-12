@@ -12,8 +12,7 @@ import from jaclang.compiler.frontend.srcloc { Span }
 import from jaclang.compiler.passes.context { Alert }
 import from jaclang.project.kernel_snapshot { host_deferred, kernel_analysis }
 
-glob KERNEL_ANALYZE_ENV: str = "JAC_KERNEL_ANALYZE",
-     _PASS_TYPES: dict[str, type] = {},
+glob _PASS_TYPES: dict[str, type] = {},
      _STAND_INS: dict[str, type] = {};
 
 obj KernelCheck {
@@ -24,11 +23,6 @@ obj KernelCheck {
 }
 
 class KernelCheckError(RuntimeError) {}
-
-def kernel_analyze_mode -> str {
-    raw = os.environ.get(KERNEL_ANALYZE_ENV, "").strip().lower();
-    return "parity" if raw == "parity" else "on";
-}
 
 def analysis_kernel -> any {
     import from jaclang.compiler.native_compiler { ensure_loaded }
@@ -113,13 +107,12 @@ def diag_row(diag: AnalysisDiag) -> tuple[str, str, int, int] {
 }
 
 def kernel_check(
-    program: JacProgram, path: str, options: CompileOptions
+    program: JacProgram, path: str, options: CompileOptions, parity: bool = False
 ) -> KernelCheck {
     import from jaclang.compiler.frontend.codeinfo { is_compiler_source_path }
     if is_compiler_source_path(path) {
         return KernelCheck();
     }
-    mode = kernel_analyze_mode();
     kernel = analysis_kernel();
     if kernel is None {
         return KernelCheck();
@@ -127,7 +120,7 @@ def kernel_check(
     try {
         outcome = kernel_analysis(active_host(), program, path, options, isolated=True);
     } except Exception as err {
-        if mode != "parity" {
+        if not parity {
             raise KernelCheckError(
                 f"the native compiler kernel could not analyze {path}: "
                 f"{type(err).__name__}: {err}"
@@ -140,7 +133,7 @@ def kernel_check(
     }
     if outcome.misses {
         failure = f"the kernel lacked host answers ({outcome.misses[0]})";
-        if mode != "parity" {
+        if not parity {
             raise KernelCheckError(
                 f"the native compiler kernel could not analyze {path}: {failure}"
             );
@@ -156,7 +149,7 @@ def kernel_check(
     if entry_module.native {
         return KernelCheck(outcome=outcome);
     }
-    if mode == "parity" {
+    if parity {
         return KernelCheck(outcome=outcome, parity=True);
     }
     for diag in outcome.errors {

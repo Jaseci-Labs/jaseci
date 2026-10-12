@@ -1,16 +1,11 @@
 import threading;
 import from jaclang.cli.console { console }
-import from jaclang.client { get_bun }
-import from jaclang.client.bun_installer { bun_unavailable_message }
-import from jaclang.client.client_bundle { ClientBundleError, MissingBunError }
+import from jaclang.client.client_bundle { ClientBundleError }
+import from jaclang.client.js_runtime { js_runtime_path }
 
 
 def _require_bun -> str {
-    bun = get_bun();
-    if not bun {
-        raise MissingBunError(bun_unavailable_message()) from None;
-    }
-    return bun;
+    return js_runtime_path();
 }
 
 
@@ -311,7 +306,6 @@ impl ViteBundler.add_packages(
 ) -> None {
     import json;
     import subprocess;
-    import from jaclang.client { get_bun }
     target_dir = install_dir if install_dir is not None else self.project_dir;
     pkg_json = target_dir / 'package.json';
     if not pkg_json.exists() {
@@ -325,11 +319,7 @@ impl ViteBundler.add_packages(
         console.print("  ✔ Created package.json");
     }
 
-    bun = get_bun();
-    if bun is None {
-        raise RuntimeError("bun unavailable: cannot install client dependencies");
-    }
-    cmd = [bun, 'add'];
+    cmd = [js_runtime_path(), 'add'];
     if dev {
         cmd.append('--dev');
     }
@@ -1336,13 +1326,7 @@ impl ViteBundler.start_dev_server(
     import sys;
     import time;
     import threading;
-    import from jaclang.client { get_bun }
-
-    if get_bun() is None {
-        raise ClientBundleError(
-            'Bun is required for dev server. Install manually: https://bun.sh'
-        ) from None;
-    }
+    js_runtime_path();
     build_dir = self._get_client_dir();
     self._ensure_dev_index_html(build_dir);
     self._ensure_dev_dependencies(build_dir);
