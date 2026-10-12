@@ -46,7 +46,10 @@ impl mk_payload(python_dir: str, repo_root: str, out: str, opts: MkPayloadOpts) 
 
     ts_versions = os.path.join(repo_root, TYPESHED_VENDOR, "stdlib", "VERSIONS");
     if not file_exists(ts_versions) {
-        fetch_typeshed(repo_root);
+        die(
+            "the vendored typeshed stdlib is missing; run `zig build fetch-typeshed` "
+            "(or `jac native build typeshed`) before building the payload"
+        );
     }
 
     log("==> assembling jaclang site from source (no pyproject build)");
@@ -78,10 +81,7 @@ impl mk_payload(python_dir: str, repo_root: str, out: str, opts: MkPayloadOpts) 
         False
     );
 
-    stage_tree(python_dir, site, stage, opts.musl_dir, opts.wasm_libc_dir);
-    if opts.js_engine_dir is not None {
-        stage_js_engine(opts.js_engine_dir, stage);
-    }
+    stage_tree(python_dir, site, stage, opts.musl_dirs, opts.wasm_libc_dir);
 
     precompile_pyc(py, stage);
 
@@ -173,6 +173,23 @@ impl assemble_site(repo_root: str, site: str, opts: MkPayloadOpts) {
             " shipped binary both locate it by that exact path."
         );
     }
+    import from jaclang.compiler.backends.native.llvm.shim_path { write_shim_record }
+    write_shim_record(dst, repo_root);
+
+    _bundle_bun(site, opts);
+}
+
+impl _bundle_bun(site: str, opts: MkPayloadOpts) {
+    bb = opts.bun_bin;
+    if bb is not None {
+        bun_dir = os.path.join(site, "jaclang", "client", "_bun");
+        make_dirs(bun_dir);
+        log(f"==> bundling contained bun runtime ({bb})");
+        staged = os.path.join(bun_dir, os.path.basename(bb));
+        copy_file(bb, staged);
+        import from jaclang.client.js_runtime { write_bun_record }
+        write_bun_record(staged);
+    }
 }
 
 impl write_dist_info(repo_root: str, site: str) {
@@ -207,7 +224,7 @@ impl write_dist_info(repo_root: str, site: str) {
 }
 
 impl run_precompile_stage(py: str, python_dir: str, site: str, opts: MkPayloadOpts) {
-    if opts.skip_precompile or opts.link_source is not None {
+    if opts.link_source is not None {
         run_stubcat_stage(py, python_dir, site, opts);
         log("==> skipping JIR precompile; modules compile on first run");
         return;
@@ -221,7 +238,7 @@ impl run_precompile_stage(py: str, python_dir: str, site: str, opts: MkPayloadOp
 
     delete_file(os.path.join(site_pre, "MANIFEST.json"));
     run_stubcat_stage(py, python_dir, site, opts);
-    precompile(py, python_dir, site, opts.seal, opts.debug_src, opts.skip_stubcat);
+    precompile(py, python_dir, site, opts.seal, opts.debug_src);
     if pc is not None {
         delete_tree(pc);
         copy_tree(site_pre, pc, skip_none);
@@ -230,8 +247,10 @@ impl run_precompile_stage(py: str, python_dir: str, site: str, opts: MkPayloadOp
 
 impl run_stubcat_stage(py: str, python_dir: str, site: str, opts: MkPayloadOpts) {
     out_copy = opts.stubcat_out;
-    if opts.skip_stubcat or opts.skip_precompile or opts.link_source is not None {
-        log("==> skipping the stub catalog; the type checker builds it on first use");
+    if opts.link_source is not None {
+        log(
+            "==> skipping the stub catalog; the kit runs its floor until `jac native build stubcat`"
+        );
         delete_file(os.path.join(site, "jaclang", "_precompiled", "stubcat.bin"));
         if out_copy is not None {
             write_bytes(out_copy, b"");
@@ -280,7 +299,6 @@ impl run_stubcat(py: str, python_dir: str, site: str, out: str) -> bool {
     boot = os.path.join(site, "stubcat_boot.py");
     write_text(boot, STUBCAT_BOOT_SRC);
     env = precompile_env(python_dir, site);
-    env["JAC_STUBCAT_BUILDING"] = "1";
     ok = run_child([py, "-S", boot, out], env, True);
     delete_file(boot);
     if not ok or not file_exists(out) {
@@ -300,26 +318,11 @@ impl precompile_env(python_dir: str, site: str) -> dict[str, str] {
     make_dirs(scratch_home);
     env["HOME"] = scratch_home;
     env["PATH"] = "/usr/bin:/bin";
-    env["JAC_NO_DEV_SOURCE"] = "1";
-    for name in (
-        "JAC_STUBCAT_BUILDING",
-        "JAC_STUBCAT_FILE",
-        "JAC_STUBCAT_OFF",
-        "JAC_STUBCAT_LEN"
-    ) {
-        env.pop(name, None);
-    }
+    env.pop("JAC_HANDOFF", None);
     return env;
 }
 
-impl precompile(
-    py: str,
-    python_dir: str,
-    site: str,
-    seal: bool,
-    debug_src: bool,
-    skip_stubcat: bool = False
-) {
+impl precompile(py: str, python_dir: str, site: str, seal: bool, debug_src: bool) {
     import time;
     compile_start = time.monotonic();
     pc = os.path.join(site, "jaclang", "dist", "precompile_bytecode.jac");
@@ -342,10 +345,7 @@ impl precompile(
         argv.append("--debug-src");
     }
 
-    env = precompile_env(python_dir, site);
-    if skip_stubcat {
-        env["JAC_STUBCAT_BUILDING"] = "1";
-    }
+    env: dict[str, str] = precompile_env(python_dir, site);
     run_child(argv, env, True);
 
     pre_dir = os.path.join(site, "jaclang", "_precompiled");
@@ -400,7 +400,7 @@ impl stage_tree(
     python_dir: str,
     site: str,
     stage: str,
-    musl_dir: str | None,
+    musl_dirs: list[str],
     wasm_libc_dir: str | None
 ) {
     log("==> staging runtime tree (shared libpython + stdlib + site)");
@@ -437,7 +437,7 @@ impl stage_tree(
 
     stage_floor(python_dir, stage);
 
-    if musl_dir is not None {
+    for musl_dir in musl_dirs {
         stage_musl(musl_dir, stage);
     }
     if wasm_libc_dir is not None {
@@ -517,7 +517,8 @@ impl stage_floor(python_dir: str, stage: str) {
 }
 
 impl stage_musl(musl_dir: str, stage: str) {
-    osarch = host_os_arch();
+    vendored = os.path.basename(os.path.dirname(os.path.dirname(musl_dir)));
+    osarch = vendored if vendored.startswith("linux-") else host_os_arch();
     dst = os.path.join(stage, "python", "floor", osarch, "musl");
     make_dirs(dst);
     staged = 0;
@@ -530,14 +531,6 @@ impl stage_musl(musl_dir: str, stage: str) {
         staged += 1;
     }
     log(f"==> staged {staged} musl runtime artifact(s) -> python/floor/{osarch}/musl");
-}
-
-impl stage_js_engine(js_engine_dir: str, stage: str) {
-    if not file_exists(os.path.join(js_engine_dir, "libjs_engine.so")) {
-        die(f"js-engine staging: no libjs_engine.so in {js_engine_dir}");
-    }
-    log(f"==> staging the JavaScript engine ({js_engine_dir})");
-    copy_tree(js_engine_dir, os.path.join(stage, "js"), skip_none);
 }
 
 impl stage_wasm_libc(wasm_libc_dir: str, stage: str) {
@@ -633,6 +626,9 @@ impl find_libpython(lib_dir: str) -> FoundLib {
 impl is_volatile_path(p: str) -> bool {
     if p.startswith("site/jaclang") {
         if "compiler/backends/native/llvm" in p {
+            return False;
+        }
+        if "client/_bun" in p {
             return False;
         }
         return True;

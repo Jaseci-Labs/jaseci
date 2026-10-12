@@ -1,8 +1,7 @@
 import json;
 import os;
 
-glob KERNEL_TARGET_ENV: str = "JAC_KERNEL_TARGET",
-     KERNEL_TARGET_FORMAT: int = 1;
+glob KERNEL_TARGET_FORMAT: int = 1;
 
 obj KernelTarget {
     has format: int = KERNEL_TARGET_FORMAT,
@@ -50,7 +49,6 @@ obj KernelTarget {
 }
 
 glob _TARGET: list[KernelTarget] = [],
-     _ENV_READ: list[bool] = [],
      _GENERATION: list[int] = [0],
      _ROOT_REAL: list[tuple[int, str]] = [];
 
@@ -129,29 +127,11 @@ def set_kernel_target(spec: (KernelTarget | None)) -> (KernelTarget | None) {
     if spec is not None {
         _TARGET.append(spec);
     }
-    _ENV_READ.clear();
-    _ENV_READ.append(True);
     _GENERATION[0] = _GENERATION[0] + 1;
     return prev;
 }
 
 def active_kernel_target -> (KernelTarget | None) {
-    if not _ENV_READ {
-        _ENV_READ.append(True);
-        spec_path = os.environ.get(KERNEL_TARGET_ENV, "").strip();
-        if spec_path {
-            spec = read_kernel_target(spec_path);
-            if spec is None {
-                raise ValueError(
-                    f"{KERNEL_TARGET_ENV}={spec_path} is not a format "
-                    f"{KERNEL_TARGET_FORMAT} kernel target"
-                );
-            }
-            _TARGET.clear();
-            _TARGET.append(spec);
-            _GENERATION[0] = _GENERATION[0] + 1;
-        }
-    }
     return _TARGET[0] if _TARGET else None;
 }
 
@@ -160,7 +140,6 @@ def kernel_target_active -> bool {
 }
 
 def kernel_target_generation -> int {
-    active_kernel_target();
     return _GENERATION[0];
 }
 

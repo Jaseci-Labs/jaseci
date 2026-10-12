@@ -38,6 +38,12 @@ glob REACT_JSDOM_DEPS: dict[str, str] = {
          ** OPTIONAL_RUNTIME_DEPS
      };
 
+"""Skip unless the client toolchain is present (JAC_TEST_STRICT escalates)."""
+def require_client_integration(suite: str) {
+    import from jaclang.testing.requires { require_tool }
+    require_tool("bun");
+}
+
 """Compile a `.jac` to JS with the React backend; type errors are non-fatal.
 
 `type_check=True` so typed builtin calls (e.g. `len(list)`) lower to their JS
@@ -101,14 +107,12 @@ def write_runtime_support(work: Path, runtime_path: str) {
     }
 }
 
-"""`js_engine install` a dep set into `work`; defaults to the shared one.
+"""`bun install` a dep set into `work`; defaults to the shared one.
 
 `deps` lets a suite install exactly the versions the client pipeline pins
 (plus its own extras) instead of the shared mirror, so a pin drift shows up
 as that suite failing rather than as a silently stale harness."""
-def npm_install(
-    js_engine: str, work: Path, name: str, deps: (dict[str, str] | None) = None
-) {
+def bun_install(bun: str, work: Path, name: str, deps: (dict[str, str] | None) = None) {
     (work / "package.json").write_text(
         json.dumps(
             {
@@ -121,23 +125,24 @@ def npm_install(
         encoding="utf-8"
     );
     install = subprocess.run(
-        [js_engine, "install"],
-        cwd=str(work),
-        capture_output=True,
-        text=True,
-        timeout=300
+        [bun, "install"], cwd=str(work), capture_output=True, text=True, timeout=300
     );
     assert install.returncode == 0 , (
-        f"js_engine install failed (exit {install.returncode}):\n"
+        f"bun install failed (exit {install.returncode}):\n"
         f"{install.stdout}\n{install.stderr}"
     );
 }
 
 """Run `work/harness.mjs` once, with `args` appended, and assert it exited 0.
 
-Runs under the jac binary's `node`."""
-def run_harness(js_engine: str, work: Path, args: list[any], label: str) {
-    cmd = [js_engine, str(work / "harness.mjs")] + args;
+Prefers a real `node` when present; falls back to `bun run`."""
+def run_harness(bun: str, work: Path, args: list[any], label: str) {
+    node_bin = shutil.which("node");
+    if node_bin {
+        cmd = [node_bin, str(work / "harness.mjs")] + args;
+    } else {
+        cmd = [bun, "run", str(work / "harness.mjs")] + args;
+    }
     run = subprocess.run(
         cmd, cwd=str(work), capture_output=True, text=True, timeout=120
     );

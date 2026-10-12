@@ -12,7 +12,6 @@ and the indirect-call table.
 """
 
 import os;
-import from jaclang.client.js_engine { node_executable }
 import from jaclang.compiler.driver.compile_options {
     push_native_target,
     pop_native_target
@@ -240,7 +239,10 @@ test "nacompile --target wasm32 writes a valid module via the CLI" {
 }
 
 test "linked module instantiates and runs under node" {
-    node_bin = node_executable();
+    node_bin = shutil.which("node");
+    if not node_bin {
+        testskip("node not available");
+    }
     mod = WasmLinker.link([emit_wasm_object(FIXTURE)], [], 256);
     d = tempfile.mkdtemp();
     wpath = os.path.join(d, "m.wasm");

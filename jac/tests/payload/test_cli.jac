@@ -34,6 +34,10 @@ test "every subcommand reports its usage when positional args are missing" {
     cases = [
         (["fetch-llvm"], "usage: payload fetch-llvm <dest-dir>"),
         (
+            ["fetch-bun", "linux-x86_64"],
+            "usage: payload fetch-bun <os-arch> <dest-dir>"
+        ),
+        (
             ["build-musl", "linux-x86_64", "/tmp/x"],
             "usage: payload build-musl <os-arch> <dest-dir> <zig-exe>"
         ),
@@ -65,6 +69,10 @@ test "every subcommand reports its usage when positional args are missing" {
 test "offline argument validation dies before any network or subprocess" {
     tmp = tempfile.mkdtemp(prefix="jac-payload-cli-");
     try {
+        (rc, err) = run(["fetch-bun", "plan9-z80", os.path.join(tmp, "bun")]);
+        assert rc == 1
+            and err == "payload: fetch-bun: unsupported platform 'plan9-z80'\n";
+
         (rc, err) = run(
             ["build-musl", "macos-aarch64", os.path.join(tmp, "musl"), "zig"]
         );
@@ -106,21 +114,18 @@ test "offline argument validation dies before any network or subprocess" {
 
 test "mkpayload trailing flags parse into MkPayloadOpts; unknown flags are ignored" {
     opts = parse_mkpayload_flags([]);
-    assert opts.shim_so is None
-        and opts.js_engine_dir is None
-        and opts.link_source is None;
-    assert opts.musl_dir is None and opts.wasm_libc_dir is None;
+    assert opts.shim_so is None and opts.bun_bin is None and opts.link_source is None;
+    assert opts.musl_dirs == [] and opts.wasm_libc_dir is None;
     assert opts.precompiled_cache is None and opts.layer_cache is None;
-    assert not opts.skip_precompile and not opts.seal and not opts.debug_src;
+    assert not opts.seal and not opts.debug_src;
 
     opts = parse_mkpayload_flags(
         [
             "--shim=/b/libjacllvm.so",
-            "--skip-precompile",
             "--link-source=/repo/jac",
             "--precompiled-cache=/c/pre",
             "--layer-cache=/c/layers",
-            "--js-engine=/b/js_engine",
+            "--bun=/b/bun",
             "--musl=/m",
             "--wasm-libc=/w",
             "--seal",
@@ -132,12 +137,11 @@ test "mkpayload trailing flags parse into MkPayloadOpts; unknown flags are ignor
         ]
     );
     assert opts.shim_so == "/b/libjacllvm.so";
-    assert opts.skip_precompile;
     assert opts.link_source == "/repo/jac";
     assert opts.precompiled_cache == "/c/pre";
     assert opts.layer_cache == "/c/layers";
-    assert opts.js_engine_dir == "/b/js_engine";
-    assert opts.musl_dir == "/m";
+    assert opts.bun_bin == "/b/bun";
+    assert opts.musl_dirs == ["/m"];
     assert opts.wasm_libc_dir == "/w";
     assert opts.seal and opts.debug_src;
     assert not hasattr(opts, "nvim_dir") and not hasattr(opts, "pyembed_so");

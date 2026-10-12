@@ -1,8 +1,9 @@
+import subprocess;
 import hashlib;
 import json;
 import from pathlib { Path }
 import from jaclang.cli.console { console }
-import from jaclang.client.js_engine { node_executable, run_pm }
+import from jaclang.client.js_runtime { js_runtime_path, run_pm }
 
 def resolve_node_tool_entry(project_dir: Path, tool: str) -> (Path | None) {
     shim = project_dir / "node_modules" / ".bin" / tool;
@@ -13,6 +14,7 @@ def resolve_node_tool_entry(project_dir: Path, tool: str) -> (Path | None) {
 }
 
 def resolve_node_tool(project_dir: Path, tool: str) -> list[str] {
+    bun = js_runtime_path();
     `entry = resolve_node_tool_entry(project_dir, tool);
     if `entry is None {
         raise RuntimeError(
@@ -21,7 +23,7 @@ def resolve_node_tool(project_dir: Path, tool: str) -> list[str] {
             "dependencies first; project tools must resolve from the local node_modules."
         );
     }
-    return [node_executable(), str(`entry)];
+    return [bun, str(`entry)];
 }
 
 def run_manifest_install(project_dir: Path) {
@@ -49,9 +51,7 @@ def run_manifest_install(project_dir: Path) {
         console.print(f"Synchronizing dependencies in {project_dir.name}...");
         (returncode, _) = run_pm(["install"], str(project_dir));
         if returncode != 0 {
-            raise RuntimeError(
-                f"Installing the JavaScript dependencies in {project_dir} failed"
-            );
+            raise subprocess.CalledProcessError(returncode, ["install"]);
         }
         stamp.write_text(manifest_signature(project_dir));
     }
@@ -73,7 +73,7 @@ def _deps_current(project_dir: Path, stamp: Path, signature: str) -> bool {
 
 def manifest_signature(project_dir: Path) -> str {
     digest = hashlib.sha256();
-    for name in ["package.json", "bun.lock"] {
+    for name in ["package.json", "bun.lock", "bun.lockb"] {
         path = project_dir / name;
         if path.is_file() {
             digest.update(name.encode());

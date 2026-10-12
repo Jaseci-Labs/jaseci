@@ -50,8 +50,8 @@ The revision cache lives in `.jac/cache/applications`. Its identity includes the
 compiler generation, selected roots and targets, active profile, source inventory,
 external dependency stamps, and generated output stamps. An unchanged revision
 restores without frontend analysis or rebuilding its client/native outputs.
-Missing outputs, changed inputs, unreadable revision records, and `JAC_REBUILD`
-trigger preparation. The Python bytecode ABI is part of the revision identity.
+Missing outputs, changed inputs, and unreadable revision records trigger
+preparation. The Python bytecode ABI is part of the revision identity.
 A failed revision does not replace the previously published revision.
 Runtime logs and database files do not invalidate the source inventory.
 Production client builds finish before initialization; a failed build aborts
@@ -109,7 +109,7 @@ The output contains `requirements.txt`, `build.py`, and `main.py`. Install the
 requirements with Python, run `python build.py`, then `python main.py`. Server
 applications accept `--host` and `--port`; `--app` selects an exported application.
 CLI arguments are forwarded to Python and native executable entries. JavaScript
-builds use Node/npm or js_engine. C builds use Clang (overridable through `CC`), with a
+builds use Node/npm or Bun. C builds use Clang (overridable through `CC`), with a
 WASI sysroot for WebAssembly (`WASI_SYSROOT`). Jac is not required in the exported
 build or runtime environment. Original project resources remain available to
 applications that serve source files or other data.
@@ -127,7 +127,7 @@ shared-library emitter directly and do not require the C projection toolchain.
 The C projection uses a pinned LLVM C backend and a versioned compatibility patch;
 its provenance and license ship with exports. The generated C retains the selected
 target ABI and external native library requirements. Exporting C requires CMake and LLVM
-22 development files, or an explicit `JAC_LLVM_CBE` executable. Unsupported lowering
+22 development files to build the backend once (`jac native build llvm-cbe`). Unsupported lowering
 fails at export instead of substituting a Python implementation.
 
 Prepared applications isolate their project imports under a private namespace.

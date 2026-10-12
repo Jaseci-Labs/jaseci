@@ -4,7 +4,6 @@ Migrated from test_js_generation.py to native Jac test format.
 """
 
 import json;
-import from jaclang.client.js_engine { node_executable }
 import os;
 import shutil;
 import subprocess;
@@ -2251,7 +2250,7 @@ test "a builtin exception crosses a module boundary (#9259)" {
             'import { probe } from "./xmod_catcher.js";\nconsole.log(probe());\n'
         );
         result = subprocess.run(
-            [node_executable(), os.path.join(stage, "main.mjs")],
+            ["node", os.path.join(stage, "main.mjs")],
             capture_output=True,
             text=True,
             timeout=30
@@ -3034,7 +3033,7 @@ test "imported JS/TS class constructs with new (#8017)" {
         js_code + "\nconsole.log(go());\n"
     );
     result = subprocess.run(
-        [node_executable(), os.path.join(comp_dir, "main.mjs")],
+        ["node", os.path.join(comp_dir, "main.mjs")],
         capture_output=True,
         text=True,
         timeout=30
@@ -3093,6 +3092,10 @@ test "builtin functions lower to runtime helpers without type-check (#7480, #858
         );
     }
 
+    import shutil;
+    if not shutil.which("node") {
+        testskip("node not on PATH");
+    }
     wrapper = (
         js_code
         + "\nlet _emptyErr = null;"
@@ -3752,6 +3755,9 @@ test "del es lowering" {
 }
 
 test "del es runtime" {
+    if shutil.which("node") is None {
+        return;
+    }
     js_code = compile_fixture_to_js_production(DEL_FIXTURE, FIXTURES);
     wrapper = js_code + "\nconsole.log(JSON.stringify(del_forms()));\n";
     result = run_js_module(wrapper);

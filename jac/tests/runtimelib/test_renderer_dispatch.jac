@@ -20,7 +20,6 @@ regressions the source-level checks miss.
 """
 
 import os;
-import from jaclang.client.js_engine { node_executable }
 import shutil;
 import subprocess;
 import importlib;
@@ -258,7 +257,10 @@ def _slice_renderer_fns(js: str) -> str {
 
 """Run a JS snippet under Node and return (rc, stdout, stderr)."""
 def _run_node(snippet: str) -> tuple[int, str, str] {
-    node_bin = node_executable();
+    node_bin = shutil.which("node");
+    if not node_bin {
+        testskip("node not on PATH");
+    }
     with TemporaryDirectory() as tmp_name {
         tmp = str(tmp_name);
         harness_path = Path(tmp) / "harness.mjs";

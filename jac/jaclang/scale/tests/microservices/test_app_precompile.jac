@@ -255,7 +255,7 @@ test "the seal and vendor subprocesses run without persistent storage (issue 809
         f"persistent store there is a permanent orphan; {SCRATCH_ENV} was "
         f"{env.get(SCRATCH_ENV)!r}"
     );
-    for banned in ["PYTHONPATH", "JAC_DEV_SOURCE"] {
+    for banned in ["PYTHONPATH", "JAC_HANDOFF"] {
         assert banned not in env , f"{banned} must stay out of the seal env";
     }
 }
@@ -395,7 +395,7 @@ test "a real pod binary seals the app each pod serves and boots it from the seal
                 archive.extractall(tmp, filter="data");
             }
             env = dict(os.environ);
-            env["JAC_NO_DEV_SOURCE"] = "1";
+            env["JAC_HANDOFF"] = '{"compiler_source": ""}';
             for (boot_file, endpoint) in boots.items() {
                 result = subprocess.run(
                     [

@@ -34,6 +34,7 @@ glob CONFIG_REVISION_ANNOTATION: str = "jac-scale.config-revision",
      _TRANSIENT_CLIENT_BUILD_MARKERS: tuple[str, ...] = (
          "dependency installation failed",
          "failed to install dependencies",
+         "bun install failed",
          "econnreset",
          "econnrefused",
          "enotfound",
@@ -937,6 +938,9 @@ obj ManifestBuilder {
 
     def _worker_count_env(svc_cfg: dict[str, any]) -> str {
         raw = str(svc_cfg.get("workers") or self._serve_config().workers.count).strip();
+        if not raw {
+            return "1";
+        }
         resolve_count(raw, 1, '[serve.workers] count');
         return raw;
     }
@@ -1291,11 +1295,13 @@ obj ManifestBuilder {
         return env;
     }
 
-    def _resolved_memory_request(svc_cfg: dict[str, any], is_gateway: bool) -> str {
+    def _configured_memory_request(svc_cfg: dict[str, any]) -> str | None {
         val = svc_cfg.get("memory_request");
-        if val is None {
-            val = self.k8s_config.memory_request;
-        }
+        return self.k8s_config.memory_request if val is None else val;
+    }
+
+    def _resolved_memory_request(svc_cfg: dict[str, any], is_gateway: bool) -> str {
+        val = self._configured_memory_request(svc_cfg);
         if val is None {
             val = "2Gi" if is_gateway else "1Gi";
         }
@@ -1648,6 +1654,7 @@ obj ManifestBuilder {
             "has_memory_request": bool(
                 self._resolved_memory_request(svc, svc_name == GATEWAY_NAME)
             ),
+            "memory_request_configured": bool(self._configured_memory_request(svc)),
             "triggers": raw_triggers,
             "behavior": dict(behavior)
         };

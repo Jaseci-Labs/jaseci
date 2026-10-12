@@ -21,6 +21,7 @@ import from tempfile { TemporaryDirectory }
 
 import from .test_helpers {
     copy_fixture,
+    get_env_with_bun,
     get_free_port,
     get_jac_command,
     request_endpoint,
@@ -254,7 +255,7 @@ test "syntax error surfaces a console diagnostic" {
         }
         port = get_free_port();
         jac_cmd = get_jac_command();
-        env = os.environ.copy();
+        env = get_env_with_bun();
         # The broken build aborts `jac run --serve`, so capture its console output.
         captured = "";
         try {

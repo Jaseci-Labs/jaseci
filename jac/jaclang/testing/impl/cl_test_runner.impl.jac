@@ -428,7 +428,9 @@ impl _run_harness(
     timeout: float,
     source_path: (str | None) = None
 ) -> list[ClTestResult] {
-    import from jaclang.client.js_engine { node_executable }
+    import from jaclang.client.js_runtime { js_runtime_path }
+
+    bun = js_runtime_path();
 
     work_dir = Path(tempfile.mkdtemp(prefix="jac_cl_test_"));
     try {
@@ -504,7 +506,7 @@ impl _run_harness(
         harness_path.write_text(harness, encoding="utf-8");
 
         proc = subprocess.run(
-            [node_executable(), str(harness_path)],
+            [bun, "run", str(harness_path)],
             cwd=str(work_dir),
             capture_output=True,
             text=True,

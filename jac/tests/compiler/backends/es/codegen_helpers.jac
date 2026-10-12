@@ -1,7 +1,6 @@
 """JavaScript fixture compilation without registering tests as an import side effect."""
 
 import os;
-import from jaclang.client.js_engine { node_executable }
 import from pathlib { Path }
 import from jaclang.compiler.backends.es { EsastGenPass }
 import from jaclang.compiler.backends.es.es_unparse { es_to_js }
@@ -151,6 +150,6 @@ def run_js_module(source: str, timeout: float = 30.0) -> any {
         mod_path = mod.name;
     }
     return subprocess.run(
-        [node_executable(), mod_path], capture_output=True, text=True, timeout=timeout
+        ["node", mod_path], capture_output=True, text=True, timeout=timeout
     );
 }

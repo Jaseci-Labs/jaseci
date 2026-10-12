@@ -184,7 +184,7 @@ test "client build renders from file protocol" {
     } except ImportError {
         testskip("playwright not installed");
     }
-    import from .test_helpers { get_jac_command }
+    import from .test_helpers { get_env_with_npm, get_jac_command }
 
     tests_dir = os.path.dirname(__file__);
     example_src = os.path.join(os.path.dirname(tests_dir), "examples", "basic");
@@ -211,7 +211,7 @@ test "client build renders from file protocol" {
             cwd=project_dir,
             capture_output=True,
             text=True,
-            env=os.environ.copy(),
+            env=get_env_with_npm(),
             timeout=600,
         );
         if build.returncode != 0 {

@@ -3,8 +3,8 @@ import from pathlib { Path }
 import from jaclang.toolchains.store { offline }
 
 def native_node -> Path {
-    import from jaclang.client.js_engine { node_executable }
-    return Path(node_executable());
+    import from jaclang.toolchains.tools { tool_path }
+    return tool_path("node");
 }
 
 def build_environment(base: dict[str, str]) -> dict[str, str] {

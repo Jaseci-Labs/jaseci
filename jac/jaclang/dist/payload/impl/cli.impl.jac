@@ -2,15 +2,18 @@ import os;
 import sys;
 
 import from jaclang.dist.payload.assemble { mk_payload }
-import from jaclang.dist.payload.fetch { fetch_llvm, fetch_typeshed, typeshed_sha }
+import from jaclang.dist.payload.fetch {
+    fetch_bun,
+    fetch_llvm,
+    fetch_typeshed,
+    typeshed_sha
+}
 import from jaclang.dist.payload.fsutil { PayloadDie, die }
 import from jaclang.dist.payload.pack { pack }
 import from jaclang.dist.payload.pins { host_py_minor, py_ver }
 import from jaclang.dist.payload.vendor { build_musl, build_wasm_libc }
 
 impl main(argv: list[str]) -> int {
-    import os;
-    os.environ.setdefault("JAC_COMPILER_LIB", "off");
     try {
         dispatch(list(argv));
     } except PayloadDie as e {
@@ -38,6 +41,9 @@ impl dispatch(argv: list[str]) {
     if cmd == "fetch-llvm" {
         _need(argv, 2, "usage: payload fetch-llvm <dest-dir>");
         fetch_llvm(argv[1]);
+    } elif cmd == "fetch-bun" {
+        _need(argv, 3, "usage: payload fetch-bun <os-arch> <dest-dir>");
+        fetch_bun(argv[1], argv[2]);
     } elif cmd == "build-musl" {
         _need(argv, 4, "usage: payload build-musl <os-arch> <dest-dir> <zig-exe>");
         build_musl(argv[1], argv[2], argv[3]);
@@ -77,19 +83,14 @@ impl parse_mkpayload_flags(flags: list[str]) -> MkPayloadOpts {
     opts = MkPayloadOpts();
     valued = {
         "--shim=": "shim_so",
-        "--js-engine=": "js_engine_dir",
+        "--bun=": "bun_bin",
         "--link-source=": "link_source",
-        "--musl=": "musl_dir",
         "--wasm-libc=": "wasm_libc_dir",
         "--precompiled-cache=": "precompiled_cache",
         "--layer-cache=": "layer_cache",
         "--stubcat-out=": "stubcat_out"
     };
     for arg in flags {
-        if arg == "--skip-precompile" {
-            opts.skip_precompile = True;
-            continue;
-        }
         if arg == "--seal" {
             opts.seal = True;
             continue;
@@ -98,8 +99,8 @@ impl parse_mkpayload_flags(flags: list[str]) -> MkPayloadOpts {
             opts.debug_src = True;
             continue;
         }
-        if arg == "--skip-stubcat" {
-            opts.skip_stubcat = True;
+        if arg.startswith("--musl=") {
+            opts.musl_dirs.append(arg[len("--musl="):]);
             continue;
         }
         for (prefix, field) in valued.items() {

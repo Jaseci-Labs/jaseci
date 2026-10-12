@@ -1,6 +1,6 @@
 # js_engine
 
-js_engine is a JavaScript / Node.js-compatible runtime, written from scratch in [Jac Native](https://docs.jaseci.org) and compiled through Jac's LLVM backend into a library that ships inside the `jac` binary. Think of it as a from-the-ground-up answer to [Bun](https://bun.sh/), but built on the Jac toolchain.
+js_engine is a JavaScript / Node.js-compatible runtime, written from scratch in [Jac Native](https://docs.jaseci.org) and compiled through Jac's LLVM backend into a library the `jac` binary runs. Think of it as a from-the-ground-up answer to [Bun](https://bun.sh/), but built on the Jac toolchain.
 
 It is **not** a wrapper around V8, QuickJS, or any other existing engine. The lexer, parser, bytecode compiler, and virtual machine are all hand-written in `.jac` source files. The only outside code it calls is a handful of C libraries bound through Jac's FFI — libuv, OpenSSL, zlib, zstd, brotli, PCRE2, llhttp, nghttp2, ICU and Wasmtime.
 
@@ -8,7 +8,7 @@ This README is meant to be the one place you go to understand what the project i
 
 ## How it ships
 
-`zig build` in `jac/` builds the engine with everything else, into the runtime tree's `js/` directory:
+js_engine is an accelerator over bun: a release ships bun, and jac runs JavaScript on the engine wherever one is built and current. `jac native build js-engine` (the `zig build js-engine` step in `jac/`) builds it into `jac/zig-out/js` and installs that directory for every jac:
 
 | File | What it is |
 |------|------------|
@@ -17,21 +17,21 @@ This README is meant to be the one place you go to understand what the project i
 | `libwasmtime.so` | the pinned upstream Wasmtime C API |
 | `builtins.jsbc` | every builtin under `engine/src/builtins/js/`, precompiled by [engine/src/js_compiler.jac](engine/src/js_compiler.jac) |
 
-Every step is cached by the Zig build, and nothing is needed from the system beyond glibc. `zig build js-engine` builds just this directory (into `zig-out/js`).
+Every step is cached by the Zig build, and nothing is needed from the system beyond glibc. `jac native status js-engine` shows which engine a jac uses: a checkout's own build (accepted while it matches `js_engine/`), else the installed one, else bun.
 
 The engine is never a separate program. `jac` uses it two ways:
 
-- **as `node`** — the `jac` binary invoked under the name `node` (the runtime keeps a `js/bin/node` link to it) loads `libjs_engine.so` and calls `jac_main(argc, argv)`, which runs [main.jac](engine/src/main.jac)'s entry: the bun-compatible package-manager commands first (`install`, `add`, `x`, `run`, ...), then the Node-style script runner. Vite, the `cl` test runner, `jac x` and every npm script run this way, and `process.execPath` names that `node`, so child processes come back to it too;
+- **as `node`** — the `jac` binary invoked under the name `node` (the engine's `bin/node` link, which jac keeps pointing at itself) loads `libjs_engine.so` and calls `jac_main(argc, argv)`, which runs [main.jac](engine/src/main.jac)'s entry: the bun-compatible package-manager commands first (`install`, `add`, `x`, `run`, ...), then the Node-style script runner. Vite, the `cl` test runner, `jac x` and every npm script run this way, and `process.execPath` names that `node`, so child processes come back to it too;
 - **in-process** — the package manager runs inside jac's own process through `js_pm(argc, argv)` ([jaclang/client/js_engine.jac](../jaclang/client/js_engine.jac)), for `jac install` and the client build's dependency sync.
 
 ## Running
 
 ```bash
-ln -s "$(command -v jac)" /tmp/node
-/tmp/node path/to/script.js
+jac native build js-engine
+jac/zig-out/js/bin/node path/to/script.js
 ```
 
-Any `node` that resolves to the `jac` binary runs the engine. Engine debug flags go before the script: `--ast` (print the parsed AST), `--bc` (print the bytecode), `--norun`, `--debug`, `--gc`/`--nogc` and `--ic`.
+Any `node` link to the `jac` binary inside an engine's `bin/` runs that engine. Engine debug flags go before the script: `--ast` (print the parsed AST), `--bc` (print the bytecode), `--norun`, `--debug`, `--gc`/`--nogc` and `--ic`.
 
 ## How the engine works
 

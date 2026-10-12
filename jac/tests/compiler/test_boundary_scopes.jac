@@ -5,7 +5,7 @@ import re;
 import subprocess;
 import from tempfile { TemporaryDirectory }
 import from tests.support { JAC_ROOT }
-import from jaclang.client.js_engine { node_executable }
+import from tests.support { js_runtime_or_none }
 import from jaclang.compiler.driver.program { JacProgram }
 
 test "JavaScript boundary types preserve provider scopes and aliases" {
@@ -22,7 +22,10 @@ test "JavaScript boundary types preserve provider scopes and aliases" {
     mod = prog.compile(path);
     assert not prog.errors_had , str(prog.errors_had);
     js = mod.gen.js;
-    js_engine = node_executable();
+    bun = js_runtime_or_none();
+    if bun is None {
+        testskip("Bun is required to execute generated JavaScript");
+    }
     # Run the emitted codecs with only the HTTP transport replaced.
     js = re.sub(r"import[^;]+;", "", js);
     harness = """
@@ -50,7 +53,7 @@ check(left.meta._jac_type_id !== right.meta._jac_type_id, 'nested identities col
             f.write(js + harness);
         }
         result = subprocess.run(
-            [js_engine, script], capture_output=True, text=True, timeout=30
+            [bun, script], capture_output=True, text=True, timeout=30
         );
         assert result.returncode == 0 , result.stdout + result.stderr;
     }
@@ -76,7 +79,10 @@ test "a boundary type the module also imports from its own module keeps one bind
     # identifier are a SyntaxError that leaves the whole page blank.
     assert re.search(r"import \{[^}]*\bRepoMeta\b[^}]*\} from", js) , js[:400];
     assert not re.search(r"^class RepoMeta\b", js, re.M) , "decoder reuses the imported name";
-    js_engine = node_executable();
+    bun = js_runtime_or_none();
+    if bun is None {
+        testskip("Bun is required to execute generated JavaScript");
+    }
     js = re.sub(r"import[^;]+;", "", js);
     harness = """
 class RepoMeta { constructor() { this.owner = 'local'; } }
@@ -94,7 +100,7 @@ check(new RepoMeta().owner === 'local', 'imported class was replaced');
             f.write(harness.replace("const first", js + "\nconst first", 1));
         }
         result = subprocess.run(
-            [js_engine, script], capture_output=True, text=True, timeout=30
+            [bun, script], capture_output=True, text=True, timeout=30
         );
         assert result.returncode == 0 , result.stdout + result.stderr;
     }

@@ -13,7 +13,6 @@ requiring a webview or display. Covers:
   8. Generated CPython bootstrap correctness
 """
 import json;
-import from jaclang.client.js_engine { node_executable }
 import os;
 import shutil;
 import subprocess;
@@ -1018,19 +1017,23 @@ test "generated host source with no plugins" {
 test "js sdk snippet is valid javascript" {
     import subprocess;
     js_sdk = _bootstrap_js_snippet();
-    # Wrap in a window mock since node doesn't have `window`
-    wrapped = "var window = {};" + js_sdk + ";";
-    result = subprocess.run(
-        [node_executable(), "-e", wrapped], capture_output=True, text=True, timeout=5
-    );
-    # node exit code should be 0 (no syntax errors)
-    assert result.returncode == 0 , f"JS SDK failed to parse: {result.stderr}";
-    # window.__jac should exist
-    check = wrapped + "console.log(typeof window.__jac);";
-    result2 = subprocess.run(
-        [node_executable(), "-e", check], capture_output=True, text=True, timeout=5
-    );
-    assert "object" in result2.stdout;
+    # Check with node if available
+    node_bin = shutil.which("node");
+    if node_bin {
+        # Wrap in a window mock since node doesn't have `window`
+        wrapped = "var window = {};" + js_sdk + ";";
+        result = subprocess.run(
+            [node_bin, "-e", wrapped], capture_output=True, text=True, timeout=5
+        );
+        # node exit code should be 0 (no syntax errors)
+        assert result.returncode == 0 , f"JS SDK failed to parse: {result.stderr}";
+        # window.__jac should exist
+        check = wrapped + "console.log(typeof window.__jac);";
+        result2 = subprocess.run(
+            [node_bin, "-e", check], capture_output=True, text=True, timeout=5
+        );
+        assert "object" in result2.stdout;
+    }
     # Structural checks (always valid)
     assert "window.__jac" in js_sdk;
     assert "window.__JAC_DESKTOP__" in js_sdk;
@@ -1041,6 +1044,10 @@ test "js sdk snippet is valid javascript" {
 
 """JS SDK invoke function produces correct JSON from arguments."""
 test "js sdk invoke produces correct request format" {
+    node_bin = shutil.which("node");
+    if not node_bin {
+        return;  # Skip in environments without node
+    }
     test_code = (
         "var captured = null;"
         "window = {__jac_invoke: function(p,c,a) { captured = {plugin:p,command:c,args:a}; "
@@ -1054,7 +1061,7 @@ test "js sdk invoke produces correct request format" {
             "});"
         );
     result = subprocess.run(
-        [node_executable(), "-e", test_code], capture_output=True, text=True, timeout=5
+        [node_bin, "-e", test_code], capture_output=True, text=True, timeout=5
     );
     assert result.returncode == 0;
     lines = result.stdout.strip().split("\n");
