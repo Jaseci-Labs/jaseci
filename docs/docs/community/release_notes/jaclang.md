@@ -2,7 +2,13 @@
 
 This document provides a summary of new features, improvements, and bug fixes in each version of **Jaclang**. For details on changes that might require updates to your existing code, please refer to the [Breaking Changes](../breaking-changes.md) page.
 
-## jaclang 0.34.21 (Latest Release)
+## jaclang 0.34.22 (Latest Release)
+
+### Bug Fixes
+
+- **Fix: the Mongo backend no longer rescans the quarantine on every request**: index creation now runs once per process and quarantine auto-retry runs once at server startup, after the app is loaded, instead of each time a request builds a backend. The retry now reads only quarantined docs it can actually attempt, so unrecoverable docs (no class, dangling references, removed classes, failures with no repair rule) no longer fill its 500-doc window and hide the ones it can recover.
+
+## jaclang 0.34.21
 
 ### Bug Fixes
 
