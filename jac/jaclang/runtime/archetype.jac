@@ -706,6 +706,10 @@ def light_edge_views(
     return out;
 }
 
+def _note_write(an: any) {
+    an.__dict__['_field_written'] = an.__dict__.get('_field_written', 0) + 1;
+}
+
 def _dirty_setattr(self: any, name: str, value: any) -> None {
     an = self.__dict__.get('__jac__');
     if an is None or not an.persistent {
@@ -716,6 +720,7 @@ def _dirty_setattr(self: any, name: str, value: any) -> None {
     ctx = JacRuntime.peek_context();
     if ctx is None {
         object.__setattr__(self, name, value);
+        _note_write(an);
         return;
     }
     import from jaclang { JacRuntimeInterface }
@@ -723,6 +728,32 @@ def _dirty_setattr(self: any, name: str, value: any) -> None {
         return;
     }
     object.__setattr__(self, name, value);
+    _note_write(an);
+    md = ctx.mem?.mark_dirty;
+    if md is not None {
+        md(an);
+    }
+}
+
+def _dirty_delattr(self: any, name: str) -> None {
+    an = self.__dict__.get('__jac__');
+    if an is None or not an.persistent {
+        object.__delattr__(self, name);
+        return;
+    }
+    import from jaclang.runtime.runtime { JacRuntime }
+    ctx = JacRuntime.peek_context();
+    if ctx is None {
+        object.__delattr__(self, name);
+        _note_write(an);
+        return;
+    }
+    import from jaclang { JacRuntimeInterface }
+    if not JacRuntimeInterface.check_write_access(an, op_hint="field_write") {
+        return;
+    }
+    object.__delattr__(self, name);
+    _note_write(an);
     md = ctx.mem?.mark_dirty;
     if md is not None {
         md(an);
@@ -760,6 +791,7 @@ def track_writes(arch: Archetype) -> None {
                 '__jac_tracked__': True,
                 '__jac_untracked__': cls,
                 '__setattr__': _dirty_setattr,
+                '__delattr__': _dirty_delattr,
                 '__reduce_ex__': _tracked_reduce_ex
             }
         );
