@@ -289,6 +289,7 @@ impl JacAPIServerCore.start(
     }
     Jac.set_shared_root_resolver(_shared_root_id);
     self.setup_emailer();
+    self._retry_quarantine();
     self._setup_scheduler();
     self._setup_events();
 
@@ -619,6 +620,19 @@ impl JacAPIServerCore._refresh_dev_endpoints -> None {
     self._register_endpoints();
     self.server.execute();
     self.server.app.openapi_schema = None;
+}
+
+impl JacAPIServerCore._retry_quarantine -> None {
+    import from jaclang.scale.memory.memory_hierarchy { MongoBackend }
+    l3 = getattr(Jac.get_context().mem, 'l3', None);
+    if not isinstance(l3, MongoBackend) {
+        return;
+    }
+    try {
+        l3._auto_retry_quarantine();
+    } except Exception as e {
+        logger.warning(f"Quarantine auto-retry failed: {e}");
+    }
 }
 
 impl JacAPIServerCore._setup_scheduler -> None {

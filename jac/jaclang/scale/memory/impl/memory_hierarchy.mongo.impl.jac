@@ -26,16 +26,15 @@ impl MongoBackend.postinit -> None {
         } except Exception as e {
             logger.debug(f"MongoBackend: alias preload skipped: {e}");
         }
-        try {
-            self.ensure_indexes();
-        } except Exception as e {
-            logger.debug(f"MongoBackend: index creation skipped: {e}");
-        }
-
-        try {
-            self._auto_retry_quarantine();
-        } except Exception as e {
-            logger.debug(f"MongoBackend: quarantine auto-retry skipped: {e}");
+        indexed = _process_cache.setdefault('mongo_indexed', set());
+        index_key = (self.db_name, self.collection_name);
+        if index_key not in indexed {
+            try {
+                self.ensure_indexes();
+                indexed.add(index_key);
+            } except Exception as e {
+                logger.debug(f"MongoBackend: index creation skipped: {e}");
+            }
         }
     }
 }
@@ -1398,13 +1397,40 @@ impl MongoBackend._auto_retry_quarantine(limit: int = 500) -> tuple {
     if self.client is None or repair_mode() == 'off' {
         return (0, 0);
     }
+    resolvable = set(Serializer._registry);
+    for (old_key, new_key) in Serializer._aliases.items() {
+        if new_key in Serializer._registry {
+            resolvable.add(old_key);
+        }
+    }
+    class_filter = [];
+    for key in resolvable {
+        (mod_name, _, cls_name) = key.rpartition('.');
+        pair = {'arch_module': mod_name, 'arch_type': cls_name};
+        cls = Serializer._get_class(mod_name, cls_name);
+        if cls is not None and merged_rules_for(cls) is not None {
+            class_filter.append(pair);
+        } else {
+            class_filter.append(
+                {** pair, 'reason_code': {'$in': ['CLASS_MISSING', 'CASCADE']}}
+            );
+        }
+    }
+    if not class_filter {
+        return (0, 0);
+    }
     try {
         docs = list(
             _mongo_q_collection(self).find(
                 {
-                    '$or': [
-                        {'retry_count': {'$exists': False}},
-                        {'retry_count': {'$lt': 5}}
+                    '$and': [
+                        {'$or': class_filter},
+                        {
+                            '$or': [
+                                {'retry_count': {'$exists': False}},
+                                {'retry_count': {'$lt': 5}}
+                            ]
+                        }
                     ]
                 }
             ).limit(

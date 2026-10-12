@@ -191,6 +191,25 @@ test "startup auto-retry recovers quarantined docs the deploy fixed" {
     arch_mod = getattr(_RepairUser, '__module__');
     doc_id = str(uuid4());
 
+    client["jac_test_repair"]["_anchors_quarantine"].insert_many(
+        [
+            {
+                '_id': str(uuid4()),
+                'type': 'EdgeAnchor',
+                'arch_module': module,
+                'arch_type': arch_type,
+                'data': {},
+                'error': 'unrecoverable',
+                'reason_code': reason
+            }
+            for (module, arch_type, reason) in [
+                (None, None, 'DESER_ERROR'),
+                (None, 'DANGLING_REF', 'DANGLING_REF'),
+                ('nowhere', 'Missing', 'CLASS_MISSING'),
+                ('jaclang.jac0core.archetype', 'Root', 'DESER_ERROR')
+            ] for _ in range(500)
+        ]
+    );
     client["jac_test_repair"]["_anchors_quarantine"].insert_one(
         {
             '_id': doc_id,
@@ -220,6 +239,11 @@ test "startup auto-retry recovers quarantined docs the deploy fixed" {
     );
 
     backend = MongoBackend(mongo_url=uri, db_name="jac_test_repair");
+    q = client["jac_test_repair"]["_anchors_quarantine"].find_one({'_id': doc_id});
+    assert q is not None , "constructing a backend must not run the startup retry";
+    assert backend._auto_retry_quarantine() == (1, 1) , (
+        "the scan must reach the recoverable doc past 2000 unretryable ones"
+    );
     q = client["jac_test_repair"]["_anchors_quarantine"].find_one({'_id': doc_id});
     assert q is None , "auto-retry must recover the now-loadable doc at startup";
     live = backend.collection.find_one({'_id': doc_id});

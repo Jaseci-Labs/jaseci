@@ -163,6 +163,7 @@ obj JacAPIServerCore {
     def enable_hmr(hot_reloader: any) -> None;
     def _register_endpoints -> None;
     def _refresh_dev_endpoints -> None;
+    def _retry_quarantine -> None;
     def _setup_scheduler -> None;
     def _setup_events -> None;
     def _create_admin_metrics_handler(
