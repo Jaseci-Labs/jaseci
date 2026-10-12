@@ -9,6 +9,7 @@ import from jaclang.byllm.systemone { Decision }
 import from jaclang.byllm.mtir { MTIR, MTRuntime }
 import from jaclang.runtime.runtime { JacRuntime }
 import from jaclang.byllm.types {
+    Document,
     Image,
     IterationAction,
     IterationContext,
@@ -51,6 +52,7 @@ glob `by = JacRuntime.`by,
          'McpError',
          'McpClient',
          'McpTool',
+         'Document',
          'Image',
          'IterationAction',
          'IterationContext',

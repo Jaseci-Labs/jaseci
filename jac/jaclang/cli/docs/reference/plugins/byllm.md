@@ -1696,7 +1696,7 @@ Cached input tokens are billed at a fraction of the normal rate, so a high hit r
 
 ## Multimodal Inputs
 
-byLLM supports image and video inputs through the `Image` and `Video` types. These can be used as parameters in any `by llm()` function or method.
+byLLM supports image, video and PDF document inputs through the `Image`, `Video` and `Document` types. These can be used as parameters in any `by llm()` function or method.
 
 ### Image Type
 
@@ -1830,6 +1830,48 @@ obj VideoAnalysis {
 """Analyze this video and extract key information."""
 def analyze_video(video: Video) -> VideoAnalysis by llm();
 ```
+
+### Document Type
+
+The `Document` type sends a PDF file to the model. Give it a path, or the PDF's bytes:
+
+```jac
+import from jaclang.byllm.lib { Document }
+
+"""Summarise the document in two sentences."""
+def summarise(brief: Document) -> str by llm();
+
+with entry {
+    print(summarise(Document("brief.pdf")));
+    print(summarise(Document(pdf_bytes, filename="brief.pdf")));
+}
+```
+
+#### Document Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `source` | str, os.PathLike, bytes | required | Path to a PDF file, or the PDF's bytes |
+| `filename` | str | the path's file name | Name sent with the file. Omitted for bytes when not given |
+
+`Document` checks the content, not the extension: a `.pdf` file that is not a PDF is refused with a `ValueError` before any call is made, and a PDF without an extension is accepted. A missing file raises `ValueError` and an unsupported input type raises `TypeError`.
+
+Only PDF is accepted, because providers reject other file types. Pass text-like files (`.md`, `.txt`, source code, `.csv`) as `Text`, which `jaclang.byllm.lib` exports:
+
+```jac
+import from jaclang.byllm.lib { Text }
+
+"""Read the note and report any action items."""
+def read_note(note: Text) -> list[str] by llm();
+
+with entry {
+    with open("note.md") as f {
+        print(read_note(Text(f.read())));
+    }
+}
+```
+
+byLLM does not check whether the model accepts documents; a model that cannot read PDFs fails at the provider. A `Document` returned by a tool reaches the model in the user turn that follows the tool result, as an image does. Page and file size limits are the provider's.
 
 ### Multimodal with Tools
 
