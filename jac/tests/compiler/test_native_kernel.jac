@@ -237,7 +237,7 @@ test "a checkout without a current kernel parses with the store parser" {
     reset_loaded();
     router.forget();
     try {
-        with patch.object(resolver, "_sealed_kit_omits_kernel", return_value=False) {
+        with patch.object(router, "_omitted", return_value=frozenset()) {
             with patch.object(resolver, "_from_sealed_image", return_value=None) {
                 with patch.object(
                     resolver.KernelArtifact,

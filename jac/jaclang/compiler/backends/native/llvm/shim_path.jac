@@ -156,6 +156,10 @@ obj ShimArtifact(Artifact) {
 
     override def build(log: Callable[[str], None], force: bool, exact: bool) {
         import subprocess;
+        record = self.checkout_path() + RECORD_SUFFIX;
+        if force and os.path.isfile(record) {
+            os.remove(record);
+        }
         log(
             "  zig build jacllvm (links the pinned LLVM; places the shim and its record)"
         );

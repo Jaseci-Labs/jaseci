@@ -174,71 +174,36 @@ test "payload interface sealing uses the fresh staged catalog" {
     }
 }
 
-test "skipping payload precompilation publishes an empty catalog region" {
+test "a linked-source payload publishes an empty catalog region" {
     import jaclang.dist.payload.assemble as assembly;
     with tempfile.TemporaryDirectory() as base {
         out = os.path.join(base, "stubcat.bin");
-        for opts in (
-            MkPayloadOpts(skip_precompile=True, stubcat_out=out),
-            MkPayloadOpts(link_source=base, stubcat_out=out)
-        ) {
-            wf(base, "stubcat.bin", b"stale catalog");
-            with patch.object(assembly, "run_child") as child {
-                assembly.run_precompile_stage("python", base, base, opts);
-                child.assert_not_called();
-            }
-            assert rf(out) == b"";
-        }
-    }
-}
-
-test "skipping the payload catalog cannot reuse a cached catalog" {
-    import jaclang.dist.payload.assemble as assembly;
-    with tempfile.TemporaryDirectory() as base {
-        site = os.path.join(base, "site");
-        cache = os.path.join(base, "cache");
-        pre = os.path.join(site, "jaclang", "_precompiled");
-        out = os.path.join(base, "stubcat.bin");
-        wf(site, "jaclang/dist/precompile_bytecode.jac", b"");
-        wf(cache, "stubcat.bin", b"stale catalog");
-        def child(
-            argv: list[str], env: dict[str, str] | None, allow_fail: bool
-        ) -> bool {
-            assert argv[2].endswith("precompile_boot.py");
-            assert env is not None;
-            assert not os.path.exists(os.path.join(pre, "stubcat.bin"));
-            wf(pre, "PRECOMPILE_RESULT.json", b"{}");
-            return True;
-        }
-        with patch.object(assembly, "run_child", side_effect=child) as runner {
+        wf(base, "stubcat.bin", b"stale catalog");
+        with patch.object(assembly, "run_child") as child {
             assembly.run_precompile_stage(
-                "python",
-                base,
-                site,
-                MkPayloadOpts(
-                    skip_stubcat=True, precompiled_cache=cache, stubcat_out=out
-                )
+                "python", base, base, MkPayloadOpts(link_source=base, stubcat_out=out)
             );
-            runner.assert_called_once();
+            child.assert_not_called();
         }
         assert rf(out) == b"";
-        assert not os.path.exists(os.path.join(cache, "stubcat.bin"));
     }
 }
 
-test "the precompile child keeps the cache home and the kit's kernel switch while HOME moves" {
+test "the precompile child keeps the cache home and the CI event while HOME moves" {
     with tempfile.TemporaryDirectory() as tmp {
         site = os.path.join(tmp, "site");
         os.makedirs(site);
         outer = {
             "JAC_CACHE_HOME": os.path.join(tmp, "cache"),
-            "JAC_PR_KIT_KERNEL": "none"
+            "GITHUB_EVENT_PATH": os.path.join(tmp, "event.json")
         };
         with patch.dict(os.environ, outer) {
             env = precompile_env(os.path.join(tmp, "python"), site);
         }
         assert env["JAC_CACHE_HOME"] == outer["JAC_CACHE_HOME"];
-        assert env["JAC_PR_KIT_KERNEL"] == outer["JAC_PR_KIT_KERNEL"];
+        assert env["GITHUB_EVENT_PATH"] == outer["GITHUB_EVENT_PATH"] , (
+            "the seal reads a pull request's labels from the event"
+        );
         assert env["HOME"] == site + ".home";
     }
 }

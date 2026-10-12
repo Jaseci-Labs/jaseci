@@ -119,16 +119,14 @@ jobs:
     # A kit that seals the native compiler kernel lowers the analysis zone in
     # one process and peaks near 15 GB, which starves a 4-vCPU runner.
     runs-on: blacksmith-8vcpu-ubuntu-2404
-    env:
-      # A pull request's kit carries no native compiler kernel: the compiler
-      # runs from the bytecode the same build precompiles, which is the path a
-      # kernel build itself compiles through. The kernel is most of a kit's
-      # build time and a pull request rarely changes what it does. Main,
-      # nightly and release kits build it, and so does a pull request carrying
-      # the `build-kernel` label (adding the label starts a new run). The seal
-      # honors this only for pull_request events, and the kit's manifest
-      # records the omission for the runtime to read.
-      JAC_PR_KIT_KERNEL: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'build-kernel') && 'none' || '' }}
+    # A pull request's kit carries no native compiler kernel: the compiler
+    # runs from the bytecode the same build precompiles, which is the path a
+    # kernel build itself compiles through. The kernel is most of a kit's build
+    # time and a pull request rarely changes what it does. Main, nightly and
+    # release kits build it, and so does a pull request carrying the
+    # `native:kernel` label (adding the label starts a new run). The seal reads
+    # that from the pull request's event (artifacts/kit.jac pr_kit_omits), and
+    # the kit's manifest records the omission for the runtime to read.
     steps:
       - uses: actions/checkout@v5
 

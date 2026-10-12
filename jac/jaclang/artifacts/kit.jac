@@ -2,7 +2,9 @@ import os;
 import sys;
 import type from jaclang.jac0core.sealed { SealedImage }
 
-glob _KIT: list[tuple[str, (SealedImage | None)]] = [];
+glob _KIT: list[tuple[str, (SealedImage | None)]] = [],
+     PR_KIT_EVENT: str = "pull_request",
+     PR_KIT_LABEL_PREFIX: str = "native:";
 
 def kit_image -> (tuple[str, SealedImage] | None) {
     if not _KIT {
@@ -10,6 +12,32 @@ def kit_image -> (tuple[str, SealedImage] | None) {
     }
     (site_pkg, image) = _KIT[0];
     return (site_pkg, image) if image is not None else None;
+}
+
+def pr_kit_omits(name: str) -> bool {
+    if os.environ.get("GITHUB_ACTIONS") != "true"
+        or os.environ.get("GITHUB_EVENT_NAME") != PR_KIT_EVENT {
+        return False;
+    }
+    return PR_KIT_LABEL_PREFIX + name not in _pr_labels();
+}
+
+def _pr_labels -> set[str] {
+    import json;
+    try {
+        with open(os.environ.get("GITHUB_EVENT_PATH", ""), encoding="utf-8") as f {
+            event: any = json.load(f);
+        }
+    } except (OSError, ValueError) {
+        return set();
+    }
+    pull = event.get("pull_request") if isinstance(event, dict) else None;
+    labels = pull.get("labels") if isinstance(pull, dict) else None;
+    return {
+        str(label.get("name", ""))
+        for label in (labels if isinstance(labels, list) else [])
+        if isinstance(label, dict)
+    };
 }
 
 def kit_path(rel: str) -> str {

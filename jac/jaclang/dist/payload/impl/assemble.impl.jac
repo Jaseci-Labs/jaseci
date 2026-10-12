@@ -224,7 +224,7 @@ impl write_dist_info(repo_root: str, site: str) {
 }
 
 impl run_precompile_stage(py: str, python_dir: str, site: str, opts: MkPayloadOpts) {
-    if opts.skip_precompile or opts.link_source is not None {
+    if opts.link_source is not None {
         run_stubcat_stage(py, python_dir, site, opts);
         log("==> skipping JIR precompile; modules compile on first run");
         return;
@@ -247,7 +247,7 @@ impl run_precompile_stage(py: str, python_dir: str, site: str, opts: MkPayloadOp
 
 impl run_stubcat_stage(py: str, python_dir: str, site: str, opts: MkPayloadOpts) {
     out_copy = opts.stubcat_out;
-    if opts.skip_stubcat or opts.skip_precompile or opts.link_source is not None {
+    if opts.link_source is not None {
         log(
             "==> skipping the stub catalog; the kit runs its floor until `jac native build stubcat`"
         );

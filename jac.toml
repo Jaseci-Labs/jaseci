@@ -26,7 +26,7 @@ Documentation = "https://www.jaclang.org/docs"
 # edits still self-invalidate). A one-time `zig build` is needed first, since
 # sitecustomize.py -- which reads this key -- ships inside the binary payload.
 # Comment this stanza out to fall back to the binary's bundled jaclang.
-# Set JAC_NO_DEV_SOURCE=1 to force it off for a single command.
+# Run jac from outside the repo to use its bundled compiler for one command.
 [dev]
 jaclang_source = "jac"   # dir CONTAINING jaclang/, relative to this file
 

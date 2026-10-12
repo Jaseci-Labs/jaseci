@@ -117,12 +117,11 @@ test "mkpayload trailing flags parse into MkPayloadOpts; unknown flags are ignor
     assert opts.shim_so is None and opts.bun_bin is None and opts.link_source is None;
     assert opts.musl_dirs == [] and opts.wasm_libc_dir is None;
     assert opts.precompiled_cache is None and opts.layer_cache is None;
-    assert not opts.skip_precompile and not opts.seal and not opts.debug_src;
+    assert not opts.seal and not opts.debug_src;
 
     opts = parse_mkpayload_flags(
         [
             "--shim=/b/libjacllvm.so",
-            "--skip-precompile",
             "--link-source=/repo/jac",
             "--precompiled-cache=/c/pre",
             "--layer-cache=/c/layers",
@@ -138,7 +137,6 @@ test "mkpayload trailing flags parse into MkPayloadOpts; unknown flags are ignor
         ]
     );
     assert opts.shim_so == "/b/libjacllvm.so";
-    assert opts.skip_precompile;
     assert opts.link_source == "/repo/jac";
     assert opts.precompiled_cache == "/c/pre";
     assert opts.layer_cache == "/c/layers";

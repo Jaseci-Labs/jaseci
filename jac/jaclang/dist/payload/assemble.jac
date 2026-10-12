@@ -51,7 +51,6 @@ glob PAYLOAD_ZSTD_LEVEL: int = 19,
 obj MkPayloadOpts {
     has shim_so: str | None = None,
         bun_bin: str | None = None,
-        skip_precompile: bool = False,
         link_source: str | None = None,
         musl_dirs: list[str] = [],
         wasm_libc_dir: str | None = None,
@@ -59,8 +58,7 @@ obj MkPayloadOpts {
         layer_cache: str | None = None,
         seal: bool = False,
         debug_src: bool = False,
-        stubcat_out: str | None = None,
-        skip_stubcat: bool = False;
+        stubcat_out: str | None = None;
 }
 
 obj FoundLib {

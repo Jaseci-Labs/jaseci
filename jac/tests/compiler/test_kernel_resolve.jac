@@ -48,7 +48,7 @@ def _resolve_fresh(sealed: bool = False) -> tuple[(ResolvedKernel | None), str] 
     router.forget();
     reset_loaded();
     try {
-        with patch.object(resolver, "_sealed_kit_omits_kernel", return_value=False) {
+        with patch.object(router, "_omitted", return_value=frozenset()) {
             with patch.object(
                 resolver,
                 "_from_sealed_image",
@@ -110,98 +110,73 @@ test "a sealed image runs its own kernel and never consults the checkout" {
     assert said == "";
 }
 
-test "a seal omits the kernel only in a pull-request CI build" {
-    import from jaclang.compiler.backends.native.kernel_resolve {
-        PR_KIT_KERNEL_ENV,
-        seal_omits_kernel
-    }
-    ci = {"GITHUB_ACTIONS": "true", "GITHUB_EVENT_NAME": "pull_request"};
-    with patch.dict(os.environ, ci) {
-        os.environ.pop(PR_KIT_KERNEL_ENV, None);
-        assert not seal_omits_kernel() , "a kit carries its kernel unless asked";
-    }
-    with patch.dict(os.environ, dict(ci, **{PR_KIT_KERNEL_ENV: "none"})) {
-        assert seal_omits_kernel();
-    }
-    for event in ("push", "release", "workflow_dispatch", "schedule") {
-        refused = False;
-        with patch.dict(
-            os.environ,
-            {
-                "GITHUB_ACTIONS": "true",
-                "GITHUB_EVENT_NAME": event,
-                PR_KIT_KERNEL_ENV: "none"
-            }
-        ) {
-            try {
-                seal_omits_kernel();
-            } except RuntimeError {
-                refused = True;
-            }
-        }
-        assert refused , f"a {event} build must never ship an image without its kernel";
-    }
-    with patch.dict(os.environ, {PR_KIT_KERNEL_ENV: "none"}) {
-        os.environ.pop("GITHUB_ACTIONS", None);
-        refused = False;
-        try {
-            seal_omits_kernel();
-        } except RuntimeError {
-            refused = True;
-        }
-        assert refused , "a local seal carries its kernel";
-    }
-    with patch.dict(os.environ, dict(ci, **{PR_KIT_KERNEL_ENV: "objects"})) {
-        refused = False;
-        try {
-            seal_omits_kernel();
-        } except ValueError {
-            refused = True;
-        }
-        assert refused , "an unknown value is an error, not a full build";
+"""Write a GitHub Actions pull-request event carrying `labels`."""
+def _pr_event(path: str, labels: list[str]) {
+    import json;
+    with open(path, "w", encoding="utf-8") as f {
+        json.dump({"pull_request": {"labels": [{"name": n} for n in labels]}}, f);
     }
 }
 
-test "only a pull-request kit's own record omits the kernel" {
-    import from jaclang.compiler.backends.native.kernel_resolve {
-        kit_omits_kernel,
-        omitted_kernel_record
+test "only a pull request's CI kit leaves the kernel out, and its label keeps it" {
+    import tempfile;
+    import from jaclang.artifacts.kit { pr_kit_omits }
+    with tempfile.TemporaryDirectory() as tmp {
+        event = os.path.join(tmp, "event.json");
+        ci = {
+            "GITHUB_ACTIONS": "true",
+            "GITHUB_EVENT_NAME": "pull_request",
+            "GITHUB_EVENT_PATH": event
+        };
+        _pr_event(event, ["docs"]);
+        with patch.dict(os.environ, ci) {
+            assert pr_kit_omits("kernel");
+        }
+        _pr_event(event, ["docs", "native:kernel"]);
+        with patch.dict(os.environ, ci) {
+            assert not pr_kit_omits("kernel") , "the native:kernel label keeps it";
+        }
+        for name in ("push", "release", "workflow_dispatch", "schedule") {
+            with patch.dict(os.environ, dict(ci, GITHUB_EVENT_NAME=name)) {
+                assert not pr_kit_omits("kernel") , f"a {name} kit carries its kernel";
+            }
+        }
+        with patch.dict(os.environ, {"GITHUB_EVENT_NAME": "pull_request"}) {
+            os.environ.pop("GITHUB_ACTIONS", None);
+            assert not pr_kit_omits("kernel") , "a local seal carries its kernel";
+        }
     }
-    assert kit_omits_kernel(omitted_kernel_record());
-    assert not kit_omits_kernel({});
-    assert not kit_omits_kernel(None);
-    assert not kit_omits_kernel({"kernel": "none"}) , "the record names the kit it ships in";
-    assert not kit_omits_kernel({"kernel": "none", "kit": "release"});
-    assert not kit_omits_kernel(
-        dict(omitted_kernel_record(), artifact={"path": "compiler/libjac_compiler.so"})
-    ) , "a record that names a kernel carries one";
 }
 
-test "a kit sealed without its kernel runs from bytecode quietly, sealed or rerouted" {
+"""Resolve the kernel when the sealed image (`sealed`) or the kit (`not
+sealed`) leaves it out; return the resolution and what the router printed."""
+def _resolve_omitted(sealed: bool) -> tuple[any, str] {
+    def omitted(sealed_image: bool) -> frozenset[str] {
+        return frozenset({"kernel"}) if sealed_image == sealed else frozenset();
+    }
     router.forget();
+    err = io.StringIO();
     try {
-        with patch.object(resolver, "_sealed_kit_omits_kernel", return_value=True) {
-            sealed = KernelArtifact().probe_sealed();
-            assert sealed is not None and sealed.omitted;
+        with patch.object(router, "_omitted", side_effect=omitted), patch.object(
+            KernelArtifact, "probe_sealed", return_value=None
+        ), patch.object(
+            KernelArtifact, "probe_checkout", return_value=Probe.missing()
+        ), patch.object(KernelArtifact, "probe_kit", side_effect=_never), patch.object(
+            sys, "stderr", err
+        ), _toolchain() {
+            resolution = router.resolve("kernel");
         }
-        with patch.object(resolver, "_bundled_kit_omits_kernel", return_value=True) {
-            assert KernelArtifact().probe_kit().omitted;
-        }
-        with _toolchain() {
-            with patch.object(
-                KernelArtifact, "probe_checkout", return_value=Probe.missing()
-            ) {
-                with patch.object(
-                    KernelArtifact, "probe_kit", return_value=Probe.by_design()
-                ) {
-                    (found, said) = _resolve_fresh();
-                }
-            }
-        }
-        assert found is None;
-        assert said == "" , "a pull-request kit runs from bytecode by design";
     } finally {
         router.forget();
+    }
+    return (resolution, err.getvalue());
+}
+
+test "an image that leaves the kernel out runs from bytecode quietly, sealed or rerouted" {
+    for sealed in (True, False) {
+        (resolution, said) = _resolve_omitted(sealed);
+        assert resolution.found is None and resolution.quiet;
+        assert said == "" , "an omitted kernel runs from bytecode by design";
     }
 }
 

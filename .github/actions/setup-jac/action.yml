@@ -110,16 +110,17 @@ runs:
     # native/**, build.zig, and the pinned slice (bootstrap/pins.json) -- NOT on
     # jaclang/**. Cache the built shim itself so compiler-only merges (the
     # common case for a binary-cache miss) skip both the LLVM fetch below and
-    # the link: the build step passes the restored file via `-Dshim-bin`. The
-    # cache path is the shim's in-tree place path, which a from-source build
-    # populates, so a main-branch miss self-seeds when the job ends.
+    # the link. The cache path is the shim's in-tree place path, record
+    # included: `zig build` reuses a placed shim whose record names these
+    # inputs and this target. A from-source build populates it, so a
+    # main-branch miss self-seeds when the job ends.
     - name: Restore cached LLVMPY shim
       id: shim-cache
       if: steps.cache.outputs.cache-hit != 'true' || inputs.need-build-inputs == 'true'
       uses: actions/cache/restore@v4
       with:
         path: jac/jaclang/compiler/backends/native/llvm/libjacllvm.*
-        key: jac-shim-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('jac/native/**', 'jac/build.zig', 'jac/bootstrap/pins.json') }}
+        key: jac-shim-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('jac/native/**', 'jac/build.zig', 'jac/build.zig.zon', 'jac/bootstrap/pins.json') }}
 
     # The native (na) backend statically links a pinned LLVM into the LLVMPY_*
     # shim, so `zig build` needs that LLVM extracted first (there is no llvmlite
@@ -237,7 +238,7 @@ runs:
     # Download + extract the pinned LLVM into jac/.llvm-build (idempotent: a no-op
     # when the cache above restored it). Must run before `zig build` so the shim's
     # static archives exist when build.zig configures the jacllvm step. Skipped
-    # entirely when a cached shim was restored (-Dshim-bin needs no LLVM).
+    # entirely when a cached shim was restored (a current shim needs no LLVM).
     - name: Fetch LLVM for the jacllvm shim
       if: steps.cache.outputs.cache-hit != 'true' && steps.shim-cache.outputs.cache-hit != 'true'
       shell: bash
@@ -256,23 +257,15 @@ runs:
       if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
       working-directory: jac
-      # On a shim-cache hit, stage the restored shim OUTSIDE its in-tree place
-      # path before passing it via -Dshim-bin: the build's place step copies
-      # -Dshim-bin back to that path, and a self-copy would read the file it is
-      # truncating. On a shim miss the plain build links it from source, the
-      # place step writes it in-tree, and the shim cache saves it at job end.
+      # On a shim-cache hit the build reuses the restored shim in place. On a
+      # miss it links the shim from source, the place step writes it in-tree,
+      # and the shim cache saves it at job end.
       # The shared CI kit exercises the native Python compiler. A PR reuses the
       # JacPython runtime main last built when the sources it was lowered from
       # are unchanged (build_python.zig sourcesKey); main keeps the full key, so
       # the runtime is at most one main build behind.
       run: |
         PY=(-Dpython=jacpython -Dreuse-python=${{ github.event_name == 'pull_request' }})
-        SHIM_ARG=()
-        if [ "${{ steps.shim-cache.outputs.cache-hit }}" = "true" ]; then
-          mkdir -p .shim-build
-          cp jaclang/compiler/backends/native/llvm/libjacllvm.* .shim-build/
-          SHIM_ARG=(-Dshim-bin=".shim-build/$(ls .shim-build | head -1)")
-        fi
         TARGET_ARG=()
         case "$RUNNER_OS/$RUNNER_ARCH" in
           Linux/X64) TARGET_ARG=(-Dtarget=x86_64-linux-gnu.2.17) ;;
@@ -285,7 +278,7 @@ runs:
         set -o pipefail
         LOG="$(mktemp)"
         for attempt in 1 2 3; do
-          if zig build "${PY[@]}" "${TARGET_ARG[@]}" "${SHIM_ARG[@]}" --summary all 2>&1 | tee "$LOG"; then
+          if zig build "${PY[@]}" "${TARGET_ARG[@]}" --summary all 2>&1 | tee "$LOG"; then
             exit 0
           fi
           if grep -qE 'Seal aborted|Seal incomplete|seal-finalize failed' "$LOG"; then
@@ -333,7 +326,7 @@ runs:
       uses: actions/cache/save@v4
       with:
         path: jac/jaclang/compiler/backends/native/llvm/libjacllvm.*
-        key: jac-shim-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('jac/native/**', 'jac/build.zig', 'jac/bootstrap/pins.json') }}
+        key: jac-shim-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('jac/native/**', 'jac/build.zig', 'jac/build.zig.zon', 'jac/bootstrap/pins.json') }}
 
     - name: Save LLVM cache (trusted refs only)
       if: >-

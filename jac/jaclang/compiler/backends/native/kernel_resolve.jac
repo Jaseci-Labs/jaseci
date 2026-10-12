@@ -21,10 +21,7 @@ import from jaclang.artifacts.model {
 glob NOT_BUILT: str = "not built",
      LAYOUT_SIDECAR_SUFFIX: str = ".layout.json",
      KERNEL_DEV_LINK_MODE: str = NATIVE_LINK_MODE_OBJECTS,
-     SEALED_LINK_MODE: str = NATIVE_LINK_MODE_BITCODE,
-     PR_KIT_KERNEL_ENV: str = "JAC_PR_KIT_KERNEL",
-     PR_KIT_KERNEL_OMITTED: str = "none",
-     PR_KIT_EVENT: str = "pull_request";
+     SEALED_LINK_MODE: str = NATIVE_LINK_MODE_BITCODE;
 
 obj ResolvedKernel {
     has lib_path: str,
@@ -65,39 +62,6 @@ def read_sidecar(lib_path: str) -> (dict[str, any] | None) {
     return data;
 }
 
-def seal_omits_kernel -> bool {
-    requested = os.environ.get(PR_KIT_KERNEL_ENV, "").strip().lower();
-    if not requested {
-        return False;
-    }
-    if requested != PR_KIT_KERNEL_OMITTED {
-        raise ValueError(
-            f"{PR_KIT_KERNEL_ENV}={requested!r}: expected {PR_KIT_KERNEL_OMITTED} "
-            "or nothing"
-        );
-    }
-    event = os.environ.get("GITHUB_EVENT_NAME", "");
-    if os.environ.get("GITHUB_ACTIONS") != "true" or event != PR_KIT_EVENT {
-        raise RuntimeError(
-            f"{PR_KIT_KERNEL_ENV}={PR_KIT_KERNEL_OMITTED} is honored only in a "
-            f"{PR_KIT_EVENT} CI build (this is {event or 'not a CI build'}); a "
-            "shipped image carries its kernel"
-        );
-    }
-    return True;
-}
-
-def omitted_kernel_record -> dict[str, any] {
-    return {"units": {}, "kernel": PR_KIT_KERNEL_OMITTED, "kit": PR_KIT_EVENT};
-}
-
-def kit_omits_kernel(native: any) -> bool {
-    return isinstance(native, dict)
-        and native.get("kernel") == PR_KIT_KERNEL_OMITTED
-        and native.get("kit") == PR_KIT_EVENT
-        and not native.get("artifact");
-}
-
 def sealed_link_refusal(record: dict[str, any], sidecar: dict[str, any]) -> str {
     mode = str(record.get("mode", SEALED_LINK_MODE));
     linked = str(sidecar.get("link_mode", SEALED_LINK_MODE));
@@ -108,12 +72,6 @@ def sealed_link_refusal(record: dict[str, any], sidecar: dict[str, any]) -> str 
         return "";
     }
     return f"a sealed image carries a {SEALED_LINK_MODE} link, not a {mode} link";
-}
-
-def _sealed_kit_omits_kernel -> bool {
-    import from jaclang.jac0core { sealed }
-    image = sealed._jaclang_image();
-    return image is not None and kit_omits_kernel(image.native);
 }
 
 def _from_sealed_image -> (ResolvedKernel | None) {
@@ -303,12 +261,6 @@ def _inspect(
 }
 
 
-def _bundled_kit_omits_kernel -> bool {
-    import from jaclang.artifacts.kit { kit_image }
-    found = kit_image();
-    return found is not None and kit_omits_kernel(found[1].native);
-}
-
 def _bundled_kernel -> tuple[str, dict[str, any]] | None {
     import from jaclang.artifacts.kit { kit_image }
     found = kit_image();
@@ -351,9 +303,6 @@ obj KernelArtifact(Artifact) {
     }
 
     override def probe_sealed -> (Probe | None) {
-        if _sealed_kit_omits_kernel() {
-            return Probe.by_design();
-        }
         sealed = _from_sealed_image();
         if sealed is None {
             return None;
@@ -368,9 +317,6 @@ obj KernelArtifact(Artifact) {
     }
 
     override def probe_kit -> Probe {
-        if _bundled_kit_omits_kernel() {
-            return Probe.by_design();
-        }
         found = _bundled_kernel();
         if found is None {
             return Probe.missing("this process runs on no kit that carries one");

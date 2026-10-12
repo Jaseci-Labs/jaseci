@@ -91,10 +91,6 @@ impl parse_mkpayload_flags(flags: list[str]) -> MkPayloadOpts {
         "--stubcat-out=": "stubcat_out"
     };
     for arg in flags {
-        if arg == "--skip-precompile" {
-            opts.skip_precompile = True;
-            continue;
-        }
         if arg == "--seal" {
             opts.seal = True;
             continue;
@@ -105,10 +101,6 @@ impl parse_mkpayload_flags(flags: list[str]) -> MkPayloadOpts {
         }
         if arg.startswith("--musl=") {
             opts.musl_dirs.append(arg[len("--musl="):]);
-            continue;
-        }
-        if arg == "--skip-stubcat" {
-            opts.skip_stubcat = True;
             continue;
         }
         for (prefix, field) in valued.items() {

@@ -45,6 +45,11 @@ def _decide(artifact: Artifact) -> Resolution {
     if artifact.disabled() {
         return Resolution(name=artifact.name, reason="being built", quiet=True);
     }
+    if artifact.name in _omitted(sealed_image=True) {
+        return Resolution(
+            name=artifact.name, reason="this image leaves it out", quiet=True
+        );
+    }
     sealed = artifact.probe_sealed();
     if sealed is not None {
         if sealed.found is not None {
@@ -64,6 +69,11 @@ def _decide(artifact: Artifact) -> Resolution {
     if tree.found is not None {
         return Resolution(name=artifact.name, found=tree.found);
     }
+    if artifact.name in _omitted(sealed_image=False) {
+        return Resolution(
+            name=artifact.name, reason="the kit leaves it out", quiet=True
+        );
+    }
     kit = artifact.probe_kit();
     if kit.found is not None {
         return Resolution(name=artifact.name, found=kit.found);
@@ -74,6 +84,17 @@ def _decide(artifact: Artifact) -> Resolution {
         );
     }
     return Resolution(name=artifact.name, reason=tree.describe());
+}
+
+def _omitted(sealed_image: bool) -> frozenset[str] {
+    if sealed_image {
+        import from jaclang.jac0core { sealed }
+        image = sealed._jaclang_image();
+        return image.omits if image is not None else frozenset();
+    }
+    import from jaclang.artifacts.kit { kit_image }
+    found = kit_image();
+    return found[1].omits if found is not None else frozenset();
 }
 
 def _provision(artifact: Artifact, resolution: Resolution) -> Resolution {

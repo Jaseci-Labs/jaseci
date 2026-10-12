@@ -146,6 +146,7 @@ pub fn build(b: *std.Build) void {
     // (an extracted LLVM 22.1.x prebuilt) or the fetch-llvm cache; without
     // either the step is unavailable. See jac/native/README.md, #6925.
     const jacllvm = addLlvmShim(b, target, optimize);
+    addAdoptShim(b, target);
 
     // --- unit tests (the Zig bootstrap seed) -------------------------------
     addTests(b, target, optimize);
@@ -198,7 +199,7 @@ pub fn build(b: *std.Build) void {
     } else if (jacpython and !shimPlacedInTree(b, target)) {
         fetch_host.step.dependOn(&b.addFail(
             "the JacPython runtime needs the LLVMPY_* shim: run `zig build fetch-llvm` " ++
-                "first (or pass -Dshim-bin=<path to libjacllvm.so>)",
+                "first (or restore a shim built from these inputs to " ++ SHIM_PLACE_DIR ++ ")",
         ).step);
     }
     fetch_ts.addArg(b.pathFromRoot("jaclang/vendor/typeshed"));
@@ -350,21 +351,13 @@ pub fn build(b: *std.Build) void {
         mk.step.dependOn(fetch_target);
         const out = mk.addOutputFileArg("payload.tar.zst");
         stubcat_region = mk.addPrefixedOutputFileArg("--stubcat-out=", "stubcat.bin");
-        if (b.option(bool, "skip-stubcat", "mkpayload: skip the stub catalog build (the type checker builds it on first use)") orelse false) {
-            mk.addArg("--skip-stubcat");
-        }
         // Optional trailing flags (parsed after the positional python/root/out):
-        // --shim ships the Zig-built LLVMPY_* shim; --skip-precompile drops the
-        // JIR precompile (fast link validation; first run compiles on demand).
+        // --shim ships the Zig-built LLVMPY_* shim.
         if (jacllvm) |shim| {
             mk.addPrefixedFileArg("--shim=", shim.bin);
             // A plain `zig build` also drops the shim into the source tree so the
             // editable dev loop works without any manual step.
             b.getInstallStep().dependOn(shim.place);
-        }
-        const skip_precompile = b.option(bool, "skip-precompile", "mkpayload: skip the JIR precompile (faster link validation)") orelse false;
-        if (skip_precompile) {
-            mk.addArg("--skip-precompile");
         }
         // Editable dev binary: ship a payload WITHOUT the bundled compiler and
         // reroute `import jaclang` to a live source dir at startup (see
@@ -374,7 +367,7 @@ pub fn build(b: *std.Build) void {
         //   -Ddev            link the build root (jaclang/ in THIS tree)
         //   -Djaclang-dir=P  link an explicit dir containing jaclang/
         const opt_jaclang_dir = b.option([]const u8, "jaclang-dir", "Editable dev binary: link the compiler from this dir (containing jaclang/) instead of bundling it");
-        const opt_dev = b.option(bool, "dev", "Editable dev binary: link the compiler from the build root instead of bundling it (implies skip-precompile)") orelse false;
+        const opt_dev = b.option(bool, "dev", "Editable dev binary: link the compiler from the build root instead of bundling it (no JIR precompile)") orelse false;
         const link_dir: ?[]const u8 = if (opt_jaclang_dir) |d|
             (if (std.fs.path.isAbsolute(d)) d else b.pathFromRoot(d))
         else if (opt_dev)
@@ -398,9 +391,9 @@ pub fn build(b: *std.Build) void {
         // Seal the runtime (issue #7135): a bundled release payload boots from
         // the JIR image + frozen jac0core bootstrap. This is the ONLY bundled
         // shape; it just needs a real bundled precompile, so it is inert under
-        // -Ddev/-Djaclang-dir (link-source) and -Dskip-precompile.
+        // -Ddev/-Djaclang-dir (link-source).
         const debug_src = b.option(bool, "debug-src", "Sealed build: embed source text in JIR so tracebacks show source lines (larger payload)") orelse false;
-        if (link_dir == null and !skip_precompile) {
+        if (link_dir == null) {
             mk.addArg("--seal");
             if (debug_src) mk.addArg("--debug-src");
         }
@@ -567,21 +560,18 @@ fn osArchString(t: std.Target) ?[]const u8 {
 fn addLlvmShim(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) ?Shim {
     const shim_file = shimFileName(target);
 
-    // -Dshim-bin: bundle a PREBUILT shim (path relative to jac/ or absolute),
-    // skipping the LLVM fetch and the static link entirely -- the shim is the
-    // single most expensive compile artifact (it links ~0.5 GB of LLVM archives)
-    // and depends only on native/**, this file, and the pinned slice, NOT on
-    // jaclang/**. CI (setup-jac) uses this to reuse a shim across compiler-only
-    // changes, keyed on exactly those inputs; the -Dpayload option is the same
-    // idea one level up. Invalidation is the CALLER's responsibility -- a plain
-    // `zig build` (no option) always links from source.
-    if (b.option([]const u8, "shim-bin", "Prebuilt LLVMPY_* shim to bundle (skips the LLVM fetch + link)")) |p| {
-        const bin: std.Build.LazyPath = .{ .cwd_relative = p };
-        const place = placeShim(b, bin, shim_file);
+    // A shim already placed in the tree, built from these inputs for this
+    // target, is current: reuse it and skip the LLVM fetch and the static link
+    // entirely. The shim is the single most expensive compile artifact (it
+    // links ~0.5 GB of LLVM archives) and depends only on native/**, this file
+    // and the pinned slice, never on jaclang/**, so CI restores its cached
+    // shim (with its record) to the placed path and a compiler-only change
+    // relinks nothing. A stale or foreign record links from source.
+    if (placedShimCurrent(b, target)) {
+        const bin = b.path(b.fmt("{s}/{s}", .{ SHIM_PLACE_DIR, shim_file }));
         const jacllvm_step = b.step("jacllvm", "Build the LLVMPY_* shim (jac/native), static-link LLVM, place it in-tree");
         jacllvm_step.dependOn(&b.addInstallLibFile(bin, shim_file).step);
-        jacllvm_step.dependOn(place);
-        return .{ .bin = bin, .place = place };
+        return .{ .bin = bin, .place = jacllvm_step };
     }
 
     // -Dllvm-dir wins; otherwise use the fetch-llvm cache (.llvm-build). If
@@ -627,7 +617,7 @@ fn addLlvmShim(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.bu
     // payload -- finds it through the llvm-shim artifact's checkout tier. Mirrors how
     // fetch-typeshed materializes gitignored stubs into the tree. mkpayload's
     // jaclang copy skips this file (it ships the shim via --shim instead).
-    const place = placeShim(b, bin, shim_file);
+    const place = placeShim(b, bin, shim_file, target);
 
     const jacllvm_step = b.step("jacllvm", "Build the LLVMPY_* shim (jac/native), static-link LLVM, place it in-tree");
     jacllvm_step.dependOn(&b.addInstallLibFile(bin, shim_file).step);
@@ -636,20 +626,45 @@ fn addLlvmShim(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.bu
 }
 
 /// Place the shim in-tree together with its artifact record: the hash of
-/// the inputs it was built from (bootstrap/native_inputs.zig). The artifact
-/// router accepts a placed shim only when that hash matches the checkout's
-/// current sources, so a shim left over from an older native/ is stale, not
-/// silently loaded.
-fn placeShim(b: *std.Build, bin: std.Build.LazyPath, shim_file: []const u8) *std.Build.Step {
-    const digest = native_inputs.shimInputsHex(b.graph.io, b.allocator, b.pathFromRoot(".")) catch |err|
-        std.debug.panic("shim inputs: {s}", .{@errorName(err)});
+/// the inputs it was built from (bootstrap/native_inputs.zig) and the target
+/// it was built for. The artifact router accepts a placed shim only when that
+/// hash matches the checkout's current sources, so a shim left over from an
+/// older native/ is stale, not silently loaded; the build reuses one only
+/// for the same target.
+fn placeShim(b: *std.Build, bin: std.Build.LazyPath, shim_file: []const u8, target: std.Build.ResolvedTarget) *std.Build.Step {
     const place = b.addUpdateSourceFiles();
     place.addCopyFileToSource(bin, b.fmt("{s}/{s}", .{ SHIM_PLACE_DIR, shim_file }));
-    place.addBytesToSource(
-        b.fmt("{{\"inputs\": \"{s}\"}}\n", .{&digest}),
-        b.fmt("{s}/{s}.artifact.json", .{ SHIM_PLACE_DIR, shim_file }),
-    );
+    place.addBytesToSource(shimRecord(b, target), b.fmt("{s}/{s}.artifact.json", .{ SHIM_PLACE_DIR, shim_file }));
     return &place.step;
+}
+
+fn shimRecord(b: *std.Build, target: std.Build.ResolvedTarget) []const u8 {
+    const digest = native_inputs.shimInputsHex(b.graph.io, b.allocator, b.pathFromRoot(".")) catch |err|
+        std.debug.panic("shim inputs: {s}", .{@errorName(err)});
+    return b.fmt("{{\"inputs\": \"{s}\", \"target\": \"{s}\"}}\n", .{ &digest, osArchString(target.result) orelse "unknown" });
+}
+
+/// `zig build adopt-shim`: record the shim already placed in-tree as built
+/// from this checkout's inputs for the target. For a shim fetched by content
+/// address (the release channel's prebuilt assets, named by the hash of the
+/// same inputs); after it, a build reuses that shim instead of linking LLVM.
+fn addAdoptShim(b: *std.Build, target: std.Build.ResolvedTarget) void {
+    const step = b.step("adopt-shim", "Record the shim placed in-tree as built from these inputs (for a content-addressed prebuilt shim)");
+    if (!shimPlacedInTree(b, target)) {
+        step.dependOn(&b.addFail(b.fmt("adopt-shim: no shim at {s}/{s}", .{ SHIM_PLACE_DIR, shimFileName(target) })).step);
+        return;
+    }
+    const record = b.addUpdateSourceFiles();
+    record.addBytesToSource(shimRecord(b, target), b.fmt("{s}/{s}.artifact.json", .{ SHIM_PLACE_DIR, shimFileName(target) }));
+    step.dependOn(&record.step);
+}
+
+/// Whether the placed shim's record names these inputs and this target.
+fn placedShimCurrent(b: *std.Build, target: std.Build.ResolvedTarget) bool {
+    if (!shimPlacedInTree(b, target)) return false;
+    const rel = b.fmt("{s}/{s}.artifact.json", .{ SHIM_PLACE_DIR, shimFileName(target) });
+    const recorded = b.build_root.handle.readFileAlloc(b.graph.io, rel, b.allocator, .limited(4096)) catch return false;
+    return std.mem.eql(u8, std.mem.trimEnd(u8, recorded, "\n"), std.mem.trimEnd(u8, shimRecord(b, target), "\n"));
 }
 
 /// Linux link path for the LLVMPY_* shim. Which path a target takes is decided by

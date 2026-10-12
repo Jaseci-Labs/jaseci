@@ -167,7 +167,12 @@ def _check_file_job(request: dict[(str, any)]) -> dict[(str, any)] {
                 kernel_view: any = None;
                 if not opts.get("placements") and not opts.get("native_coverage") {
                     import from jaclang.project.kernel_check { kernel_check }
-                    kernel_view = kernel_check(prog, file_path, compile_options);
+                    kernel_view = kernel_check(
+                        prog,
+                        file_path,
+                        compile_options,
+                        parity=bool(opts.get("kernel_parity"))
+                    );
                 }
                 adopted = kernel_view is not None and kernel_view.adopted;
                 if not adopted {
@@ -289,7 +294,8 @@ impl check(
     native_coverage: bool = False,
     placements: bool = False,
     jobs: str = "",
-    app: str = ""
+    app: str = "",
+    kernel_parity: bool = False
 ) -> int {
     import from jaclang.compiler.frontend.diagnostic_utils { resolve_diagnostic_tokens }
     import from jaclang.cli.workpool {
@@ -432,6 +438,7 @@ impl check(
         'parse_only': parse_only,
         'native_coverage': native_coverage,
         'placements': placements,
+        'kernel_parity': kernel_parity,
         'suppress_codes': list(suppressed_codes),
         'ignore': list(ignore_list)
     };
