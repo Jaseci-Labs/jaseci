@@ -137,6 +137,20 @@ def _unit_key_for(target: any) -> (str | None) {
 }
 
 
+glob _TURN_POOL: list[any] = [];
+
+
+def _conflict_turn_pool -> any {
+    if not _TURN_POOL {
+        import from concurrent.futures { ThreadPoolExecutor }
+        _TURN_POOL.append(
+            ThreadPoolExecutor(max_workers=8, thread_name_prefix="jac-conflict-turn")
+        );
+    }
+    return _TURN_POOL[0];
+}
+
+
 def _occ_policy -> tuple[str, int, int] {
     mode = "retry";
     max_attempts = 5;
@@ -254,6 +268,30 @@ async def _run_function_with_occ(
                 }
                 if occ_backoff_ms > 0 {
                     await asyncio.sleep(occ_backoff_ms * attempt / 1000.0);
+                }
+                import from jaclang.server.session { Session }
+                mem: any = ctx.mem;
+                if isinstance(mem, Session) {
+                    import contextvars;
+                    turn_context = contextvars.copy_context();
+                    def take_turn {
+                        turn_context.run(mem.wait_turn);
+                    }
+                    turn = asyncio.get_running_loop().run_in_executor(
+                        _conflict_turn_pool(), take_turn
+                    );
+                    try {
+                        await asyncio.shield(turn);
+                    } except asyncio.CancelledError {
+                        while not turn.done() {
+                            try {
+                                await asyncio.shield(turn);
+                            } except asyncio.CancelledError {
+                                continue;
+                            }
+                        }
+                        raise;
+                    }
                 }
                 await ctx.aset_user_root(root_id);
             } except Exception as e {
