@@ -52,9 +52,6 @@ NS_DELETE_WAIT="${NS_DELETE_WAIT:-300}"
 APP_DIR=""
 ALL_NS="${OWNED_NS} ${ADOPTED_NS} ${COTENANT_NS}"
 
-if [ -z "${JAC_SCALE_BINARY_PATH:-}" ]; then
-    echo "WARN: JAC_SCALE_BINARY_PATH is unset; pods will bootstrap from a published release binary instead of the code under test."
-fi
 
 cleanup() {
     rc="${1:-0}"
@@ -109,6 +106,8 @@ with open(sys.argv[1]) as f:
 with open(sys.argv[2], "w") as f:
     f.writelines(out)
 PYEOF
+ship_checkout_binary "${APP_DIR}" \
+    || echo "WARN: pods will bootstrap from a published release binary instead of the code under test."
 
 export SDK_DEPLOY_SOURCE="${APP_DIR}"
 export SDK_DEPLOY_STORAGE_CLASS="${STORAGE_CLASS}"

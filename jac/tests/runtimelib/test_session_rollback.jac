@@ -908,6 +908,8 @@ def _vote_app(td: str) -> tuple[any, dict[str, any], any] {
     mod.rival_commits.clear();
     mod.commit_faults.clear();
     mod.failed_commits.clear();
+    mod.lock_exhaustions.clear();
+    mod.exhausted_queries.clear();
     return (exec_mgr, walkers, mod);
 }
 
@@ -989,6 +991,30 @@ test "request loop: a COMMIT conflict the session retries does not cost a re-run
             );
             tally = _spawn(exec_mgr, walkers["Tally"]);
             assert tally.get("reports") == [{"cast": True, "total": 1}] , f"{tally}";
+        }
+    } finally {
+        _restore_read_tier(prior);
+    }
+}
+
+
+test "request loop: a read that runs out of predicate locks is retried, not a 500" {
+    prior = _without_read_tier();
+    try {
+        with TemporaryDirectory() as td {
+            (exec_mgr, walkers, mod) = _vote_app(td);
+            seeded = _spawn(exec_mgr, walkers["Seed"]);
+            assert "error" not in seeded , f"seeding failed: {seeded}";
+            mod.lock_exhaustions.append(1);
+            read = _spawn(exec_mgr, walkers["ReadPoll"]);
+            assert mod.lock_exhaustions == [] , "the exhaustion was never armed";
+            assert len(mod.exhausted_queries) == 1 , (
+                "the read never reached the database, so nothing was exhausted"
+            );
+            assert "error" not in read , (
+                f"an exhausted predicate-lock table failed the request: {read}"
+            );
+            assert read.get("reports") == [0] , f"{read}";
         }
     } finally {
         _restore_read_tier(prior);

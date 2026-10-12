@@ -119,7 +119,7 @@ At deploy time (`jac scale deploy`), the pin selects the **pod runtime**: the de
 - **Range** -> the newest published release that satisfies it.
 - **No published release satisfies the pin** (or the matching release lacks the pod's CPU arch or a `jac-*` asset) -> the deploy **aborts** with an error naming the pin; a pinned deploy never silently ships a different version. Fix or remove `jac-version` to proceed.
 
-The pin is honored only on the default (stable) channel; the `[dev]`, `[experimental]`, and `JAC_SCALE_BINARY_PATH` (local) channels select the pod binary by their own rules and ignore it.
+The pin is honored only on the default (stable) channel; the `[dev]`, `[experimental]`, and `[dev] pod_binary` (local) channels select the pod binary by their own rules and ignore it.
 
 ---
 
@@ -326,7 +326,7 @@ conflict_max_attempts = 5    # max walker/function attempts under "retry"
 conflict_backoff_ms = 0      # linear backoff between replay attempts (0 = none)
 
 [serve.workers]
-count = "1"              # Worker processes; "auto" = the CPU quota. JAC_SERVE_WORKERS
+count = ""               # Worker processes; unset = as many as fit (see below), "auto" = the CPU quota. JAC_SERVE_WORKERS
 threads = "auto"         # Sync-handler threads per worker; "auto" sizes from the quota. JAC_SERVE_THREADS
 max_requests = 0         # Recycle a worker after this many requests (0 = never). JAC_SERVE_MAX_REQUESTS
 max_requests_jitter = 0  # Random extra requests so workers do not recycle together
@@ -451,6 +451,15 @@ per core of the container's quota. Even on one core, more than one worker
 keeps a slow request from stalling every other request. Anything that only
 works in one process is refused when `count > 1`: `--dev` hot reload, a
 memory WebSocket backplane, or events without a database.
+
+Left unset, `count` starts one worker per core of the quota, no more than
+available memory allows at 512 MiB per worker, and falls back to one worker
+(saying why at startup) whenever more would be refused for one of the reasons
+above, so `--dev` and single-process features keep working without
+configuration. In a cluster an unset count is one worker per pod; pods scale
+by replicas, and `jac scale deploy` sets `JAC_SERVE_WORKERS` to `1` unless
+`count` is configured. Set `count` explicitly to pin it: an explicit value is
+never lowered, and is refused instead when it cannot work.
 
 `on_conflict` controls what happens when two concurrent requests race a "look it up, create it if missing" against the same node and the loser's commit is rejected. `retry` (default) re-runs the request against the now-current graph so it converges on the winner's node; `fail` surfaces a typed `409 write_conflict` for the client to handle. See [Persistence -> Concurrent writes: check-then-create](../persistence.md#concurrent-writes-check-then-create-and-convergence) for the full model.
 
@@ -737,6 +746,39 @@ failures, and annex failures are never cached as clean. `--cache` / precommit
 enable this format cache explicitly and do **not** consult `[cache].enabled`
 (that flag gates the bytecode cache). The directory is git-ignored, so it is
 safe to delete at any time. See [`jac fmt --cache`](../cli/index.md#jac-fmt).
+
+---
+
+### [dev]
+
+Settings for working on jac itself or shipping a build of it. None of them is
+read by a sealed release; a `[dev]` table also selects the `dev` deploy channel.
+
+```toml
+[dev]
+jaclang_source = "../jac"   # run the compiler from this checkout
+exact = false               # true: never reuse an earlier compiler's products
+pod_binary = "../jac/zig-out/bin/jac"  # ship this jac to scale pods (channel local)
+```
+
+### [network]
+
+```toml
+[network]
+offline = false  # true: never download; a missing toolchain, package,
+                 # scaffold or Postgres distribution is an error naming why
+```
+
+### [toolchains]
+
+```toml
+[toolchains]
+system = true    # false: ignore a compatible tool already on the system
+                 # (a JDK 21 at JAVA_HOME, Node 22 on PATH) and use jac's
+                 # pinned managed copy -- reproducible CI setups
+```
+
+See [Toolchains](../../build/toolchains.md).
 
 ---
 

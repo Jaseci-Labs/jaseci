@@ -60,14 +60,8 @@ def preferred_port(app_name: str) -> int {
 
 
 def host_executable -> str {
-    if os.path.isfile("/proc/self/exe") {
-        return os.path.realpath("/proc/self/exe");
-    }
-    exe = os.environ.get("JAC_EXECUTABLE", "");
-    if exe and os.path.isfile(exe) {
-        return os.path.realpath(exe);
-    }
-    return os.path.abspath(sys.argv[0]);
+    import from jaclang.jac0core.handoff { process_executable }
+    return process_executable();
 }
 
 

@@ -332,6 +332,26 @@ def preflight_pod_runtime(project_dir: str, channel: str, arch: str) -> str {
 }
 
 
+def read_local_binary(project_dir: str) -> bytes {
+    import from jaclang.scale.config.dev_config { local_pod_binary }
+    local = local_pod_binary(project_dir);
+    if not local {
+        raise RuntimeError(
+            "channel 'local' requires [dev] pod_binary in jac.toml to name a jac binary."
+        );
+    }
+    path = Path(local);
+    if not path.is_file() {
+        raise RuntimeError(
+            f"[dev] pod_binary {local!r} is not a file; cannot ship a local jac "
+            "binary that does not exist."
+        );
+    }
+    logger.info(f"Shipping the local jac binary at {local} ([dev] pod_binary).");
+    return path.read_bytes();
+}
+
+
 def download_release_binary(
     channel: str, arch: str, version: str = "", plat: str = "linux"
 ) -> bytes {
@@ -345,23 +365,9 @@ def download_release_binary(
     }
 
     if channel == "local" {
-        import from jaclang.scale.config.dev_config { BINARY_PATH_ENV }
-        local = os.environ.get(BINARY_PATH_ENV, "");
-        if not local {
-            raise RuntimeError(
-                f"channel 'local' requires {BINARY_PATH_ENV} to point at a jac "
-                "binary; it is unset or empty."
-            );
-        }
-        path = Path(local);
-        if not path.is_file() {
-            raise RuntimeError(
-                f"{BINARY_PATH_ENV}={local!r} is not a file; cannot ship a local "
-                "jac binary that does not exist."
-            );
-        }
-        logger.info(f"Shipping the local jac binary at {local} ({BINARY_PATH_ENV}).");
-        return path.read_bytes();
+        raise RuntimeError(
+            "channel 'local' ships the project's [dev] pod_binary; it is never downloaded"
+        );
     }
 
     if channel == "dev" {

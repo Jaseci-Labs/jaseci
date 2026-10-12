@@ -1316,11 +1316,38 @@ impl _parse_toml_data(
         client_data = data["client"];
         config.client = ClientConfig(framework=client_data.get("framework", "react"));
     }
+    if isinstance(data.get("database"), dict) {
+        db_data: dict[str, any] = data["database"];
+        indexes = db_data.get("indexes");
+        days = str(db_data.get("retention_days") or "0").strip();
+        config.database = DatabaseConfig(
+            indexes={
+                str(arch): [str(field) for field in fields]
+                for (arch, fields) in (
+                    indexes.items() if isinstance(indexes, dict) else []
+                )
+                if isinstance(fields, list)
+            },
+            retention_days=int(days) if days.isdigit() else 0,
+            postgres_dist=str(db_data.get("postgres_dist") or ""),
+            postgres_version=str(db_data.get("postgres_version") or "")
+        );
+    }
+    if isinstance(data.get("network"), dict) {
+        config.network = NetworkConfig(offline=data["network"].get("offline") is True);
+    }
+    if isinstance(data.get("toolchains"), dict) {
+        config.toolchains = ToolchainsConfig(
+            system=data["toolchains"].get("system", True) is not False
+        );
+    }
     if "dev" in data {
         dev_data = data["dev"];
 
         config.dev = DevConfig(
             jaclang_source=str(dev_data.get("jaclang_source", "")),
+            exact=dev_data.get("exact") is True,
+            pod_binary=str(dev_data.get("pod_binary", "")),
             jobs=str(dev_data.get("jobs", "")),
             test_jobs=str(dev_data.get("test_jobs", "")),
             check_jobs=str(dev_data.get("check_jobs", "")),
