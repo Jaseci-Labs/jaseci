@@ -16,40 +16,40 @@ import from jaclang.runtime.prepared {
 }
 
 glob SERVE_MANIFEST_SHAPES: dict[int, dict[str, set[str]]] = {
-    3: {
-        'manifest': {
-            'app',
-            'client',
-            'endpoint_effects',
-            'format',
-            'jaclang_version',
-            'module_manifests',
-            'persistence',
-            'private_declarations',
-            'spa_routes',
-            'surface'
-        },
-        'module': {
-            'app',
-            'client',
-            'endpoint_effects',
-            'persistence',
-            'private_declarations',
-            'spa_routes',
-            'surface'
-        },
-        'surface': {
-            'explicit_access',
-            'exposure',
-            'kind',
-            'placement',
-            'reflect',
-            'route',
-            'scheduled',
-            'src'
-        }
-    }
-};
+         3: {
+             'manifest': {
+                 'app',
+                 'client',
+                 'endpoint_effects',
+                 'format',
+                 'jaclang_version',
+                 'module_manifests',
+                 'persistence',
+                 'private_declarations',
+                 'spa_routes',
+                 'surface'
+             },
+             'module': {
+                 'app',
+                 'client',
+                 'endpoint_effects',
+                 'persistence',
+                 'private_declarations',
+                 'spa_routes',
+                 'surface'
+             },
+             'surface': {
+                 'explicit_access',
+                 'exposure',
+                 'kind',
+                 'placement',
+                 'reflect',
+                 'route',
+                 'scheduled',
+                 'src'
+             }
+         }
+     };
 
 """Collect the key names of a serve manifest, its module records, and their surface entries."""
 def serve_manifest_shape(manifest: dict[str, any]) -> dict[str, set[str]] {
@@ -58,9 +58,7 @@ def serve_manifest_shape(manifest: dict[str, any]) -> dict[str, set[str]] {
         'manifest': set(manifest),
         'module': {key for record in modules for key in record},
         'surface': {
-            key
-            for record in modules
-            for rec in (record.get('surface') or {}).values()
+            key for record in modules for rec in (record.get('surface') or {}).values()
             for key in rec
         }
     };
@@ -91,8 +89,8 @@ test "sealing retains each colocated service's access metadata" {
             shape = serve_manifest_shape(manifest);
             assert shape == SERVE_MANIFEST_SHAPES.get(SERVE_MANIFEST_FORMAT) , (
                 f'serve manifest shape changed under format {SERVE_MANIFEST_FORMAT}: '
-                    + f'{shape}. If older readers cannot handle the change, bump '
-                    + 'SERVE_MANIFEST_FORMAT; then record the new shape in SERVE_MANIFEST_SHAPES.'
+                + f'{shape}. If older readers cannot handle the change, bump '
+                + 'SERVE_MANIFEST_FORMAT; then record the new shape in SERVE_MANIFEST_SHAPES.'
             );
             modules = manifest['module_manifests'];
             assert modules['main.jac']['app'] == 'web';
