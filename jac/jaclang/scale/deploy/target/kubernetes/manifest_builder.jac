@@ -938,6 +938,9 @@ obj ManifestBuilder {
 
     def _worker_count_env(svc_cfg: dict[str, any]) -> str {
         raw = str(svc_cfg.get("workers") or self._serve_config().workers.count).strip();
+        if not raw {
+            return "1";
+        }
         resolve_count(raw, 1, '[serve.workers] count');
         return raw;
     }

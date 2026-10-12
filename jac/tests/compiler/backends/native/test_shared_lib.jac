@@ -347,6 +347,50 @@ test "link_artifact builds a shared library from the plan with its sidecar" {
 }
 
 
+test "a library exports its root module's :pub surface, not its imports'" {
+    # `jac build --native --lib` sets library_api: the helper's `:pub twice` is
+    # how shared_main.jac imports it, not part of the library's C ABI.
+    prev = push_native_target("x86_64-unknown-linux-gnu");
+    try {
+        (_prog, plan, _opts) = plan_shared(
+            "shared_main.jac", "x86_64-unknown-linux-gnu"
+        );
+        assert "twice" in plan.pub_exports();
+        plan.library_api = True;
+        exports = plan.pub_exports();
+        assert "seen_argc" in exports and "doubled" in exports , exports;
+        assert "twice" not in exports , exports;
+    } finally {
+        pop_native_target(prev);
+    }
+}
+
+test "a library with an entry runs it through jac_main with the host's argv" {
+    # Loading runs the unit initializers but not the entry; jac_main(argc, argv)
+    # hands the program the host's argv (sys.argv) and runs it.
+    if not (
+        sys.platform.startswith("linux") and ("x86_64" in llvm.get_default_triple())
+    ) {
+        return;
+    }
+    import ctypes;
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d {
+        out = os.path.join(d, "libshared_main.so");
+        link_shared("shared_main.jac", "x86_64-unknown-linux-gnu", out);
+        lib = ctypes.CDLL(out);
+        lib.seen_argc.restype = ctypes.c_int64;
+        assert lib.seen_argc() == -1 , "the entry ran at load";
+        lib.doubled.restype = ctypes.c_int64;
+        lib.doubled.argtypes = [ctypes.c_int64];
+        assert lib.doubled(21) == 42;
+        argv = (ctypes.c_char_p * 3)(b"prog", b"a", b"b");
+        lib.jac_main.restype = ctypes.c_int32;
+        lib.jac_main.argtypes = [ctypes.c_int32, ctypes.POINTER(ctypes.c_char_p)];
+        assert lib.jac_main(3, argv) == 0;
+        assert lib.seen_argc() == 3;
+    }
+}
+
 test "ELF shared object initializes a global clib struct on dlopen" {
     # Regression guard for the `--lib` global-clib-struct segfault. The
     # struct pointer `g` is populated by the unit's initializer
