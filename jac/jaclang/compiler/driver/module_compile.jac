@@ -61,10 +61,12 @@ obj ModuleCompilation {
     }
 
     def native_checks {
+        import from jaclang.compiler.placement.placement_facts { variant_selected }
         analysis = self.analysis;
         options = analysis.options;
         if not (
-            options.no_cgen
+            variant_selected(analysis.path) is not False
+            and options.no_cgen
             and (options.native_parity or options.native_required_for(analysis.path))
             and not options.symtab_ir_only
             and not analysis.parse_failed

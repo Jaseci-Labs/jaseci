@@ -6,6 +6,11 @@ impl EsastGenPass.exit_name with uni.Name exit {
 }
 
 impl EsastGenPass._exit_name_impl(nd: uni.Name) -> None {
+    link = self.loop_links.of_name(nd);
+    if link is not None and not self._pass_link_native(link) {
+        nd.gen.es_ast = self._pass_link_ref(link, nd);
+        return;
+    }
     if self._is_ct_type_param(nd) and not self._in_identifier_slot(nd) {
         nd.gen.es_ast = self.sync_loc(
             es.MemberExpression(

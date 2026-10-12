@@ -49,19 +49,14 @@ import from jaclang.compiler.driver.jir {
     write_module_cache,
     write_precompiled_jir
 }
+import from jaclang.jac0core.handoff { update_handoff }
 import from tests.support { cache_env }
 
 glob PKG: Path = Path(str(jir.__file__)).resolve().parent.parent.parent,
      MODULE: str = str(PKG / "cache" / "policy.jac"),
      EMITTER_ROW: str = "compiler/backends/py/jcir_gen_pass.jac",
      NATIVE_ROW: str = "compiler/backends/native/link_plan.jac",
-     INTERPRETER_ROW: str = "compiler/backends/py/jacpython/runtime.jac",
-     SCRUBBED_ENV: tuple[str, ...] = (
-         "JAC_DEV_EXACT",
-         "JAC_PRECOMPILE_REQUIRED",
-         "JAC_REBUILD",
-         "JAC_NO_PRECOMPILE"
-     );
+     INTERPRETER_ROW: str = "compiler/backends/py/jacpython/runtime.jac";
 
 """A source checkout with its own cache, entered as one compiler build after
 another. Each build is a generation directory, a compiler digest and the
@@ -74,11 +69,10 @@ obj Checkout {
         minted: list[str] = [];
 
     def __enter__ -> Checkout {
+        import from jaclang.jac0core.handoff { HANDOFF_ENV, update_handoff }
         env = dict(cache_env(self.cache));
-        env["JAC_DEV_SOURCE"] = str(PKG.parent);
-        for name in SCRUBBED_ENV {
-            self.saved_env[name] = os.environ.pop(name, None);
-        }
+        self.saved_env[HANDOFF_ENV] = os.environ.pop(HANDOFF_ENV, None);
+        update_handoff(compiler_source=str(PKG.parent));
         for (name, value) in env.items() {
             self.saved_env[name] = os.environ.get(name);
             os.environ[name] = value;
@@ -245,22 +239,20 @@ test "nothing is carried outside a source checkout" {
         write_module_cache(MODULE, b"emitted-by-a");
         tree.build("b", native="n1");
         assert carried_module_bytecode(MODULE) is not None;
-        os.environ["JAC_DEV_SOURCE"] = tree.cache;
+        update_handoff(compiler_source=tree.cache);
         assert carried_module_bytecode(MODULE) is None , "another checkout's compiler was carried";
-        del os.environ["JAC_DEV_SOURCE"];
+        update_handoff(compiler_source="");
         assert carried_module_bytecode(MODULE) is None , "an installed compiler carried bytecode";
     }
 }
 
-test "a build that requires its bundle or asks to be exact carries nothing" {
-    for name in ["JAC_DEV_EXACT", "JAC_PRECOMPILE_REQUIRED"] {
-        with checkout() as tree {
-            tree.build("a");
-            write_module_cache(MODULE, b"emitted-by-a");
-            tree.build("b", native="n1");
-            os.environ[name] = "1";
-            assert carried_module_bytecode(MODULE) is None , f"{name} still carried bytecode";
-        }
+test "a build that asks to be exact carries nothing" {
+    with checkout() as tree {
+        tree.build("a");
+        write_module_cache(MODULE, b"emitted-by-a");
+        tree.build("b", native="n1");
+        update_handoff(exact=True);
+        assert carried_module_bytecode(MODULE) is None , "an exact build still carried bytecode";
     }
 }
 
@@ -273,7 +265,7 @@ test "carried bytecode is refused by an exact build and replaced by a real compi
         slot = get_module_cache_path(MODULE);
         assert entry_flags() & FLAG_CARRIED;
         assert is_module_cache_valid(MODULE, slot);
-        os.environ["JAC_DEV_EXACT"] = "1";
+        update_handoff(exact=True);
         assert module_cache_invalid_reason(MODULE, slot)
             == "bytecode carried from an earlier compiler";
         write_module_cache(MODULE, b"emitted-by-b");
@@ -290,7 +282,7 @@ test "the compiler loads a carried module without compiling it" {
         if compiler._sealed_jir_data(MODULE) is not None {
             return;
         }
-        os.environ["JAC_NO_PRECOMPILE"] = "1";
+        jir.set_cache_mode(no_precompile=True);
         tree.build("a");
         code = compile("CARRIED = 41 + 1\n", MODULE, "exec");
         write_module_cache(MODULE, marshal.dumps(code));
@@ -349,7 +341,7 @@ test "a kernel unit is stamped with the kernel's ABI in a source checkout" {
         assert native_producer_digest(False) == running_compiler_digest() , (
             "a user program's products lost the compiler that built them"
         );
-        os.environ["JAC_DEV_EXACT"] = "1";
+        update_handoff(exact=True);
         assert native_producer_digest(True) == running_compiler_digest() , (
             "an exact build stamped a kernel unit by its ABI"
         );
@@ -396,7 +388,7 @@ test "an exact build carries no native products" {
         write_native(True, b"lowered-by-a");
         tree.build("b", native="n1");
         kernel = native_producer_digest(True);
-        os.environ["JAC_DEV_EXACT"] = "1";
+        update_handoff(exact=True);
         assert carried_native_sections(MODULE, kernel) == {};
     }
 }
@@ -430,7 +422,7 @@ test "an unrelated compiler edit lowers no kernel unit again" {
         assert lowered_kernel_units() == [];
         tree.build("b", native="n1");
         assert lowered_kernel_units() == [] , "a compiler edit lowered unchanged kernel units";
-        os.environ["JAC_DEV_EXACT"] = "1";
+        update_handoff(exact=True);
         assert lowered_kernel_units() == cold , "an exact build reused a kernel unit";
     }
 }
@@ -438,10 +430,9 @@ test "an unrelated compiler edit lowers no kernel unit again" {
 test "a kernel linked before a compiler edit is still accepted after it" {
     import sys;
     import from jaclang.compiler.backends.native.kernel_resolve {
-        _unit_sources_match,
-        kernel_options
+        kernel_options,
+        unit_drift
     }
-    import from jaclang.compiler.backends.native.link_plan { units_source_key }
     import from jaclang.compiler.driver.jir { unit_source_digest }
     import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
     with checkout() as tree {
@@ -457,20 +448,15 @@ test "a kernel linked before a compiler edit is still accepted after it" {
             "unit_policy": {ident: int(options.native_required_for(MODULE))}
         };
         recorded = {ident: unit_source_digest(MODULE)};
-        source_key = units_source_key([MODULE], options);
-        assert _unit_sources_match(sidecar, recorded, [MODULE]);
+        assert unit_drift(sidecar, recorded, [MODULE]) == [];
         tree.build("b", native="n1");
-        assert _unit_sources_match(sidecar, recorded, [MODULE]) , (
+        assert unit_drift(sidecar, recorded, [MODULE]) == [] , (
             "a compiler edit outside the kernel's units retired the kernel"
         );
-        assert units_source_key([MODULE], options) == source_key;
-        assert not _unit_sources_match(
-            sidecar, {ident: "an earlier revision"}, [MODULE]
-        );
-        os.environ["JAC_DEV_EXACT"] = "1";
-        assert not _unit_sources_match(sidecar, recorded, [MODULE]) , (
+        assert unit_drift(sidecar, {ident: "an earlier revision"}, [MODULE]);
+        update_handoff(exact=True);
+        assert unit_drift(sidecar, recorded, [MODULE]) , (
             "an exact build accepted a kernel stamped by its ABI"
         );
-        assert units_source_key([MODULE], options) != source_key;
     }
 }

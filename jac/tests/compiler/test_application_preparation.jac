@@ -40,6 +40,16 @@ test "sealing retains each colocated service's access metadata" {
             assert 'private_score' not in modules['scoring.jac']['surface'] , (
                 "the served surface lists only exposed declarations"
             );
+            for entry_manifest in [manifest, *modules.values()] {
+                assert 'root' not in entry_manifest , (
+                    "a baked manifest must not pin the seal stage's path"
+                );
+                for rec in (entry_manifest.get('surface') or {}).values() {
+                    assert 'module' not in rec , (
+                        "a baked surface entry must not pin the seal stage's path"
+                    );
+                }
+            }
         } finally {
             forget(str(path));
         }
@@ -735,6 +745,50 @@ def _restored(path: Path, `root: str) -> bool {
         forget(str(path));
     }
     return 'Restoring prepared application' in err.getvalue();
+}
+
+test "an in-process prepare releases the compiler state it built" {
+    import from jaclang.project.kernel_compile { _APPLICATION_UNITS }
+    import from jaclang.project.kernel_snapshot { _IFACE_MEMO, _IFACE_REFUSED }
+    with tempfile.TemporaryDirectory(prefix='jac-prepared-release-') as tmp {
+        base = Path(tmp);
+        path = base / 'main.jac';
+        helper = base / 'helper.jac';
+        helper.write_text("def:pub twice(n: int) -> int { return n * 2; }\n");
+        path.write_text(
+            "import from helper { twice }\n"
+            "def:pub hello -> int { return twice(21); }\n"
+        );
+        program = JacProgram();
+        memo: any = _IFACE_MEMO;
+        memo[str(base / 'stale_iface.py')] = ([], [], None);
+        _IFACE_REFUSED[str(base / 'stale_refused.py')] = 'stamp';
+        try {
+            prepared = prepare_application(str(path), program, tmp);
+            assert prepared.code , "the prepared application lost its code";
+            held = [
+                key
+                for key in program.mod.hub
+                if key.startswith(tmp)
+            ];
+            assert not held , (
+                f"the program still holds {len(held)} parsed app modules after prepare"
+            );
+            assert not program.contexts , (
+                f"{len(program.contexts)} per-context programs survived the prepare"
+            );
+            assert not [
+                p
+                for p in _APPLICATION_UNITS
+                if p.startswith(tmp)
+            ] , "kernel unit products for the app survived the prepare";
+            assert not _IFACE_MEMO and not _IFACE_REFUSED , (
+                "the interface memo survived the prepare"
+            );
+        } finally {
+            forget(str(path));
+        }
+    }
 }
 
 test "prepared applications are reused by content, not by timestamp" {

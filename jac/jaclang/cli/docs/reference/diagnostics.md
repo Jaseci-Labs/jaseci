@@ -163,6 +163,7 @@ All three block code generation for the module that reports them.
 | `E0094` | Expected a wire ('provider --> consumer') or an edge rule here |
 | `E0095` | '*' must be the only item in a payload |
 | `E0096` | A rule payload lists names without aliases |
+| `E0097` | `return tail` needs a function call |
 
 ### Parser Warnings
 
@@ -301,8 +302,15 @@ Emitted by the type checker for [C library](language/native-pathway.md#c-library
 | `E1150` | Field '{field}' of foreign struct '{name}' {reason} |
 | `E1151` | Opaque C type '{name}' has no known size, so it cannot be {use} |
 | `E1152` | {what} needs C plain data, not {type} |
+| `E1153` | C data symbol '{name}' {reason} |
+| `E1154` | addressof() takes a C data symbol, not {what} |
+| `E1155` | C data definition '{name}' {reason} |
+| `E1156` | A C string pointer is made from a string literal of bytes, not {what} |
+| `E1157` | C variadic {what} |
+| `E1158` | C function definition '{name}' {reason} |
+| `E1159` | '{name}' is a borrowed scalar parameter; {what} |
 
-A foreign struct field must be C plain data: a sized scalar, `int`, `float`, `bool`, another foreign struct (nested by value, never containing itself), `ptr[T]` / `ptr`, or a named-function callback (`E1150`). A bodiless `obj Name;` declares an opaque C type, usable only as `ptr[Name]` (`E1151`). `pin(value)`, `p.view(n)` and `&T` / `&mut T` clib parameters lay their payload out in C memory, so `T` needs a known size (`E1152`). Escaping a `PtrView` of C memory is `E1315`, and passing anything but a `Pinned[T]` to a `&mut Pinned[T]` parameter is an ordinary argument mismatch (`E1053`).
+A foreign struct field must be C plain data: a sized scalar, `int`, `float`, `bool`, another foreign struct (nested by value, never containing itself), `ptr[T]` / `ptr`, or a named-function callback (`E1150`). A bodiless `obj Name;` declares an opaque C type, usable only as `ptr[Name]` (`E1151`). `pin(value)`, `p.view(n)` and `&T` / `&mut T` clib parameters lay their payload out in C memory, so `T` needs a known size (`E1152`). `glob name: T;` in a C library import declares a C variable and `glob name: T = value;` defines one; a C object (foreign struct, opaque type or `list[T]` array) is used only by address (`E1153`), `addressof()` takes only such a symbol (`E1154`), a definition's initializer is a C constant, where `ptr(function)` is a named function's address for a `ptr` field such as a `PyMethodDef` entry and a sized integer array also takes a bytes literal, read as its little-endian elements (`E1155`), and `ptr[u8]("text")` takes a string literal (`E1156`). A C variadic function takes C scalars, pointers, `str` or `bytes` as extra arguments and no keyword parameters (`E1157`), and a `def` with a body in a C library import defines a C function whose parameters and result are C data, under a C symbol no other linked module declares with a different signature (`E1158`). Escaping a `PtrView` of C memory is `E1315`, and passing anything but a `Pinned[T]` to a `&mut Pinned[T]` parameter is an ordinary argument mismatch (`E1053`), as is `&mut x` for a `ptr[T]` parameter unless the callee is a C function and `x` is exactly `T` (then it lends x's address for the call). A Jac function's `&mut` parameter holding a scalar (a number, a bool or a pointer) is a value: assigning it, lending it on as `&mut p`, or passing it to a parameter the callee declares `&mut` would write only the function's copy, so each is `E1159`; return the new value or take a `ptr[T]` to storage the caller owns.
 
 ### Exception / Context Manager / Yield
 
@@ -473,6 +481,14 @@ See [Project Wiring](wiring.md).
 | `E1143` | A wire cannot connect '{module}' to itself |
 | `E1144` | Import of '{module}' is not declared by arch.jac for '{consumer}' |
 
+### Unresolved Names
+
+| Code | Message |
+|------|---------|
+| `E1145` | Cannot import name '{name}' from Jac module '{module}': it defines no such name |
+
+Native lowering reports `E1145` when a module imports a name that the Jac module it binds to does not define. There is no symbol to bind the name to, and every use of it used to lower to a null value (a glob initializer received NULL and the binary crashed at load). The checker reports the same import as the `W1101` warning: its lazy resolution can miss a name that exists (an import cycle still being analyzed, or a sibling module shadowing a standard-library one), so only native lowering, which reads the bound module's complete symbol table, makes it an error.
+
 ## Semantic Errors (E2xxx / W2xxx)
 
 Emitted by static analysis and declaration-implementation matching passes.
@@ -484,74 +500,6 @@ Emitted by static analysis and declaration-implementation matching passes.
 | `W2001` | Name '{name}' may be undefined |
 | `W2002` | Unreachable code detected |
 | `W2003` | '{name}' is defined but never used |
-
-### Closures Created in a Loop
-
-| Code | Message |
-|------|---------|
-| `E2097` | Closure captures '{name}', which the enclosing loop reassigns: every closure the loop creates shares that one binding and will see its final value |
-| `W2084` | Closure captures '{name}', which the enclosing loop reassigns: every closure the loop creates shares that one binding and will see its final value if the callee or container it is handed to keeps it past the iteration |
-
-A local assigned in a loop body belongs to the enclosing function, not to one iteration, with or without a type annotation (see [Variables and Scope](language/variables-and-scope.md#4-scope-rules)). A `lambda` or nested `def` created in the loop only reads that local when it is called, so if it is kept past its iteration every one of them reads whatever the last iteration assigned:
-
-<!-- jac-skip -->
-```jac
-for item in items {
-    item_id = item.id;
-    handlers.append(lambda { open(item_id); });   # E2097: every handler opens the last item
-}
-```
-
-Bind the value through a parameter, which is bound per call:
-
-```jac
-def opener_for(item_id: str, open: Callable[[str], None]) -> Callable[[], None] {
-    return lambda { open(item_id); };
-}
-
-def build(ids: list[str], open: Callable[[str], None]) -> list[Callable[[], None]] {
-    handlers: list[Callable[[], None]] = [];
-    for raw in ids {
-        item_id = raw.strip();
-        handlers.append(opener_for(item_id, open));
-    }
-    return handlers;
-}
-```
-
-Both codes are reported from `jac check` in every codespace. Which one depends on what the code in front of the compiler proves about the closure.
-
-**`E2097`, an error: the loop keeps the closure.** Nothing the compiler cannot see stands between the closure and the place that holds it past the iteration:
-
-- it is the value of a JSX attribute, a spread attribute or a JSX child (`<li onClick={lambda { ... }}>`)
-- it is assigned to a field or a subscript of something that outlives the iteration (`table[key] = ...`, `if ready { self.on_done = ...; }`), on its own or inside a list, tuple, set or dict literal
-- it is stored by `append`, `extend` or `insert` on a `list`, or `add` on a `set`, when the checker has resolved the receiver to that builtin type and the container outlives the iteration
-- it is carried from one iteration to the next by a rebinding (`rows = rows + [lambda { ... }]`, `rows += [...]`)
-- it is yielded
-- it is captured by another closure that is kept in one of these ways
-
-A named closure (a `def` in the loop body, or a `lambda` assigned to a name) is followed to where the name is used, so `handler = lambda { ... }; handlers.append(handler);` is the same error. A local `async def` or generator does not run when it is called, so its call result is followed the same way: `pending.append(read())` keeps the coroutine, `await read()` runs it in place.
-
-**`W2084`, a warning: the closure is handed to a callee the compiler cannot see into.** It is written as an argument of a call (directly, by keyword, or inside a literal that is passed), or it is a named closure whose only use as a value is being passed to one. The same warning covers stores the code does not settle either way: a container the loop resets only on some paths, a container that is an alias, a call result or the loop target (`btn.on_click = ...`, where whether `btn` outlives the iteration depends on the collection), a field directly on one object that the loop body overwrites on every iteration (`self.on_progress = ...`, where only the latest closure is left in the field but an earlier one may have been read or handed on first), and a value taken back out of a per-iteration container and then stored (`handlers.append(batch[0])`), where the compiler does not track which element was taken. The callee may run it before returning, in which case the code is correct, or keep it, in which case every closure sees the last value. The warning does not fail `jac check`. Binding through a parameter removes it; so does `# jac:ignore[W2084]` on the line when the callee is known to run the closure in place.
-
-<!-- jac-skip -->
-```jac
-for item in items {
-    item_id = item.id;
-    register(lambda { open(item_id); });   # W2084: does register() keep it?
-}
-```
-
-**Not reported: the closure runs within its iteration, or the loop does not share the binding.**
-
-- the closure is called on the spot (`(lambda { ... })()`), or is a local `def` or named `lambda` that is only ever called
-- the closure is the callback of an iteration combinator that runs it before returning (`map`, `filter`, `reduce`, `forEach`, `find`, `findIndex`, `findLast`, `findLastIndex`, `some`, `every`, `flatMap`, `reduceRight`, `sort`, `toSorted`) or a `key=` argument; a closure created inside such a callback is still checked
-- the closure is part of a `return` statement, which ends the loop, or is only used after the loop
-- the closure is put in a list, tuple, set or dict literal that is created afresh in the iteration and stays there
-- the name is a parameter of the closure, a local of its own, or is read in a parameter default (evaluated when the closure is created)
-- the closure only assigns the name and never reads it (an augmented assignment such as `count += 1` does read it)
-- the loop does not assign the binding (it was assigned before the loop), or the binding is a `glob`
-- the binding belongs to the loop itself: the `for` target, or a `def` declared in the loop body
 
 ### Semantic Errors
 
@@ -742,7 +690,7 @@ Emitted while lowering the unitree into the compact codegen IR container (`JcirG
 
 | Code | Message |
 |------|---------|
-| `E5060` | C library import declaration '{name}' must not have a body |
+| `E5114` | `return tail` cannot be a guaranteed tail call: {reason} |
 
 ### Client Code Generation
 

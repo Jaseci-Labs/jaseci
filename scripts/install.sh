@@ -10,7 +10,6 @@
 #
 # Options:
 #   --version V   Install a specific release version (e.g., 2.3.1)
-#   --jacpython   Select the experimental JacPython compiler
 #   --uninstall   Remove Jac
 #   --help        Print usage
 #
@@ -28,7 +27,6 @@ INSTALL_DIR="${HOME}/.local/bin"
 # --- Defaults ---
 VERSION=""
 UNINSTALL=false
-USE_JACPYTHON=false
 # Filled in by resolve_release_metadata once the release is known: the jac
 # binary version its assets are named with, and every asset name it carries.
 ASSET_VERSION=""
@@ -86,7 +84,6 @@ USAGE:
 
 OPTIONS:
     --version V   Install a specific release version (e.g., 2.3.1)
-    --jacpython   Select the experimental JacPython compiler (default: CPython)
     --uninstall   Remove Jac installation
     --help        Print this help message
 
@@ -96,9 +93,6 @@ EXAMPLES:
 
     # Specific version
     curl -fsSL ... | bash -s -- --version 2.3.1
-
-    # Experimental JacPython binary
-    curl -fsSL ... | bash -s -- --jacpython
 EOF
 }
 
@@ -145,10 +139,6 @@ parse_args() {
                 fi
                 VERSION="$2"
                 shift 2
-                ;;
-            --jacpython)
-                USE_JACPYTHON=true
-                shift
                 ;;
             --uninstall)
                 UNINSTALL=true
@@ -305,12 +295,6 @@ require_platform_asset() {
         return 0
     fi
 
-    if $USE_JACPYTHON; then
-        err "Release v${VERSION} ships no JacPython binary for ${OS}-${ARCH} (--jacpython)."
-        err "Choose a release that lists ${asset}, or omit --jacpython to select the default binary."
-        exit 1
-    fi
-
     err "Release v${VERSION} ships no jac binary for ${OS}-${ARCH}."
     err ""
     if [[ "$OS" == "macos" && "$ARCH" == "x86_64" ]]; then
@@ -359,7 +343,6 @@ install_binary() {
     info "jac binary version: ${ASSET_VERSION}"
 
     local asset="jac-${ASSET_VERSION}-${OS}-${ARCH}"
-    if $USE_JACPYTHON; then asset="${asset}-jacpython"; fi
 
     # Checked against the release's own asset list before downloading, so a
     # platform this release did not build gets an explanation rather than a

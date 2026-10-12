@@ -5,7 +5,12 @@ import from jaclang.compiler.frontend.module_facts { ModuleFacts }
 import from jaclang.runtime.osp_tag { stable_osp_tag }
 
 
-glob OSP_ANY_TAGS: dict[str, int] = {"Node": -2, "Edge": -3, "Walker": -4};
+glob OSP_ANY_TAGS: dict[str, int] = {
+         "Node": -2,
+         "Edge": -3,
+         "Walker": -4,
+         "Root": -5
+     };
 
 obj OspSlot {
     has owner: str,
@@ -335,6 +340,11 @@ obj OspAnalysis {
             while work {
                 nd = work.pop();
                 if isinstance(nd, (uni.ConnectOp, uni.VisitStmt, uni.EdgeOpRef)) {
+                    return True;
+                }
+                if isinstance(nd, uni.FuncCall)
+                    and isinstance(nd.target, uni.Name)
+                    and (nd.target.value == "jid") {
                     return True;
                 }
                 if isinstance(nd, uni.BinaryExpr)

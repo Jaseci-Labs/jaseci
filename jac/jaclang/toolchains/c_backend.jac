@@ -5,6 +5,13 @@ import subprocess;
 import tempfile;
 import from pathlib { Path }
 import from jaclang.toolchains.host { executable, host_platform, run_step }
+import from jaclang.artifacts.model {
+    Artifact as ArtifactBase,
+    ArtifactKind,
+    Probe,
+    ReleasePolicy,
+    Source
+}
 import from jaclang.toolchains.store {
     Artifact,
     build_slot,
@@ -24,34 +31,69 @@ glob LLVM_MAJOR: int = 22,
          'd425227fe3bd6a69299b188754403e20b0c840cf1609955c0ccbb68827e34ab9'
      );
 
-def ensure_c_backend -> Path {
-    configured = os.environ.get('JAC_LLVM_CBE', '');
-    if configured {
-        path = Path(configured).expanduser().resolve();
-        if not path.is_file() {
-            raise FileNotFoundError(
-                f'JAC_LLVM_CBE does not name an executable: {path}'
-            );
-        }
-        return path;
-    }
+def _c_backend_slot -> Path {
     patch = Path(__file__).parent / 'patches' / 'llvm-cbe-runtime-semantics.patch';
-    directory = build_slot(
+    return build_slot(
         C_BACKEND.name,
         host_platform(),
         f"{C_BACKEND.version[:16]}-{file_digest(patch)[:16]}"
     );
-    binary = directory / 'bin' / executable('llvm-cbe');
-    with FileLock(directory.with_suffix('.lock')) {
+}
+
+def _c_backend_binary -> Path {
+    return _c_backend_slot() / 'bin' / executable('llvm-cbe');
+}
+
+def _llvm_config -> (str | None) {
+    return shutil.which(f'llvm-config-{LLVM_MAJOR}') or shutil.which('llvm-config');
+}
+
+obj CBackendArtifact(ArtifactBase) {
+    has name: str = 'llvm-cbe',
+        kind: ArtifactKind = ArtifactKind.CAPABILITY,
+        release: ReleasePolicy = ReleasePolicy.ON_DEMAND,
+        summary: str = 'the LLVM C backend (C source export)';
+
+    override def probe_checkout -> Probe {
+        directory = _c_backend_slot();
+        binary = _c_backend_binary();
         if slot_ready(directory) and binary.is_file() {
-            return binary;
+            return Probe.hit(Source.CHECKOUT, str(binary), {});
         }
-        llvm_config = shutil.which(f'llvm-config-{LLVM_MAJOR}')
-            or shutil.which('llvm-config');
-        if not llvm_config or not shutil.which('cmake') {
+        return Probe.missing();
+    }
+
+    override def checkout_path -> str {
+        return str(_c_backend_binary());
+    }
+
+    override def build_blocker -> str {
+        if not _llvm_config() or not shutil.which('cmake') {
+            return f'C source export needs CMake and the LLVM {LLVM_MAJOR} development toolchain (llvm-config)';
+        }
+        return '';
+    }
+
+    override def build(log: Callable[[str], None], force: bool, exact: bool) {
+        _build_c_backend();
+    }
+}
+
+def ensure_c_backend -> Path {
+    import from jaclang.artifacts.router { require }
+    found = require('llvm-cbe').found;
+    assert found is not None;
+    return Path(found.path);
+}
+
+def _build_c_backend {
+    patch = Path(__file__).parent / 'patches' / 'llvm-cbe-runtime-semantics.patch';
+    directory = _c_backend_slot();
+    with FileLock(directory.with_suffix('.lock')) {
+        llvm_config = _llvm_config();
+        if not llvm_config {
             raise RuntimeError(
-                f'C source export requires CMake and the LLVM {LLVM_MAJOR} development toolchain '
-                    + '(llvm-config), or JAC_LLVM_CBE pointing to a built LLVM C backend.'
+                f'the LLVM {LLVM_MAJOR} development toolchain (llvm-config) is missing'
             );
         }
         version = subprocess.check_output(
@@ -111,19 +153,10 @@ def ensure_c_backend -> Path {
             publish_build_slot(ready, directory);
         }
     }
-    return binary;
 }
 
 
 def c_backend_provenance -> dict[str, str | int] {
-    configured = os.environ.get('JAC_LLVM_CBE', '');
-    if configured {
-        return {
-            'name': C_BACKEND.name,
-            'provider': 'JAC_LLVM_CBE',
-            'executable_sha256': file_digest(ensure_c_backend())
-        };
-    }
     patch = Path(__file__).parent / 'patches' / 'llvm-cbe-runtime-semantics.patch';
     return {
         'name': C_BACKEND.name,

@@ -736,7 +736,8 @@ hydrates a cache-valid dep from `SEC_IFACE` instead of re-running its
 frontend, `SEC_DEPS` hashes give early cutoff (a body-only edit rewrites a
 dep's JIR but not its interface hash, so importers do not cascade), and a
 warm no-edit `jac check` replays `SEC_DIAG` without running a single pass.
-Hydration is always on; `JAC_REBUILD` recomputes and rewrites the cache, and
+Hydration is always on; `jac cache purge jir-modules` makes the next run
+recompute and rewrite the cache, and
 `JAC_IFACE_VERIFY=1` recomputes everything served from cache and fails on
 any divergence. See [The analysis cache](analysis-cache.md) for the design.
 

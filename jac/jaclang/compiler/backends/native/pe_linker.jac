@@ -36,7 +36,7 @@ obj PeLinker {
     static def link(
         objects: list[bytes],
         output_path: str,
-        needed_libs: list[str] = ["msvcrt.dll"],
+        needed_libs: list[str] = ["ucrtbase.dll"],
         symbol_lib_map: dict[str, str] = {},
         shared: bool = False,
         export_symbols: list[str] = [],
