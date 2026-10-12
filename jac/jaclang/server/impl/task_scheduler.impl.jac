@@ -375,6 +375,18 @@ impl Scheduler._still_running(task: ScheduledTask) -> bool {
     return False;
 }
 
+impl Scheduler._start(thread: threading.Thread, task: ScheduledTask) -> bool {
+    try {
+        thread.start();
+    } except RuntimeError as e {
+        logger.warning(
+            f"could not start a thread for '{task.name}': {e}; skipping this run"
+        );
+        return False;
+    }
+    return True;
+}
+
 impl Scheduler._launch(task: ScheduledTask) -> None {
     thread = threading.Thread(
         target=self._run_tracked,
@@ -392,7 +404,12 @@ impl Scheduler._launch(task: ScheduledTask) -> None {
         self._release_run(task);
         return;
     }
-    thread.start();
+    if not self._start(thread, task) {
+        with self._flight_lock {
+            del self._in_flight[id(task)];
+        }
+        self._release_run(task);
+    }
 }
 
 impl Scheduler._run_tracked(task: ScheduledTask) -> None {
@@ -405,13 +422,14 @@ impl Scheduler._run_tracked(task: ScheduledTask) -> None {
             daemon=True,
             name=f"jac-schedule-hold-{task.name}"
         );
-        keeper.start();
     }
     try {
-        self._execute(task);
+        if keeper is None or self._start(keeper, task) {
+            self._execute(task);
+        }
     } finally {
         beat.set();
-        if keeper is not None {
+        if keeper is not None and keeper.ident is not None {
             keeper.join();
         }
         self._release_run(task);

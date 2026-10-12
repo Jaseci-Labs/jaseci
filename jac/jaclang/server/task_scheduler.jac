@@ -102,6 +102,7 @@ obj Scheduler {
     def _keep_hold(task: ScheduledTask, beat: threading.Event) -> None;
     def _release_run(task: ScheduledTask) -> None;
     def _still_running(task: ScheduledTask) -> bool;
+    def _start(thread: threading.Thread, task: ScheduledTask) -> bool;
     def _launch(task: ScheduledTask) -> None;
     def _run_tracked(task: ScheduledTask) -> None;
     def stop(timeout: (float | None) = None) -> None;
