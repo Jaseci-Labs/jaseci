@@ -7,7 +7,8 @@ import os;
 import from inspect { iscoroutine }
 import from typing { get_type_hints }
 import from jaclang.data.serializer { Serializer }
-import from jaclang.client.artifact { ClientBundleError, MissingBunError }
+import from jaclang.artifacts.model { ArtifactUnavailable }
+import from jaclang.client.artifact { ClientBundleError }
 import from jaclang.runtime.exceptions { ReadOnlyRetry, WriteConflict }
 import from jaclang.runtime.constants { Constants as Con }
 import from jaclang.server.exchange { forget_response_choice }
@@ -137,6 +138,20 @@ def _unit_key_for(target: any) -> (str | None) {
 }
 
 
+glob _TURN_POOL: list[any] = [];
+
+
+def _conflict_turn_pool -> any {
+    if not _TURN_POOL {
+        import from concurrent.futures { ThreadPoolExecutor }
+        _TURN_POOL.append(
+            ThreadPoolExecutor(max_workers=8, thread_name_prefix="jac-conflict-turn")
+        );
+    }
+    return _TURN_POOL[0];
+}
+
+
 def _occ_policy -> tuple[str, int, int] {
     mode = "retry";
     max_attempts = 5;
@@ -254,6 +269,30 @@ async def _run_function_with_occ(
                 }
                 if occ_backoff_ms > 0 {
                     await asyncio.sleep(occ_backoff_ms * attempt / 1000.0);
+                }
+                import from jaclang.server.session { Session }
+                mem: any = ctx.mem;
+                if isinstance(mem, Session) {
+                    import contextvars;
+                    turn_context = contextvars.copy_context();
+                    def take_turn {
+                        turn_context.run(mem.wait_turn);
+                    }
+                    turn = asyncio.get_running_loop().run_in_executor(
+                        _conflict_turn_pool(), take_turn
+                    );
+                    try {
+                        await asyncio.shield(turn);
+                    } except asyncio.CancelledError {
+                        while not turn.done() {
+                            try {
+                                await asyncio.shield(turn);
+                            } except asyncio.CancelledError {
+                                continue;
+                            }
+                        }
+                        raise;
+                    }
                 }
                 await ctx.aset_user_root(root_id);
             } except Exception as e {
@@ -903,7 +942,7 @@ impl ModuleIntrospector.ensure_bundle -> str {
             self._bundle_error = None;
             self._bundle_epoch += 1;
             return self._bundle.hash;
-        } except MissingBunError {
+        } except ArtifactUnavailable {
             self._bundle_epoch += 1;
             raise;
         } except Exception as exc {
@@ -1540,7 +1579,15 @@ impl JacAPIServer._register_scheduled_tasks -> None {
         def _claim(key: str, tick: int) -> bool {
             return bool(_store.kv_claim_tick(key, tick));
         }
+        def _hold(key: str, ttl: int, owner: str) -> bool {
+            return bool(_store.kv_acquire_lease(key, ttl, owner));
+        }
+        def _release(key: str, owner: str) -> bool {
+            return bool(_store.kv_release_lease(key, owner));
+        }
         self.scheduler.claim = _claim;
+        self.scheduler.hold = _hold;
+        self.scheduler.release = _release;
         self.scheduler.namespace = schedule_namespace(self.module_name);
     }
 }

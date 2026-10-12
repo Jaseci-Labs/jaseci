@@ -721,7 +721,7 @@ def run_eas_local_build(
     import from jaclang.toolchains.store { offline }
     if offline() {
         raise RuntimeError(
-            "EAS builds require network access; disable JAC_OFFLINE or use the native builder."
+            "EAS builds require network access; unset `[network] offline` in jac.toml or use the native builder."
         );
     }
     plat = str(platform or "").strip().lower();

@@ -740,6 +740,17 @@ impl ProjectHost.has_active_stub_catalog -> bool {
     return active() is not None;
 }
 
+impl ProjectHost.typeshed_unavailable_reason -> str {
+    import from jaclang.artifacts.model { ArtifactUnavailable }
+    import from jaclang.artifacts.router { require }
+    try {
+        require("typeshed");
+    } except ArtifactUnavailable as e {
+        return str(e);
+    }
+    return "";
+}
+
 impl ProjectHost.is_native_only_source(rel: str) -> bool {
     import from jaclang.bootstrap_manifest { is_native_only }
     return is_native_only(rel);

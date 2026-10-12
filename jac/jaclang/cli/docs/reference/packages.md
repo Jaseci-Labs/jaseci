@@ -172,7 +172,7 @@ internal = "https://raw.githubusercontent.com/acme/jac-index/main/"
 "acme/secret" = { version = "^1", registry = "internal" }
 ```
 
-`JAC_REGISTRY` overrides the default registry's URL (a mirror, or a `file://` directory in tests), and `JAC_OFFLINE=1` resolves from cached index files and the store only.
+`JAC_REGISTRY` overrides the default registry's URL (a mirror, or a `file://` directory in tests), and an offline project (`[network] offline = true` in `jac.toml`) resolves from cached index files and the store only.
 
 ## Templates
 
