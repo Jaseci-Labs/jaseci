@@ -932,9 +932,7 @@ Mechanism B exists to avoid writing twice. Reaching for one through the flat
   2,000 randomized fuzz configs x 7 constructor kwarg sets (state snapshot
   compared verbatim): byte-identical after three `read_dict`/continuation/
   interpolation-payload fixes, values, ordering, and every `str(e)` included.
-  SCOPE divergences: `get(..., fallback=None)` cannot distinguish a `None`
-  fallback from no fallback (`getint`/`getfloat`/`getboolean` have no
-  fallback); `interpolation` is a bool (CPython 3.14 takes an
+  SCOPE divergences: `interpolation` is a bool (CPython 3.14 takes an
   `Interpolation` instance); no `vars=` overrides; `optionxform` is
   hardwired to `lower()`; no `SectionProxy` mapping protocol, converters,
   `allow_no_value`, `UNNAMED_SECTION`, `dict_type`, or `read(filenames)`;

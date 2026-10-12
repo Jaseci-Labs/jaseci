@@ -4,6 +4,12 @@ glob:pub DEFAULTSECT: str = "DEFAULT",
 glob _INDENT_MAX: int = 2147483647;
 
 
+obj:pub _NoFallback {}
+
+
+glob _NO_FALLBACK: _NoFallback = _NoFallback();
+
+
 def _hexd(v: int) -> str {
     if v < 10 {
         return chr(48 + v);
@@ -596,11 +602,11 @@ obj:pub ConfigParser {
     }
 
     def get(
-        section: str, option: str, raw: bool = False, fallback: str | None = None
-    ) -> str {
+        section: str, option: str, raw: bool = False, fallback: any = _NO_FALLBACK
+    ) -> any {
         in_sect: bool = section in self._sections;
         if not in_sect and section != self.default_section {
-            if fallback is None {
+            if isinstance(fallback, _NoFallback) {
                 raise NoSectionError(section);
             }
             return fallback;
@@ -628,24 +634,51 @@ obj:pub ConfigParser {
             }
             return value;
         }
-        if fallback is None {
+        if isinstance(fallback, _NoFallback) {
             raise NoOptionError(opt, section);
         }
         return fallback;
     }
 
-    def getint(section: str, option: str, raw: bool = False) -> int {
-        v: str = self.get(section, option, raw);
+    def getint(
+        section: str, option: str, raw: bool = False, fallback: any = _NO_FALLBACK
+    ) -> any {
+        try {
+            v: str = self.get(section, option, raw, _NO_FALLBACK);
+        } except (NoSectionError, NoOptionError) {
+            if isinstance(fallback, _NoFallback) {
+                raise;
+            }
+            return fallback;
+        }
         return int(v);
     }
 
-    def getfloat(section: str, option: str, raw: bool = False) -> float {
-        v: str = self.get(section, option, raw);
+    def getfloat(
+        section: str, option: str, raw: bool = False, fallback: any = _NO_FALLBACK
+    ) -> any {
+        try {
+            v: str = self.get(section, option, raw, _NO_FALLBACK);
+        } except (NoSectionError, NoOptionError) {
+            if isinstance(fallback, _NoFallback) {
+                raise;
+            }
+            return fallback;
+        }
         return float(v);
     }
 
-    def getboolean(section: str, option: str, raw: bool = False) -> bool {
-        v: str = self.get(section, option, raw);
+    def getboolean(
+        section: str, option: str, raw: bool = False, fallback: any = _NO_FALLBACK
+    ) -> any {
+        try {
+            v: str = self.get(section, option, raw, _NO_FALLBACK);
+        } except (NoSectionError, NoOptionError) {
+            if isinstance(fallback, _NoFallback) {
+                raise;
+            }
+            return fallback;
+        }
         vl: str = v.lower();
         if vl == "1" or vl == "yes" or vl == "true" or vl == "on" {
             return True;

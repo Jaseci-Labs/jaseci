@@ -179,6 +179,33 @@ def configparser_py -> dict[any, any] {
     } except Exception {
         out["e_ad"] = "WRONG-TYPE";
     }
+    cpf: ConfigParser = ConfigParser();
+    cpf.read_string("[s]\na = 1\n");
+    fb1: any = cpf.get("s", "zz", fallback=None);
+    out["fb_opt_none"] = "None" if fb1 is None else str(fb1);
+    fb2: any = cpf.get("nope", "k", fallback=None);
+    out["fb_sect_none"] = "None" if fb2 is None else str(fb2);
+    fb3: any = cpf.get("s", "zz", fallback="FB");
+    out["fb_opt_val"] = "None" if fb3 is None else str(fb3);
+    fb4: any = cpf.get("nope", "k", fallback="FB");
+    out["fb_sect_val"] = "None" if fb4 is None else str(fb4);
+    gi1: any = cpf.getint("s", "zz", fallback=7);
+    out["gi_fb_val"] = "None" if gi1 is None else str(gi1);
+    gi2: any = cpf.getint("nope", "k", fallback=None);
+    out["gi_fb_none"] = "None" if gi2 is None else str(gi2);
+    gf1: any = cpf.getfloat("s", "zz", fallback=2.5);
+    out["gf_fb_val"] = "None" if gf1 is None else str(gf1);
+    gb1: any = cpf.getboolean("s", "zz", fallback=True);
+    out["gb_fb_val"] = "None" if gb1 is None else str(gb1);
+    gb2: any = cpf.getboolean("s", "zz", fallback="yes");
+    out["gb_fb_raw"] = "None" if gb2 is None else str(gb2);
+    try {
+        cpf.getint("s", "zz");
+    } except NoOptionError as e {
+        out["e_gi_nofb"] = "NoOptionError: " + str(e);
+    } except Exception {
+        out["e_gi_nofb"] = "WRONG-TYPE";
+    }
     return out;
 }
 
@@ -332,6 +359,33 @@ def configparser_na -> dict[str, any] {
         out["e_ad"] = "ValueError: Invalid section name: 'DEFAULT'";
     } except Exception {
         out["e_ad"] = "WRONG-TYPE";
+    }
+    cpf: ConfigParser = ConfigParser();
+    cpf.read_string("[s]\na = 1\n");
+    fb1: any = cpf.get("s", "zz", fallback=None);
+    out["fb_opt_none"] = "None" if fb1 is None else str(fb1);
+    fb2: any = cpf.get("nope", "k", fallback=None);
+    out["fb_sect_none"] = "None" if fb2 is None else str(fb2);
+    fb3: any = cpf.get("s", "zz", fallback="FB");
+    out["fb_opt_val"] = "None" if fb3 is None else str(fb3);
+    fb4: any = cpf.get("nope", "k", fallback="FB");
+    out["fb_sect_val"] = "None" if fb4 is None else str(fb4);
+    gi1: any = cpf.getint("s", "zz", fallback=7);
+    out["gi_fb_val"] = "None" if gi1 is None else str(gi1);
+    gi2: any = cpf.getint("nope", "k", fallback=None);
+    out["gi_fb_none"] = "None" if gi2 is None else str(gi2);
+    gf1: any = cpf.getfloat("s", "zz", fallback=2.5);
+    out["gf_fb_val"] = "None" if gf1 is None else str(gf1);
+    gb1: any = cpf.getboolean("s", "zz", fallback=True);
+    out["gb_fb_val"] = "None" if gb1 is None else str(gb1);
+    gb2: any = cpf.getboolean("s", "zz", fallback="yes");
+    out["gb_fb_raw"] = "None" if gb2 is None else str(gb2);
+    try {
+        cpf.getint("s", "zz");
+    } except NoOptionError as e {
+        out["e_gi_nofb"] = "NoOptionError: " + str(e);
+    } except Exception {
+        out["e_gi_nofb"] = "WRONG-TYPE";
     }
     return out;
 }
