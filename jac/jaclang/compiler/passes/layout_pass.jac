@@ -213,6 +213,23 @@ glob _NATIVE_NAME_BY_DECL: dict[tuple[str, int, int, str], str] = {},
 
 def archetype_native_name(arch: Archetype) -> str {
     name = arch.name.value if arch.name else "unknown";
+    if arch.loc is not None and arch.loc.mod_path.endswith(".pyi") {
+        import os;
+        import from jaclang.compiler.frontend.codeinfo { bundled_stdlib_module_of }
+        twin = _NATIVE_NAME_BY_DECL.get(
+            (
+                os.path.realpath(arch.loc.mod_path),
+                arch.loc.first_line,
+                arch.loc.col_start,
+                name
+            )
+        );
+        stdlib_module = bundled_stdlib_module_of(arch.loc.mod_path);
+        if twin is None and stdlib_module is not None {
+            twin = _NATIVE_NAME_BY_STDLIB.get((stdlib_module, name));
+        }
+        return twin if twin is not None else _archetype_native_name(arch, name);
+    }
     native = _archetype_native_name(arch, name);
     if arch.loc is not None and arch.loc.mod_path {
         import os;
@@ -234,6 +251,50 @@ def archetype_native_name(arch: Archetype) -> str {
         }
     }
     return native;
+}
+
+def record_interface_twins(native_mod: Module, prog: JacProgram) {
+    import os;
+    import from jaclang.compiler.frontend.codeinfo { bundled_stdlib_module_of }
+    import from jaclang.compiler.native_bindings { interface_type, typeshed_stub_path }
+    import from jaclang.compiler.types.types { ClassType }
+    if native_mod.loc is None or not native_mod.loc.mod_path.endswith(".jac") {
+        return;
+    }
+    stdlib_module = bundled_stdlib_module_of(native_mod.loc.mod_path);
+    stub_path = typeshed_stub_path(stdlib_module)
+        if stdlib_module is not None
+        else None;
+    if stub_path is None {
+        return;
+    }
+    stub_mod: (Module | None) = None;
+    for stmt in native_mod.body {
+        if not isinstance(stmt, Archetype)
+            or stmt.name is None
+            or stmt.name.value.startswith("_") {
+            continue;
+        }
+        if stub_mod is None {
+            try {
+                stub_mod = prog.load_dependency_module(stub_path);
+            } except Exception {
+                return;
+            }
+        }
+        typ = interface_type(stub_mod, stmt.name.value, prog);
+        if not isinstance(typ, ClassType) or typ._shared is None or typ.is_instance() {
+            continue;
+        }
+        key = typ.shared.canonical_key();
+        if key is None or not key[0].endswith(".pyi") {
+            continue;
+        }
+        _NATIVE_NAME_BY_DECL[(os.path.realpath(key[0]), key[1], key[2], key[3])] = (
+            archetype_native_name(stmt)
+        );
+        _NATIVE_NAMED_CLASSES.add(key[3]);
+    }
 }
 
 def _archetype_native_name(arch: Archetype, name: str) -> str {

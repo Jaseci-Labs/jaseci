@@ -1507,6 +1507,8 @@ impl NaIRGenPass._walk_imported_module_type_names(imported_mod: uni.Module) -> N
             }
         }
     }
+    import from jaclang.compiler.passes.layout_pass { record_interface_twins }
+    record_interface_twins(imported_mod, self.prog);
 }
 
 impl NaIRGenPass._walk_imported_module_types(imported_mod: uni.Module) -> None {
