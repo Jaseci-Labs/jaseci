@@ -119,9 +119,12 @@ test "a restored build is installed without being rebuilt" {
         installed = Path(tmp) / "cache" / "js-engine" / "current";
         with patch.object(js_runtime, "_repo_root", return_value=str(repo)), patch.object(
             js_runtime, "installed_engine_dir", return_value=str(installed)
-        ), patch("subprocess.run", side_effect=AssertionError("no rebuild")) {
+        ), patch("subprocess.run", side_effect=AssertionError("no rebuild")), patch(
+            "shutil.which", return_value=None
+        ) {
             artifact = JsEngineArtifact();
             assert artifact.built().found is None , "built but not installed is not current";
+            assert artifact.build_blocker() == "" , "installing a current build needs no zig";
             artifact.build(lambda (line: str) -> None {}, False, False);
             assert (installed / "libjs_engine.so").is_file();
             assert artifact.built().found is not None;

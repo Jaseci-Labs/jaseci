@@ -243,7 +243,10 @@ obj JsEngineArtifact(Artifact) {
         if not os.path.isdir(os.path.join(_repo_root(), "js_engine")) {
             return "this tree has no js_engine/";
         }
-        return "" if shutil.which("zig") else "zig is not on PATH";
+        if shutil.which("zig") or self.probe_checkout().found is not None {
+            return "";
+        }
+        return "zig is not on PATH";
     }
 
     override def build(log: Callable[[str], None], force: bool, exact: bool) {
