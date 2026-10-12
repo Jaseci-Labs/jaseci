@@ -104,7 +104,7 @@ obj ModuleAnalysis {
                 and self.program.infers_native_codespace(self.path)
             );
 
-        if self.native {
+        if candidate {
             self.options.need_full_ast = True;
         }
 
