@@ -3,9 +3,12 @@
 import from importlib.machinery { EXTENSION_SUFFIXES }
 import from pathlib { Path }
 import from tempfile { TemporaryDirectory }
+import from jaclang.compiler.backends.py.artifact_imports { runtime_sources }
+import from jaclang.compiler.driver.application { prepare_application }
 import from jaclang.compiler.driver.compile_options { CompileOptions }
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.project.modresolver { resolve_local_module, resolve_module }
+import from jaclang.runtime.prepared { forget }
 
 
 test "relative imports resolve the host's Python extension suffixes" {
@@ -49,6 +52,64 @@ test "a Python library's relative extension import is not a missing-module error
         program = JacProgram();
         program.compile(str(entry_file), options=CompileOptions(no_cgen=True));
         assert program.errors_had == [] , [str(e) for e in program.errors_had];
+    }
+}
+
+
+test "application preparation compiles Python sources without compiling their extensions" {
+    with TemporaryDirectory() as directory {
+        workspace = Path(directory).resolve();
+        package = workspace / 'extension_prepared_pkg';
+        package.mkdir();
+        initializer = package / '__init__.py';
+        initializer.write_text('');
+        extension = package / f'_compiled{EXTENSION_SUFFIXES[0]}';
+        extension.write_bytes(b'\x7fELF\x00binary-provider');
+        api = package / 'api.py';
+        api.write_text(
+            'from ._compiled import Marker\n'
+            'from . import _compiled\n\n'
+            'def marker() -> Marker:\n'
+            '    return _compiled.Marker()\n'
+        );
+        entry_file = workspace / 'main.jac';
+        entry_file.write_text(
+            'import from extension_prepared_pkg.api { marker }\n\n'
+            'def:pub read_marker -> any { return marker(); }\n'
+        );
+        try {
+            prepared = prepare_application(
+                str(entry_file), JacProgram(), str(workspace)
+            );
+            for source in [entry_file, initializer, api] {
+                assert str(source) in prepared.code;
+            }
+            assert str(extension) not in prepared.code;
+            assert extension.read_bytes() == b'\x7fELF\x00binary-provider';
+        } finally {
+            forget(str(entry_file));
+        }
+    }
+}
+
+
+test "extension imports retain their Python package initializers" {
+    with TemporaryDirectory() as directory {
+        workspace = Path(directory).resolve();
+        package = workspace / 'extension_pkg';
+        package.mkdir();
+        initializer = package / '__init__.py';
+        initializer.write_text('');
+        (package / f'_compiled{EXTENSION_SUFFIXES[0]}').write_bytes(b'');
+        source = str(workspace / 'main.py');
+        for statement in [
+            'from extension_pkg._compiled import Marker\n',
+            'from extension_pkg import _compiled\n',
+            'import extension_pkg._compiled\n'
+        ] {
+            code = compile(statement, source, 'exec');
+            assert runtime_sources(code, source, str(workspace)) == {str(initializer)};
+        }
     }
 }
 
