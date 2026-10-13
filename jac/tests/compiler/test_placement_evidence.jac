@@ -13,7 +13,7 @@ import shutil;
 import tempfile;
 import from jaclang.compiler.driver.program { JacProgram }
 import from jaclang.compiler.driver.compile_options { CompileOptions }
-import from jaclang.compiler.frontend.unitree { AstAccessNode }
+import from jaclang.compiler.frontend.unitree { Ability, AstAccessNode }
 
 def _proj(files: dict[str, any], pins: str = "") -> str {
     d = tempfile.mkdtemp(prefix="jacplace_");
@@ -242,7 +242,6 @@ test "unpinned rootless archetypes pull into client closures" {
 # so it no longer blocks native placement; inline ::py:: remains the
 # statically-known native-incompatible construct.
 test "solver does not propose native for capability-violating modules" {
-    import from jaclang.compiler.placement.placement_solver { native_default_verdict }
     d = _proj(
         {
             "pymod.jac": (
@@ -255,12 +254,31 @@ test "solver does not propose native for capability-violating modules" {
             )
         }
     );
+    import from jaclang.compiler.frontend.codeinfo {
+        get_effective_default_codespace_override,
+        set_effective_default_codespace
+    }
+    previous = get_effective_default_codespace_override();
     try {
         prog = JacProgram();
-        mod = prog.compile(os.path.join(d, "pymod.jac"), no_cgen=True);
-        (ok, reason) = native_default_verdict(mod);
-        assert not ok , "capability-violating module must not prefer native";
+        path = os.path.join(d, "pymod.jac");
+        mod = prog.compile(
+            path,
+            options=CompileOptions(default_codespace="native", skip_native_engine=True)
+        );
+        assert mod.decided_codespace != 'native' , "capability-violating module must not be placed native";
+        f_elem = [
+            s
+            for s in mod.body
+            if isinstance(s, Ability)
+        ][0];
+        assert f_elem.code_context.value == 'server';
+        assert not mod.gen.native_undecided , (
+            "inline Python closes the module's native preference before typing"
+        );
+        assert "PyInlineCode" in mod.gen.native_closed_why , mod.gen.native_closed_why;
     } finally {
+        set_effective_default_codespace(previous);
         shutil.rmtree(d, ignore_errors=True);
     }
 }

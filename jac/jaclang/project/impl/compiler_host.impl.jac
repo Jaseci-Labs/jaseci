@@ -368,31 +368,11 @@ impl ProjectHost.native_units_for(program: JacProgram) -> NativeUnitRegistry {
     return program._natives;
 }
 
-impl ProjectHost.native_verdict(
-    path: str, program: (JacProgram | None) = None
-) -> (NativeVerdict | None) {
-    try {
-        if program is not None {
-            return program.native_units().verdict_for(path);
-        }
-        import from jaclang.compiler.driver.nativecache { read_native_verdict }
-        return read_native_verdict(path);
-    } except Exception {
-        return None;
-    }
-}
-
 impl ProjectHost.record_native_coverage(
     path: str, outcome: str, code: str = "", detail: str = ""
 ) {
     import from jaclang.compiler.driver.na_coverage { na_coverage_record }
     na_coverage_record(path, outcome, code, detail);
-}
-
-impl ProjectHost.record_native_verdict(
-    program: JacProgram, path: str, code: str, detail: str
-) {
-    program.native_units().record_verdict(path, code, detail);
 }
 
 impl ProjectHost.native_analyze(
@@ -758,6 +738,17 @@ impl ProjectHost.import_in_flight(path: str) -> bool {
 impl ProjectHost.has_active_stub_catalog -> bool {
     import from jaclang.jac0core.stubcat_hook { active }
     return active() is not None;
+}
+
+impl ProjectHost.typeshed_unavailable_reason -> str {
+    import from jaclang.artifacts.model { ArtifactUnavailable }
+    import from jaclang.artifacts.router { require }
+    try {
+        require("typeshed");
+    } except ArtifactUnavailable as e {
+        return str(e);
+    }
+    return "";
 }
 
 impl ProjectHost.is_native_only_source(rel: str) -> bool {

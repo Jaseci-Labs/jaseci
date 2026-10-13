@@ -3,6 +3,7 @@ import logging;
 import from jaclang.scale.injector.pvc_injector { PvcInjector, bundle_pvc_path }
 import from jaclang.scale.injector.binary {
     download_release_binary,
+    read_local_binary,
     host_seal_platform,
     node_arch,
     pack_binary_bytes,
@@ -37,7 +38,9 @@ obj BinaryInjector(PvcInjector) {
         );
 
         pod_arch = node_arch();
-        payload = download_release_binary(self.channel.value, pod_arch, version);
+        payload = read_local_binary(project_dir)
+            if self.channel == Channel.LOCAL
+            else download_release_binary(self.channel.value, pod_arch, version);
         self._pod_binary_bytes = payload;
         self._pod_binary_sha256 = hashlib.sha256(payload).hexdigest();
         self._pod_arch = pod_arch;

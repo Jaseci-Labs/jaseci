@@ -61,10 +61,12 @@ obj ModuleCompilation {
     }
 
     def native_checks {
+        import from jaclang.compiler.placement.placement_facts { variant_selected }
         analysis = self.analysis;
         options = analysis.options;
         if not (
-            options.no_cgen
+            variant_selected(analysis.path) is not False
+            and options.no_cgen
             and (options.native_parity or options.native_required_for(analysis.path))
             and not options.symtab_ir_only
             and not analysis.parse_failed
@@ -197,16 +199,32 @@ obj ModuleCompilation {
             analysis.blocked = True;
             return;
         }
-        program.run_schedule(
-            mod=module,
-            passes=get_py_code_gen(
-                native=needs_native,
-                provided=program.analysis.analyses_run.provided(module)
-            ),
-            cancel_token=options.cancel_token
+        schedule = get_py_code_gen(
+            native=needs_native, provided=program.analysis.analyses_run.provided(module)
         );
+        python_start = len(schedule);
+        for (index, step) in enumerate(schedule) {
+            if step is NativeImportFactsPass {
+                python_start = index;
+                break;
+            }
+        }
+        if python_start > 0 {
+            program.run_schedule(
+                mod=module,
+                passes=schedule[:python_start],
+                cancel_token=options.cancel_token
+            );
+        }
         if module.gen.has_native_ir() {
             self.session.assemble_native(program, module, False);
+        }
+        if python_start < len(schedule) {
+            program.run_schedule(
+                mod=module,
+                passes=schedule[python_start:],
+                cancel_token=options.cancel_token
+            );
         }
         self.session.assemble_python(program, module);
         if module.decided_codespace == 'native' {
@@ -319,17 +337,22 @@ def module_pipeline -> list[CompilationPhase] {
     return phases;
 }
 
-def compile_task(
-    session: SessionHooks,
-    program: JacProgram,
-    path: str,
-    options: CompileOptions,
-    source: str | None = None
+def analyze_for_compile(
+    program: JacProgram, path: str, options: CompileOptions, source: str | None
 ) -> ModuleAnalysis {
     analysis = active_host().native_analyze(program, path, options, source);
     if analysis is None {
         analysis = analyze_module(program, path, options, source);
     }
+    return analysis;
+}
+
+def run_codegen_phases(
+    session: SessionHooks,
+    program: JacProgram,
+    analysis: ModuleAnalysis,
+    options: CompileOptions
+) {
     task = ModuleCompilation(session, analysis);
     for phase in CODEGEN_PHASES {
         if cancelled(options) {
@@ -342,6 +365,17 @@ def compile_task(
             record_phase(program, phase, started);
         }
     }
+}
+
+def compile_task(
+    session: SessionHooks,
+    program: JacProgram,
+    path: str,
+    options: CompileOptions,
+    source: str | None = None
+) -> ModuleAnalysis {
+    analysis = analyze_for_compile(program, path, options, source);
+    run_codegen_phases(session, program, analysis, options);
     return analysis;
 }
 

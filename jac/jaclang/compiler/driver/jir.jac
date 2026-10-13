@@ -561,7 +561,6 @@ glob _COMPILER_DIGEST_CACHE: list[str] = [],
 
 glob PY_EMITTER_ROOTS: tuple[str, ...] = ("compiler/backends/py", ),
      PY_EMITTER_EXCLUDED: tuple[str, ...] = ("compiler/backends/py/jacpython", ),
-     DEV_EXACT_ENV: str = "JAC_DEV_EXACT",
      DEV_NATIVE_PRODUCER: str = "abi:";
 
 def _digest_manifest_path(pkg_dir: str) -> Path {
@@ -677,14 +676,25 @@ def py_emitter_digest -> str {
 }
 
 def require_exact_compiler_products {
-    os.environ[DEV_EXACT_ENV] = "1";
+    import from jaclang.jac0core.handoff { update_handoff }
+    update_handoff(exact=True);
+}
+
+def _handoff -> dict[str, object] {
+    import from jaclang.jac0core.handoff { handoff }
+    return handoff();
+}
+
+def dev_source -> str {
+    return str(_handoff().get("compiler_source") or "");
 }
 
 def dev_carry_enabled -> bool {
-    if os.environ.get(DEV_EXACT_ENV, "") in ENV_TRUTHY or precompile_required() {
+    record = _handoff();
+    if record.get("exact") {
         return False;
     }
-    dev = os.environ.get("JAC_DEV_SOURCE", "").strip();
+    dev = str(record.get("compiler_source") or "");
     if not dev {
         return False;
     }
@@ -1508,29 +1518,18 @@ def jir_cacheable_source_path(source_path: str) -> bool {
         or (source_path.endswith('.jac') and not source_path.endswith('.na.jac'));
 }
 
-glob ENV_TRUTHY: set[str] = {
-         '1',
-         'true',
-         'True',
-         'TRUE',
-         'yes',
-         'YES',
-         'on',
-         'ON'
-     };
-
 def cache_mode -> tuple[bool, bool] {
-    rebuild = os.environ.get('JAC_REBUILD', '') in ENV_TRUTHY;
-    no_precompile = os.environ.get('JAC_NO_PRECOMPILE', '') in ENV_TRUTHY;
-    return (rebuild, no_precompile);
+    record = _handoff();
+    return (bool(record.get("rebuild")), bool(record.get("no_precompile")));
 }
 
-def precompile_required -> bool {
-    return os.environ.get('JAC_PRECOMPILE_REQUIRED', '') in ENV_TRUTHY;
+def set_cache_mode(rebuild: (bool | None) = None, no_precompile: (bool | None) = None) {
+    import from jaclang.jac0core.handoff { update_handoff }
+    update_handoff(rebuild=rebuild or None, no_precompile=no_precompile or None);
 }
 
 def bundle_dir_allowed(bundle_dir: str) -> bool {
-    dev = os.environ.get('JAC_DEV_SOURCE', '').strip();
+    dev = dev_source();
     if not dev {
         return True;
     }

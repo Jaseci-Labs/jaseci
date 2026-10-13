@@ -22,7 +22,10 @@ import from jaclang.compiler.passes.sym_tab_build_pass { SymTabBuildPass }
 import from jaclang.compiler.passes.import_wiring_pass { ImportWiringPass }
 import from jaclang.compiler.passes.package_boundary_pass { PackageBoundaryPass }
 
-import from jaclang.compiler.placement.placement_solver { PlacementApplyPass }
+import from jaclang.compiler.placement.placement_solver {
+    PlacementApplyPass,
+    refresh_placement_module
+}
 import from jaclang.compiler.frontend.host { active_host }
 import from jaclang.compiler.driver.pipeline_types {
     UtilityProduct,
@@ -38,9 +41,6 @@ glob PASS_CONTRACTS: dict[str, PassContract] = {
          'CFGBuildPass': PassContract(
              (),
              (AnalysisFact.CFG_SUCC, AnalysisFact.CFG_TRUE, AnalysisFact.CFG_FALSE, )
-         ),
-         'ClientCapabilityCheckPass': PassContract(
-             (), (AnalysisFact.CLIENT_CAPABILITY, )
          ),
          'ComptimeResolvePass': PassContract((), (AnalysisFact.COMPTIME, )),
          'DeclImplMatchPass': PassContract(
@@ -60,10 +60,6 @@ glob PASS_CONTRACTS: dict[str, PassContract] = {
              ),
              ()
          ),
-         'NativeCapabilityCheckPass': PassContract((), (AnalysisFact.CAPABILITY, )),
-         'OwnershipCheckPass': PassContract(
-             (AnalysisFact.CFG_SUCC, AnalysisFact.TYPE_OF, ), (AnalysisFact.OWNERSHIP, )
-         ),
          'PlacementApplyPass': PassContract(
              (AnalysisFact.SYM_OF, ),
              (
@@ -72,6 +68,13 @@ glob PASS_CONTRACTS: dict[str, PassContract] = {
                  AnalysisFact.CODESPACE_PULL,
 
              )
+         ),
+         'PlacementPass': PassContract(
+             (AnalysisFact.TYPE_OF, ),
+             (AnalysisFact.CAPABILITY, AnalysisFact.CLIENT_CAPABILITY, )
+         ),
+         'OwnershipCheckPass': PassContract(
+             (AnalysisFact.CFG_SUCC, AnalysisFact.TYPE_OF, ), (AnalysisFact.OWNERSHIP, )
          ),
          'PortabilityWarnPass': PassContract((), (AnalysisFact.PORTABILITY, )),
          'RcFactsPass': PassContract(
@@ -387,6 +390,10 @@ glob SYMTAB_SCHED_DEPS: tuple[str, ...] = ('jaclang.compiler.symbol_utils', ),
          'jaclang.compiler.passes.access_check_pass',
          'jaclang.compiler.passes.variant_agreement_pass',
          'jaclang.compiler.passes.capability_check_pass',
+         'jaclang.compiler.capability_notes',
+         'jaclang.compiler.boundary_rules',
+         'jaclang.compiler.native_bindings',
+         'jaclang.compiler.passes.placement_pass',
          'jaclang.compiler.passes.ownership_check_pass',
          'jaclang.compiler.passes.region_infer_pass',
          'jaclang.compiler.tools.jac_auto_lint_pass'
@@ -508,24 +515,17 @@ def get_ir_gen_sched(is_internal: bool = False, gen_mtir: bool = True) -> PassSc
     }
 }
 
-def typeshed_stubs_available -> bool {
-    import from jaclang.compiler.frontend.codeinfo { jaclang_pkg_root }
-    return os.path.exists(
-        os.path.join(jaclang_pkg_root(), 'vendor', 'typeshed', 'stdlib', 'builtins.pyi')
-    );
-}
-
 def require_typeshed_stubs -> None {
-    if active_host().has_active_stub_catalog() or typeshed_stubs_available() {
+    if active_host().has_active_stub_catalog() {
         return;
     }
-    raise TypeshedUnavailableError(
-        "type inference is on the critical path of every compilation, but this "
-        "environment has neither a stub catalog nor the vendored typeshed stdlib "
-        "stubs, so no module can be compiled. In a source checkout run "
-        "'zig build fetch-typeshed'; in an installed environment reinstall the "
-        "jac distribution, whose payload carries the catalog."
-    );
+    why = active_host().typeshed_unavailable_reason();
+    if why {
+        raise TypeshedUnavailableError(
+            "type inference is on the critical path of every compilation, but "
+            f"this environment has neither a stub catalog nor typeshed: {why}"
+        );
+    }
 }
 
 def get_analysis_sched -> PassSchedule {
@@ -544,10 +544,9 @@ def get_analysis_sched -> PassSchedule {
             VariantAgreementPass
         }
         import from jaclang.compiler.passes.capability_check_pass {
-            ClientCapabilityCheckPass,
-            NativeCapabilityCheckPass,
             PortabilityWarnPass
         }
+        import from jaclang.compiler.passes.placement_pass { PlacementPass }
         import from jaclang.compiler.passes.ownership_check_pass { OwnershipCheckPass }
         import from jaclang.compiler.passes.region_infer_pass { RegionInferPass }
         import from jaclang.compiler.tools.jac_auto_lint_pass { JacLintCheckPass }
@@ -559,8 +558,7 @@ def get_analysis_sched -> PassSchedule {
                 StaticAnalysisPass,
                 AccessCheckPass,
                 OwnershipCheckPass,
-                NativeCapabilityCheckPass,
-                ClientCapabilityCheckPass,
+                PlacementPass,
                 PortabilityWarnPass,
                 JacLintCheckPass
             ],

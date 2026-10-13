@@ -747,7 +747,7 @@ impl NaIRGenPass._default_repr_fn(arch_name: str) -> (ir.Function | None) {
         b.position_at_end(raised_bb);
         self._region_unwind(b.load(region_depth));
         thrown = self._exception_values(raised);
-        b.call(self._exc_pop_fn, []);
+        self._emit_exc_pop(b);
         b.call(leave_fn, [outer]);
         b.call(self._exc_raise_fn, [thrown[1], thrown[0], thrown[2]]);
         b.unreachable();
@@ -789,7 +789,7 @@ impl NaIRGenPass._default_repr_fn(arch_name: str) -> (ir.Function | None) {
     self._emit_rc_release_simple(cur, op="mstr_old", loc="");
     self._emit_set_type_tag(self.builder, closed, "str");
     if guarded {
-        self.builder.call(self._exc_pop_fn, []);
+        self._emit_exc_pop(self.builder);
     }
     self.builder.call(leave_fn, [outer]);
     self.builder.ret(closed);

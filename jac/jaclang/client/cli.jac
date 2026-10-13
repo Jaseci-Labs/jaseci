@@ -363,9 +363,9 @@ def run_npm_add(packages: list[str], dev: bool, install_global: bool = False) ->
 }
 
 def run_npm_add_global(packages: list[str], dev: bool) -> int {
-    import subprocess;
     import from jaclang.cli.console { console }
-    import from jaclang.client.bun_installer { get_bun, bun_unavailable_message }
+    import from jaclang.artifacts.model { ArtifactUnavailable }
+    import from jaclang.client.js_runtime { js_runtime_path, run_pm }
     import from jaclang.project.tool_paths { node_root }
 
     if not packages {
@@ -375,9 +375,10 @@ def run_npm_add_global(packages: list[str], dev: bool) -> int {
         );
         return 1;
     }
-    bun = get_bun();
-    if bun is None {
-        console.error(bun_unavailable_message());
+    try {
+        js_runtime_path();
+    } except ArtifactUnavailable as e {
+        console.error(str(e));
         return 1;
     }
     dest = node_root("global");
@@ -389,16 +390,13 @@ def run_npm_add_global(packages: list[str], dev: bool) -> int {
             '{\n  "name": "jac-global-tools",\n  "private": true\n}\n', encoding="utf-8"
         );
     }
-    cmd: list[str] = [bun, "add"];
-    if dev {
-        cmd.append("--dev");
-    }
-    cmd.extend(packages);
     console.print(
         f"\n📦 Installing {len(packages)} npm tool(s) globally into {dest}", style="bold"
     );
-    result = subprocess.run(cmd, cwd=str(dest));
-    if result.returncode != 0 {
+    (returncode, _) = run_pm(
+        ["add"] + (["--dev"] if dev else []) + packages, str(dest)
+    );
+    if returncode != 0 {
         console.error("Global npm install failed.");
         return 1;
     }

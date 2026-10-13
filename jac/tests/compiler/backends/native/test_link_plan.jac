@@ -1147,7 +1147,7 @@ def _cascade_plan(root_dir: str) -> tuple[dict[str, str], list[str]] {
     env = {
         k: v
         for (k, v) in os.environ.items()
-        if not k.startswith("JAC_STUBCAT_") and k != "JAC_STANDALONE"
+        if k != "JAC_STANDALONE"
     };
     run = subprocess.run(
         compiler_python_command(CASCADE_PLAN_SCRIPT, root_dir, source_root),

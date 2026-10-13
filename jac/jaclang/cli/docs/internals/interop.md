@@ -335,8 +335,19 @@ the block opens with a declaration keyword, populates `Import.clib_decls`,
 and stamps `CodeContext.NATIVE`. A logical name (`raylib`) is mapped to
 `libraylib.so` / `.dylib` / `raylib.dll` per target triple, and the runpath
 is emitted as ELF `DT_RUNPATH=$ORIGIN` (or Mach-O `@loader_path`). A `str`
-parameter lowers to `i8*`. A clib declaration with a *body* is an error
-(`E5060`).
+parameter lowers to `i8*`.
+
+The block is the C boundary in both directions. A declaration without a body
+or initializer names something C defines; with one, Jac defines it under that
+exact symbol. `glob name: T = value;` is C-layout data built from a C constant
+initializer (`ptr(f)` is the address of the named function `f`, for an
+untyped function-pointer field), and `def name(...) -> R { ... }` is a C function with the C
+calling convention: callers in the same module call the Jac body directly,
+while C code and other modules reach it through a generated C-ABI entry point
+that unpacks struct-by-value arguments and returns (register pieces, `byval`
+memory, `sret`) with the same classification the call side uses. A C variadic
+definition (`*args: VaList`) is emitted directly under the C name, since its
+fixed parameters are scalars or pointers.
 
 ### The three-layer ABI implementation
 
@@ -392,6 +403,17 @@ rule both backends lower.
   the call when the Jac slot differs, e.g. `bool`). The borrow's lifetime is
   the call, so the ownership checker needs no new rule, and a clib call
   never consumes its arguments.
+- **`&mut x` for a `ptr[T]` parameter.** Passed positionally to a `ptr[T]`
+  parameter of a C-ABI function (a clib declaration, or a function a C
+  block defines in this module or another), `&mut x` (or `&x`) lends x's
+  address for the call, as C's `&x` does, when x is a local or field of
+  exactly `T` (a C scalar other than `bool`, a C pointer or a foreign
+  struct): `PySlice_Unpack(item, &mut start, &mut stop, &mut step)`. The
+  native backend passes the variable's slot or the struct's storage; the
+  Python backend passes a C cell's address and reads it back, or the
+  foreign struct's own storage. Anywhere else the argument is an ordinary
+  mismatch (`E1053`). `c_lent_arg_elem` in `compiler/c_interop.jac` is the
+  rule the checker and both backends share.
 - **`ptr[T]`** lowers to an `i64` in Jac values (locals, fields, container
   elements, foreign struct fields), so no reference-count or cycle-collector
   path ever sees it; the marshaller converts at the call boundary.
@@ -650,6 +672,20 @@ Everything crossing a marshalled boundary is **JSON** (for `cl↔sv` and the
   `bytes` return reaches the wire as those bytes; error paths keep the
   envelope. Walkers always keep it, having no single value to project. See
   [jac-scale HTTP](../reference/plugins/jac-scale-http.md#raw-response-bodies).
+
+- **What may cross** -- `compiler/boundary_rules.jac` judges the declared
+  signature of every function and walker a client reaches, and
+  `BoundaryAnalysisPass` reports `E5115` for a type with no wire form. The
+  rule mirrors the two halves above. The request binder builds scalars
+  (`str`, `int`, `float`, `bool`, `bytes`, `None`), lists, tuples and sets,
+  dicts, enums and objects from JSON, and the serializer writes the same
+  shapes back, so those cross, as does an archetype whose fields all cross
+  and a union of types that cross. A dict crosses only with `str` keys,
+  because a JSON object has no other kind and neither side converts them
+  back. An upload is a part of a request, so it crosses only as a parameter
+  of a server function. A generator crosses only as a result, which is
+  streamed. A callable, an awaitable, a file handle or a native handle is
+  behaviour or a resource, not data, and does not cross.
 
 ### C-ABI wire format (`na`)
 

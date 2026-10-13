@@ -458,6 +458,8 @@ walker JcirGenPass(TreePass) {
     def _c_temp_name(role: str) -> str;
     def _c_named(name: str, value: CgNode) -> CgNode;
     def _c_interop_call_rewrite(nd: FuncCall) -> None;
+    def _c_vararg_rewrite(nd: FuncCall, fixed: int) -> None;
+    def _is_c_global_value(nd: Name) -> bool;
     def _c_copy_rewrite(nd: AtomTrailer) -> None;
     def const_of(value: any, jac_node: (UniNode | None) = None) -> CgNode;
     def int_const_of(value: CtInt, jac_node: (UniNode | None) = None) -> CgNode;

@@ -1,16 +1,11 @@
 import threading;
 import from jaclang.cli.console { console }
-import from jaclang.client { get_bun }
-import from jaclang.client.bun_installer { bun_unavailable_message }
-import from jaclang.client.client_bundle { ClientBundleError, MissingBunError }
+import from jaclang.client.client_bundle { ClientBundleError }
+import from jaclang.client.js_runtime { js_runtime_path, run_pm }
 
 
 def _require_bun -> str {
-    bun = get_bun();
-    if not bun {
-        raise MissingBunError(bun_unavailable_message()) from None;
-    }
-    return bun;
+    return js_runtime_path();
 }
 
 
@@ -224,8 +219,7 @@ impl ViteBundler.install_packages(
 ) -> None {
     import time;
     import shutil;
-    import subprocess;
-    bun = _require_bun();
+    _require_bun();
     build_dir = install_dir if install_dir is not None else self._get_client_dir();
     node_modules = build_dir / 'node_modules';
 
@@ -258,22 +252,17 @@ impl ViteBundler.install_packages(
     try {
         console.print("\n  ⏳ Installing dependencies...\n");
         start_time = time.time();
-        result = subprocess.run(
-            [bun, 'install'],
-            cwd=build_dir,
-            check=False,
-            text=True,
-            capture_output=capture_output
+        (returncode, error_output) = run_pm(
+            ['install'], str(build_dir), capture=capture_output
         );
         elapsed = time.time() - start_time;
-        if result.returncode != 0 {
+        if returncode != 0 {
             if capture_output {
-                error_output = result.stderr or result.stdout;
                 raise ClientBundleError(
-                    f"Dependency installation failed after {elapsed:.1f}s\n\n{error_output}\nCommand: bun install"
+                    f"Dependency installation failed after {elapsed:.1f}s\n\n{error_output}"
                 ) from None;
             }
-            console.error(f"\n  ✖ bun install failed after {elapsed:.1f}s");
+            console.error(f"\n  ✖ Dependency installation failed after {elapsed:.1f}s");
             raise ClientBundleError("Failed to install dependencies") from None;
         }
         console.print(f"\n  ✔ Dependencies installed ({elapsed:.1f}s)");
@@ -311,7 +300,6 @@ impl ViteBundler.add_packages(
 ) -> None {
     import json;
     import subprocess;
-    import from jaclang.client { get_bun }
     target_dir = install_dir if install_dir is not None else self.project_dir;
     pkg_json = target_dir / 'package.json';
     if not pkg_json.exists() {
@@ -325,17 +313,13 @@ impl ViteBundler.add_packages(
         console.print("  ✔ Created package.json");
     }
 
-    bun = get_bun();
-    if bun is None {
-        raise RuntimeError("bun unavailable: cannot install client dependencies");
-    }
-    cmd = [bun, 'add'];
-    if dev {
-        cmd.append('--dev');
-    }
-    cmd.extend(packages);
     console.print(f"  Installing: {' '.join(packages)}");
-    subprocess.run(cmd, cwd=target_dir, check=True, capture_output=False);
+    (returncode, _) = run_pm(
+        ['add'] + (['--dev'] if dev else []) + packages, str(target_dir)
+    );
+    if returncode != 0 {
+        raise RuntimeError(f"installing {', '.join(packages)} failed ({returncode})");
+    }
 }
 
 impl ViteBundler._format_config_object(
@@ -1336,13 +1320,7 @@ impl ViteBundler.start_dev_server(
     import sys;
     import time;
     import threading;
-    import from jaclang.client { get_bun }
-
-    if get_bun() is None {
-        raise ClientBundleError(
-            'Bun is required for dev server. Install manually: https://bun.sh'
-        ) from None;
-    }
+    js_runtime_path();
     build_dir = self._get_client_dir();
     self._ensure_dev_index_html(build_dir);
     self._ensure_dev_dependencies(build_dir);

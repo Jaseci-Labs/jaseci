@@ -630,6 +630,16 @@ def precompile_unit_context(
     }
 }
 
+def raised_at(err: BaseException) -> str {
+    import traceback;
+    frames = traceback.extract_tb(err.__traceback__);
+    if not frames {
+        return "";
+    }
+    last = frames[-1];
+    return f" (raised in {last.name} at {os.path.basename(last.filename)}:{last.lineno})";
+}
+
 def precompile_unit(
     jac_path: str,
     pkg_root: str,
@@ -1234,7 +1244,8 @@ def seal_finalize(
         manifest_modules,
         payloads,
         app_meta,
-        native_record
+        native_record,
+        kit_omissions(pkg_name)
     );
     _phase("payloads and manifest");
     console.print(f"  Manifest: {precompiled_dir / MANIFEST_NAME}");
@@ -1249,9 +1260,9 @@ def native_roots(pkg_name: str, units: list[str]) -> list[str] {
     return list(units);
 }
 
-def _kernel_omitted -> bool {
-    import from jaclang.compiler.backends.native.kernel_resolve { seal_omits_kernel }
-    return seal_omits_kernel();
+def kit_omissions(pkg_name: str) -> list[str] {
+    import from jaclang.artifacts.kit { pr_kit_omits }
+    return ["kernel"] if pkg_name == "jaclang" and pr_kit_omits("kernel") else [];
 }
 
 def _compiler_kernel_units -> set[str] {
@@ -1312,12 +1323,11 @@ def seal_native(
     pkg_path: Path, out_dir: Path, pkg_name: str, manifest_modules: dict[str, any]
 ) -> (dict[str, any] | None) {
     import from jaclang.compiler.driver.toolchain { native_pipeline_available }
-    if pkg_name == "jaclang" and _kernel_omitted() {
-        import from jaclang.compiler.backends.native.kernel_resolve {
-            omitted_kernel_record
-        }
-        console.print("  Native artifact: none (pull-request kit without a kernel)");
-        return omitted_kernel_record();
+    if "kernel" in kit_omissions(pkg_name) {
+        console.print(
+            "  Native artifact: none (a pull request's kit leaves the kernel out)"
+        );
+        return None;
     }
     units = package_native_units(str(pkg_path));
     if not units {
@@ -1514,7 +1524,8 @@ def write_manifest(
     modules: dict[str, dict[str, any]],
     payloads: (dict[str, str] | None) = None,
     app_meta: (dict[str, any] | None) = None,
-    native_record: (dict[str, any] | None) = None
+    native_record: (dict[str, any] | None) = None,
+    omits: (list[str] | None) = None
 ) {
     import from importlib.metadata { version as pkg_version }
     try {
@@ -1539,6 +1550,9 @@ def write_manifest(
     }
     if native_record {
         manifest["native"] = native_record;
+    }
+    if omits {
+        manifest["omits"] = sorted(omits);
     }
     (precompiled_dir / MANIFEST_NAME).write_text(
         json.dumps(manifest, sort_keys=True, indent=1) + "\n", encoding="utf-8"
@@ -1747,7 +1761,7 @@ def run_precompile(
                     f"  Compiler kernel: {len(dropped)} unit(s) "
                         + (
                             "left unlowered; this pull-request kit omits the kernel"
-                                if _kernel_omitted()
+                                if "kernel" in kit_omissions(pkg_name)
                                 else "left to the native seal; lowering the units programs link"
                         )
                 );
@@ -1869,7 +1883,7 @@ def run_precompile(
             return {
                 "status": "failed",
                 "rel": str(rel),
-                "message": f"FAIL: {rel} - {e}"
+                "message": f"FAIL: {rel} - {type(e).__name__}: {e}{raised_at(e)}"
             };
         }
     }

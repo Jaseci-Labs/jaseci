@@ -2166,6 +2166,17 @@ impl TypeEvaluator._get_type_of_expression_core(
                     if na_sym is not None {
                         symbol = na_sym;
                     }
+                } elif symbol is None and self.neutral_site(expr) {
+                    na_sym = self.na_builtins_module.names_in_scope.get(expr.value);
+                    if na_sym is not None {
+                        symbol = na_sym;
+                        self.note_native(
+                            expr,
+                            "E5090",
+                            f"'{expr.value}' is a native-only builtin",
+                            requires=True
+                        );
+                    }
                 }
 
                 if symbol is None and expr.value == "Self" {
@@ -2606,6 +2617,9 @@ impl TypeEvaluator._get_type_of_symbol_decl(
         case ParamVar():
             if node_.type_tag {
                 annotation_type = self.get_type_of_expression(node_.type_tag.tag);
+                if node_.is_vararg and is_va_list_type(annotation_type) {
+                    return self._convert_to_instance(annotation_type);
+                }
                 if node_.is_vararg {
                     if self.prefetch.list_class is None {
                         return UnknownType();
@@ -3592,7 +3606,15 @@ impl TypeEvaluator._diag_unnarrowed_optional(
     if not _has_none {
         return False;
     }
-    if not self._in_native_context() or not self._is_strict_site(nd) {
+    if not self._is_strict_site(nd) {
+        return False;
+    }
+    if not self._in_native_context() {
+        if self.neutral_site(nd) {
+            self.note_native(
+                nd, "E1121", E1121.format_message(type=str(ty), required=required)
+            );
+        }
         return False;
     }
     self.emit_diag(E1121, nd, type=str(ty), required=required);
@@ -3611,6 +3633,21 @@ impl TypeEvaluator._is_strict_site(nd: UniNode) -> bool {
     result = not mod.is_raised_from_py;
     self._strict_site_cache[id(mod)] = result;
     return result;
+}
+
+impl TypeEvaluator.neutral_site(nd: UniNode) -> bool {
+    import from jaclang.compiler.capability_notes { placement_neutral }
+    return placement_neutral(nd);
+}
+
+impl TypeEvaluator.note_native(
+    nd: UniNode, code: str, text: str, requires: bool = False
+) -> None {
+    if self._diagnostic_suppression_depth > 0 {
+        return;
+    }
+    import from jaclang.compiler.capability_notes { TARGET_NATIVE, note_capability }
+    note_capability(self.program, nd, TARGET_NATIVE, code, text, requires);
 }
 
 impl TypeEvaluator._in_native_context -> bool {
@@ -3688,6 +3725,19 @@ impl TypeEvaluator.assign_expr(
     return AssignVerdict(ok=self.assign_type(src_type, dest_type, strict));
 }
 
+impl TypeEvaluator._is_address_pair(src_type: TypeBase, dest_type: TypeBase) -> bool {
+    return (
+        isinstance(dest_type, FunctionType)
+        and isinstance(src_type, ClassType)
+        and src_type.is_builtin("int")
+    )
+        or (
+            isinstance(src_type, FunctionType)
+            and isinstance(dest_type, ClassType)
+            and dest_type.is_builtin("int")
+        );
+}
+
 impl TypeEvaluator.assign_type(
     src_type: TypeBase, dest_type: TypeBase, strict: bool = False
 ) -> bool {
@@ -3726,17 +3776,27 @@ impl TypeEvaluator.assign_type(
         return True;
     }
 
-    if self._in_native_context() {
-        if (
-            isinstance(dest_type, FunctionType)
-            and isinstance(src_type, ClassType)
-            and src_type.is_builtin("int")
-        )
-            or (
-                isinstance(src_type, FunctionType)
-                and isinstance(dest_type, ClassType)
-                and dest_type.is_builtin("int")
-            ) {
+    if (
+        isinstance(dest_type, FunctionType)
+        and isinstance(src_type, ClassType)
+        and src_type.is_builtin("int")
+    )
+        or (
+            isinstance(src_type, FunctionType)
+            and isinstance(dest_type, ClassType)
+            and dest_type.is_builtin("int")
+        ) {
+        if self._in_native_context() {
+            return True;
+        }
+        cur = self._pass?.current_node;
+        if isinstance(cur, UniNode) and self.neutral_site(cur) {
+            self.note_native(
+                cur,
+                "E5090",
+                "a function address converts to and from int only natively",
+                requires=True
+            );
             return True;
         }
     }
@@ -3924,11 +3984,24 @@ impl TypeEvaluator.assign_type(
             for src_type_arg in src_type.types {
                 matched = False;
                 src_type_inst = self._convert_to_instance(src_type_arg);
+                deferred: list[TypeBase] = [];
                 for dest_type_arg in dest_type.types {
                     dest_type_inst = self._convert_to_instance(dest_type_arg);
+                    if self._is_address_pair(src_type_inst, dest_type_inst) {
+                        deferred.append(dest_type_inst);
+                        continue;
+                    }
                     if self.assign_type(src_type_inst, dest_type_inst, strict) {
                         matched = True;
                         break;
+                    }
+                }
+                if not matched {
+                    for dest_type_inst in deferred {
+                        if self.assign_type(src_type_inst, dest_type_inst, strict) {
+                            matched = True;
+                            break;
+                        }
                     }
                 }
 
@@ -3939,9 +4012,19 @@ impl TypeEvaluator.assign_type(
 
             return True;
         }
+        address_members: list[TypeBase] = [];
         for union_type in dest_type.types {
             new_dest_type = self._convert_to_instance(union_type);
+            if self._is_address_pair(src_type, new_dest_type) {
+                address_members.append(new_dest_type);
+                continue;
+            }
             if self.assign_type(src_type, new_dest_type, strict) {
+                return True;
+            }
+        }
+        for address_member in address_members {
+            if self.assign_type(src_type, address_member, strict) {
                 return True;
             }
         }
@@ -5382,7 +5465,8 @@ impl TypeEvaluator._find_predicate_for(
                 attr_name=inner_pred.attr_name,
                 narrows_on_true=inner_pred.narrows_on_false,
                 narrows_on_false=inner_pred.narrows_on_true,
-                replaces_declared=inner_pred.replaces_declared
+                replaces_declared=inner_pred.replaces_declared,
+                by_equality=inner_pred.by_equality
             );
         }
         return None;
@@ -5437,7 +5521,8 @@ impl TypeEvaluator._find_predicate_for(
                     attr_name=most_specific.attr_name,
                     narrows_on_true=most_specific.narrows_on_true,
                     narrows_on_false=(most_specific.narrows_on_false and covers_false),
-                    replaces_declared=most_specific.replaces_declared
+                    replaces_declared=most_specific.replaces_declared,
+                    by_equality=most_specific.by_equality
                 );
 
             case Tok.KW_OR:
@@ -5474,7 +5559,8 @@ impl TypeEvaluator._find_predicate_for(
                             covers_true and all(p.narrows_on_true for p in positive)
                         ),
                         narrows_on_false=all(p.narrows_on_false for p in positive),
-                        replaces_declared=any(p.replaces_declared for p in positive)
+                        replaces_declared=any(p.replaces_declared for p in positive),
+                        by_equality=any(p.by_equality for p in positive)
                     );
                 }
 
@@ -5492,7 +5578,8 @@ impl TypeEvaluator._find_predicate_for(
                     attr_name=chosen.attr_name,
                     narrows_on_true=(len(all_preds) == 1 and chosen.narrows_on_true),
                     narrows_on_false=chosen.narrows_on_false,
-                    replaces_declared=chosen.replaces_declared
+                    replaces_declared=chosen.replaces_declared,
+                    by_equality=chosen.by_equality
                 );
 
         }
@@ -5570,7 +5657,8 @@ impl TypeEvaluator._find_predicate_for(
                     key=key,
                     narrow_type=literal_type,
                     is_inverted=False,
-                    narrows_on_false=False
+                    narrows_on_false=False,
+                    by_equality=True
                 );
 
             case NarrowingKind.LITERAL_NE | NarrowingKind.MEMBERSHIP_NOT_IN:
@@ -5582,7 +5670,8 @@ impl TypeEvaluator._find_predicate_for(
                     key=key,
                     narrow_type=literal_type,
                     is_inverted=True,
-                    narrows_on_true=False
+                    narrows_on_true=False,
+                    by_equality=True
                 );
 
             case NarrowingKind.TRUTHINESS:
@@ -5630,7 +5719,8 @@ impl TypeEvaluator._narrowing_equivalent(
     if left.attr_name != right.attr_name {
         return False;
     }
-    if left.replaces_declared != right.replaces_declared {
+    if left.replaces_declared != right.replaces_declared
+        or left.by_equality != right.by_equality {
         return False;
     }
     if left.narrows_on_true != right.narrows_on_true
@@ -5683,6 +5773,10 @@ impl TypeEvaluator._apply_narrowing(
             base_type = incoming;
         } else {
             base_type = target.declared_type;
+        }
+        if predicate.by_equality {
+            by_value = self._narrow_type_by_equality(base_type, predicate.narrow_type);
+            return by_value if by_value is not None else incoming;
         }
 
         narrowed = self._narrow_type_to(base_type, predicate.narrow_type);
@@ -5820,6 +5914,51 @@ impl TypeEvaluator._narrow_member_to(
         return self._specialize_narrow_from_base(member, narrow_type);
     }
     return None;
+}
+
+impl TypeEvaluator._narrow_type_by_equality(
+    base_type: TypeBase, compared: TypeBase
+) -> TypeBase | None {
+    members = (
+        base_type.types
+            if isinstance(base_type, UnionType) and base_type.types
+            else [base_type]
+    );
+    candidates = (
+        compared.types
+            if isinstance(compared, UnionType) and compared.types
+            else [compared]
+    );
+    kept = [
+        m
+        for m in members
+        if any(self._may_equal(m, c) for c in candidates)
+    ];
+    if not kept or len(kept) == len(members) {
+        return None;
+    }
+    return self._union_narrowed_types(kept);
+}
+
+impl TypeEvaluator._may_equal(member: TypeBase, compared: TypeBase) -> bool {
+    if self.is_none_type(member) or self.is_none_type(compared) {
+        return self.is_none_type(member) and self.is_none_type(compared);
+    }
+    if not isinstance(member, ClassType) or not isinstance(compared, ClassType) {
+        return True;
+    }
+    if member.shared.same_class(compared.shared) {
+        if member.is_literal_type() and compared.is_literal_type() {
+            return member.get_literal_value() == compared.get_literal_value();
+        }
+        return True;
+    }
+    numeric = ["bool", "int", "float", "complex"];
+    builtin_values = numeric + ["str", "bytes"];
+    if member.is_builtin(builtin_values) and compared.is_builtin(builtin_values) {
+        return member.is_builtin(numeric) and compared.is_builtin(numeric);
+    }
+    return True;
 }
 
 impl TypeEvaluator._type_matches_isinstance(
