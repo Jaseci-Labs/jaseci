@@ -5,7 +5,7 @@ import litellm;
 import jaclang.byllm.llm as _byllm_llm_mod;
 import from jaclang.byllm.lib { Model, ModelPool, MockLLM }
 import from jaclang.byllm.llm { BaseLLM, LocalLLM }
-import from jaclang.byllm.types { MockToolCall }
+import from jaclang.byllm.types { MockToolCall, StreamEvent }
 import from jaclang.byllm.exceptions { CompactionNotEffectiveError, ConfigurationError }
 import from jaclang.byllm.config_loader { reset_byllm_config, get_byllm_config }
 import from pathlib { Path }
@@ -564,6 +564,47 @@ test "an emergency compaction is reported with the overflow reason" {
     assert len(reported) == 1 , f"expected one compaction event, got {reported}";
     assert reported[0].data["reason"] == "overflow";
     assert reported[0].data["by"] == "hook";
+}
+
+
+test "an emergency compaction is reported even when the retried call fails" {
+    def overflow -> Exception {
+        return litellm.exceptions.ContextWindowExceededError(
+            message="ctx exceeded", model="mockllm", llm_provider="openai"
+        );
+    }
+
+    llm = MockLLM(
+        outputs=[
+            (MockToolCall(tool=step_a, args={}), {}),
+            fail(overflow()),
+            fail(overflow())
+        ]
+    );
+
+    def shrinking_hook(msgs: list[any], keep_recent: int) -> list[any] {
+        return msgs[:2];
+    }
+
+    def task(q: str) -> str by llm(
+        tools=[step_a], stream=True, logging=True, on_compaction=shrinking_hook
+    );
+
+    seen: list[StreamEvent] = [];
+    stream: any = task("go");
+    raised = False;
+    try {
+        for event in stream {
+            seen.append(event);
+        }
+    } except litellm.exceptions.ContextWindowExceededError {
+        raised = True;
+    }
+
+    assert raised , "the retried call overflowed again, so the stream must raise it";
+    assert event_types(seen).count("compaction") == 1 , (
+        f"the applied compaction was lost with the retry: {event_types(seen)}"
+    );
 }
 
 
