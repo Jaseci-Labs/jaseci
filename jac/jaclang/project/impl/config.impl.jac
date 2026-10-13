@@ -1195,7 +1195,7 @@ impl _parse_toml_data(
             conflict_max_attempts=serve_data.get("conflict_max_attempts", 5),
             conflict_backoff_ms=serve_data.get("conflict_backoff_ms", 0),
             workers=ServeWorkersConfig(
-                count=str(workers_data.get("count", "1")),
+                count=str(workers_data.get("count", "")),
                 threads=str(workers_data.get("threads", "auto")),
                 max_requests=int(workers_data.get("max_requests", 0)),
                 max_requests_jitter=int(workers_data.get("max_requests_jitter", 0)),
