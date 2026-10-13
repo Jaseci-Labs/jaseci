@@ -4177,7 +4177,9 @@ impl TypeEvaluator.get_type_of_expression(
             if isinstance(node_.type, (UnionType, ClassType, FunctionType)) {
                 if narrowed
                     := self.get_narrowed_type_for_expr(node_, node_.type, node_) {
-                    node_.narrowed_type = narrowed;
+                    if node_.narrowed_type is not narrowed {
+                        node_.narrowed_type = narrowed;
+                    }
                     return narrowed;
                 }
             }
@@ -4767,11 +4769,34 @@ impl TypeEvaluator.get_narrowed_type(
 impl TypeEvaluator.get_narrowed_type_for_expr(
     expr: Expr, declared_type: TypeBase, at_node: UniNode
 ) -> TypeBase | None {
-    import from jaclang.compiler.types.type_evaluator { NarrowingTarget }
-    import from jaclang.compiler.symbol_utils { reference_key_deps }
     if not isinstance(declared_type, (UnionType, ClassType, FunctionType)) {
         return None;
     }
+    memo_key = (id(expr), id(at_node), id(declared_type));
+    memo_ok = not self._and_narrowing_overrides and not self._flow_pending_keys;
+    if memo_ok {
+        held = self._narrow_expr_memo.get(memo_key);
+        if held is not None
+            and held[0] is expr
+            and held[1] is at_node
+            and held[2] is declared_type {
+            return held[3];
+        }
+    }
+    result = self._narrowed_type_for_expr(expr, declared_type, at_node);
+    if memo_ok
+        and not self._flow_pending_keys
+        and not (isinstance(result, UnknownType) and result.is_incomplete) {
+        self._narrow_expr_memo[memo_key] = (expr, at_node, declared_type, result);
+    }
+    return result;
+}
+
+impl TypeEvaluator._narrowed_type_for_expr(
+    expr: Expr, declared_type: TypeBase, at_node: UniNode
+) -> TypeBase | None {
+    import from jaclang.compiler.types.type_evaluator { NarrowingTarget }
+    import from jaclang.compiler.symbol_utils { reference_key_deps }
     key = self.create_key_for_reference(expr);
     if key is None {
         return None;

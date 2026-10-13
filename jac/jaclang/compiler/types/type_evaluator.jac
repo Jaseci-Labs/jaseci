@@ -421,6 +421,7 @@ walker TypeEvaluator {
         builtins_module: Module | None = None,
         _flow_node_type_cache: dict[tuple[int, int], TypeBase | None] = {},
         _flow_key_type_cache: dict[tuple[int, str], TypeBase | None] = {},
+        _narrow_expr_memo: dict[tuple[int, int, int], tuple] = {},
         _flow_pending_symbols: set[tuple[int, int]] postinit,
         _flow_pending_keys: set[tuple[str, int]] postinit,
         _module_type_cache: dict[str, ModuleType] = {},
@@ -979,6 +980,10 @@ walker TypeEvaluator {
     def flow_pred_never_returns(pred: UniCFGNode) -> bool;
     def get_narrowed_type(symbol: Symbol, at_node: UniNode) -> TypeBase | None;
     def get_narrowed_type_for_expr(
+        expr: Expr, declared_type: TypeBase, at_node: UniNode
+    ) -> TypeBase | None;
+
+    def _narrowed_type_for_expr(
         expr: Expr, declared_type: TypeBase, at_node: UniNode
     ) -> TypeBase | None;
 
