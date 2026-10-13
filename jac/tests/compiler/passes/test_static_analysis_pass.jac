@@ -411,6 +411,29 @@ test "module-form typing.List stays legal as the runtime-object escape hatch" {
     ]}";
 }
 
+test "jsx member tags check their head, not their attribute parts" {
+    file_path = os.path.join(FIXTURES, "jsx_member_tags.jac");
+    prog = JacProgram();
+    prog.compile(file_path);
+    member_lines = set(range(15, 26));
+    flagged = [
+        (w.code.code, w.loc.first_line, w.loc.col_start)
+        for w in prog.warnings_had
+        if w.code is not None
+            and w.code.code in ("W1050", "W1051", "W2001")
+            and w.loc.first_line in member_lines
+    ];
+    assert flagged == [] , f"Expected no diagnostics on resolvable member tags, got {flagged}";
+    unknown = sorted(
+        [
+            (w.loc.first_line, w.loc.col_start)
+            for w in prog.warnings_had
+            if w.code is not None and w.code.code == "W2001" and w.loc.first_line == 28
+        ]
+    );
+    assert unknown == [(28, 6)] , f"Expected W2001 only on the unknown head 'Missing', got {unknown}";
+}
+
 test "lowercase boolean and null literals carry a did-you-mean hint" {
     # Issue #6357: `true`/`false`/`null`/`none` parse as undefined names. The
     # W2001 warning must point the author at the right Python-style literal
