@@ -2318,6 +2318,24 @@ test "bug_protoovl1_overloaded_protocol_member_picks_fitting_overload" {
     );
 }
 
+# Bug #GENPROTO-1: a `Protocol[...]` base was typed as `_SpecialForm.__getitem__`'s
+# `object`, so a generic protocol whose name does not start with `Supports` was
+# not a protocol, and `ExitStack.enter_context` rejected every context manager.
+test "bug_genproto_1_subscripted_protocol_base_is_a_protocol" {
+    program = compile_and_check("checker_subscripted_protocol_base.jac");
+    by_line = {
+        e.loc.first_line: str(e)
+        for e in program.errors_had
+        if e.loc
+    };
+    assert sorted(by_line) == [37, 38] , (
+        "Bug #GENPROTO-1: only the two deliberate mismatches may fire. Got: "
+        f"{[str(e) for e in program.errors_had]}"
+    );
+    assert "Cannot assign int to str" in by_line[37] , by_line[37];
+    assert "NoExit" in by_line[38] , by_line[38];
+}
+
 # Bug #UNBOUND-1: `Cls.method` read as a value is a function taking the
 # receiver first. The type now carries that (FunctionTypeFlags.UnboundMethod
 # with an explicit self), so a call through a name, a list element or a

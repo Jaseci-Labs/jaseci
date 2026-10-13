@@ -663,6 +663,13 @@ walker TypeEvaluator {
         src_type: ClassType, proto_type: ClassType, bindings: dict[str, TypeBase]
     ) -> bool;
 
+    def _solve_protocol_members(
+        src_type: ClassType,
+        proto_type: ClassType,
+        proto_symtab: UniScopeNode,
+        bindings: dict[str, TypeBase]
+    ) -> bool;
+
     def _protocol_member_impl(
         proto_func: FunctionType, member: ClassMember, src_type: ClassType
     ) -> (FunctionType | None);

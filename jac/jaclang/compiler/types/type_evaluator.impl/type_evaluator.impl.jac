@@ -1435,6 +1435,10 @@ impl TypeEvaluator._get_type_of_expression_core(
                     ) {
                         target_name = expr.target.right.value;
                     }
+                    if target_name == "Protocol" {
+                        return base_type;
+                    }
+
                     if target_name == "Union" or target_name == "Optional" {
                         union_args: list[TypeBase] = [];
                         if isinstance(expr.right, IndexSlice) and expr.right.slices {
@@ -3225,6 +3229,8 @@ impl TypeEvaluator._is_protocol_class(cls_type: ClassType) -> bool {
     return False;
 }
 
+glob _PROTOCOL_SOLVES_IN_PROGRESS: set[tuple[int, int]] = set();
+
 impl TypeEvaluator._solve_protocol_type_args(
     src_type: ClassType, proto_type: ClassType, bindings: dict[str, TypeBase]
 ) -> bool {
@@ -3232,7 +3238,26 @@ impl TypeEvaluator._solve_protocol_type_args(
     if not isinstance(proto_symtab, UniScopeNode) {
         return False;
     }
+    key = (id(src_type.shared), id(proto_type.shared));
+    if key in _PROTOCOL_SOLVES_IN_PROGRESS {
+        return False;
+    }
+    _PROTOCOL_SOLVES_IN_PROGRESS.add(key);
+    try {
+        return self._solve_protocol_members(
+            src_type, proto_type, proto_symtab, bindings
+        );
+    } finally {
+        _PROTOCOL_SOLVES_IN_PROGRESS.discard(key);
+    }
+}
 
+impl TypeEvaluator._solve_protocol_members(
+    src_type: ClassType,
+    proto_type: ClassType,
+    proto_symtab: UniScopeNode,
+    bindings: dict[str, TypeBase]
+) -> bool {
     solved = False;
     for (name, sym) in proto_symtab.names_in_scope.items() {
         proto_func: TypeBase | None = None;
