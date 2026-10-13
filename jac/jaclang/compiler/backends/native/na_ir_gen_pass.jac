@@ -2348,6 +2348,16 @@ walker NaIRGenPass(CompilerPass) {
     ) -> (ir.Value | None);
 
     def _osp_edge_factory(name: str) -> ir.Function;
+    def _osp_edge_ctor_args(name: str) -> list[str];
+    def _osp_edge_ctor_assigns(co: uni.ConnectOp, name: str) -> list[uni.KWPair];
+    def _osp_edge_build_with(
+        co: uni.ConnectOp,
+        name: str,
+        ctor_kws: list[uni.KWPair],
+        held: (list[tuple[ir.Value, ir.Value]] | None),
+        nd: uni.UniNode
+    ) -> (ir.Value | None);
+
     def _emit_osp_edge_factories -> None;
     def _derived_field_decls(nd: uni.Archetype) -> dict[str, uni.HasVar];
     def _class_expr_bound(
@@ -2456,7 +2466,8 @@ walker NaIRGenPass(CompilerPass) {
         co: uni.ConnectOp,
         edge_obj: ir.Value,
         edge_arch: (str | None),
-        held: (list[tuple[ir.Value, ir.Value]] | None) = None
+        held: (list[tuple[ir.Value, ir.Value]] | None) = None,
+        built_with: (set[str] | None) = None
     ) -> bool;
 
     def _osp_connect_assign_hold(
