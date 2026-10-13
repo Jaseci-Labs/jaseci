@@ -90,6 +90,7 @@ impl StaticAnalysisPass._check_unused_symbols(scope: UniScopeNode) -> None {
 }
 
 impl StaticAnalysisPass._check_undefined_names(mod: Module) -> None {
+    import from jaclang.compiler.frontend.unitree { JsxElementName }
     all_names = mod.get_all_sub_nodes(typ=Name);
     for name_nd in all_names {
         if name_nd.sym {
@@ -114,6 +115,10 @@ impl StaticAnalysisPass._check_undefined_names(mod: Module) -> None {
 
         parent = name_nd.parent;
         if isinstance(parent, AtomTrailer) and parent.is_attr {
+            continue;
+        }
+
+        if isinstance(parent, JsxElementName) and parent.parts[0] is not name_nd {
             continue;
         }
 

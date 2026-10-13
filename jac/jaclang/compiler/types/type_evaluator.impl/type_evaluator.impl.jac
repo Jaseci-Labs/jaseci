@@ -623,15 +623,19 @@ impl TypeEvaluator._get_type_of_expression_core(
         case JsxElement():
             if self.prefetch and self.prefetch.jsx_element_class {
                 if expr.name and expr.name.parts {
-                    for part in expr.name.parts {
-                        if isinstance(part, Name) {
-                            tag_val = part.value or "";
-                            is_mobui = self._is_mobui_module(part);
-                            if tag_val and (tag_val[0].isupper() or is_mobui) {
-                                self.get_type_of_expression(part);
-                            } elif tag_val {
-                                self._resolve_intrinsic_jsx_tag(part, tag_val);
-                            }
+                    part = expr.name.parts[0];
+                    if isinstance(part, Name) {
+                        tag_val = part.value or "";
+                        is_mobui = self._is_mobui_module(part);
+                        if tag_val
+                            and (
+                                len(expr.name.parts) > 1
+                                or tag_val[0].isupper()
+                                or is_mobui
+                            ) {
+                            self.get_type_of_expression(part);
+                        } elif tag_val {
+                            self._resolve_intrinsic_jsx_tag(part, tag_val);
                         }
                     }
                 }
