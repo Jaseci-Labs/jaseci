@@ -845,6 +845,74 @@ test "an ELF link still names libc.so.6 and binds two-level" {
 }
 
 
+test "a host ELF link names a system C library by the SONAME the loader finds" {
+    import ctypes.util;
+    import from unittest.mock { patch }
+    paths = ["libcrypto.so", "$ORIGIN/libfoo.so", "libc.so"];
+    with patch.object(ctypes.util, "find_library", return_value="libcrypto.so.3") {
+        needed: list[str] = [];
+        norm = clib_needed_libs(needed, paths, set(), host_elf=True);
+        assert needed == ["libcrypto.so.3", "$ORIGIN/libfoo.so", "libc.so.6"] , f"{needed}";
+        assert norm["libcrypto.so"] == "libcrypto.so.3" , f"{norm}";
+        cross: list[str] = [];
+        clib_needed_libs(cross, paths, set());
+        assert cross == ["libcrypto.so", "$ORIGIN/libfoo.so", "libc.so.6"] , f"{cross}";
+    }
+    with patch.object(ctypes.util, "find_library", return_value=None) {
+        unfound: list[str] = [];
+        clib_needed_libs(unfound, ["libcrypto.so"], set(), host_elf=True);
+        assert unfound == ["libcrypto.so"] , f"{unfound}";
+    }
+}
+
+def _elf_needed(raw: bytes) -> list[str] {
+    (shoff, ) = struct.unpack_from("<Q", raw, 0x28);
+    (shentsize, shnum) = struct.unpack_from("<HH", raw, 0x3A);
+    sections = [
+        struct.unpack_from("<IIQQQQIIQQ", raw, shoff + i * shentsize)
+        for i in range(shnum)
+    ];
+    needed: list[str] = [];
+    for sec in sections {
+        if sec[1] != 6 {
+            continue;
+        }
+        strtab = sections[sec[6]];
+        for off in range(sec[4], sec[4] + sec[5], 16) {
+            (tag, val) = struct.unpack_from("<qQ", raw, off);
+            if tag == 1 {
+                start = strtab[4] + val;
+                needed.append(raw[start:raw.index(b"\0", start)].decode());
+            }
+        }
+    }
+    return needed;
+}
+
+test "a shared library linked on this host loads its system C library" {
+    import ctypes;
+    import ctypes.util;
+    if not (
+        sys.platform.startswith("linux") and ("x86_64" in llvm.get_default_triple())
+    ) {
+        return;
+    }
+    if ctypes.util.find_library("crypto") is None {
+        return;
+    }
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d {
+        out = os.path.join(d, "libshared_system_clib.so");
+        link_shared("shared_system_clib.jac", "x86_64-unknown-linux-gnu", out);
+        needed = _elf_needed(Path(out).read_bytes());
+        assert "libcrypto.so" not in needed , (
+            f"names the development link libcrypto.so, which the loader need not have: {needed}"
+        );
+        lib = ctypes.CDLL(out);
+        lib.openssl_version.restype = ctypes.c_int64;
+        assert lib.openssl_version() > 0;
+    }
+}
+
 test "a floor-satisfied C import names no library and maps no symbol" {
     needed: list[str] = ["/usr/lib/libSystem.B.dylib"];
     handled: set[str] = {"libcrypto.dylib"};

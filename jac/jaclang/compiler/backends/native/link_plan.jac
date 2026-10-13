@@ -1090,6 +1090,11 @@ def _reuse_artifact(
     }
 }
 
+def _links_for_host(triple: str) -> bool {
+    import from jaclang.artifacts.kit { osarch }
+    return sys.platform.startswith("linux") and osarch(triple) == osarch();
+}
+
 def link_artifact(
     plan: LinkPlan,
     output_path: str,
@@ -1131,7 +1136,12 @@ def link_artifact(
     } elif is_macos {
         needed_libs = ["/usr/lib/libSystem.B.dylib"];
     }
-    lib_norm = clib_needed_libs(needed_libs, clib_paths, floor_handled);
+    lib_norm = clib_needed_libs(
+        needed_libs,
+        clib_paths,
+        floor_handled,
+        host_elf=platform == "elf" and _links_for_host(plan.triple)
+    );
     is_linux_exec = (not shared) and platform == "elf";
     """The runtime units declare their libc calls as C imports, and musl's
     libc.a satisfies every one of them: only a library beyond libc and libm
