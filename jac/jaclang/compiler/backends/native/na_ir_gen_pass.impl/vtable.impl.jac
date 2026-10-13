@@ -1635,9 +1635,7 @@ impl NaIRGenPass._emit_isa_vtobj_fn -> ir.Function {
     node_ty = ir.LiteralStructType([i8p, i8p]);
     zero = ir.Constant(i32, 0);
     registry = self._vtable_set();
-    fn = self._define_function(
-        "__jac_isa_vtobj", ir.FunctionType(i1, [i8p, i8p, i64])
-    );
+    fn = self._define_function("__jac_isa_vtobj", ir.FunctionType(i1, [i8p, i8p, i64]));
     fn.linkage = "private";
     word = fn.args[0];
     head = fn.append_basic_block("entry");
