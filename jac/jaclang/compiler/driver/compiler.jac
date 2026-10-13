@@ -79,7 +79,7 @@ import from jaclang.compiler.driver.source_failures {
 }
 
 glob COMPILE_GC_THRESHOLDS: tuple[int, int, int] = (5000000, 50, 100),
-     CHECK_GC_THRESHOLDS: tuple[int, int, int] = (100000, 10, 10);
+     CHECK_GC_THRESHOLDS: tuple[int, int, int] = (300000, 10, 10);
 
 def client_dep_digests(manifest: ClientManifest) -> dict[str, str] {
     digests: dict[str, str] = {};
