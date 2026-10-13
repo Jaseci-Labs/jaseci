@@ -313,6 +313,47 @@ test "an import with no native form keeps the module in Python" {
     assert set(placed_by_name(mod).values()) == {'server'} , placed_by_name(mod);
 }
 
+test "only a module whose native preference is open asks for full dependency trees" {
+    import from unittest.mock { patch }
+    import jaclang.compiler.driver.module_compile as module_compile;
+    import from jaclang.compiler.frontend.codeinfo {
+        set_effective_default_codespace,
+        get_effective_default_codespace_override
+    }
+    real_analyze: any = module_compile.analyze_module;
+    seen: dict[str, bool] = {};
+    def recording(
+        program: JacProgram, path: str, options: CompileOptions, source: any = None
+    ) -> any {
+        task = real_analyze(program, path, options, source);
+        seen[os.path.realpath(str(path))] = options.need_full_ast;
+        return task;
+    }
+    previous = get_effective_default_codespace_override();
+    asked: dict[str, bool] = {};
+    try {
+        with patch.object(module_compile, "analyze_module", recording) {
+            for (name, text) in [("closed", PY_IMPORT_SRC), ("open", CLEAN_SRC)] {
+                path = os.path.realpath(os.path.join(tempfile.mkdtemp(), "m.jac"));
+                with open(path, "w", encoding="utf-8") as fh {
+                    fh.write(text);
+                }
+                JacProgram().compile(
+                    path, options=CompileOptions(default_codespace="native")
+                );
+                asked[name] = seen.get(path, False);
+            }
+        }
+    } finally {
+        set_effective_default_codespace(previous);
+    }
+    assert not asked["closed"] , (
+        "a module the syntax scan closed is placed on the server before typing, "
+        "so its dependencies are read from their interfaces"
+    );
+    assert asked["open"] , "a module that may be placed native lowers against full trees";
+}
+
 test "access to the persistent graph still keeps the whole module in Python" {
     (prog, mod, path, parses) = compile_native_default(ROOT_SRC);
     assert not prog.errors_had , f"{[str(e) for e in prog.errors_had]}";
