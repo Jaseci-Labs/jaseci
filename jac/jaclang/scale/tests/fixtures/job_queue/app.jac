@@ -1,13 +1,23 @@
 import from reviews { Review }
 import from jaclang.scale.jobs { enqueue, job_info }
 
-walker:pub QueueReview {
+walker Tidy {
     has run_id: str,
         hang: bool = False;
 
     can go with Root entry {
+        print(f"tidied {self.run_id}");
+    }
+}
+
+walker:pub QueueReview {
+    has run_id: str,
+        hang: bool = False,
+        here_only: bool = False;
+
+    can go with Root entry {
         job_id = enqueue(
-            Review,
+            Tidy if self.here_only else Review,
             {"run_id": self.run_id, "hang": self.hang},
             queue="agents",
             max_attempts=1,

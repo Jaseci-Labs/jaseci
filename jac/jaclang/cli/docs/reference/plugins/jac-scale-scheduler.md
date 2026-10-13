@@ -426,11 +426,11 @@ walker MoveToReview {
 |----------|---------|---------|
 | `target` | required | The walker or function to run, or its name. It can be private (no `:pub`) and live in any module of the app. A walker or function passed directly is recorded by its module's persistent identity, so it resolves after a redeploy, and a job whose module is not loaded is `dead` rather than run as some other target of the same name |
 | `args` | `{}` | Walker fields or function keyword arguments. Must be JSON-serializable |
-| `key` | `""` | Idempotency key. A second `enqueue` with the same key from the same service writes nothing and returns the first job's id |
+| `key` | `""` | Idempotency key. A second `enqueue` with the same key from the same service writes nothing and returns the first job's id, whatever that job's status. A `done` or `cancelled` job holds its key until `retention_seconds` removes it, and a `dead` job holds it for good, so to run the work again use a new key (for example with an attempt number) |
 | `queue` | `"default"` | A queue declared under `[scale.jobs] queues`. An undeclared name raises `ValueError` |
 | `run_at` | now | A `datetime` or ISO string. The job is not claimed before it. A naive value is read as UTC |
 | `max_attempts` | `3` | Attempts before the job is marked `dead` |
-| `timeout_s` | `0` | Seconds the runner waits for one attempt. Past it the attempt counts as failed and the runner stops renewing its lease. Python cannot stop a running thread, so the abandoned attempt keeps running until it returns, and its writes may still commit. `0` means no limit |
+| `timeout_s` | `0` | Seconds the runner waits for one attempt. Past it the attempt counts as failed and the runner stops renewing its lease. Python cannot stop a running thread, so the abandoned attempt keeps running until it returns, and its writes may still commit. The retry is scheduled straight away, so it can run while the abandoned attempt is still going. `0` means no limit |
 
 `cancel(job_id)` stops a job that has not started yet and returns `True`. It returns `False` for a job that is running or already finished. `job_info(job_id)` returns a `JobInfo` with the job's `status`, `attempts`, `run_at` and `last_error`, or `None`.
 
@@ -452,7 +452,8 @@ walker MoveToReview {
 - On shutdown a runner stops claiming, waits for its running jobs until the server's drain budget runs out, then stops renewing their leases, so another runner takes whatever is still running.
 - A new job wakes the runners with `pg_notify`. Runners also poll every `poll_seconds`.
 - Jobs run as the internal `__system__` account, like static schedules.
-- A job can run more than once: a runner can die after the work finished but before it recorded that. Keep job targets idempotent.
+- A job can run more than once: a runner can die after the work finished but before it recorded that, and a retry after `timeout_s` can overlap the attempt it replaced. Keep job targets idempotent.
+- `enqueue` writes the job in the request's own transaction. If the request is rolled back, or re-run after a write conflict, the job from the rolled-back attempt is gone with it and only the attempt that commits leaves one.
 
 ### `[scale.jobs]` reference
 

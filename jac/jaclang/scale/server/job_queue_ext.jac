@@ -9,32 +9,26 @@ import from jaclang.scale.jobs.runner { JobRunner, JobTargetMissing, QueueSpec }
 glob logger: logging.Logger = logging.getLogger(__name__);
 
 
-def module_for_identity(identity: str) -> any {
-    import sys;
-    import from jaclang { JacRuntime as Jac }
-    import from jaclang.data.type_identity { module_identity }
-    if not identity.startswith('jac:') {
-        return Jac.loaded_modules.get(identity) or sys.modules.get(identity);
-    }
-    for module in list(sys.modules.values()) {
-        facts: any = module?.__jac_persistence__;
-        if isinstance(facts, tuple) and facts and module_identity(facts) == identity {
-            return module;
-        }
-    }
-    return None;
-}
-
-
 def resolve_job_target(server: JacAPIServer, name: str) -> any {
     import inspect;
     import from jaclang { JacRuntime as Jac }
     import from jaclang.runtime.constructs { WalkerArchetype }
     found: any = None;
     if ':' in name {
+        import from jaclang.data.type_identity { TypeResolutionError, module_for }
+        import from jaclang.runtime.prepared { application_for }
         (identity, attr) = name.rsplit(':', 1);
-        module: any = module_for_identity(identity);
-        found = getattr(module, attr, None) if module is not None else None;
+        entry_file = server.module_file;
+        try {
+            module = module_for(
+                identity, application_for(entry_file) if entry_file else None
+            );
+        } except TypeResolutionError as e {
+            raise JobTargetMissing(
+                f"'{name}' is not a walker or function this app loads: {e}"
+            ) from e;
+        }
+        found = getattr(module, attr, None);
     } else {
         found = server.find_target(name);
         if found is None {

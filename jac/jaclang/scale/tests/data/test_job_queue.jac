@@ -335,6 +335,74 @@ test "a second enqueue with the same key is a no-op" {
 }
 
 
+test "a job enqueued by a request whose COMMIT hits a serialization conflict is re-run, not dropped" {
+    import from pathlib { Path }
+    import from tempfile { TemporaryDirectory }
+    import from jaclang.data.pgwire { PgWireError }
+    import from jaclang.runtime.context { ExecutionContext }
+    import from jaclang.runtime.exceptions { WriteConflict }
+    import from jaclang.runtime.runtime { JacRuntime }
+    with TemporaryDirectory() as td {
+        ctx = ExecutionContext(
+            base_path_dir=td, full_target_path=str(Path(td) / "jobs_app.jac")
+        );
+        token = JacRuntime.push_request_context(ctx);
+        try {
+            store: any = ctx.mem.store;
+            if not isinstance(store, PgStore) {
+                print("[skip] the request session is not on Postgres");
+                return;
+            }
+            def _stored(job_id: str) -> int {
+                probe = store.new_session();
+                try {
+                    return int(
+                        probe.rows(
+                            "SELECT count(*) FROM jac_jobs WHERE id = :id",
+                            {'id': job_id}
+                        )[0][0]
+                    );
+                } finally {
+                    probe.close();
+                }
+            }
+            real_commit = store.commit;
+            left = [1];
+            def _conflicting_commit {
+                if left[0] > 0 and store.in_txn() {
+                    left[0] -= 1;
+                    store.rollback();
+                    raise PgWireError(
+                        {"C": "40001", "M": "could not serialize access"}
+                    );
+                }
+                real_commit();
+            }
+            store.commit = _conflicting_commit;
+
+            lost = enqueue("Work", {"attempt": 1});
+            rerun = False;
+            try {
+                ctx.mem.commit();
+            } except WriteConflict {
+                rerun = True;
+            }
+            assert left[0] == 0 , "the injected COMMIT conflict never fired";
+            assert rerun , "the conflict was replayed without the job row instead of re-running the request";
+            assert _stored(lost) == 0 , "a job row survived its rolled-back transaction";
+
+            ctx.mem.abort();
+            kept = enqueue("Work", {"attempt": 2});
+            ctx.mem.commit();
+            assert _stored(kept) == 1 , "the re-run request did not leave its job";
+        } finally {
+            JacRuntime.reset_request_context(token);
+            ctx.close();
+        }
+    }
+}
+
+
 test "cancel stops only a job that has not started" {
     pg = _pg();
     if pg is None {
@@ -374,7 +442,7 @@ test "cancel stops only a job that has not started" {
 }
 
 
-test "a served app runs a private walker from a sibling module and times out a hung one" {
+test "a served app runs private walkers from its entry and a sibling module and times out a hung one" {
     import shutil;
     import tempfile;
     import from pathlib { Path }
@@ -401,15 +469,20 @@ test "a served app runs a private walker from a sibling module and times out a h
                 'jobs_user', 'Passw0rd!long'
             )}"
         };
-        cases: list[tuple[bool, str, str, float]] = [
-            (False, "done", "", 10.0),
-            (True, "dead", "ran past timeout_s=0.5", 2.5)
+        cases: list[tuple[bool, bool, str, str, float]] = [
+            (False, False, "done", "", 10.0),
+            (False, True, "done", "", 10.0),
+            (True, False, "dead", "ran past timeout_s=0.5", 2.5)
         ];
-        for (hang, status, error, budget) in cases {
+        for (hang, here_only, status, error, budget) in cases {
             queued = extract_data(
                 client.post(
                     "/walker/QueueReview",
-                    json={"run_id": f"r-{hang}", "hang": hang},
+                    json={
+                        "run_id": f"r-{hang}-{here_only}",
+                        "hang": hang,
+                        "here_only": here_only
+                    },
                     headers=auth
                 ).json()
             );
@@ -427,8 +500,10 @@ test "a served app runs a private walker from a sibling module and times out a h
                 }
                 time.sleep(0.1);
             }
-            assert seen.get("status") == status , f"hang={hang}: {seen} after {budget}s";
-            assert error in seen["last_error"] , f"hang={hang}: {seen['last_error']}";
+            assert seen.get("status") == status , f"hang={hang} here_only={here_only}: {seen} after {budget}s";
+            assert error in seen["last_error"] , f"hang={hang} here_only={here_only}: {seen[
+                'last_error'
+            ]}";
         }
     } finally {
         if client is not None {
