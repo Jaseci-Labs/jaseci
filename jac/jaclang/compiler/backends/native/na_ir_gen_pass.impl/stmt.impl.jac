@@ -3646,6 +3646,27 @@ impl NaIRGenPass._codegen_for(nd: uni.InForStmt) -> None {
                 helpers = self.dict_helpers.get(items_dict_key)
                     if items_dict_key is not None
                     else None;
+                dict_struct = self.dict_types.get(items_dict_key)
+                    if items_dict_key is not None
+                    else None;
+                if collection_val is not None
+                    and helpers is not None
+                    and (
+                        dict_struct is None
+                        or collection_val.type != dict_struct.as_pointer()
+                    ) {
+                    self.emit(
+                        E5092,
+                        node_override=items_source,
+                        kind="dict iteration",
+                        name="items() of a value that is not a native dict",
+                        help_text="The value is typed as a dict only by narrowing a "
+                        "dynamically typed value, and it is held boxed, so native "
+                        "code cannot iterate it as a native dict. Give it a "
+                        "declared dict type, or keep this code in Python."
+                    );
+                    return;
+                }
                 if collection_val is not None and helpers is not None {
                     self._codegen_for_indexed(
                         nd,
@@ -3955,6 +3976,24 @@ impl NaIRGenPass._codegen_for(nd: uni.InForStmt) -> None {
         if inner_type is not None {
             actual_elem_type = inner_type;
         }
+    }
+    _for_len_fn = helpers["len"];
+    if isinstance(_for_len_fn, ir.Function)
+        and len(_for_len_fn.function_type.args) > 0
+        and _coll_memo.type != _for_len_fn.function_type.args[0] {
+        if len(self.ctx.errors_had) == _for_errs0 {
+            self.emit(
+                E5092,
+                node_override=nd.collection or nd,
+                kind="for-loop iterable",
+                name=(coll_name or "<expr>"),
+                help_text="The value iterated here has no list layout natively "
+                "(an `Iterable`/`Iterator`-typed value is an iterator handle, "
+                "not a list), so the indexed loop cannot read it. Annotate it "
+                "as a concrete `list[...]`, or iterate it from a Python context."
+            );
+        }
+        return;
     }
     self._codegen_for_indexed(
         nd,

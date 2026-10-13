@@ -17,7 +17,8 @@ obj ModuleAnalysis {
         parse_failed: bool = False,
         blocked: bool = False,
         full_head: bool = False,
-        native: bool = False;
+        native: bool = False,
+        placement_only: bool = False;
 
     def postinit {
         self.module = Module.make_stub();
@@ -95,8 +96,15 @@ obj ModuleAnalysis {
         import from jaclang.compiler.frontend.constant { CodeContext as _CodeCtx }
         self.native = self.module is not None
             and self.module.declares_codespace(_CodeCtx.NATIVE, path_hint=self.path);
+        candidate = self.native
+            or (
+                self.module is not None
+                and not self.parse_failed
+                and not self.module.gen.placement_mode
+                and self.program.infers_native_codespace(self.path)
+            );
 
-        if self.native {
+        if candidate {
             self.options.need_full_ast = True;
         }
 
@@ -107,16 +115,15 @@ obj ModuleAnalysis {
         host = active_host();
         _annex_of_base = host.path_facts(self.path).is_annex
             and host.base_file(str(self.path)) is not None;
+        _unasked = self.options.skip_analysis
+            or (self.program.internal and host.import_in_flight(self.path));
         _analyze = self.full_head
             and not _is_decl_stub
             and not _annex_of_base
-            and (
-                self.native
-                or not (
-                    self.options.skip_analysis
-                    or (self.program.internal and host.import_in_flight(self.path))
-                )
-            );
+            and (candidate or not _unasked);
+        self.placement_only = _analyze and _unasked and not self.native;
+        errors_mark = len(self.program.errors_had);
+        blocked_before = self.blocked;
 
         if _analyze
             and not product_ready(
@@ -131,11 +138,28 @@ obj ModuleAnalysis {
                 self.blocked = True;
             }
         }
+        if self.placement_only
+            and not blocked_before
+            and len(self.program.errors_had) > errors_mark
+            and not cancelled(self.options) {
+            import from jaclang.compiler.placement.placement_facts { settle_server }
+            del self.program.errors_had[errors_mark:];
+            settle_server(self.module);
+            import from jaclang.compiler.placement.placement { record_decided }
+            record_decided(self.program, self.module);
+            self.blocked = False;
+        }
 
         if not self.blocked
             and self.program.count_module_errors(self.module_path) > 0 {
             self.blocked = True;
         }
+        if _analyze and not self.blocked {
+            import from jaclang.compiler.placement.placement_solver { placement_work }
+            placement_work(self.program).drain(self.program);
+        }
+        self.native = self.module is not None
+            and self.module.declares_codespace(_CodeCtx.NATIVE, path_hint=self.path);
     }
 
     def run_phase(phase: CompilationPhase) {
@@ -187,9 +211,10 @@ def cancelled(options: CompileOptions) -> bool {
     return options.cancel_token is not None and options.cancel_token.is_set();
 }
 
-def analyze_module(
-    program: JacProgram, path: str, options: CompileOptions, source: str | None = None
+def run_analysis_phases(
+    program: JacProgram, path: str, options: CompileOptions, source: str | None
 ) -> ModuleAnalysis {
+    program.analysis.capability_notes.pop(os.path.realpath(path), None);
     task = ModuleAnalysis(program, path, options, source);
     for phase in ANALYSIS_PHASES {
         if cancelled(options) {
@@ -203,4 +228,10 @@ def analyze_module(
         }
     }
     return task;
+}
+
+def analyze_module(
+    program: JacProgram, path: str, options: CompileOptions, source: str | None = None
+) -> ModuleAnalysis {
+    return run_analysis_phases(program, path, options, source);
 }
