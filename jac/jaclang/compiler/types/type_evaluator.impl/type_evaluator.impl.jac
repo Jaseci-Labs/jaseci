@@ -3217,15 +3217,6 @@ impl TypeEvaluator._is_protocol_class(cls_type: ClassType) -> bool {
         and (class_name.startswith('Supports') or class_name.startswith('_Supports')) {
         return True;
     }
-
-    for mro_cls in cls_type.shared.mro {
-        if isinstance(mro_cls, ClassType) {
-            if (mro_cls.shared.is_builtin_class or mro_cls.shared.is_from_stdlib_stub)
-                and mro_cls.shared.class_name in ('Protocol', '_SpecialForm') {
-                return True;
-            }
-        }
-    }
     return False;
 }
 

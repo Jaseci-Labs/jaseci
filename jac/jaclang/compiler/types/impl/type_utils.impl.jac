@@ -173,6 +173,18 @@ impl class_implements_protocol(
                 cls_func_type = _method_entry_type(evaluator, cls_method);
                 if isinstance(proto_func_type, FunctionType)
                     and isinstance(cls_func_type, FunctionType) {
+                    if proto.private is not None and proto.private.type_args {
+                        proto_func_type = proto_func_type.specialize(proto);
+                        cls_member = evaluator._lookup_class_member(cls, name);
+                        impl_func = evaluator._protocol_member_impl(
+                            proto_func_type, cls_member, cls
+                        )
+                            if cls_member is not None
+                            else None;
+                        if impl_func is not None {
+                            cls_func_type = impl_func;
+                        }
+                    }
                     if not evaluator._assign_callable(cls_func_type, proto_func_type) {
                         return False;
                     }

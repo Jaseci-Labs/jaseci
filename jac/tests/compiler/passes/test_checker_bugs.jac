@@ -2328,12 +2328,14 @@ test "bug_genproto_1_subscripted_protocol_base_is_a_protocol" {
         for e in program.errors_had
         if e.loc
     };
-    assert sorted(by_line) == [37, 38] , (
-        "Bug #GENPROTO-1: only the two deliberate mismatches may fire. Got: "
+    assert sorted(by_line) == [42, 43, 57, 58] , (
+        "Bug #GENPROTO-1: only the four deliberate mismatches may fire. Got: "
         f"{[str(e) for e in program.errors_had]}"
     );
-    assert "Cannot assign int to str" in by_line[37] , by_line[37];
-    assert "NoExit" in by_line[38] , by_line[38];
+    assert "Cannot assign int to str" in by_line[42] , by_line[42];
+    assert "NoExit" in by_line[43] , by_line[43];
+    assert "BytesLocation" in by_line[57] , by_line[57];
+    assert "Cannot assign list[int] to list[str]" in by_line[58] , by_line[58];
 }
 
 # Bug #UNBOUND-1: `Cls.method` read as a value is a function taking the
