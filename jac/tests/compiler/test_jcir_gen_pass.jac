@@ -42,8 +42,8 @@ import from jaclang.compiler.driver.pipeline_types {
 }
 
 """The passes a module's codegen requests, in order: the shared lowering, the Python IR, the structure freeze."""
-def codegen_lane(native: bool) -> list {
-    lane: list = [];
+def codegen_lane(native: bool) -> list[type] {
+    lane: list[type] = [];
     for product in (
         CompilationProduct.CODEGEN,
         CompilationProduct.PY_IR,

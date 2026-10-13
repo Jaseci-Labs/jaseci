@@ -72,16 +72,17 @@ test "the analysis stage always carries type checking and the checkers" {
     assert sched.index(TypeCheckPass) < sched.index(OwnershipCheckPass);
 }
 
-def canonical_pipeline -> list {
-    sched = product_passes(CompilationProduct.IR)
-        + product_passes(CompilationProduct.ANALYSIS)
-        + product_passes(CompilationProduct.BOUNDARIES);
+def canonical_pipeline -> list[type] {
+    sched: list[type] = [];
     for product in (
+        CompilationProduct.IR,
+        CompilationProduct.ANALYSIS,
+        CompilationProduct.BOUNDARIES,
         CompilationProduct.CODEGEN,
         CompilationProduct.PY_IR,
         CompilationProduct.FROZEN
     ) {
-        sched += product_passes(product, ProductRequest(native=True));
+        sched.extend(product_passes(product, ProductRequest(native=True)));
     }
     return sched;
 }
