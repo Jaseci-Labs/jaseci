@@ -23,7 +23,7 @@ import from jaclang.compiler.capability_notes {
 }
 
 glob WIRE_SRC = (
-         "import from typing { Generator }\n\n"
+         "import from typing { Generator, Literal, Text, TypeAlias }\n\n"
          "enum Color { RED, BLUE }\n\n"
          "obj Item {\n"
          "    has name: str,\n"
@@ -43,6 +43,12 @@ glob WIRE_SRC = (
          "    return Item(name=str(a));\n"
          "}\n\n"
          "def int_keys(m: dict[int, str]) -> None {}\n\n"
+         "glob Key: TypeAlias = str;\n\n"
+         "type Name = str;\n\n"
+         "type Count = int;\n\n"
+         "def alias_keys(a: dict[Key, int], b: dict[Name, int]) -> None {}\n\n"
+         "def text_keys(a: dict[Text, int], b: dict[Literal['x', 'y'], int]) -> None {}\n\n"
+         "def int_alias_keys(m: dict[Count, str]) -> None {}\n\n"
          "def callback(f: Callable[[int], int]) -> int {\n"
          "    return f(1);\n"
          "}\n\n"
@@ -107,6 +113,14 @@ test "a dict crosses only with string keys" {
     assert len(found) == 1 , found;
     (what, spelled, why) = found[0];
     assert what == "parameter 'm'" and "string keys" in why , found;
+}
+
+test "a dict key is judged by what its alias names" {
+    mod = typed_module();
+    assert request_refusals(mod, "alias_keys") == [];
+    assert request_refusals(mod, "text_keys") == [];
+    found = request_refusals(mod, "int_alias_keys");
+    assert len(found) == 1 and "'int' keys" in found[0][2] , found;
 }
 
 test "behaviour does not cross: a callable has no wire form" {

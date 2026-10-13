@@ -1,6 +1,7 @@
 import from jaclang.compiler.frontend.unitree {
     Ability,
     Archetype,
+    Assignment,
     AtomTrailer,
     AtomUnit,
     BinaryExpr,
@@ -10,11 +11,13 @@ import from jaclang.compiler.frontend.unitree {
     HasVar,
     IndexSlice,
     Module,
+    MultiString,
     NameAtom,
     Null,
     String,
     Token,
     TupleVal,
+    TypeAlias,
     UniNode,
     resolved_decl_of
 }
@@ -179,6 +182,73 @@ def declared_type(scope: (Module | None), name: str) -> (Archetype | Enum | None
     return target if isinstance(target, (Archetype, Enum)) else None;
 }
 
+def alias_value(scope: (Module | None), name: str) -> (UniNode | None) {
+    if scope is None or scope.sym_tab is None {
+        return None;
+    }
+    sym = scope.sym_tab.lookup(name, deep=True);
+    if sym is None {
+        return None;
+    }
+    found: (UniNode | None) = sym.defn[0] if sym.defn else None;
+    resolved = resolved_decl_of(sym);
+    if resolved is not None {
+        found = resolved;
+    }
+    if isinstance(found, NameAtom) {
+        if isinstance(found.name_of, TypeAlias) {
+            return found.name_of.value;
+        }
+        if isinstance(found.parent, Assignment) {
+            return found.parent.value;
+        }
+    }
+    return None;
+}
+
+def non_string_key(
+    tag: (UniNode | None), scope: (Module | None), depth: int
+) -> (str | None) {
+    import from jaclang.runtime.scalars { sized_scalar_names }
+    (key, key_args) = annotation_shape(tag);
+    if key in ('', '...', 'str', 'any', 'Any') {
+        return None;
+    }
+    if key == '|' {
+        for branch in key_args {
+            bad = non_string_key(branch, scope, depth);
+            if bad is not None {
+                return bad;
+            }
+        }
+        return None;
+    }
+    if key == 'Literal' {
+        for value in key_args {
+            if not isinstance(value, (String, MultiString)) {
+                return key;
+            }
+        }
+        return None;
+    }
+    if key in JSON_SCALARS
+        or key in sized_scalar_names()
+        or key in JSON_SEQUENCES
+        or key in JSON_MAPPINGS {
+        return key;
+    }
+    if depth < 8 {
+        target = alias_value(scope, key);
+        if target is not None {
+            return non_string_key(target, scope, depth + 1);
+        }
+    }
+    if declared_type(scope, key) is not None {
+        return key;
+    }
+    return None;
+}
+
 def json_refusal(
     tag: (UniNode | None),
     scope: (Module | None),
@@ -216,8 +286,8 @@ def json_refusal(
     }
     if head in JSON_MAPPINGS {
         if len(args) > 0 {
-            (key, _key_args) = annotation_shape(args[0]);
-            if key not in ('str', 'any', 'Any') {
+            key = non_string_key(args[0], scope, 0);
+            if key is not None {
                 return (
                     spelled,
                     f"a JSON object has string keys, so '{key}' keys arrive as "
