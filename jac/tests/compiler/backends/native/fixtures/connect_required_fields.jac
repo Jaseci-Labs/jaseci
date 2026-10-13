@@ -2,6 +2,7 @@
 # requires them: `a +>:E:f=v:+> b` passes the names `E` requires to its
 # constructor, as `E(f=v)` would, and sets every other named field on the
 # built edge afterwards, so a defaulted field still lands after `postinit`.
+# Every value is evaluated in source order before the edge is built.
 node Spot {
     has index: int;
 }
@@ -80,4 +81,9 @@ with entry {
     g +>:Span:lo=3, note="custom":+> a;
     span = [edge g->:Span:->][0];
     print("custom init", span.lo, span.hi, span.note);
+
+    h = Spot(index=14);
+    h +>:Named:weight=bump(), label=str(bump()):+> a;
+    ordered = [edge h->:Named:->][0];
+    print("source order", ordered.weight, ordered.label);
 }

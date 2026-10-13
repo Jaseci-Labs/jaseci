@@ -1988,7 +1988,8 @@ impl NaIRGenPass._codegen_instantiation(
     nd: (uni.FuncCall | uni.Name),
     type_name_override: (str | None) = None,
     ctor_params: (list[uni.Expr | uni.KWPair] | None) = None,
-    ctor_values: (dict[str, ir.Value] | None) = None
+    ctor_values: (dict[str, ir.Value] | None) = None,
+    ctor_pre: (dict[int, ir.Value] | None) = None
 ) -> (ir.Value | None) {
     import from jaclang.compiler.passes.layout_pass { EXC_MESSAGE_FIELD }
     _ctor_ref = nd.target if isinstance(nd, uni.FuncCall) else nd;
@@ -2258,7 +2259,7 @@ impl NaIRGenPass._codegen_instantiation(
     foreign_fields = self.struct_field_foreign.get(type_name, set());
 
     set_fields: set[str] = set();
-    _pre_args: dict[int, ir.Value] = {};
+    _pre_args: dict[int, ir.Value] = dict(ctor_pre) if ctor_pre is not None else {};
     if _msg_slot is not None and _pos_all {
         if not self._store_exc_message(
             obj_ptr, type_name, _pos_all, _pre_args, shared=not _msg_only

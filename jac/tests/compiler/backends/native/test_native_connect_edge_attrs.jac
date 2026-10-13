@@ -125,7 +125,8 @@ arguments, so a connect that names them passes them to the constructor, as
 `E(f=v)` does, on the Python tier and in native binaries alike. Both used to
 build `E()` first: Python raised a missing-argument TypeError and native
 raised "edge type cannot be constructed without arguments". A defaulted
-field named beside them is still set after `postinit`, a list connect
+field named beside them is still set after `postinit`, every value is
+evaluated in source order before the edge is built, a list connect
 evaluates the values once, and an edge with its own `init` gets the
 parameters it requires."""
 test "connects build edges whose constructor requires the assigned fields" {
@@ -143,5 +144,6 @@ test "connects build edges whose constructor requires the assigned fields" {
             "fan out 1 3\n"
             "fan out labels 2 ['fan2', 'fan2']\n"
             "custom init 3 8 custom\n"
+            "source order 3 4\n"
         ) , out;
 }

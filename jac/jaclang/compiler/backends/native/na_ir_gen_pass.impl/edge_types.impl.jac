@@ -141,6 +141,7 @@ impl NaIRGenPass._osp_edge_build_with(
     name: str,
     ctor_kws: list[uni.KWPair],
     held: (list[tuple[ir.Value, ir.Value]] | None),
+    early: (dict[int, ir.Value] | None),
     nd: uni.UniNode
 ) -> (ir.Value | None) {
     arch = self.arch_ast_map.get(name);
@@ -152,8 +153,16 @@ impl NaIRGenPass._osp_edge_build_with(
     errors_before = len(self.ctx.errors_had);
     built: (ir.Value | None) = None;
     if held is None {
+        pre: dict[int, ir.Value] = {};
+        if early is not None {
+            for kw in ctor_kws {
+                if id(kw.value) in early {
+                    pre[id(kw.value)] = early.pop(id(kw.value));
+                }
+            }
+        }
         built = self._codegen_instantiation(
-            arch.name, type_name_override=name, ctor_params=list(ctor_kws)
+            arch.name, type_name_override=name, ctor_params=list(ctor_kws), ctor_pre=pre
         );
     } else {
         if self._arch_init_params_of(name) is not None {

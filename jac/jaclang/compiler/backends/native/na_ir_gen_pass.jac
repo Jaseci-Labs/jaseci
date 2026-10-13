@@ -2265,7 +2265,8 @@ walker NaIRGenPass(CompilerPass) {
         nd: (uni.FuncCall | uni.Name),
         type_name_override: (str | None) = None,
         ctor_params: (list[uni.Expr | uni.KWPair] | None) = None,
-        ctor_values: (dict[str, ir.Value] | None) = None
+        ctor_values: (dict[str, ir.Value] | None) = None,
+        ctor_pre: (dict[int, ir.Value] | None) = None
     ) -> (ir.Value | None);
 
     def _codegen_method_call(nd: uni.FuncCall) -> (ir.Value | None);
@@ -2355,6 +2356,7 @@ walker NaIRGenPass(CompilerPass) {
         name: str,
         ctor_kws: list[uni.KWPair],
         held: (list[tuple[ir.Value, ir.Value]] | None),
+        early: (dict[int, ir.Value] | None),
         nd: uni.UniNode
     ) -> (ir.Value | None);
 
@@ -2467,8 +2469,13 @@ walker NaIRGenPass(CompilerPass) {
         edge_obj: ir.Value,
         edge_arch: (str | None),
         held: (list[tuple[ir.Value, ir.Value]] | None) = None,
-        built_with: (set[str] | None) = None
+        built_with: (set[str] | None) = None,
+        early: (dict[int, ir.Value] | None) = None
     ) -> bool;
+
+    def _osp_connect_assign_early(
+        co: uni.ConnectOp, edge_arch: (str | None)
+    ) -> (dict[int, ir.Value] | None);
 
     def _osp_connect_assign_hold(
         co: uni.ConnectOp, edge_arch: (str | None)
