@@ -240,7 +240,7 @@ test "a schedule dependency mid-import puts the compile on the bootstrap tier" {
         reason = tier_reason(CompilationProduct.IR);
         assert name in reason , f"tier reason does not name the module in flight: {reason!r}";
         sched = schedule_for(CompilationProduct.IR);
-        assert "CfgSucc" not in providers_of(sched) , (
+        assert "CfgSucc" not in providers_of(sched or []) , (
             "the full ir-gen schedule was built while one of its dependencies was "
             "mid-import; a pass reaching that module at run time re-enters it"
         );
@@ -257,7 +257,7 @@ test "a schedule dependency mid-import puts the compile on the bootstrap tier" {
         sys.modules[name] = saved;
     }
     assert tier_reason(CompilationProduct.IR) == "" , "the tier reason outlived the import";
-    assert "CfgSucc" in providers_of(schedule_for(CompilationProduct.IR));
+    assert "CfgSucc" in providers_of(schedule_for(CompilationProduct.IR) or []);
 }
 
 
@@ -292,8 +292,8 @@ test "every scheduled pass and loader import is a declared schedule dependency" 
         + (schedule_for(CompilationProduct.PY_IR) or [])
         + (schedule_for(CompilationProduct.FROZEN) or []);
     schedules = {
-        "ir-gen": (schedule_for(CompilationProduct.IR), IR_LOADS),
-        "analysis": (schedule_for(CompilationProduct.ANALYSIS), ANALYSIS_LOADS),
+        "ir-gen": (schedule_for(CompilationProduct.IR) or [], IR_LOADS),
+        "analysis": (schedule_for(CompilationProduct.ANALYSIS) or [], ANALYSIS_LOADS),
         "codegen": (codegen, CODEGEN_LOADS)
     };
     for (origin, (passes, deps)) in schedules.items() {

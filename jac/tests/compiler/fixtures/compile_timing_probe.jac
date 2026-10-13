@@ -61,21 +61,19 @@ def run_stage(staged: JacProgram, mod: any, stage: str) {
             ProductRequest
         }
     } except ImportError {
-        import from jaclang.compiler.driver.pipeline {
-            get_analysis_sched,
-            get_boundary_analysis_sched,
-            get_ir_gen_sched
-        }
-        import from jaclang.compiler.driver.module_compile { get_py_code_gen }
+        import importlib;
+        pipeline_mod = importlib.import_module("jaclang.compiler.driver.pipeline");
+        codegen_mod = importlib.import_module("jaclang.compiler.driver.module_compile");
         if stage == "ir_gen" {
-            staged.run_schedule(mod, get_ir_gen_sched());
+            sched = getattr(pipeline_mod, "get_ir_gen_sched")();
         } elif stage == "analysis" {
-            staged.run_schedule(mod, get_analysis_sched());
+            sched = getattr(pipeline_mod, "get_analysis_sched")();
         } elif stage == "boundary" {
-            staged.run_schedule(mod, get_boundary_analysis_sched());
+            sched = getattr(pipeline_mod, "get_boundary_analysis_sched")();
         } else {
-            staged.run_schedule(mod, get_py_code_gen(native=False));
+            sched = getattr(codegen_mod, "get_py_code_gen")(native=False);
         }
+        getattr(staged, "run_schedule")(mod, sched);
         return;
     }
     products = {
