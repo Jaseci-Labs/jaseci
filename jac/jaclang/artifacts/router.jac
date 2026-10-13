@@ -16,6 +16,7 @@ def names -> list[str];
 def artifact_named(name: str) -> Artifact;
 def resolve(name: str) -> Resolution;
 def require(name: str) -> Resolution;
+def demote(name: str, reason: str) -> Resolution;
 def forget(name: str = "") -> None;
 def building_now -> frozenset[str];
 def building(names: list[str]) -> _BuildingSpan;

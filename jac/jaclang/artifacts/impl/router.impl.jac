@@ -60,6 +60,13 @@ impl require(name: str) -> Resolution {
     return resolution;
 }
 
+impl demote(name: str, reason: str) -> Resolution {
+    resolution = Resolution(name=name, reason=reason);
+    _RESOLVED[name] = resolution;
+    _announce(artifact_named(name), resolution);
+    return resolution;
+}
+
 impl forget(name: str = "") -> None {
     if name {
         _RESOLVED.pop(name, None);

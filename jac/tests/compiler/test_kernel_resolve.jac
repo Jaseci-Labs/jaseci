@@ -26,7 +26,7 @@ import from jaclang.compiler.backends.native.kernel_resolve {
 }
 import jaclang.compiler.backends.native.kernel_resolve as resolver;
 import from jaclang.compiler.backends.native.link_plan { LinkResult }
-import from jaclang.compiler.native_compiler { reset_loaded }
+import from jaclang.compiler.native_compiler { ensure_loaded, reset_loaded }
 
 def _never(*args: any, **kwargs: any) -> any {
     raise AssertionError("resolving a kernel must never build or probe here");
@@ -239,6 +239,45 @@ test "a current checkout kernel loads silently and reports where it came from" {
         and found.source == "checkout"
         and found.plan_digest == "p";
     assert said == "";
+}
+
+test "a current kernel that does not load runs from bytecode and says why once" {
+    err = io.StringIO();
+    with tempfile.TemporaryDirectory(prefix="jac-kernel-") as tmp {
+        lib = os.path.join(tmp, "libjac_compiler.so");
+        Path(lib).write_bytes(b"not a shared library");
+        mine = Probe.hit(Source.CHECKOUT, lib, {"classes": {}, "plan_digest": "p"});
+        router.forget();
+        reset_loaded();
+        try {
+            with _toolchain() {
+                with patch.object(router, "_omitted", return_value=frozenset()) {
+                    with patch.object(
+                        resolver, "_from_sealed_image", return_value=None
+                    ) {
+                        with patch.object(
+                            KernelArtifact, "probe_checkout", return_value=mine
+                        ) {
+                            with patch.object(sys, "stderr", err) {
+                                first = ensure_loaded();
+                                again = ensure_loaded();
+                                after = router.resolve("kernel");
+                            }
+                        }
+                    }
+                }
+            }
+        } finally {
+            router.forget();
+            reset_loaded();
+        }
+    }
+    said = err.getvalue();
+    assert first is None and again is None;
+    assert after.on_floor() , after.reason;
+    assert said.count("kernel runs on its floor") == 1 , said;
+    assert f"{lib} does not load (" in said , said;
+    assert "jac native build kernel" in said , said;
 }
 
 test "the sidecar reader wants a classes map" {
