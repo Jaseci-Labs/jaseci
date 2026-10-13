@@ -101,6 +101,7 @@ obj ModuleAnalysis {
                 self.module is not None
                 and not self.parse_failed
                 and not self.module.gen.placement_mode
+                and self.module.gen.native_undecided
                 and self.program.infers_native_codespace(self.path)
             );
 
