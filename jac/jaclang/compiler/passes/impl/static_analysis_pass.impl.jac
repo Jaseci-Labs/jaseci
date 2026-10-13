@@ -74,6 +74,15 @@ impl StaticAnalysisPass._check_unused_symbols(scope: UniScopeNode) -> None {
             continue;
         }
 
+        decl_owner = sym.decl.parent;
+        if (
+            isinstance(decl_owner, HasVar)
+            and decl_owner.name is not sym.decl
+            and name == client_state_setter_name(decl_owner.name.value)
+        ) {
+            continue;
+        }
+
         if len(sym.uses) == 0 {
             self.ctx.emit(W2003, node_override=sym.decl, name=name);
         }
@@ -109,6 +118,14 @@ impl StaticAnalysisPass._check_undefined_names(mod: Module) -> None {
         }
 
         if isinstance(parent, KWPair) and parent.key is name_nd {
+            continue;
+        }
+
+        if (
+            isinstance(parent, JsxElementName)
+            and isinstance(parent.parent, JsxElement)
+            and parent.parent.name is not parent
+        ) {
             continue;
         }
 

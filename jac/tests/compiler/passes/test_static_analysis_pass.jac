@@ -459,3 +459,31 @@ test "obj bare assignment to has var name still warns as unused" {
     ];
     assert len(unused_warnings) > 0 , "Expected unused variable warning for bare 'x' in obj method, got none";
 }
+
+test "jsx closing tags are not undefined-name reads" {
+    file_path = os.path.join(FIXTURES, "jsx_closing_tags.jac");
+    prog = JacProgram();
+    prog.compile(file_path);
+    w2001 = [
+        w
+        for w in prog.warnings_had
+        if w.code is not None and w.code.code == "W2001"
+    ];
+    flagged = sorted([(w.loc.first_line, w.loc.col_start) for w in w2001]);
+    assert flagged == [(17, 6)] , f"Expected W2001 only on the opening tag of the unknown component <Missing> (17:6), got {flagged}: {[
+        str(w) for w in w2001
+    ]}";
+}
+
+test "client state setters are not reported as unused" {
+    file_path = os.path.join(FIXTURES, "client_state_setters.jac");
+    prog = JacProgram();
+    prog.compile(file_path);
+    unused = [
+        str(w)
+        for w in prog.warnings_had
+        if w.code is not None and w.code.code == "W2003"
+    ];
+    assert not any("'setCount'" in w or "'setTitle'" in w for w in unused) , f"State setters are generated, not written; got {unused}";
+    assert len(unused) == 1 and "'stale' is defined but never used" in unused[0] , f"Expected exactly one W2003, for 'stale', got {unused}";
+}
