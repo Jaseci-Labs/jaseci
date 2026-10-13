@@ -663,7 +663,7 @@ impl NaIRGenPass._reraise_caught(values: tuple[ir.Value, ir.Value, ir.Value]) ->
         self.builder.store(values[0], _slot_t);
         self.builder.store(values[1], _slot_o);
         self.builder.store(values[2], _slot_m);
-        held = self._slot_caught_drops.get(id(values));
+        held = self._slot_caught_drops.get(id(values[0]));
         if held is not None {
             (drop_slot, handed_back) = held;
             self.builder.store(handed_back, self._nogc_err_drop_slot());
@@ -1393,11 +1393,15 @@ impl NaIRGenPass._register_unwind_cleanup -> None {
         return;
     }
     func = self._builder.function;
-    if func is None
-        or not func.blocks
-        or any(not blk.is_terminated for blk in func.blocks)
-        or bool(getattr(self.module.gen, "nogc_enforced", False))
-        or "wasm" in str(self.llvm_module.triple) {
+    if func is None or len(func.blocks) == 0 {
+        return;
+    }
+    for blk in func.blocks {
+        if not blk.is_terminated {
+            return;
+        }
+    }
+    if self.module.gen.nogc_enforced or "wasm" in str(self.llvm_module.triple) {
         return;
     }
     slots: list[tuple[str, ir.Value]] = [];
@@ -1416,28 +1420,28 @@ impl NaIRGenPass._register_unwind_cleanup -> None {
     }
     i8p = ir.IntType(8).as_pointer();
     i32 = ir.IntType(32);
-    saved = (
-        self._builder,
-        self.local_vars,
-        self.region_open_stack,
-        self.closure_cell_handles
-    );
+    saved_builder = self._builder;
+    saved_locals = self.local_vars;
+    saved_regions = self.region_open_stack;
+    saved_cells = self.closure_cell_handles;
     probe = func.append_basic_block(name="unwind.probe");
     try {
         self._builder = ir.IRBuilder(probe);
-        self.local_vars = dict(slots);
+        probe_locals: dict[str, ir.Value] = {};
+        for (name, slot) in slots {
+            probe_locals[name] = slot;
+        }
+        self.local_vars = probe_locals;
         self.region_open_stack = [];
         self.closure_cell_handles = {};
         self._emit_scope_cleanup(skip_var=None, loc="unwind");
         pending = len(probe.instructions) > 0;
     } finally {
         func.blocks.remove(probe);
-        (
-            self._builder,
-            self.local_vars,
-            self.region_open_stack,
-            self.closure_cell_handles
-        ) = saved;
+        self._builder = saved_builder;
+        self.local_vars = saved_locals;
+        self.region_open_stack = saved_regions;
+        self.closure_cell_handles = saved_cells;
     }
     if not pending {
         return;
@@ -1464,12 +1468,10 @@ impl NaIRGenPass._register_unwind_cleanup -> None {
         self._emit_scope_cleanup(skip_var=None, loc="unwind");
         cb.ret_void();
     } finally {
-        (
-            self._builder,
-            self.local_vars,
-            self.region_open_stack,
-            self.closure_cell_handles
-        ) = saved;
+        self._builder = saved_builder;
+        self.local_vars = saved_locals;
+        self.region_open_stack = saved_regions;
+        self.closure_cell_handles = saved_cells;
     }
     entry_blk = func.entry_basic_block;
 
@@ -1569,7 +1571,9 @@ impl NaIRGenPass._hoist_entry_allocas(entry_blk: ir.Block) -> None {
             i += 1;
         }
     }
-    entry_blk.instructions[:] = slots + rest;
+    entry_blk.instructions.clear();
+    entry_blk.instructions.extend(slots);
+    entry_blk.instructions.extend(rest);
 }
 
 impl NaIRGenPass._exception_handler_slot(
@@ -1906,7 +1910,7 @@ impl NaIRGenPass._codegen_try_slot(nd: uni.TryStmt) -> None {
                 handed_back = taken;
                 handler_drops = True;
             }
-            self._slot_caught_drops[id(caught_values)] = (exc_drop[0], handed_back);
+            self._slot_caught_drops[id(caught_values[0])] = (exc_drop[0], handed_back);
         }
         var_name = "";
         shadowed: (ir.Value | None) = None;
@@ -1952,7 +1956,7 @@ impl NaIRGenPass._codegen_try_slot(nd: uni.TryStmt) -> None {
                 }
             }
         }
-        self._slot_caught_drops.pop(id(caught_values), None);
+        self._slot_caught_drops.pop(id(caught_values[0]), None);
         self._caught_error_stack.pop();
         if not self.builder.block.is_terminated {
             self.builder.store(ir.Constant(i32, 0), kind);
@@ -2185,15 +2189,16 @@ impl NaIRGenPass._setjmp_local_base(value: ir.Value) -> (ir.Value | None) {
 }
 
 impl NaIRGenPass._block_successors(block: ir.Block) -> list[ir.Block] {
-    term: any = block.terminator;
-    if term is None {
+    term = block.terminator;
+    if not isinstance(term, ir.Instruction) {
         return [];
     }
-    found: list[ir.Block] = [
-        op
-        for op in term.operands
-        if isinstance(op, ir.Block)
-    ];
+    found: list[ir.Block] = [];
+    for op in term.operands {
+        if isinstance(op, ir.Block) {
+            found.append(op);
+        }
+    }
     if isinstance(term, ir.SwitchInstr) {
         found.append(term.default_bb);
         for arm in term.cases {
@@ -2226,9 +2231,11 @@ impl NaIRGenPass._volatilize_setjmp_locals -> None {
             for inst in block.instructions {
                 if armed {
                     after.append(inst);
-                } elif isinstance(inst, ir.CallInstr)
-                    and getattr(inst.callee, "name", "") == setjmp_name {
-                    armed = True;
+                } elif isinstance(inst, ir.CallInstr) {
+                    callee = inst.callee;
+                    if isinstance(callee, ir.Function) and callee.name == setjmp_name {
+                        armed = True;
+                    }
                 }
             }
             if armed {

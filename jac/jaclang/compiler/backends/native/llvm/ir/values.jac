@@ -710,6 +710,8 @@ class Constant(Value) {
             val = "undef";
         } elif isinstance(held, bytearray) {
             val = 'c"' + _escape_string(held) + '"';
+        } elif isinstance(held, `bytes) {
+            val = 'c"' + _escape_string(held) + '"';
         } else {
             val = self.type.format_constant(held);
         }

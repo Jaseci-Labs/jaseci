@@ -4389,7 +4389,10 @@ impl NaIRGenPass._nogc_drop_replaced_field(
     if not isinstance(ftype, ir.PointerType) {
         return;
     }
-    _pname = getattr(ftype.pointee, "name", "") or "";
+    _pname = "";
+    if isinstance(ftype.pointee, ir.IdentifiedStructType) {
+        _pname = ftype.pointee.name;
+    }
     if _pname not in self.struct_types or _pname in self.clib_struct_names {
         return;
     }
