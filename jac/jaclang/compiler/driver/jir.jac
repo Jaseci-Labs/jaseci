@@ -833,7 +833,7 @@ def _check_policy_digest(source_path: str) -> str {
     return hashlib.sha256(json.dumps(policy, sort_keys=True).encode()).hexdigest();
 }
 
-def _project_env_fingerprint(source_path: str) -> str {
+def _project_env_fingerprint_uncached(source_path: str) -> str {
     h = hashlib.sha256();
     h.update(_module_codespace_mode(source_path).encode());
     h.update(_check_policy_digest(source_path).encode());
@@ -884,6 +884,42 @@ def _module_projection(source_path: str) -> str {
         return options.dependency_projection(source_path);
     }
     return options.module_projection();
+}
+
+glob _PREPARE_MEMO: list[dict[str, str]] = [];
+
+def begin_prepare_memo {
+    _PREPARE_MEMO.append({});
+}
+
+def end_prepare_memo {
+    if _PREPARE_MEMO {
+        _PREPARE_MEMO.pop();
+    }
+}
+
+def _memoized(kind: str, source_path: str, compute: any) -> str {
+    if not _PREPARE_MEMO {
+        return compute(source_path);
+    }
+    import from jaclang.compiler.driver.compilation_context { active_options }
+    import from jaclang.compiler.frontend.host { active_host }
+    key = f"{kind}\x1f{source_path}\x1f{id(active_options())}\x1f{id(active_host())}";
+    memo = _PREPARE_MEMO[-1];
+    found = memo.get(key);
+    if found is None {
+        found = compute(source_path);
+        memo[key] = found;
+    }
+    return found;
+}
+
+def _project_env_fingerprint(source_path: str) -> str {
+    return _memoized("env", source_path, _project_env_fingerprint_uncached);
+}
+
+def compute_module_key(source_path: str) -> str {
+    return _memoized("module", source_path, _compute_module_key_uncached);
 }
 
 glob _WIRING_DIGESTS: dict[str, dict[str, str]] = {};
@@ -997,7 +1033,7 @@ def sidecar_unit_paths(sidecar: dict[str, any]) -> list[str] {
     return out;
 }
 
-def compute_module_key(source_path: str) -> str {
+def _compute_module_key_uncached(source_path: str) -> str {
     """A module the running compiler package owns is keyed canonically,
     whatever compilation scope is active: the package's precompile, the
     compiler's bootstrap, a consumer's analysis and a native build session

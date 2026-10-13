@@ -204,6 +204,48 @@ test "source changes invalidate a prepared revision and replace its access metad
     }
 }
 
+test "a prepare after an edit reads only the edited module's imports again" {
+    import from jaclang.compiler.backends.py { artifact_imports }
+    tmp = tempfile.mkdtemp(prefix="jac-prepared-imports-");
+    real_sources = artifact_imports.runtime_sources;
+    scanned: list[str] = [];
+    def counting_sources(code: any, source: str, `root: str) -> set[str] {
+        scanned.append(os.path.basename(source));
+        return real_sources(code, source, `root);
+    }
+    path = Path(tmp) / 'main.jac';
+    try {
+        (Path(tmp) / 'mods').mkdir();
+        for name in ['a', 'b', 'c'] {
+            (Path(tmp) / 'mods' / f'{name}.jac').write_text(
+                f"def:pub {name}_value -> int {{ return 1; }}\n"
+            );
+        }
+        path.write_text(
+            "import from mods.a { a_value }\n"
+                + "import from mods.b { b_value }\n"
+                + "import from mods.c { c_value }\n"
+                + "def:pub total -> int { return a_value() + b_value() + c_value(); }\n"
+        );
+        first = prepare_application(str(path), JacProgram(), tmp);
+        edited = os.path.realpath(str(Path(tmp) / 'mods' / 'a.jac'));
+        old_code = first.code[edited];
+        forget(str(path));
+        (Path(tmp) / 'mods' / 'a.jac').write_text("def:pub a_value -> int { return 2; }\n");
+        artifact_imports.runtime_sources = counting_sources;
+        updated = prepare_application(str(path), JacProgram(), tmp);
+        assert updated.code[edited] != old_code , "the edited module kept its old code";
+        assert scanned == ['a.jac'] , (
+            f"a one-module edit re-read the imports of {scanned}; only a.jac changed"
+        );
+    } finally {
+        artifact_imports.runtime_sources = real_sources;
+        forget(str(path));
+        shutil.rmtree(tmp, ignore_errors=True);
+    }
+}
+
+
 test "runtime logs and toolchain directories do not become application inputs" {
     import jaclang.compiler.driver.application as preparation;
     import from jaclang.runtime.prepared { containing_application }

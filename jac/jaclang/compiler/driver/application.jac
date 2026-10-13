@@ -706,12 +706,15 @@ def _prepare(
         capture(path);
     }
     import from jaclang.project.kernel_compile { host_prepared }
+    import from jaclang.compiler.driver.jir { begin_prepare_memo, end_prepare_memo }
     with compile_progress.listen(capture) {
+        begin_prepare_memo();
         try {
             return _prepare_revision(
                 `entry, program, `root, entries, client, dev, console, inputs
             );
         } finally {
+            end_prepare_memo();
             host_prepared();
         }
     }
@@ -953,6 +956,13 @@ def _prepare_revision(
         package_sources
     }
     sections = {};
+    previous_code: dict[str, any] = candidate.get('code') or {}
+        if isinstance(candidate, dict)
+        else {};
+    previous_imports: dict[str, list[str]] = candidate.get('imports') or {}
+        if isinstance(candidate, dict)
+        else {};
+    imports_of: dict[str, list[str]] = {};
     pending = `set(entries);
     for path in entries {
         pending.update(package_sources(path, `root));
@@ -994,7 +1004,12 @@ def _prepare_revision(
         revision.code[path] = code;
         sections[path] = _sections(path, program);
         revision.native[path] = compiler.get_native_interop_setup(path, program);
-        pending.update((runtime_sources(code, path, `root) - revision.code.keys()));
+        known = previous_imports.get(path);
+        found = set(known)
+            if known is not None and previous_code.get(path) == code
+            else runtime_sources(code, path, `root);
+        imports_of[path] = sorted(found);
+        pending.update(found - revision.code.keys());
     }
 
     project_facts: dict[str, tuple[str, any]] = {
@@ -1078,6 +1093,7 @@ def _prepare_revision(
                 if revision.client_compiler is not None
                 else False,
             code=revision.code,
+            imports=imports_of,
             manifests=revision.manifests,
             sections=sections,
             outputs=outputs,
