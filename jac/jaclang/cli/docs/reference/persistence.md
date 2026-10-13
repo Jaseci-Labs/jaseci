@@ -30,6 +30,10 @@ walker create {
 
 Anchors live in an `anchors` table with `jsonb` payloads; the same database also carries the `quarantine` sidecar, a `kv_state` utility table, and (under jac-scale) the `jac_docs` table for scheduler jobs and webhook API keys. `jac db inspect` summarizes anchors by kind and archetype; `jac db sql "..."` runs one SQL statement against the project store when you need to look closer.
 
+### Named SQL parameters
+
+`PgWireConnection.run` and `PgStore.rows` accept named SQL parameters such as `:name`. Only executable placeholders are bound: ordinary strings, quoted identifiers, dollar-quoted strings, `E'...'` escape strings, and SQL comments retain their text. Repeated names share one positional parameter, and PostgreSQL `::` casts remain unchanged.
+
 !!! info "Attachment, disconnection, and deletion"
     Reachability from persistent graph state promotes transient nodes and edges into storage. It is not a continuous garbage-collection rule for stored records: removing an edge does not automatically delete a previously persisted node. Use explicit deletion when the record should be destroyed. Ordinary local values and transient graphs do not become durable merely because their types are declared in Jac.
 
