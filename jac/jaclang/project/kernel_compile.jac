@@ -120,7 +120,11 @@ def kernel_route(program: JacProgram, path: str) -> tuple[bool, bool] {
         return (True, True);
     }
     import from jaclang.compiler.native_compiler { ensure_loaded }
-    return (ensure_loaded() is not None, False);
+    if ensure_loaded() is None {
+        return (False, False);
+    }
+    import from jaclang.compiler.backends.native.kernel_resolve { catalog_blocker }
+    return (not catalog_blocker(program), False);
 }
 
 def kernel_compile_reported(

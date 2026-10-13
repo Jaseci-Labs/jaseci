@@ -299,10 +299,7 @@ obj KernelArtifact(Artifact) {
         } except Exception as e {
             return f"the native toolchain is unavailable ({e})";
         }
-        if not ok {
-            return why or "the native toolchain is unavailable";
-        }
-        return stub_catalog_blocker();
+        return "" if ok else (why or "the native toolchain is unavailable");
     }
 
     override def probe_sealed -> (Probe | None) {
@@ -341,15 +338,24 @@ obj KernelArtifact(Artifact) {
     }
 }
 
-def stub_catalog_blocker -> str {
-    import from jaclang.artifacts.router { resolve }
-    stubcat = resolve("stubcat");
-    if stubcat.found is not None {
+def _catalog_active(program: JacProgram) -> bool {
+    import from jaclang.compiler.frontend.host { active_host }
+    host = active_host();
+    host.compiler_for(program).ensure_stub_catalog();
+    return host.has_active_stub_catalog();
+}
+
+def catalog_blocker(program: JacProgram) -> str {
+    if _catalog_active(program) {
         return "";
     }
-    return "it reads typeshed only through the stub catalog, which is unavailable ("
-        + (stubcat.reason or "not built")
+    import from jaclang.artifacts.model { Resolution }
+    import from jaclang.artifacts.router { _announce, artifact_named, resolve }
+    why = "it reads typeshed only through the stub catalog, which is unavailable ("
+        + (resolve("stubcat").reason or "not built")
         + ")";
+    _announce(artifact_named("kernel"), Resolution(name="kernel", reason=why));
+    return why;
 }
 
 def resolve_kernel -> (ResolvedKernel | None) {

@@ -117,6 +117,10 @@ def kernel_check(
     if kernel is None {
         return KernelCheck();
     }
+    import from jaclang.compiler.backends.native.kernel_resolve { catalog_blocker }
+    if catalog_blocker(program) {
+        return KernelCheck();
+    }
     try {
         outcome = kernel_analysis(active_host(), program, path, options, isolated=True);
     } except Exception as err {
