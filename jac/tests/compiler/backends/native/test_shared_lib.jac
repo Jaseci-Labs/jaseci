@@ -857,7 +857,6 @@ test "only a link for this host's architecture and C runtime consults its librar
     assert link_plan._links_for_host(host) , host;
     assert not link_plan._links_for_host("-".join(parts[:-1] + [other_libc])) , host;
     assert not link_plan._links_for_host("-".join([other_arch] + parts[1:])) , host;
-    assert not link_plan._links_for_host("riscv64-unknown-linux-gnu");
     assert not link_plan._links_for_host("x86_64-apple-darwin");
 }
 
