@@ -459,3 +459,18 @@ test "obj bare assignment to has var name still warns as unused" {
     ];
     assert len(unused_warnings) > 0 , "Expected unused variable warning for bare 'x' in obj method, got none";
 }
+
+test "jsx closing tags are not undefined-name reads" {
+    file_path = os.path.join(FIXTURES, "jsx_closing_tags.jac");
+    prog = JacProgram();
+    prog.compile(file_path);
+    w2001 = [
+        w
+        for w in prog.warnings_had
+        if w.code is not None and w.code.code == "W2001"
+    ];
+    flagged = sorted([(w.loc.first_line, w.loc.col_start) for w in w2001]);
+    assert flagged == [(17, 6)] , f"Expected W2001 only on the opening tag of the unknown component <Missing> (17:6), got {flagged}: {[
+        str(w) for w in w2001
+    ]}";
+}

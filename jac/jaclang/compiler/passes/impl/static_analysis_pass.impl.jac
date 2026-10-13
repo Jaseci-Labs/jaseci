@@ -112,6 +112,14 @@ impl StaticAnalysisPass._check_undefined_names(mod: Module) -> None {
             continue;
         }
 
+        if (
+            isinstance(parent, JsxElementName)
+            and isinstance(parent.parent, JsxElement)
+            and parent.parent.name is not parent
+        ) {
+            continue;
+        }
+
         if not name_nd.is_kwesc {
             native_position = self._native_type_position(name_nd);
             if native_position is not None {
