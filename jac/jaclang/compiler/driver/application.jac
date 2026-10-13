@@ -870,6 +870,7 @@ def _prepare_revision(
             ];
         }
         revision.code = record['code'];
+        revision.sources = sorted(record['dependencies']);
         revision.manifests = record['manifests'];
         for (path, sections) in record['sections'].items() {
             import from jaclang.compiler.driver.compilation_context {
@@ -1084,6 +1085,7 @@ def _prepare_revision(
             dependencies=inputs
         )
     );
+    revision.sources = sorted(inputs);
     _semantic_metadata(revision, program);
     return revision;
 }

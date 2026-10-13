@@ -38,6 +38,11 @@ impl application_watch_roots(base: str, application: any, program: any) -> list[
     for part in [application, *application.applications] {
         sources.extend(part.code);
         sources.extend(part.manifests);
+        sources.extend(
+            source
+            for source in part.sources
+            if source.endswith(('.jac', '.py'))
+        );
     }
     return watch_roots(base, application.`root, sources);
 }

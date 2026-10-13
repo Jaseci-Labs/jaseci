@@ -204,6 +204,50 @@ test "a served workspace app watches the directories its prepared modules come f
     }
 }
 
+test "a client-only sibling directory is watched on a fresh and a restored start" {
+    import os;
+    import sys;
+    import from jaclang.runtime.runtime { JacRuntime as Jac }
+    import from jaclang.compiler.driver.application { prepare_application }
+    import from jaclang.runtime.prepared { initialize_application, forget }
+    with tempfile.TemporaryDirectory() as tmp {
+        top = os.path.realpath(tmp);
+        web = os.path.join(top, "web");
+        for rel in ["web", "ui"] {
+            os.makedirs(os.path.join(top, rel));
+        }
+        Path(top, "jac.toml").write_text('[project]\nname = "client-sibling"\n');
+        Path(top, "ui", "Badge.jac").write_text(
+            'def:pub Badge -> JsxElement {\n    return <span>ok</span>;\n}\n'
+        );
+        source_path = os.path.join(web, "main.jac");
+        Path(source_path).write_text(
+            'import from ui.Badge { Badge }\n\ndef:pub app -> JsxElement {\n    return <Badge/>;\n}\n'
+        );
+        for attempt in ["prepared", "restored"] {
+            application = prepare_application(
+                source_path, Jac.get_program(), top, (), True
+            );
+            module = initialize_application(application);
+            prefix = module.__name__.split('.')[0];
+            try {
+                assert os.path.join(top, "ui", "Badge.jac") not in application.code , (
+                    "the client-only module is executable server code"
+                );
+                roots = application_watch_roots(web, application, Jac.get_program());
+                assert roots == [web, os.path.join(top, "ui")] , f"{attempt}: {roots}";
+            } finally {
+                forget(source_path);
+                for name in list(sys.modules) {
+                    if name == prefix or name.startswith(prefix + '.') {
+                        sys.modules.pop(name, None);
+                    }
+                }
+            }
+        }
+    }
+}
+
 test "a watched directory outside the first one delivers its changes" {
     with tempfile.TemporaryDirectory() as tmp {
         entry_dir = Path(tmp) / "web";
