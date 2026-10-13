@@ -541,12 +541,12 @@ def resolve(
     product: CompilationProduct,
     request: (ProductRequest | None) = None,
     internal: bool = False,
-    peer_degraded: bool = False
+    peer_fell_back: bool = False
 ) -> tuple[(PassSchedule | None), bool] {
     spec = PRODUCTS[product];
     req = request if request is not None else ProductRequest();
-    if spec.tiered and (peer_degraded or tier_reason(product)) {
-        return (spec.bootstrap(req), True);
+    if spec.tiered and (peer_fell_back or tier_reason(product)) {
+        return (spec.bootstrap(req), False);
     }
     spec.precheck();
     token = _LOADING.set(_LOADING.get() + (product, ));
@@ -682,18 +682,18 @@ def produce(
         return spec.action(program, module);
     }
     build = program.analysis.build(module);
-    peer_degraded = False;
+    peer_fell_back = False;
     for peer in spec.tier_with {
         peer_task = build.tasks.get(peer);
-        if peer_task is not None and peer_task.degraded {
-            peer_degraded = True;
+        if peer_task is not None and peer_task.import_fallback {
+            peer_fell_back = True;
         }
     }
-    (schedule, degraded) = resolve(
-        product, request, program.internal, peer_degraded
+    (schedule, fell_back) = resolve(
+        product, request, program.internal, peer_fell_back
     );
     if task is not None {
-        task.degraded = degraded;
+        task.import_fallback = fell_back;
     }
     if schedule is None {
         return None;

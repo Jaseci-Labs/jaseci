@@ -19,6 +19,14 @@ import from jaclang.compiler.driver.module_analysis {
     run_plan
 }
 
+def session_of(task: ModuleAnalysis) -> SessionHooks {
+    session = task.session;
+    if session is None {
+        raise RuntimeError(f"codegen steps for {task.path} ran without a session");
+    }
+    return session;
+}
+
 def admits_native_checks(task: ModuleAnalysis) -> bool {
     import from jaclang.compiler.placement.placement_facts { variant_selected }
     options = task.options;
@@ -36,7 +44,7 @@ def admits_native_checks(task: ModuleAnalysis) -> bool {
 def run_native_checks(task: ModuleAnalysis) {
     lowered = task.require(CompilationProduct.NATIVE_IR);
     if lowered and task.options.native_required_for(task.path) {
-        task.session.assemble_native(task.program, task.module, True);
+        session_of(task).assemble_native(task.program, task.module, True);
     }
 }
 
@@ -82,7 +90,7 @@ def run_client_dependencies(task: ModuleAnalysis) {
                 paths.extend(os.path.abspath(edge) for edge in served);
                 continue;
             }
-            dep = task.session.compile(dep_path, program, None, dep_options);
+            dep = session_of(task).compile(dep_path, program, None, dep_options);
         }
         worklist.append(dep);
     }
@@ -91,7 +99,7 @@ def run_client_dependencies(task: ModuleAnalysis) {
 
 def admits_interface(task: ModuleAnalysis) -> bool {
     options = task.options;
-    closure = task.session.closure_options() or options;
+    closure = session_of(task).closure_options() or options;
     if task.parse_failed or task.blocked or task.source is not None {
         return False;
     }
@@ -126,7 +134,7 @@ def run_codegen(task: ModuleAnalysis) {
     program.options = options;
     if not task.has_full_ir() {
         task.require(CompilationProduct.PY_IR);
-        task.session.assemble_python(program, module);
+        session_of(task).assemble_python(program, module);
         return;
     }
     needs_native = task.native or ModuleFacts.has_native_context_stmts(module);
@@ -138,11 +146,11 @@ def run_codegen(task: ModuleAnalysis) {
     }
     task.require(CompilationProduct.CODEGEN, ProductRequest(native=needs_native));
     if module.gen.has_native_ir() {
-        task.session.assemble_native(program, module, False);
+        session_of(task).assemble_native(program, module, False);
     }
     task.require(CompilationProduct.PY_IR);
     task.require(CompilationProduct.FROZEN);
-    task.session.assemble_python(program, module);
+    session_of(task).assemble_python(program, module);
     if module.decided_codespace == 'native' {
         scrubbed = scrub_native_artifacts_on_error(program, module);
         if options.aot_mode and not scrubbed {

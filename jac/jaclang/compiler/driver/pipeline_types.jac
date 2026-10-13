@@ -86,5 +86,5 @@ obj ProductTask {
     has product: CompilationProduct,
         state: TaskState = TaskState.PENDING,
         elapsed: float = 0.0,
-        degraded: bool = False;
+        import_fallback: bool = False;
 }
