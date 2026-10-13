@@ -707,7 +707,7 @@ impl NaIRGenPass._tail_call_mismatch(
     try {
         callee_ty = callee.function_type;
     } except TypeError {
-        return "the callee's signature is unknown";
+        callee_ty = None;
     }
     if callee_ty is None {
         return "the callee's signature is unknown";
@@ -716,31 +716,48 @@ impl NaIRGenPass._tail_call_mismatch(
         return "the callee is variadic";
     }
     if callee_ty.return_type != fnty.return_type {
-        return f"the callee returns {callee_ty.return_type}, the caller {fnty.return_type}";
+        return "the callee returns "
+            + str(callee_ty.return_type)
+            + ", the caller "
+            + str(fnty.return_type);
     }
     if len(callee_ty.args) != len(fnty.args) {
-        return f"the callee takes {len(callee_ty.args)} parameters, the caller {len(
-            fnty.args
-        )}";
+        return "the callee takes "
+            + str(len(callee_ty.args))
+            + " parameters, the caller "
+            + str(len(fnty.args));
     }
-    for (i, (a, b)) in enumerate(zip(callee_ty.args, fnty.args)) {
-        if a != b {
-            return f"parameter {i + 1} is {a} in the callee and {b} in the caller";
+    for i in range(len(fnty.args)) {
+        want = fnty.args[i];
+        have = callee_ty.args[i];
+        if have != want {
+            return "parameter "
+                + str(i + 1)
+                + " is "
+                + str(have)
+                + " in the callee and "
+                + str(want)
+                + " in the caller";
         }
     }
-    if (call.cconv or "") != (func.calling_convention or "") {
+    call_cc = call.cconv if call.cconv is not None else "";
+    if call_cc != func.calling_convention {
         return "the callee uses a different calling convention";
     }
-    _abi = {"sret", "byval", "inalloca", "preallocated", "swifterror"};
+    abi_names = ["sret", "byval", "inalloca", "preallocated", "swifterror"];
     for arg in func.args {
-        if _abi & {str(a).split("(")[0] for a in arg.attributes} {
-            return "the caller passes a parameter by an ABI attribute (`sret`, `byval`)";
+        for abi_name in abi_names {
+            if arg.attributes.contains(abi_name) {
+                return "the caller passes a parameter by an ABI attribute (`sret`, `byval`)";
+            }
         }
     }
     if isinstance(callee, ir.Function) {
         for arg in callee.args {
-            if _abi & {str(a).split("(")[0] for a in arg.attributes} {
-                return "the callee takes a parameter by an ABI attribute (`sret`, `byval`)";
+            for abi_name in abi_names {
+                if arg.attributes.contains(abi_name) {
+                    return "the callee takes a parameter by an ABI attribute (`sret`, `byval`)";
+                }
             }
         }
     }
@@ -3198,8 +3215,10 @@ impl NaIRGenPass._codegen_assignment(nd: uni.Assignment) -> None {
                 }
             }
             _desc_hint: (ir.Type | None) = None;
-            if _raw_str_hint is not None and self._str_desc_ty is not None {
-                if _raw_str_hint == self._str_desc_ty {
+            desc_ty = self._str_desc_ty;
+            if isinstance(_raw_str_hint, ir.IdentifiedStructType)
+                and desc_ty is not None {
+                if _raw_str_hint.name == desc_ty.name {
                     _desc_hint = _raw_str_hint;
                 }
             }

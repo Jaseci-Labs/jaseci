@@ -424,10 +424,11 @@ impl NaIRGenPass._emit_clib_export_thunk(name: str) -> None {
     plan = self.clib_fn_abi.get(name);
     state = self._enter_function(cfunc);
     try {
+        plan_ret: dict[str, any] = plan["ret"] if plan is not None else {};
         _scalar_only = plan is None
             or (
                 not plan["sret"]
-                and plan["ret"].get("kind") != "struct_reg"
+                and plan_ret.get("kind") != "struct_reg"
                 and all(pp["kind"] == "scalar" for pp in plan["params"])
                 and all(pp["argpos"] == i for (i, pp) in enumerate(plan["params"]))
             );
@@ -486,7 +487,7 @@ impl NaIRGenPass._emit_clib_export_thunk(name: str) -> None {
             self._c_release_temp(box);
         }
         ret_type = cfunc.function_type.return_type;
-        ret_plan = plan["ret"] if plan is not None else {};
+        ret_plan: dict[str, any] = plan["ret"] if plan is not None else {};
         rkind = ret_plan.get("kind");
         if plan is not None and (plan["sret"] or rkind == "struct_reg") {
             self._mark_owned(result);

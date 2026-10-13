@@ -1420,28 +1420,28 @@ impl NaIRGenPass._register_unwind_cleanup -> None {
     }
     i8p = ir.IntType(8).as_pointer();
     i32 = ir.IntType(32);
-    saved = (
-        self._builder,
-        self.local_vars,
-        self.region_open_stack,
-        self.closure_cell_handles
-    );
+    saved_builder = self._builder;
+    saved_locals = self.local_vars;
+    saved_regions = self.region_open_stack;
+    saved_cells = self.closure_cell_handles;
     probe = func.append_basic_block(name="unwind.probe");
     try {
         self._builder = ir.IRBuilder(probe);
-        self.local_vars = dict(slots);
+        probe_locals: dict[str, ir.Value] = {};
+        for (name, slot) in slots {
+            probe_locals[name] = slot;
+        }
+        self.local_vars = probe_locals;
         self.region_open_stack = [];
         self.closure_cell_handles = {};
         self._emit_scope_cleanup(skip_var=None, loc="unwind");
         pending = len(probe.instructions) > 0;
     } finally {
         func.blocks.remove(probe);
-        (
-            self._builder,
-            self.local_vars,
-            self.region_open_stack,
-            self.closure_cell_handles
-        ) = saved;
+        self._builder = saved_builder;
+        self.local_vars = saved_locals;
+        self.region_open_stack = saved_regions;
+        self.closure_cell_handles = saved_cells;
     }
     if not pending {
         return;
@@ -1468,12 +1468,10 @@ impl NaIRGenPass._register_unwind_cleanup -> None {
         self._emit_scope_cleanup(skip_var=None, loc="unwind");
         cb.ret_void();
     } finally {
-        (
-            self._builder,
-            self.local_vars,
-            self.region_open_stack,
-            self.closure_cell_handles
-        ) = saved;
+        self._builder = saved_builder;
+        self.local_vars = saved_locals;
+        self.region_open_stack = saved_regions;
+        self.closure_cell_handles = saved_cells;
     }
     entry_blk = func.entry_basic_block;
 
