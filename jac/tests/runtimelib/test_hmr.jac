@@ -17,7 +17,8 @@ import from jaclang.server.watcher {
     ChangeType,
     FileChangeEvent,
     JacFileWatcher,
-    watch_roots
+    watch_roots,
+    application_watch_roots
 }
 
 def _as_any(v: any) -> any {
@@ -159,6 +160,47 @@ test "watch roots cover the directories the application's modules come from" {
         nested = os.path.join(top, "web", "pages");
         assert watch_roots(nested, top, sources)
             == [os.path.join(top, "core"), os.path.join(top, "web")];
+    }
+}
+
+test "a served workspace app watches the directories its prepared modules come from" {
+    import os;
+    import sys;
+    import from jaclang.runtime.runtime { JacRuntime as Jac }
+    import from jaclang.compiler.driver.application { prepare_application }
+    import from jaclang.runtime.prepared { initialize_application, forget }
+    with tempfile.TemporaryDirectory() as tmp {
+        top = os.path.realpath(tmp);
+        web = os.path.join(top, "web");
+        for rel in ["web", "core", "svc"] {
+            os.makedirs(os.path.join(top, rel));
+        }
+        Path(top, "core", "shared.jac").write_text('def value -> int { return 1; }\n');
+        Path(top, "svc", "api.jac").write_text('def:pub ping -> int { return 1; }\n');
+        source_path = os.path.join(web, "main.jac");
+        Path(source_path).write_text(
+            'import from core.shared { value }\n\ndef doubled -> int { return value() * 2; }\n'
+        );
+        service = os.path.join(top, "svc", "api.jac");
+        expected = [web, os.path.join(top, "core"), os.path.join(top, "svc")];
+        for attempt in ["prepared", "restored"] {
+            application = prepare_application(
+                source_path, Jac.get_program(), top, [service]
+            );
+            module = initialize_application(application);
+            prefix = module.__name__.split('.')[0];
+            try {
+                roots = application_watch_roots(web, application, Jac.get_program());
+                assert roots == expected , f"{attempt}: {roots}";
+            } finally {
+                forget(source_path);
+                for name in list(sys.modules) {
+                    if name == prefix or name.startswith(prefix + '.') {
+                        sys.modules.pop(name, None);
+                    }
+                }
+            }
+        }
     }
 }
 
