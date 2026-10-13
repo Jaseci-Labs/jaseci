@@ -261,6 +261,48 @@ test "a shared annex folder reports only the annexes of watched modules" {
     }
 }
 
+test "a module named like a shared annex folder keeps its annexes in that folder" {
+    import from jaclang.jac0core.ext_registry { is_annex_path_of }
+    with tempfile.TemporaryDirectory() as tmp {
+        top = Path(tmp).resolve();
+        for rel in ["impl", "test"] {
+            (top / rel).mkdir();
+        }
+        for name in ["test.jac", "impl.jac"] {
+            (top / name).write_text("glob x = 1;\n");
+        }
+        assert is_annex_path_of(
+            str(top / "test" / "test.test.jac"), str(top / "test.jac")
+        );
+        assert is_annex_path_of(
+            str(top / "impl" / "impl.impl.jac"), str(top / "impl.jac")
+        );
+        assert not is_annex_path_of(
+            str(top / "test" / "other.test.jac"), str(top / "test.jac")
+        );
+        assert not is_annex_path_of(
+            str(top / "testing.test.jac"), str(top / "test.jac")
+        );
+        watcher = JacFileWatcher(
+            watch_paths=[
+                str(top / "impl"),
+                str(top / "test"),
+                str(top / "test.jac"),
+                str(top / "impl.jac")
+            ]
+        );
+        for name in [
+            "test/test.test.jac",
+            "impl/impl.impl.jac",
+            "test/other.test.jac"
+        ] {
+            watcher._on_change(str(top / name), ChangeType.MODIFIED);
+        }
+        seen = sorted(str(Path(p).relative_to(top)) for p in watcher._pending_events);
+        assert seen == ["impl/impl.impl.jac", "test/test.test.jac"] , str(seen);
+    }
+}
+
 test "a root-level module brings its annex folders into the watch roots" {
     import os;
     with tempfile.TemporaryDirectory() as tmp {
