@@ -1,4 +1,5 @@
 import contextlib;
+import copy;
 import time;
 import os;
 import sys;
@@ -19,7 +20,13 @@ import from jaclang.byllm.exceptions {
     McpError
 }
 import from jaclang.byllm.mcp { McpClient, McpTool }
-import from jaclang.byllm.types { Tool, Message, MessageRole }
+import from jaclang.byllm.types {
+    IterationAction,
+    IterationContext,
+    Message,
+    MessageRole,
+    Tool
+}
 import from jaclang { JacRuntimeInterface as Jac }
 import from jaclang.byllm.lib { MockLLM }
 import from support {
@@ -680,17 +687,126 @@ test "prompt caching marks system, last non-system message, and last tool for an
         {"type": "function", "function": {"name": "read_file"}},
         {"type": "function", "function": {"name": "finish_tool"}}
     ];
-    _apply_prompt_caching(messages, tools);
+    before = copy.deepcopy((messages, tools));
+    (sent_messages, sent_tools) = _apply_prompt_caching(messages, tools);
 
-    assert messages[0].get("cache_control") == _CACHE_CONTROL_EPHEMERAL;
-    assert "cache_control" not in messages[1];
-    assert "cache_control" not in messages[2];
-    tool_content: any = messages[3].get("content");
+    assert sent_messages[0].get("cache_control") == _CACHE_CONTROL_EPHEMERAL;
+    assert "cache_control" not in sent_messages[1];
+    assert "cache_control" not in sent_messages[2];
+    tool_content: any = sent_messages[3].get("content");
     assert "cache_control" not in tool_content[0];
     assert tool_content[-1].get("cache_control") == _CACHE_CONTROL_EPHEMERAL;
 
-    assert "cache_control" not in tools[0];
-    assert tools[-1].get("cache_control") == _CACHE_CONTROL_EPHEMERAL;
+    assert "cache_control" not in sent_tools[0];
+    assert sent_tools[-1].get("cache_control") == _CACHE_CONTROL_EPHEMERAL;
+
+    assert (messages, tools) == before , (
+        "the markers belong to the request, so the caller's messages and tools "
+        "must be the same after caching as before it"
+    );
+}
+
+def _cache_markers(params: dict[str, any]) -> int {
+    count = len(
+        [
+            t
+            for t in params.get("tools") or []
+            if "cache_control" in t
+        ]
+    );
+    for msg in params.get("messages") or [] {
+        if not isinstance(msg, dict) {
+            continue;
+        }
+        if "cache_control" in msg {
+            count += 1;
+        }
+        content = msg.get("content");
+        if isinstance(content, list) {
+            count += len(
+                [
+                    p
+                    for p in content
+                    if isinstance(p, dict) and "cache_control" in p
+                ]
+            );
+        }
+    }
+    return count;
+}
+
+test "prompt caching drops markers a stored history already carries" {
+    stale = dict(_CACHE_CONTROL_EPHEMERAL);
+    messages = [
+        {"role": "system", "content": "You are an agent.", "cache_control": stale},
+        {"role": "user", "content": "first", "cache_control": stale},
+        {
+            "role": "user",
+            "content": [{"type": "text", "text": "second", "cache_control": stale}]
+        },
+        {"role": "assistant", "content": "ok", "cache_control": stale},
+        {"role": "user", "content": "latest"}
+    ];
+    tools = [
+        {"type": "function", "function": {"name": "read_file"}, "cache_control": stale},
+        {"type": "function", "function": {"name": "finish_tool"}}
+    ];
+    (sent_messages, sent_tools) = _apply_prompt_caching(messages, tools);
+
+    assert _cache_markers({"messages": sent_messages, "tools": sent_tools}) == 3 , (
+        "only the system message, the latest message and the last tool may carry "
+        "a marker, whatever the stored history held"
+    );
+    assert sent_messages[-1].get("cache_control") == _CACHE_CONTROL_EPHEMERAL;
+    assert "cache_control" in messages[1] , "the stored history itself is left as it was";
+}
+
+test "steering through on_iteration never sends more than four cache markers" {
+    steers: list[dict[str, any]] = [];
+
+    def lookup(key: str) -> str {
+        return f"value_for_{key}";
+    }
+
+    def hook(ctx: IterationContext) -> IterationAction {
+        steer: dict[str, any] = (
+            {"role": "user", "content": f"steer {ctx.iteration}"}
+                if ctx.iteration % 2 == 0
+                else {
+                    "role": "user",
+                    "content": [{"type": "text", "text": f"steer {ctx.iteration}"}]
+                }
+        );
+        steers.append(steer);
+        ctx.messages.append(steer);
+        return IterationAction.CONTINUE;
+    }
+
+    llm = MockLLM(
+        model_name="anthropic/claude-test",
+        outputs=[
+            tool_call("lookup", {"key": "a"}),
+            tool_call("lookup", {"key": "b"}),
+            tool_call("lookup", {"key": "c"}),
+            tool_call("lookup", {"key": "d"}),
+            finish("done")
+        ]
+    );
+
+    def fetch(query: str) -> str by llm(tools=[lookup], on_iteration=hook);
+
+    assert fetch("get everything") == "done";
+    assert len(steers) >= 3 , f"expected several steers, got {len(steers)}";
+    counts = [_cache_markers(params) for params in llm.seen];
+    assert all(n <= 4 for n in counts) , (
+        f"Anthropic rejects a request with more than four cache markers; sent {counts}"
+    );
+    leaked = [
+        s
+        for s in steers
+        if _cache_markers({"messages": [s]})
+    ];
+    assert not leaked , f"the caller's steer messages were stamped: {leaked}";
 }
 
 test "prompt caching disabled via config" {
