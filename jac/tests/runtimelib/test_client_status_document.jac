@@ -480,6 +480,32 @@ test "the shared client-error path classifies once and carries both stacks" {
     }
 }
 
+test "an unchanged status document is not rewritten" {
+    import os;
+    with TemporaryDirectory() as tmp {
+        proj = Path(tmp);
+        doc = proj / ".jac" / "client" / ".jac-status.json";
+        reloader = _reloader(proj);
+        try {
+            reloader.record_error(str(proj / "app.jac"), "boom");
+            written = doc.read_text();
+            os.utime(doc, ns=(1000000000, 1000000000));
+            reloader.record_client_event("ready", None);
+            reloader.record_client_event("runtime", None);
+            reloader._sync_status_file();
+            assert doc.stat().st_mtime_ns == 1000000000 , (
+                "an unchanged status document was written again"
+            );
+            reloader.record_error(str(proj / "app.jac"), "a different failure");
+            assert doc.read_text() != written;
+            reloader.record_ok();
+            assert not doc.exists();
+        } finally {
+            _reset_client_globals();
+        }
+    }
+}
+
 test "the suite leaves no dev-loop global behind" {
     import from jaclang.client.source_mapping {
         _locator_cache,
