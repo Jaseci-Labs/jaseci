@@ -71,9 +71,7 @@ def _cancel_row(row: tuple[any, ...]) {
         assert token.is_set() , row_id;
         assert program.analysis.provides(module, AnalysisFact.CFG_SUCC)
             == cfg_live_after , row_id;
-        assert not program.analysis.provides(
-            module, AnalysisFact.TYPE_OF
-        ) , row_id;
+        assert not program.analysis.provides(module, AnalysisFact.TYPE_OF) , row_id;
         tasks = tasks_of(program, module);
         flow_state = tasks[CompilationProduct.FLOW].state;
         analysis_state = tasks[CompilationProduct.ANALYSIS].state;
@@ -83,12 +81,8 @@ def _cancel_row(row: tuple[any, ...]) {
         );
         token.clear();
         assert require(program, module, CompilationProduct.ANALYSIS) , row_id;
-        assert program.analysis.provides(
-            module, AnalysisFact.CFG_SUCC
-        ) , row_id;
-        assert program.analysis.provides(
-            module, AnalysisFact.TYPE_OF
-        ) , row_id;
+        assert program.analysis.provides(module, AnalysisFact.CFG_SUCC) , row_id;
+        assert program.analysis.provides(module, AnalysisFact.TYPE_OF) , row_id;
         assert tasks[CompilationProduct.FLOW].state == TaskState.SUCCEEDED , (
             f"{row_id}: flow retry"
         );
@@ -112,7 +106,9 @@ test "guard-emptied analysis schedule stays retryable instead of succeeding" {
         program = JacProgram();
         path = os.path.join(temp_dir, "pipeline_guard_empty_9151.jac");
         module = program.parse_str("def answer() -> int { return 42; }\n", path);
-        load_tok = _LOADING.set(_LOADING.get() + (CompilationProduct.ANALYSIS, ));
+        load_tok = _LOADING.set(
+            _LOADING.get() | frozenset([CompilationProduct.ANALYSIS])
+        );
         try {
             assert not require(program, module, CompilationProduct.ANALYSIS);
             tasks = tasks_of(program, module);
@@ -122,12 +118,8 @@ test "guard-emptied analysis schedule stays retryable instead of succeeding" {
             assert tasks[CompilationProduct.ANALYSIS].state == TaskState.PENDING , (
                 tasks[CompilationProduct.ANALYSIS].state
             );
-            assert program.analysis.provides(
-                module, AnalysisFact.CFG_SUCC
-            );
-            assert not program.analysis.provides(
-                module, AnalysisFact.TYPE_OF
-            );
+            assert program.analysis.provides(module, AnalysisFact.CFG_SUCC);
+            assert not program.analysis.provides(module, AnalysisFact.TYPE_OF);
         } finally {
             _LOADING.reset(load_tok);
         }

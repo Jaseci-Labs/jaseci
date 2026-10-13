@@ -233,5 +233,3 @@ def compile_application(
     }
     return entry_module;
 }
-
-

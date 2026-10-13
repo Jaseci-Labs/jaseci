@@ -250,8 +250,7 @@ test "a schedule dependency mid-import puts the compile on the bootstrap tier" {
                 CompilationProduct.CODEGEN,
                 CompilationProduct.PY_IR,
                 CompilationProduct.FROZEN
-            )
-            for p in (schedule_for(product, ProductRequest(native=True)) or [])
+            ) for p in (schedule_for(product, ProductRequest(native=True)) or [])
         ];
         assert tail == ["NativeImportFactsPass", "JcirGenPass"] , tail;
     } finally {
@@ -399,10 +398,7 @@ test "a bootstrap frontend retains its codegen tier after imports finish" {
     import tempfile;
     import from pathlib { Path }
     import from unittest.mock { patch }
-    import from jaclang.compiler.driver.pipeline {
-        PRODUCTS,
-        bootstrap_ir_passes
-    }
+    import from jaclang.compiler.driver.pipeline { PRODUCTS, bootstrap_ir_passes }
     with tempfile.TemporaryDirectory() as directory {
         source = str(Path(directory) / "bootstrap_tier.jac");
         prog = JacProgram();

@@ -1018,7 +1018,16 @@ def invalidate_importers_es(prog: JacProgram, mod_path: str) -> list[uni.Module]
 }
 
 walker PlacementApplyPass(CompilerPass) {
-    static has contract: PassContract = PassContract(requires=(AnalysisFact.SYM_OF, ), provides=(AnalysisFact.PLACED_IN, AnalysisFact.DECIDED_CODESPACE, AnalysisFact.CODESPACE_PULL, ));
+    static has contract: PassContract = PassContract(
+        requires=(AnalysisFact.SYM_OF, ),
+        provides=(
+            AnalysisFact.PLACED_IN,
+            AnalysisFact.DECIDED_CODESPACE,
+            AnalysisFact.CODESPACE_PULL,
+
+        )
+    );
+
     def _run_impl(ir_in: uni.Module) -> uni.Module;
     can run_walk with uni.Module entry;
 }

@@ -4,6 +4,7 @@ import jaclang.compiler.frontend.unitree as uni;
 
 walker FreezeStructurePass(CompilerPass) {
     static has contract: PassContract = PassContract(provides=(AnalysisFact.FROZEN, ));
+
     can freeze with uni.Module entry;
 }
 

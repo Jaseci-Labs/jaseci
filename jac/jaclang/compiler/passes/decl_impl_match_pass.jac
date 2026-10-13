@@ -37,7 +37,11 @@ import from jaclang.compiler.frontend.diagnostics {
 }
 
 walker DeclImplMatchPass(CompilerPass) {
-    static has contract: PassContract = PassContract(requires=(AnalysisFact.SYM_OF, ), provides=(AnalysisFact.IMPL_OF, ), kernel_safe=True);
+    static has contract: PassContract = PassContract(
+        requires=(AnalysisFact.SYM_OF, ),
+        provides=(AnalysisFact.IMPL_OF, ),
+        kernel_safe=True
+    );
     has _e2026_reported: set[int] = set();
 
     def _run_impl(ir_in: Module) -> Module;

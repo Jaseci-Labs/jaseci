@@ -1,6 +1,5 @@
 import os;
 import time;
-import from collections.abc { Callable }
 import from jaclang.compiler.driver.pipeline_types {
     AnalysisFact,
     CompilationProduct,
@@ -207,8 +206,7 @@ def run_plan(task: ModuleAnalysis, steps: tuple[PlanStep, ...]) {
                 step.run(task);
             }
         } finally {
-            times[step.name] = times.get(step.name, 0.0)
-                + time.perf_counter()
+            times[step.name] = times.get(step.name, 0.0) + time.perf_counter()
                 - started;
         }
     }

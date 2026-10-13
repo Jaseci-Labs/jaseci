@@ -310,9 +310,7 @@ class AnalysisCaches {
         if found is not None and found.module is module {
             return found;
         }
-        fresh = ModuleBuild(
-            module=module, done=set(), tasks={}, facts=set(), early={}
-        );
+        fresh = ModuleBuild(module=module, done=set(), tasks={}, facts=set(), early={});
         self.builds[key] = fresh;
         return fresh;
     }
@@ -325,16 +323,12 @@ class AnalysisCaches {
         return None;
     }
 
-    def provides(
-        self: AnalysisCaches, module: uni.Module, fact: AnalysisFact
-    ) -> bool {
+    def provides(self: AnalysisCaches, module: uni.Module, fact: AnalysisFact) -> bool {
         found = self.peek(module);
         return found is not None and fact in found.facts;
     }
 
-    def mark_facts(
-        self: AnalysisCaches, module: uni.Module, facts: set[AnalysisFact]
-    ) {
+    def mark_facts(self: AnalysisCaches, module: uni.Module, facts: set[AnalysisFact]) {
         live = self.build(module).facts;
         live.clear();
         live.update(facts);

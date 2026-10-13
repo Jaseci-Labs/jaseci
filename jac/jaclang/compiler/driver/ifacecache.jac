@@ -621,9 +621,7 @@ obj IfaceRegistry(CatalogResolver) {
         self._restore_placement(ent);
         import from jaclang.compiler.driver.pipeline { product_facts }
         import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
-        self.prog.analysis.mark_facts(
-            mod, product_facts(CompilationProduct.SYMBOLS)
-        );
+        self.prog.analysis.mark_facts(mod, product_facts(CompilationProduct.SYMBOLS));
     }
 
     static def _profiles_of(

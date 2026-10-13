@@ -32,6 +32,7 @@ def optimize_unit(
 
 walker NativeCompilePass(CompilerPass) {
     static has contract: PassContract = PassContract();
+
     def postinit -> None;
     def _run_impl(ir_in: uni.Module) -> uni.Module;
     def _share_engine(module: uni.Module, engine: any) -> None;

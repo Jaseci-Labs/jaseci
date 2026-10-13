@@ -268,7 +268,16 @@ obj NativeFunctionState {
 }
 
 walker NaIRGenPass(CompilerPass) {
-    static has contract: PassContract = PassContract(requires=(AnalysisFact.TYPE_OF, AnalysisFact.CFG_SUCC, AnalysisFact.OWNERSHIP, AnalysisFact.CAPABILITY, AnalysisFact.RC_FACTS, ));
+    static has contract: PassContract = PassContract(
+        requires=(
+            AnalysisFact.TYPE_OF,
+            AnalysisFact.CFG_SUCC,
+            AnalysisFact.OWNERSHIP,
+            AnalysisFact.CAPABILITY,
+            AnalysisFact.RC_FACTS,
+
+        )
+    );
     has module: uni.Module,
         _llvm_module: (ir.Module | None) = None,
         _type_map: (dict[str, ir.Type] | None) = None,

@@ -51,10 +51,7 @@ def run_native_checks(task: ModuleAnalysis) {
 def admits_client_dependencies(task: ModuleAnalysis) -> bool {
     options = task.options;
     return not (
-        task.parse_failed
-        or task.blocked
-        or options.symtab_ir_only
-        or options.no_cgen
+        task.parse_failed or task.blocked or options.symtab_ir_only or options.no_cgen
     );
 }
 
@@ -120,10 +117,7 @@ def run_interface(task: ModuleAnalysis) {
 def admits_codegen(task: ModuleAnalysis) -> bool {
     options = task.options;
     return not (
-        task.parse_failed
-        or task.blocked
-        or options.no_cgen
-        or options.symtab_ir_only
+        task.parse_failed or task.blocked or options.no_cgen or options.symtab_ir_only
     );
 }
 

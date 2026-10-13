@@ -209,10 +209,7 @@ def _tree_source(
 ) -> ManifestSource {
     import from jaclang.compiler.driver.unit_products { import_edge_rows }
     if imported {
-        import from jaclang.compiler.driver.pipeline {
-            require,
-            CompilationProduct
-        }
+        import from jaclang.compiler.driver.pipeline { require, CompilationProduct }
         manifest = mod.gen.interop_manifest;
         if not (manifest and manifest.surface) {
             require(program, mod, CompilationProduct.BOUNDARIES);

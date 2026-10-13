@@ -1,7 +1,6 @@
 import from jaclang.compiler.passes.context { CompilerPass, PassSchedule }
 import os;
 import time;
-import from collections.abc { Callable }
 import type from jaclang.compiler.driver.compile_options { CancelToken }
 import from contextvars { ContextVar }
 import type from jaclang.compiler.driver.program { JacProgram }
@@ -51,14 +50,15 @@ def no_action(program: JacProgram, module: Module) -> bool {
     return True;
 }
 
-def no_drop(program: JacProgram, module: Module) -> None {}
+def no_drop(program: JacProgram, module: Module) {}
 
-def no_precheck -> None {}
+def no_precheck {}
 
 obj ProductSpec {
     has needs: tuple[CompilationProduct, ...] = (),
         passes: Callable[[ProductRequest], PassSchedule] = no_passes,
-        bootstrap: Callable[[ProductRequest], (PassSchedule | None)] = unavailable_schedule,
+        bootstrap:
+            Callable[[ProductRequest], (PassSchedule | None)] = unavailable_schedule,
         action: Callable[[JacProgram, Module], bool] = no_action,
         drop: Callable[[JacProgram, Module], None] = no_drop,
         precheck: Callable[[], None] = no_precheck,
@@ -124,9 +124,7 @@ def analysis_passes(request: ProductRequest) -> PassSchedule {
     import from jaclang.compiler.passes.type_checker_pass { TypeCheckPass }
     import from jaclang.compiler.passes.static_analysis_pass { StaticAnalysisPass }
     import from jaclang.compiler.passes.access_check_pass { AccessCheckPass }
-    import from jaclang.compiler.passes.variant_agreement_pass {
-        VariantAgreementPass
-    }
+    import from jaclang.compiler.passes.variant_agreement_pass { VariantAgreementPass }
     import from jaclang.compiler.passes.capability_check_pass { PortabilityWarnPass }
     import from jaclang.compiler.passes.placement_pass { PlacementPass }
     import from jaclang.compiler.passes.ownership_check_pass { OwnershipCheckPass }
@@ -277,7 +275,7 @@ def prepare_interface(program: JacProgram, module: Module) -> bool {
     );
 }
 
-def drop_client(program: JacProgram, module: Module) -> None {
+def drop_client(program: JacProgram, module: Module) {
     module.gen.js = '';
     module.gen.es_ast = None;
     path = os.path.realpath(module.loc.mod_path);
@@ -285,12 +283,12 @@ def drop_client(program: JacProgram, module: Module) -> None {
     active_host().drop_python_lane_products(path, program);
 }
 
-def drop_native_ir(program: JacProgram, module: Module) -> None {
+def drop_native_ir(program: JacProgram, module: Module) {
     module.gen.drop_native_ir();
     module.gen.native_iface = None;
 }
 
-def drop_native_object(program: JacProgram, module: Module) -> None {
+def drop_native_object(program: JacProgram, module: Module) {
     module.gen.native_bitcode = None;
     module.gen.native_object = None;
 }
@@ -450,17 +448,15 @@ glob PRODUCTS: dict[CompilationProduct, ProductSpec] = {
          ),
          CompilationProduct.GRAMMAR: ProductSpec(passes=grammar_passes, tool=True),
          CompilationProduct.CFG_DOT: ProductSpec(passes=cfg_dot_passes, tool=True),
-         CompilationProduct.NORMALIZE: ProductSpec(
-             passes=normalize_passes, tool=True
-         ),
+         CompilationProduct.NORMALIZE: ProductSpec(passes=normalize_passes, tool=True),
          CompilationProduct.UNPARSE: ProductSpec(passes=unparse_passes, tool=True),
          CompilationProduct.DOC: ProductSpec(passes=doc_passes, tool=True),
          CompilationProduct.FORMAT_TEXT: ProductSpec(
              passes=format_text_passes, tool=True
          )
      },
-     _LOADING: ContextVar[tuple[CompilationProduct, ...]] = ContextVar(
-         'jac_schedule_loading', `default=()
+     _LOADING: ContextVar[frozenset[CompilationProduct]] = ContextVar(
+         'jac_schedule_loading', `default=frozenset()
      ),
      _PRODUCT_FACTS: dict[CompilationProduct, set[AnalysisFact]] = {},
      _EARLY_PASSES: list[PassSchedule] = [];
@@ -549,7 +545,7 @@ def resolve(
         return (spec.bootstrap(req), False);
     }
     spec.precheck();
-    token = _LOADING.set(_LOADING.get() + (product, ));
+    token = _LOADING.set(_LOADING.get() | frozenset([product]));
     schedule: PassSchedule = [];
     try {
         if spec.loads {
@@ -560,7 +556,7 @@ def resolve(
         fallback = spec.on_import_error;
         if fallback == ImportFallback.RAISE
             or (fallback == ImportFallback.BOOTSTRAP_INTERNAL and not internal) {
-            raise ;
+            raise;
         }
         if fallback == ImportFallback.REPORT {
             active_host().schedule_import_failed(e);
@@ -569,9 +565,8 @@ def resolve(
     } finally {
         _LOADING.reset(token);
     }
-    _PRODUCT_FACTS[product] = _PRODUCT_FACTS.get(product, set()) | providers_of(
-        schedule
-    );
+    _PRODUCT_FACTS[product] = _PRODUCT_FACTS.get(product, set())
+        | providers_of(schedule);
     return (schedule, False);
 }
 
@@ -689,9 +684,7 @@ def produce(
             peer_fell_back = True;
         }
     }
-    (schedule, fell_back) = resolve(
-        product, request, program.internal, peer_fell_back
-    );
+    (schedule, fell_back) = resolve(product, request, program.internal, peer_fell_back);
     if task is not None {
         task.import_fallback = fell_back;
     }
@@ -767,15 +760,13 @@ def require(
         return task.state == TaskState.SUCCEEDED;
     } except Exception {
         task.state = TaskState.FAILED;
-        raise ;
+        raise;
     } finally {
         task.elapsed = time.perf_counter() - start;
     }
 }
 
-def invalidate(
-    program: JacProgram, module: Module, product: CompilationProduct
-) -> None {
+def invalidate(program: JacProgram, module: Module, product: CompilationProduct) {
     build = program.analysis.peek(module);
     for current in [product] + dependents(product) {
         spec = PRODUCTS[current];

@@ -10,6 +10,7 @@ import from jaclang.compiler.frontend.roles { BodyRole, ItemsRole }
 
 walker NormalizePass(TreePass) {
     static has contract: PassContract = PassContract();
+
     can enter_sub_tag with uni.SubTag entry;
     can enter_module with uni.Module entry;
     can enter_type_param with uni.TypeParam entry;
