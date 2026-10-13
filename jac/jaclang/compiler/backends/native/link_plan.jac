@@ -211,6 +211,9 @@ obj LinkPlan {
         h.update(self.options.codegen_identity().encode());
         import from jaclang.compiler.driver.jir { native_producer_digest }
         h.update(native_producer_digest(self.options.kernel_build).encode());
+        if self.library_api {
+            h.update(b"library-api");
+        }
         import from jaclang.compiler.frontend.codeinfo { native_unit_identity }
         for u in self.units {
             h.update(native_unit_identity(u.path).encode());
