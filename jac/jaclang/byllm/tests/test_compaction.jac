@@ -496,8 +496,9 @@ test "a streaming caller is told about an applied hook compaction" {
     assert info["reason"] == "threshold";
     assert info["by"] == "hook";
     assert info["iteration"] == 2;
-    assert info["messages_before"] == len(llm.sent("messages")[1]) , (
-        "messages_before is the history the threshold-crossing request carried"
+    assert info["messages_before"] == len(llm.sent("messages")[1]) + 1 , (
+        "messages_before is the request that crossed the threshold plus the reply "
+        "that was just appended to it"
     );
     assert info["messages_after"] == 2;
     assert 0 < info["tokens_after"] < info["tokens_before"];

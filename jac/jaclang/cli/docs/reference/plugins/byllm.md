@@ -1441,6 +1441,36 @@ def my_agent(query: str) -> str by llm(
 );
 ```
 
+### Observing compactions
+
+byLLM applies a compaction only when the new history is smaller than the old one, so a hook that returns the list unchanged, or a result that is not smaller, is discarded and the old history is kept. Only an **applied** compaction is reported. A discarded one produces no event and shows up only as a log warning.
+
+For a `logging=True` stream or a `stream_handler`, each applied compaction arrives as a `compaction` event just before that iteration's `llm_timing` and `usage_step`:
+
+```jac
+with entry {
+    for event in my_agent("...") {
+        if event.event_type == "compaction" {
+            print(event.data["reason"]);           # "threshold" or "overflow"
+            print(event.data["by"]);               # "hook" or "builtin"
+            print(event.data["tokens_before"], event.data["tokens_after"]);
+        }
+    }
+}
+```
+
+| Field | Description |
+|---|---|
+| `reason` | `"threshold"` when `prompt_tokens / ctx_window` crossed `threshold_ratio`, `"overflow"` when the provider rejected the request as too long |
+| `by` | `"hook"` when your `on_compaction` produced the new history, `"builtin"` for byLLM's own compactor (which may summarise, or only clip long tool results when there is too little to summarise) |
+| `messages_before`, `messages_after` | Message count before and after, system prompt included |
+| `tokens_before`, `tokens_after` | byLLM's own size estimate (about four characters per token), the figure the applied-or-discarded decision compares. These are not provider token counts |
+| `iteration` | The ReAct iteration whose reply triggered the compaction |
+
+A compaction can be applied on the reply that ends the turn, so the event can arrive right before `steps_done`. The cost of the built-in summariser call is reported separately, as a `compaction` call in `usage_step` and `usage`.
+
+Calls that do not stream have no event channel. Every invocation shape records its applied compactions in the `compactions` field of the [telemetry record](#telemetry-record-fields), as a list of the same dicts (without `iteration`).
+
 ### `CompactionNotEffectiveError`
 
 If the provider rejects a request as too long and compaction cannot reduce the history, or the request is rejected again after a compaction, byLLM raises `CompactionNotEffectiveError` rather than retrying forever. Crossing the threshold without being able to compact only logs a warning. See [Error Handling](#error-handling) for how to catch it.
@@ -1594,6 +1624,7 @@ delta from a stream that replaced an abandoned one.
 | `thought` | LLM produced reasoning text before a tool call | `content` (str), `iteration` (int) |
 | `steps_done` | ReAct loop finished, final answer next | `iterations` (int), `reason` (str): `"max_iterations"`, `"aborted"`, or `"aborted_with_summary"` |
 | `chunk` | One token of the final streamed answer | `content` (str) |
+| `compaction` | Auto-compaction replaced the message history (tool-calling invocations only; see [Observing compactions](#observing-compactions)) | `reason` (str): `"threshold"` or `"overflow"`, `by` (str): `"hook"` or `"builtin"`, `messages_before` (int), `messages_after` (int), `tokens_before` (int), `tokens_after` (int), `iteration` (int) |
 | `usage_step` | A single LLM call finished (tool-calling invocations only; see [Per-Call Usage](#per-call-usage)) | Same shape as `usage`, scoped to that one call |
 | `usage` | All LLM calls complete (always the last event) | `total` (dict), `by_kind` (dict), `per_call` (list[dict]), `requests` (int) |
 
@@ -2423,6 +2454,7 @@ Each callback receives a dict with these fields:
 | `status` | `str` | `"success"` or `"error"` |
 | `error` | `str \| None` | Error message if status is `"error"` (truncated to 1000 chars) |
 | `tokens` | `dict` | Same shape as the `usage` `StreamEvent` (see [Usage Tracking](#usage-tracking)); covers every invocation shape, streaming or not |
+| `compactions` | `list[dict]` | Every compaction applied during the invocation, in order, with the fields of the `compaction` `StreamEvent` except `iteration` (see [Observing compactions](#observing-compactions)); empty when none was applied |
 
 ### Combining with LiteLLM Per-Call Logging
 
