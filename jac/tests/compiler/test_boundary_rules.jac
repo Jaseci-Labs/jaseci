@@ -23,7 +23,7 @@ import from jaclang.compiler.capability_notes {
 }
 
 glob WIRE_SRC = (
-         "import from typing { Generator, Literal, Text, TypeAlias }\n\n"
+         "import from typing { Generator, Literal, Optional, Text, TypeAlias, Union }\n\n"
          "enum Color { RED, BLUE }\n\n"
          "obj Item {\n"
          "    has name: str,\n"
@@ -49,6 +49,9 @@ glob WIRE_SRC = (
          "def alias_keys(a: dict[Key, int], b: dict[Name, int]) -> None {}\n\n"
          "def text_keys(a: dict[Text, int], b: dict[Literal['x', 'y'], int]) -> None {}\n\n"
          "def int_alias_keys(m: dict[Count, str]) -> None {}\n\n"
+         "def union_text_keys(m: dict[Union[str, Key], int]) -> None {}\n\n"
+         "def union_int_keys(m: dict[Union[str, int], str]) -> None {}\n\n"
+         "def optional_keys(m: dict[Optional[str], str]) -> None {}\n\n"
          "def callback(f: Callable[[int], int]) -> int {\n"
          "    return f(1);\n"
          "}\n\n"
@@ -121,6 +124,15 @@ test "a dict key is judged by what its alias names" {
     assert request_refusals(mod, "text_keys") == [];
     found = request_refusals(mod, "int_alias_keys");
     assert len(found) == 1 and "'int' keys" in found[0][2] , found;
+}
+
+test "a union dict key crosses only when every branch is a string" {
+    mod = typed_module();
+    assert request_refusals(mod, "union_text_keys") == [];
+    found = request_refusals(mod, "union_int_keys");
+    assert len(found) == 1 and "'int' keys" in found[0][2] , found;
+    found = request_refusals(mod, "optional_keys");
+    assert len(found) == 1 and "'None' keys" in found[0][2] , found;
 }
 
 test "behaviour does not cross: a callable has no wire form" {

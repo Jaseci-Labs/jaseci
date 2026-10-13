@@ -214,14 +214,14 @@ def non_string_key(
     if key in ('', '...', 'str', 'any', 'Any') {
         return None;
     }
-    if key == '|' {
+    if key in ('|', 'Union', 'Optional') {
         for branch in key_args {
             bad = non_string_key(branch, scope, depth);
             if bad is not None {
                 return bad;
             }
         }
-        return None;
+        return 'None' if key == 'Optional' else None;
     }
     if key == 'Literal' {
         for value in key_args {

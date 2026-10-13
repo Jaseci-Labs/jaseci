@@ -1303,6 +1303,9 @@ impl NaIRGenPass._owner_element(full_name: str) -> (uni.UniNode | None) {
     import from jaclang.compiler.placement.placement { element_display_name }
     owner_name = full_name.split(".")[0];
     for elem in self.module.body {
+        if isinstance(elem, uni.Archetype) and self._arch_key(elem) == owner_name {
+            return elem;
+        }
         if element_display_name(elem) == owner_name {
             return elem;
         }

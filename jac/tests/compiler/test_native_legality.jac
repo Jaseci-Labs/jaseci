@@ -191,6 +191,22 @@ glob PIN_FIXTURE_DIR = os.path.join(
          "    print(Foo().size());\n"
          "}\n"
      ),
+     PINNED_LATE_METHOD_SRC = (
+         "import json;\n\n"
+         "def pretty(x: dict[str, int]) -> str {\n"
+         "    return json.dumps(x, indent=2);\n"
+         "}\n\n"
+         "obj Foo {\n"
+         "    has n: int = 1;\n\n"
+         "    def size -> int {\n"
+         "        s = {1, \"a\"};\n"
+         "        return len(s) + self.n;\n"
+         "    }\n"
+         "}\n\n"
+         "with entry {\n"
+         "    print(Foo().size());\n"
+         "}\n"
+     ),
      OVERLOAD_STUB = (
          "from typing import Callable, overload\n"
          "@overload\n"
@@ -476,7 +492,8 @@ test "a late refusal in a mixed module settles the module on the server" {
     assert mod.gen.py_ast , "the Python backend emits the module it was handed";
 }
 
-test "a refusal inside an element pinned native is an error" {
+"""Compile `text` as m.jac in a project that pins `m.Foo` native."""
+def compile_pinned_foo(text: str) -> JacProgram {
     import from jaclang.compiler.frontend.codeinfo {
         set_effective_default_codespace,
         get_effective_default_codespace_override
@@ -489,7 +506,7 @@ test "a refusal inside an element pinned native is an error" {
     }
     path = os.path.realpath(os.path.join(base, "m.jac"));
     with open(path, "w", encoding="utf-8") as fh {
-        fh.write(PINNED_METHOD_SRC);
+        fh.write(text);
     }
     previous = get_effective_default_codespace_override();
     prog = JacProgram();
@@ -498,9 +515,22 @@ test "a refusal inside an element pinned native is an error" {
     } finally {
         set_effective_default_codespace(previous);
     }
+    return prog;
+}
+
+test "a refusal inside an element pinned native is an error" {
+    prog = compile_pinned_foo(PINNED_METHOD_SRC);
     assert any("must be native" in (e.help_text or "") for e in prog.errors_had) , f"a method of a pinned archetype that cannot lower is an error: {[
         str(e) for e in prog.errors_had
     ]}";
+}
+
+test "a late refusal inside an element pinned native is an error" {
+    prog = compile_pinned_foo(PINNED_LATE_METHOD_SRC);
+    assert any("mixed element types" in str(e) for e in prog.errors_had) , (
+        f"a method of a pinned archetype that refuses during lowering keeps its "
+        f"error rather than an abort() body: {[str(e) for e in prog.errors_had]}"
+    );
 }
 
 test "an overload the call does not select records no native requirement" {
