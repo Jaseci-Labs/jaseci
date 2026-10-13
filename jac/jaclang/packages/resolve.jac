@@ -111,7 +111,7 @@ obj GraphSource(PackageSource) {
             } except GitError as e {
                 raise ResolveError(f"{dep.name}: {e}");
             }
-            (_, sha256) = pack_checkout(co);
+            sha256 = "";
             tree = co.tree;
             source = f"git+{dep.git}#{co.commit}";
         }
@@ -125,6 +125,9 @@ obj GraphSource(PackageSource) {
                 );
             }
             return existing;
+        }
+        if dep.kind() == "git" {
+            (_, sha256) = pack_checkout(co);
         }
         cfg = JacConfig.load(tree / "jac.toml");
         if cfg.project.name != dep.name {

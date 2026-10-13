@@ -6,7 +6,7 @@ import from unittest.mock { patch }
 import from jaclang.packages.index { forget_registries }
 import from jaclang.packages.install { InstallError, sync, write_lock }
 import from jaclang.packages.lock { Lockfile }
-import from jaclang.packages.resolve { GraphSource, ResolveError }
+import from jaclang.packages.resolve { GraphSource, ResolveError, pack_checkout }
 import from jaclang.project.config { JacConfig }
 import from jaclang.project.dependencies { PackageDep }
 import from tests.packages.fixture_registry {
@@ -506,13 +506,18 @@ test "repeated git sources compare resolved commits" {
             }
         }
         resolver = GraphSource(root_dir=w.app, registries={});
-        original = resolver.add_local(
-            PackageDep(name="acme/gitpkg", git=repo.as_uri(), rev=first), w.app
-        );
-        alias = resolver.add_local(
-            PackageDep(name="acme/gitpkg", git=repo.as_uri(), rev="first"), w.app
-        );
-        assert alias is original;
+        with patch(
+            "jaclang.packages.resolve.pack_checkout", wraps=pack_checkout
+        ) as pack {
+            original = resolver.add_local(
+                PackageDep(name="acme/gitpkg", git=repo.as_uri(), rev=first), w.app
+            );
+            alias = resolver.add_local(
+                PackageDep(name="acme/gitpkg", git=repo.as_uri(), rev="first"), w.app
+            );
+            assert alias is original;
+            assert pack.call_count == 1;
+        }
     }
 }
 
