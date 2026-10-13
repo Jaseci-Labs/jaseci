@@ -9,7 +9,18 @@ import from jaclang.byllm.types { MockToolCall }
 import from jaclang.byllm.exceptions { CompactionNotEffectiveError, ConfigurationError }
 import from jaclang.byllm.config_loader { reset_byllm_config, get_byllm_config }
 import from pathlib { Path }
-import from support { call, capture_loguru, fail, finish, fixture_path, scripted }
+import from support {
+    call,
+    capture_loguru,
+    event_types,
+    events_of,
+    fail,
+    finish,
+    fixture_path,
+    say,
+    scripted,
+    stream_events
+}
 
 
 glob COMPACTION_TOML_FIXTURE = fixture_path("compaction_config");
@@ -17,6 +28,12 @@ glob COMPACTION_TOML_FIXTURE = fixture_path("compaction_config");
 
 def step_a -> str {
     return "stepped";
+}
+
+
+# Big enough that the first round is worth a summariser call in a 1000-token window.
+def bulky_step -> str {
+    return "x" * 1000;
 }
 
 
@@ -446,6 +463,169 @@ test "streaming path triggers compaction and respects compaction_enabled" {
 
     for event in task2("test") {}
     assert not fired2[0];
+}
+
+
+test "a streaming caller is told about an applied hook compaction" {
+    llm = MockLLM(
+        ctx_window=1000,
+        outputs=[
+            (MockToolCall(tool=step_a, args={}), {"prompt_tokens": 100}),
+            (MockToolCall(tool=step_a, args={}), {"prompt_tokens": 850}),
+            (MockToolCall(tool=finish_tool, args={"final_output": "ok"}), {}),
+            "ok"
+        ]
+    );
+
+    def shrinking_hook(msgs: list[any], keep_recent: int) -> list[any] {
+        return msgs[:2];
+    }
+
+    def task(q: str) -> str by llm(
+        tools=[step_a],
+        stream=True,
+        logging=True,
+        threshold_ratio=0.80,
+        on_compaction=shrinking_hook
+    );
+
+    reported = events_of(stream_events(task("go")), "compaction");
+
+    assert len(reported) == 1 , f"expected one compaction event, got {reported}";
+    info = reported[0].data;
+    assert info["reason"] == "threshold";
+    assert info["by"] == "hook";
+    assert info["iteration"] == 2;
+    assert info["messages_before"] == len(llm.sent("messages")[1]) , (
+        "messages_before is the history the threshold-crossing request carried"
+    );
+    assert info["messages_after"] == 2;
+    assert 0 < info["tokens_after"] < info["tokens_before"];
+}
+
+
+test "a compaction that is discarded is not reported" {
+    llm = MockLLM(
+        ctx_window=1000,
+        outputs=[
+            (MockToolCall(tool=step_a, args={}), {"prompt_tokens": 100}),
+            (MockToolCall(tool=step_a, args={}), {"prompt_tokens": 850}),
+            (MockToolCall(tool=finish_tool, args={"final_output": "ok"}), {}),
+            "ok"
+        ]
+    );
+
+    hook_calls = [0];
+    def noop_hook(msgs: list[any], keep_recent: int) -> list[any] {
+        hook_calls[0] += 1;
+        return msgs;
+    }
+
+    def task(q: str) -> str by llm(
+        tools=[step_a],
+        stream=True,
+        logging=True,
+        threshold_ratio=0.80,
+        on_compaction=noop_hook
+    );
+
+    events = stream_events(task("go"));
+
+    assert hook_calls[0] >= 1 , "the hook must have run for the discard to be meaningful";
+    assert events_of(events, "compaction") == [];
+}
+
+
+test "an emergency compaction is reported with the overflow reason" {
+    llm = MockLLM(
+        outputs=[
+            (MockToolCall(tool=step_a, args={}), {}),
+            fail(
+                litellm.exceptions.ContextWindowExceededError(
+                    message="ctx exceeded", model="mockllm", llm_provider="openai"
+                )
+            ),
+            (MockToolCall(tool=finish_tool, args={"final_output": "ok"}), {}),
+            "ok"
+        ]
+    );
+
+    def shrinking_hook(msgs: list[any], keep_recent: int) -> list[any] {
+        return msgs[:2];
+    }
+
+    def task(q: str) -> str by llm(
+        tools=[step_a], stream=True, logging=True, on_compaction=shrinking_hook
+    );
+
+    reported = events_of(stream_events(task("go")), "compaction");
+
+    assert len(reported) == 1 , f"expected one compaction event, got {reported}";
+    assert reported[0].data["reason"] == "overflow";
+    assert reported[0].data["by"] == "hook";
+}
+
+
+test "a compaction applied on the reply that ends the turn is reported before the answer" {
+    llm = MockLLM(
+        ctx_window=1000,
+        outputs=[
+            (MockToolCall(tool=step_a, args={}), {"prompt_tokens": 100}),
+            (
+                MockToolCall(tool=finish_tool, args={"final_output": "ok"}),
+                {"prompt_tokens": 950}
+            ),
+            "ok"
+        ]
+    );
+
+    def shrinking_hook(msgs: list[any], keep_recent: int) -> list[any] {
+        return msgs[:2];
+    }
+
+    def task(q: str) -> str by llm(
+        tools=[step_a],
+        stream=True,
+        logging=True,
+        threshold_ratio=0.80,
+        on_compaction=shrinking_hook
+    );
+
+    kinds = event_types(stream_events(task("go")));
+
+    assert kinds.count("compaction") == 1 , f"expected one compaction event: {kinds}";
+    assert kinds.index("compaction") < kinds.index("steps_done");
+}
+
+
+test "the built-in compactor is reported as builtin" {
+    llm = MockLLM(
+        model_name="test-model",
+        ctx_window=1000,
+        outputs=[
+            call("bulky_step", usage={"prompt_tokens": 100}),
+            call("bulky_step", usage={"prompt_tokens": 850}),
+            say("a summary"),
+            finish("done"),
+            say("done")
+        ]
+    );
+
+    def task(q: str) -> str by llm(
+        tools=[bulky_step],
+        stream=True,
+        logging=True,
+        threshold_ratio=0.80,
+        keep_recent_iterations=1
+    );
+
+    reported = events_of(stream_events(task("go")), "compaction");
+
+    assert llm.exhausted() , f"the summary was never requested: {llm.outputs}";
+    assert len(reported) == 1 , f"expected one compaction event, got {reported}";
+    assert reported[0].data["by"] == "builtin";
+    assert reported[0].data["reason"] == "threshold";
+    assert reported[0].data["tokens_after"] < reported[0].data["tokens_before"];
 }
 
 

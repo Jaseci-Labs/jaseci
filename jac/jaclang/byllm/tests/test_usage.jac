@@ -499,6 +499,45 @@ test "tokens telemetry is populated via register_agent_callback for every invoca
 }
 
 
+test "telemetry lists every applied compaction on a non-streaming call" {
+    llm = Model(
+        model_name="mockllm",
+        config={
+            "outputs": [
+                (MockToolCall(tool=step_a, args={}), {"prompt_tokens": 100}),
+                (MockToolCall(tool=step_a, args={}), {"prompt_tokens": 850}),
+                (MockToolCall(tool=finish_tool, args={"final_output": "ok"}), {})
+            ]
+        }
+    );
+
+    def shrinking_hook(msgs: list[any], keep_recent: int) -> list[any] {
+        return msgs[:2];
+    }
+
+    def task(q: str) -> str by llm(
+        tools=[step_a],
+        ctx_window=1000,
+        threshold_ratio=0.80,
+        on_compaction=shrinking_hook
+    );
+
+    captured: list[dict[str, any]] = [];
+    def cb(record: dict[str, any]) {
+        captured.append(record);
+    }
+    assert _with_callback(cb, lambda { return task("go"); }) == "ok";
+
+    assert len(captured) == 1;
+    compactions = captured[0]["compactions"];
+    assert len(compactions) == 1 , f"expected one applied compaction, got {compactions}";
+    assert compactions[0]["reason"] == "threshold";
+    assert compactions[0]["by"] == "hook";
+    assert compactions[0]["messages_after"] == 2;
+    assert compactions[0]["tokens_after"] < compactions[0]["tokens_before"];
+}
+
+
 def _restream_case -> MTRuntime {
     llm = MockLLM(
         model_name="test-model",

@@ -117,6 +117,7 @@ test "emit_agent_telemetry builds record with correct fields" {
         assert record["latency_ms"] == 150.0;
         assert record["status"] == "success";
         assert record["error"] is None;
+        assert record["compactions"] == [];
 
         # user_prompt extracted from mt_run.messages[1].content[0].text
         assert record["user_prompt"] == "What is the capital of France?";
