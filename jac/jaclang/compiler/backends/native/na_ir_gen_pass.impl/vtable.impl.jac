@@ -1365,7 +1365,7 @@ impl NaIRGenPass._emit_isa_vtable_fn -> ir.Function {
     i32 = ir.IntType(32);
     i64 = ir.IntType(64);
     i8p = ir.IntType(8).as_pointer();
-    fn: any = self._define_function(
+    fn = self._define_function(
         "__jac_isa_vt", ir.FunctionType(i1, [i8p.as_pointer(), i8p, i64])
     );
     fn.linkage = "private";
@@ -1635,7 +1635,7 @@ impl NaIRGenPass._emit_isa_vtobj_fn -> ir.Function {
     node_ty = ir.LiteralStructType([i8p, i8p]);
     zero = ir.Constant(i32, 0);
     registry = self._vtable_set();
-    fn: any = self._define_function(
+    fn = self._define_function(
         "__jac_isa_vtobj", ir.FunctionType(i1, [i8p, i8p, i64])
     );
     fn.linkage = "private";

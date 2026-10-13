@@ -703,10 +703,13 @@ impl NaIRGenPass._tail_call_mismatch(
     """;
     callee = call.callee;
     fnty = func.function_type;
-    callee_ty: any = None;
+    callee_ty: (ir.FunctionType | None) = None;
     try {
         callee_ty = callee.function_type;
     } except TypeError {
+        return "the callee's signature is unknown";
+    }
+    if callee_ty is None {
         return "the callee's signature is unknown";
     }
     if callee_ty.var_arg {
@@ -3194,9 +3197,15 @@ impl NaIRGenPass._codegen_assignment(nd: uni.Assignment) -> None {
                     _raw_str_hint = None;
                 }
             }
-            if _raw_str_hint is not None and _raw_str_hint == self._str_desc_ty {
-                value = self._coerce_type(value, _raw_str_hint);
-                var_type = _raw_str_hint;
+            _desc_hint: (ir.Type | None) = None;
+            if _raw_str_hint is not None and self._str_desc_ty is not None {
+                if _raw_str_hint == self._str_desc_ty {
+                    _desc_hint = _raw_str_hint;
+                }
+            }
+            if _desc_hint is not None {
+                value = self._coerce_type(value, _desc_hint);
+                var_type = _desc_hint;
                 _pre_box_val = value;
             }
             if nd.type_tag and nd.type_tag.tag {
