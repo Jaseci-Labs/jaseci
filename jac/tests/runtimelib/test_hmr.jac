@@ -17,8 +17,7 @@ import from jaclang.server.watcher {
     ChangeType,
     FileChangeEvent,
     JacFileWatcher,
-    watch_roots,
-    application_watch_roots
+    watch_roots
 }
 
 def _as_any(v: any) -> any {
@@ -179,34 +178,6 @@ test "nothing under site-packages or a hidden directory becomes a watch root" {
             os.path.join(top, "core", "__pycache__", "m.jac")
         ];
         assert watch_roots(base, top, sources) == [base];
-    }
-}
-
-# The dev server hands the watcher the prepared application's root and the
-# modules the program loaded. On a workspace-shaped project that has to reach
-# the sibling directory the entry imports from.
-test "the watch roots of a prepared workspace app include its shared directory" {
-    import os;
-    import from jaclang.runtime.runtime { JacRuntime as Jac }
-    import from jaclang.compiler.driver.application { prepare_application }
-    import from jaclang.runtime.prepared { forget }
-    with tempfile.TemporaryDirectory() as tmp {
-        top = os.path.realpath(tmp);
-        web = os.path.join(top, "web");
-        os.makedirs(web);
-        os.makedirs(os.path.join(top, "core"));
-        Path(top, "core", "shared.jac").write_text('def value -> int { return 1; }\n');
-        source_path = Path(web, "main.jac");
-        source_path.write_text(
-            'import from core.shared { value }\n\ndef doubled -> int { return value() * 2; }\n'
-        );
-        application = prepare_application(str(source_path), Jac.get_program(), top);
-        try {
-            roots = application_watch_roots(web, application, Jac.get_program());
-            assert roots == [web, os.path.join(top, "core")] , str(roots);
-        } finally {
-            forget(str(source_path));
-        }
     }
 }
 

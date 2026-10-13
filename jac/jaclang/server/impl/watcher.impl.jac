@@ -54,12 +54,6 @@ impl watch_roots(base: str, app_root: str, sources: list[str]) -> list[str] {
     return ([] if covered else [base]) + sorted(roots);
 }
 
-impl application_watch_roots(base: str, application: any, program: any) -> list[str] {
-    return watch_roots(
-        base, application.`root, [str(key) for key in program.mod.hub.keys()]
-    );
-}
-
 impl JacFileWatcher.start -> None {
     if self._running {
         return;
