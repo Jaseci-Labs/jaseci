@@ -845,6 +845,22 @@ test "an ELF link still names libc.so.6 and binds two-level" {
 }
 
 
+test "only a link for this host's architecture and C runtime consults its libraries" {
+    if not sys.platform.startswith("linux") {
+        return;
+    }
+    import jaclang.compiler.backends.native.link_plan as link_plan;
+    host = str(llvm.get_default_triple());
+    parts = host.split("-");
+    other_libc = "musl" if "musl" not in parts[-1] else "gnu";
+    other_arch = "aarch64" if parts[0] != "aarch64" else "x86_64";
+    assert link_plan._links_for_host(host) , host;
+    assert not link_plan._links_for_host("-".join(parts[:-1] + [other_libc])) , host;
+    assert not link_plan._links_for_host("-".join([other_arch] + parts[1:])) , host;
+    assert not link_plan._links_for_host("riscv64-unknown-linux-gnu");
+    assert not link_plan._links_for_host("x86_64-apple-darwin");
+}
+
 test "a host ELF link names a system C library by the SONAME the loader finds" {
     import ctypes.util;
     import from unittest.mock { patch }
@@ -900,13 +916,21 @@ test "a shared library linked on this host loads its system C library" {
     if ctypes.util.find_library("crypto") is None {
         return;
     }
+    import from unittest.mock { patch }
+    import jaclang.compiler.backends.native.link_plan as link_plan;
+    soname = ctypes.util.find_library("crypto");
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d {
         out = os.path.join(d, "libshared_system_clib.so");
-        link_shared("shared_system_clib.jac", "x86_64-unknown-linux-gnu", out);
+        with patch.object(
+            link_plan, "collect_floor_archives", return_value=([], set())
+        ) {
+            link_shared("shared_system_clib.jac", llvm.get_default_triple(), out);
+        }
         needed = _elf_needed(Path(out).read_bytes());
         assert "libcrypto.so" not in needed , (
             f"names the development link libcrypto.so, which the loader need not have: {needed}"
         );
+        assert soname in needed , f"expected {soname} among {needed}";
         lib = ctypes.CDLL(out);
         lib.openssl_version.restype = ctypes.c_int64;
         assert lib.openssl_version() > 0;

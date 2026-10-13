@@ -1091,8 +1091,14 @@ def _reuse_artifact(
 }
 
 def _links_for_host(triple: str) -> bool {
-    import from jaclang.artifacts.kit { osarch }
-    return sys.platform.startswith("linux") and osarch(triple) == osarch();
+    if not sys.platform.startswith("linux") {
+        return False;
+    }
+    target = triple.lower().split("-");
+    host = str(llvm.get_default_triple()).lower().split("-");
+    return target[0] == host[0]
+        and "linux" in target
+        and ("musl" in target[-1]) == ("musl" in host[-1]);
 }
 
 def link_artifact(
