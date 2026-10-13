@@ -3483,6 +3483,7 @@ impl TypeEvaluator.get_type_of_magic_method_call(
                 }
 
                 _fallback_result: TypeBase | None = None;
+                _fallback_notes: list[tuple[UniNode, str, str, bool]] = [];
                 for fn in overloaded_fns {
                     if not self._overload_accepts_receiver(fn, obj_type) {
                         continue;
@@ -3502,15 +3503,18 @@ impl TypeEvaluator.get_type_of_magic_method_call(
                                 ret_ty = apply_solved_type_vars(ret_ty, solved);
                             }
                             if not isinstance(ret_ty, UnknownType) {
+                                self.commit_trial_notes(self._last_trial_notes);
                                 return ret_ty or UnknownType();
                             }
                             if _fallback_result is None {
                                 _fallback_result = ret_ty;
+                                _fallback_notes = self._last_trial_notes;
                             }
                         }
                     }
                 }
                 if _fallback_result is not None {
+                    self.commit_trial_notes(_fallback_notes);
                     return _fallback_result;
                 }
 
@@ -3650,8 +3654,20 @@ impl TypeEvaluator.note_native(
     if self._diagnostic_suppression_depth > 0 {
         return;
     }
+    if self._trial_notes is not None {
+        self._trial_notes.append((nd, code, text, requires));
+        return;
+    }
     import from jaclang.compiler.capability_notes { TARGET_NATIVE, note_capability }
     note_capability(self.program, nd, TARGET_NATIVE, code, text, requires);
+}
+
+impl TypeEvaluator.commit_trial_notes(
+    notes: list[tuple[UniNode, str, str, bool]]
+) -> None {
+    for (nd, code, text, requires) in notes {
+        self.note_native(nd, code, text, requires);
+    }
 }
 
 impl TypeEvaluator._in_native_context -> bool {
