@@ -41,6 +41,10 @@ def _toolchain(ok: bool = True) -> any {
     );
 }
 
+def _catalog -> any {
+    return patch.object(resolver, "stub_catalog_blocker", return_value="");
+}
+
 """Resolve the kernel afresh with the sealed image out of the way and return
 what resolved and what the router printed."""
 def _resolve_fresh(sealed: bool = False) -> tuple[(ResolvedKernel | None), str] {
@@ -163,7 +167,7 @@ def _resolve_omitted(sealed: bool) -> tuple[any, str] {
             KernelArtifact, "probe_checkout", return_value=Probe.missing()
         ), patch.object(KernelArtifact, "probe_kit", side_effect=_never), patch.object(
             sys, "stderr", err
-        ), _toolchain() {
+        ), _toolchain(), _catalog() {
             resolution = router.resolve("kernel");
         }
     } finally {
@@ -197,7 +201,7 @@ test "a stale checkout runs from bytecode, says so once, and never builds" {
             "jaclang/compiler/driver/jir.jac changed"
         ]
     );
-    with _toolchain() {
+    with _toolchain(), _catalog() {
         with patch.object(KernelArtifact, "probe_checkout", return_value=drift) {
             with patch.object(
                 KernelArtifact, "probe_kit", return_value=Probe.missing()
@@ -224,11 +228,36 @@ test "a checkout without a native toolchain says why it runs from bytecode" {
     assert "no LLVM shim here" in said , said;
 }
 
+test "a kernel without a stub catalog runs from bytecode and says why" {
+    import from jaclang.compiler.types.stubcat.locate { StubcatArtifact }
+    with _toolchain() {
+        with patch.object(StubcatArtifact, "probe_sealed", return_value=None) {
+            with patch.object(
+                StubcatArtifact, "probe_checkout", return_value=Probe.missing()
+            ) {
+                with patch.object(
+                    StubcatArtifact, "probe_kit", return_value=Probe.missing()
+                ) {
+                    with patch.object(
+                        KernelArtifact, "probe_checkout", side_effect=_never
+                    ) {
+                        (found, said) = _resolve_fresh();
+                    }
+                }
+            }
+        }
+    }
+    assert found is None;
+    assert said.count("kernel runs on its floor") == 1 , said;
+    assert "stub catalog, which is unavailable (not built)" in said , said;
+    assert "stubcat" in KernelArtifact().requires , "building the kernel builds its catalog";
+}
+
 test "a current checkout kernel loads silently and reports where it came from" {
     mine = Probe.hit(
         Source.CHECKOUT, "/tree/libjac_compiler.so", {"classes": {}, "plan_digest": "p"}
     );
-    with _toolchain() {
+    with _toolchain(), _catalog() {
         with patch.object(KernelArtifact, "probe_checkout", return_value=mine) {
             with patch.object(KernelArtifact, "probe_kit", side_effect=_never) {
                 (found, said) = _resolve_fresh();

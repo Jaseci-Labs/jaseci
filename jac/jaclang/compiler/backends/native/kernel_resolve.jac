@@ -289,7 +289,7 @@ obj KernelArtifact(Artifact) {
         release: ReleasePolicy = ReleasePolicy.REQUIRED,
         summary: str = "the native compiler kernel",
         floor: str = "the bytecode compiler",
-        requires: list[str] = ["llvm-shim"],
+        requires: list[str] = ["llvm-shim", "stubcat"],
         consumes: list[str] = ["stubcat"];
 
     override def unavailable_reason -> str {
@@ -299,7 +299,10 @@ obj KernelArtifact(Artifact) {
         } except Exception as e {
             return f"the native toolchain is unavailable ({e})";
         }
-        return "" if ok else (why or "the native toolchain is unavailable");
+        if not ok {
+            return why or "the native toolchain is unavailable";
+        }
+        return stub_catalog_blocker();
     }
 
     override def probe_sealed -> (Probe | None) {
@@ -336,6 +339,17 @@ obj KernelArtifact(Artifact) {
         }
         build_kernel(source_tree_kernel_path(), log=log);
     }
+}
+
+def stub_catalog_blocker -> str {
+    import from jaclang.artifacts.router { resolve }
+    stubcat = resolve("stubcat");
+    if stubcat.found is not None {
+        return "";
+    }
+    return "it reads typeshed only through the stub catalog, which is unavailable ("
+        + (stubcat.reason or "not built")
+        + ")";
 }
 
 def resolve_kernel -> (ResolvedKernel | None) {
