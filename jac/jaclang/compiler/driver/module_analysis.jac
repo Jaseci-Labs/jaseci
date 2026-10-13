@@ -106,7 +106,7 @@ obj ModuleAnalysis {
             );
 
         if candidate {
-            self.options.need_full_ast = True;
+            self.options.native_tree_demand = True;
         }
 
         _is_decl_stub = str(self.path).endswith('.pyi')
