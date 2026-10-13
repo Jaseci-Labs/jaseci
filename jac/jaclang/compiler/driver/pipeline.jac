@@ -457,9 +457,7 @@ glob PRODUCTS: dict[CompilationProduct, ProductSpec] = {
      },
      _LOADING: ContextVar[list[CompilationProduct]] = ContextVar(
          'jac_schedule_loading', `default=[]
-     ),
-     _PRODUCT_FACTS: dict[CompilationProduct, set[AnalysisFact]] = {},
-     _EARLY_PASSES: list[PassSchedule] = [];
+     );
 
 def contract_of(p: type[CompilerPass]) -> PassContract {
     contract = p.contract;
@@ -538,11 +536,11 @@ def resolve(
     request: (ProductRequest | None) = None,
     internal: bool = False,
     peer_fell_back: bool = False
-) -> tuple[(PassSchedule | None), bool] {
+) -> tuple[(PassSchedule | None), bool, bool] {
     spec = PRODUCTS[product];
     req = request if request is not None else ProductRequest();
     if spec.tiered and (peer_fell_back or tier_reason(product)) {
-        return (spec.bootstrap(req), False);
+        return (spec.bootstrap(req), False, False);
     }
     spec.precheck();
     token = _LOADING.set(_LOADING.get() + [product]);
@@ -561,13 +559,11 @@ def resolve(
         if fallback == ImportFallback.REPORT {
             active_host().schedule_import_failed(e);
         }
-        return (spec.bootstrap(req), True);
+        return (spec.bootstrap(req), True, False);
     } finally {
         _LOADING.reset(token);
     }
-    _PRODUCT_FACTS[product] = _PRODUCT_FACTS.get(product, set())
-        | providers_of(schedule);
-    return (schedule, False);
+    return (schedule, False, True);
 }
 
 def schedule_for(
@@ -601,25 +597,15 @@ def product_passes(
 }
 
 def product_facts(product: CompilationProduct) -> set[AnalysisFact] {
-    known = _PRODUCT_FACTS.get(product);
-    if known is None {
-        known = providers_of(product_passes(product));
-        _PRODUCT_FACTS[product] = known;
-    }
-    return set(known);
+    return providers_of(product_passes(product));
 }
 
 def early_passes -> PassSchedule {
-    if not _EARLY_PASSES {
-        _EARLY_PASSES.append(
-            [
-                p
-                for p in product_passes(CompilationProduct.IR)
-                if contract_of(p).kernel_safe
-            ]
-        );
-    }
-    return _EARLY_PASSES[0];
+    return [
+        p
+        for p in product_passes(CompilationProduct.IR)
+        if contract_of(p).kernel_safe
+    ];
 }
 
 def dependents(product: CompilationProduct) -> list[CompilationProduct] {
@@ -643,7 +629,7 @@ def product_ready(
     spec = PRODUCTS[product];
     build = program.analysis.peek(module);
     if not spec.acts {
-        facts = _PRODUCT_FACTS.get(product);
+        facts = program.analysis.product_facts.get(product);
         if facts is None {
             return False;
         }
@@ -684,12 +670,22 @@ def produce(
             peer_fell_back = True;
         }
     }
-    (schedule, fell_back) = resolve(product, request, program.internal, peer_fell_back);
+    (schedule, fell_back, full) = resolve(
+        product, request, program.internal, peer_fell_back
+    );
     if task is not None {
         task.import_fallback = fell_back;
     }
     if schedule is None {
         return None;
+    }
+    if full {
+        known = program.analysis.product_facts.get(product);
+        facts = providers_of(schedule);
+        if known is not None {
+            facts.update(known);
+        }
+        program.analysis.product_facts[product] = facts;
     }
     execute_passes(program, module, schedule, cancel_token=cancel_token);
     return True;

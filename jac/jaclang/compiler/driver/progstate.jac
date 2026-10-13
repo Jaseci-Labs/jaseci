@@ -284,6 +284,7 @@ class AnalysisCaches {
         pass_time: dict[str, float],
         phase_time: dict[str, float],
         builds: dict[int, ModuleBuild],
+        product_facts: dict[CompilationProduct, set[AnalysisFact]],
         cache_events: dict[str, int],
         running: (CompileContext | None);
 
@@ -300,6 +301,7 @@ class AnalysisCaches {
         self.pass_time: dict[str, float] = {};
         self.phase_time: dict[str, float] = {};
         self.builds: dict[int, ModuleBuild] = {};
+        self.product_facts: dict[CompilationProduct, set[AnalysisFact]] = {};
         self.cache_events: dict[str, int] = {};
         self.running: (CompileContext | None) = None;
     }
