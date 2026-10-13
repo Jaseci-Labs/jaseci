@@ -24,6 +24,7 @@ import from jaclang.compiler.frontend.unitree {
     Float,
     ForeverStmt,
     FormattedValue,
+    HasVar,
     IfStmt,
     ImplDef,
     ImplImport,
@@ -52,7 +53,11 @@ import from jaclang.compiler.frontend.unitree {
     in_type_position
 }
 
-import from jaclang.compiler.frontend.constant { ExprCtx, SymbolType }
+import from jaclang.compiler.frontend.constant {
+    ExprCtx,
+    SymbolType,
+    client_state_setter_name
+}
 import from jaclang.compiler.frontend.diagnostics {
     W1103,
     W2001,

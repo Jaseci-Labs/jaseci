@@ -303,10 +303,10 @@ tree every backend reads.
    the boundary rule: a call stays native when the callee's signature
    crosses, a type binds as a data shape, anything else refuses the code
    that uses it. Any other closure that cannot be native (a dependency
-   whose summary records a blocker, past `native_closure_cap`, or into the
-   compiler's own frontend) closes the preference. A native pin on a module
-   is a preference like the project default: only a pin on an element
-   holds that element native. The pass places each top-level element
+   whose summary records a blocker, or into the compiler's own frontend)
+   closes the preference, however many modules the closure holds. A native
+   pin on a module is a preference like the project default: only a pin on
+   an element holds that element native. The pass places each top-level element
    native unless a capability rule or a refusal rules it out, and a
    reference between two elements placed apart is allowed when the
    callee's signature can cross (`compiler/boundary_rules.jac`): between

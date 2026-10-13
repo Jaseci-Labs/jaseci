@@ -474,3 +474,16 @@ test "jsx closing tags are not undefined-name reads" {
         str(w) for w in w2001
     ]}";
 }
+
+test "client state setters are not reported as unused" {
+    file_path = os.path.join(FIXTURES, "client_state_setters.jac");
+    prog = JacProgram();
+    prog.compile(file_path);
+    unused = [
+        str(w)
+        for w in prog.warnings_had
+        if w.code is not None and w.code.code == "W2003"
+    ];
+    assert not any("'setCount'" in w or "'setTitle'" in w for w in unused) , f"State setters are generated, not written; got {unused}";
+    assert len(unused) == 1 and "'stale' is defined but never used" in unused[0] , f"Expected exactly one W2003, for 'stale', got {unused}";
+}
