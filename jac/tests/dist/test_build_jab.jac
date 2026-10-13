@@ -140,12 +140,16 @@ test "a sealed boot reads each module's imports from the seal instead of disasse
         return real_sources(code, source, `root);
     }
     entry_file = "";
+    manifest_path: (Path | None) = None;
+    original_manifest = "";
     try {
         config = JacConfig.load(Path(ws) / "jac.toml");
         out = Path(ws) / "out" / "web.jab";
         build_jab(config, out, bake_client=False);
         img = materialize_jab(str(out));
-        serving = json.loads((img / ".jac" / "serve_manifest.json").read_text());
+        manifest_path = img / ".jac" / "serve_manifest.json";
+        original_manifest = manifest_path.read_text();
+        serving = json.loads(original_manifest);
         recorded: dict[str, list[str]] = serving.get("runtime_imports") or {};
         main_imports: list[str] = recorded.get("web/main.jac", []);
         assert "core/helper.jac" in main_imports , (
@@ -161,7 +165,6 @@ test "a sealed boot reads each module's imports from the seal instead of disasse
             f"the sealed boot disassembled {len(scanned)} modules whose imports the "
             f"seal had recorded: {scanned}"
         );
-        manifest_path = img / ".jac" / "serve_manifest.json";
         partial = dict(serving);
         partial["runtime_imports"] = {
             source: imports
@@ -187,6 +190,9 @@ test "a sealed boot reads each module's imports from the seal instead of disasse
             );
         }
     } finally {
+        if manifest_path is not None and original_manifest {
+            manifest_path.write_text(original_manifest);
+        }
         artifact_imports.runtime_sources = real_sources;
         if entry_file {
             forget(entry_file);
