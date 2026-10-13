@@ -1107,3 +1107,40 @@ test "equivalent external class references have one interface identity" {
     );
     assert build_module_iface(mod, evaluator, pkg) == before;
 }
+
+test "an empty dependency persists an interface its importer can replay against" {
+    import from jaclang.compiler.driver.jir { read_dep_rows }
+    tmp = tempfile.mkdtemp();
+    dep = os.path.realpath(os.path.join(tmp, "emptydep.jac"));
+    with open(dep, "w") as fh {
+        fh.write("");
+    }
+    main = os.path.realpath(os.path.join(tmp, "usesempty.jac"));
+    with open(main, "w") as fh {
+        fh.write("import emptydep;\n\nwith entry { print(emptydep); }\n");
+    }
+    (cold_prog, cold_diags) = _check(main);
+    dep_jir = _cache_path(dep, main);
+    assert dep_jir.exists() , "the empty dependency wrote no cache JIR";
+    assert read_section_bytes(dep_jir.read_bytes(), SEC_IFACE) is not None , (
+        "the empty dependency persisted no interface"
+    );
+    rows = {
+        row.path: row.digest
+        for row in read_dep_rows(_cache_path(main).read_bytes(), tmp)
+    };
+    assert rows.get(dep) , f"the importer recorded no digest for the empty module: {rows}";
+    (warm_prog, warm_diags) = _check(main);
+    events = warm_prog.analysis.cache_events;
+    assert events.get("analysis_replay", 0) == 1 , (
+        f"the importer of an empty module was not replayed (events: {events})"
+    );
+    assert warm_diags == cold_diags , "warm diagnostics diverge from cold";
+}
+
+test "priming the interface codec makes it ready without a compile" {
+    import from jaclang.compiler.driver.ifacecache { iface_codec, prime_iface_codec }
+    codec = prime_iface_codec();
+    assert codec is not None , "priming did not produce an interface codec";
+    assert iface_codec() is codec , "the primed codec is not the one the cache serves";
+}
