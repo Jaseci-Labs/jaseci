@@ -408,7 +408,7 @@ impl JacCompiler.native_entry_engine(
     if self.get_bytecode(full_target=path, target_program=target_program) is None {
         return None;
     }
-    actual = self.selfhost.resolve(path, target_program, execution=True);
+    actual = self.product_program(path, target_program, execution=True);
     placed = summary_store(actual).get(os.path.abspath(path));
     if placed is None or placed.decided != 'native' {
         return None;
@@ -426,17 +426,19 @@ impl JacCompiler.kernel_native_entry(
     if actual.internal or not kernel_generates_native(actual, path) {
         return (False, None);
     }
+    compiled = actual;
     if options is None {
         self.get_bytecode(full_target=path, target_program=target_program);
+        compiled = self.product_program(path, target_program, execution=True);
     } else {
         self._adopt_kernel_compile(path, actual, options);
     }
     import from jaclang.compiler.placement.placement { summary_store }
-    placed = summary_store(actual).get(os.path.abspath(path));
+    placed = summary_store(compiled).get(os.path.abspath(path));
     if placed is None or placed.decided != 'native' {
         return (True, None);
     }
-    carrier = actual.hub.artifacts.get(path);
+    carrier = compiled.hub.artifacts.get(path);
     return (True, carrier.native_engine if carrier is not None else None);
 }
 

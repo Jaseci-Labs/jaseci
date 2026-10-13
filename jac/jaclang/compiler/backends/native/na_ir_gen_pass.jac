@@ -2245,6 +2245,9 @@ walker NaIRGenPass(CompilerPass) {
         stub_body: bool = True
     ) -> bool;
 
+    def _owner_element(full_name: str) -> (uni.UniNode | None);
+    def _owner_required(full_name: str) -> bool;
+    def _lacks_python_body(full_name: str) -> bool;
     def _seam_warnings_on -> bool;
     def _opaque_field_if_unlowerable(
         arch_name: str, fname: str, local_mark: int

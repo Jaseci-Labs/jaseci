@@ -271,7 +271,9 @@ def place_module(program: JacProgram, module: Module) -> bool {
 
 def prepare_interface(program: JacProgram, module: Module) -> bool {
     return active_host().prepare_interface(
-        program, os.path.realpath(module.loc.mod_path), module
+        program,
+        os.path.realpath(module.loc.mod_path or module.source.file_path),
+        module
     );
 }
 

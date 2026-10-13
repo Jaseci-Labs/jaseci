@@ -683,11 +683,18 @@ impl NaIRGenPass._stub_refused_unit(
 ) -> bool {
     """Place a unit the legality analysis already refused on its Python-only
     implementation without lowering its body. Where the module requires native,
-    the refusals are reported as the errors they are.""";
+    the refusals are reported as the errors they are. A unit of a native
+    element in a mixed module has no Python implementation to be placed on,
+    so its refusals are reported too and the module settles on the server as
+    a whole; an element that must be native had its refusals reported by
+    placement.""";
     if not refusals {
         return False;
     }
-    if self.prog.options.native_required_for(self.module.loc.mod_path) {
+    if self.prog.options.native_required_for(self.module.loc.mod_path)
+        or (
+            self._lacks_python_body(full_name) and not self._owner_required(full_name)
+        ) {
         for _refusal in refusals {
             if _refusal.site is None {
                 continue;

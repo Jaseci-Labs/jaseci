@@ -128,6 +128,7 @@ def run_analysis(task: ModuleAnalysis) {
             module is not None
             and not task.parse_failed
             and not module.gen.placement_mode
+            and module.gen.native_undecided
             and program.infers_native_codespace(task.path)
         );
     if candidate {

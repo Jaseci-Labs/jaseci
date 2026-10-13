@@ -80,6 +80,14 @@ def iface_codec -> (IfaceCodec | None) {
     return codec;
 }
 
+def prime_iface_codec -> (IfaceCodec | None) {
+    import importlib;
+    for name in _CODEC_MODULES {
+        importlib.import_module(name);
+    }
+    return iface_codec();
+}
+
 def iface_verify_enabled -> bool {
     truthy: set = {'1', 'true', 'True', 'TRUE', 'yes', 'YES', 'on', 'ON'};
     return os.environ.get('JAC_IFACE_VERIFY', '') in truthy;

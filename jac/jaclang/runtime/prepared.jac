@@ -31,7 +31,8 @@ obj PreparedApplication {
         dev: bool = True,
         client_dist: str = "",
         applications: list[PreparedApplication] = [],
-        index: ModuleIndex | None = None;
+        index: ModuleIndex | None = None,
+        sources: list[str] = [];
 }
 
 glob _applications: dict[str, PreparedApplication] = {},
