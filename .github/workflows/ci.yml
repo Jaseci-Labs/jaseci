@@ -52,7 +52,6 @@ jobs:
       native: ${{ steps.filter.outputs.native }}
       pack_smoke: ${{ steps.filter.outputs.pack_smoke }}
       site_journey: ${{ steps.filter.outputs.site_journey }}
-      jacpython: ${{ steps.filter.outputs.jacpython }}
     steps:
       - uses: actions/checkout@v5
       - uses: dorny/paths-filter@v3
@@ -73,12 +72,6 @@ jobs:
               - 'jac/jaclang/byllm/**'
             site_journey:
               - 'scripts/site-browse-journey.sh'
-            # jac.toml excludes these trees from `jac check`, so a change to
-            # them runs the JacPython lane instead.
-            jacpython:
-              - 'jac/jaclang/runtime/python/**'
-              - 'jac/jaclang/compiler/backends/py/jacpython/**'
-              - 'scripts/jacpython/**'
             pack_smoke:
               - 'scripts/ci_perf.jac'
               - 'scripts/ci_perf.test.jac'
@@ -1704,8 +1697,7 @@ jobs:
   # gates. On request only -- the `native:jacpython` label or a manual run;
   # nightly.yml runs it on every platform.
   jacpython:
-    needs: [changes]
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && (contains(github.event.pull_request.labels.*.name, 'native:jacpython') || needs.changes.outputs.jacpython == 'true')) }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'native:jacpython')) }}
     uses: ./.github/workflows/_jacpython.yml
 
   test-managed-android:
