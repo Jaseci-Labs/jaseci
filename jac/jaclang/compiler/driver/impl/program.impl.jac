@@ -195,6 +195,7 @@ impl JacProgram.load_dependency_module(
             events["stub_ingest"] = events.get("stub_ingest", 0) + 1;
         } else {
             saved_options = self.options;
+            warn_start = len(self.warnings_had);
             try {
                 mod = self.compile(
                     source_path,
@@ -203,6 +204,9 @@ impl JacProgram.load_dependency_module(
                 );
             } finally {
                 self.options = saved_options;
+            }
+            if self.toolchain_dependency(resolved_path) {
+                del self.warnings_had[warn_start:];
             }
         }
         if not isinstance(mod, CatModule) {
@@ -221,6 +225,15 @@ impl JacProgram.load_dependency_module(
     }
     active_host().note_program_dependency(self, resolved_path);
     return mod;
+}
+
+impl JacProgram.toolchain_dependency(self: JacProgram, resolved_path: str) -> bool {
+    import from jaclang.compiler.frontend.codeinfo { is_compiler_source_path }
+    if self.internal or not is_compiler_source_path(resolved_path) {
+        return False;
+    }
+    entry_path = self.options.entry_point;
+    return not (entry_path and is_compiler_source_path(entry_path));
 }
 
 impl JacProgram.hub_key(path: str) -> str {

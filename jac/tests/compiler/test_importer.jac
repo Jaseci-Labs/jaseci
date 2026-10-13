@@ -254,6 +254,44 @@ test "compiler separates internal from user modules" {
     }
 }
 
+test "a program's view of the compiler's own modules carries none of their warnings" {
+    import from jaclang.compiler.driver.compile_options { CompileOptions }
+    project = tempfile.mkdtemp(dir=_test_tmp_dir);
+    Path(project, "helper.jac").write_text(
+        'def:pub helper_fn -> int {\n    "Docstring inside the body.";\n    return 1;\n}\n'
+    );
+    main_file = os.path.join(project, "main.jac");
+    Path(main_file).write_text(
+        "import from jaclang.runtime.runtime { JacRuntime }\n"
+            + "import from jaclang.project.config { find_project_root }\n"
+            + "import from helper { helper_fn }\n\n"
+            + "def:pub where -> str {\n"
+            + "    return str(find_project_root()) + str(JacRuntime) + str(helper_fn());\n"
+            + "}\n"
+    );
+    options = CompileOptions(no_cgen=True, iface_ok=True, strict_dependencies=True);
+    options.entry_point = main_file;
+    program = JacProgram();
+    program.compile(main_file, options=options);
+    jaclang_root = os.path.realpath(os.path.dirname(jaclang.__file__)) + os.sep;
+    leaked = [
+        str(w)
+        for w in program.warnings_had
+        if w.loc and os.path.realpath(w.loc.mod_path).startswith(jaclang_root)
+    ];
+    assert not leaked , f"the compiler's own modules leaked warnings: {leaked[:3]}";
+    helper_codes = [
+        w.code.code
+        for w in program.warnings_had
+        if w.code is not None and w.loc and w.loc.mod_path.endswith("helper.jac")
+    ];
+    assert "W0060" in helper_codes , f"an application dependency keeps its warnings, got {helper_codes}";
+    runtime_module = os.path.join(jaclang_root, "runtime", "object_model.jac");
+    assert program.toolchain_dependency(runtime_module);
+    program.options.entry_point = runtime_module;
+    assert not program.toolchain_dependency(runtime_module);
+}
+
 test "get bytecode uses JIR cache on second call" {
     with tempfile.NamedTemporaryFile(
         mode="w", suffix=".jac", delete=False, dir=_test_tmp_dir
