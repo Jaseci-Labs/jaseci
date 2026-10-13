@@ -6,6 +6,7 @@ import from jaclang.compiler.frontend.unitree {
     Name,
     Token
 }
+import from jaclang.compiler.driver.pipeline_types { PassContract }
 import from jaclang.compiler.passes.context { CompileContext, TreePass }
 import from jaclang.compiler.frontend.diagnostics { E1105 }
 
@@ -30,6 +31,7 @@ def _suggestion_for(tag: str) -> str {
 }
 
 walker JsxIntrinsicGuardPass(TreePass) {
+    static has contract: PassContract = PassContract(kernel_safe=True);
     has _enforced_root: (str | None) = None,
         _exempt_paths: dict[str, bool] = {};
 

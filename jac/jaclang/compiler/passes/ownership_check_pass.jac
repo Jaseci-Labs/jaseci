@@ -1,4 +1,5 @@
 import from jaclang.compiler.frontend.roles { BodyRole, Kid }
+import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
 import from jaclang.compiler.passes.context { CompileContext, CompilerPass }
 import type from jaclang.compiler.types.types { TypeBase }
 import from enum { Enum }
@@ -104,6 +105,7 @@ obj BorrowMeta {
 }
 
 walker OwnershipCheckPass(CompilerPass) {
+    static has contract: PassContract = PassContract(requires=(AnalysisFact.CFG_SUCC, AnalysisFact.TYPE_OF, ), provides=(AnalysisFact.OWNERSHIP, ));
     has owned_decl: dict[SymId, Name] = {},
         linear_decl: dict[SymId, Name] = {},
         consumed_syms: set[SymId] = set(),

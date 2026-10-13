@@ -1,4 +1,5 @@
 import from jaclang.compiler.passes.context { CompileContext, CompilerPass }
+import from jaclang.compiler.driver.pipeline_types { PassContract }
 import from jaclang.compiler.frontend.unitree {
     Ability,
     ArchHas,
@@ -942,6 +943,7 @@ obj LayoutRegistry {
 }
 
 walker LayoutPass(CompilerPass) {
+    static has contract: PassContract = PassContract();
     has registry: LayoutRegistry postinit,
         isinstance_targets: set[str] postinit;
 

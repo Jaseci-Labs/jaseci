@@ -1,4 +1,5 @@
 import from jaclang.compiler.passes.context { CompilerPass }
+import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
 import os;
 import jaclang.compiler.frontend.unitree as uni;
 import from jaclang.compiler.frontend.constant { CodeContext, Tokens as Tok }
@@ -1015,6 +1016,7 @@ def invalidate_importers_es(prog: JacProgram, mod_path: str) -> list[uni.Module]
 }
 
 walker PlacementApplyPass(CompilerPass) {
+    static has contract: PassContract = PassContract(requires=(AnalysisFact.SYM_OF, ), provides=(AnalysisFact.PLACED_IN, AnalysisFact.DECIDED_CODESPACE, AnalysisFact.CODESPACE_PULL, ));
     def _run_impl(ir_in: uni.Module) -> uni.Module;
     can run_walk with uni.Module entry;
 }

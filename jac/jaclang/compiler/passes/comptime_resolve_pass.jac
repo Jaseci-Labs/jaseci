@@ -1,4 +1,5 @@
 import from jaclang.compiler.frontend.roles { Kid }
+import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
 import from jaclang.runtime.osp_kernel { osp_skip_rest }
 import from jaclang.compiler.passes.type_checker_pass { TypeCheckPass }
 import from jaclang.compiler.frontend.unitree {
@@ -72,6 +73,7 @@ def comptime_reach(top: UniNode) -> set[int] {
 }
 
 walker ComptimeResolvePass(TypeCheckPass) {
+    static has contract: PassContract = PassContract(provides=(AnalysisFact.COMPTIME, ));
     has _armed: bool = False,
         _keep: set[int] = set();
 

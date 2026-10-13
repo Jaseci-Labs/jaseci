@@ -9,7 +9,7 @@ import from jaclang.compiler.driver.pipeline {
     register_codegen_backend,
     register_product_schedule
 }
-import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
+import from jaclang.compiler.driver.pipeline_types { AnalysisFact, CompilationProduct, PassContract }
 import from jaclang.compiler.driver.native_iface { NativeIface, NativeExport }
 import from jaclang.compiler.frontend.host { active_host }
 import from jaclang.compiler.backends.native.na_constants {
@@ -277,6 +277,7 @@ obj NativeFunctionState {
 }
 
 walker NaIRGenPass(CompilerPass) {
+    static has contract: PassContract = PassContract(requires=(AnalysisFact.TYPE_OF, AnalysisFact.CFG_SUCC, AnalysisFact.OWNERSHIP, AnalysisFact.CAPABILITY, AnalysisFact.RC_FACTS, ));
     has module: uni.Module,
         _llvm_module: (ir.Module | None) = None,
         _type_map: (dict[str, ir.Type] | None) = None,

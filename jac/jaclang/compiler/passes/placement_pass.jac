@@ -1,4 +1,5 @@
 import from jaclang.compiler.passes.context { Alert, CompilerPass }
+import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
 import os;
 import from jaclang.compiler.frontend.unitree {
     Ability,
@@ -91,6 +92,7 @@ def settle_native_module(
 ) -> (NativeRefusal | None);
 
 walker PlacementPass(CompilerPass) {
+    static has contract: PassContract = PassContract(requires=(AnalysisFact.TYPE_OF, ), provides=(AnalysisFact.CAPABILITY, AnalysisFact.CLIENT_CAPABILITY, ));
     def _emit_refusal(refusal: NativeRefusal, required_by: str) -> None;
     def _report_unmet(legality: NativeLegality, why: str) -> None;
     def _check_conformance(ir_in: Module) -> None;

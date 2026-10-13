@@ -1,4 +1,5 @@
 import from jaclang.compiler.frontend.roles { Kid }
+import from jaclang.compiler.driver.pipeline_types { PassContract }
 import from jaclang.compiler.frontend.unitree { TreeWalker, Tok, EmptyToken, Token }
 import from jaclang.compiler.passes.context { CompileContext, TreePass }
 import jaclang.compiler.frontend.unitree as uni;
@@ -8,6 +9,7 @@ import from jaclang.compiler.frontend.constant { CodeContext }
 import from jaclang.compiler.frontend.roles { BodyRole, ItemsRole }
 
 walker NormalizePass(TreePass) {
+    static has contract: PassContract = PassContract();
     can enter_sub_tag with uni.SubTag entry;
     can enter_module with uni.Module entry;
     can enter_type_param with uni.TypeParam entry;
