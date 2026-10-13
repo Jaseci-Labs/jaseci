@@ -136,12 +136,22 @@ test "definition positions from an analysed tree give the parsed digests" {
         rows = definition_span_rows(analysed);
         assert any(str(annex) in row for row in rows) , rows;
         jir_mod._DEFINITION_TEXTS.clear();
+        jir_mod._DEFINITION_DIGESTS.clear();
         jir_mod.seed_definition_texts(rows);
         def refuse(*args: any, **kwargs: any) -> any {
             raise AssertionError("the files were parsed again");
         }
-        with patch.object(JacProgram, "parse_source", refuse) {
-            seeded = {name: definition_digest(str(decl), name) for name in names};
+        with TemporaryDirectory() as fresh_store {
+            def empty_store(key: str) -> Path {
+                return Path(fresh_store) / key;
+            }
+            with patch.object(jir_mod, "_definition_digest_file", empty_store) {
+                with patch.object(JacProgram, "parse_source", refuse) {
+                    seeded = {
+                        name: definition_digest(str(decl), name) for name in names
+                    };
+                }
+            }
         }
         assert seeded == parsed;
     }

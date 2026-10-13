@@ -317,8 +317,21 @@ def _check_file_job(request: dict[(str, any)]) -> dict[(str, any)] {
         } else {
             prog.release_compile_closure(collect=bool(request.get("collect")));
         }
-        _settle_check_heap();
         _maybe_malloc_trim();
+    }
+}
+
+def _check_file_job_settled(request: dict[(str, any)]) -> dict[(str, any)] {
+    result = _check_file_job(request);
+    _settle_check_heap();
+    return result;
+}
+
+def _release_check_heap {
+    import gc;
+    if _CHECK_HEAP["base_rss"] >= 0 {
+        gc.unfreeze();
+        _CHECK_HEAP["base_rss"] = -1;
     }
 }
 
@@ -552,7 +565,7 @@ impl check(
 
         pool = WorkPool(
             items=[u['path'] for u in batch],
-            job=_check_file_job,
+            job=_check_file_job_settled,
             on_record=on_record,
             jobs=min(workers, max(1, total)),
             request_extra=request_extra,
@@ -569,9 +582,17 @@ impl check(
             if not os.environ.get('JAC_GC_NO_COMPILE_BOOST') {
                 gc.freeze();
             }
-            pool.run();
+            try {
+                pool.run();
+            } finally {
+                gc.unfreeze();
+            }
         } else {
-            pool.run_inline();
+            try {
+                pool.run_inline();
+            } finally {
+                _release_check_heap();
+            }
         }
     }
 
