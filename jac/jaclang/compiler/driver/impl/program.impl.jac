@@ -229,7 +229,9 @@ impl JacProgram.load_dependency_module(
 
 impl JacProgram.toolchain_dependency(self: JacProgram, resolved_path: str) -> bool {
     import from jaclang.compiler.frontend.codeinfo { is_compiler_source_path }
-    if self.internal or not is_compiler_source_path(resolved_path) {
+    if self.internal
+        or not resolved_path
+        or not is_compiler_source_path(resolved_path) {
         return False;
     }
     entry_path = self.options.entry_point;
