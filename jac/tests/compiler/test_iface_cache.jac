@@ -1138,9 +1138,30 @@ test "an empty dependency persists an interface its importer can replay against"
     assert warm_diags == cold_diags , "warm diagnostics diverge from cold";
 }
 
-test "priming the interface codec makes it ready without a compile" {
-    import from jaclang.compiler.driver.ifacecache { iface_codec, prime_iface_codec }
-    codec = prime_iface_codec();
-    assert codec is not None , "priming did not produce an interface codec";
-    assert iface_codec() is codec , "the primed codec is not the one the cache serves";
+test "a fresh check process can serve its first unit from the cache" {
+    import subprocess;
+    import from tests.support { compiler_python_command }
+    tmp = tempfile.mkdtemp();
+    with open(os.path.join(tmp, "alpha.jac"), "w") as fh {
+        fh.write("def alpha_value(x: int) -> int { return x + 1; }\n");
+    }
+    probe = (
+        "import sys\n"
+        + "import jaclang.cli.commands.analysis as A\n"
+        + "import jaclang.compiler.driver.ifacecache as IC\n"
+        + "seen = []\n"
+        + "inner = A._check_file_job\n"
+        + "def job(req):\n"
+        + "    seen.append(IC.iface_codec() is not None)\n"
+        + "    return inner(req)\n"
+        + "A._check_file_job = job\n"
+        + "A.check([sys.argv[1]], nowarn=True, jobs='0')\n"
+        + "print('FIRST_UNIT_CODEC_READY', seen[:1])\n"
+    );
+    done = subprocess.run(
+        compiler_python_command(probe, tmp), capture_output=True, text=True, timeout=600
+    );
+    assert "FIRST_UNIT_CODEC_READY [True]" in done.stdout , (
+        f"the first unit ran before the interface codec was ready:\n{done.stdout}\n{done.stderr}"
+    );
 }
