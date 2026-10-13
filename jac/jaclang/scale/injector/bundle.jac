@@ -749,7 +749,8 @@ def _precompile_app(
             line
             for line in output
             if line.startswith("Done!")
-        ] + output[-12:] {
+        ]
+            + output[-12:] {
             if line.strip() {
                 logger.info(f"seal: {line.strip()}");
             }
@@ -1017,7 +1018,9 @@ def _mtime(path: Path) -> float {
 
 def _latest_seal(base: Path) -> (Path | None) {
     try {
-        bundles = sorted(_seal_cache_dir(base).`glob("*.jab"), key=_mtime, reverse=True);
+        bundles = sorted(
+            _seal_cache_dir(base).`glob("*.jab"), key=_mtime, reverse=True
+        );
     } except OSError {
         return None;
     }
