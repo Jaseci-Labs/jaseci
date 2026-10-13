@@ -3447,10 +3447,13 @@ impl NaIRGenPass._final_scalar_value(
         }
         return ir.Constant(value_type, bits);
     }
-    if isinstance(value_type, (ir.DoubleType, ir.FloatType))
-        and isinstance(folded, (int, float))
-        and not isinstance(folded, bool) {
-        return ir.Constant(value_type, float(folded));
+    if isinstance(value_type, (ir.DoubleType, ir.FloatType)) {
+        if isinstance(folded, float) {
+            return ir.Constant(value_type, folded);
+        }
+        if isinstance(folded, int) and not isinstance(folded, bool) {
+            return ir.Constant(value_type, float(int(folded)));
+        }
     }
     return None;
 }
