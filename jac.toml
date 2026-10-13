@@ -86,6 +86,18 @@ exclude = [
     # regression suite and test262 gate it, not this check.
     "jac/js_engine/*",
 
+    # JacPython: the CPython runtime port, its compiler backend and its
+    # generators. About 80% of this check's time on a 4 vCPU runner (122 of
+    # 188 worker-minutes in the runtime port alone); its own test suites gate it.
+    "jac/jaclang/runtime/python/*",
+    "jac/jaclang/compiler/backends/py/jacpython/*",
+    "scripts/jacpython/*",
+
+    # Examples and benchmarks are not shipped compiler or runtime code.
+    "jac/examples/*",
+    "scripts/bench*",
+    "scripts/native_compile_bench.jac",
+
     # Everything below is a module that does not currently pass `jac check`.
     # Adding to this list is a debt, not a policy: the goal is to empty it.
     # llvmlite-bound native IR generation.

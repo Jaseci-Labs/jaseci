@@ -725,6 +725,38 @@ glob _CLI_SHARED_FIXTURE = (
          "}\n"
      );
 
+test "jac build --native --lib exports the root module's :pub surface only" {
+    if not sys.platform.startswith("linux") {
+        return;
+    }
+    import ctypes;
+    import shutil;
+    import subprocess;
+    import from tests.support { jac_command }
+    d = tempfile.mkdtemp();
+    try {
+        for name in ("shared_main.jac", "shared_main_helper.jac") {
+            shutil.copy(os.path.join(FIXTURES, name), os.path.join(d, name));
+        }
+        lib_out = os.path.join(d, "lib.so");
+        res = subprocess.run(
+            jac_command("build", "--native", "--lib", "shared_main.jac", "-o", lib_out),
+            cwd=d,
+            capture_output=True,
+            text=True,
+            timeout=600
+        );
+        assert res.returncode == 0 , f"jac build --native --lib failed:\n{res.stderr}";
+        lib = ctypes.CDLL(lib_out);
+        lib.doubled.restype = ctypes.c_int64;
+        lib.doubled.argtypes = [ctypes.c_int64];
+        assert lib.doubled(21) == 42;
+        assert not hasattr(lib, "twice") , "an imported module's :pub leaked into the C ABI";
+    } finally {
+        shutil.rmtree(d, ignore_errors=True);
+    }
+}
+
 test "jac build --native --lib initialises runtime globals via __jac_shared_init" {
     # The CLI probe + DT_INIT_ARRAY path is ELF-specific; skip on non-Linux.
     if not sys.platform.startswith("linux") {

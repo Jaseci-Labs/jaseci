@@ -74,6 +74,15 @@ impl StaticAnalysisPass._check_unused_symbols(scope: UniScopeNode) -> None {
             continue;
         }
 
+        decl_owner = sym.decl.parent;
+        if (
+            isinstance(decl_owner, HasVar)
+            and decl_owner.name is not sym.decl
+            and name == client_state_setter_name(decl_owner.name.value)
+        ) {
+            continue;
+        }
+
         if len(sym.uses) == 0 {
             self.ctx.emit(W2003, node_override=sym.decl, name=name);
         }
@@ -122,6 +131,24 @@ impl StaticAnalysisPass._check_undefined_names(mod: Module) -> None {
                     position=native_position
                 );
                 continue;
+            }
+            if in_type_position(name_nd, include_subscripts=False) {
+                import from jaclang.compiler.capability_notes {
+                    TARGET_NATIVE,
+                    note_capability,
+                    placement_neutral
+                }
+                if placement_neutral(name_nd) {
+                    note_capability(
+                        self.prog,
+                        name_nd,
+                        TARGET_NATIVE,
+                        "E2018",
+                        E2018.format_message(
+                            name=name_nd.value, position="native type position"
+                        )
+                    );
+                }
             }
         }
 

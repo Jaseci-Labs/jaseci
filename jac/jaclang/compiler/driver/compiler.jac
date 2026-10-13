@@ -293,18 +293,11 @@ obj JacCompiler(SessionHooks) {
     ) -> tuple[bool, (bytes | None)];
 
     def _wants_native_engine(full_target: str, program: JacProgram) -> bool;
-    def _demote_adopted_native(
-        unit_path: str, program: JacProgram, options: CompileOptions, failure: Exception
-    ) -> bool;
-
     def kernel_native_entry(
         full_target: str, target_program: JacProgram, options: (CompileOptions | None)
     ) -> tuple[bool, any];
 
-    def _adopt_native_verdict(
-        unit: UnitProducts, program: JacProgram, sections: dict[int, bytes]
-    );
-
+    def native_entry_engine(full_target: str, target_program: JacProgram) -> any;
     def _adopt_native_unit(
         unit: UnitProducts,
         program: JacProgram,

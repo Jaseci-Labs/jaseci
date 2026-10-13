@@ -19,10 +19,7 @@ js_engine is an accelerator over bun: a release ships bun, and jac runs JavaScri
 
 Every step is cached by the Zig build, and nothing is needed from the system beyond glibc. `jac native status js-engine` shows which engine a jac uses: a checkout's own build (accepted while it matches `js_engine/`), else the installed one, else bun.
 
-The engine is never a separate program. `jac` uses it two ways:
-
-- **as `node`** — the `jac` binary invoked under the name `node` (the engine's `bin/node` link, which jac keeps pointing at itself) loads `libjs_engine.so` and calls `jac_main(argc, argv)`, which runs [main.jac](engine/src/main.jac)'s entry: the bun-compatible package-manager commands first (`install`, `add`, `x`, `run`, ...), then the Node-style script runner. Vite, the `cl` test runner, `jac x` and every npm script run this way, and `process.execPath` names that `node`, so child processes come back to it too;
-- **in-process** — the package manager runs inside jac's own process through `js_pm(argc, argv)` ([jaclang/client/js_engine.jac](../jaclang/client/js_engine.jac)), for `jac install` and the client build's dependency sync.
+The engine is never a separate program. `jac` runs it **as `node`**: the `jac` binary invoked under the name `node` (the engine's `bin/node` link, which jac keeps pointing at itself) loads `libjs_engine.so` and calls `jac_main(argc, argv)`, which runs [main.jac](engine/src/main.jac)'s entry: the bun-compatible package-manager commands first (`install`, `add`, `x`, `run`, ...), then the Node-style script runner. Vite, the `cl` test runner, `jac x` and every npm script run this way, and `process.execPath` names that `node`, so child processes come back to it too. `jac install` and the client build's dependency sync run the package manager the same way, in a child process with the engine's `bin` first on `PATH`, so install scripts that call `node` get the engine.
 
 ## Running
 
@@ -98,7 +95,7 @@ js_engine/
   jac.toml                 # engine build settings: rc memory, native placement, opt level
   engine/
     src/
-      main.jac             # library root: the `node` entry, js_pm, AST/bytecode debug printers
+      main.jac             # library root: the `node` entry, AST/bytecode debug printers
       js_compiler.jac      # build-time builtins compiler (builtins.jsbc)
       version.jac          # version constants (js_engine, Node compat target, linked libs)
       parser/              # lexer.jac, ast.jac, parser.jac

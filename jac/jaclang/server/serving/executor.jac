@@ -2,7 +2,8 @@ import asyncio;
 import logging;
 import from concurrent.futures { ThreadPoolExecutor }
 
-glob logger: logging.Logger = logging.getLogger(__name__);
+glob logger: logging.Logger = logging.getLogger(__name__),
+     _STREAM_STOP: any = object();
 
 
 obj SyncExecutor {
@@ -31,4 +32,16 @@ obj SyncExecutor {
 
 async def run_sync(fn: Callable[..., any], *args: any) -> any {
     return await asyncio.to_thread(fn, *args);
+}
+
+
+async def iterate_sync(source: any) -> AsyncIterator[any] {
+    iterator = await run_sync(iter, source);
+    while True {
+        item = await run_sync(next, iterator, _STREAM_STOP);
+        if item is _STREAM_STOP {
+            return;
+        }
+        yield item;
+    }
 }

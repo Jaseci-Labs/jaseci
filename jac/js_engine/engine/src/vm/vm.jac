@@ -916,7 +916,6 @@ import from engine.src.builtins.set {
 }
 import from engine.src.builtins.date {
     js_is_date,
-    js_Date_call,
     js_Date_toJSON,
     js_Date_construct,
     js_Date_now_string
@@ -1024,8 +1023,7 @@ import from engine.src.builtins.promise {
     promise_unhandled_reason,
     promise_unhandled_promise,
     promise_unhandled_clear,
-    promise_unmark_unhandled,
-    process_queue_rejection_handled
+    promise_unmark_unhandled
 }
 import from engine.src.builtins.streams {
     stream_pending_count,
@@ -1195,6 +1193,7 @@ import from engine.src.builtins.native_kinds {
     NATIVE_KIND_JSON_STRINGIFY
 }
 import from engine.src.builtins.process {
+    process_queue_rejection_handled,
     _KEY_IS_ENV_OBJ,
     process_get_builtin_module,
     process_get_uncaught_listeners,
