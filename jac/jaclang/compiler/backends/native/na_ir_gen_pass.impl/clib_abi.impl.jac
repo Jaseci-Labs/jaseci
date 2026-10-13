@@ -425,13 +425,15 @@ impl NaIRGenPass._emit_clib_export_thunk(name: str) -> None {
     state = self._enter_function(cfunc);
     try {
         plan_ret: dict[str, any] = plan["ret"] if plan is not None else {};
+        plan_params: list[dict[str, any]] = plan["params"] if plan is not None else [];
         _scalar_only = plan is None
-            or (
-                not plan["sret"]
-                and plan_ret.get("kind") != "struct_reg"
-                and all(pp["kind"] == "scalar" for pp in plan["params"])
-                and all(pp["argpos"] == i for (i, pp) in enumerate(plan["params"]))
-            );
+            or (not plan["sret"] and plan_ret.get("kind") != "struct_reg");
+        for i in range(len(plan_params)) {
+            pp = plan_params[i];
+            if pp["kind"] != "scalar" or pp["argpos"] != i {
+                _scalar_only = False;
+            }
+        }
         b = self.builder;
         i32 = ir.IntType(32);
 
@@ -443,7 +445,7 @@ impl NaIRGenPass._emit_clib_export_thunk(name: str) -> None {
         saved = self._region_c_entry_escape();
         jac_args: list[ir.Value] = [];
         boxes: list[ir.Value] = [];
-        params = plan["params"] if plan is not None else [];
+        params: list[dict[str, any]] = plan["params"] if plan is not None else [];
         for (i, want) in enumerate(jac_fn.function_type.args) {
             if plan is None {
                 jac_args.append(
