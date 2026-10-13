@@ -217,6 +217,50 @@ test "a watched file reports itself and its annexes, not the files beside it" {
     }
 }
 
+test "a shared annex folder reports only the annexes of watched modules" {
+    with tempfile.TemporaryDirectory() as tmp {
+        top = Path(tmp).resolve();
+        for rel in ["web", "impl", "test"] {
+            (top / rel).mkdir();
+        }
+        shared = top / "shared.jac";
+        shared.write_text("glob x = 1;\n");
+        (top / "impl" / "local.jac").write_text("glob y = 1;\n");
+        watcher = JacFileWatcher(
+            watch_paths=[
+                str(top / "web"),
+                str(top / "impl"),
+                str(top / "test"),
+                str(shared)
+            ]
+        );
+        for name in [
+            "impl/other.impl.jac",
+            "test/other.test.jac",
+            "impl/shared.impl.jac",
+            "impl/shared.extra.impl.jac",
+            "test/shared.test.jac",
+            "impl/local.impl.jac",
+            "impl/local.extra.impl.jac",
+            "impl/plain.jac",
+            "web/page.impl.jac"
+        ] {
+            watcher._on_change(str(top / name), ChangeType.MODIFIED);
+        }
+        seen = sorted(str(Path(p).relative_to(top)) for p in watcher._pending_events);
+        assert seen
+            == [
+                "impl/local.extra.impl.jac",
+                "impl/local.impl.jac",
+                "impl/plain.jac",
+                "impl/shared.extra.impl.jac",
+                "impl/shared.impl.jac",
+                "test/shared.test.jac",
+                "web/page.impl.jac"
+            ] , str(seen);
+    }
+}
+
 test "a root-level module brings its annex folders into the watch roots" {
     import os;
     with tempfile.TemporaryDirectory() as tmp {

@@ -168,13 +168,56 @@ impl JacFileWatcher._beside_watched_file(path: str) -> bool {
         );
 }
 
+impl JacFileWatcher._foreign_shared_annex(path: str) -> bool {
+    import from jaclang.jac0core.ext_registry {
+        ANNEX_FOLDER,
+        JAC_SUFFIX,
+        is_annex_path_of,
+        shared_annex_folder
+    }
+    changed = os.path.realpath(path);
+    folder = os.path.dirname(changed);
+    suffix = next(
+        (
+            s
+            for s in ANNEX_FOLDER
+            if changed.endswith(s)
+        ),
+        None
+    );
+    if suffix is None or os.path.basename(folder) != shared_annex_folder(suffix) {
+        return False;
+    }
+    files = [
+        os.path.realpath(w)
+        for w in self.watch_paths
+        if os.path.isfile(os.path.realpath(w))
+            and os.path.dirname(os.path.realpath(w)) == os.path.dirname(folder)
+    ];
+    if not files {
+        return False;
+    }
+    try {
+        names = os.listdir(folder);
+    } except OSError {
+        names = [];
+    }
+    local = [
+        os.path.join(folder, name)
+        for name in names
+        if name.endswith(JAC_SUFFIX)
+            and not any(name.endswith(annex) for annex in ANNEX_FOLDER)
+    ];
+    return not any(is_annex_path_of(changed, module) for module in [*local, *files]);
+}
+
 impl JacFileWatcher._on_change(
     path: str, change_type: ChangeType, is_directory: bool = False
 ) -> None {
     if '/.jac/' in path or '\\.jac\\' in path {
         return;
     }
-    if self._beside_watched_file(path) {
+    if self._beside_watched_file(path) or self._foreign_shared_annex(path) {
         return;
     }
 
