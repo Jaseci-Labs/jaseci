@@ -101,6 +101,7 @@ class HTMLElement(EventTarget):
     tabIndex: int
     draggable: bool
     contentEditable: str
+    isContentEditable: bool
     dataset: dict[str, str]
     style: CSSStyleDeclaration
     classList: DOMTokenList
