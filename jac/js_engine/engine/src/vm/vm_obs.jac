@@ -26,7 +26,7 @@ import from engine.src.runtime.jsvalue {
 }
 import from engine.src.runtime.jsstring { str_from_id, str_intern }
 import from engine.src.runtime.dtoa { number_to_string_radix10 }
-import from engine.src.runtime.jssymbol { SYMBOL_KEY_BASE }
+import from engine.src.runtime.encoding { SYMBOL_KEY_BASE }
 import from engine.src.runtime.obs_context {
     obs_set_vm_handle,
     obs_get_vm_handle,
