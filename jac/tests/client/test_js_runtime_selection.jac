@@ -125,7 +125,7 @@ test "a restored build is installed without being rebuilt" {
             artifact = JsEngineArtifact();
             assert artifact.built().found is None , "built but not installed is not current";
             assert artifact.build_blocker() == "" , "installing a current build needs no zig";
-            artifact.build(lambda (line: str) -> None {}, False, False);
+            artifact.build(lambda (line: str) {}, False, False);
             assert (installed / "libjs_engine.so").is_file();
             assert artifact.built().found is not None;
         }

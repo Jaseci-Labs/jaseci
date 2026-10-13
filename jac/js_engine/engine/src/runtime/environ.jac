@@ -4,17 +4,23 @@ started with, so it misses what the launcher sets before running the engine
 (the engine's own `bin` on PATH, SSL_CERT_FILE) and anything set since."""
 
 import from engine.src.runtime.mem { read_ptr, str_from_foreign_cstr }
+import from engine.src.ffi.libdl { dlsym, RTLD_DEFAULT }
 
-import from c {
-    glob environ: int;
-}
-
-"""Every KEY=VALUE entry of the live environment, in order."""
+"""Every KEY=VALUE entry of the live environment, in order. libc's `environ`
+is read through its address, since setenv may move the array."""
 def:pub environ_entries -> list[str] {
     out: list[str] = [];
+    slot: int = dlsym(RTLD_DEFAULT, "environ");
+    if slot == 0 {
+        return out;
+    }
+    table: int = read_ptr(slot, 0);
+    if table == 0 {
+        return out;
+    }
     i: int = 0;
     while True {
-        item: int = read_ptr(environ, 8 * i);
+        item: int = read_ptr(table, 8 * i);
         if item == 0 {
             return out;
         }
