@@ -369,6 +369,12 @@ impl check(
     if not os.environ.get('JAC_GC_NO_COMPILE_BOOST') {
         gc.set_threshold(*CHECK_GC_THRESHOLDS);
     }
+    if not parse_only {
+        try {
+            import from jaclang.compiler.driver.ifacecache { prime_iface_codec }
+            prime_iface_codec();
+        } except Exception {}
+    }
     if isinstance(paths, str) {
         paths = [paths];
     }

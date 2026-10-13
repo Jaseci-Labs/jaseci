@@ -285,7 +285,9 @@ def require_product(
         }
         if product == CompilationProduct.INTERFACE {
             if not active_host().prepare_interface(
-                program, os.path.realpath(module.loc.mod_path), module
+                program,
+                os.path.realpath(module.loc.mod_path or module.source.file_path),
+                module
             ) {
                 task.state = TaskState.FAILED;
                 return False;
