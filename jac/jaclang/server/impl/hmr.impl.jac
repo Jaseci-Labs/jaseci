@@ -146,6 +146,10 @@ impl HotReloader.record_error(
 impl HotReloader._status_file_path -> Path {
     if self.client_compiler {
         try {
+            return Path(self.client_compiler.vite_bundler._get_client_dir())
+                / '.jac-status.json';
+        } except Exception {}
+        try {
             compiled = Path(str(self.client_compiler.jac_client_compiler.compiled_dir));
             return compiled.parent / '.jac-status.json';
         } except Exception {}

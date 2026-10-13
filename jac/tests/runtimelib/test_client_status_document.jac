@@ -480,6 +480,56 @@ test "the shared client-error path classifies once and carries both stacks" {
     }
 }
 
+test "a workspace app's status document and reload signal sit where its dev config reads them" {
+    import from jaclang { JacRuntime as Jac }
+    import from jaclang.project.config { JacConfig, get_config, set_config }
+    import from jaclang.client.vite_client_bundle { make_client_bundle_builder }
+    previous = get_config();
+    with TemporaryDirectory() as tmp {
+        project = Path(tmp).resolve();
+        manifest = '[project]\nname = "status-paths"\ndefault-app = "web"\n[apps.web]\nkind = "web-app"\nentry-point = "web.main"\n';
+        (project / "jac.toml").write_text(manifest);
+        target = project / "web" / "main.jac";
+        target.parent.mkdir();
+        target.write_text("def:pub app -> JsxElement {\n    return <div/>;\n}\n");
+        try {
+            set_config(JacConfig.from_toml_str(manifest, project / "jac.toml"));
+            compiler = make_client_bundle_builder(
+                project, entry_path=str(target), program=Jac.get_program()
+            )._get_compiler();
+            compiled = Path(str(compiler.jac_client_compiler.compiled_dir));
+            config_path = compiler.vite_bundler.create_vite_config(target, is_dev=True);
+            generated = config_path.read_text();
+            build_dir = config_path.parent.parent;
+            assert compiled.parent != build_dir , (
+                f"not a workspace layout: {compiled} compiles beside the dev config"
+            );
+            assert 'const buildDir = path.resolve(__dirname, "..");' in generated;
+            assert 'path.resolve(buildDir, ".jac-status.json")' in generated;
+            assert 'path.resolve(buildDir, ".jac-force-reload")' in generated;
+            _reset_client_globals();
+            reloader = HotReloader(
+                base_path=str(project),
+                module_name="app",
+                watcher=JacFileWatcher(watch_paths=[str(project)]),
+                client_compiler=compiler
+            );
+            reloader.record_error(str(target), "boom");
+            assert (build_dir / ".jac-status.json").exists() , (
+                "the overlay plugin never sees the status document"
+            );
+            assert not (compiled.parent / ".jac-status.json").exists();
+            reloader._signal_full_reload();
+            assert (build_dir / ".jac-force-reload").read_text() == "1";
+            reloader.record_ok();
+            assert not (build_dir / ".jac-status.json").exists();
+        } finally {
+            set_config(previous);
+            _reset_client_globals();
+        }
+    }
+}
+
 test "the suite leaves no dev-loop global behind" {
     import from jaclang.client.source_mapping {
         _locator_cache,
