@@ -9,8 +9,7 @@ import re;
 import json;
 import subprocess;
 import from tempfile { TemporaryDirectory }
-import from tests.support { JAC_ROOT }
-import from jaclang.client.bun_installer { get_bun }
+import from tests.support { JAC_ROOT, js_runtime_or_none }
 import from jaclang.compiler.driver.program { JacProgram }
 
 glob REGISTRY = os.path.join(
@@ -104,13 +103,13 @@ test "a merged className is never overridden by the props spread" {
     assert not offenders , f"props spread after a merged className (move className after the spread): {offenders}";
 }
 
-"""Compile one registry component and run `checks` against it under Bun with
+"""Compile one registry component and run `checks` against it under the JavaScript runtime with
 React, the JSX factory and the sibling components replaced by recording
 stubs, so a component's own prop handling runs for real."""
 def run_component(name: str, checks: str) {
-    bun = get_bun();
-    if bun is None {
-        testskip("Bun is required to execute generated JavaScript");
+    runtime = js_runtime_or_none();
+    if runtime is None {
+        testskip("A JavaScript runtime is required to execute generated JavaScript");
     }
     prog = JacProgram();
     mod = prog.compile(os.path.join(COMPONENTS, name));
@@ -138,7 +137,7 @@ function check(value, message) { if (!value) throw new Error(message); }
             f.write(stubs + js + checks);
         }
         result = subprocess.run(
-            [bun, script], capture_output=True, text=True, timeout=30
+            [runtime, script], capture_output=True, text=True, timeout=30
         );
         assert result.returncode == 0 , result.stdout + result.stderr;
     }
