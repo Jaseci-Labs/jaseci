@@ -186,8 +186,8 @@ def get_layout_registry(module: Module, prog: JacProgram) -> LayoutRegistry {
         return reg;
     }
 
-    import from jaclang.compiler.driver.pipeline { require_product, CompilationProduct }
-    if not require_product(prog, module, CompilationProduct.LAYOUT) {
+    import from jaclang.compiler.driver.pipeline { require, CompilationProduct }
+    if not require(prog, module, CompilationProduct.LAYOUT) {
         raise RuntimeError(f"Layout preparation failed: {module.loc.mod_path}");
     }
     return module.gen.layout_registry or LayoutRegistry();

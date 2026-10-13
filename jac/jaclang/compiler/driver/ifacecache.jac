@@ -34,7 +34,6 @@ import from jaclang.compiler.driver.jir {
 
 glob DIAG_SCHEMA: int = 1,
      IFACE_RETAIN_CAP: int = 1024,
-     _SYMTAB_PROVIDES_MEMO: list[set[AnalysisFact]] = [],
      _CODEC_MODULES: tuple[str, ...] = (
          "jaclang.compiler.types.type_evaluator",
          "jaclang.compiler.types.stubcat.reader",
@@ -90,16 +89,6 @@ def _interface_source_path(path: str) -> bool {
     return jir_cacheable_source_path(path) and not is_stub_like_path(path);
 }
 
-def _symtab_provides -> set[AnalysisFact] {
-    if not _SYMTAB_PROVIDES_MEMO {
-        import from jaclang.compiler.driver.pipeline {
-            get_symtab_ir_sched,
-            providers_of
-        }
-        _SYMTAB_PROVIDES_MEMO.append(set(providers_of(get_symtab_ir_sched())));
-    }
-    return set(_SYMTAB_PROVIDES_MEMO[0]);
-}
 
 def _span_record(span: any) -> list[str | int | None] {
     return [
@@ -566,11 +555,9 @@ obj IfaceRegistry(CatalogResolver) {
             before_warnings = len(self.prog.warnings_had);
             options = self.prog.options.for_symbols();
             module = self.prog.compile(resolved, options=options);
-            import from jaclang.compiler.driver.pipeline {
-                require_product,
-                CompilationProduct
-            }
-            if require_product(self.prog, module, CompilationProduct.INTERFACE) {
+            import from jaclang.compiler.driver.pipeline { require }
+            import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
+            if require(self.prog, module, CompilationProduct.INTERFACE) {
                 self.persist_after_compile(
                     resolved, module, options, before_errors, before_warnings
                 );
@@ -632,7 +619,11 @@ obj IfaceRegistry(CatalogResolver) {
     def _prepare(ent: IfaceEntry, mod: any) {
         self.prog.stamp_app_facts(mod);
         self._restore_placement(ent);
-        self.prog.analysis.analyses_run.mark(mod, _symtab_provides());
+        import from jaclang.compiler.driver.pipeline { product_facts }
+        import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
+        self.prog.analysis.mark_facts(
+            mod, product_facts(CompilationProduct.SYMBOLS)
+        );
     }
 
     static def _profiles_of(
@@ -878,15 +869,12 @@ obj IfaceRegistry(CatalogResolver) {
             or getattr(mod, "is_raised_from_py", False) {
             return;
         }
-        ledger = self.prog.analysis.analyses_run;
-        if ledger.provides(mod, AnalysisFact.CFG_SUCC) {
+        if self.prog.analysis.provides(mod, AnalysisFact.CFG_SUCC) {
             return;
         }
-        import from jaclang.compiler.driver.pipeline {
-            require_product,
-            CompilationProduct
-        }
-        if not require_product(self.prog, mod, CompilationProduct.FLOW) {
+        import from jaclang.compiler.driver.pipeline { require }
+        import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
+        if not require(self.prog, mod, CompilationProduct.FLOW) {
             raise RuntimeError(f"Interface flow analysis failed: {mod.loc.mod_path}");
         }
         self._event("iface_cfg");

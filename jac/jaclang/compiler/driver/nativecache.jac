@@ -872,24 +872,11 @@ obj NativeBuildSession {
             opts.no_cgen = False;
             self.prog.options = opts;
             set_effective_default_codespace("native");
-            import from jaclang.compiler.passes.rc_facts_pass { RcFactsPass }
-            import from jaclang.compiler.backends.native.na_ir_gen_pass { NaIRGenPass }
-            completed = self.prog.analysis.completed_passes.get(id(mod));
-            if completed is not None {
-                completed.discard("NaIRGenPass");
-                completed.discard("NativeCompilePass");
-            }
+            import from jaclang.compiler.driver.pipeline { invalidate, require }
             import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
-            tasks = self.prog.analysis.product_tasks.get(id(mod));
-            if tasks is not None {
-                tasks.pop(CompilationProduct.NATIVE_IR, None);
-            }
-            mod.gen.drop_native_ir();
-            mod.gen.native_iface = None;
-            mod.gen.native_bitcode = None;
-            mod.gen.native_object = None;
+            invalidate(self.prog, mod, CompilationProduct.NATIVE_LOWER);
             started = self.registry.note_step("lower", resolved);
-            self.prog.run_schedule(mod, [RcFactsPass, NaIRGenPass]);
+            require(self.prog, mod, CompilationProduct.NATIVE_LOWER);
             self.registry._timed("NATIVE_LOWER", started);
             self.registry._event("native_unit_lower");
             self.registry.note_slow_step("lowering", resolved, started);
@@ -995,9 +982,8 @@ obj NativeBuildSession {
         """Optimize and persist only after every consumed interface agrees.
         Cyclic interface settlement reuses the analyzed trees and never emits
         optimized products for an intermediate state.""";
-        import from jaclang.compiler.backends.native.na_compile_pass {
-            NativeCompilePass
-        }
+        import from jaclang.compiler.driver.pipeline { require }
+        import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
         self.prog.options = self.options.clone_for_native_import();
         for path in paths {
             if path in self.source_keys
@@ -1026,7 +1012,7 @@ obj NativeBuildSession {
             errors_before = len(self.prog.errors_had);
             if path not in optimized {
                 started = self.registry.note_step("optimize", path);
-                self.prog.run_schedule(mod, [NativeCompilePass]);
+                require(self.prog, mod, CompilationProduct.NATIVE_OBJECT);
                 self.registry._timed("NATIVE_OPTIMIZE", started);
                 self.registry.note_slow_step("optimizing", path, started);
             }

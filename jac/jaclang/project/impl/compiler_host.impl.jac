@@ -569,9 +569,10 @@ impl ProjectHost.parse_python(
 ) -> tuple[Module, bool] {
     import ast as py_ast;
     import jaclang.compiler.frontend.unitree as uni;
-    import from jaclang.compiler.driver.pipeline_runner { run_utility, UtilityProduct }
+    import from jaclang.compiler.driver.pipeline { run_utility }
+    import from jaclang.compiler.driver.pipeline_types { CompilationProduct }
     built = run_utility(
-        UtilityProduct.PYTHON_AST,
+        CompilationProduct.PYTHON_AST,
         uni.PythonModuleAst(
             py_ast.parse(source_str),
             orig_src=uni.Source(source_str, mod_path=file_path)

@@ -124,7 +124,7 @@ def run_codegen(task: ModuleAnalysis) {
     program = task.program;
     module = task.module;
     program.options = options;
-    if not task.full_head() {
+    if not task.has_full_ir() {
         task.require(CompilationProduct.PY_IR);
         task.session.assemble_python(program, module);
         return;

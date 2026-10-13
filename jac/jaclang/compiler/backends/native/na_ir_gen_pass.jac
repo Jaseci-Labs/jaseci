@@ -1,15 +1,6 @@
 import from jaclang.compiler.frontend.roles { Kid }
-import from jaclang.compiler.passes.context {
-    Alert,
-    CompileContext,
-    CompilerPass,
-    PassSchedule
-}
-import from jaclang.compiler.driver.pipeline {
-    register_codegen_backend,
-    register_product_schedule
-}
-import from jaclang.compiler.driver.pipeline_types { AnalysisFact, CompilationProduct, PassContract }
+import from jaclang.compiler.passes.context { Alert, CompileContext, CompilerPass }
+import from jaclang.compiler.driver.pipeline_types { AnalysisFact, PassContract }
 import from jaclang.compiler.driver.native_iface { NativeIface, NativeExport }
 import from jaclang.compiler.frontend.host { active_host }
 import from jaclang.compiler.backends.native.na_constants {
@@ -3531,19 +3522,4 @@ walker NaIRGenPass(CompilerPass) {
     def _decl_field_llvm_types(arch_name: str) -> (dict[str, ir.Type] | None);
     def _lower_view_container(t: any) -> (ir.Type | None);
     def _program_has_subclasses(arch_name: str) -> bool;
-}
-
-def native_codegen_schedule -> PassSchedule {
-    return [NaIRGenPass];
-}
-
-def native_ir_product_schedule -> PassSchedule {
-    import from jaclang.compiler.driver.context_passes { NativeImportFactsPass }
-    import from jaclang.compiler.passes.rc_facts_pass { RcFactsPass }
-    return [NativeImportFactsPass, RcFactsPass, NaIRGenPass];
-}
-
-with entry {
-    register_codegen_backend("native", native_codegen_schedule);
-    register_product_schedule(CompilationProduct.NATIVE_IR, native_ir_product_schedule);
 }

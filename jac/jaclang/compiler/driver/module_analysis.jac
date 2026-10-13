@@ -73,7 +73,7 @@ obj ModuleAnalysis {
         return product_ready(self.program, self.module, product);
     }
 
-    def full_head -> bool {
+    def has_full_ir -> bool {
         return not self.options.symtab_ir_only
             and self.program.analysis.provides(self.module, AnalysisFact.CFG_SUCC);
     }
@@ -143,7 +143,7 @@ def run_analysis(task: ModuleAnalysis) {
         and host.base_file(str(task.path)) is not None;
     _unasked = task.options.skip_analysis
         or (program.internal and host.import_in_flight(task.path));
-    _analyze = task.full_head()
+    _analyze = task.has_full_ir()
         and not _is_decl_stub
         and not _annex_of_base
         and (candidate or not _unasked);
