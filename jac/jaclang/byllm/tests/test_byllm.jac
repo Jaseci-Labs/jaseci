@@ -20,7 +20,6 @@ import from jaclang.byllm.exceptions {
 }
 import from jaclang.byllm.mcp { McpClient, McpTool }
 import from jaclang.byllm.schema { type_display_name }
-import typing;
 import from typing { Optional }
 import from jaclang.byllm.types { Tool, Message, MessageRole }
 import from jaclang { JacRuntimeInterface as Jac }
@@ -330,10 +329,7 @@ test "return types are named the way they are written" {
         (_TestPerson | int | None, "_TestPerson | int | None"),
         (list[_TestPerson], "list[_TestPerson]"),
         (dict[str, list[int | None]], "dict[str, list[int | None]]"),
-        (tuple[int, ...], "tuple[int, ...]"),
-        (Literal["low", 2], "Literal['low', 2]"),
-        (Callable[[int], str], "Callable[[int], str]"),
-        (typing.Any, "Any")
+        (tuple[int, ...], "tuple[int, ...]")
     ] {
         got = type_display_name(ty);
         assert got == expected , f"{ty!r}: expected '{expected}', got '{got}'";

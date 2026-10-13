@@ -339,29 +339,14 @@ impl type_display_name(ty: object) -> str {
     if isinstance(ty, EllipsisType) {
         return "...";
     }
-    if isinstance(ty, str) {
-        return ty;
-    }
-    if isinstance(ty, list) {
-        items = ", ".join(type_display_name(a) for a in ty);
-        return f"[{items}]";
-    }
     origin = get_origin(ty);
     args = get_args(ty);
     if origin in (Union, UnionType) {
         return " | ".join(type_display_name(a) for a in args);
     }
-    if origin is Literal {
-        values = ", ".join(repr(a) for a in args);
-        return f"Literal[{values}]";
-    }
-    if origin is not None {
-        head = type_display_name(origin);
-        if not args {
-            return head;
-        }
+    if origin is not None and args {
         params = ", ".join(type_display_name(a) for a in args);
-        return f"{head}[{params}]";
+        return f"{type_display_name(origin)}[{params}]";
     }
     if isinstance(ty, type) {
         return ty.__name__;
