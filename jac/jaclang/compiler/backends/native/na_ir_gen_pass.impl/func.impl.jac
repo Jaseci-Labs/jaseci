@@ -391,7 +391,7 @@ glob RETURNS_TWICE_EXTERNS: frozenset[str] = frozenset(
      );
 
 def _mark_returns_twice(name: str, func: ir.Function) {
-    if name in RETURNS_TWICE_EXTERNS and "returns_twice" not in func.attributes {
+    if name in RETURNS_TWICE_EXTERNS {
         func.attributes.add("returns_twice");
     }
 }
