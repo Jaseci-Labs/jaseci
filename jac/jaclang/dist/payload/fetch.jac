@@ -1,4 +1,4 @@
-import from jaclang.client.bun_installer { BUN_VERSION }
+import from jaclang.client.js_runtime { BUN_VERSION }
 import from jaclang.dist.payload.pins { LlvmSlice }
 
 glob TYPESHED_TARBALL_BASE: str = "https://codeload.github.com/python/typeshed/tar.gz",

@@ -473,6 +473,10 @@ impl ProjectHost.native_parse(
 ) -> (tuple[Module, bool] | None) {
     import from jaclang.compiler.frontend.parser.frontend { finish_parse }
     import jaclang.compiler.native_compiler as _jc;
+    natives = program._natives if program is not None else None;
+    if natives is not None and natives.progress is not None {
+        natives.note_step("parse", file_path);
+    }
     kernel = _jc.ensure_loaded();
     if kernel is None {
         return None;
@@ -754,6 +758,17 @@ impl ProjectHost.import_in_flight(path: str) -> bool {
 impl ProjectHost.has_active_stub_catalog -> bool {
     import from jaclang.jac0core.stubcat_hook { active }
     return active() is not None;
+}
+
+impl ProjectHost.typeshed_unavailable_reason -> str {
+    import from jaclang.artifacts.model { ArtifactUnavailable }
+    import from jaclang.artifacts.router { require }
+    try {
+        require("typeshed");
+    } except ArtifactUnavailable as e {
+        return str(e);
+    }
+    return "";
 }
 
 impl ProjectHost.is_native_only_source(rel: str) -> bool {

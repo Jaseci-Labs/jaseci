@@ -1,4 +1,5 @@
 import from jaclang.compiler.backends.native.abi { classify_foreign_fn }
+import from jaclang.compiler.c_interop { c_variadic_param }
 import from jaclang.compiler.frontend.constant { OwnershipKind }
 
 impl NaIRGenPass._forward_declare_functions(module: uni.Module) -> None {
@@ -43,7 +44,7 @@ impl NaIRGenPass._nogc_owned_param(p: uni.ParamVar) -> bool {
 }
 
 impl NaIRGenPass._maybe_declare_ability(
-    nd: uni.ElementStmt, imp_layout: any = None
+    nd: uni.ElementStmt, imp_layout: any = None, symbol: (str | None) = None
 ) -> None {
     if not isinstance(nd, uni.Ability) {
         return;
@@ -65,9 +66,15 @@ impl NaIRGenPass._maybe_declare_ability(
     _sig_mark = len(self.ctx.errors_had);
     _saved_sig_kind = self._sig_decl_kind;
     self._sig_decl_kind = "signature type";
+    va_param = c_variadic_param(sig);
+    c_params = [
+        p
+        for p in sig.get_parameters()
+        if p is not va_param
+    ];
 
     param_types: list[ir.Type] = [];
-    for p in sig.get_parameters() {
+    for p in c_params {
         param_types.append(self._resolve_jac_type(p));
     }
 
@@ -83,7 +90,7 @@ impl NaIRGenPass._maybe_declare_ability(
     }
     self._sig_decl_kind = _saved_sig_kind;
 
-    local_type = ir.FunctionType(ret_type, param_types);
+    local_type = ir.FunctionType(ret_type, param_types, var_arg=va_param is not None);
     import from jaclang.compiler.frontend.codeinfo { NativeModuleLayout }
     _layout: (NativeModuleLayout | None) = imp_layout
         if isinstance(imp_layout, NativeModuleLayout)
@@ -110,7 +117,7 @@ impl NaIRGenPass._maybe_declare_ability(
             ret_type = carrier;
         }
     }
-    fnty = ir.FunctionType(ret_type, param_types);
+    fnty = ir.FunctionType(ret_type, param_types, var_arg=va_param is not None);
 
     _dec_names: list[str] = [];
     if nd.decorators
@@ -140,14 +147,18 @@ impl NaIRGenPass._maybe_declare_ability(
         _def_m = nd.find_parent_of_type(uni.Module);
         _is_pub = bool(nd.access and nd.access.tag.name == Tok.KW_PUB);
         func = ir.Function(
-            self.llvm_module, fnty, name=self._symbol_for(name, _def_m, _is_pub)
+            self.llvm_module,
+            fnty,
+            name=symbol
+                if symbol is not None
+                else self._symbol_for(name, _def_m, _is_pub)
         );
     }
 
-    for (i, p) in enumerate(sig.get_parameters()) {
+    for (i, p) in enumerate(c_params) {
         func.args[i].name = p.name.value if p.name else f"arg{i}";
     }
-    self._apply_ownership_param_attrs(func, sig.get_parameters(), 0);
+    self._apply_ownership_param_attrs(func, c_params, 0);
     self._record_linked_decl(func, nd);
     if fnty != local_type {
         func = self._imported_string_adapter(func, local_type);
@@ -367,6 +378,24 @@ impl NaIRGenPass._record_ret_facts(
     }
 }
 
+glob RETURNS_TWICE_EXTERNS: frozenset[str] = frozenset(
+         {
+             "setjmp",
+             "_setjmp",
+             "sigsetjmp",
+             "__sigsetjmp",
+             "savectx",
+             "getcontext",
+             "vfork"
+         }
+     );
+
+def _mark_returns_twice(name: str, func: ir.Function) {
+    if name in RETURNS_TWICE_EXTERNS and "returns_twice" not in func.attributes {
+        func.attributes.add("returns_twice");
+    }
+}
+
 impl NaIRGenPass._declare_clib_ability(nd: uni.Ability) -> None {
     if not isinstance(nd, uni.Ability) {
         return;
@@ -399,7 +428,9 @@ impl NaIRGenPass._declare_clib_ability(nd: uni.Ability) -> None {
                 _fdecl["params"],
                 _fdecl["ret"],
                 _abi_triple,
-                force=_c_ret_ptr or any(bool(_ci) for _ci in _c_args)
+                force=_c_ret_ptr
+                    or any(bool(_ci) for _ci in _c_args)
+                    or name in self._clib_definitions
             );
         }
     }
@@ -511,6 +542,7 @@ impl NaIRGenPass._declare_clib_ability(nd: uni.Ability) -> None {
             "ret": sysv_ret_plan,
             "sret": sysv_sret
         };
+        _mark_returns_twice(name, sysv_func);
         self.func_symtab[name] = sysv_func;
         self.clib_extern_fns[name] = sysv_func;
         self.has_native_code = True;
@@ -524,14 +556,7 @@ impl NaIRGenPass._declare_clib_ability(nd: uni.Ability) -> None {
         }
         fixed_params.append(p);
     }
-    param_types: list[ir.Type] = [];
-    for p in fixed_params {
-        if p.type_tag and p.type_tag.tag {
-            param_types.append(self._resolve_clib_type(p.type_tag.tag));
-        } else {
-            param_types.append(ir.IntType(64));
-        }
-    }
+    param_types: list[ir.Type] = [self._clib_param_type(p) for p in fixed_params];
 
     ret_type = self._resolve_clib_type(sig.return_type);
 
@@ -543,9 +568,17 @@ impl NaIRGenPass._declare_clib_ability(nd: uni.Ability) -> None {
     for (i, p) in enumerate(fixed_params) {
         func.args[i].name = p.name.value if p.name else f"arg{i}";
     }
+    _mark_returns_twice(name, func);
     self.func_symtab[name] = func;
     self.clib_extern_fns[name] = func;
     self.has_native_code = True;
+}
+
+impl NaIRGenPass._clib_param_type(p: uni.ParamVar) -> ir.Type {
+    if p.type_tag and p.type_tag.tag {
+        return self._resolve_clib_type(p.type_tag.tag);
+    }
+    return ir.IntType(64);
 }
 
 impl NaIRGenPass._codegen_ability(nd: uni.Ability) -> None {
@@ -630,8 +663,16 @@ impl NaIRGenPass._codegen_ability(nd: uni.Ability) -> None {
 
         sig = nd.signature;
         assert isinstance(sig, uni.FuncSignature) , "a declared function has a function signature";
+        va_param = c_variadic_param(sig);
         for (i, p) in enumerate(sig.get_parameters()) {
             param_name = p.name.value if p.name else f"arg{i}";
+            if p is va_param {
+                started = self._c_va_start(p);
+                if started is not None {
+                    self._bind_function_parameter(param_name, started);
+                }
+                continue;
+            }
             arg_val = func.args[i];
             borrowed = not self._nogc_owned_param(p);
             self._bind_function_parameter(
@@ -735,7 +776,7 @@ impl NaIRGenPass._codegen_test(nd: uni.Test) -> None {
         exc_state_type = self._exc_state_type;
         assert exc_state_type is not None;
         exc_state = self.builder.alloca(exc_state_type, name="exc.state");
-        self.builder.call(self._exc_push_fn, [exc_state]);
+        self._emit_exc_push(self.builder, exc_state);
         env_ptr = self.builder.gep(
             exc_state, [ir.Constant(i32, 0), ir.Constant(i32, 0)], name="env.ptr"
         );
@@ -754,13 +795,13 @@ impl NaIRGenPass._codegen_test(nd: uni.Test) -> None {
         }
 
         self.builder.position_at_end(success_bb);
-        self.builder.call(self._exc_pop_fn, []);
+        self._emit_exc_pop(self.builder);
         _tc_loc = f"{self.module.loc.mod_path}:{nd.loc.last_line if nd.loc else 0}";
         self._emit_scope_cleanup(skip_var=None, loc=_tc_loc);
         self.builder.ret(ir.Constant(i8p, None));
 
         self.builder.position_at_end(fail_bb);
-        self.builder.call(self._exc_pop_fn, []);
+        self._emit_exc_pop(self.builder);
         exc_obj_ptr = self.builder.gep(
             exc_state, [ir.Constant(i32, 0), ir.Constant(i32, 1)], name="exc.obj.ptr"
         );
@@ -913,6 +954,7 @@ impl NaIRGenPass._codegen_nested_ability(nd: uni.Ability) -> None {
                 [(cname, cmode) for (cname, cmode, _ct) in captures]
             );
         }
+        self._register_pass_links(nd, fn);
     }
 
     state = self._enter_function(fn);
@@ -1153,6 +1195,7 @@ impl NaIRGenPass._predeclare_nested_siblings(nd: uni.Ability) -> None {
                 [(_c0, _c1) for (_c0, _c1, _c2) in _caps]
             );
         }
+        self._register_pass_links(s, _fn);
         self._nested_predecl[s] = (_fn, _caps, _pnames, _rt);
     }
 }

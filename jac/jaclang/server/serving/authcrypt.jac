@@ -210,6 +210,9 @@ def jwt_decode(
     } except Exception {
         raise JWTError(reason='malformed token');
     }
+    if not isinstance(header, dict) or not isinstance(payload, dict) {
+        raise JWTError(reason='malformed token');
+    }
     if header.get('alg') != 'HS256' {
         raise JWTError(reason='unsupported algorithm');
     }
@@ -311,7 +314,7 @@ def verify_password(password: str, stored: str) -> bool {
             'Stored scrypt hash has parameters exceeding the memory budget '
             f"(maxmem={SCRYPT_MAXMEM}); refusing to verify it. The "
             'credential was written under a misconfigured '
-            'password_hash_cost; the user must reset their password.'
+            '[serve.auth.password] hash_cost; the user must reset their password.'
         );
         return False;
     } except Exception {

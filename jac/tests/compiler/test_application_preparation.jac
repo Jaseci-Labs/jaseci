@@ -40,6 +40,16 @@ test "sealing retains each colocated service's access metadata" {
             assert 'private_score' not in modules['scoring.jac']['surface'] , (
                 "the served surface lists only exposed declarations"
             );
+            for entry_manifest in [manifest, *modules.values()] {
+                assert 'root' not in entry_manifest , (
+                    "a baked manifest must not pin the seal stage's path"
+                );
+                for rec in (entry_manifest.get('surface') or {}).values() {
+                    assert 'module' not in rec , (
+                        "a baked surface entry must not pin the seal stage's path"
+                    );
+                }
+            }
         } finally {
             forget(str(path));
         }
@@ -737,6 +747,50 @@ def _restored(path: Path, `root: str) -> bool {
     return 'Restoring prepared application' in err.getvalue();
 }
 
+test "an in-process prepare releases the compiler state it built" {
+    import from jaclang.project.kernel_compile { _APPLICATION_UNITS }
+    import from jaclang.project.kernel_snapshot { _IFACE_MEMO, _IFACE_REFUSED }
+    with tempfile.TemporaryDirectory(prefix='jac-prepared-release-') as tmp {
+        base = Path(tmp);
+        path = base / 'main.jac';
+        helper = base / 'helper.jac';
+        helper.write_text("def:pub twice(n: int) -> int { return n * 2; }\n");
+        path.write_text(
+            "import from helper { twice }\n"
+            "def:pub hello -> int { return twice(21); }\n"
+        );
+        program = JacProgram();
+        memo: any = _IFACE_MEMO;
+        memo[str(base / 'stale_iface.py')] = ([], [], None);
+        _IFACE_REFUSED[str(base / 'stale_refused.py')] = 'stamp';
+        try {
+            prepared = prepare_application(str(path), program, tmp);
+            assert prepared.code , "the prepared application lost its code";
+            held = [
+                key
+                for key in program.mod.hub
+                if key.startswith(tmp)
+            ];
+            assert not held , (
+                f"the program still holds {len(held)} parsed app modules after prepare"
+            );
+            assert not program.contexts , (
+                f"{len(program.contexts)} per-context programs survived the prepare"
+            );
+            assert not [
+                p
+                for p in _APPLICATION_UNITS
+                if p.startswith(tmp)
+            ] , "kernel unit products for the app survived the prepare";
+            assert not _IFACE_MEMO and not _IFACE_REFUSED , (
+                "the interface memo survived the prepare"
+            );
+        } finally {
+            forget(str(path));
+        }
+    }
+}
+
 test "prepared applications are reused by content, not by timestamp" {
     import time;
     with tempfile.TemporaryDirectory() as tmp {
@@ -762,4 +816,50 @@ test "prepared applications are reused by content, not by timestamp" {
         annex.unlink();
         assert not _restored(path, tmp) , "an annex deletion was reused";
     }
+}
+
+def _prepared_lookups(modules: int) -> int {
+    import sys;
+    lookups = [0];
+    with tempfile.TemporaryDirectory() as tmp {
+        base = Path(tmp);
+        (base / 'mods').mkdir();
+        lines: list[str] = [];
+        for k in range(modules) {
+            (base / 'mods' / f'm{k}.jac').write_text(
+                f'walker:pub w{k} {{\n    can go with Root entry {{\n        report {k};\n    }}\n}}\n'
+            );
+            lines.append(f'import from mods.m{k} {{ w{k} }}\n');
+        }
+        path = base / 'main.jac';
+        path.write_text(''.join(lines));
+        prepared = prepare_application(str(path), JacProgram(), tmp);
+        def tally(frame: any, event: str, arg: any) {
+            if event == 'call'
+                and frame.f_code.co_filename.endswith(
+                    ('prepared.jac', 'prepared_loader.jac')
+                ) {
+                lookups[0] += 1;
+            }
+        }
+        sys.setprofile(tally);
+        try {
+            initialize_application(prepared);
+        } finally {
+            sys.setprofile(None);
+            forget(str(path));
+        }
+    }
+    return lookups[0];
+}
+
+"""Finding a prepared module by name or package used to scan every prepared
+module, so loading an application grew with the square of its module count.
+Counted on a real load, not timed."""
+test "loading a prepared application grows with its module count, not its square" {
+    small = _prepared_lookups(8);
+    large = _prepared_lookups(32);
+    assert large < 6 * small , (
+        f"prepared lookups went {small} -> {large} for 4x the modules"
+    );
 }

@@ -1,61 +1,14 @@
 import from jaclang.compiler.backends.native.linker_common {
     object_undefined_symbols,
-    select_ar_members
-}
-
-def resolve_floor_dir(pkg_root: str, triple: str) -> (str | None) {
-    import os;
-    import from jaclang.runtime.graph_utils { triple_arch }
-    want = triple_arch(triple);
-
-    python_build = os.path.join(pkg_root, ".python-build");
-    fallback: (str | None) = None;
-    for build_root in [
-        os.path.join(python_build, "cpython"),
-        os.path.join(python_build, "jacpython"),
-        python_build
-    ] {
-        if not os.path.isdir(build_root) {
-            continue;
-        }
-        for d in sorted(os.listdir(build_root)) {
-            libdir = os.path.join(build_root, d, "python", "build", "lib");
-            if os.path.isdir(libdir) {
-                if fallback is None {
-                    fallback = libdir;
-                }
-                if want in d {
-                    return libdir;
-                }
-            }
-        }
-    }
-
-    import from jaclang.dist.fused_binary { bundled_floor_roots }
-    for floor in bundled_floor_roots(pkg_root) {
-        if not os.path.isdir(floor) {
-            continue;
-        }
-        for d in sorted(os.listdir(floor)) {
-            cand = os.path.join(floor, d);
-            if os.path.isdir(cand) and (want in d) {
-                return cand;
-            }
-        }
-    }
-    return fallback;
+    select_ar_members,
+    ArMember
 }
 
 def floor_lib_dir(triple: str) -> (str | None) {
-    import os;
-    import from jaclang.compiler.driver.compile_options { env_floor_dir }
-    `override = env_floor_dir();
-    if `override and os.path.isdir(`override) {
-        return `override;
-    }
-    import jaclang;
-    pkg_root = os.path.dirname(os.path.dirname(os.path.abspath(jaclang.__file__)));
-    return resolve_floor_dir(pkg_root, triple);
+    import from jaclang.artifacts.router { resolve }
+    import from jaclang.artifacts.kit { osarch }
+    found = resolve(f"c-floor@{osarch(triple)}").found;
+    return found.path if found is not None else None;
 }
 
 def clib_to_archive_name(clib_path: str) -> str {
@@ -85,35 +38,57 @@ def collect_floor_archives(
         syms_by_lib.setdefault(raw, []).append(sym);
     }
 
-    roots_by_archive: dict[str, list[str]] = {};
+    archives: dict[str, bytes] = {};
     paths_by_archive: dict[str, list[str]] = {};
+    roots: list[str] = [];
     for clib_path in clib_paths {
         arch_file = os.path.join(lib_dir, clib_to_archive_name(clib_path));
         if not os.path.isfile(arch_file) {
             continue;
         }
         paths_by_archive.setdefault(arch_file, []).append(clib_path);
+        if arch_file not in archives {
+            with open(arch_file, "rb") as _f {
+                archives[arch_file] = _f.read();
+            }
+        }
         for s in syms_by_lib.get(clib_path, []) {
-            roots_by_archive.setdefault(arch_file, []).append(
-                ("_" + s) if is_macos else s
-            );
+            roots.append(("_" + s) if is_macos else s);
         }
     }
-    for (arch_file, roots) in roots_by_archive.items() {
-        if not roots {
-            continue;
+    """Select to a fixpoint across the archives: a member one archive
+    contributes can call into another (libssl's members need libcrypto's).""";
+    known: set[str] = set(roots);
+    selected: dict[str, list[ArMember]] = {};
+    while True {
+        selected = {
+            arch_file: select_ar_members(data, roots)
+            for (arch_file, data) in archives.items()
+        };
+        added = False;
+        for members in selected.values() {
+            for m in members {
+                for u in object_undefined_symbols(m.data) {
+                    if u not in known {
+                        known.add(u);
+                        roots.append(u);
+                        added = True;
+                    }
+                }
+            }
         }
-        with open(arch_file, "rb") as _f {
-            data = _f.read();
+        if not added {
+            break;
         }
-        members = select_ar_members(data, roots);
+    }
+    for (arch_file, members) in selected.items() {
         if not members {
             continue;
         }
         for m in members {
             member_bytes.append(m.data);
         }
-        for p in paths_by_archive.get(arch_file, []) {
+        for p in paths_by_archive[arch_file] {
             handled.add(p);
         }
     }
@@ -176,41 +151,10 @@ def clib_symbol_lib_map(
 }
 
 def musl_lib_dir(triple: str) -> (str | None) {
-    import os;
-    import from jaclang.runtime.graph_utils { triple_arch }
-    env = os.environ.get("JAC_NATIVE_MUSL_DIR", "");
-    if env and os.path.isdir(env) {
-        return env;
-    }
-    import jaclang;
-    pkg_root = os.path.dirname(os.path.dirname(os.path.abspath(jaclang.__file__)));
-    want = triple_arch(triple);
-    pbs = os.path.join(pkg_root, ".pbs-build");
-    if os.path.isdir(pbs) {
-        for d in sorted(os.listdir(pbs)) {
-            libdir = os.path.join(pbs, d, "musl", "lib");
-            if os.path.isdir(libdir)
-                and os.path.isfile(os.path.join(libdir, "libc.a"))
-                and (want in d) {
-                return libdir;
-            }
-        }
-    }
-    import from jaclang.dist.fused_binary { bundled_floor_roots }
-    for floor in bundled_floor_roots(pkg_root) {
-        if not os.path.isdir(floor) {
-            continue;
-        }
-        for d in sorted(os.listdir(floor)) {
-            cand = os.path.join(floor, d, "musl");
-            if os.path.isdir(cand)
-                and os.path.isfile(os.path.join(cand, "libc.a"))
-                and (want in d) {
-                return cand;
-            }
-        }
-    }
-    return None;
+    import from jaclang.artifacts.router { resolve }
+    import from jaclang.artifacts.kit { osarch }
+    found = resolve(f"musl@{osarch(triple)}").found;
+    return found.path if found is not None else None;
 }
 
 obj StaticRuntime {

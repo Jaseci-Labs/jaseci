@@ -37,6 +37,16 @@ def client_assets_config(
 }
 
 
+def client_input_dirs(
+    config: JacConfig | None, project_dir: Path, entry_path: str = ""
+) -> list[str] {
+    return [
+        str(client_assets_dir(config, project_dir, entry_path)),
+        str(client_app_root(config, project_dir, entry_path) / 'pages')
+    ];
+}
+
+
 def client_assets_dir(
     config: JacConfig | None, project_dir: Path, entry_path: str = ""
 ) -> Path {
