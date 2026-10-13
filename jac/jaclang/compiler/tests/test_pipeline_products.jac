@@ -106,9 +106,7 @@ test "guard-emptied analysis schedule stays retryable instead of succeeding" {
         program = JacProgram();
         path = os.path.join(temp_dir, "pipeline_guard_empty_9151.jac");
         module = program.parse_str("def answer() -> int { return 42; }\n", path);
-        load_tok = _LOADING.set(
-            _LOADING.get() | frozenset([CompilationProduct.ANALYSIS])
-        );
+        load_tok = _LOADING.set(_LOADING.get() + [CompilationProduct.ANALYSIS]);
         try {
             assert not require(program, module, CompilationProduct.ANALYSIS);
             tasks = tasks_of(program, module);

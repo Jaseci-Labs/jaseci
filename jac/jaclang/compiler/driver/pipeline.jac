@@ -455,8 +455,8 @@ glob PRODUCTS: dict[CompilationProduct, ProductSpec] = {
              passes=format_text_passes, tool=True
          )
      },
-     _LOADING: ContextVar[frozenset[CompilationProduct]] = ContextVar(
-         'jac_schedule_loading', `default=frozenset()
+     _LOADING: ContextVar[list[CompilationProduct]] = ContextVar(
+         'jac_schedule_loading', `default=[]
      ),
      _PRODUCT_FACTS: dict[CompilationProduct, set[AnalysisFact]] = {},
      _EARLY_PASSES: list[PassSchedule] = [];
@@ -545,7 +545,7 @@ def resolve(
         return (spec.bootstrap(req), False);
     }
     spec.precheck();
-    token = _LOADING.set(_LOADING.get() | frozenset([product]));
+    token = _LOADING.set(_LOADING.get() + [product]);
     schedule: PassSchedule = [];
     try {
         if spec.loads {
