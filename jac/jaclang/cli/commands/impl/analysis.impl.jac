@@ -17,6 +17,45 @@ def _maybe_malloc_trim {
 
 glob _CHECK_STATE: dict[(str, any)] = {"prog": None, "coverage_on": False};
 
+glob _CHECK_HEAP: dict[(str, int)] = {"base_rss": -1},
+     CHECK_HEAP_REGROW_MB: int = 512;
+
+def _unit_weight(unit: dict[(str, any)]) -> int {
+    import os;
+    import from jaclang.compiler.driver.bccache { discover_annex_files }
+    path = str(unit['path']);
+    try {
+        size = os.path.getsize(path);
+    } except OSError {
+        return 0;
+    }
+    try {
+        for annex in discover_annex_files(path, '.impl.jac') {
+            size += os.path.getsize(annex);
+        }
+    } except Exception {}
+    return size;
+}
+
+def _settle_check_heap {
+    import gc;
+    import os;
+    if os.environ.get('JAC_GC_NO_COMPILE_BOOST') {
+        return;
+    }
+    import from jaclang.cli.workpool { maybe_malloc_trim, worker_rss_mb }
+    rss = worker_rss_mb();
+    if _CHECK_HEAP["base_rss"] < 0 {
+        _CHECK_HEAP["base_rss"] = rss;
+    } elif rss - _CHECK_HEAP["base_rss"] > CHECK_HEAP_REGROW_MB {
+        gc.unfreeze();
+        gc.collect();
+        maybe_malloc_trim();
+        _CHECK_HEAP["base_rss"] = worker_rss_mb();
+    }
+    gc.freeze();
+}
+
 def _wire_list(value: any) -> list[any] {
     return value if isinstance(value, list) else [];
 }
@@ -278,6 +317,7 @@ def _check_file_job(request: dict[(str, any)]) -> dict[(str, any)] {
         } else {
             prog.release_compile_closure(collect=bool(request.get("collect")));
         }
+        _settle_check_heap();
         _maybe_malloc_trim();
     }
 }
@@ -459,6 +499,9 @@ impl check(
             and workers > 1
             and total > 1
         );
+        if use_pool {
+            batch = sorted(batch, key=_unit_weight, reverse=True);
+        }
 
         def request_extra(idx: int, path: str) -> dict[(str, any)] {
             unit = batch[idx];
@@ -523,6 +566,9 @@ impl check(
             try {
                 JacRuntime.get_compiler().ensure_stub_catalog();
             } except Exception {}
+            if not os.environ.get('JAC_GC_NO_COMPILE_BOOST') {
+                gc.freeze();
+            }
             pool.run();
         } else {
             pool.run_inline();

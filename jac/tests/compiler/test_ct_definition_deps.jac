@@ -146,3 +146,26 @@ test "definition positions from an analysed tree give the parsed digests" {
         assert seeded == parsed;
     }
 }
+
+test "a definition's digest is answered from disk without reparsing its files" {
+    import jaclang.compiler.driver.jir as jir_mod;
+    with TemporaryDirectory() as directory {
+        (decl, annex) = write_module(directory);
+        before = definition_digest(str(decl), "Box.first");
+        assert before;
+        jir_mod._DEFINITION_TEXTS.clear();
+        jir_mod._DEFINITION_DIGESTS.clear();
+        reparse = jir_mod._definition_texts;
+        def refuse(path: str) -> dict[str, list[str]] {
+            raise AssertionError(f"reparsed {path} for a digest already on disk");
+        }
+        jir_mod._definition_texts = refuse;
+        try {
+            assert definition_digest(str(decl), "Box.first") == before;
+        } finally {
+            jir_mod._definition_texts = reparse;
+        }
+        annex.write_text(IMPL.replace("self.items[0]", "self.items[3]"));
+        assert definition_digest(str(decl), "Box.first") != before;
+    }
+}
