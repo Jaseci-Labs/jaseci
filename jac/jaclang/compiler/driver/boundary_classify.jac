@@ -533,11 +533,16 @@ def _declared_name(stmt: uni.ContextAwareNode) -> (str | None) {
 }
 
 def _reexport_provider(imp: uni.Import, prog: JacProgram) -> (uni.Module | None) {
-    if bridgeable_import_target(imp) is None {
+    target = bridgeable_import_target(imp);
+    if target is None or not os.path.isfile(target) {
         return None;
     }
-    import from jaclang.compiler.symbol_utils { resolve_import_source_module }
-    return resolve_import_source_module(prog, imp);
+    importer = imp.find_parent_of_type(uni.Module);
+    return prog.load_dependency_module(
+        target,
+        importer_path=importer.loc.mod_path if importer is not None else None,
+        need_tree=True
+    );
 }
 
 def _declaration_named(
@@ -554,17 +559,17 @@ def _declaration_named(
         }
     }
     sym = mod.lookup(wanted);
-    if sym is None {
+    if sym is None or sym.decl is None {
         return None;
     }
-    reexport = sym.decl.parent if sym.decl is not None else None;
+    reexport = sym.decl.parent;
     if isinstance(reexport, uni.ModuleItem) and isinstance(reexport.name, uni.Name) {
         provider = _reexport_provider(reexport.from_parent, prog);
         if provider is not None {
             return _declaration_named(provider, reexport.name.sym_name, prog, seen);
         }
     }
-    cur: (uni.UniNode | None) = uni.resolved_decl_of(sym);
+    cur: (uni.UniNode | None) = sym.decl;
     while cur is not None and not isinstance(cur, uni.Module) {
         if isinstance(cur, uni.ContextAwareNode) {
             return cur;
