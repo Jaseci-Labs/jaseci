@@ -227,9 +227,9 @@ obj BaseLLM {
         mt_run: MTRuntime, usage: object, just_compacted: bool, cp: dict[str, any]
     ) -> bool;
 
-    def _emergency_compact_retry(
+    def _emergency_compact(
         mt_run: MTRuntime, just_compacted: bool, cp: dict[str, any]
-    ) -> CompletionResult;
+    ) -> None;
 
     def _compact_messages(mt_run: MTRuntime, cp: dict[str, any], reason: str) -> bool;
 }

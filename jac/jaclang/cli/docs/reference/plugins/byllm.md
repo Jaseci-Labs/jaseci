@@ -1445,7 +1445,7 @@ def my_agent(query: str) -> str by llm(
 
 byLLM applies a compaction only when the new history is smaller than the old one, so a hook that returns the list unchanged, or a result that is not smaller, is discarded and the old history is kept. Only an **applied** compaction is reported. A discarded one produces no event and shows up only as a log warning.
 
-For a `logging=True` stream or a `stream_handler`, each applied compaction arrives as a `compaction` event just before that iteration's `llm_timing` and `usage_step`:
+For a `logging=True` stream or a `stream_handler`, each applied compaction arrives as a `compaction` event as soon as it is applied, before that iteration's `llm_timing` and `usage_step`. An emergency compaction is reported before the call is retried, so it is reported even when the retry fails:
 
 ```jac
 with entry {

@@ -674,9 +674,9 @@ impl BaseLLM._maybe_compact(
 }
 
 
-impl BaseLLM._emergency_compact_retry(
+impl BaseLLM._emergency_compact(
     mt_run: MTRuntime, just_compacted: bool, cp: dict[str, any]
-) -> CompletionResult {
+) -> None {
     if not bool(cp["enabled"]) {
         raise;
     }
@@ -697,7 +697,6 @@ impl BaseLLM._emergency_compact_retry(
             "check on_compaction hook or compaction model."
         );
     }
-    return self.dispatch_no_streaming(mt_run);
 }
 
 
@@ -1183,8 +1182,9 @@ impl BaseLLM._invoke_react_loop(mt_run: MTRuntime) -> object {
         try {
             resp = self.dispatch_no_streaming(mt_run);
         } except litellm.exceptions.ContextWindowExceededError {
-            resp = self._emergency_compact_retry(mt_run, just_compacted, _cp);
+            self._emergency_compact(mt_run, just_compacted, _cp);
             just_compacted = True;
+            resp = self.dispatch_no_streaming(mt_run);
         } except OutputConversionError {
             recovery_resp = self._attempt_recovery(mt_run);
             if recovery_resp is None {
@@ -2451,8 +2451,11 @@ impl BaseLLM._stream_steps(mt_run: MTRuntime) -> Generator[StreamEvent, None, No
                     );
                 }
                 mt_run._tool_arg_deltas = [];
-                resp = self._emergency_compact_retry(mt_run, just_compacted, _cp);
+                self._emergency_compact(mt_run, just_compacted, _cp);
                 just_compacted = True;
+                yield from _compaction_events(mt_run, _compactions_base, iter_count);
+                _compactions_base = len(mt_run._compactions);
+                resp = self.dispatch_no_streaming(mt_run);
             } except OutputConversionError {
                 if _emitted_deltas {
                     _emitted_deltas = False;
