@@ -318,6 +318,56 @@ test "a proactive compaction that does not reduce the history lets the call cont
 }
 
 
+test "a hook that shrinks the list in place is applied" {
+    llm = MockLLM(
+        ctx_window=1000,
+        outputs=[
+            (MockToolCall(tool=step_a, args={}), {"prompt_tokens": 100}),
+            (MockToolCall(tool=step_a, args={}), {"prompt_tokens": 850}),
+            (MockToolCall(tool=finish_tool, args={"final_output": "ok"}), {})
+        ]
+    );
+
+    def in_place_hook(msgs: list[any], keep_recent: int) -> list[any] {
+        del msgs[2:];
+        return msgs;
+    }
+
+    def my_task(q: str) -> str by llm(
+        tools=[step_a], threshold_ratio=0.80, on_compaction=in_place_hook
+    );
+
+    assert my_task("test") == "ok";
+    iter_msgs = [len(sent) for sent in llm.sent("messages")];
+    assert iter_msgs == [2, 4, 3] , f"Expected [2, 4, 3], got {iter_msgs}";
+}
+
+
+test "an emergency compaction by a hook that shrinks the list in place retries" {
+    llm = MockLLM(
+        outputs=[
+            (MockToolCall(tool=step_a, args={}), {}),
+            fail(
+                litellm.exceptions.ContextWindowExceededError(
+                    message="ctx exceeded", model="mockllm", llm_provider="openai"
+                )
+            ),
+            (MockToolCall(tool=finish_tool, args={"final_output": "ok"}), {})
+        ]
+    );
+
+    def in_place_hook(msgs: list[any], keep_recent: int) -> list[any] {
+        del msgs[2:];
+        return msgs;
+    }
+
+    def my_task(q: str) -> str by llm(tools=[step_a], on_compaction=in_place_hook);
+
+    assert my_task("test") == "ok";
+    assert llm.exhausted();
+}
+
+
 test "an emergency compaction that does not reduce the history raises CompactionNotEffectiveError" {
     llm = MockLLM(
         outputs=[
