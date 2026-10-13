@@ -889,7 +889,9 @@ impl FunctionType.specialize(class_type: ClassType) -> FunctionType {
         cache = {};
         self._acc_cache = cache;
     }
-    memo: dict = cache.get("_specialized");
+    memo: (dict[int, tuple[(ClassType, dict[str, TypeBase], FunctionType)]] | None) = cache.get(
+        "_specialized"
+    );
     if memo is None {
         memo = {};
         cache["_specialized"] = memo;

@@ -28,8 +28,6 @@ import from jaclang.compiler.frontend.relations {
     ValueTypeOf
 }
 
-glob CLASS_GRAPH_EPOCH: list[int] = [0];
-
 enum TypeCategory(IntEnum) {
     Unbound,
     Unknown,
@@ -485,3 +483,5 @@ node EnumMemberType(TypeBase) {
     def __str__ -> str;
     def get_value_type -> TypeBase;
 }
+
+glob CLASS_GRAPH_EPOCH: list[int] = [0];

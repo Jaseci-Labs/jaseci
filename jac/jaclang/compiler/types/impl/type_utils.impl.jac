@@ -1094,7 +1094,14 @@ def _apply_to_function(
         cache = {};
         func._acc_cache = cache;
     }
-    memo: dict = cache.get("_applied");
+    memo:
+        (
+            dict[
+                tuple[(int, int, (frozenset[str] | None))],
+                tuple[(dict[str, TypeBase], (ClassType | None), FunctionType)]
+            ]
+            | None
+        ) = cache.get("_applied");
     if memo is None {
         memo = {};
         cache["_applied"] = memo;

@@ -421,7 +421,7 @@ walker TypeEvaluator {
         builtins_module: Module | None = None,
         _flow_node_type_cache: dict[tuple[int, int], TypeBase | None] = {},
         _flow_key_type_cache: dict[tuple[int, str], TypeBase | None] = {},
-        _narrow_expr_memo: dict[tuple[int, int, int], tuple] = {},
+        _narrow_expr_memo: dict[tuple[int, int, int], tuple[any, any, any, any]] = {},
         _flow_pending_symbols: set[tuple[int, int]] postinit,
         _flow_pending_keys: set[tuple[str, int]] postinit,
         _module_type_cache: dict[str, ModuleType] = {},
