@@ -181,6 +181,7 @@ walker RcFactsPass(CompilerPass) {
     static has contract: PassContract = PassContract(
         requires=(AnalysisFact.CFG_SUCC, ), provides=(AnalysisFact.RC_FACTS, )
     );
+
     has _node_use: dict[int, set[SymId]] = {},
         _node_def: dict[int, set[SymId]] = {};
 

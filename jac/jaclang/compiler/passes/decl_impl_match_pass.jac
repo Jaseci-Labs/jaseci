@@ -42,6 +42,7 @@ walker DeclImplMatchPass(CompilerPass) {
         provides=(AnalysisFact.IMPL_OF, ),
         kernel_safe=True
     );
+
     has _e2026_reported: set[int] = set();
 
     def _run_impl(ir_in: Module) -> Module;

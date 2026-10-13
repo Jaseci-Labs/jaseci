@@ -114,6 +114,7 @@ walker SymTabBuildPass(TreePass) {
         ),
         kernel_safe=True
     );
+
     has cur_sym_tab: list[UniScopeNode] = [];
 
     can prepare with entry;

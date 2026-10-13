@@ -109,6 +109,7 @@ walker OwnershipCheckPass(CompilerPass) {
         requires=(AnalysisFact.CFG_SUCC, AnalysisFact.TYPE_OF, ),
         provides=(AnalysisFact.OWNERSHIP, )
     );
+
     has owned_decl: dict[SymId, Name] = {},
         linear_decl: dict[SymId, Name] = {},
         consumed_syms: set[SymId] = set(),

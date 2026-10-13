@@ -32,6 +32,7 @@ walker AccessCheckPass(CompilerPass) {
     static has contract: PassContract = PassContract(
         provides=(AnalysisFact.ACCESS_CHECKS, )
     );
+
     has _enforce: bool = False,
         _bridged_syms: set[int] = set(),
         _bridged_mods: set[str] = set();
