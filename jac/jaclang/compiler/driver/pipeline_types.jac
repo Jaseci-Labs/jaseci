@@ -85,5 +85,6 @@ enum TaskState {
 obj ProductTask {
     has product: CompilationProduct,
         state: TaskState = TaskState.PENDING,
-        elapsed: float = 0.0;
+        elapsed: float = 0.0,
+        degraded: bool = False;
 }

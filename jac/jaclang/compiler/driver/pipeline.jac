@@ -537,15 +537,16 @@ def tier_reason(product: CompilationProduct) -> str {
     return '';
 }
 
-def schedule_for(
+def resolve(
     product: CompilationProduct,
     request: (ProductRequest | None) = None,
-    internal: bool = False
-) -> (PassSchedule | None) {
+    internal: bool = False,
+    peer_degraded: bool = False
+) -> tuple[(PassSchedule | None), bool] {
     spec = PRODUCTS[product];
     req = request if request is not None else ProductRequest();
-    if spec.tiered and tier_reason(product) {
-        return spec.bootstrap(req);
+    if spec.tiered and (peer_degraded or tier_reason(product)) {
+        return (spec.bootstrap(req), True);
     }
     spec.precheck();
     token = _LOADING.set(_LOADING.get() + (product, ));
@@ -564,14 +565,22 @@ def schedule_for(
         if fallback == ImportFallback.REPORT {
             active_host().schedule_import_failed(e);
         }
-        return spec.bootstrap(req);
+        return (spec.bootstrap(req), True);
     } finally {
         _LOADING.reset(token);
     }
     _PRODUCT_FACTS[product] = _PRODUCT_FACTS.get(product, set()) | providers_of(
         schedule
     );
-    return schedule;
+    return (schedule, False);
+}
+
+def schedule_for(
+    product: CompilationProduct,
+    request: (ProductRequest | None) = None,
+    internal: bool = False
+) -> (PassSchedule | None) {
+    return resolve(product, request, internal)[0];
 }
 
 def unavailable(product: CompilationProduct) -> str {
@@ -665,13 +674,27 @@ def produce(
     module: Module,
     product: CompilationProduct,
     cancel_token: (CancelToken | None),
-    request: (ProductRequest | None)
+    request: (ProductRequest | None),
+    task: (ProductTask | None) = None
 ) -> (bool | None) {
     spec = PRODUCTS[product];
     if spec.acts {
         return spec.action(program, module);
     }
-    schedule = schedule_for(product, request, program.internal);
+    build = program.analysis.build(module);
+    peer_degraded = False;
+    for peer in spec.tier_with {
+        peer_task = build.tasks.get(peer);
+        if peer_task is not None and peer_task.degraded {
+            peer_degraded = True;
+        }
+    }
+    (schedule, degraded) = resolve(
+        product, request, program.internal, peer_degraded
+    );
+    if task is not None {
+        task.degraded = degraded;
+    }
     if schedule is None {
         return None;
     }
@@ -729,7 +752,7 @@ def require(
                 return False;
             }
         }
-        produced = produce(program, module, product, active_cancel, request);
+        produced = produce(program, module, product, active_cancel, request, task);
         if produced is None {
             task.state = TaskState.PENDING;
             return False;
