@@ -666,46 +666,6 @@ import from jaclang.byllm.llm {
     _CACHE_CONTROL_EPHEMERAL
 }
 
-test "prompt caching marks system, last non-system message, and last tool for anthropic models" {
-    assert _is_prompt_caching_eligible("anthropic/claude-sonnet-4-20250514") == True;
-    assert _is_prompt_caching_eligible("claude-3-opus-20240229") == True;
-    assert _is_prompt_caching_eligible("gpt-4o") == False;
-
-    messages = [
-        {"role": "system", "content": "You are an agent."},
-        {"role": "user", "content": "Do something"},
-        {"role": "assistant", "content": "Calling a tool."},
-        {
-            "role": "tool",
-            "content": [
-                {"type": "text", "text": "first"},
-                {"type": "text", "text": "last"}
-            ]
-        }
-    ];
-    tools = [
-        {"type": "function", "function": {"name": "read_file"}},
-        {"type": "function", "function": {"name": "finish_tool"}}
-    ];
-    before = copy.deepcopy((messages, tools));
-    (sent_messages, sent_tools) = _apply_prompt_caching(messages, tools);
-
-    assert sent_messages[0].get("cache_control") == _CACHE_CONTROL_EPHEMERAL;
-    assert "cache_control" not in sent_messages[1];
-    assert "cache_control" not in sent_messages[2];
-    tool_content: any = sent_messages[3].get("content");
-    assert "cache_control" not in tool_content[0];
-    assert tool_content[-1].get("cache_control") == _CACHE_CONTROL_EPHEMERAL;
-
-    assert "cache_control" not in sent_tools[0];
-    assert sent_tools[-1].get("cache_control") == _CACHE_CONTROL_EPHEMERAL;
-
-    assert (messages, tools) == before , (
-        "the markers belong to the request, so the caller's messages and tools "
-        "must be the same after caching as before it"
-    );
-}
-
 def _cache_markers(params: dict[str, any]) -> int {
     count = len(
         [
@@ -735,33 +695,75 @@ def _cache_markers(params: dict[str, any]) -> int {
     return count;
 }
 
-test "prompt caching drops markers a stored history already carries" {
+test "prompt caching marks system, last non-system message, and last tool for anthropic models" {
+    assert _is_prompt_caching_eligible("anthropic/claude-sonnet-4-20250514") == True;
+    assert _is_prompt_caching_eligible("claude-3-opus-20240229") == True;
+    assert _is_prompt_caching_eligible("gpt-4o") == False;
+
     stale = dict(_CACHE_CONTROL_EPHEMERAL);
-    messages = [
-        {"role": "system", "content": "You are an agent.", "cache_control": stale},
-        {"role": "user", "content": "first", "cache_control": stale},
-        {
-            "role": "user",
-            "content": [{"type": "text", "text": "second", "cache_control": stale}]
-        },
-        {"role": "assistant", "content": "ok", "cache_control": stale},
-        {"role": "user", "content": "latest"}
-    ];
-    tools = [
-        {"type": "function", "function": {"name": "read_file"}, "cache_control": stale},
-        {"type": "function", "function": {"name": "finish_tool"}}
-    ];
-    (sent_messages, sent_tools) = _apply_prompt_caching(messages, tools);
+    for (label, messages, tools) in [
+        (
+            "fresh history",
+            [
+                {"role": "system", "content": "You are an agent."},
+                {"role": "user", "content": "Do something"},
+                {"role": "assistant", "content": "Calling a tool."},
+                {
+                    "role": "tool",
+                    "content": [
+                        {"type": "text", "text": "first"},
+                        {"type": "text", "text": "last"}
+                    ]
+                }
+            ],
+            [
+                {"type": "function", "function": {"name": "read_file"}},
+                {"type": "function", "function": {"name": "finish_tool"}}
+            ]
+        ),
+        (
+            "history saved with stale markers",
+            [
+                {
+                    "role": "system",
+                    "content": "You are an agent.",
+                    "cache_control": stale
+                },
+                {"role": "user", "content": "first", "cache_control": stale},
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "second", "cache_control": stale}
+                    ]
+                },
+                {"role": "assistant", "content": "ok", "cache_control": stale},
+                {"role": "user", "content": "latest"}
+            ],
+            [
+                {
+                    "type": "function",
+                    "function": {"name": "read_file"},
+                    "cache_control": stale
+                },
+                {"type": "function", "function": {"name": "finish_tool"}}
+            ]
+        )
+    ] {
+        before = copy.deepcopy((messages, tools));
+        (sent_messages, sent_tools) = _apply_prompt_caching(messages, tools);
+        assert _cache_markers({"messages": [sent_messages[0]]}) == 1 , f"{label}: system";
+        assert _cache_markers({"messages": [sent_messages[-1]]}) == 1 , f"{label}: latest";
+        assert sent_tools[-1].get("cache_control") == _CACHE_CONTROL_EPHEMERAL , f"{label}: last tool";
+        assert _cache_markers({"messages": sent_messages, "tools": sent_tools}) == 3 , (
+            f"{label}: only the system message, the latest message and the last tool "
+            "may carry a marker"
+        );
+        assert (messages, tools) == before , (
+            f"{label}: the markers belong to the request, so the caller's messages "
+            "and tools must be the same after caching as before it"
+        );
+    }
 
-    assert _cache_markers({"messages": sent_messages, "tools": sent_tools}) == 3 , (
-        "only the system message, the latest message and the last tool may carry "
-        "a marker, whatever the stored history held"
-    );
-    assert sent_messages[-1].get("cache_control") == _CACHE_CONTROL_EPHEMERAL;
-    assert "cache_control" in messages[1] , "the stored history itself is left as it was";
-}
-
-test "steering through on_iteration never sends more than four cache markers" {
     steers: list[dict[str, any]] = [];
 
     def lookup(key: str) -> str {
