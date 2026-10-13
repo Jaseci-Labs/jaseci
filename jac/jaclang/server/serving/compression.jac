@@ -2,6 +2,7 @@ import gzip;
 import inspect;
 import zlib;
 import from jaclang.server.serving.datatypes { Headers, Request, Response }
+import from jaclang.server.serving.executor { iterate_sync }
 
 glob COMPRESSIBLE_TYPES: list[str] = [
          'text/',
@@ -76,7 +77,7 @@ async def _gzip_stream(source: any, level: int) -> AsyncIterator[bytes] {
             }
         }
     } else {
-        for chunk in source {
+        async for chunk in iterate_sync(source) {
             data = chunk if isinstance(chunk, bytes) else str(chunk).encode('utf-8');
             if not data {
                 continue;

@@ -1,6 +1,7 @@
 import from jaclang.compiler.backends.native.linker_common {
     object_undefined_symbols,
-    select_ar_members
+    select_ar_members,
+    ArMember
 }
 
 def floor_lib_dir(triple: str) -> (str | None) {
@@ -37,35 +38,57 @@ def collect_floor_archives(
         syms_by_lib.setdefault(raw, []).append(sym);
     }
 
-    roots_by_archive: dict[str, list[str]] = {};
+    archives: dict[str, bytes] = {};
     paths_by_archive: dict[str, list[str]] = {};
+    roots: list[str] = [];
     for clib_path in clib_paths {
         arch_file = os.path.join(lib_dir, clib_to_archive_name(clib_path));
         if not os.path.isfile(arch_file) {
             continue;
         }
         paths_by_archive.setdefault(arch_file, []).append(clib_path);
+        if arch_file not in archives {
+            with open(arch_file, "rb") as _f {
+                archives[arch_file] = _f.read();
+            }
+        }
         for s in syms_by_lib.get(clib_path, []) {
-            roots_by_archive.setdefault(arch_file, []).append(
-                ("_" + s) if is_macos else s
-            );
+            roots.append(("_" + s) if is_macos else s);
         }
     }
-    for (arch_file, roots) in roots_by_archive.items() {
-        if not roots {
-            continue;
+    """Select to a fixpoint across the archives: a member one archive
+    contributes can call into another (libssl's members need libcrypto's).""";
+    known: set[str] = set(roots);
+    selected: dict[str, list[ArMember]] = {};
+    while True {
+        selected = {
+            arch_file: select_ar_members(data, roots)
+            for (arch_file, data) in archives.items()
+        };
+        added = False;
+        for members in selected.values() {
+            for m in members {
+                for u in object_undefined_symbols(m.data) {
+                    if u not in known {
+                        known.add(u);
+                        roots.append(u);
+                        added = True;
+                    }
+                }
+            }
         }
-        with open(arch_file, "rb") as _f {
-            data = _f.read();
+        if not added {
+            break;
         }
-        members = select_ar_members(data, roots);
+    }
+    for (arch_file, members) in selected.items() {
         if not members {
             continue;
         }
         for m in members {
             member_bytes.append(m.data);
         }
-        for p in paths_by_archive.get(arch_file, []) {
+        for p in paths_by_archive[arch_file] {
             handled.add(p);
         }
     }

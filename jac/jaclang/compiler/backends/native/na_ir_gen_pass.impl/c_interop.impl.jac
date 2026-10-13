@@ -995,7 +995,7 @@ impl NaIRGenPass._c_const_init(
                 return None;
             }
             if shape[0] == 1 {
-                return ir.Constant(llt, bytearray(data));
+                return ir.Constant(llt, data);
             }
             return ir.Constant(llt, c_bytes_array_values(data, shape[0], shape[1]));
         }
@@ -1047,7 +1047,10 @@ impl NaIRGenPass._c_abi_same(have: ir.FunctionType, want: ir.FunctionType) -> bo
     if have.var_arg != want.var_arg or len(have.args) != len(want.args) {
         return False;
     }
-    pairs = list(zip(have.args, want.args));
+    pairs: list[tuple[ir.Type, ir.Type]] = [];
+    for i in range(len(have.args)) {
+        pairs.append((have.args[i], want.args[i]));
+    }
     pairs.append((have.return_type, want.return_type));
     word = ir.IntType(64);
     for (a, b) in pairs {
@@ -1071,7 +1074,10 @@ impl NaIRGenPass._c_const_scalar(expr: uni.Expr, llt: ir.Type) -> (ir.Constant |
     if isinstance(llt, ir.IntType) {
         return ir.Constant(llt, int(value));
     }
-    return ir.Constant(llt, float(value));
+    if isinstance(value, float) {
+        return ir.Constant(llt, value);
+    }
+    return ir.Constant(llt, float(int(value)));
 }
 
 impl NaIRGenPass._c_const_struct(expr: uni.Expr, sname: str) -> (ir.Constant | None) {

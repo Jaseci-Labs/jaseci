@@ -31,6 +31,7 @@ import from jaclang.compiler.backends.native.link_glue {
     RC_THREADED_SYMBOL,
     REGION_DIED_HOOK,
     SHARED_INIT_SYMBOL,
+    SHARED_MAIN_SYMBOL,
     STR_NEW_SYMBOL,
     init_object_codegen,
     link_glue_ir
@@ -159,7 +160,8 @@ obj LinkPlan {
         units: list[LinkUnit],
         mode: str,
         triple: str,
-        callback_bindings: list[InteropBinding] = [];
+        callback_bindings: list[InteropBinding] = [],
+        library_api: bool = False;
 
     def unit(path: str) -> (LinkUnit | None) {
         real = os.path.realpath(path);
@@ -259,8 +261,12 @@ obj LinkPlan {
     }
 
     def pub_exports -> list[str] {
+        """The C ABI of a shared artifact. A library's is its root module's
+        `:pub` surface: in the modules it imports `:pub` is how Jac modules see
+        each other, and keeping those internal lets the whole-program optimizer
+        specialize and drop them as it does for an executable.""";
         out: list[str] = [];
-        for u in self.units {
+        for u in ([self.root_unit()] if self.library_api else self.units) {
             for sym in u.iface.pub_symbols() {
                 if sym not in out {
                     out.append(sym);
@@ -906,6 +912,7 @@ def optimize_whole_program(
         exports = plan.pub_exports()
             + [
                 SHARED_INIT_SYMBOL,
+                SHARED_MAIN_SYMBOL,
                 "jac_retain",
                 "jac_release",
                 "jac_str_new",

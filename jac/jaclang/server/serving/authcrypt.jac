@@ -210,6 +210,9 @@ def jwt_decode(
     } except Exception {
         raise JWTError(reason='malformed token');
     }
+    if not isinstance(header, dict) or not isinstance(payload, dict) {
+        raise JWTError(reason='malformed token');
+    }
     if header.get('alg') != 'HS256' {
         raise JWTError(reason='unsupported algorithm');
     }

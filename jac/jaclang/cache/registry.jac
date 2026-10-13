@@ -183,6 +183,12 @@ glob RETIRED: tuple[str, ...] = (
              relpath="pg",
              policy=Policy(retention=Retention.EXTERNAL),
              summary="the embedded Postgres cluster and distribution (jac db)"
+         ),
+         Bucket(
+             name="js-engine",
+             relpath="js-engine",
+             policy=Policy(retention=Retention.PINNED),
+             summary="the JavaScript engine `jac native build js-engine` installed"
          )
      ];
 
