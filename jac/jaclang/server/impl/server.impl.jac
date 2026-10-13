@@ -1374,8 +1374,11 @@ impl JacAPIServer.enable_hmr(hot_reloader: any) -> None {
 }
 
 impl JacAPIServer._refresh_dev_endpoints -> None {
-    self._hmr_pending = False;
-    self.introspector.load(force_reload=True);
+    import from jaclang.compiler.driver.application { PREPARATION_LOCK }
+    with PREPARATION_LOCK {
+        self._hmr_pending = False;
+        self.introspector.load(force_reload=True);
+    }
     if self.app is None {
         return;
     }

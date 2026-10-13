@@ -11,7 +11,7 @@ import type from jaclang.compiler.frontend { unitree as uni }
 glob _FORMAT: int = 9,
      SLOW_PREPARE_SECONDS: int = 45,
      _SKIP: set[str] = {'.jac', '.git', '.venv', 'venv', 'node_modules', '__pycache__'},
-     _PREPARING: threading.RLock = threading.RLock();
+     PREPARATION_LOCK: threading.RLock = threading.RLock();
 
 def _stamp(path: str, previous: any = None) -> tuple[int, int, str] {
     import from jaclang.compiler.driver.jir { compute_content_sha256 }
@@ -593,7 +593,7 @@ def prepare_application(
         get_effective_default_codespace_override,
         set_effective_default_codespace
     }
-    with _PREPARING {
+    with PREPARATION_LOCK {
         previous = get_effective_default_codespace_override();
         set_effective_default_codespace('server');
         watched = bool(os.environ.get('JAC_KERNEL_TIMING'));
@@ -1157,7 +1157,7 @@ def prepare_dynamic_module(
     console.print(f'Preparing dynamically imported module: {path}', file=sys.stderr);
     import from jaclang.compiler.driver.compilation_context { program_for }
     import from jaclang.runtime.prepared { publish }
-    with _PREPARING {
+    with PREPARATION_LOCK {
         actual = program_for(application.entry, program);
         revision = _prepare(
             application.entry,

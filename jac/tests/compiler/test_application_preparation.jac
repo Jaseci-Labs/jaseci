@@ -4,6 +4,7 @@ import dis;
 import os;
 import shutil;
 import tempfile;
+import time;
 import from pathlib { Path }
 import from unittest.mock { patch }
 import from jaclang.compiler.driver.application { prepare_application }
@@ -977,10 +978,12 @@ test "compiles on two threads leave the compiler free to release" {
             name = threading.current_thread().name;
             if name == 'first' and not first_entered.is_set() {
                 first_entered.set();
-                second_entered.wait(2);
+                assert second_entered.wait(120) , "the second compile never started";
             } elif name == 'second' and not second_entered.is_set() {
                 second_entered.set();
-                first_done.wait(2);
+                assert first_done.wait(120) , (
+                    "the first compile did not finish before the second"
+                );
             }
             return frame;
         }
@@ -1020,6 +1023,69 @@ test "compiles on two threads leave the compiler free to release" {
             shutil.rmtree(tmp, ignore_errors=True);
         }
     }
+}
+
+obj _ReloadingIntrospector {
+    has reload: any;
+
+    def load(force_reload: bool = False) {
+        self.reload();
+    }
+}
+
+obj _DevServer {
+    has introspector: _ReloadingIntrospector,
+        app: any = None,
+        _hmr_pending: bool = True;
+}
+
+test "a dev reload waits for the preparation lock before it takes the import lock" {
+    import _imp;
+    import threading;
+    import from jaclang.compiler.driver.application { PREPARATION_LOCK }
+    import from jaclang.server.server { JacAPIServer }
+    holding = threading.Event();
+    waiting: list[bool] = [];
+    def reload_under_import_lock {
+        _imp.acquire_lock();
+        try {
+            took = PREPARATION_LOCK.acquire(timeout=5);
+            waiting.append(not took);
+            if took {
+                PREPARATION_LOCK.release();
+            }
+        } finally {
+            _imp.release_lock();
+        }
+    }
+    def watcher {
+        with PREPARATION_LOCK {
+            holding.set();
+            time.sleep(0.5);
+            _imp.acquire_lock();
+            _imp.release_lock();
+        }
+    }
+    def request {
+        holding.wait(60);
+        server = _DevServer(
+            introspector=_ReloadingIntrospector(reload=reload_under_import_lock)
+        );
+        refresh: any = JacAPIServer._refresh_dev_endpoints;
+        refresh(server);
+    }
+    threads = [
+        threading.Thread(target=watcher, name='watcher'),
+        threading.Thread(target=request, name='request')
+    ];
+    for thread in threads {
+        thread.start();
+    }
+    stuck = _join_all(threads);
+    assert not stuck , f"workers still running: {stuck}";
+    assert waiting == [False] , (
+        "the reload waited for the preparation lock while holding the import lock"
+    );
 }
 
 test "prepared applications are reused by content, not by timestamp" {
