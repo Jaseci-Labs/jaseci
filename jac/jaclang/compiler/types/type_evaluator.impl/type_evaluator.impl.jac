@@ -3196,6 +3196,9 @@ impl TypeEvaluator._assign_c_interop_args(
 }
 
 impl TypeEvaluator._is_protocol_class(cls_type: ClassType) -> bool {
+    if cls_type.shared.is_typeddict {
+        return True;
+    }
     for base_cls in cls_type.shared.base_classes {
         if not isinstance(base_cls, ClassType) or base_cls._shared is None {
             continue;
