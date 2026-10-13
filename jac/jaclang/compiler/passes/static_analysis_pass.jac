@@ -31,6 +31,8 @@ import from jaclang.compiler.frontend.unitree {
     Import,
     InForStmt,
     Int,
+    JsxElement,
+    JsxElementName,
     IterForStmt,
     KWPair,
     LambdaExpr,
