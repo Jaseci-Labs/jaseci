@@ -866,7 +866,8 @@ impl NaIRGenPass._export_native_layout -> None {
     }
 
     for (enum_name, entries) in self.enum_string_values.items() {
-        if self._enum_source_name.get(enum_name, self.module.name) != self.module.name {
+        if self._enum_source_name.get(enum_name, self.module.name)
+            != self.module.name {
             continue;
         }
         _enum_members: list[tuple[str, any, int]] = [];
