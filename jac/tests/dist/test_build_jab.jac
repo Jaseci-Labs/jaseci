@@ -161,6 +161,31 @@ test "a sealed boot reads each module's imports from the seal instead of disasse
             f"the sealed boot disassembled {len(scanned)} modules whose imports the "
             f"seal had recorded: {scanned}"
         );
+        manifest_path = img / ".jac" / "serve_manifest.json";
+        partial = dict(serving);
+        partial["runtime_imports"] = {
+            source: imports
+            for (source, imports) in recorded.items()
+            if source != "web/main.jac"
+        };
+        missing = dict(serving);
+        missing.pop("runtime_imports", None);
+        for (label, variant) in [
+            ("one module unrecorded", partial),
+            ("no map", missing)
+        ] {
+            manifest_path.write_text(json.dumps(variant));
+            forget(entry_file);
+            scanned.clear();
+            prepared = prepare_application(entry_file, JacProgram(), str(img));
+            assert os.path.realpath(str(img / "core" / "helper.jac"))
+                in prepared.code , (
+                f"{label}: the boot did not load the module web/main.jac imports"
+            );
+            assert any(path.endswith("main.jac") for path in scanned) , (
+                f"{label}: the boot did not fall back to reading web/main.jac's imports"
+            );
+        }
     } finally {
         artifact_imports.runtime_sources = real_sources;
         if entry_file {
