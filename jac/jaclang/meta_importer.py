@@ -91,6 +91,10 @@ def _bootstrap_compile(
                 os.utime(cache_file, None)
             except OSError:
                 pass
+            # The key is the source's content, so a checkout with the same
+            # source reuses an entry another checkout wrote; report this file.
+            if code.co_filename != file_path:
+                code = _sealed._patch_code_filenames(code, code.co_filename, file_path)
             return code
 
     # Cache miss — transpile with jac0, compile, and cache (best-effort).

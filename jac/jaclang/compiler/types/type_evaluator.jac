@@ -418,6 +418,8 @@ walker TypeEvaluator {
         prefetch: PrefetchedTypes postinit,
         _pass: CompileContext | None = None,
         _diagnostic_suppression_depth: int = 0,
+        _trial_notes: (list[tuple[UniNode, str, str, bool]] | None) = None,
+        _last_trial_notes: list[tuple[UniNode, str, str, bool]] = [],
         builtins_module: Module | None = None,
         _flow_node_type_cache: dict[tuple[int, int], TypeBase | None] = {},
         _flow_key_type_cache: dict[tuple[int, str], TypeBase | None] = {},
@@ -599,6 +601,7 @@ walker TypeEvaluator {
     def _diag_unnarrowed_optional(nd: UniNode, ty: TypeBase, required: str) -> bool;
     def _in_native_context -> bool;
     def note_native(nd: UniNode, code: str, text: str, requires: bool = False) -> None;
+    def commit_trial_notes(notes: list[tuple[UniNode, str, str, bool]]) -> None;
     def neutral_site(nd: UniNode) -> bool;
     def _is_address_pair(src_type: TypeBase, dest_type: TypeBase) -> bool;
     def is_typevar_class(ty: TypeBase) -> bool;

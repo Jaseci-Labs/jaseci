@@ -81,6 +81,14 @@ def iface_codec -> (IfaceCodec | None) {
     return codec;
 }
 
+def prime_iface_codec -> (IfaceCodec | None) {
+    import importlib;
+    for name in _CODEC_MODULES {
+        importlib.import_module(name);
+    }
+    return iface_codec();
+}
+
 def iface_verify_enabled -> bool {
     truthy: set = {'1', 'true', 'True', 'TRUE', 'yes', 'YES', 'on', 'ON'};
     return os.environ.get('JAC_IFACE_VERIFY', '') in truthy;
@@ -88,6 +96,14 @@ def iface_verify_enabled -> bool {
 
 def _interface_source_path(path: str) -> bool {
     return jir_cacheable_source_path(path) and not is_stub_like_path(path);
+}
+
+def native_lowering_reads(path: str) -> bool {
+    import from jaclang.compiler.frontend.codeinfo {
+        is_compiler_source_path,
+        is_native_by_location
+    }
+    return not is_compiler_source_path(path) or is_native_by_location(path);
 }
 
 def _symtab_provides -> set[AnalysisFact] {
@@ -724,6 +740,9 @@ obj IfaceRegistry(CatalogResolver) {
 
     def _serve_in_context(compiler: any, resolved: str, options: any) -> any {
         if not options.iface_ok or options.need_full_ast or not self.ready() {
+            return None;
+        }
+        if options.native_tree_demand and native_lowering_reads(resolved) {
             return None;
         }
         if resolved in self.building {
