@@ -102,6 +102,33 @@ impl is_generator_family_type(return_type: types.TypeBase) -> bool {
 
 glob _proto_checks_in_progress: set = set();
 
+def _protocol_member_impl(
+    evaluator: any,
+    cls: types.ClassType,
+    name: str,
+    proto_func: types.FunctionType,
+    fallback: types.FunctionType
+) -> types.FunctionType {
+    member = evaluator._lookup_class_member(cls, name);
+    if member is None {
+        return fallback;
+    }
+    impl_type = evaluator._get_method_with_overloads(member, cls);
+    candidates: list = impl_type.overloads or []
+        if isinstance(impl_type, types.OverloadedType)
+        else [impl_type];
+    for candidate in candidates {
+        if isinstance(candidate, types.FunctionType)
+        and evaluator._assign_callable(candidate, proto_func) {
+            return candidate;
+        }
+    }
+    if candidates and isinstance(candidates[0], types.FunctionType) {
+        return candidates[0];
+    }
+    return fallback;
+}
+
 impl class_implements_protocol(
     cls: types.ClassType, proto: types.ClassType, evaluator: any = None
 ) -> bool {
@@ -150,6 +177,12 @@ impl class_implements_protocol(
                 cls_func_type = evaluator.get_type_of_ability(cls_method);
                 if isinstance(proto_func_type, types.FunctionType)
                 and isinstance(cls_func_type, types.FunctionType) {
+                    if proto.private is not None and proto.private.type_args {
+                        proto_func_type = proto_func_type.specialize(proto);
+                        cls_func_type = _protocol_member_impl(
+                            evaluator, cls, name, proto_func_type, cls_func_type
+                        );
+                    }
                     if not evaluator._assign_callable(cls_func_type, proto_func_type) {
                         return False;
                     }

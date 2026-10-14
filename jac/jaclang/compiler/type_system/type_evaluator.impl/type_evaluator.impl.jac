@@ -1295,6 +1295,10 @@ impl TypeEvaluator._get_type_of_expression_core(
                     ) {
                         target_name = expr.target.right.value;
                     }
+                    if target_name == "Protocol" and self.prefetch.protocol_class {
+                        return self.prefetch.protocol_class;
+                    }
+
                     if target_name == "Union" or target_name == "Optional" {
                         union_args: list[types.TypeBase] = [];
                         if isinstance(expr.right, uni.IndexSlice)
@@ -2540,7 +2544,7 @@ impl TypeEvaluator._assign_class(
         }
     }
 
-    is_protocol = False;
+    is_protocol = dest_type.shared.is_typeddict;
 
     for base_cls in dest_type.shared.base_classes {
         if not isinstance(base_cls, types.ClassType) or base_cls._shared is None {
@@ -2564,21 +2568,6 @@ impl TypeEvaluator._assign_class(
         if (dest_type.shared.is_from_stdlib_stub or dest_type.shared.is_builtin_class)
         and (class_name.startswith('Supports') or class_name.startswith('_Supports')) {
             is_protocol = True;
-        }
-    }
-
-    if not is_protocol {
-        for mro_cls in dest_type.shared.mro {
-            if isinstance(mro_cls, types.ClassType) {
-                if (
-                    mro_cls.shared.is_builtin_class
-                    or mro_cls.shared.is_from_stdlib_stub
-                )
-                and mro_cls.shared.class_name in ('Protocol', '_SpecialForm') {
-                    is_protocol = True;
-                    break;
-                }
-            }
         }
     }
 

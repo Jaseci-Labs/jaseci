@@ -1067,3 +1067,21 @@ test "bug_7163_llvm_ir_boundary_resolves" {
         f"symbol). Got errors: {[str(e) for e in program.errors_had]}"
     );
 }
+
+# Bug #GENPROTO-1: a `Protocol[...]` base was typed as `_SpecialForm.__getitem__`'s
+# `object`, so a generic protocol whose name does not start with `Supports` was
+# not a protocol, and `ExitStack.enter_context` rejected every context manager.
+test "bug_genproto_1_subscripted_protocol_base_is_a_protocol" {
+    program = compile_and_check("checker_subscripted_protocol_base.jac");
+    by_line = {
+        e.loc.first_line: str(e)
+        for e in program.errors_had
+        if e.loc
+    };
+    assert sorted(by_line) == [42, 56] , (
+        "Bug #GENPROTO-1: only the two deliberate mismatches may fire. Got: "
+        f"{[str(e) for e in program.errors_had]}"
+    );
+    assert "NoExit" in by_line[42] , by_line[42];
+    assert "BytesLocation" in by_line[56] , by_line[56];
+}
