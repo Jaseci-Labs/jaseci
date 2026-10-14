@@ -150,6 +150,19 @@ test "retries are bounded, and the error reports how many were spent" {
             f"{label}: the JSON parse failure must be chained, got {err.__cause__.__cause__!r}"
         );
     }
+
+    # An empty reply is never parsed; it fails as a non-conforming value.
+    empty = MockLLM(outputs=[say(""), say("")]);
+    def empty_person -> RetryPerson by empty(max_output_retries=1);
+    err: any = None;
+    try {
+        empty_person();
+    } except OutputConversionError as e {
+        err = e;
+    }
+    assert "return type 'RetryPerson'" in str(err) , (
+        f"empty reply: the error should name the type, got: {err!r}"
+    );
 }
 
 
