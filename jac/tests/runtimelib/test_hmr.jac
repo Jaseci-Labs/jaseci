@@ -8,7 +8,7 @@ import tempfile;
 import threading;
 import time;
 import from pathlib { Path }
-import from unittest.mock { MagicMock }
+import from unittest.mock { MagicMock, patch }
 
 import watchdog;
 
@@ -54,6 +54,71 @@ test "prepared namespaced modules reload through their source source_path" {
             updated: any = load_prepared_module(str(source_path));
             assert updated.value() == 2;
             assert updated is not module;
+        } finally {
+            forget(str(source_path));
+            for name in list(sys.modules) {
+                if name == prefix or name.startswith(prefix + '.') {
+                    sys.modules.pop(name, None);
+                }
+            }
+        }
+    }
+}
+
+test "a hot reload holds the preparation lock until the app is initialized again" {
+    import sys;
+    import threading;
+    import jaclang.runtime.prepared as prepared_runtime;
+    import from jaclang.runtime.runtime { JacRuntime as Jac }
+    import from jaclang.compiler.driver.application { prepare_application }
+    import from jaclang.runtime.prepared {
+        initialize_application,
+        load_prepared_module,
+        forget
+    }
+    import from jaclang.runtime.preparation_lock { PREPARATION_LOCK }
+    with tempfile.TemporaryDirectory() as tmp {
+        source_path = Path(tmp) / 'main.jac';
+        source_path.write_text('def value -> int { return 1; }\n');
+        application = prepare_application(str(source_path), Jac.get_program(), tmp);
+        module = initialize_application(application);
+        prefix = module.__name__.split('.')[0];
+        free_during: list[bool] = [];
+        original = prepared_runtime.initialize_application;
+        def observed_initialize(*args: any, **kwargs: any) -> any {
+            took: list[bool] = [];
+            def try_lock {
+                got = PREPARATION_LOCK.acquire(timeout=0);
+                took.append(got);
+                if got {
+                    PREPARATION_LOCK.release();
+                }
+            }
+            other = threading.Thread(target=try_lock);
+            other.start();
+            other.join(30);
+            free_during.extend(took);
+            return original(*args, **kwargs);
+        }
+        try {
+            reloader = HotReloader(
+                base_path=tmp,
+                module_name=module.__name__,
+                entry_path=str(source_path),
+                watcher=JacFileWatcher(watch_paths=[tmp])
+            );
+            source_path.write_text('def value -> int { return 2; }\n');
+            with patch.object(
+                prepared_runtime, 'initialize_application', observed_initialize
+            ) {
+                reloader._reload_server_module(str(source_path));
+            }
+            assert not reloader.diagnostics() , reloader.diagnostics();
+            assert free_during == [False] , (
+                "another thread could take the preparation lock while the reload re-initialized the app"
+            );
+            updated: any = load_prepared_module(str(source_path));
+            assert updated.value() == 2;
         } finally {
             forget(str(source_path));
             for name in list(sys.modules) {
