@@ -244,6 +244,9 @@ impl TypeEvaluator._get_type_of_expression_core(
                 if isinstance(dict_inst, ClassType) and expr.kv_pairs {
                     key_types: list[TypeBase] = [];
                     val_types: list[TypeBase] = [];
+                    expected_kv = self._get_expected_kv_types(
+                        expected_type, self.prefetch.dict_class
+                    );
                     for _kv in expr.kv_pairs {
                         if _kv.key {
                             kt = self._container_value_type(
@@ -254,7 +257,13 @@ impl TypeEvaluator._get_type_of_expression_core(
                                 key_types.append(kt);
                             }
                             vt = self._container_value_type(
-                                self.get_type_of_expression(_kv.value), expr
+                                self.get_type_of_expression(
+                                    _kv.value,
+                                    expected_type=expected_kv[1]
+                                        if expected_kv
+                                        else None
+                                ),
+                                expr
                             );
                             if not isinstance(vt, UnknownType)
                                 and not self._type_in_list(vt, val_types) {
@@ -282,9 +291,6 @@ impl TypeEvaluator._get_type_of_expression_core(
                         }
                     }
 
-                    expected_kv = self._get_expected_kv_types(
-                        expected_type, self.prefetch.dict_class
-                    );
                     if expected_kv is not None and (key_types or val_types) {
                         all_ok = True;
                         for kt in key_types {

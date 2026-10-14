@@ -24,6 +24,14 @@ class Holder(TypedDict) {
         n: int;
 }
 
+class Chain(TypedDict) {
+    has next: Chain | None;
+}
+
+class Link(TypedDict) {
+    has next: Link | None;
+}
+
 def role_of(u: UserDoc) -> str {
     return u['role'];
 }
@@ -39,6 +47,19 @@ def maybe_role(u: UserDoc | None) -> str {
 # --- Valid: TypedDicts and matching dict literals ---
 def make -> UserDoc {
     return {'id': '1', 'role': 'admin'};
+}
+
+# A recursive TypedDict compares with a structurally equal one without
+# looping forever.
+def relink(c: Chain) -> Link {
+    return c;
+}
+
+def directory -> dict[str, UserDoc] {
+    docs: dict[str, UserDoc] = {'alice': {'id': '1', 'role': 'admin'}};
+    roster: list[UserDoc] = [{'id': '2', 'role': 'guest'}];
+    docs['bob'] = roster[0];
+    return docs;
 }
 
 def valid -> int {

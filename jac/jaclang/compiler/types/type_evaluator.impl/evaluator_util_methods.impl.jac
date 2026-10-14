@@ -368,24 +368,35 @@ impl TypeEvaluator._typeddict_as_dict(base_type: ClassType) -> ClassType | None 
     return dict_type.clone_as_instance();
 }
 
+glob _TYPEDDICT_ASSIGNS_IN_PROGRESS: set[tuple[int, int]] = set();
+
 impl TypeEvaluator._assign_typeddict(
     src_type: ClassType, dest_type: ClassType, strict: bool = False
 ) -> bool {
     if not src_type.is_typeddict() {
         return False;
     }
-    src_fields: dict[str, TypeBase] = src_type.shared.typeddict_fields or {};
-    for (key, dest_field) in (dest_type.shared.typeddict_fields or {}).items() {
-        if key not in src_fields {
-            return False;
-        }
-        src_field = src_fields[key];
-        if not self.assign_type(src_field, dest_field, strict)
-            or not self.assign_type(dest_field, src_field, strict) {
-            return False;
-        }
+    pair = (id(src_type.shared), id(dest_type.shared));
+    if pair in _TYPEDDICT_ASSIGNS_IN_PROGRESS {
+        return True;
     }
-    return True;
+    _TYPEDDICT_ASSIGNS_IN_PROGRESS.add(pair);
+    try {
+        src_fields: dict[str, TypeBase] = src_type.shared.typeddict_fields or {};
+        for (key, dest_field) in (dest_type.shared.typeddict_fields or {}).items() {
+            if key not in src_fields {
+                return False;
+            }
+            src_field = src_fields[key];
+            if not self.assign_type(src_field, dest_field, strict)
+                or not self.assign_type(dest_field, src_field, strict) {
+                return False;
+            }
+        }
+        return True;
+    } finally {
+        _TYPEDDICT_ASSIGNS_IN_PROGRESS.discard(pair);
+    }
 }
 
 impl TypeEvaluator._typeddict_for_dict_literal(
