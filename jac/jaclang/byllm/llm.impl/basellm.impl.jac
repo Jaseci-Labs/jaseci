@@ -199,16 +199,11 @@ def _is_prompt_caching_eligible(model_name: str) -> bool {
 
 
 def _without_cache_control(block: dict[str, any]) -> dict[str, any] {
-    return {
+    out = {
         key: value
         for (key, value) in block.items()
         if key != "cache_control"
     };
-}
-
-
-def _uncached_message_copy(msg: dict[str, any]) -> dict[str, any] {
-    out = _without_cache_control(msg);
     content = out.get("content");
     if isinstance(content, list) {
         out["content"] = [
@@ -270,23 +265,22 @@ def _apply_prompt_caching(
     messages: list[any], tools: list[dict[str, any]] | None
 ) -> tuple[list[any], list[dict[str, any]] | None] {
     out_msgs: list[any] = [
-        _uncached_message_copy(msg) if isinstance(msg, dict) else msg
+        _without_cache_control(msg) if isinstance(msg, dict) else msg
         for msg in messages
     ];
-    last_sys_idx = -1;
-    last_nonsys_idx = -1;
-    for (i, msg) in enumerate(out_msgs) {
+    last_sys: dict[str, any] | None = None;
+    last_nonsys: dict[str, any] | None = None;
+    for msg in out_msgs {
         if isinstance(msg, dict) {
             if msg.get("role") == "system" {
-                last_sys_idx = i;
+                last_sys = msg;
             } else {
-                last_nonsys_idx = i;
+                last_nonsys = msg;
             }
         }
     }
-    for idx in (last_sys_idx, last_nonsys_idx) {
-        target = out_msgs[idx] if idx >= 0 else None;
-        if isinstance(target, dict) {
+    for target in (last_sys, last_nonsys) {
+        if target is not None {
             _mark_message_for_caching(target);
         }
     }
