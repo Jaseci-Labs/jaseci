@@ -293,7 +293,7 @@ obj KernelArtifact(Artifact) {
         release: ReleasePolicy = ReleasePolicy.REQUIRED,
         summary: str = "the native compiler kernel",
         floor: str = "the bytecode compiler",
-        requires: list[str] = ["llvm-shim"],
+        requires: list[str] = ["llvm-shim", "stubcat"],
         consumes: list[str] = ["stubcat"];
 
     override def unavailable_reason -> str {
